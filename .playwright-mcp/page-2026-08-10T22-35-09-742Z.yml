@@ -1,0 +1,218 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: Real-time strategy · in development
+      - heading [level=1] [ref=e6]:
+        - text: Multiverse
+        - emphasis [ref=e7]: Mages
+      - paragraph [ref=e8]:
+        - text: You do not cast spells. You decide which spells
+        - emphasis [ref=e9]: can exist
+        - text: .
+      - paragraph [ref=e10]: Five techniques. Fourteen forms. Nineteen switches that decide what magic is possible in your world — and, because magic obeys the sky it is standing under, exactly what an invader may use against you in it.
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - paragraph [ref=e13]: Click a technique or form to permit it · hover a cell to read it
+        - generic [ref=e15]:
+          - button "Ani" [ref=e17] [cursor=pointer]
+          - button "Aqu" [ref=e19] [cursor=pointer]
+          - button "Aur" [ref=e21] [cursor=pointer]
+          - button "Cor" [ref=e23] [cursor=pointer]
+          - button "Her" [ref=e25] [cursor=pointer]
+          - button "Ign" [ref=e27] [cursor=pointer]
+          - button "Ima" [ref=e29] [cursor=pointer]
+          - button "Men" [pressed] [ref=e31] [cursor=pointer]
+          - button "Ter" [pressed] [ref=e33] [cursor=pointer]
+          - button "Vim" [ref=e35] [cursor=pointer]
+          - button "Umb" [ref=e37] [cursor=pointer]
+          - button "Fat" [ref=e39] [cursor=pointer]
+          - button "Lim" [pressed] [ref=e41] [cursor=pointer]
+          - button "Nom" [pressed] [ref=e43] [cursor=pointer]
+          - button "Creo make" [ref=e45] [cursor=pointer]:
+            - generic [ref=e47]:
+              - generic [ref=e48]: Creo
+              - generic [ref=e49]: make
+          - button "Creo Animal" [ref=e50] [cursor=pointer]
+          - button "Creo Aquam" [ref=e51] [cursor=pointer]
+          - button "Creo Auram" [ref=e52] [cursor=pointer]
+          - button "Creo Corpus" [ref=e53] [cursor=pointer]
+          - button "Creo Herbam" [ref=e54] [cursor=pointer]
+          - button "Creo Ignem" [ref=e55] [cursor=pointer]
+          - button "Creo Imaginem" [ref=e56] [cursor=pointer]
+          - button "Creo Mentem" [ref=e57] [cursor=pointer]
+          - button "Creo Terram" [ref=e58] [cursor=pointer]
+          - button "Creo Vim" [ref=e59] [cursor=pointer]
+          - button "Creo Umbra" [ref=e60] [cursor=pointer]
+          - button "Creo Fatum" [ref=e61] [cursor=pointer]
+          - button "Creo Limen" [ref=e62] [cursor=pointer]
+          - button "Creo Nomen" [ref=e63] [cursor=pointer]
+          - button "Intellego perceive" [pressed] [ref=e64] [cursor=pointer]:
+            - generic [ref=e66]:
+              - generic [ref=e67]: Intellego
+              - generic [ref=e68]: perceive
+          - button "Intellego Animal" [ref=e69] [cursor=pointer]
+          - button "Intellego Aquam" [ref=e70] [cursor=pointer]
+          - button "Intellego Auram" [ref=e71] [cursor=pointer]
+          - button "Intellego Corpus" [ref=e72] [cursor=pointer]
+          - button "Intellego Herbam" [ref=e73] [cursor=pointer]
+          - button "Intellego Ignem" [ref=e74] [cursor=pointer]
+          - button "Intellego Imaginem" [ref=e75] [cursor=pointer]
+          - button "Intellego Mentem" [ref=e76] [cursor=pointer]
+          - button "Intellego Terram" [ref=e77] [cursor=pointer]
+          - button "Intellego Vim" [ref=e78] [cursor=pointer]
+          - button "Intellego Umbra" [ref=e79] [cursor=pointer]
+          - button "Intellego Fatum" [ref=e80] [cursor=pointer]
+          - button "Intellego Limen" [ref=e81] [cursor=pointer]
+          - button "Intellego Nomen" [ref=e82] [cursor=pointer]
+          - button "Muto transform" [ref=e83] [cursor=pointer]:
+            - generic [ref=e85]:
+              - generic [ref=e86]: Muto
+              - generic [ref=e87]: transform
+          - button "Muto Animal" [ref=e88] [cursor=pointer]
+          - button "Muto Aquam" [ref=e89] [cursor=pointer]
+          - button "Muto Auram" [ref=e90] [cursor=pointer]
+          - button "Muto Corpus" [ref=e91] [cursor=pointer]
+          - button "Muto Herbam" [ref=e92] [cursor=pointer]
+          - button "Muto Ignem" [ref=e93] [cursor=pointer]
+          - button "Muto Imaginem" [ref=e94] [cursor=pointer]
+          - button "Muto Mentem" [ref=e95] [cursor=pointer]
+          - button "Muto Terram" [ref=e96] [cursor=pointer]
+          - button "Muto Vim" [ref=e97] [cursor=pointer]
+          - button "Muto Umbra" [ref=e98] [cursor=pointer]
+          - button "Muto Fatum" [ref=e99] [cursor=pointer]
+          - button "Muto Limen" [ref=e100] [cursor=pointer]
+          - button "Muto Nomen" [ref=e101] [cursor=pointer]
+          - button "Perdo unmake" [pressed] [ref=e102] [cursor=pointer]:
+            - generic [ref=e104]:
+              - generic [ref=e105]: Perdo
+              - generic [ref=e106]: unmake
+          - button "Perdo Animal" [ref=e107] [cursor=pointer]
+          - button "Perdo Aquam" [ref=e108] [cursor=pointer]
+          - button "Perdo Auram" [ref=e109] [cursor=pointer]
+          - button "Perdo Corpus" [ref=e110] [cursor=pointer]
+          - button "Perdo Herbam" [ref=e111] [cursor=pointer]
+          - button "Perdo Ignem" [ref=e112] [cursor=pointer]
+          - button "Perdo Imaginem" [ref=e113] [cursor=pointer]
+          - button "Perdo Mentem" [ref=e114] [cursor=pointer]
+          - button "Perdo Terram" [ref=e115] [cursor=pointer]
+          - button "Perdo Vim" [ref=e116] [cursor=pointer]
+          - button "Perdo Umbra" [ref=e117] [cursor=pointer]
+          - button "Perdo Fatum" [ref=e118] [cursor=pointer]
+          - button "Perdo Limen" [ref=e119] [cursor=pointer]
+          - button "Perdo Nomen" [ref=e120] [cursor=pointer]
+          - button "Rego control" [pressed] [ref=e121] [cursor=pointer]:
+            - generic [ref=e123]:
+              - generic [ref=e124]: Rego
+              - generic [ref=e125]: control
+          - button "Rego Animal" [ref=e126] [cursor=pointer]
+          - button "Rego Aquam" [ref=e127] [cursor=pointer]
+          - button "Rego Auram" [ref=e128] [cursor=pointer]
+          - button "Rego Corpus" [ref=e129] [cursor=pointer]
+          - button "Rego Herbam" [ref=e130] [cursor=pointer]
+          - button "Rego Ignem" [ref=e131] [cursor=pointer]
+          - button "Rego Imaginem" [ref=e132] [cursor=pointer]
+          - button "Rego Mentem" [ref=e133] [cursor=pointer]
+          - button "Rego Terram" [ref=e134] [cursor=pointer]
+          - button "Rego Vim" [ref=e135] [cursor=pointer]
+          - button "Rego Umbra" [ref=e136] [cursor=pointer]
+          - button "Rego Fatum" [ref=e137] [cursor=pointer]
+          - button "Rego Limen" [ref=e138] [cursor=pointer]
+          - button "Rego Nomen" [ref=e139] [cursor=pointer]
+        - generic [ref=e141]:
+          - generic [ref=e142]: Your scholars
+          - generic [ref=e144]: Anyone raiding you
+        - generic [ref=e146]:
+          - generic [ref=e147]: 12 / 70 in your sky · 12 in theirs
+          - paragraph [ref=e148]: Twelve cells are open to your scholars — and to anyone who walks through a portal into your sky knowing them.
+      - complementary [ref=e149]:
+        - generic [ref=e150]: Forbidden here
+        - heading "Muto Limen" [level=3] [ref=e151]
+        - paragraph [ref=e152]: Known to scholars as transmutation
+        - paragraph [ref=e153]: ○ Not permitted
+        - list [ref=e154]:
+          - listitem [ref=e155]:
+            - generic [ref=e156]: T1
+            - generic [ref=e157]:
+              - text: Change What the Wall Means
+              - generic [ref=e158]: A wall raised against weather can be persuaded it was raised against people. It was not, and it knows, so the
+          - listitem [ref=e159]:
+            - generic [ref=e160]: T2
+            - generic [ref=e161]:
+              - text: The Door That Was a Window
+              - generic [ref=e162]: "Change a threshold's kind rather than its state. Declares no portal effect and never will: opening onto anothe"
+          - listitem [ref=e163]:
+            - generic [ref=e164]: T3
+            - generic [ref=e165]:
+              - text: Which Side the Courtyard Is On
+              - generic [ref=e166]: Change which side of a boundary a place is on without moving the boundary or the place. Two sieges in the reco
+          - listitem [ref=e167]:
+            - generic [ref=e168]: T4
+            - generic [ref=e169]:
+              - text: The Seam Made a Hinge
+              - generic [ref=e170]: Change a boundary into a joint, so that it bends where it used to hold. It bends back, and the fortress it was
+        - button "Reset to the v1 subset" [ref=e171] [cursor=pointer]
+  - generic [ref=e173]:
+    - generic [ref=e174]:
+      - generic [ref=e175]:
+        - img "An intact candlelit library archive" [ref=e176]
+        - img "The same archive burned and collapsed" [ref=e177]
+      - slider "Burn the archive" [ref=e178]: "0"
+      - generic [ref=e179]:
+        - generic [ref=e180]: Standing
+        - generic [ref=e181]: Ash
+    - generic [ref=e182]:
+      - generic [ref=e183]: Knowledge is a physical thing
+      - heading [level=2] [ref=e184]:
+        - text: A spell lives
+        - emphasis [ref=e185]: somewhere
+        - text: .
+      - paragraph [ref=e186]: In a mage's mind. In a grimoire. On a library's shelves. Under one tradition, in a memory palace that cannot burn and cannot be lent — and dies with the person holding it.
+      - paragraph [ref=e187]: Kill the last mage who knew it and burn the book, and it is gone. Not disabled. Gone — until someone derives it again from first principles, at a cost far above learning it from a living teacher.
+      - paragraph [ref=e188]: Which is why a raid is rarely about killing anyone. It is about reaching the archive.
+  - generic [ref=e189]:
+    - generic [ref=e190]:
+      - generic [ref=e191]: They do this without you
+      - heading "Your mages are academics, and they have careers." [level=2] [ref=e192]
+      - paragraph [ref=e193]: You bless, you fund, you forbid, and you grant a chosen scholar the founding knowledge of something nobody in your world has ever known. You never give an order — not even in a raid. They research, teach, write, age, and die on their own.
+    - generic [ref=e194]:
+      - img "An elderly dwarf archivist holding a heavy grimoire" [ref=e195]
+      - img "An iron-bound grimoire with glowing script" [ref=e196]
+    - generic [ref=e197]:
+      - generic [ref=e198]:
+        - term [ref=e199]: Human · 80 years
+        - definition [ref=e200]: Curious and numerous. Loses knowledge constantly to mortality.
+      - generic [ref=e201]:
+        - term [ref=e202]: Dwarf · 250 years
+        - definition [ref=e203]: Incurious, but the finest archivists. Dwarven books resist burning.
+      - generic [ref=e204]:
+        - term [ref=e205]: Gnome · 350 years
+        - definition [ref=e206]: Wildly curious, poor retention. Best at rediscovering what was lost.
+      - generic [ref=e207]:
+        - term [ref=e208]: Draconic · 1,500 years
+        - definition [ref=e209]: Barely curious, learns slowly. Reaches depths nobody else can.
+  - generic [ref=e210]:
+    - generic [ref=e211]:
+      - generic [ref=e212]: Where the project actually is
+      - heading "Pre-alpha. Balanced by machines first, in the open." [level=2] [ref=e213]
+      - paragraph [ref=e214]: Real-time strategy is hard to get right, so this one is deterministic and headless before it is attractive. Monte Carlo sweeps and learning agents get to find the meta before any human does. There is no build to download and nothing to wishlist — the design documents and the source are public and readable today.
+    - generic [ref=e215]:
+      - generic [ref=e216]:
+        - term [ref=e217]: Simulation
+        - definition [ref=e218]: Deterministic core · 0.1.0
+      - generic [ref=e219]:
+        - term [ref=e220]: The grid
+        - definition [ref=e221]: 70 cells · 12 playable in v1
+      - generic [ref=e222]:
+        - term [ref=e223]: Species
+        - definition [ref=e224]: Six · 60 to 1,500 years
+      - generic [ref=e225]:
+        - term [ref=e226]: Licence
+        - definition [ref=e227]: AGPL-3.0-or-later
+  - generic [ref=e228]:
+    - img "A stone archway portal glowing with pale light" [ref=e229]
+    - heading "Somewhere, another god is deciding what fire means." [level=2] [ref=e230]
+    - paragraph [ref=e231]: Sooner or later, one of their scholars learns to open a door.
+  - contentinfo [ref=e232]:
+    - generic [ref=e233]: Multiverse Mages
+    - generic [ref=e234]: © 2026 Ann Kelner
+    - generic [ref=e235]: github.com/lizTheDeveloper/multiverse_mages

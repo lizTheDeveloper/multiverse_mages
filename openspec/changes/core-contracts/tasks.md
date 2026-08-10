@@ -61,6 +61,6 @@
       ranked PvP, which 0.16.0 claims zero of. Cheap to fix now, expensive once 0.13.0 ships saves.
 
 
-- [ ] 6.1 Confirm every scenario across the five capability specs has a corresponding passing test
-- [ ] 6.2 Run the full suite, typecheck, lint, purity check, and content validation together
-- [ ] 6.3 Update `docs/design/contracts.md` with any deviation discovered during implementation, or confirm none
+- [x] 6.1 Confirm every scenario across the five capability specs has a corresponding passing test
+- [x] 6.2 Run the full suite, typecheck, lint, purity check, and content validation together
+- [x] 6.3 Update `docs/design/contracts.md` with any deviation discovered during implementation, or confirm none

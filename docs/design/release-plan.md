@@ -146,9 +146,29 @@ names its file path and JSON pointer.
 
 **Claim:** Ruleset legality is computed in exactly one place.
 
-- *Disproved by:* the conformance check finding any direct technique/form bitmask evaluation
-  outside `permits()`. Expected count: zero.
+- *Disproved by:* the conformance check finding any **cell-scoped** technique/form bitmask
+  evaluation outside `permits()`. Expected count: zero.
 - *Collected:* **yes**.
+
+*Refined during implementation, because the original count was zero only if you did not look.*
+Two sites evaluate the bitmasks directly and both are correct: the legality mask asks whether
+every technique is already permitted — a universe with everything forbidden but one live
+dispensation has `permits()` returning true for that cell while "permit a technique" is still a
+legal action, so saturation is a question about the raw axis and there is no cell to ask it about.
+And the observation projects §4.1's ruleset block, which pins axis bits and edict slots as separate
+fields so an agent learns the precedence itself; routing it through `permits()` would fold the
+edicts in and change an exported contract every trained policy depends on. The rule is therefore
+not "nobody may touch the bitmask" but "nobody may decide a *cell* from it", and the check draws
+that line by shape rather than by a list of exempt filenames.
+
+**Measured at 0.2.0:**
+
+- Five records broken five ways produce five diagnostics with five distinct JSON pointers, and two
+  different kinds of violation in two different files both survive to the report. Mutation-checked:
+  truncating the reported diagnostics to the first turns both assertions red.
+- The arbitration conformance check reports zero cell-scoped evaluations outside `permits()`, and
+  is mutation-checked against a copied arbitration in `rules-magic`.
+- 811 tests across 71 files; typecheck, lint, dependency-purity and content validation all gate CI.
 
 ### 0.3.0 — `knowledge-model`
 
