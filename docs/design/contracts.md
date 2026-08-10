@@ -27,6 +27,15 @@ spec is the thing that gets fixed.
 - **Randomness.** Every draw names a subsystem stream (§6). No subsystem may draw from another's.
 - **Nulls.** Absent references are `0`, never `-1` or `undefined`. Entity handle `0` is reserved
   and never allocated.
+- **`EDICT_BUDGET_MAX = 8`.** A permanent structural constant, distinct from a universe's current
+  `edictBudget`, which grows with worship tier and may never exceed it. The observation vector pads
+  to the maximum. Raising this constant is a breaking contract change precisely because it resizes
+  the observation and invalidates every trained policy — which is why it is pinned here rather than
+  derived from a tuning value in `god-agency`.
+- **Content revision.** Every content registry computes a `contentRevision` hash over all loaded
+  content. It is written into every snapshot. Two universes may only interact — a raid, a match —
+  if their `contentRevision` values are equal. There is no partial-compatibility rule and no
+  negotiation; mismatch is refusal with both revisions named.
 
 ---
 
@@ -41,7 +50,7 @@ The world state is a set of component arrays over an entity store. Grouped by sc
 | `permittedTechniques` | `uint8` bitmask | 5 bits, one per technique |
 | `permittedForms` | `uint16` bitmask | 14 bits, one per form |
 | `edicts` | array of `{cellId: uint16, kind: 0=dispensation \| 1=interdiction}` | length ≤ `edictBudget` |
-| `edictBudget` | `uint8` | grows with worship tier |
+| `edictBudget` | `uint8` | current allowance; grows with worship tier, never exceeds `EDICT_BUDGET_MAX` |
 | `traditionId` | `uint16` | exactly one; never 0 |
 | `favor` | `fp` | god's currency |
 | `worship` | `fp` | drives favor regen |
@@ -293,7 +302,7 @@ length data is bucketed or summarized, never emitted raw.
 
 | Block | Size | Contents |
 |---|---|---|
-| `ruleset` | 19 + 2×`edictBudgetMax` | technique bits, form bits, edict slots (cellId, kind) |
+| `ruleset` | 19 + 2×`EDICT_BUDGET_MAX` = 35 | technique bits, form bits, 8 edict slots (cellId, kind), zero-padded |
 | `tradition` | 1 | tradition id |
 | `resources` | 5 | favor, worship, worshipTier, materials, prestige |
 | `population` | 6 species × 5 occupations = 30 | cohort counts |
@@ -333,8 +342,54 @@ agent that submits an illegal action gets a no-op and a counter increment — ne
 never a silent partial effect. RL agents will submit illegal actions constantly; that must be
 cheap and observable.
 
+**This rule governs the core only, and the core assumes a trusted caller.** A cheap, silent,
+unlimited no-op is correct for a learning agent and is an invitation to unbounded work from a
+hostile network peer — and under the AGPL, modified clients are a granted right, not an anomaly.
+Any layer accepting actions across a trust boundary (`server`, and `gym-bridge` if ever exposed
+remotely) MUST apply its own admission policy — rate limiting, disconnection — *before* the action
+reaches the core. The core does not defend itself; the boundary does.
+
 **Rules changes are world-time only.** Actions 1–7 and 13 are masked out whenever
 `clock.mode == engagement`. This is the vision's frozen-policy rule (§3), enforced in one place.
+
+### 4.3 Reward and episode boundaries
+
+The core emits **no reward**. Reward is a property of a training objective, not of the game, and
+baking one in would make every trained agent a hostage to one researcher's choice.
+
+Instead the core emits, alongside each observation, an **outcome record**: terminal flag, terminal
+reason, era, and the balance-metric deltas since the previous step. The `agent-api` layer exposes a
+*pluggable* reward function over that record. The shipped default is sparse and terminal: ascension
+`+1`, stagnation `0`, nothing in between.
+
+**Episode boundaries:**
+
+- **Terminal** — ascension (vision §8a), or stagnation as defined by `god-agency`.
+- **Truncated** — a step limit imposed by the caller, never by the core. A truncated episode is
+  flagged distinctly from a terminal one; bootstrapping value estimates through the two differs, and
+  conflating them is a silent training bug.
+- **A raid is inside an episode, not its own episode.** The clock changes mode; the episode does
+  not end. One agent plays both scales — which is exactly what the fixed-shape observation with its
+  zero-filled engagement block exists to support.
+
+### 4.4 Parameterized actions and the explain channel
+
+Actions 8–14 carry entity handles drawn from a set that changes every tick, and a flat discrete mask
+cannot express "action 9, but only for these 40 of 3,000 mages."
+
+**Resolution:** parameterized actions address a **slot-indexed candidate list**, not raw handles.
+Each observation carries, per parameterized action, a fixed-length list of the top-*k* candidate
+entities ranked by a deterministic salience ordering; the agent selects a slot index. `k` is a
+structural constant per action, pinned like `EDICT_BUDGET_MAX`. A slot referring to an entity that
+died between observation and action is an ordinary illegal action.
+
+**The explain channel** is a separate, optional projection carrying the reasons behind autonomous
+mage decisions — utility scores and the goal chosen. It exists because vision §7 makes mage autonomy
+a design pillar while §5 forbids the renderer computing rules: with no data path, a client can show
+what mages *did* but never why, and autonomy reads as randomness.
+
+It is **not** part of the RL observation. It is emitted on request, is never an input to any rules
+computation, and no simulation behaviour may depend on whether it was requested.
 
 ---
 
@@ -412,6 +467,9 @@ Deliberately left to the capabilities that own them, so that implementation expe
 - Combat resolution math beyond primitive units — `rules-raid`
 - Utility-AI scoring functions for mage autonomy — `rules-world`
 - The worship and favor-regeneration formulas — `god-agency`
-- Wall-clock pacing — client and server
+- Wall-clock pacing — **the server is authoritative; the client follows.** In single-player, the
+  client's own core instance is the server for this purpose. Naming one owner matters: two owners
+  choosing independently produces a divergence determinism cannot catch, because both sides are
+  individually correct
 - Snapshot wire format for network transport — `pvp-server`
 - Which 12 cells make the v1 subset — `knowledge-model`, constrained only to include `rego-limen`

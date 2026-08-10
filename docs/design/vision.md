@@ -359,7 +359,7 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 | 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | not started |
 | 0.11.0 | `gym-bridge` | `rl-bridge` | proposal only |
 | 0.13.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only |
-| 0.15.0 | `pvp-server` | `authoritative-lockstep`, `matchmaking`, `universe-persistence`, `hetzner-deployment` | proposal only |
+| 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | proposal only |
 | 1.0.0 | — | contracts freeze; public release | — |
 
 Versions skip because **MINOR parity encodes balance validation from 0.5.0 onward** — odd means

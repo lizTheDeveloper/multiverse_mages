@@ -62,23 +62,31 @@ denies you it too — and you cannot carry it offensively into a realm that forb
 
 ### Architecture
 
-Nine changes, built in order. See `docs/design/vision.md` §11 for the authoritative table.
+Ten changes, built in order. `docs/design/vision.md` §11 is the authoritative table, and
+`docs/design/release-plan.md` maps each to a version.
 
-1. `sim-core-foundation` — fixed-timestep loop, seeded PRNG, entity store, snapshots, replay tests
-2. `knowledge-model` — the technique×form grid, effect primitives, node schema, knowledge
-   instances with location, research, teaching, scribing, loss, rediscovery, tradition hooks
-3. `mages-and-species` — species traits, aging, utility-AI with assignable roles, universities,
-   non-magical populace
-4. `agent-interface` — the observation/action interface and the batch balance runner
-5. `god-agency` — favor pool, worship feedback loop, interventions, technique/form toggles, edicts
-6. `raid-engagement` — portals, snapshot pairing, host-ruleset arbitration, objectives,
-   casualties, knowledge theft
-7. `electron-client` — stylized-but-simple presentation
-8. `pvp-server` — authoritative lockstep, matchmaking, persistence
-9. `gym-bridge` — Python RL wrapper
+1. `sim-core-foundation` (0.1.0) — fixed-timestep loop, seeded PRNG, entity store, snapshots, replay
+2. `core-contracts` (0.2.0) — shared state types, validated content, primitive registry,
+   observation/action space, enforced module boundaries. **The parallelization gate**
+3. `knowledge-model` (0.3.0) — the technique×form grid, node schema, knowledge instances with
+   location, research, teaching, scribing, loss, rediscovery, tradition hooks
+4. `mages-and-species` (0.4.0) — species traits, aging, utility-AI with assignable roles,
+   universities, non-magical populace, the three-input economy
+5. `agent-interface` (0.5.0) — the agent API and the Monte Carlo balance runner
+6. `god-agency` (0.7.0) — favor, worship loop, interventions, technique/form toggles, edicts,
+   ascension and prestige
+7. `raid-engagement` (0.9.0) — portals, host-ruleset arbitration, positional battlefield,
+   objectives, casualties, knowledge theft
+8. `gym-bridge` (0.11.0) — Python RL wrapper
+9. `electron-client` (0.13.0) — stylized-but-simple presentation
+10. `pvp-server` (0.15.0) — authoritative lockstep, direct challenge, persistence, Hetzner
 
-The balance harness lands fourth deliberately: it is what prevents discovering at cell #30 that
-the primitives were mis-tuned at cell #3.
+The balance harness lands fifth deliberately: it is what prevents discovering at cell #30 that the
+primitives were mis-tuned at cell #3. The RL bridge lands before the client deliberately: machines
+find the meta, then humans find the human meta.
+
+Versions skip because MINOR parity encodes balance validation from 0.5.0 on — odd is in flight,
+even means baselines are committed and green.
 
 ### Testing Strategy
 

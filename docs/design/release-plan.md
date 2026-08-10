@@ -241,20 +241,24 @@ document exists to prevent.
 
 Promoted to **0.14.0** when a playtest cohort completes without a balance regression.
 
-**Claim:** A new player reaches their first granted founding knowledge without external
-instruction.
+**Claim:** At least 8 of 10 observed first-time players issue a grant-founding-knowledge action
+within 15 minutes of starting, without asking a question or consulting documentation.
 
-- *Disproved by:* observed playtest sessions where players do not.
-- *Collected:* **NO.** There is no telemetry. This is the first claim in the plan that cannot be
-  automatically verified, and it must not be dressed up as though it can. Either instrument the
-  client before this release — see the `wire-telemetry` skill — or state plainly that the claim
-  rests on a handful of observed sessions.
+- *Disproved by:* fewer than 8 of 10 in an observed cohort.
+- *Collected:* **NO, and the original wording was also unfalsifiable.** "Without external
+  instruction" had no measurable definition and no time bound — it could never have been checked
+  even with perfect telemetry. The restatement above is falsifiable but still needs either
+  instrumentation (see `wire-telemetry`) or ten genuinely observed sessions. Do not claim it on
+  fewer.
 
-**Claim:** The client computes no rules — its displayed state always matches a server snapshot
-hash.
+**Claim:** The client computes no rules — displayed state always matches the snapshot hash of the
+core instance it reads from.
 
-- *Disproved by:* any divergence between client-displayed state and the authoritative snapshot.
-- *Collected:* **yes**, automatable.
+- *Disproved by:* any divergence between client-displayed state and that snapshot.
+- *Collected:* **yes**, automatable. Stated against the *core*, not a server: the server does not
+  exist until 0.15.0, and the original wording made this claim uncheckable at the release that
+  makes it. Designing the main↔renderer transport as the same path the server will later use makes
+  the 0.16.0 desync claim nearly free; not doing so makes it a rewrite.
 
 ### 0.15.0 — `pvp-server`
 
