@@ -110,12 +110,25 @@ describe('regeneration is a separate command', () => {
    *
    * Checked by bytes rather than by reading the code, because the property that
    * matters is what happens to the files, not which functions were called.
+   *
+   * Divergence is swallowed rather than propagated, and that is the whole point
+   * of the test rather than a shortcut. The spec requires the files to be
+   * unchanged *while a fixture is failing* — which is precisely the run a
+   * regenerate-on-failure repair would fire on. Letting the throw escape would
+   * skip the byte comparison in the only case that can catch that, and would
+   * leave this test re-reporting a divergence the per-fixture tests already
+   * reported instead of answering its own question.
    */
   it('leaves every fixture file byte-identical after the suite has run them', () => {
     const before = new Map(files.map((file) => [file, readFileSync(join(FIXTURES_DIR, file))]));
 
     for (const file of files) {
-      verifyFixture(file);
+      try {
+        verifyFixture(file);
+      } catch {
+        // Reporting the divergence belongs to the tests above. This one asks
+        // only whether replaying — passing or failing — wrote anything.
+      }
     }
 
     expect(fixtureFiles(), 'the suite added or removed a fixture file').toEqual(files);

@@ -35,27 +35,27 @@
 
 ## 5. Clock and step contract
 
-- [ ] 5.1 Implement the dual-scale clock with world ticks (one month), engagement ticks, and an explicit mode
-- [ ] 5.2 Implement action-driven mode transitions, with no wall-clock input anywhere in the path
-- [ ] 5.3 Implement `step(state, actions, rng) -> state`, returning a new state and never mutating its input
-- [ ] 5.4 Unit test that world time is suspended in engagement mode and resumes at the correct world tick afterward
-- [ ] 5.5 Unit test that the input state's snapshot hash is unchanged after `step` returns
+- [x] 5.1 Implement the dual-scale clock with world ticks (one month), engagement ticks, and an explicit mode
+- [x] 5.2 Implement action-driven mode transitions, with no wall-clock input anywhere in the path
+- [x] 5.3 Implement `step(state, actions, rng) -> state`, returning a new state and never mutating its input
+- [x] 5.4 Unit test that world time is suspended in engagement mode and resumes at the correct world tick afterward
+- [x] 5.5 Unit test that the input state's snapshot hash is unchanged after `step` returns
 
 ## 6. Snapshots and persistence
 
-- [ ] 6.1 Implement binary serialization of complete state with a schema version header and component tag table
-- [ ] 6.2 Implement deserialization that rejects unknown-future versions and malformed buffers with descriptive errors
-- [ ] 6.3 Implement the deterministic snapshot content hash
-- [ ] 6.4 Implement the migration registry and sequential forward migration by version
-- [ ] 6.5 Unit test round-trip equality, byte-stability of repeated serialization, and that a restored state simulates identically
-- [ ] 6.6 Unit test migration ordering across two or more versions, and the explicit failure when a migration is missing
+- [x] 6.1 Implement binary serialization of complete state with a schema version header and component tag table
+- [x] 6.2 Implement deserialization that rejects unknown-future versions and malformed buffers with descriptive errors
+- [x] 6.3 Implement the deterministic snapshot content hash
+- [x] 6.4 Implement the migration registry and sequential forward migration by version
+- [x] 6.5 Unit test round-trip equality, byte-stability of repeated serialization, and that a restored state simulates identically
+- [x] 6.6 Unit test migration ordering across two or more versions, and the explicit failure when a migration is missing
 
 ## 7. Recording and replay
 
-- [ ] 7.1 Implement the action log recorder, preserving tick association and within-tick order
-- [ ] 7.2 Implement the replayer over `(rootSeed, initialSnapshot, actionLog)`
-- [ ] 7.3 Implement divergence reporting that identifies the earliest diverging tick, not merely that a divergence occurred
-- [ ] 7.4 Unit test that enabling recording does not change results, and that replay speed does not affect the outcome
+- [x] 7.1 Implement the action log recorder, preserving tick association and within-tick order
+- [x] 7.2 Implement the replayer over `(rootSeed, initialSnapshot, actionLog)`
+- [x] 7.3 Implement divergence reporting that identifies the earliest diverging tick, not merely that a divergence occurred
+- [x] 7.4 Unit test that enabling recording does not change results, and that replay speed does not affect the outcome
 
 ## 8. Golden replay harness
 
@@ -67,8 +67,8 @@
 
 ## 9. Benchmark and closeout
 
-- [ ] 9.1 Implement the benchmark harness over a configurable synthetic entity population
-- [ ] 9.2 Emit machine-readable steps-per-second and entity-updates-per-second output
-- [ ] 9.3 Verify the benchmark's simulated results are identical across runs at the same seed, with only timing differing
-- [ ] 9.4 Record measured throughput in `docs/design/vision.md` §13, answering the mage-population open question
+- [x] 9.1 Implement the benchmark harness over a configurable synthetic entity population
+- [x] 9.2 Emit machine-readable steps-per-second and entity-updates-per-second output
+- [x] 9.3 Verify the benchmark's simulated results are identical across runs at the same seed, with only timing differing
+- [x] 9.4 Record measured throughput in `docs/design/vision.md` §13, answering the mage-population open question
 - [ ] 9.5 Confirm every scenario in the three capability specs has a corresponding passing test
