@@ -1,0 +1,47 @@
+[
+  {
+    "id": "vancian-memorization",
+    "name": "Vancian Memorization",
+    "hooks": {
+      "acquire": { "kind": "standard" },
+      "store": { "kind": "standard" },
+      "cast": { "kind": "prepared", "params": { "slotsPerMage": 4 } },
+      "cost": { "kind": "prepaid" }
+    }
+  },
+  {
+    "id": "true-naming",
+    "name": "True Naming",
+    "hooks": {
+      "acquire": {
+        "kind": "true-name",
+        "params": {
+          "researchCostMultiplier": 2048,
+          "teachCostMultiplier": 512,
+          "instanceMastery": 1024
+        }
+      },
+      "store": { "kind": "standard" },
+      "cast": { "kind": "standard" },
+      "cost": { "kind": "standard" }
+    }
+  },
+  {
+    "id": "art-of-memory",
+    "name": "The Art of Memory",
+    "hooks": {
+      "acquire": { "kind": "standard" },
+      "store": {
+        "kind": "palace",
+        "params": {
+          "slotsPerMage": 12,
+          "lootable": false,
+          "burnable": false,
+          "libraryDepthCoefficient": 768
+        }
+      },
+      "cast": { "kind": "standard" },
+      "cost": { "kind": "standard" }
+    }
+  }
+]

@@ -1,0 +1,86 @@
+[
+  {
+    "id": "animal",
+    "name": "Animal",
+    "gloss": "beasts and their parts",
+    "bit": 0
+  },
+  {
+    "id": "aquam",
+    "name": "Aquam",
+    "gloss": "water and liquids",
+    "bit": 1
+  },
+  {
+    "id": "auram",
+    "name": "Auram",
+    "gloss": "air and weather",
+    "bit": 2
+  },
+  {
+    "id": "corpus",
+    "name": "Corpus",
+    "gloss": "body",
+    "bit": 3
+  },
+  {
+    "id": "herbam",
+    "name": "Herbam",
+    "gloss": "plant and wood",
+    "bit": 4
+  },
+  {
+    "id": "ignem",
+    "name": "Ignem",
+    "gloss": "fire and heat",
+    "bit": 5
+  },
+  {
+    "id": "imaginem",
+    "name": "Imaginem",
+    "gloss": "image and the senses",
+    "bit": 6
+  },
+  {
+    "id": "mentem",
+    "name": "Mentem",
+    "gloss": "mind",
+    "bit": 7
+  },
+  {
+    "id": "terram",
+    "name": "Terram",
+    "gloss": "earth and stone",
+    "bit": 8
+  },
+  {
+    "id": "vim",
+    "name": "Vim",
+    "gloss": "raw magic",
+    "bit": 9
+  },
+  {
+    "id": "umbra",
+    "name": "Umbra",
+    "gloss": "shadow",
+    "bit": 10
+  },
+  {
+    "id": "fatum",
+    "name": "Fatum",
+    "gloss": "fate",
+    "bit": 11
+  },
+  {
+    "id": "limen",
+    "name": "Limen",
+    "gloss": "threshold and boundary",
+    "bit": 12
+  },
+  {
+    "id": "nomen",
+    "name": "Nomen",
+    "gloss": "true name",
+    "bit": 13
+  }
+]

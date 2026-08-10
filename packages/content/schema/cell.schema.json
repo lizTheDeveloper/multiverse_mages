@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/cell.schema.json",
+  "title": "cell.json",
+  "description": "All 70 technique×form cells (contracts.md §2.2). `classicalLabels` are display-only and are never read by a rule. `edicts` seeds a starting ruleset; a cell may not carry both an interdiction and a dispensation (contracts.md §1.1).",
+  "type": "array",
+  "minItems": 70,
+  "maxItems": 70,
+  "items": { "$ref": "#/$defs/cell" },
+  "$defs": {
+    "cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "technique", "form", "classicalLabels", "nodes"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "technique": { "$ref": "#/$defs/contentId" },
+        "form": { "$ref": "#/$defs/contentId" },
+        "classicalLabels": {
+          "type": "array",
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/contentId" }
+        },
+        "nodes": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/contentId" }
+        },
+        "v1": { "type": "boolean" },
+        "edicts": {
+          "type": "array",
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["dispensation", "interdiction"] }
+        }
+      }
+    },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}

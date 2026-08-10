@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/primitive.schema.json",
+  "title": "primitive.json",
+  "description": "The effect primitive registry (contracts.md §2.6 and §3). §3 is normative and this file must match it. The set is closed: an effect naming a primitive absent from here is a hard load failure, which is also what keeps content from inventing a portal-stability primitive (contracts.md §1.6).",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/primitive" },
+  "$defs": {
+    "primitive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "unit", "scale", "stacking", "cap"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "unit": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "scale": { "type": "string", "enum": ["world", "engagement", "both"] },
+        "stacking": {
+          "type": "string",
+          "enum": [
+            "additive",
+            "additive-into-multiplier",
+            "multiplicative-on-remainder",
+            "max",
+            "summed-then-single-ward",
+            "presence"
+          ]
+        },
+        "cap": { "$ref": "#/$defs/cap" }
+      }
+    },
+    "cap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["none", "fp", "fraction-of-species-base", "count-per-side"]
+        },
+        "value": { "type": "integer", "minimum": 0, "maximum": 1073741823 }
+      }
+    },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}
