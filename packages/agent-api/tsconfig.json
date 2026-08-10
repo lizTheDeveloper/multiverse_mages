@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "//": "Library build. `types: []` is deliberate — the observation export runs inside the client and the server alike, so it must not see Node's ambient types.",
+  "//": "Library build. `types: []` is deliberate — the observation export runs inside the client and the server alike, so it must not see Node's ambient types. Note what is NOT referenced: @mm/content. contracts.md §5 would permit it, but content's public surface re-exports a filesystem loader, so the content facts the observation needs arrive as a caller-supplied catalogue instead. See src/catalogue.ts.",
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "./src",
@@ -8,5 +8,6 @@
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "types": []
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../sim-core" }, { "path": "../state" }]
 }
