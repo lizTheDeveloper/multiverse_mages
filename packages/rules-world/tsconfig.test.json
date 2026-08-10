@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the rules-world tests. Never emits into dist/. Tests may see Node's ambient types: they read docs/design/contracts.md off disk and boot ESLint over synthetic source, neither of which the package itself may do.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./test",
+    "types": ["node"],
+    "emitDeclarationOnly": true,
+    "outDir": "../../.tsbuild/rules-world-test",
+    "tsBuildInfoFile": "../../.tsbuild/rules-world-test.tsbuildinfo"
+  },
+  "include": ["test/**/*.ts"],
+  "references": [{ "path": "./tsconfig.json" }, { "path": "../content" }]
+}

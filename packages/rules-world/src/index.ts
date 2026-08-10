@@ -13,17 +13,63 @@
 
 /**
  * `@mm/rules-world` — mages and their autonomy, species, populace cohorts,
- * universities, and the materials economy. Empty until `mages-and-species`.
+ * universities, and the materials economy.
  *
- * The skeleton exists now rather than later because the boundary it sits inside
- * is the deliverable: `contracts.md` §5 forbids this package from importing
- * `@mm/rules-magic` or `@mm/agent-api`, and a rule with no package to apply to
- * is a rule nothing has ever tested. The dependency-graph test
+ * What is here so far is the species layer of `mages-and-species`: the trait
+ * registry that makes "higher is better" a checkable property rather than a
+ * convention, the rediscovery floor that keeps the shipped 0.3.0 claim true,
+ * the extended-scale division that stops long-lived species from becoming
+ * immortal by rounding, and the port through which this package reaches
+ * knowledge without importing `@mm/rules-magic`.
+ *
+ * `contracts.md` §5 forbids this package from importing `@mm/rules-magic` or
+ * `@mm/agent-api`, and the dependency-graph test
  * (`packages/sim-core/test/unit/module-boundaries.test.ts`) asserts those edges
- * against these directories from the day the directories exist.
+ * against these directories. The utility-AI scoring functions for mage autonomy
+ * are deliberately left open by `contracts.md` §8 and are this package's to fix.
  *
- * The utility-AI scoring functions for mage autonomy are deliberately left open
- * by `contracts.md` §8 and are this package's to fix.
+ * **Every species magnitude is content, and every one of them is untuned.**
+ * Nothing in this package may carry a number keyed to a named species; a
+ * conformance test over `src/` enforces that, and `release-plan.md`'s
+ * measurement pivot forbids any claim that those magnitudes are balanced before
+ * 0.5.0.
  */
 
-export {};
+export type {
+  KnowledgeGateway,
+  KnowledgeTarget,
+  MageHandle,
+  UniversityHandle,
+} from './coordination.js';
+export { NO_INHERITOR } from './coordination.js';
+
+export {
+  LIFESPAN_RATE_ONE,
+  LIFESPAN_RATE_SHIFT,
+  naivePerLifespanRate,
+  narrowToFixed,
+  perLifespanRate,
+} from './lifespan-rate.js';
+
+export type { RediscoveryClampCounter } from './rediscovery.js';
+export {
+  REDISCOVERY_FLOOR,
+  createRediscoveryClampCounter,
+  effectiveRediscoveryMultiplier,
+  speciesRediscoveryMultiplier,
+} from './rediscovery.js';
+
+export type {
+  SpeciesFpTrait,
+  SpeciesTraitDescriptor,
+  TraitApplication,
+  TraitOutputKind,
+} from './traits.js';
+export {
+  SPECIES_FP_TRAITS,
+  SPECIES_TRAIT_REGISTRY,
+  TRAIT_NEUTRAL,
+  advantageOf,
+  applySpeciesTrait,
+  traitValueOf,
+} from './traits.js';

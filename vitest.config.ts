@@ -30,6 +30,7 @@ export default defineConfig({
       '@mm/primitives': packageSrc('primitives'),
       '@mm/state': packageSrc('state'),
       '@mm/rules-magic': packageSrc('rules-magic'),
+      '@mm/rules-world': packageSrc('rules-world'),
       '@mm/agent-api': packageSrc('agent-api'),
     },
   },

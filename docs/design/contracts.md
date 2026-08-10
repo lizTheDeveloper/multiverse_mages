@@ -283,6 +283,7 @@ prerequisite has a higher `tier`.
 ```jsonc
 {
   "id": "dwarf",
+  "name": "Dwarf",                  // display label; required, and not a mechanical value
   "lifespanMonths": 3000,           // ~250y
   "lifespanVarianceMonths": 360,
   "curiosity": 512,                 // fp; P(initiating self-directed research) scalar
@@ -298,9 +299,26 @@ prerequisite has a higher `tier`.
   "mageAptitude": 448,              // fp; share of matured students who become mages at all
   "laborAffinity": 1280,            // fp multiplier on non-magical labour productivity
   "affinities": { "terram": 1536, "ignem": 1152 },  // by form or by cell id
-  "personality": { "curiosity": 512, "ambition": 1024, "caution": 1024 }  // means; each defaults to fp(1024)
+  "personality": { "curiosity": 512, "ambition": 1024, "caution": 1024 },  // optional; means, each
+                                    // defaults to fp(1024)
+  "tuningStatus": "untuned"         // "untuned" | "tuned". Every magnitude above is a placeholder
+                                    // awaiting the balance harness, and no release before 0.5.0
+                                    // may claim any of them is balanced (release-plan.md)
 }
 ```
+
+**This field list is CI-enforced.** A conformance check parses the example above and compares it
+field-for-field against the species schema, failing the build when a field is added to one and not
+the other. The example is what an author copies when writing new species content, so a field
+missing from it is a broken starting point rather than a documentation nit — which is exactly how
+`name` and `tuningStatus` came to be required by the schema and absent from here.
+
+**Soldier effectiveness is deliberately absent, and the absence is load-bearing.** Vision §6 gives
+orcs "martial capability", and a `martialAffinity` field is the obvious way to encode it. It is not
+here because soldier effectiveness is only observable inside a raid, and raids belong to
+`raid-engagement`. Adding the field now would ship a species trait that nothing reads, tuned against
+no measurement, from a capability with less information than the one that will eventually need it.
+If `raid-engagement` wants it, that change amends this section with a use for it in hand.
 
 ### 2.5 `tradition.json`
 

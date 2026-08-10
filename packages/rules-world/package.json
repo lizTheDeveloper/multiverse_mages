@@ -2,7 +2,7 @@
   "name": "@mm/rules-world",
   "version": "0.2.0",
   "private": true,
-  "description": "Mages, species, populace cohorts, universities, and the economy. Skeleton — the rules land in mages-and-species.",
+  "description": "Mages, species, populace cohorts, universities, and the economy.",
   "license": "AGPL-3.0-or-later",
   "author": "Ann Kelner",
   "type": "module",
@@ -20,7 +20,11 @@
   "engines": {
     "node": ">=22.0.0 <23"
   },
-  "//": "Rules-path code: no runtime dependencies, no Node built-ins, integer-only. Per contracts.md §5 it may import sim-core, content, and state — and MUST NOT import rules-magic or agent-api.",
+  "//": "Rules-path code: no third-party runtime dependencies, no Node built-ins, integer-only. Per contracts.md §5 it may import sim-core, content, state, and primitives — and MUST NOT import rules-magic or agent-api. Only the two it actually imports are declared: an undeclared-but-imported dependency resolves through workspace hoisting and breaks the moment the package is consumed from outside this repository, while a declared-but-unused one is a boundary nobody is really holding.",
+  "dependencies": {
+    "@mm/content": "*",
+    "@mm/sim-core": "*"
+  },
   "scripts": {
     "build": "tsc --build"
   }
