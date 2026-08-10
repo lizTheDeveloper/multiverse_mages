@@ -80,6 +80,7 @@ import type { MigrationRegistry } from './migrations.js';
  * |  28 |    4 | u32 engagement tick                      |
  * |  32 |    1 | u8 time mode                             |
  * |  33 |    3 | padding, zero                            |
+ * |  36 |    4 | u32 step ordinal                         |
  *
  * Payload: `u32 slotCount`, `slotCount x u16` generations, `slotCount x u8`
  * liveness, `u32 freeCount`, `freeCount x u32` free slots; then `u16`
@@ -121,7 +122,7 @@ export const SNAPSHOT_VERSION = 1;
 const MAGIC = 'MMSN';
 
 /** Bytes of fixed header before the payload begins. */
-const HEADER_BYTES = 36;
+const HEADER_BYTES = 40;
 
 /** Zero bytes after the mode byte, so the payload starts on a 4-byte boundary. */
 const HEADER_PADDING_BYTES = 3;
@@ -189,6 +190,7 @@ export interface SnapshotEnvelope {
   readonly clock: {
     readonly worldTick: number;
     readonly engagementTick: number;
+    readonly stepOrdinal: number;
     readonly mode: number;
   };
   readonly entities: {
@@ -412,6 +414,7 @@ export function stateToEnvelope(state: SimState): SnapshotEnvelope {
     clock: {
       worldTick: state.clock.worldTick,
       engagementTick: state.clock.engagementTick,
+      stepOrdinal: state.clock.stepOrdinal,
       mode: state.clock.mode,
     },
     entities: {
@@ -442,6 +445,7 @@ export function encodeSnapshot(envelope: SnapshotEnvelope): Uint8Array {
   writer.u32(envelope.clock.engagementTick);
   writer.u8(envelope.clock.mode);
   writer.skip(HEADER_PADDING_BYTES);
+  writer.u32(envelope.clock.stepOrdinal);
 
   const { generations, alive, freeList } = envelope.entities;
   writer.u32(generations.length);
@@ -545,6 +549,7 @@ export function decodeSnapshot(buffer: Uint8Array): SnapshotEnvelope {
   const engagementTick = reader.u32('the engagement tick');
   const mode = reader.u8('the time mode');
   reader.padding(HEADER_PADDING_BYTES, 'the header padding');
+  const stepOrdinal = reader.u32('the step ordinal');
 
   const slotCount = reader.u32('the entity slot count');
   reader.expectRun(slotCount, BYTES_PER_U16, 'the entity generation table');
@@ -583,7 +588,7 @@ export function decodeSnapshot(buffer: Uint8Array): SnapshotEnvelope {
     rootSeed,
     contentRevision,
     illegalActionCount,
-    clock: { worldTick, engagementTick, mode },
+    clock: { worldTick, engagementTick, mode, stepOrdinal },
     entities: { generations, alive, freeList },
     components,
   };
@@ -611,6 +616,7 @@ export function envelopeToState(envelope: SnapshotEnvelope, schema: WorldSchema)
   requireCount(envelope.illegalActionCount, 'illegal-action count');
   requireCount(envelope.clock.worldTick, 'world tick');
   requireCount(envelope.clock.engagementTick, 'engagement tick');
+  requireCount(envelope.clock.stepOrdinal, 'step ordinal');
 
   // createState range-checks rootSeed and contentRevision and throws on its own.
   const state = createState({
@@ -621,6 +627,7 @@ export function envelopeToState(envelope: SnapshotEnvelope, schema: WorldSchema)
   state.illegalActionCount = envelope.illegalActionCount;
   state.clock.worldTick = envelope.clock.worldTick;
   state.clock.engagementTick = envelope.clock.engagementTick;
+  state.clock.stepOrdinal = envelope.clock.stepOrdinal;
   state.clock.mode =
     envelope.clock.mode === TIME_MODE.engagement ? TIME_MODE.engagement : TIME_MODE.world;
 
@@ -824,6 +831,7 @@ function validateEnvelopeShape(envelope: SnapshotEnvelope): void {
   requireCount(envelope.contentRevision, 'content revision');
   requireCount(envelope.clock.worldTick, 'world tick');
   requireCount(envelope.clock.engagementTick, 'engagement tick');
+  requireCount(envelope.clock.stepOrdinal, 'step ordinal');
 
   const { generations, alive, freeList } = envelope.entities;
   if (generations.length !== alive.length) {

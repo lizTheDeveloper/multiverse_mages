@@ -17,10 +17,41 @@ import type { Clock, TimeMode } from './clock.js';
 import type { ComponentFields, ComponentSpec } from './component.js';
 import type { ComponentStore } from './component.js';
 import { EntityStore } from './entity-store.js';
-import type { RngSource } from './rng/source.js';
+import type { RngStream } from './rng/pcg32.js';
+
+/**
+ * Randomness as a system sees it: already bound to this step.
+ *
+ * The tick argument is deliberately absent. `RngSource` takes one, and a system
+ * that passed the wrong one — `ctx.tick` being the obvious, wrong choice —
+ * would produce a run that still replayed deterministically while quietly
+ * reusing the same numbers. `engagementTick` restarts at zero each engagement,
+ * so every raid would roll identical dice at each ordinal, and no test anywhere
+ * would fail.
+ *
+ * Binding it here removes the decision rather than documenting it. There is no
+ * correct-tick discipline for a rules author to remember, because there is no
+ * tick to pass.
+ */
+export interface StepRng {
+  readonly rootSeed: number;
+  /** This subsystem's stream for this step. */
+  stream(subsystemId: number): RngStream;
+  /**
+   * This subsystem's stream for one actor at this step. `actorKey` must be a
+   * stable identity — an entity handle — never an array index or visit
+   * position, or inserting an actor shifts every later actor's rolls.
+   */
+  actorStream(subsystemId: number, actorKey: number): RngStream;
+}
 
 const UINT32_COUNT = 4294967296;
 const UINT32_MAX = 4294967295;
+
+/** Snapshot names are length-prefixed with one byte and written as printable ASCII. */
+const MAX_NAME_LENGTH = 255;
+const MIN_NAME_CHAR = 0x20;
+const MAX_NAME_CHAR = 0x7e;
 
 /**
  * One submission to `step`.
@@ -47,8 +78,8 @@ export interface StepContext {
   readonly state: SimState;
   /** Actions submitted for this tick, in submission order. */
   readonly actions: readonly Action[];
-  /** Seeded randomness. Draw with `rng.stream(subsystemId, ctx.tick)`. */
-  readonly rng: RngSource;
+  /** Seeded randomness, already bound to this step. See {@link StepRng}. */
+  readonly rng: StepRng;
   /** The tick of the running scale, before this step's advance. */
   readonly tick: number;
   /** Which scale is running. */
@@ -103,6 +134,33 @@ export type WorldSchema = Readonly<Required<Omit<WorldSchemaInput, 'maxSlots'>>>
  * table, and a second system with a familiar name is how a rules change gets
  * applied twice.
  */
+/**
+ * Rejects a name the snapshot format cannot write.
+ *
+ * Checked here rather than only at serialization, which is where it used to
+ * surface. A component named `vitalité` defined fine, created state fine, and
+ * stepped fine — and then threw on the first autosave, hours into a run, from a
+ * call site that had nothing to do with naming it. The constraint belongs where
+ * the name is chosen.
+ */
+function assertEncodableName(name: string, role: string): void {
+  if (name.length < 1 || name.length > MAX_NAME_LENGTH) {
+    throw new Error(
+      `${role} must be 1 to ${MAX_NAME_LENGTH} characters; the snapshot format length-prefixes ` +
+        `names with a single byte. Received ${name.length}.`,
+    );
+  }
+  for (let i = 0; i < name.length; i += 1) {
+    const code = name.charCodeAt(i);
+    if (code < MIN_NAME_CHAR || code > MAX_NAME_CHAR) {
+      throw new Error(
+        `${role} contains a character outside printable ASCII at position ${i}. Snapshot names ` +
+          'are written byte-for-byte so that two machines encode them identically.',
+      );
+    }
+  }
+}
+
 export function defineWorld(input: WorldSchemaInput): WorldSchema {
   const componentNames = new Set<string>();
   for (const spec of input.components) {
@@ -110,6 +168,10 @@ export function defineWorld(input: WorldSchemaInput): WorldSchema {
       throw new Error(`World declares component "${spec.name}" more than once.`);
     }
     componentNames.add(spec.name);
+    assertEncodableName(spec.name, `Component name "${spec.name}"`);
+    for (const fieldName of Object.keys(spec.fields)) {
+      assertEncodableName(fieldName, `Field name "${fieldName}" of component "${spec.name}"`);
+    }
   }
 
   const systemNames = new Set<string>();
@@ -256,10 +318,12 @@ export class SimState {
     const copy = new SimState(this.schema, this.rootSeed, this.contentRevision);
     copy.illegalActionCount = this.illegalActionCount;
 
-    const clock = cloneClock(this.clock);
-    copy.clock.worldTick = clock.worldTick;
-    copy.clock.engagementTick = clock.engagementTick;
-    copy.clock.mode = clock.mode;
+    // Assigned through `Object.assign` over `cloneClock`'s result rather than
+    // field by field. The hand-written version silently dropped `stepOrdinal`
+    // the moment the clock grew a field — every step reset it, so every step
+    // drew the same random numbers. Copying whatever the clock actually has
+    // makes the next field free instead of a latent determinism bug.
+    Object.assign(copy.clock, cloneClock(this.clock));
 
     this.entities.cloneStateInto(copy.entities);
     for (const [name, component] of this.#components) {

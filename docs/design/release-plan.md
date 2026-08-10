@@ -119,6 +119,22 @@ recorded, not asserted in advance.
 - *Collected:* **yes** — the benchmark harness ships in this release. The number is an *output* of
   0.1.0, and every later population claim is bounded by it.
 
+**Measured at 0.1.0:**
+
+- Three golden fixtures — world time only, an engagement transition, heavy entity churn — replay to
+  their recorded per-tick hashes. Verified across **three Node majors locally (20, 22, 26)**, not
+  only the pinned one, and across separate processes. CI runs the pinned job as a gate and Node 24
+  as a non-blocking early warning.
+- The gate was proved to fire, twice and independently, by injecting nondeterminism and confirming
+  every fixture failed while naming its diverging tick — and that a failing run rewrites no fixture.
+- Throughput: ~19.7 M entity-updates/sec, flat from 5,000 to 25,000 entities. Recorded in
+  `vision.md` §13 with what it does and does not answer.
+
+**Known limitation, stated rather than discovered later:** `npm run goldens:regen` requires Node 22
+or newer, because it loads the core's TypeScript through native type stripping. The simulation
+itself is unaffected — fixtures replay correctly on Node 20 — and `engines` pins Node 22 anyway,
+but a contributor on an older Node will find the command, not the tests, is what fails.
+
 ### 0.2.0 — `core-contracts`
 
 **Claim:** No content record is ever silently skipped. Every schema violation fails the load and

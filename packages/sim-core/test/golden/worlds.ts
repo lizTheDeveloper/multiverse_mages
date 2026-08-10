@@ -82,7 +82,7 @@ const enrolment: System = {
           const handle = ctx.state.entities.create();
           vit.add(handle);
           sch.add(handle);
-          const roll = ctx.rng.actorStream(RNG_STREAM.mageBirth, ctx.tick, handle);
+          const roll = ctx.rng.actorStream(RNG_STREAM.mageBirth, handle);
           vit.set(handle, 'hp', BASE_VITALITY + nextBounded(roll, APTITUDE_SPREAD));
           break;
         }
@@ -124,7 +124,7 @@ const study: System = {
     const sch = ctx.state.component('scholarship');
     const insight = sch.field('insight');
     sch.forEach((row, handle) => {
-      const stream = ctx.rng.actorStream(RNG_STREAM.research, ctx.tick, handle);
+      const stream = ctx.rng.actorStream(RNG_STREAM.research, handle);
       insight[row] = (insight[row] as number) + nextBounded(stream, INSIGHT_SPREAD);
     });
   },
@@ -149,7 +149,7 @@ const attrition: System = {
 
     const doomed: EntityHandle[] = [];
     vit.forEach((row, handle) => {
-      const stream = ctx.rng.actorStream(RNG_STREAM.mortality, ctx.tick, handle);
+      const stream = ctx.rng.actorStream(RNG_STREAM.mortality, handle);
       const remaining = (hp[row] as number) - nextBounded(stream, bite);
       hp[row] = remaining;
       if (remaining <= 0) {

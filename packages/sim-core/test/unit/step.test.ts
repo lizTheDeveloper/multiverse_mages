@@ -167,7 +167,7 @@ describe('randomness reaches systems through the stream registry', () => {
         {
           name: 'roll',
           run: (ctx: StepContext) => {
-            const stream = ctx.rng.stream(RNG_STREAM.mortality, ctx.tick);
+            const stream = ctx.rng.stream(RNG_STREAM.mortality);
             drawn.push(nextUint32(stream));
           },
         },

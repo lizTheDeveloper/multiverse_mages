@@ -13,6 +13,9 @@
 
 import { describe, expect, it } from 'vitest';
 
+/** Bytes of fixed snapshot header, mirrored from snapshot.ts so offsets stay honest. */
+const HEADER_BYTES = 40;
+
 import { createState } from '../../src/state.js';
 import {
   decodeSnapshot,
@@ -66,7 +69,7 @@ describe('component name length lies past the buffer', () => {
     // truncating the buffer immediately after a valid name-length byte instead
     // of hunting for the exact offset — either way, decode must fail cleanly
     // rather than read garbage or crash on an out-of-bounds access.
-    const componentCountOffset = 36 /* header */
+    const componentCountOffset = HEADER_BYTES /* header */
       + 4 /* slotCount */
       + envelope.entities.generations.length * 2
       + envelope.entities.alive.length
@@ -87,7 +90,7 @@ describe('a name byte outside printable ASCII', () => {
     const envelope = stateToEnvelope(state);
     const buffer = encodeSnapshot(envelope);
     const componentCountOffset =
-      36 + 4 + envelope.entities.generations.length * 2 + envelope.entities.alive.length + 4 + envelope.entities.freeList.length * 4 + 2;
+      HEADER_BYTES + 4 + envelope.entities.generations.length * 2 + envelope.entities.alive.length + 4 + envelope.entities.freeList.length * 4 + 2;
     const firstNameByteOffset = componentCountOffset + 1; // past the length byte
     const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
     view.setUint8(firstNameByteOffset, 0x00); // NUL
@@ -99,7 +102,7 @@ describe('a name byte outside printable ASCII', () => {
     const envelope = stateToEnvelope(state);
     const buffer = encodeSnapshot(envelope);
     const componentCountOffset =
-      36 + 4 + envelope.entities.generations.length * 2 + envelope.entities.alive.length + 4 + envelope.entities.freeList.length * 4 + 2;
+      HEADER_BYTES + 4 + envelope.entities.generations.length * 2 + envelope.entities.alive.length + 4 + envelope.entities.freeList.length * 4 + 2;
     const firstNameByteOffset = componentCountOffset + 1;
     const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
     view.setUint8(firstNameByteOffset, 0xff);
@@ -138,7 +141,7 @@ describe('duplicate component names in one snapshot', () => {
       envelope.entities.alive.length +
       4 /* freeCount */ +
       envelope.entities.freeList.length * 4;
-    const componentTableStart = 36 + entityBytes + 2; // header + entities + u16 count
+    const componentTableStart = HEADER_BYTES + entityBytes + 2; // header + entities + u16 count
     const componentBytes = buffer.subarray(componentTableStart);
 
     const doubled = new Uint8Array(buffer.length + componentBytes.length);
@@ -148,7 +151,7 @@ describe('duplicate component names in one snapshot', () => {
 
     const view = new DataView(doubled.buffer);
     view.setUint16(componentTableStart - 2, 2, true); // component count: 1 -> 2
-    view.setUint32(8, doubled.length - 36, true); // payloadLength must match the new size
+    view.setUint32(8, doubled.length - HEADER_BYTES, true); // payloadLength must match the new size
 
     expect(() => deserializeState(doubled, world)).toThrow(/more than once/i);
   });
@@ -227,7 +230,7 @@ describe('rowCount inflated far beyond the buffer (would-be OOM guard)', () => {
 
     const nameLen = validComponent.name.length;
     let offset =
-      36 +
+      HEADER_BYTES +
       4 +
       envelope.entities.generations.length * 2 +
       envelope.entities.alive.length +

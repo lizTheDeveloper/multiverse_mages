@@ -210,7 +210,7 @@ function makeChurnSystem(counters: WorkCounters, churnPerTick: number): System {
       let remaining = candidates.length;
       const kills = Math.min(churnPerTick, remaining);
 
-      const deathDraws = ctx.rng.stream(RNG_STREAM.mortality, ctx.tick);
+      const deathDraws = ctx.rng.stream(RNG_STREAM.mortality);
       for (let i = 0; i < kills; i += 1) {
         const pick = nextBounded(deathDraws, remaining);
         const slot = candidates[pick] as number;

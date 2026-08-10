@@ -5,7 +5,7 @@
   "worldId": "academy-v1",
   "rootSeed": 991733,
   "tickCount": 20,
-  "initialSnapshot": "TU1TTgEAAAA/AAAA9SEPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAh2aXRhbGl0eQECaHAEAAAAAAtzY2hvbGFyc2hpcAIHaW5zaWdodAQHc3RpcGVuZAUAAAAA",
+  "initialSnapshot": "TU1TTgEAAAA/AAAA9SEPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAIdml0YWxpdHkBAmhwBAAAAAALc2Nob2xhcnNoaXACB2luc2lnaHQEB3N0aXBlbmQFAAAAAA==",
   "actionLog": {
     "ticks": [
       [
@@ -52,27 +52,27 @@
       []
     ]
   },
-  "finalHash": "da3d02a0061d5526",
+  "finalHash": "bff19999071f3f04",
   "tickHashes": [
-    "a2f521fd83832544",
-    "9b9289b2132fec29",
-    "89d57e172508d20d",
-    "09cafb1d492fc1cf",
-    "136fcb82c13199a6",
-    "07df7891fc60fa38",
-    "8ac9cd74713b2043",
-    "7bae5154697dac41",
-    "2d55df10dc31e27b",
-    "4dcecf5cbc8b13ee",
-    "c407fdeae6009711",
-    "ccccad75805c792d",
-    "16af0916a1f6ff57",
-    "306f6443e5591936",
-    "9ec2512d895a7cf4",
-    "95cebbf6fb1bea03",
-    "caf363f88cc913ad",
-    "b9bb3f8f57cdceb7",
-    "2b2a81bf65e9ad99",
-    "da3d02a0061d5526"
+    "71ddc3ec766b7085",
+    "068eb1bf6be0509f",
+    "25df1e5fcff7e04e",
+    "a9c5572b7386d2e9",
+    "fdda1007c8677d42",
+    "ecfb42a8076f4da6",
+    "69fb7454d3e4309e",
+    "064095799cb968ff",
+    "403fc616881c011e",
+    "c80b3bc4629bc216",
+    "d8650540247dc510",
+    "3cbdc52b3d746a55",
+    "d8aace0486cfe874",
+    "9f33660ee995058e",
+    "aca762db9dbe80ab",
+    "5e0869241ec38cb6",
+    "6dc2b55b4d901c9e",
+    "f4c7c73c78b719fe",
+    "8c0b06477a2825e2",
+    "bff19999071f3f04"
   ]
 }

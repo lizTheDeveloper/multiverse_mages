@@ -134,13 +134,26 @@ export function replayAndLocate(
     return { state, diverged: false, tick: null };
   }
 
+  // Why the tick could not be located, said accurately. Claiming "no per-tick
+  // hashes" for a recording that has them — just fewer than its tick count, as
+  // a truncated desync report from a peer would — sends the reader to re-record
+  // something already recorded, on the one path whose entire value is telling
+  // them where to look.
+  const traced = recording.tickHashes?.length ?? 0;
+  const reason =
+    traced >= recording.tickCount
+      ? 'Every per-tick hash matched, yet the final hash did not — the recording is internally ' +
+        'inconsistent, and its final hash disagrees with its own last per-tick hash.'
+      : traced === 0
+        ? 'The recording carries no per-tick hashes, so the diverging tick cannot be identified — ' +
+          're-record with `traceHashes: true` to locate it.'
+        : `The recording carries only ${traced} per-tick hashes for ${recording.tickCount} ticks, ` +
+          'so any divergence after that point cannot be located. The recording is truncated.';
+
   return {
     state,
     diverged: true,
     tick: null,
-    reason:
-      `Replay diverged: expected final snapshot hash ${recording.finalHash}, got ${snapshotHash(state)}. ` +
-      'The recording carries no per-tick hashes, so the diverging tick cannot be identified — ' +
-      're-record with `traceHashes: true` to locate it.',
+    reason: `Replay diverged: expected final snapshot hash ${recording.finalHash}, got ${snapshotHash(state)}. ${reason}`,
   };
 }

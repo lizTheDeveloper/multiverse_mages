@@ -57,6 +57,23 @@ export interface Clock {
   /** Ticks elapsed within the current engagement. Zero outside one. */
   engagementTick: number;
   mode: TimeMode;
+  /**
+   * Steps taken since the run began. Monotonic, never reset, never frozen.
+   *
+   * Exists because neither other counter identifies a step uniquely, and
+   * randomness has to key on something that does. `engagementTick` restarts at
+   * zero for every engagement, so raid #2's third tick would derive a
+   * byte-identical stream to raid #1's third tick — the same combatants rolling
+   * the same dice in every battle. `worldTick` is frozen during an engagement,
+   * so it cannot break the tie either, and world tick 5 and engagement tick 5
+   * would collide outright.
+   *
+   * Replay stayed deterministic throughout, which is exactly what made this
+   * worth finding early: nothing would have failed. The damage would have been
+   * to every balance measurement taken over repeated engagements, discovered
+   * as an unexplained correlation months later.
+   */
+  stepOrdinal: number;
 }
 
 /** A read-only view, for the observation and snapshot paths. */
@@ -64,7 +81,7 @@ export type ReadonlyClock = Readonly<Clock>;
 
 /** A fresh clock: world mode, nothing elapsed. */
 export function createClock(): Clock {
-  return { worldTick: 0, engagementTick: 0, mode: TIME_MODE.world };
+  return { worldTick: 0, engagementTick: 0, mode: TIME_MODE.world, stepOrdinal: 0 };
 }
 
 export function cloneClock(clock: ReadonlyClock): Clock {
@@ -72,6 +89,7 @@ export function cloneClock(clock: ReadonlyClock): Clock {
     worldTick: clock.worldTick,
     engagementTick: clock.engagementTick,
     mode: clock.mode,
+    stepOrdinal: clock.stepOrdinal,
   };
 }
 
@@ -84,6 +102,7 @@ export function cloneClock(clock: ReadonlyClock): Clock {
  * system can accidentally age the world during a raid.
  */
 export function advanceClock(clock: Clock): void {
+  clock.stepOrdinal += 1;
   if (clock.mode === TIME_MODE.engagement) {
     clock.engagementTick += 1;
     return;

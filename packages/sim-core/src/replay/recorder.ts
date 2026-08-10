@@ -46,13 +46,29 @@ export class ActionLog {
 
   /** Appends one step's actions. */
   record(actions: readonly Action[]): void {
+    // Frozen, not merely copied. `at()` hands this array straight to `step` as
+    // `ctx.actions`, so an unfrozen copy would let a system rewrite the log it
+    // is being replayed from — history editing itself mid-replay.
     this.#ticks.push(
-      actions.map((action) =>
-        action.params === undefined
-          ? { kind: action.kind }
-          : { kind: action.kind, params: [...action.params] },
-      ),
+      Object.freeze(
+        actions.map((action) =>
+          Object.freeze(
+            action.params === undefined
+              ? { kind: action.kind }
+              : { kind: action.kind, params: Object.freeze([...action.params]) },
+          ),
+        ),
+      ) as Action[],
     );
+  }
+
+  /** A detached copy, so a snapshot of a log does not follow the live one. */
+  clone(): ActionLog {
+    const copy = new ActionLog();
+    for (const actions of this.#ticks) {
+      copy.record(actions);
+    }
+    return copy;
   }
 
   /** Steps recorded. */
@@ -203,13 +219,22 @@ export class Recorder {
     return this.#state;
   }
 
-  /** The recording so far. Safe to take mid-run. */
+  /**
+   * The recording so far, detached from this recorder.
+   *
+   * The action log is copied, not referenced. It used to be handed out live
+   * while `tickCount` was frozen at the moment of the call, so a `Recording`
+   * taken mid-run silently decayed as the run continued — by the next step its
+   * own two fields disagreed, and replaying it threw. "Safe to take mid-run"
+   * was documented and false; this makes it true instead of retracting it,
+   * because taking a recording mid-run is exactly what a desync report does.
+   */
   get recording(): Recording {
     this.#finalHash ??= snapshotHash(this.#state);
     const base = {
       rootSeed: this.#rootSeed,
-      initialSnapshot: this.#initialSnapshot,
-      actionLog: this.#actionLog,
+      initialSnapshot: this.#initialSnapshot.slice(),
+      actionLog: this.#actionLog.clone(),
       tickCount: this.#actionLog.length,
       finalHash: this.#finalHash,
     };

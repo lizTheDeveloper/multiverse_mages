@@ -14,7 +14,7 @@
 import type { TimeMode } from './clock.js';
 import { TIME_MODE, advanceClock, currentTick, enterEngagement, leaveEngagement } from './clock.js';
 import type { RngSource } from './rng/source.js';
-import type { Action, StepContext, SimState } from './state.js';
+import type { Action, StepContext, StepRng, SimState } from './state.js';
 
 export type { Action, StepContext, System } from './state.js';
 
@@ -61,6 +61,7 @@ export const CORE_ACTION = {
  */
 class PendingMode {
   #mode: TimeMode;
+  #transitions = 0;
   readonly #initial: TimeMode;
 
   constructor(mode: TimeMode) {
@@ -73,6 +74,20 @@ class PendingMode {
     return this.#mode !== this.#initial;
   }
 
+  /**
+   * Whether the tick left and re-entered the mode it started in.
+   *
+   * Distinguished from {@link changed} because the two need different handling
+   * and conflating them was a bug: `[leaveEngagement, enterEngagement]` in one
+   * tick is two legal actions that end where they began, so nothing was
+   * applied and `engagementTick` kept counting from the old engagement — a
+   * *new* engagement silently continuing the old one's clock, in flat
+   * contradiction of `enterEngagement`'s documented contract.
+   */
+  get cycled(): boolean {
+    return !this.changed && this.#transitions > 0;
+  }
+
   get target(): TimeMode {
     return this.#mode;
   }
@@ -83,6 +98,7 @@ class PendingMode {
       return false;
     }
     this.#mode = mode;
+    this.#transitions += 1;
     return true;
   }
 }
@@ -132,10 +148,29 @@ export function step(state: SimState, actions: readonly Action[], rng: RngSource
   const mode = next.clock.mode;
 
   const pending = new PendingMode(mode);
-  const requestMode = (target: TimeMode): void => {
+
+  /**
+   * A request from a submitted action. A redundant one is an illegal *agent*
+   * action and is counted as such.
+   */
+  const requestByAction = (target: TimeMode): void => {
     if (!pending.request(target)) {
       next.noteIllegalAction();
     }
+  };
+
+  /**
+   * A request from a system. Deliberately *not* counted.
+   *
+   * `illegalActionCount` means "agent submissions the core rejected" — it is
+   * what `illegalActionRate` (contracts.md §7) is computed from, against a
+   * per-submission denominator. A system asking to stay in the mode it is
+   * already in is the rules being idempotent, not an agent making a mistake,
+   * and counting it made a world whose only system calls `requestWorldTime()`
+   * report one illegal action per tick with no agent in the loop at all.
+   */
+  const requestBySystem = (target: TimeMode): void => {
+    pending.request(target);
   };
 
   // Actions first, then systems. A system therefore sees the mode the god's
@@ -146,10 +181,10 @@ export function step(state: SimState, actions: readonly Action[], rng: RngSource
   for (const action of actions) {
     switch (action.kind) {
       case CORE_ACTION.enterEngagement:
-        requestMode(TIME_MODE.engagement);
+        requestByAction(TIME_MODE.engagement);
         break;
       case CORE_ACTION.leaveEngagement:
-        requestMode(TIME_MODE.world);
+        requestByAction(TIME_MODE.world);
         break;
       default:
         // Every other kind belongs to a rules layer, which reads `ctx.actions`
@@ -160,17 +195,25 @@ export function step(state: SimState, actions: readonly Action[], rng: RngSource
     }
   }
 
+  // Bound to the step ordinal, not to `tick`. See `StepRng` and `Clock.stepOrdinal`.
+  const ordinal = next.clock.stepOrdinal;
+  const boundRng: StepRng = {
+    rootSeed: rng.rootSeed,
+    stream: (subsystemId) => rng.stream(subsystemId, ordinal),
+    actorStream: (subsystemId, actorKey) => rng.actorStream(subsystemId, ordinal, actorKey),
+  };
+
   const context: StepContext = {
     state: next,
     actions,
-    rng,
+    rng: boundRng,
     tick,
     mode,
     requestEngagement() {
-      requestMode(TIME_MODE.engagement);
+      requestBySystem(TIME_MODE.engagement);
     },
     requestWorldTime() {
-      requestMode(TIME_MODE.world);
+      requestBySystem(TIME_MODE.world);
     },
   };
 
@@ -184,6 +227,12 @@ export function step(state: SimState, actions: readonly Action[], rng: RngSource
     } else {
       leaveEngagement(next.clock);
     }
+  } else if (pending.cycled && pending.target === TIME_MODE.engagement) {
+    // Left and re-entered within one tick: a new engagement, so its clock
+    // starts at zero like any other. Without this the second engagement would
+    // silently inherit the first one's tick count.
+    leaveEngagement(next.clock);
+    enterEngagement(next.clock);
   }
 
   advanceClock(next.clock);

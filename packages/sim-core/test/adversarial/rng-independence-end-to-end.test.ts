@@ -76,7 +76,7 @@ const rolling: System = {
   run(ctx) {
     const component = ctx.state.component('vitality');
     component.forEach((row, handle) => {
-      const rng = ctx.rng.actorStream(RNG_STREAM.combat, ctx.tick, handle);
+      const rng = ctx.rng.actorStream(RNG_STREAM.combat, handle);
       component.field('roll')[row] = nextBounded(rng, 1000);
     });
   },
@@ -200,14 +200,14 @@ describe('per-tick subsystem streams remain isolated when reached through step()
     const mortalityDrawsOnce: System = {
       name: 'mortality',
       run(ctx) {
-        const mortality = ctx.rng.stream(RNG_STREAM.mortality, ctx.tick);
+        const mortality = ctx.rng.stream(RNG_STREAM.mortality);
         nextBounded(mortality, 1000);
       },
     };
     const mortalityDrawsFive: System = {
       name: 'mortality',
       run(ctx) {
-        const mortality = ctx.rng.stream(RNG_STREAM.mortality, ctx.tick);
+        const mortality = ctx.rng.stream(RNG_STREAM.mortality);
         for (let i = 0; i < 5; i += 1) {
           nextBounded(mortality, 1000);
         }
@@ -218,7 +218,7 @@ describe('per-tick subsystem streams remain isolated when reached through step()
       run(ctx) {
         const handle = ctx.state.entities.create();
         ctx.state.component('combatRoll').add(handle);
-        const combat = ctx.rng.stream(RNG_STREAM.combat, ctx.tick);
+        const combat = ctx.rng.stream(RNG_STREAM.combat);
         ctx.state.component('combatRoll').set(handle, 'value', nextBounded(combat, 1_000_000));
       },
     };

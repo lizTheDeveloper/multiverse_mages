@@ -45,7 +45,7 @@ const rules: System = {
       }
     }
 
-    const stream = ctx.rng.stream(RNG_STREAM.combat, ctx.tick);
+    const stream = ctx.rng.stream(RNG_STREAM.combat);
     const hp = component.field('hp');
     component.forEach((row) => {
       hp[row] = (hp[row] as number) - nextBounded(stream, 8);
