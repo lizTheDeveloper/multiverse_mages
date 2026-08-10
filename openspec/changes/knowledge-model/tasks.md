@@ -8,17 +8,17 @@
 
 ## 2. v1 content: the 12-cell subset
 
-- [ ] 2.1 Replace the placeholder `"v1": true` flags from `core-contracts` with the chosen twelve: `intellego`, `perdo`, `rego` × `limen`, `mentem`, `nomen`, `terram`
-- [ ] 2.2 Add loader validation asserting exactly twelve v1 cells forming a 3 × 4 rectangle and including `rego-limen`, with errors naming the offending cells
-- [ ] 2.3 Add loader validation rejecting any node whose cell is not flagged `v1`
-- [ ] 2.4 Author the node graph for `rego-limen`, covering `portal`, `blink`, and `ward`
-- [ ] 2.5 Author the node graphs for `intellego-mentem` and `rego-nomen`, covering `knowledge-steal` from both canonical cells, plus `research-rate`, `scribe-rate`, `summon`, and `concealment`
-- [ ] 2.6 Author the node graphs for `rego-terram` and `intellego-terram`, covering `build-rate` and `resource-yield`
-- [ ] 2.7 Author the node graphs for `rego-mentem` and `intellego-nomen`, covering `teach-rate` and `worship-yield`
-- [ ] 2.8 Author the node graphs for `perdo-mentem`, `perdo-nomen`, `perdo-terram`, and `perdo-limen`, covering `direct-damage` and `area-denial` and supplying the magical causes of instance destruction
-- [ ] 2.9 Author the node graph for `intellego-limen`, covering threshold detection
-- [ ] 2.10 Mark every authored magnitude as untuned, and add the test asserting no v1 content claims to be tuned
-- [ ] 2.11 Set every node's `rediscoveryMultiplier` at or above `fp(3072)`, most of them above it so species affinity has room to differentiate
+- [x] 2.1 Replace the placeholder `"v1": true` flags from `core-contracts` with the chosen twelve: `intellego`, `perdo`, `rego` × `limen`, `mentem`, `nomen`, `terram`
+- [x] 2.2 Add loader validation asserting exactly twelve v1 cells forming a 3 × 4 rectangle and including `rego-limen`, with errors naming the offending cells
+- [x] 2.3 Add loader validation rejecting any node whose cell is not flagged `v1`
+- [x] 2.4 Author the node graph for `rego-limen`, covering `portal`, `blink`, and `ward`
+- [x] 2.5 Author the node graphs for `intellego-mentem` and `rego-nomen`, covering `knowledge-steal` from both canonical cells, plus `research-rate`, `scribe-rate`, `summon`, and `concealment`
+- [x] 2.6 Author the node graphs for `rego-terram` and `intellego-terram`, covering `build-rate` and `resource-yield`
+- [x] 2.7 Author the node graphs for `rego-mentem` and `intellego-nomen`, covering `teach-rate` and `worship-yield`
+- [x] 2.8 Author the node graphs for `perdo-mentem`, `perdo-nomen`, `perdo-terram`, and `perdo-limen`, covering `direct-damage` and `area-denial` and supplying the magical causes of instance destruction
+- [x] 2.9 Author the node graph for `intellego-limen`, covering threshold detection
+- [x] 2.10 Mark every authored magnitude as untuned, and add the test asserting no v1 content claims to be tuned
+- [x] 2.11 Set every node's `rediscoveryMultiplier` at or above `fp(3072)`, most of them above it so species affinity has room to differentiate
 
 ## 3. Grid mechanics
 
@@ -26,26 +26,26 @@
 - [x] 3.2 Implement availability strictly as a call to `permits(universe, cellId)`, with no caching
 - [x] 3.3 Implement prerequisite satisfaction against the loaded node graph, allowing cross-cell prerequisites and never inferring satisfaction from tier
 - [x] 3.4 Implement dormancy as a derived predicate over `permits(universe, cellOf(nodeId))`, stored nowhere
-- [ ] 3.5 Enforce that dormant instances cannot be cast, taught, scribed, prepared, or used as prerequisites, and contribute no effects
+- [x] 3.5 Enforce that dormant instances cannot be cast, taught, scribed, prepared, or used as prerequisites, and contribute no effects
 - [x] 3.6 Unit test the four arbitration cases against a v1 cell: both axes permitted, dispensation, interdiction, and neither
 - [x] 3.7 Unit test that re-permitting an interdicted cell restores surviving instances with no migration step
 
 ## 4. Knowledge instances and the lifecycle
 
-- [ ] 4.1 Implement the instance index: per-node instance counts, the single-instance enumeration backing `libraryDependence`, and incremental maintenance
-- [ ] 4.2 Implement the persisted per-node ever-known record, set on first instance creation, never cleared, and included in world snapshots
-- [ ] 4.3 Implement research against scaled `researchCost`, drawing from RNG stream 3, refusing on a forbidden cell or an unsatisfied prerequisite
-- [ ] 4.4 Implement teaching mind → mind, drawing from RNG stream 4, with the eligibility threshold and proportional transmission loss below `fp(1024)` mastery
-- [ ] 4.5 Implement scribing mind → grimoire, drawing from RNG stream 5, consuming supplied scribe capacity and materials and deriving `durability` from scribe affinity
-- [ ] 4.6 Implement instance location for written copies, including the `(2, grimoireId)` ↔ `(3, libraryId)` rewrite on shelving and withdrawal, and the subsystem-owned grimoire-to-instance index
-- [ ] 4.7 Implement deterministic mastery decay for mind and palace instances only, with a retention-derived floor and no RNG draw
-- [ ] 4.8 Implement floorless decay for dormant instances, destroying them at zero mastery
-- [ ] 4.9 Implement instance destruction and the loss event naming node, world tick, and location kind
-- [ ] 4.10 Implement rediscovery: declared multiplier, species affinity, then the `fp(3072)` floor clamp
-- [ ] 4.11 Add loader validation rejecting any node with `rediscoveryMultiplier` below `fp(3072)`
-- [ ] 4.12 Implement `libraryDepth(libraryId)` as a tier-weighted count over stored instances, excluding dormant ones, exposed as an accessor and applied nowhere in `rules-magic`
-- [ ] 4.13 Unit test the snapshot round trip preserving the ever-known record so a lost node still costs rediscovery after restore
-- [ ] 4.14 Unit test that adding a draw to one knowledge operation leaves the other streams' sequences unchanged
+- [x] 4.1 Implement the instance index: per-node instance counts, the single-instance enumeration backing `libraryDependence`, and incremental maintenance
+- [x] 4.2 Implement the persisted per-node ever-known record, set on first instance creation, never cleared, and included in world snapshots
+- [x] 4.3 Implement research against scaled `researchCost`, drawing from RNG stream 3, refusing on a forbidden cell or an unsatisfied prerequisite
+- [x] 4.4 Implement teaching mind → mind, drawing from RNG stream 4, with the eligibility threshold and proportional transmission loss below `fp(1024)` mastery
+- [x] 4.5 Implement scribing mind → grimoire, drawing from RNG stream 5, consuming supplied scribe capacity and materials and deriving `durability` from scribe affinity
+- [x] 4.6 Implement instance location for written copies, including the `(2, grimoireId)` ↔ `(3, libraryId)` rewrite on shelving and withdrawal, and the subsystem-owned grimoire-to-instance index
+- [x] 4.7 Implement deterministic mastery decay for mind and palace instances only, with a retention-derived floor and no RNG draw
+- [x] 4.8 Implement floorless decay for dormant instances, destroying them at zero mastery
+- [x] 4.9 Implement instance destruction and the loss event naming node, world tick, and location kind
+- [x] 4.10 Implement rediscovery: declared multiplier, species affinity, then the `fp(3072)` floor clamp
+- [x] 4.11 Add loader validation rejecting any node with `rediscoveryMultiplier` below `fp(3072)`
+- [x] 4.12 Implement `libraryDepth(libraryId)` as a tier-weighted count over stored instances, excluding dormant ones, exposed as an accessor and applied nowhere in `rules-magic`
+- [x] 4.13 Unit test the snapshot round trip preserving the ever-known record so a lost node still costs rediscovery after restore
+- [x] 4.14 Unit test that adding a draw to one knowledge operation leaves the other streams' sequences unchanged
 
 ## 5. Effect application pipeline
 

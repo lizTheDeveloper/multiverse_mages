@@ -79,16 +79,16 @@ export interface InstanceResolution {
  * separate category, which is exactly the accounting that hides how expensive
  * the god's own switch is.
  *
- * Structurally duplicated from the knowledge-instance subsystem's loss event
- * rather than imported, because that module lands in the same change from a
- * different task group. Reconciling the two into one declaration is a
- * follow-up, not a difference of opinion.
+ * Re-exported from the knowledge-instance subsystem rather than declared again.
+ *
+ * Both task groups landed in this change and each wrote its own — and they did
+ * not agree: this one called the field `locationKind`, the other `location`.
+ * Two structurally similar records differing in one field name is worse than an
+ * obvious duplicate, because both compile and only one matches what
+ * `libraryDependence` reads.
  */
-export interface KnowledgeLossEvent {
-  readonly nodeId: number;
-  readonly worldTick: number;
-  readonly locationKind: LocationKindValue;
-}
+export type { KnowledgeLossEvent } from '../instances/outcomes.js';
+import type { KnowledgeLossEvent } from '../instances/outcomes.js';
 
 /** Inputs to a tradition change. */
 export interface TraditionChangeInput {
@@ -193,7 +193,7 @@ export function changeTradition(input: TraditionChangeInput): TraditionChangeRes
       losses.push({
         nodeId: instance.nodeId,
         worldTick: input.worldTick,
-        locationKind: instance.locationKind,
+        location: instance.locationKind,
       });
     }
   }

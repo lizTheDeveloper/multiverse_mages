@@ -85,7 +85,7 @@ describe('switching to a palace store', () => {
     expect(loss).toEqual({
       nodeId: 12,
       worldTick: WORLD_TICK,
-      locationKind: LOCATION_KIND.library,
+      location: LOCATION_KIND.library,
     });
   });
 });
@@ -127,7 +127,7 @@ describe('a loss from a tradition change is an ordinary loss', () => {
     // which is exactly the bookkeeping that hides how expensive the god's own
     // switch is.
     expect(Object.keys(result.losses[0] ?? {}).sort()).toEqual([
-      'locationKind',
+      'location',
       'nodeId',
       'worldTick',
     ]);

@@ -63,3 +63,14 @@ export type {
   ScribeInputs,
   WorldInputs,
 } from './world-inputs.js';
+
+export * from './instances/index.js';
+// `requireNode` exists in both subsystems over different catalog shapes — the
+// instances one takes a NodeCatalog, the effects one a ContentRegistry. Exported
+// under the effects name so the barrel is unambiguous without renaming either
+// call site.
+export {
+  requireNode as requireRegistryNode,
+} from './effects/registry-lookup.js';
+export * from './effects/index.js';
+export * from './traditions/index.js';

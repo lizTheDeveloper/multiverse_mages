@@ -48,7 +48,11 @@ export { appliesInMode, primitiveAppliesInMode } from './scale.js';
 export type { EffectStackContext } from './stack.js';
 export { stackContributions } from './stack.js';
 
-export { primitiveIndex, requireNode, requirePrimitive } from './registry-lookup.js';
+// `requireNode` is deliberately not re-exported here: the instances subsystem
+// exports a function of the same name over a different catalog shape, and two
+// same-named lookups in one barrel is an ambiguity a caller resolves by guessing.
+// The package barrel exposes this one as `requireRegistryNode`.
+export { primitiveIndex, requirePrimitive } from './registry-lookup.js';
 
 export type { PrimitiveCoverageEntry, PrimitiveCoverageReport } from './coverage.js';
 export {
