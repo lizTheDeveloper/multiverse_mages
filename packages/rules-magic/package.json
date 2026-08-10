@@ -6,6 +6,10 @@
   "license": "AGPL-3.0-or-later",
   "author": "Ann Kelner",
   "type": "module",
+  "dependencies": {
+    "@mm/sim-core": "*",
+    "@mm/state": "*"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the rules-magic tests. Never emits into dist/. `types: [\"node\"]` is the deliberate difference from tsconfig.json: the conformance tests read this package's own source off disk, which src itself may never do.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./test",
+    "types": ["node"],
+    "emitDeclarationOnly": true,
+    "outDir": "../../.tsbuild/rules-magic-test",
+    "tsBuildInfoFile": "../../.tsbuild/rules-magic-test.tsbuildinfo"
+  },
+  "include": ["test/**/*.ts"],
+  "references": [{ "path": "./tsconfig.json" }, { "path": "../content" }, { "path": "../state" }]
+}

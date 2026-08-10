@@ -307,9 +307,12 @@ prerequisite has a higher `tier`.
 ```jsonc
 {
   "id": "art-of-memory",
+  "name": "The Art of Memory",
   "hooks": {
     "acquire": { "kind": "standard" },
-    "store":   { "kind": "palace", "params": { "slotsPerMage": 12, "lootable": false, "burnable": false } },
+    "store":   { "kind": "palace",
+                 "params": { "slotsPerMage": 12, "lootable": false, "burnable": false,
+                             "libraryDepthCoefficient": 768 } },
     "cast":    { "kind": "standard" },
     "cost":    { "kind": "standard" }
   }
@@ -320,6 +323,24 @@ prerequisite has a higher `tier`.
 a closed, enumerated set implemented in code; `params` are data. Adding a new `kind` is a code
 change that must update this document. This cap is the mechanism that keeps traditions from
 defeating primitive-level balance.
+
+**The enumeration, normatively.** This table is the document half of that rule, and a test compares
+it against `packages/content/src/hooks.ts` character for character. Without it, "adding a kind must
+update this document" named no place in the document to update, and the obligation could be
+honoured by writing nothing.
+
+| Hook | Kinds |
+|---|---|
+| `acquire` | `standard`, `true-name` |
+| `store` | `standard`, `palace` |
+| `cast` | `standard`, `prepared` |
+| `cost` | `standard`, `prepaid` |
+
+**Across a portal the hooks split by clock** (`vision.md` §4a): `acquire` and `store` resolve to the
+mage's **home** tradition, because acquiring and holding knowledge are world-time acts; `cast` and
+`cost` resolve to the **host's**, because releasing a spell happens under the host's sky. The single
+arbitration function is `hookFor(hook, homeTraditionId, hostTraditionId)` in `@mm/rules-magic`, and
+it is the only place outside the four dispatch points permitted to read a `traditionId`.
 
 ### 2.6 `primitive.json`
 

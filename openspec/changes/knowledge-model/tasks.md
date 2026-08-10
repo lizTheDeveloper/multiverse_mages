@@ -59,21 +59,21 @@
 
 ## 6. Traditions
 
-- [ ] 6.1 Implement the closed hook-kind enumeration: `acquire` — `standard`, `true-name`; `store` — `standard`, `palace`; `cast` — `standard`, `prepared`; `cost` — `standard`, `prepaid`
-- [ ] 6.2 Add the CI check asserting the enumeration matches `docs/design/contracts.md` §2.5
-- [ ] 6.3 Add loader validation rejecting a missing hook, a fifth hook key, an unknown kind, and a kind valid only for a different hook
-- [ ] 6.4 Implement the four `standard` hook kinds as the baseline every tradition falls back to
-- [ ] 6.5 Implement `cast: prepared` — bounded preparation slots drawn from usable instances, expended on cast, re-prepared in world time
-- [ ] 6.6 Implement `cost: prepaid` — zero cost at release
-- [ ] 6.7 Implement `acquire: true-name` — raised research cost, lowered teaching cost, instances created at `fp(1024)`, stolen instances arriving at `fp(1024)`, and no effect on decay, storage, casting, or cost
-- [ ] 6.8 Implement `store: palace` — palace instances bounded by `slotsPerMage`, scribing unavailable, instances unlootable and untransferable, destroyed on holder death
-- [ ] 6.9 Implement palace-derived library depth under `store: palace`, scaled by the hook's depth coefficient parameter
-- [ ] 6.10 Author the three v1 tradition records: Vancian memorization, True Naming, the Art of Memory
-- [ ] 6.11 Implement `hookFor(hook, homeTraditionId, hostTraditionId)` as a pure function — `acquire` and `store` from home, `cast` and `cost` from host
-- [ ] 6.12 Implement `preparedSpells` population at portal entry by the raider's home `cast` kind, with expenditure and payment following the host
-- [ ] 6.13 Implement the total tradition-change operation, resolving every instance the incoming `store` kind cannot hold, reporting each resolution, and emitting loss events for any node it empties
-- [ ] 6.14 Add the conformance check rejecting reads of `traditionId` outside the four hook dispatch points and `hookFor`
-- [ ] 6.15 Unit test that each pair of v1 traditions is distinguishable on at least one seeded scenario, and that all three agree on a scenario outside their differing hooks
+- [x] 6.1 Implement the closed hook-kind enumeration: `acquire` — `standard`, `true-name`; `store` — `standard`, `palace`; `cast` — `standard`, `prepared`; `cost` — `standard`, `prepaid`
+- [x] 6.2 Add the CI check asserting the enumeration matches `docs/design/contracts.md` §2.5
+- [x] 6.3 Add loader validation rejecting a missing hook, a fifth hook key, an unknown kind, and a kind valid only for a different hook
+- [x] 6.4 Implement the four `standard` hook kinds as the baseline every tradition falls back to
+- [x] 6.5 Implement `cast: prepared` — bounded preparation slots drawn from usable instances, expended on cast, re-prepared in world time
+- [x] 6.6 Implement `cost: prepaid` — zero cost at release
+- [x] 6.7 Implement `acquire: true-name` — raised research cost, lowered teaching cost, instances created at `fp(1024)`, stolen instances arriving at `fp(1024)`, and no effect on decay, storage, casting, or cost
+- [x] 6.8 Implement `store: palace` — palace instances bounded by `slotsPerMage`, scribing unavailable, instances unlootable and untransferable, destroyed on holder death
+- [x] 6.9 Implement palace-derived library depth under `store: palace`, scaled by the hook's depth coefficient parameter
+- [x] 6.10 Author the three v1 tradition records: Vancian memorization, True Naming, the Art of Memory
+- [x] 6.11 Implement `hookFor(hook, homeTraditionId, hostTraditionId)` as a pure function — `acquire` and `store` from home, `cast` and `cost` from host
+- [x] 6.12 Implement `preparedSpells` population at portal entry by the raider's home `cast` kind, with expenditure and payment following the host
+- [x] 6.13 Implement the total tradition-change operation, resolving every instance the incoming `store` kind cannot hold, reporting each resolution, and emitting loss events for any node it empties
+- [x] 6.14 Add the conformance check rejecting reads of `traditionId` outside the four hook dispatch points and `hookFor`
+- [x] 6.15 Unit test that each pair of v1 traditions is distinguishable on at least one seeded scenario, and that all three agree on a scenario outside their differing hooks
 
 ## 7. Closeout
 
