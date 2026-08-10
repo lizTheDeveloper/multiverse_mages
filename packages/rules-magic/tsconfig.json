@@ -8,5 +8,11 @@
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "types": []
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../sim-core" },
+    { "path": "../content" },
+    { "path": "../primitives" },
+    { "path": "../state" }
+  ]
 }

@@ -6,6 +6,12 @@
   "license": "AGPL-3.0-or-later",
   "author": "Ann Kelner",
   "type": "module",
+  "dependencies": {
+    "@mm/content": "*",
+    "@mm/primitives": "*",
+    "@mm/sim-core": "*",
+    "@mm/state": "*"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -20,7 +26,7 @@
   "engines": {
     "node": ">=22.0.0 <23"
   },
-  "//": "Rules-path code: no runtime dependencies, no Node built-ins, integer-only. Per contracts.md §5 it may import sim-core, content, and state — and MUST NOT import rules-world or agent-api.",
+  "//": "Rules-path code: no third-party runtime dependencies, no Node built-ins, integer-only. Per contracts.md §5 it may import sim-core, content, state and primitives — and MUST NOT import rules-world or agent-api. @mm/content is imported for TYPES ONLY, as in @mm/state: its public surface re-exports a loader that reads the filesystem, so a value import would make this package Node-bound in an Electron renderer.",
   "scripts": {
     "build": "tsc --build"
   }
