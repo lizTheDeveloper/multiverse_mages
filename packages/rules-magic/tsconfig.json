@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "//": "Library build. `types: []` is deliberate — rules-path code must run unchanged in Node, Electron, and a browser, so it must not see Node's ambient types.",
+  "//": "Library build. `types: []` is deliberate — rules-path code must run unchanged in Node, Electron, and a browser, so it must not see Node's ambient types. @mm/content is referenced so its declarations resolve, but it may only be imported with `import type`: a value import would drag its filesystem loader into the renderer.",
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "./src",
@@ -8,5 +8,11 @@
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "types": []
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../sim-core" },
+    { "path": "../content" },
+    { "path": "../state" },
+    { "path": "../primitives" }
+  ]
 }

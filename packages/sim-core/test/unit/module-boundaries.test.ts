@@ -437,6 +437,35 @@ describe('the workspace dependency graph matches contracts.md §5', () => {
     expect(violationsOf(workspaceEdges, workspacePackages)).toEqual([]);
   });
 
+  it('keeps rules-magic clear of rules-world and agent-api in the real tree (rules 3, 4)', () => {
+    // `violationsOf` already covers this in general, and this asserts it
+    // specifically, because `rules-magic` is the package whose two forbidden
+    // edges are the *tempting* ones. Everything a knowledge operation wants —
+    // a mage's `learnRate`, a species' `retention`, the materials balance —
+    // lives in `rules-world`, and the one-line fix for needing it is the import
+    // that makes the graph cyclic. The alternative §5 prescribes is that those
+    // arrive as caller-supplied parameters, which is what
+    // `packages/rules-magic/src/world-inputs.ts` exists to type.
+    //
+    // Named rather than left to the general check so that the failure message a
+    // future author sees says which rule they broke, on the day they break it.
+    const magic = workspaceEdges.filter((edge) => edge.pkg === 'rules-magic');
+
+    // Not vacuous: rules-magic imports real workspace packages, so an empty
+    // result below means "no forbidden edges", not "no edges parsed at all".
+    const workspaceTargets = magic
+      .filter((edge) => edge.specifier.startsWith(WORKSPACE_SCOPE))
+      .map((edge) => edge.specifier.slice(WORKSPACE_SCOPE.length).split('/')[0]);
+    expect(workspaceTargets.length).toBeGreaterThan(0);
+    expect(new Set(workspaceTargets)).toContain('state');
+
+    for (const forbidden of ['rules-world', 'agent-api']) {
+      expect(
+        magic.filter((edge) => edge.specifier.slice(WORKSPACE_SCOPE.length).split('/')[0] === forbidden),
+      ).toEqual([]);
+    }
+  });
+
   it('keeps sim-core free of workspace and Node built-in imports (rule 1)', () => {
     const coreSource = workspaceEdges.filter(
       (edge) => edge.pkg === 'sim-core' && edge.area !== 'test',
