@@ -743,5 +743,670 @@
       { "primitive": "resource-yield", "magnitude": 192, "target": "universe", "durationTicks": 0 }
     ],
     "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "ian-cut-the-sign",
+    "cell": "intellego-animal",
+    "name": "Cut the Sign",
+    "gloss": "Take an hour-old print for everything it is: what made it, what weight it was carrying, and whether it was hurrying away from something that is still nearby.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ian-number-the-herd",
+    "cell": "intellego-animal",
+    "name": "Number the Herd",
+    "gloss": "Know how many, of what ages, and which of them will not see the winter — without penning a single animal to be looked at. Herders who have it stop losing the whole beast to find out it was sick.",
+    "tier": 2,
+    "prerequisites": ["ian-cut-the-sign"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 256, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ian-chart-the-migration",
+    "cell": "intellego-animal",
+    "name": "Chart the Migration",
+    "gloss": "Know where the herds will be a season before the herds have decided. The first working in this cell that pays for a granary rather than a supper.",
+    "tier": 3,
+    "prerequisites": ["ian-number-the-herd"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 384, "target": "universe", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ian-the-beasts-own-eye",
+    "cell": "intellego-animal",
+    "name": "The Beast's Own Eye",
+    "gloss": "Borrow what an animal is looking at, from wherever it happens to be standing. A scholar whose watchmen are all crows is difficult to surprise, and impossible to catch listening — nothing she posted can be questioned afterwards.",
+    "tier": 4,
+    "prerequisites": ["ian-chart-the-migration", "im-follow-the-thought"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "research-rate", "magnitude": 448, "target": "self", "durationTicks": 0 },
+      { "primitive": "concealment", "magnitude": 192, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "iaq-sound-the-well",
+    "cell": "intellego-aquam",
+    "name": "Sound the Well",
+    "gloss": "Find how deep the water truly sits, and whether it will still be sitting there in August, without lowering a rope into it.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iaq-sip-the-standing-pool",
+    "cell": "intellego-aquam",
+    "name": "Sip the Standing Pool",
+    "gloss": "Learn what is in a water before drinking enough of it to learn the ordinary way. Whole siege years turn on which of a city's three cisterns is the one that kills.",
+    "tier": 2,
+    "prerequisites": ["iaq-sound-the-well"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 192, "target": "universe", "durationTicks": 0 },
+      { "primitive": "lifespan", "magnitude": 18, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iaq-trace-the-current",
+    "cell": "intellego-aquam",
+    "name": "Trace the Current",
+    "gloss": "Follow a moving water back to where it comes from and forward to where it means to go, including the stretches of it that are underground and the stretches that are somebody else's.",
+    "tier": 3,
+    "prerequisites": ["iaq-sip-the-standing-pool"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 320, "target": "universe", "durationTicks": 0 },
+      { "primitive": "build-rate", "magnitude": 128, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iaq-fathom-the-watershed",
+    "cell": "intellego-aquam",
+    "name": "Fathom the Watershed",
+    "gloss": "Hold every water of a country in one perception at once — springs, seeps, the river's bad years, the marsh that used to be a lake. Mills get sited on this, and so do the arguments about who owns the rain.",
+    "tier": 4,
+    "prerequisites": ["iaq-trace-the-current"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 512, "target": "universe", "durationTicks": 0 },
+      { "primitive": "build-rate", "magnitude": 192, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "iau-the-ache-before-rain",
+    "cell": "intellego-auram",
+    "name": "The Ache Before Rain",
+    "gloss": "The old soldier's knee, made deliberate and made accurate. Three days' warning saves more harvests than any working of Creo, and costs a university nothing to keep.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iau-gauge-the-winds-road",
+    "cell": "intellego-auram",
+    "name": "Gauge the Wind's Road",
+    "gloss": "Perceive the wind aloft, which is not the wind you are standing in and rarely agrees with it. Everything that sails or grinds is scheduled against this.",
+    "tier": 2,
+    "prerequisites": ["iau-the-ache-before-rain"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 256, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iau-reckon-the-season",
+    "cell": "intellego-auram",
+    "name": "Reckon the Season",
+    "gloss": "Take a whole year's weather in advance, coarsely, and be right about it more often than not. Coarse and usually right is worth more to a granary than precise and occasional.",
+    "tier": 3,
+    "prerequisites": ["iau-gauge-the-winds-road"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 384, "target": "universe", "durationTicks": 0 },
+      { "primitive": "build-rate", "magnitude": 128, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iau-the-lightnings-chosen-ground",
+    "cell": "intellego-auram",
+    "name": "The Lightning's Chosen Ground",
+    "gloss": "Know which stone the storm has already picked, and put the library on a different one. Universities that hold this working lose towers at a rate their neighbours find suspicious.",
+    "tier": 4,
+    "prerequisites": ["iau-reckon-the-season"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "build-rate", "magnitude": 384, "target": "universe", "durationTicks": 0 },
+      { "primitive": "resource-yield", "magnitude": 192, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "ic-take-the-pulse",
+    "cell": "intellego-corpus",
+    "name": "Take the Pulse",
+    "gloss": "Two fingers at a wrist, and the whole of what the body is currently doing about itself. Every physician thinks she can already do this; the ones who can are the ones who stop being surprised.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "research-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ic-sift-the-humours",
+    "cell": "intellego-corpus",
+    "name": "Sift the Humours",
+    "gloss": "Separate what is wrong with a body from what is merely unusual about it. The great saving is not in the cures it enables but in the ones it stops a physician from attempting.",
+    "tier": 2,
+    "prerequisites": ["ic-take-the-pulse"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "lifespan", "magnitude": 18, "target": "single", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ic-listen-at-the-ribs",
+    "cell": "intellego-corpus",
+    "name": "Listen at the Ribs",
+    "gloss": "Attend to the sounds a body makes only on the inside, and know which of them is new. Everything worth catching is quiet for a year first.",
+    "tier": 3,
+    "prerequisites": ["ic-sift-the-humours"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "lifespan", "magnitude": 36, "target": "single", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ic-tell-the-hour-of-a-body",
+    "cell": "intellego-corpus",
+    "name": "Tell the Hour of a Body",
+    "gloss": "Say how long this body has, from the body alone. It is not fate — Fatum reads the hour that was appointed; this reads only the hour the flesh is already walking toward, which is why it can be argued with.",
+    "tier": 4,
+    "prerequisites": ["ic-listen-at-the-ribs"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "lifespan", "magnitude": 72, "target": "single", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 192, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "ih-sight-the-blight",
+    "cell": "intellego-herbam",
+    "name": "Sight the Blight",
+    "gloss": "See the rot in a field on the morning it decides to happen, rather than on the morning it shows.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ih-question-the-orchard",
+    "cell": "intellego-herbam",
+    "name": "Question the Orchard",
+    "gloss": "Put the question to the trees themselves — what they are short of, what they are hoarding, which of them is dying quietly and taking the row with it.",
+    "tier": 2,
+    "prerequisites": ["ih-sight-the-blight"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 256, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ih-pick-out-the-simple",
+    "cell": "intellego-herbam",
+    "name": "Pick Out the Simple",
+    "gloss": "Know a medicinal herb by its leaf, its hour, and its ground, and know it apart from the four things in the same hedge that will kill the patient instead. Most of herb-lore is the apart-from.",
+    "tier": 3,
+    "prerequisites": ["ih-question-the-orchard"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "lifespan", "magnitude": 24, "target": "universe", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ih-the-root-beneath-the-root",
+    "cell": "intellego-herbam",
+    "name": "The Root Beneath the Root",
+    "gloss": "Perceive the thing a forest is doing under the soil, where it is not a thousand trees but one argument. Foresters who learn it stop calling the wood a crop, which their treasurers dislike.",
+    "tier": 4,
+    "prerequisites": ["ih-pick-out-the-simple"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 448, "target": "universe", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 192, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "iig-judge-the-kiln",
+    "cell": "intellego-ignem",
+    "name": "Judge the Kiln",
+    "gloss": "Know the state of a fire without opening the door to it, which is the only way to know the state of a fire.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "build-rate", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iig-the-colour-of-ready-iron",
+    "cell": "intellego-ignem",
+    "name": "The Colour of Ready Iron",
+    "gloss": "Smiths have always read heat by colour and always argued about it. This settles the argument, and a smithy that stops arguing produces roughly a third more.",
+    "tier": 2,
+    "prerequisites": ["iig-judge-the-kiln"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [
+      { "primitive": "build-rate", "magnitude": 256, "target": "universe", "durationTicks": 0 },
+      { "primitive": "resource-yield", "magnitude": 128, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iig-scry-the-coals",
+    "cell": "intellego-ignem",
+    "name": "Scry the Coals",
+    "gloss": "The old fire-gazing, done properly. What returns is not a picture but a pressure, and the discipline is entirely in refusing to improve it into a picture on the way to the page.",
+    "tier": 3,
+    "prerequisites": ["iig-the-colour-of-ready-iron"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "research-rate", "magnitude": 384, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iig-where-the-fire-will-go",
+    "cell": "intellego-ignem",
+    "name": "Where the Fire Will Go",
+    "gloss": "Perceive a fire's whole future path through a building before it has taken the first yard of it. Fire-wardens use it to choose what to wet; the other profession that wants it uses it to choose what not to.",
+    "tier": 4,
+    "prerequisites": ["iig-scry-the-coals"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "build-rate", "magnitude": 384, "target": "universe", "durationTicks": 0 },
+      { "primitive": "resource-yield", "magnitude": 192, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "iim-catch-the-painted-thing",
+    "cell": "intellego-imaginem",
+    "name": "Catch the Painted Thing",
+    "gloss": "Notice that what you are looking at is a picture of itself. The first lesson is that the tell is never in the image; it is in how little the image is bothering to be looked at from the side.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "research-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iim-watch-the-light-lie",
+    "cell": "intellego-imaginem",
+    "name": "Watch the Light Lie",
+    "gloss": "Attend to the mechanism of a false image rather than to the image. Knowing exactly how a thing is not seen is the first half of not being seen, and this cell reaches concealment from that side rather than from hiding.",
+    "tier": 2,
+    "prerequisites": ["iim-catch-the-painted-thing", "im-weigh-the-attention"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "concealment", "magnitude": 128, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iim-the-room-you-are-not-in",
+    "cell": "intellego-imaginem",
+    "name": "The Room You Are Not In",
+    "gloss": "Take the sight and sound of a place you are nowhere near, entire, without sending anything there to fetch it. Every treaty on scrying is really about this working, and none of them has ever been enforceable.",
+    "tier": 3,
+    "prerequisites": ["iim-watch-the-light-lie"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "research-rate", "magnitude": 384, "target": "self", "durationTicks": 0 },
+      { "primitive": "concealment", "magnitude": 128, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iim-nothing-painted-passes",
+    "cell": "intellego-imaginem",
+    "name": "Nothing Painted Passes",
+    "gloss": "No false image within reach survives being looked at. The same perception run backwards tells the mage precisely where the looking in a room is going, and she is never standing there.",
+    "tier": 4,
+    "prerequisites": ["iim-the-room-you-are-not-in"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "concealment", "magnitude": 288, "target": "self", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 256, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "iv-feel-the-air-go-tight",
+    "cell": "intellego-vim",
+    "name": "Feel the Air Go Tight",
+    "gloss": "The small pull in a room in the moment before something is cast in it. Students describe it as a held breath that is not theirs, and the ones who never feel it are usually the ones who die indoors.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "research-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iv-price-the-working",
+    "cell": "intellego-vim",
+    "name": "Price the Working",
+    "gloss": "Say what a spell cost the mage who cast it. Half of scholarship is knowing which rival results were expensive, because those are the ones nobody bothered to fake.",
+    "tier": 2,
+    "prerequisites": ["iv-feel-the-air-go-tight", "in-hear-the-name-spoken"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "research-rate", "magnitude": 256, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iv-the-residue-in-the-room",
+    "cell": "intellego-vim",
+    "name": "The Residue in the Room",
+    "gloss": "Perceive what was cast in a place after the casting is over — a day after, in a still room, three weeks. Most of what a university knows about its neighbours was picked up off a floor.",
+    "tier": 3,
+    "prerequisites": ["iv-price-the-working"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "research-rate", "magnitude": 384, "target": "self", "durationTicks": 0 },
+      { "primitive": "scribe-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iv-know-the-hand-that-cast-it",
+    "cell": "intellego-vim",
+    "name": "Know the Hand That Cast It",
+    "gloss": "Every mage casts with an accent. This reads it, and names the school, the teacher, and often the individual. Raids are attributed by it, and at least two wars in the archive were begun on a careful misreading of one.",
+    "tier": 4,
+    "prerequisites": ["iv-the-residue-in-the-room"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "research-rate", "magnitude": 448, "target": "self", "durationTicks": 0 },
+      { "primitive": "concealment", "magnitude": 192, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "iu-the-second-shadow",
+    "cell": "intellego-umbra",
+    "name": "The Second Shadow",
+    "gloss": "Notice that something in the room is casting one shadow more than it is entitled to. Half the students who learn it stop sleeping well; the other half stop being surprised by anything.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "concealment", "magnitude": 96, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iu-what-the-shadow-remembers",
+    "cell": "intellego-umbra",
+    "name": "What the Shadow Remembers",
+    "gloss": "A shadow is a record of an absence, and records can be interrogated. Ask an empty patch of floor what stood in it, and it will tell you the shape, though never the name.",
+    "tier": 2,
+    "prerequisites": ["iu-the-second-shadow"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "research-rate", "magnitude": 256, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iu-look-along-the-shadow",
+    "cell": "intellego-umbra",
+    "name": "Look Along the Shadow",
+    "gloss": "Sight down a shadow toward the thing that is casting it, and keep going. What is on the far side of the wall is not hidden from the shadow, only from you, and the shadow can be asked.",
+    "tier": 3,
+    "prerequisites": ["iu-what-the-shadow-remembers", "il-sense-the-seam"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "concealment", "magnitude": 224, "target": "self", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iu-the-unlit-line",
+    "cell": "intellego-umbra",
+    "name": "The Unlit Line",
+    "gloss": "Perceive, continuously and without effort, which line through a room no eye is currently on — and be on it. Nothing about the mage is hidden. She is simply never where the looking is happening.",
+    "tier": 4,
+    "prerequisites": ["iu-look-along-the-shadow"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [{ "primitive": "concealment", "magnitude": 320, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iu-the-shadow-before-the-thing",
+    "cell": "intellego-umbra",
+    "name": "The Shadow Before the Thing",
+    "gloss": "Some shadows arrive first. A raid throws one across a floor three days ahead of itself, and a mage who has learned to read the early ones is standing somewhere else by the time the caster gets there. This is where shadow stops being optics and starts being fate.",
+    "tier": 5,
+    "prerequisites": ["iu-the-unlit-line", "if-the-fork-seen-from-above"],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      { "primitive": "concealment", "magnitude": 384, "target": "self", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 256, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "if-cast-the-lots",
+    "cell": "intellego-fatum",
+    "name": "Cast the Lots",
+    "gloss": "The oldest divination there is, made honest. The lots were always random; this working is the part that makes them not, and every student's first result is indistinguishable from luck.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "research-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "if-the-omen-and-the-coincidence",
+    "cell": "intellego-fatum",
+    "name": "The Omen and the Coincidence",
+    "gloss": "Separate the sign that means something from the enormous number of things that merely happened. This is the entire discipline, and the reason Fatum scholars are so tiresome about method.",
+    "tier": 2,
+    "prerequisites": ["if-cast-the-lots"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "research-rate", "magnitude": 256, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "if-the-fork-seen-from-above",
+    "cell": "intellego-fatum",
+    "name": "The Fork Seen From Above",
+    "gloss": "Stand outside a decision and see both roads to their ends at once. Applied to research it says which line of enquiry pays; applied to a student it says which one is worth the hours, which is the part the faculty argues about.",
+    "tier": 3,
+    "prerequisites": ["if-the-omen-and-the-coincidence"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "research-rate", "magnitude": 384, "target": "self", "durationTicks": 0 },
+      { "primitive": "teach-rate", "magnitude": 128, "target": "single", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "if-the-appointed-hour",
+    "cell": "intellego-fatum",
+    "name": "The Appointed Hour",
+    "gloss": "Know the hour the world has set aside for you. It does not move. But a scholar who knows which afternoon to spend indoors buys back all the years that were never appointed at all, and most deaths were never appointed.",
+    "tier": 4,
+    "prerequisites": ["if-the-fork-seen-from-above", "in-derive-the-true-name"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "lifespan", "magnitude": 60, "target": "self", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 192, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "if-the-thread-fate-set-down",
+    "cell": "intellego-fatum",
+    "name": "The Thread Fate Set Down",
+    "gloss": "Perceive your own thread so exactly that you can tell the moment fate puts it down to attend to someone else — and live in those moments. Nothing that works by destiny can find a mage who is not currently being tracked by it. Archmages who hold it tend to have no recorded death.",
+    "tier": 5,
+    "prerequisites": ["if-the-appointed-hour"],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      { "primitive": "concealment", "magnitude": 320, "target": "self", "durationTicks": 0 },
+      { "primitive": "lifespan", "magnitude": 96, "target": "self", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 192, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
   }
 ]
