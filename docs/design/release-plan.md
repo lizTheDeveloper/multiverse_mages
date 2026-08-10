@@ -127,8 +127,10 @@ recorded, not asserted in advance.
   as a non-blocking early warning.
 - The gate was proved to fire, twice and independently, by injecting nondeterminism and confirming
   every fixture failed while naming its diverging tick — and that a failing run rewrites no fixture.
-- Throughput: ~19.7 M entity-updates/sec, flat from 5,000 to 25,000 entities. Recorded in
-  `vision.md` §13 with what it does and does not answer.
+- Throughput: 18-19 M entity-updates/sec, flat from 5,000 to 25,000 entities. Recorded in
+  `vision.md` §13 with what it does and does not answer. (An earlier draft of this line said
+  ~19.7 M, measured before the RNG and clock fixes landed — i.e. against a build that was not
+  tagged. Re-measured against the shipped code.)
 
 **Known limitation, stated rather than discovered later:** `npm run goldens:regen` requires Node 22
 or newer, because it loads the core's TypeScript through native type stripping. The simulation
