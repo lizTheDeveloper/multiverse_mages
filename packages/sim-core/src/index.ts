@@ -25,3 +25,5 @@
  * empty file. Delete it once the first real module lands.
  */
 export const SIM_CORE_SCAFFOLD_ONLY = true;
+
+export * from './handle.js';
