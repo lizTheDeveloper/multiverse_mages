@@ -29,6 +29,7 @@ export default defineConfig({
       '@mm/content': packageSrc('content'),
       '@mm/primitives': packageSrc('primitives'),
       '@mm/state': packageSrc('state'),
+      '@mm/rules-magic': packageSrc('rules-magic'),
       '@mm/agent-api': packageSrc('agent-api'),
     },
   },

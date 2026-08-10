@@ -12,19 +12,54 @@
  */
 
 /**
- * `@mm/rules-magic` — grid legality, node research and teaching, knowledge
- * instances, and the four tradition hooks. Empty until `knowledge-model`.
+ * `@mm/rules-magic` — grid legality, node prerequisites, dormancy, knowledge
+ * instances, and the four tradition hooks.
  *
- * The skeleton exists now rather than later because the boundary it sits inside
- * is the deliverable: `contracts.md` §5 forbids this package from importing
- * `@mm/rules-world` or `@mm/agent-api`, and a rule with no package to apply to
- * is a rule nothing has ever tested. The dependency-graph test
- * (`packages/sim-core/test/unit/module-boundaries.test.ts`) asserts those edges
- * against these directories from the day the directories exist.
+ * ## The boundary is the deliverable
  *
- * Where this package and `@mm/rules-world` genuinely interact — a mage learning
- * a node — the interaction belongs in `@mm/rules-raid` or another coordinating
- * layer that imports both, never in a cycle between them.
+ * `contracts.md` §5 forbids this package from importing `@mm/rules-world` or
+ * `@mm/agent-api`, and names the interaction that would otherwise create the
+ * cycle: *"a mage learning a node"*. So a mage never arrives here. Every rate a
+ * knowledge operation needs — `learnRate`, `retention`, `scribeAffinity`,
+ * `rediscoveryAffinity`, scribe capacity, materials — arrives as a
+ * caller-supplied parameter (`world-inputs.ts`), and mage, grimoire and library
+ * identifiers are opaque handles this package never dereferences. The
+ * dependency-graph test asserts the edges; `world-inputs.ts` is what makes them
+ * satisfiable.
+ *
+ * ## Two rules that must not be re-implemented anywhere in here
+ *
+ * - **Availability is `permits(ruleset, cellId)` and nothing else.** No bitmask
+ *   is evaluated against a cell in this package; no result is cached in state.
+ * - **Dormancy is derived.** `!permits(ruleset, cellOf(nodeId))`, computed on
+ *   demand, stored nowhere — so re-permitting a cell restores every surviving
+ *   instance with no migration step.
+ *
+ * Both are enforced mechanically rather than asked for politely:
+ * `packages/state/test/unit/arbitration-conformance.test.ts` and
+ * `packages/rules-magic/test/unit/rules-path-conformance.test.ts`.
  */
 
-export {};
+export type { GridContent, CellView, HeldKnowledge, PrerequisiteStatus } from './grid.js';
+export { MagicGrid, cellAxes, heldNodes } from './grid.js';
+
+export type { DormancyRefusal, KnowledgeUseValue, UsablePrerequisiteStatus } from './dormancy.js';
+export {
+  KNOWLEDGE_USE,
+  dormancyRefusal,
+  isCellAvailable,
+  isDormant,
+  isUsable,
+  prerequisiteStatusFor,
+  usableHolding,
+} from './dormancy.js';
+
+export type {
+  GrimoireHandle,
+  LearnerRates,
+  LibraryHandle,
+  MageHandle,
+  RediscoveryInputs,
+  ScribeInputs,
+  WorldInputs,
+} from './world-inputs.js';

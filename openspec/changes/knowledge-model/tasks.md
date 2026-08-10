@@ -1,10 +1,10 @@
 ## 1. Package skeleton and boundary
 
-- [ ] 1.1 Create `packages/rules-magic` depending only on `sim-core` and `content`, with the AGPL header and `"license": "AGPL-3.0-or-later"`
-- [ ] 1.2 Extend the dependency-graph test to assert `rules-magic` imports neither `rules-world` nor `agent-api`
-- [ ] 1.3 Define the operation input types — learn rate, retention, scribe affinity, rediscovery affinity, scribe capacity, materials — as caller-supplied parameters, with mage, grimoire, and library identifiers typed as opaque handles
-- [ ] 1.4 Add the lint rule rejecting inline combination of primitive magnitudes inside `rules-magic`
-- [ ] 1.5 Add the conformance check rejecting direct reads of `permittedTechniques`, `permittedForms`, `edicts`, and `classicalLabels` in the rules path
+- [x] 1.1 Create `packages/rules-magic` depending only on `sim-core` and `content`, with the AGPL header and `"license": "AGPL-3.0-or-later"`
+- [x] 1.2 Extend the dependency-graph test to assert `rules-magic` imports neither `rules-world` nor `agent-api`
+- [x] 1.3 Define the operation input types — learn rate, retention, scribe affinity, rediscovery affinity, scribe capacity, materials — as caller-supplied parameters, with mage, grimoire, and library identifiers typed as opaque handles
+- [x] 1.4 Add the lint rule rejecting inline combination of primitive magnitudes inside `rules-magic`
+- [x] 1.5 Add the conformance check rejecting direct reads of `permittedTechniques`, `permittedForms`, `edicts`, and `classicalLabels` in the rules path
 
 ## 2. v1 content: the 12-cell subset
 
@@ -22,13 +22,13 @@
 
 ## 3. Grid mechanics
 
-- [ ] 3.1 Implement cell addressing over the full 5 × 14 space, resolvable by `(techniqueId, formId)` and by cell id, with non-v1 cells resolving as empty
-- [ ] 3.2 Implement availability strictly as a call to `permits(universe, cellId)`, with no caching
-- [ ] 3.3 Implement prerequisite satisfaction against the loaded node graph, allowing cross-cell prerequisites and never inferring satisfaction from tier
-- [ ] 3.4 Implement dormancy as a derived predicate over `permits(universe, cellOf(nodeId))`, stored nowhere
+- [x] 3.1 Implement cell addressing over the full 5 × 14 space, resolvable by `(techniqueId, formId)` and by cell id, with non-v1 cells resolving as empty
+- [x] 3.2 Implement availability strictly as a call to `permits(universe, cellId)`, with no caching
+- [x] 3.3 Implement prerequisite satisfaction against the loaded node graph, allowing cross-cell prerequisites and never inferring satisfaction from tier
+- [x] 3.4 Implement dormancy as a derived predicate over `permits(universe, cellOf(nodeId))`, stored nowhere
 - [ ] 3.5 Enforce that dormant instances cannot be cast, taught, scribed, prepared, or used as prerequisites, and contribute no effects
-- [ ] 3.6 Unit test the four arbitration cases against a v1 cell: both axes permitted, dispensation, interdiction, and neither
-- [ ] 3.7 Unit test that re-permitting an interdicted cell restores surviving instances with no migration step
+- [x] 3.6 Unit test the four arbitration cases against a v1 cell: both axes permitted, dispensation, interdiction, and neither
+- [x] 3.7 Unit test that re-permitting an interdicted cell restores surviving instances with no migration step
 
 ## 4. Knowledge instances and the lifecycle
 
