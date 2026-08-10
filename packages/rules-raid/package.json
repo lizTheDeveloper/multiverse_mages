@@ -1,6 +1,6 @@
 {
   "name": "@mm/rules-raid",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Engagement space, combat, objectives, and raid consequences. Skeleton — the rules land in raid-engagement.",
   "license": "AGPL-3.0-or-later",

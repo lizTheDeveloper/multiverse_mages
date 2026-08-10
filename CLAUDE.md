@@ -57,10 +57,16 @@ table uses the real change and capability IDs so it stays in sync with `openspec
 - `openspec show <change>` / `openspec validate <change> --strict`
 - `/opsx:apply` — implement a change's tasks
 
-Current state: `sim-core-foundation` is implemented and released as 0.1.0 — `packages/sim-core` holds
-fixed-point arithmetic, the splittable PRNG, the entity store, the dual-scale clock, the pure
-`step` contract, versioned snapshots, replay, the golden fixtures, and the benchmark. Next up is
-`core-contracts` (0.2.0).
+Current state: released through **0.2.0**. `sim-core-foundation` gave `packages/sim-core` its
+deterministic substrate — fixed-point arithmetic, the splittable PRNG, the entity store, the
+dual-scale clock, the pure `step` contract, versioned snapshots, replay, golden fixtures and the
+benchmark. `core-contracts` added `content` (schemas, loader, v1 data), `state` (the §1 world state
+types and the one `permits()`), `primitives` (§3 stacking arithmetic), and `agent-api` (the §4
+observation, action space and legality mask), plus skeletons for the `rules-*` packages. Next up is
+`knowledge-model` (0.3.0).
+
+Two packages are **deviations from `contracts.md` §5 as originally drawn**, both recorded there with
+their reasoning: `state` and `primitives`. §5 was written before anyone tried to satisfy it.
 
 Two commands worth knowing before touching the core:
 

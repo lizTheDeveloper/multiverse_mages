@@ -1,6 +1,6 @@
 {
   "name": "@mm/rules-magic",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Grid legality, nodes, knowledge instances, and tradition hooks. Skeleton — the rules land in knowledge-model.",
   "license": "AGPL-3.0-or-later",

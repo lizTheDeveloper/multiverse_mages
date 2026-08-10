@@ -1,6 +1,6 @@
 {
   "name": "@mm/rules-world",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Mages, species, populace cohorts, universities, and the economy. Skeleton — the rules land in mages-and-species.",
   "license": "AGPL-3.0-or-later",
