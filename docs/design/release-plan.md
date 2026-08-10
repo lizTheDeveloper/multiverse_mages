@@ -25,13 +25,28 @@ universe stops working.
 **Tag every release.** A tag 150 commits behind what is live is not a rollback marker, it is a
 decoration. If it is not tagged, it is not a rollback target, and we say so instead of pretending.
 
-### Optional: encode balance-validation in the version
+### Parity encodes balance validation — ADOPTED
 
-The scheme that fits this project unusually well is **even MINOR = balance-validated, odd MINOR =
-in flight**. Balance validation is the actual quality gate here, so the version number would tell
-you at a glance whether you are looking at a line whose Monte Carlo baselines are green. Worth
-adopting from 0.5.0 onward, once baselines exist to be green. Flagged as a decision, not adopted
-yet.
+**Even MINOR = balance-validated. Odd MINOR = in flight.**
+
+Balance validation is the real quality gate on this project, so the version number itself says
+whether you are looking at a line whose Monte Carlo baselines are green. `0.9.3` is a raid engine
+nobody has proven terminates; `0.10.0` is one that survived ten thousand trials.
+
+Three consequences, all deliberate:
+
+1. **Every capability ships twice.** It lands on an odd MINOR, and it is *promoted* to the next
+   even MINOR when its baselines are committed and green. The even release is earned, not
+   scheduled. This is why the roadmap below has sixteen MINORs for ten changes.
+2. **The gate is enforced in CI, not intended.** A release may only take an even MINOR if the
+   balance-baseline job passes. A version scheme that relies on someone remembering is a version
+   scheme that lies within a month.
+3. **Parity is undefined below 0.5.0.** There is no harness before then, so nothing can be green.
+   `0.2.0` and `0.4.0` are even and carry no validation claim, and saying so plainly is better than
+   pretending the invariant holds where it cannot.
+
+An even MINOR is therefore the honest answer to "is it safe to build on this?" — and the odd ones
+stop being a source of false confidence.
 
 ---
 
@@ -49,28 +64,40 @@ balance.
 
 ## Roadmap
 
-| Version | Change | What it makes true |
-|---|---|---|
-| 0.1.0 | `sim-core-foundation` | The simulation is reproducible |
-| 0.2.0 | `core-contracts` | Shared shapes are enforced, not agreed |
-| 0.3.0 | `knowledge-model` | Magic and knowledge exist and can be lost |
-| 0.4.0 | `mages-and-species` | A universe runs on its own |
-| 0.5.0 | `agent-interface` | **The game becomes measurable** |
-| 0.6.0 | `god-agency` | The player has verbs |
-| 0.7.0 | `raid-engagement` | Universes can fight |
-| 0.8.0 | `gym-bridge` | Machines find the meta |
-| 0.9.0 | `electron-client` | Humans can play |
-| 0.10.0 | `pvp-server` | Humans can play each other |
-| 1.0.0 | — | Contracts freeze; public release |
+| Version | Change | What it makes true | Parity |
+|---|---|---|---|
+| 0.1.0 | `sim-core-foundation` | The simulation is reproducible | n/a |
+| 0.2.0 | `core-contracts` | Shared shapes are enforced, not agreed | n/a |
+| 0.3.0 | `knowledge-model` | Magic and knowledge exist and can be lost | n/a |
+| 0.4.0 | `mages-and-species` | A universe runs on its own | n/a |
+| 0.5.0 | `agent-interface` | **The game becomes measurable** | in flight |
+| 0.6.0 | — | **First validated line.** Baselines committed and green for knowledge and mages | validated |
+| 0.7.0 | `god-agency` | The player has verbs | in flight |
+| 0.8.0 | — | Worship loop proven not to run away | validated |
+| 0.9.0 | `raid-engagement` | Universes can fight | in flight |
+| 0.10.0 | — | Every raid terminates; arbitration never leaks | validated |
+| 0.11.0 | `gym-bridge` | Machines can play | in flight |
+| 0.12.0 | — | **Machine meta found**; baselines re-greened against learned agents | validated |
+| 0.13.0 | `electron-client` | Humans can play | in flight |
+| 0.14.0 | — | First playtest cohort completes without balance regression | validated |
+| 0.15.0 | `pvp-server` | Humans can play each other | in flight |
+| 0.16.0 | — | Zero desyncs; prestige does not decide matches | validated |
+| 1.0.0 | — | Contracts freeze; public release | validated |
 
-### One reordering, proposed
+The even releases carry no new capability. That is the point — they are the moment the previous
+odd release stops being a promise. **0.12.0 is the most important one in the plan**: it is where
+learned agents have played enough to expose strategies the scripted bots could not, and the
+baselines have been re-established against them. Shipping a client before that is shipping a game
+whose meta nobody has looked for.
 
-The original roadmap put the Electron client before the RL bridge. **Swapping them is more faithful
-to the stated philosophy:** machines discover the meta, *then* humans discover the human meta. If
-the client ships first, human playtesters become the primary balance signal by default — which is
-exactly the outcome the whole balance-first methodology exists to avoid.
+### Reordering — adopted
 
-The cost is that the first human playtest slips one milestone. That is the intended trade.
+The RL bridge now ships **before** the Electron client. Machines discover the meta, *then* humans
+discover the human meta. Shipping the client first would make human playtesters the primary balance
+signal by default, which is precisely the outcome the balance-first methodology exists to avoid.
+
+Cost: the first human playtest slips. That is the intended trade, and it is the whole reason the
+project was structured balance-first in the first place.
 
 ---
 
@@ -144,6 +171,8 @@ noise on identical seeds.
 
 ### 0.5.0 — `agent-interface` — the pivot
 
+Promoted to **0.6.0**, the first validated line, when baselines for `knowledge-model` and `mages-and-species` are committed and green.
+
 **Claim:** Ten thousand headless runs complete within the recorded time budget on eight workers,
 and every metric in `contracts.md` §7 is reported for every run.
 
@@ -156,9 +185,9 @@ identical aggregate metrics.
 - *Disproved by:* two identical sweeps producing differing metrics.
 - *Collected:* **yes**.
 
-### 0.6.0 — `god-agency`
+### 0.7.0 — `god-agency`
 
-**First release that can make a balance claim.**
+**First release that can make a balance claim.** Promoted to **0.8.0** when both claims below hold across a full sweep.
 
 **Claim:** No scripted god strategy in the bot pool exceeds a 65% win rate against the pool.
 
@@ -172,7 +201,9 @@ the sweep.
 - *Collected:* **yes**. This is the specific risk flagged in vision §6a and §7, and this is where
   it stops being a worry and becomes a number.
 
-### 0.7.0 — `raid-engagement`
+### 0.9.0 — `raid-engagement`
+
+Promoted to **0.10.0** when all three claims below hold across 10,000 raids.
 
 **Claim:** Every raid terminates. Across 10,000 Monte Carlo raids, zero exceed portal stability.
 
@@ -192,7 +223,9 @@ its band.
 - *Disproved by:* the metric leaving the band.
 - *Collected:* **yes**.
 
-### 0.8.0 — `gym-bridge`
+### 0.11.0 — `gym-bridge`
+
+Promoted to **0.12.0** when learned agents have played enough to expose strategies the scripted pool could not, and baselines have been re-established against them.
 
 **Claim:** The Python bridge sustains the recorded observation/action throughput and reproduces a
 recorded episode exactly.
@@ -204,7 +237,9 @@ recorded episode exactly.
 research, not a release promise, and putting them in release notes would be the exact failure this
 document exists to prevent.
 
-### 0.9.0 — `electron-client` — first human cohort
+### 0.13.0 — `electron-client` — first human cohort
+
+Promoted to **0.14.0** when a playtest cohort completes without a balance regression.
 
 **Claim:** A new player reaches their first granted founding knowledge without external
 instruction.
@@ -221,7 +256,9 @@ hash.
 - *Disproved by:* any divergence between client-displayed state and the authoritative snapshot.
 - *Collected:* **yes**, automatable.
 
-### 0.10.0 — `pvp-server`
+### 0.15.0 — `pvp-server`
+
+Promoted to **0.16.0** when both claims below hold.
 
 **Claim:** Zero desyncs. Across 1,000 automated matches, both clients produce identical final
 snapshot hashes.
@@ -250,9 +287,9 @@ MAJOR bump.
 
 Pre-1.0 there are no users, so releases ship on milestone boundaries.
 
-From **0.9.0** there are playtesters, and they become the release boundary: each playtest wave is a
+From **0.13.0** there are playtesters, and they become the release boundary: each playtest wave is a
 cohort, and a cohort experiences one version. This gives a sentence that means something to a human
-— "everyone in wave 3 played 0.9.2" — which is also the unit for judging whether a change helped.
+— "everyone in wave 3 played 0.13.2" — which is also the unit for judging whether a change helped.
 
 Post-1.0, cohorts are players who onboarded in a given window.
 
@@ -273,6 +310,6 @@ editor.
 ## Related skills
 
 - `release-process` — how code gets from a branch to production
-- `verify-release` — the human test plan for a release, required from 0.9.0
-- `wire-telemetry` — needed before 0.9.0's onboarding claim is verifiable
+- `verify-release` — the human test plan for a release, required from 0.13.0
+- `wire-telemetry` — needed before 0.13.0's onboarding claim is verifiable
 - `detect-drift` — whether these docs still match the code

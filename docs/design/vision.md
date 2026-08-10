@@ -355,12 +355,17 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 | 0.3.0 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | not started |
 | 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | not started |
 | 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | not started |
-| 0.6.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | not started |
-| 0.7.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | not started |
-| 0.8.0 | `gym-bridge` | `rl-bridge` | proposal only |
-| 0.9.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only |
-| 0.10.0 | `pvp-server` | `authoritative-lockstep`, `matchmaking`, `universe-persistence`, `hetzner-deployment` | proposal only |
+| 0.7.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | not started |
+| 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | not started |
+| 0.11.0 | `gym-bridge` | `rl-bridge` | proposal only |
+| 0.13.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only |
+| 0.15.0 | `pvp-server` | `authoritative-lockstep`, `matchmaking`, `universe-persistence`, `hetzner-deployment` | proposal only |
 | 1.0.0 | — | contracts freeze; public release | — |
+
+Versions skip because **MINOR parity encodes balance validation from 0.5.0 onward** — odd means
+in flight, even means the Monte Carlo baselines are committed and green. Every capability therefore
+ships twice: it lands odd, and is *promoted* to the next even MINOR once it is proven. The even
+releases carry no new features, which is exactly what makes them worth having.
 
 Steps through 0.4.0 produce a single universe that runs on its own. **0.5.0 makes it measurable** —
 before that, no claim about balance is verifiable, so none should be made. 0.6.0–0.7.0 make it a

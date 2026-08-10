@@ -73,6 +73,18 @@ breaks something that will not be noticed for months:
 4. **Golden replay fixtures are regenerated only by explicit command,** never as a test side
    effect. A regenerated fixture is a claim that behavior changed on purpose.
 
+## Versioning
+
+`docs/design/release-plan.md` is authoritative. Two rules that are easy to violate by accident:
+
+- **MINOR parity encodes balance validation from 0.5.0 onward.** Odd = in flight, even = Monte
+  Carlo baselines committed and green. Never take an even MINOR without the baseline job passing —
+  the whole value of the scheme is that an even version is a claim someone could check.
+- **Every release gets a tag.** An untagged release is not a rollback target.
+
+Every release states a claim that could turn out to be false, plus the measurement that would
+disprove it and whether that measurement is actually collected. "Improved X" is not a claim.
+
 ## Conventions
 
 - Commits are authored with the repo owner's git identity (`lizTheDeveloper`), not an inferred one.
