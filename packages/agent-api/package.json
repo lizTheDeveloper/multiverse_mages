@@ -1,0 +1,27 @@
+{
+  "name": "@mm/agent-api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Observation and action space, legality masks, and boundary normalization. Skeleton — the interface lands in agent-interface.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "//": "Not covered by the rules-path float ban: contracts.md §4.1 makes this the ONE place floating point is permitted, on the observation export path. The dependency runs one way — rules packages never import this.",
+  "scripts": {
+    "build": "tsc --build"
+  }
+}

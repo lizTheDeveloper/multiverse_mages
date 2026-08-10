@@ -1,0 +1,27 @@
+{
+  "name": "@mm/state",
+  "version": "0.0.0",
+  "private": true,
+  "description": "World state types, component layouts, and the single ruleset arbitration function every rules package shares.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "//": "Rules-path code: no runtime dependencies, no Node built-ins, integer-only. See scripts/check-purity.mjs and the RULES_SRC block in eslint.config.mjs. @mm/content is imported for TYPES ONLY — its public surface re-exports a loader that reads the filesystem, so a value import would make this package Node-bound in an Electron renderer.",
+  "scripts": {
+    "build": "tsc --build"
+  }
+}

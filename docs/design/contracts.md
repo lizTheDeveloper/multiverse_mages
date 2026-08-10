@@ -477,15 +477,32 @@ computation, and no simulation behaviour may depend on whether it was requested.
 packages/
   sim-core        deterministic substrate. Depends on: nothing.
   content         data files + loader + validator. Depends on: sim-core (types only).
-  rules-magic     grid legality, nodes, knowledge instances, traditions. → sim-core, content
-  rules-world     mages, species, populace, universities, economy.        → sim-core, content
-  rules-raid      engagement space, combat, objectives, consequences.     → sim-core, content, rules-magic, rules-world
-  agent-api       observation/action space, legality masks.               → sim-core, rules-*
+  state           §1 world state types, component layouts, permits().     → sim-core, content (types only)
+  primitives      §3 stacking arithmetic and cap clamping.                → sim-core, content (types only)
+  rules-magic     grid legality, nodes, knowledge instances, traditions. → sim-core, content, state, primitives
+  rules-world     mages, species, populace, universities, economy.        → sim-core, content, state, primitives
+  rules-raid      engagement space, combat, objectives, consequences.     → sim-core, content, state, primitives, rules-magic, rules-world
+  agent-api       observation/action space, legality masks.               → sim-core, content, state, primitives, rules-*
   mc-harness      worker pool, sweeps, balance metrics.                   → agent-api
   client-electron renderer. Reads snapshots. Computes no rules.           → agent-api (read path only)
   server          authoritative lockstep, Hetzner deployment.             → agent-api
   gym-bridge      JSON-over-stdio RL wrapper.                             → agent-api
 ```
+
+**`state` is a deviation from this list as originally drawn, added during `core-contracts`.**
+`state-schema` requires one set of world-state type definitions that every rules package consumes,
+and the original list had nowhere to put them: `sim-core` must stay content-agnostic — its entity
+store knows nothing about magic — and putting them in `rules-magic` would force `rules-world` to
+import it for the mage layout, which is exactly the cycle rule 3 forbids. Its edge to `content` is
+**types only** because `content`'s public surface re-exports a filesystem-reading loader, and
+`state` runs inside the Electron renderer.
+
+**`primitives` is the second deviation, added for the same underlying reason: §5 was drawn before
+anyone tried to satisfy it.** §3's stacking arithmetic needs `sim-core`'s fixed-point helpers *and*
+the primitive registry that lives in `content`. `content` is in the dependency-purity check's
+`PURE_PACKAGES` and may take no runtime dependency, so the arithmetic cannot live there; and §3
+forbids re-deriving a floor outside the one shared helper, so it cannot live anywhere that would
+have to reimplement one. A package between the two is the only placement that satisfies both.
 
 **Enforced rules:**
 

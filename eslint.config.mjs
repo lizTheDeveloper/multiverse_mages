@@ -28,7 +28,39 @@ import tseslint from 'typescript-eslint';
  * outside this glob, where floats and Node built-ins are legitimate.
  */
 const CORE_SRC = ['packages/sim-core/src/**/*.ts', 'packages/sim-core/bench/**/*.ts'];
-const CORE_TEST = ['packages/sim-core/test/**/*.ts'];
+
+/**
+ * The rest of the rules path, held to the same bans as the core.
+ *
+ * `contracts.md` §0 puts the float ban on *the rules path*, not on one package,
+ * so a package outside this glob is a package where `0.5` compiles. The list is
+ * enumerated rather than written as `packages/rules-*` plus a wildcard because
+ * two packages must stay out of it and the reason differs for each:
+ *
+ * - `agent-api` is the one place floating point is permitted (§4.1): it
+ *   normalizes the observation to a `Float64Array` on the way out. Banning
+ *   floats there would ban the contract.
+ * - `mc-harness` is host-side tooling — worker processes, result files, a wall
+ *   clock to report throughput. Its determinism obligation is to run the core
+ *   faithfully, not to be integer-only itself.
+ *
+ * `content` is also absent, and deliberately so: it parses author-facing JSON,
+ * where a malformed float has to be *detected* before it can be rejected.
+ */
+const RULES_SRC = [
+  'packages/state/src/**/*.ts',
+  'packages/rules-magic/src/**/*.ts',
+  'packages/rules-world/src/**/*.ts',
+  'packages/rules-raid/src/**/*.ts',
+];
+
+const CORE_TEST = [
+  'packages/sim-core/test/**/*.ts',
+  'packages/state/test/**/*.ts',
+  'packages/rules-magic/test/**/*.ts',
+  'packages/rules-world/test/**/*.ts',
+  'packages/rules-raid/test/**/*.ts',
+];
 
 /**
  * `packages/primitives` is rules path: it is where effect-primitive magnitudes
@@ -287,7 +319,7 @@ export default tseslint.config(
 
   {
     // ---- Simulation core: purity is enforced here, not asked for politely. ----
-    files: CORE_SRC,
+    files: [...CORE_SRC, ...RULES_SRC],
     rules: {
       'no-restricted-globals': ['error', ...NONDETERMINISTIC_GLOBALS],
       'no-restricted-imports': BAN_NODE_BUILTINS,

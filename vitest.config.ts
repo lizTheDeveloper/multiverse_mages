@@ -28,6 +28,7 @@ export default defineConfig({
       // so a test could quietly pass against a stale build.
       '@mm/content': packageSrc('content'),
       '@mm/primitives': packageSrc('primitives'),
+      '@mm/state': packageSrc('state'),
     },
   },
   test: {

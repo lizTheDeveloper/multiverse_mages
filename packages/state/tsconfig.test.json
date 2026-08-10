@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the state tests. Never emits into dist/.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./test",
+    "types": ["node"],
+    "emitDeclarationOnly": true,
+    "outDir": "../../.tsbuild/state-test",
+    "tsBuildInfoFile": "../../.tsbuild/state-test.tsbuildinfo"
+  },
+  "include": ["test/**/*.ts"],
+  "references": [{ "path": "./tsconfig.json" }, { "path": "../content" }]
+}

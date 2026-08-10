@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Library build. `types: []` is deliberate — state is rules-path code and must not see Node's ambient types, exactly like sim-core.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "types": []
+  },
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../sim-core" }, { "path": "../content" }]
+}

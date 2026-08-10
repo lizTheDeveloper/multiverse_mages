@@ -1,0 +1,27 @@
+{
+  "name": "@mm/rules-magic",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Grid legality, nodes, knowledge instances, and tradition hooks. Skeleton — the rules land in knowledge-model.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "//": "Rules-path code: no runtime dependencies, no Node built-ins, integer-only. Per contracts.md §5 it may import sim-core, content, and state — and MUST NOT import rules-world or agent-api.",
+  "scripts": {
+    "build": "tsc --build"
+  }
+}
