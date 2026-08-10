@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/form.schema.json",
+  "title": "form.json",
+  "description": "The fourteen forms — what magic is done to. `bit` positions are dense, stable, and serialized into snapshots (contracts.md §2.1).",
+  "type": "array",
+  "minItems": 14,
+  "maxItems": 14,
+  "items": { "$ref": "#/$defs/form" },
+  "$defs": {
+    "form": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "gloss", "bit"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "bit": { "type": "integer", "minimum": 0, "maximum": 13 }
+      }
+    },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}

@@ -10,18 +10,18 @@
 
 ## 2. Content package and schemas
 
-- [ ] 2.1 Create `packages/content` with zero runtime dependencies beyond a schema validator used at build/test time
-- [ ] 2.2 Author JSON Schemas for technique, form, cell, node, species, tradition, and primitive
-- [ ] 2.3 Implement the loader with hard-fail validation and errors naming file path and JSON pointer
-- [ ] 2.4 Implement deterministic string-to-integer ID interning, stable across processes
-- [ ] 2.5 Implement graph integrity checks: prerequisite cycles, missing references, inverted tiers, and cells carrying both an interdiction and a dispensation
-- [ ] 2.6 Implement the validation CLI and wire it into CI
-- [ ] 2.7 Author the 5 techniques and 14 forms with dense, stable bit assignments
-- [ ] 2.8 Author the 70 cell definitions with classical labels, flagging exactly 12 as `v1` and including `rego-limen`
-- [ ] 2.9 Author placeholder node graphs for the 12 v1 cells, magnitudes explicitly marked as untuned
-- [ ] 2.10 Author the 6 species definitions from `vision.md` §6
-- [ ] 2.11 Author the 3 v1 traditions with their four hooks each
-- [ ] 2.12 Unit test that malformed content fails the load rather than being skipped
+- [x] 2.1 Create `packages/content` with zero runtime dependencies beyond a schema validator used at build/test time
+- [x] 2.2 Author JSON Schemas for technique, form, cell, node, species, tradition, and primitive
+- [x] 2.3 Implement the loader with hard-fail validation and errors naming file path and JSON pointer
+- [x] 2.4 Implement deterministic string-to-integer ID interning, stable across processes
+- [x] 2.5 Implement graph integrity checks: prerequisite cycles, missing references, inverted tiers, and cells carrying both an interdiction and a dispensation
+- [x] 2.6 Implement the validation CLI and wire it into CI
+- [x] 2.7 Author the 5 techniques and 14 forms with dense, stable bit assignments
+- [x] 2.8 Author the 70 cell definitions with classical labels, flagging exactly 12 as `v1` and including `rego-limen`
+- [x] 2.9 Author placeholder node graphs for the 12 v1 cells, magnitudes explicitly marked as untuned
+- [x] 2.10 Author the 6 species definitions from `vision.md` §6
+- [x] 2.11 Author the 3 v1 traditions with their four hooks each
+- [x] 2.12 Unit test that malformed content fails the load rather than being skipped
 
 ## 3. Primitive semantics
 

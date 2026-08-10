@@ -24,6 +24,9 @@ export default defineConfig({
     // run never depends on a prior build.
     alias: {
       '@mm/sim-core': packageSrc('sim-core'),
+      // Without the alias the workspace symlink resolves @mm/content to dist/,
+      // so a test could quietly pass against a stale build.
+      '@mm/content': packageSrc('content'),
     },
   },
   test: {

@@ -16,9 +16,10 @@
     "typecheck": "tsc --build",
     "lint": "eslint .",
     "check:purity": "node scripts/check-purity.mjs",
+    "check:content": "node packages/content/bin/validate-content.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run test"
+    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run test"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/species.schema.json",
+  "title": "species.json",
+  "description": "The six playable species (contracts.md §2.4, vision.md §6). Every `fp` trait is higher-is-better, including `rediscoveryAffinity`, which is applied as a divisor.",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/species" },
+  "$defs": {
+    "species": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "lifespanMonths",
+        "lifespanVarianceMonths",
+        "maturityMonths",
+        "curiosity",
+        "depthCeiling",
+        "learnRate",
+        "retention",
+        "fertility",
+        "scribeAffinity",
+        "rediscoveryAffinity",
+        "mageAptitude",
+        "laborAffinity",
+        "affinities",
+        "tuningStatus"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "lifespanMonths": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "lifespanVarianceMonths": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+        "maturityMonths": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "curiosity": { "$ref": "#/$defs/fp" },
+        "depthCeiling": { "type": "integer", "minimum": 1, "maximum": 7 },
+        "learnRate": { "$ref": "#/$defs/fp" },
+        "retention": { "$ref": "#/$defs/fp" },
+        "fertility": { "$ref": "#/$defs/fp" },
+        "scribeAffinity": { "$ref": "#/$defs/fp" },
+        "rediscoveryAffinity": { "$ref": "#/$defs/fp" },
+        "mageAptitude": { "$ref": "#/$defs/fp" },
+        "laborAffinity": { "$ref": "#/$defs/fp" },
+        "affinities": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/contentId" },
+          "additionalProperties": { "$ref": "#/$defs/fp" }
+        },
+        "personality": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "curiosity": { "$ref": "#/$defs/fp" },
+            "ambition": { "$ref": "#/$defs/fp" },
+            "caution": { "$ref": "#/$defs/fp" }
+          }
+        },
+        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
+      }
+    },
+    "fp": { "type": "integer", "minimum": 1, "maximum": 1073741823 },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}

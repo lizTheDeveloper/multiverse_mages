@@ -1,0 +1,32 @@
+[
+  {
+    "id": "creo",
+    "name": "Creo",
+    "gloss": "make, create, heal",
+    "bit": 0
+  },
+  {
+    "id": "intellego",
+    "name": "Intellego",
+    "gloss": "perceive, know, scry",
+    "bit": 1
+  },
+  {
+    "id": "muto",
+    "name": "Muto",
+    "gloss": "transform",
+    "bit": 2
+  },
+  {
+    "id": "perdo",
+    "name": "Perdo",
+    "gloss": "unmake, destroy, wither",
+    "bit": 3
+  },
+  {
+    "id": "rego",
+    "name": "Rego",
+    "gloss": "control, bind, compel",
+    "bit": 4
+  }
+]
