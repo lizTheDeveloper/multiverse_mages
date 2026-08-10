@@ -1,12 +1,12 @@
 ## 1. Shared types and state schema
 
-- [ ] 1.1 Define TypeScript types for universe, mage, populace cohort, university, library, grimoire, and knowledge instance per `contracts.md` §1
-- [ ] 1.2 Define engagement-only types: combatant and raid state, including fixed-point positions
-- [ ] 1.3 Register component layouts with the `sim-core` entity store, asserting that no world-scale component includes position
-- [ ] 1.4 Implement `permits(universe, cellId)` with interdiction taking precedence over dispensation
-- [ ] 1.5 Implement the derived "node exists in universe" index, maintained incrementally and never cached in state
-- [ ] 1.6 Exclude engagement entities from world snapshot serialization while preserving clock mode and engagement tick
-- [ ] 1.7 Unit test arbitration across all four cases: both axes permitted, dispensation, interdiction, and neither
+- [x] 1.1 Define TypeScript types for universe, mage, populace cohort, university, library, grimoire, and knowledge instance per `contracts.md` §1
+- [x] 1.2 Define engagement-only types: combatant and raid state, including fixed-point positions
+- [x] 1.3 Register component layouts with the `sim-core` entity store, asserting that no world-scale component includes position
+- [x] 1.4 Implement `permits(universe, cellId)` with interdiction taking precedence over dispensation
+- [x] 1.5 Implement the derived "node exists in universe" index, maintained incrementally and never cached in state
+- [x] 1.6 Exclude engagement entities from world snapshot serialization while preserving clock mode and engagement tick
+- [x] 1.7 Unit test arbitration across all four cases: both axes permitted, dispensation, interdiction, and neither
 
 ## 2. Content package and schemas
 
@@ -45,11 +45,11 @@
 
 ## 5. Module boundaries and RNG registry
 
-- [ ] 5.1 Create the workspace package skeletons named in `contracts.md` §5
-- [ ] 5.2 Implement the dependency-graph test asserting every rule, including the no-cycle rule between `rules-magic` and `rules-world`
-- [ ] 5.3 Implement the RNG subsystem stream registry as an append-only enumeration
-- [ ] 5.4 Implement the registry test rejecting renumbering and duplicate IDs, with an error explaining the balance-baseline consequence
-- [ ] 5.5 Verify a deliberately introduced forbidden import fails CI, then revert it
+- [x] 5.1 Create the workspace package skeletons named in `contracts.md` §5
+- [x] 5.2 Implement the dependency-graph test asserting every rule, including the no-cycle rule between `rules-magic` and `rules-world`
+- [x] 5.3 Implement the RNG subsystem stream registry as an append-only enumeration
+- [x] 5.4 Implement the registry test rejecting renumbering and duplicate IDs, with an error explaining the balance-baseline consequence
+- [x] 5.5 Verify a deliberately introduced forbidden import fails CI, then revert it
 
 ## 6. Closeout
 
