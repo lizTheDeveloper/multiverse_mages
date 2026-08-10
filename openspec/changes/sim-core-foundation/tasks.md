@@ -88,11 +88,11 @@ be deleted without a single test going red.*
       test that a manifest with a runtime dependency exits non-zero and names the dependency
 - [ ] 10.5 Test that the benchmark runner emits one parseable JSON object with numeric
       `stepsPerSecond` and `entityUpdatesPerSecond`, and exits zero
-- [ ] 10.6 Assert the golden failure message's content — fixture filename and diverging tick —
+- [x] 10.6 Assert the golden failure message's content — fixture filename and diverging tick —
       rather than only that a divergence is detected
-- [ ] 10.7 Test the fixture-immutability guarantee on the failing path, against a temporary
+- [x] 10.7 Test the fixture-immutability guarantee on the failing path, against a temporary
       fixtures directory with one expected hash altered
-- [ ] 10.8 Test that regeneration rewrites a changed fixture and names it, and writes nothing when
+- [x] 10.8 Test that regeneration rewrites a changed fixture and names it, and writes nothing when
       no scenario changed
-- [ ] 10.9 Make the migration-chain test order-sensitive, or compare against an envelope authored
+- [x] 10.9 Make the migration-chain test order-sensitive, or compare against an envelope authored
       directly at the current version

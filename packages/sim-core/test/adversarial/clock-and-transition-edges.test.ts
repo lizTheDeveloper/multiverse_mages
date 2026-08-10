@@ -25,7 +25,7 @@ import { CORE_ACTION, step } from '../../src/step.js';
 const world = defineWorld({ components: [], systems: [] });
 
 describe('multiple identical illegal transitions submitted in one tick', () => {
-  it('AMBIGUITY: ten illegal enterEngagement actions increment the counter once, not ten times', () => {
+  it('counts every illegal enterEngagement in a batch, not just one', () => {
     // step.ts scans `actions` and folds every enterEngagement/leaveEngagement
     // kind into a single `transition` variable — the *last* matching action
     // wins, then `applyTransition` is called exactly once. Submitting the
@@ -55,13 +55,17 @@ describe('multiple identical illegal transitions submitted in one tick', () => {
     }));
     state = step(state, tenIllegalRequests, rngFromRootSeed(1));
 
-    // Documents the actual, current behaviour.
-    expect(state.illegalActionCount).toBe(1);
+    // RESOLVED: each submission is now judged in order against the mode the
+    // ones before it asked for, so all ten count. contracts.md §4.2's
+    // per-action wording won the argument — an `illegalActionRate` that
+    // under-reports against a per-submission denominator is a balance metric
+    // nobody would think to distrust.
+    expect(state.illegalActionCount).toBe(10);
   });
 });
 
 describe('conflicting transition actions in the same tick', () => {
-  it('AMBIGUITY: a legal transition is silently discarded when a later illegal one is submitted in the same tick', () => {
+  it('no longer discards a legal transition paired with a conflicting one', () => {
     // Submitting `enterEngagement` (legal, from world mode) followed by
     // `leaveEngagement` (illegal, since the clock has not actually entered
     // engagement yet) in the *same* actions array: step.ts's scan loop
@@ -86,15 +90,18 @@ describe('conflicting transition actions in the same tick', () => {
       rngFromRootSeed(2),
     );
 
-    // Documents the actual, current behaviour: the tick just advances world
-    // time normally, as if neither action had been submitted, except that
-    // the counter silently attributes an illegal leaveEngagement.
+    // RESOLVED, and this test is why. Under sequential evaluation the pair
+    // reads as "enter, then leave": both legal, netting to no mode change.
+    // The tick advances world time and nothing is counted illegal. What
+    // matters is what no longer happens — a legal `enterEngagement` is no
+    // longer discarded with zero effect and zero trace, which was the
+    // sharpest thing adversarial testing found in the spine.
     expect(state.clock.mode).toBe(TIME_MODE.world);
     expect(state.clock.worldTick).toBe(1);
-    expect(state.illegalActionCount).toBe(1);
+    expect(state.illegalActionCount).toBe(0);
   });
 
-  it('AMBIGUITY: a system-requested transition unconditionally overrides a CORE_ACTION from the same tick', () => {
+  it('lets a system override a CORE_ACTION from the same tick, by documented precedence', () => {
     // step.ts's order: (1) scan `actions`, setting `transition` for any
     // CORE_ACTION found; (2) run systems, which can reassign `transition`
     // via ctx.requestEngagement()/requestWorldTime(); (3) apply whatever
@@ -121,11 +128,15 @@ describe('conflicting transition actions in the same tick', () => {
     // A legal enterEngagement request, from world mode.
     state = step(state, [{ kind: CORE_ACTION.enterEngagement }], rngFromRootSeed(3));
 
-    // The system's (illegal, since not yet in engagement) requestWorldTime()
-    // call overrides the action's legal request. The god's enterEngagement
-    // is silently discarded; the system's contrary request is counted.
+    // RESOLVED, and the precedence is now stated in step.ts rather than
+    // being an accident of which loop ran last: actions are read first, then
+    // systems, so a system sees what the god asked for and may override it.
+    // A raid that must begin as a rules consequence outranks a request to
+    // stay in world time. Under sequential evaluation both requests here are
+    // legal — enter, then leave — so the tick nets to no mode change and
+    // nothing is counted illegal.
     expect(state.clock.mode).toBe(TIME_MODE.world);
-    expect(state.illegalActionCount).toBe(1);
+    expect(state.illegalActionCount).toBe(0);
   });
 });
 

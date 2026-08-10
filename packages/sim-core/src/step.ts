@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import type { TimeMode } from './clock.js';
 import { TIME_MODE, advanceClock, currentTick, enterEngagement, leaveEngagement } from './clock.js';
 import type { RngSource } from './rng/source.js';
 import type { Action, StepContext, SimState } from './state.js';
@@ -34,10 +35,57 @@ export const CORE_ACTION = {
   leaveEngagement: 65535,
 } as const;
 
-/** No transition requested this tick. */
-const NO_TRANSITION = 0;
-const TO_ENGAGEMENT = 1;
-const TO_WORLD = 2;
+/**
+ * Tracks the mode this tick is heading for, evaluating each request in
+ * submission order against the mode that would hold when it arrived.
+ *
+ * The obvious implementation — fold every request into one "final wish" and
+ * apply it at the end — was what this did first, and adversarial testing found
+ * two things wrong with it, neither of which the spec settles:
+ *
+ * 1. Ten illegal `enterEngagement` actions in one tick counted as **one**
+ *    illegal action. `contracts.md` §4.2 says an agent that submits an illegal
+ *    action gets a no-op and a counter increment — per action. Undercounting
+ *    makes `illegalActionRate` (§7) quietly wrong against any per-submission
+ *    denominator, which is a balance metric nobody would think to distrust.
+ * 2. Worse: submitting `[enterEngagement, leaveEngagement]` from world mode
+ *    applied *neither*. Last-one-wins made the illegal `leaveEngagement` the
+ *    final wish, so the **legal** `enterEngagement` produced no effect and left
+ *    no trace anywhere — not in the clock, not in the counter. A legal action
+ *    that silently does nothing is the worst outcome available: an agent
+ *    cannot learn from it and a human cannot debug it.
+ *
+ * Sequential evaluation fixes both and costs one integer. A tick may now
+ * legally return to the mode it started in, having transitioned twice; that
+ * nets to no clock change, which is correct — it is what the caller asked for.
+ */
+class PendingMode {
+  #mode: TimeMode;
+  readonly #initial: TimeMode;
+
+  constructor(mode: TimeMode) {
+    this.#mode = mode;
+    this.#initial = mode;
+  }
+
+  /** Whether the mode ends the tick somewhere other than it started. */
+  get changed(): boolean {
+    return this.#mode !== this.#initial;
+  }
+
+  get target(): TimeMode {
+    return this.#mode;
+  }
+
+  /** Requests a mode. Returns `false` — meaning illegal — if already there. */
+  request(mode: TimeMode): boolean {
+    if (this.#mode === mode) {
+      return false;
+    }
+    this.#mode = mode;
+    return true;
+  }
+}
 
 /**
  * Advances the simulation by one tick.
@@ -52,14 +100,16 @@ const TO_WORLD = 2;
  * author will depend on it:
  *
  * 1. Clone. Nothing below can be observed by the caller's state.
- * 2. Run systems in schema order, each seeing the tick the state *arrived*
+ * 2. Read the clock actions in submission order, each judged against the mode
+ *    the ones before it asked for. See {@link PendingMode}.
+ * 3. Run systems in schema order, each seeing the tick the state *arrived*
  *    with. A system that draws randomness keys on that tick, so what a
  *    subsystem rolls is a function of when it rolled, not of how many systems
  *    ran before it.
- * 3. Apply at most one mode transition.
- * 4. Advance the clock exactly once.
+ * 4. Apply the net mode change, if the tick ends somewhere it did not begin.
+ * 5. Advance the clock exactly once.
  *
- * Steps 3 and 4 in that order are why entering engagement does not also age the
+ * Steps 4 and 5 in that order are why entering engagement does not also age the
  * world by a month: the transition lands first, so the advance that follows is
  * an engagement tick.
  *
@@ -81,28 +131,25 @@ export function step(state: SimState, actions: readonly Action[], rng: RngSource
   const tick = currentTick(next.clock);
   const mode = next.clock.mode;
 
-  let transition = NO_TRANSITION;
-  const context: StepContext = {
-    state: next,
-    actions,
-    rng,
-    tick,
-    mode,
-    requestEngagement() {
-      transition = TO_ENGAGEMENT;
-    },
-    requestWorldTime() {
-      transition = TO_WORLD;
-    },
+  const pending = new PendingMode(mode);
+  const requestMode = (target: TimeMode): void => {
+    if (!pending.request(target)) {
+      next.noteIllegalAction();
+    }
   };
 
+  // Actions first, then systems. A system therefore sees the mode the god's
+  // actions have already asked for, and can override it — a raid that must
+  // begin as a rules consequence outranks a request to stay in world time.
+  // Stated because it is precedence, and undocumented precedence is a bug
+  // waiting for two readers to disagree.
   for (const action of actions) {
     switch (action.kind) {
       case CORE_ACTION.enterEngagement:
-        transition = TO_ENGAGEMENT;
+        requestMode(TIME_MODE.engagement);
         break;
       case CORE_ACTION.leaveEngagement:
-        transition = TO_WORLD;
+        requestMode(TIME_MODE.world);
         break;
       default:
         // Every other kind belongs to a rules layer, which reads `ctx.actions`
@@ -113,43 +160,32 @@ export function step(state: SimState, actions: readonly Action[], rng: RngSource
     }
   }
 
+  const context: StepContext = {
+    state: next,
+    actions,
+    rng,
+    tick,
+    mode,
+    requestEngagement() {
+      requestMode(TIME_MODE.engagement);
+    },
+    requestWorldTime() {
+      requestMode(TIME_MODE.world);
+    },
+  };
+
   for (const system of next.schema.systems) {
     system.run(context);
   }
 
-  applyTransition(next, transition);
+  if (pending.changed) {
+    if (pending.target === TIME_MODE.engagement) {
+      enterEngagement(next.clock);
+    } else {
+      leaveEngagement(next.clock);
+    }
+  }
 
   advanceClock(next.clock);
   return next;
-}
-
-/**
- * Applies a requested mode transition, counting a redundant one as illegal.
- *
- * Redundant rather than exceptional: `contracts.md` §4.2 requires an illegal
- * action to be a cheap no-op and a counter increment. An agent that has not
- * learned the clock yet will ask to enter an engagement it is already in
- * thousands of times per training run, and each one must cost a branch and a
- * increment, not a thrown error and an unwound step.
- */
-function applyTransition(state: SimState, transition: number): void {
-  if (transition === NO_TRANSITION) {
-    return;
-  }
-
-  const inEngagement = state.clock.mode === TIME_MODE.engagement;
-  if (transition === TO_ENGAGEMENT) {
-    if (inEngagement) {
-      state.noteIllegalAction();
-      return;
-    }
-    enterEngagement(state.clock);
-    return;
-  }
-
-  if (!inEngagement) {
-    state.noteIllegalAction();
-    return;
-  }
-  leaveEngagement(state.clock);
 }

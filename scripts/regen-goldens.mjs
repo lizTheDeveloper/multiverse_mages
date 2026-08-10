@@ -32,7 +32,7 @@
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { registerHooks } from 'node:module';
-import { join } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
@@ -64,7 +64,36 @@ registerHooks({
 
 const GOLDEN_DIR = new URL('../packages/sim-core/test/golden/', import.meta.url);
 const CORE_SRC = new URL('../packages/sim-core/src/', import.meta.url);
-const FIXTURES_DIR = fileURLToPath(new URL('./fixtures/', GOLDEN_DIR));
+const COMMITTED_FIXTURES_DIR = fileURLToPath(new URL('./fixtures/', GOLDEN_DIR));
+
+/**
+ * Where fixtures are written. Defaults to the committed directory — typing
+ * `npm run goldens:regen` must keep meaning exactly what it has always meant.
+ *
+ * `--fixtures <dir>` exists so the tests covering *this command's* behaviour
+ * (that it rewrites a changed fixture and names it, and writes nothing at all
+ * when nothing changed) can run against a throwaway copy. Those properties are
+ * only observable on a run that actually writes something, and the one
+ * directory a test may never make it write to is this repository's.
+ *
+ * Note what the flag does not do: it does not let a test regenerate the
+ * committed fixtures by omission or accident, because omitting it is the safe
+ * case and supplying it is the deliberate one.
+ */
+function fixturesDirFromArgv(argv) {
+  const flag = argv.indexOf('--fixtures');
+  if (flag === -1) {
+    return COMMITTED_FIXTURES_DIR;
+  }
+  const value = argv[flag + 1];
+  if (value === undefined || value.startsWith('--')) {
+    console.error('--fixtures requires a directory path.');
+    process.exit(2);
+  }
+  return isAbsolute(value) ? value : resolve(process.cwd(), value);
+}
+
+const FIXTURES_DIR = fixturesDirFromArgv(process.argv.slice(2));
 
 /** Dynamic, because the hooks above must be registered before anything resolves. */
 const { GOLDEN_SCENARIOS } = await import(new URL('./scenarios.ts', GOLDEN_DIR).href);
@@ -123,6 +152,10 @@ function record(scenario) {
 
 if (!existsSync(FIXTURES_DIR)) {
   mkdirSync(FIXTURES_DIR, { recursive: true });
+}
+
+if (FIXTURES_DIR !== COMMITTED_FIXTURES_DIR) {
+  console.log(`Writing to ${FIXTURES_DIR} — NOT the committed fixtures.\n`);
 }
 
 /** @type {{ file: string, status: string }[]} */

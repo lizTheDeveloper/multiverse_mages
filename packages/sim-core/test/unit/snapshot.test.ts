@@ -269,19 +269,60 @@ describe('the format is versioned and self-describing', () => {
 });
 
 describe('migration', () => {
+  /**
+   * ## The two steps do not commute, and that is the whole design
+   *
+   * The chain used to be "one step doubles `wealth.values`, the other rebases
+   * `contentRevision`" — two edits to disjoint fields, which produce the same
+   * envelope in either order. A registry that walked its steps backwards, or in
+   * registration order, or in `Map` insertion order, passed that test. The
+   * scenario `world-persistence` states is *"migrations are applied in ascending
+   * version order"*, and a test that cannot tell ascending from descending is
+   * not evidence for it.
+   *
+   * So both steps now write the same two fields with operations that disagree
+   * under composition: doubling then adding is not adding then doubling. The
+   * ascending answer and the descending answer are different numbers, and the
+   * test asserts the first and rejects the second by name.
+   *
+   * They are also registered high-to-low, so an implementation applying steps in
+   * the order they were handed to it lands on the descending answer rather than
+   * stumbling onto the right one.
+   */
+  type Envelope = ReturnType<typeof decodeSnapshot>;
+
+  const DOUBLED = (value: number): number => (value * 2) >>> 0;
+  /** Added to every coin balance by the v2 -> v3 step. */
+  const BONUS = 7;
+  /** Added to the content revision by the same step. */
+  const BONUS_REVISION = 1;
+
+  /** Rewrites every value of the wealth component, leaving every other field alone. */
+  const remapWealth = (
+    components: Envelope['components'],
+    f: (value: number) => number,
+  ): Envelope['components'] =>
+    components.map((component) =>
+      component.name === 'wealth' ? { ...component, values: component.values.map(f) } : component,
+    );
+
   const registry = new MigrationRegistry();
-  // v1 -> v2: the wealth component gained its coins by doubling.
+  // v2 -> v3: every balance gained a flat joining bonus, and the content
+  // revision ticked by one.
+  registry.register(2, (envelope) => ({
+    ...envelope,
+    version: 3,
+    contentRevision: (envelope.contentRevision + BONUS_REVISION) >>> 0,
+    components: remapWealth(envelope.components, (value) => (value + BONUS) >>> 0),
+  }));
+  // v1 -> v2: the wealth component gained its coins by doubling, and the
+  // content revision doubled with them.
   registry.register(1, (envelope) => ({
     ...envelope,
     version: 2,
-    components: envelope.components.map((component) =>
-      component.name === 'wealth'
-        ? { ...component, values: component.values.map((v) => (v * 2) >>> 0) as Uint32Array }
-        : component,
-    ),
+    contentRevision: DOUBLED(envelope.contentRevision),
+    components: remapWealth(envelope.components, DOUBLED),
   }));
-  // v2 -> v3: content revision was rebased.
-  registry.register(2, (envelope) => ({ ...envelope, version: 3, contentRevision: 999 }));
 
   const atVersion = (version: number) => {
     const buffer = serializeState(populated());
@@ -290,19 +331,64 @@ describe('migration', () => {
     return buffer;
   };
 
+  /** What `populated()` writes, and what the two steps together must produce. */
+  const OLD_COINS = 4000000000;
+  const OLD_REVISION = 0xabcdef01;
+  const ASCENDING_COINS = (DOUBLED(OLD_COINS) + BONUS) >>> 0;
+  const ASCENDING_REVISION = (DOUBLED(OLD_REVISION) + BONUS_REVISION) >>> 0;
+  /** What applying the same two steps in the wrong order would produce. */
+  const DESCENDING_COINS = DOUBLED(OLD_COINS + BONUS);
+  const DESCENDING_REVISION = DOUBLED(OLD_REVISION + BONUS_REVISION);
+
+  const wealthOf = (envelope: Envelope) =>
+    envelope.components.find((component) => component.name === 'wealth')!;
+
   it('applies a single registered migration', () => {
     const envelope = registry.migrate(decodeSnapshot(atVersion(1)), 2);
     expect(envelope.version).toBe(2);
-    const wealthComponent = envelope.components.find((c) => c.name === 'wealth')!;
-    expect(wealthComponent.values[0]).toBe((4000000000 * 2) >>> 0);
+    expect(wealthOf(envelope).values[0]).toBe(DOUBLED(OLD_COINS));
   });
 
-  it('applies a chain in ascending version order', () => {
+  it('applies a chain in ascending version order, not in registration order', () => {
     const envelope = registry.migrate(decodeSnapshot(atVersion(1)), 3);
     expect(envelope.version).toBe(3);
-    expect(envelope.contentRevision).toBe(999);
-    const wealthComponent = envelope.components.find((c) => c.name === 'wealth')!;
-    expect(wealthComponent.values[0]).toBe((4000000000 * 2) >>> 0);
+    expect(wealthOf(envelope).values[0]).toBe(ASCENDING_COINS);
+    expect(envelope.contentRevision).toBe(ASCENDING_REVISION);
+
+    // Stated as its own assertion rather than left implicit in the numbers
+    // above, so that the next person to read this can see what it is ruling
+    // out. The steps were registered 2 first, 1 second; these are the values a
+    // registry that ran them in that order would produce.
+    expect(DESCENDING_COINS).not.toBe(ASCENDING_COINS);
+    expect(DESCENDING_REVISION).not.toBe(ASCENDING_REVISION);
+    expect(wealthOf(envelope).values[0]).not.toBe(DESCENDING_COINS);
+    expect(envelope.contentRevision).not.toBe(DESCENDING_REVISION);
+  });
+
+  it('lands on exactly the envelope a snapshot authored at the current version decodes to', () => {
+    // The scenario's second clause: *"the result matches a snapshot authored
+    // directly at the current version"*. Asserting the two fields the
+    // migrations touch would leave the interesting failure uncovered — a step
+    // that dropped a component, reordered the entity tables, or quietly
+    // resized the free list would still show the right coin balance. Whole-
+    // envelope equality is the only form of the claim that catches those.
+    //
+    // The authored side is built and serialized independently, then decoded
+    // from its own bytes: it is a snapshot this build would have written, not
+    // the migrated object with the same fields patched in.
+    const base = decodeSnapshot(serializeState(populated()));
+    const authored = decodeSnapshot(
+      encodeSnapshot({
+        ...base,
+        version: 3,
+        contentRevision: ASCENDING_REVISION,
+        // `populated()` gives wealth exactly one row of one field, so setting
+        // every value is setting the one value.
+        components: remapWealth(base.components, () => ASCENDING_COINS),
+      }),
+    );
+
+    expect(registry.migrate(decodeSnapshot(atVersion(1)), 3)).toEqual(authored);
   });
 
   it('names the missing step when no migration path exists', () => {

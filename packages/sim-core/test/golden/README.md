@@ -33,13 +33,38 @@ quietly stopped meaning anything.
 
 ## Layout
 
-| Path                | What it is                                                                     |
-| ------------------- | ------------------------------------------------------------------------------ |
-| `fixtures/*.json`   | The committed recordings. One file per fixture. Discovered, never listed.       |
-| `worlds.ts`         | The world registry: stable world ID → `WorldSchema`. Fixtures name an ID.       |
-| `scenarios.ts`      | The recipes the fixtures were recorded from. Read only by the regen command.    |
-| `fixture-format.ts` | The on-disk format: canonical rendering, strict parsing, `Recording` adaptation. |
-| `golden.test.ts`    | The verification suite.                                                        |
+| Path                          | What it is                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------- |
+| `fixtures/*.json`             | The committed recordings. One file per fixture. Discovered, never listed.        |
+| `worlds.ts`                   | The world registry: stable world ID → `WorldSchema`. Fixtures name an ID.        |
+| `scenarios.ts`                | The recipes the fixtures were recorded from. Read only by the regen command.     |
+| `fixture-format.ts`           | The on-disk format: canonical rendering, strict parsing, `Recording` adaptation.  |
+| `harness.ts`                  | Discovery, replay, and the failure message — with the two seams described below. |
+| `golden.test.ts`              | The verification suite. Calls the harness with no options.                       |
+| `golden-failure.test.ts`      | What the harness *says* when a fixture stops reproducing.                        |
+| `golden-immutability.test.ts` | That a **failing** run rewrites nothing.                                         |
+| `golden-regeneration.test.ts` | What `goldens:regen` writes, and what it refuses to write.                       |
+
+### Testing the gate on the path it is about
+
+A determinism gate's safety properties are properties of the **failing** run: the failure message
+names the fixture and the tick, a failing run rewrites nothing, and regeneration writes only when
+behaviour actually changed. In a green repository none of those paths is ever taken, so for a while
+they were checked only where nothing failed — which is to say, not checked.
+
+`harness.ts` exposes two seams that make the failing path reachable, both defaulting to exactly what
+the committed suite does:
+
+- **`fixturesDir`** — a test copies the fixtures somewhere temporary, breaks one, and watches what
+  the harness does. The committed fixtures are read, never written.
+- **`resolveWorld`** — a test replays a genuine fixture against `academyDriftingFrom(T)`, a world
+  built by appending one system to the real academy so its rules change at exactly tick `T`. That
+  is the executable form of "a change introduced nondeterminism": the harness must report tick `T`,
+  and say so in its message.
+
+The regeneration command takes `--fixtures <dir>` for the same reason. It defaults to the committed
+directory, so `npm run goldens:regen` means what it always meant, and the tests covering the command
+supply a throwaway directory — the one place a test may make it write.
 
 `worlds.ts` exists so that a fixture and the command that regenerated it resolve the *same*
 `WorldSchema` from the *same* code. A fixture that encoded one world and was verified against

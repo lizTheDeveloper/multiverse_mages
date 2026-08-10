@@ -105,6 +105,42 @@ const NODE_BUILTIN_IMPORTS = [
   ...new Set([...builtinModules, ...builtinModules.map((m) => `node:${m}`)]),
 ];
 
+/**
+ * `no-restricted-imports` only visits static `import`/`export` declarations, so
+ * `await import('node:fs')` and `require('fs')` walked straight through both the
+ * enumerated path list and the `node:*` pattern below. Found by an adversarial
+ * agent probing the ban rather than trusting it — which is the whole argument
+ * for testing enforcement machinery: the rule had been correct-looking and
+ * porous since the day it was written, and nothing would ever have said so.
+ *
+ * Expressed as syntax selectors because `no-restricted-imports` cannot describe
+ * a call expression at all.
+ *
+ * Banned outright rather than filtered down to Node built-ins. Two reasons, and
+ * the second is the real one:
+ *
+ * - The core is dependency-free and loads nothing lazily, so it has no
+ *   legitimate use for `import()` at all. A blanket ban costs nothing.
+ * - A selector matching only built-in specifiers has to embed the module list
+ *   in a regex, and several of those names contain a `/` (`fs/promises`,
+ *   `stream/web`). A rule that is fiddly to express is a rule that gets a
+ *   subtle hole later — which is exactly the history of the ban it patches.
+ */
+const BAN_DYNAMIC_IMPORT = {
+  selector: 'ImportExpression',
+  message:
+    'The simulation core performs no I/O and imports no Node built-ins — a dynamic import is ' +
+    'still an import, and static `no-restricted-imports` cannot see one. The core loads nothing ' +
+    'lazily; it must run unchanged in Node, Electron, and a browser.',
+};
+
+const BAN_REQUIRE = {
+  selector: "CallExpression[callee.name='require']",
+  message:
+    'require() is CommonJS and, in the core, is a way to reach a Node built-in past the import ' +
+    'ban. The simulation core is ESM and imports no Node built-ins.',
+};
+
 const BAN_NODE_BUILTINS = [
   'error',
   {
@@ -172,6 +208,8 @@ export default tseslint.config(
         BAN_FLOAT_NUMBER_MEMBERS,
         BAN_DECIMAL_LITERAL,
         BAN_NEGATIVE_EXPONENT_LITERAL,
+        BAN_DYNAMIC_IMPORT,
+        BAN_REQUIRE,
       ],
       '@typescript-eslint/no-explicit-any': 'error',
     },

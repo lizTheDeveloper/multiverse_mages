@@ -210,3 +210,46 @@ export function worldById(id: string): WorldSchema {
   }
   return world;
 }
+
+/**
+ * The academy, with its rules deliberately changed from `fromTick` onward.
+ *
+ * **Never registered in {@link GOLDEN_WORLDS}, and no fixture may name it.** It
+ * exists so a test can execute the one scenario nobody can commit: a change
+ * that makes the simulation stop reproducing a recorded run. "Introduce a
+ * nondeterministic operation" is not something CI can run — a permanently
+ * nondeterministic branch cannot live in the repository — but replaying a
+ * genuine fixture against a world whose behaviour changes at a *known* tick
+ * asks the harness the same question and has a checkable answer: it must report
+ * that tick, and say so in the message.
+ *
+ * Built by appending to the real academy's systems rather than by restating
+ * them, so the pre-`fromTick` half of the run cannot silently drift away from
+ * the world the fixtures were recorded against. If it did, the divergence would
+ * be reported at tick 0 and the test would be checking nothing.
+ *
+ * The drift is a bare increment on an existing field: no new draws, so it moves
+ * no RNG stream, and no create or destroy, so it cannot change which entities
+ * exist. The reported tick is then exactly the tick the rules changed, which is
+ * the fact under test.
+ */
+export function academyDriftingFrom(fromTick: number): WorldSchema {
+  const drift: System = {
+    name: 'drift',
+    run(ctx) {
+      if (ctx.tick < fromTick) {
+        return;
+      }
+      const sch = ctx.state.component('scholarship');
+      const insight = sch.field('insight');
+      sch.forEach((row) => {
+        insight[row] = (insight[row] as number) + 1;
+      });
+    },
+  };
+
+  return defineWorld({
+    components: [vitality, scholarship],
+    systems: [enrolment, study, attrition, drift],
+  });
+}
