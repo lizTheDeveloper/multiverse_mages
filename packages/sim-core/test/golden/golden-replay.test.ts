@@ -16,7 +16,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { TIME_MODE, replayAndLocate, snapshotHash } from '@mm/sim-core';
+import { TIME_MODE, replay, replayAndLocate, snapshotHash } from '@mm/sim-core';
 
 import { FIXTURE_DIR, loadFixtures, toRecording } from './fixture.ts';
 import { GOLDEN_ACTION } from './worlds.ts';
@@ -101,6 +101,14 @@ describe('every committed fixture reproduces its recorded hash', () => {
   }
 });
 
+/**
+ * These assertions are about what a fixture *covers*, not about whether it
+ * reproduces, so they run through `replay` rather than `replayAndLocate`.
+ * `replayAndLocate` stops at the first divergence and hands back the state it
+ * stopped at — correct for locating a bug, and useless for asking what the run
+ * exercised. Using it here would make one real regression cascade into a page
+ * of unrelated failures about slot counts.
+ */
 describe('each fixture still exhibits the coverage it claims', () => {
   const byName = new Map(loaded.map((entry) => [entry.fixture.name, entry]));
 
@@ -114,7 +122,7 @@ describe('each fixture still exhibits the coverage it claims', () => {
     expect(kinds.has(65534)).toBe(false);
     expect(kinds.has(65535)).toBe(false);
 
-    const state = replayAndLocate(toRecording(entry!.fixture), entry!.schema).state;
+    const state = replay(toRecording(entry!.fixture), entry!.schema);
     expect(state.clock.mode).toBe(TIME_MODE.world);
     expect(state.clock.worldTick).toBe(entry!.fixture.tickCount);
   });
@@ -126,7 +134,7 @@ describe('each fixture still exhibits the coverage it claims', () => {
     expect(kinds.has(65534)).toBe(true);
     expect(kinds.has(65535)).toBe(true);
 
-    const state = replayAndLocate(toRecording(entry!.fixture), entry!.schema).state;
+    const state = replay(toRecording(entry!.fixture), entry!.schema);
     // World time advanced on fewer ticks than were stepped, because the
     // engagement ticks did not age the world.
     expect(state.clock.worldTick).toBeLessThan(entry!.fixture.tickCount);
@@ -139,7 +147,7 @@ describe('each fixture still exhibits the coverage it claims', () => {
     const kinds = actionKinds(entry!.fixture);
     expect(kinds.has(GOLDEN_ACTION.cull)).toBe(true);
 
-    const state = replayAndLocate(toRecording(entry!.fixture), entry!.schema).state;
+    const state = replay(toRecording(entry!.fixture), entry!.schema);
     // More entities were created than slots exist: the difference is reuse.
     expect(state.entities.slotCount).toBeGreaterThan(16);
     expect(state.entities.liveCount).toBeLessThan(state.entities.slotCount);
