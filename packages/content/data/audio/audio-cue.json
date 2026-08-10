@@ -1,0 +1,50 @@
+[
+  {
+    "id": "click-tick",
+    "kind": "click", "band": "presence", "grid": "unquantized",
+    "durationMs": 4, "levelDbTenths": -300, "variants": 5, "pitchJitterCents": 15,
+    "prompt": "A single fingernail tapping once on glazed ceramic, very close mic, dry room, no reverb, crisp high transient",
+    "post": "Gate to 4 ms, HPF 400 Hz, -30 dBFS",
+    "subject": "hover", "source": "2", "densityThreshold": 0
+  },
+  {
+    "id": "click-latch",
+    "kind": "click", "band": "presence", "grid": "unquantized",
+    "durationMs": 12, "levelDbTenths": -180, "variants": 5, "pitchJitterCents": 15,
+    "prompt": "A small brass mechanism engaging with a precise click, followed by a faint sustained metallic ring",
+    "post": "Split: click to 12 ms; ring becomes the sustain layer, tuned to root",
+    "subject": "arm-intervention", "source": "2.1", "densityThreshold": 0
+  },
+  {
+    "id": "click-commit",
+    "kind": "click", "band": "presence", "grid": "downbeat",
+    "durationMs": 40, "levelDbTenths": -140, "variants": 5, "pitchJitterCents": 15,
+    "prompt": "A wooden stamp pressed firmly onto thick paper on a stone table, single hit, close, dry",
+    "post": "Layer with a 60 Hz sine thump, 40 ms",
+    "subject": "resolve-action", "source": "2", "densityThreshold": 0
+  },
+  {
+    "id": "click-deny",
+    "kind": "click", "band": "presence", "grid": "unquantized",
+    "durationMs": 8, "levelDbTenths": -200, "variants": 5, "pitchJitterCents": 15,
+    "prompt": "A single dry wooden knock with no resonance, damped immediately, dead room",
+    "post": "Gate to 8 ms, remove all tail",
+    "subject": "illegal-action", "source": "2.2", "densityThreshold": 0
+  },
+  {
+    "id": "click-detent",
+    "kind": "click", "band": "presence", "grid": "unquantized",
+    "durationMs": 6, "levelDbTenths": -220, "variants": 5, "pitchJitterCents": 15,
+    "prompt": "A rotary switch clicking one position, small metal detent, close mic",
+    "post": "Pitch-shift per step",
+    "subject": "threshold-step", "source": "2", "densityThreshold": 0
+  },
+  {
+    "id": "click-seal",
+    "kind": "click", "band": "low-mid", "grid": "downbeat",
+    "durationMs": 700, "levelDbTenths": -120, "variants": 3, "pitchJitterCents": 0,
+    "prompt": "Hot wax seal pressed onto parchment, slow press and slow release, heavy, close, quiet room tone",
+    "post": "Keep the full 700 ms",
+    "subject": "irreversible-action", "source": "2.4", "densityThreshold": 0
+  }
+]

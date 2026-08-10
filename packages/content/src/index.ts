@@ -70,4 +70,20 @@ export {
 export type { CliOutput } from './cli.js';
 export { runValidation } from './cli.js';
 
+export {
+  AUDIO_FILES,
+  audioSchemas,
+  validateAudioContent,
+  loadAudioContent,
+  shippedAudioDirectory,
+} from './audio.js';
+export type { AudioFileName, AudioValidationResult } from './audio.js';
+export type {
+  AudioCueRecord,
+  AudioCueKind,
+  AudioBand,
+  AudioGridPosition,
+  VoiceLineBankRecord,
+} from './audio-types.js';
+
 export * from './types.js';

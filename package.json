@@ -18,10 +18,11 @@
     "check:purity": "node scripts/check-purity.mjs",
     "goldens:regen": "node --experimental-strip-types scripts/regen-goldens.mjs",
     "check:content": "node packages/content/bin/validate-content.mjs",
+    "check:audio": "node packages/content/bin/validate-audio.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "bench": "tsc -p packages/sim-core/bench/tsconfig.run.json && node scripts/bench.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run test"
+    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run test"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

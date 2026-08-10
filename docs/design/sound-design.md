@@ -83,23 +83,17 @@ one that lacks it is the one that turns a mature universe into noise.
 ### 0.5 Licensing
 
 `CLAUDE.md`: assets are licensed separately from code, and the AGPL is not assumed to cover
-non-software assets cleanly.
+non-software assets cleanly. **Resolved 2026-08-10; the position is recorded in `ASSET-LICENSE.md`
+at the repository root.**
 
-- **Audio assets and the voice-line text in §8 are licensed CC BY-SA 4.0**, copyright Ann Kelner.
-  This is the natural copyleft counterpart to the AGPL and keeps the project's stance consistent.
-- **Unresolved, and flagged rather than answered: whether AI-generated audio may be committed to
-  this repository at all.** Two questions, both needing a human decision before a single generated
-  file lands:
-  1. What the generation service's terms grant — specifically whether output can be sublicensed
-     under CC BY-SA 4.0, which requires the generator to grant rights it may not grant.
-  2. Whether AI-generated audio is copyrightable at all in the relevant jurisdictions, and
-     therefore whether "licensed CC BY-SA 4.0" is even a meaningful claim over it.
-
-  These are not blockers for *this document*, which contains only prose and prompts. They are hard
-  blockers on committing generated `.wav` files, and this repository is public and permanent, so
-  the mistake is not reversible. Resolve before generating at volume.
-- The voice lines in §8 are **prose written here** and are unambiguously ours to license, whatever
-  is decided about generated audio.
+- **Written material — the voice lines in §8, the prompts in §9, and this document — is CC BY-SA
+  4.0**, copyright Ann Kelner. Human-authored, unambiguously ours to license, share-alike as the
+  counterpart to the AGPL.
+- **Generated audio carries no asserted rights.** Whether machine-generated audio is copyrightable
+  is unsettled and quite possibly no. Copyleft needs ownership to attach to, so claiming CC BY-SA
+  over the output would be an empty claim rather than a protective one. Asserting nothing is the
+  honest version, and it puts the library beyond enclosure by anyone else too.
+- **This unblocks generation.** §9 can be run as a batch job.
 
 ### 0.6 Content sourcing
 
