@@ -654,6 +654,20 @@
     "tuningStatus": "untuned"
   },
   {
+    "id": "rn-keep-the-name-close",
+    "cell": "rego-nomen",
+    "name": "Keep the Name Close",
+    "gloss": "Hold your own name in your own keeping, so that it does not answer when someone else uses it. Taught in the same term as Compel by Name, by professors who consider that an ethics curriculum.",
+    "tier": 2,
+    "prerequisites": ["rn-call-by-name"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "concealment", "magnitude": 160, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
     "id": "rn-compel-by-name",
     "cell": "rego-nomen",
     "name": "Compel by Name",

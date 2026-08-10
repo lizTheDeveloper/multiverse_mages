@@ -24,7 +24,12 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { ContentValidationError, loadContent, validateContent } from '@mm/content';
+import {
+  ContentValidationError,
+  V1_REDISCOVERY_AUTHORING_FLOOR,
+  loadContent,
+  validateContent,
+} from '@mm/content';
 import type { ContentDiagnostic } from '@mm/content';
 
 import { brokenSource, recordById, recordsOf } from './fixtures.js';
@@ -159,7 +164,7 @@ describe('invalid content is a hard load failure', () => {
     expect(messages(subset)).toContain('exactly 12');
   });
 
-  it('rejects a v1 set that is not a rectangle, naming the uneven axes', () => {
+  it('rejects a v1 set that is not a rectangle, naming the uneven axes and the cells on them', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {
         // Swap one cell out of the rectangle for one outside it: still twelve.
@@ -171,6 +176,43 @@ describe('invalid content is a hard load failure', () => {
     expect(messages(subset)).toContain('rectangle');
     expect(messages(subset)).toContain('technique "creo" covers 1 forms');
     expect(messages(subset)).toContain('form "ignem" covers 1 techniques');
+    // tasks.md 2.2 asks the error to name the offending *cells*, not only the
+    // axes. An author reading "technique creo covers 1 forms" still has to grep
+    // cell.json to find which one; naming it closes that gap. The intact axes
+    // stay unnamed, so the message points at the defect rather than listing the
+    // whole subset back.
+    expect(messages(subset)).toContain('creo-ignem');
+    expect(messages(subset)).not.toContain('rego-limen');
+  });
+
+  it('rejects a v1 node below the rediscovery authoring floor, naming node and floor', () => {
+    const diagnostics = expectHardFail(
+      brokenSource((documents) => {
+        // fp(4096) clears the schema's hard fp(3072) invariant, so this reaches
+        // phase 3 rather than dying at schema — which is exactly the case that
+        // matters. contracts.md §2.3 rejects fp(4096) *by name*: the best
+        // rediscoverer (gnome, affinity fp(1792)) turns it into 2340, below the
+        // hard floor, so the trait clamps flat and stops existing.
+        recordById(documents, 'node.json', 'rl-open-the-portal')['rediscoveryMultiplier'] = 4096;
+      }),
+    );
+    const invariant = diagnostics.filter((d) => d.code === 'content-invariant');
+    expect(invariant).toHaveLength(1);
+    expect(invariant[0]?.file).toBe('node.json');
+    expect(invariant[0]?.message).toContain('rl-open-the-portal');
+    expect(invariant[0]?.message).toContain('4096');
+    expect(invariant[0]?.message).toContain('5376');
+    expect(invariant[0]?.pointer).toContain('/rediscoveryMultiplier');
+  });
+
+  it('accepts a node authored exactly at the rediscovery authoring floor', () => {
+    // The passing control: the floor is inclusive, so the rejection above is
+    // about being below it rather than about the field having been touched.
+    const source = brokenSource((documents) => {
+      recordById(documents, 'node.json', 'rl-open-the-portal')['rediscoveryMultiplier'] =
+        V1_REDISCOVERY_AUTHORING_FLOOR;
+    });
+    expect(validateContent(source).diagnostics).toEqual([]);
   });
 
   it('rejects removing rego-limen from the v1 subset', () => {
