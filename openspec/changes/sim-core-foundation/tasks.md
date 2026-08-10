@@ -11,10 +11,10 @@
 
 ## 2. Fixed-point arithmetic
 
-- [ ] 2.1 Implement the fixed-point module at scale 1/1024 with `fromInt`, `toInt`, `mul`, `div`, `lerp`
-- [ ] 2.2 Implement `div` rounding toward negative infinity through a single shared helper used by all division
-- [ ] 2.3 Unit test round-trip conversion, negative-value rounding symmetry, and overflow boundaries
-- [ ] 2.4 Property-test `mul` and `div` associativity and monotonicity within the documented precision bound
+- [x] 2.1 Implement the fixed-point module at scale 1/1024 with `fromInt`, `toInt`, `mul`, `div`, `lerp`
+- [x] 2.2 Implement `div` rounding toward negative infinity through a single shared helper used by all division
+- [x] 2.3 Unit test round-trip conversion, negative-value rounding symmetry, and overflow boundaries
+- [x] 2.4 Property-test `mul` and `div` associativity and monotonicity within the documented precision bound
 
 ## 3. Splittable PRNG
 

@@ -12,16 +12,28 @@
  */
 
 /**
- * Scaffolding placeholder.
+ * `@mm/sim-core` — the pure, dependency-free, deterministic substrate every
+ * consumer of the simulation shares: the Monte Carlo balance harness, the
+ * Electron client, the PvP server, and the later RL bridge.
  *
- * This package is deliberately empty of behaviour: task group 1 of
- * `sim-core-foundation` establishes the toolchain and the purity enforcement
- * only. Fixed-point arithmetic, the splittable PRNG, the entity store, the
- * clock, snapshots, and replay land in task groups 2 through 8 and are exported
- * from here.
- *
- * The value exists so the barrel has something to export and so the toolchain
- * (typecheck, lint, test) is exercised against a real module rather than an
- * empty file. Delete it once the first real module lands.
+ * Landed so far (`sim-core-foundation` task groups 2 and 3): fixed-point
+ * arithmetic and the splittable PRNG. The entity store, the dual-scale clock,
+ * snapshots, and replay land in groups 4 through 8 and are exported from here.
  */
-export const SIM_CORE_SCAFFOLD_ONLY = true;
+
+export { floorDiv } from './fixed-point/divide.js';
+
+export type { Fixed } from './fixed-point/fixed-point.js';
+export {
+  FP_INT_MAX,
+  FP_INT_MIN,
+  FP_MAX,
+  FP_MIN,
+  FP_ONE,
+  FP_SHIFT,
+  div,
+  fromInt,
+  lerp,
+  mul,
+  toInt,
+} from './fixed-point/fixed-point.js';
