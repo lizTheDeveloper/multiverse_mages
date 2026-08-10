@@ -1,0 +1,27 @@
+{
+  "name": "@mm/sim-core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pure, dependency-free deterministic simulation core for Multiverse Mages.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "//": "This package MUST NOT gain dependencies, peerDependencies, optionalDependencies, or bundledDependencies. See scripts/check-purity.mjs.",
+  "scripts": {
+    "build": "tsc --build"
+  }
+}

@@ -1,13 +1,13 @@
 ## 1. Repository and toolchain
 
-- [ ] 1.1 Create npm workspaces monorepo root with `packages/*` and pinned Node 22 via `.nvmrc` and `engines`
-- [ ] 1.2 Add strict TypeScript config (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) shared by workspaces
-- [ ] 1.3 Scaffold `packages/sim-core` with zero runtime dependencies and no Node built-in imports
-- [ ] 1.4 Add Vitest and a `test` script that runs unit tests and the golden suite together
-- [ ] 1.5 Add ESLint with `no-restricted-globals` / `no-restricted-syntax` banning `Math.random`, `Date.now`, `new Date()`, `performance.now()`, and `Intl` inside `packages/sim-core/src`
-- [ ] 1.6 Add a dependency-purity check that fails if `packages/sim-core/package.json` gains any runtime dependency
-- [ ] 1.7 Add a lint rule rejecting non-integer numeric literals and floating-point `Math.*` calls in the rules path
-- [ ] 1.8 Add CI workflow running typecheck, lint, purity check, and tests on pinned Node 22, plus a non-blocking job on the next Node major
+- [x] 1.1 Create npm workspaces monorepo root with `packages/*` and pinned Node 22 via `.nvmrc` and `engines`
+- [x] 1.2 Add strict TypeScript config (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) shared by workspaces
+- [x] 1.3 Scaffold `packages/sim-core` with zero runtime dependencies and no Node built-in imports
+- [x] 1.4 Add Vitest and a `test` script that runs unit tests and the golden suite together
+- [x] 1.5 Add ESLint with `no-restricted-globals` / `no-restricted-syntax` banning `Math.random`, `Date.now`, `new Date()`, `performance.now()`, and `Intl` inside `packages/sim-core/src`
+- [x] 1.6 Add a dependency-purity check that fails if `packages/sim-core/package.json` gains any runtime dependency
+- [x] 1.7 Add a lint rule rejecting non-integer numeric literals and floating-point `Math.*` calls in the rules path
+- [x] 1.8 Add CI workflow running typecheck, lint, purity check, and tests on pinned Node 22, plus a non-blocking job on the next Node major
 
 ## 2. Fixed-point arithmetic
 

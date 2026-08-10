@@ -1,0 +1,32 @@
+{
+  "name": "multiverse-mages",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Multiverse Mages — a real-time strategy game in which the player is the god of magic for a universe.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "scripts": {
+    "typecheck": "tsc --build",
+    "lint": "eslint .",
+    "check:purity": "node scripts/check-purity.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^22.19.2",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2",
+    "vitest": "^3.2.4"
+  }
+}

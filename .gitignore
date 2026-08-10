@@ -3,6 +3,9 @@ dist/
 .DS_Store
 *.log
 mc-results/
+.tsbuild/
+*.tsbuildinfo
+coverage/
 
 # agent worktrees
 .claude/worktrees/
