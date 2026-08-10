@@ -3,7 +3,8 @@
 ### Requirement: Fixed-shape observation
 
 The observation emitted for any universe at any tick SHALL have a constant shape, sized from the
-full content space (70 cells, 6 species, 7 tiers) rather than from the v1 subset. Variable-length
+full content space (70 cells, 6 species, 8 mage slots — the seven tiers plus the untaught) rather
+than from the v1 subset. Variable-length
 data MUST be bucketed or summarized, never emitted raw.
 
 #### Scenario: Shape is constant across universes
@@ -52,7 +53,14 @@ revoking an edict, and changing tradition.
 #### Scenario: Ruleset actions unavailable mid-raid
 
 - **WHEN** an observation is taken while the clock is in engagement mode
-- **THEN** the mask entries for actions 1 through 7 and action 13 are all false
+- **THEN** every action except no-op is masked
+
+*Widened during implementation. This scenario named actions 1-7 and 13, but `contracts.md` §4.2 is
+explicit that the rule covers 8-12, 14 and 15 equally — blessing a defender mid-raid or declaring
+ascension to escape a losing one violates frozen policy exactly as squarely as forbidding a
+technique does, and it says in terms that silence in an earlier draft was not permission. The
+implemented mask closes all fifteen non-noop actions, so a later-added action is masked by
+default rather than by someone remembering to add it here.*
 
 #### Scenario: Ruleset actions available at world scale
 
