@@ -809,6 +809,22 @@ function validateEnvelopeShape(envelope: SnapshotEnvelope): void {
     throw new Error(`Snapshot format version ${envelope.version} does not fit the u16 header field.`);
   }
 
+  // The header's four scalars, checked on the way OUT as well as on the way in.
+  //
+  // They were previously validated only in `envelopeToState`, so encoding took
+  // whatever it was given and `SnapshotWriter.u32` reduced it mod 2^32. That is
+  // the worst available failure mode: an out-of-range value does not fail, it
+  // becomes a different, entirely legitimate-looking value — an
+  // `illegalActionCount` of 2^32 round-trips as 0, and nothing anywhere says so.
+  // `illegalActionCount` is unbounded and, per contracts.md §4.2, incremented
+  // constantly by learning agents; `contentRevision` is worse still, because
+  // §0 makes it the gate on whether two universes may interact at all, and it
+  // is a writable field on a live state.
+  requireCount(envelope.illegalActionCount, 'illegal-action count');
+  requireCount(envelope.contentRevision, 'content revision');
+  requireCount(envelope.clock.worldTick, 'world tick');
+  requireCount(envelope.clock.engagementTick, 'engagement tick');
+
   const { generations, alive, freeList } = envelope.entities;
   if (generations.length !== alive.length) {
     throw new Error(

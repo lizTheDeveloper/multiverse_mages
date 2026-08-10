@@ -27,10 +27,20 @@ export default defineConfig({
     },
   },
   test: {
-    // `npm test` runs the unit tests and the golden replay suite together, in
-    // one command, so a determinism regression cannot pass by running only the
-    // fast half. The golden suite lands in task group 8 under test/golden.
-    include: ['packages/*/test/unit/**/*.test.ts', 'packages/*/test/golden/**/*.test.ts'],
+    // `npm test` runs the unit tests, the golden replay suite, and the
+    // adversarial suite together, in one command, so a determinism regression
+    // cannot pass by running only the fast half.
+    //
+    // `test/adversarial` holds tests written by agents whose brief was to break
+    // this package rather than to demonstrate it. They are listed explicitly
+    // because a directory that is not in this glob is a directory whose tests
+    // silently never run — which is how a suite grows tests nobody has executed
+    // in months.
+    include: [
+      'packages/*/test/unit/**/*.test.ts',
+      'packages/*/test/golden/**/*.test.ts',
+      'packages/*/test/adversarial/**/*.test.ts',
+    ],
     environment: 'node',
     // Deterministic reporting: no randomised file or test ordering.
     sequence: { shuffle: false, concurrent: false },

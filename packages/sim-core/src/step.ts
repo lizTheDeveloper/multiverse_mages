@@ -140,7 +140,7 @@ function applyTransition(state: SimState, transition: number): void {
   const inEngagement = state.clock.mode === TIME_MODE.engagement;
   if (transition === TO_ENGAGEMENT) {
     if (inEngagement) {
-      state.illegalActionCount += 1;
+      state.noteIllegalAction();
       return;
     }
     enterEngagement(state.clock);
@@ -148,7 +148,7 @@ function applyTransition(state: SimState, transition: number): void {
   }
 
   if (!inEngagement) {
-    state.illegalActionCount += 1;
+    state.noteIllegalAction();
     return;
   }
   leaveEngagement(state.clock);

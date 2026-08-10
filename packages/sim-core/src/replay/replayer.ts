@@ -17,6 +17,29 @@ import type { SimState, WorldSchema } from '../state.js';
 import { step } from '../step.js';
 import type { Recording } from './recorder.js';
 
+/**
+ * Rejects a recording whose declared length disagrees with its action log.
+ *
+ * `Recorder` cannot produce one — it derives `tickCount` from the log. But a
+ * `Recording` is a plain object, and the ones that matter most are assembled by
+ * hand: a golden fixture read off disk, a desync report from a PvP peer. If
+ * `tickCount` exceeded the log, `actionLog.at(tick)` would return `[]` and the
+ * replay would silently pad the run with empty ticks; if it fell short, the
+ * replay would silently stop early. Either way the replay *succeeds*, at a
+ * different final hash than the run it claims to reproduce — and a divergence
+ * report that blames the rules for a malformed input is worse than no report.
+ */
+function assertConsistentLength(recording: Recording): void {
+  if (recording.tickCount !== recording.actionLog.length) {
+    throw new Error(
+      `Recording declares ${recording.tickCount} ticks but its action log holds ` +
+        `${recording.actionLog.length}. A replay cannot reproduce a run whose length is ` +
+        'ambiguous: the difference would be silently padded with empty ticks or silently ' +
+        'truncated, and either way would report a divergence the rules did not cause.',
+    );
+  }
+}
+
 export interface ReplayOptions {
   /**
    * Called after each step. Intended for progress reporting and for tests that
@@ -41,6 +64,7 @@ export function replay(
   schema: WorldSchema,
   options: ReplayOptions = {},
 ): SimState {
+  assertConsistentLength(recording);
   let state = deserializeState(recording.initialSnapshot, schema);
   const rng = rngFromRootSeed(recording.rootSeed);
 
@@ -84,6 +108,7 @@ export function replayAndLocate(
   schema: WorldSchema,
   options: ReplayOptions = {},
 ): DivergenceResult {
+  assertConsistentLength(recording);
   const tickHashes = recording.tickHashes;
   let state = deserializeState(recording.initialSnapshot, schema);
   const rng = rngFromRootSeed(recording.rootSeed);

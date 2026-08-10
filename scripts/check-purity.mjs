@@ -23,12 +23,41 @@
  * rule that can be checked mechanically.
  *
  * This script is tooling, not simulation code: it may use Node built-ins.
+ *
+ * Usage:
+ *
+ *     node scripts/check-purity.mjs            # this repository (what CI runs)
+ *     node scripts/check-purity.mjs <root>     # any directory laid out like it
+ *
+ * The optional root exists so the *failing* path is reachable from a test. With
+ * the root hard-coded, the only way to observe a failure was to add a runtime
+ * dependency to the real manifest, which no test may do — so the branch that
+ * gives this script its entire purpose was never once executed. Passing a
+ * temporary directory instead costs one argument and makes it testable.
  */
 
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { resolve, sep } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const REPO_ROOT = new URL('../', import.meta.url);
+/** The repository this script lives in — the no-argument behaviour CI depends on. */
+const DEFAULT_ROOT = new URL('../', import.meta.url);
+
+/**
+ * The directory to check package manifests under.
+ *
+ * The trailing separator is load-bearing. `new URL('packages/x/package.json',
+ * base)` resolves relative to the base's *directory*, so a base without a
+ * trailing slash silently drops its last segment and the check would inspect a
+ * sibling of the intended root rather than the root itself.
+ */
+function resolveRoot(args) {
+  const [root] = args;
+  if (root === undefined) return DEFAULT_ROOT;
+  return pathToFileURL(resolve(root) + sep);
+}
+
+const REPO_ROOT = resolveRoot(process.argv.slice(2));
 
 /** Packages whose runtime dependency list must stay empty. */
 const PURE_PACKAGES = ['packages/sim-core'];

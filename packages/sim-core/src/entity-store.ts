@@ -420,6 +420,21 @@ export class EntityStore {
       if (seenFree.has(slot)) {
         throw new Error(`Snapshot free list names slot ${slot} twice.`);
       }
+      // A retired slot must never be reusable. `destroy` already declines to
+      // free one, so no genuine snapshot can contain this — but a corrupted or
+      // hand-crafted one can, and without this check it loads *successfully*
+      // and then throws from the next unrelated `create()`, with an error that
+      // says nothing about snapshots. That is the failure this spec's "reject
+      // with a descriptive error rather than returning a partial state" exists
+      // to prevent: the state here is not partial, it is fully formed, plausible
+      // and wrong.
+      if ((input.generations[slot] as number) > MAX_ENTITY_GENERATION) {
+        throw new Error(
+          `Snapshot free list names slot ${slot}, which is retired at generation ` +
+            `${input.generations[slot] as number}. A retired slot has no generation left for a ` +
+            'handle to encode and must never be reused.',
+        );
+      }
       seenFree.add(slot);
     }
 

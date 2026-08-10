@@ -20,6 +20,7 @@ import { EntityStore } from './entity-store.js';
 import type { RngSource } from './rng/source.js';
 
 const UINT32_COUNT = 4294967296;
+const UINT32_MAX = 4294967295;
 
 /**
  * One submission to `step`.
@@ -206,6 +207,23 @@ export class SimState {
       );
     }
     return new SimState(schema, rootSeed, contentRevision);
+  }
+
+  /**
+   * Counts one rejected action, saturating at the `uint32` ceiling.
+   *
+   * Saturating rather than wrapping, and rather than being left unbounded.
+   * The counter is a `uint32` in the snapshot header, and a training run that
+   * submitted illegal actions for long enough would otherwise either wrap to a
+   * smaller number than it started at — reporting *fewer* rejections than
+   * actually happened — or grow past what the format can encode and make the
+   * state unserializable, which turns a cosmetic overflow into a lost run.
+   * A saturated counter reads honestly as "at least this many".
+   */
+  noteIllegalAction(): void {
+    if (this.illegalActionCount < UINT32_MAX) {
+      this.illegalActionCount += 1;
+    }
   }
 
   /** A component's storage, by name. Throws if the world does not declare it. */

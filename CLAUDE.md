@@ -57,7 +57,17 @@ table uses the real change and capability IDs so it stays in sync with `openspec
 - `openspec show <change>` / `openspec validate <change> --strict`
 - `/opsx:apply` — implement a change's tasks
 
-Current state: `sim-core-foundation` is fully specified, not yet implemented. No code exists yet.
+Current state: `sim-core-foundation` is implemented and released as 0.1.0 — `packages/sim-core` holds
+fixed-point arithmetic, the splittable PRNG, the entity store, the dual-scale clock, the pure
+`step` contract, versioned snapshots, replay, the golden fixtures, and the benchmark. Next up is
+`core-contracts` (0.2.0).
+
+Two commands worth knowing before touching the core:
+
+- `npm run verify` — typecheck, lint, dependency-purity, and the full test suite. This is the gate.
+- `npm run goldens:regen` — regenerates the golden replay fixtures. **Never run this to make a
+  test pass.** A fixture diff is a claim that behaviour changed on purpose, and reviewers read it
+  as one.
 
 ## Non-negotiable technical constraints
 

@@ -1,5 +1,5 @@
 /*
- * Multiverse Mages — proof that the float ban in the rules path is enforced.
+ * Multiverse Mages — proof that the purity bans in the rules path are enforced.
  * Copyright (C) 2026 Ann Kelner
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -12,14 +12,23 @@
  */
 
 /**
- * Covers the "Float literal in rules path rejected" scenario of the
- * fixed-point requirement: a non-integer numeric literal or a floating-point
- * `Math.*` operation in the rules path must make the lint task exit non-zero.
+ * Covers three scenarios that are enforced by lint and by nothing else:
+ *
+ *   - "Float literal in rules path rejected" (fixed-point requirement)
+ *   - "Forbidden global rejected" (core-purity requirement)
+ *   - "Node built-in import rejected" (core-purity requirement)
  *
  * The rule config lives in `eslint.config.mjs` and is easy to weaken by
- * accident — narrowing a selector, adding a member to the `Math` allowlist —
- * with nothing failing to say so. This runs the project's real ESLint
- * configuration over source text and asserts the rules still fire.
+ * accident — narrowing a selector, adding a member to the `Math` allowlist,
+ * dropping an entry from `NONDETERMINISTIC_GLOBALS` — with nothing failing to
+ * say so. This runs the project's real ESLint configuration over source text
+ * and asserts the rules still fire, still name the right ban, and still report
+ * the offending file and line.
+ *
+ * The banned identifiers appear here only inside string literals of synthetic
+ * source handed to ESLint. That is the point of the file: the test never
+ * executes `Date` or `Math.random`, it asks the linter what it would say about
+ * a core file that did.
  *
  * Snippets are linted from memory against a virtual path inside
  * `packages/sim-core/src`, which is what selects the core's config block. No
@@ -53,6 +62,42 @@ function wouldFailTheLintTask(result: ESLint.LintResult): boolean {
   return result.errorCount > 0;
 }
 
+/**
+ * The error messages for one rule, so a test can assert *which* ban fired.
+ *
+ * Asserting the ruleId alone is not enough for several of these bans. Six
+ * distinct restrictions share `no-restricted-syntax`, so a `Math.random()`
+ * snippet reports under that ruleId twice — once for the float-Math allowlist
+ * and once for the named `Math.random` ban. A test that only checked the ruleId
+ * would still pass if the `Math.random` entry were deleted outright.
+ */
+function messagesFor(result: ESLint.LintResult, ruleId: string): string[] {
+  return result.messages
+    .filter((message) => message.ruleId === ruleId)
+    .map((message) => message.message);
+}
+
+/** Asserts that some message for `ruleId` contains `fragment`. */
+function expectBanReported(result: ESLint.LintResult, ruleId: string, fragment: string): void {
+  const reported = messagesFor(result, ruleId);
+  expect(
+    reported.some((message) => message.includes(fragment)),
+    `expected a ${ruleId} message containing ${JSON.stringify(fragment)}, got ${JSON.stringify(reported)}`,
+  ).toBe(true);
+}
+
+/**
+ * Asserts the report names the file it came from.
+ *
+ * Compared by suffix rather than by equality: ESLint resolves the virtual path
+ * against `cwd`, so the absolute prefix is wherever this repository happens to
+ * be checked out, and a hard-coded absolute path would be a machine-specific
+ * assertion dressed up as a behavioural one.
+ */
+function expectNamesTheProbeFile(result: ESLint.LintResult): void {
+  expect(result.filePath.endsWith(virtualCoreFile)).toBe(true);
+}
+
 describe('the rules path rejects floating point', () => {
   it('rejects a non-integer numeric literal', async () => {
     const result = await lintAsCoreSource('export const chance = 0.35;\n');
@@ -83,10 +128,170 @@ describe('the rules path rejects floating point', () => {
     expect(wouldFailTheLintTask(result)).toBe(true);
   });
 
-  it('names the offending line', async () => {
+  it('names the offending file and line', async () => {
     const result = await lintAsCoreSource('export const a = 1;\nexport const b = 2.5;\n');
     const offence = result.messages.find((message) => message.ruleId === 'no-restricted-syntax');
     expect(offence?.line).toBe(2);
+    expectNamesTheProbeFile(result);
+  });
+});
+
+/**
+ * Task 10.1 — the "Forbidden global rejected" scenario, one test per banned
+ * global. Each asserts the specific ban by message text, not just that
+ * *something* went wrong: `NONDETERMINISTIC_GLOBALS` is a list, and a list can
+ * lose an entry without any other entry noticing.
+ */
+describe('the core rejects nondeterministic globals', () => {
+  it('rejects Math.random()', async () => {
+    const result = await lintAsCoreSource('export const roll = Math.random();\n');
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-syntax', 'Math.random is banned');
+    expectNamesTheProbeFile(result);
+    expect(result.messages[0]?.line).toBe(1);
+  });
+
+  it('rejects Date.now()', async () => {
+    const result = await lintAsCoreSource('export const stamp = Date.now();\n');
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-globals', "'Date'");
+    expectBanReported(result, 'no-restricted-globals', 'may not read wall-clock time');
+    expectNamesTheProbeFile(result);
+    expect(result.messages[0]?.line).toBe(1);
+  });
+
+  it('rejects a Date constructed with new', async () => {
+    // `Date` is banned whole rather than by member so that this form, and
+    // `Date['now']()`, are covered by the one rule. If the ban were narrowed to
+    // the `Date.now` member expression, this test is what would notice.
+    const result = await lintAsCoreSource('export const born = new Date();\n');
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-globals', "'Date'");
+    expectNamesTheProbeFile(result);
+  });
+
+  it('rejects computed access to Date, which a member-only ban would miss', async () => {
+    const result = await lintAsCoreSource("export const stamp = Date['now']();\n");
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-globals', "'Date'");
+  });
+
+  it('rejects performance.now()', async () => {
+    const result = await lintAsCoreSource('export const at = performance.now();\n');
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-globals', "'performance'");
+    expectBanReported(result, 'no-restricted-globals', 'wall-clock time');
+    expectNamesTheProbeFile(result);
+    expect(result.messages[0]?.line).toBe(1);
+  });
+
+  it('rejects Intl.NumberFormat', async () => {
+    const result = await lintAsCoreSource(
+      'export const format = new Intl.NumberFormat().format(1);\n',
+    );
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-globals', "'Intl'");
+    expectBanReported(result, 'no-restricted-globals', 'ICU build and locale');
+    expectNamesTheProbeFile(result);
+    expect(result.messages[0]?.line).toBe(1);
+  });
+
+  it('reports the line the global was read on, not the first line of the file', async () => {
+    const result = await lintAsCoreSource(
+      'export const stable = 1;\n' + 'export function tick(): number {\n' + '  return Date.now();\n' + '}\n',
+    );
+    const offence = result.messages.find((message) => message.ruleId === 'no-restricted-globals');
+    expect(offence?.line).toBe(3);
+    expectNamesTheProbeFile(result);
+  });
+});
+
+/**
+ * Task 10.2 — the "Node built-in import rejected" scenario, with and without
+ * the `node:` prefix.
+ *
+ * KNOWN GAP, deliberately not asserted here: on ESLint 9.39 this config does
+ * NOT reject `import('node:fs')`, `import('fs')`, or a `require`-shaped call.
+ * `no-restricted-imports` sees only static import/export declarations, so a
+ * dynamic specifier walks straight past both the `paths` list and the `node:*`
+ * pattern. That is a real hole in the ban, not a property worth freezing into a
+ * test — asserting the current behaviour would make closing the hole look like
+ * a regression. It is recorded here so the next person to read this file knows
+ * the coverage stops at static imports.
+ */
+describe('the core rejects Node built-in imports', () => {
+  it('rejects a prefixed node: import, naming the file and line', async () => {
+    const result = await lintAsCoreSource(
+      "import { readFileSync } from 'node:fs';\n\nexport const read = readFileSync;\n",
+    );
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-imports', "'node:fs'");
+    expectBanReported(result, 'no-restricted-imports', 'performs no I/O');
+    expectNamesTheProbeFile(result);
+    expect(
+      result.messages.find((message) => message.ruleId === 'no-restricted-imports')?.line,
+    ).toBe(1);
+  });
+
+  it('rejects the same module imported bare, without the node: prefix', async () => {
+    // The unprefixed spelling resolves to exactly the same built-in, so a ban
+    // that only covered `node:*` would be trivially evadable. This is why the
+    // config enumerates `builtinModules` as well as matching the prefix.
+    const result = await lintAsCoreSource(
+      "export const nothing = 0;\nimport { readFileSync } from 'fs';\nexport const read = readFileSync;\n",
+    );
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-imports', "'fs'");
+    expectBanReported(result, 'no-restricted-imports', 'performs no I/O');
+    expectNamesTheProbeFile(result);
+    expect(
+      result.messages.find((message) => message.ruleId === 'no-restricted-imports')?.line,
+    ).toBe(2);
+  });
+
+  it('rejects a built-in reached through a re-export', async () => {
+    const result = await lintAsCoreSource("export { readFileSync } from 'node:fs';\n");
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-imports', "'node:fs'");
+  });
+
+  it('rejects built-ins other than fs, since the ban is the whole list', async () => {
+    const result = await lintAsCoreSource(
+      "import { createHash } from 'node:crypto';\nexport const hash = createHash;\n",
+    );
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-imports', "'node:crypto'");
+  });
+});
+
+/**
+ * The non-vacuity control for tasks 10.1 and 10.2. Every test above asserts
+ * that lint fails; without this one they would all still pass if the core's
+ * config block rejected every file it saw, and the suite would be measuring
+ * nothing.
+ */
+describe('the core accepts equivalent, permitted constructs', () => {
+  it('accepts a module that reads no global and imports no built-in', async () => {
+    const result = await lintAsCoreSource(
+      "import { floorDiv } from './divide.js';\n" +
+        '\n' +
+        'export function advance(tick: number, step: number): number {\n' +
+        '  return floorDiv(tick + step, 1);\n' +
+        '}\n' +
+        '\n' +
+        'export function pick(values: readonly number[], draw: number): number | undefined {\n' +
+        '  return values[draw % values.length];\n' +
+        '}\n',
+    );
+    expect(result.errorCount).toBe(0);
+    expect(result.messages).toEqual([]);
+  });
+
+  it('accepts a relative import, so the import ban is about built-ins and not imports', async () => {
+    const result = await lintAsCoreSource(
+      "import { createRng } from '../rng/index.js';\nexport const rng = createRng;\n",
+    );
+    expect(result.errorCount).toBe(0);
   });
 });
 
