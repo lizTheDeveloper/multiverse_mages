@@ -159,6 +159,23 @@ describe('contentRevision', () => {
     expect(registry.contentRevision).toMatch(/^[0-9a-f]{32}$/u);
   });
 
+  it('is pinned to the digest of the shipped content set', () => {
+    // The golden table above samples nine interned ids out of several hundred.
+    // This is the whole-set fingerprint: one value that changes if *any* byte
+    // of *any* shipped record changes, including the ones nobody sampled.
+    //
+    // §0 makes this load-bearing rather than decorative — two universes may
+    // only interact if their `contentRevision` values are equal — so a silent
+    // drift here is a silent refusal to raid, or worse, two builds that agree
+    // on the hash and disagree on the content. The tests below prove the digest
+    // *moves* when content changes; only a pinned literal proves it lands
+    // where every other machine lands.
+    //
+    // A failure here is not a test to update reflexively. It says the shipped
+    // content set changed, and the question is whether that was intended.
+    expect(registry.contentRevision).toBe('a3e246fb601bc6c3c19e9682cd94e1ea');
+  });
+
   it('is stable across loads of identical content', () => {
     expect(loadContent(shippedContentSource()).contentRevision).toBe(registry.contentRevision);
   });

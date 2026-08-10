@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the primitives tests. Never emits into dist/.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./test",
+    "types": ["node"],
+    "emitDeclarationOnly": true,
+    "outDir": "../../.tsbuild/primitives-test",
+    "tsBuildInfoFile": "../../.tsbuild/primitives-test.tsbuildinfo"
+  },
+  "include": ["test/**/*.ts"],
+  "references": [{ "path": "./tsconfig.json" }]
+}

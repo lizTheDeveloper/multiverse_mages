@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Library build. Rules path: no Node ambient types, because this package performs no I/O.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "types": []
+  },
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../sim-core" }, { "path": "../content" }]
+}

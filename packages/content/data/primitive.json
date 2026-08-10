@@ -15,7 +15,7 @@
   },
   {
     "id": "area-denial",
-    "unit": "hp-per-engagement-tick-within-radius",
+    "unit": "hp-per-engagement-tick-within-radius-fp-metres",
     "scale": "engagement",
     "stacking": "additive",
     "cap": { "kind": "none" }
@@ -106,7 +106,7 @@
   },
   {
     "id": "portal",
-    "unit": "boolean-gate-enabling-raid-initiation",
+    "unit": "boolean-gate-enables-raid-initiation",
     "scale": "world",
     "stacking": "presence",
     "cap": { "kind": "none" }

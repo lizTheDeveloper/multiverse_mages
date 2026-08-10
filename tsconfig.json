@@ -1,12 +1,22 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "//": "Solution file. `tsc --build` from the repo root typechecks every project listed here.",
+  "//": "Solution file. `tsc --build` from the repo root typechecks every project listed here. A package that is not listed is a package nobody typechecks, which is how a skeleton rots.",
   "files": [],
   "references": [
     { "path": "./packages/sim-core" },
     { "path": "./packages/sim-core/tsconfig.test.json" },
     { "path": "./packages/content" },
     { "path": "./packages/content/tsconfig.test.json" },
+    { "path": "./packages/primitives" },
+    { "path": "./packages/primitives/tsconfig.test.json" },
+    { "path": "./packages/state" },
+    { "path": "./packages/state/tsconfig.test.json" },
+    { "path": "./packages/rules-magic" },
+    { "path": "./packages/rules-world" },
+    { "path": "./packages/rules-raid" },
+    { "path": "./packages/agent-api" },
+    { "path": "./packages/agent-api/tsconfig.test.json" },
+    { "path": "./packages/mc-harness" },
     { "path": "./tsconfig.tools.json" }
   ]
 }

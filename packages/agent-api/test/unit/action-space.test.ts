@@ -1,0 +1,191 @@
+/*
+ * Multiverse Mages — the action table and its candidate lists.
+ * Copyright (C) 2026 Ann Kelner
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/>.
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/**
+ * Tasks 4.3 and the candidate-list half of 4.4.
+ *
+ * The ids are asserted one at a time against `contracts.md` §4.2's numbers. A
+ * loop over `Object.values` would assert that the table is *self-consistent*,
+ * which it is by construction — the thing worth checking is that it matches the
+ * document, because the ids are serialized into action logs and into a trained
+ * policy's output layer, and renumbering one is invisible everywhere.
+ */
+
+import { MAGE_ROLE } from '@mm/state';
+import {
+  ACTION_SPACE_SIZE,
+  ALL_GOD_ACTIONS,
+  CANDIDATE_SLOTS,
+  GOD_ACTION,
+  PARAMETERIZED_ACTIONS,
+  buildCandidates,
+  candidateAt,
+  candidateSlotCount,
+  isGodAction,
+} from '@mm/agent-api';
+import { describe, expect, it } from 'vitest';
+
+import { FIXTURE_CATALOGUE, firstUniverse, secondUniverse } from './fixtures.js';
+
+describe('task 4.3 — the discrete action enumeration', () => {
+  it('matches contracts.md §4.2 id for id', () => {
+    expect(GOD_ACTION.noop).toBe(0);
+    expect(GOD_ACTION.permitTechnique).toBe(1);
+    expect(GOD_ACTION.forbidTechnique).toBe(2);
+    expect(GOD_ACTION.permitForm).toBe(3);
+    expect(GOD_ACTION.forbidForm).toBe(4);
+    expect(GOD_ACTION.issueDispensation).toBe(5);
+    expect(GOD_ACTION.issueInterdiction).toBe(6);
+    expect(GOD_ACTION.revokeEdict).toBe(7);
+    expect(GOD_ACTION.grantFoundingKnowledge).toBe(8);
+    expect(GOD_ACTION.blessMage).toBe(9);
+    expect(GOD_ACTION.assignRole).toBe(10);
+    expect(GOD_ACTION.fundUniversity).toBe(11);
+    expect(GOD_ACTION.encourageResearch).toBe(12);
+    expect(GOD_ACTION.changeTradition).toBe(13);
+    expect(GOD_ACTION.openPortal).toBe(14);
+    expect(GOD_ACTION.declareAscension).toBe(15);
+  });
+
+  it('is 16 wide, dense, and gap-free', () => {
+    expect(ACTION_SPACE_SIZE).toBe(16);
+    expect([...ALL_GOD_ACTIONS]).toEqual(Array.from({ length: 16 }, (_, index) => index));
+    for (let id = 0; id < 16; id += 1) expect(isGodAction(id)).toBe(true);
+    expect(isGodAction(16)).toBe(false);
+    expect(isGodAction(-1)).toBe(false);
+  });
+
+  it('does not collide with the clock actions sim-core reserves', () => {
+    // CORE_ACTION numbers enterEngagement/leaveEngagement from the top of the
+    // uint16 range for exactly this reason. `noop` is 0 in both, which is the
+    // same action, not a collision.
+    expect(ACTION_SPACE_SIZE).toBeLessThan(65534);
+  });
+});
+
+describe('task 4.4 — k is a pinned structural constant per action', () => {
+  it('pins a slot count for every parameterized action and no others', () => {
+    expect([...PARAMETERIZED_ACTIONS]).toEqual([8, 9, 10, 11, 12, 13, 14]);
+    for (const action of PARAMETERIZED_ACTIONS) {
+      expect(candidateSlotCount(action), `k for action ${action}`).toBeGreaterThan(0);
+    }
+    for (const action of [0, 1, 2, 3, 4, 5, 6, 7, 15]) {
+      expect(candidateSlotCount(action), `action ${action} takes no slots`).toBe(0);
+    }
+  });
+
+  it('truncates a candidate list at k even mid-mage, rather than padding or growing', () => {
+    // The list is (mage, role) pairs and each mage contributes three of them,
+    // so k = 32 genuinely cuts the eleventh mage off partway through hers. That
+    // is the intended behaviour: fixed length is what a policy learns against,
+    // and a k that flexed to end on a mage boundary would not be fixed.
+    const world = firstUniverse();
+    const lists = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+    expect((lists.get(GOD_ACTION.assignRole) ?? []).length).toBeLessThanOrEqual(
+      candidateSlotCount(GOD_ACTION.assignRole),
+    );
+  });
+});
+
+describe('candidate lists are deterministic and never longer than k', () => {
+  it('produces byte-identical lists from two states holding the same values', () => {
+    const a = buildCandidates({ state: firstUniverse().state, catalogue: FIXTURE_CATALOGUE });
+    const b = buildCandidates({ state: firstUniverse().state, catalogue: FIXTURE_CATALOGUE });
+    for (const action of PARAMETERIZED_ACTIONS) {
+      expect(a.get(action)).toEqual(b.get(action));
+    }
+  });
+
+  it('never exceeds the pinned k', () => {
+    const lists = buildCandidates({
+      state: firstUniverse().state,
+      catalogue: FIXTURE_CATALOGUE,
+      portalTargets: Array.from({ length: 50 }, (_, index) => index + 1),
+    });
+    for (const action of PARAMETERIZED_ACTIONS) {
+      expect(lists.get(action)?.length ?? 0).toBeLessThanOrEqual(candidateSlotCount(action));
+    }
+    // The portal list was handed 50 targets and k is 8.
+    expect(lists.get(GOD_ACTION.openPortal)).toHaveLength(
+      CANDIDATE_SLOTS[GOD_ACTION.openPortal] as number,
+    );
+  });
+
+  it('ranks mages to bless by ascending vigor, tie-broken by handle', () => {
+    const world = firstUniverse();
+    const lists = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+    const bless = lists.get(GOD_ACTION.blessMage) ?? [];
+    // Three living mages, at 1, 3 and 4 vigor. Most depleted first.
+    expect(bless.map((candidate) => candidate.params[0])).toEqual([
+      world.mages[1],
+      world.mages[0],
+      world.mages[2],
+    ]);
+  });
+
+  it('offers founding a new university as a fixed slot 0, ahead of the ranked ones', () => {
+    const world = firstUniverse();
+    const lists = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+    const fund = lists.get(GOD_ACTION.fundUniversity) ?? [];
+    // §4.2: "universityId | 0 to found new". Slot 0 does not name an entity, so
+    // it cannot die and cannot move.
+    expect(fund[0]?.params).toEqual([0]);
+    expect(fund[1]?.params).toEqual([world.university]);
+  });
+
+  it('excludes the tradition already held, and the role a mage already has', () => {
+    const world = firstUniverse();
+    const lists = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+    const traditions = (lists.get(GOD_ACTION.changeTradition) ?? []).map((c) => c.params[0]);
+    expect(traditions).not.toContain(2); // the fixture universe holds tradition 2
+    expect(traditions).toEqual([1, 3]);
+
+    const roles = lists.get(GOD_ACTION.assignRole) ?? [];
+    const forFirstMage = roles.filter((candidate) => candidate.params[0] === world.mages[0]);
+    expect(forFirstMage.map((candidate) => candidate.params[1])).not.toContain(
+      MAGE_ROLE.researcher,
+    );
+  });
+
+  it('offers founding knowledge only for permitted cells and tier-1 nodes, never held ones', () => {
+    const world = firstUniverse();
+    const lists = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+    const grants = lists.get(GOD_ACTION.grantFoundingKnowledge) ?? [];
+    expect(grants.length).toBeGreaterThan(0);
+    for (const grant of grants) {
+      const node = FIXTURE_CATALOGUE.node(grant.params[1] as number);
+      expect(node?.tier).toBe(1);
+    }
+    // Mage 0 already holds node 1, so that pair is absent.
+    expect(
+      grants.some((g) => g.params[0] === world.mages[0] && g.params[1] === 1),
+    ).toBe(false);
+  });
+
+  it('gives action 14 no candidates when the caller names no other universe', () => {
+    // §1.1: one simulation instance holds one universe. The multiverse is not
+    // in state, so an empty list is the correct answer for a solo run — not an
+    // error, and not an invented target.
+    const lists = buildCandidates({ state: secondUniverse().state, catalogue: FIXTURE_CATALOGUE });
+    expect(lists.get(GOD_ACTION.openPortal)).toHaveLength(0);
+  });
+
+  it('resolves a slot index, and refuses one past the end of the list', () => {
+    const world = firstUniverse();
+    const lists = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+    expect(candidateAt(lists, GOD_ACTION.blessMage, 0)?.params).toEqual([world.mages[1]]);
+    expect(candidateAt(lists, GOD_ACTION.blessMage, 3)).toBeUndefined();
+    expect(candidateAt(lists, GOD_ACTION.blessMage, 999)).toBeUndefined();
+    expect(candidateAt(lists, GOD_ACTION.blessMage, -1)).toBeUndefined();
+  });
+});

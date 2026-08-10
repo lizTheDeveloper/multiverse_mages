@@ -48,6 +48,45 @@ export interface StepRng {
 const UINT32_COUNT = 4294967296;
 const UINT32_MAX = 4294967295;
 
+/**
+ * `contentRevision` is a 128-bit hash rendered as 32 lowercase hex characters.
+ *
+ * **A string, in a package that bans floating point — deliberately, and not a
+ * loophole.** The float ban exists because arithmetic must be reproducible bit
+ * for bit on every machine. This value is never arithmetic: it is compared for
+ * equality, written to the snapshot header as 16 raw bytes, and nothing else.
+ * There is no add, no divide, no rounding, so there is nothing for a float to
+ * be wrong about.
+ *
+ * It is a string rather than a number because 128 bits does not fit one. The
+ * field used to be a `uint32`, which meant `@mm/content`'s 128-bit hash was
+ * folded to a quarter of its width on the way in. `contracts.md` §0 makes this
+ * value the gate on whether two universes may interact at all, with no
+ * partial-compatibility rule and no negotiation — so a fold makes "equal
+ * revisions" mean *probably* identical content, with birthday collisions
+ * likely around 65,000 distinct content sets. Carrying the full width end to
+ * end is what makes equality mean what §0 says it means.
+ */
+export const CONTENT_REVISION_HEX_LENGTH = 32;
+
+/** The 16 raw bytes the snapshot header stores. */
+export const CONTENT_REVISION_BYTES = 16;
+
+/** What a state carries before any content has been loaded into it. */
+export const CONTENT_REVISION_ZERO = '00000000000000000000000000000000';
+
+/**
+ * Lowercase only. Two renderings of the same hash that differ in case would
+ * compare unequal and refuse a raid between two identical universes, so one
+ * casing is admitted and the other is a malformed value, not a synonym.
+ */
+const CONTENT_REVISION_SHAPE = /^[0-9a-f]{32}$/;
+
+/** Whether a value is a well-formed `contentRevision`. */
+export function isContentRevision(value: unknown): value is string {
+  return typeof value === 'string' && CONTENT_REVISION_SHAPE.test(value);
+}
+
 /** Snapshot names are length-prefixed with one byte and written as printable ASCII. */
 const MAX_NAME_LENGTH = 255;
 const MIN_NAME_CHAR = 0x20;
@@ -195,11 +234,12 @@ export interface CreateStateOptions {
   readonly rootSeed: number;
   readonly schema: WorldSchema;
   /**
-   * Hash over all loaded content, per `contracts.md` §0. Two universes may
-   * only interact when these are equal. Zero until `core-contracts` computes
-   * a real one.
+   * Hash over all loaded content, per `contracts.md` §0: 32 lowercase hex
+   * characters, exactly as `@mm/content` renders it. Two universes may only
+   * interact when these are equal. Defaults to {@link CONTENT_REVISION_ZERO}
+   * for a state built without a content registry.
    */
-  readonly contentRevision?: number;
+  readonly contentRevision?: string;
 }
 
 /**
@@ -218,8 +258,14 @@ export class SimState {
   /** The universe's seed. Fixed for the life of a run. */
   readonly rootSeed: number;
 
-  /** Hash over loaded content; the gate on inter-universe interaction. */
-  contentRevision: number;
+  /**
+   * Hash over loaded content; the gate on inter-universe interaction.
+   *
+   * 32 lowercase hex characters — the full 128 bits `@mm/content` computes.
+   * See {@link CONTENT_REVISION_HEX_LENGTH} for why a string is not a breach
+   * of the float ban.
+   */
+  contentRevision: string;
 
   readonly clock: Clock;
 
@@ -238,7 +284,7 @@ export class SimState {
 
   readonly #components: Map<string, ComponentStore<ComponentFields>>;
 
-  private constructor(schema: WorldSchema, rootSeed: number, contentRevision: number) {
+  private constructor(schema: WorldSchema, rootSeed: number, contentRevision: string) {
     this.schema = schema;
     this.rootSeed = rootSeed;
     this.contentRevision = contentRevision;
@@ -262,10 +308,14 @@ export class SimState {
         `rootSeed must be an integer in [0, 4294967295], received ${String(rootSeed)}`,
       );
     }
-    const contentRevision = options.contentRevision ?? 0;
-    if (!Number.isInteger(contentRevision) || contentRevision < 0 || contentRevision >= UINT32_COUNT) {
+    const contentRevision = options.contentRevision ?? CONTENT_REVISION_ZERO;
+    if (!isContentRevision(contentRevision)) {
       throw new RangeError(
-        `contentRevision must be an integer in [0, 4294967295], received ${String(contentRevision)}`,
+        `contentRevision must be exactly ${CONTENT_REVISION_HEX_LENGTH} lowercase hex characters ` +
+          `— the full 128-bit hash @mm/content renders — received ${JSON.stringify(contentRevision)}. ` +
+          'contracts.md §0 gates every inter-universe interaction on equality of this value, so a ' +
+          'truncated, uppercased, or otherwise reshaped one would make two universes look ' +
+          'compatible or incompatible for reasons that have nothing to do with their content.',
       );
     }
     return new SimState(schema, rootSeed, contentRevision);

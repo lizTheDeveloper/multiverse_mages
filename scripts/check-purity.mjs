@@ -64,8 +64,27 @@ function resolveRoot(args) {
 
 const REPO_ROOT = resolveRoot(process.argv.slice(2));
 
-/** Packages whose runtime dependency list must stay empty. */
-const PURE_PACKAGES = ['packages/sim-core', 'packages/content'];
+/**
+ * Packages whose runtime dependency list must stay empty.
+ *
+ * The rules path in full, not just the core. `state` and the three `rules-*`
+ * packages are loaded by the client, the server, and the Monte Carlo workers
+ * alike, so a dependency in any of them is a surface on which those consumers
+ * can disagree about what the simulation did.
+ *
+ * `agent-api` and `mc-harness` are deliberately absent. The harness may
+ * legitimately want third-party tooling one day, and this list is a claim about
+ * what must be true, not a wish about what would be tidy.
+ */
+const PURE_PACKAGES = [
+  'packages/sim-core',
+  'packages/content',
+  'packages/state',
+  'packages/rules-magic',
+  'packages/rules-world',
+  'packages/rules-raid',
+  'packages/primitives',
+];
 
 /** Fields npm treats as runtime (installed for consumers, not just for us). */
 const RUNTIME_DEPENDENCY_FIELDS = [
@@ -77,6 +96,9 @@ const RUNTIME_DEPENDENCY_FIELDS = [
 ];
 
 const EXPECTED_LICENSE = 'AGPL-3.0-or-later';
+
+/** Workspace packages are `@mm/…`; anything else is third-party. */
+const WORKSPACE_SCOPE = '@mm';
 
 /** @type {string[]} */
 const failures = [];
@@ -98,9 +120,23 @@ for (const packageDir of PURE_PACKAGES) {
     if (value === undefined) continue;
 
     const names = Array.isArray(value) ? value : Object.keys(value);
-    if (names.length > 0) {
+    // Workspace siblings are permitted; third-party packages are not.
+    //
+    // The rule this script enforces is "no third-party runtime code in the
+    // rules path", not "no dependencies at all". §5 *requires* `state` and
+    // every `rules-*` package to depend on `@mm/sim-core` — forbidding that
+    // outright pushed them into declaring nothing while importing it anyway,
+    // which resolved only through workspace hoisting and would have failed the
+    // moment one was packed or consumed from outside this repository. It also
+    // made this check pass for a reason unrelated to what it is checking.
+    //
+    // `sim-core` itself declares nothing at all, and its own entry in this list
+    // plus the module-boundary graph is what holds that line.
+    const external = names.filter((name) => !name.startsWith(`${WORKSPACE_SCOPE}/`));
+    if (external.length > 0) {
       failures.push(
-        `${manifestPath}: "${field}" must be empty but declares ${names.length} entry/entries: ${names.join(', ')}`,
+        `${manifestPath}: "${field}" may name workspace packages only, but declares ` +
+          `${external.length} third-party entry/entries: ${external.join(', ')}`,
       );
     }
   }
@@ -122,4 +158,6 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Dependency-purity check passed: ${PURE_PACKAGES.join(', ')} declare no runtime dependencies.`);
+console.log(
+  `Dependency-purity check passed: ${PURE_PACKAGES.join(', ')} declare no third-party runtime dependencies.`,
+);

@@ -97,7 +97,16 @@ describe('validation reports every violation in a run', () => {
     const result = validateContent(sourceOf(sixViolationDocuments()));
     for (const diagnostic of result.diagnostics) {
       expect(CONTENT_FILES).toContain(diagnostic.file);
-      expect(diagnostic.pointer).toMatch(/^(\/.*)?$/u);
+      // At least one non-empty RFC 6901 segment. The previous pattern,
+      // `/^(\/.*)?$/u`, was satisfied by the empty string — which is the one
+      // value that means "no pointer at all" — so a validator that stopped
+      // emitting pointers entirely would have kept this test green while
+      // falsifying the 0.2.0 claim the test exists to hold. The empty pointer
+      // is legal RFC 6901 (it addresses the whole document) and that is exactly
+      // why it must not be accepted here: every diagnostic in a run over an
+      // array-of-records file points at a record, so a root pointer is a
+      // producer that gave up rather than a producer being precise.
+      expect(diagnostic.pointer).toMatch(/^(\/[^/]+)+$/u);
       expect(diagnostic.message.length).toBeGreaterThan(0);
     }
     // The three that point at a specific record point at a specific record.
