@@ -53,7 +53,7 @@
 
 ## 6. Closeout
 
-- [ ] 6.0 Widen `contentRevision` so equality means identical content. `@mm/content` computes a
+- [x] 6.0 Widen `contentRevision` so equality means identical content. `@mm/content` computes a
       128-bit hash; `SimState` and the snapshot header store a `uint32`, so the narrowing is a
       silent fold. §0 makes this value the gate on whether two universes may interact, with no
       partial-compatibility rule — a 32-bit fold makes equality mean *probably* identical, and

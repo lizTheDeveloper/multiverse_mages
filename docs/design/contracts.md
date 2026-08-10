@@ -41,6 +41,15 @@ spec is the thing that gets fixed.
   if their `contentRevision` values are equal. There is no partial-compatibility rule and no
   negotiation; mismatch is refusal with both revisions named.
 
+  **It is 128 bits wide, carried end to end as 32 lowercase hex characters** — in the content
+  registry, in `SimState`, in the snapshot header (16 raw bytes), and in the ruleset snapshot,
+  with no narrowing at any boundary. The width is normative, not an implementation detail. It was
+  once stored as a `uint32`, and because this clause offers no partial-compatibility rule to fall
+  back on, that fold made "equal revisions" mean only *probably* identical content: birthday
+  collisions become likely around 65,000 distinct content sets, an ordinary number for moddable
+  content, and each one admits two incompatible universes to the same match. Narrowing this value
+  anywhere is a breaking contract change.
+
 ---
 
 ## 1. State Schema

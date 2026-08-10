@@ -76,14 +76,18 @@ export interface Ruleset {
  *
  * `contentRevision` is carried because §0 forbids two universes from
  * interacting at all unless theirs are equal, and the refusal has to name both
- * values. It is a `uint32` here, matching `SimState.contentRevision`; the
- * content loader currently computes a 128-bit hex revision, and narrowing one
- * to the other is `agent-interface`'s to pin.
+ * values. It is the full 128-bit hash `@mm/content` computes, rendered as 32
+ * lowercase hex characters — the same type and the same width as
+ * `SimState.contentRevision`, with no conversion at this boundary or any
+ * other. There used to be a narrowing to `uint32` here, which meant equality
+ * asserted only that two content sets *probably* matched; §0 offers no
+ * partial-compatibility rule to fall back on when they did not.
  */
 export interface RulesetSnapshot extends Ruleset {
   /** `contracts.md` §1.1: exactly one tradition, never 0. */
   readonly traditionId: number;
-  readonly contentRevision: number;
+  /** 32 lowercase hex characters. Compared for equality, never arithmetic. */
+  readonly contentRevision: string;
 }
 
 /**

@@ -14,7 +14,15 @@
 import { describe, expect, it } from 'vitest';
 
 /** Bytes of fixed snapshot header, mirrored from snapshot.ts so offsets stay honest. */
-const HEADER_BYTES = 40;
+const HEADER_BYTES = 52;
+
+/**
+ * The first of the three reserved bytes after the time mode, mirrored the same
+ * way. It moved from 33 to 45 when `contentRevision` widened from a `u32` to
+ * the 16 raw bytes of the full 128-bit hash `@mm/content` computes — see
+ * `contracts.md` §0 on why that value may not be narrowed.
+ */
+const HEADER_PADDING_OFFSET = 45;
 
 import { createState } from '../../src/state.js';
 import {
@@ -206,7 +214,10 @@ describe('non-zero padding and flags bytes', () => {
   it('rejects non-zero header padding bytes', () => {
     const { buffer } = populated();
     const tampered = buffer.slice();
-    new DataView(tampered.buffer, tampered.byteOffset, tampered.byteLength).setUint8(33, 1); // first padding byte
+    new DataView(tampered.buffer, tampered.byteOffset, tampered.byteLength).setUint8(
+      HEADER_PADDING_OFFSET,
+      1,
+    );
     expect(() => deserializeState(tampered, world)).toThrow(/reserved|padding/i);
   });
 });

@@ -59,7 +59,8 @@ import type { RulesetSnapshot } from '@mm/state';
 const FP_ONE = 1024;
 
 export const FIXTURE_ROOT_SEED = 0x5eed_0001;
-export const FIXTURE_CONTENT_REVISION = 0xabcd_1234;
+/** 32 lowercase hex characters — the full width `contracts.md` §0 requires. */
+export const FIXTURE_CONTENT_REVISION = 'abcd1234abcd1234abcd1234abcd1234';
 
 export interface PopulatedWorld {
   readonly state: SimState;

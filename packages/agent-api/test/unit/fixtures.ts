@@ -63,7 +63,8 @@ import { buildCatalogue } from '@mm/agent-api';
 /** `fp(1.0)`, spelled out so the fixtures read as game values. */
 export const FP = 1024;
 
-export const FIXTURE_CONTENT_REVISION = 0x0c0f_fee1;
+/** 32 lowercase hex characters — the full width `contracts.md` §0 requires. */
+export const FIXTURE_CONTENT_REVISION = '0c0ffee10c0ffee10c0ffee10c0ffee1';
 
 /**
  * A catalogue spanning several cells and tiers.
