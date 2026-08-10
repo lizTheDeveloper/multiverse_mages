@@ -117,9 +117,14 @@ describe('invalid content is a hard load failure', () => {
         recordById(documents, 'node.json', 'im-follow-the-thought')['tier'] = 4;
       }),
     );
-    const inverted = diagnostics.filter((d) => d.code === 'inverted-tier');
+    // Scoped to the pair under test rather than the whole run. Deepening one node
+    // inverts it against every node that gates on it, and the grid is pre-authored,
+    // so that count grows with content. Asserting a global count here would make
+    // this test fail whenever someone writes an unrelated spell.
+    const inverted = diagnostics.filter(
+      (d) => d.code === 'inverted-tier' && d.message.includes('im-read-the-surface'),
+    );
     expect(inverted).toHaveLength(1);
-    expect(inverted[0]?.message).toContain('im-read-the-surface');
     expect(inverted[0]?.message).toContain('im-follow-the-thought');
     expect(inverted[0]?.message).toContain('is tier 3');
     expect(inverted[0]?.message).toContain('tier 4');
@@ -183,20 +188,26 @@ describe('invalid content is a hard load failure', () => {
     expect(messages(diagnostics)).toContain('portal');
   });
 
-  it('rejects a node authored outside the v1 subset', () => {
+  // Authoring outside the v1 subset is permitted -- the grid holds seventy cells and
+  // only twelve are enabled, so the rest are written but inert. What is NOT permitted
+  // is a playable node sitting behind content the release does not enable: it would be
+  // permanently unreachable, and nothing else in the pipeline would notice.
+  it('rejects a v1 node whose prerequisite lies outside the v1 subset', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {
-        const node = recordById(documents, 'node.json', 'rt-set-the-stone');
-        node['cell'] = 'creo-terram';
-        recordById(documents, 'cell.json', 'creo-terram')['nodes'] = ['rt-set-the-stone'];
-        const oldCell = recordById(documents, 'cell.json', 'rego-terram');
-        oldCell['nodes'] = (oldCell['nodes'] as string[]).filter((id) => id !== 'rt-set-the-stone');
+        // Park a fresh node in a non-v1 cell, then make a playable node depend on it.
+        const donor = recordById(documents, 'node.json', 'rt-set-the-stone');
+        const stranded = { ...donor, id: 'ct-stranded-course', cell: 'creo-terram' };
+        (documents['node.json'] as unknown[]).push(stranded);
+        recordById(documents, 'cell.json', 'creo-terram')['nodes'] = ['ct-stranded-course'];
+        const playable = recordById(documents, 'node.json', 'rt-raise-the-course');
+        playable['prerequisites'] = ['ct-stranded-course'];
       }),
     );
-    const outside = diagnostics.filter((d) => d.code === 'node-outside-v1');
-    expect(outside).toHaveLength(1);
-    expect(outside[0]?.message).toContain('rt-set-the-stone');
-    expect(outside[0]?.message).toContain('creo-terram');
+    const unreachable = diagnostics.filter((d) => d.code === 'v1-unreachable-prerequisite');
+    expect(unreachable).toHaveLength(1);
+    expect(unreachable[0]?.message).toContain('rt-raise-the-course');
+    expect(unreachable[0]?.message).toContain('creo-terram');
   });
 
   it('rejects an effect naming a primitive the registry does not define', () => {

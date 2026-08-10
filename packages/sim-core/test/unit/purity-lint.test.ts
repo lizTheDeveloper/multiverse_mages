@@ -38,7 +38,7 @@
 import { fileURLToPath } from 'node:url';
 
 import { ESLint } from 'eslint';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 /** From packages/sim-core/test/unit/ up to the repository root. */
 const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url));
@@ -97,6 +97,20 @@ function expectBanReported(result: ESLint.LintResult, ruleId: string, fragment: 
 function expectNamesTheProbeFile(result: ESLint.LintResult): void {
   expect(result.filePath.endsWith(virtualCoreFile)).toBe(true);
 }
+
+/**
+ * Pay ESLint's cold start once, outside any test's timeout.
+ *
+ * The first `lintAsCoreSource` call constructs an ESLint instance and resolves the
+ * flat config, which takes seconds on a loaded machine; every call after it takes
+ * roughly a tenth of one. Without this, whichever test happens to run first pays
+ * that cost against the default 5s budget and fails intermittently — a flake that
+ * looks exactly like the purity rules having broken, which is the one thing this
+ * file exists to tell the truth about.
+ */
+beforeAll(async () => {
+  await lintAsCoreSource('export const warm = 1;');
+}, 60_000);
 
 describe('the rules path rejects floating point', () => {
   it('rejects a non-integer numeric literal', async () => {

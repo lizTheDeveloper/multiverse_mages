@@ -137,8 +137,8 @@ describe('interning', () => {
     expect(registry.intern('form', 'nomen')).toBe(14);
     expect(registry.intern('cell', 'creo-animal')).toBe(1);
     expect(registry.intern('cell', 'rego-nomen')).toBe(70);
-    expect(registry.intern('node', 'il-count-the-doors')).toBe(1);
-    expect(registry.intern('node', 'rt-the-vaulted-hall')).toBe(50);
+    expect(registry.intern('node', 'can-call-the-pack')).toBe(1);
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(299);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
