@@ -30,7 +30,8 @@ What this obliges, and what it obliges of *us*:
   as a service must offer its source to users. Keep the server's source-offer path intact; do not
   design anything that would make compliance impractical.
 - **New source files carry the standard AGPL header** (short notice + reference to `LICENSE`),
-  and `package.json` files declare `"license": "AGPL-3.0-or-later"`.
+  and `package.json` files declare `"license": "AGPL-3.0-or-later"`. The copyright holder is
+  **Ann Kelner** — not the GitHub handle, not the home-directory name.
 - **Assets are licensed separately from code.** When art, audio, or text content is added, license
   it explicitly — CC BY-SA 4.0 is the natural copyleft counterpart. Do not assume the AGPL covers
   non-software assets cleanly.

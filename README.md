@@ -61,7 +61,15 @@ mistuned.
 
 ## License
 
+Copyright © 2026 Ann Kelner.
+
 **GNU Affero General Public License v3.0 or later** — see [`LICENSE`](LICENSE).
+
+This program is free software: you can redistribute it and/or modify it under the terms of the
+GNU Affero General Public License as published by the Free Software Foundation, either version 3
+of the License, or (at your option) any later version. It is distributed in the hope that it will
+be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
 
 Chosen for the network clause: if you run a modified version of this game's server as a service,
 you must offer your users its source. Forks, derivatives, and hosted versions stay free.
