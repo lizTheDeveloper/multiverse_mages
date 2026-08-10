@@ -26,12 +26,12 @@
 
 ## 4. Entity store
 
-- [ ] 4.1 Implement struct-of-arrays storage with stable integer IDs and per-slot generation counters
-- [ ] 4.2 Implement a deterministic free list for slot reuse
-- [ ] 4.3 Implement handle resolution that reports stale handles rather than returning a slot's new occupant
-- [ ] 4.4 Implement index-order iteration and a component registration mechanism generic over future game content
-- [ ] 4.5 Unit test that identical create/destroy sequences yield identical IDs and generations across runs
-- [ ] 4.6 Unit test that iteration order is index order regardless of creation order
+- [x] 4.1 Implement struct-of-arrays storage with stable integer IDs and per-slot generation counters
+- [x] 4.2 Implement a deterministic free list for slot reuse
+- [x] 4.3 Implement handle resolution that reports stale handles rather than returning a slot's new occupant
+- [x] 4.4 Implement index-order iteration and a component registration mechanism generic over future game content
+- [x] 4.5 Unit test that identical create/destroy sequences yield identical IDs and generations across runs
+- [x] 4.6 Unit test that iteration order is index order regardless of creation order
 
 ## 5. Clock and step contract
 
