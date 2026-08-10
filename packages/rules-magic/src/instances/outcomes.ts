@@ -1,0 +1,152 @@
+/*
+ * Multiverse Mages — why a knowledge operation refused, and what it lost.
+ * Copyright (C) 2026 Ann Kelner
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/>.
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/**
+ * Refusals and loss events — the two things a knowledge operation reports that
+ * are not a state change.
+ *
+ * ## A refusal is data, not an exception and not a boolean
+ *
+ * `knowledge-instances` requires refusals to *name* what stopped them: the
+ * interdicted cell, the unsatisfied prerequisite, the teaching threshold, the
+ * shortfall in materials. That rules out returning `false`, and it rules out
+ * throwing — a mage AI at `mages-and-species` will call these operations
+ * speculatively to score them, and an exception is not something you evaluate a
+ * hundred of per tick.
+ *
+ * So a refusal is a discriminated union carrying the values the requirement
+ * says it must carry, and {@link describeRefusal} renders one for a human. Two
+ * consumers with genuinely different needs — a test asserting on
+ * `refusal.prerequisiteId`, and a log line — and neither has to parse the
+ * other's format.
+ *
+ * ## A loss event is emitted, never stored
+ *
+ * `contracts.md` §1.5 makes node existence derived — `count(instances) > 0`,
+ * "nothing may cache it in state". A persisted "this node was lost" record
+ * would be exactly that cache wearing a different hat, so loss events are
+ * return values. The *ever-known* record is the deliberate exception, and it
+ * says something a count cannot: that the node was once held at all.
+ */
+
+import type { ContentId, Fp } from '@mm/content';
+import type { Handle, Tick } from '@mm/state';
+
+/**
+ * Why an operation produced no state change.
+ *
+ * Every member names the thing that stopped it. `reason` is a string rather
+ * than a numbered enum because refusals never enter state, never cross a
+ * snapshot, and never reach the observation vector — so there is nothing for a
+ * stable numbering to buy, and a string is what a failing test prints.
+ */
+export type KnowledgeRefusal =
+  /** The node's cell is not permitted here — interdicted, or off both axes. */
+  | { readonly reason: 'forbidden-cell'; readonly nodeId: ContentId; readonly cellId: ContentId }
+  /** The subject does not hold a usable instance of a prerequisite. */
+  | {
+      readonly reason: 'unsatisfied-prerequisite';
+      readonly nodeId: ContentId;
+      readonly prerequisiteId: ContentId;
+      readonly subject: Handle;
+    }
+  /** The subject holds no usable instance of the node itself. */
+  | { readonly reason: 'node-not-held'; readonly nodeId: ContentId; readonly subject: Handle }
+  /** No instance of the node survives anywhere in this universe. */
+  | { readonly reason: 'node-lost'; readonly nodeId: ContentId }
+  /** The teacher's mastery is below the teaching-eligibility threshold. */
+  | {
+      readonly reason: 'teacher-below-threshold';
+      readonly nodeId: ContentId;
+      readonly mastery: Fp;
+      readonly threshold: Fp;
+    }
+  /** The active `store` hook does not keep written copies. */
+  | {
+      readonly reason: 'written-storage-unavailable';
+      readonly nodeId: ContentId;
+      readonly storeKind: string;
+    }
+  /** Supplied materials are below the node's `scribeCost`. */
+  | {
+      readonly reason: 'insufficient-materials';
+      readonly nodeId: ContentId;
+      readonly supplied: Fp;
+      readonly required: Fp;
+    }
+  /** Supplied scribe capacity is below what the node's tier costs to copy. */
+  | {
+      readonly reason: 'insufficient-scribe-capacity';
+      readonly nodeId: ContentId;
+      readonly supplied: Fp;
+      readonly required: Fp;
+    };
+
+/** A refusal rendered for a human. Never parsed; assert on the fields instead. */
+export function describeRefusal(refusal: KnowledgeRefusal): string {
+  switch (refusal.reason) {
+    case 'forbidden-cell':
+      return (
+        `node ${String(refusal.nodeId)} sits in cell ${String(refusal.cellId)}, which this ` +
+        'universe does not permit: acquisition is gated by permits(), not only casting'
+      );
+    case 'unsatisfied-prerequisite':
+      return (
+        `node ${String(refusal.nodeId)} requires node ${String(refusal.prerequisiteId)}, which ` +
+        `${String(refusal.subject)} does not hold as a usable instance`
+      );
+    case 'node-not-held':
+      return `${String(refusal.subject)} holds no usable instance of node ${String(refusal.nodeId)}`;
+    case 'node-lost':
+      return (
+        `no instance of node ${String(refusal.nodeId)} survives in this universe, so it cannot ` +
+        'be taught, scribed, or used as a prerequisite — only rediscovered'
+      );
+    case 'teacher-below-threshold':
+      return (
+        `the teacher's mastery of node ${String(refusal.nodeId)} is ${String(refusal.mastery)}, ` +
+        `below the teaching-eligibility threshold of ${String(refusal.threshold)}`
+      );
+    case 'written-storage-unavailable':
+      return (
+        `the active store hook "${refusal.storeKind}" keeps no written copies, so node ` +
+        `${String(refusal.nodeId)} cannot be scribed`
+      );
+    case 'insufficient-materials':
+      return (
+        `scribing node ${String(refusal.nodeId)} needs ${String(refusal.required)} materials and ` +
+        `${String(refusal.supplied)} were supplied`
+      );
+    case 'insufficient-scribe-capacity':
+      return (
+        `scribing node ${String(refusal.nodeId)} needs ${String(refusal.required)} scribe ` +
+        `capacity and ${String(refusal.supplied)} was supplied`
+      );
+  }
+}
+
+/**
+ * A node leaving the universe, emitted when its **last** instance is destroyed.
+ *
+ * This is 0.3.0's first claim made observable. `location` is the location kind
+ * of the instance that happened to be last, which is the difference between "an
+ * archmage died" and "the library burned" — and the two are the signals
+ * `knowledgeHalfLife` and `libraryDependence` are meant to separate.
+ */
+export interface KnowledgeLossEvent {
+  readonly nodeId: ContentId;
+  /** The world tick the last instance was destroyed on. */
+  readonly worldTick: Tick;
+  /** `LOCATION_KIND` of the destroyed instance: mind, grimoire, library, palace. */
+  readonly location: number;
+}
