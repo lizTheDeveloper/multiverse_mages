@@ -138,7 +138,10 @@ describe('interning', () => {
     expect(registry.intern('cell', 'creo-animal')).toBe(1);
     expect(registry.intern('cell', 'rego-nomen')).toBe(70);
     expect(registry.intern('node', 'il-count-the-doors')).toBe(1);
-    expect(registry.intern('node', 'rt-the-vaulted-hall')).toBe(50);
+    // 51, not 50: `knowledge-model` task 2.5 added `rn-keep-the-name-close` to
+    // `rego-nomen`, and node ids intern in sort order, so every node after it
+    // shifts by one. That is the renumbering this assertion exists to surface.
+    expect(registry.intern('node', 'rt-the-vaulted-hall')).toBe(51);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
@@ -173,7 +176,12 @@ describe('contentRevision', () => {
     //
     // A failure here is not a test to update reflexively. It says the shipped
     // content set changed, and the question is whether that was intended.
-    expect(registry.contentRevision).toBe('a3e246fb601bc6c3c19e9682cd94e1ea');
+    //
+    // It moved once, deliberately, from a3e246fb601bc6c3c19e9682cd94e1ea:
+    // `knowledge-model` task 2.5 added the `rn-keep-the-name-close` node so that
+    // `rego-nomen` carries `concealment`, which the task list requires of that
+    // cell and which no rego cell previously supplied.
+    expect(registry.contentRevision).toBe('5444a4e2727aa7ba20ffaa4ef67981d1');
   });
 
   it('is stable across loads of identical content', () => {

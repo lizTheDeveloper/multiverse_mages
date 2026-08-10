@@ -54,7 +54,7 @@ describe('shipped content', () => {
       forms: 14,
       cells: 70,
       v1Cells: 12,
-      nodes: 50,
+      nodes: 51,
       species: 6,
       traditions: 3,
       primitives: 16,
@@ -136,13 +136,14 @@ describe('shipped content', () => {
         V1_REDISCOVERY_AUTHORING_FLOOR,
       );
     }
-    // contracts.md §2.3 asks for fp(4096) so that "species affinity has room to
-    // differentiate above the floor rather than being clamped flat". fp(4096) is
-    // not quite enough to achieve that for the *best* rediscoverer: the gnome's
-    // fp(1792) affinity turns 4096 into 2340, below the hard fp(3072) floor, so
-    // the strongest instance of the trait does nothing. The v1 data is therefore
-    // authored above the derived break-even of 3072 × 1792 / 1024 = 5376, and
-    // this test is what keeps it there.
+    // contracts.md §2.3 asks v1 to author at or above fp(5376) so that "species
+    // affinity has room to differentiate above the floor rather than being
+    // clamped flat", and rejects fp(4096) by name: the gnome's fp(1792) affinity
+    // turns 4096 into 2340, below the hard fp(3072) floor, so the strongest
+    // instance of the trait does nothing. fp(5376) is the break-even,
+    // 3072 × 1792 / 1024. The loader enforces that floor; this assertion is the
+    // one that notices if the *species* side moves, because break-even is a
+    // function of the best affinity and the loader constant is a literal.
     const bestAffinity = Math.max(
       ...registry.species.map((entry) => entry.record.rediscoveryAffinity),
     );
@@ -150,6 +151,59 @@ describe('shipped content', () => {
       ...registry.nodes.map((entry) => entry.record.rediscoveryMultiplier),
     );
     expect(Math.floor((cheapest * 1024) / bestAffinity)).toBeGreaterThan(3072);
+  });
+
+  it('exercises, cell by cell, the primitives the v1 subset was chosen to deliver', () => {
+    // The global coverage assertion below says every primitive is exercised
+    // *somewhere*. That is not the claim `knowledge-model` design.md §"The v1
+    // subset" makes: it justifies each cell by the primitives it carries, and a
+    // primitive drifting to a different cell would silently falsify the
+    // permit/forbid asymmetry table without changing the global set at all.
+    const primitivesOf = (...cells: readonly string[]): readonly string[] => {
+      const found = new Set<string>();
+      for (const entry of registry.nodes) {
+        if (!cells.includes(entry.record.cell)) continue;
+        for (const effect of entry.record.effects) found.add(effect.primitive);
+      }
+      return [...found].sort();
+    };
+    const expectCovers = (cells: readonly string[], required: readonly string[]): void => {
+      const found = primitivesOf(...cells);
+      for (const primitive of required) expect(found).toContain(primitive);
+    };
+
+    // tasks.md 2.4 — the mandated cell, and the only source of `portal`.
+    expectCovers(['rego-limen'], ['portal', 'blink', 'ward']);
+    // tasks.md 2.5 — `knowledge-steal` from *both* canonical theft cells
+    // separately, so a universe can close exactly one vector.
+    expectCovers(['intellego-mentem'], ['knowledge-steal']);
+    expectCovers(['rego-nomen'], ['knowledge-steal']);
+    expectCovers(
+      ['intellego-mentem', 'rego-nomen'],
+      ['research-rate', 'scribe-rate', 'summon', 'concealment'],
+    );
+    // tasks.md 2.6, 2.7, 2.8.
+    expectCovers(['rego-terram', 'intellego-terram'], ['build-rate', 'resource-yield']);
+    expectCovers(['rego-mentem', 'intellego-nomen'], ['teach-rate', 'worship-yield']);
+    expectCovers(
+      ['perdo-mentem', 'perdo-nomen', 'perdo-terram', 'perdo-limen'],
+      ['direct-damage', 'area-denial'],
+    );
+  });
+
+  it('keeps concealment inside the nomen form, as the forbid-cost table promises', () => {
+    // design.md's asymmetry table prices forbidding `nomen` as "no scribing
+    // bonus, no summoning, no concealment". `intellego-limen` also carries a
+    // concealment node, so the promise is not that nomen is the *only* source —
+    // it is that closing nomen removes a real share of it. Both nomen cells in
+    // the subset carry concealment, which is what makes the price non-trivial.
+    const cellsWithConcealment = new Set(
+      registry.nodes
+        .filter((entry) => entry.record.effects.some((effect) => effect.primitive === 'concealment'))
+        .map((entry) => entry.record.cell),
+    );
+    expect(cellsWithConcealment).toContain('perdo-nomen');
+    expect(cellsWithConcealment).toContain('rego-nomen');
   });
 
   it('exercises every primitive except the two that await Corpus and Animal', () => {

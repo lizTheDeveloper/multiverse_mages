@@ -80,12 +80,27 @@ export const V1_FORM_COUNT = 4;
  * Authoring floor for `rediscoveryMultiplier` in v1 content.
  *
  * `contracts.md` §2.3 sets the hard invariant at `fp(3072)` and then asks v1 to
- * author at or above `fp(4096)`, because species `rediscoveryAffinity` is
+ * author at or above `fp(5376)`, because species `rediscoveryAffinity` is
  * applied *before* the `fp(3072)` floor: a node authored at the floor has every
  * species clamped to the same effective cost, and the trait stops existing.
  * Enforcing the guidance is what keeps that from happening by accident.
+ *
+ * The number is `fp(5376)` and not the `fp(4096)` this constant originally held.
+ * §2.3 now rejects `fp(4096)` by name, because it does not achieve its own
+ * purpose: the best rediscoverer in v1 species content is the gnome at affinity
+ * `fp(1792)`, and `4096 × 1024 / 1792 = 2340` lands *below* the hard floor, so
+ * the strongest instance of the trait is clamped flat and does nothing at all.
+ * Break-even is `3072 × 1792 / 1024 = 5376`.
+ *
+ * It is a literal rather than a value derived from the loaded species records,
+ * deliberately. Deriving it would make whether `node.json` loads depend on
+ * whoever last edited `species.json`, so a species change would surface as a
+ * node rejection. The coupling is instead asserted from
+ * `test/unit/shipped-content.test.ts`, which recomputes break-even from the
+ * actual best affinity and fails if the species side moves out from under this
+ * number — a test failure that names the real cause.
  */
-export const V1_REDISCOVERY_AUTHORING_FLOOR = 4096;
+export const V1_REDISCOVERY_AUTHORING_FLOOR = 5376;
 
 /** Result of a validation pass that is allowed to fail without throwing. */
 export interface ValidationResult {
@@ -509,18 +524,25 @@ function checkV1Subset(v1Cells: readonly CellRecord[], out: ContentDiagnostic[])
     formCells.push(cell.id);
   }
 
+  // Each uneven axis names the cells sitting on it. The axis alone identifies
+  // the shape of the defect but not the record to edit, and an author reading
+  // `technique "creo" covers 1 forms` still has to grep cell.json for the flag
+  // that put it there. Only the *uneven* axes are expanded, so the message stays
+  // a pointer at the defect rather than the whole subset listed back.
   const uneven: string[] = [];
   for (const [technique, ids] of [...techniques].sort(byKey)) {
     if (ids.length !== V1_FORM_COUNT) {
       uneven.push(
-        `technique "${technique}" covers ${String(ids.length)} forms, expected ${String(V1_FORM_COUNT)}`,
+        `technique "${technique}" covers ${String(ids.length)} forms, expected ` +
+          `${String(V1_FORM_COUNT)} (${[...ids].sort(byString).join(', ')})`,
       );
     }
   }
   for (const [form, ids] of [...forms].sort(byKey)) {
     if (ids.length !== V1_TECHNIQUE_COUNT) {
       uneven.push(
-        `form "${form}" covers ${String(ids.length)} techniques, expected ${String(V1_TECHNIQUE_COUNT)}`,
+        `form "${form}" covers ${String(ids.length)} techniques, expected ` +
+          `${String(V1_TECHNIQUE_COUNT)} (${[...ids].sort(byString).join(', ')})`,
       );
     }
   }
