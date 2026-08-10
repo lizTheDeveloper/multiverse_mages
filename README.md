@@ -58,3 +58,12 @@ The project is built balance-first: the simulation is playable by machines, and 
 sweeps validate it, long before the interface is attractive. Real-time strategy is hard to get
 right, and humans should be discovering the human meta — not the fact that one primitive was
 mistuned.
+
+## License
+
+**GNU Affero General Public License v3.0 or later** — see [`LICENSE`](LICENSE).
+
+Chosen for the network clause: if you run a modified version of this game's server as a service,
+you must offer your users its source. Forks, derivatives, and hosted versions stay free.
+
+Dependencies must be AGPL-compatible. Assets, when they exist, will be licensed separately.

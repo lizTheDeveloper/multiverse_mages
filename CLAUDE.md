@@ -14,8 +14,29 @@ Consequences to respect on every commit:
 - **Design discussion is public.** The vision doc and OpenSpec artifacts are readable by anyone,
   including people who might build the same game. That is a deliberate accepted tradeoff, not an
   oversight — but write with an audience in mind.
-- **No license file yet**, so default copyright applies (all rights reserved). Adding a license is
-  the author's call; do not add one unprompted.
+## License: AGPL-3.0-or-later
+
+The project is licensed **GNU Affero General Public License v3.0 or later**, chosen deliberately
+as the most strongly copyleft option available. `LICENSE` holds the verbatim FSF text and must
+not be edited.
+
+What this obliges, and what it obliges of *us*:
+
+- **Every dependency must be AGPL-compatible.** Before adding any dependency, check its license.
+  Apache-2.0, MIT, BSD, LGPL, GPLv3, and MPL-2.0 are fine. **GPLv2-only is not** — it is
+  incompatible with AGPL-3.0 and would make the combined work undistributable. Neither are
+  proprietary or source-available licenses (BSL, SSPL, Elastic, "non-commercial", CC BY-NC).
+- **The network clause is the point.** Anyone running a modified version of the multiplayer server
+  as a service must offer its source to users. Keep the server's source-offer path intact; do not
+  design anything that would make compliance impractical.
+- **New source files carry the standard AGPL header** (short notice + reference to `LICENSE`),
+  and `package.json` files declare `"license": "AGPL-3.0-or-later"`.
+- **Assets are licensed separately from code.** When art, audio, or text content is added, license
+  it explicitly — CC BY-SA 4.0 is the natural copyleft counterpart. Do not assume the AGPL covers
+  non-software assets cleanly.
+- **Outside contributions inherit AGPL.** If commercial dual-licensing is ever wanted, that
+  requires owning or being assigned all copyright — i.e. a CLA, decided *before* accepting
+  contributions, not after. Flag this if a PR from a third party arrives.
 
 ## What this project is
 
