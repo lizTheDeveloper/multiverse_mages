@@ -163,17 +163,21 @@ design. Python RL bridge over JSON-over-stdio, staged for later.
 
 ## 11. Roadmap
 
-| # | Capability | Delivers |
-|---|---|---|
-| 1 | `sim-core` | Deterministic tick loop, entity store, snapshots, replay tests |
-| 2 | `knowledge-model` | Primitives, schools, nodes, knowledge instances, loss & rediscovery |
-| 3 | `mages-and-species` | Species, aging, utility AI with roles, universities, populace |
-| 4 | `agent-api` + `mc-harness` | Machine play and balance measurement |
-| 5 | `god-agency` | Favor, worship loop, interventions |
-| 6 | `raid-engagement` | Portals, host-ruleset arbitration, objectives, casualties, theft |
-| 7 | `electron-client` | Stylized-but-simple playable interface |
-| 8 | `pvp-server` | Live real-time PvP, lockstep, persistence |
-| 9 | `gym-bridge` | Python RL wrapper |
+Each row is one OpenSpec change, delivering the capability specs named beside it. Roadmap rows
+use the real change and capability identifiers so that `openspec list` and this table stay in
+agreement — that agreement is how "did the vision get built?" is answerable.
+
+| # | OpenSpec change | Capabilities delivered | Status |
+|---|---|---|---|
+| 1 | `sim-core-foundation` | `simulation-core`, `world-persistence`, `deterministic-replay` | specified |
+| 2 | `knowledge-model` | `magic-primitives`, `school-content`, `knowledge-instances` | not started |
+| 3 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities` | not started |
+| 4 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | not started |
+| 5 | `god-agency` | `favor-economy`, `worship-loop`, `interventions` | not started |
+| 6 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-objectives`, `raid-consequences` | not started |
+| 7 | `electron-client` | `client-shell`, `world-presentation` | not started |
+| 8 | `pvp-server` | `authoritative-lockstep`, `matchmaking`, `universe-persistence` | not started |
+| 9 | `gym-bridge` | `rl-bridge` | not started |
 
 Steps 1–3 produce a single universe that runs on its own. Step 4 makes it measurable. Steps 5–6
 make it a game. Steps 7–9 make it playable by humans and by learning agents.
