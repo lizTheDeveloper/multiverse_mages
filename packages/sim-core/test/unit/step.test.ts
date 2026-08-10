@@ -176,7 +176,9 @@ describe('randomness reaches systems through the stream registry', () => {
 
     let state = createState({ rootSeed: 99, schema });
     state = step(state, [], rngFromRootSeed(99));
-    state = step(state, [], rngFromRootSeed(99));
+    // The second tick's result is never read: what is under test is what the
+    // system was handed, which `drawn` already captured.
+    step(state, [], rngFromRootSeed(99));
 
     const rng = rngFromRootSeed(99);
     expect(drawn).toEqual([
