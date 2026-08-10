@@ -18,11 +18,11 @@
 
 ## 3. Splittable PRNG
 
-- [ ] 3.1 Implement a counter-based PCG-family generator over `Uint32Array` state with no floating-point values
-- [ ] 3.2 Implement stream derivation from `(rootSeed, subsystemId, tick)`
-- [ ] 3.3 Implement bounded-integer draw with rejection sampling so no modulo bias is introduced
-- [ ] 3.4 Unit test that streams are independent — adding draws in one subsystem leaves other subsystems' sequences unchanged
-- [ ] 3.5 Unit test that identical derivation inputs produce identical sequences, and commit a known-answer vector
+- [x] 3.1 Implement a counter-based PCG-family generator over `Uint32Array` state with no floating-point values
+- [x] 3.2 Implement stream derivation from `(rootSeed, subsystemId, tick)`
+- [x] 3.3 Implement bounded-integer draw with rejection sampling so no modulo bias is introduced
+- [x] 3.4 Unit test that streams are independent — adding draws in one subsystem leaves other subsystems' sequences unchanged
+- [x] 3.5 Unit test that identical derivation inputs produce identical sequences, and commit a known-answer vector
 
 ## 4. Entity store
 

@@ -37,3 +37,15 @@ export {
   mul,
   toInt,
 } from './fixed-point/fixed-point.js';
+
+export type { RngStream } from './rng/pcg32.js';
+export {
+  cloneStream,
+  nextBounded,
+  nextUint32,
+  rejectionThreshold,
+  streamFromWords,
+} from './rng/pcg32.js';
+
+export type { RngSubsystemId } from './rng/streams.js';
+export { RNG_STREAM, deriveStream } from './rng/streams.js';
