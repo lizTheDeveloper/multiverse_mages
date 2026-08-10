@@ -27,3 +27,5 @@
 export const SIM_CORE_SCAFFOLD_ONLY = true;
 
 export * from './handle.js';
+export * from './component.js';
+export * from './entity-store.js';
