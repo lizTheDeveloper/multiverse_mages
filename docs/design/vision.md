@@ -437,15 +437,19 @@ Produced by `npm run bench` in `sim-core-foundation` (task 9.4). Node v22.23.1, 
 
 | Entities | Steps/sec | Entity-updates/sec | Updates/step |
 |---:|---:|---:|---:|
-| 1,000 | 5,603 | 14.2 M | 2,542 |
-| 5,000 | 1,503 | 19.1 M | 12,713 |
-| 10,000 | 774 | 19.6 M | 25,321 |
-| 25,000 | 312 | 19.8 M | 63,343 |
+| 1,000 | 4,947 | 12.5 M | 2,530 |
+| 5,000 | 1,469 | 18.6 M | 12,689 |
+| 10,000 | 712 | 18.0 M | 25,345 |
+| 25,000 | 299 | 19.0 M | 63,319 |
 
-**What this answers.** Entity-update throughput plateaus at ~19.7 M/sec and is *flat* from 5,000
-to 25,000 entities: cost is linear in population with no cliff in that range. At 10,000 mages a
-universe sustains ~774 world ticks per second, and a world tick is one month — roughly **64 game
-years per wall-clock second**, single-threaded. At 25,000 it still holds ~26 game years/sec.
+**What this answers.** Entity-update throughput plateaus around **18–19 M/sec** and is *flat* from
+5,000 to 25,000 entities: cost is linear in population with no cliff in that range. At 10,000 mages
+a universe sustains ~712 world ticks per second, and a world tick is one month — roughly **59 game
+years per wall-clock second**, single-threaded. At 25,000 it still holds ~25 game years/sec.
+
+These are single-run figures on a warm machine and vary by a few percent between runs; treat the
+shape (flat, linear) as the finding and the absolute numbers as a floor to re-measure against, not
+as a precision instrument.
 
 **What it does not answer.** This is the *substrate's* cost with three components and four trivial
 systems. Real mage autonomy, knowledge lookup, and university economics land in `knowledge-model`
