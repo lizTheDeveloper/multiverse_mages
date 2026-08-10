@@ -8,9 +8,12 @@ its own.
 
 #### Scenario: Types are shared, not duplicated
 
-- **WHEN** a rules package declares a structural type describing an entity already defined in the
-  state schema
-- **THEN** the contract-conformance check fails and names the duplicated type
+*Restated during implementation. "Describing an entity already defined" had no operational
+meaning, so nothing could implement it. This is the operational form.*
+
+- **WHEN** a package other than `@mm/state` exports a type whose name matches a state record, or
+  whose declared field set is a superset of one `@mm/state` exports
+- **THEN** the conformance check fails, naming the file and the duplicated type
 
 #### Scenario: State round-trips through a snapshot
 
@@ -24,8 +27,14 @@ entities are positioned.
 
 #### Scenario: Position on a world entity is rejected
 
-- **WHEN** a position component is attached to a mage, university, cohort, or library
-- **THEN** the operation fails in development builds and the conformance test fails in CI
+*Restated during implementation. "Development builds" describes a build mode this repository does
+not have, and the failure is unconditional rather than mode-dependent — so the original THEN could
+not be checked as written.*
+
+- **WHEN** a world schema declares an `x` or `y` field on any world-scale component
+- **THEN** the conformance check fails and names the component
+- **AND WHEN** code writes a coordinate onto a mage, university, cohort, or library
+- **THEN** the write throws, because the layout gives those components no such field to write
 
 #### Scenario: Engagement entities are positioned
 
@@ -45,8 +54,15 @@ population as individual entities.
 
 #### Scenario: Individual populace is rejected
 
-- **WHEN** code attempts to create an individual entity with a non-mage occupation
-- **THEN** the conformance test fails
+*Restated during implementation. `contracts.md` §1.3 states a documentation gate — "no capability
+may promote populace to individual entities without changing this document first" — not a runtime
+guard, and the entity store is deliberately permissive about which components a handle carries.
+Asserting a guard that was never specified would have been inventing a requirement; asserting the
+layouts cannot express the confusion is what the contract actually buys.*
+
+- **WHEN** the mage and populace-cohort layouts are compared
+- **THEN** they share no field, so a cohort has no individual's attributes and a mage has no count
+- **AND** promoting populace to individual entities requires editing `contracts.md` §1.3 first
 
 ### Requirement: Single ruleset arbitration function
 

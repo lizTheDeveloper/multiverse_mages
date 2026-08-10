@@ -39,7 +39,7 @@ load. The mapping MUST be deterministic across runs and stable across processes.
 
 #### Scenario: Interning is deterministic
 
-- **WHEN** the same content set is loaded in two separate processes
+- **WHEN** the same content set is loaded twice with every content file's records reordered
 - **THEN** every string ID maps to the same integer in both
 
 #### Scenario: Runtime uses integers
