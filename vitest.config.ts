@@ -27,6 +27,7 @@ export default defineConfig({
       // Without the alias the workspace symlink resolves @mm/content to dist/,
       // so a test could quietly pass against a stale build.
       '@mm/content': packageSrc('content'),
+      '@mm/primitives': packageSrc('primitives'),
     },
   },
   test: {

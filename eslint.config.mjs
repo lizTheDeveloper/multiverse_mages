@@ -31,6 +31,15 @@ const CORE_SRC = ['packages/sim-core/src/**/*.ts', 'packages/sim-core/bench/**/*
 const CORE_TEST = ['packages/sim-core/test/**/*.ts'];
 
 /**
+ * `packages/primitives` is rules path: it is where effect-primitive magnitudes
+ * are stacked and clamped, so it carries the same float ban as the core. It is
+ * a separate glob rather than an addition to {@link CORE_SRC} because it *does*
+ * import — from `@mm/sim-core` and `@mm/content` — and lumping it in would blur
+ * what "the core depends on nothing" means.
+ */
+const PRIMITIVES_SRC = ['packages/primitives/src/**/*.ts'];
+
+/**
  * Globals whose values are not a function of `(state, actions, rng)`. Reading
  * any of them makes a run irreproducible, which breaks lockstep PvP and makes
  * every committed Monte Carlo baseline meaningless. `Date` is banned whole
@@ -141,6 +150,87 @@ const BAN_REQUIRE = {
     'ban. The simulation core is ESM and imports no Node built-ins.',
 };
 
+/**
+ * ## Inline combination of primitive magnitudes
+ *
+ * `docs/design/contracts.md` §3 gives every effect primitive a *declared*
+ * stacking rule, and the design note behind it names the failure this prevents:
+ * two implementers disagreeing about whether two `+20%` research bonuses make
+ * `+40%` or `+44%`. The disagreement is invisible — both readings compile, both
+ * produce plausible numbers, and the divergence only shows up months later as a
+ * balance baseline that nobody can reproduce.
+ *
+ * The defence is that the arithmetic exists in exactly one place
+ * (`packages/primitives/src/stacking.ts`) and everywhere else calls it. These
+ * selectors are the mechanical half of that: they reject the shapes an inline
+ * reimplementation actually takes — arithmetic directly on a `.magnitude`, a
+ * `reduce` over a `magnitudes` array, `Math.max` over one, a fixed-point helper
+ * applied straight to a magnitude.
+ *
+ * **This is a tripwire, not a proof.** A determined `for` loop accumulating into
+ * a differently-named local walks past it, and no syntax selector can close
+ * that. What the tripwire buys is that the *obvious* way to write the mistake
+ * fails immediately, with a message naming the function to call instead — which
+ * is the difference between a convention and a rule. It is applied to every
+ * package's `src` except the shared implementation itself and `sim-core`, which
+ * has no concept of a primitive.
+ */
+const BAN_INLINE_MAGNITUDE_ARITHMETIC = {
+  selector: "BinaryExpression[operator=/^[-+*/%]$/] > MemberExpression[property.name='magnitude']",
+  message:
+    'Effect primitive magnitudes may not be combined with inline arithmetic — the stacking rule is ' +
+    'declared per primitive in contracts.md §3 and implemented once in @mm/primitives. Call ' +
+    'stackMagnitudes(), or the named rule (additive/additiveIntoMultiplier/multiplicativeOnRemainder/maxOf).',
+};
+
+const BAN_INLINE_MAGNITUDE_ACCUMULATION = {
+  selector: "AssignmentExpression[operator=/^[-+*/%]=$/] > MemberExpression[property.name='magnitude']",
+  message:
+    'Accumulating into or out of a primitive magnitude is inline stacking by another spelling. ' +
+    'Collect the magnitudes and call stackMagnitudes() from @mm/primitives.',
+};
+
+const BAN_MAGNITUDE_REDUCE = {
+  selector:
+    "CallExpression[callee.property.name=/^(reduce|reduceRight)$/][callee.object.name=/[Mm]agnitudes$/]",
+  message:
+    'Folding an array of primitive magnitudes is exactly what @mm/primitives exists to do once. ' +
+    'The fold you write here will not know the primitive’s declared cap, and an uncapped ' +
+    'compounding rate is the runaway contracts.md §3 caps exist to prevent.',
+};
+
+const BAN_MAGNITUDE_MATH_EXTREMUM = [
+  {
+    selector:
+      "CallExpression[callee.object.name='Math'][callee.property.name=/^(max|min)$/] > MemberExpression[property.name='magnitude']",
+    message:
+      'Only some primitives stack by max (contracts.md §3), and which ones is registry data, not a ' +
+      'judgement call at the call site. Use maxOf()/stackMagnitudes() from @mm/primitives.',
+  },
+  {
+    selector:
+      "CallExpression[callee.object.name='Math'][callee.property.name=/^(max|min)$/] > SpreadElement > Identifier[name=/[Mm]agnitudes$/]",
+    message:
+      'Only some primitives stack by max (contracts.md §3), and which ones is registry data, not a ' +
+      'judgement call at the call site. Use maxOf()/stackMagnitudes() from @mm/primitives.',
+  },
+];
+
+const BAN_FIXED_POINT_ON_MAGNITUDE = {
+  selector: "CallExpression[callee.name=/^(mul|div|lerp)$/] > MemberExpression[property.name='magnitude']",
+  message:
+    'Applying a fixed-point helper straight to a primitive magnitude skips the declared stacking ' +
+    'rule and the cap. Route it through @mm/primitives, which applies both and counts the clamp.',
+};
+
+const BAN_INLINE_PRIMITIVE_STACKING = [
+  BAN_INLINE_MAGNITUDE_ARITHMETIC,
+  BAN_INLINE_MAGNITUDE_ACCUMULATION,
+  BAN_MAGNITUDE_REDUCE,
+  ...BAN_MAGNITUDE_MATH_EXTREMUM,
+  BAN_FIXED_POINT_ON_MAGNITUDE,
+];
+
 const BAN_NODE_BUILTINS = [
   'error',
   {
@@ -212,6 +302,42 @@ export default tseslint.config(
         BAN_REQUIRE,
       ],
       '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+
+  {
+    // ---- Shared primitive arithmetic: rules path, so the float ban applies. ----
+    // This block does not overlap CORE_SRC, and the inline-stacking block below
+    // deliberately excludes this glob: flat config resolves `no-restricted-syntax`
+    // last-block-wins rather than by union, so two blocks matching one file would
+    // silently disable the first block's bans.
+    files: PRIMITIVES_SRC,
+    rules: {
+      'no-restricted-globals': ['error', ...NONDETERMINISTIC_GLOBALS],
+      'no-restricted-imports': BAN_NODE_BUILTINS,
+      'no-restricted-syntax': [
+        'error',
+        BAN_MATH_RANDOM,
+        BAN_FLOAT_MATH,
+        BAN_FLOAT_NUMBER_MEMBERS,
+        BAN_DECIMAL_LITERAL,
+        BAN_NEGATIVE_EXPONENT_LITERAL,
+        BAN_DYNAMIC_IMPORT,
+        BAN_REQUIRE,
+      ],
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+
+  {
+    // ---- Everyone else: combine primitive magnitudes through @mm/primitives. ----
+    // `sim-core` is excluded because it has no concept of a primitive, and
+    // including it would collide with the purity block above; `primitives/src`
+    // is excluded because it *is* the shared implementation.
+    files: ['packages/*/src/**/*.ts'],
+    ignores: ['packages/sim-core/**/*.ts', ...PRIMITIVES_SRC],
+    rules: {
+      'no-restricted-syntax': ['error', ...BAN_INLINE_PRIMITIVE_STACKING],
     },
   },
 
