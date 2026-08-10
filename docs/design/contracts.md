@@ -86,6 +86,11 @@ permits(universe, cellId) =
 Interdiction beats dispensation; a cell may not carry both, and the loader rejects content that
 tries.
 
+**Legality gates world-time acquisition** — research, teaching, and scribing — and gates casting.
+It is deliberately **not** a universal invariant over instances: a mage may hold knowledge her
+universe has since forbidden, and it lies dormant rather than being erased. Making legality
+universal would silently pre-decide how raid theft works, which belongs to `raid-engagement`.
+
 ### 1.2 Mage (individual entity)
 
 | Field | Type | Notes |
@@ -95,6 +100,7 @@ tries.
 | `roleId` | `uint8` | researcher \| warden \| professor \| raider |
 | `universityId` | `uint32` | handle, 0 = unaffiliated |
 | `curiosity`, `ambition`, `caution` | `fp` | personality; rolled at birth from species means |
+| `vigor`, `maxVigor` | `fp` | the resource a tradition's `cost` hook deducts from. Without it, `cost` has nothing to spend and the hook is decorative |
 | `alive` | `bool` | |
 
 Mages are individuals. Everyone else is not.
@@ -140,10 +146,24 @@ this document first.
 |---|---|---|
 | `nodeId` | `uint16` | one node per grimoire |
 | `durability` | `fp` | species scribe-affinity raises this; dwarven books resist burning |
-| `holderKind` / `holderId` | `uint8` / `uint32` | mage, library, or in transit |
+| `holderKind` / `holderId` | `uint8` / `uint32` | mage, library, in transit, or **unowned** — a dead unaffiliated mage's books are not in transit to anywhere |
+
+**One instance per written copy.** A grimoire shelved in a library does not produce a second
+instance: the instance's location is *rewritten* from `(2, grimoireId)` to `(3, libraryId)` on
+shelving and back on removal. The grimoire-to-library association lives in a subsystem index, not in
+a second instance record. Counting a shelved book twice would inflate every redundancy metric and
+make `libraryDependence` lie in the safe direction.
+
+**`mastery` thresholds.** `fp(1024)` is full mastery. Below `TEACH_THRESHOLD` a mage may not teach
+at all; between the threshold and full, teaching transmits at proportionally reduced mastery. "Loss"
+in the mastery scale is therefore defined, not implied.
 
 **Derived, never stored:** whether a node "exists in the universe" is `count(instances of nodeId) > 0`,
 computed from an index maintained by the knowledge subsystem. Nothing may cache it in state.
+
+**Persisted, and not derivable:** a per-node **ever-known** record. Instances alone cannot
+distinguish a node this universe once held and lost from one it never knew — and rediscovery
+requires exactly that distinction. This is state, not an index.
 
 ### 1.6 Engagement-only entities
 
@@ -159,7 +179,8 @@ world snapshots.
 | `side` | `uint8` | 0 attacker, 1 defender |
 | `x`, `y` | `fp` | metres |
 | `hp`, `maxHp` | `fp` | |
-| `preparedSpells` | array of `nodeId` | the host's `cast` hook applied to the pool the combatant's **home** `store` hook makes available. A raider carries her own preparations and pays the local price to release them (vision §4a) |
+| `vigor`, `maxVigor` | `fp` | carried from the source mage; the host tradition's `cost` hook deducts from it |
+| `preparedSpells` | array of `nodeId` | **readied at home, spent abroad.** The raider's *home* `cast` hook populates this list at portal entry, drawing on what her home `store` hook makes available; the *host's* `cast` hook governs how casting consumes it and the host's `cost` hook sets the price. This is the only split under which vision §4a's "carries her own preparations but pays the host's price" is literally true — a purely host-governed `cast` would strip a Vancian raider of preparations entirely on arrival |
 | `concealment` | `fp` | |
 
 **RaidState**
@@ -221,7 +242,12 @@ serialized into snapshots.
   "researchCost": 4096,             // fp; mage-months of self-directed work
   "teachCost": 1024,                // fp; mage-months for a teacher/student pair
   "scribeCost": 2048,               // fp; scribe-months + materials
-  "rediscoveryMultiplier": 3072,    // fp; applied to researchCost when relearning a lost node
+  "rediscoveryMultiplier": 3072,    // fp; applied to researchCost when relearning a lost node.
+                                    // Content invariant: >= fp(3072). Species rediscoveryAffinity is
+                                    // applied, then a hard fp(3072) floor -- otherwise affinity alone
+                                    // drops the effective cost to 2.25x and falsifies the 0.3.0 claim.
+                                    // Author v1 bases at >= fp(4096) so species affinity has room to
+                                    // differentiate above the floor rather than being clamped flat
   "effects": [
     { "primitive": "direct-damage", "magnitude": 512, "target": "single", "durationTicks": 0 }
   ]
@@ -244,8 +270,14 @@ prerequisite has a higher `tier`.
   "retention": 1536,                // fp; resists mastery decay
   "fertility": 768,                 // fp multiplier on cohort birth rate
   "scribeAffinity": 1792,           // fp multiplier on grimoire durability and scribe-rate
-  "rediscoveryAffinity": 768,       // fp multiplier against rediscoveryMultiplier
-  "affinities": { "terram": 1536, "ignem": 1152 }   // by form or by cell id
+  "rediscoveryAffinity": 768,       // fp DIVISOR against rediscoveryMultiplier. Higher is better,
+                                    // uniform with every other trait -- so this dwarf is a
+                                    // below-average rediscoverer, and gnomes lead (vision §5)
+  "maturityMonths": 600,            // before which a mage cannot be promoted from a student cohort
+  "mageAptitude": 448,              // fp; share of matured students who become mages at all
+  "laborAffinity": 1280,            // fp multiplier on non-magical labour productivity
+  "affinities": { "terram": 1536, "ignem": 1152 },  // by form or by cell id
+  "personality": { "curiosity": 512, "ambition": 1024, "caution": 1024 }  // means; each defaults to fp(1024)
 }
 ```
 
@@ -293,7 +325,7 @@ all of them.
 | `research-rate` | multiplier on research progress | world | additive into `(1 + Σ)`, cap `fp(4096)` |
 | `teach-rate` | multiplier on teaching throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` |
 | `scribe-rate` | multiplier on scribing throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` |
-| `lifespan` | additive months | world | additive, cap `+50%` of species base |
+| `lifespan` | additive months | world | additive, cap `+50%` of species base. **Recomputed from active effects at each hazard evaluation, never accumulated into a stored field** — which is also why mortality is a per-tick hazard rather than a death date rolled at birth |
 | `fertility` | multiplier on cohort birth rate | world | additive into `(1 + Σ)`, cap `fp(3072)` |
 | `worship-yield` | multiplier on favor regeneration | world | additive into `(1 + Σ)`, cap `fp(2048)` |
 | `concealment` | fp probability of evading targeting/detection | both | multiplicative on the remainder, cap `fp(870)` = 85% |
@@ -307,6 +339,12 @@ discovering it in live play.
 
 **Rounding.** All `fp` division rounds toward negative infinity via the single shared helper. No
 exceptions — uniform rounding is what makes replays reproducible.
+
+**Extended precision is mandatory wherever a per-tick rate derives from a long span.** A draconic
+lifespan of 18,000 months divided at `fp` scale floors to **zero hazard**, and dragons become
+silently immortal — a defect that would survive thousands of Monte Carlo runs looking like a
+species that is merely very long-lived. Any rate of the form `X / lifespanMonths` computes at
+extended scale before narrowing, and a test must assert a non-zero draconic hazard specifically.
 
 ---
 

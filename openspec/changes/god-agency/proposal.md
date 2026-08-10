@@ -102,6 +102,13 @@ as spec-level modifications made unilaterally here.
     and therefore cannot record what the run achieved.
   - An era-advancement rule. §1.1 declares `era` as `uint16` and nothing in vision or contracts
     says when it increments, yet the second ascension path is defined over eras.
+  - A relaxation of §1.1's `edicts` invariant. Contracts declares `length ≤ edictBudget`
+    unconditionally; this change specifies that a universe falling a worship tier keeps its edicts
+    in force and is merely barred from issuing more, so the invariant must become "a new edict may
+    be issued only while `length < edictBudget`" with existing edicts persisting through a tier
+    fall. The alternative — deterministically auto-revoking an edict when the budget shrinks — was
+    rejected as arbitrary and hard to observe, but the disagreement with §1.1 as written is real
+    and is reported rather than worked around.
 - **Downstream:** `raid-engagement` consumes the portal-opening precondition and the frozen-policy
   rule; `pvp-server` consumes `prestigeAdvantage` as its own release claim at 0.10.0;
   `electron-client` presents favor, worship tier, and the legality mask without recomputing any

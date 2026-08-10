@@ -139,10 +139,14 @@ Every run SHALL terminate with exactly one recorded outcome from `ascended`, `st
 when any of the following holds: no living mage for `STAGNATION_MAGELESS_TICKS` consecutive world
 ticks; worship below `STAGNATION_WORSHIP_FLOOR` for `STAGNATION_WORSHIP_TICKS` consecutive world
 ticks; or no node newly entering the universe by any route for `STAGNATION_STASIS_TICKS`
-consecutive world ticks. A run reaching `MC_MAX_TICKS` without terminating MUST end as `cutoff`.
-`STAGNATION_MAGELESS_TICKS = 60`, `STAGNATION_WORSHIP_FLOOR = fp(128)`,
-`STAGNATION_WORSHIP_TICKS = 240`, `STAGNATION_STASIS_TICKS = 480`, and `MC_MAX_TICKS = 2400` are
-untuned placeholders.
+consecutive world ticks **while worship is simultaneously below `STAGNATION_HEALTH_FLOOR`**. The
+stasis trigger MUST be conjunctive in this way, because a flourishing custodian that has completed
+its learnable graph and lost nothing also acquires no new nodes, and that civilization is the exact
+one the Enduring Canon path exists to reward — terminating it as ruin would execute Path B's best
+players before they could qualify. A run reaching `MC_MAX_TICKS` without terminating MUST end as
+`cutoff`. `STAGNATION_MAGELESS_TICKS = 60`, `STAGNATION_WORSHIP_FLOOR = fp(128)`,
+`STAGNATION_WORSHIP_TICKS = 240`, `STAGNATION_STASIS_TICKS = 480`,
+`STAGNATION_HEALTH_FLOOR = fp(2048)`, and `MC_MAX_TICKS = 2400` are untuned placeholders.
 
 #### Scenario: A dead civilization stagnates
 
@@ -151,9 +155,16 @@ untuned placeholders.
 
 #### Scenario: A living but frozen civilization stagnates
 
-- **WHEN** a universe keeps its mages and populace but acquires no new node for 480 consecutive
-  world ticks
+- **WHEN** a universe keeps a handful of mages, acquires no new node for 480 consecutive world
+  ticks, and holds worship below `STAGNATION_HEALTH_FLOOR` throughout
 - **THEN** the run terminates as `stagnated`
+
+#### Scenario: A thriving custodian is not stagnant
+
+- **WHEN** a universe has learned every node its content graph offers, lost none, and holds worship
+  above `STAGNATION_HEALTH_FLOOR` for 480 consecutive world ticks with no new node entering
+- **THEN** the run does not terminate, and it remains eligible to reach era 4 and declare the
+  Enduring Canon path
 
 #### Scenario: Defeat is not the opposite of ascension
 

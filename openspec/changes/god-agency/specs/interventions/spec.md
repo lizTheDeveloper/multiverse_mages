@@ -117,20 +117,29 @@ edict SHALL free its slot in the same world tick.
 ### Requirement: Granting founding knowledge is the only route for an unknown body of magic
 
 Granting founding knowledge SHALL create exactly one knowledge instance of the named node at
-`mind:<mageId>`, and MUST be legal only when the node currently has zero instances in the universe,
-the target mage is alive, and `permits` returns true for the node's cell. The grant MUST bypass the
-node's prerequisites, and no other intervention may introduce a node the universe has never held.
-A cost of `fp(12288) × node tier` and a granted mastery of `fp(1024)` are untuned placeholders.
+`mind:<mageId>`, and MUST be legal only when the node declares no prerequisites, the node currently
+has zero instances in the universe, the target mage is alive, and `permits` returns true for the
+node's cell. No other intervention may introduce a node the universe has never held. Restricting
+grants to the prerequisite-free roots of a cell's graph is load-bearing: a grant that could name any
+node would let a god buy the deepest node of a cell outright, which would reduce the Apotheosis
+ascension path to a favor-accumulation race. A cost of `fp(12288) × node tier` and a granted mastery
+of `fp(1024)` are untuned placeholders.
 
 #### Scenario: A grant seeds a body of magic
 
-- **WHEN** the god grants a tier-1 node that no instance of exists to a living mage
+- **WHEN** the god grants a prerequisite-free node that no instance of exists to a living mage
 - **THEN** exactly one instance exists at that mage's mind, and the node now exists in the universe
 
-#### Scenario: Prerequisites are bypassed
+#### Scenario: A node with prerequisites cannot be granted
 
-- **WHEN** the granted node declares prerequisites the target mage does not hold
-- **THEN** the grant succeeds, because founding knowledge is how a prerequisite chain starts
+- **WHEN** the named node declares one or more prerequisites
+- **THEN** the action is masked, and the node must be reached by research, teaching, or scribing
+  from the granted root
+
+#### Scenario: The summit cannot be bought
+
+- **WHEN** a god with favor at its cap attempts to grant the deepest node of a cell directly
+- **THEN** the action is masked, since that node declares prerequisites
 
 #### Scenario: A grant cannot duplicate existing knowledge
 

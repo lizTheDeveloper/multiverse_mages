@@ -358,6 +358,30 @@ Note also that `idle` is read as "not economically productive", which covers chi
 old, not merely unemployed adults. Newborns enter the youngest bucket of the `idle` cohort for
 their species.
 
+### Cohorts die too, using the same hazard table at cohort granularity
+
+Populace cohorts lose members every world tick to the *same* scale-free hazard table that kills
+mages, indexed by the normalized age implied by `birthTickBucket`, with expected deaths computed as
+an integer part plus exactly one draw on stream 6 per cohort — the identical arithmetic used for
+mage promotion, and for the identical reason.
+
+This is worth recording as a decision because it is the easiest thing in the change to leave out.
+Cohorts already lose members to occupation transitions and to mage promotion, both of which look
+like attrition, and neither of which is death. Omitting mortality would break three things at once:
+the 0.4.0 claim that no species population reaches zero becomes vacuous, since nothing could die;
+the cohort entity bound stops holding, because old birth buckets would accumulate for the length of
+the run rather than retiring; and the carrying-capacity equilibrium below becomes a ratchet toward
+`K` rather than a balance of births against deaths. The economy spec's reading of `idle` as
+including those "past productive age" only means something if there is an end to be past.
+
+Reusing the mage table rather than authoring a second one keeps one shape to tune and means the
+draconic precision trap is fixed in one place for both.
+
+*Alternative considered:* deterministic bucket expiry — a cohort simply vanishes when its bucket
+exceeds the species lifespan. Rejected: it produces a step-function population that drops in
+decade-sized cliffs, and every rate derived from population inherits the cliff, which is the same
+class of measurement artifact as the bang-bang reallocation rejected below.
+
 ### Fertility is braked by carrying capacity; population is not hard-capped
 
 Births per cohort scale by `clamp((K − population) × fp(1024) / K, 0, fp(1024))`, where `K` is a

@@ -279,6 +279,21 @@ never declares reveals that the terminal reward is mispriced against continued p
 *Alternative considered:* automatic termination on condition. Rejected — it removes the decision
 and makes it impossible to distinguish "could not ascend" from "chose not to".
 
+### Founding knowledge seeds roots only, or the summit becomes purchasable
+
+Granting founding knowledge is restricted to nodes that declare no prerequisites — the roots of a
+cell's graph. Without that restriction the grant would be a direct purchase of any node in the
+game, and the cheapest route to Path A would be to save favor to the pool cap, grant the deepest
+node of a cell outright, scribe a second copy, and declare. That would turn a condition built as a
+conjunction of four unlikely facts into a favor-accumulation race, and take the ascension band's
+whole plausibility argument with it.
+
+The restriction is also the more faithful reading of vision §7 — founding knowledge exists "so that
+a body of magic can exist in your world for the first time", which is a *beginning*, not a summit.
+
+*Alternative considered:* allowing any node but pricing deep grants steeply. Rejected — a price is
+a delay, and a hundred world years of saving is not a design constraint, it is a loading screen.
+
 ### Two disjoint ascension paths, and depth is defined relative to content
 
 **Path A — Apotheosis of Mastery.** A living mage holds a node that is the deepest node present in
@@ -319,11 +334,17 @@ is part of the specification rather than an afterthought.
 Vision §8a says a ruined universe "stagnates, and stagnation is its own ending" — which is prose,
 not a condition. A run terminates as `stagnated` when any of: no living mage for 60 consecutive
 world ticks; worship below `fp(128)` for 240 consecutive world ticks; or no node newly entering the
-universe by any route for 480 consecutive world ticks. A run that reaches tick 2400 without
-terminating ends as `cutoff`.
+universe by any route for 480 consecutive world ticks *while worship is also below a health floor*.
+A run that reaches tick 2400 without terminating ends as `cutoff`.
 
-Without this, `ascensionRate` is a fraction over an undefined denominator, and Monte Carlo runs
-that are already decided burn wall-clock proving it.
+The third trigger is conjunctive for a specific reason. A perfect custodian — zero losses, every
+learnable node already learned — acquires no new nodes either, because zero losses means nothing to
+rediscover. A bare stasis trigger would therefore terminate as *ruin* the exact civilization Path B
+exists to reward, and would do it at tick 480 when Path B qualifies at tick 960. Stagnation must
+mean decline, not completion, and only worship distinguishes the two.
+
+Without a stagnation definition at all, `ascensionRate` is a fraction over an undefined denominator,
+and Monte Carlo runs that are already decided burn wall-clock proving it.
 
 ### Prestige buys stocks; it never buys rates
 

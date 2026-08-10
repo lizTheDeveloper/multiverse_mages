@@ -4,6 +4,7 @@
 - [ ] 1.2 Amend `contracts.md` §4.1 with `edictBudgetMax = 6`, and confirm the observation vector's ruleset block length against it
 - [ ] 1.3 Amend `contracts.md` §7 with the `worshipSnowball` threshold and the new `ascensionRateByPath` and `favorWasted` metrics
 - [ ] 1.4 Record the era-advancement rule in `contracts.md`, noting that ownership may move to the world-rules layer
+- [ ] 1.4a Amend `contracts.md` §1.1's `edicts` invariant to "a new edict may be issued only while `length < edictBudget`", with existing edicts persisting through a worship-tier fall
 - [ ] 1.5 Author the intervention cost table as validated content, one entry per action ID in §4.2, with a schema rejecting missing or negative entries
 - [ ] 1.6 Author the worship, tier-threshold, ascension, stagnation, and prestige constants as validated content, each flagged as an untuned placeholder
 - [ ] 1.7 Add a content check asserting `PRESTIGE_CAP × (fp(1024) − PRESTIGE_RETENTION) == PRESTIGE_EARN_MAX × fp(1024)`
@@ -40,7 +41,8 @@
 - [ ] 4.2 Extend the legality mask so every action 1–15 is false during engagement mode
 - [ ] 4.3 Implement technique and form toggles with symmetric cost, immediate effect, and all legality routed through `permits`
 - [ ] 4.4 Implement dispensation, interdiction, and revocation against `edictBudget`, masking vacuous edicts
-- [ ] 4.5 Implement grant founding knowledge: zero-instance precondition, permitted cell, living target, prerequisite bypass, one instance at `mind:` with full mastery
+- [ ] 4.5 Implement grant founding knowledge: prerequisite-free node only, zero-instance precondition, permitted cell, living target, one instance at `mind:` with full mastery
+- [ ] 4.5a Add a test asserting that granting the deepest node of a cell is masked, so the Apotheosis path cannot be purchased
 - [ ] 4.6 Implement blessing as time-limited `research-rate`, `teach-rate`, and `lifespan` contributions through the shared stacking arithmetic, with refresh-not-stack and the tier-based concurrency cap
 - [ ] 4.7 Implement role assignment, and add a content check that its cost is strictly the lowest non-zero cost
 - [ ] 4.8 Implement fund and found university, with worship and capacity contributions gated on `buildProgress` reaching `fp(1024)`
@@ -58,7 +60,8 @@
 - [ ] 5.3 Implement Path B over retained era-boundary evaluations
 - [ ] 5.4 Implement the minimum-tick floor and action 15's mask predicate, including lapse when the condition stops holding
 - [ ] 5.5 Implement declaration: set `ascended`, record outcome and tick, freeze the universe, mask everything but the no-op
-- [ ] 5.6 Implement the three stagnation triggers and the tick cutoff, each terminating the run with its recorded outcome
+- [ ] 5.6 Implement the three stagnation triggers and the tick cutoff, each terminating the run with its recorded outcome, with the stasis trigger conjunctive on the worship health floor
+- [ ] 5.6a Add a test asserting that a thriving custodian with a completed graph is not terminated as stagnant before it can reach era 4
 - [ ] 5.7 Implement the terminal-score ordering used to decide a pairing before raids exist, marked provisional
 - [ ] 5.8 Unit test that a content graph whose deepest tier is 5 satisfies Path A, with no literal tier-7 check anywhere in the tree
 - [ ] 5.9 Unit test single-instance and forbidden-cell disqualification, one-bad-era disqualification, and the pre-tick-600 mask

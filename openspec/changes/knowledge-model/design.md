@@ -419,6 +419,12 @@ edit plus a re-tune, not a structural change.
   conservative placeholder. The capital loop is one of the two compounding loops `vision.md` §6a
   flags, and the weighting is a prime suspect for `capitalSnowball`; it is a tuning constant, first
   measured at 0.5.0.
+- **What resource does the `cost` hook deduct from?** `contracts.md` §1.2 gives a mage no fatigue,
+  vigor, or reserve field, and §1.6 gives a combatant only `hp` and `concealment`. The `cost` hook
+  therefore has nothing declared to spend. This change specifies `cost` as a function returning a
+  magnitude — `standard` returns non-zero, `prepaid` returns zero — so the hook is fully testable
+  without the resource existing; whichever capability introduces the caster resource must add it to
+  `contracts.md` §1.2 and §1.6. Reported to the contract owner rather than invented here.
 - **Is `fp(1024)` the right teaching-eligibility threshold, or should it sit below full mastery?**
   Authored as a content constant so it can move without a code change, but which value produces
   interesting generational degradation is unanswerable before the harness exists.

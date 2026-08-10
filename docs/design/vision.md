@@ -212,6 +212,12 @@ fertility, and technique/form affinities.
 | **Gnome** | ~350y | Highest curiosity, discovery and *rediscovery* bonuses, poor retention. Erratic geniuses. |
 | **Orc** | ~60y | Low magical aptitude, high build-rate and martial capability, high fertility. |
 
+**Universities are generic capacity; specialization is emergent** — a university becomes known for
+Rego Terram because that is what its library holds and its professors know, not because it declared
+a discipline. The decisive reason is mechanical: the observation block for institutions is fixed at
+four slots, and a declared specialization over 70 cells would force a resize that invalidates every
+trained agent.
+
 **Non-magical individuals** exist across all species and matter mechanically: scribes copy
 grimoires, laborers build universities, students become the next generation of mages, soldiers
 fight in raids without magic. A universe of pure archmages does not function.
@@ -420,6 +426,4 @@ Tracked for resolution during the changes that need them, not blocking:
   contain *Rego Limen* for portals and enough asymmetry to make the permit/forbid decision real.
 - How large is the edict budget, and how does it scale with worship tier? Deferred to
   `god-agency` and expected to be retuned repeatedly by the balance harness.
-- Do universities have specializations, or are they generic capacity? Deferred to
-  `mages-and-species`.
 - What is the exact worship formula? Deferred to `god-agency`, same caveat.
