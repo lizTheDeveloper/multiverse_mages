@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks repo-root tooling that is not part of any workspace package.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "emitDeclarationOnly": true,
+    "outDir": ".tsbuild/tools",
+    "tsBuildInfoFile": ".tsbuild/tools.tsbuildinfo"
+  },
+  "include": ["vitest.config.ts"]
+}

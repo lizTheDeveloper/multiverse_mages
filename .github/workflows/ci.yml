@@ -1,0 +1,83 @@
+# Multiverse Mages — continuous integration.
+# Copyright (C) 2026 Ann Kelner
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# The pinned job is the gate. The next-major job is an early-warning signal for
+# cross-version determinism drift and must never block a merge.
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify (pinned Node)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Dependency-purity check
+        run: npm run check:purity
+
+      - name: Test (unit + golden replay)
+        run: npm test
+
+  next-node:
+    # Early warning only: a failure here means the next Node major may change
+    # simulation behaviour, which we want to know about before it is pinned.
+    # Node 23 is skipped deliberately — odd majors are already end-of-life.
+    name: Next Node major (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      # `engines` pins Node 22, so npm prints an EBADENGINE warning here. That is
+      # intended: the warning is the point, and engine-strict is left off so the
+      # early-warning job can still run.
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Dependency-purity check
+        run: npm run check:purity
+
+      - name: Test (unit + golden replay)
+        run: npm test

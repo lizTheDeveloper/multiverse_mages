@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Solution file. `tsc --build` from the repo root typechecks every project listed here.",
+  "files": [],
+  "references": [
+    { "path": "./packages/sim-core" },
+    { "path": "./packages/sim-core/tsconfig.test.json" },
+    { "path": "./tsconfig.tools.json" }
+  ]
+}
