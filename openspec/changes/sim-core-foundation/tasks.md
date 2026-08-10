@@ -11,18 +11,18 @@
 
 ## 2. Fixed-point arithmetic
 
-- [ ] 2.1 Implement the fixed-point module at scale 1/1024 with `fromInt`, `toInt`, `mul`, `div`, `lerp`
-- [ ] 2.2 Implement `div` rounding toward negative infinity through a single shared helper used by all division
-- [ ] 2.3 Unit test round-trip conversion, negative-value rounding symmetry, and overflow boundaries
-- [ ] 2.4 Property-test `mul` and `div` associativity and monotonicity within the documented precision bound
+- [x] 2.1 Implement the fixed-point module at scale 1/1024 with `fromInt`, `toInt`, `mul`, `div`, `lerp`
+- [x] 2.2 Implement `div` rounding toward negative infinity through a single shared helper used by all division
+- [x] 2.3 Unit test round-trip conversion, negative-value rounding symmetry, and overflow boundaries
+- [x] 2.4 Property-test `mul` and `div` associativity and monotonicity within the documented precision bound
 
 ## 3. Splittable PRNG
 
-- [ ] 3.1 Implement a counter-based PCG-family generator over `Uint32Array` state with no floating-point values
-- [ ] 3.2 Implement stream derivation from `(rootSeed, subsystemId, tick)`
-- [ ] 3.3 Implement bounded-integer draw with rejection sampling so no modulo bias is introduced
-- [ ] 3.4 Unit test that streams are independent — adding draws in one subsystem leaves other subsystems' sequences unchanged
-- [ ] 3.5 Unit test that identical derivation inputs produce identical sequences, and commit a known-answer vector
+- [x] 3.1 Implement a counter-based PCG-family generator over `Uint32Array` state with no floating-point values
+- [x] 3.2 Implement stream derivation from `(rootSeed, subsystemId, tick)`
+- [x] 3.3 Implement bounded-integer draw with rejection sampling so no modulo bias is introduced
+- [x] 3.4 Unit test that streams are independent — adding draws in one subsystem leaves other subsystems' sequences unchanged
+- [x] 3.5 Unit test that identical derivation inputs produce identical sequences, and commit a known-answer vector
 
 ## 4. Entity store
 
