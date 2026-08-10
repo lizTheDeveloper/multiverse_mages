@@ -116,7 +116,15 @@ const BAN_NODE_BUILTINS = [
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '.tsbuild/**', 'coverage/**'],
+    // .claude/worktrees holds throwaway git worktrees created by background agents.
+    // They contain full copies of this repo, so linting them double-reports every file.
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '.tsbuild/**',
+      'coverage/**',
+      '.claude/worktrees/**',
+    ],
   },
 
   js.configs.recommended,
