@@ -216,6 +216,29 @@ fertility, and technique/form affinities.
 grimoires, laborers build universities, students become the next generation of mages, soldiers
 fight in raids without magic. A universe of pure archmages does not function.
 
+## 6a. The Economy
+
+Three tracked inputs, distinct from favor (which is the god's own currency, §7):
+
+**Populace** — people, by species and by role. Produced by fertility, consumed by everything.
+Non-magical individuals are the bulk of it: laborers raise buildings, scribes copy grimoires,
+students become the next generation of mages, soldiers fight in raids without magic. Mages are a
+thin, expensive layer on top of a large ordinary population.
+
+**Materials** — the physical substrate. Buildings consume it; so does every grimoire, which is why
+a universe can be knowledge-rich and unable to write any of it down. *Rego Terram* and its
+neighbours move this number, which is how "earth magic builds universities faster" becomes a
+number rather than a special case.
+
+**Knowledge as capital** — a university's output scales with the depth of its library. This is the
+consequential one: knowledge is not merely a thing you accumulate, it is an *input to producing
+more knowledge*. A deep library trains better mages, who research faster, who deepen the library.
+
+That is a compounding loop, and it is the second one in the design after worship (§7). Two
+compounding loops that feed each other is exactly the shape that produces runaway leaders in
+strategy games, so the balance harness must watch it specifically — and burning a rival's library
+is not just a loss of stored spells, it is an attack on their rate of future production.
+
 ## 7. The God's Agency
 
 Everything the player does costs **favor**, drawn from a regenerating pool whose regeneration
@@ -232,6 +255,24 @@ encourage a research direction, and — rarely and ruinously — change the univ
 their assigned standing **role** (researcher, warden, professor, raider). You set the role; they
 decide everything else. You never issue direct orders — including in raids.
 
+## 7a. Space and Scale
+
+**The world is abstract. Raids are positional.** This split is deliberate and it defines what the
+simulation has to represent.
+
+At **world scale** there is no map. Universities, populations, materials, and knowledge are counts
+and relationships. A university is not *somewhere*; it exists, it has a library, it has staff, it
+has students. Knowledge spreads through the teaching graph, not across geography. This keeps the
+management layer legible and keeps world-time Monte Carlo cheap enough to run at volume.
+
+At **raid scale** there is a real battlefield: positioned combatants, terrain, range, line of
+sight, and objectives that occupy locations. This is where the game looks like an RTS and where
+the `blink/mobility` and `area-denial` primitives mean anything.
+
+The consequence for the simulation core: only engagement-mode state needs spatial indexing, and
+only combatants need positions. World-scale entities carry no coordinates at all. This is a large
+saving and it is why the entity store's component model must not assume every entity is placed.
+
 ## 8. Raids
 
 - **Two clocks.** World time advances in months/years while you tend your universe. Entering a
@@ -246,6 +287,30 @@ decide everything else. You never issue direct orders — including in raids.
 - **Stakes:** casualties are permanent. Knowledge whose last instance dies with a mage or burns
   in a library is *lost* and must be rediscovered. Theft is cell-gated, not universal — it lives
   in *Intellego Mentem* and *Rego Nomen*.
+
+## 8a. Ascension and Prestige
+
+A universe's life is long but not endless. **Ascension** is the terminal condition: a summit
+reached — the deepest node of a cell, or a civilization that has held its knowledge intact across
+enough eras — that ends the run gloriously rather than by defeat.
+
+**Prestige carries forward.** Ascending closes a universe and opens a new one, seeded with legacy
+drawn from what the last one achieved. The persistent world is therefore persistent *across* runs,
+not within one infinite run.
+
+This resolves a tension the earlier design had. "Persistent world" and "Monte Carlo needs a
+terminal condition" pull against each other; ascension gives every run a clean, bounded end that
+MC can score as a binary and a duration, while prestige preserves the long-term ownership the
+persistent-world fantasy is actually about.
+
+Design constraints this creates, to be honoured in `god-agency` and the balance harness:
+
+- Prestige must not compound without bound across runs, or the meta-game decides matches before
+  they begin — a live-PvP death sentence.
+- The ascension condition must be reachable but not routine. If a majority of Monte Carlo runs
+  ascend, it is not a summit; if almost none do, the meta-game never starts.
+- Defeat is not the opposite of ascension. A universe that is raided to ruin does not "lose" —
+  it stagnates, and stagnation is its own ending.
 
 ## 9. Balance Methodology
 
@@ -269,6 +334,14 @@ and the authoritative multiplayer server. Determinism is enforced by golden-repl
 Written so the hot loop could be ported to Rust if throughput demands it, without touching game
 design. Python RL bridge over JSON-over-stdio, staged for later.
 
+**Hosting and distribution:** published under **Multiverse Games**, hosted on **Hetzner Cloud**,
+provisioned via the `hcloud` CLI. Both the game's distribution and the authoritative multiplayer
+servers live there. `pvp-server` is therefore designed for self-hosted Linux VMs — plain
+containers or systemd units on Hetzner instances, no managed-cloud primitives, no vendor
+serverless, and no dependency on a service that only one provider offers. That constraint is also
+what keeps the AGPL's source-offer obligation practical to honour: anyone can stand up the same
+server the same way.
+
 ## 11. Roadmap
 
 Each row is one OpenSpec change, delivering the capability specs named beside it. Roadmap rows
@@ -277,18 +350,29 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 
 | # | OpenSpec change | Capabilities delivered | Status |
 |---|---|---|---|
-| 1 | `sim-core-foundation` | `simulation-core`, `world-persistence`, `deterministic-replay` | specified |
-| 2 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | not started |
-| 3 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities` | not started |
-| 4 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | not started |
-| 5 | `god-agency` | `favor-economy`, `worship-loop`, `interventions` | not started |
-| 6 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-objectives`, `raid-consequences` | not started |
-| 7 | `electron-client` | `client-shell`, `world-presentation` | not started |
-| 8 | `pvp-server` | `authoritative-lockstep`, `matchmaking`, `universe-persistence` | not started |
-| 9 | `gym-bridge` | `rl-bridge` | not started |
+| 1 | `sim-core-foundation` | `simulation-core`, `world-persistence`, `deterministic-replay` | in progress |
+| 2 | `core-contracts` | `state-schema`, `content-schemas`, `primitive-semantics`, `observation-action-space`, `module-boundaries` | specified |
+| 3 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | not started |
+| 4 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | not started |
+| 5 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | not started |
+| 6 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | not started |
+| 7 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | not started |
+| 8 | `electron-client` | `client-shell`, `world-presentation` | proposal only |
+| 9 | `pvp-server` | `authoritative-lockstep`, `matchmaking`, `universe-persistence`, `hetzner-deployment` | proposal only |
+| 10 | `gym-bridge` | `rl-bridge` | proposal only |
 
-Steps 1–3 produce a single universe that runs on its own. Step 4 makes it measurable. Steps 5–6
-make it a game. Steps 7–9 make it playable by humans and by learning agents.
+Steps 1–4 produce a single universe that runs on its own. Step 5 makes it measurable. Steps 6–7
+make it a game. Steps 8–10 make it playable by humans and by learning agents.
+
+**Change 2 is the parallelization gate.** Everything downstream is built against the contracts it
+fixes — the state schema, the content data schemas, the exact semantics of every effect primitive,
+and the observation/action space. With contracts in hand, changes 3, 4, and 5 can be built
+concurrently by separate agents without touching each other's code; without them, they would each
+invent an incompatible version of the same model.
+
+**Changes 8–10 are deliberately held at proposal depth** until the core exists. Specifying a
+client, a netcode layer, and an RL bridge with zero implementation experience produces documents
+that are confidently wrong in ways nobody can see yet.
 
 ## 12. Deliberately Out of Scope for v1
 
@@ -305,6 +389,11 @@ Tracked for resolution during the changes that need them, not blocking:
 
 - How many mages does a mature universe hold? This sets the simulation's performance budget and
   is answered empirically in `sim-core-foundation` benchmarking.
+- How long is a world year in real seconds, and how long should a raid run? Pacing is a tuning
+  output of the balance harness, not an up-front decision; the contracts fix the *units*, not the
+  values.
+- How much prestige may carry between runs before the meta-game decides matches before they
+  start? Deferred to `god-agency`; the balance harness must test it adversarially.
 - Does world time advance for *uninvolved* universes during someone else's raid, or globally
   pause? Only matters once `pvp-server` exists.
 - Which 3 techniques × 4 forms make the v1 subset? Deferred to `knowledge-model`; the subset must
