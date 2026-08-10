@@ -306,6 +306,135 @@ export class EntityStore {
   }
 
   /**
+   * Copies this store's slot bookkeeping into another store, replacing what it
+   * held. Components are *not* copied — `SimState.clone` copies those through
+   * `ComponentStore.cloneStateInto`, so each store's registration order stays
+   * the one its own constructor established.
+   *
+   * The free list is copied verbatim, top included. Rebuilding it from the
+   * dead slots would be tempting and wrong: the list is LIFO, so its *order*
+   * decides which slot the next `create` returns, and a clone that reordered
+   * it would hand out different entity IDs than the original for the same
+   * subsequent actions. That is a desync, discovered a month later.
+   *
+   * @internal Consumers clone states, not stores.
+   */
+  cloneStateInto(target: EntityStore): void {
+    if (target.#maxSlots !== this.#maxSlots) {
+      throw new Error(
+        `Cannot clone an entity store with maxSlots ${this.#maxSlots} into one with ${target.#maxSlots}.`,
+      );
+    }
+    target.#generations = this.#generations.slice();
+    target.#alive = this.#alive.slice();
+    target.#freeSlots = this.#freeSlots.slice();
+    target.#freeTop = this.#freeTop;
+    target.#slotCount = this.#slotCount;
+    target.#liveCount = this.#liveCount;
+  }
+
+  /**
+   * The store's slot bookkeeping, for the serializer. Arrays are views into
+   * live storage, truncated to the meaningful prefix — read them, do not keep
+   * them across a mutation.
+   *
+   * @internal
+   */
+  rawSlotState(): {
+    readonly generations: Uint16Array;
+    readonly alive: Uint8Array;
+    readonly freeList: Uint32Array;
+    readonly slotCount: number;
+    readonly liveCount: number;
+  } {
+    return {
+      generations: this.#generations.subarray(0, this.#slotCount),
+      alive: this.#alive.subarray(0, this.#slotCount),
+      freeList: this.#freeSlots.subarray(0, this.#freeTop),
+      slotCount: this.#slotCount,
+      liveCount: this.#liveCount,
+    };
+  }
+
+  /**
+   * Rebuilds slot bookkeeping from a snapshot, for the deserializer.
+   *
+   * Validates rather than trusts: a snapshot is an input from outside the
+   * process — off disk, or off a network in `pvp-server` — and a free list
+   * naming a live slot would hand that slot to a second entity. `world-
+   * persistence` requires a descriptive failure over a partially populated
+   * state, and this is where most of that requirement is enforced.
+   *
+   * @internal
+   */
+  restoreSlotState(input: {
+    readonly generations: Uint16Array;
+    readonly alive: Uint8Array;
+    readonly freeList: Uint32Array;
+  }): void {
+    const slotCount = input.generations.length;
+    if (input.alive.length !== slotCount) {
+      throw new Error(
+        `Snapshot entity store is inconsistent: ${slotCount} generations but ${input.alive.length} liveness flags.`,
+      );
+    }
+    if (slotCount > this.#maxSlots) {
+      throw new Error(
+        `Snapshot declares ${slotCount} entity slots, above this store's maximum of ${this.#maxSlots}.`,
+      );
+    }
+
+    let liveCount = 0;
+    for (let slot = 0; slot < slotCount; slot += 1) {
+      const generation = input.generations[slot] as number;
+      const alive = input.alive[slot] as number;
+      if (alive !== 0 && alive !== 1) {
+        throw new Error(`Snapshot slot ${slot} has liveness flag ${alive}; expected 0 or 1.`);
+      }
+      if (generation < 1 || generation > MAX_ENTITY_GENERATION + 1) {
+        throw new Error(
+          `Snapshot slot ${slot} has generation ${generation}, outside 1..${MAX_ENTITY_GENERATION + 1}.`,
+        );
+      }
+      if (alive === 1) {
+        liveCount += 1;
+        if (generation > MAX_ENTITY_GENERATION) {
+          throw new Error(
+            `Snapshot slot ${slot} is live at retirement generation ${generation}, which no handle can encode.`,
+          );
+        }
+      }
+    }
+
+    const seenFree = new Set<number>();
+    for (let i = 0; i < input.freeList.length; i += 1) {
+      const slot = input.freeList[i] as number;
+      if (slot >= slotCount) {
+        throw new Error(
+          `Snapshot free list names slot ${slot}, but only ${slotCount} slots exist.`,
+        );
+      }
+      if ((input.alive[slot] as number) === 1) {
+        throw new Error(`Snapshot free list names slot ${slot}, which is live.`);
+      }
+      if (seenFree.has(slot)) {
+        throw new Error(`Snapshot free list names slot ${slot} twice.`);
+      }
+      seenFree.add(slot);
+    }
+
+    this.#ensureCapacity(Math.max(slotCount, 1));
+    this.#generations.fill(0);
+    this.#alive.fill(0);
+    this.#generations.set(input.generations);
+    this.#alive.set(input.alive);
+    this.#freeSlots = input.freeList.slice();
+    this.#freeTop = input.freeList.length;
+    this.#slotCount = slotCount;
+    this.#liveCount = liveCount;
+  }
+
+  /**
    * The generation check, in one place.
    *
    * `?? 0` is not defensive noise: an out-of-range slot yields 0, and 0 is not

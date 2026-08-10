@@ -307,6 +307,33 @@ export class ComponentStore<F extends ComponentFields> {
     }
   }
 
+  /**
+   * Copies this component's entire storage into another component of the same
+   * shape, replacing whatever it held.
+   *
+   * Used by `SimState.clone`, which runs on every `step`. It copies the raw
+   * layout — row order included — rather than rebuilding through {@link add},
+   * because a step that paid a canonical re-sort per component per tick would
+   * make the Monte Carlo harness the bottleneck it exists to avoid. Row order
+   * is unobservable anyway: every iteration path here is slot-ordered.
+   *
+   * @internal Consumers clone states, not components.
+   */
+  cloneStateInto(target: ComponentStore<F>): void {
+    if (target.name !== this.name) {
+      throw new Error(`Cannot clone component "${this.name}" into "${target.name}".`);
+    }
+    target.#sparse = this.#sparse.slice();
+    target.#rowHandles = this.#rowHandles.slice();
+    target.#size = this.#size;
+    for (const [fieldName, array] of this.#arrays) {
+      target.#arrays.set(fieldName, array.slice() as AnyIntArray);
+    }
+    // Cheaper to let the target rebuild its order lazily than to copy a cache.
+    target.#order = new Uint32Array(0);
+    target.#orderDirty = true;
+  }
+
   /** Pre-grows the backing arrays so a bulk pass can cache {@link field} results. */
   reserve(rows: number): void {
     if (!Number.isInteger(rows) || rows < 0) {

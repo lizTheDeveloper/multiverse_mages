@@ -44,6 +44,8 @@ export const RNG_STREAM = {
   knowledgeTheft: 9,
   /** Objective and raid generation. */
   objectives: 10,
+  /** Terrain generation and combatant deployment. */
+  terrain: 11,
 } as const;
 
 /** Any ID in the permanent registry. */
@@ -78,6 +80,13 @@ function mixWord(salt: number, rootSeed: number, subsystemId: number, tick: numb
   return h;
 }
 
+/**
+ * Salts distinguishing the four words of a per-tick stream. These are the first
+ * four 32-bit words of the fractional part of pi — nothing-up-my-sleeve numbers,
+ * the same sequence Blowfish uses for its P-array. Their only requirements are
+ * that they differ from each other and that nobody chose them to make a
+ * particular seed behave a particular way.
+ */
 const SALT_STATE_HI = 0x243f6a88;
 const SALT_STATE_LO = 0x85a308d3;
 const SALT_INC_HI = 0x13198a2e;
@@ -127,3 +136,111 @@ export function deriveStream(rootSeed: number, subsystemId: number, tick: number
     mixWord(SALT_INC_LO, rootSeed, subsystemId, tick),
   );
 }
+
+// ---------------------------------------------------------------------------
+// Per-actor streams.
+//
+// Deliberately a separate derivation rather than an optional fourth argument to
+// the mixer above. `deriveStream`'s output is frozen in a known-answer vector
+// and, through it, in every committed balance baseline and golden replay
+// fixture; a shared code path is one refactor away from someone "simplifying"
+// the actor case into it and moving every historical number. The four salts
+// below are the *next* four words of pi's fractional part, continuing the
+// sequence the per-tick salts start, so the two families can never collide on a
+// word by construction.
+// ---------------------------------------------------------------------------
+
+const ACTOR_SALT_STATE_HI = 0xa4093822;
+const ACTOR_SALT_STATE_LO = 0x299f31d0;
+const ACTOR_SALT_INC_HI = 0x082efa98;
+const ACTOR_SALT_INC_LO = 0xec4e6c89;
+
+/** Odd, so `Math.imul` by it is invertible and no actor key maps onto zero. */
+const ACTOR_ODD = 0xc2b2ae35;
+
+/**
+ * Mixes all four inputs into one word: the per-tick mix, plus one more
+ * finalizer round folding in the actor key. The extra round matters — entity
+ * handles are allocated densely, so neighbouring actors differ in their low
+ * bits only, and a mixer that merely xor'd the key in would leave adjacent
+ * combatants correlated.
+ */
+function mixActorWord(
+  salt: number,
+  rootSeed: number,
+  subsystemId: number,
+  tick: number,
+  actorKey: number,
+): number {
+  let h = fmix32((salt ^ rootSeed) >>> 0);
+  h = fmix32((h ^ Math.imul(subsystemId, SUBSYSTEM_ODD)) >>> 0);
+  h = fmix32((h ^ Math.imul(tick, TICK_ODD)) >>> 0);
+  h = fmix32((h ^ Math.imul(actorKey, ACTOR_ODD)) >>> 0);
+  return h;
+}
+
+/**
+ * Derives one actor's random stream within a subsystem, for one tick.
+ *
+ * `docs/design/contracts.md` §6 keys every draw on
+ * `(rootSeed, stream, tick, actorKey, drawOrdinal)` and calls the resulting
+ * property **insertion invariance**: adding a combatant, or adding a draw,
+ * disturbs nobody else's rolls. {@link deriveStream} delivers only half of
+ * that. It isolates subsystems from each other, but every actor inside a
+ * subsystem shares one cursor, so an actor's draws are positioned by nothing
+ * more than where it sits in the iteration. Insert a summoned combatant at the
+ * front of the roster and every combatant behind it rolls differently — as does
+ * merely sorting the roster by initiative instead of by handle.
+ *
+ * That defect does not announce itself. The run stays deterministic, stays
+ * reproducible from its seed, and passes every test that re-runs the same
+ * scenario unchanged. It surfaces only as an ablation run diverging from its
+ * control for reasons unrelated to the ablated primitive — that is, as noise in
+ * precisely the measurement the balance methodology exists to produce, with no
+ * indication that the noise is an artefact rather than an effect.
+ *
+ * **`actorKey` must be a stable identity — an entity handle — never an array
+ * index, a roster position, a loop counter, or an index into a live-slot list.**
+ * A positional key reproduces the exact bug this function removes, while
+ * looking like the fix: keys shift when anything is inserted or removed ahead
+ * of them, so the actor that inherits position 3 also inherits position 3's
+ * rolls. Entity handles carry a generation counter, so a slot reused by a new
+ * entity yields a different key and therefore different rolls, which is also
+ * correct — the dead mage's luck does not transfer to whoever takes its slot.
+ *
+ * Like {@link deriveStream}, this is re-derived per tick and never carried
+ * forward, so how many draws an actor took last tick cannot shift this tick's.
+ *
+ * @param rootSeed - The universe's seed. Unsigned 32-bit.
+ * @param subsystemId - An ID from {@link RNG_STREAM}. Unsigned 32-bit.
+ * @param tick - The tick the draw belongs to. Unsigned 32-bit.
+ * @param actorKey - The actor's stable identity. Unsigned 32-bit. Zero is
+ * accepted: handle `0` is reserved by the entity store, not by the generator.
+ * @throws RangeError if any input is outside the unsigned 32-bit domain.
+ */
+export function deriveActorStream(
+  rootSeed: number,
+  subsystemId: number,
+  tick: number,
+  actorKey: number,
+): RngStream {
+  assertUint32(rootSeed, 'rootSeed');
+  assertUint32(subsystemId, 'subsystemId');
+  assertUint32(tick, 'tick');
+  assertUint32(actorKey, 'actorKey');
+
+  return streamFromWords(
+    mixActorWord(ACTOR_SALT_STATE_HI, rootSeed, subsystemId, tick, actorKey),
+    mixActorWord(ACTOR_SALT_STATE_LO, rootSeed, subsystemId, tick, actorKey),
+    mixActorWord(ACTOR_SALT_INC_HI, rootSeed, subsystemId, tick, actorKey),
+    mixActorWord(ACTOR_SALT_INC_LO, rootSeed, subsystemId, tick, actorKey),
+  );
+}
+
+/**
+ * The unsigned 32-bit check, shared with `source.ts` so both surfaces reject
+ * the same inputs with the same wording.
+ *
+ * @internal Not part of the package's public surface.
+ */
+export { assertUint32 as assertRngUint32 };
