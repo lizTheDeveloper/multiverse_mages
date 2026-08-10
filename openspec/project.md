@@ -116,5 +116,6 @@ the primitives were mis-tuned at cell #3.
   learning it from a teacher.
 - **Raid** — a bounded, objective-based engagement inside one universe, entered through a portal.
   World time is paused for both participants while a raid resolves.
-- **Host ruleset** — the set of schools enabled in the universe a raid takes place in. It governs
-  what magic functions there, for attacker and defender alike.
+- **Host ruleset** — the techniques, forms, and edicts in force in the universe a raid takes place
+  in, together with that universe's tradition. It governs what magic functions there, for attacker
+  and defender alike.

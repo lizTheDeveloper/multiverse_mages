@@ -17,13 +17,13 @@ The mages are academics with swords. They have careers. They have curiosity, and
 lifespans, and they die — sometimes taking the only copy of something irreplaceable with them.
 
 Your relationship to them is pressure, not control: you bless, you fund, you forbid, you grant
-founding knowledge to a chosen scholar so that a school can exist in your world for the first
+founding knowledge to a chosen scholar so that a body of magic can exist in your world for the first
 time. Then you let go and see what they make of it.
 
 ## 2. Design Pillars
 
 1. **Rules-setting is the core verb.** The most interesting decision in the game is which
-   schools exist in your universe — because that choice is *symmetric* and permanent-feeling.
+   magic exists in your universe — because that choice is *symmetric* and permanent-feeling.
 2. **Knowledge is physical.** It occupies minds and books and buildings. It can be taught,
    copied, stolen, and lost. This is what makes a civilization feel mortal.
 3. **You are a god, not a general.** Autonomy of the mages is a feature, not a limitation.
@@ -51,9 +51,9 @@ Consequences, which are the whole strategy layer:
 
 ## 4. Magic: The Grid
 
-Magic is a grid of **techniques** × **forms**. This yields the 40+ schools as structure rather
-than as an authoring backlog, and it gives the god a small number of switches with combinatorial
-consequences.
+Magic is a grid of **techniques** × **forms**. This yields the 40+ bodies of magic as structure
+rather than as an authoring backlog, and it gives the god a small number of switches with
+combinatorial consequences.
 
 **Five techniques** — what you do:
 
@@ -201,7 +201,7 @@ This is what makes losing hurt in a way that losing units never does.
 
 Six playable species plus the non-magical populace. Tuned on: lifespan, curiosity (rate of
 self-directed research), depth ceiling (deepest node tier reachable), learn rate, retention,
-fertility, and school affinities.
+fertility, and technique/form affinities.
 
 | Species | Lifespan | Character |
 |---|---|---|
@@ -244,7 +244,8 @@ decide everything else. You never issue direct orders — including in raids.
   Attacker wins by destroying or looting a target — a library, a university, an archmage.
   Defender wins by holding until the portal collapses.
 - **Stakes:** casualties are permanent. Knowledge whose last instance dies with a mage or burns
-  in a library is *lost* and must be rediscovered. Theft is school-gated, not universal.
+  in a library is *lost* and must be rediscovered. Theft is cell-gated, not universal — it lives
+  in *Intellego Mentem* and *Rego Nomen*.
 
 ## 9. Balance Methodology
 

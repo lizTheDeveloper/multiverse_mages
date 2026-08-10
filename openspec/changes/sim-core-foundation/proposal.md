@@ -8,7 +8,7 @@ will be measuring something the player never experiences.
 
 This change builds that single simulation substrate and, critically, proves it is deterministic
 before any game rules are written on top of it. Determinism is cheap to establish now and
-ruinously expensive to retrofit once forty schools of magic depend on it.
+ruinously expensive to retrofit once seventy cells of magic depend on it.
 
 ## What Changes
 
