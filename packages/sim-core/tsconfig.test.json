@@ -1,10 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "//": "Typechecks the unit tests and the golden suite. Never emits into dist/.",
+  "//allowImportingTsExtensions": "test/golden is also loaded by `npm run golden:regen`, which runs under Node's type stripping and resolves specifiers literally, so those files import each other as .ts. Safe here because this project only emits declarations.",
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "./test",
     "types": ["node"],
+    "allowImportingTsExtensions": true,
     "emitDeclarationOnly": true,
     "outDir": "../../.tsbuild/sim-core-test",
     "tsBuildInfoFile": "../../.tsbuild/sim-core-test.tsbuildinfo"

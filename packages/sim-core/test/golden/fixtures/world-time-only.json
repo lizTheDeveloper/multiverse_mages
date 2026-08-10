@@ -1,0 +1,130 @@
+{
+  "formatVersion": 1,
+  "name": "world-time-only",
+  "description": "Forty-eight world ticks in the chronicle world, with no engagement and no destruction: population growth through fixed-point multiplication, a per-tick populace stream, and an era boundary crossed by the clock rather than counted by a system.",
+  "world": "chronicle",
+  "rootSeed": 909090,
+  "tickCount": 48,
+  "initialSnapshot": "TU1TTgEAAAAi3w0A4f4PDAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAVyZWFsbQIFc291bHMGB3BlYWtFcmEEAAAAAA==",
+  "actionLog": {
+    "ticks": [
+      [
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [
+        {
+          "kind": 1
+        }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [
+        {
+          "kind": 1
+        }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ]
+  },
+  "expectedFinalHash": "04aef937b90ca7ec",
+  "tickHashes": [
+    "d01e233f8b8ffd91",
+    "4079e572ab71f8ce",
+    "c65dca7acb0a8857",
+    "f1ba091068449893",
+    "6bee4d961cff595b",
+    "fa94f793095741b4",
+    "2204e86a2fbd006e",
+    "e17a8f8fc69ed52d",
+    "e29a455665b73dd1",
+    "e327cc8ebc6f084d",
+    "897a1cea6992f451",
+    "8a79825441ad83b7",
+    "a4a2102c38d44f13",
+    "4969117802cb4c66",
+    "d247e27c48ebae78",
+    "4893dc3629af5cb9",
+    "a147b3d23c58acd3",
+    "0af6b0836d20b627",
+    "814d522f004ab9d8",
+    "d22315ca84c49aca",
+    "c29a660d8b1c7320",
+    "4a4f2bf5709a16c2",
+    "bbbab1b12d7fc8c2",
+    "b86d8b257c2e636c",
+    "bc02930c20c408f9",
+    "f880d2454faacdcb",
+    "aa0adea0600606e9",
+    "ffda6348895e798f",
+    "5b64e0fc4f25f373",
+    "8fb33711a835b945",
+    "d6dcf717dedca3b9",
+    "ba2ecb258fc6e789",
+    "b2f5fefc08fed6ff",
+    "9772d80e4f7dd232",
+    "0ce4a55f2d779560",
+    "2d4fcad9bd73528e",
+    "9f72792e7d8cf57d",
+    "e04f2df0484cf8e1",
+    "0833f511c081d702",
+    "aa9d410ca79d34f8",
+    "afcd7822fd841c32",
+    "ef5f284a2478e0ac",
+    "59dff7a9b3716b6a",
+    "b06a5241bd7a07b0",
+    "75cbd8ba8b321340",
+    "7c93cea042e7734e",
+    "24a0d8fd23e658c3",
+    "04aef937b90ca7ec"
+  ]
+}

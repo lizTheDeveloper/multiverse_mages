@@ -21,7 +21,9 @@
     "node": ">=22.0.0 <23"
   },
   "//": "This package MUST NOT gain dependencies, peerDependencies, optionalDependencies, or bundledDependencies. See scripts/check-purity.mjs.",
+  "//golden": "Golden fixtures are regenerated only by this command, never as a test side effect. It builds first because it runs against dist, while the suite runs against source through Vitest's alias — the two agree only when the build is honest.",
   "scripts": {
-    "build": "tsc --build"
+    "build": "tsc --build",
+    "golden:regen": "npm run build && node --experimental-strip-types test/golden/regenerate.ts"
   }
 }

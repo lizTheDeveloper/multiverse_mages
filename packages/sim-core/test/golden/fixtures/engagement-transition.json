@@ -1,0 +1,166 @@
+{
+  "formatVersion": 1,
+  "name": "engagement-transition",
+  "description": "Forty ticks in the warband world spanning two engagements. World time freezes across each, combat draws from per-actor streams at engagement rates, warriors fall and are buried, and world time resumes at the tick it stopped on.",
+  "world": "warband",
+  "rootSeed": 313131,
+  "tickCount": 40,
+  "initialSnapshot": "TU1TTgEAAAArxwQA4f4PDAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAh2aXRhbGl0eQICaHAFBnNoaWVsZAQAAAAACHN0YW5kaW5nAgRyYW5rAgZyZW5vd24FAAAAAA==",
+  "actionLog": {
+    "ticks": [
+      [
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        }
+      ],
+      [
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        }
+      ],
+      [
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        }
+      ],
+      [
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [
+        {
+          "kind": 65534
+        }
+      ],
+      [],
+      [],
+      [],
+      [
+        {
+          "kind": 1
+        }
+      ],
+      [],
+      [],
+      [],
+      [
+        {
+          "kind": 1
+        }
+      ],
+      [],
+      [],
+      [],
+      [
+        {
+          "kind": 65535
+        }
+      ],
+      [],
+      [
+        {
+          "kind": 3,
+          "params": [
+            6
+          ]
+        }
+      ],
+      [],
+      [],
+      [],
+      [
+        {
+          "kind": 3,
+          "params": [
+            2
+          ]
+        }
+      ],
+      [],
+      [
+        {
+          "kind": 65534
+        }
+      ],
+      [],
+      [],
+      [
+        {
+          "kind": 1
+        }
+      ],
+      [],
+      [],
+      [
+        {
+          "kind": 65535
+        }
+      ],
+      [],
+      [],
+      [],
+      [],
+      []
+    ]
+  },
+  "expectedFinalHash": "4291404ba61e42a9",
+  "tickHashes": [
+    "32cd40d0ff64a2c2",
+    "b024c934b759e4bc",
+    "45e1480b4234de28",
+    "edeb453862720dab",
+    "b5d878ae62ba9336",
+    "f4202592f221154c",
+    "1866a01f57e63d00",
+    "4f548f33cc444451",
+    "7e37239685896f7e",
+    "6ec2c3989741de0c",
+    "113d4fe05f362888",
+    "b354de47449cdfbc",
+    "2f3633c4f56764e0",
+    "8a33e77a92a5612c",
+    "3b3129144535c4c9",
+    "cfc588b90123189d",
+    "577e5e7839a65e48",
+    "c7d9c4c28941bff3",
+    "081bd25fb4070a04",
+    "7bebb580e155c519",
+    "1f4ec100b513cc0b",
+    "71f909d194b9f279",
+    "4d1622605fc20f4b",
+    "c4fa34a388b5c3e2",
+    "ede6a7f950632189",
+    "c12e19d40a6579f0",
+    "d66b033cca2a579f",
+    "e8fc5d548c99f056",
+    "14c452e60de9c9c6",
+    "d4490669a346b163",
+    "25f9b8e76cc05be4",
+    "1ea951938ca39024",
+    "4d24c85e231fea39",
+    "360f15ddd6354ed5",
+    "6a5b222781ee7c21",
+    "4df01e4a5c209f10",
+    "a78e4d0480907a40",
+    "ce126165e64178ab",
+    "598acf60dc81fdc1",
+    "4291404ba61e42a9"
+  ]
+}
