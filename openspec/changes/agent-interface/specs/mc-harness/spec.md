@@ -69,10 +69,10 @@ a sweep file that omits any of these or that declares an unknown factor, metric,
 
 ### Requirement: Sweep reproducibility
 
-Two executions of the same sweep specification at the same `rootSeed`, against the same build,
-content, and metric definitions, SHALL produce byte-identical per-run result records and identical
-aggregate metrics. Equality MUST be exact; the reproducibility check MUST NOT apply a numerical
-tolerance.
+The harness SHALL guarantee that two executions of the same sweep specification at the same
+`rootSeed`, against the same build, content, and metric definitions, produce byte-identical per-run
+result records and identical aggregate metrics. Equality MUST be exact; the reproducibility check
+MUST NOT apply a numerical tolerance.
 
 #### Scenario: Repeated sweeps agree exactly
 

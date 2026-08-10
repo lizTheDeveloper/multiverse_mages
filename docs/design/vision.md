@@ -275,9 +275,18 @@ saving and it is why the entity store's component model must not assume every en
 
 ## 8. Raids
 
-- **Two clocks.** World time advances in months/years while you tend your universe. Entering a
-  raid **pauses world time for both participating universes** and switches to a fast combat
-  clock. What happens to *uninvolved* universes is left open in §13.
+- **Two clocks, and clocks are per-universe.** World time advances in months/years while you tend
+  your universe. Entering a raid **pauses world time for the two participating universes** and
+  switches them to a fast combat clock. **Uninvolved universes keep advancing.**
+- **Therefore raiding costs tempo, for both sides.** While you fight, everyone not fighting is
+  researching, teaching, and building. An attacker pays that price as surely as a defender, which
+  means raiding is never free and a third party profits from every war. This is the intended
+  shape.
+- **It also creates a griefing surface, which must be measured, not assumed away.** A player who
+  is raided repeatedly loses world time others are spending. `raid-engagement` and `god-agency`
+  must between them bound inbound raid frequency, and the balance harness must report tempo lost
+  to inbound raids as a first-class metric. An unbounded version of this rule is a live-PvP
+  death sentence dressed as a strategic cost.
 - **Entry** requires *Rego Limen* — the portal cell — and favor.
 - **Arbitration:** host ruleset governs (§3). Casting and cost follow the host's tradition; what
   a raider knows and how she carries it follow her own (§4a).
@@ -407,8 +416,6 @@ Tracked for resolution during the changes that need them, not blocking:
   values.
 - How much prestige may carry between runs before the meta-game decides matches before they
   start? Deferred to `god-agency`; the balance harness must test it adversarially.
-- Does world time advance for *uninvolved* universes during someone else's raid, or globally
-  pause? Only matters once `pvp-server` exists.
 - Which 3 techniques × 4 forms make the v1 subset? Deferred to `knowledge-model`; the subset must
   contain *Rego Limen* for portals and enough asymmetry to make the permit/forbid decision real.
 - How large is the edict budget, and how does it scale with worship tier? Deferred to

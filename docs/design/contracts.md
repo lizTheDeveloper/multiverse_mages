@@ -21,6 +21,10 @@ spec is the thing that gets fixed.
   - `engagementTick` = **100 ms** of fictional time. 10 per fictional second.
   - Real-time pacing (how many ms of wall clock per tick) is a client/server concern and never
     appears in the core.
+  - **Clocks are per-universe.** Entering engagement mode freezes world time for the two
+    participating universes only; every uninvolved universe continues to advance. A multi-universe
+    simulation therefore ticks universes independently, and no global clock exists at the core
+    level.
 - **Space.** Only engagement entities have positions. Coordinates are `fp` metres on a 2D plane.
   The reference battlefield is 200 m × 200 m. World-scale entities have **no** coordinates —
   the component model must not assume otherwise.
@@ -312,9 +316,13 @@ length data is bucketed or summarized, never emitted raw.
 | `clock` | 3 | worldTick, era, mode |
 | `engagement` (zeroed at world scale) | 64 | own/enemy combatant summaries, objective states, portal stability |
 
-Total: a fixed vector, all values `fp`-normalized to `[0, fp(1024)]` at the boundary. The core emits
-integers; **normalization happens in the agent-api layer, which is the one place floats are
-permitted** on the way out.
+Total: a fixed vector. The core emits integers; **normalization happens in the agent-api layer,
+which is the one place floats are permitted** on the way out.
+
+**Exported type is pinned:** `Float64Array`, values in `[0, 1]`, with `fp(1024)` mapping to `1.0`.
+Every trained policy depends on this, so it is a contract, not an implementation detail. Each block
+declares its own normalization descriptor — a divisor and a clamp — so that a quantity whose range
+later grows does not silently rescale an existing policy's inputs.
 
 ### 4.2 Actions — discrete, masked
 
@@ -443,7 +451,19 @@ invalidates every committed balance baseline.**
 
 ## 7. Balance Metrics
 
-What the Monte Carlo harness reports. Committed baselines are keyed on these names.
+The **registry of metric names**. Committed baselines are keyed on these names, and a CI check
+asserts the implemented registry's keys equal this list exactly.
+
+**The precise definitions live in the `agent-interface` capability specs, under an explicit
+`definitionVersion`, not here.** Every metric below needed pinning that prose could not carry —
+census intervals, censoring rules, denominators, whether a rate is instantaneous or cumulative. A
+metric whose definition drifts silently makes every committed baseline meaningless while still
+appearing green, so the definition is versioned alongside the numbers it produces.
+
+**A metric whose mechanic does not yet exist reports `{status: "unavailable", reason:
+"mechanic-absent"}`.** It is never absent from the output. This is what lets `0.5.0` claim that
+every metric is reported two milestones before raids exist: a missing key is a harness failure, an
+unavailable status is an honest answer.
 
 | Metric | Definition |
 |---|---|
@@ -457,6 +477,8 @@ What the Monte Carlo harness reports. Committed baselines are keyed on these nam
 | `ascensionRate` | fraction of runs reaching ascension. Target band: 5–20% |
 | `prestigeAdvantage` | win rate of a high-prestige universe vs. a fresh one. **Must stay under 60%** |
 | `illegalActionRate` | fraction of agent actions rejected by the mask; a spec-clarity smell |
+| `inboundRaidTempoLoss` | world ticks a universe spends frozen in engagement as a defender, as a fraction of elapsed multiverse time. **Must stay under its threshold** — this is the griefing guard |
+| `raidInitiationCost` | tempo an attacker forgoes per raid, for comparison against what they gain |
 
 ---
 

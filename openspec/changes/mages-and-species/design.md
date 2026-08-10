@@ -66,14 +66,15 @@ professors know.
 
 Three reasons, in increasing order of force. It removes a content axis the Monte Carlo harness
 would otherwise have to sweep. It removes the possibility of a university declared as a *Rego
-Terram* school whose library holds nothing of the sort — a class of incoherent state that only
+Terram* institution whose library holds nothing of the sort — a class of incoherent state that only
 exists if you store the same fact twice. And decisively: `contracts.md` §4.1 fixes the
 `institutions` observation block at **four slots**. A declared specialization over 70 cells would
 need 70 more, and resizing a fixed observation vector is a contract break that invalidates every
 trained agent.
 
 It also makes burning a library mean more, not less. If specialization were a field, a raided
-university would still *be* a necromancy school with an empty shelf. Emergent specialization means
+university would still *be* declared a *Rego Corpus* institution with an empty shelf. Emergent
+specialization means
 the fire takes the identity with it.
 
 *Alternative considered:* a `specializationCellId` field with a research-rate bonus inside the

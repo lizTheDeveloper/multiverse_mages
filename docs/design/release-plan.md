@@ -174,7 +174,8 @@ noise on identical seeds.
 Promoted to **0.6.0**, the first validated line, when baselines for `knowledge-model` and `mages-and-species` are committed and green.
 
 **Claim:** Ten thousand headless runs complete within the recorded time budget on eight workers,
-and every metric in `contracts.md` §7 is reported for every run.
+and every metric in `contracts.md` §7 is reported for every run — where a metric whose mechanic does
+not yet exist reports an explicit `unavailable` status rather than being omitted.
 
 - *Disproved by:* a sweep exceeding the budget, or any run missing a metric.
 - *Collected:* **yes** — this release builds the collection.
