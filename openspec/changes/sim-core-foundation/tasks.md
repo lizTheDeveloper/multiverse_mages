@@ -72,3 +72,27 @@
 - [x] 9.3 Verify the benchmark's simulated results are identical across runs at the same seed, with only timing differing
 - [x] 9.4 Record measured throughput in `docs/design/vision.md` §13, answering the mage-population open question
 - [ ] 9.5 Confirm every scenario in the three capability specs has a corresponding passing test
+
+## 10. Enforcement coverage
+
+*Added after the task 9.5 coverage audit. Every simulation property turned out to be well tested;
+every gap was in the machinery meant to catch a future regression — which is precisely the
+machinery that fails silently when it rots. A lint rule nothing exercises is a lint rule that can
+be deleted without a single test going red.*
+
+- [ ] 10.1 Test that each banned nondeterministic global (`Math.random`, `Date.now`, `new Date()`,
+      `performance.now()`, `Intl`) fails lint in the core, naming the file and the line
+- [ ] 10.2 Test that a Node built-in import fails lint in the core, with and without the `node:` prefix
+- [ ] 10.3 Assert the reported file path, not only the line, in the purity-lint tests
+- [ ] 10.4 Give the dependency-purity check a root argument so its failing path is reachable, and
+      test that a manifest with a runtime dependency exits non-zero and names the dependency
+- [ ] 10.5 Test that the benchmark runner emits one parseable JSON object with numeric
+      `stepsPerSecond` and `entityUpdatesPerSecond`, and exits zero
+- [ ] 10.6 Assert the golden failure message's content — fixture filename and diverging tick —
+      rather than only that a divergence is detected
+- [ ] 10.7 Test the fixture-immutability guarantee on the failing path, against a temporary
+      fixtures directory with one expected hash altered
+- [ ] 10.8 Test that regeneration rewrites a changed fixture and names it, and writes nothing when
+      no scenario changed
+- [ ] 10.9 Make the migration-chain test order-sensitive, or compare against an envelope authored
+      directly at the current version

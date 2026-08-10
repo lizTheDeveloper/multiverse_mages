@@ -20,9 +20,17 @@ output state.
 
 #### Scenario: Caller owns time
 
-- **WHEN** the same `state` and `actions` are stepped by a caller running as fast as possible and
-  by a caller running on a one-second schedule
-- **THEN** both produce identical resulting states
+*Restated during implementation. The original — "a caller running as fast as possible and a caller
+running on a one-second schedule produce identical states" — described varying an input the core
+does not have, so it could never have been checked. Nothing reaches `step` that carries elapsed
+time; that is the guarantee, and the two halves below are what actually make it true.*
+
+- **WHEN** `N` steps are taken in a tight loop, and `N` steps are taken with arbitrary unrelated
+  work interleaved between them
+- **THEN** both produce identical final snapshot hashes
+- **AND WHEN** a source file under `packages/sim-core/src` references `Date`, `performance`, or
+  `Intl`
+- **THEN** the lint task exits non-zero and names the offending file and line
 
 ### Requirement: Core purity is mechanically enforced
 
@@ -37,8 +45,15 @@ built-in modules. Use of `Math.random`, `Date.now`, `new Date()`, `performance.n
 
 #### Scenario: Runtime dependency rejected
 
-- **WHEN** a runtime dependency is added to `packages/sim-core/package.json`
-- **THEN** the dependency-purity check fails CI
+- **WHEN** the dependency-purity check is run against a package manifest declaring a runtime
+  dependency
+- **THEN** it exits non-zero and names the offending dependency and manifest
+
+#### Scenario: Node built-in import rejected
+
+- **WHEN** a source file under `packages/sim-core/src` imports a Node built-in module, with or
+  without the `node:` prefix
+- **THEN** the lint task exits non-zero and names the offending file and line
 
 ### Requirement: Fixed-point arithmetic in the rules path
 
@@ -110,6 +125,22 @@ NOT alter the values drawn by any other subsystem.
 - **WHEN** two runs use the same root seed and the same action log
 - **THEN** every random value drawn in both runs is identical
 
+#### Scenario: Inserting an actor disturbs no other actor's draws
+
+*Added during implementation. `docs/design/contracts.md` §6 keys draws on
+`(rootSeed, stream, tick, actorKey, drawOrdinal)` and claims insertion invariance, but this
+requirement originally named only `(rootSeed, subsystemId, tick)` — under which every actor in a
+subsystem shares one cursor and draws in iteration order. Adding one combatant would then shift
+every later combatant's rolls, silently, which is exactly the noise that makes an ablation
+measurement meaningless. The stronger guarantee was always the intent; only the wording was weak.*
+
+- **WHEN** an actor is added to a subsystem's population and the tick is redrawn from the same
+  root seed
+- **THEN** every other actor's draws for that tick are unchanged, and the number of draws one
+  actor takes does not affect any other actor's sequence
+- **AND** `actorKey` is a stable identity — an entity handle — never an array index or a
+  visit position
+
 ### Requirement: Dual-scale world clock
 
 The core SHALL maintain a clock with a world scale where one tick represents one month, an
@@ -139,9 +170,9 @@ a configurable synthetic entity population and reports the result in a machine-r
 
 #### Scenario: Benchmark reports throughput
 
-- **WHEN** the benchmark is run against a stated entity count
-- **THEN** it emits sustained steps per second and entity-updates per second in machine-readable
-  output
+- **WHEN** the benchmark runner is executed against a stated entity count and tick count
+- **THEN** its standard output parses as exactly one JSON object carrying numeric
+  `stepsPerSecond` and `entityUpdatesPerSecond`, and it exits zero
 
 #### Scenario: Benchmark is deterministic
 
