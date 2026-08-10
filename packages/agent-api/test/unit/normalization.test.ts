@@ -86,7 +86,7 @@ describe('task 4.6 — the boundary normalizes, and only the boundary', () => {
 
   it('refuses a vector of the wrong width instead of padding it', () => {
     expect(() => normalizedObservation(new Int32Array(OBSERVATION_SIZE - 1))).toThrow(
-      /fixes it at 394/,
+      /fixes it at 400/,
     );
   });
 });

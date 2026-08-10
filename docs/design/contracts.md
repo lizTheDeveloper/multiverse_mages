@@ -376,11 +376,19 @@ length data is bucketed or summarized, never emitted raw.
 | `tradition` | 1 | tradition id |
 | `resources` | 5 | favor, worship, worshipTier, materials, prestige |
 | `population` | 6 species × 5 occupations = 30 | cohort counts |
-| `mages` | 6 species × 7 tiers = 42 | living mage counts by species and highest tier known |
+| `mages` | 6 species × 8 tiers = 48 | living mage counts by species and highest tier known; **slot 0 is "knows nothing yet"** |
 | `knowledge` | 70 cells × 3 = 210 | per cell: nodes known, deepest tier, instance redundancy |
 | `institutions` | 4 | university count, total capacity, library depth, grimoire count |
 | `clock` | 3 | worldTick, era, mode |
 | `engagement` (zeroed at world scale) | 64 | own/enemy combatant summaries, objective states, portal stability |
+
+**Why the mage block has eight slots per species, not seven.** Node tiers are numbered 1–7 (§2.3),
+so bucketing purely by highest tier known left a mage who knows nothing in no bucket at all — and
+nothing else in the observation carries a living-mage count. An agent could not distinguish ten
+fresh mages from none, which is precisely the state a universe is in for its first decades and
+exactly when the god's decisions matter most. Slot 0 is the untaught. Found while implementing
+`core-contracts`; the block was widened rather than patched around, because a count recovered from
+somewhere else would have been a second source of truth for the same fact.
 
 Total: a fixed vector. The core emits integers; **normalization happens in the agent-api layer,
 which is the one place floats are permitted** on the way out.

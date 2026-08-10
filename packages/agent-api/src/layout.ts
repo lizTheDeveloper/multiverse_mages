@@ -75,6 +75,20 @@ export const OBSERVATION_SPECIES_COUNT = 6;
 /** Node tiers. `contracts.md` §2.3: `tier` is `1..7`. */
 export const OBSERVATION_TIER_COUNT = 7;
 
+/**
+ * Mage-block slots per species: the seven tiers plus one for the untaught.
+ *
+ * `contracts.md` §4.1 widened the block from 7 to 8 during `core-contracts`.
+ * Bucketing purely by highest tier known left a mage who knows nothing in no
+ * bucket at all, and no other block carries a living-mage count — so an agent
+ * could not tell ten fresh mages from none, which is the state every universe
+ * is in for its first decades and exactly when the god's choices matter most.
+ */
+export const MAGE_TIER_SLOTS = OBSERVATION_TIER_COUNT + 1;
+
+/** The mage-block slot for a mage who knows no nodes at all. */
+export const UNTAUGHT_TIER_SLOT = 0;
+
 /** Occupations a cohort can hold. `contracts.md` §1.3, five of them. */
 export const OBSERVATION_OCCUPATION_COUNT = 5;
 
@@ -362,7 +376,7 @@ const BLOCK_DESCRIPTORS: Readonly<Record<ObservationBlockName, readonly Normaliz
     ),
     mages: repeat(
       unitScale(OBSERVATION_SCALE.mageCount),
-      OBSERVATION_SPECIES_COUNT * OBSERVATION_TIER_COUNT,
+      OBSERVATION_SPECIES_COUNT * MAGE_TIER_SLOTS,
     ),
     knowledge: KNOWLEDGE_DESCRIPTORS,
     institutions: INSTITUTION_DESCRIPTORS,
@@ -401,7 +415,7 @@ export function observationBlock(name: ObservationBlockName): ObservationBlock {
  * The length of every observation, from every universe, at every tick, in both
  * clock modes.
  *
- * `394`, decomposing as `35 + 1 + 5 + 30 + 42 + 210 + 4 + 3 + 64`. The
+ * `400`, decomposing as `35 + 1 + 5 + 30 + 48 + 210 + 4 + 3 + 64`. The
  * arithmetic is done by {@link buildBlocks} rather than written here, and a
  * test asserts the sum equals this literal — so the constant is a *claim about*
  * the block table rather than a second, independently rottable copy of it.
@@ -453,25 +467,19 @@ export function speciesSlot(speciesId: number): number {
 /**
  * The mage-block slot for a `(species, highest tier known)` pair.
  *
- * **Tiers are `1..7` and a mage who knows nothing lands in no bucket.** §2.3
- * numbers node tiers from 1, and §4.1 gives the block exactly 7 tier slots per
- * species, so the seven slots are tiers 1 through 7 with none left over. The
- * consequence is real and is recorded here rather than papered over: a universe
- * whose mages have learned nothing yet observes an all-zero mage block, and
- * nothing else in §4.1 carries a living-mage count, so at that moment the
- * observation cannot distinguish ten fresh mages from none. Widening the block
- * would fix it and would also be a contract change; `contracts.md` §4.1 is the
- * place to make it.
+ * **Slot 0 is the untaught.** Tiers are numbered 1–7 (§2.3), so pass `0` for a
+ * mage who knows no nodes. The block used to have exactly seven slots and such
+ * a mage was counted nowhere, which made an all-zero mage block ambiguous
+ * between an empty universe and a young one — see {@link MAGE_TIER_SLOTS}.
  */
 export function mageTierSlot(speciesId: number, tier: number): number {
-  if (!Number.isInteger(tier) || tier < 1 || tier > OBSERVATION_TIER_COUNT) {
+  if (!Number.isInteger(tier) || tier < UNTAUGHT_TIER_SLOT || tier > OBSERVATION_TIER_COUNT) {
     throw new RangeError(
       `Tier ${String(tier)} has no mage-block slot; contracts.md §2.3 numbers node tiers ` +
-        `1..${OBSERVATION_TIER_COUNT}. A mage who knows no nodes has no highest tier and is ` +
-        'counted in no bucket — do not call this for her.',
+        `1..${OBSERVATION_TIER_COUNT}, and 0 is the slot for a mage who knows nothing.`,
     );
   }
-  return speciesSlot(speciesId) * OBSERVATION_TIER_COUNT + (tier - 1);
+  return speciesSlot(speciesId) * MAGE_TIER_SLOTS + tier;
 }
 
 /** The population-block slot for a `(species, occupation)` pair. */

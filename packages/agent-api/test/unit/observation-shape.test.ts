@@ -46,7 +46,7 @@ describe('contracts.md §4.1 block table', () => {
       tradition: 1,
       resources: 5,
       population: 6 * 5,
-      mages: 6 * 7,
+      mages: 6 * 8, // seven tiers plus slot 0, the untaught
       knowledge: 70 * 3,
       institutions: 4,
       clock: 3,
@@ -57,9 +57,13 @@ describe('contracts.md §4.1 block table', () => {
     }
   });
 
-  it('totals 394, and the total is the sum of the blocks', () => {
-    expect(OBSERVATION_SIZE).toBe(394);
-    expect(OBSERVATION_BLOCKS.reduce((total, block) => total + block.size, 0)).toBe(394);
+  it('totals 400, and the total is the sum of the blocks', () => {
+    // 394 until core-contracts widened the mage block from 7 tier slots to 8.
+    // A mage who knew nothing was counted in no bucket and no other block
+    // carries a living-mage count, so an all-zero mage block was ambiguous
+    // between an empty universe and a young one.
+    expect(OBSERVATION_SIZE).toBe(400);
+    expect(OBSERVATION_BLOCKS.reduce((total, block) => total + block.size, 0)).toBe(400);
   });
 
   it('lays the blocks out contiguously, in the order the document lists them', () => {
@@ -113,7 +117,7 @@ describe('task 4.7 — shape is constant', () => {
   it('does not change length when the world empties out entirely', () => {
     // No mages and no universe at all — the degenerate case a length derived
     // from what the world happens to contain would get wrong. Every block is
-    // zero-filled here and the vector is still 394 wide.
+    // zero-filled here and the vector is still 400 wide.
     const empty = secondUniverse();
     for (const handle of empty.mages) {
       empty.state.entities.destroy(handle);
