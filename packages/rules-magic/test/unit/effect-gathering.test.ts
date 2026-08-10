@@ -16,7 +16,6 @@ import type { ContentId, ContentRegistry, PrimitiveScale } from '@mm/content';
 import { LOCATION_KIND } from '@mm/state';
 import { describe, expect, it } from 'vitest';
 
-import type { EffectSourceInstance } from '../../src/effects/index.js';
 import {
   CONTRIBUTING_LOCATION_KINDS,
   MASTERY_ACTIVATION_THRESHOLD,
@@ -26,16 +25,13 @@ import {
 import {
   cellIdOfNode,
   countingCellOf,
+  mindInstance,
   permissiveRuleset,
   rulesetInterdicting,
   shippedRegistry,
   v1Nodes,
+  worldActiveNodesInDistinctCells,
 } from './fixtures.js';
-
-/** A mind instance of `nodeId`, fully mastered unless told otherwise. */
-function mindInstance(nodeId: ContentId, mastery = MASTERY_ACTIVATION_THRESHOLD): EffectSourceInstance {
-  return { nodeId, locationKind: LOCATION_KIND.mind, mastery };
-}
 
 /**
  * A v1 node declaring some primitive of the given scale, plus that primitive's
@@ -58,32 +54,6 @@ function nodeForScale(
   throw new Error(`no v1 node declares a "${scale}"-scale primitive`);
 }
 
-/**
- * `count` v1 nodes that each contribute at world scale, in pairwise-distinct
- * cells — so interdicting one cell removes exactly one of them.
- */
-function worldActiveNodesInDistinctCells(
-  registry: ContentRegistry,
-  count: number,
-): readonly ContentId[] {
-  const chosen: ContentId[] = [];
-  const seenCells = new Set<number>();
-  for (const node of v1Nodes(registry)) {
-    const cellId = cellIdOfNode(registry, node.contentId);
-    if (seenCells.has(cellId)) continue;
-    const contributions = gatherEffects([mindInstance(node.contentId)], {
-      registry,
-      ruleset: permissiveRuleset(),
-      mode: TIME_MODE.world,
-      cellOf: countingCellOf(registry),
-    });
-    if (contributions.length === 0) continue;
-    seenCells.add(cellId);
-    chosen.push(node.contentId);
-    if (chosen.length === count) return chosen;
-  }
-  throw new Error(`v1 content has fewer than ${String(count)} world-active nodes in distinct cells`);
-}
 
 describe('effects are sourced from usable knowledge instances', () => {
   it('gathers from a held mind instance at the activation threshold', () => {

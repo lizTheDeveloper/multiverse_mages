@@ -29,23 +29,22 @@ import { TIME_MODE } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
 import { ClampCounters, stackMagnitudes } from '@mm/primitives';
-import { LOCATION_KIND } from '@mm/state';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { EffectContribution, EffectSourceInstance } from '../../src/effects/index.js';
-import {
-  MASTERY_ACTIVATION_THRESHOLD,
-  gatherEffects,
-  stackContributions,
-} from '../../src/effects/index.js';
+import type { EffectContribution } from '../../src/effects/index.js';
+import { gatherEffects, stackContributions } from '../../src/effects/index.js';
 
 import {
+  cellIdOfNode,
   countingCellOf,
+  mindInstance,
   nodeDeclaring,
   permissiveRuleset,
   primitiveRecord,
+  rulesetInterdicting,
   shippedRegistry,
   twoNodesDeclaring,
+  worldActiveNodesInDistinctCells,
 } from './fixtures.js';
 
 /** Calls that reached the shared implementation. */
@@ -74,10 +73,6 @@ vi.mock('@mm/primitives', async (importOriginal) => {
 beforeEach(() => {
   calls.length = 0;
 });
-
-function mindInstance(nodeId: number): EffectSourceInstance {
-  return { nodeId, locationKind: LOCATION_KIND.mind, mastery: MASTERY_ACTIVATION_THRESHOLD };
-}
 
 function contribution(primitiveId: string, magnitude: Fixed): EffectContribution {
   return { nodeId: 1, primitiveId, magnitude, target: 'self', durationTicks: 0 };
@@ -162,6 +157,33 @@ describe('every combination goes through the shared implementation', () => {
   });
 });
 
+describe('an illegal contribution never reaches stacking', () => {
+  it('delivers the two legal nodes’ magnitudes and nothing of the third', () => {
+    const registry = shippedRegistry();
+    const [first, second, third] = worldActiveNodesInDistinctCells(registry, 3);
+    if (first === undefined || second === undefined || third === undefined) return;
+
+    const instances = [first, second, third].map((nodeId) => mindInstance(nodeId));
+    const gathered = gatherEffects(instances, {
+      registry,
+      ruleset: rulesetInterdicting(cellIdOfNode(registry, third)),
+      mode: TIME_MODE.world,
+      cellOf: countingCellOf(registry),
+    });
+
+    calls.length = 0;
+    stackContributions(gathered, { registry });
+
+    // `magic-primitives` states this as a count reaching the stacker, so it is
+    // asserted as one: everything the two surviving nodes declared, and not one
+    // magnitude more.
+    const delivered = calls.reduce((total, call) => total + call.magnitudes.length, 0);
+    expect(delivered).toBe(gathered.length);
+    expect(new Set(gathered.map((entry) => entry.nodeId))).toEqual(new Set([first, second]));
+    expect(delivered).toBeGreaterThan(0);
+  });
+});
+
 describe('the pipeline end to end delegates too', () => {
   it('stacks two held nodes declaring one primitive through the shared code', () => {
     const registry = shippedRegistry();
@@ -173,12 +195,17 @@ describe('the pipeline end to end delegates too', () => {
       return;
     }
 
-    const gathered = gatherEffects(pair.map(mindInstance), {
-      registry,
-      ruleset: permissiveRuleset(),
-      mode: TIME_MODE.world,
-      cellOf: countingCellOf(registry),
-    });
+    // Not `.map(mindInstance)`: map's index argument would land in the mastery
+    // parameter and put every instance below the activation threshold.
+    const gathered = gatherEffects(
+      pair.map((nodeId) => mindInstance(nodeId)),
+      {
+        registry,
+        ruleset: permissiveRuleset(),
+        mode: TIME_MODE.world,
+        cellOf: countingCellOf(registry),
+      },
+    );
     calls.length = 0;
     const stacked = stackContributions(gathered, { registry });
 

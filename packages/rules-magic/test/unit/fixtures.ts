@@ -41,8 +41,12 @@ import {
   shippedContentSource,
   shippedDataDirectory,
 } from '@mm/content';
+import { TIME_MODE } from '@mm/sim-core';
 import type { Edict, Ruleset } from '@mm/state';
-import { EDICT_KIND } from '@mm/state';
+import { EDICT_KIND, LOCATION_KIND } from '@mm/state';
+
+import type { EffectSourceInstance } from '../../src/effects/index.js';
+import { MASTERY_ACTIVATION_THRESHOLD, gatherEffects } from '../../src/effects/index.js';
 
 let cached: ContentRegistry | undefined;
 
@@ -149,6 +153,44 @@ export function twoNodesDeclaring(
   const [first, second] = matches;
   if (first === undefined || second === undefined) return undefined;
   return [first.contentId, second.contentId];
+}
+
+/** A mind instance of `nodeId`, at the activation threshold unless told otherwise. */
+export function mindInstance(
+  nodeId: ContentId,
+  mastery: number = MASTERY_ACTIVATION_THRESHOLD,
+): EffectSourceInstance {
+  return { nodeId, locationKind: LOCATION_KIND.mind, mastery };
+}
+
+/**
+ * `count` v1 nodes that each contribute at world scale, in pairwise-distinct
+ * cells — so interdicting one cell removes exactly one of them.
+ *
+ * Determined by running the pipeline rather than by reading content, so the
+ * selection survives whatever the node graphs turn into.
+ */
+export function worldActiveNodesInDistinctCells(
+  registry: ContentRegistry,
+  count: number,
+): readonly ContentId[] {
+  const chosen: ContentId[] = [];
+  const seenCells = new Set<number>();
+  for (const node of v1Nodes(registry)) {
+    const cellId = cellIdOfNode(registry, node.contentId);
+    if (seenCells.has(cellId)) continue;
+    const contributions = gatherEffects([mindInstance(node.contentId)], {
+      registry,
+      ruleset: permissiveRuleset(),
+      mode: TIME_MODE.world,
+      cellOf: countingCellOf(registry),
+    });
+    if (contributions.length === 0) continue;
+    seenCells.add(cellId);
+    chosen.push(node.contentId);
+    if (chosen.length === count) return chosen;
+  }
+  throw new Error(`v1 content has fewer than ${String(count)} world-active nodes in distinct cells`);
 }
 
 /** The shipped content, parsed into plain mutable JSON, for mutation fixtures. */
