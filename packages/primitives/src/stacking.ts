@@ -170,7 +170,22 @@ export function multiplicativeOnRemainder(fractions: readonly Fixed[]): Fixed {
  * @returns `0` for no sources.
  */
 export function maxOf(magnitudes: readonly Fixed[]): Fixed {
-  let best: Fixed = 0;
+  // Seeded from the first magnitude, not from zero.
+  //
+  // Seeding at zero silently floored an all-negative set: `maxOf([-100, -50])`
+  // returned 0 rather than -50, so a max-stacked debuff became no effect at
+  // all. Debuffs are a supported concept here — `additive`'s comment is
+  // explicit that negative magnitudes sum by the same path as positive ones
+  // rather than through a sign-dependent branch — and a rule that quietly
+  // discards them is the kind of thing that reads as a balance result.
+  //
+  // No content authors a negative `max` magnitude today, which is exactly why
+  // this was worth fixing before one does: the failure would arrive as a
+  // primitive that mysteriously does nothing.
+  if (magnitudes.length === 0) {
+    return 0;
+  }
+  let best: Fixed = magnitudes[0] as Fixed;
   for (const magnitude of magnitudes) {
     best = Math.max(best, magnitude);
   }

@@ -106,9 +106,42 @@ export function canIssueEdict(state: SimState, universe: EntityHandle): boolean 
  * frozen-policy rule has to be structural or it is nothing.
  */
 export function captureRuleset(state: SimState, universe: EntityHandle): RulesetSnapshot {
+  return buildRuleset(state, universe, true);
+}
+
+/**
+ * The same capture, without the conflict assertion.
+ *
+ * For read-only consumers — the observation and the legality mask — which
+ * `contracts.md` §4.2 forbids from throwing at all: an agent submitting a bad
+ * action gets a no-op and a counter, never an exception. A conflicted ruleset
+ * is reachable, since the god may issue a dispensation and an interdiction on
+ * one cell and nothing validates the cell id at submission, so making the
+ * *observation* throw would take a recoverable rules mistake and turn it into
+ * a crashed training run.
+ *
+ * `permits()` is deliberately total over conflicted rulesets for the same
+ * reason — interdiction simply wins — so reading one is well defined. The
+ * assertion belongs on the paths that *construct* a ruleset for arbitration,
+ * which is where {@link captureRuleset} keeps it.
+ */
+export function readRulesetForObservation(
+  state: SimState,
+  universe: EntityHandle,
+): RulesetSnapshot {
+  return buildRuleset(state, universe, false);
+}
+
+function buildRuleset(
+  state: SimState,
+  universe: EntityHandle,
+  assertConflicts: boolean,
+): RulesetSnapshot {
   const record = readUniverse(state, universe);
   const edicts = readEdicts(state).map((edict) => Object.freeze({ ...edict }));
-  assertNoEdictConflict(edicts);
+  if (assertConflicts) {
+    assertNoEdictConflict(edicts);
+  }
 
   return Object.freeze({
     permittedTechniques: record.permittedTechniques,

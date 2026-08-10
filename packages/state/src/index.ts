@@ -141,6 +141,7 @@ export { attachRecord, collectRecords, readRecord } from './records.js';
 export {
   canIssueEdict,
   captureRuleset,
+  readRulesetForObservation,
   createUniverse,
   currentEra,
   findUniverse,

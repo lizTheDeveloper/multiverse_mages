@@ -251,14 +251,18 @@ describe('established: cap boundaries are exact, and the counter does not over-c
 // explicitly rejects a sign-dependent code path in its own doc comment —
 // making the asymmetry here easy for a second implementer to miss.
 // ---------------------------------------------------------------------------
-describe('ambiguity: maxOf floors an all-negative input at zero rather than returning the true maximum', () => {
-  it('maxOf([-100, -50]) is 0, not -50', () => {
+describe('maxOf returns the true maximum of an all-negative input — reported as an ambiguity, then fixed', () => {
+  it('maxOf([-100, -50]) is -50, not 0', () => {
     // -50 is unambiguously the largest of the two inputs. `maxOf` does not
     // return it, because its accumulator is seeded at 0 and `Math.max` never
     // moves below its seed. A reader of "the largest source wins" who writes
     // `Math.max(...magnitudes)` from scratch would get -50 here and disagree
     // with the shipped implementation on every all-negative stack.
-    expect(maxOf([-100, -50])).toBe(0);
+    // The breaker reported this as ambiguous rather than red, correctly: §3 is
+    // silent on negative magnitudes for max-stacked primitives. Reviewed and
+    // decided — seeding the fold at zero discards a debuff entirely, and
+    // `additive` is explicit that negatives are a supported concept.
+    expect(maxOf([-100, -50])).toBe(-50);
     expect(Math.max(-100, -50)).toBe(-50);
   });
 });

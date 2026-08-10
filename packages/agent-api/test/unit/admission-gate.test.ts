@@ -32,8 +32,8 @@
 
 import type { Action, StepContext, System } from '@mm/sim-core';
 import { rngFromRootSeed, step } from '@mm/sim-core';
-import { UNIVERSE, componentOf, findUniverse, readUniverse } from '@mm/state';
-import { GOD_ACTION, admit, observe } from '@mm/agent-api';
+import { EDICT, EDICT_KIND, UNIVERSE, attachRecord, cellIdAt, componentOf, findUniverse, readUniverse } from '@mm/state';
+import { GOD_ACTION, OBSERVATION_SIZE, admit, observe } from '@mm/agent-api';
 import { describe, expect, it } from 'vitest';
 
 import { FIXTURE_CATALOGUE, engageWorld, firstUniverse } from './fixtures.js';
@@ -214,5 +214,33 @@ describe('task 4.8 — a masked rules change mid-engagement leaves the ruleset u
     expect(gated.admitted).toEqual([]);
     expect(gated.rejected).toHaveLength(submissions.length);
     expect(world.state.illegalActionCount).toBe(submissions.length);
+  });
+});
+
+describe('a conflicted ruleset does not crash the read path', () => {
+  it('observes and admits without throwing when a cell carries both edicts', () => {
+    // contracts.md §4.2: an illegal action gets a no-op and a counter, "never
+    // an exception". The candidate builders captured the ruleset through the
+    // path that asserts no cell carries both a dispensation and an
+    // interdiction, so a conflicted universe made `observe()` and `admit()`
+    // throw — turning a recoverable rules mistake into a crashed training run.
+    //
+    // The state is reachable: the god issues both edicts and nothing validates
+    // the cell id at submission. `permits()` is deliberately total over it,
+    // interdiction winning, so reading it is well defined; only the paths that
+    // *construct* a ruleset for arbitration assert.
+    const world = firstUniverse();
+    const contested = cellIdAt(1, 1);
+    for (const kind of [EDICT_KIND.dispensation, EDICT_KIND.interdiction]) {
+      const edict = world.state.entities.create();
+      attachRecord(world.state, EDICT, edict, { cellId: contested, kind });
+    }
+
+    const input = { state: world.state, catalogue: FIXTURE_CATALOGUE };
+    expect(() => observe(input)).not.toThrow();
+    expect(observe(input).raw).toHaveLength(OBSERVATION_SIZE);
+    expect(() =>
+      admit(input, [{ kind: GOD_ACTION.permitTechnique, params: [1] }]),
+    ).not.toThrow();
   });
 });

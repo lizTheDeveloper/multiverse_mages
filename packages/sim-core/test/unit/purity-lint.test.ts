@@ -352,3 +352,57 @@ describe('the ban reaches dynamic imports, not only static ones', () => {
     expect(offence?.line).toBe(2);
   });
 });
+
+/**
+ * The float ban has to fire in every rules-path package, not only in the one
+ * this file is named after.
+ *
+ * It stopped firing in four of them and nothing noticed. ESLint's flat config
+ * resolves `no-restricted-syntax` **last-block-wins, not by union**, so a later
+ * block matching `packages/*` /src replaced the purity block's whole rule array
+ * with a single unrelated ban. `packages/state/src` and every `rules-*` package
+ * accepted `0.5`, `Math.random()` and `Math.floor(1.5)` with no error at all,
+ * while the config above them still read exactly as though it banned them.
+ *
+ * It survived because every existing probe pointed at `packages/sim-core/src`.
+ * A rule is only enforced where something has watched it fail — so these probe
+ * each rules-path package by name, and a package added to `RULES_SRC` without
+ * a probe here is a package whose purity is once again nobody's job.
+ */
+describe('the float ban covers every rules-path package, not just sim-core', () => {
+  const rulesPathProbes = [
+    'packages/state/src/__lint-probe__.ts',
+    'packages/rules-magic/src/__lint-probe__.ts',
+    'packages/rules-world/src/__lint-probe__.ts',
+    'packages/rules-raid/src/__lint-probe__.ts',
+    'packages/primitives/src/__lint-probe__.ts',
+  ];
+
+  it.each(rulesPathProbes)('rejects a non-integer literal in %s', async (filePath) => {
+    const [result] = await eslint.lintText('export const chance = 0.35;\n', { filePath });
+    expect(result?.errorCount ?? 0).toBeGreaterThan(0);
+    expectBanReported(result as ESLint.LintResult, 'no-restricted-syntax', 'fixed-point integers');
+  });
+
+  it.each(rulesPathProbes)('rejects Math.random in %s', async (filePath) => {
+    const [result] = await eslint.lintText('export const r = Math.random();\n', { filePath });
+    expect(result?.errorCount ?? 0).toBeGreaterThan(0);
+    expectBanReported(result as ESLint.LintResult, 'no-restricted-syntax', 'Math.random is banned');
+  });
+
+  it.each(rulesPathProbes)('rejects floating-point Math in %s', async (filePath) => {
+    const [result] = await eslint.lintText('export const f = Math.floor(1);\n', { filePath });
+    expect(result?.errorCount ?? 0).toBeGreaterThan(0);
+    expectBanReported(result as ESLint.LintResult, 'no-restricted-syntax', 'integer-safe');
+  });
+
+  it.each(rulesPathProbes)('still accepts integer-only source in %s', async (filePath) => {
+    // The control. Without it, a config that errored on everything would pass
+    // all three tests above and mean nothing.
+    const [result] = await eslint.lintText(
+      'export function add(a: number, b: number): number {\n  return a + b;\n}\n',
+      { filePath },
+    );
+    expect(result?.errorCount ?? 0).toBe(0);
+  });
+});

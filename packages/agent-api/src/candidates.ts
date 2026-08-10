@@ -60,7 +60,7 @@ import {
   MAGE,
   MAGE_ROLE,
   UNIVERSITY,
-  captureRuleset,
+  readRulesetForObservation,
   collectRecords,
   findUniverse,
   permits,
@@ -178,7 +178,7 @@ function foundingKnowledgeCandidates(input: CandidateInput): Candidate[] {
   const { state, catalogue } = input;
   const universe = findUniverse(state);
   if (universe === 0) return [];
-  const ruleset = captureRuleset(state, universe);
+  const ruleset = readRulesetForObservation(state, universe);
   const known = knownNodesByMage(state);
 
   const grantable = catalogue.nodes
@@ -273,7 +273,7 @@ function encourageResearchCandidates(input: CandidateInput): Candidate[] {
   const { state, catalogue } = input;
   const universe = findUniverse(state);
   if (universe === 0) return [];
-  const ruleset = captureRuleset(state, universe);
+  const ruleset = readRulesetForObservation(state, universe);
 
   const encouraged = new Set(
     collectRecords(state, ENCOURAGED_CELL)

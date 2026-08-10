@@ -332,6 +332,14 @@ export default tseslint.config(
         BAN_NEGATIVE_EXPONENT_LITERAL,
         BAN_DYNAMIC_IMPORT,
         BAN_REQUIRE,
+        // Listed here rather than left to the "everyone else" block below.
+        // Flat config resolves `no-restricted-syntax` last-block-wins, not by
+        // union, so a later block matching these same files replaced this whole
+        // array — and one did. For a while `packages/state/src` and every
+        // `rules-*` package accepted `0.5`, `Math.random()` and `Math.floor`
+        // with no error at all, while the block above still read as though it
+        // banned them. Rules-path packages need both sets, so both live here.
+        ...BAN_INLINE_PRIMITIVE_STACKING,
       ],
       '@typescript-eslint/no-explicit-any': 'error',
     },
@@ -356,6 +364,8 @@ export default tseslint.config(
         BAN_NEGATIVE_EXPONENT_LITERAL,
         BAN_DYNAMIC_IMPORT,
         BAN_REQUIRE,
+        // NOT the inline-stacking ban: this package *is* the shared
+        // implementation, so combining magnitudes here is the whole point.
       ],
       '@typescript-eslint/no-explicit-any': 'error',
     },
@@ -363,11 +373,19 @@ export default tseslint.config(
 
   {
     // ---- Everyone else: combine primitive magnitudes through @mm/primitives. ----
-    // `sim-core` is excluded because it has no concept of a primitive, and
-    // including it would collide with the purity block above; `primitives/src`
-    // is excluded because it *is* the shared implementation.
+    //
+    // "Everyone else" means everyone the purity block above does not already
+    // cover. That block now carries these bans itself, and this one must not
+    // match any file it matches: flat config replaces `no-restricted-syntax`
+    // wholesale rather than merging it, so an overlap silently deletes the
+    // float ban from whichever files both blocks touch. That is not a
+    // hypothetical — it is what this block did to `state` and `rules-*` until a
+    // review probed the config instead of reading it.
+    //
+    // `sim-core` and `primitives/src` were already excluded for the same
+    // reason; the rules packages were missed because they were added later.
     files: ['packages/*/src/**/*.ts'],
-    ignores: ['packages/sim-core/**/*.ts', ...PRIMITIVES_SRC],
+    ignores: ['packages/sim-core/**/*.ts', ...PRIMITIVES_SRC, ...RULES_SRC],
     rules: {
       'no-restricted-syntax': ['error', ...BAN_INLINE_PRIMITIVE_STACKING],
     },
