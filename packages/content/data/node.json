@@ -743,5 +743,984 @@
       { "primitive": "resource-yield", "magnitude": 192, "target": "universe", "durationTicks": 0 }
     ],
     "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "can-mend-the-beast",
+    "cell": "creo-animal",
+    "name": "Mend the Beast",
+    "gloss": "Close a working animal's injury before the season is lost along with it. Unglamorous, and the reason the ox that hauls stone for a library is usually the same ox for thirty years.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "can-quicken-the-herd",
+    "cell": "creo-animal",
+    "name": "Quicken the Herd",
+    "gloss": "Bring a herd into season early and see it take. The primitive it moves is the same one that counts student intakes, which the faculty of medicine finds vulgar and the bursar does not.",
+    "tier": 2,
+    "prerequisites": ["can-mend-the-beast"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [
+      { "primitive": "fertility", "magnitude": 128, "target": "universe", "durationTicks": 0 },
+      { "primitive": "resource-yield", "magnitude": 192, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "can-the-fat-year",
+    "cell": "creo-animal",
+    "name": "The Fat Year",
+    "gloss": "Hold a whole countryside in abundance for a year. Towns that eat well raise more children, and the university finds out twenty years later, in the size of one entering class.",
+    "tier": 3,
+    "prerequisites": ["can-quicken-the-herd"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "fertility", "magnitude": 256, "target": "universe", "durationTicks": 0 },
+      { "primitive": "resource-yield", "magnitude": 384, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "can-call-the-pack",
+    "cell": "creo-animal",
+    "name": "Call the Pack",
+    "gloss": "Make beasts, whole and willing, out of the material of the place. They are honest animals and behave like it, which is the standing complaint of everyone who has tried to use them as soldiers.",
+    "tier": 3,
+    "prerequisites": ["can-mend-the-beast"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "summon", "magnitude": 1024, "target": "side", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "can-the-made-beast",
+    "cell": "creo-animal",
+    "name": "The Made Beast",
+    "gloss": "Conjure a creature that never existed, and discover that it breeds true. The practical literature is four pages; the literature on whether one may is a shelf.",
+    "tier": 4,
+    "prerequisites": ["can-call-the-pack", "can-the-fat-year"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "summon", "magnitude": 2048, "target": "side", "durationTicks": 0 },
+      { "primitive": "fertility", "magnitude": 192, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "caq-draw-the-sweet-water",
+    "cell": "creo-aquam",
+    "name": "Draw the Sweet Water",
+    "gloss": "Make clean water where the ground offers none. A siege is arithmetic about wells, and this working changes the arithmetic.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "caq-the-unfailing-well",
+    "cell": "creo-aquam",
+    "name": "The Unfailing Well",
+    "gloss": "A well that does not go down in a dry year. Cheap to hold, and impossible to explain to a neighbouring town whose well does.",
+    "tier": 2,
+    "prerequisites": ["caq-draw-the-sweet-water"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 256, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "caq-turn-the-channel",
+    "cell": "creo-aquam",
+    "name": "Turn the Channel",
+    "gloss": "Put a river where the mills and the fields want it. Everything downstream of the old course becomes a matter for the courts, and the courts have been busy since the working was first published.",
+    "tier": 3,
+    "prerequisites": ["caq-the-unfailing-well"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 384, "target": "universe", "durationTicks": 0 },
+      { "primitive": "build-rate", "magnitude": 192, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "caq-raise-the-river",
+    "cell": "creo-aquam",
+    "name": "Raise the River",
+    "gloss": "Raise water out of nothing at the volume of a river, and keep raising it. The same working supplies a city and drowns a besieging camp; the treatises differ only on which use to describe first.",
+    "tier": 4,
+    "prerequisites": ["caq-turn-the-channel"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 512, "target": "universe", "durationTicks": 0 },
+      { "primitive": "area-denial", "magnitude": 160, "target": "area", "durationTicks": 40 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "cau-turn-the-wind",
+    "cell": "creo-auram",
+    "name": "Turn the Wind",
+    "gloss": "Put the wind where a mill or a drying floor wants it. The most-cast working in any university that owns farmland, and the least written about.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cau-clear-the-sky",
+    "cell": "creo-auram",
+    "name": "Clear the Sky",
+    "gloss": "Hold weather off a place for a day. Harvest and roof-work want the same day, and a university that can promise one is immediately asked for the other.",
+    "tier": 2,
+    "prerequisites": ["cau-turn-the-wind"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 256, "target": "universe", "durationTicks": 0 },
+      { "primitive": "build-rate", "magnitude": 128, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cau-the-borrowed-season",
+    "cell": "creo-auram",
+    "name": "The Borrowed Season",
+    "gloss": "Keep a growing season open past the month it should have closed. Universities that hold it eat in years their neighbours do not, which has done more for enrolment than any prospectus.",
+    "tier": 3,
+    "prerequisites": ["cau-clear-the-sky"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 448, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cau-call-the-storm",
+    "cell": "creo-auram",
+    "name": "Call the Storm",
+    "gloss": "Evocation as the older texts meant it: weather made, aimed, and left running over a field somebody else is standing in. It is not a stronger working than the one that saves a harvest. It is that working, pointed.",
+    "tier": 3,
+    "prerequisites": ["cau-clear-the-sky"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "area-denial", "magnitude": 160, "target": "area", "durationTicks": 40 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cau-keep-the-sky",
+    "cell": "creo-auram",
+    "name": "Keep the Sky",
+    "gloss": "Hold a climate over one valley indefinitely. The neighbouring valleys receive whatever is left over, and there is a long body of law about that.",
+    "tier": 4,
+    "prerequisites": ["cau-the-borrowed-season", "cau-call-the-storm"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 512, "target": "universe", "durationTicks": 0 },
+      { "primitive": "area-denial", "magnitude": 192, "target": "area", "durationTicks": 30 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "cc-close-the-wound",
+    "cell": "creo-corpus",
+    "name": "Close the Wound",
+    "gloss": "Knit a body back to the shape it held an hour ago. Over a career an infirmary staffed by one such mage is worth about two years to everyone who passes through it, which is the first number anyone in the discipline learns to quote.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "lifespan", "magnitude": 24, "target": "single", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cc-the-mended-decade",
+    "cell": "creo-corpus",
+    "name": "The Mended Decade",
+    "gloss": "Correct the slow failures rather than the fast ones. A physician-mage on the faculty adds most of a decade to everyone else on it, and does it quietly enough that the endowment is always the last to notice.",
+    "tier": 2,
+    "prerequisites": ["cc-close-the-wound"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "lifespan", "magnitude": 96, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cc-quicken-the-cohort",
+    "cell": "creo-corpus",
+    "name": "Quicken the Cohort",
+    "gloss": "Carry a difficult birth through, at the scale of a whole population rather than a bedside. The slowest lever a god holds and the only one that compounds: a larger entering class is a larger faculty in forty years.",
+    "tier": 3,
+    "prerequisites": ["cc-the-mended-decade"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "fertility", "magnitude": 256, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cc-the-long-tenure",
+    "cell": "creo-corpus",
+    "name": "The Long Tenure",
+    "gloss": "Twenty more years of working life for everyone who holds it. It sits at tier 3 deliberately, so that orcs — depth ceiling 3, and the shortest-lived of the six — can reach the one working that answers what is actually wrong with them.",
+    "tier": 3,
+    "prerequisites": ["cc-the-mended-decade"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "lifespan", "magnitude": 240, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cc-the-unfinished-death",
+    "cell": "creo-corpus",
+    "name": "The Unfinished Death",
+    "gloss": "Hold one scholar at the point where the body has finished and the work has not. The cap is half a species' natural span, so this exhausts it for a human and is a rounding error for a dragon. The objection is not that it fails; it is that the chair has not been vacated in ninety years.",
+    "tier": 5,
+    "prerequisites": ["cc-the-long-tenure", "cc-quicken-the-cohort"],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      { "primitive": "lifespan", "magnitude": 480, "target": "single", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 192, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "ch-quicken-the-seed",
+    "cell": "creo-herbam",
+    "name": "Quicken the Seed",
+    "gloss": "Bring a crop up in the time it takes to walk the field. The yield is unchanged; what changes is how many times in a year the field is a field.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ch-grow-the-beam",
+    "cell": "creo-herbam",
+    "name": "Grow the Beam",
+    "gloss": "Grow a beam already in the shape the roof wants it, joint and curve together. Carpenters who learn what it does to their trade tend to learn the working.",
+    "tier": 2,
+    "prerequisites": ["ch-quicken-the-seed"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 192, "target": "universe", "durationTicks": 0 },
+      { "primitive": "build-rate", "magnitude": 128, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ch-paper-without-rags",
+    "cell": "creo-herbam",
+    "name": "Paper Without Rags",
+    "gloss": "Grow paper rather than beat it out of rags. A university that grows its own paper writes several times more of it, and nobody has proposed a mechanism for that other than cost.",
+    "tier": 3,
+    "prerequisites": ["ch-grow-the-beam"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "scribe-rate", "magnitude": 320, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ch-the-grown-hall",
+    "cell": "creo-herbam",
+    "name": "The Grown Hall",
+    "gloss": "Grow a building instead of raising one. It takes a decade and cannot be hurried past its own season, which is why the cloisters of the older universities are all exactly the same age.",
+    "tier": 4,
+    "prerequisites": ["ch-grow-the-beam"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "build-rate", "magnitude": 448, "target": "universe", "durationTicks": 0 },
+      { "primitive": "resource-yield", "magnitude": 192, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "cig-strike-the-light",
+    "cell": "creo-ignem",
+    "name": "Strike the Light",
+    "gloss": "A flame that needs no fuel and does not go out when the window is open. The first working most universities teach, because a lamp that costs nothing buys more reading hours than any endowment.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "research-rate", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cig-hold-the-temperature",
+    "cell": "creo-ignem",
+    "name": "Hold the Temperature",
+    "gloss": "Keep a kiln, a forge, or a crucible at exactly one heat for as long as the work takes. Fire's entire practical literature is about holding a number still, and none of it is about throwing anything.",
+    "tier": 2,
+    "prerequisites": ["cig-strike-the-light"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [
+      { "primitive": "resource-yield", "magnitude": 192, "target": "universe", "durationTicks": 0 },
+      { "primitive": "build-rate", "magnitude": 96, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cig-the-assayers-flame",
+    "cell": "creo-ignem",
+    "name": "The Assayer's Flame",
+    "gloss": "A flame pure enough that what it burns can be read off its colour. Half the metallurgy in the archive is downstream of one lamp and a patient afternoon.",
+    "tier": 3,
+    "prerequisites": ["cig-hold-the-temperature"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "research-rate", "magnitude": 320, "target": "universe", "durationTicks": 0 },
+      { "primitive": "resource-yield", "magnitude": 160, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cig-the-uncontained-hour",
+    "cell": "creo-ignem",
+    "name": "The Uncontained Hour",
+    "gloss": "The kiln working with the restraint taken out. It is not a separate discovery, and the literature is embarrassed about that; it is also why a fire licence is countersigned by the treasurer rather than the dean.",
+    "tier": 3,
+    "prerequisites": ["cig-hold-the-temperature"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "direct-damage", "magnitude": 384, "target": "single", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cig-the-standing-furnace",
+    "cell": "creo-ignem",
+    "name": "The Standing Furnace",
+    "gloss": "A fire that feeds itself and stays where it was put. It runs the great foundries, and it denies a field to anyone who would rather not walk through a foundry.",
+    "tier": 4,
+    "prerequisites": ["cig-the-assayers-flame", "cig-the-uncontained-hour"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "area-denial", "magnitude": 224, "target": "area", "durationTicks": 50 },
+      { "primitive": "resource-yield", "magnitude": 224, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "cim-cast-the-likeness",
+    "cell": "creo-imaginem",
+    "name": "Cast the Likeness",
+    "gloss": "Make an image that holds still and can be walked around. The illustrated lecture, arriving centuries before cheap paper; students who have seen a thing argue about it less.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "teach-rate", "magnitude": 128, "target": "single", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cim-the-shown-interior",
+    "cell": "creo-imaginem",
+    "name": "The Shown Interior",
+    "gloss": "Show the inside of a thing without opening the thing. Anatomy, siege engines, and the workings of a lock are all taught this way, and the last of those has been raised in council more than once.",
+    "tier": 2,
+    "prerequisites": ["cim-cast-the-likeness"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [
+      { "primitive": "teach-rate", "magnitude": 256, "target": "single", "durationTicks": 0 },
+      { "primitive": "scribe-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cim-the-absent-scholar",
+    "cell": "creo-imaginem",
+    "name": "The Absent Scholar",
+    "gloss": "Leave your likeness at the desk and be elsewhere. The standard alibi, and the standard reason a disciplinary board stopped accepting one.",
+    "tier": 3,
+    "prerequisites": ["cim-the-shown-interior"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "concealment", "magnitude": 192, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cim-the-crowded-hall",
+    "cell": "creo-imaginem",
+    "name": "The Crowded Hall",
+    "gloss": "Fill a courtyard with people who are not there. Illusion's one honest combat use: the arrows spent on them are real, and eight is the most that will ever stand, because the ninth is always the one that gets noticed.",
+    "tier": 3,
+    "prerequisites": ["cim-the-shown-interior"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "summon", "magnitude": 1024, "target": "side", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cim-the-perfect-forgery",
+    "cell": "creo-imaginem",
+    "name": "The Perfect Forgery",
+    "gloss": "An image of a grimoire, accurate down to the name on every page. It reads correctly and teaches correctly, and it stops doing either on the day the mage who cast it dies — which no catalogue records.",
+    "tier": 4,
+    "prerequisites": ["cim-the-absent-scholar", "in-spell-the-lesser-name"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "scribe-rate", "magnitude": 448, "target": "self", "durationTicks": 0 },
+      { "primitive": "concealment", "magnitude": 192, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "cm-kindle-the-question",
+    "cell": "creo-mentem",
+    "name": "Kindle the Question",
+    "gloss": "Put a question into a mind that was not asking one. Tutors call it cheating, and use it in the first week of every term.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "teach-rate", "magnitude": 128, "target": "single", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cm-the-given-memory",
+    "cell": "creo-mentem",
+    "name": "The Given Memory",
+    "gloss": "Make a memory of a lesson that was never sat through. It is indistinguishable from having learned the thing, which is the entire content of the objection to it.",
+    "tier": 2,
+    "prerequisites": ["cm-kindle-the-question", "im-follow-the-thought"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "teach-rate", "magnitude": 256, "target": "single", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cm-the-second-attention",
+    "cell": "creo-mentem",
+    "name": "The Second Attention",
+    "gloss": "Make a scholar a second attention to think with, running alongside the first. It costs nothing she notices until she is sixty, and then it costs all of it at once.",
+    "tier": 3,
+    "prerequisites": ["cm-the-given-memory"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "research-rate", "magnitude": 384, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cm-the-made-scholar",
+    "cell": "creo-mentem",
+    "name": "The Made Scholar",
+    "gloss": "A mind with no body, kept in a room, that reads. The oldest of them are older than the universities built around them, and none of them will say so.",
+    "tier": 4,
+    "prerequisites": ["cm-the-second-attention"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "research-rate", "magnitude": 448, "target": "universe", "durationTicks": 0 },
+      { "primitive": "teach-rate", "magnitude": 192, "target": "single", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "ct-make-the-brick",
+    "cell": "creo-terram",
+    "name": "Make the Brick",
+    "gloss": "Stone out of nothing, one brick at a time, at a price in mage-months no quarry would survive being compared to. The point is not the brick; it is that the brick appears where no cart can go.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ct-the-poured-wall",
+    "cell": "creo-terram",
+    "name": "The Poured Wall",
+    "gloss": "Make a wall as a single piece, with no courses for anything to fail along. Perdo Terram takes considerably longer with these, which is the argument that gets them funded.",
+    "tier": 2,
+    "prerequisites": ["ct-make-the-brick"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "build-rate", "magnitude": 256, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ct-the-conjured-vein",
+    "cell": "creo-terram",
+    "name": "The Conjured Vein",
+    "gloss": "Make ore in the ground, in the shape ore takes, where a survey would expect to find it. Three universities' worth of argument exists on whether conjured silver is silver; the mints hold their own view.",
+    "tier": 3,
+    "prerequisites": ["ct-make-the-brick", "it-find-the-deep-seam"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "resource-yield", "magnitude": 384, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ct-the-raised-bastion",
+    "cell": "creo-terram",
+    "name": "The Raised Bastion",
+    "gloss": "Raise a fortification in an afternoon, out of material that was not there in the morning. Every siege doctrine written before the working assumes a wall takes a season, and all of them are still on the syllabus.",
+    "tier": 4,
+    "prerequisites": ["ct-the-poured-wall", "ct-the-conjured-vein"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "ward", "magnitude": 256, "target": "self", "durationTicks": 0 },
+      { "primitive": "build-rate", "magnitude": 384, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "cv-kindle-the-aura",
+    "cell": "creo-vim",
+    "name": "Kindle the Aura",
+    "gloss": "Thicken the magic of a place the way one banks a fire. Everything cast in the room afterwards is easier, and nobody can say by how much without casting it twice.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "research-rate", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cv-feed-the-working",
+    "cell": "creo-vim",
+    "name": "Feed the Working",
+    "gloss": "Pour raw magic into a working that is already running, including somebody else's. The etiquette around doing this uninvited is older than most of the universities that teach it.",
+    "tier": 2,
+    "prerequisites": ["cv-kindle-the-aura"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "research-rate", "magnitude": 256, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cv-the-standing-aura",
+    "cell": "creo-vim",
+    "name": "The Standing Aura",
+    "gloss": "Make a place permanently easier to work in. This is why universities sit where they sit, and why the ones that were sited for the river have all quietly moved.",
+    "tier": 3,
+    "prerequisites": ["cv-feed-the-working"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "research-rate", "magnitude": 448, "target": "universe", "durationTicks": 0 },
+      { "primitive": "worship-yield", "magnitude": 128, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cv-the-warded-precinct",
+    "cell": "creo-vim",
+    "name": "The Warded Precinct",
+    "gloss": "Make enough raw magic in one place that it stands between what is cast at the precinct and the precinct. Nothing about it is clever: it is a wall built out of the same stuff as the arrow.",
+    "tier": 3,
+    "prerequisites": ["cv-feed-the-working"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "ward", "magnitude": 256, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cv-the-made-vis",
+    "cell": "creo-vim",
+    "name": "The Made Vis",
+    "gloss": "Magic made rather than gathered. Every economy in the multiverse is priced on the assumption that this is impossible, and the four universities that hold it have each independently decided not to publish.",
+    "tier": 5,
+    "prerequisites": ["cv-the-standing-aura", "cv-the-warded-precinct"],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      { "primitive": "research-rate", "magnitude": 640, "target": "universe", "durationTicks": 0 },
+      { "primitive": "ward", "magnitude": 320, "target": "self", "durationTicks": 0 },
+      { "primitive": "worship-yield", "magnitude": 192, "target": "universe", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "cu-cast-the-shadow",
+    "cell": "creo-umbra",
+    "name": "Cast the Shadow",
+    "gloss": "Make a shadow where nothing stands to cast one. Trivial, and the first half of everything else in the form.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "concealment", "magnitude": 96, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cu-the-lengthened-dusk",
+    "cell": "creo-umbra",
+    "name": "The Lengthened Dusk",
+    "gloss": "Hold the hour after sunset over a place for as long as attention lasts. Guards keep the watch they were rostered for and not the one the light says they should.",
+    "tier": 2,
+    "prerequisites": ["cu-cast-the-shadow"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "concealment", "magnitude": 192, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cu-the-kept-shadow",
+    "cell": "creo-umbra",
+    "name": "The Kept Shadow",
+    "gloss": "Put a thing into a shadow and take it out again later. A library kept this way cannot be burned and can be lost by forgetting which wall it was cast on; the Art of Memory faculty consider the whole approach plagiarism.",
+    "tier": 3,
+    "prerequisites": ["cu-the-lengthened-dusk"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "scribe-rate", "magnitude": 256, "target": "self", "durationTicks": 0 },
+      { "primitive": "concealment", "magnitude": 128, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cu-the-unlit-hall",
+    "cell": "creo-umbra",
+    "name": "The Unlit Hall",
+    "gloss": "Take a building out of the light entirely. Raiding parties have crossed the courtyard, emptied the wrong hall, and left with the library standing behind them.",
+    "tier": 4,
+    "prerequisites": ["cu-the-kept-shadow"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "concealment", "magnitude": 320, "target": "self", "durationTicks": 0 },
+      { "primitive": "area-denial", "magnitude": 128, "target": "area", "durationTicks": 40 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "cf-make-the-small-luck",
+    "cell": "creo-fatum",
+    "name": "Make the Small Luck",
+    "gloss": "Fortune, made in quantities too small to prove. The literature on whether it works at all is the largest in the discipline and the least conclusive.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "research-rate", "magnitude": 128, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cf-the-promised-year",
+    "cell": "creo-fatum",
+    "name": "The Promised Year",
+    "gloss": "Make a promise about a year and let the year arrange itself around it. A god whose scholars can do this is asked for fewer miracles and given more.",
+    "tier": 2,
+    "prerequisites": ["cf-make-the-small-luck"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "worship-yield", "magnitude": 192, "target": "universe", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cf-the-fated-hand",
+    "cell": "creo-fatum",
+    "name": "The Fated Hand",
+    "gloss": "A mage who cannot be struck is not shielded. The arrow turns out to have been aimed somewhere else the whole time, and the archer will say so under oath.",
+    "tier": 3,
+    "prerequisites": ["cf-the-promised-year"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "ward", "magnitude": 256, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cf-write-the-ending",
+    "cell": "creo-fatum",
+    "name": "Write the Ending",
+    "gloss": "Fix how a thing ends and let the middle find its own way there. Nothing survives between the third tier of this cell and this one: either the intervening work was never done, or it was done and is in no catalogue.",
+    "tier": 5,
+    "prerequisites": ["cf-the-fated-hand"],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      { "primitive": "concealment", "magnitude": 256, "target": "self", "durationTicks": 0 },
+      { "primitive": "ward", "magnitude": 192, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cf-the-given-destiny",
+    "cell": "creo-fatum",
+    "name": "The Given Destiny",
+    "gloss": "Give a person a fate they did not have. Every surviving instruction opens with the same warning: the caster becomes part of the fate and cannot be written out of it afterwards. Only the two deepest species can hold it at all.",
+    "tier": 6,
+    "prerequisites": ["cf-write-the-ending"],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      { "primitive": "worship-yield", "magnitude": 384, "target": "universe", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 512, "target": "universe", "durationTicks": 0 },
+      { "primitive": "concealment", "magnitude": 192, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "cl-set-the-doorstep",
+    "cell": "creo-limen",
+    "name": "Set the Doorstep",
+    "gloss": "Make a threshold where the architecture provided none. A line across a floor that behaves, from then on, like a wall's business.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "ward", "magnitude": 128, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cl-draw-the-circle",
+    "cell": "creo-limen",
+    "name": "Draw the Circle",
+    "gloss": "The scholar's circle, made rather than drawn: a boundary that holds because it is one, and not because chalk is persuasive.",
+    "tier": 2,
+    "prerequisites": ["cl-set-the-doorstep"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "ward", "magnitude": 256, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cl-the-made-door",
+    "cell": "creo-limen",
+    "name": "The Made Door",
+    "gloss": "Put a door in a wall that had none, and a corridor behind it the building did not have room for. Declares no portal effect and never will: making a threshold is not opening one, and the raid gate stays in Rego Limen (contracts.md §8).",
+    "tier": 3,
+    "prerequisites": ["cl-draw-the-circle", "il-sense-the-seam"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [
+      { "primitive": "build-rate", "magnitude": 256, "target": "universe", "durationTicks": 0 },
+      { "primitive": "blink", "magnitude": 4096, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cl-the-threshold-that-was-always-there",
+    "cell": "creo-limen",
+    "name": "The Threshold That Was Always There",
+    "gloss": "Make a seam, then make it old, so that the record agrees it was always a seam. Intellego Limen reads it as genuine, which is the entire point and the reason several universities decline to teach it.",
+    "tier": 4,
+    "prerequisites": ["cl-the-made-door"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "ward", "magnitude": 320, "target": "self", "durationTicks": 0 },
+      { "primitive": "concealment", "magnitude": 192, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "cn-give-the-use-name",
+    "cell": "creo-nomen",
+    "name": "Give the Use-Name",
+    "gloss": "Attach a name to a thing that had none, and have it stick. A catalogue is impossible before this working and merely tedious after it.",
+    "tier": 1,
+    "prerequisites": [],
+    "researchCost": 2048,
+    "teachCost": 512,
+    "scribeCost": 1024,
+    "rediscoveryMultiplier": 5632,
+    "effects": [{ "primitive": "scribe-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cn-name-the-unnamed",
+    "cell": "creo-nomen",
+    "name": "Name the Unnamed",
+    "gloss": "Make a true name for something that has never had one — a new working, a made beast, a hall that was grown rather than built. The name is correct, which is not the same as it being deserved.",
+    "tier": 2,
+    "prerequisites": ["cn-give-the-use-name"],
+    "researchCost": 4096,
+    "teachCost": 1024,
+    "scribeCost": 2048,
+    "rediscoveryMultiplier": 5632,
+    "effects": [
+      { "primitive": "scribe-rate", "magnitude": 256, "target": "self", "durationTicks": 0 },
+      { "primitive": "research-rate", "magnitude": 128, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cn-the-name-that-teaches",
+    "cell": "creo-nomen",
+    "name": "The Name That Teaches",
+    "gloss": "Build a name so that holding it conveys the thing named. In a True Naming universe this is a term's curriculum in one syllable, and it is why those universities' terms are shorter.",
+    "tier": 3,
+    "prerequisites": ["cn-name-the-unnamed", "in-derive-the-true-name"],
+    "researchCost": 8192,
+    "teachCost": 2048,
+    "scribeCost": 4096,
+    "rediscoveryMultiplier": 6144,
+    "effects": [{ "primitive": "teach-rate", "magnitude": 384, "target": "single", "durationTicks": 0 }],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cn-the-second-name",
+    "cell": "creo-nomen",
+    "name": "The Second Name",
+    "gloss": "Make yourself a second true name, so that the first can be spent. Perdo Nomen can take a name away; this puts a spare on the shelf, and a mage holding both is difficult to end and impossible to cite.",
+    "tier": 4,
+    "prerequisites": ["cn-the-name-that-teaches"],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      { "primitive": "concealment", "magnitude": 320, "target": "self", "durationTicks": 0 },
+      { "primitive": "scribe-rate", "magnitude": 192, "target": "self", "durationTicks": 0 }
+    ],
+    "tuningStatus": "untuned"
   }
 ]
