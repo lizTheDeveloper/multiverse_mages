@@ -227,6 +227,12 @@ describe('the shared implementation is still rules path', () => {
     const result = await lintAt(sharedFile, 'export const half = 0.5;\n');
     expect(result.errorCount).toBeGreaterThan(0);
     expectBanReported(result, 'fixed-point integers at scale 1/1024');
+    // The report names the offending file, not just the offence. A ban that
+    // fires without saying where leaves whoever hits it grepping the workspace
+    // for a float — and this suite's own configuration is the thing most likely
+    // to attribute the message to the wrong path. Same assertion as the
+    // consumer-side ban above, for the same reason.
+    expect(result.filePath.endsWith(sharedFile)).toBe(true);
   });
 
   it('rejects Math.floor in packages/primitives/src', async () => {
