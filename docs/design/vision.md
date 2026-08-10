@@ -129,7 +129,8 @@ decide everything else. You never issue direct orders — including in raids.
 ## 8. Raids
 
 - **Two clocks.** World time advances in months/years while you tend your universe. Entering a
-  raid **pauses world time for both universes** and switches to a fast combat clock.
+  raid **pauses world time for both participating universes** and switches to a fast combat
+  clock. What happens to *uninvolved* universes is left open in §13.
 - **Entry** requires the portal school and favor.
 - **Arbitration:** host ruleset governs (§3).
 - **Termination:** objective-based, with a portal stability timer that guarantees the raid ends.
