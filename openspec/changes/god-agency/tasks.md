@@ -1,7 +1,7 @@
 ## 1. Contract amendments and content
 
 - [ ] 1.1 Amend `docs/design/contracts.md` §1.1 with `favorCap`, per-cell `researchEmphasis`, per-axis hysteresis counters, blessing and upheaval expiry ticks, `prestigeEarned`, and a run-end reason code
-- [ ] 1.2 Amend `contracts.md` §4.1 with `edictBudgetMax = 6`, and confirm the observation vector's ruleset block length against it
+- [ ] 1.2 Confirm the observation vector's ruleset block against `EDICT_BUDGET_MAX = 8` (already pinned in `contracts.md` §0); assert `edictBudget = 1 + worshipTier` never exceeds it
 - [ ] 1.3 Amend `contracts.md` §7 with the `worshipSnowball` threshold and the new `ascensionRateByPath` and `favorWasted` metrics
 - [ ] 1.4 Record the era-advancement rule in `contracts.md`, noting that ownership may move to the world-rules layer
 - [ ] 1.4a Amend `contracts.md` §1.1's `edicts` invariant to "a new edict may be issued only while `length < edictBudget`", with existing edicts persisting through a worship-tier fall

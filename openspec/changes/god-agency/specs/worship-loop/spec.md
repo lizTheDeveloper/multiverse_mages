@@ -119,7 +119,7 @@ regeneration through the shared capped channel and never enters the worship form
 
 `worshipTier` SHALL be the count of geometric thresholds `fp(512) × 2^t` for `t` in `0..4` that
 current worship meets or exceeds, yielding tiers 0 through 5. `edictBudget` MUST equal
-`1 + worshipTier`, and `edictBudgetMax` MUST therefore be 6 — the value `contracts.md` §4.1 uses to
+`1 + worshipTier`, reaching 6 at the top tier. It MUST never exceed `EDICT_BUDGET_MAX = 8`, pinned in `contracts.md` §0 and used to
 size the observation vector's ruleset block. Thresholds are untuned placeholders; the tier count
 is not, because the observation shape depends on it.
 

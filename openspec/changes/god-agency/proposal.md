@@ -22,7 +22,7 @@ Specifying the loop without specifying its damping would ship the risk and call 
   is discarded and counted, and the `worship-yield` primitive's role as the one licensed
   multiplier on regeneration.
 - Define **worship tiers** on geometric thresholds and fix `edictBudget = 1 + worshipTier`, which
-  in turn fixes `edictBudgetMax = 6` — a constant `contracts.md` §4.1 uses to size the observation
+  reaches 6 at the top tier, against the `EDICT_BUDGET_MAX = 8` that `contracts.md` §0 pins to size the observation
   vector but never gives a value.
 - Specify the **damping** on the worship loop: saturation, lag, the pool cap, geometric tier
   thresholds, and a deliberate decoupling — worship reads institutional *breadth* and mage
@@ -94,7 +94,7 @@ as spec-level modifications made unilaterally here.
   if left implicit. They are proposed here and must be written into the contract before or with
   implementation:
   - `favorCap` and the per-tick `favorRegen`, both derived from `worshipTier` and worship.
-  - `edictBudgetMax = 6`, referenced by §4.1's observation sizing and never valued.
+  - none — `EDICT_BUDGET_MAX` is pinned at 8 in `contracts.md` §0, with headroom above the 6 that `1 + worshipTier` currently reaches.
   - A per-cell `researchEmphasis` array, without which action 12 has nowhere to persist.
   - Hysteresis counters for recent ruleset changes, per technique and per form axis.
   - Expiry ticks for active blessings and for the upheaval worship shock.
