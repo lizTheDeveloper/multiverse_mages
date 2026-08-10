@@ -4,15 +4,28 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "./test",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "emitDeclarationOnly": true,
     "outDir": "../../.tsbuild/rules-magic-test",
     "tsBuildInfoFile": "../../.tsbuild/rules-magic-test.tsbuildinfo"
   },
-  "include": ["test/**/*.ts"],
+  "include": [
+    "test/**/*.ts"
+  ],
   "references": [
-    { "path": "./tsconfig.json" },
-    { "path": "../content" },
-    { "path": "../state" }
+    {
+      "path": "./tsconfig.json"
+    },
+    {
+      "path": "../content"
+    },
+    {
+      "path": "../primitives"
+    },
+    {
+      "path": "../state"
+    }
   ]
 }

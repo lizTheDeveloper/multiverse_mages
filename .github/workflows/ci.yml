@@ -48,6 +48,9 @@ jobs:
       - name: Content validation
         run: npm run check:content
 
+      - name: Primitive coverage over v1 content
+        run: npm run check:coverage
+
       - name: Test (unit + golden replay)
         run: npm test
 
@@ -84,6 +87,9 @@ jobs:
 
       - name: Content validation
         run: npm run check:content
+
+      - name: Primitive coverage over v1 content
+        run: npm run check:coverage
 
       - name: Test (unit + golden replay)
         run: npm test

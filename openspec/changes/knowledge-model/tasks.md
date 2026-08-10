@@ -49,13 +49,13 @@
 
 ## 5. Effect application pipeline
 
-- [ ] 5.1 Implement effect gathering from usable mind and palace instances, with the mastery activation threshold
-- [ ] 5.2 Implement single-point legality evaluation, so illegal contributions never reach stacking and carry no legality field forward
-- [ ] 5.3 Implement scale routing against the `primitive-semantics` registry, including the `both` case
-- [ ] 5.4 Delegate all stacking, cap, and rounding arithmetic to the shared implementation, with no local combination
-- [ ] 5.5 Implement the primitive-coverage check over v1 content, with `lifespan` and `fertility` as the only declared exclusions
-- [ ] 5.6 Wire the coverage check into CI, failing both on a newly unexercised primitive and on an exclusion becoming covered
-- [ ] 5.7 Unit test that written instances produce no direct effect contributions, and that a library's influence appears only through `libraryDepth`
+- [x] 5.1 Implement effect gathering from usable mind and palace instances, with the mastery activation threshold
+- [x] 5.2 Implement single-point legality evaluation, so illegal contributions never reach stacking and carry no legality field forward
+- [x] 5.3 Implement scale routing against the `primitive-semantics` registry, including the `both` case
+- [x] 5.4 Delegate all stacking, cap, and rounding arithmetic to the shared implementation, with no local combination
+- [x] 5.5 Implement the primitive-coverage check over v1 content, with `lifespan` and `fertility` as the only declared exclusions
+- [x] 5.6 Wire the coverage check into CI, failing both on a newly unexercised primitive and on an exclusion becoming covered
+- [x] 5.7 Unit test that written instances produce no direct effect contributions, and that a library's influence appears only through `libraryDepth`
 
 ## 6. Traditions
 
