@@ -69,6 +69,23 @@ Two commands worth knowing before touching the core:
   test pass.** A fixture diff is a claim that behaviour changed on purpose, and reviewers read it
   as one.
 
+## CI, and why there are two of them
+
+`main` is protected: pull request required, no force-push, no deletion, and **two** status checks
+must be green. See `docs/devops/ci-and-deploy.md` before changing any of it.
+
+The short version, because the obvious "cleanup" here is a security regression:
+
+- **GitHub Actions** (`.github/workflows/ci.yml`) is free and unmetered — this repo is public — and
+  runs in a sandbox holding no credentials. It is the **only** gate that safely sees fork PRs.
+- **The self-hosted runner** (`scripts/ci-check.sh`, status context `ci/hetzner-lint`) runs on
+  `cto-tycoon-hel1` in a process holding Coolify, Neon, GitHub and Matrix tokens. It therefore
+  **refuses fork PRs outright**, and must keep doing so.
+
+Neither can do the other's job. Do not delete the Actions workflow to "move CI off GitHub", and do
+not relax the fork guard to make a fork PR go green. `scripts/ci-check.sh` must stay equivalent to
+`npm run verify`, or a commit can pass locally and fail on the runner — or worse, the reverse.
+
 ## Non-negotiable technical constraints
 
 These come from the balance methodology and the live-PvP requirement, and violating any of them
