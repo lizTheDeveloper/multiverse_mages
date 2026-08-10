@@ -1,0 +1,465 @@
+/*
+ * Multiverse Mages — the knowledge subsystem: instances, existence, and loss.
+ * Copyright (C) 2026 Ann Kelner
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/>.
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/**
+ * The one place a knowledge instance is created or destroyed.
+ *
+ * ## Why every path funnels through two methods
+ *
+ * 0.3.0 claims that *a node ceases to exist in a universe when its last
+ * instance is destroyed*. That claim is only as true as the least careful
+ * caller: a mage dying, a library burning, a dormant instance decaying to
+ * nothing, a grimoire crumbling and a tradition change that cannot hold a
+ * written copy are five different stories, and if each maintained the index
+ * itself, four of them would eventually stop. So {@link
+ * KnowledgeSubsystem.createInstance} and {@link
+ * KnowledgeSubsystem.destroyInstance} are the only writers, the index is
+ * private, and the loss event is emitted by the destroy path rather than by
+ * whoever happened to call it.
+ *
+ * ## What is state, what is index, and why the distinction is not cosmetic
+ *
+ * - **State**, and therefore snapshotted: the knowledge instances themselves,
+ *   the grimoires, and the per-node **ever-known** record.
+ * - **Index**, and therefore rebuilt on load: the per-node instance counts
+ *   ({@link NodeExistenceIndex}, which `@mm/state` already owns) and the
+ *   grimoire-to-instance association.
+ *
+ * `contracts.md` §1.5 is explicit that current existence is derived and
+ * *"nothing may cache it in state"*, and equally explicit that ever-known is
+ * *"persisted, and not derivable"*. Those two sentences look symmetrical and
+ * are not. Existence can be recomputed from the instances at any moment, so a
+ * stored copy can only ever be a second source of truth that a snapshot would
+ * faithfully preserve in a state of disagreement. Ever-known cannot be
+ * recomputed at all: once the last instance of a node is gone, nothing in the
+ * world remembers it was ever there, and rediscovery — the expensive path, the
+ * one carrying the release claim — becomes indistinguishable from ordinary
+ * research. A derived index cannot do that job, which is why this one is a
+ * component and lives in world snapshots.
+ *
+ * The in-memory `Set` beside it is a mirror, not the record: it exists so that
+ * "have we ever known this?" is a lookup rather than a scan, and it is rebuilt
+ * from the component by {@link KnowledgeSubsystem.rebuild}. A snapshot restored
+ * into a fresh process therefore still costs rediscovery, which is exactly what
+ * `knowledge-instances`' round-trip scenario asserts.
+ */
+
+import type { ContentId, Fp } from '@mm/content';
+import type { EntityHandle, SimState } from '@mm/sim-core';
+import type { Handle, KnowledgeInstanceRecord, Tick } from '@mm/state';
+import {
+  EVER_KNOWN,
+  GRIMOIRE,
+  HOLDER_KIND,
+  KNOWLEDGE_INSTANCE,
+  LOCATION_KIND,
+  NodeExistenceIndex,
+  attachRecord,
+  componentOf,
+} from '@mm/state';
+
+import type { KnowledgeLossEvent } from './outcomes.js';
+
+/**
+ * What creating an instance needs: `contracts.md` §1.5's record, plus the link
+ * to the book it is the contents of.
+ *
+ * **Extends `@mm/state`'s record rather than restating it.** `state-schema`
+ * requires one set of world-state types, and a second declaration of the same
+ * five fields is a duplicate however it is named — the field a copy adds is
+ * invariably one the component layout never serializes, so it is written every
+ * tick and absent from every snapshot. `grimoire` is genuinely not part of §1.5
+ * and genuinely not serialized: it feeds the subsystem index, which is exactly
+ * where §1.5 says that association belongs.
+ */
+export interface InstanceSpec extends KnowledgeInstanceRecord {
+  /**
+   * The grimoire this instance is the contents of. **Required** for a written
+   * copy and forbidden for a held one — see {@link KnowledgeSubsystem.createInstance}.
+   */
+  readonly grimoire?: Handle;
+}
+
+/** Location kinds a mage carries in their own head. Only these decay, and only these teach. */
+export function isHeldLocation(locationKind: number): boolean {
+  return locationKind === LOCATION_KIND.mind || locationKind === LOCATION_KIND.palace;
+}
+
+/** Location kinds that are a written copy, and therefore have a grimoire behind them. */
+export function isWrittenLocation(locationKind: number): boolean {
+  return locationKind === LOCATION_KIND.grimoire || locationKind === LOCATION_KIND.library;
+}
+
+export class KnowledgeSubsystem {
+  readonly #state: SimState;
+  readonly #existence: NodeExistenceIndex;
+
+  /**
+   * Mirror of the `ever-known` component. Never cleared, never trusted over the
+   * component — {@link rebuild} discards and re-reads it.
+   */
+  #everKnown = new Set<ContentId>();
+
+  /**
+   * `contracts.md` §1.5: *"the grimoire-to-library association lives in a
+   * subsystem index, not in a second instance record."* This is that index, and
+   * the reason it is not a state field is that a state field would be a second
+   * place a written copy is recorded — the double-count that makes
+   * `libraryDependence` lie in the safe direction, which is the worst direction
+   * for a metric whose only job is to warn.
+   */
+  #instanceOfGrimoire = new Map<Handle, Handle>();
+
+  /**
+   * @param state - The world state. Must carry `@mm/state`'s §1 components.
+   * @param nodeCount - Node ids the loaded content declares, `1..nodeCount`.
+   */
+  constructor(state: SimState, nodeCount: number) {
+    this.#state = state;
+    this.#existence = new NodeExistenceIndex(nodeCount);
+  }
+
+  /**
+   * A subsystem over a state that already holds instances — the load path.
+   *
+   * Every index this class keeps is rebuilt from the state it is handed, so a
+   * snapshot written by an older build, or by a build with a bug in this file,
+   * loads correctly and is repaired by the act of loading.
+   */
+  static fromState(state: SimState, nodeCount: number): KnowledgeSubsystem {
+    const subsystem = new KnowledgeSubsystem(state, nodeCount);
+    subsystem.rebuild();
+    return subsystem;
+  }
+
+  /** The world state this subsystem indexes. */
+  get state(): SimState {
+    return this.#state;
+  }
+
+  /** Whether the universe currently holds at least one instance of a node. */
+  exists(nodeId: ContentId): boolean {
+    return this.#existence.exists(nodeId);
+  }
+
+  /** Live instances of a node. `contracts.md` §1.5's derived existence, as a count. */
+  instanceCount(nodeId: ContentId): number {
+    return this.#existence.instanceCount(nodeId);
+  }
+
+  /** Nodes surviving on exactly one instance — §7's `libraryDependence`. */
+  singleInstanceNodes(): ContentId[] {
+    return this.#existence.singleInstanceNodes();
+  }
+
+  /** Nodes with at least one instance, ascending. */
+  knownNodes(): ContentId[] {
+    return this.#existence.knownNodes();
+  }
+
+  /**
+   * Whether this universe has *ever* held an instance of a node.
+   *
+   * The distinction rediscovery is built on. `false` means ordinary research;
+   * `true` with no surviving instance means the node was lost and re-deriving
+   * it costs at least three times what discovering it did.
+   */
+  wasEverKnown(nodeId: ContentId): boolean {
+    return this.#everKnown.has(nodeId);
+  }
+
+  /** The instance a grimoire holds, or `0` if the index knows of none. */
+  instanceForGrimoire(grimoire: Handle): Handle {
+    return this.#instanceOfGrimoire.get(grimoire) ?? 0;
+  }
+
+  /** The grimoire an instance is the contents of, or `0`. The inverse lookup. */
+  grimoireHolding(instance: Handle): Handle {
+    for (const [grimoire, held] of this.#instanceOfGrimoire) {
+      if (held === instance) return grimoire;
+    }
+    return 0;
+  }
+
+  /** A knowledge instance's fields. Throws on a handle carrying no instance. */
+  read(instance: Handle): KnowledgeInstanceRecord {
+    const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
+    const handle = instance as EntityHandle;
+    return {
+      nodeId: store.get(handle, 'nodeId'),
+      locationKind: store.get(handle, 'locationKind'),
+      locationId: store.get(handle, 'locationId'),
+      acquiredTick: store.get(handle, 'acquiredTick'),
+      mastery: store.get(handle, 'mastery'),
+    };
+  }
+
+  /** Whether a handle names a live knowledge instance. */
+  isInstance(instance: Handle): boolean {
+    return componentOf(this.#state, KNOWLEDGE_INSTANCE).has(instance as EntityHandle);
+  }
+
+  /** Overwrites an instance's mastery. Callers clamp; this does not. */
+  setMastery(instance: Handle, mastery: Fp): void {
+    componentOf(this.#state, KNOWLEDGE_INSTANCE).set(instance as EntityHandle, 'mastery', mastery);
+  }
+
+  /**
+   * Rewrites where an instance lives, leaving the instance count untouched.
+   *
+   * This is how shelving and withdrawal are expressed: `contracts.md` §1.5
+   * requires *one* instance per written copy, moving between `(2, grimoireId)`
+   * and `(3, libraryId)`, rather than a second instance appearing on a shelf.
+   */
+  setLocation(instance: Handle, locationKind: number, locationId: Handle): void {
+    const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
+    store.set(instance as EntityHandle, 'locationKind', locationKind);
+    store.set(instance as EntityHandle, 'locationId', locationId);
+  }
+
+  /**
+   * Creates an instance, counts it, and records the node as ever-known.
+   *
+   * The ever-known write happens here rather than at each acquisition site
+   * because "first instance" is a fact about the index, not about which
+   * operation happened to produce it — founding grants, research, teaching,
+   * scribing and raid theft all make a node known, and a site that forgot would
+   * make that node rediscoverable at ordinary cost forever after.
+   *
+   * @throws RangeError if a written copy arrives without its grimoire, or a
+   * held instance arrives with one. The pairing is the invariant the
+   * grimoire-to-instance index exists to maintain, and an unpaired written copy
+   * is an instance that can never be burned.
+   */
+  createInstance(spec: InstanceSpec): Handle {
+    const written = isWrittenLocation(spec.locationKind);
+    if (written && (spec.grimoire === undefined || spec.grimoire === 0)) {
+      throw new RangeError(
+        `A knowledge instance at location kind ${String(spec.locationKind)} is a written copy and ` +
+          'must name the grimoire it is the contents of. contracts.md §1.5 keeps exactly one ' +
+          'instance per written copy, associated through a subsystem index.',
+      );
+    }
+    if (!written && spec.grimoire !== undefined) {
+      throw new RangeError(
+        `A knowledge instance at location kind ${String(spec.locationKind)} is held in a mind, not ` +
+          'written, so it has no grimoire. Passing one would put a book in someone’s memory.',
+      );
+    }
+
+    const handle = this.#state.entities.create();
+    attachRecord(this.#state, KNOWLEDGE_INSTANCE, handle, {
+      nodeId: spec.nodeId,
+      locationKind: spec.locationKind,
+      locationId: spec.locationId,
+      acquiredTick: spec.acquiredTick,
+      mastery: spec.mastery,
+    });
+
+    this.#existence.add(spec.nodeId);
+    this.#markEverKnown(spec.nodeId);
+    if (spec.grimoire !== undefined) this.#instanceOfGrimoire.set(spec.grimoire, handle);
+    return handle;
+  }
+
+  /**
+   * Destroys an instance and reports the node leaving the universe, if it did.
+   *
+   * The single destroy path. Everything that can take knowledge away — a
+   * holder's death, a burned library, a decayed dormant instance, a crumbling
+   * grimoire — routes through here, which is what makes the 0.3.0 loss claim
+   * testable in one place rather than in five.
+   *
+   * @returns the loss event when this was the node's last instance, and
+   * `undefined` otherwise. Losing one of several copies is not a loss, and
+   * emitting an event for it would drown the signal `knowledgeHalfLife` reads.
+   */
+  destroyInstance(instance: Handle, worldTick: Tick): KnowledgeLossEvent | undefined {
+    const view = this.read(instance);
+    this.#existence.remove(view.nodeId);
+
+    for (const [grimoire, held] of this.#instanceOfGrimoire) {
+      if (held === instance) {
+        this.#instanceOfGrimoire.delete(grimoire);
+        break;
+      }
+    }
+
+    this.#state.entities.destroy(instance as EntityHandle);
+
+    if (this.#existence.instanceCount(view.nodeId) > 0) return undefined;
+    return { nodeId: view.nodeId, worldTick, location: view.locationKind };
+  }
+
+  /** Every live instance in the universe, in ascending slot order. */
+  instances(): Handle[] {
+    return this.#collect(() => true);
+  }
+
+  /** Every live instance of a node, in ascending slot order. */
+  instancesOf(nodeId: ContentId): Handle[] {
+    return this.#collect((view) => view.nodeId === nodeId);
+  }
+
+  /**
+   * Every instance a mage carries in mind or memory palace.
+   *
+   * Ascending slot order, never insertion order: rows move under swap-removal,
+   * so anything ordered by row would depend on the destruction history rather
+   * than on what the world is — which is a desync between two peers that agree
+   * on every value.
+   */
+  instancesHeldBy(subject: Handle): Handle[] {
+    return this.#collect(
+      (view) => isHeldLocation(view.locationKind) && view.locationId === subject,
+    );
+  }
+
+  /** Every instance at one location, of one kind. */
+  instancesAt(locationKind: number, locationId: Handle): Handle[] {
+    return this.#collect(
+      (view) => view.locationKind === locationKind && view.locationId === locationId,
+    );
+  }
+
+  /**
+   * Destroys everything a mage held. The mortality path, and the reason
+   * `store: palace` is a meaningfully harsher tradition.
+   */
+  destroyInstancesHeldBy(subject: Handle, worldTick: Tick): KnowledgeLossEvent[] {
+    return this.destroyAll(this.instancesHeldBy(subject), worldTick);
+  }
+
+  /** Destroys a list of instances, collecting the nodes it emptied. */
+  destroyAll(instances: readonly Handle[], worldTick: Tick): KnowledgeLossEvent[] {
+    const lost: KnowledgeLossEvent[] = [];
+    for (const instance of instances) {
+      const event = this.destroyInstance(instance, worldTick);
+      if (event !== undefined) lost.push(event);
+    }
+    return lost;
+  }
+
+  /**
+   * Rebuilds every index from the state.
+   *
+   * Called on load, and available as a repair.
+   *
+   * **The shelved-grimoire pairing is reconstructed, not read.** An unshelved
+   * written instance names its grimoire directly, at `(2, grimoireId)`, so that
+   * pair is a fact in state. A shelved one names the *library*, at
+   * `(3, libraryId)`, and §1.5 forbids putting the grimoire back in a state
+   * field — the association is required to live in a subsystem index. So the
+   * pair is recovered by matching each shelved grimoire against an unclaimed
+   * instance of the same node in the library its `holderId` names, in ascending
+   * slot order on both sides.
+   *
+   * That is deterministic, and it is exact except in one case: two grimoires of
+   * the *same node* shelved in the *same library*, where nothing in state
+   * distinguishes which instance came from which book. The reconstruction may
+   * swap them. Both are copies of one node in one place with mastery `0` — a
+   * later burn destroys one of two identical rows either way, and the instance
+   * count, the library's depth, and every loss event are unchanged. The
+   * observable difference is confined to `acquiredTick`. This is recorded as a
+   * gap in `contracts.md` §1.5 rather than closed by adding the state field §1.5
+   * rules out.
+   */
+  rebuild(): void {
+    const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
+    const nodeIds = store.field('nodeId');
+    this.#existence.rebuildFrom((yieldNodeId) => {
+      store.forEach((row) => {
+        yieldNodeId(nodeIds[row] as number);
+      });
+    });
+
+    this.#instanceOfGrimoire = new Map();
+    const locationKinds = store.field('locationKind');
+    const locationIds = store.field('locationId');
+    store.forEach((row, handle) => {
+      if ((locationKinds[row] as number) === LOCATION_KIND.grimoire) {
+        this.#instanceOfGrimoire.set(locationIds[row] as number, handle);
+      }
+    });
+    this.#relinkShelvedGrimoires();
+
+    this.#everKnown = new Set();
+    const everKnown = componentOf(this.#state, EVER_KNOWN);
+    const everKnownNodes = everKnown.field('nodeId');
+    everKnown.forEach((row) => {
+      this.#everKnown.add(everKnownNodes[row] as number);
+    });
+  }
+
+  /**
+   * Re-links a grimoire to its instance.
+   *
+   * `location.ts` uses this when shelving moves an instance off the grimoire's
+   * own handle; {@link rebuild} uses it on load. Exposed rather than private
+   * because a raid depositing a looted book is the same operation, and it will
+   * arrive from `rules-raid`.
+   */
+  linkGrimoire(grimoire: Handle, instance: Handle): void {
+    this.#instanceOfGrimoire.set(grimoire, instance);
+  }
+
+  #relinkShelvedGrimoires(): void {
+    const claimed = new Set<Handle>(this.#instanceOfGrimoire.values());
+    const grimoires = componentOf(this.#state, GRIMOIRE);
+    const grimoireNodes = grimoires.field('nodeId');
+    const holderKinds = grimoires.field('holderKind');
+    const holderIds = grimoires.field('holderId');
+
+    grimoires.forEach((row, grimoire) => {
+      if ((holderKinds[row] as number) !== HOLDER_KIND.library) return;
+      if (this.#instanceOfGrimoire.has(grimoire)) return;
+      const library = holderIds[row] as number;
+      const nodeId = grimoireNodes[row] as number;
+      for (const candidate of this.instancesAt(LOCATION_KIND.library, library)) {
+        if (claimed.has(candidate)) continue;
+        if (this.read(candidate).nodeId !== nodeId) continue;
+        this.#instanceOfGrimoire.set(grimoire, candidate);
+        claimed.add(candidate);
+        return;
+      }
+    });
+  }
+
+  #collect(matches: (view: KnowledgeInstanceRecord) => boolean): Handle[] {
+    const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
+    const nodeIds = store.field('nodeId');
+    const locationKinds = store.field('locationKind');
+    const locationIds = store.field('locationId');
+    const acquiredTicks = store.field('acquiredTick');
+    const masteries = store.field('mastery');
+    const found: Handle[] = [];
+    store.forEach((row, handle) => {
+      const view: KnowledgeInstanceRecord = {
+        nodeId: nodeIds[row] as number,
+        locationKind: locationKinds[row] as number,
+        locationId: locationIds[row] as number,
+        acquiredTick: acquiredTicks[row] as number,
+        mastery: masteries[row] as number,
+      };
+      if (matches(view)) found.push(handle);
+    });
+    return found;
+  }
+
+  #markEverKnown(nodeId: ContentId): void {
+    if (this.#everKnown.has(nodeId)) return;
+    this.#everKnown.add(nodeId);
+    const handle = this.#state.entities.create();
+    attachRecord(this.#state, EVER_KNOWN, handle, { nodeId });
+  }
+}
