@@ -53,9 +53,9 @@ Reusing the schema interpreter (rather than putting audio content outside `packa
 | `packages/content/test/unit/audio-*.test.ts` (create) | Schema, cross-reference, isolation and selection tests |
 | `packages/content/test/fixtures/audio-select-vectors.json` (create) | Golden vectors pinning the selection hash |
 | `scripts/generate-audio.mjs` (create) | Batch generation driver |
-| `scripts/lib/generation-plan.mjs` (create) | Pure request-shaping and manifest logic, unit-testable |
+| `packages/content/src/audio-generation.ts` (create) | Pure request-shaping: `planRequests`, `redact` |
 | `tools/audition/index.html` (create) | Static take-audition page |
-| `tools/audition/merge-selections.mjs` (create) | Pure selection-merge logic |
+| `packages/content/src/audio-selection-merge.ts` (create) | Pure selection-merge: `mergeSelections`, `selectionCoverage`, `assetIdOf` |
 | `package.json` (modify) | `check:audio`, `audio:generate` scripts; `check:audio` joins `verify` |
 | `.gitignore` (modify) | Ignore `assets/candidates/` |
 | `docs/design/sound-design.md` (modify) | §0.5 licensing resolved |
@@ -1425,15 +1425,16 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 Drives the batch job from the content files. Pure request-shaping is separated from I/O so it can be tested without a network or a key.
 
 **Files:**
-- Create: `scripts/lib/generation-plan.mjs`
+- Create: `packages/content/src/audio-generation.ts`
 - Create: `scripts/generate-audio.mjs`
+- Modify: `packages/content/src/index.ts`
 - Modify: `package.json`
 - Modify: `.gitignore`
 - Test: `packages/content/test/unit/generation-plan.test.ts`
 
 **Interfaces:**
 - Consumes: `loadAudioContent` from Task 1, `AudioCueRecord` and `VoiceLineBankRecord` from Tasks 1 and 3.
-- Produces, from `scripts/lib/generation-plan.mjs`:
+- Produces, from `packages/content/src/audio-generation.ts` (re-exported from `index.ts`):
   - `planRequests(cues, banks, { takes })` → `readonly GenerationRequest[]`
   - `GenerationRequest = { id, endpoint: 'sound-effect' | 'text-to-speech', body: object, outputPath: string }`
   - `redact(text, key)` → `string`
@@ -1453,7 +1454,7 @@ Create `packages/content/test/unit/generation-plan.test.ts` with the AGPL header
 
 import { describe, expect, it } from 'vitest';
 
-import { planRequests, redact } from '../../../../scripts/lib/generation-plan.mjs';
+import { planRequests, redact } from '@mm/content';
 
 const cues = [
   {
@@ -1539,11 +1540,13 @@ describe('planRequests', () => {
 npx vitest run packages/content/test/unit/generation-plan.test.ts
 ```
 
-Expected: FAIL — cannot resolve `scripts/lib/generation-plan.mjs`.
+Expected: FAIL — `planRequests` is not exported from `@mm/content`.
 
-- [ ] **Step 3: Implement `generation-plan.mjs`**
+- [ ] **Step 3: Implement `audio-generation.ts`**
 
-Create `scripts/lib/generation-plan.mjs` with the AGPL header and a module doc comment noting it is pure by design so it can be tested without a key:
+Create `packages/content/src/audio-generation.ts` with the AGPL header and a module doc comment noting it is pure by design so it can be tested without a key, and that the script imports it from `dist/` as a leaf module.
+
+Write it as TypeScript using the `AudioCueRecord` and `VoiceLineBankRecord` types from `audio-types.js`, and export `interface GenerationRequest { readonly id: string; readonly endpoint: 'sound-effect' | 'text-to-speech'; readonly body: Record<string, unknown>; readonly outputPath: string }`. The bodies below are otherwise unchanged:
 
 ```javascript
 /** The API caps a single sound-effect request; clamp rather than fail the batch. */
@@ -1624,7 +1627,7 @@ import { dirname } from 'node:path';
 import process from 'node:process';
 
 import { loadAudioContent, directorySource, shippedAudioDirectory } from '../packages/content/dist/index.js';
-import { planRequests, redact } from './lib/generation-plan.mjs';
+import { planRequests, redact } from '../packages/content/dist/audio-generation.js';
 
 const KEY = process.env.ELEVENLABS_API_KEY;
 const BASE = 'https://api.elevenlabs.io/v1';
@@ -1737,7 +1740,7 @@ Expected: exits 1 with the message about the key never being written to a file.
 
 ```bash
 npm run verify
-git add scripts package.json .gitignore packages/content/test
+git add scripts package.json .gitignore packages/content
 git commit -m "feat(audio): generation pipeline driven by the content files
 
 Request shaping is pure and unit-tested; the driver holds the I/O and the
@@ -1761,12 +1764,13 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 Generation is cheap; selecting among ~1,500 takes is the expensive part (sound-design §9.6). This makes it a keyboard-driven pass instead of a file-browser one.
 
 **Files:**
-- Create: `tools/audition/merge-selections.mjs`
+- Create: `packages/content/src/audio-selection-merge.ts`
 - Create: `tools/audition/index.html`
+- Modify: `packages/content/src/index.ts`
 - Test: `packages/content/test/unit/merge-selections.test.ts`
 
 **Interfaces:**
-- Produces, from `tools/audition/merge-selections.mjs`:
+- Produces, from `packages/content/src/audio-selection-merge.ts` (re-exported from `index.ts`):
   - `mergeSelections(existing, incoming)` → `Record<string, string>` mapping asset id to chosen take path
   - `selectionCoverage(requests, selections)` → `{ total, chosen, missing: readonly string[] }`
 
@@ -1777,7 +1781,7 @@ Create `packages/content/test/unit/merge-selections.test.ts` with the AGPL heade
 ```typescript
 import { describe, expect, it } from 'vitest';
 
-import { mergeSelections, selectionCoverage } from '../../../../tools/audition/merge-selections.mjs';
+import { assetIdOf, mergeSelections, selectionCoverage } from '@mm/content';
 
 describe('mergeSelections', () => {
   it('adds new selections', () => {
@@ -1831,11 +1835,11 @@ describe('selectionCoverage', () => {
 npx vitest run packages/content/test/unit/merge-selections.test.ts
 ```
 
-Expected: FAIL — module not found.
+Expected: FAIL — `mergeSelections` is not exported from `@mm/content`.
 
 - [ ] **Step 3: Implement the merge module**
 
-Create `tools/audition/merge-selections.mjs` with the AGPL header:
+Create `packages/content/src/audio-selection-merge.ts` with the AGPL header. Write it as TypeScript — `Selections` is `Readonly<Record<string, string>>`, an incoming pass is `Readonly<Record<string, string | null>>`, and `selectionCoverage` takes `readonly { readonly id: string }[]`. **It must import nothing**: the audition page loads it directly in a browser, so a single `node:` import would break the tool. The logic is otherwise unchanged:
 
 ```javascript
 /** Strips the take suffix from a request id, leaving the asset id. */
@@ -1908,7 +1912,7 @@ logic and the tested logic are the same code:
 <button id="export" disabled>Download selections.json</button>
 
 <script type="module">
-  import { mergeSelections, selectionCoverage, assetIdOf } from './merge-selections.mjs';
+  import { assetIdOf, mergeSelections, selectionCoverage } from '../../packages/content/dist/audio-selection-merge.js';
 
   let assets = [];      // [{ id, takes: [{ name, url }] }]
   let index = 0;
@@ -2000,7 +2004,7 @@ logic and the tested logic are the same code:
 </script>
 ```
 
-`assetIdOf` must be exported from `merge-selections.mjs` — it already is, per Step 3.
+The page imports the **leaf** module from `dist/`, never `dist/index.js`: `index.js` re-exports the filesystem-reading loader (contracts §5 notes this), and a browser would fail on `node:fs`. `dist/` is gitignored, so run `npm run typecheck` before opening the page.
 
 - [ ] **Step 6: Verify the page loads**
 
@@ -2014,7 +2018,7 @@ Open `http://localhost:8099`, confirm the page renders and the keyboard bindings
 
 ```bash
 npm run verify
-git add tools packages/content/test
+git add tools packages/content
 git commit -m "feat(audio): audition harness for choosing among takes
 
 sound-design §9.6: generation is cheap and selection is not — six takes across
