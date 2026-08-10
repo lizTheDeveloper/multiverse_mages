@@ -29,11 +29,11 @@ Five sections, in this order. Each earns the next.
 
 | # | Section | Job |
 |---|---|---|
-| 1 | **Hero** | Establish the world in one image and one sentence. The image is a candlelit archive, not a battle — the game is about scholars |
-| 2 | **The symmetry** | The portal rule, shown as two mirrored skies. The reader must feel the trap: permitting fire arms invaders standing in your realm |
-| 3 | **The grid, live** | 5 techniques × 14 forms = 70 cells, as an interactive toggle. Nineteen switches, seventy outcomes. This is the page's centrepiece |
-| 4 | **Knowledge is physical** | The intact library crossfading to the burned one. Kill the last mage who knew it and burn the book, and it is *gone* |
-| 5 | **What it is / status** | Honest current state, links to the public repo. No signup, no wishlist theatre |
+| 1 | **Hero — the mirror** | The live grid and its reflection. Establishes the world and the one novel mechanic in a single interactive object |
+| 2 | **Knowledge is physical** | The intact archive crossfading to the burned one. Kill the last mage who knew it and burn the book, and it is *gone* |
+| 3 | **The scholars** | Mages are academics with careers, and species differ by lifespan. Establishes that the player nudges rather than commands |
+| 4 | **Status** | Honest current state, public repo. No signup, no wishlist theatre |
+| 5 | **Close — the portal** | Ends on an opening, not on ruin: *somewhere, another god is deciding what fire means* |
 
 ## 3. Copy principles
 
@@ -50,10 +50,18 @@ Five sections, in this order. Each earns the next.
 
 Two interactions only, both demonstrating the thesis rather than decorating it.
 
-**The grid toggle.** Techniques and forms are independently permittable. Toggling one lights or darkens
-an entire row or column, and a running line names the consequence — *"Ignem is permitted. Fire works
-in your realm, for anyone standing in it."* This is the fastest possible demonstration of why
-nineteen switches produce seventy outcomes, and why the choice is symmetric.
+**The mirror — the signature element.** The hero is not a picture, it is the grid itself, rendered
+twice: your sky above, and beneath a lamplit horizon, its reflection — dimmer, ember-tinted, labelled
+*anyone raiding you*. The same nineteen switches drive both. Permit *Ignem* and it lights in your
+grid and in theirs simultaneously; the tally reads `15 / 70 in your sky · 15 in theirs`.
+
+This is the whole pitch in one object. The symmetry of the portal rule is the game's one genuinely
+novel idea, and prose takes a paragraph to land it where the mirror lands it in a single click. Every
+other element on the page is deliberately quiet so this one carries.
+
+Cells are capped at ~45px so the grid reads as an instrument rather than a wall of squares, and the
+horizon sits just above the fold at a laptop viewport — you see your own sky first, and discover the
+reflection by scrolling.
 
 **The library crossfade.** Dragging or hovering moves the intact archive to the burned one. Knowledge
 loss is the game's emotional core and the hardest thing to convey in prose; one image pair does it.
@@ -100,7 +108,5 @@ scaling pixel art smoothly destroys the only reason to use it.
 
 - Does the grid toggle read without instruction, or does it need a one-line prompt? Testable the
   moment anyone unfamiliar looks at it.
-- Is the burned library too bleak as the final image before the status section? It may need the
-  portal to follow it, so the page ends on an opening rather than an ending.
 - Should the page name the AGPL licence prominently? For this audience it is likely an asset, not
   fine print.
