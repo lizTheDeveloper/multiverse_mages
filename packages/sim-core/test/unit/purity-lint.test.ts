@@ -210,14 +210,14 @@ describe('the core rejects nondeterministic globals', () => {
  * Task 10.2 — the "Node built-in import rejected" scenario, with and without
  * the `node:` prefix.
  *
- * KNOWN GAP, deliberately not asserted here: on ESLint 9.39 this config does
- * NOT reject `import('node:fs')`, `import('fs')`, or a `require`-shaped call.
- * `no-restricted-imports` sees only static import/export declarations, so a
- * dynamic specifier walks straight past both the `paths` list and the `node:*`
- * pattern. That is a real hole in the ban, not a property worth freezing into a
- * test — asserting the current behaviour would make closing the hole look like
- * a regression. It is recorded here so the next person to read this file knows
- * the coverage stops at static imports.
+ * The ban originally stopped at static imports: `import('node:fs')`,
+ * `import('fs')` and `require('fs')` all linted clean, because
+ * `no-restricted-imports` visits only static import and export declarations, so
+ * a dynamic specifier walked past both the `paths` list and the `node:*`
+ * pattern. That hole existed from the day the rule was written and nothing in
+ * the repo was positioned to notice it — which is the entire argument for
+ * testing enforcement machinery instead of trusting it. It is closed now, by
+ * syntax selectors in `eslint.config.mjs`, and the tests below hold it closed.
  */
 describe('the core rejects Node built-in imports', () => {
   it('rejects a prefixed node: import, naming the file and line', async () => {
@@ -315,5 +315,40 @@ describe('the rules path allows integer arithmetic', () => {
         'export const product = Math.imul(3, 4);\n',
     );
     expect(result.errorCount).toBe(0);
+  });
+});
+
+describe('the ban reaches dynamic imports, not only static ones', () => {
+  it('rejects a dynamic import of a Node built-in, with and without the prefix', async () => {
+    for (const specifier of ['node:fs', 'fs', 'node:crypto']) {
+      const result = await lintAsCoreSource(
+        `export async function load(): Promise<unknown> { return import('${specifier}'); }\n`,
+      );
+      expect(wouldFailTheLintTask(result)).toBe(true);
+      expectBanReported(result, 'no-restricted-syntax', 'dynamic import is still an import');
+    }
+  });
+
+  it('rejects a dynamic import of anything at all, because the core loads nothing lazily', async () => {
+    const result = await lintAsCoreSource(
+      "export async function load(): Promise<unknown> { return import('./other.js'); }\n",
+    );
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-syntax', 'dynamic import is still an import');
+  });
+
+  it('rejects a require-shaped call', async () => {
+    const result = await lintAsCoreSource(
+      "declare const require: (id: string) => unknown;\nexport const fs = require('node:fs');\n",
+    );
+    expect(wouldFailTheLintTask(result)).toBe(true);
+    expectBanReported(result, 'no-restricted-syntax', 'require() is CommonJS');
+  });
+
+  it('names the offending file and line for a dynamic import', async () => {
+    const result = await lintAsCoreSource("\nexport const p = import('node:fs');\n");
+    expectNamesTheProbeFile(result);
+    const offence = result.messages.find((message) => message.ruleId === 'no-restricted-syntax');
+    expect(offence?.line).toBe(2);
   });
 });
