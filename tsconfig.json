@@ -7,6 +7,8 @@
     { "path": "./packages/sim-core/tsconfig.test.json" },
     { "path": "./packages/content" },
     { "path": "./packages/content/tsconfig.test.json" },
+    { "path": "./packages/primitives" },
+    { "path": "./packages/primitives/tsconfig.test.json" },
     { "path": "./tsconfig.tools.json" }
   ]
 }

@@ -25,12 +25,12 @@
 
 ## 3. Primitive semantics
 
-- [ ] 3.1 Encode the primitive registry — unit, scale, stacking rule, cap — as data
-- [ ] 3.2 Add a CI check asserting the registry matches the table in `contracts.md` §3
-- [ ] 3.3 Implement shared stacking arithmetic for each rule: additive, additive-into-multiplier, multiplicative-on-remainder, and max
-- [ ] 3.4 Implement cap clamping with per-primitive clamp counters exposed to the harness
-- [ ] 3.5 Add a lint rule rejecting inline combination of primitive magnitudes outside the shared implementation
-- [ ] 3.6 Unit test each stacking rule, including the two-50%-wards case and the max-not-sum case
+- [x] 3.1 Encode the primitive registry — unit, scale, stacking rule, cap — as data
+- [x] 3.2 Add a CI check asserting the registry matches the table in `contracts.md` §3
+- [x] 3.3 Implement shared stacking arithmetic for each rule: additive, additive-into-multiplier, multiplicative-on-remainder, and max
+- [x] 3.4 Implement cap clamping with per-primitive clamp counters exposed to the harness
+- [x] 3.5 Add a lint rule rejecting inline combination of primitive magnitudes outside the shared implementation
+- [x] 3.6 Unit test each stacking rule, including the two-50%-wards case and the max-not-sum case
 
 ## 4. Observation and action space
 

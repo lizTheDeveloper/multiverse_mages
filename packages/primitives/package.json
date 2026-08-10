@@ -1,0 +1,31 @@
+{
+  "name": "@mm/primitives",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The one implementation of effect-primitive stacking arithmetic and cap clamping, driven by the registry in @mm/content.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "//": "Rules path. No Node built-ins, no floats, no I/O — see the purity block in eslint.config.mjs. The dependency on @mm/sim-core is what buys the single shared floorDiv; the dependency on @mm/content is types only.",
+  "dependencies": {
+    "@mm/content": "*",
+    "@mm/sim-core": "*"
+  },
+  "scripts": {
+    "build": "tsc --build"
+  }
+}
