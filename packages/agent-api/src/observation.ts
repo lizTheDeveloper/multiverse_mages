@@ -61,6 +61,7 @@ import {
   OBSERVATION_SIZE,
   cohortSlot,
   knowledgeSlot,
+  UNTAUGHT_TIER_SLOT,
   mageTierSlot,
   observationBlock,
   saturate,
@@ -262,11 +263,12 @@ function writeMages(view: Int32Array, state: SimState, digest: KnowledgeDigest):
   const { offset } = observationBlock('mages');
   for (const { handle, row } of collectRecords(state, MAGE)) {
     if (row.alive === 0) continue;
-    const tier = digest.mageHighestTier.get(handle) ?? 0;
-    // A mage who knows nothing has no highest tier and lands in no bucket. See
-    // `mageTierSlot` — the block is 7 tiers wide because §2.3's tiers are 1..7,
-    // and there is no eighth slot to put her in without a contract change.
-    if (tier === 0) continue;
+    // Tier 0 is a mage who knows nothing, and she goes in slot 0 rather than
+    // being skipped. §4.1's block was widened to eight slots per species for
+    // exactly this: with seven, an all-zero mage block was ambiguous between an
+    // empty universe and a young one — the state every universe is in when the
+    // god's choices about what magic can exist matter most.
+    const tier = digest.mageHighestTier.get(handle) ?? UNTAUGHT_TIER_SLOT;
     const slot = offset + mageTierSlot(row.speciesId, tier);
     view[slot] = saturate((view[slot] ?? 0) + 1);
   }

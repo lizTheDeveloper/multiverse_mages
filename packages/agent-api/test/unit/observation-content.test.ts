@@ -25,6 +25,7 @@ import {
   OBSERVATION_SPECIES_COUNT,
   cohortSlot,
   knowledgeSlot,
+  UNTAUGHT_TIER_SLOT,
   mageTierSlot,
   observationBlock,
   rawObservation,
@@ -103,11 +104,16 @@ describe('the mages block', () => {
     expect(view[offset + mageTierSlot(1, 3)]).toBe(1);
     expect(view[offset + mageTierSlot(3, 6)]).toBe(1);
 
-    // Mage 1 knows nothing and mage 3 is dead: neither is counted anywhere. The
-    // first is the documented consequence of the block being exactly 7 tiers
-    // wide (see `mageTierSlot`); the second is §1.2's `alive`.
+    // Mage 1 knows nothing, and she lands in slot 0 rather than vanishing. This
+    // test previously asserted she was counted nowhere, which locked in the
+    // defect the eighth slot exists to fix: with seven slots an all-zero mage
+    // block could not be told apart from an empty universe.
+    expect(view[offset + mageTierSlot(1, UNTAUGHT_TIER_SLOT)]).toBe(1);
+
+    // Mage 3 is dead, and stays uncounted — that one is §1.2's `alive`, not a
+    // bucketing gap.
     const total = [...view.slice(offset, offset + size)].reduce((sum, value) => sum + value, 0);
-    expect(total).toBe(2);
+    expect(total).toBe(3);
   });
 });
 
