@@ -45,9 +45,15 @@ const ageing: System = {
 
 const world = defineWorld({ components: [vitality, wealth], systems: [ageing] });
 
+/**
+ * The revision `populated()` carries, and the input the migration chain below
+ * transforms. 32 lowercase hex characters, per `contracts.md` §0.
+ */
+const OLD_REVISION = 'abcdef0100000000000000000000abcd';
+
 /** A state with a non-trivial history: churned slots, sparse components, a mode change. */
 function populated(): ReturnType<typeof createState> {
-  const state = createState({ rootSeed: 4242, schema: world, contentRevision: 0xabcdef01 });
+  const state = createState({ rootSeed: 4242, schema: world, contentRevision: OLD_REVISION });
   const handles = [];
   for (let i = 0; i < 8; i += 1) {
     handles.push(state.entities.create());
@@ -94,7 +100,11 @@ describe('round trip', () => {
   });
 
   it('restores the clock, seed, revision, and illegal-action counter', () => {
-    let state = createState({ rootSeed: 77, schema: world, contentRevision: 5 });
+    // A revision whose bottom 96 bits are the only thing distinguishing it
+    // from `OLD_REVISION`'s prefix — the header has to carry all 128 bits, not
+    // the 32 it used to.
+    const revision = 'abcdef010000000000000000000000ff';
+    let state = createState({ rootSeed: 77, schema: world, contentRevision: revision });
     state = step(state, [], rngFromRootSeed(77));
     state = step(state, [{ kind: CORE_ACTION.enterEngagement }], rngFromRootSeed(77));
     state = step(state, [{ kind: CORE_ACTION.enterEngagement }], rngFromRootSeed(77));
@@ -104,7 +114,7 @@ describe('round trip', () => {
     expect(restored.clock.worldTick).toBe(state.clock.worldTick);
     expect(restored.clock.engagementTick).toBe(state.clock.engagementTick);
     expect(restored.rootSeed).toBe(77);
-    expect(restored.contentRevision).toBe(5);
+    expect(restored.contentRevision).toBe(revision);
     expect(restored.illegalActionCount).toBe(1);
   });
 
@@ -281,9 +291,11 @@ describe('migration', () => {
    * not evidence for it.
    *
    * So both steps now write the same two fields with operations that disagree
-   * under composition: doubling then adding is not adding then doubling. The
-   * ascending answer and the descending answer are different numbers, and the
-   * test asserts the first and rejects the second by name.
+   * under composition: for the coin balance, doubling then adding is not adding
+   * then doubling; for the revision, rotating then overwriting a character is
+   * not overwriting then rotating. The ascending answer and the descending
+   * answer are different values, and the test asserts the first and rejects the
+   * second by name.
    *
    * They are also registered high-to-low, so an implementation applying steps in
    * the order they were handed to it lands on the descending answer rather than
@@ -294,8 +306,19 @@ describe('migration', () => {
   const DOUBLED = (value: number): number => (value * 2) >>> 0;
   /** Added to every coin balance by the v2 -> v3 step. */
   const BONUS = 7;
-  /** Added to the content revision by the same step. */
-  const BONUS_REVISION = 1;
+
+  /**
+   * The revision's counterparts to the two coin operations.
+   *
+   * `contentRevision` is 32 hex characters carrying a 128-bit hash, not a
+   * number, so the two steps rewrite it by rotation and by overwrite rather
+   * than by multiplication and addition. The property the test needs is
+   * unchanged: the two do not commute, so a registry that ran them in the
+   * wrong order lands on a different string and this file can name it.
+   */
+  const ROTATED = (revision: string): string => revision.slice(1) + revision.charAt(0);
+  /** The v2 -> v3 step's mark on the revision: force the leading nibble to `f`. */
+  const STAMPED = (revision: string): string => `f${revision.slice(1)}`;
 
   /** Rewrites every value of the wealth component, leaving every other field alone. */
   const remapWealth = (
@@ -312,15 +335,15 @@ describe('migration', () => {
   registry.register(2, (envelope) => ({
     ...envelope,
     version: 3,
-    contentRevision: (envelope.contentRevision + BONUS_REVISION) >>> 0,
+    contentRevision: STAMPED(envelope.contentRevision),
     components: remapWealth(envelope.components, (value) => (value + BONUS) >>> 0),
   }));
   // v1 -> v2: the wealth component gained its coins by doubling, and the
-  // content revision doubled with them.
+  // content revision rotated by one nibble.
   registry.register(1, (envelope) => ({
     ...envelope,
     version: 2,
-    contentRevision: DOUBLED(envelope.contentRevision),
+    contentRevision: ROTATED(envelope.contentRevision),
     components: remapWealth(envelope.components, DOUBLED),
   }));
 
@@ -333,12 +356,11 @@ describe('migration', () => {
 
   /** What `populated()` writes, and what the two steps together must produce. */
   const OLD_COINS = 4000000000;
-  const OLD_REVISION = 0xabcdef01;
   const ASCENDING_COINS = (DOUBLED(OLD_COINS) + BONUS) >>> 0;
-  const ASCENDING_REVISION = (DOUBLED(OLD_REVISION) + BONUS_REVISION) >>> 0;
+  const ASCENDING_REVISION = STAMPED(ROTATED(OLD_REVISION));
   /** What applying the same two steps in the wrong order would produce. */
   const DESCENDING_COINS = DOUBLED(OLD_COINS + BONUS);
-  const DESCENDING_REVISION = DOUBLED(OLD_REVISION + BONUS_REVISION);
+  const DESCENDING_REVISION = ROTATED(STAMPED(OLD_REVISION));
 
   const wealthOf = (envelope: Envelope) =>
     envelope.components.find((component) => component.name === 'wealth')!;
@@ -407,11 +429,13 @@ describe('migration', () => {
   });
 
   it('runs a registered migration during deserialization', () => {
+    /** Differs from `OLD_REVISION` only below the old 32-bit fold. */
+    const MIGRATED_REVISION = 'abcdef0100000000000000000000007b';
     const older = new MigrationRegistry();
     older.register(SNAPSHOT_VERSION - 1, (envelope) => ({
       ...envelope,
       version: SNAPSHOT_VERSION,
-      contentRevision: 123,
+      contentRevision: MIGRATED_REVISION,
     }));
     const buffer = serializeState(populated());
     new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength).setUint16(
@@ -421,7 +445,10 @@ describe('migration', () => {
     );
 
     const restored = deserializeState(buffer, world, { migrations: older });
-    expect(restored.contentRevision).toBe(123);
+    expect(restored.contentRevision).toBe(MIGRATED_REVISION);
+    // The migrated revision shares `OLD_REVISION`'s first 32 bits, so this
+    // assertion would have passed by accident while the field was folded.
+    expect(MIGRATED_REVISION.slice(0, 8)).toBe(OLD_REVISION.slice(0, 8));
   });
 
   it('fails an older snapshot when no registry is supplied', () => {

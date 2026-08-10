@@ -35,6 +35,21 @@ import {
 
 import { fixtureRuleset, populateEngagement, populatedWorld } from './fixtures.js';
 
+const HOST_REVISION = '11111111111111111111111111111111';
+const RAIDER_REVISION = '22222222222222222222222222222222';
+
+/**
+ * Two revisions agreeing on their first 32 bits and disagreeing below.
+ *
+ * The first eight hex characters are the entire width `contentRevision` used
+ * to be stored at, so a build that folded the hash would see one value here,
+ * not two.
+ */
+const COLLIDING_ABOVE_32_BITS = [
+  'deadbeef00000000000000000000000a',
+  'deadbeef00000000000000000000000b',
+] as const;
+
 /** The bytes of a snapshot, as text, for asserting a name is absent from it. */
 function asLatin1(bytes: Uint8Array): string {
   let text = '';
@@ -140,13 +155,63 @@ describe('opening a raid refuses the arrangements that break termination', () =>
     const { state } = populatedWorld();
     expect(() =>
       beginEngagement(state, {
-        hostRuleset: fixtureRuleset({ contentRevision: 111 }),
-        raiderRuleset: fixtureRuleset({ contentRevision: 222 }),
+        hostRuleset: fixtureRuleset({ contentRevision: HOST_REVISION }),
+        raiderRuleset: fixtureRuleset({ contentRevision: RAIDER_REVISION }),
         portalStability: 300,
         stabilityDecayPerTick: 1,
         raidSeed: 1,
       }),
-    ).toThrow(/111.*222|222.*111/s);
+    ).toThrow(
+      new RegExp(`${HOST_REVISION}.*${RAIDER_REVISION}|${RAIDER_REVISION}.*${HOST_REVISION}`, 's'),
+    );
+  });
+
+  /**
+   * The regression guard for the `contentRevision` narrowing.
+   *
+   * These two revisions are identical for their first eight hex characters —
+   * the whole of the 32 bits the field used to be folded to — and differ only
+   * below that. While `SimState.contentRevision` was a `uint32`, a pair like
+   * this was the shape of the collision that let two incompatible universes
+   * into the same raid: §0 offers no partial-compatibility rule and no
+   * negotiation, so the equality check below is the *only* thing standing
+   * between them and a desync. Now that the full 128 bits are carried, they
+   * are simply two different revisions and the raid is refused.
+   */
+  it('refuses two universes whose revisions differ only below the old 32-bit fold', () => {
+    const { state } = populatedWorld();
+    const [low, high] = COLLIDING_ABOVE_32_BITS;
+
+    expect(low.slice(0, 8)).toBe(high.slice(0, 8)); // identical where a u32 would have looked
+    expect(low).not.toBe(high); // and different everywhere it mattered
+
+    expect(() =>
+      beginEngagement(state, {
+        hostRuleset: fixtureRuleset({ contentRevision: low }),
+        raiderRuleset: fixtureRuleset({ contentRevision: high }),
+        portalStability: 300,
+        stabilityDecayPerTick: 1,
+        raidSeed: 1,
+      }),
+    ).toThrow(new RegExp(`${low}.*${high}`, 's'));
+  });
+
+  it('admits two universes on the same full-width revision', () => {
+    // The other half of the claim: the guard above must be refusing them for
+    // the difference, not refusing everything. Without this, narrowing the
+    // comparison to a constant `false` would pass the test above.
+    const { state } = populatedWorld();
+    const [low] = COLLIDING_ABOVE_32_BITS;
+
+    expect(() =>
+      beginEngagement(state, {
+        hostRuleset: fixtureRuleset({ contentRevision: low }),
+        raiderRuleset: fixtureRuleset({ contentRevision: low }),
+        portalStability: 300,
+        stabilityDecayPerTick: 1,
+        raidSeed: 1,
+      }),
+    ).not.toThrow();
   });
 
   it('refuses a stability decay of zero, which is a raid that never ends', () => {
