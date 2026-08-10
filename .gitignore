@@ -9,3 +9,8 @@ coverage/
 
 # agent worktrees
 .claude/worktrees/
+
+# secrets — never commit; this repo is public
+.env
+.env.*
+!.env.example
