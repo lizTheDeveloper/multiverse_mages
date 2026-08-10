@@ -127,8 +127,31 @@ export function additiveIntoMultiplier(bonuses: readonly Fixed[]): Fixed {
  * @returns The combined prevented fraction; `0` for no sources.
  */
 export function multiplicativeOnRemainder(fractions: readonly Fixed[]): Fixed {
+  // Sorted before folding, and this is a correctness requirement rather than
+  // tidiness.
+  //
+  // `mul` floors, and floored multiplication does not associate: with three or
+  // more factors, `(a·b)·c` and `(c·b)·a` can differ by one unit at scale 1024.
+  // Adversarial testing found `[300, 500, 700]` giving 907 and `[700, 500, 300]`
+  // giving 908 — and, worse, the same set of ward sources landing on either side
+  // of the registry cap depending only on the order they were visited, which
+  // flips the clamp counter that exists to make cap pressure visible.
+  //
+  // The stack is defined over a *multiset* of sources: which mage's ward was
+  // read first is not a fact about the game. Leaving the fold order-sensitive
+  // makes the result a function of iteration order, and iteration order is a
+  // function of the destroy history — so two peers holding identical state
+  // could compute different damage. That is a desync, and it is precisely the
+  // class of bug the whole determinism apparatus exists to prevent.
+  //
+  // Sorting makes the answer a deterministic function of the multiset. It does
+  // not make the fold exact — the one-unit rounding loss is inherent to
+  // flooring at each step — but a rule that is uniformly slightly lossy is a
+  // balance question, while a rule that disagrees with itself is a bug.
+  const ordered = [...fractions].sort((a, b) => a - b);
+
   let remainder: Fixed = FP_ONE;
-  for (const fraction of fractions) {
+  for (const fraction of ordered) {
     remainder = mul(remainder, FP_ONE - fraction);
   }
   return assertRepresentable(FP_ONE - remainder, 'multiplicative-on-remainder stacking');

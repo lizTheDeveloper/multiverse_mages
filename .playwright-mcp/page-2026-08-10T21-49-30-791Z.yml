@@ -1,0 +1,114 @@
+- generic [ref=f2e2]:
+  - generic [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - generic [ref=f2e5]: Real-time strategy · in development
+      - heading [level=1] [ref=f2e6]:
+        - text: Multiverse
+        - emphasis [ref=f2e7]: Mages
+      - paragraph [ref=f2e8]:
+        - text: You do not cast spells. You decide which spells
+        - emphasis [ref=f2e9]: can exist
+        - text: .
+      - paragraph [ref=f2e10]: Five techniques. Fourteen forms. Nineteen switches that decide what magic is possible in your world — and, because magic obeys the sky it is standing under, exactly what an invader may use against you in it.
+    - generic [ref=f2e11]:
+      - generic [ref=f2e13]:
+        - button "Ani" [ref=f2e15] [cursor=pointer]
+        - button "Aqu" [ref=f2e17] [cursor=pointer]
+        - button "Aur" [ref=f2e19] [cursor=pointer]
+        - button "Cor" [ref=f2e21] [cursor=pointer]
+        - button "Her" [ref=f2e23] [cursor=pointer]
+        - button "Ign" [ref=f2e25] [cursor=pointer]
+        - button "Ima" [ref=f2e27] [cursor=pointer]
+        - button "Men" [pressed] [ref=f2e29] [cursor=pointer]
+        - button "Ter" [pressed] [ref=f2e31] [cursor=pointer]
+        - button "Vim" [ref=f2e33] [cursor=pointer]
+        - button "Umb" [ref=f2e35] [cursor=pointer]
+        - button "Fat" [ref=f2e37] [cursor=pointer]
+        - button "Lim" [pressed] [ref=f2e39] [cursor=pointer]
+        - button "Nom" [pressed] [ref=f2e41] [cursor=pointer]
+        - button "Creo make" [ref=f2e43] [cursor=pointer]:
+          - generic [ref=f2e44]: Creo
+          - generic [ref=f2e45]: make
+        - button "Intellego perceive" [pressed] [ref=f2e60] [cursor=pointer]:
+          - generic [ref=f2e61]: Intellego
+          - generic [ref=f2e62]: perceive
+        - button "Muto transform" [ref=f2e77] [cursor=pointer]:
+          - generic [ref=f2e78]: Muto
+          - generic [ref=f2e79]: transform
+        - button "Perdo unmake" [pressed] [ref=f2e94] [cursor=pointer]:
+          - generic [ref=f2e95]: Perdo
+          - generic [ref=f2e96]: unmake
+        - button "Rego control" [pressed] [ref=f2e111] [cursor=pointer]:
+          - generic [ref=f2e112]: Rego
+          - generic [ref=f2e113]: control
+      - generic [ref=f2e206]:
+        - generic [ref=f2e207]: Your scholars
+        - generic [ref=f2e209]: Anyone raiding you
+      - generic [ref=f2e211]:
+        - generic [ref=f2e212]: 12 / 70 in your sky · 12 in theirs
+        - paragraph [ref=f2e213]: Twelve cells are open to your scholars — and to anyone who walks through a portal into your sky knowing them.
+  - generic [ref=f2e215]:
+    - generic [ref=f2e216]:
+      - generic [ref=f2e217]:
+        - img "An intact candlelit library archive" [ref=f2e218]
+        - img "The same archive burned and collapsed" [ref=f2e219]
+      - slider "Burn the archive" [ref=f2e220]: "0"
+      - generic [ref=f2e221]:
+        - generic [ref=f2e222]: Standing
+        - generic [ref=f2e223]: Ash
+    - generic [ref=f2e224]:
+      - generic [ref=f2e225]: Knowledge is a physical thing
+      - heading [level=2] [ref=f2e226]:
+        - text: A spell lives
+        - emphasis [ref=f2e227]: somewhere
+        - text: .
+      - paragraph [ref=f2e228]: In a mage's mind. In a grimoire. On a library's shelves. Under one tradition, in a memory palace that cannot burn and cannot be lent — and dies with the person holding it.
+      - paragraph [ref=f2e229]: Kill the last mage who knew it and burn the book, and it is gone. Not disabled. Gone — until someone derives it again from first principles, at a cost far above learning it from a living teacher.
+      - paragraph [ref=f2e230]: Which is why a raid is rarely about killing anyone. It is about reaching the archive.
+  - generic [ref=f2e231]:
+    - generic [ref=f2e232]:
+      - generic [ref=f2e233]: They do this without you
+      - heading "Your mages are academics, and they have careers." [level=2] [ref=f2e234]
+      - paragraph [ref=f2e235]: You bless, you fund, you forbid, and you grant a chosen scholar the founding knowledge of something nobody in your world has ever known. You never give an order — not even in a raid. They research, teach, write, age, and die on their own.
+    - generic [ref=f2e236]:
+      - img "An elderly dwarf archivist holding a heavy grimoire" [ref=f2e237]
+      - img "An iron-bound grimoire with glowing script" [ref=f2e238]
+    - generic [ref=f2e239]:
+      - generic [ref=f2e240]:
+        - term [ref=f2e241]: Human · 80 years
+        - definition [ref=f2e242]: Curious and numerous. Loses knowledge constantly to mortality.
+      - generic [ref=f2e243]:
+        - term [ref=f2e244]: Dwarf · 250 years
+        - definition [ref=f2e245]: Incurious, but the finest archivists. Dwarven books resist burning.
+      - generic [ref=f2e246]:
+        - term [ref=f2e247]: Gnome · 350 years
+        - definition [ref=f2e248]: Wildly curious, poor retention. Best at rediscovering what was lost.
+      - generic [ref=f2e249]:
+        - term [ref=f2e250]: Draconic · 1,500 years
+        - definition [ref=f2e251]: Barely curious, learns slowly. Reaches depths nobody else can.
+  - generic [ref=f2e252]:
+    - generic [ref=f2e253]:
+      - generic [ref=f2e254]: Where the project actually is
+      - heading "Pre-alpha. Balanced by machines first, in the open." [level=2] [ref=f2e255]
+      - paragraph [ref=f2e256]: Real-time strategy is hard to get right, so this one is deterministic and headless before it is attractive. Monte Carlo sweeps and learning agents get to find the meta before any human does. There is no build to download and nothing to wishlist — the design documents and the source are public and readable today.
+    - generic [ref=f2e257]:
+      - generic [ref=f2e258]:
+        - term [ref=f2e259]: Simulation
+        - definition [ref=f2e260]: Deterministic core · 0.1.0
+      - generic [ref=f2e261]:
+        - term [ref=f2e262]: The grid
+        - definition [ref=f2e263]: 70 cells · 12 playable in v1
+      - generic [ref=f2e264]:
+        - term [ref=f2e265]: Species
+        - definition [ref=f2e266]: Six · 60 to 1,500 years
+      - generic [ref=f2e267]:
+        - term [ref=f2e268]: Licence
+        - definition [ref=f2e269]: AGPL-3.0-or-later
+  - generic [ref=f2e270]:
+    - img "A stone archway portal glowing with pale light" [ref=f2e271]
+    - heading "Somewhere, another god is deciding what fire means." [level=2] [ref=f2e272]
+    - paragraph [ref=f2e273]: Sooner or later, one of their scholars learns to open a door.
+  - contentinfo [ref=f2e274]:
+    - generic [ref=f2e275]: Multiverse Mages
+    - generic [ref=f2e276]: Â© 2026 Ann Kelner
+    - generic [ref=f2e277]: github.com/lizTheDeveloper/multiverse_mages

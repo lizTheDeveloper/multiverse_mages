@@ -50,7 +50,7 @@ import { edgesOf, importsOf, violationsOf } from '../unit/module-boundaries.test
 const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url));
 
 describe('DEFECT: the scanner is blind to a dynamic import built from a non-literal specifier', () => {
-  it('sees nothing in a require() built by string concatenation', () => {
+  it('reports a require() built by string concatenation rather than skipping it', () => {
     const source = [
       "const pkg = '@mm/' + 'agent-api';",
       'const forbidden = require(pkg);',
@@ -62,10 +62,13 @@ describe('DEFECT: the scanner is blind to a dynamic import built from a non-lite
     // module-boundaries.test.ts trusts specifically *because* it is a real
     // parse rather than a regex — reports zero imports for it.
     const found = importsOf('probe.ts', source);
-    expect(found).toEqual([]);
+    // FIXED: the scanner now fails closed. It cannot read the specifier, so it
+    // surfaces the import instead of dropping it — a boundary check that waves
+    // through the one import written to be hard to see is worse than none.
+    expect(found).toHaveLength(1);
   });
 
-  it('sees nothing in a dynamic import() through a template literal with a substitution', () => {
+  it('reports a dynamic import() through a template literal with a substitution', () => {
     const source = [
       "const name = 'server';",
       "const forbidden = await import(`@mm/${name}`);",
@@ -73,10 +76,13 @@ describe('DEFECT: the scanner is blind to a dynamic import built from a non-lite
     ].join('\n');
 
     const found = importsOf('probe.ts', source);
-    expect(found).toEqual([]);
+    // FIXED: the scanner now fails closed. It cannot read the specifier, so it
+    // surfaces the import instead of dropping it — a boundary check that waves
+    // through the one import written to be hard to see is worse than none.
+    expect(found).toHaveLength(1);
   });
 
-  it('reports zero violations for a rules-magic file that reaches agent-api this way', () => {
+  it('reports a violation for a rules-magic file that reaches agent-api this way', () => {
     // The consequence, end to end: violationsOf sees this file's edges (there
     // are none, per the two probes above) and therefore reports the file as
     // compliant. A CI run over this exact file would go green.
@@ -85,7 +91,8 @@ describe('DEFECT: the scanner is blind to a dynamic import built from a non-lite
       { pkg: 'rules-magic', area: 'src', path: 'packages/rules-magic/src/probe.ts', source },
     ]);
 
-    expect(edges).toEqual([]);
+    // FIXED: one unreadable edge, which `violationsOf` reports below.
+    expect(edges).toHaveLength(1);
 
     // What "the dependency-graph check would catch a violation" (the sibling
     // describe block in module-boundaries.test.ts) demands of a *literal*
@@ -120,7 +127,7 @@ describe('established: eslint closes this hole at the syntax level for every wat
     }
   });
 
-  it('does not cover packages/content/src at all, in any glob', () => {
+  it('now covers packages/content/src too, which was the one uncovered package', () => {
     // No occurrence of the literal path anywhere in the config — not in
     // CORE_SRC, RULES_SRC, or PRIMITIVES_SRC, and not in a fourth block
     // either. Grepped from the real file rather than asserted from memory.
@@ -136,10 +143,15 @@ describe('established: eslint closes this hole at the syntax level for every wat
     // A red test whose only fix is deleting the assertion is meant to be read
     // as "this documents an open gap," never as "this repository wants the
     // gap kept open."
-    expect(eslintConfigSource).not.toContain('packages/content');
+    // FIXED: content was the single workspace package with no defence against
+    // this class of import — the scanner could not read the specifier and the
+    // purity script only reads manifests. It now carries the two import bans,
+    // and deliberately not the float or Node-builtin bans: the loader reads
+    // files and must be able to *detect* a malformed float in order to reject it.
+    expect(eslintConfigSource).toContain("files: ['packages/content/src/**/*.ts'");
   });
 
-  it('leaves content with no mechanical defence at all against this class of import', () => {
+  it('leaves the purity script reading manifests only, so lint is what closes it', () => {
     // check-purity.mjs (packages/sim-core/test/unit/dependency-purity.test.ts
     // exercises it) is the other mechanism guarding content's "zero runtime
     // dependencies" contract, and it only reads package.json manifests — it

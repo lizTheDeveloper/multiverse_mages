@@ -374,6 +374,25 @@ export default tseslint.config(
   },
 
   {
+    /**
+     * The content loader is *not* pure — it reads the filesystem, and it parses
+     * author-written JSON where a malformed float has to be detected before it
+     * can be rejected. So it gets neither the float ban nor the Node-builtin
+     * ban. It does get these two.
+     *
+     * Adversarial testing found that a computed-specifier dynamic import in
+     * `packages/content` was caught by nothing in this repository: the module-
+     * boundary scanner could not read the specifier, and the dependency-purity
+     * script only reads manifests, never source. Every other workspace package
+     * was covered by the outright `import()` ban; content was the one hole.
+     */
+    files: ['packages/content/src/**/*.ts', 'packages/content/bin/**/*.mjs'],
+    rules: {
+      'no-restricted-syntax': ['error', BAN_DYNAMIC_IMPORT, BAN_REQUIRE],
+    },
+  },
+
+  {
     // The core's tests must be as reproducible as the core, but they are not
     // themselves the rules path: float literals are allowed so a test can state
     // what a float answer would have been, and built-ins are allowed so the

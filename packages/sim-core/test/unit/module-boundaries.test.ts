@@ -55,6 +55,15 @@ const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url));
 
 const WORKSPACE_SCOPE = '@mm/';
 
+/**
+ * Stands in for an import specifier that is present but not a literal string.
+ *
+ * Deliberately not a plausible module name: it must never accidentally match a
+ * real package, and it must be obvious in a failure message that the problem is
+ * the *shape* of the import rather than its target.
+ */
+const UNRESOLVED_SPECIFIER = '\u0000unresolved-specifier';
+
 /** Directories inside a package that hold first-party TypeScript. */
 const SCANNED_AREAS = ['src', 'test', 'bench'] as const;
 type Area = (typeof SCANNED_AREAS)[number];
@@ -154,13 +163,27 @@ interface ImportEdge {
  * specifiers, `import()` expressions, and `require()` calls. The last two are
  * not idiomatic here and are exactly how a boundary gets crossed quietly, since
  * neither is visible to a scanner that only walks import declarations.
+ *
+ * **A specifier this cannot read is reported, not skipped.** It used to drop
+ * anything that was not a plain string literal, so `require('@mm/' + name)` or
+ * an interpolated `import()` produced no edge at all and therefore no
+ * violation, whatever package it reached. That is the worst possible default
+ * for a boundary check: the one import written to be hard to see is the one it
+ * waved through. Unreadable specifiers now surface as
+ * {@link UNRESOLVED_SPECIFIER} and are reported by name, because a scanner that
+ * cannot prove an import safe must not call it safe.
  */
 export function importsOf(path: string, source: string): { specifier: string; typeOnly: boolean }[] {
   const parsed = ts.createSourceFile(path, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
   const found: { specifier: string; typeOnly: boolean }[] = [];
 
-  const literalText = (node: ts.Expression | undefined): string | undefined =>
-    node !== undefined && ts.isStringLiteralLike(node) ? node.text : undefined;
+  const literalText = (node: ts.Expression | undefined): string | undefined => {
+    if (node === undefined) return undefined;
+    if (ts.isStringLiteralLike(node)) return node.text;
+    // Present but unreadable — a concatenation, a template with substitutions,
+    // an identifier. Fail closed.
+    return UNRESOLVED_SPECIFIER;
+  };
 
   const visit = (node: ts.Node): void => {
     if (ts.isImportDeclaration(node)) {
@@ -240,6 +263,16 @@ export function edgesOf(files: readonly ScannedFile[]): ImportEdge[] {
 export function violationsOf(edges: readonly ImportEdge[], packages: readonly string[]): string[] {
   const problems: string[] = [];
 
+  for (const edge of edges) {
+    if (edge.specifier !== UNRESOLVED_SPECIFIER) continue;
+    problems.push(
+      `${edge.path} imports a module whose specifier this check cannot read — it is built at ` +
+        'runtime rather than written as a string literal. §5 boundaries are only as good as the ' +
+        'scanner, so an import that cannot be proven safe is reported rather than assumed safe. ' +
+        'Write the specifier as a literal.',
+    );
+  }
+
   for (const pkg of packages) {
     if (ALLOWED[pkg] === undefined) {
       problems.push(
@@ -251,6 +284,7 @@ export function violationsOf(edges: readonly ImportEdge[], packages: readonly st
   }
 
   for (const edge of edges) {
+    if (edge.specifier === UNRESOLVED_SPECIFIER) continue; // already reported above
     if (!edge.specifier.startsWith(WORKSPACE_SCOPE)) continue;
     const target = edge.specifier.slice(WORKSPACE_SCOPE.length).split('/')[0] as string;
 
