@@ -228,7 +228,11 @@ serialized into snapshots.
   "id": "rego-corpus",
   "technique": "rego",
   "form": "corpus",
-  "classicalLabels": ["necromancy", "conjuration"],   // display only, never mechanical
+  "classicalLabels": ["necromancy"],                 // display only, never mechanical.
+                                                     // Vision §4's mapping table is authoritative
+  "edicts": [],                                      // optional; "dispensation" | "interdiction".
+                                                     // §1.1 requires the loader to reject a cell
+                                                     // carrying both, which needs a slot to carry one
   "nodes": ["rc-still-the-limb", "rc-puppet-flesh", "..."]
 }
 ```
@@ -251,8 +255,11 @@ serialized into snapshots.
                                     // Content invariant: >= fp(3072). Species rediscoveryAffinity is
                                     // applied, then a hard fp(3072) floor -- otherwise affinity alone
                                     // drops the effective cost to 2.25x and falsifies the 0.3.0 claim.
-                                    // Author v1 bases at >= fp(4096) so species affinity has room to
-                                    // differentiate above the floor rather than being clamped flat
+                                    // Author v1 bases at >= fp(5376). NOT fp(4096) -- that number does
+                                    // not achieve its own purpose: the best rediscoverer (gnome,
+                                    // affinity 1792) turns 4096 into 4096*1024/1792 = 2340, BELOW the
+                                    // floor, so the trait clamps flat and does nothing. Break-even is
+                                    // 3072 * 1792 / 1024 = 5376
   "effects": [
     { "primitive": "direct-damage", "magnitude": 512, "target": "single", "durationTicks": 0 }
   ]
