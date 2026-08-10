@@ -1,0 +1,240 @@
+/*
+ * Multiverse Mages — the shipped v1 content set loads and says what it is.
+ * Copyright (C) 2026 Ann Kelner
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/>.
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/**
+ * This file is the content package's CI gate. `.github/workflows/ci.yml` runs
+ * `npm test` rather than `npm run verify`, so a validation command wired only
+ * into `verify` would not run in CI at all — validating the shipped set from a
+ * test is what actually puts it in front of every push.
+ */
+
+import { describe, expect, it } from 'vitest';
+
+import {
+  REQUIRED_V1_CELL,
+  V1_CELL_COUNT,
+  V1_REDISCOVERY_AUTHORING_FLOOR,
+  loadContent,
+  shippedContentSource,
+} from '@mm/content';
+import type { ContentRegistry } from '@mm/content';
+
+const registry: ContentRegistry = loadContent(shippedContentSource());
+
+/** The v1 subset `knowledge-model` chose, spelled out so a silent swap fails. */
+const V1_CELLS = [
+  'intellego-limen',
+  'intellego-mentem',
+  'intellego-nomen',
+  'intellego-terram',
+  'perdo-limen',
+  'perdo-mentem',
+  'perdo-nomen',
+  'perdo-terram',
+  'rego-limen',
+  'rego-mentem',
+  'rego-nomen',
+  'rego-terram',
+];
+
+describe('shipped content', () => {
+  it('loads and reports its counts', () => {
+    expect(registry.counts).toEqual({
+      techniques: 5,
+      forms: 14,
+      cells: 70,
+      v1Cells: 12,
+      nodes: 50,
+      species: 6,
+      traditions: 3,
+      primitives: 16,
+    });
+  });
+
+  it('pins technique and form bit assignments', () => {
+    // These are serialized into snapshots (contracts.md §2.1). Changing one is
+    // a breaking content change, so it is asserted rather than derived.
+    expect(registry.techniques.map((entry) => [entry.record.id, entry.record.bit])).toEqual([
+      ['creo', 0],
+      ['intellego', 1],
+      ['muto', 2],
+      ['perdo', 3],
+      ['rego', 4],
+    ]);
+    expect(registry.forms.map((entry) => [entry.record.id, entry.record.bit])).toEqual([
+      ['animal', 0],
+      ['aquam', 1],
+      ['auram', 2],
+      ['corpus', 3],
+      ['herbam', 4],
+      ['ignem', 5],
+      ['imaginem', 6],
+      ['mentem', 7],
+      ['terram', 8],
+      ['vim', 9],
+      ['umbra', 10],
+      ['fatum', 11],
+      ['limen', 12],
+      ['nomen', 13],
+    ]);
+  });
+
+  it('addresses all seventy cells, and every technique/form pair resolves', () => {
+    const seen = new Set<number>();
+    for (let technique = 1; technique <= 5; technique += 1) {
+      for (let form = 1; form <= 14; form += 1) {
+        const cellId = registry.cellAt(technique, form);
+        expect(cellId).toBeGreaterThan(0);
+        expect(registry.cell(cellId)).toBeDefined();
+        seen.add(cellId);
+      }
+    }
+    expect(seen.size).toBe(70);
+  });
+
+  it('resolves a non-v1 cell as addressable but empty', () => {
+    const cellId = registry.intern('cell', 'creo-ignem');
+    const cell = registry.cell(cellId);
+    expect(cell?.nodes).toEqual([]);
+    expect(cell?.v1).toBeUndefined();
+  });
+
+  it('flags exactly the twelve v1 cells, including rego-limen', () => {
+    const flagged = registry.cells
+      .filter((entry) => entry.record.v1 === true)
+      .map((entry) => entry.record.id)
+      .sort();
+    expect(flagged).toEqual([...V1_CELLS].sort());
+    expect(flagged).toHaveLength(V1_CELL_COUNT);
+    expect(flagged).toContain(REQUIRED_V1_CELL);
+  });
+
+  it('authors every node inside the v1 subset', () => {
+    for (const entry of registry.nodes) {
+      expect(V1_CELLS).toContain(entry.record.cell);
+    }
+  });
+
+  it('marks every authored magnitude as untuned', () => {
+    for (const entry of registry.nodes) expect(entry.record.tuningStatus).toBe('untuned');
+    for (const entry of registry.species) expect(entry.record.tuningStatus).toBe('untuned');
+  });
+
+  it('authors rediscovery multipliers above the floor so affinity can differentiate', () => {
+    for (const entry of registry.nodes) {
+      expect(entry.record.rediscoveryMultiplier).toBeGreaterThanOrEqual(
+        V1_REDISCOVERY_AUTHORING_FLOOR,
+      );
+    }
+    // contracts.md §2.3 asks for fp(4096) so that "species affinity has room to
+    // differentiate above the floor rather than being clamped flat". fp(4096) is
+    // not quite enough to achieve that for the *best* rediscoverer: the gnome's
+    // fp(1792) affinity turns 4096 into 2340, below the hard fp(3072) floor, so
+    // the strongest instance of the trait does nothing. The v1 data is therefore
+    // authored above the derived break-even of 3072 × 1792 / 1024 = 5376, and
+    // this test is what keeps it there.
+    const bestAffinity = Math.max(
+      ...registry.species.map((entry) => entry.record.rediscoveryAffinity),
+    );
+    const cheapest = Math.min(
+      ...registry.nodes.map((entry) => entry.record.rediscoveryMultiplier),
+    );
+    expect(Math.floor((cheapest * 1024) / bestAffinity)).toBeGreaterThan(3072);
+  });
+
+  it('exercises every primitive except the two that await Corpus and Animal', () => {
+    const declared = new Set<string>();
+    for (const entry of registry.nodes) {
+      for (const effect of entry.record.effects) declared.add(effect.primitive);
+    }
+    const registered = registry.primitives.map((entry) => entry.record.id);
+    const uncovered = registered.filter((id) => !declared.has(id)).sort();
+    expect(uncovered).toEqual(['fertility', 'lifespan']);
+  });
+
+  it('confines the portal primitive to rego-limen', () => {
+    const cellsWithPortal = new Set(
+      registry.nodes
+        .filter((entry) => entry.record.effects.some((effect) => effect.primitive === 'portal'))
+        .map((entry) => entry.record.cell),
+    );
+    expect([...cellsWithPortal]).toEqual(['rego-limen']);
+  });
+
+  it('declares no primitive that could touch portal stability', () => {
+    // contracts.md §1.6: the absence is load-bearing. Any primitive whose id
+    // mentions stability would downgrade the raid termination guarantee from a
+    // proof to an observation.
+    for (const entry of registry.primitives) {
+      expect(entry.record.id).not.toMatch(/stabilit/u);
+    }
+  });
+
+  it('ships the six species from vision §6', () => {
+    expect(registry.species.map((entry) => entry.record.id).sort()).toEqual(
+      ['draconic', 'dwarf', 'elf', 'gnome', 'human', 'orc'].sort(),
+    );
+  });
+
+  it('ships the three v1 traditions, each declaring exactly four hooks', () => {
+    expect(registry.traditions.map((entry) => entry.record.id).sort()).toEqual([
+      'art-of-memory',
+      'true-naming',
+      'vancian-memorization',
+    ]);
+    for (const entry of registry.traditions) {
+      expect(Object.keys(entry.record.hooks).sort()).toEqual(['acquire', 'cast', 'cost', 'store']);
+    }
+  });
+
+  it('gives each tradition the hook kinds knowledge-model specified', () => {
+    const kindsOf = (id: string): Record<string, string> => {
+      const record = registry.traditions.find((entry) => entry.record.id === id)?.record;
+      if (record === undefined) throw new Error(`missing tradition ${id}`);
+      return {
+        acquire: record.hooks.acquire.kind,
+        store: record.hooks.store.kind,
+        cast: record.hooks.cast.kind,
+        cost: record.hooks.cost.kind,
+      };
+    };
+    expect(kindsOf('vancian-memorization')).toEqual({
+      acquire: 'standard',
+      store: 'standard',
+      cast: 'prepared',
+      cost: 'prepaid',
+    });
+    expect(kindsOf('true-naming')).toEqual({
+      acquire: 'true-name',
+      store: 'standard',
+      cast: 'standard',
+      cost: 'standard',
+    });
+    expect(kindsOf('art-of-memory')).toEqual({
+      acquire: 'standard',
+      store: 'palace',
+      cast: 'standard',
+      cost: 'standard',
+    });
+  });
+
+  it('keeps classical labels off the mechanical path', () => {
+    // The labels exist and are non-empty somewhere, so the assertion that they
+    // are display-only is about something rather than vacuous.
+    const labelled = registry.cells.filter((entry) => entry.record.classicalLabels.length > 0);
+    expect(labelled.length).toBeGreaterThan(0);
+    expect(
+      registry.cells.find((entry) => entry.record.id === 'rego-mentem')?.record.classicalLabels,
+    ).toEqual(['enchantment']);
+  });
+});
