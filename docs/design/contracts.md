@@ -62,15 +62,20 @@ state would have no mechanism preventing mid-raid rule changes at all.
 |---|---|---|
 | `permittedTechniques` | `uint8` bitmask | 5 bits, one per technique |
 | `permittedForms` | `uint16` bitmask | 14 bits, one per form |
-| `edicts` | array of `{cellId: uint16, kind: 0=dispensation \| 1=interdiction}` | length ≤ `edictBudget` |
+| `edicts` | array of `{cellId: uint16, kind: 0=dispensation \| 1=interdiction}` | a new edict may be issued only while `length < edictBudget`. Existing edicts stay in force if the budget later falls — deterministic auto-revocation would silently rewrite a player's ruleset mid-run |
 | `edictBudget` | `uint8` | current allowance; grows with worship tier, never exceeds `EDICT_BUDGET_MAX` |
 | `traditionId` | `uint16` | exactly one; never 0 |
 | `favor` | `fp` | god's currency |
 | `worship` | `fp` | drives favor regen |
 | `worshipTier` | `uint8` | derived, cached; recomputed on worship change |
 | `materials` | `fp` | |
-| `era` | `uint16` | |
+| `era` | `uint16` | **derived, cached**: `floor(worldTick / ERA_TICKS)` with `ERA_TICKS = 240` (20 world years). Nothing advances it imperatively — it was previously a field nothing wrote, while an ascension path was defined over it |
 | `prestige` | `fp` | carried in from prior runs; **read-only during a run** |
+| `prestigeEarned` | `fp` | written once at run end; the input to the next run's `prestige` |
+| `terminalReason` | `uint8` | none \| ascension-apotheosis \| ascension-canon \| stagnation \| truncated |
+| `favorCap` | `fp` | rises with worship tier; overflow is discarded and counted as `favorWasted` |
+| `encouragedCells` | array of `{cellId, expiryTick}` | action 12 had nowhere to persist |
+| `axisChangeCounters` | array per technique/form | hysteresis; repeated flips of one axis escalate in cost |
 | `ascended` | `bool` | terminal flag |
 
 **Ruleset legality — the single arbitration function.** Every consumer must call this rather than
@@ -411,8 +416,12 @@ Any layer accepting actions across a trust boundary (`server`, and `gym-bridge` 
 remotely) MUST apply its own admission policy — rate limiting, disconnection — *before* the action
 reaches the core. The core does not defend itself; the boundary does.
 
-**Rules changes are world-time only.** Actions 1–7 and 13 are masked out whenever
-`clock.mode == engagement`. This is the vision's frozen-policy rule (§3), enforced in one place.
+**Every action except no-op is masked during engagement.** The god acts only in world time. This
+covers the ruleset actions 1–7 and 13, and equally 8–12, 14, and 15: blessing a defender mid-raid,
+or declaring ascension to escape a losing one, violates frozen policy exactly as squarely as
+forbidding a technique does. Silence in an earlier draft of this table was not permission.
+
+This is the vision's frozen-policy rule (§3), enforced in one place.
 
 ### 4.3 Reward and episode boundaries
 
@@ -520,6 +529,12 @@ census intervals, censoring rules, denominators, whether a rate is instantaneous
 metric whose definition drifts silently makes every committed baseline meaningless while still
 appearing green, so the definition is versioned alongside the numbers it produces.
 
+**Ownership splits two ways.** `agent-interface` owns each metric's *definition and collection*;
+the capability that owns the mechanic owns its *threshold value* — `worshipSnowball`,
+`ascensionRate`, and `prestigeAdvantage` thresholds belong to `god-agency`, and the tempo metrics
+to `raid-engagement`. A definition without a threshold is unfalsifiable; a threshold without a
+pinned definition is unmeasurable.
+
 **A metric whose mechanic does not yet exist reports `{status: "unavailable", reason:
 "mechanic-absent"}`.** It is never absent from the output. This is what lets `0.5.0` claim that
 every metric is reported two milestones before raids exist: a missing key is a harness failure, an
@@ -531,7 +546,7 @@ unavailable status is an honest answer.
 | `timeToTierBySpecies` | world ticks for a species to first reach each node tier |
 | `knowledgeHalfLife` | world ticks for 50% of nodes known at tick *t* to be lost by tick *t+n* |
 | `libraryDependence` | fraction of known nodes with exactly one surviving instance |
-| `worshipSnowball` | Gini coefficient of favor regen across MC runs at fixed tick counts |
+| `worshipSnowball` | Gini coefficient of favor regen across MC runs at fixed tick counts. **Threshold: ≤ 0.35**, plus p95:p50 regen ≤ 3:1 |
 | `capitalSnowball` | same, over library depth — the §6a loop |
 | `raidLengthDistribution` | engagement ticks to resolution; must be bounded by portal stability |
 | `ascensionRate` | fraction of runs reaching ascension. Target band: 5–20% |
