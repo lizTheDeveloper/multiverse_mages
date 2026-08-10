@@ -15,6 +15,7 @@
     { "path": "./packages/rules-world" },
     { "path": "./packages/rules-raid" },
     { "path": "./packages/agent-api" },
+    { "path": "./packages/agent-api/tsconfig.test.json" },
     { "path": "./packages/mc-harness" },
     { "path": "./tsconfig.tools.json" }
   ]

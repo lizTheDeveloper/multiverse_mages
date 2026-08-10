@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the agent-api tests. Never emits into dist/.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./test",
+    "types": ["node"],
+    "emitDeclarationOnly": true,
+    "outDir": "../../.tsbuild/agent-api-test",
+    "tsBuildInfoFile": "../../.tsbuild/agent-api-test.tsbuildinfo"
+  },
+  "include": ["test/**/*.ts"],
+  "references": [{ "path": "./tsconfig.json" }, { "path": "../sim-core" }, { "path": "../state" }]
+}

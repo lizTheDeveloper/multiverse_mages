@@ -34,14 +34,14 @@
 
 ## 4. Observation and action space
 
-- [ ] 4.1 Implement the fixed-shape observation vector, sized from the full 70-cell, 6-species, 7-tier space
-- [ ] 4.2 Implement the engagement block with zero-fill at world scale
-- [ ] 4.3 Implement the discrete action enumeration per `contracts.md` §4.2
-- [ ] 4.4 Implement the legality mask, including masking actions 1–7 and 13 during engagement mode
-- [ ] 4.5 Implement illegal-action handling as no-op plus counter, never an exception
-- [ ] 4.6 Implement boundary normalization in the agent-api layer, keeping the core integer-only
-- [ ] 4.7 Unit test shape constancy across differing universes and across both clock modes
-- [ ] 4.8 Unit test that a masked rules-change action submitted mid-engagement leaves the ruleset unchanged
+- [x] 4.1 Implement the fixed-shape observation vector, sized from the full 70-cell, 6-species, 7-tier space
+- [x] 4.2 Implement the engagement block with zero-fill at world scale
+- [x] 4.3 Implement the discrete action enumeration per `contracts.md` §4.2
+- [x] 4.4 Implement the legality mask, including masking actions 1–7 and 13 during engagement mode — and, per §4.2, 8–12, 14 and 15 as well
+- [x] 4.5 Implement illegal-action handling as no-op plus counter, never an exception
+- [x] 4.6 Implement boundary normalization in the agent-api layer, keeping the core integer-only
+- [x] 4.7 Unit test shape constancy across differing universes and across both clock modes
+- [x] 4.8 Unit test that a masked rules-change action submitted mid-engagement leaves the ruleset unchanged
 
 ## 5. Module boundaries and RNG registry
 
