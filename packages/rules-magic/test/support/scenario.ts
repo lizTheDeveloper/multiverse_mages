@@ -50,11 +50,14 @@ export const OTHER_CELL = cellIdAt(OTHER_TECHNIQUE_BIT, FORM_BIT);
 export const ROOT_NODE = 1;
 export const CHILD_NODE = 2;
 export const OTHER_CELL_NODE = 3;
+/** In {@link HOME_CELL}, but requiring the node in {@link OTHER_CELL}. */
+export const CROSS_CELL_CHILD = 4;
 
 const NODE_CELLS: ReadonlyMap<number, number> = new Map([
   [ROOT_NODE, HOME_CELL],
   [CHILD_NODE, HOME_CELL],
   [OTHER_CELL_NODE, OTHER_CELL],
+  [CROSS_CELL_CHILD, HOME_CELL],
 ]);
 
 /** `cellOf` as `magic-grid` will supply it, over the fixture graph. */
@@ -67,7 +70,13 @@ export function cellOf(nodeId: number): number {
 export const testCells = { cellOf };
 
 /**
- * Three nodes: a root, a child that requires it, and a node in another cell.
+ * Four nodes: a root, a child that requires it, a node in another cell, and a
+ * child whose prerequisite is that other-cell node.
+ *
+ * The last one exists so that a *cross-cell* prerequisite can be interdicted
+ * without interdicting the node being researched — the only shape in which
+ * "dormant knowledge satisfies no prerequisite" is distinguishable from "the
+ * node's own cell is forbidden".
  *
  * `researchCost` is `fp(4096)` and `rediscoveryMultiplier` `fp(4096)` on every
  * node, which are the exact magnitudes the rediscovery scenarios in
@@ -86,11 +95,12 @@ export function testCatalog(overrides: Partial<KnowledgeNode> = {}): NodeCatalog
     { ...base, nodeId: ROOT_NODE, prerequisites: [] },
     { ...base, nodeId: CHILD_NODE, prerequisites: [ROOT_NODE] },
     { ...base, nodeId: OTHER_CELL_NODE, prerequisites: [] },
+    { ...base, nodeId: CROSS_CELL_CHILD, prerequisites: [OTHER_CELL_NODE] },
   ]);
 }
 
 /** How many node ids the fixture catalog spans. Sizes the instance index. */
-export const TEST_NODE_COUNT = 3;
+export const TEST_NODE_COUNT = 4;
 
 /** A world state with §1's components and no systems. */
 export function testWorld(rootSeed = 7): SimState {

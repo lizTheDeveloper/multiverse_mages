@@ -27,7 +27,10 @@ import {
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
 import {
   CHILD_NODE,
+  CROSS_CELL_CHILD,
   HOME_CELL,
+  OTHER_CELL,
+  OTHER_CELL_NODE,
   ROOT_NODE,
   TEST_NODE_COUNT,
   interdicting,
@@ -154,6 +157,40 @@ describe('research', () => {
     expect(dormant.refusal?.reason).toBe('forbidden-cell');
   });
 
+  it('satisfies a prerequisite in another cell, and refuses when that cell is forbidden', () => {
+    const { knowledge } = fixture();
+    knowledge.createInstance({
+      nodeId: OTHER_CELL_NODE,
+      locationKind: LOCATION_KIND.mind,
+      locationId: SUBJECT,
+      acquiredTick: 0,
+      mastery: FULL,
+    });
+
+    const permitted = research(
+      inputs(knowledge, { nodeId: CROSS_CELL_CHILD, progress: 99999, effort: 0 }),
+    );
+    expect(permitted.refusal).toBeUndefined();
+    expect(permitted.completed).toBe(true);
+
+    // The node's own cell stays permitted; only its prerequisite's is closed.
+    // A god may not route research *through* their own interdiction.
+    const routed = research(
+      inputs(knowledge, {
+        nodeId: CROSS_CELL_CHILD,
+        progress: 99999,
+        effort: 0,
+        ruleset: interdicting(OTHER_CELL),
+      }),
+    );
+    expect(routed.refusal).toEqual({
+      reason: 'unsatisfied-prerequisite',
+      nodeId: CROSS_CELL_CHILD,
+      prerequisiteId: OTHER_CELL_NODE,
+      subject: SUBJECT,
+    });
+  });
+
   it('throws on a node this content set does not declare', () => {
     const { knowledge } = fixture();
     expect(() => research(inputs(knowledge, { nodeId: 99 }))).toThrow(/No node with id 99/u);
@@ -267,6 +304,33 @@ describe('rediscovery', () => {
     const outcome = research(inputs(knowledge, { progress: 0, effort: 0 }));
     expect(outcome.rediscovery).toBe(false);
     expect(outcome.required).toBe(4096);
+  });
+
+  it('stays at three times the same subject’s ordinary cost at any rate', () => {
+    // The claim is a *ratio*, not an absolute figure: learn rate scales the
+    // requirement, so "three times research" means three times what research
+    // would have cost this same subject. `div` floors, and floor(3x) is never
+    // below 3·floor(x), so the ratio survives the rounding in both terms.
+    const node = testCatalog().node(ROOT_NODE);
+    expect(node).toBeDefined();
+
+    for (const learnRate of [512, FULL, 2048]) {
+      for (const researchRate of [768, FULL, 1536]) {
+        const ordinary = researchRequirement(node!, {
+          rediscovery: false,
+          rediscoveryAffinity: FULL,
+          learnRate,
+          researchRate,
+        });
+        const rediscovered = researchRequirement(node!, {
+          rediscovery: true,
+          rediscoveryAffinity: 128,
+          learnRate,
+          researchRate,
+        });
+        expect(rediscovered).toBeGreaterThanOrEqual(ordinary * 3);
+      }
+    }
   });
 
   it('scales the requirement by learn rate and the stacked research-rate multiplier', () => {

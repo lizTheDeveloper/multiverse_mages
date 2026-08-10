@@ -168,10 +168,13 @@ export function isRediscovery(knowledge: KnowledgeSubsystem, nodeId: ContentId):
 /**
  * Applies one step of research.
  *
- * Draws once from stream 3 whether or not the step completes, and whether or
- * not any effort was supplied. A draw that happens conditionally is a draw
- * whose ordinal depends on the branch taken, which is how two runs that agree
- * on every input diverge on the tick one of them happens to finish.
+ * Draws once from stream 3 on every step that is not refused — including a step
+ * that supplies no effort and one that completes. A refusal returns before the
+ * draw, which is safe here and would not be under a shared cursor: streams are
+ * re-derived from `(rootSeed, subsystem, tick, actorKey)` on every call, so a
+ * step nobody took cannot shift the ordinals of the step anybody else takes.
+ * What the unconditional draw *within* an accepted step buys is that finishing
+ * a node does not consume a different number of values than not finishing it.
  */
 export function research(inputs: ResearchInputs): ResearchOutcome {
   const node = requireNode(inputs.catalog, inputs.nodeId);
