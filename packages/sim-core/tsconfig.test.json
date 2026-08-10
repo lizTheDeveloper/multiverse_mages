@@ -10,5 +10,6 @@
     "tsBuildInfoFile": "../../.tsbuild/sim-core-test.tsbuildinfo"
   },
   "include": ["test/**/*.ts"],
-  "references": [{ "path": "./tsconfig.json" }]
+  "//references": "./bench is referenced, not merely imported: rootDir is ./test, so a test that imported ../bench/*.ts directly would fail with TS6059. Referencing it also makes `tsc --build` typecheck the benchmark workload transitively, without the root solution needing to know it exists.",
+  "references": [{ "path": "./tsconfig.json" }, { "path": "./bench" }]
 }

@@ -1,0 +1,92 @@
+{
+  "formatVersion": 1,
+  "name": "world-time-only",
+  "description": "Twenty-four world ticks with no mode change: seeded study and attrition draws every tick, plus one component write at a near-maximum uint32 to keep the unsigned width honest.",
+  "worldId": "academy-v1",
+  "rootSeed": 20260810,
+  "tickCount": 24,
+  "initialSnapshot": "TU1TTgEAAAA/AAAAyic1AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAh2aXRhbGl0eQECaHAEAAAAAAtzY2hvbGFyc2hpcAIHaW5zaWdodAQHc3RpcGVuZAUAAAAA",
+  "actionLog": {
+    "ticks": [
+      [
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        }
+      ],
+      [
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        }
+      ],
+      [
+        {
+          "kind": 3,
+          "params": [
+            0,
+            4000000000
+          ]
+        }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ]
+  },
+  "finalHash": "c05ef12296b325a8",
+  "tickHashes": [
+    "eb2fc8c06940dd47",
+    "0566b49af291f685",
+    "b46bfa6bfb1e1094",
+    "822b7c71e1f6f62b",
+    "e7010340411f1f46",
+    "cd42ed75f0400a1a",
+    "a16fd99c2ff282f2",
+    "37199f2482966d31",
+    "d8bd74e32a5192da",
+    "90e0963cb3bb6fad",
+    "8e5580353a08fcff",
+    "7691a167056beeb5",
+    "b24e97043f56b325",
+    "1946ad8c257346c0",
+    "4871f6a042231706",
+    "cc35ccc4613573cd",
+    "9defdb4df01c7820",
+    "4f7c6a9a39b89674",
+    "3f866271a771c34d",
+    "840b9b6c93b2b04d",
+    "f21762873783363b",
+    "a7ed58dd72d869d2",
+    "fa02673107e0780e",
+    "c05ef12296b325a8"
+  ]
+}

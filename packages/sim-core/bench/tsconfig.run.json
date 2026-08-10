@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Emits runnable JavaScript for `npm run bench`. Separate from ./tsconfig.json because it has the opposite job: that one typechecks the workload as a composite project so the test suite can import it, this one produces .js a bare `node` can execute.",
+  "//2": "It compiles src/ and bench/ together into one output tree rather than consuming packages/sim-core/dist through a project reference. That is deliberate: bench/population.ts imports '../src/*.js' relatively, and only a shared rootDir keeps those specifiers resolving after emit. A project reference would typecheck fine and produce JavaScript whose imports point at .ts files that node cannot load.",
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "outDir": "../../../.tsbuild/bench-run",
+    "tsBuildInfoFile": "../../../.tsbuild/bench-run.tsbuildinfo",
+    "types": [],
+    "composite": false,
+    "incremental": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": true
+  },
+  "include": ["./**/*.ts", "../src/**/*.ts"]
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the pure benchmark workload. `types: []` is the point — the workload lives outside src/ but must stay as Node-free and clock-free as src/ is, and with no ambient Node types it cannot reach for `process` or `performance` even by accident. Timing lives in scripts/bench.mjs.",
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "types": [],
+    "emitDeclarationOnly": true,
+    "outDir": "../../../.tsbuild/sim-core-bench",
+    "tsBuildInfoFile": "../../../.tsbuild/sim-core-bench.tsbuildinfo"
+  },
+  "include": ["./**/*.ts"],
+  "references": [{ "path": "../tsconfig.json" }]
+}

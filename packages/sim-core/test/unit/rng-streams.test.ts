@@ -193,6 +193,7 @@ describe('the subsystem stream registry', () => {
       combat: 8,
       knowledgeTheft: 9,
       objectives: 10,
+      terrain: 11,
     });
   });
 

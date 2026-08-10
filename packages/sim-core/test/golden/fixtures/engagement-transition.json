@@ -1,0 +1,78 @@
+{
+  "formatVersion": 1,
+  "name": "engagement-transition",
+  "description": "Three world ticks, then an engagement entered by action, six engagement ticks (one of which enrolls, so entities are created at the engagement scale), then a return to world time and eleven more world ticks.",
+  "worldId": "academy-v1",
+  "rootSeed": 991733,
+  "tickCount": 20,
+  "initialSnapshot": "TU1TTgEAAAA/AAAA9SEPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAh2aXRhbGl0eQECaHAEAAAAAAtzY2hvbGFyc2hpcAIHaW5zaWdodAQHc3RpcGVuZAUAAAAA",
+  "actionLog": {
+    "ticks": [
+      [
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        },
+        {
+          "kind": 1
+        }
+      ],
+      [],
+      [
+        {
+          "kind": 65534
+        }
+      ],
+      [],
+      [],
+      [
+        {
+          "kind": 1
+        }
+      ],
+      [],
+      [],
+      [
+        {
+          "kind": 65535
+        }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ]
+  },
+  "finalHash": "da3d02a0061d5526",
+  "tickHashes": [
+    "a2f521fd83832544",
+    "9b9289b2132fec29",
+    "89d57e172508d20d",
+    "09cafb1d492fc1cf",
+    "136fcb82c13199a6",
+    "07df7891fc60fa38",
+    "8ac9cd74713b2043",
+    "7bae5154697dac41",
+    "2d55df10dc31e27b",
+    "4dcecf5cbc8b13ee",
+    "c407fdeae6009711",
+    "ccccad75805c792d",
+    "16af0916a1f6ff57",
+    "306f6443e5591936",
+    "9ec2512d895a7cf4",
+    "95cebbf6fb1bea03",
+    "caf363f88cc913ad",
+    "b9bb3f8f57cdceb7",
+    "2b2a81bf65e9ad99",
+    "da3d02a0061d5526"
+  ]
+}

@@ -415,8 +415,9 @@ that are confidently wrong in ways nobody can see yet.
 
 Tracked for resolution during the changes that need them, not blocking:
 
-- How many mages does a mature universe hold? This sets the simulation's performance budget and
-  is answered empirically in `sim-core-foundation` benchmarking.
+- ~~How many mages does a mature universe hold?~~ **Answered empirically in 0.1.0** — see
+  "Measured simulation throughput" below. The population question was never really about mages; it
+  was about whether the Monte Carlo harness could afford them. It can.
 - How long is a world year in real seconds, and how long should a raid run? Pacing is a tuning
   output of the balance harness, not an up-front decision; the contracts fix the *units*, not the
   values.
@@ -427,3 +428,31 @@ Tracked for resolution during the changes that need them, not blocking:
 - How large is the edict budget, and how does it scale with worship tier? Deferred to
   `god-agency` and expected to be retuned repeatedly by the balance harness.
 - What is the exact worship formula? Deferred to `god-agency`, same caveat.
+
+### Measured simulation throughput
+
+Produced by `npm run bench` in `sim-core-foundation` (task 9.4). Node v22.23.1, Apple Silicon,
+100 world ticks per run, seed 1, churn 1/64 of the population per tick. Every figure below is an
+*output* of 0.1.0, not a target set in advance, and every later population claim is bounded by it.
+
+| Entities | Steps/sec | Entity-updates/sec | Updates/step |
+|---:|---:|---:|---:|
+| 1,000 | 5,603 | 14.2 M | 2,542 |
+| 5,000 | 1,503 | 19.1 M | 12,713 |
+| 10,000 | 774 | 19.6 M | 25,321 |
+| 25,000 | 312 | 19.8 M | 63,343 |
+
+**What this answers.** Entity-update throughput plateaus at ~19.7 M/sec and is *flat* from 5,000
+to 25,000 entities: cost is linear in population with no cliff in that range. At 10,000 mages a
+universe sustains ~774 world ticks per second, and a world tick is one month — roughly **64 game
+years per wall-clock second**, single-threaded. At 25,000 it still holds ~26 game years/sec.
+
+**What it does not answer.** This is the *substrate's* cost with three components and four trivial
+systems. Real mage autonomy, knowledge lookup, and university economics land in `knowledge-model`
+and `mages-and-species` and will each take a bite out of these numbers. The figure to re-measure
+against is entity-updates/sec, and the honest reading of the table today is "the substrate is not
+the constraint" — not "a universe holds 25,000 mages".
+
+**Disproved by:** a benchmark run below these figures on comparable hardware. Re-run it whenever a
+change lands in the hot loop; the harness prints the final snapshot hash alongside the timing, so
+a run whose *simulated* result moved is distinguishable from one that merely got slower.

@@ -18,7 +18,16 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-const CORE_SRC = ['packages/sim-core/src/**/*.ts'];
+/**
+ * The purity rules cover the benchmark's *workload* as well as the core.
+ *
+ * `packages/sim-core/bench` is split in two on purpose: the workload builds a
+ * synthetic world and steps it, and must be as deterministic as the thing it
+ * measures — a benchmark whose simulated result varied between runs would be
+ * measuring noise. Only the runner reads a clock, and it lives in `scripts/`,
+ * outside this glob, where floats and Node built-ins are legitimate.
+ */
+const CORE_SRC = ['packages/sim-core/src/**/*.ts', 'packages/sim-core/bench/**/*.ts'];
 const CORE_TEST = ['packages/sim-core/test/**/*.ts'];
 
 /**

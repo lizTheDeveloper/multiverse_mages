@@ -59,11 +59,11 @@
 
 ## 8. Golden replay harness
 
-- [ ] 8.1 Define the golden fixture format: root seed, initial snapshot, action log, expected final hash
-- [ ] 8.2 Implement the test that executes every committed fixture and compares final hashes
-- [ ] 8.3 Implement an explicit, separate regeneration command that tests never invoke
-- [ ] 8.4 Commit at least three fixtures covering world-time-only advancement, an engagement-mode transition, and heavy entity churn
-- [ ] 8.5 Verify that a deliberately introduced nondeterministic operation fails a fixture and reports the diverging tick, then revert it
+- [x] 8.1 Define the golden fixture format: root seed, initial snapshot, action log, expected final hash
+- [x] 8.2 Implement the test that executes every committed fixture and compares final hashes
+- [x] 8.3 Implement an explicit, separate regeneration command that tests never invoke
+- [x] 8.4 Commit at least three fixtures covering world-time-only advancement, an engagement-mode transition, and heavy entity churn
+- [x] 8.5 Verify that a deliberately introduced nondeterministic operation fails a fixture and reports the diverging tick, then revert it
 
 ## 9. Benchmark and closeout
 

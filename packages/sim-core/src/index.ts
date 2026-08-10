@@ -16,14 +16,72 @@
  * consumer of the simulation shares: the Monte Carlo balance harness, the
  * Electron client, the PvP server, and the later RL bridge.
  *
- * Landed so far (`sim-core-foundation` task groups 2, 3 and 4): fixed-point
- * arithmetic, the splittable PRNG, and the entity store. The dual-scale clock,
- * snapshots, and replay land in groups 5 through 8 and are exported from here.
+ * The whole of `sim-core-foundation`: fixed-point arithmetic, the splittable
+ * PRNG, the entity store, the dual-scale clock, the pure `step` contract,
+ * versioned snapshots, and recording and replay.
+ *
+ * The one thing deliberately *not* exported is the benchmark runner. It reads
+ * a wall clock, which is precisely what this package forbids; it lives outside
+ * `src` and is reached through `npm run bench`.
  */
 
 export * from './handle.js';
 export * from './component.js';
 export * from './entity-store.js';
+
+export type { Clock, ReadonlyClock, TimeMode } from './clock.js';
+export {
+  ENGAGEMENT_TICK_MS,
+  ERA_TICKS,
+  TIME_MODE,
+  WORLD_TICKS_PER_YEAR,
+  advanceClock,
+  cloneClock,
+  createClock,
+  currentTick,
+  enterEngagement,
+  eraOf,
+  leaveEngagement,
+} from './clock.js';
+
+export type {
+  Action,
+  CreateStateOptions,
+  StepContext,
+  System,
+  WorldSchema,
+  WorldSchemaInput,
+} from './state.js';
+export { SimState, createState, defineWorld } from './state.js';
+
+export { CORE_ACTION, step } from './step.js';
+
+export type { ActionLogJSON, Recording, RecorderOptions } from './replay/recorder.js';
+export { ActionLog, Recorder } from './replay/recorder.js';
+
+export type { DivergenceResult, ReplayOptions } from './replay/replayer.js';
+export { replay, replayAndLocate } from './replay/replayer.js';
+
+export { hashBytes } from './snapshot/hash.js';
+
+export type { Migration } from './snapshot/migrations.js';
+export { MigrationRegistry } from './snapshot/migrations.js';
+
+export type {
+  DeserializeOptions,
+  SnapshotComponent,
+  SnapshotEnvelope,
+} from './snapshot/snapshot.js';
+export {
+  SNAPSHOT_VERSION,
+  decodeSnapshot,
+  deserializeState,
+  encodeSnapshot,
+  envelopeToState,
+  serializeState,
+  snapshotHash,
+  stateToEnvelope,
+} from './snapshot/snapshot.js';
 
 export { floorDiv } from './fixed-point/divide.js';
 
@@ -52,4 +110,7 @@ export {
 } from './rng/pcg32.js';
 
 export type { RngSubsystemId } from './rng/streams.js';
-export { RNG_STREAM, deriveStream } from './rng/streams.js';
+export { RNG_STREAM, deriveActorStream, deriveStream } from './rng/streams.js';
+
+export type { RngSource } from './rng/source.js';
+export { rngFromRootSeed } from './rng/source.js';
