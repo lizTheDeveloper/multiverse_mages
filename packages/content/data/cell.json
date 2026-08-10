@@ -1,0 +1,649 @@
+[
+  {
+    "id": "creo-animal",
+    "technique": "creo",
+    "form": "animal",
+    "classicalLabels": [
+      "conjuration"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "creo-aquam",
+    "technique": "creo",
+    "form": "aquam",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "creo-auram",
+    "technique": "creo",
+    "form": "auram",
+    "classicalLabels": [
+      "evocation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "creo-corpus",
+    "technique": "creo",
+    "form": "corpus",
+    "classicalLabels": [
+      "conjuration",
+      "necromancy"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "creo-herbam",
+    "technique": "creo",
+    "form": "herbam",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "creo-ignem",
+    "technique": "creo",
+    "form": "ignem",
+    "classicalLabels": [
+      "evocation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "creo-imaginem",
+    "technique": "creo",
+    "form": "imaginem",
+    "classicalLabels": [
+      "illusion"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "creo-mentem",
+    "technique": "creo",
+    "form": "mentem",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "creo-terram",
+    "technique": "creo",
+    "form": "terram",
+    "classicalLabels": [
+      "conjuration"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "creo-vim",
+    "technique": "creo",
+    "form": "vim",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "creo-umbra",
+    "technique": "creo",
+    "form": "umbra",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "creo-fatum",
+    "technique": "creo",
+    "form": "fatum",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "creo-limen",
+    "technique": "creo",
+    "form": "limen",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "creo-nomen",
+    "technique": "creo",
+    "form": "nomen",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "intellego-animal",
+    "technique": "intellego",
+    "form": "animal",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "intellego-aquam",
+    "technique": "intellego",
+    "form": "aquam",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "intellego-auram",
+    "technique": "intellego",
+    "form": "auram",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "intellego-corpus",
+    "technique": "intellego",
+    "form": "corpus",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "intellego-herbam",
+    "technique": "intellego",
+    "form": "herbam",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "intellego-ignem",
+    "technique": "intellego",
+    "form": "ignem",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "intellego-imaginem",
+    "technique": "intellego",
+    "form": "imaginem",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "intellego-mentem",
+    "technique": "intellego",
+    "form": "mentem",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": [
+      "im-weigh-the-attention",
+      "im-follow-the-thought",
+      "im-read-the-surface",
+      "im-open-the-locked-room"
+    ],
+    "v1": true
+  },
+  {
+    "id": "intellego-terram",
+    "technique": "intellego",
+    "form": "terram",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": [
+      "it-taste-the-soil",
+      "it-survey-the-strata",
+      "it-find-the-deep-seam",
+      "it-read-the-fault"
+    ],
+    "v1": true
+  },
+  {
+    "id": "intellego-vim",
+    "technique": "intellego",
+    "form": "vim",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "intellego-umbra",
+    "technique": "intellego",
+    "form": "umbra",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "intellego-fatum",
+    "technique": "intellego",
+    "form": "fatum",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "intellego-limen",
+    "technique": "intellego",
+    "form": "limen",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": [
+      "il-sense-the-seam",
+      "il-count-the-doors",
+      "il-read-the-binding",
+      "il-stand-in-the-doorway"
+    ],
+    "v1": true
+  },
+  {
+    "id": "intellego-nomen",
+    "technique": "intellego",
+    "form": "nomen",
+    "classicalLabels": [
+      "divination"
+    ],
+    "nodes": [
+      "in-hear-the-name-spoken",
+      "in-spell-the-lesser-name",
+      "in-derive-the-true-name",
+      "in-catalogue-of-names"
+    ],
+    "v1": true
+  },
+  {
+    "id": "muto-animal",
+    "technique": "muto",
+    "form": "animal",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-aquam",
+    "technique": "muto",
+    "form": "aquam",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-auram",
+    "technique": "muto",
+    "form": "auram",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-corpus",
+    "technique": "muto",
+    "form": "corpus",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-herbam",
+    "technique": "muto",
+    "form": "herbam",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-ignem",
+    "technique": "muto",
+    "form": "ignem",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-imaginem",
+    "technique": "muto",
+    "form": "imaginem",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-mentem",
+    "technique": "muto",
+    "form": "mentem",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-terram",
+    "technique": "muto",
+    "form": "terram",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-vim",
+    "technique": "muto",
+    "form": "vim",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-umbra",
+    "technique": "muto",
+    "form": "umbra",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-fatum",
+    "technique": "muto",
+    "form": "fatum",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-limen",
+    "technique": "muto",
+    "form": "limen",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "muto-nomen",
+    "technique": "muto",
+    "form": "nomen",
+    "classicalLabels": [
+      "transmutation"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "perdo-animal",
+    "technique": "perdo",
+    "form": "animal",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "perdo-aquam",
+    "technique": "perdo",
+    "form": "aquam",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "perdo-auram",
+    "technique": "perdo",
+    "form": "auram",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "perdo-corpus",
+    "technique": "perdo",
+    "form": "corpus",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "perdo-herbam",
+    "technique": "perdo",
+    "form": "herbam",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "perdo-ignem",
+    "technique": "perdo",
+    "form": "ignem",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "perdo-imaginem",
+    "technique": "perdo",
+    "form": "imaginem",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "perdo-mentem",
+    "technique": "perdo",
+    "form": "mentem",
+    "classicalLabels": [],
+    "nodes": [
+      "pm-blunt-the-edge",
+      "pm-the-misplaced-hour",
+      "pm-scatter-the-lesson",
+      "pm-unmake-the-mind",
+      "pm-the-empty-room"
+    ],
+    "v1": true
+  },
+  {
+    "id": "perdo-terram",
+    "technique": "perdo",
+    "form": "terram",
+    "classicalLabels": [],
+    "nodes": [
+      "pt-crumble",
+      "pt-open-the-ground",
+      "pt-pull-down-the-arch",
+      "pt-the-swallowed-hall"
+    ],
+    "v1": true
+  },
+  {
+    "id": "perdo-vim",
+    "technique": "perdo",
+    "form": "vim",
+    "classicalLabels": [
+      "abjuration"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "perdo-umbra",
+    "technique": "perdo",
+    "form": "umbra",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "perdo-fatum",
+    "technique": "perdo",
+    "form": "fatum",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "perdo-limen",
+    "technique": "perdo",
+    "form": "limen",
+    "classicalLabels": [
+      "abjuration"
+    ],
+    "nodes": [
+      "pl-fray-the-edge",
+      "pl-unhinge",
+      "pl-the-open-wound",
+      "pl-nothing-holds"
+    ],
+    "v1": true
+  },
+  {
+    "id": "perdo-nomen",
+    "technique": "perdo",
+    "form": "nomen",
+    "classicalLabels": [],
+    "nodes": [
+      "pn-mispronounce",
+      "pn-shed-the-use-name",
+      "pn-unsay-the-name",
+      "pn-the-nameless"
+    ],
+    "v1": true
+  },
+  {
+    "id": "rego-animal",
+    "technique": "rego",
+    "form": "animal",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "rego-aquam",
+    "technique": "rego",
+    "form": "aquam",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "rego-auram",
+    "technique": "rego",
+    "form": "auram",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "rego-corpus",
+    "technique": "rego",
+    "form": "corpus",
+    "classicalLabels": [
+      "necromancy"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "rego-herbam",
+    "technique": "rego",
+    "form": "herbam",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "rego-ignem",
+    "technique": "rego",
+    "form": "ignem",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "rego-imaginem",
+    "technique": "rego",
+    "form": "imaginem",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "rego-mentem",
+    "technique": "rego",
+    "form": "mentem",
+    "classicalLabels": [
+      "enchantment"
+    ],
+    "nodes": [
+      "rm-hold-the-attention",
+      "rm-the-patient-lesson",
+      "rm-kindle-devotion",
+      "rm-the-shared-mind"
+    ],
+    "v1": true
+  },
+  {
+    "id": "rego-terram",
+    "technique": "rego",
+    "form": "terram",
+    "classicalLabels": [],
+    "nodes": [
+      "rt-set-the-stone",
+      "rt-raise-the-course",
+      "rt-quarry-without-hands",
+      "rt-the-vaulted-hall"
+    ],
+    "v1": true
+  },
+  {
+    "id": "rego-vim",
+    "technique": "rego",
+    "form": "vim",
+    "classicalLabels": [
+      "abjuration"
+    ],
+    "nodes": []
+  },
+  {
+    "id": "rego-umbra",
+    "technique": "rego",
+    "form": "umbra",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "rego-fatum",
+    "technique": "rego",
+    "form": "fatum",
+    "classicalLabels": [],
+    "nodes": []
+  },
+  {
+    "id": "rego-limen",
+    "technique": "rego",
+    "form": "limen",
+    "classicalLabels": [
+      "abjuration"
+    ],
+    "nodes": [
+      "rl-hold-the-door",
+      "rl-step-across",
+      "rl-seal-the-way",
+      "rl-open-the-portal",
+      "rl-the-standing-gate"
+    ],
+    "v1": true
+  },
+  {
+    "id": "rego-nomen",
+    "technique": "rego",
+    "form": "nomen",
+    "classicalLabels": [
+      "incantation"
+    ],
+    "nodes": [
+      "rn-call-by-name",
+      "rn-write-the-name-down",
+      "rn-compel-by-name",
+      "rn-the-bound-servant"
+    ],
+    "v1": true
+  }
+]

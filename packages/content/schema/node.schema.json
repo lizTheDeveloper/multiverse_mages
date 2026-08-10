@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/node.schema.json",
+  "title": "node.json",
+  "description": "Knowledge nodes (contracts.md §2.3). Every cost is fixed-point at scale 1024. `rediscoveryMultiplier` carries a content invariant of >= fp(3072); v1 authors at >= fp(4096) so species rediscoveryAffinity has room to differentiate above the floor.",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/node" },
+  "$defs": {
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "cell",
+        "name",
+        "gloss",
+        "tier",
+        "prerequisites",
+        "researchCost",
+        "teachCost",
+        "scribeCost",
+        "rediscoveryMultiplier",
+        "effects",
+        "tuningStatus"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "cell": { "$ref": "#/$defs/contentId" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "tier": { "type": "integer", "minimum": 1, "maximum": 7 },
+        "prerequisites": {
+          "type": "array",
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/contentId" }
+        },
+        "researchCost": { "type": "integer", "minimum": 1, "maximum": 1073741823 },
+        "teachCost": { "type": "integer", "minimum": 1, "maximum": 1073741823 },
+        "scribeCost": { "type": "integer", "minimum": 1, "maximum": 1073741823 },
+        "rediscoveryMultiplier": { "type": "integer", "minimum": 3072, "maximum": 1073741823 },
+        "effects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/effect" }
+        },
+        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
+      }
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primitive", "magnitude", "target", "durationTicks"],
+      "properties": {
+        "primitive": { "$ref": "#/$defs/contentId" },
+        "magnitude": { "type": "integer", "minimum": 1, "maximum": 1073741823 },
+        "target": { "type": "string", "enum": ["self", "single", "area", "side", "universe"] },
+        "durationTicks": { "type": "integer", "minimum": 0, "maximum": 1073741823 }
+      }
+    },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}

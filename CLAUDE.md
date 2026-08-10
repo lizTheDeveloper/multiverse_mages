@@ -95,6 +95,22 @@ breaks something that will not be noticed for months:
 Every release states a claim that could turn out to be false, plus the measurement that would
 disprove it and whether that measurement is actually collected. "Improved X" is not a claim.
 
+## Always work in a git worktree
+
+**Never edit the shared checkout directly.** Create a worktree, work there, verify there, push from
+there. This holds for merges too — merging by checking out `main` in the shared tree yanks the
+branch out from under anyone else working in it.
+
+    git worktree add .claude/worktrees/<name> <branch>
+
+`.claude/worktrees/` is gitignored and excluded from eslint. A worktree has no `node_modules` of its
+own, so run `npm ci` in it before `npm run verify`, or npm will silently resolve workspace binaries
+from the parent checkout and you will be verifying the wrong tree.
+
+The reason is concrete: more than one agent or person may be editing this repository at the same
+time. Files changing underneath a running command produce failures that look like real defects and
+are not, and `git stash` in a shared tree can sweep up someone else's uncommitted work.
+
 ## Conventions
 
 - Commits are authored with the repo owner's git identity (`lizTheDeveloper`), not an inferred one.

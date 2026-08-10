@@ -30,7 +30,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
@@ -53,20 +53,45 @@ afterAll(() => {
 });
 
 /**
- * Writes a throwaway repository root containing one `packages/sim-core`
- * manifest, and returns the root plus the manifest path the script will report.
+ * Writes a throwaway repository root, puts `manifest` at `packages/sim-core`,
+ * and gives every *other* guarded package a clean manifest.
+ *
+ * The filler matters. The script guards a list of packages and fails if any is
+ * missing — correctly, since a guarded package that vanished is exactly what
+ * the guard is for. So a temp root holding only `sim-core` fails for the wrong
+ * reason, and this test would have quietly become "the script exits non-zero",
+ * which it does for every input. Reading the list from the script keeps the two
+ * in step when a package is added, instead of leaving a trap for whoever adds
+ * the next one.
  */
 function rootWithManifest(manifest: unknown): { root: string; manifestPath: string } {
   const root = mkdtempSync(join(tmpdir(), 'mm-purity-'));
   createdRoots.push(root);
 
-  const packageDir = join(root, PURE_PACKAGE_DIR);
-  mkdirSync(packageDir, { recursive: true });
+  for (const dir of guardedPackageDirs()) {
+    mkdirSync(join(root, dir), { recursive: true });
+    writeFileSync(
+      join(root, dir, 'package.json'),
+      `${JSON.stringify(dir === PURE_PACKAGE_DIR ? manifest : CLEAN_MANIFEST, null, 2)}\n`,
+      'utf8',
+    );
+  }
 
-  const manifestPath = join(packageDir, 'package.json');
-  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  return { root, manifestPath: join(root, PURE_PACKAGE_DIR, 'package.json') };
+}
 
-  return { root, manifestPath };
+/** The guarded package list, read from the script so the two cannot drift. */
+function guardedPackageDirs(): string[] {
+  const source = readFileSync(scriptPath, 'utf8');
+  const match = /const PURE_PACKAGES = \[([^\]]*)\]/.exec(source);
+  if (match === null) {
+    throw new Error('Could not read PURE_PACKAGES from the dependency-purity script.');
+  }
+  const dirs = [...match[1]!.matchAll(/'([^']+)'/g)].map((m) => m[1]!);
+  if (!dirs.includes(PURE_PACKAGE_DIR)) {
+    throw new Error(`The purity script no longer guards ${PURE_PACKAGE_DIR}.`);
+  }
+  return dirs;
 }
 
 interface Run {

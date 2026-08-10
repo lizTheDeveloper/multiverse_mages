@@ -13,7 +13,12 @@
  */
 
 /**
- * Fails if `packages/sim-core/package.json` declares any runtime dependency.
+ * Fails if a pure package's `package.json` declares any runtime dependency.
+ *
+ * `packages/content` is here because its loader is runtime code: a third-party
+ * JSON Schema validator could only ever be a test-side cross-check, so the
+ * schema interpreter lives in-package. That property was true but unenforced
+ * until this list included it.
  *
  * The core is consumed by the Monte Carlo harness, the Electron client, the
  * authoritative PvP server, and later a Python RL bridge. Every one of them
@@ -60,7 +65,7 @@ function resolveRoot(args) {
 const REPO_ROOT = resolveRoot(process.argv.slice(2));
 
 /** Packages whose runtime dependency list must stay empty. */
-const PURE_PACKAGES = ['packages/sim-core'];
+const PURE_PACKAGES = ['packages/sim-core', 'packages/content'];
 
 /** Fields npm treats as runtime (installed for consumers, not just for us). */
 const RUNTIME_DEPENDENCY_FIELDS = [

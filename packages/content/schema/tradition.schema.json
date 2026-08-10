@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/tradition.schema.json",
+  "title": "tradition.json",
+  "description": "Traditions (contracts.md §2.5). A tradition declares exactly the four hooks acquire, store, cast, and cost, and no others — the schema pins the key set; the closed enumeration of each hook's `kind`, and the shape of its `params`, is implemented in code (src/hooks.ts).",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/tradition" },
+  "$defs": {
+    "tradition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "hooks"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "hooks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["acquire", "store", "cast", "cost"],
+          "properties": {
+            "acquire": { "$ref": "#/$defs/hook" },
+            "store": { "$ref": "#/$defs/hook" },
+            "cast": { "$ref": "#/$defs/hook" },
+            "cost": { "$ref": "#/$defs/hook" }
+          }
+        }
+      }
+    },
+    "hook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/contentId" },
+        "params": { "type": "object" }
+      }
+    },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}
