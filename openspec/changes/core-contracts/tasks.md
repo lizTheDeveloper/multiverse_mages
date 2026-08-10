@@ -53,6 +53,14 @@
 
 ## 6. Closeout
 
+- [ ] 6.0 Widen `contentRevision` so equality means identical content. `@mm/content` computes a
+      128-bit hash; `SimState` and the snapshot header store a `uint32`, so the narrowing is a
+      silent fold. §0 makes this value the gate on whether two universes may interact, with no
+      partial-compatibility rule — a 32-bit fold makes equality mean *probably* identical, and
+      collisions become likely around 65,000 distinct content sets. The consequence is a desync in
+      ranked PvP, which 0.16.0 claims zero of. Cheap to fix now, expensive once 0.13.0 ships saves.
+
+
 - [ ] 6.1 Confirm every scenario across the five capability specs has a corresponding passing test
 - [ ] 6.2 Run the full suite, typecheck, lint, purity check, and content validation together
 - [ ] 6.3 Update `docs/design/contracts.md` with any deviation discovered during implementation, or confirm none
