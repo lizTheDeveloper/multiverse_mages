@@ -54,7 +54,7 @@
 
 - [ ] 6.1 Implement the fixed tick phase order: intent, movement, area denial, casts, theft, objectives, stability decrement, cleanup
 - [ ] 6.2 Implement intent scoring against tick-start state using the `mage-autonomy` scorer with a raid-specific goal set, tie-breaking on stream 7
-- [ ] 6.3 Implement deferred death removal in the cleanup phase, and test that a combatant reduced to zero still resolves its declared intent
+- [ ] 6.3 Implement deferred death removal in the cleanup phase, walking cast resolution in ascending stable combatant key order, and test that a combatant reduced to zero still resolves its declared intent
 - [ ] 6.4 Implement combat RNG substream derivation keyed by `(rootSeed, streamId, engagementTick, combatantKey, drawOrdinal)` with `combatantKey` as side and spawn ordinal
 - [ ] 6.5 Test insertion invariance: adding a combatant, and adding a draw, leave every other combatant's draws unchanged
 - [ ] 6.6 Implement targeting as lowest hit points above zero within range and line of sight, tie-broken on stable combatant key, marked untuned

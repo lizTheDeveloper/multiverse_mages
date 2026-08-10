@@ -47,7 +47,16 @@ spec is the thing that gets fixed.
 
 The world state is a set of component arrays over an entity store. Grouped by scale.
 
-### 1.1 Universe (singleton)
+### 1.1 Universe (singleton per simulation instance)
+
+One simulation instance holds one universe. A raid does **not** load a second universe into the
+same instance: it captures an immutable **ruleset snapshot** from each participant at portal open —
+`permittedTechniques`, `permittedForms`, `edicts`, `traditionId`, `contentRevision` — and
+`permits()` evaluates against that snapshot, never against a live entity.
+
+This is what makes the vision's frozen-policy rule (§3) structural rather than dependent on the
+action mask: `rules-raid` may not depend on `agent-api` (§5), so a raid that read live universe
+state would have no mechanism preventing mid-raid rule changes at all.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -150,17 +159,24 @@ world snapshots.
 | `side` | `uint8` | 0 attacker, 1 defender |
 | `x`, `y` | `fp` | metres |
 | `hp`, `maxHp` | `fp` | |
-| `preparedSpells` | array of `nodeId` | populated by tradition `cast` hook |
+| `preparedSpells` | array of `nodeId` | the host's `cast` hook applied to the pool the combatant's **home** `store` hook makes available. A raider carries her own preparations and pays the local price to release them (vision §4a) |
 | `concealment` | `fp` | |
 
 **RaidState**
 
 | Field | Type | Notes |
 |---|---|---|
-| `hostUniverseId` | `uint32` | governs legality — always the defender |
-| `attackerTraditionId` | `uint16` | raider's home tradition (acquire/store hooks) |
-| `objectives` | array of `{kind, targetId, x, y, valueFp, capturedBy}` | |
-| `portalStability` | `fp` | decrements per engagement tick; 0 ends the raid |
+| `hostRuleset` | ruleset snapshot | the defender's. Governs legality, and the `cast`/`cost` hooks |
+| `raiderRuleset` | ruleset snapshot | the attacker's. Governs the `acquire`/`store` hooks |
+| `objectives` | array of `{kind, targetId, x, y, valueFp, statusKind, capturedBy}` | `statusKind` distinguishes held / captured / looted / destroyed — a looted library still stands, a burned one does not |
+| `portalStability` | `int32` | raw integer, decrements every engagement tick; 0 ends the raid |
+| `stabilityDecayPerTick` | `int32` ≥ 1 | **authored raw integer, never derived by fixed-point division.** `div` rounds toward negative infinity, so a derived decay silently becomes 0 whenever the divisor exceeds the numerator — a raid that runs forever, with no error and no symptom |
+| `raidSeed` | `uint32` | derived at portal open |
+| `engagementStartTick` | `int32` | the world tick the raid began at |
+
+**No effect primitive may modify `portalStability`.** Its absence from §3 is load-bearing, not
+incidental: adding one would silently downgrade the termination guarantee from a proof to an
+observation. Content declaring any stability increase or decay reduction is a hard load failure.
 
 ---
 
@@ -267,7 +283,7 @@ all of them.
 
 | Primitive | Unit | Scale | Stacking |
 |---|---|---|---|
-| `direct-damage` | HP per application | engagement | additive across sources |
+| `direct-damage` | HP per application | engagement | summed per target per tick, then **one** ward factor applied to the sum — so ten small hits equal one large hit rather than differing by rounding artefact |
 | `ward` | fraction of damage prevented | engagement | **multiplicative on the remainder**, hard cap `fp(922)` = 90% |
 | `area-denial` | HP per engagement tick, within radius (fp metres) | engagement | additive |
 | `blink` | fp metres of instantaneous displacement | engagement | max, not sum |
@@ -442,10 +458,16 @@ invalidates every committed balance baseline.**
 | 4 | teaching outcomes |
 | 5 | scribing outcomes and grimoire durability |
 | 6 | populace cohort dynamics |
-| 7 | mage autonomy / utility-AI tie-breaking |
-| 8 | combat resolution |
+| 7 | mage autonomy / utility-AI tie-breaking, **including combatant goal selection in a raid** |
+| 8 | combat resolution only — hit, evasion, damage |
 | 9 | knowledge theft |
 | 10 | objective and raid generation |
+| 11 | terrain generation and combatant deployment |
+
+Draws key on `(rootSeed, stream, tick, actorKey, drawOrdinal)` where `actorKey` is stable identity,
+never array index. This gives **insertion invariance**: adding a combatant, or adding a draw,
+disturbs nobody else's rolls. Without it, an ablation run diverges from its control for reasons
+unrelated to the ablated primitive, and every attribution measurement becomes noise.
 
 ---
 

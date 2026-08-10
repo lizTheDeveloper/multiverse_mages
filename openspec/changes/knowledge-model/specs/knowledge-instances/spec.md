@@ -220,11 +220,11 @@ flag may record existence. The index MUST expose the per-node instance count so 
 - **WHEN** the index is queried for nodes whose instance count is exactly one
 - **THEN** it returns them without iterating every instance in the world
 
-#### Scenario: No cached existence flag
+#### Scenario: No cached current-existence flag
 
-- **WHEN** the conformance check scans world state component definitions for a per-node existence
-  or "known" boolean
-- **THEN** it finds none
+- **WHEN** the conformance check scans world state component definitions for a per-node
+  current-existence boolean, excluding the persisted ever-known record required for rediscovery
+- **THEN** it finds none, and current existence is answerable only through the index
 
 ### Requirement: Knowledge loss is observable when the last instance is destroyed
 

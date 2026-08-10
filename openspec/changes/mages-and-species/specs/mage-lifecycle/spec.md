@@ -157,8 +157,9 @@ most 50% of the species base, per `docs/design/contracts.md` §3.
 
 A mage's death SHALL destroy every knowledge instance held at `mind:<mageId>` and every instance
 held at `palace:<mageId>`. Grimoires held by the mage MUST transfer to the library of its
-affiliated university, or to unaffiliated holding if `universityId` is 0. The mage's `alive` flag
-MUST be set false and its role and university slots released.
+affiliated university; if `universityId` is 0 they MUST be set to the `in transit` holder kind
+enumerated in `docs/design/contracts.md` §1.5, since that enumeration admits only mage, library, and
+in transit. The mage's `alive` flag MUST be set false and its role and university slots released.
 
 #### Scenario: Mind instances die with the mage
 
@@ -175,6 +176,12 @@ MUST be set false and its role and university slots released.
 - **WHEN** an affiliated mage holding two grimoires dies
 - **THEN** both grimoires are held by that university's library afterwards and their `durability`
   is unchanged
+
+#### Scenario: An unaffiliated mage's grimoires enter transit
+
+- **WHEN** a mage with `universityId` of 0 dies holding a grimoire
+- **THEN** the grimoire's `holderKind` becomes `in transit`, and no holder kind outside the
+  `contracts.md` §1.5 enumeration is introduced
 
 #### Scenario: Last instance leaving the universe is signalled
 

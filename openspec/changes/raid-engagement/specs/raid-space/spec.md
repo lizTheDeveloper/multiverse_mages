@@ -163,12 +163,12 @@ at the start of that tick.
 - **WHEN** a combatant is reduced to zero hit points during the cast resolution phase
 - **THEN** its own declared cast still resolves in that same tick, and it is removed in cleanup
 
-#### Scenario: Within-tick effects are order-independent
+#### Scenario: Within-tick damage and displacement are order-independent
 
 - **WHEN** the same tick is resolved with the cast resolution phase walking combatants in a different
-  order
-- **THEN** the set of effects applied and the resulting hit points are identical, because damage is
-  additive and removal is deferred
+  order, for effects other than capped summons
+- **THEN** the set of effects applied and the resulting hit points and positions are identical,
+  because damage is additive and removal is deferred
 
 #### Scenario: Theft resolves after damage
 

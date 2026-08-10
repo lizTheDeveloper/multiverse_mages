@@ -83,8 +83,9 @@ preparation.
 
 #### Scenario: Release is free at the moment of casting
 
-- **WHEN** a mage under `prepaid` casts a prepared node
-- **THEN** no casting cost is deducted from the caster at that moment
+- **WHEN** the `prepaid` cost kind is evaluated for a mage releasing a prepared node
+- **THEN** it returns a cost of zero, while the `standard` cost kind returns a non-zero cost for the
+  same node
 
 ### Requirement: True Naming hooks acquire only
 
@@ -185,8 +186,8 @@ and thereafter expended by the **host's** `cast` kind and paid for by the **host
 
 #### Scenario: The raider pays the host's price
 
-- **WHEN** that Vancian raider casts one of her prepared nodes in the Art of Memory universe
-- **THEN** the standard host cost is deducted, not the Vancian `prepaid` zero cost
+- **WHEN** that Vancian raider releases one of her prepared nodes in the Art of Memory universe
+- **THEN** the cost applied is the host's `standard` cost, not the Vancian `prepaid` zero cost
 
 #### Scenario: At home both halves are the same tradition
 

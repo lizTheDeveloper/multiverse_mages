@@ -104,14 +104,16 @@ any species magnitude is balanced.
 ### Requirement: Species differentiate measurably
 
 Species SHALL produce measurably different outcomes on identical seeds. Under the reference
-scenario, the world ticks taken by each species to first reach a given node tier MUST differ
-between at least four distinct species by more than the run-to-run variation observed across seeds.
+scenario, the world ticks taken to first reach node tier 3 — a tier reachable by all six species,
+since the lowest `depthCeiling` is 3 — MUST differ between **every pair** of species by more than
+the run-to-run variation observed across seeds. Any indistinguishable pair falsifies the 0.4.0
+species-differentiation claim in `docs/design/release-plan.md`.
 
-#### Scenario: Time-to-tier differs by species
+#### Scenario: No two species are indistinguishable
 
 - **WHEN** the reference scenario is run to 200 world years across a fixed set of seeds
-- **THEN** the recorded time to first reach tier 3 differs between at least four species by more
-  than the observed cross-seed spread
+- **THEN** for every pair of species, the recorded time to first reach tier 3 differs by more than
+  the observed cross-seed spread, and the test names any pair that does not
 
 #### Scenario: Depth ceiling is a hard limit
 

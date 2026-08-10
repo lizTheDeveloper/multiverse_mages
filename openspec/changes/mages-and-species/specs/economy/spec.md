@@ -42,7 +42,8 @@ same tick. A cohort reaching a `count` of 0 MUST be destroyed.
 
 - **WHEN** the reference scenario runs for 200 world years
 - **THEN** the number of live cohort entities never exceeds
-  `6 species × 5 occupations × ceil(maxLifespanMonths / 120)`, and the test records the observed peak
+  `6 species × 5 occupations × ceil(maxLifespanMonths / 120)`, and the test records the observed
+  peak. The bound holds only because cohort mortality retires old birth buckets
 
 #### Scenario: Empty cohorts are reclaimed
 
@@ -128,6 +129,43 @@ completed university capacity. Population MUST NOT be enforced by a hard rejecti
 - **WHEN** every cohort of a species reaches a count of 0 and no mage of that species survives
 - **THEN** no births of that species occur thereafter, and the simulation does not synthesize a
   founding population
+
+### Requirement: Cohort members die at cohort granularity
+
+Populace cohorts SHALL lose members each world tick to the same scale-free hazard table used for
+mage mortality, indexed by the normalized age implied by the cohort's `birthTickBucket` and its
+species `lifespanMonths`. Expected deaths MUST be computed as an integer part plus exactly one
+fractional draw on RNG stream 6 per cohort per tick, and the division MUST use the extended-scale
+helper so that a long-lived species' hazard does not round to zero.
+
+#### Scenario: Old cohorts decay to nothing
+
+- **WHEN** a human cohort whose birth bucket is 120 years in the past is stepped repeatedly with no
+  transitions in or out
+- **THEN** its count falls monotonically and reaches zero, and its entity is destroyed
+
+#### Scenario: Draw count is one per cohort
+
+- **WHEN** a cohort of 250,000 is stepped for one world tick
+- **THEN** exactly one value is drawn from RNG stream 6 for that cohort's mortality
+
+#### Scenario: Long-lived cohorts still die
+
+- **WHEN** a draconic cohort at normalized age `fp(1024)` with `lifespanMonths` of 18000 is stepped
+- **THEN** its computed per-tick hazard is strictly greater than zero and deaths accumulate over
+  time
+
+#### Scenario: Birth buckets are reclaimed
+
+- **WHEN** the reference scenario runs for 200 world years
+- **THEN** no live cohort exists whose birth bucket is older than its species `lifespanMonths` plus
+  the documented tail allowance, which is what makes the cohort entity bound hold
+
+#### Scenario: Deaths balance births at equilibrium
+
+- **WHEN** the reference scenario reaches its carrying capacity
+- **THEN** total births and total deaths per tick are within a documented tolerance of each other,
+  and population is stable rather than pinned against a ceiling
 
 ### Requirement: Materials are produced by labor and consumed by everything
 

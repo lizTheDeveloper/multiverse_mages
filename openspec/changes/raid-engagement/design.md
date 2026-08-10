@@ -165,7 +165,7 @@ Each engagement tick (100 ms of fictional time) runs these phases in this order,
    `concealment`, because concealment is defined as evasion of *targeting and detection*
    (`contracts.md` §3) and a field targets nothing. This is the mechanical reason area denial is the
    counter to a concealment build, and it should be stated rather than emergent.
-4. **Cast resolution.** In ascending combatant index order, each declared cast runs:
+4. **Cast resolution.** In ascending stable combatant key order, each declared cast runs:
    legality (`permits` on the frozen host snapshot) → cost (host `cost` hook; unaffordable means no
    effect and no expenditure) → cast (host `cast` hook expends the preparation) → target acquisition
    (range by **squared distance**, plus line of sight) → concealment evasion roll (stream 8) →

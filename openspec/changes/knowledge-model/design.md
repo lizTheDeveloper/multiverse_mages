@@ -190,6 +190,28 @@ plus a compounding capital loop is a stability risk nobody can measure until 0.5
 violation — "in active use" is a fact about mage behaviour, which is `rules-world`. If it is wanted,
 it arrives as a caller-supplied parameter in `mages-and-species`, not as a flag invented here.
 
+### Held knowledge contributes effects only above an activation threshold
+
+A held instance contributes its node's primitive effects only once its mastery reaches a declared
+activation threshold. Below it the instance exists, is teachable-status tracked, and can be improved,
+but it produces no `build-rate`, no `direct-damage`, and no anything else.
+
+Without a threshold, the instant a research operation completes the mage delivers that node's full
+magnitude, and mastery becomes a stat that governs only teaching fidelity. With it, acquisition has a
+ramp: a civilization that learns broadly and shallowly holds a great deal of knowledge that does
+nothing yet, which is the same pressure that makes the teaching-loss rule interesting from the other
+direction.
+
+*Alternative considered:* contributing full magnitude at any mastery, including `fp(0)`. Rejected —
+it makes acquisition and capability the same event, deletes the only reason to keep practising a node
+you already hold, and would let a raider taught a node in the field deploy it at full strength in the
+same engagement.
+
+*Alternative considered:* scaling magnitude continuously with mastery. Rejected for this release —
+it multiplies every effect by a second per-instance factor before the harness exists to tell whether
+the resulting curve is sane, and it interacts with the primitive caps in a way nothing at 0.3.0 can
+measure. The threshold is the conservative placeholder; the continuous curve is a 0.5.0 question.
+
 ### Rediscovery has a hard floor of 3×, applied after species affinity
 
 `release-plan.md`'s 0.3.0 claim is that rediscovery "costs at least 3× its original research cost."

@@ -29,7 +29,11 @@
 - [ ] 3.5 Implement demand computation from construction sites, the scribing queue, university capacity, and the standing soldier target
 - [ ] 3.6 Implement rate-limited occupation reallocation with a deterministic allocation order and unmet-demand counters
 - [ ] 3.7 Assert the cohort entity count bound `6 × 5 × ceil(maxLifespanMonths / 120)` in a long-run test, recording the observed peak
-- [ ] 3.8 Unit test that RNG draw count on stream 6 is independent of population size at fixed cohort count
+- [ ] 3.8 Implement cohort mortality from the shared scale-free hazard table, indexed by the normalized age implied by `birthTickBucket`, using the extended-scale division helper
+- [ ] 3.9 Implement expected-deaths arithmetic as an integer part plus exactly one stream 6 fractional draw per cohort per tick
+- [ ] 3.10 Test that a cohort past its species lifespan decays monotonically to zero and its entity is destroyed
+- [ ] 3.11 Test that no live cohort's birth bucket is older than its species `lifespanMonths` plus the documented tail allowance across the 200-year run
+- [ ] 3.12 Unit test that RNG draw count on stream 6 is independent of population size at fixed cohort count
 
 ## 4. Mage lifecycle
 
@@ -101,6 +105,7 @@
 - [ ] 8.4 Implement carrying capacity `K` from materials stock and completed university capacity
 - [ ] 8.5 Implement the logistic fertility brake and the subsistence-shortfall effect on `K`
 - [ ] 8.6 Implement births into the youngest `idle` bucket, with extinction as an absorbing state and no synthesized founding population
+- [ ] 8.7 Test that births and deaths per tick balance within a documented tolerance once the reference scenario reaches carrying capacity
 - [ ] 8.7 Add the check asserting exactly three tracked economic inputs and that this package never writes `favor` or `worship`
 - [ ] 8.8 Expose mage, university, and populace counts for `god-agency` to consume, computing no worship value
 - [ ] 8.9 Add the conformance check that no populace cohort carries a position and the economy path computes no distance
