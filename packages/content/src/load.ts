@@ -168,7 +168,10 @@ export function validateContent(source: ContentSource): ValidationResult {
   for (const fileName of CONTENT_FILES) {
     const schema = schemas.get(fileName);
     if (schema === undefined) continue;
-    diagnostics.push(...schema.validate(raw.get(fileName), fileName));
+    const document = raw.get(fileName);
+    for (const problem of schema.validate(document, fileName)) {
+      diagnostics.push(nameTheRecord(problem, document));
+    }
   }
   if (diagnostics.length > 0) return { diagnostics: sortDiagnostics(diagnostics) };
 
@@ -210,6 +213,29 @@ function diagnostic(
   message: string,
 ): ContentDiagnostic {
   return { file, pointer, code, message };
+}
+
+/**
+ * Adds the offending record's own id to a schema diagnostic.
+ *
+ * A JSON pointer of `/38` is precise and unusable: content files are edited by
+ * id, searched by id, and discussed by id, so an error that says only "index 38"
+ * makes the author count records. The id is recovered from the raw document
+ * rather than the parsed one, because at this point the record is exactly what
+ * failed to parse into a valid record.
+ */
+function nameTheRecord(problem: ContentDiagnostic, document: unknown): ContentDiagnostic {
+  if (!Array.isArray(document)) return problem;
+  const match = /^\/(\d+)(\/|$)/u.exec(problem.pointer);
+  if (match === null) return problem;
+
+  const record: unknown = document[Number(match[1])];
+  if (typeof record !== 'object' || record === null) return problem;
+  const id: unknown = (record as Record<string, unknown>)['id'];
+  if (typeof id !== 'string') return problem;
+  if (problem.message.includes(`"${id}"`)) return problem;
+
+  return { ...problem, message: `record "${id}": ${problem.message}` };
 }
 
 function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {

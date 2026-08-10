@@ -61,6 +61,9 @@ describe('invalid content is a hard load failure', () => {
     expect(diagnostics).toHaveLength(1);
     expect(diagnostics[0]?.code).toBe('schema');
     expect(diagnostics[0]?.file).toBe('node.json');
+    // The spec asks for the node id and the field, not just a pointer: content
+    // is edited and discussed by id, and "index 38" makes the author count.
+    expect(diagnostics[0]?.message).toContain('rl-open-the-portal');
     expect(diagnostics[0]?.message).toContain('researchCost');
     // The pointer locates the record, so an author can find it without counting.
     expect(diagnostics[0]?.pointer).toMatch(/^\/\d+$/u);
