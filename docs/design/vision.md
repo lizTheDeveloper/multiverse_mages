@@ -348,21 +348,29 @@ Each row is one OpenSpec change, delivering the capability specs named beside it
 use the real change and capability identifiers so that `openspec list` and this table stay in
 agreement — that agreement is how "did the vision get built?" is answerable.
 
-| # | OpenSpec change | Capabilities delivered | Status |
+| Version | OpenSpec change | Capabilities delivered | Status |
 |---|---|---|---|
-| 1 | `sim-core-foundation` | `simulation-core`, `world-persistence`, `deterministic-replay` | in progress |
-| 2 | `core-contracts` | `state-schema`, `content-schemas`, `primitive-semantics`, `observation-action-space`, `module-boundaries` | specified |
-| 3 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | not started |
-| 4 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | not started |
-| 5 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | not started |
-| 6 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | not started |
-| 7 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | not started |
-| 8 | `electron-client` | `client-shell`, `world-presentation` | proposal only |
-| 9 | `pvp-server` | `authoritative-lockstep`, `matchmaking`, `universe-persistence`, `hetzner-deployment` | proposal only |
-| 10 | `gym-bridge` | `rl-bridge` | proposal only |
+| 0.1.0 | `sim-core-foundation` | `simulation-core`, `world-persistence`, `deterministic-replay` | in progress |
+| 0.2.0 | `core-contracts` | `state-schema`, `content-schemas`, `primitive-semantics`, `observation-action-space`, `module-boundaries` | specified |
+| 0.3.0 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | not started |
+| 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | not started |
+| 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | not started |
+| 0.6.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | not started |
+| 0.7.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | not started |
+| 0.8.0 | `gym-bridge` | `rl-bridge` | proposal only |
+| 0.9.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only |
+| 0.10.0 | `pvp-server` | `authoritative-lockstep`, `matchmaking`, `universe-persistence`, `hetzner-deployment` | proposal only |
+| 1.0.0 | — | contracts freeze; public release | — |
 
-Steps 1–4 produce a single universe that runs on its own. Step 5 makes it measurable. Steps 6–7
-make it a game. Steps 8–10 make it playable by humans and by learning agents.
+Steps through 0.4.0 produce a single universe that runs on its own. **0.5.0 makes it measurable** —
+before that, no claim about balance is verifiable, so none should be made. 0.6.0–0.7.0 make it a
+game. 0.8.0–0.10.0 make it playable by learning agents and then by humans.
+
+**The RL bridge ships before the client, deliberately.** Machines discover the meta first; humans
+discover the human meta second. Shipping the client first would make human playtesters the primary
+balance signal by default, which is the exact outcome the balance-first methodology exists to
+avoid. See `docs/design/release-plan.md` for version semantics and the falsifiable claim each
+release makes.
 
 **Change 2 is the parallelization gate.** Everything downstream is built against the contracts it
 fixes — the state schema, the content data schemas, the exact semantics of every effect primitive,

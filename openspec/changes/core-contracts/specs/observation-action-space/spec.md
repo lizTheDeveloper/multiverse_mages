@@ -45,9 +45,9 @@ MUST carry a boolean legality mask over the full action space.
 
 ### Requirement: Rules changes are masked during engagement
 
-Actions that alter the ruleset or the tradition — permitting or forbidding a technique or form,
-issuing or revoking an edict, and changing tradition — MUST be masked out whenever the clock is in
-engagement mode.
+The legality mask MUST exclude every action that alters the ruleset or the tradition whenever the
+clock is in engagement mode. This covers permitting or forbidding a technique or form, issuing or
+revoking an edict, and changing tradition.
 
 #### Scenario: Ruleset actions unavailable mid-raid
 
