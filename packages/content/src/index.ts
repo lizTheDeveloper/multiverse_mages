@@ -91,3 +91,6 @@ export type { GenerationRequest } from './audio-generation.js';
 export { planRequests, redact } from './audio-generation.js';
 
 export * from './types.js';
+
+export type { SelectionCoverage, SelectionPass, Selections } from './audio-selection-merge.js';
+export { assetIdOf, mergeSelections, selectionCoverage } from './audio-selection-merge.js';
