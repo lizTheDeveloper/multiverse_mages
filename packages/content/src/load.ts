@@ -78,6 +78,34 @@ export const V1_TECHNIQUE_COUNT = 3;
 export const V1_FORM_COUNT = 4;
 
 /**
+ * The most nodes a content set may declare, because every one of them is
+ * potentially on a mage's research frontier.
+ *
+ * `@mm/coordination`'s `researchFrontier` walks the nodes of the cells the
+ * ruleset permits, once per mage per tick. A god may permit all seventy cells,
+ * so the worst case over all rulesets is *the whole catalog*, and the node count
+ * is therefore a per-tick cost that content controls and the AI layer cannot.
+ *
+ * That scan used to be bounded instead by a constant over interned node id —
+ * walk `1..min(nodeCount, 256)` and stop — and the shipped catalog has held 300
+ * nodes since the grid was authored, so 44 of them were silently unreachable:
+ * the whole `rego` technique, four of the twelve v1 cells, a third of the
+ * playable content. Nothing failed. Nothing warned. The universe simply had less
+ * magic in it than the content said, for the life of every run, and it took a
+ * plateau in a fifty-year sweep to notice.
+ *
+ * So the bound moved here, where crossing it is **loud**. This is a content
+ * decision that fails `npm run verify` with a message, not a runtime truncation
+ * that deletes whatever sorts last. One thousand and twenty-four is an arbitrary
+ * budget — a little over three times what v1 authors — chosen to be roomy enough
+ * that ordinary content growth never meets it and small enough that meeting it
+ * is a conversation. **The response to hitting it is to measure the frontier
+ * scan and raise this number on purpose, or to author fewer nodes. It is never
+ * to cap the scan again.**
+ */
+export const MAX_CONTENT_NODES = 1024;
+
+/**
  * Authoring floor for `rediscoveryMultiplier` in v1 content.
  *
  * `contracts.md` §2.3 sets the hard invariant at `fp(3072)` and then asks v1 to
@@ -625,6 +653,22 @@ function checkNodes(
   out: ContentDiagnostic[],
 ): void {
   const file = 'node.json';
+
+  if (nodes.length > MAX_CONTENT_NODES) {
+    out.push(
+      diagnostic(
+        file,
+        '',
+        'content-invariant',
+        `node.json declares ${String(nodes.length)} nodes, above the frontier-scan budget of ` +
+          `${String(MAX_CONTENT_NODES)}. A god may permit all seventy cells, so every declared node ` +
+          "is potentially on every mage's research frontier every tick, and the node count is a " +
+          'per-tick cost content controls. Raise the budget deliberately, having measured the ' +
+          'scan, or author fewer nodes — do not bound the scan by node id again, which is what ' +
+          'made a third of the v1 content unreachable for the life of every run',
+      ),
+    );
+  }
 
   for (let position = 0; position < nodes.length; position += 1) {
     const node = nodes[position];

@@ -21,6 +21,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  MAX_CONTENT_NODES,
   REQUIRED_V1_CELL,
   V1_CELL_COUNT,
   V1_REDISCOVERY_AUTHORING_FLOOR,
@@ -142,6 +143,17 @@ describe('shipped content', () => {
   it('carries authored spells in every cell of the grid', () => {
     const withContent = new Set(registry.nodes.map((entry) => entry.record.cell));
     expect(withContent.size).toBe(70);
+  });
+
+  it('sits inside the frontier-scan budget with room to grow', () => {
+    // Every node is potentially on every mage's frontier every tick, because a
+    // god may permit all seventy cells — so this count is a per-tick cost, and
+    // `MAX_CONTENT_NODES` is where that cost is argued about. Headroom is
+    // asserted rather than merely the bound, so that content arriving at the
+    // ceiling is noticed here, in a test that can explain it, rather than in a
+    // build failure a month later.
+    expect(registry.counts.nodes).toBeLessThanOrEqual(MAX_CONTENT_NODES);
+    expect(registry.counts.nodes * 3).toBeLessThan(MAX_CONTENT_NODES);
   });
 
   it('marks every authored magnitude as untuned', () => {

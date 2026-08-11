@@ -98,8 +98,11 @@ import type {
   MageHandle,
   UniversityHandle,
 } from '@mm/rules-world';
+import { compareTargets } from '@mm/rules-world';
 
 import type { EffortKey, EffortLedger } from './effort-store.js';
+import type { CellNodeIndex } from './frontier-index.js';
+import { cellNodeIndex } from './frontier-index.js';
 
 /** Species rates the gateway needs about whichever mage it is asked about. */
 export interface MageRates {
@@ -188,22 +191,24 @@ export interface GatewayDeps {
    * nobody is counting, which is honest for a query-only gateway.
    */
   readonly clampCounter?: RediscoveryClampCounter | undefined;
+  /**
+   * `cellOf` inverted: which nodes live in which cell.
+   *
+   * What the frontier scan walks instead of an id range — see
+   * {@link CoordinatingKnowledgeGateway.researchFrontier} and
+   * `frontier-index.ts`. Supplied by the caller so that it outlives a phase, for
+   * the same reason `clampCounter` is: the index is a function of the content
+   * set alone, and one built here would be rebuilt three times a tick and cost
+   * an `O(catalog)` pass each time — which is precisely the cost the scan is
+   * being changed to stop paying.
+   *
+   * Omitted means this gateway builds its own, lazily, on the first frontier
+   * question and not at all if none is asked. That keeps a query-only caller —
+   * a test, an outlook build — from having to construct one, and it is the slow
+   * path by construction: the world loop supplies the shared index.
+   */
+  readonly nodesByCell?: CellNodeIndex | undefined;
 }
-
-/**
- * The most nodes the frontier scan considers before giving up.
- *
- * The scan is over the whole catalog, which content grows without anyone
- * thinking about the AI — the same argument `MAX_CANDIDATE_TARGETS` makes one
- * layer up, applied to the layer that produces the list rather than the one that
- * consumes it. The caller's `limit` bounds the *result*; this bounds the *work*,
- * so a catalog of ten thousand nodes costs the same per mage as one of three
- * hundred.
- *
- * Nodes are visited in ascending id, which is content-authored order and
- * therefore a total order that depends on nothing but the content set.
- */
-export const MAX_FRONTIER_SCAN = 256;
 
 /**
  * The mages a teachability scan will consider as counterparties.
@@ -230,6 +235,10 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   readonly #rates = new Map<MageHandle, MageRates | undefined>();
   /** Every mage's held nodes and mastery, from one pass. See {@link #holdings}. */
   #heldByMage: Map<MageHandle, Map<ContentId, Fp>> | undefined;
+  /** `cellOf` inverted. The caller's, or this gateway's own. See {@link #legalNodeIds}. */
+  #nodesByCell: CellNodeIndex | undefined;
+  /** Every node this universe's ruleset permits, ascending. Memoized for this phase. */
+  #legalNodes: readonly ContentId[] | undefined;
 
   /** Projects finished while this gateway was alive. Reporting only. */
   readonly #completed: CompletedEffort[] = [];
@@ -266,17 +275,56 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * project cheaper to resume than to start, which is the whole reason progress
    * has a home: `compareTargets` sorts cheapest first, so a half-finished node
    * outranks an untouched one of the same cost without any rule saying so.
+   *
+   * ## The scan is bounded by legality, not by an id range
+   *
+   * It used to walk `1..min(nodeCount, 256)`. That constant was documented as
+   * bounding *work* and in fact bounded *reachability*: the shipped catalog
+   * holds 300 nodes, so 44 of them — the whole `rego` technique, four of the
+   * twelve v1 cells, four tier-1 roots with no prerequisites at all — were
+   * invisible to every mage at every tick for the life of the universe. Teaching
+   * could not route around it, because nobody can hold a node nobody can
+   * research. `test/unit/frontier-scan-window.test.ts` carries the diagnosis.
+   *
+   * What replaces it is the index the ruleset already implies: the nodes in
+   * permitted cells ({@link #legalNodeIds}). That is `O(legal nodes)` and flat
+   * in total catalog size — which is what the old constant claimed and did not
+   * deliver, since content authored into cells nobody permitted now costs
+   * nothing at all. It is also a bound that **cannot delete content**: the only
+   * way to narrow it is for the god to forbid a cell, which is a rule, is
+   * visible in the ruleset, and is reversible.
+   *
+   * ## `limit` bounds the result, and the cheapest survive it
+   *
+   * The old loop also stopped at `found.length < limit` while walking ascending
+   * id, so a mage with more candidates than the limit got the lowest-numbered
+   * ones — the same defect at smaller scale, with interned id again deciding
+   * what she may consider.
+   *
+   * It does not bite today, and that is measured rather than assumed: over a
+   * fifty-year reference run the longest frontier any mage ever holds is 16,
+   * against `gatherFrontier`'s request of 32, because the v1 graph gates most of
+   * its 51 nodes behind prerequisites. It is a trap rather than a live defect —
+   * the ceiling is 51 against a limit of 32, and the `rego` block is the
+   * highest-numbered of the 51, so the day a content set widens the graph the
+   * truncation would quietly start deleting exactly what the index above just
+   * made reachable.
+   *
+   * So the whole frontier is gathered and `compareTargets` — the caller's own
+   * total order, imported rather than restated — decides which `limit` of it
+   * comes back. Cheapest first, which is what this method has always claimed to
+   * return and now does. It costs one sort of at most `legal nodes` per mage per
+   * evaluation, and buys a bound whose meaning does not depend on interning
+   * order.
    */
   researchFrontier(mage: MageHandle, limit: number): readonly KnowledgeTarget[] {
     const rates = this.#ratesOf(mage);
     if (rates === undefined) return [];
 
     const found: KnowledgeTarget[] = [];
-    const scanned = Math.min(this.#deps.catalog.nodeCount, MAX_FRONTIER_SCAN);
-    for (let nodeId = 1; nodeId <= scanned && found.length < limit; nodeId += 1) {
+    for (const nodeId of this.#legalNodeIds()) {
       const node = this.#deps.catalog.node(nodeId);
       if (node === undefined) continue;
-      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
       if (this.knows(mage, nodeId)) continue;
       if (!this.#prerequisitesHeld(mage, node.prerequisites)) continue;
 
@@ -299,7 +347,8 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       });
       found.push({ nodeId, tier: node.tier, remainingCost: Math.max(requirement - banked, 0) });
     }
-    return found;
+    found.sort(compareTargets);
+    return found.length > limit ? found.slice(0, limit) : found;
   }
 
   canTeach(teacher: MageHandle, nodeId: ContentId): boolean {
@@ -667,6 +716,38 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       this.#heldByMage = byMage;
     }
     return this.#heldByMage.get(mage) ?? EMPTY_HOLDINGS;
+  }
+
+  /**
+   * Every node this universe's ruleset permits, ascending by id.
+   *
+   * One `permits()` call per populated cell for the whole phase, rather than one
+   * per node per mage: the ruleset is fixed for a gateway's life — that is what
+   * makes a gateway a view of one phase — so the answer cannot change underneath
+   * this. A universe running the v1 rectangle turns 300 nodes into 51 here, once,
+   * and every mage's frontier walks the 51.
+   *
+   * Ascending id rather than cell-major, which is the order the cell index hands
+   * them over in. Both are total orders over the content set and neither is
+   * observable through {@link researchFrontier} — its result is sorted by
+   * `compareTargets`, which breaks its own ties on node id. Ascending is chosen
+   * because it is the order the frontier walked before this changed, so the
+   * *only* behavioural difference this method introduces is which nodes are in
+   * the list, and a reader diffing a run has one thing to account for.
+   */
+  #legalNodeIds(): readonly ContentId[] {
+    if (this.#legalNodes !== undefined) return this.#legalNodes;
+    this.#nodesByCell ??=
+      this.#deps.nodesByCell ?? cellNodeIndex(this.#deps.catalog, this.#deps.cells);
+
+    const legal: ContentId[] = [];
+    for (const cellId of this.#nodesByCell.populatedCellIds()) {
+      if (!permits(this.#deps.ruleset, cellId)) continue;
+      for (const nodeId of this.#nodesByCell.nodesIn(cellId)) legal.push(nodeId);
+    }
+    legal.sort((a, b) => a - b);
+    this.#legalNodes = legal;
+    return legal;
   }
 
   #ratesOf(mage: MageHandle): MageRates | undefined {
