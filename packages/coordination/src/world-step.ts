@@ -787,8 +787,10 @@ function deliverBirths(cohorts: CohortStore, phase: BirthPhase): number {
 // ---------------------------------------------------------------------------
 
 function ratesOf(state: SimState, mage: Handle, deps: WorldStepDeps): MageRates | undefined {
-  const row = mageRowOf(state, mage);
-  const species = row === undefined ? undefined : deps.speciesOf(row.speciesId);
+  const store = componentOf(state, MAGE);
+  const species = store.has(mage as EntityHandle)
+    ? deps.speciesOf(store.get(mage as EntityHandle, 'speciesId'))
+    : undefined;
   if (species === undefined) return undefined;
   return {
     learnRate: species.learnRate,
@@ -824,10 +826,18 @@ function lifespanMonths(
   }).months;
 }
 
+/**
+ * This holder's species retention, or `0` for a handle that is not a mage.
+ *
+ * Reads the one field it needs rather than the whole `MAGE` row. The decay
+ * phase asks this once per held instance, which is tens of thousands of times a
+ * tick in a mature universe, and `readRecord` builds an object carrying every
+ * field of §1.2 to answer a question about one of them.
+ */
 function retentionOf(state: SimState, holder: Handle, deps: WorldStepDeps): number {
-  const row = mageRowOf(state, holder);
-  if (row === undefined) return 0;
-  return deps.speciesOf(row.speciesId)?.retention ?? 0;
+  const store = componentOf(state, MAGE);
+  if (!store.has(holder as EntityHandle)) return 0;
+  return deps.speciesOf(store.get(holder as EntityHandle, 'speciesId'))?.retention ?? 0;
 }
 
 function mageRowOf(state: SimState, mage: Handle): MageRecord | undefined {

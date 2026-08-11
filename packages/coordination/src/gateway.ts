@@ -230,6 +230,8 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   readonly #rates = new Map<MageHandle, MageRates | undefined>();
   /** Every mage's held nodes and mastery, from one pass. See {@link #holdings}. */
   #heldByMage: Map<MageHandle, Map<ContentId, Fp>> | undefined;
+  /** Node id to whether this universe's ruleset permits its cell. See {@link #permitted}. */
+  readonly #permittedNode = new Map<ContentId, boolean>();
 
   /** Projects finished while this gateway was alive. Reporting only. */
   readonly #completed: CompletedEffort[] = [];
@@ -272,11 +274,12 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (rates === undefined) return [];
 
     const found: KnowledgeTarget[] = [];
+    const discarded = createRediscoveryClampCounter();
     const scanned = Math.min(this.#deps.catalog.nodeCount, MAX_FRONTIER_SCAN);
     for (let nodeId = 1; nodeId <= scanned && found.length < limit; nodeId += 1) {
       const node = this.#deps.catalog.node(nodeId);
       if (node === undefined) continue;
-      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
+      if (!this.#permitted(nodeId)) continue;
       if (this.knows(mage, nodeId)) continue;
       if (!this.#prerequisitesHeld(mage, node.prerequisites)) continue;
 
@@ -295,7 +298,13 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
         // not the accrual that pays it. The share that matters at 0.5.0 is
         // counted where the work happens, and folding scan-time quotes into it
         // would inflate the denominator with evaluations nobody paid for.
-        clampCounter: createRediscoveryClampCounter(),
+        //
+        // One throwaway for the whole scan rather than one per node. Nothing
+        // ever reads it, so what it accumulates cannot be observed — and a
+        // fresh object per candidate per mage per tick was a hundred thousand
+        // allocations a tick in a garbage collector that was already 13% of
+        // the run.
+        clampCounter: discarded,
       });
       found.push({ nodeId, tier: node.tier, remainingCost: Math.max(requirement - banked, 0) });
     }
@@ -325,7 +334,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
       const node = this.#deps.catalog.node(nodeId);
       if (node === undefined || node.tier > rates.depthCeiling) continue;
-      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
+      if (!this.#permitted(nodeId)) continue;
       if (this.knows(student, nodeId)) continue;
       if (!this.#prerequisitesHeld(student, node.prerequisites)) continue;
       best = nodeId;
@@ -341,7 +350,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (!this.#deps.store.scribingAvailable) return undefined;
     const node = this.#deps.catalog.node(nodeId);
     if (node === undefined) return undefined;
-    if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return undefined;
+    if (!this.#permitted(nodeId)) return undefined;
     if (!this.knows(mage, nodeId)) return undefined;
     return { nodeId, tier: node.tier, remainingCost: node.scribeCost };
   }
@@ -669,6 +678,29 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     return this.#heldByMage.get(mage) ?? EMPTY_HOLDINGS;
   }
 
+  /**
+   * Whether this universe's ruleset permits the cell a node sits in.
+   *
+   * `permits` reads two bitmasks and then walks the edict list, and it decodes
+   * the cell's two axes with a division to do it. The frontier scan asks it once
+   * per candidate per mage, and the teachability scan once per held node per
+   * pair, so a tick at a thousand mages asked the same few hundred questions
+   * hundreds of thousands of times. It was 12% of a profiled run.
+   *
+   * Memoized on the gateway rather than anywhere longer-lived, because a gateway
+   * is a view of one phase and a ruleset can be changed by an edict between two
+   * of them — see the staleness note at the top of this file. Cached per *node*
+   * rather than per cell because the caller always has a node id and the extra
+   * entries cost one map slot each.
+   */
+  #permitted(nodeId: ContentId): boolean {
+    const known = this.#permittedNode.get(nodeId);
+    if (known !== undefined) return known;
+    const legal = permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId));
+    this.#permittedNode.set(nodeId, legal);
+    return legal;
+  }
+
   #ratesOf(mage: MageHandle): MageRates | undefined {
     if (this.#rates.has(mage)) return this.#rates.get(mage);
     const rates = this.#deps.ratesOf(mage);
@@ -698,7 +730,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (rates === undefined) return false;
     const node = this.#deps.catalog.node(nodeId);
     if (node === undefined || node.tier > rates.depthCeiling) return false;
-    if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return false;
+    if (!this.#permitted(nodeId)) return false;
     if (this.knows(student, nodeId)) return false;
     return this.#prerequisitesHeld(student, node.prerequisites);
   }
