@@ -16,43 +16,45 @@
  * `mages-and-species` task 9.9: *"implement the time-to-tier measurement and
  * assert at least four species differ by more than the observed cross-seed
  * spread."* The measurement is implemented and is exercised here. **The
- * assertion is not made, because three species differ and not four**, and the
- * task's box is left unticked.
+ * assertion is not made, because the species fall into two bands of three
+ * rather than into four separable columns**, and the task's box is left
+ * unticked.
  *
- * ## The numbers, so the reader can check the arithmetic
+ * ## Re-measured after the `acquire` hook was wired in
  *
- * Time to a mage of tier 2, in world ticks, over eight seeds of a sixty-year
- * run — measured on 2026-08-11 while authoring this file. `null` is censored:
- * the species had no tier-2 mage when the run ended.
+ * These numbers moved, and the reason is worth recording because the previous
+ * reading would have sent someone tuning the wrong thing. `applyAcquire` was
+ * called from tests and from nowhere else, so a tradition's `initialMastery`
+ * never reached a created instance and every mage finished her research at the
+ * placeholder `fp(256)`. Wiring the hook into the real acquisition path made
+ * the slow species dramatically faster: **draconic went from `[63, 548]` ticks
+ * to `[33, 104]`, and orc stopped being censored at all** — it had no tier-2
+ * mage in seven of eight seeds and now reaches tier 2 in all six.
+ *
+ * A universe in which the slow species arrive at all is a different
+ * measurement from one in which they time out, so the earlier assertions here
+ * are obsolete rather than weakened.
+ *
+ * Time to a mage of tier 3, in world ticks, six seeds of a sixty-year run:
  *
  * ```text
- *  draconic  383   63  548 null  249 null null  419
- *  dwarf      17   17   17   17   17   17   17   17
- *  elf        20   22   20   20   49   21   20   20
- *  gnome      17   17   16   17   16   17   16   17
- *  human      17   17   17   17   17   17   17   17
- *  orc      null null null null null null  316 null
+ *  gnome     [41,  55]        dwarf  [45,  57]        human  [46,  55]
+ *  elf       [60, 127]        orc    [61,  76]     draconic  [71, 345]
  * ```
  *
- * Read as intervals, that is three separated bands and two things that are not
- * bands:
+ * Two bands, cleanly separated: every fast species arrives strictly before
+ * every slow one, in every seed. Inside a band nothing separates — which is
+ * exactly why 9.9 stays unticked. The task asks for species to differentiate,
+ * and three of them arriving together is three species wearing one trait.
  *
- * - **dwarf, gnome and human are one band**, `[16, 17]`. They are not
- *   distinguishable from each other at this tier by this instrument, and no
- *   amount of seeds would separate values that differ by one tick.
- * - **elf**, `[20, 49]`, is strictly above that band in every seed.
- * - **draconic**, `[63, 548]`, is strictly above elf in every seed it reached
- *   tier 2 at all.
- * - **orc** is censored in seven seeds of eight — and in the eighth it arrives
- *   at tick 316, *inside* draconic's interval. So orc cannot be counted as a
- *   separated sixth: whether it separates depends on the horizon, and the run
- *   that goes far enough to decide is the run in which it overlaps.
+ * Tier 3 is asserted rather than tier 2 because it is the tier
+ * `species-traits` names, and because at tier 2 the bands blur: draconic's
+ * `[33, 104]` now overlaps elf's `[34, 63]`, so tier 2 would report *fewer*
+ * distinguishable groups. Both tiers are printed, so a reader who suspects the
+ * tier was chosen to flatter the result can check.
  *
- * Three mutually separated species, then: one of the tied trio, elf, draconic.
- * Four would need either a censoring convention — which `contracts.md` §7's
- * `timeToTierBySpecies` owns and `agent-interface` task group 6 is where it is
- * pinned, not here — or content that separates dwarf, gnome and human, which is
- * a tuning question and `release-plan.md` forbids answering one before 0.5.0.
+ * Separating dwarf, gnome and human is a tuning question, and
+ * `release-plan.md` forbids answering one before 0.5.0.
  *
  * ## Why sixty years and six seeds
  *
@@ -106,6 +108,8 @@ interface Column {
 /** Columns per tier, keyed by the tier they were measured at. */
 let byTier: ReadonlyMap<number, readonly Column[]>;
 let columns: readonly Column[];
+/** The same, at tier 3 — the tier `species-traits` names. */
+let tierThree: readonly Column[] = [];
 
 beforeAll(async () => {
   const content = referenceContent();
@@ -125,6 +129,7 @@ beforeAll(async () => {
     ]),
   );
   columns = byTier.get(TIER) ?? [];
+  tierThree = byTier.get(3) ?? [];
 }, TIMEOUT_MS);
 
 describe('time to tier, by species', () => {
@@ -184,41 +189,51 @@ describe('time to tier, by species', () => {
     }
   });
 
-  it('separates exactly three species, which is one short of what 9.9 asks', () => {
-    const interval = (name: string): { low: number; high: number } | undefined => {
-      const column = columns.find((entry) => entry.name === name);
-      if (column === undefined || column.observed.length === 0) return undefined;
+  it('separates two bands of three, not six species, and 9.9 stays unchecked', () => {
+    // Rewritten after the `acquire` hook was wired into the real acquisition
+    // path. Every number below moved, and all of them for the better: draconic
+    // went from [63, 548] ticks to [33, 104], and orc stopped being censored
+    // altogether — it was censored in seven of eight seeds and now reaches
+    // tier 2 in all six. A universe in which the slow species arrive at all is
+    // a different measurement from one in which they time out, so the previous
+    // assertions are not weakened here, they are obsolete.
+    //
+    // What the data now supports is a two-band split rather than six ordered
+    // species, and the bands are cleanest at tier 3 — which is the tier
+    // `species-traits` names, so it is the tier asserted.
+    const interval = (name: string): { low: number; high: number } => {
+      const column = tierThree.find((entry) => entry.name === name);
+      if (column === undefined || column.observed.length === 0) {
+        throw new Error(`${name} was censored in every seed and cannot be banded`);
+      }
       return { low: Math.min(...column.observed), high: Math.max(...column.observed) };
     };
 
-    const human = interval('human');
-    const elf = interval('elf');
-    const draconic = interval('draconic');
-    if (human === undefined || elf === undefined || draconic === undefined) {
-      throw new Error('a species that should always reach tier 2 was censored in every seed');
-    }
+    const fast = ['gnome', 'dwarf', 'human'].map(interval);
+    const slow = ['elf', 'orc', 'draconic'].map(interval);
 
-    // Separated means the observed intervals do not overlap: in every seed the
-    // faster species arrived strictly earlier. That is a stronger statement than
-    // "the means differ by more than the spread" and is the one the data
-    // supports.
-    expect(human.high).toBeLessThan(elf.low);
-    expect(elf.high).toBeLessThan(draconic.low);
+    // The bands separate: in every seed, every fast species arrived strictly
+    // before every slow one. That is a stronger statement than comparing means,
+    // and it is the one the observed intervals actually support.
+    const slowest = Math.max(...fast.map((entry) => entry.high));
+    const earliest = Math.min(...slow.map((entry) => entry.low));
+    expect(slowest).toBeLessThan(earliest);
 
-    // And the three that are not separated, asserted so the shortfall is a fact
-    // in the suite rather than a claim in a comment.
-    const dwarf = interval('dwarf');
-    const gnome = interval('gnome');
-    if (dwarf === undefined || gnome === undefined) throw new Error('a fast species was censored');
+    // Inside a band nothing separates, which is why 9.9 stays unchecked: the
+    // task asks for species to differentiate, and three of them arriving
+    // together is three species wearing one trait.
     const overlaps = (a: { low: number; high: number }, b: { low: number; high: number }): boolean =>
       a.low <= b.high && b.low <= a.high;
-    expect(overlaps(dwarf, gnome)).toBe(true);
-    expect(overlaps(dwarf, human)).toBe(true);
-
-    // Orc is the sixth, and it is censored rather than slow. Recorded, not
-    // counted: see the module note for the eighth seed in which it is not.
-    const orc = columns.find((entry) => entry.name === 'orc');
-    expect(orc?.observed).toHaveLength(0);
-    expect(orc?.censored).toBe(SEEDS.length);
+    const [gnome, dwarfBand, humanBand] = fast;
+    const [elfBand, orcBand] = slow;
+    if (gnome === undefined || dwarfBand === undefined || humanBand === undefined) {
+      throw new Error('a fast-band species was censored in every seed');
+    }
+    if (elfBand === undefined || orcBand === undefined) {
+      throw new Error('a slow-band species was censored in every seed');
+    }
+    expect(overlaps(gnome, dwarfBand)).toBe(true);
+    expect(overlaps(dwarfBand, humanBand)).toBe(true);
+    expect(overlaps(elfBand, orcBand)).toBe(true);
   });
 });
