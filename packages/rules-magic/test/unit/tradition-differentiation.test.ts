@@ -32,6 +32,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { createRediscoveryClampCounter } from '@mm/primitives';
 import { FP_ONE, fromInt, mul } from '@mm/sim-core';
 import type { Ruleset } from '@mm/state';
 import { EDICT_KIND, LOCATION_KIND } from '@mm/state';
@@ -295,6 +296,7 @@ function agreementScenario(tradition: number) {
     learnRate: LEARN_RATE,
     researchRate: RESEARCH_RATE,
     rediscoveryAffinity: FP_ONE,
+    clampCounter: createRediscoveryClampCounter(),
     // The two tradition-derived inputs a research step legitimately takes.
     initialMastery: terms.initialMastery,
     locationKind: store.personalLocationKind,
@@ -385,6 +387,7 @@ describe('all three traditions agree outside their differing hooks', () => {
       learnRate: LEARN_RATE,
       researchRate: RESEARCH_RATE,
       rediscoveryAffinity: FP_ONE,
+      clampCounter: createRediscoveryClampCounter(),
       nodeId: CHILD_NODE,
     };
 
