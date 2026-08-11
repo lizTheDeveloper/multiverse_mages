@@ -12,6 +12,8 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import { readFileSync } from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -65,6 +67,35 @@ describe('audio cue schema', () => {
       'voice-line.json': '[]',
     });
     expect(validateAudioContent(source).diagnostics).toHaveLength(1);
+  });
+});
+
+/**
+ * `check:audio` is the only thing that validates the audio set — audio is
+ * deliberately outside `CONTENT_FILES`, so `check:content` and every
+ * schema verifier walk straight past it. That makes the gate itself the whole
+ * guarantee, and the two CI paths are not one file: `verify` is what the
+ * self-hosted runner invokes, while the Actions workflow lists its steps by
+ * hand and is the only gate that sees fork PRs. A step present in one and
+ * absent from the other is a hole in exactly half the checks.
+ */
+describe('the audio validation gate', () => {
+  it('is part of npm run verify', () => {
+    const manifest = JSON.parse(
+      readFileSync(new URL('../../../../package.json', import.meta.url), 'utf8'),
+    ) as { scripts: Record<string, string> };
+
+    expect(manifest.scripts['check:audio']).toBeDefined();
+    expect(manifest.scripts['verify']).toContain('check:audio');
+  });
+
+  it('is a step in the GitHub Actions workflow, in both jobs', () => {
+    const workflow = readFileSync(
+      new URL('../../../../.github/workflows/ci.yml', import.meta.url),
+      'utf8',
+    );
+    const steps = workflow.split('\n').filter((line) => line.includes('npm run check:audio'));
+    expect(steps.length).toBe(2);
   });
 });
 

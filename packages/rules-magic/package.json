@@ -1,11 +1,17 @@
 {
   "name": "@mm/rules-magic",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Grid legality, nodes, knowledge instances, and tradition hooks. Skeleton — the rules land in knowledge-model.",
+  "description": "Grid legality, node prerequisites, dormancy, knowledge instances, and tradition hooks — the behaviour behind contracts.md §1.5, §2.2–§2.5 and §3.",
   "license": "AGPL-3.0-or-later",
   "author": "Ann Kelner",
   "type": "module",
+  "dependencies": {
+    "@mm/content": "*",
+    "@mm/primitives": "*",
+    "@mm/sim-core": "*",
+    "@mm/state": "*"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -20,7 +26,13 @@
   "engines": {
     "node": ">=22.0.0 <23"
   },
-  "//": "Rules-path code: no runtime dependencies, no Node built-ins, integer-only. Per contracts.md §5 it may import sim-core, content, and state — and MUST NOT import rules-world or agent-api.",
+  "//": "Rules-path code: no third-party runtime dependencies, no Node built-ins, integer-only. Per contracts.md §5 it may import sim-core, content, state and primitives — and MUST NOT import rules-world or agent-api. @mm/content is declared but imported for TYPES ONLY, following @mm/primitives: content's public surface re-exports a filesystem-reading loader, and this package builds under `types: []` so that it runs unchanged in a browser. Content facts arrive as a caller-supplied registry.",
+  "dependencies": {
+    "@mm/content": "*",
+    "@mm/primitives": "*",
+    "@mm/sim-core": "*",
+    "@mm/state": "*"
+  },
   "scripts": {
     "build": "tsc --build"
   }

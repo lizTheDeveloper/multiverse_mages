@@ -29,8 +29,11 @@ import {
   COMBATANT_SOURCE_KIND,
   EDICT,
   EDICT_KIND,
+  EFFORT_KIND,
+  EFFORT_PROGRESS,
   ENCOURAGED_CELL,
   EVER_KNOWN,
+  GOAL_COMMITMENT,
   GRIMOIRE,
   HOLDER_KIND,
   KNOWLEDGE_INSTANCE,
@@ -70,6 +73,7 @@ export interface PopulatedWorld {
   readonly university: EntityHandle;
   readonly library: EntityHandle;
   readonly grimoire: EntityHandle;
+  readonly effort: EntityHandle;
 }
 
 /**
@@ -174,15 +178,37 @@ export function populatedWorld(): PopulatedWorld {
   const everKnown = state.entities.create();
   attachRecord(state, EVER_KNOWN, everKnown, { nodeId: 7 });
 
+  // On the mage's own handle, which is the whole point of the component: a
+  // commitment is found by the handle every other subsystem already holds, and
+  // a mage with no row is a mage who has never chosen.
+  attachRecord(state, GOAL_COMMITMENT, mage, {
+    goalId: 5,
+    targetNodeId: 7,
+    adoptedTick: 30,
+    score: 640,
+  });
+
+  // An entity of its own, not the mage's handle: a mage may have several
+  // projects set down at once, which is the whole reason progress is not stored
+  // on the commitment. See `components.ts`.
+  const effort = state.entities.create();
+  attachRecord(state, EFFORT_PROGRESS, effort, {
+    subject: mage,
+    kind: EFFORT_KIND.research,
+    nodeId: 9,
+    counterparty: 0,
+    progress: 3 * FP_ONE,
+  });
+
   assertEveryWorldComponentPopulated(state);
-  return { state, universe, mage, cohort, university, library, grimoire };
+  return { state, universe, mage, cohort, university, library, grimoire, effort };
 }
 
 /** Fails if any world component has no rows, so "every component" stays true. */
 export function assertEveryWorldComponentPopulated(state: SimState): void {
   // Widened to the base spec type on purpose: `WORLD_COMPONENTS` is a `const`
-  // tuple, so its element type is a union of twelve distinct layouts and
-  // `componentOf` would try to infer one of them for all twelve.
+  // tuple, so its element type is a union of every declared layout and
+  // `componentOf` would try to infer one of them for all of them.
   const specs: readonly ComponentSpec<ComponentFields>[] = WORLD_COMPONENTS;
   const empty = specs.filter((spec) => componentOf(state, spec).size === 0).map((spec) => spec.name);
   if (empty.length > 0) {

@@ -67,10 +67,10 @@ const REPO_ROOT = resolveRoot(process.argv.slice(2));
 /**
  * Packages whose runtime dependency list must stay empty.
  *
- * The rules path in full, not just the core. `state` and the three `rules-*`
- * packages are loaded by the client, the server, and the Monte Carlo workers
- * alike, so a dependency in any of them is a surface on which those consumers
- * can disagree about what the simulation did.
+ * The rules path in full, not just the core. `state`, the three `rules-*`
+ * packages and `coordination` are loaded by the client, the server, and the
+ * Monte Carlo workers alike, so a dependency in any of them is a surface on
+ * which those consumers can disagree about what the simulation did.
  *
  * `agent-api` and `mc-harness` are deliberately absent. The harness may
  * legitimately want third-party tooling one day, and this list is a claim about
@@ -83,6 +83,7 @@ const PURE_PACKAGES = [
   'packages/rules-magic',
   'packages/rules-world',
   'packages/rules-raid',
+  'packages/coordination',
   'packages/primitives',
 ];
 

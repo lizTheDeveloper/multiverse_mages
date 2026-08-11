@@ -119,6 +119,97 @@ universal would silently pre-decide how raid theft works, which belongs to `raid
 
 Mages are individuals. Everyone else is not.
 
+**Goal commitment** — a separate component, keyed on the mage's own entity handle, and **present
+only while she has chosen a goal**.
+
+| Field | Type | Notes |
+|---|---|---|
+| `goalId` | `uint8` | `rules-world`'s permanent, append-only goal registry. `0` is `idle` |
+| `targetNodeId` | `uint16` | the node the goal is pointed at, or `0` for a goal that needs none |
+| `adoptedTick` | `int32` | the commitment clock, which hysteresis and the stagger both compare against |
+| `score` | `fp` | what it was adopted at. Reported, never compared — the incumbent is re-scored |
+
+**This is a deviation from this document as originally drawn, added during `mages-and-species`, and
+the third of its kind after `state` and `primitives` in §5.** `mages-and-species`' proposal says
+`state-schema` is *"consumed unchanged"*. This addition breaks that, and it is recorded here rather
+than absorbed quietly because the promise was made in writing and somebody planning against it
+should meet the correction where they read the original.
+
+The reasoning, in the order it forced the decision:
+
+- **A commitment must outlive a tick.** §7's autonomy has a commitment minimum and a hysteresis
+  margin, both of which compare `worldTick` against the tick a goal was adopted on. That comparison
+  needs the adoption tick to still be there next tick — and therefore after a save, because a
+  commitment that vanished on load would make a resumed run diverge from an uninterrupted one. That
+  is a desync in `pvp-server` and a silently spoiled baseline in Monte Carlo, and neither announces
+  itself.
+- **A JavaScript map beside the state was rejected first.** It is state that does not round-trip,
+  the defect `state`'s component model exists to prevent.
+- **Widening §1.2's mage row was rejected second, and this is why the addition is a component.** A
+  mage who has never chosen and a mage who chose `idle` are different states, and the autonomy layer
+  reads the difference. Fields exist for every mage, so telling those two apart on the mage row
+  would need a sentinel goal id — a tenth entry in a registry whose entire contract is that its ids
+  are permanent and mean one thing each. An absent component says the same thing with nothing
+  invented, and costs nothing for the mages not using it, which at any moment is most of them.
+- **The cost is a schema revision.** Adding a component means an older world snapshot is missing a
+  section, which `deserializeState` refuses. That is repaired by a world-schema migration in
+  `packages/state/src/migrations.ts`, which appends the empty section. It deliberately does **not**
+  bump `sim-core`'s `SNAPSHOT_VERSION`: that number is inside the hashed header, so moving it
+  changes every snapshot hash in the project and breaks every golden fixture with a version error
+  rather than a behaviour diff. The container and the component set are versioned separately, and
+  the second is inferred from the snapshot's own self-describing component tables.
+
+**Effort progress** — a separate component, **one entity per project**, present only for work a
+mage has actually started and not yet finished.
+
+| Field | Type | Notes |
+|---|---|---|
+| `subject` | `uint32` | the mage the work is counted against; for teaching, the **teacher** |
+| `kind` | `uint8` | research \| teaching \| scribing. `0` is the reserved null |
+| `nodeId` | `uint16` | the node being worked toward |
+| `counterparty` | `uint32` | the student, for a teaching effort; `0` for the other two |
+| `progress` | `fp` | work accumulated, in the unit `kind` implies |
+
+**This is the second deviation from this document as originally drawn, added during
+`mages-and-species`, and the fifth overall after `state`, `primitives` and `coordination` in §5 and
+the goal commitment above.** It is recorded here for the same reason that one is: `mages-and-species`
+promised `state-schema` would be *"consumed unchanged"*, and this breaks that promise a second time.
+
+The reasoning, in the order it forced the decision:
+
+- **Somebody had to own partial progress.** `rules-magic`'s `research` takes *"progress accumulated
+  before this step"* as a parameter and states that *"the caller owns storing it"*; teaching and
+  scribing have a cost to reach and no accumulator at all. Nothing owned it, so
+  `packages/coordination`'s three `contribute*` methods threw rather than invent a home for it —
+  which left mages choosing goals, holding them through hysteresis, and completing nothing.
+- **Storing it on the goal commitment was rejected first.** It is the obvious place and it is
+  wrong: hysteresis exists precisely to move a mage off a goal, so progress living on the
+  commitment would be destroyed by the mechanism most likely to touch it. A mage displaced from a
+  node after fifteen years of work would silently restart it at zero on returning, and no metric in
+  the project would attribute that loss to the rule that caused it. **Progress must outlive a goal
+  switch**, and that single requirement is what the shape below is derived from.
+- **Widening §1.2's mage row was rejected second, and for the same reasons as before.** Fields
+  exist for every mage, so a fixed row could carry only a fixed number of projects, chosen by
+  whoever wrote it; a mage with none would pay for them anyway; and "no project" would need a
+  sentinel node id. An absent row says all of that with nothing invented.
+- **A project is therefore an entity, keyed by its fields rather than by a handle.** A mage may
+  have several projects set down at once, so this cannot hang on her handle the way the goal
+  commitment does — the precedent is §1.1's `axisChangeCounters`, one entity per axis ever flipped.
+  All four addressing fields earn their place. `kind` separates work over the same node that is not
+  the same work: a mage who holds a node can be teaching it and writing it down at once, against
+  `teachCost` and `scribeCost` respectively, and without the discriminator a month at the desk
+  finishes a student's education. `counterparty` makes a lesson belong to the **pair**, because
+  §2.3 prices teaching as one cost for two people and both of them have goals pointed at it — the
+  teacher's `teach` and the student's `seek-teaching`. Two rows would let one lesson complete twice
+  and put two instances of one node in one student's head.
+- **The number of projects one mage may hold is bounded.** Without a bound the component grows with
+  *how often mages change their minds*, which is not a number the design controls; the bound is
+  `MAX_EFFORTS_PER_MAGE` in `packages/coordination/src/effort-store.ts`, and starting a project past
+  it gives up the least-invested one. Untuned, like every magnitude before 0.5.0.
+- **The cost is a second schema revision**, repaired exactly as the first one was: world-schema
+  revision 3 appends an empty `effort-progress` section, and `sim-core`'s `SNAPSHOT_VERSION` again
+  does not move. A revision-1 save reaches revision 3 by running both steps in turn.
+
 ### 1.3 Populace cohort (aggregate entity)
 
 | Field | Type | Notes |
@@ -171,6 +262,17 @@ make `libraryDependence` lie in the safe direction.
 **`mastery` thresholds.** `fp(1024)` is full mastery. Below `TEACH_THRESHOLD` a mage may not teach
 at all; between the threshold and full, teaching transmits at proportionally reduced mastery. "Loss"
 in the mastery scale is therefore defined, not implied.
+
+**The reduction is strict, and that is a rule rather than an artifact of the arithmetic.** A teacher
+anywhere below `fp(1024)` must produce a student strictly below her own mastery — the loss is
+floored at one unit, the finest quantity scale 1/1024 can represent, and only a teacher at exactly
+`fp(1024)` transmits without reduction. Stating it this way round is load-bearing because
+"proportionally reduced" alone does not survive fixed point: `mul` floors, so a teacher one unit
+short of full has a shortfall of `1`, and `mul(1, anything below one)` is `0`. Half the jitter range
+would therefore round the entire shortfall away and teach losslessly — from a teacher one ordinary
+decay tick below full, which is a reachable state and not a contrived one. Degradation would stop
+compounding down a chain and settle at a plateau, and `knowledgeHalfLife` would measure a decay that
+the rules had quietly stopped producing.
 
 **Derived, never stored:** whether a node "exists in the universe" is `count(instances of nodeId) > 0`,
 computed from an index maintained by the knowledge subsystem. Nothing may cache it in state.
@@ -239,10 +341,13 @@ serialized into snapshots.
   "form": "corpus",
   "classicalLabels": ["necromancy"],                 // display only, never mechanical.
                                                      // Vision §4's mapping table is authoritative
+  "v1": true,                                        // optional; flags membership of the 12-cell
+                                                     // v1 rectangle. Absent means not in v1
   "edicts": [],                                      // optional; "dispensation" | "interdiction".
                                                      // §1.1 requires the loader to reject a cell
                                                      // carrying both, which needs a slot to carry one
-  "nodes": ["rc-still-the-limb", "rc-puppet-flesh", "..."]
+  "nodes": ["rc-still-the-limb", "rc-puppet-flesh"]   // every id must resolve in node.json; there is
+                                                     // no elision syntax, "..." is not a contentId
 }
 ```
 
@@ -255,6 +360,8 @@ serialized into snapshots.
 {
   "id": "rc-puppet-flesh",
   "cell": "rego-corpus",
+  "name": "Puppet Flesh",           // display label; required, and not a mechanical value
+  "gloss": "Walk a body that is not yours, one limb at a time.",  // required; <= 400 chars
   "tier": 3,                        // 1..7; depth ceilings are per-species
   "prerequisites": ["rc-still-the-limb"],
   "researchCost": 4096,             // fp; mage-months of self-directed work
@@ -262,8 +369,17 @@ serialized into snapshots.
   "scribeCost": 2048,               // fp; scribe-months + materials
   "rediscoveryMultiplier": 3072,    // fp; applied to researchCost when relearning a lost node.
                                     // Content invariant: >= fp(3072). Species rediscoveryAffinity is
-                                    // applied, then a hard fp(3072) floor -- otherwise affinity alone
-                                    // drops the effective cost to 2.25x and falsifies the 0.3.0 claim.
+                                    // applied, then a hard fp(3072) floor -- otherwise the BEST
+                                    // rediscoverer's affinity alone drops the effective cost to
+                                    // 3072*1024/1792 = 1755, i.e. 1.71x, falsifying the 0.3.0 claim.
+                                    // (An earlier draft of this line said "2.25x". That number is
+                                    // 3072*768/1024 -- affinity as a MULTIPLIER, against a dwarf's
+                                    // value. It was the only sentence in this document written under
+                                    // that reading, and it taught an implementation the wrong
+                                    // direction: rules-magic shipped `mul` where every other artifact
+                                    // -- this field's own "fp DIVISOR" note in §2.4, the species data,
+                                    // the loader's 5376 authoring floor -- assumes `div`. Found when
+                                    // two agents independently reported the contradiction.)
                                     // Author v1 bases at >= fp(5376). NOT fp(4096) -- that number does
                                     // not achieve its own purpose: the best rediscoverer (gnome,
                                     // affinity 1792) turns 4096 into 4096*1024/1792 = 2340, BELOW the
@@ -271,7 +387,9 @@ serialized into snapshots.
                                     // 3072 * 1792 / 1024 = 5376
   "effects": [
     { "primitive": "direct-damage", "magnitude": 512, "target": "single", "durationTicks": 0 }
-  ]
+  ],
+  "tuningStatus": "untuned"         // "untuned" | "tuned". Same meaning as in §2.4: every magnitude
+                                    // above is a placeholder awaiting the balance harness
 }
 ```
 
@@ -283,6 +401,7 @@ prerequisite has a higher `tier`.
 ```jsonc
 {
   "id": "dwarf",
+  "name": "Dwarf",                  // display label; required, and not a mechanical value
   "lifespanMonths": 3000,           // ~250y
   "lifespanVarianceMonths": 360,
   "curiosity": 512,                 // fp; P(initiating self-directed research) scalar
@@ -298,18 +417,38 @@ prerequisite has a higher `tier`.
   "mageAptitude": 448,              // fp; share of matured students who become mages at all
   "laborAffinity": 1280,            // fp multiplier on non-magical labour productivity
   "affinities": { "terram": 1536, "ignem": 1152 },  // by form or by cell id
-  "personality": { "curiosity": 512, "ambition": 1024, "caution": 1024 }  // means; each defaults to fp(1024)
+  "personality": { "curiosity": 512, "ambition": 1024, "caution": 1024 },  // optional; means, each
+                                    // defaults to fp(1024)
+  "tuningStatus": "untuned"         // "untuned" | "tuned". Every magnitude above is a placeholder
+                                    // awaiting the balance harness, and no release before 0.5.0
+                                    // may claim any of them is balanced (release-plan.md)
 }
 ```
+
+**This field list is CI-enforced.** A conformance check parses the example above and compares it
+field-for-field against the species schema, failing the build when a field is added to one and not
+the other. The example is what an author copies when writing new species content, so a field
+missing from it is a broken starting point rather than a documentation nit — which is exactly how
+`name` and `tuningStatus` came to be required by the schema and absent from here.
+
+**Soldier effectiveness is deliberately absent, and the absence is load-bearing.** Vision §6 gives
+orcs "martial capability", and a `martialAffinity` field is the obvious way to encode it. It is not
+here because soldier effectiveness is only observable inside a raid, and raids belong to
+`raid-engagement`. Adding the field now would ship a species trait that nothing reads, tuned against
+no measurement, from a capability with less information than the one that will eventually need it.
+If `raid-engagement` wants it, that change amends this section with a use for it in hand.
 
 ### 2.5 `tradition.json`
 
 ```jsonc
 {
   "id": "art-of-memory",
+  "name": "The Art of Memory",
   "hooks": {
     "acquire": { "kind": "standard" },
-    "store":   { "kind": "palace", "params": { "slotsPerMage": 12, "lootable": false, "burnable": false } },
+    "store":   { "kind": "palace",
+                 "params": { "slotsPerMage": 12, "lootable": false, "burnable": false,
+                             "libraryDepthCoefficient": 768 } },
     "cast":    { "kind": "standard" },
     "cost":    { "kind": "standard" }
   }
@@ -321,10 +460,61 @@ a closed, enumerated set implemented in code; `params` are data. Adding a new `k
 change that must update this document. This cap is the mechanism that keeps traditions from
 defeating primitive-level balance.
 
+**The enumeration, normatively.** This table is the document half of that rule, and a test compares
+it against `packages/content/src/hooks.ts` character for character. Without it, "adding a kind must
+update this document" named no place in the document to update, and the obligation could be
+honoured by writing nothing.
+
+| Hook | Kinds |
+|---|---|
+| `acquire` | `standard`, `true-name` |
+| `store` | `standard`, `palace` |
+| `cast` | `standard`, `prepared` |
+| `cost` | `standard`, `prepaid` |
+
+**Across a portal the hooks split by clock** (`vision.md` §4a): `acquire` and `store` resolve to the
+mage's **home** tradition, because acquiring and holding knowledge are world-time acts; `cast` and
+`cost` resolve to the **host's**, because releasing a spell happens under the host's sky. The single
+arbitration function is `hookFor(hook, homeTraditionId, hostTraditionId)` in `@mm/rules-magic`, and
+it is the only place outside the four dispatch points permitted to read a `traditionId`.
+
 ### 2.6 `primitive.json`
 
 Declares the units and stacking rule for each effect primitive. See §3 — the table there is
 normative and this file must match it.
+
+### 2.7 `territory.json`
+
+```jsonc
+{
+  "id": "arable-lowland",
+  "name": "The Arable Lowland",
+  "gloss": "The ordinary country most people live in, and the reason there are most people.",
+  "landUnits": 1600,             // how much of this region the universe holds. A count, not fp
+  "capacityPerLandUnit": 20480,  // fp; people one land unit carries. 20480 = 20 people
+  "tuningStatus": "untuned"
+}
+```
+
+**Territory is the fixed resource, and that is its entire job.** Carrying capacity `K` is derived
+from `Σ landUnits × capacityPerLandUnit` because nothing a universe does during a run creates land.
+Every other economic quantity a universe holds — the materials stock above all — is something the
+universe produces, so deriving `K` from one of those makes `K` a function of its own consequences:
+more people produce more materials, more materials raise `K`, and the population bound is whatever
+number the run happened to reach. This file exists so that the bound is a property of the world
+rather than of the run's length.
+
+Materials and completed university seats still *modulate* `K` — a well-supplied territory holds more
+people than a bare one — but only as a **bounded multiplier** on the territory term, never as an
+addend that can grow without limit. `packages/rules-world/src/economy/carrying-capacity.ts` states
+the shape and the ceiling it implies.
+
+`landUnits` is a per-universe endowment carried in content because a simulation instance holds
+exactly one universe (§1.1). When that stops being true — a raid that takes ground, a scenario that
+seeds a smaller world — `landUnits` moves to §1.1 and this record keeps `capacityPerLandUnit`, which
+is a property of the *kind* of country and not of who holds it.
+
+**Every magnitude here is untuned** and carries `tuningStatus` saying so.
 
 ---
 
@@ -510,8 +700,9 @@ packages/
   primitives      §3 stacking arithmetic and cap clamping.                → sim-core, content (types only)
   rules-magic     grid legality, nodes, knowledge instances, traditions. → sim-core, content, state, primitives
   rules-world     mages, species, populace, universities, economy.        → sim-core, content, state, primitives
-  rules-raid      engagement space, combat, objectives, consequences.     → sim-core, content, state, primitives, rules-magic, rules-world
-  agent-api       observation/action space, legality masks.               → sim-core, content, state, primitives, rules-*
+  rules-raid      engagement space, combat, objectives, consequences.     → sim-core, content, state, primitives, rules-magic, rules-world, coordination
+  coordination    the world step loop, and the rules-world → rules-magic port. → sim-core, content, state, primitives, rules-magic, rules-world
+  agent-api       observation/action space, legality masks.               → sim-core, content, state, primitives, rules-*, coordination
   mc-harness      worker pool, sweeps, balance metrics.                   → agent-api
   client-electron renderer. Reads snapshots. Computes no rules.           → agent-api (read path only)
   server          authoritative lockstep, Hetzner deployment.             → agent-api
@@ -546,6 +737,28 @@ here; a new package would add build infrastructure — its own `tsconfig`, its o
 dependency-purity check, its own place in this diagram — to hold two files. Boundaries that are
 only true in practice, not enforced anywhere, are the ones that get "tidied up" by someone who
 does not know why they were drawn that way.
+
+**`coordination` is the third deviation, added during `mages-and-species`, and it is rule 3's own
+coordinating layer given a home.** Rule 3 says the `rules-magic`/`rules-world` interaction *"lives
+in a coordinating layer"* without naming one, and the two candidates this list already held both
+fail a **world** loop:
+
+- **`rules-raid`** may import both, and the dependency-graph test names it as the example. But this
+  list defines it as *"engagement space, combat, objectives, consequences"*, and a world tick is
+  none of those. Putting the world loop there makes a headless Monte Carlo worker load the combat
+  package in order to advance a month, and hands ownership of 0.4.0's central loop to
+  `raid-engagement`, a capability that has not started. It also inverts §0's clock rule: an
+  engagement *freezes* world time, so the raid layer is the thing that pauses the world loop, and
+  one module should not be both the thing paused and the thing pausing.
+- **`agent-api`** may import every `rules-*` package, but rule 4 runs the dependency one way only.
+  A world loop living there could never be reached by `rules-raid` when a raid writes its
+  consequences back into world state — and the observation layer becoming an input to the rules it
+  observes is precisely what rule 4 exists to prevent.
+
+So the layer gets a package, above both rules packages and below `agent-api`, with an inbound edge
+from `rules-raid` because a raid's consequences land in world state through it. It is in
+`PURE_PACKAGES`: it is rules-path code, loaded by the client, the server and the Monte Carlo
+workers alike.
 
 **Enforced rules:**
 

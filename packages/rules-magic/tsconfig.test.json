@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the rules-magic tests. Never emits into dist/. Tests see Node's ambient types because they read the workspace from disk to run the conformance scans.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./test",
+    "types": [
+      "node"
+    ],
+    "emitDeclarationOnly": true,
+    "outDir": "../../.tsbuild/rules-magic-test",
+    "tsBuildInfoFile": "../../.tsbuild/rules-magic-test.tsbuildinfo"
+  },
+  "include": [
+    "test/**/*.ts"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.json"
+    },
+    {
+      "path": "../content"
+    },
+    {
+      "path": "../primitives"
+    },
+    {
+      "path": "../state"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "name": "multiverse-mages",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Multiverse Mages — a real-time strategy game in which the player is the god of magic for a universe.",
   "license": "AGPL-3.0-or-later",
@@ -19,11 +19,12 @@
     "goldens:regen": "node --experimental-strip-types scripts/regen-goldens.mjs",
     "check:content": "node packages/content/bin/validate-content.mjs",
     "check:audio": "node packages/content/bin/validate-audio.mjs",
+    "check:coverage": "node scripts/check-primitive-coverage.mjs",
     "audio:generate": "node scripts/generate-audio.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "bench": "tsc -p packages/sim-core/bench/tsconfig.run.json && node scripts/bench.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run test"
+    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

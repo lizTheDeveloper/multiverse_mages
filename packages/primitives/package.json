@@ -1,6 +1,6 @@
 {
   "name": "@mm/primitives",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "The one implementation of effect-primitive stacking arithmetic and cap clamping, driven by the registry in @mm/content.",
   "license": "AGPL-3.0-or-later",

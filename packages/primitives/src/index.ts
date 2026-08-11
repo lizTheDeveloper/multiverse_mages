@@ -27,6 +27,11 @@
  * live in `content` (which is dependency-free by mechanical check, and so
  * cannot reach `sim-core`'s single shared `floorDiv`), and duplicating it into
  * each rules package is the exact failure §3 exists to prevent.
+ *
+ * `rediscovery.ts` is here for the same reason stated the other way round: the
+ * effective rediscovery multiplier is a number `rules-magic` and `rules-world`
+ * must agree on, §5 rule 3 forbids either importing the other, and they had in
+ * fact drifted into computing opposite things. See that module's note.
  */
 
 export type { CapContext, CapOutcome } from './caps.js';
@@ -43,3 +48,11 @@ export {
 
 export type { StackOptions, StackOutcome } from './stack.js';
 export { stackMagnitudes } from './stack.js';
+
+export type { RediscoveryClampCounter } from './rediscovery.js';
+export {
+  REDISCOVERY_FLOOR,
+  createRediscoveryClampCounter,
+  effectiveRediscoveryMultiplier,
+  speciesRediscoveryMultiplier,
+} from './rediscovery.js';

@@ -46,6 +46,7 @@ const NAMESPACES: readonly ContentNamespace[] = [
   'species',
   'tradition',
   'primitive',
+  'territory',
 ];
 
 /** Every string id to its integer, across every namespace. */
@@ -59,6 +60,7 @@ function fullMapping(registry: ContentRegistry): Record<string, number> {
     ['species', registry.species],
     ['tradition', registry.traditions],
     ['primitive', registry.primitives],
+    ['territory', registry.territories],
   ] as const;
   for (const [namespace, entries] of namespaced) {
     for (const entry of entries) mapping[`${namespace}:${entry.record.id}`] = entry.contentId;
@@ -130,18 +132,25 @@ describe('interning', () => {
   });
 
   it('pins the interned integers of the shipped content set', () => {
-    // A golden table, deliberately spanning all seven namespaces. If a future
+    // A golden table, deliberately spanning all eight namespaces. If a future
     // change renumbers content, this fails and the fix is a considered decision
     // about whether the contentRevision bump is acceptable — not a surprise.
     expect(registry.intern('technique', 'rego')).toBe(5);
     expect(registry.intern('form', 'nomen')).toBe(14);
     expect(registry.intern('cell', 'creo-animal')).toBe(1);
     expect(registry.intern('cell', 'rego-nomen')).toBe(70);
-    expect(registry.intern('node', 'il-count-the-doors')).toBe(1);
-    expect(registry.intern('node', 'rt-the-vaulted-hall')).toBe(50);
+    expect(registry.intern('node', 'can-call-the-pack')).toBe(1);
+    // 300, not 299: pre-authoring the other 58 cells brought 249 nodes, and
+    // `knowledge-model` task 2.5's `rn-keep-the-name-close` is the one neither
+    // side of that merge shared. Node ids intern in sort order, so it lands at
+    // 285 and every node after it shifts by one — the renumbering these
+    // assertions exist to surface.
+    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(285);
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(300);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
+    expect(registry.intern('territory', 'arable-lowland')).toBe(1);
   });
 
   it('round-trips an interned id back to its string', () => {
@@ -173,7 +182,28 @@ describe('contentRevision', () => {
     //
     // A failure here is not a test to update reflexively. It says the shipped
     // content set changed, and the question is whether that was intended.
-    expect(registry.contentRevision).toBe('a3e246fb601bc6c3c19e9682cd94e1ea');
+    //
+    // It has moved twice, both deliberately:
+    //
+    // a3e246fb601bc6c3c19e9682cd94e1ea -> 5444a4e2727aa7ba20ffaa4ef67981d1,
+    // when `knowledge-model` task 2.5 added the `rn-keep-the-name-close` node so
+    // that `rego-nomen` carries `concealment`, which the task list requires of
+    // that cell and which no rego cell previously supplied.
+    //
+    // 5444a4e2727aa7ba20ffaa4ef67981d1 -> 4f90d08940a3f0224893a2731eed41e9,
+    // when the other 58 cells were pre-authored: 249 nodes and every cell's
+    // `nodes` list. Nothing in the v1 subset changed, but the digest covers the
+    // whole shipped set by design, so it moves anyway. That is the correct
+    // behaviour and the reason `contentRevision` gates raiding rather than some
+    // v1-only fingerprint — two universes disagreeing about the inert 58 cells
+    // would disagree the moment either one enabled a cell.
+    //
+    // 4f90d08940a3f0224893a2731eed41e9 -> f813d90d3ddadb345c0a9d55505de432,
+    // when `territory.json` was added as the eighth content file (§2.7) so that
+    // carrying capacity could be derived from a fixed resource instead of from
+    // the materials stock, which by construction only grows. Five new records
+    // and a new namespace in the preimage; nothing existing changed a byte.
+    expect(registry.contentRevision).toBe('f813d90d3ddadb345c0a9d55505de432');
   });
 
   it('is stable across loads of identical content', () => {

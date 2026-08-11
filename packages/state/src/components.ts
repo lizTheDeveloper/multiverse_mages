@@ -296,6 +296,135 @@ export interface MageRecord {
 export const MAGE_FIELDS_MATCH: KeysMatch<MageRecord, typeof MAGE> = true;
 
 /**
+ * What a mage is currently working on (`contracts.md` §1.2, "Goal commitment").
+ *
+ * **Attached to the mage's own entity handle, and only while she has chosen.**
+ * That is the whole of the design, and both halves are load-bearing:
+ *
+ * - *On her own handle*, so the commitment is found by the handle everything
+ *   else already has, and so a dead mage's commitment leaves with her entity.
+ * - *Only while she has chosen*, so a mage who has never made a decision — every
+ *   mage on the tick she is promoted, and every mage in a universe whose
+ *   autonomy has not run yet — carries no row at all. The absence is the
+ *   distinction `select.ts` reads as `no-incumbent`, which is a different state
+ *   from a mage who considered her options and committed to `idle`. Widening
+ *   §1.2's mage row instead would have made those two indistinguishable without
+ *   a sentinel, and would have cost four fields on every mage in a Monte Carlo
+ *   run to carry a value most of them are not using.
+ *
+ * **Why this is a component rather than a value beside the state.** Hysteresis
+ * (`MIN_COMMITMENT_TICKS`) and the stagger both compare against `adoptedTick`,
+ * so the commitment has to survive from one tick to the next — and therefore
+ * across a save. A JavaScript map beside the state is the defect this file's
+ * header names: state that does not round-trip, showing up as a loaded game
+ * whose mages all reconsider on the first tick because none of them remembers
+ * committing to anything.
+ *
+ * `goalId` values are `@mm/rules-world`'s permanent, append-only goal registry.
+ * This package deliberately does not enumerate them: it would be a second copy
+ * of a table whose whole contract is that there is one, and `state` may not
+ * import a rules package to get the first.
+ */
+export const GOAL_COMMITMENT = {
+  name: 'goal-commitment',
+  fields: {
+    goalId: 'u8',
+    targetNodeId: 'u16',
+    adoptedTick: 'i32',
+    score: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface GoalCommitmentRecord {
+  /** `@mm/rules-world`'s `GOAL` registry. Permanent ids; `0` is `idle`. */
+  goalId: Enum8;
+  /** The node the goal is pointed at, or `0` for a goal that needs none. */
+  targetNodeId: ContentId;
+  /** The world tick the goal was adopted on. The commitment clock. */
+  adoptedTick: Tick;
+  /** The score it was adopted at, for reporting rather than for comparison. */
+  score: Fp;
+}
+
+export const GOAL_COMMITMENT_FIELDS_MATCH: KeysMatch<GoalCommitmentRecord, typeof GOAL_COMMITMENT> =
+  true;
+
+/**
+ * Unfinished work, one row per project (`contracts.md` §1.2, "Effort progress").
+ *
+ * `@mm/rules-magic`'s `research` takes *"progress accumulated before this step"*
+ * as a parameter and says the caller owns storing it; teaching and scribing have
+ * a cost to reach and no accumulator either. This component is what owns them.
+ *
+ * ## An effort is its own entity, keyed by the fields, not by a handle
+ *
+ * {@link GOAL_COMMITMENT} hangs on the mage's own handle because a mage has
+ * exactly one goal. A mage has any number of *projects* — that is the whole
+ * point of the decision recorded in §1.2: progress must outlive a goal switch,
+ * so a mage who is bumped off a node by hysteresis and returns to it two years
+ * later resumes rather than restarts. One row per mage cannot express that, and
+ * a fixed set of slots on the mage row expresses it only up to whatever number
+ * somebody guessed.
+ *
+ * So an effort is an entity of its own carrying its own subject, exactly as
+ * {@link AXIS_CHANGE_COUNTER} is one entity per axis and {@link PREPARED_SPELL}
+ * one per readied spell. A mage with nothing in flight carries no row anywhere,
+ * which is the same absence-means-absence property the goal commitment has and
+ * is why neither of them widened §1.2's mage row.
+ *
+ * The addressing key is `(subject, kind, nodeId, counterparty)`, and every part
+ * of it earns its place:
+ *
+ * - **`kind`** distinguishes projects over the same node that are not the same
+ *   project — see {@link EFFORT_KIND}. Without it, scribing finishes teaching.
+ * - **`counterparty`** makes a teaching effort belong to the *pair*.
+ *   `contracts.md` §2.3 prices teaching as one cost for the two of them, and
+ *   both mages have goals — the teacher's `teach` and the student's
+ *   `seek-teaching`. Two rows would let one lesson create two instances of the
+ *   node in one student's head. One row, contributed to from either side, is the
+ *   pair's project, and a teacher who takes a second student starts a second
+ *   one. It is `0` for research and scribing, which have no second party.
+ * - **`subject`** is the mage the effort is counted against, and for teaching it
+ *   is the *teacher*: she is the one who must hold the node, so she is the one
+ *   whose death ends the project rather than pausing it.
+ *
+ * ## What `progress` is measured in depends on `kind`, and that is not a hedge
+ *
+ * Research progress is compared against `researchRequirement`, which scales the
+ * node's `researchCost` by the researcher's own rates; teaching against the
+ * node's authored `teachCost`; scribing against the scribe-months its tier
+ * costs. Those are three different denominators because §2.3 authors three
+ * different costs, and normalizing them to a fraction here would put a division
+ * — and a rounding decision — in a component layout.
+ */
+export const EFFORT_PROGRESS = {
+  name: 'effort-progress',
+  fields: {
+    subject: 'u32',
+    kind: 'u8',
+    nodeId: 'u16',
+    counterparty: 'u32',
+    progress: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface EffortProgressRecord {
+  /** The mage this effort is counted against. For teaching, the teacher. */
+  subject: Handle;
+  /** {@link EFFORT_KIND}. Never `0` on a well-formed row. */
+  kind: Enum8;
+  /** The node being worked toward. */
+  nodeId: ContentId;
+  /** The student, for a teaching effort; `0` for research and scribing. */
+  counterparty: Handle;
+  /** Work accumulated so far, in the units {@link EFFORT_KIND} implies. */
+  progress: Fp;
+}
+
+export const EFFORT_PROGRESS_FIELDS_MATCH: KeysMatch<EffortProgressRecord, typeof EFFORT_PROGRESS> =
+  true;
+
+/**
  * An aggregate populace cohort (`contracts.md` §1.3).
  *
  * **This is a performance contract, not a modelling preference.** Simulating a
@@ -628,6 +757,8 @@ export const WORLD_COMPONENTS = [
   GRIMOIRE,
   KNOWLEDGE_INSTANCE,
   EVER_KNOWN,
+  GOAL_COMMITMENT,
+  EFFORT_PROGRESS,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

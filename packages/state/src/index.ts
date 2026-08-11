@@ -47,6 +47,7 @@ export {
   COMBATANT_SOURCE_KIND,
   EDICT_BUDGET_MAX,
   EDICT_KIND,
+  EFFORT_KIND,
   HOLDER_KIND,
   LOCATION_KIND,
   MAGE_ROLE,
@@ -60,6 +61,7 @@ export type {
   AxisKindValue,
   CombatantSourceKindValue,
   EdictKindValue,
+  EffortKindValue,
   HolderKindValue,
   LocationKindValue,
   MageRoleValue,
@@ -90,10 +92,12 @@ export type {
   CombatantRecord,
   ContentId,
   EdictComponentRecord,
+  EffortProgressRecord,
   EncouragedCellRecord,
   Enum8,
   EverKnownRecord,
   Fp,
+  GoalCommitmentRecord,
   GrimoireRecord,
   Handle,
   KeysMatch,
@@ -112,10 +116,12 @@ export {
   AXIS_CHANGE_COUNTER,
   COMBATANT,
   EDICT,
+  EFFORT_PROGRESS,
   ENCOURAGED_CELL,
   ENGAGEMENT_COMPONENTS,
   ENGAGEMENT_MAX_SLOTS,
   EVER_KNOWN,
+  GOAL_COMMITMENT,
   GRIMOIRE,
   KNOWLEDGE_INSTANCE,
   LIBRARY,
@@ -135,10 +141,22 @@ export {
   worldComponentsWithPosition,
 } from './components.js';
 
+export type { WorldSchemaMigration } from './migrations.js';
+export {
+  WORLD_SCHEMA_MIGRATIONS,
+  WORLD_SCHEMA_VERSION,
+  addEffortProgress,
+  addGoalCommitment,
+  loadWorldSnapshot,
+  migrateWorldEnvelope,
+  worldSchemaVersionOf,
+} from './migrations.js';
+
 export type { RowOf } from './records.js';
 export { attachRecord, collectRecords, readRecord } from './records.js';
 
 export {
+  assertTraditionSelected,
   canIssueEdict,
   captureRuleset,
   readRulesetForObservation,

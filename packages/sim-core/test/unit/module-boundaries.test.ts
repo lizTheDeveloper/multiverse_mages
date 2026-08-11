@@ -76,9 +76,9 @@ type Area = (typeof SCANNED_AREAS)[number];
  * must be written `import type` — they are erased at compile time and are not
  * permitted to become runtime coupling.
  *
- * Two packages here are not in §5's original list, both added by
- * `core-contracts` for the same underlying reason — §5 was written before
- * anyone tried to satisfy it — and both recorded beside the §5 diagram:
+ * Three packages here are not in §5's original list, all added for the same
+ * underlying reason — §5 was written before anyone tried to satisfy it — and
+ * all recorded beside the §5 diagram:
  *
  * - `state`: the shared world-state types have to live somewhere every
  *   `rules-*` package can reach. `sim-core` must stay content-agnostic, and
@@ -89,6 +89,12 @@ type Area = (typeof SCANNED_AREAS)[number];
  *   PURE_PACKAGES and may not take a runtime dependency, and §3 forbids
  *   re-deriving a floor outside the one shared helper, so it can live in
  *   neither and needs a package between them.
+ * - `coordination`: rule 3's coordinating layer, for the **world** loop. The
+ *   two places §5 offered both fail it — `rules-raid` is defined as the
+ *   engagement space and would make a headless world tick load the combat
+ *   package, and `agent-api` cannot be reached by `rules-raid` under rule 4.
+ *   `rules-raid` is given an inbound edge to it, since a raid's consequences
+ *   land in world state through the same layer.
  */
 const ALLOWED: Readonly<Record<string, { value: readonly string[]; typeOnly: readonly string[] }>> =
   {
@@ -99,6 +105,18 @@ const ALLOWED: Readonly<Record<string, { value: readonly string[]; typeOnly: rea
     'rules-magic': { value: ['sim-core', 'content', 'state', 'primitives'], typeOnly: [] },
     'rules-world': { value: ['sim-core', 'content', 'state', 'primitives'], typeOnly: [] },
     'rules-raid': {
+      value: [
+        'sim-core',
+        'content',
+        'state',
+        'primitives',
+        'rules-magic',
+        'rules-world',
+        'coordination',
+      ],
+      typeOnly: [],
+    },
+    coordination: {
       value: ['sim-core', 'content', 'state', 'primitives', 'rules-magic', 'rules-world'],
       typeOnly: [],
     },
@@ -111,6 +129,7 @@ const ALLOWED: Readonly<Record<string, { value: readonly string[]; typeOnly: rea
         'rules-magic',
         'rules-world',
         'rules-raid',
+        'coordination',
       ],
       typeOnly: [],
     },
@@ -435,6 +454,35 @@ describe('the workspace dependency graph matches contracts.md §5', () => {
 
   it('grants no package an edge §5 withholds', () => {
     expect(violationsOf(workspaceEdges, workspacePackages)).toEqual([]);
+  });
+
+  it('keeps rules-magic clear of rules-world and agent-api in the real tree (rules 3, 4)', () => {
+    // `violationsOf` already covers this in general, and this asserts it
+    // specifically, because `rules-magic` is the package whose two forbidden
+    // edges are the *tempting* ones. Everything a knowledge operation wants —
+    // a mage's `learnRate`, a species' `retention`, the materials balance —
+    // lives in `rules-world`, and the one-line fix for needing it is the import
+    // that makes the graph cyclic. The alternative §5 prescribes is that those
+    // arrive as caller-supplied parameters, which is what
+    // `packages/rules-magic/src/world-inputs.ts` exists to type.
+    //
+    // Named rather than left to the general check so that the failure message a
+    // future author sees says which rule they broke, on the day they break it.
+    const magic = workspaceEdges.filter((edge) => edge.pkg === 'rules-magic');
+
+    // Not vacuous: rules-magic imports real workspace packages, so an empty
+    // result below means "no forbidden edges", not "no edges parsed at all".
+    const workspaceTargets = magic
+      .filter((edge) => edge.specifier.startsWith(WORKSPACE_SCOPE))
+      .map((edge) => edge.specifier.slice(WORKSPACE_SCOPE.length).split('/')[0]);
+    expect(workspaceTargets.length).toBeGreaterThan(0);
+    expect(new Set(workspaceTargets)).toContain('state');
+
+    for (const forbidden of ['rules-world', 'agent-api']) {
+      expect(
+        magic.filter((edge) => edge.specifier.slice(WORKSPACE_SCOPE.length).split('/')[0] === forbidden),
+      ).toEqual([]);
+    }
   });
 
   it('keeps sim-core free of workspace and Node built-in imports (rule 1)', () => {

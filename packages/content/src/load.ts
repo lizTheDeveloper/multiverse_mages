@@ -58,6 +58,7 @@ import type {
   PrimitiveRecord,
   SpeciesRecord,
   TechniqueRecord,
+  TerritoryRecord,
   TraditionRecord,
 } from './types.js';
 
@@ -80,12 +81,75 @@ export const V1_FORM_COUNT = 4;
  * Authoring floor for `rediscoveryMultiplier` in v1 content.
  *
  * `contracts.md` §2.3 sets the hard invariant at `fp(3072)` and then asks v1 to
- * author at or above `fp(4096)`, because species `rediscoveryAffinity` is
+ * author at or above `fp(5376)`, because species `rediscoveryAffinity` is
  * applied *before* the `fp(3072)` floor: a node authored at the floor has every
  * species clamped to the same effective cost, and the trait stops existing.
  * Enforcing the guidance is what keeps that from happening by accident.
+ *
+ * The number is `fp(5376)` and not the `fp(4096)` this constant originally held.
+ * §2.3 now rejects `fp(4096)` by name, because it does not achieve its own
+ * purpose: the best rediscoverer in v1 species content is the gnome at affinity
+ * `fp(1792)`, and `4096 × 1024 / 1792 = 2340` lands *below* the hard floor, so
+ * the strongest instance of the trait is clamped flat and does nothing at all.
+ * Break-even is `3072 × 1792 / 1024 = 5376`.
+ *
+ * It is a literal rather than a value derived from the loaded species records,
+ * deliberately. Deriving it would make whether `node.json` loads depend on
+ * whoever last edited `species.json`, so a species change would surface as a
+ * node rejection. The coupling is instead asserted from
+ * `test/unit/shipped-content.test.ts`, which recomputes break-even from the
+ * actual best affinity and fails if the species side moves out from under this
+ * number — a test failure that names the real cause.
  */
-export const V1_REDISCOVERY_AUTHORING_FLOOR = 4096;
+export const V1_REDISCOVERY_AUTHORING_FLOOR = 5376;
+
+/**
+ * Fixed-point scale and ceiling, restated here because `content` carries no
+ * runtime dependencies — not even on `sim-core`, which owns the real ones.
+ * Asserted equal to `sim-core`'s from `test/unit/shipped-content.test.ts`.
+ */
+const FP_SCALE = 1024;
+const FP_CEILING = 2147483647;
+
+/**
+ * The least `rediscoveryAffinity` any species may carry, as a divisor.
+ *
+ * Affinity divides, so the *smallest* affinity produces the *largest* effective
+ * rediscovery multiplier and therefore the largest requirement. v1 species
+ * content bottoms out at the orc's `fp(512)`, which doubles the authored
+ * multiplier — that is the worst case the rules path must survive.
+ *
+ * A literal rather than a value derived from `species.json`, for the same
+ * reason `V1_REDISCOVERY_AUTHORING_FLOOR` is one: deriving it would make
+ * whether `node.json` loads depend on whoever last edited the species records.
+ * `test/unit/shipped-content.test.ts` asserts the coupling and fails naming the
+ * real cause if a species is ever authored below this.
+ */
+export const WORST_REDISCOVERY_AFFINITY = 512;
+
+/** `contracts.md` §2.3's hard floor, below which the effective multiplier clamps. */
+const REDISCOVERY_HARD_FLOOR = 3072;
+
+/**
+ * Whether the rules path can actually compute this node's rediscovery cost.
+ *
+ * `researchRequirement` evaluates `mul(researchCost, effectiveMultiplier)`, and
+ * `mul` throws `RangeError` rather than saturating — deliberately, because a
+ * silently saturated cost is a balance change nobody authored. The schema
+ * admits `researchCost` and `rediscoveryMultiplier` up to `fp(1073741823)`
+ * each, and their product overflows long before that, so without this check
+ * content validation accepts a node that makes the simulation throw the first
+ * time anyone tries to rediscover it.
+ *
+ * Checked at the worst affinity rather than at `fp(1024)`: the requirement is
+ * computed per-species, so a node that only overflows for orcs is still a node
+ * that overflows.
+ */
+function rediscoveryRequirementOverflows(researchCost: number, multiplier: number): boolean {
+  const scaled = Math.floor((multiplier * FP_SCALE) / WORST_REDISCOVERY_AFFINITY);
+  const effective = Math.max(scaled, REDISCOVERY_HARD_FLOOR);
+  return researchCost * effective > FP_CEILING * FP_SCALE;
+}
 
 /** Result of a validation pass that is allowed to fail without throwing. */
 export interface ValidationResult {
@@ -102,12 +166,13 @@ interface ParsedDocuments {
   readonly species: readonly SpeciesRecord[];
   readonly tradition: readonly TraditionRecord[];
   readonly primitive: readonly PrimitiveRecord[];
+  readonly territory: readonly TerritoryRecord[];
 }
 
 let cachedSchemas: ReadonlyMap<ContentFileName, CompiledSchema> | undefined;
 
 /**
- * Compiles the seven schema documents once per process.
+ * Compiles the eight schema documents once per process.
  *
  * Compilation throws on any keyword the interpreter does not implement, so a
  * schema cannot outgrow its validator without the very first load saying so.
@@ -183,6 +248,7 @@ export function validateContent(source: ContentSource): ValidationResult {
     species: raw.get('species.json') as readonly SpeciesRecord[],
     tradition: raw.get('tradition.json') as readonly TraditionRecord[],
     primitive: raw.get('primitive.json') as readonly PrimitiveRecord[],
+    territory: raw.get('territory.json') as readonly TerritoryRecord[],
   };
 
   // ---- Phase 3: graph integrity. ----
@@ -248,6 +314,7 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   indexById(documents.species, 'species.json', out);
   indexById(documents.tradition, 'tradition.json', out);
   const primitiveById = indexById(documents.primitive, 'primitive.json', out);
+  indexById(documents.territory, 'territory.json', out);
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
@@ -509,18 +576,25 @@ function checkV1Subset(v1Cells: readonly CellRecord[], out: ContentDiagnostic[])
     formCells.push(cell.id);
   }
 
+  // Each uneven axis names the cells sitting on it. The axis alone identifies
+  // the shape of the defect but not the record to edit, and an author reading
+  // `technique "creo" covers 1 forms` still has to grep cell.json for the flag
+  // that put it there. Only the *uneven* axes are expanded, so the message stays
+  // a pointer at the defect rather than the whole subset listed back.
   const uneven: string[] = [];
   for (const [technique, ids] of [...techniques].sort(byKey)) {
     if (ids.length !== V1_FORM_COUNT) {
       uneven.push(
-        `technique "${technique}" covers ${String(ids.length)} forms, expected ${String(V1_FORM_COUNT)}`,
+        `technique "${technique}" covers ${String(ids.length)} forms, expected ` +
+          `${String(V1_FORM_COUNT)} (${[...ids].sort(byString).join(', ')})`,
       );
     }
   }
   for (const [form, ids] of [...forms].sort(byKey)) {
     if (ids.length !== V1_TECHNIQUE_COUNT) {
       uneven.push(
-        `form "${form}" covers ${String(ids.length)} techniques, expected ${String(V1_TECHNIQUE_COUNT)}`,
+        `form "${form}" covers ${String(ids.length)} techniques, expected ` +
+          `${String(V1_TECHNIQUE_COUNT)} (${[...ids].sort(byString).join(', ')})`,
       );
     }
   }
@@ -568,17 +642,6 @@ function checkNodes(
         ),
       );
     } else {
-      if (cell.v1 !== true) {
-        out.push(
-          diagnostic(
-            file,
-            `${at}/cell`,
-            'node-outside-v1',
-            `node "${node.id}" is authored in cell "${node.cell}", which is not flagged "v1": true. ` +
-              'No node may be authored outside the v1 subset for this release',
-          ),
-        );
-      }
       if (!cell.nodes.includes(node.id)) {
         out.push(
           diagnostic(
@@ -589,16 +652,30 @@ function checkNodes(
           ),
         );
       }
-      if (cell.v1 === true && node.rediscoveryMultiplier < V1_REDISCOVERY_AUTHORING_FLOOR) {
+      if (node.rediscoveryMultiplier < V1_REDISCOVERY_AUTHORING_FLOOR) {
         out.push(
           diagnostic(
             file,
             `${at}/rediscoveryMultiplier`,
             'content-invariant',
             `node "${node.id}" authors rediscoveryMultiplier ${String(node.rediscoveryMultiplier)}, below the ` +
-              `v1 authoring floor of fp(${String(V1_REDISCOVERY_AUTHORING_FLOOR)}). Species rediscoveryAffinity is ` +
+              `rediscovery authoring floor of fp(${String(V1_REDISCOVERY_AUTHORING_FLOOR)}). Species rediscoveryAffinity is ` +
               'applied before the hard fp(3072) floor, so a node authored at the floor clamps every species ' +
               'to the same effective cost and the trait stops differentiating (contracts.md §2.3)',
+          ),
+        );
+      }
+      if (rediscoveryRequirementOverflows(node.researchCost, node.rediscoveryMultiplier)) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/researchCost`,
+            'content-invariant',
+            `node "${node.id}" authors researchCost ${String(node.researchCost)} against ` +
+              `rediscoveryMultiplier ${String(node.rediscoveryMultiplier)}, whose rediscovery ` +
+              `requirement overflows fixed point at the worst species affinity of ` +
+              `fp(${String(WORST_REDISCOVERY_AFFINITY)}). The rules path throws rather than ` +
+              'saturating, so this node would fail the first time anyone rediscovered it',
           ),
         );
       }
@@ -630,6 +707,20 @@ function checkNodes(
         );
         continue;
       }
+      const prerequisiteCell = cellById.get(prerequisite.cell);
+      if (cell?.v1 === true && prerequisiteCell !== undefined && prerequisiteCell.v1 !== true) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/prerequisites/${String(index)}`,
+            'v1-unreachable-prerequisite',
+            `node "${node.id}" is in the v1 cell "${node.cell}" but requires "${prerequisiteId}" from ` +
+              `"${prerequisite.cell}", which is not flagged "v1": true. A playable node may never sit ` +
+              'behind content the release does not enable — it would be permanently unreachable',
+          ),
+        );
+      }
+
       if (prerequisite.tier > node.tier) {
         out.push(
           diagnostic(
@@ -873,6 +964,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const species = internNamespace(documents.species);
   const traditions = internNamespace(documents.tradition);
   const primitives = internNamespace(documents.primitive);
+  const territories = internNamespace(documents.territory);
 
   const tables = new Map<ContentNamespace, ReadonlyMap<string, ContentId>>([
     ['technique', tableOf(techniques)],
@@ -882,6 +974,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     ['species', tableOf(species)],
     ['tradition', tableOf(traditions)],
     ['primitive', tableOf(primitives)],
+    ['territory', tableOf(territories)],
   ]);
   const reverse = new Map<ContentNamespace, ReadonlyMap<ContentId, string>>();
   for (const [namespace, table] of tables) {
@@ -904,6 +997,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   append('species', species);
   append('tradition', traditions);
   append('primitive', primitives);
+  append('territory', territories);
 
   const counts: ContentCounts = {
     techniques: techniques.length,
@@ -914,6 +1008,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     species: species.length,
     traditions: traditions.length,
     primitives: primitives.length,
+    territories: territories.length,
   };
 
   return {
@@ -926,6 +1021,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     species,
     traditions,
     primitives,
+    territories,
     intern(namespace, id) {
       return tables.get(namespace)?.get(id) ?? 0;
     },

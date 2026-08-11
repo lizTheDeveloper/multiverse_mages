@@ -40,10 +40,48 @@ import { attachRecord, collectRecords, readRecord } from './records.js';
  * that a snapshot round-trip would have to be trusted to restore.
  */
 export function createUniverse(state: SimState, record: UniverseRecord): EntityHandle {
+  assertTraditionSelected(record);
   const handle = state.entities.create();
   attachRecord(state, UNIVERSE, handle, record);
   return handle;
 }
+
+/**
+ * Throws unless a universe record names a tradition.
+ *
+ * §1.1 says a universe has *exactly one* `traditionId` and that it is **never
+ * `0`**, and until now that sentence was a comment on {@link UniverseRecord}
+ * with nothing enforcing it. `0` is the zeroed default of a `u16` field, so an
+ * unselected tradition is not a value somebody typed — it is what a record
+ * looks like when the selection step was skipped, which is precisely the case a
+ * comment cannot catch.
+ *
+ * The failure it prevents is downstream and quiet. `rules-magic`'s `hookFor`
+ * throws on tradition `0`, but only when something *resolves a hook*: a
+ * universe that never cast, never researched and never scribed would carry the
+ * missing selection indefinitely, and the first thing to notice would be a raid
+ * arbitration far from the construction site. Checking here fails at the moment
+ * the mistake is made, with the record in hand.
+ *
+ * Exported separately from {@link createUniverse} because a snapshot load path
+ * reconstructs the row without going through the constructor, and it should be
+ * able to make the same assertion rather than reimplement it.
+ *
+ * @throws RangeError if `traditionId` is `0`.
+ */
+export function assertTraditionSelected(record: UniverseRecord): void {
+  if (record.traditionId !== NO_TRADITION) return;
+  throw new RangeError(
+    'This universe names no tradition: `traditionId` is 0. contracts.md §1.1 says exactly one ' +
+      'tradition is required per universe and that it is never 0 — a tradition supplies the four ' +
+      'hooks (acquire, store, cast, cost) every acquisition, cast and cost resolves through, and ' +
+      'a zeroed id would resolve to "standard everything", which is a plausible-looking answer to ' +
+      'a question nobody asked.',
+  );
+}
+
+/** The `traditionId` of a universe whose tradition was never selected. */
+const NO_TRADITION = 0;
 
 /**
  * The universe entity, or {@link NULL_ENTITY} if the world has none yet.

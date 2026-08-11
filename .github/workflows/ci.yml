@@ -51,6 +51,9 @@ jobs:
       - name: Audio content validation
         run: npm run check:audio
 
+      - name: Primitive coverage over v1 content
+        run: npm run check:coverage
+
       - name: Test (unit + golden replay)
         run: npm test
 
@@ -90,6 +93,9 @@ jobs:
 
       - name: Audio content validation
         run: npm run check:audio
+
+      - name: Primitive coverage over v1 content
+        run: npm run check:coverage
 
       - name: Test (unit + golden replay)
         run: npm test
