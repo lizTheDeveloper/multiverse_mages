@@ -92,10 +92,14 @@ describe('direction one: a primitive stops being exercised', () => {
 
 describe('direction two: an exclusion becomes covered', () => {
   it('fails and says the exclusion list must be updated deliberately', () => {
+    // Deliberately a *v1* node. The check reads only v1 content, and the grid is
+    // now pre-authored across all seventy cells, so `nodes[0]` is a creo-animal
+    // node the check never looks at -- mutating it would leave the exclusion
+    // uncovered and this test asserting the opposite of what it means.
+    const v1 = v1CellIds(shippedRegistry());
     const registry = registryWith((documents) => {
-      const nodes = nodeDocuments(documents);
-      const first = nodes[0];
-      if (first === undefined) throw new Error('node.json is empty');
+      const first = nodeDocuments(documents).find((node) => v1.has(node['cell'] as string));
+      if (first === undefined) throw new Error('node.json declares no v1 node');
       effectsOf(first).push({
         primitive: 'lifespan',
         magnitude: 12,
@@ -135,9 +139,15 @@ describe('portal belongs to the mandated cell', () => {
   });
 
   it('fails when portal is authored anywhere else', () => {
+    // A v1 cell that is not rego-limen, for the same reason as above: portal
+    // authored in a non-v1 cell is invisible to a check scoped to v1 content, so
+    // the stray has to be somewhere the check actually reads.
+    const v1 = v1CellIds(shippedRegistry());
     const registry = registryWith((documents) => {
-      const stray = nodeDocuments(documents).find((node) => node['cell'] !== PORTAL_HOME_CELL_ID);
-      if (stray === undefined) throw new Error('every node is in rego-limen; fixture impossible');
+      const stray = nodeDocuments(documents).find(
+        (node) => node['cell'] !== PORTAL_HOME_CELL_ID && v1.has(node['cell'] as string),
+      );
+      if (stray === undefined) throw new Error('every v1 node is in rego-limen; fixture impossible');
       effectsOf(stray).push({
         primitive: PORTAL_PRIMITIVE_ID,
         magnitude: 1024,

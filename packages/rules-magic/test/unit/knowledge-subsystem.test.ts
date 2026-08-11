@@ -57,6 +57,32 @@ describe('the instance index', () => {
     expect(knowledge.exists(ROOT_NODE)).toBe(false);
   });
 
+  it('reports the node as existing again the moment an instance returns', () => {
+    // `knowledge-instances`: *"Existence returns when an instance returns"*. The
+    // index is a count, so this ought to be free — but the ever-known record is
+    // written on first creation and never cleared, and an implementation that
+    // answered existence from it, or that latched a "lost" state to avoid
+    // re-emitting a loss event, would pass every assertion above and fail here.
+    const knowledge = subsystem();
+    const grant = {
+      nodeId: ROOT_NODE,
+      locationKind: LOCATION_KIND.mind,
+      locationId: 41,
+      acquiredTick: 0,
+      mastery: 512,
+    };
+
+    const first = knowledge.createInstance(grant);
+    expect(knowledge.destroyInstance(first, 11)).toBeDefined();
+    expect(knowledge.exists(ROOT_NODE)).toBe(false);
+
+    knowledge.createInstance({ ...grant, locationId: 42, acquiredTick: 12 });
+    expect(knowledge.exists(ROOT_NODE)).toBe(true);
+    expect(knowledge.instanceCount(ROOT_NODE)).toBe(1);
+    // The node came back; that it was once lost did not.
+    expect(knowledge.wasEverKnown(ROOT_NODE)).toBe(true);
+  });
+
   it('records no current-existence flag in state', () => {
     const knowledge = subsystem();
     knowledge.createInstance({

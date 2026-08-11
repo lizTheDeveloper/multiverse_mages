@@ -4,8 +4,15 @@
 
 Content SHALL flag exactly twelve cells with `"v1": true`, and those twelve MUST be the full
 rectangle of techniques `intellego`, `perdo`, `rego` crossed with forms `limen`, `mentem`, `nomen`,
-`terram`. The subset MUST include `rego-limen`. No node may be authored in a cell outside the v1
-subset for this release, and the loader MUST reject content that violates either condition.
+`terram`. The subset MUST include `rego-limen`, and the loader MUST reject content that violates
+either condition.
+
+Nodes MAY be authored in cells outside the subset. The grid holds seventy cells and this release
+enables twelve; the remaining fifty-eight are written but inert, which is how a later release turns
+a cell on without authoring it under time pressure. What the loader MUST reject instead is a
+*playable* node made permanently unreachable — one in a v1 cell whose prerequisite lies in a cell
+this release does not enable. Nothing else in the pipeline would notice that node can never be
+acquired.
 
 #### Scenario: The subset is exactly the declared rectangle
 
@@ -24,10 +31,16 @@ subset for this release, and the loader MUST reject content that violates either
 - **WHEN** content flags twelve cells that do not form a 3-technique × 4-form rectangle
 - **THEN** the load fails and the error names the techniques and forms that are unevenly covered
 
-#### Scenario: A node outside the subset is rejected
+#### Scenario: A node outside the subset is accepted and inert
 
-- **WHEN** content authors a node whose `cell` is not flagged `v1`
-- **THEN** the load fails and the error names the node id and its cell
+- **WHEN** content authors a node whose `cell` is not flagged `v1`, and nothing playable requires it
+- **THEN** the load succeeds, and the node is addressable but unreachable in play
+
+#### Scenario: A playable node gated behind disabled content is rejected
+
+- **WHEN** content authors a node in a v1 cell whose prerequisite lies in a cell not flagged `v1`
+- **THEN** the load fails and the error names the node id, the prerequisite id, and the cell that
+  is not enabled
 
 ### Requirement: Cell availability is decided by the arbitration function alone
 

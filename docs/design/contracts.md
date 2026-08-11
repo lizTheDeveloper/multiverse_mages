@@ -172,6 +172,17 @@ make `libraryDependence` lie in the safe direction.
 at all; between the threshold and full, teaching transmits at proportionally reduced mastery. "Loss"
 in the mastery scale is therefore defined, not implied.
 
+**The reduction is strict, and that is a rule rather than an artifact of the arithmetic.** A teacher
+anywhere below `fp(1024)` must produce a student strictly below her own mastery — the loss is
+floored at one unit, the finest quantity scale 1/1024 can represent, and only a teacher at exactly
+`fp(1024)` transmits without reduction. Stating it this way round is load-bearing because
+"proportionally reduced" alone does not survive fixed point: `mul` floors, so a teacher one unit
+short of full has a shortfall of `1`, and `mul(1, anything below one)` is `0`. Half the jitter range
+would therefore round the entire shortfall away and teach losslessly — from a teacher one ordinary
+decay tick below full, which is a reachable state and not a contrived one. Degradation would stop
+compounding down a chain and settle at a plateau, and `knowledgeHalfLife` would measure a decay that
+the rules had quietly stopped producing.
+
 **Derived, never stored:** whether a node "exists in the universe" is `count(instances of nodeId) > 0`,
 computed from an index maintained by the knowledge subsystem. Nothing may cache it in state.
 

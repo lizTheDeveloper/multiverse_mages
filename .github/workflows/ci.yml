@@ -48,6 +48,9 @@ jobs:
       - name: Content validation
         run: npm run check:content
 
+      - name: Audio content validation
+        run: npm run check:audio
+
       - name: Primitive coverage over v1 content
         run: npm run check:coverage
 
@@ -87,6 +90,9 @@ jobs:
 
       - name: Content validation
         run: npm run check:content
+
+      - name: Audio content validation
+        run: npm run check:audio
 
       - name: Primitive coverage over v1 content
         run: npm run check:coverage
