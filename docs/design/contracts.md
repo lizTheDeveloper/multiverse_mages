@@ -41,6 +41,15 @@ spec is the thing that gets fixed.
   if their `contentRevision` values are equal. There is no partial-compatibility rule and no
   negotiation; mismatch is refusal with both revisions named.
 
+  **It is 128 bits wide, carried end to end as 32 lowercase hex characters** — in the content
+  registry, in `SimState`, in the snapshot header (16 raw bytes), and in the ruleset snapshot,
+  with no narrowing at any boundary. The width is normative, not an implementation detail. It was
+  once stored as a `uint32`, and because this clause offers no partial-compatibility rule to fall
+  back on, that fold made "equal revisions" mean only *probably* identical content: birthday
+  collisions become likely around 65,000 distinct content sets, an ordinary number for moddable
+  content, and each one admits two incompatible universes to the same match. Narrowing this value
+  anywhere is a breaking contract change.
+
 ---
 
 ## 1. State Schema
@@ -376,11 +385,19 @@ length data is bucketed or summarized, never emitted raw.
 | `tradition` | 1 | tradition id |
 | `resources` | 5 | favor, worship, worshipTier, materials, prestige |
 | `population` | 6 species × 5 occupations = 30 | cohort counts |
-| `mages` | 6 species × 7 tiers = 42 | living mage counts by species and highest tier known |
+| `mages` | 6 species × 8 tiers = 48 | living mage counts by species and highest tier known; **slot 0 is "knows nothing yet"** |
 | `knowledge` | 70 cells × 3 = 210 | per cell: nodes known, deepest tier, instance redundancy |
 | `institutions` | 4 | university count, total capacity, library depth, grimoire count |
 | `clock` | 3 | worldTick, era, mode |
 | `engagement` (zeroed at world scale) | 64 | own/enemy combatant summaries, objective states, portal stability |
+
+**Why the mage block has eight slots per species, not seven.** Node tiers are numbered 1–7 (§2.3),
+so bucketing purely by highest tier known left a mage who knows nothing in no bucket at all — and
+nothing else in the observation carries a living-mage count. An agent could not distinguish ten
+fresh mages from none, which is precisely the state a universe is in for its first decades and
+exactly when the god's decisions matter most. Slot 0 is the untaught. Found while implementing
+`core-contracts`; the block was widened rather than patched around, because a count recovered from
+somewhere else would have been a second source of truth for the same fact.
 
 Total: a fixed vector. The core emits integers; **normalization happens in the agent-api layer,
 which is the one place floats are permitted** on the way out.
@@ -489,15 +506,32 @@ explanation of one decision*. Two consequences, neither urgent:
 packages/
   sim-core        deterministic substrate. Depends on: nothing.
   content         data files + loader + validator. Depends on: sim-core (types only).
-  rules-magic     grid legality, nodes, knowledge instances, traditions. → sim-core, content
-  rules-world     mages, species, populace, universities, economy.        → sim-core, content
-  rules-raid      engagement space, combat, objectives, consequences.     → sim-core, content, rules-magic, rules-world
-  agent-api       observation/action space, legality masks.               → sim-core, rules-*
+  state           §1 world state types, component layouts, permits().     → sim-core, content (types only)
+  primitives      §3 stacking arithmetic and cap clamping.                → sim-core, content (types only)
+  rules-magic     grid legality, nodes, knowledge instances, traditions. → sim-core, content, state, primitives
+  rules-world     mages, species, populace, universities, economy.        → sim-core, content, state, primitives
+  rules-raid      engagement space, combat, objectives, consequences.     → sim-core, content, state, primitives, rules-magic, rules-world
+  agent-api       observation/action space, legality masks.               → sim-core, content, state, primitives, rules-*
   mc-harness      worker pool, sweeps, balance metrics.                   → agent-api
   client-electron renderer. Reads snapshots. Computes no rules.           → agent-api (read path only)
   server          authoritative lockstep, Hetzner deployment.             → agent-api
   gym-bridge      JSON-over-stdio RL wrapper.                             → agent-api
 ```
+
+**`state` is a deviation from this list as originally drawn, added during `core-contracts`.**
+`state-schema` requires one set of world-state type definitions that every rules package consumes,
+and the original list had nowhere to put them: `sim-core` must stay content-agnostic — its entity
+store knows nothing about magic — and putting them in `rules-magic` would force `rules-world` to
+import it for the mage layout, which is exactly the cycle rule 3 forbids. Its edge to `content` is
+**types only** because `content`'s public surface re-exports a filesystem-reading loader, and
+`state` runs inside the Electron renderer.
+
+**`primitives` is the second deviation, added for the same underlying reason: §5 was drawn before
+anyone tried to satisfy it.** §3's stacking arithmetic needs `sim-core`'s fixed-point helpers *and*
+the primitive registry that lives in `content`. `content` is in the dependency-purity check's
+`PURE_PACKAGES` and may take no runtime dependency, so the arithmetic cannot live there; and §3
+forbids re-deriving a floor outside the one shared helper, so it cannot live anywhere that would
+have to reimplement one. A package between the two is the only placement that satisfies both.
 
 **Enforced rules:**
 

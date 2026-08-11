@@ -40,13 +40,15 @@
  *   - `clock.worldTick` / `clock.engagementTick` (clock.ts's `advanceClock`)
  *     are bare `+= 1` with no ceiling anywhere in the clock or in `step`.
  *   - `contentRevision` (state.ts) is a *public, non-readonly* field on
- *     `SimState` — `contentRevision: number;`, unlike the readonly
- *     `rootSeed`. `SimState.create` range-checks it at construction, but
- *     nothing stops `state.contentRevision = anything` afterward, and
- *     `contracts.md` §0 treats it as the gate on whether two universes may
- *     interact at all — a silently wrapped value here would let two
- *     genuinely-incompatible universes pass the `permits()`-adjacent
- *     equality check by coincidence.
+ *     `SimState`, unlike the readonly `rootSeed`. `SimState.create` validates
+ *     it at construction, but nothing stops `state.contentRevision = anything`
+ *     afterward, and `contracts.md` §0 treats it as the gate on whether two
+ *     universes may interact at all — a silently reshaped value here would let
+ *     two genuinely-incompatible universes pass the `permits()`-adjacent
+ *     equality check by coincidence. It has since been widened from a
+ *     `uint32` to the full 128-bit hash `@mm/content` computes, so its
+ *     out-of-domain case below is a malformed hex string rather than an
+ *     oversized number; the corruption class the test names is the same one.
  *
  * Either "throw on encode" (matching `requireCount`'s read-side behaviour) or
  * "preserve the value some other way" would be a defensible fix. Silently
@@ -87,10 +89,17 @@ describe('header scalars beyond 2^32 are wrapped, not rejected, at encode time',
     expect(() => serializeState(state)).toThrow();
   });
 
-  it('contentRevision silently wraps to 0 instead of throwing — despite being the inter-universe compatibility gate (contracts.md §0)', () => {
+  it('an out-of-domain contentRevision is refused instead of reshaped — it is the inter-universe compatibility gate (contracts.md §0)', () => {
+    // The field is no longer a `uint32`, so there is no 2^32 to exceed: it
+    // carries `@mm/content`'s full 128-bit hash as 32 lowercase hex
+    // characters, because folding it to 32 bits made "equal revisions" mean
+    // only *probably* identical content. The assertion is unchanged in
+    // substance — a value outside the domain must throw rather than become a
+    // different, legitimate-looking revision — and the out-of-domain value is
+    // now a malformed string rather than an oversized number.
     const state = createState({ rootSeed: 1, schema: world });
-    state.contentRevision = PAST_UINT32; // mutable post-construction; see comment above
-    expect(() => serializeState(state)).toThrow();
+    state.contentRevision = 'not-a-revision'; // mutable post-construction; see comment above
+    expect(() => serializeState(state)).toThrow(/content revision/i);
   });
 
   it('no longer corrupts silently: an out-of-range count fails to encode instead of round-tripping as 0', () => {

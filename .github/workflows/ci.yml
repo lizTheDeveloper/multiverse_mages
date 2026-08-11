@@ -45,6 +45,9 @@ jobs:
       - name: Dependency-purity check
         run: npm run check:purity
 
+      - name: Content validation
+        run: npm run check:content
+
       - name: Test (unit + golden replay)
         run: npm test
 
@@ -78,6 +81,9 @@ jobs:
 
       - name: Dependency-purity check
         run: npm run check:purity
+
+      - name: Content validation
+        run: npm run check:content
 
       - name: Test (unit + golden replay)
         run: npm test

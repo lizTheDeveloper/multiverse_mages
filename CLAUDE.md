@@ -57,10 +57,16 @@ table uses the real change and capability IDs so it stays in sync with `openspec
 - `openspec show <change>` / `openspec validate <change> --strict`
 - `/opsx:apply` — implement a change's tasks
 
-Current state: `sim-core-foundation` is implemented and released as 0.1.0 — `packages/sim-core` holds
-fixed-point arithmetic, the splittable PRNG, the entity store, the dual-scale clock, the pure
-`step` contract, versioned snapshots, replay, the golden fixtures, and the benchmark. Next up is
-`core-contracts` (0.2.0).
+Current state: released through **0.2.0**. `sim-core-foundation` gave `packages/sim-core` its
+deterministic substrate — fixed-point arithmetic, the splittable PRNG, the entity store, the
+dual-scale clock, the pure `step` contract, versioned snapshots, replay, golden fixtures and the
+benchmark. `core-contracts` added `content` (schemas, loader, v1 data), `state` (the §1 world state
+types and the one `permits()`), `primitives` (§3 stacking arithmetic), and `agent-api` (the §4
+observation, action space and legality mask), plus skeletons for the `rules-*` packages. Next up is
+`knowledge-model` (0.3.0).
+
+Two packages are **deviations from `contracts.md` §5 as originally drawn**, both recorded there with
+their reasoning: `state` and `primitives`. §5 was written before anyone tried to satisfy it.
 
 Two commands worth knowing before touching the core:
 
@@ -68,6 +74,23 @@ Two commands worth knowing before touching the core:
 - `npm run goldens:regen` — regenerates the golden replay fixtures. **Never run this to make a
   test pass.** A fixture diff is a claim that behaviour changed on purpose, and reviewers read it
   as one.
+
+## CI, and why there are two of them
+
+`main` is protected: pull request required, no force-push, no deletion, and **two** status checks
+must be green. See `docs/devops/ci-and-deploy.md` before changing any of it.
+
+The short version, because the obvious "cleanup" here is a security regression:
+
+- **GitHub Actions** (`.github/workflows/ci.yml`) is free and unmetered — this repo is public — and
+  runs in a sandbox holding no credentials. It is the **only** gate that safely sees fork PRs.
+- **The self-hosted runner** (`scripts/ci-check.sh`, status context `ci/hetzner-lint`) runs on
+  `cto-tycoon-hel1` in a process holding Coolify, Neon, GitHub and Matrix tokens. It therefore
+  **refuses fork PRs outright**, and must keep doing so.
+
+Neither can do the other's job. Do not delete the Actions workflow to "move CI off GitHub", and do
+not relax the fork guard to make a fork PR go green. `scripts/ci-check.sh` must stay equivalent to
+`npm run verify`, or a commit can pass locally and fail on the runner — or worse, the reverse.
 
 ## Non-negotiable technical constraints
 

@@ -14,7 +14,12 @@
 import { TIME_MODE } from '../clock.js';
 import type { ComponentFieldKind, ComponentSpec, ComponentFields } from '../component.js';
 import type { SimState, WorldSchema } from '../state.js';
-import { createState } from '../state.js';
+import {
+  CONTENT_REVISION_BYTES,
+  CONTENT_REVISION_HEX_LENGTH,
+  createState,
+  isContentRevision,
+} from '../state.js';
 import { hashBytes } from './hash.js';
 import type { MigrationRegistry } from './migrations.js';
 
@@ -65,7 +70,7 @@ import type { MigrationRegistry } from './migrations.js';
  *
  * ## Layout
  *
- * Header, 36 bytes:
+ * Header, 52 bytes:
  *
  * | off | size | field                                    |
  * | --- | ---- | ---------------------------------------- |
@@ -74,13 +79,26 @@ import type { MigrationRegistry } from './migrations.js';
  * |   6 |    2 | u16 flags, reserved, must be 0           |
  * |   8 |    4 | u32 payload length, bytes after header   |
  * |  12 |    4 | u32 root seed                            |
- * |  16 |    4 | u32 content revision                     |
- * |  20 |    4 | u32 illegal action count                 |
- * |  24 |    4 | u32 world tick                           |
- * |  28 |    4 | u32 engagement tick                      |
- * |  32 |    1 | u8 time mode                             |
- * |  33 |    3 | padding, zero                            |
- * |  36 |    4 | u32 step ordinal                         |
+ * |  16 |   16 | content revision, 128 bits, big-endian   |
+ * |  32 |    4 | u32 illegal action count                 |
+ * |  36 |    4 | u32 world tick                           |
+ * |  40 |    4 | u32 engagement tick                      |
+ * |  44 |    1 | u8 time mode                             |
+ * |  45 |    3 | padding, zero                            |
+ * |  48 |    4 | u32 step ordinal                         |
+ *
+ * The content revision is sixteen raw bytes, not four. It is the 128-bit hash
+ * `@mm/content` computes, and `contracts.md` §0 makes equality of it the gate
+ * on whether two universes may interact at all — with no partial-compatibility
+ * rule and no negotiation. Storing it as a `u32`, as this header once did,
+ * folded it to a quarter of its width, at which point "equal revisions" meant
+ * only *probably* identical content: birthday collisions become likely around
+ * 65,000 distinct content sets, an ordinary number for moddable content, and
+ * the consequence of a collision is two incompatible universes admitted to a
+ * ranked match. The bytes are written most-significant first so that the hex
+ * rendering and the byte order read the same way in a hex dump; every *numeric*
+ * field around it stays little-endian, because those are numbers and this is
+ * not.
  *
  * Payload: `u32 slotCount`, `slotCount x u16` generations, `slotCount x u8`
  * liveness, `u32 freeCount`, `freeCount x u32` free slots; then `u16`
@@ -122,7 +140,7 @@ export const SNAPSHOT_VERSION = 1;
 const MAGIC = 'MMSN';
 
 /** Bytes of fixed header before the payload begins. */
-const HEADER_BYTES = 40;
+const HEADER_BYTES = 52;
 
 /** Zero bytes after the mode byte, so the payload starts on a 4-byte boundary. */
 const HEADER_PADDING_BYTES = 3;
@@ -141,6 +159,31 @@ const BYTES_PER_U32 = 4;
 /** Printable ASCII, the only bytes a component or field name may contain. */
 const MIN_NAME_BYTE = 0x20;
 const MAX_NAME_BYTE = 0x7e;
+
+/** Lowercase, because the hex rendering of a revision is lowercase by contract. */
+const HEX_DIGITS = '0123456789abcdef';
+
+const HEX_CHAR_ZERO = 0x30;
+const HEX_CHAR_NINE = 0x39;
+const HEX_CHAR_A = 0x61;
+const NIBBLE_BITS = 4;
+const LOW_NIBBLE_MASK = 0xf;
+const DECIMAL_DIGIT_COUNT = 10;
+
+/**
+ * Digit value of one lowercase hex character code.
+ *
+ * Deliberately branch-free about invalid input: every caller validates the
+ * whole string against the revision shape first, so an out-of-alphabet
+ * character cannot reach here. Re-checking per character would put a second,
+ * quieter definition of "well-formed revision" in the file — and the one that
+ * matters is the one that produces a descriptive error, not a silent nibble.
+ */
+function nibbleOfHexChar(code: number): number {
+  return code >= HEX_CHAR_ZERO && code <= HEX_CHAR_NINE
+    ? code - HEX_CHAR_ZERO
+    : code - HEX_CHAR_A + DECIMAL_DIGIT_COUNT;
+}
 
 /**
  * Field width, as a number on the wire.
@@ -185,7 +228,8 @@ export interface SnapshotComponent {
 export interface SnapshotEnvelope {
   readonly version: number;
   readonly rootSeed: number;
-  readonly contentRevision: number;
+  /** 32 lowercase hex characters. Sixteen raw bytes on the wire. */
+  readonly contentRevision: string;
   readonly illegalActionCount: number;
   readonly clock: {
     readonly worldTick: number;
@@ -241,6 +285,23 @@ class SnapshotWriter {
   u32(value: number): void {
     this.#view.setUint32(this.#offset, value >>> 0, true);
     this.#offset += BYTES_PER_U32;
+  }
+
+  /**
+   * Writes an even-length lowercase hex string as raw bytes, most significant
+   * nibble first.
+   *
+   * The value is stored as bytes rather than as its 32 ASCII characters
+   * because a hash is bits, and sixteen bytes is what those bits are. Writing
+   * the text would double the field and invite a reader to treat two different
+   * renderings of the same hash as different revisions.
+   */
+  hex(text: string, byteCount: number): void {
+    for (let index = 0; index < byteCount; index += 1) {
+      const high = nibbleOfHexChar(text.charCodeAt(index * 2));
+      const low = nibbleOfHexChar(text.charCodeAt(index * 2 + 1));
+      this.u8((high << NIBBLE_BITS) | low);
+    }
   }
 
   /**
@@ -336,6 +397,25 @@ class SnapshotReader {
         );
       }
     }
+  }
+
+  /**
+   * Reads raw bytes back as lowercase hex, most significant nibble first.
+   *
+   * No reject path, and none is possible: every one of the 256 byte values
+   * renders as two characters of the lowercase alphabet, so any run of bytes
+   * decodes to a well-formed revision. What a corrupt buffer produces here is
+   * a *different* revision, which then refuses every interaction — the same
+   * outcome as any other content mismatch, and the right one.
+   */
+  hex(byteCount: number, what: string): string {
+    const at = this.#take(byteCount, what);
+    let text = '';
+    for (let index = 0; index < byteCount; index += 1) {
+      const byte = this.#view.getUint8(at + index);
+      text += HEX_DIGITS.charAt(byte >>> NIBBLE_BITS) + HEX_DIGITS.charAt(byte & LOW_NIBBLE_MASK);
+    }
+    return text;
   }
 
   ascii(length: number, what: string): string {
@@ -439,7 +519,7 @@ export function encodeSnapshot(envelope: SnapshotEnvelope): Uint8Array {
   writer.u16(FLAGS_NONE);
   writer.u32(payloadLength);
   writer.u32(envelope.rootSeed);
-  writer.u32(envelope.contentRevision);
+  writer.hex(envelope.contentRevision, CONTENT_REVISION_BYTES);
   writer.u32(envelope.illegalActionCount);
   writer.u32(envelope.clock.worldTick);
   writer.u32(envelope.clock.engagementTick);
@@ -543,7 +623,7 @@ export function decodeSnapshot(buffer: Uint8Array): SnapshotEnvelope {
   }
 
   const rootSeed = reader.u32('the root seed');
-  const contentRevision = reader.u32('the content revision');
+  const contentRevision = reader.hex(CONTENT_REVISION_BYTES, 'the content revision');
   const illegalActionCount = reader.u32('the illegal-action count');
   const worldTick = reader.u32('the world tick');
   const engagementTick = reader.u32('the engagement tick');
@@ -618,7 +698,8 @@ export function envelopeToState(envelope: SnapshotEnvelope, schema: WorldSchema)
   requireCount(envelope.clock.engagementTick, 'engagement tick');
   requireCount(envelope.clock.stepOrdinal, 'step ordinal');
 
-  // createState range-checks rootSeed and contentRevision and throws on its own.
+  // createState range-checks rootSeed and shape-checks contentRevision, and
+  // throws on its own.
   const state = createState({
     rootSeed: envelope.rootSeed,
     schema,
@@ -816,7 +897,7 @@ function validateEnvelopeShape(envelope: SnapshotEnvelope): void {
     throw new Error(`Snapshot format version ${envelope.version} does not fit the u16 header field.`);
   }
 
-  // The header's four scalars, checked on the way OUT as well as on the way in.
+  // The header's scalars, checked on the way OUT as well as on the way in.
   //
   // They were previously validated only in `envelopeToState`, so encoding took
   // whatever it was given and `SnapshotWriter.u32` reduced it mod 2^32. That is
@@ -824,14 +905,20 @@ function validateEnvelopeShape(envelope: SnapshotEnvelope): void {
   // becomes a different, entirely legitimate-looking value — an
   // `illegalActionCount` of 2^32 round-trips as 0, and nothing anywhere says so.
   // `illegalActionCount` is unbounded and, per contracts.md §4.2, incremented
-  // constantly by learning agents; `contentRevision` is worse still, because
-  // §0 makes it the gate on whether two universes may interact at all, and it
-  // is a writable field on a live state.
+  // constantly by learning agents.
   requireCount(envelope.illegalActionCount, 'illegal-action count');
-  requireCount(envelope.contentRevision, 'content revision');
   requireCount(envelope.clock.worldTick, 'world tick');
   requireCount(envelope.clock.engagementTick, 'engagement tick');
   requireCount(envelope.clock.stepOrdinal, 'step ordinal');
+
+  // `contentRevision` is checked by shape rather than by range, because it is
+  // no longer a number. It gets its own check for the same reason it used to
+  // get `requireCount`: §0 makes it the gate on whether two universes may
+  // interact at all, and it is a writable field on a live state, so an
+  // ill-formed value can reach the encoder from ordinary code. `hex` would
+  // otherwise write whatever nibbles it computed from a wrong-length or
+  // out-of-alphabet string and produce a revision nobody chose.
+  requireContentRevision(envelope.contentRevision);
 
   const { generations, alive, freeList } = envelope.entities;
   if (generations.length !== alive.length) {
@@ -995,6 +1082,25 @@ function fieldsOfSpec(
     name,
     kind: spec.fields[name] as ComponentFieldKind,
   }));
+}
+
+/**
+ * The content revision is 32 lowercase hex characters and nothing else.
+ *
+ * Named separately from `requireCount` and phrased in terms of §0 on purpose:
+ * the encoder is the last place a malformed revision can be caught before it
+ * becomes bytes that some other build will read back as a *valid* revision it
+ * never agreed to.
+ */
+function requireContentRevision(value: string): void {
+  if (!isContentRevision(value)) {
+    throw new Error(
+      `Snapshot content revision is ${JSON.stringify(value)}; it must be exactly ` +
+        `${CONTENT_REVISION_HEX_LENGTH} lowercase hex characters. contracts.md §0 gates every ` +
+        'inter-universe interaction on equality of this value, so encoding a reshaped one would ' +
+        'write a revision that means nothing to the build that reads it back.',
+    );
+  }
 }
 
 /** Header scalars are unsigned 32-bit counters; anything else cannot be encoded. */

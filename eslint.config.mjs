@@ -28,7 +28,48 @@ import tseslint from 'typescript-eslint';
  * outside this glob, where floats and Node built-ins are legitimate.
  */
 const CORE_SRC = ['packages/sim-core/src/**/*.ts', 'packages/sim-core/bench/**/*.ts'];
-const CORE_TEST = ['packages/sim-core/test/**/*.ts'];
+
+/**
+ * The rest of the rules path, held to the same bans as the core.
+ *
+ * `contracts.md` §0 puts the float ban on *the rules path*, not on one package,
+ * so a package outside this glob is a package where `0.5` compiles. The list is
+ * enumerated rather than written as `packages/rules-*` plus a wildcard because
+ * two packages must stay out of it and the reason differs for each:
+ *
+ * - `agent-api` is the one place floating point is permitted (§4.1): it
+ *   normalizes the observation to a `Float64Array` on the way out. Banning
+ *   floats there would ban the contract.
+ * - `mc-harness` is host-side tooling — worker processes, result files, a wall
+ *   clock to report throughput. Its determinism obligation is to run the core
+ *   faithfully, not to be integer-only itself.
+ *
+ * `content` is also absent, and deliberately so: it parses author-facing JSON,
+ * where a malformed float has to be *detected* before it can be rejected.
+ */
+const RULES_SRC = [
+  'packages/state/src/**/*.ts',
+  'packages/rules-magic/src/**/*.ts',
+  'packages/rules-world/src/**/*.ts',
+  'packages/rules-raid/src/**/*.ts',
+];
+
+const CORE_TEST = [
+  'packages/sim-core/test/**/*.ts',
+  'packages/state/test/**/*.ts',
+  'packages/rules-magic/test/**/*.ts',
+  'packages/rules-world/test/**/*.ts',
+  'packages/rules-raid/test/**/*.ts',
+];
+
+/**
+ * `packages/primitives` is rules path: it is where effect-primitive magnitudes
+ * are stacked and clamped, so it carries the same float ban as the core. It is
+ * a separate glob rather than an addition to {@link CORE_SRC} because it *does*
+ * import — from `@mm/sim-core` and `@mm/content` — and lumping it in would blur
+ * what "the core depends on nothing" means.
+ */
+const PRIMITIVES_SRC = ['packages/primitives/src/**/*.ts'];
 
 /**
  * Globals whose values are not a function of `(state, actions, rng)`. Reading
@@ -141,6 +182,87 @@ const BAN_REQUIRE = {
     'ban. The simulation core is ESM and imports no Node built-ins.',
 };
 
+/**
+ * ## Inline combination of primitive magnitudes
+ *
+ * `docs/design/contracts.md` §3 gives every effect primitive a *declared*
+ * stacking rule, and the design note behind it names the failure this prevents:
+ * two implementers disagreeing about whether two `+20%` research bonuses make
+ * `+40%` or `+44%`. The disagreement is invisible — both readings compile, both
+ * produce plausible numbers, and the divergence only shows up months later as a
+ * balance baseline that nobody can reproduce.
+ *
+ * The defence is that the arithmetic exists in exactly one place
+ * (`packages/primitives/src/stacking.ts`) and everywhere else calls it. These
+ * selectors are the mechanical half of that: they reject the shapes an inline
+ * reimplementation actually takes — arithmetic directly on a `.magnitude`, a
+ * `reduce` over a `magnitudes` array, `Math.max` over one, a fixed-point helper
+ * applied straight to a magnitude.
+ *
+ * **This is a tripwire, not a proof.** A determined `for` loop accumulating into
+ * a differently-named local walks past it, and no syntax selector can close
+ * that. What the tripwire buys is that the *obvious* way to write the mistake
+ * fails immediately, with a message naming the function to call instead — which
+ * is the difference between a convention and a rule. It is applied to every
+ * package's `src` except the shared implementation itself and `sim-core`, which
+ * has no concept of a primitive.
+ */
+const BAN_INLINE_MAGNITUDE_ARITHMETIC = {
+  selector: "BinaryExpression[operator=/^[-+*/%]$/] > MemberExpression[property.name='magnitude']",
+  message:
+    'Effect primitive magnitudes may not be combined with inline arithmetic — the stacking rule is ' +
+    'declared per primitive in contracts.md §3 and implemented once in @mm/primitives. Call ' +
+    'stackMagnitudes(), or the named rule (additive/additiveIntoMultiplier/multiplicativeOnRemainder/maxOf).',
+};
+
+const BAN_INLINE_MAGNITUDE_ACCUMULATION = {
+  selector: "AssignmentExpression[operator=/^[-+*/%]=$/] > MemberExpression[property.name='magnitude']",
+  message:
+    'Accumulating into or out of a primitive magnitude is inline stacking by another spelling. ' +
+    'Collect the magnitudes and call stackMagnitudes() from @mm/primitives.',
+};
+
+const BAN_MAGNITUDE_REDUCE = {
+  selector:
+    "CallExpression[callee.property.name=/^(reduce|reduceRight)$/][callee.object.name=/[Mm]agnitudes$/]",
+  message:
+    'Folding an array of primitive magnitudes is exactly what @mm/primitives exists to do once. ' +
+    'The fold you write here will not know the primitive’s declared cap, and an uncapped ' +
+    'compounding rate is the runaway contracts.md §3 caps exist to prevent.',
+};
+
+const BAN_MAGNITUDE_MATH_EXTREMUM = [
+  {
+    selector:
+      "CallExpression[callee.object.name='Math'][callee.property.name=/^(max|min)$/] > MemberExpression[property.name='magnitude']",
+    message:
+      'Only some primitives stack by max (contracts.md §3), and which ones is registry data, not a ' +
+      'judgement call at the call site. Use maxOf()/stackMagnitudes() from @mm/primitives.',
+  },
+  {
+    selector:
+      "CallExpression[callee.object.name='Math'][callee.property.name=/^(max|min)$/] > SpreadElement > Identifier[name=/[Mm]agnitudes$/]",
+    message:
+      'Only some primitives stack by max (contracts.md §3), and which ones is registry data, not a ' +
+      'judgement call at the call site. Use maxOf()/stackMagnitudes() from @mm/primitives.',
+  },
+];
+
+const BAN_FIXED_POINT_ON_MAGNITUDE = {
+  selector: "CallExpression[callee.name=/^(mul|div|lerp)$/] > MemberExpression[property.name='magnitude']",
+  message:
+    'Applying a fixed-point helper straight to a primitive magnitude skips the declared stacking ' +
+    'rule and the cap. Route it through @mm/primitives, which applies both and counts the clamp.',
+};
+
+const BAN_INLINE_PRIMITIVE_STACKING = [
+  BAN_INLINE_MAGNITUDE_ARITHMETIC,
+  BAN_INLINE_MAGNITUDE_ACCUMULATION,
+  BAN_MAGNITUDE_REDUCE,
+  ...BAN_MAGNITUDE_MATH_EXTREMUM,
+  BAN_FIXED_POINT_ON_MAGNITUDE,
+];
+
 const BAN_NODE_BUILTINS = [
   'error',
   {
@@ -197,7 +319,7 @@ export default tseslint.config(
 
   {
     // ---- Simulation core: purity is enforced here, not asked for politely. ----
-    files: CORE_SRC,
+    files: [...CORE_SRC, ...RULES_SRC],
     rules: {
       'no-restricted-globals': ['error', ...NONDETERMINISTIC_GLOBALS],
       'no-restricted-imports': BAN_NODE_BUILTINS,
@@ -210,8 +332,81 @@ export default tseslint.config(
         BAN_NEGATIVE_EXPONENT_LITERAL,
         BAN_DYNAMIC_IMPORT,
         BAN_REQUIRE,
+        // Listed here rather than left to the "everyone else" block below.
+        // Flat config resolves `no-restricted-syntax` last-block-wins, not by
+        // union, so a later block matching these same files replaced this whole
+        // array — and one did. For a while `packages/state/src` and every
+        // `rules-*` package accepted `0.5`, `Math.random()` and `Math.floor`
+        // with no error at all, while the block above still read as though it
+        // banned them. Rules-path packages need both sets, so both live here.
+        ...BAN_INLINE_PRIMITIVE_STACKING,
       ],
       '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+
+  {
+    // ---- Shared primitive arithmetic: rules path, so the float ban applies. ----
+    // This block does not overlap CORE_SRC, and the inline-stacking block below
+    // deliberately excludes this glob: flat config resolves `no-restricted-syntax`
+    // last-block-wins rather than by union, so two blocks matching one file would
+    // silently disable the first block's bans.
+    files: PRIMITIVES_SRC,
+    rules: {
+      'no-restricted-globals': ['error', ...NONDETERMINISTIC_GLOBALS],
+      'no-restricted-imports': BAN_NODE_BUILTINS,
+      'no-restricted-syntax': [
+        'error',
+        BAN_MATH_RANDOM,
+        BAN_FLOAT_MATH,
+        BAN_FLOAT_NUMBER_MEMBERS,
+        BAN_DECIMAL_LITERAL,
+        BAN_NEGATIVE_EXPONENT_LITERAL,
+        BAN_DYNAMIC_IMPORT,
+        BAN_REQUIRE,
+        // NOT the inline-stacking ban: this package *is* the shared
+        // implementation, so combining magnitudes here is the whole point.
+      ],
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+
+  {
+    // ---- Everyone else: combine primitive magnitudes through @mm/primitives. ----
+    //
+    // "Everyone else" means everyone the purity block above does not already
+    // cover. That block now carries these bans itself, and this one must not
+    // match any file it matches: flat config replaces `no-restricted-syntax`
+    // wholesale rather than merging it, so an overlap silently deletes the
+    // float ban from whichever files both blocks touch. That is not a
+    // hypothetical — it is what this block did to `state` and `rules-*` until a
+    // review probed the config instead of reading it.
+    //
+    // `sim-core` and `primitives/src` were already excluded for the same
+    // reason; the rules packages were missed because they were added later.
+    files: ['packages/*/src/**/*.ts'],
+    ignores: ['packages/sim-core/**/*.ts', ...PRIMITIVES_SRC, ...RULES_SRC],
+    rules: {
+      'no-restricted-syntax': ['error', ...BAN_INLINE_PRIMITIVE_STACKING],
+    },
+  },
+
+  {
+    /**
+     * The content loader is *not* pure — it reads the filesystem, and it parses
+     * author-written JSON where a malformed float has to be detected before it
+     * can be rejected. So it gets neither the float ban nor the Node-builtin
+     * ban. It does get these two.
+     *
+     * Adversarial testing found that a computed-specifier dynamic import in
+     * `packages/content` was caught by nothing in this repository: the module-
+     * boundary scanner could not read the specifier, and the dependency-purity
+     * script only reads manifests, never source. Every other workspace package
+     * was covered by the outright `import()` ban; content was the one hole.
+     */
+    files: ['packages/content/src/**/*.ts', 'packages/content/bin/**/*.mjs'],
+    rules: {
+      'no-restricted-syntax': ['error', BAN_DYNAMIC_IMPORT, BAN_REQUIRE],
     },
   },
 

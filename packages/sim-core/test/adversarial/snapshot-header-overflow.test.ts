@@ -29,10 +29,12 @@
  * past 2^32 serialized *successfully* and deserialized back as a different,
  * silently wrong number.
  *
- * `validateEnvelopeShape` in `snapshot.ts` now calls `requireCount` on all
- * four header scalars (including `contentRevision`, which this test suite
- * had not itself flagged) on the encode path as well as the decode path, and
- * `SimState.noteIllegalAction` now saturates `illegalActionCount` at
+ * `validateEnvelopeShape` in `snapshot.ts` now calls `requireCount` on every
+ * numeric header scalar on the encode path as well as the decode path — and
+ * checks `contentRevision`, which this test suite had not itself flagged,
+ * against its own shape rule, since that field has since been widened from a
+ * `uint32` to the full 128-bit hash `@mm/content` computes. `SimState.
+ * noteIllegalAction` now saturates `illegalActionCount` at
  * `UINT32_MAX` instead of incrementing past it — so the defect described
  * above is fixed both at its source (the counter can no longer be pushed
  * past the domain through the normal increment path) and at the format
@@ -78,13 +80,50 @@ describe('snapshot header scalars beyond the u32 domain', () => {
     expect(() => serializeState(state)).toThrow(/engagement tick/i);
   });
 
-  it('REGRESSION GUARD: refuses to encode a contentRevision past the u32 domain', () => {
+  it('REGRESSION GUARD: refuses to encode a contentRevision outside its domain', () => {
     // contentRevision is the inter-universe compatibility gate (contracts.md
     // §0) and is a writable field on a live state, so this is not a purely
     // hypothetical input either.
+    //
+    // Its domain is no longer "a u32": the field carries `@mm/content`'s full
+    // 128-bit hash as 32 lowercase hex characters, because folding it to 32
+    // bits made equality mean only *probably* identical content. The property
+    // this guard asserts is the same one it always asserted — an
+    // out-of-domain revision is refused at encode time rather than silently
+    // reshaped into some other legitimate-looking revision. Only the domain
+    // moved.
     const state = createState({ rootSeed: 1, schema: world });
-    state.contentRevision = UINT32_OVERFLOW;
+    state.contentRevision = 'abcdef01'; // the old u32 width, now a truncation
     expect(() => serializeState(state)).toThrow(/content revision/i);
+  });
+
+  it('REGRESSION GUARD: refuses to encode a contentRevision outside the lowercase hex alphabet', () => {
+    // Two renderings of one hash that differ only in case would compare
+    // unequal and refuse a raid between two identical universes, so uppercase
+    // is a malformed value rather than a synonym.
+    const state = createState({ rootSeed: 1, schema: world });
+    state.contentRevision = 'ABCDEF0100000000000000000000ABCD';
+    expect(() => serializeState(state)).toThrow(/content revision/i);
+  });
+
+  it('PASSES: a full-width revision round-trips, including the bits below the old fold', () => {
+    // The boundary the guard is actually protecting: two revisions that agree
+    // on their first 32 bits — everything a `u32` header field could have held
+    // — must survive as two distinct revisions and two distinct buffers.
+    const low = createState({
+      rootSeed: 1,
+      schema: world,
+      contentRevision: 'deadbeef00000000000000000000000a',
+    });
+    const high = createState({
+      rootSeed: 1,
+      schema: world,
+      contentRevision: 'deadbeef00000000000000000000000b',
+    });
+
+    expect(deserializeState(serializeState(low), world).contentRevision).toBe(low.contentRevision);
+    expect(deserializeState(serializeState(high), world).contentRevision).toBe(high.contentRevision);
+    expect(serializeState(low)).not.toEqual(serializeState(high));
   });
 
   it('PASSES: the illegal-action counter saturates rather than overflows when incremented through the normal path', () => {

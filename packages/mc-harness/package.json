@@ -1,0 +1,27 @@
+{
+  "name": "@mm/mc-harness",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Monte Carlo worker pool, parameter sweeps, and balance metric collection. Skeleton — the harness lands in balance-harness.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "//": "Host-side tooling, not rules-path code: it owns worker processes and file output, so it sees Node's ambient types. Per contracts.md §5 it reaches the simulation only through agent-api.",
+  "scripts": {
+    "build": "tsc --build"
+  }
+}

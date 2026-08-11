@@ -27,6 +27,9 @@ export default defineConfig({
       // Without the alias the workspace symlink resolves @mm/content to dist/,
       // so a test could quietly pass against a stale build.
       '@mm/content': packageSrc('content'),
+      '@mm/primitives': packageSrc('primitives'),
+      '@mm/state': packageSrc('state'),
+      '@mm/agent-api': packageSrc('agent-api'),
     },
   },
   test: {
@@ -47,5 +50,20 @@ export default defineConfig({
     environment: 'node',
     // Deterministic reporting: no randomised file or test ordering.
     sequence: { shuffle: false, concurrent: false },
+    // Vitest's 5s default is sized for tests that only compute. Two suites here
+    // boot a real ESLint instance instead — `purity-lint.test.ts` and
+    // `stacking-lint.test.ts`, which lint synthetic source to prove the bans
+    // actually fire — and that first `lintText` call loads the flat config, the
+    // TypeScript parser, and the plugin graph. It takes ~500 ms on an idle
+    // machine and comfortably exceeds 5 s on a busy one, so the suite failed
+    // intermittently, always on whichever ESLint test ran first, and always
+    // with a timeout rather than an assertion. A conformance suite that goes
+    // red for reasons unrelated to the code under test is a suite people learn
+    // to re-run rather than read.
+    //
+    // Raised globally rather than per-test because the next test to boot a
+    // toolchain should not have to rediscover this. Nothing here is expected to
+    // take seconds, so a genuine hang still fails the run — just later.
+    testTimeout: 30_000,
   },
 });
