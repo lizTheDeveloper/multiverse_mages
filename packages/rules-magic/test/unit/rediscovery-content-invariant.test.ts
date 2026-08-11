@@ -42,9 +42,9 @@ import {
   shippedDataDirectory,
   validateContent,
 } from '@mm/content';
+import { REDISCOVERY_FLOOR } from '@mm/primitives';
 
 import { catalogFromRegistry } from '../../src/instances/catalog.js';
-import { REDISCOVERY_MULTIPLIER_FLOOR } from '../../src/instances/constants.js';
 
 /** The shipped data files, with one node's rediscovery multiplier rewritten. */
 function contentWithMultiplier(multiplier: number): Record<string, string> {
@@ -91,7 +91,7 @@ describe('the shipped node graph', () => {
       expect(node).toBeDefined();
       expect(node?.researchCost).toBe(entry.record.researchCost);
       expect(node?.prerequisites).toHaveLength(entry.record.prerequisites.length);
-      expect(node?.rediscoveryMultiplier).toBeGreaterThanOrEqual(REDISCOVERY_MULTIPLIER_FLOOR);
+      expect(node?.rediscoveryMultiplier).toBeGreaterThanOrEqual(REDISCOVERY_FLOOR);
     }
   });
 

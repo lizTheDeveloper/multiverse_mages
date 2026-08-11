@@ -63,21 +63,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { deserializeState, div, mul, serializeState } from '@mm/sim-core';
+import {
+  REDISCOVERY_FLOOR,
+  createRediscoveryClampCounter,
+  effectiveRediscoveryMultiplier,
+} from '@mm/primitives';
 import { LOCATION_KIND, defineWorldStateSchema } from '@mm/state';
 
 import type { KnowledgeNode } from '../../src/instances/catalog.js';
-import {
-  DEFAULT_INITIAL_MASTERY,
-  MASTERY_MAX,
-  REDISCOVERY_MULTIPLIER_FLOOR,
-} from '../../src/instances/constants.js';
+import { DEFAULT_INITIAL_MASTERY, MASTERY_MAX } from '../../src/instances/constants.js';
 import { decayHeldKnowledge } from '../../src/instances/decay.js';
 import { destroyLibrary, shelveGrimoire } from '../../src/instances/location.js';
-import {
-  effectiveRediscoveryMultiplier,
-  research,
-  researchRequirement,
-} from '../../src/instances/research.js';
+import { research, researchRequirement } from '../../src/instances/research.js';
 import { STANDARD_STORE, scribe } from '../../src/instances/scribing.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
 import { teach } from '../../src/instances/teaching.js';
@@ -142,6 +139,7 @@ function researchStep(
     learnRate: UNITY.learnRate,
     researchRate: UNITY.researchRate,
     rediscoveryAffinity: options.rediscoveryAffinity ?? 1024,
+    clampCounter: createRediscoveryClampCounter(),
   });
 }
 
@@ -188,6 +186,7 @@ function routesBackTo(knowledge: KnowledgeSubsystem) {
     rediscovery: false,
     rediscoveryAffinity: 1024,
     ...UNITY,
+    clampCounter: createRediscoveryClampCounter(),
   });
   const rederived = researchStep(knowledge, { effort: ordinary });
 
@@ -390,7 +389,14 @@ describe('release claim 0.3.0 — a node ceases to exist when its last instance 
 describe('release claim 0.3.0 — rediscovery costs at least 3× the original research cost', () => {
   const RESEARCH_COSTS = [1024, 3072, 4096, 16384];
   const REDISCOVERY_MULTIPLIERS = [3072, 4096, 6144, 8192];
-  /** Species `rediscoveryAffinity`, spanning "much better" to "much worse". */
+  /**
+   * Species `rediscoveryAffinity`, spanning "much worse" to "much better".
+   *
+   * **The span reads in that order because §2.4 makes the trait a divisor**,
+   * and this comment used to say the reverse. `fp(512)` is the orc, the worst
+   * rediscoverer in v1 content; `fp(2048)` is better than any shipped species
+   * (the gnome leads at `fp(1792)`) and is here to push past the shipped range.
+   */
   const AFFINITIES = [512, 768, 1024, 1536, 2048];
   const LEARN_RATES = [256, 1024, 4096];
   /** The **already stacked** `research-rate` multiplier. */
@@ -410,6 +416,7 @@ describe('release claim 0.3.0 — rediscovery costs at least 3× the original re
 
   it('holds across every combination of content magnitude, affinity, and rate', () => {
     const violations: string[] = [];
+    const counter = createRediscoveryClampCounter();
     let strictlyAbove = 0;
     let combinations = 0;
 
@@ -419,7 +426,12 @@ describe('release claim 0.3.0 — rediscovery costs at least 3× the original re
           for (const learnRate of LEARN_RATES) {
             for (const researchRate of RESEARCH_RATES) {
               const node = nodeCosting(researchCost, rediscoveryMultiplier);
-              const rates = { learnRate, researchRate, rediscoveryAffinity };
+              const rates = {
+                learnRate,
+                researchRate,
+                rediscoveryAffinity,
+                clampCounter: counter,
+              };
               const ordinary = researchRequirement(node, { rediscovery: false, ...rates });
               const lost = researchRequirement(node, { rediscovery: true, ...rates });
 
@@ -443,37 +455,80 @@ describe('release claim 0.3.0 — rediscovery costs at least 3× the original re
     // Not vacuous: most of the grid is *dearer* than the floor, which is what
     // content authored above `fp(3072)` and species affinity are both for.
     expect(strictlyAbove).toBeGreaterThan(combinations / 2);
+
+    // **Re-derived under the divisor reading of §2.4, and it still holds.**
+    // Zero violations across all 720, and `strictlyAbove` is 558 — the *same*
+    // 558 the multiplier reading produced, which is a coincidence of this grid's
+    // roughly symmetric affinity span rather than a fact about the arithmetic.
+    //
+    // What moved is *which* species meet the clamp, not how strong the claim is.
+    // Under the old reading the floor caught the low affinities (`fp(512)`,
+    // `fp(768)`); under §2.4's it catches the high ones (`fp(1536)`, `fp(2048)`)
+    // against content authored near the invariant. On this grid that is 144 of
+    // 720 rather than 108 — the floor binds slightly *more often* here, which is
+    // an artefact of the chosen affinity span and not a weakening: the claim's
+    // margin, `strictlyAbove`, is unchanged, and on **shipped** content the
+    // clamp fires zero times (`rules-world`'s species-traits suite asserts that
+    // over every species × node pair, which is the number that actually says
+    // whether the trait differentiates anything).
+    //
+    // The counts are pinned so a future retune that quietly flattens the trait —
+    // the clamp firing across most of the grid — fails here rather than passing.
+    expect(counter.evaluated).toBe(720);
+    expect(counter.floored).toBe(144);
+    // The floor is a guarantee, not the mechanism: it is idle on most of the grid.
+    expect(counter.floored).toBeLessThan(counter.evaluated / 2);
+    expect(strictlyAbove).toBe(558);
   });
 
   /**
    * The clamp itself. A species good at rediscovery composes below 3× against
-   * content authored at the invariant — `mul(fp(3072), fp(512))` is `fp(1536)`,
+   * content authored at the invariant — `div(fp(3072), fp(2048))` is `fp(1536)`,
    * or 1.5×, and the release claim would be false before any code ran. The
    * clamp is what makes it true, and lowering it falsifies a released claim
    * rather than retuning anything.
+   *
+   * **Direction settled by `contracts.md` §2.4.** These assertions named
+   * `fp(512)` as the species "good at rediscovery", which is the multiplier
+   * reading; §2.4 is normative and makes affinity a divisor, under which
+   * `fp(512)` is the *orc* — the worst rediscoverer in v1, who pays `fp(6144)`
+   * and never approaches the floor. The species that threatens the claim is a
+   * high-affinity one, so the fixtures are `fp(2048)` and the shipped gnome's
+   * `fp(1792)`. The arithmetic is untouched: `3072 × 1024 / 2048` is the same
+   * `1536` that `3072 × 512 / 1024` used to be, so the magnitude the clamp has
+   * to catch is unchanged — only which species produces it.
    */
   it('clamps the effective multiplier at fp(3072) however good the species is', () => {
-    expect(mul(REDISCOVERY_MULTIPLIER_FLOOR, 512)).toBe(1536);
-    expect(effectiveRediscoveryMultiplier(REDISCOVERY_MULTIPLIER_FLOOR, 512)).toBe(
-      REDISCOVERY_MULTIPLIER_FLOOR,
+    const counter = createRediscoveryClampCounter();
+    expect(div(REDISCOVERY_FLOOR, 2048)).toBe(1536);
+    expect(effectiveRediscoveryMultiplier(REDISCOVERY_FLOOR, 2048, counter)).toBe(
+      REDISCOVERY_FLOOR,
+    );
+    // The shipped best rediscoverer, against content authored at the invariant:
+    // `3072 × 1024 / 1792 = 1755`, under the floor. This is the exact case
+    // `contracts.md` §2.3 cites when it tells v1 authors to clear `fp(5376)`.
+    expect(div(REDISCOVERY_FLOOR, 1792)).toBe(1755);
+    expect(effectiveRediscoveryMultiplier(REDISCOVERY_FLOOR, 1792, counter)).toBe(
+      REDISCOVERY_FLOOR,
     );
 
     for (const affinity of AFFINITIES) {
       for (const multiplier of REDISCOVERY_MULTIPLIERS) {
-        expect(effectiveRediscoveryMultiplier(multiplier, affinity)).toBeGreaterThanOrEqual(
-          REDISCOVERY_MULTIPLIER_FLOOR,
+        expect(effectiveRediscoveryMultiplier(multiplier, affinity, counter)).toBeGreaterThanOrEqual(
+          REDISCOVERY_FLOOR,
         );
       }
     }
 
     // At the floor and at unity rates, the requirement is exactly three times
     // `researchCost` — the magnitude `knowledge-instances` names.
-    const atFloor = nodeCosting(4096, REDISCOVERY_MULTIPLIER_FLOOR);
+    const atFloor = nodeCosting(4096, REDISCOVERY_FLOOR);
     expect(
       researchRequirement(atFloor, {
         rediscovery: true,
-        rediscoveryAffinity: 512,
+        rediscoveryAffinity: 2048,
         ...UNITY,
+        clampCounter: counter,
       }),
     ).toBe(4096 * 3);
 
@@ -482,13 +537,15 @@ describe('release claim 0.3.0 — rediscovery costs at least 3× the original re
     const authoredAbove = nodeCosting(4096, 8192);
     const gifted = researchRequirement(authoredAbove, {
       rediscovery: true,
-      rediscoveryAffinity: 768,
+      rediscoveryAffinity: 1792,
       ...UNITY,
+      clampCounter: counter,
     });
     const ordinaryAffinity = researchRequirement(authoredAbove, {
       rediscovery: true,
       rediscoveryAffinity: 1024,
       ...UNITY,
+      clampCounter: counter,
     });
     expect(gifted).toBeLessThan(ordinaryAffinity);
     expect(gifted).toBeGreaterThanOrEqual(4096 * 3);
@@ -511,6 +568,7 @@ describe('release claim 0.3.0 — rediscovery costs at least 3× the original re
       rediscovery: false,
       rediscoveryAffinity: 1024,
       ...UNITY,
+      clampCounter: createRediscoveryClampCounter(),
     });
     const floorOfTheClaim = ordinary * 3;
 
@@ -578,7 +636,12 @@ describe('release claim 0.3.0 — rediscovery costs at least 3× the original re
     for (const learnRate of LEARN_RATES) {
       for (const researchRate of RESEARCH_RATES) {
         const node = nodeCosting(4096, 4096);
-        const rates = { learnRate, researchRate, rediscoveryAffinity: 1024 };
+        const rates = {
+          learnRate,
+          researchRate,
+          rediscoveryAffinity: 1024,
+          clampCounter: createRediscoveryClampCounter(),
+        };
         expect(researchRequirement(node, { rediscovery: false, ...rates })).toBe(
           div(4096, mul(learnRate, researchRate)),
         );

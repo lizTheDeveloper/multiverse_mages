@@ -28,6 +28,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { createRediscoveryClampCounter } from '@mm/primitives';
 import { RNG_STREAM, nextUint32 } from '@mm/sim-core';
 import { LOCATION_KIND } from '@mm/state';
 
@@ -134,6 +135,7 @@ function runResearch(knowledge: KnowledgeSubsystem, rng = stepRng(SEED, TICK)): 
     learnRate: 1024,
     researchRate: 1024,
     rediscoveryAffinity: 1024,
+    clampCounter: createRediscoveryClampCounter(),
   }).progress;
 }
 

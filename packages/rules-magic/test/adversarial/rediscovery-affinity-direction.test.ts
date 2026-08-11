@@ -13,7 +13,7 @@
 
 /**
  * `packages/rules-magic/src/instances/research.ts`'s `effectiveRediscoveryMultiplier`
- * computes `Math.max(mul(multiplier, affinity), REDISCOVERY_MULTIPLIER_FLOOR)`.
+ * computes `Math.max(mul(multiplier, affinity), REDISCOVERY_FLOOR)`.
  *
  * `mul(a, b)` is `(a * b) / FP_ONE` (`packages/sim-core/src/fixed-point/fixed-point.ts`).
  * That is multiplication by `affinity` treated as a *scalar in [0, ...)* where a
@@ -65,11 +65,18 @@ import { describe, expect, it } from 'vitest';
 
 import { FP_ONE, div, mul } from '@mm/sim-core';
 
-import { REDISCOVERY_MULTIPLIER_FLOOR } from '../../src/instances/constants.js';
-import { effectiveRediscoveryMultiplier } from '../../src/instances/research.js';
+import {
+  REDISCOVERY_FLOOR,
+  createRediscoveryClampCounter,
+  effectiveRediscoveryMultiplier,
+} from '@mm/primitives';
+
+/** A throwaway counter per call: these tests assert values, not clamp counts. */
+const counter = (): ReturnType<typeof createRediscoveryClampCounter> =>
+  createRediscoveryClampCounter();
 
 /** Comfortably above the floor under either `mul` or `div` semantics, at every affinity below. */
-const BASE = REDISCOVERY_MULTIPLIER_FLOOR * 10; // fp(30720)
+const BASE = REDISCOVERY_FLOOR * 10; // fp(30720)
 
 describe('effectiveRediscoveryMultiplier direction (contracts.md §2.4)', () => {
   it('gives a higher-affinity species a cheaper (lower) effective multiplier than a lower-affinity one', () => {
@@ -78,8 +85,8 @@ describe('effectiveRediscoveryMultiplier direction (contracts.md §2.4)', () => 
     // one with affinity fp(512) (0.5x). BASE is chosen so neither result is
     // clamped by the floor under either mul or div semantics, isolating the
     // direction question from the clamp.
-    const betterAffinity = effectiveRediscoveryMultiplier(BASE, 2048);
-    const worseAffinity = effectiveRediscoveryMultiplier(BASE, 512);
+    const betterAffinity = effectiveRediscoveryMultiplier(BASE, 2048, counter());
+    const worseAffinity = effectiveRediscoveryMultiplier(BASE, 512, counter());
 
     expect(betterAffinity).toBeLessThan(worseAffinity);
   });
@@ -88,7 +95,7 @@ describe('effectiveRediscoveryMultiplier direction (contracts.md §2.4)', () => 
     // Neutral ground truth both readings agree on: affinity fp(1024) = 1.0
     // must leave the base multiplier unchanged, since both mul(x, FP_ONE) and
     // div(x, FP_ONE) equal x.
-    expect(effectiveRediscoveryMultiplier(BASE, FP_ONE)).toBe(BASE);
+    expect(effectiveRediscoveryMultiplier(BASE, FP_ONE, counter())).toBe(BASE);
   });
 
   it('matches contracts.md §2.3\'s own worked break-even formula exactly', () => {
@@ -100,20 +107,22 @@ describe('effectiveRediscoveryMultiplier direction (contracts.md §2.4)', () => 
     // the fp(3072) floor -- neither above it (affinity did nothing) nor below
     // it (the floor would have to clamp something illegal).
     const geometricPrediction = div(5376, 1792); // contracts.md's own formula
-    expect(geometricPrediction).toBe(REDISCOVERY_MULTIPLIER_FLOOR); // sanity: 3072
+    expect(geometricPrediction).toBe(REDISCOVERY_FLOOR); // sanity: 3072
 
-    expect(effectiveRediscoveryMultiplier(5376, 1792)).toBe(REDISCOVERY_MULTIPLIER_FLOOR);
+    expect(effectiveRediscoveryMultiplier(5376, 1792, counter())).toBe(REDISCOVERY_FLOOR);
   });
 
   it('never makes affinity fp(0) (the worst possible rediscoverer) cheaper than neutral affinity', () => {
     // contracts.md §2.4: "Higher is better". Affinity 0 is the floor of the
-    // trait's range and must be at least as expensive as neutral (fp(1024)),
-    // not strictly cheaper. Only the ordering is asserted -- what `div`
-    // "should" do at a zero divisor is undefined, so no exact value is claimed.
-    const neutral = effectiveRediscoveryMultiplier(BASE, FP_ONE);
-    const zeroAffinity = effectiveRediscoveryMultiplier(BASE, 0);
-
-    expect(zeroAffinity).toBeGreaterThanOrEqual(neutral);
+    // trait's range and must never be cheaper than neutral (fp(1024)).
+    //
+    // The shared implementation satisfies this more strongly than the ordering
+    // this test originally asserted: a non-positive affinity is not a cheap
+    // rediscoverer, it is unrepresentable, and the divisor form rejects it at
+    // the boundary rather than returning some value whose meaning nobody
+    // agreed. An exception is a stronger guarantee than an inequality, so the
+    // assertion is tightened rather than relaxed.
+    expect(() => effectiveRediscoveryMultiplier(BASE, 0, counter())).toThrow(RangeError);
   });
 
   it('reproduces the exact mul/div divergence at the gnome/dwarf values contracts.md names', () => {
@@ -121,8 +130,8 @@ describe('effectiveRediscoveryMultiplier direction (contracts.md §2.4)', () => 
     // contracts.md's own species.json example uses: dwarf fp(768) (below
     // average, should be the *worse* -- more expensive -- rediscoverer) and
     // gnome fp(1792) (best, should be the *cheaper* one).
-    const dwarf = effectiveRediscoveryMultiplier(BASE, 768);
-    const gnome = effectiveRediscoveryMultiplier(BASE, 1792);
+    const dwarf = effectiveRediscoveryMultiplier(BASE, 768, counter());
+    const gnome = effectiveRediscoveryMultiplier(BASE, 1792, counter());
 
     // What contracts.md requires: the gnome (higher affinity) rediscovers more
     // cheaply than the dwarf (lower affinity).

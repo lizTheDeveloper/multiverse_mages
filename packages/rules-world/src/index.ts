@@ -59,13 +59,15 @@ export {
  */
 export * from './mages/index.js';
 
-export type { RediscoveryClampCounter } from './rediscovery.js';
-export {
-  REDISCOVERY_FLOOR,
-  createRediscoveryClampCounter,
-  effectiveRediscoveryMultiplier,
-  speciesRediscoveryMultiplier,
-} from './rediscovery.js';
+/*
+ * The rediscovery multiplier is **not** re-exported here, and its absence is
+ * deliberate. It used to live in `./rediscovery.js`, and `rules-magic` had a
+ * second copy computing the opposite direction; both are gone and the one
+ * survivor is `@mm/primitives`' `effectiveRediscoveryMultiplier`. Re-exporting
+ * it from this package would offer a second import path for the same function
+ * and start the drift over — `contracts.md` §5 rule 3 means `rules-magic`
+ * cannot follow that path anyway. Import it from `@mm/primitives`.
+ */
 
 // Counted populace: cohorts, occupations, cohort mortality. One re-export
 // rather than a named list, so that growing the populace layer touches

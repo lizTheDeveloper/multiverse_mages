@@ -62,7 +62,7 @@ export interface KnowledgeNode {
   readonly researchCost: Fp;
   readonly teachCost: Fp;
   readonly scribeCost: Fp;
-  /** At least {@link REDISCOVERY_MULTIPLIER_FLOOR}; the loader enforces it. */
+  /** At least `@mm/primitives`' `REDISCOVERY_FLOOR`; the loader enforces it. */
   readonly rediscoveryMultiplier: Fp;
 }
 

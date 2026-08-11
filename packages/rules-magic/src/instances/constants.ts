@@ -29,31 +29,13 @@
  * that a magic number buried in a function is a magnitude nobody can find when
  * the harness finally says it is wrong.
  *
- * The one constant here that is **not** a placeholder is
- * {@link REDISCOVERY_MULTIPLIER_FLOOR}. It is a release claim.
+ * Every constant here is a placeholder. The one number this file used to carry
+ * that was **not** — `REDISCOVERY_MULTIPLIER_FLOOR`, 0.3.0's headline claim in
+ * numeric form — has moved to `@mm/primitives` as `REDISCOVERY_FLOOR`, next to
+ * the arithmetic that applies it. It was one of three copies of the same
+ * release claim, and the other two disagreed about what it was clamping.
+ * Import it from `@mm/primitives`.
  */
-
-/**
- * The hard floor on a node's effective rediscovery multiplier, `fp(3072)`.
- *
- * **This is 0.3.0's headline claim in numeric form**: *"rediscovering a node
- * costs at least 3× its original research cost."* `contracts.md` §2.3 sets the
- * content invariant at `fp(3072)`, and §2.4 gives a species a
- * `rediscoveryAffinity` described as a multiplier against it — which composes
- * to less than 3× the moment a species is good at rediscovery. Gnomes at
- * `fp(768)` against a node at the invariant produce `2.25×`, and the release
- * claim is false before any code runs.
- *
- * The resolution `knowledge-model` takes, and reports to the contract owner
- * rather than applying quietly, is that affinity applies *first* and the result
- * is clamped here. Species differentiation therefore survives everywhere except
- * exactly at the floor, and v1 content is authored above it (the loader's
- * `V1_REDISCOVERY_AUTHORING_FLOOR`) so the clamp is rarely the binding
- * constraint.
- *
- * Lowering this number is not a tuning change. It falsifies a released claim.
- */
-export const REDISCOVERY_MULTIPLIER_FLOOR = 3072;
 
 /**
  * Mastery an instance is created at when nothing else is declared. **Untuned.**

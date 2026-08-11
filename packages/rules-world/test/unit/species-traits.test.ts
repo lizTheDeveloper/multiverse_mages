@@ -35,17 +35,19 @@ import { describe, expect, it } from 'vitest';
 
 import { loadContent, shippedContentSource } from '@mm/content';
 import type { ContentRegistry } from '@mm/content';
+import {
+  REDISCOVERY_FLOOR,
+  createRediscoveryClampCounter,
+  effectiveRediscoveryMultiplier,
+  speciesRediscoveryMultiplier,
+} from '@mm/primitives';
 import { FP_ONE } from '@mm/sim-core';
 
 import {
-  REDISCOVERY_FLOOR,
   SPECIES_FP_TRAITS,
   SPECIES_TRAIT_REGISTRY,
   advantageOf,
   applySpeciesTrait,
-  createRediscoveryClampCounter,
-  effectiveRediscoveryMultiplier,
-  speciesRediscoveryMultiplier,
   traitValueOf,
 } from '@mm/rules-world';
 import type { SpeciesFpTrait } from '@mm/rules-world';
@@ -319,6 +321,47 @@ describe('the effective rediscovery multiplier', () => {
         );
       }
     }
+    expect(counter.floored).toBe(0);
+  });
+
+  /**
+   * **This is the check that stops the two-implementations bug recurring.**
+   *
+   * `rediscoveryAffinity` was once computed in two packages at once — as a
+   * divisor in `rules-world` and as a multiplier in `rules-magic` — and both
+   * suites were green because `contracts.md` §5 rule 3 forbids those two
+   * packages importing each other, so nothing ever compared them. The
+   * arithmetic now lives once, in `@mm/primitives`, which both may reach.
+   *
+   * What survives *here* is the **declaration**: `SPECIES_TRAIT_REGISTRY` is
+   * the eight-row table whose whole purpose is that a trait's direction is data
+   * rather than convention, and it still says `rediscoveryAffinity` divides.
+   * `@mm/primitives` sits below this package and cannot import that table, so
+   * the declaration and the arithmetic are two artefacts that could drift.
+   * This test is the tie: wherever the floor is not binding, the shared helper
+   * must return exactly what applying the registry descriptor returns. Flip
+   * either one and this fails.
+   */
+  it('computes what the trait registry declares, above the floor', () => {
+    const descriptor = SPECIES_TRAIT_REGISTRY.rediscoveryAffinity;
+    expect(descriptor.application).toBe('divisor');
+
+    const counter = createRediscoveryClampCounter();
+    let comparisons = 0;
+    for (const base of [5376, 6144, 8192, 16384]) {
+      for (const affinity of [512, 768, 896, 1024, 1536, 1792]) {
+        const declared = applySpeciesTrait(descriptor, base, affinity);
+        // Only where the clamp is idle; where it bites, the floor is the
+        // answer and the registry has nothing to say about it.
+        if (declared < REDISCOVERY_FLOOR) continue;
+        expect(
+          effectiveRediscoveryMultiplier(base, affinity, counter),
+          `registry and @mm/primitives disagree at base ${String(base)}, affinity ${String(affinity)}`,
+        ).toBe(declared);
+        comparisons += 1;
+      }
+    }
+    expect(comparisons).toBeGreaterThan(0);
     expect(counter.floored).toBe(0);
   });
 });

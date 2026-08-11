@@ -70,6 +70,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { createRediscoveryClampCounter } from '@mm/primitives';
 import { GRIMOIRE, LOCATION_KIND, componentOf } from '@mm/state';
 import type { LocationKindValue } from '@mm/state';
 
@@ -212,6 +213,7 @@ function transcript(tradition: number): Transcript {
       effort: 512,
       ...UNITY,
       rediscoveryAffinity: 1024,
+      clampCounter: createRediscoveryClampCounter(),
       initialMastery: acquire.initialMastery,
       locationKind: store.personalLocationKind,
     });
@@ -417,6 +419,7 @@ function unhookedScenario(tradition: number): readonly (number | string)[] {
       effort: 1024 * 64,
       ...UNITY,
       rediscoveryAffinity: 1024,
+      clampCounter: createRediscoveryClampCounter(),
     });
     log.push(outcome.refusal?.reason ?? '', outcome.required, outcome.progress, outcome.instance);
     return outcome;

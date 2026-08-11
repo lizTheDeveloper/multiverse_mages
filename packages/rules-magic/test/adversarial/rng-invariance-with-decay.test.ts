@@ -37,6 +37,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { createRediscoveryClampCounter } from '@mm/primitives';
 import { LOCATION_KIND } from '@mm/state';
 
 import { decayHeldKnowledge } from '../../src/instances/decay.js';
@@ -62,6 +63,10 @@ const shared = {
   cells: testCells,
   ruleset: permissiveRuleset(),
   worldTick: TICK,
+  // Required by ResearchInputs. Shared across the control and perturbed runs on
+  // purpose: it only counts floor clamps and never feeds back into the value
+  // under test, so it cannot be the thing that makes the two runs agree.
+  clampCounter: createRediscoveryClampCounter(),
 };
 
 /** A fresh knowledge subsystem with real entity handles for a teacher and a researcher. */

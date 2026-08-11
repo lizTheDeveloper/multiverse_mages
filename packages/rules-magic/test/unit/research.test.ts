@@ -16,14 +16,15 @@ import { describe, expect, it } from 'vitest';
 import { mul } from '@mm/sim-core';
 import { LOCATION_KIND } from '@mm/state';
 
-import { catalogOf } from '../../src/instances/catalog.js';
-import { REDISCOVERY_MULTIPLIER_FLOOR } from '../../src/instances/constants.js';
-import type { ResearchInputs } from '../../src/instances/research.js';
 import {
+  REDISCOVERY_FLOOR,
+  createRediscoveryClampCounter,
   effectiveRediscoveryMultiplier,
-  research,
-  researchRequirement,
-} from '../../src/instances/research.js';
+} from '@mm/primitives';
+
+import { catalogOf } from '../../src/instances/catalog.js';
+import type { ResearchInputs } from '../../src/instances/research.js';
+import { research, researchRequirement } from '../../src/instances/research.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
 import {
   CHILD_NODE,
@@ -66,6 +67,7 @@ function inputs(
     learnRate: FULL,
     researchRate: FULL,
     rediscoveryAffinity: FULL,
+    clampCounter: createRediscoveryClampCounter(),
     ...overrides,
   };
 }
@@ -236,16 +238,66 @@ describe('rediscovery', () => {
     expect(knowledge.exists(ROOT_NODE)).toBe(true);
   });
 
-  it('lets affinity differentiate above the floor', () => {
+  /**
+   * **Direction settled by `contracts.md` §2.4.** This test previously called
+   * `fp(768)` "gnomish" and asserted it was cheaper, which is the multiplier
+   * reading — written from `knowledge-instances`' scenario wording rather than
+   * from the contract or the data. §2.4 is normative and makes
+   * `rediscoveryAffinity` a *divisor*, and the shipped gnome carries `fp(1792)`,
+   * not `fp(768)` — `fp(768)` is the dwarf, a below-average rediscoverer. So the
+   * fixture is now the real gnome and the comparison stands as written.
+   *
+   * The node is authored at `fp(6144)` rather than the shared catalog's
+   * `fp(4096)` because the assertion is about differentiating *above* the floor,
+   * and `fp(4096)` cannot: §2.3 rejects it by name, since `4096 × 1024 / 1792`
+   * is `2340`, under the floor, and the gnome clamps flat. `fp(6144)` clears the
+   * `fp(5376)` break-even `content`'s `V1_REDISCOVERY_AUTHORING_FLOOR` enforces.
+   */
+  it('lets a higher affinity differentiate above the floor', () => {
     const knowledge = lostNode();
-    const gnomish = research(inputs(knowledge, { progress: 0, effort: 0, rediscoveryAffinity: 768 }));
-    const ordinary = research(inputs(knowledge, { progress: 0, effort: 0, rediscoveryAffinity: FULL }));
+    const authoredAboveBreakEven = catalogOf([
+      {
+        nodeId: ROOT_NODE,
+        tier: 1,
+        prerequisites: [],
+        researchCost: 4096,
+        teachCost: 1024,
+        scribeCost: 2048,
+        rediscoveryMultiplier: 6144,
+      },
+    ]);
+    const at = (rediscoveryAffinity: number): number =>
+      research(
+        inputs(knowledge, {
+          catalog: authoredAboveBreakEven,
+          progress: 0,
+          effort: 0,
+          rediscoveryAffinity,
+        }),
+      ).required;
 
-    expect(gnomish.required).toBeLessThan(ordinary.required);
-    expect(gnomish.required).toBeGreaterThanOrEqual(mul(4096, REDISCOVERY_MULTIPLIER_FLOOR));
-    expect(ordinary.required).toBeGreaterThanOrEqual(mul(4096, REDISCOVERY_MULTIPLIER_FLOOR));
+    const gnomish = at(1792);
+    const ordinary = at(FULL);
+    const orcish = at(512);
+
+    // Higher affinity is cheaper, monotonically, across the shipped span.
+    expect(gnomish).toBeLessThan(ordinary);
+    expect(ordinary).toBeLessThan(orcish);
+    // And nobody, including the best rediscoverer alive, gets under 3×.
+    expect(gnomish).toBeGreaterThanOrEqual(mul(4096, REDISCOVERY_FLOOR));
+    expect(ordinary).toBeGreaterThanOrEqual(mul(4096, REDISCOVERY_FLOOR));
+    // Above the floor, not merely at it — which is what "differentiate" means.
+    expect(gnomish).toBeGreaterThan(mul(4096, REDISCOVERY_FLOOR));
   });
 
+  /**
+   * **Direction settled by `contracts.md` §2.4.** The strong affinity here was
+   * `fp(512)`, which under the divisor reading is the *orc* — the worst
+   * rediscoverer in v1 content, who pays `3072 × 1024 / 512 = fp(6144)` and is
+   * never anywhere near the floor. The species that actually threatens the
+   * release claim is the gnome at `fp(1792)`: `3072 × 1024 / 1792 = 1755`, well
+   * under `fp(3072)`, so the clamp is what keeps 0.3.0's "at least 3×" true.
+   */
   it('clamps to three times research cost however strong the affinity', () => {
     const knowledge = lostNode();
     const atTheFloor = catalogOf([
@@ -256,7 +308,7 @@ describe('rediscovery', () => {
         researchCost: 4096,
         teachCost: 1024,
         scribeCost: 2048,
-        rediscoveryMultiplier: REDISCOVERY_MULTIPLIER_FLOOR,
+        rediscoveryMultiplier: REDISCOVERY_FLOOR,
       },
     ]);
 
@@ -265,23 +317,29 @@ describe('rediscovery', () => {
         catalog: atTheFloor,
         progress: 0,
         effort: 0,
-        rediscoveryAffinity: 512,
+        rediscoveryAffinity: 1792,
       }),
     );
 
-    expect(outcome.required).toBe(mul(4096, REDISCOVERY_MULTIPLIER_FLOOR));
+    expect(outcome.required).toBe(mul(4096, REDISCOVERY_FLOOR));
     expect(outcome.required).toBe(4096 * 3);
   });
 
   it('never yields an effective multiplier below the floor, for any affinity', () => {
-    for (const affinity of [1, 128, 512, 768, FULL, 2048]) {
-      expect(effectiveRediscoveryMultiplier(REDISCOVERY_MULTIPLIER_FLOOR, affinity)).toBeGreaterThanOrEqual(
-        REDISCOVERY_MULTIPLIER_FLOOR,
-      );
-      expect(effectiveRediscoveryMultiplier(8192, affinity)).toBeGreaterThanOrEqual(
-        REDISCOVERY_MULTIPLIER_FLOOR,
+    const counter = createRediscoveryClampCounter();
+    for (const affinity of [1, 128, 512, 768, FULL, 1792, 2048, 8192]) {
+      expect(
+        effectiveRediscoveryMultiplier(REDISCOVERY_FLOOR, affinity, counter),
+      ).toBeGreaterThanOrEqual(REDISCOVERY_FLOOR);
+      expect(effectiveRediscoveryMultiplier(8192, affinity, counter)).toBeGreaterThanOrEqual(
+        REDISCOVERY_FLOOR,
       );
     }
+    // The counter is not decoration: the floor really did bind on the strong
+    // affinities here, and a run in which it never bound would be a different
+    // (and equally reportable) finding.
+    expect(counter.evaluated).toBe(16);
+    expect(counter.floored).toBeGreaterThan(0);
   });
 
   it('charges ordinary research for a node this universe never knew', () => {
@@ -321,12 +379,19 @@ describe('rediscovery', () => {
           rediscoveryAffinity: FULL,
           learnRate,
           researchRate,
+          clampCounter: createRediscoveryClampCounter(),
         });
+        // **Direction settled by `contracts.md` §2.4.** This was `fp(128)`,
+        // chosen as an absurdly *strong* affinity under the multiplier reading.
+        // Under the divisor reading `fp(128)` is an absurdly *weak* one, which
+        // makes rediscovery dearer and the assertion vacuous. `fp(8192)` is the
+        // extreme in the direction that actually threatens the claim.
         const rediscovered = researchRequirement(node!, {
           rediscovery: true,
-          rediscoveryAffinity: 128,
+          rediscoveryAffinity: 8192,
           learnRate,
           researchRate,
+          clampCounter: createRediscoveryClampCounter(),
         });
         expect(rediscovered).toBeGreaterThanOrEqual(ordinary * 3);
       }
@@ -342,12 +407,14 @@ describe('rediscovery', () => {
       rediscoveryAffinity: FULL,
       learnRate: 512,
       researchRate: FULL,
+      clampCounter: createRediscoveryClampCounter(),
     });
     const quick = researchRequirement(node!, {
       rediscovery: false,
       rediscoveryAffinity: FULL,
       learnRate: 2048,
       researchRate: FULL,
+      clampCounter: createRediscoveryClampCounter(),
     });
 
     expect(slow).toBeGreaterThan(4096);
