@@ -31,8 +31,9 @@ export interface ContentSource {
 /**
  * The content files, in load order.
  *
- * The first eight are `docs/design/contracts.md` §2's. The last two are
- * `god-agency`'s and are a deliberate extension of that list rather than a
+ * The first eight are `docs/design/contracts.md` §2's. The next two are
+ * `god-agency`'s, and the last is `raid-engagement`'s; all three are a
+ * deliberate extension of that list rather than a
  * violation of it: §2 was written before the god had verbs, and `CLAUDE.md`
  * requires that content — *"grid cells, nodes, species, primitives,
  * traditions"* — live in validated data files rather than in code. An
@@ -42,6 +43,14 @@ export interface ContentSource {
  * change, and would put a balance magnitude somewhere `contentRevision` does not
  * cover — so two universes could disagree about what forbidding a technique
  * costs and still agree they were compatible.
+ *
+ * `raid-constant.json` earns its place twice over. It is the same argument —
+ * how long a portal holds is a number a sweep turns, and two universes that
+ * disagreed about it while agreeing they were compatible would fight two
+ * different battles — and it is also where the termination proof is checked.
+ * `stabilityDecayPerTick` is an authored raw integer whose validity is the
+ * difference between a raid that ends and a worker that never returns, and the
+ * cheapest place to meet that failure is the load.
  */
 export const CONTENT_FILES = [
   'technique.json',
@@ -54,6 +63,7 @@ export const CONTENT_FILES = [
   'territory.json',
   'god-cost.json',
   'god-constant.json',
+  'raid-constant.json',
 ] as const;
 
 export type ContentFileName = (typeof CONTENT_FILES)[number];

@@ -26,7 +26,6 @@ import {
   PREPARED_SPELL,
   beginEngagement,
   componentOf,
-  decayPortal,
   defineWorldStateSchema,
   endEngagement,
   inEngagement,
@@ -227,7 +226,11 @@ describe('opening a raid refuses the arrangements that break termination', () =>
     ).toThrow(/at least 1/);
   });
 
-  it('terminates: repeated decay reaches zero and ends the raid', () => {
+  it('ends the raid once stability has been decayed to zero', () => {
+    // The decrement itself lives in `@mm/rules-raid`, because "exactly one
+    // function assigns portalStability" is the termination claim and a helper
+    // here would make it a claim about two files. What this package owns is the
+    // question, so that is what is asserted.
     const { state } = populatedWorld();
     const engagement = beginEngagement(state, {
       hostRuleset: fixtureRuleset(),
@@ -238,8 +241,7 @@ describe('opening a raid refuses the arrangements that break termination', () =>
     });
 
     expect(raidHasEnded(engagement.raid)).toBe(false);
-    for (let tick = 0; tick < 3; tick += 1) decayPortal(engagement.raid);
-    expect(engagement.raid.portalStability).toBe(0);
+    engagement.raid.portalStability = 0;
     expect(raidHasEnded(engagement.raid)).toBe(true);
   });
 });

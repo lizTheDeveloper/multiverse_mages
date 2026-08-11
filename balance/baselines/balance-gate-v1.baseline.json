@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "b84f2181f89f3dc2c169d274d9030b77e00799968751ceac42aba002e2dcf499",
+  "contentHash": "600351937df173dfdd302c1e077d9b4eba60430ea484a21ebde3debcdc78887d",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.648564310457522,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.945692931372566,"unit":"grimoires","value":116.7},
@@ -14,16 +14,18 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":0.4412285723536322,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3236857170608967,"unit":"people","value":129.13},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.4412285723536323,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3236857170608969,"unit":"people","value":-14.87}
   ],
-  "notes": [],
+  "notes": [
+    "raid-engagement adds the mechanic behind raidLengthDistribution, inboundRaidTempoLoss, raidInitiationCost and winRateByPrimitive, but this sweep does not exercise it: the passive control submits no action 14. Wiring a raiding strategy into the gate is deliberately a later change, so that this regeneration is a provenance re-key and nothing else."
+  ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "0e63987b2823f4d991ea1c7a40944055",
+    "contentHash": "2512ea02d2a7569d8d0bacc4c5a926ca",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Re-keyed to the god-agency build. god-agency (0.7.0) adds two content files inside contentRevision, so the provenance hash moves and the gate correctly refuses to compare across builds. The nine measured values are unchanged to the decimal: this sweep is 200 runs of the passive control, which submits no god action, and the god systems installed versus removed were measured to produce identical metrics. This records a new build, not new behaviour. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0, and they describe a universe still degenerate in known ways -- the passive control exercises no god verb, and library depth stays near 1.7 distinct nodes against a hundred-odd grimoires because the scribable list is cost-ordered, so the same cheap nodes are copied over and over.",
+  "rationale": "Re-keyed to the raid-engagement build. raid-engagement (0.9.0) adds raid-constant.json, an eleventh content file inside contentRevision, so the provenance hash moves from 0e63987b2823f4d991ea1c7a40944055 to 2512ea02d2a7569d8d0bacc4c5a926ca and the gate correctly refuses to compare across builds. Every measured value is unchanged to the decimal, and that is the interesting part rather than an accident: this sweep is 200 runs of the passive control, which opens no portal, and a universe that never raids is bit-identical before and after this change. This records a new build, not new behaviour. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0, and they describe a universe still degenerate in known ways -- the passive control exercises no god verb, no raid is ever initiated so the four tempo metrics still report nothing, and library depth stays near 1.7 distinct nodes against a hundred-odd grimoires because the scribable list is cost-ordered, so the same cheap nodes are copied over and over.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
@@ -37,7 +39,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.13,"value":129.13},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.87,"value":-14.87}
   ],
-  "supersedes": "8389aea026603ca6c3bc99002fcee884a4c0aedd63e89cd81f41d9d85de22661",
+  "supersedes": "b84f2181f89f3dc2c169d274d9030b77e00799968751ceac42aba002e2dcf499",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }
