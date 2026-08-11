@@ -52,11 +52,13 @@
 
 import type { SimState } from '@mm/sim-core';
 import {
+  ASCENSION_PATH,
   GRID_FORM_COUNT,
   GRID_TECHNIQUE_COUNT,
   TERMINAL_REASON,
   canIssueEdict,
   findUniverse,
+  godStateOrEmpty,
   inEngagement,
   readEdicts,
   readUniverse,
@@ -102,6 +104,22 @@ export function legalityMask(input: MaskInput): Uint8Array {
   }
 
   const record = readUniverse(state, universe);
+
+  // A run that has ended has nothing legal but the no-op. §4.3 makes the
+  // episode over, and `god-agency`'s resolver refuses every submission against
+  // a terminated universe — so a mask that kept reporting `assignRole` legal
+  // would be handing an agent an action the rules will silently turn away. That
+  // disagreement between the mask and the rules is exactly what
+  // `illegalActionRate`'s *"spec-clarity smell"* note is about, and it is
+  // cheaper to close here than to explain later.
+  //
+  // Written as an early return for the same reason the engagement branch above
+  // is: an action added to §4.2 later is masked after termination *by default*,
+  // rather than by somebody remembering to add it to a list.
+  if (record.ascended !== 0 || record.terminalReason !== TERMINAL_REASON.none) {
+    return mask;
+  }
+
   const techniqueMask = (1 << GRID_TECHNIQUE_COUNT) - 1;
   const formMask = (1 << GRID_FORM_COUNT) - 1;
 
@@ -122,11 +140,14 @@ export function legalityMask(input: MaskInput): Uint8Array {
     mask[action] = (candidates.get(action)?.length ?? 0) > 0 ? 1 : 0;
   }
 
-  // §1.1's terminal flags. A run that has already ended cannot declare
-  // ascension again — the *eligibility* for ascension is `god-agency`'s
-  // (vision §8a), but "this run is over" is state, and it is checkable here.
+  // §1.1's terminal flags are handled above, by the early return: a run that
+  // has already ended cannot declare ascension again, and cannot do anything
+  // else either. What remains here is the *eligibility*, which is
+  // `god-agency`'s (vision §8a) and lives on the god-state row — the outcome
+  // system recomputes it every world tick precisely so that it can lapse, and
+  // reading it rather than re-deriving it is what makes the mask follow it down.
   mask[GOD_ACTION.declareAscension] =
-    record.ascended === 0 && record.terminalReason === TERMINAL_REASON.none ? 1 : 0;
+    godStateOrEmpty(state, universe).ascensionPath === ASCENSION_PATH.none ? 0 : 1;
 
   return mask;
 }

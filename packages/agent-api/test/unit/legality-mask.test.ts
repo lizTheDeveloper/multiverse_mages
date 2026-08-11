@@ -29,7 +29,17 @@
  */
 
 import type { SimState } from '@mm/sim-core';
-import { EDICT, EDICT_KIND, TERMINAL_REASON, UNIVERSE, attachRecord, cellIdAt } from '@mm/state';
+import {
+  ASCENSION_PATH,
+  EDICT,
+  EDICT_KIND,
+  EMPTY_GOD_STATE,
+  GOD_STATE,
+  TERMINAL_REASON,
+  UNIVERSE,
+  attachRecord,
+  cellIdAt,
+} from '@mm/state';
 import {
   ACTION_SPACE_SIZE,
   ALL_GOD_ACTIONS,
@@ -130,15 +140,46 @@ describe('at world scale the mask reflects ordinary validity, not a blanket refu
     expect(isLegal(mask, GOD_ACTION.revokeEdict)).toBe(true);
   });
 
-  it('closes declareAscension once the run has already ended', () => {
+  it('closes declareAscension for a universe that qualifies for no path', () => {
+    // This assertion used to run the other way: the mask reported action 15
+    // legal for *any* non-terminated universe, because the only thing it could
+    // check was "this run is over" and eligibility was `god-agency`'s and did
+    // not exist. It does now, cached on the god-state row and recomputed every
+    // world tick so that it can lapse, so a fresh universe at tick zero is
+    // correctly told it cannot declare.
     const world = firstUniverse();
+    expect(isLegal(maskOf(world), GOD_ACTION.declareAscension)).toBe(false);
+
+    attachRecord(world.state, GOD_STATE, world.universe, {
+      ...EMPTY_GOD_STATE,
+      ascensionPath: ASCENSION_PATH.apotheosis,
+    });
+    expect(isLegal(maskOf(world), GOD_ACTION.declareAscension)).toBe(true);
+  });
+
+  it('closes every action, not merely declareAscension, once the run has ended', () => {
+    const world = firstUniverse();
+    attachRecord(world.state, GOD_STATE, world.universe, {
+      ...EMPTY_GOD_STATE,
+      ascensionPath: ASCENSION_PATH.apotheosis,
+    });
     expect(isLegal(maskOf(world), GOD_ACTION.declareAscension)).toBe(true);
 
     attachRecord(world.state, UNIVERSE, world.universe, {
       ...SETTLED_RULESET,
       terminalReason: TERMINAL_REASON.stagnation,
     });
-    expect(isLegal(maskOf(world), GOD_ACTION.declareAscension)).toBe(false);
+    // Not just action 15. `god-agency`'s resolver refuses *every* submission
+    // against a terminated universe, and a mask that kept reporting a role
+    // assignment legal would hand an agent an action the rules silently turn
+    // away — the mask-versus-rules disagreement `illegalActionRate` calls a
+    // spec-clarity smell.
+    const mask = maskOf(world);
+    expect(isLegal(mask, GOD_ACTION.noop)).toBe(true);
+    for (const action of ALL_GOD_ACTIONS) {
+      if (action === GOD_ACTION.noop) continue;
+      expect(isLegal(mask, action), `action ${action} must be masked after termination`).toBe(false);
+    }
   });
 
   it('leaves only no-op legal for a world with no universe yet', () => {

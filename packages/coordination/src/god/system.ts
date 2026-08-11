@@ -226,10 +226,17 @@ function interventionSystem(
       if (ctx.mode !== TIME_MODE.world) return;
       const universe = findUniverse(ctx.state);
       if (universe === 0) return;
-      if (readUniverse(ctx.state, universe).terminalReason !== TERMINAL_REASON.none) return;
 
-      expireRows(ctx.state, ctx.tick);
-      decayHysteresis(ctx.state, ctx.tick, deps);
+      // A terminated universe expires nothing and decays nothing — it is frozen
+      // — but it still runs the resolver, which refuses every submission and
+      // counts it. Returning early here instead was a defect a test found: the
+      // submission was neither applied nor counted, and `step.ts` names that
+      // outcome the worst one available, since an agent cannot learn from it and
+      // a human cannot debug it.
+      if (readUniverse(ctx.state, universe).terminalReason === TERMINAL_REASON.none) {
+        expireRows(ctx.state, ctx.tick);
+        decayHysteresis(ctx.state, ctx.tick, deps);
+      }
 
       const report = resolveInterventions(ctx.state, ctx.actions, ctx.tick, ctx.mode, {
         god: deps.content,
