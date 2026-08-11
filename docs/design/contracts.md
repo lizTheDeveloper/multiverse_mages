@@ -486,6 +486,18 @@ what mages *did* but never why, and autonomy reads as randomness.
 It is **not** part of the RL observation. It is emitted on request, is never an input to any rules
 computation, and no simulation behaviour may depend on whether it was requested.
 
+**Consumer note, added while drafting `docs/design/sound-design.md` (§10.1).** The core's guarantee
+above is unchanged and should stay. But a planned consumer — the client's bark system — wants
+*per-mage decision reasons at world-tick granularity*, which is a different shape from *on-demand
+explanation of one decision*. Two consequences, neither urgent:
+
+- Whoever pins the explain channel's payload in `agent-interface` should know that shape is wanted,
+  because it is much cheaper to know before the format is fixed than after.
+- `electron-client` should treat the channel as required for its own read path even though the core
+  keeps it optional. A client that skipped it to save bandwidth would ship a game where mages are
+  silent about why they act — which is the exact failure this section exists to prevent, arriving
+  through a door nobody was watching.
+
 ---
 
 ## 5. Module Boundaries
@@ -493,7 +505,7 @@ computation, and no simulation behaviour may depend on whether it was requested.
 ```
 packages/
   sim-core        deterministic substrate. Depends on: nothing.
-  content         data files + loader + validator. Depends on: sim-core (types only).
+  content         data files + loader + validator, plus a parallel audio content set and its own leaf modules. Depends on: sim-core (types only).
   state           §1 world state types, component layouts, permits().     → sim-core, content (types only)
   primitives      §3 stacking arithmetic and cap clamping.                → sim-core, content (types only)
   rules-magic     grid legality, nodes, knowledge instances, traditions. → sim-core, content, state, primitives
@@ -520,6 +532,20 @@ the primitive registry that lives in `content`. `content` is in the dependency-p
 `PURE_PACKAGES` and may take no runtime dependency, so the arithmetic cannot live there; and §3
 forbids re-deriving a floor outside the one shared helper, so it cannot live anywhere that would
 have to reimplement one. A package between the two is the only placement that satisfies both.
+
+**`content` also carries a second, parallel audio content set — cues and voice-line banks under
+`data/audio`, validated by their own schemas — deliberately outside `contentRevision` (§0):
+renderer-only content that never reaches the simulation must never perturb the hash two universes
+compare to agree they can play together. Alongside it live two pure leaf modules,
+`audio-selection-merge.ts` and `audio-generation.ts`, added for asset production rather than for
+the simulation.** A separate package for either would be worse. `audio-selection-merge.ts` is
+loaded directly by a browser (`tools/audition/`) and must import nothing — a package boundary
+would not tighten that constraint, only add a `package.json` for it to point at. And
+`audio-generation.ts` is ~100 lines whose only input is audio content records already defined
+here; a new package would add build infrastructure — its own `tsconfig`, its own entry in the
+dependency-purity check, its own place in this diagram — to hold two files. Boundaries that are
+only true in practice, not enforced anywhere, are the ones that get "tidied up" by someone who
+does not know why they were drawn that way.
 
 **Enforced rules:**
 

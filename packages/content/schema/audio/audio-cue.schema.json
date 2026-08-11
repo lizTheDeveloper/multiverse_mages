@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/audio/audio-cue.schema.json",
+  "title": "audio-cue.json",
+  "description": "Non-voice audio cues (docs/design/sound-design.md §§2-7). Renderer-only content: never loaded by the simulation, never part of contentRevision. `prompt` and `post` text is CC BY-SA 4.0 per ASSET-LICENSE.md.",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/cue" },
+  "$defs": {
+    "cue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "kind", "band", "grid", "durationMs", "levelDbTenths",
+        "variants", "pitchJitterCents", "prompt", "post", "subject", "source",
+        "densityThreshold"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "kind": {
+          "enum": [
+            "click", "technique-envelope", "form-material",
+            "arrangement-stem", "intervention", "knowledge", "raid-primitive"
+          ]
+        },
+        "band": { "enum": ["sub", "low", "low-mid", "presence", "sparkle", "air"] },
+        "grid": {
+          "enum": [
+            "downbeat", "beat-1-3", "backbeat", "eighth",
+            "sixteenth", "off-grid", "unquantized"
+          ]
+        },
+        "durationMs": { "type": "integer", "minimum": 1, "maximum": 600000 },
+        "levelDbTenths": { "type": "integer", "minimum": -600, "maximum": 0 },
+        "variants": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "pitchJitterCents": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "prompt": { "type": "string", "maxLength": 500 },
+        "post": { "type": "string", "maxLength": 300 },
+        "subject": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "source": { "type": "string", "minLength": 1, "maxLength": 16 },
+        "densityThreshold": { "type": "integer", "minimum": 0, "maximum": 1000 }
+      }
+    },
+    "contentId": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 64 }
+  }
+}

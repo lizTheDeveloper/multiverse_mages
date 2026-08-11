@@ -70,4 +70,32 @@ export {
 export type { CliOutput } from './cli.js';
 export { runValidation } from './cli.js';
 
+export {
+  AUDIO_FILES,
+  audioSchemas,
+  validateAudioContent,
+  loadAudioContent,
+  shippedAudioDirectory,
+  shippedAudioSchemaDirectory,
+  audioSelect,
+} from './audio.js';
+export type { AudioFileName, AudioValidationResult } from './audio.js';
+export type {
+  AudioCueRecord,
+  AudioCueKind,
+  AudioBand,
+  AudioGridPosition,
+  VoiceLineRecord,
+  VoiceLineTier,
+  VoiceLineBankRecord,
+} from './audio-types.js';
+
+export type { GenerationRequest } from './audio-generation.js';
+export { planRequests, redact } from './audio-generation.js';
+
+export type { SelectionCoverage, SelectionPass, Selections } from './audio-selection-merge.js';
+export { assetIdOf, mergeSelections, selectionCoverage } from './audio-selection-merge.js';
+
+export { runAudioValidation } from './audio-cli.js';
+
 export * from './types.js';
