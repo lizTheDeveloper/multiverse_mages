@@ -119,6 +119,46 @@ universal would silently pre-decide how raid theft works, which belongs to `raid
 
 Mages are individuals. Everyone else is not.
 
+**Goal commitment** — a separate component, keyed on the mage's own entity handle, and **present
+only while she has chosen a goal**.
+
+| Field | Type | Notes |
+|---|---|---|
+| `goalId` | `uint8` | `rules-world`'s permanent, append-only goal registry. `0` is `idle` |
+| `targetNodeId` | `uint16` | the node the goal is pointed at, or `0` for a goal that needs none |
+| `adoptedTick` | `int32` | the commitment clock, which hysteresis and the stagger both compare against |
+| `score` | `fp` | what it was adopted at. Reported, never compared — the incumbent is re-scored |
+
+**This is a deviation from this document as originally drawn, added during `mages-and-species`, and
+the third of its kind after `state` and `primitives` in §5.** `mages-and-species`' proposal says
+`state-schema` is *"consumed unchanged"*. This addition breaks that, and it is recorded here rather
+than absorbed quietly because the promise was made in writing and somebody planning against it
+should meet the correction where they read the original.
+
+The reasoning, in the order it forced the decision:
+
+- **A commitment must outlive a tick.** §7's autonomy has a commitment minimum and a hysteresis
+  margin, both of which compare `worldTick` against the tick a goal was adopted on. That comparison
+  needs the adoption tick to still be there next tick — and therefore after a save, because a
+  commitment that vanished on load would make a resumed run diverge from an uninterrupted one. That
+  is a desync in `pvp-server` and a silently spoiled baseline in Monte Carlo, and neither announces
+  itself.
+- **A JavaScript map beside the state was rejected first.** It is state that does not round-trip,
+  the defect `state`'s component model exists to prevent.
+- **Widening §1.2's mage row was rejected second, and this is why the addition is a component.** A
+  mage who has never chosen and a mage who chose `idle` are different states, and the autonomy layer
+  reads the difference. Fields exist for every mage, so telling those two apart on the mage row
+  would need a sentinel goal id — a tenth entry in a registry whose entire contract is that its ids
+  are permanent and mean one thing each. An absent component says the same thing with nothing
+  invented, and costs nothing for the mages not using it, which at any moment is most of them.
+- **The cost is a schema revision.** Adding a component means an older world snapshot is missing a
+  section, which `deserializeState` refuses. That is repaired by a world-schema migration in
+  `packages/state/src/migrations.ts`, which appends the empty section. It deliberately does **not**
+  bump `sim-core`'s `SNAPSHOT_VERSION`: that number is inside the hashed header, so moving it
+  changes every snapshot hash in the project and breaks every golden fixture with a version error
+  rather than a behaviour diff. The container and the component set are versioned separately, and
+  the second is inferred from the snapshot's own self-describing component tables.
+
 ### 1.3 Populace cohort (aggregate entity)
 
 | Field | Type | Notes |

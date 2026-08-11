@@ -32,13 +32,13 @@ import {
   selectGoal,
   shouldReevaluate,
 } from '../../src/index.js';
-import type { GoalCommitment } from '../../src/index.js';
+import type { MageGoalCommitment } from '../../src/index.js';
 
 import { outlook, richOutlook, target } from './autonomy-fixtures.js';
 import { stepRng } from './mage-fixtures.js';
 
-const commitment = (overrides: Partial<GoalCommitment> = {}): GoalCommitment => ({
-  goal: GOAL.researchNode,
+const commitment = (overrides: Partial<MageGoalCommitment> = {}): MageGoalCommitment => ({
+  goalId: GOAL.researchNode,
   targetNodeId: 11,
   adoptedTick: 0,
   score: 900,
@@ -160,7 +160,7 @@ describe('hysteresis governs displacement', () => {
     });
     expect(selection.evaluated).toBe(true);
     expect(selection.switched).toBe(false);
-    expect(selection.commitment.goal).toBe(GOAL.researchNode);
+    expect(selection.commitment.goalId).toBe(GOAL.researchNode);
   });
 
   it('lets a decisively better challenger through', () => {
@@ -168,12 +168,12 @@ describe('hysteresis governs displacement', () => {
     const selection = selectGoal({
       outlook: state,
       worldTick: 300,
-      incumbent: commitment({ goal: GOAL.raidReadiness, targetNodeId: 0, adoptedTick: 0 }),
+      incumbent: commitment({ goalId: GOAL.raidReadiness, targetNodeId: 0, adoptedTick: 0 }),
       rng: stepRng(11, 300),
       schedule: { evalPeriod: 1, minCommitmentTicks: 0, hysteresisMargin: 0 },
     });
     expect(selection.switched).toBe(true);
-    expect(selection.commitment.goal).not.toBe(GOAL.raidReadiness);
+    expect(selection.commitment.goalId).not.toBe(GOAL.raidReadiness);
   });
 
   it('does not restart the commitment clock when the same goal wins again', () => {
@@ -188,7 +188,7 @@ describe('hysteresis governs displacement', () => {
       rng: stepRng(11, 300),
       schedule: { evalPeriod: 1, minCommitmentTicks: 0, hysteresisMargin: 0 },
     });
-    expect(selection.commitment.goal).toBe(GOAL.researchNode);
+    expect(selection.commitment.goalId).toBe(GOAL.researchNode);
     expect(selection.commitment.adoptedTick).toBe(10);
     expect(selection.switched).toBe(false);
   });
@@ -199,7 +199,7 @@ describe('a held tick costs nothing and reports as much', () => {
     const selection = selectGoal({
       outlook: outlook({ mage: 4 }),
       worldTick: 101,
-      incumbent: commitment({ goal: GOAL.idle, targetNodeId: 0, adoptedTick: 100 }),
+      incumbent: commitment({ goalId: GOAL.idle, targetNodeId: 0, adoptedTick: 100 }),
       rng: stepRng(3, 101),
     });
     expect(selection.reason).toBe('held');

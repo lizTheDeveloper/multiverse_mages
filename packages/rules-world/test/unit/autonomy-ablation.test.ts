@@ -87,7 +87,7 @@ describe('ablation changes selections, and the change is attributable', () => {
         incumbent: undefined,
         rng: stepRng(555, 0),
         scoring: ablate === undefined ? {} : { ablate },
-      }).commitment.goal;
+      }).commitment.goalId;
     });
 
   it('moves at least one mage when the age term is removed, on a fixed seed', () => {

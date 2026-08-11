@@ -49,6 +49,13 @@ export {
 
 export { completeAffiliation } from './affiliation.js';
 
+export {
+  clearCommitment,
+  hasCommitment,
+  readCommitment,
+  writeCommitment,
+} from './commitment-store.js';
+
 export type { SplitFrontier } from './candidates.js';
 export {
   MAX_CANDIDATE_TARGETS,
@@ -85,7 +92,7 @@ export type { MageOutlook } from './outlook.js';
 export type { RoleBiasRow } from './role-bias.js';
 export { ROLE_BIAS, ROLE_BIAS_MAX, ROLE_BIAS_TUNING_STATUS, roleBiasFor } from './role-bias.js';
 
-export type { GoalCommitment, ReevaluationInput, ReevaluationReason, ScheduleOptions } from './schedule.js';
+export type { MageGoalCommitment, ReevaluationInput, ReevaluationReason, ScheduleOptions } from './schedule.js';
 export {
   EVAL_PERIOD,
   HYSTERESIS_MARGIN,
@@ -101,6 +108,9 @@ export { SCORE_CEILING, SCORE_FLOOR, combineTerms, scoreGoal, scoreGoals } from 
 
 export type { Selection, SelectionInput } from './select.js';
 export { argmaxWithTieBreak, chooseTarget, selectGoal } from './select.js';
+
+export type { AutonomyTickInput, AutonomyTickReport, MageDecision } from './tick.js';
+export { stepMageAutonomy } from './tick.js';
 
 export type { ScoreTerms, TermKind } from './terms.js';
 export {
