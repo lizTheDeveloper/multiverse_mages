@@ -114,7 +114,7 @@
 
 ## 9. Reference scenario and release claims
 
-- [ ] 9.1 Author the committed reference scenario seeded with all six species and zero player input
+- [x] 9.1 Author the committed reference scenario seeded with all six species and zero player input
 - [ ] 9.2 Implement the 200-world-year deterministic long-run test
 - [ ] 9.3 Assert no species population reaches zero at any recorded checkpoint
 - [ ] 9.4 Assert total population stays within `maxCarryingCapacity` of the scenario's territory — 109,800 for the shipped `territory.json` — and record the observed peak beside that bound

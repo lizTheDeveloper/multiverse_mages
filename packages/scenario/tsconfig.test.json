@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the scenario tests. Never emits into dist/. Tests may see Node's ambient types: they spawn real worker threads, read the shipped content off disk, and write sweep results to a temporary directory.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./test",
+    "types": ["node"],
+    "emitDeclarationOnly": true,
+    "outDir": "../../.tsbuild/scenario-test",
+    "tsBuildInfoFile": "../../.tsbuild/scenario-test.tsbuildinfo"
+  },
+  "include": ["test/**/*.ts"],
+  "references": [
+    { "path": "./tsconfig.json" },
+    { "path": "../sim-core" },
+    { "path": "../content" },
+    { "path": "../state" },
+    { "path": "../agent-api" },
+    { "path": "../mc-harness" }
+  ]
+}

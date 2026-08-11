@@ -233,7 +233,7 @@ export { FAILURE_CLASS } from './protocol.js';
 export { serveRuns } from './worker-main.js';
 
 export type { PoolFailure, PoolOptions, PoolResult } from './pool.js';
-export { runTasksInline, runTasksOnPool } from './pool.js';
+export { DEFAULT_BOOT_TIMEOUT_MS, runTasksInline, runTasksOnPool } from './pool.js';
 
 export type {
   MetricAggregate,

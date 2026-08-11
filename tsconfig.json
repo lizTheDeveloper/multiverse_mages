@@ -22,6 +22,8 @@
     { "path": "./packages/agent-api/tsconfig.test.json" },
     { "path": "./packages/mc-harness" },
     { "path": "./packages/mc-harness/tsconfig.test.json" },
+    { "path": "./packages/scenario" },
+    { "path": "./packages/scenario/tsconfig.test.json" },
     { "path": "./tsconfig.tools.json" }
   ]
 }

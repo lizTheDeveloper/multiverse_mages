@@ -704,6 +704,7 @@ packages/
   coordination    the world step loop, and the rules-world → rules-magic port. → sim-core, content, state, primitives, rules-magic, rules-world
   agent-api       observation/action space, legality masks.               → sim-core, content, state, primitives, rules-*, coordination
   mc-harness      worker pool, sweeps, balance metrics.                   → agent-api
+  scenario        the reference universe at tick zero, and the run executor. → everything above; a leaf
   client-electron renderer. Reads snapshots. Computes no rules.           → agent-api (read path only)
   server          authoritative lockstep, Hetzner deployment.             → agent-api
   gym-bridge      JSON-over-stdio RL wrapper.                             → agent-api
@@ -759,6 +760,39 @@ So the layer gets a package, above both rules packages and below `agent-api`, wi
 from `rules-raid` because a raid's consequences land in world state through it. It is in
 `PURE_PACKAGES`: it is rules-path code, loaded by the client, the server and the Monte Carlo
 workers alike.
+
+**`scenario` is the fourth deviation, added when the Monte Carlo harness was first pointed at a
+real universe. It is the composition root this list never named.** §5 gives `mc-harness` one edge,
+to `agent-api`, and `agent-api` builds no worlds — its session takes a caller-supplied `Scenario`
+and states outright that *"a session does not know how to build a world"*. So something has to load
+content, install `coordination`'s world loop, seed a starting position, and hand the result to a
+session the harness drives. Every package already on this list fails that job for a different
+reason:
+
+- **`agent-api`** is granted `content` and `coordination` by this diagram, but its manifest refuses
+  `content` deliberately: that package's public surface re-exports a filesystem loader, and §5 puts
+  `client-electron` and `gym-bridge` downstream of the observation layer, which therefore has to
+  run in a browser. A world builder there drags `node:fs` into the renderer.
+- **`mc-harness`** may not, and the single edge is the point rather than an oversight: the harness
+  and a trained policy must observe the same universe through the same interface, so a harness that
+  could construct a `SimState` could measure one without going through §4.
+- **`coordination`** holds the loop and is in `PURE_PACKAGES` — rules-path code the client and the
+  server load. It may not hold a loader.
+- **`rules-*`** may not import `agent-api` at all (rule 4), and a scenario is defined by the
+  session interface it satisfies.
+
+So the starting position gets a package above every rules package and above both consumers of §4.
+It is a **leaf**: nothing in this repository imports it, which is what makes an edge to both halves
+of the boundary safe, and the dependency-graph test asserts the leaf property by name. It is
+deliberately *not* in `PURE_PACKAGES` — it reads the filesystem and names a worker entry point by
+URL, exactly as `mc-harness` does — but it declares no third-party runtime dependency and its own
+boundary test holds that line.
+
+The `mm-run-sweep` CLI already assumed such a thing existed: it takes `--scenario <module>` and
+expects `{executor, registries, provenance, workerUrl}`. This package is where that module's code
+lives, so that the most consequential code in a balance run — *what a universe is at tick zero* —
+is typechecked, linted, boundary-checked and tested, rather than living in a loose `.mjs` outside
+the workspace.
 
 **Enforced rules:**
 

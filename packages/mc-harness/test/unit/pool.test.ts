@@ -23,7 +23,14 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import type { RunRecord } from '@mm/mc-harness';
-import { encodeRecord, runSweep, runTasksOnPool } from '@mm/mc-harness';
+import {
+  DEFAULT_BOOT_TIMEOUT_MS,
+  buildTasks,
+  encodeRecord,
+  expandSweep,
+  runSweep,
+  runTasksOnPool,
+} from '@mm/mc-harness';
 import { describe, expect, it } from 'vitest';
 
 import { POOL_WORKER_URL, TOY_REGISTRIES, toySweep } from './fixtures.js';
@@ -168,26 +175,13 @@ describe('one crashed worker does not lose the sweep', () => {
     // The budget is generous on purpose. `hangOn` hangs forever, so it trips any
     // timeout at all, while a healthy toy run finishes in single-digit
     // milliseconds -- and the assertion below is that *only* the hung run timed
-    // out. At 250ms that assertion also quietly required the machine to schedule
-    // every other run inside a quarter second, which a loaded CI box does not
-    // promise: this test failed on a builder running four test suites at once,
-    // reporting a harness defect that was really an unlucky scheduler. Two
-    // seconds is still nothing against a hang, and no longer measures the host.
+    // out. Two seconds is nothing against a hang, and the run timer no longer
+    // starts until its worker reports ready, so this measures the timeout rather
+    // than the host's ability to boot a thread quickly. The test below pins that
+    // separation directly.
     const spec = toySweep({
       replicates: 4,
       failureThreshold: 4,
-      // Raised from 250 ms. The assertions below are unchanged — the hung run
-      // never settles, so it times out at any budget — but 250 ms was not a
-      // budget for *the run*: `pool.ts` arms the timer in `pump`, at dispatch,
-      // so a run handed to a freshly spawned worker is charged for that
-      // worker's boot. Node boots a worker and type-strips the fixture in well
-      // over 250 ms on a loaded machine, and because the pool replaces a worker
-      // after every timeout, one slow boot cascaded: the run after the
-      // legitimate timeout also "timed out", replacing another worker, and the
-      // sweep came back with 5 failures on a bad day and 24 on a worse one.
-      // The suite grows test files that run in parallel with this one, so the
-      // machine only gets busier. A budget an order of magnitude above worker
-      // boot keeps this a test of the timeout and not of the scheduler.
       termination: { worldTickCap: 64, perRunTimeoutMs: 4000 },
     });
     const result = await runSweep({
@@ -223,6 +217,81 @@ describe('one crashed worker does not lose the sweep', () => {
         })),
     ).toEqual([{ cellIndex: 1, replicateIndex: 1 }]);
   }, 60_000);
+});
+
+describe('a run is charged for itself, not for its worker', () => {
+  it('does not time out runs handed to a worker that is slow to boot', async () => {
+    // The regression this exists for. `pool.ts` used to arm the run timer in
+    // `pump`, at dispatch, so the first run on every freshly spawned worker was
+    // charged for that worker's boot -- and because the pool replaces a worker
+    // after every timeout, one slow boot cascaded into the next. It showed up as
+    // 5 spurious `failed` records on one machine and 24 on a busier one.
+    //
+    // The fixture blocks for twice the per-run budget before it reports ready.
+    // Every run here is healthy and finishes in single-digit milliseconds, so
+    // the correct answer is zero failures; the old code produced nothing but.
+    const spec = toySweep({
+      replicates: 4,
+      failureThreshold: 0,
+      termination: { worldTickCap: 64, perRunTimeoutMs: 1000 },
+    });
+    const result = await runSweep({
+      spec,
+      registries: TOY_REGISTRIES,
+      execution: {
+        mode: 'workers',
+        workerUrl: POOL_WORKER_URL,
+        workerCount: 2,
+        workerData: { bootDelayMs: 2000 },
+      },
+      provenance,
+      now: () => 0,
+    });
+
+    expect(result.summary.failuresByClass).toEqual({});
+    expect(result.summary.failureCount).toBe(0);
+    expect(result.records).toHaveLength(spec.replicates * result.plan.cellCount);
+  }, 60_000);
+
+  it('still replaces a worker that never reports ready', async () => {
+    // The other half: the run budget no longer bounds boot, so something has to.
+    // A worker that never becomes ready must be given up on rather than leaving
+    // the pool waiting forever on a `ready` that is not coming.
+    const spec = toySweep({ replicates: 1 });
+    const plan = expandSweep(spec, TOY_REGISTRIES);
+    const tasks = buildTasks(spec, plan);
+    const twoTasks = new Map([...tasks].slice(0, 2));
+
+    const results = await runTasksOnPool(twoTasks, {
+      workerUrl: POOL_WORKER_URL,
+      workerCount: 1,
+      // Far longer than the boot budget below, so a result classified `timeout`
+      // can only have come from the boot budget.
+      perRunTimeoutMs: 30_000,
+      bootTimeoutMs: 300,
+      workerData: { neverReady: true },
+    });
+
+    expect(results.size).toBe(2);
+    for (const result of results.values()) {
+      expect(result.kind).toBe('failure');
+      if (result.kind !== 'failure') continue;
+      expect(result.failure.classification).toBe('timeout');
+      expect(result.failure.message).toContain('did not report ready');
+    }
+  }, 60_000);
+
+  it('defaults the boot budget generously, and refuses a nonsense one', async () => {
+    expect(DEFAULT_BOOT_TIMEOUT_MS).toBeGreaterThanOrEqual(10_000);
+    await expect(
+      runTasksOnPool(new Map(), {
+        workerUrl: POOL_WORKER_URL,
+        workerCount: 1,
+        perRunTimeoutMs: 10,
+        bootTimeoutMs: 0,
+      }),
+    ).rejects.toThrow(/bootTimeoutMs/);
+  });
 });
 
 describe('excess failures disqualify a sweep', () => {
