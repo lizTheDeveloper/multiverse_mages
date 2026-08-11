@@ -98,7 +98,7 @@
 
 ## 10. Closeout
 
-- [ ] 10.1 Run `npm run verify` green, including both balance gates, with golden fixtures unchanged — **both gates pass with a zero delta on every metric and the goldens are untouched, but the suite is red on a pre-existing, load-sensitive timeout in `packages/coordination/test/unit/god-loop.test.ts` that reproduces with this package's tests excluded**
+- [x] 10.1 Run `npm run verify` green, including both balance gates, with golden fixtures unchanged — 242 test files, 3372 tests, both gates PASS at a zero delta on every metric
 - [x] 10.2 Record the throughput figure and its split, and put it where the release claim can cite it
 - [x] 10.3 Confirm every scenario in `specs/rl-bridge/spec.md` has a corresponding passing test, or is named in the report as specified-not-implemented
 - [x] 10.4 Update `docs/design/vision.md` §11 and `docs/design/release-plan.md` if and only if the status of this change moved

@@ -407,15 +407,15 @@ one, which is why `src/` reads no clock at all and a test asserts it.
 
 ## Risks / Trade-offs
 
-**The suite is red on a test this change does not touch.**
-`packages/coordination/test/unit/god-loop.test.ts` — *"records one evaluation per era boundary
-crossed"* — takes 8.4 s alone and exceeds the 30 s global timeout under full-suite CPU contention.
-It reproduces on this tree with `packages/gym-bridge/**` excluded from the run, sometimes taking
-`world-step.test.ts` with it, so it is a pre-existing load-sensitive flake and not a consequence of
-adding 74 tests. It is left alone deliberately: `coordination` is where the `mages-and-species`
-closeout is working, and raising a shared timeout to hide someone else's slow test is how a
-timeout stops meaning anything. Both balance gates pass with a **zero delta on every metric**, and
-the golden fixtures are untouched.
+**A coordination test timed out against the stale base, and the merge fixed it — worth recording
+because the first diagnosis was wrong.** `packages/coordination/test/unit/god-loop.test.ts` exceeded
+the 30 s global timeout on every full-suite run against the base commit this branch forked from, and
+reproduced with `packages/gym-bridge/**` excluded, which made it look like a load-sensitive flake in
+someone else's package. It was not: the `mages-and-species` closeout landed on the base branch while
+this change was being built, and merging it made the suite green — 242 files, 3372 tests, both gates
+PASS with a **zero delta on every metric**, goldens untouched. The lesson is the cheap one: a red
+test on a fork point that has moved is a stale fork before it is anything else, and "it reproduces
+without my changes" is not the same evidence as "it reproduces on current main".
 
 **The Python package is not covered by `npm run verify`.** There is no pinned Python toolchain in
 either CI job, and adding one to a TypeScript monorepo's gate is a larger decision than this change
