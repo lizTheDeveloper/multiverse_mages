@@ -60,6 +60,16 @@ export interface OutlookDeps {
   readonly scribeThroughputOf: (universityId: Handle) => Fixed;
   /** The tier of a node, for the scribable list. */
   readonly tierOf: (nodeId: number) => number;
+  /**
+   * The university this mage would rather be at, given the one she is at.
+   *
+   * Supplied rather than computed per mage, because the answer depends on one
+   * scan of every shelved instance in the universe and that scan is the same for
+   * everybody. Building it per mage made the outlook phase
+   * `mages × instances` — free while nothing was ever shelved, and quadratic
+   * from the first grimoire. {@link universityPreference} builds it once.
+   */
+  readonly preferredUniversityFor: (current: Handle) => Handle;
 }
 
 /**
@@ -80,7 +90,7 @@ export function buildOutlook(
   const frontier = gatherFrontier(deps.gateway, mage, species);
   const lifespanMonths = deps.effectiveLifespanOf(mage, row, species);
 
-  const preferred = preferredUniversityFor(deps.state, row.universityId);
+  const preferred = deps.preferredUniversityFor(row.universityId);
 
   return {
     mage,
@@ -177,7 +187,7 @@ function scribableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
  * `betterAffiliationAvailable` false without a second computation that could
  * disagree with this one.
  */
-function preferredUniversityFor(state: SimState, current: Handle): Handle {
+export function universityPreference(state: SimState): (current: Handle) => Handle {
   const shelvedBy = new Map<Handle, number>();
   for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
     if (row.locationKind !== LOCATION_KIND.library) continue;
@@ -188,18 +198,26 @@ function preferredUniversityFor(state: SimState, current: Handle): Handle {
   const libraryIds = universities.field('libraryId');
   const buildProgress = universities.field('buildProgress');
 
-  let best = current;
-  let bestDepth = current === 0 ? -1 : (shelvedBy.get(libraryDepthKey(state, current)) ?? 0);
-
+  // Collected once, ascending by handle, so the walk below is over a list and
+  // not over the component — and so the tie-break reads as the declared order it
+  // is rather than as a property of `forEach`.
+  const completed: { handle: Handle; depth: number }[] = [];
   universities.forEach((row, handle) => {
     if ((buildProgress[row] as number) < FP_ONE) return;
-    const depth = shelvedBy.get(libraryIds[row] as number) ?? 0;
-    if (depth > bestDepth || (depth === bestDepth && best !== 0 && handle < best)) {
-      best = handle;
-      bestDepth = depth;
-    }
+    completed.push({ handle, depth: shelvedBy.get(libraryIds[row] as number) ?? 0 });
   });
-  return best;
+
+  return (current: Handle): Handle => {
+    let best = current;
+    let bestDepth = current === 0 ? -1 : (shelvedBy.get(libraryDepthKey(state, current)) ?? 0);
+    for (const entry of completed) {
+      if (entry.depth > bestDepth || (entry.depth === bestDepth && best !== 0 && entry.handle < best)) {
+        best = entry.handle;
+        bestDepth = entry.depth;
+      }
+    }
+    return best;
+  };
 }
 
 /** The library handle a university owns, or `0`. */

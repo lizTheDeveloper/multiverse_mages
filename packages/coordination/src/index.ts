@@ -51,22 +51,34 @@
  * - {@link CoordinatingKnowledgeGateway} — `rules-world`'s knowledge port,
  *   implemented over `rules-magic`. The only file in the repository that names
  *   both packages.
+ * - {@link EffortLedger} — where partial research, teaching and scribing live
+ *   between two ticks, so that progress outlives a goal switch.
  * - {@link buildOutlook} — one mage's situation, assembled from both halves.
  * - {@link worldSystem} / {@link defineWorldSimulation} — the tick itself, as a
  *   `System`, so that the pure `step(state, actions, rng) -> state` stays
  *   `@mm/sim-core`'s and is not reimplemented here.
  */
 
-export type { GatewayDeps, LivingMage, MageRates } from './gateway.js';
+export type { EffortKey, EffortRow } from './effort-store.js';
+export { EffortLedger, MAX_EFFORTS_PER_MAGE } from './effort-store.js';
+
+export type {
+  CompletedEffort,
+  GatewayDeps,
+  LivingMage,
+  MageRates,
+  MaterialsAccess,
+} from './gateway.js';
 export {
   CoordinatingKnowledgeGateway,
   MAX_FRONTIER_SCAN,
   MAX_TEACHING_COUNTERPARTIES,
+  effortKey,
   isHeldAtMind,
 } from './gateway.js';
 
 export type { OutlookDeps } from './outlook.js';
-export { buildOutlook } from './outlook.js';
+export { buildOutlook, universityPreference } from './outlook.js';
 
 export type { WorldSimulation, WorldStepDeps, WorldStepReport } from './world-step.js';
 export { defineWorldSimulation, worldSystem } from './world-step.js';
