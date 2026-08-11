@@ -83,12 +83,16 @@
     `packages/rules-magic/test/unit/classical-labels-legality.test.ts`; and
     `knowledge-instances` *"Existence returns when an instance returns"*, whose covering test showed
     a node appearing but never re-appearing after total loss, in `knowledge-subsystem.test.ts`.
-  - **Blocker for whoever merges `content-integration` (95b37fc).** That line deletes the
-    `node-outside-v1` loader rule — pre-authoring the other 58 cells makes it false by construction —
-    and replaces it with `v1-unreachable-prerequisite`. `magic-grid`'s *"A node outside the subset is
-    rejected"* scenario and the requirement sentence above it then describe behaviour the loader no
-    longer has, and this box stops being true. Amend the spec as part of that merge; it is covered on
-    this line and not on that one.
+  - **Resolved during the `content-integration` merge.** That line deletes the `node-outside-v1`
+    loader rule — pre-authoring the other 58 cells makes it false by construction — and replaces it
+    with `v1-unreachable-prerequisite`. `magic-grid`'s requirement sentence and its *"A node outside
+    the subset is rejected"* scenario described a loader that no longer exists, so both were amended
+    here: authoring outside the subset is now stated as permitted and inert, and the rejection
+    scenario is the sharper one the loader actually enforces — a *playable* node whose prerequisite
+    sits in a cell this release does not enable, which would be permanently unreachable with nothing
+    else in the pipeline noticing. Covered by `loader-hard-fail.test.ts` *"rejects a v1 node whose
+    prerequisite lies outside the v1 subset"*, and by the 300-node shipped set itself, which loads
+    clean with 58 cells' worth of inert content.
 - [x] 7.2 Add the 0.3.0 release-claim tests: a node ceases to exist when its last instance is destroyed, and rediscovery never completes below three times `researchCost`
 - [x] 7.3 Add the 0.3.0 release-claim test that each v1 tradition changes measurable behaviour through its declared hook and through no other path
 - [x] 7.4 Run the full suite, typecheck, lint, purity check, content validation, coverage check, and dependency-graph test together
