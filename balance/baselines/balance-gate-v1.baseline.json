@@ -1,48 +1,47 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "29b8952954739ed8431e25407b682aebf46f384b0e57018a922a6d2b79a4837a",
+  "contentHash": "6943c6123a59a30a058304f1650c6ca42a83cea63abfc2fa770b63adf111188a",
   "kind": "gate",
   "metrics": [
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.8811880202007825,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":5.643564060602348,"unit":"grimoires","value":123.77},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":2.4266520776828404,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":7.279956233048521,"unit":"instances","value":425.075},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":0.03558548202023186,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.10675644606069558,"unit":"nodes","value":1.7},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":200,"standardError":0.10670147178756556,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.3201044153626967,"unit":"mages","value":38.965},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":200,"standardError":0.09581284903819702,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.28743854711459105,"unit":"nodes","value":22.695},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":200,"standardError":0.09581284903819702,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.28743854711459105,"unit":"nodes","value":25.195},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.648564310457522,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.945692931372566,"unit":"grimoires","value":116.7},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":2.4068571258987923,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":7.220571377696377,"unit":"instances","value":445.14},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":0.03748469075257692,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.11245407225773076,"unit":"nodes","value":1.71},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":200,"standardError":0.1062294397874291,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.3186883193622873,"unit":"mages","value":38.96},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":200,"standardError":0.10755160128410693,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.3226548038523208,"unit":"nodes","value":30.15},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":200,"standardError":0.10755160128410693,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.3226548038523208,"unit":"nodes","value":32.65},
     {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":200,"standardError":0,"standardErrorMethod":"jackknife","status":"measured","tolerance":0,"unit":"people","value":216},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":0.451262966911891,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.353788900735673,"unit":"people","value":129.275},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.451262966911891,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.353788900735673,"unit":"people","value":-14.725}
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":0.4412285723536322,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3236857170608967,"unit":"people","value":129.13},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.4412285723536323,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3236857170608969,"unit":"people","value":-14.87}
   ],
   "notes": [
-    "These nine metrics are the reference scenario's vital signs, not the twelve balance metrics of contracts.md §7. Six of §7's twelve describe mechanics that have not shipped — raids, god actions, worship, prestige — and the rest need per-node and per-(species, tier) telemetry that the §4.1 observation does not carry, so no executor in this tree can produce them yet.",
-    "The universe these numbers describe is still degenerate, and every item is an open finding rather than something this baseline settles: node discovery plateaus well short of the 51 v1 nodes; every scripted strategy produces the same universe because no system reads a god action; the population halves before it grows; and several observation channels saturate. Grimoire shelving is the one item that has been fixed since the first baseline.",
-    "referencePeakPopulation still has a standard error of exactly zero and therefore a tolerance of exactly zero, so the gate demands exact equality of it. That is deliberate: a deterministic sweep cannot move by chance, so a metric that has never varied has no noise behind which a real change could hide. referenceLibraryDepth was such a metric until this regeneration, and the zero tolerance is what caught it moving.",
-    "Sample size is 200 runs over 4 parameter cells at 60 world ticks, sized so the gate runs in about a minute on four workers and can therefore run on every push. The 10,000-run instrument is balance/sweeps/balance-full.sweep.json, which is not runnable on this build — balance/README.md has the arithmetic."
+    "Attribution, measured rather than assumed. The nine metrics here move by exactly the same amounts with the god systems installed and with them removed from the scenario's deps — checked by building the reference universe both ways against the superseded baseline. So none of this delta is god-agency's: for a passive-control sweep the god does nothing and the universe is unchanged, which is what 'the verbs are the player's' has to mean.",
+    "The delta belongs to 512ef00, 'Bound the frontier scan by legality, not by a range of interned node ids', which merged into this branch's base at 3894bde without a regenerated baseline. That change made roughly a third of the v1 catalogue reachable again, and referenceNodesGained and referenceNodesKnown both rise by 7.455 nodes — one number, because every node gained in a 60-tick run is a node newly known. referenceGrimoires falls 7.07 and referenceKnowledgeInstances rises 20.07 for the same reason: mages spread across a wider frontier, so more heads hold more distinct nodes and fewer months go into writing any one of them down.",
+    "Still a degenerate universe, and still not a balance claim. release-plan.md forbids one before 0.5.0 and this build is 0.3.0. Every god-agency magnitude carries tuningStatus: untuned, and this sweep runs passive-control for 60 ticks — so the god holds sixteen verbs and uses none of them, no universe here ever reaches worship tier 1, and nothing terminates. What is gated is the reference scenario's vital signs, not §7's metrics."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "f813d90d3ddadb345c0a9d55505de432",
+    "contentHash": "0e63987b2823f4d991ea1c7a40944055",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Grimoire shelving landed. referenceLibraryDepth leaves zero for the first time — 0 to 1.7 nodes per universe — which is the movement the previous baseline's own note predicted and asked to be caught. Nothing else moved. Still a measurement and not a verdict: release-plan.md forbids a balance claim before 0.5.0 and this build is 0.3.0.",
+  "rationale": "god-agency lands, and the frontier fix that preceded it on this branch has never had a baseline taken against it. The contentHash moves to 0e63987b2823f4d991ea1c7a40944055 because god-cost.json and god-constant.json are inside contentRevision — deliberately, since two universes disagreeing about what forbidding a technique costs while their revisions call them compatible would be playing different games.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":123.77,"value":123.77},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":425.075,"value":425.075},
-    {"delta":1.7,"deltaInStandardErrors":null,"metricId":"referenceLibraryDepth","previousValue":0,"value":1.7},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":38.965,"value":38.965},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":22.695,"value":22.695},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":25.195,"value":25.195},
+    {"delta":-7.069999999999993,"deltaInStandardErrors":-3.758263354901335,"metricId":"referenceGrimoires","previousValue":123.77,"value":116.7},
+    {"delta":20.064999999999998,"deltaInStandardErrors":8.268593666365081,"metricId":"referenceKnowledgeInstances","previousValue":425.075,"value":445.14},
+    {"delta":0.010000000000000009,"deltaInStandardErrors":0.28101347606629534,"metricId":"referenceLibraryDepth","previousValue":1.7,"value":1.71},
+    {"delta":-0.005000000000002558,"deltaInStandardErrors":-0.04685970977005054,"metricId":"referenceLivingMages","previousValue":38.965,"value":38.96},
+    {"delta":7.454999999999998,"deltaInStandardErrors":77.80793572924615,"metricId":"referenceNodesGained","previousValue":22.695,"value":30.15},
+    {"delta":7.454999999999998,"deltaInStandardErrors":77.80793572924615,"metricId":"referenceNodesKnown","previousValue":25.195,"value":32.65},
     {"delta":0,"deltaInStandardErrors":null,"metricId":"referencePeakPopulation","previousValue":216,"value":216},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.275,"value":129.275},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.725,"value":-14.725}
+    {"delta":-0.14500000000001023,"deltaInStandardErrors":-0.3213204065742037,"metricId":"referencePopulation","previousValue":129.275,"value":129.13},
+    {"delta":-0.14499999999999957,"deltaInStandardErrors":-0.32132040657418004,"metricId":"referencePopulationChange","previousValue":-14.725,"value":-14.87}
   ],
-  "supersedes": "d15185c3441ab78638c56747c6768ebf0ef0490e80e9c6caf568197b9b939e9d",
+  "supersedes": "29b8952954739ed8431e25407b682aebf46f384b0e57018a922a6d2b79a4837a",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }

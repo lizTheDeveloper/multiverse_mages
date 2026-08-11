@@ -115,6 +115,22 @@ pre-`god-agency` save describes.
 | `overBudgetEdicts` | `uint8` | edicts in force beyond the current budget. **Reported, never auto-revoked** |
 | `terminalTick` | `int32` | world tick the run ended on, `0` while running |
 
+**A terminated universe is frozen in its component rows, and not in its clock.** `god-agency`'s
+ascension spec asks that *"no world tick may further alter the universe's state"* and that a
+stepped, ascended universe's *snapshot hash is unchanged*. The first is implemented and tested: a
+universe carrying a `terminalReason` runs no world phase and no god phase, so no component row
+moves and every submitted action is refused and counted. The second is **not**, and the difference
+is deliberate rather than an oversight — `step` advances the clock unconditionally, and that is
+`sim-core`'s contract rather than any capability's to override. So the hash of a terminated
+universe moves by exactly the clock, every tick, forever.
+
+The layer that stops advancing a finished run is `agent-api`'s session, which already refuses to
+`submit` to a terminated episode. Making the hash literally constant instead would mean either a
+rules layer suppressing a core clock advance — the inversion §5 rule 4 exists to prevent, wearing
+a different hat — or a second `step` that sometimes does not advance, which is the duplication the
+one-step-contract rule forbids. Recorded here because a reader comparing the spec's sentence
+against the code will otherwise think one of them is wrong.
+
 **Ruleset legality — the single arbitration function.** Every consumer must call this rather than
 reimplementing it:
 
