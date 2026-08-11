@@ -69,6 +69,26 @@ describe('every gate is a build-failing step in both CI systems', () => {
     expect(manifest.scripts[script]).toContain('balance-gate.mjs');
   });
 
+  // A gate that measures whatever was last built measures nothing. The workers
+  // load `packages/scenario/bin/scenario.mjs`, which imports from `dist/`, so a
+  // gate run against a source tree nobody has compiled reports the *previous*
+  // build's numbers and passes — silently, and with a plausible figure.
+  //
+  // This is not hypothetical. Running the gate by hand against an unbuilt tree
+  // reported a delta of exactly 0.00000 on all nine metrics across a change
+  // that moved `referenceNodesKnown` by 7.455 (77.81 standard errors), and the
+  // reading survived a check of `dist/` that was made *after* a rebuild. Inside
+  // `verify` the chain happens to typecheck first, which is what kept this
+  // invisible; standalone there was nothing.
+  //
+  // `tsc --build` is incremental, so the guarantee costs nothing on a tree that
+  // is already current — including the second time, inside `verify`.
+  it.each(GATE_SCRIPTS)('%s compiles the tree before it measures it', (script) => {
+    const hook = manifest.scripts[`pre${script}`];
+    expect(hook, `pre${script} is missing: the gate can measure a stale dist/`).toBeDefined();
+    expect(hook).toContain('typecheck');
+  });
+
   it.each(GATE_SCRIPTS)(
     '%s is part of npm run verify, which is what the self-hosted runner runs',
     (script) => {
