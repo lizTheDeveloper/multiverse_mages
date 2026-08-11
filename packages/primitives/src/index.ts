@@ -34,6 +34,15 @@
  * fact drifted into computing opposite things. See that module's note.
  */
 
+export type { AblationMask } from './ablation.js';
+export {
+  NEUTRALIZED_MAGNITUDE,
+  NO_ABLATION,
+  ablationMaskFor,
+  neutralizedMagnitude,
+  neutralizing,
+} from './ablation.js';
+
 export type { CapContext, CapOutcome } from './caps.js';
 export { ClampCounters, applyCap, capLimit } from './caps.js';
 

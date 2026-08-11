@@ -76,8 +76,8 @@
 
 ## 7. Ablation
 
-- [ ] 7.1 Implement the ablation mask inside the shared primitive stacking implementation, leaving content untouched
-- [ ] 7.2 Implement neutralization per stacking class: additive, additive-into-multiplier, multiplicative-on-remainder, `max`, and presence-gate
+- [x] 7.1 Implement the ablation mask inside the shared primitive stacking implementation, leaving content untouched
+- [x] 7.2 Implement neutralization per stacking class: additive, additive-into-multiplier, multiplicative-on-remainder, `max`, and presence-gate
 - [ ] 7.3 Implement draw-count invariance so a neutralized primitive still consumes and discards its draws
 - [ ] 7.4 Implement paired-seed scheduling: one shared control arm and one ablation arm per primitive, on identical derived seeds
 - [ ] 7.5 Implement mirrored slot assignment for the one-sided ablation used by `winRateByPrimitive`
