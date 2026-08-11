@@ -55,6 +55,7 @@ function describedRun(
   const record = syntheticRecord({
     cellIndex: 0,
     replicateIndex,
+    metrics: {},
     ...(overrides.status === undefined ? {} : { status: overrides.status }),
   });
   return {

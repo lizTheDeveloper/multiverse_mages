@@ -181,6 +181,7 @@ export function buildRunRecord(input: {
   }
 
   if (input.status !== 'failed') {
+    const declared = new Set(task.metrics);
     const missing = task.metrics.filter((metricId) => input.metrics[metricId] === undefined);
     if (missing.length > 0) {
       throw new Error(
@@ -188,6 +189,22 @@ export function buildRunRecord(input: {
           'metric gets an entry in every record — a measurement, or an explicit unavailable ' +
           'status. A missing key makes "the collector broke" and "the mechanic does not exist ' +
           'yet" indistinguishable.',
+      );
+    }
+    // Equality, not coverage. Task 10.4 is what turns the registry from a list
+    // into a contract, and it only does so if it holds in both directions: an
+    // *extra* key is a column in a results file with no definition behind it,
+    // which then gets aggregated, baselined and defended — and nobody deletes a
+    // green gated metric. Same argument `registryConformance` makes for the
+    // registry against contracts.md §7, applied one level down.
+    const extra = Object.keys(input.metrics)
+      .filter((metricId) => !declared.has(metricId))
+      .sort();
+    if (extra.length > 0) {
+      throw new Error(
+        `Run ${String(task.runSeed)} carries an entry for ${extra.join(', ')}, which the sweep did ` +
+          'not declare. A record whose key set is wider than the sweep is a column no baseline ' +
+          'can be keyed to and no definition covers.',
       );
     }
   }

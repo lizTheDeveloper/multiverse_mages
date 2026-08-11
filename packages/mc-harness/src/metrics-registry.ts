@@ -282,15 +282,21 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
     definition:
       'Win rate of a universe seeded with the maximum permitted prestige carry-forward against an ' +
       'otherwise identical universe seeded with zero prestige, over mirrored pairs sharing run ' +
-      'seeds with the sides swapped. Must stay under 60%.',
+      'seeds with the sides swapped. Must stay under 60%. The maximum is PRESTIGE_CAP, read out ' +
+      'of loaded god-constant content, which the loader asserts is the analytic limit of the ' +
+      'carry-forward recurrence at its earning ceiling.',
     scope: METRIC_SCOPE.perArm,
     collectArm: collectPrestigeAdvantage,
     aggregation: 'mean',
     unit: 'win rate (fraction of mirrored plays)',
-    definitionVersion: 1,
+    // Bumped by agent-interface task group 10: `carryForwardMax` was `null` —
+    // the statement that nobody had chosen a magnitude — and is now a named
+    // content constant. The collector's arithmetic did not change; what it is
+    // allowed to run against did.
+    definitionVersion: 2,
     pinnedConstants: {
       mirrored: true,
-      carryForwardMax: null,
+      carryForwardMax: 'PRESTIGE_CAP, from loaded god-constant content',
       thresholdMax: 0.6,
     },
     thresholdOwner: 'god-agency',

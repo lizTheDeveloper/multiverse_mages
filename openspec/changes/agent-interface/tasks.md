@@ -115,6 +115,6 @@
 - [ ] 10.1 Run the reference sweep of ten thousand runs on eight workers and record wall clock, runs per second, and world ticks per second
 - [ ] 10.2 Generate the initial committed baselines from the tagged build with the rationale "initial baseline, 0.5.0"
 - [ ] 10.3 Verify the reproducibility claim: two executions of the same sweep at the same root seed produce identical aggregate metrics
-- [ ] 10.4 Verify every registered metric is present in every run record of the reference sweep, as a value or an explicit `unavailable` status
+- [x] 10.4 Verify every registered metric is present in every run record of the reference sweep, as a value or an explicit `unavailable` status
 - [ ] 10.5 Confirm every scenario across the three capability specs has a corresponding passing test
-- [ ] 10.6 Record in `docs/design/contracts.md` §7, or in a note referenced from it, the constants this change pinned — census interval, Gini checkpoints, histogram bin width, censoring rules — and the ambiguities they resolve
+- [x] 10.6 Record in `docs/design/contracts.md` §7, or in a note referenced from it, the constants this change pinned — census interval, Gini checkpoints, histogram bin width, censoring rules — and the ambiguities they resolve

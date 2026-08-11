@@ -71,9 +71,13 @@ const COMMITTED_PINS: DefinitionPins = {
     definitionVersion: 1,
     digest: '65f18d4984a02fb786917f86f51892d0c458a3d57f5f819c1e9f8305f692a4ca',
   },
+  // Bumped to 2 by agent-interface task group 10. `carryForwardMax` used to be
+  // `null` — the statement that nobody had chosen a magnitude — and is now
+  // PRESTIGE_CAP out of loaded content. The arithmetic is unchanged; what the
+  // collector is allowed to run against is not.
   prestigeAdvantage: {
-    definitionVersion: 1,
-    digest: 'eea4226d0b9fc419dfe80b40a3d10ad9cff25880abe0acae845651db2d120466',
+    definitionVersion: 2,
+    digest: '87609d4538435b4b3410b41b89622ef5cde7e54520ec813f4ae9b3514bf871e2',
   },
   raidInitiationCost: {
     definitionVersion: 1,
