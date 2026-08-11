@@ -1278,18 +1278,29 @@ describe('audioSelect', () => {
     }
   });
 
-  it('varies with every input independently', () => {
-    const base = audioSelect(1, 1, 1, 'selection', 1, 8);
-    const differs = [
-      audioSelect(2, 1, 1, 'selection', 1, 8),
-      audioSelect(1, 2, 1, 'selection', 1, 8),
-      audioSelect(1, 1, 2, 'selection', 1, 8),
-      audioSelect(1, 1, 1, 'death', 1, 8),
-      audioSelect(1, 1, 1, 'selection', 2, 8),
-    ];
-    // Any single-input change should move the result for at least most inputs;
-    // a function ignoring one of its arguments fails this decisively.
-    expect(differs.filter((d) => d !== base).length).toBeGreaterThanOrEqual(3);
+  it('depends on every one of its inputs', () => {
+    // Vary one argument at a time across many values, holding the rest fixed.
+    // A hash that ignores an argument yields exactly one distinct result for
+    // that argument's sweep, which fails here.
+    //
+    // An earlier version of this test counted how many of five single-argument
+    // mutations moved the result and required three. That passes with an
+    // argument completely dead: the four live ones each change the mod-8
+    // bucket about seven times in eight, so they clear the threshold alone.
+    // Verified by construction during review, which is why this test is
+    // per-argument rather than aggregate.
+    const distinct = (values: readonly number[], select: (v: number) => number): number =>
+      new Set(values.map(select)).size;
+
+    const sweep = Array.from({ length: 64 }, (_, i) => i + 1);
+
+    expect(distinct(sweep, (v) => audioSelect(v, 7, 3, 'selection', 1, 8)), 'rootSeed').toBeGreaterThan(1);
+    expect(distinct(sweep, (v) => audioSelect(5, v, 3, 'selection', 1, 8)), 'tick').toBeGreaterThan(1);
+    expect(distinct(sweep, (v) => audioSelect(5, 7, v, 'selection', 1, 8)), 'entityId').toBeGreaterThan(1);
+    expect(distinct(sweep, (v) => audioSelect(5, 7, 3, 'selection', v, 8)), 'repeat').toBeGreaterThan(1);
+
+    const kinds = ['selection', 'death', 'annoyance-unhinged', 'click-tick', 'last-copy'];
+    expect(new Set(kinds.map((k) => audioSelect(5, 7, 3, k, 1, 8))).size, 'kind').toBeGreaterThan(1);
   });
 
   it('spreads roughly evenly across variants', () => {
@@ -1660,6 +1671,16 @@ const { cues, banks } = loadAudioContent(directorySource(shippedAudioDirectory()
 let requests = planRequests(cues, banks, { takes });
 if (only) requests = requests.filter((r) => r.id.startsWith(only));
 
+// Validate before any spend. planRequests emits every sound-effect request
+// before the first voice line, so an in-loop check would bill the whole cue
+// set and only then discover the voice id was missing.
+if (!voiceId && requests.some((request) => request.endpoint === 'text-to-speech')) {
+  fail(
+    'ELEVENLABS_VOICE_ID is not set, and this plan plans voice lines. ' +
+      'Set it, or narrow the run with --only= to generate cues only.',
+  );
+}
+
 console.log(`${requests.length} requests planned (${takes} takes each).`);
 if (dryRun) {
   for (const request of requests.slice(0, 20)) console.log(`  ${request.endpoint}  ${request.outputPath}`);
@@ -1679,10 +1700,6 @@ for (const request of requests) {
     request.endpoint === 'sound-effect'
       ? `${BASE}/sound-generation`
       : `${BASE}/text-to-speech/${voiceId}`;
-
-  if (request.endpoint === 'text-to-speech' && !voiceId) {
-    fail('ELEVENLABS_VOICE_ID is not set, and voice lines were planned. Set it, or use --only= to generate cues.');
-  }
 
   let response;
   try {
@@ -1930,12 +1947,27 @@ logic and the tested logic are the same code:
   const audio = new Audio();
 
   document.getElementById('picker').addEventListener('change', (event) => {
+    // Revoke the previous pick's object URLs before dropping the array that
+    // holds them. Without this, auditioning ~1,500 takes across several folder
+    // picks leaks a blob per file for the life of the tab.
+    for (const asset of assets) {
+      for (const take of asset.takes) URL.revokeObjectURL(take.url);
+    }
+    audio.pause();
+    audio.src = '';
+    lastPlayed = null;
+
     const byAsset = new Map();
     for (const file of event.target.files) {
       if (!/\.(mp3|wav|ogg)$/u.test(file.name)) continue;
       // Path is <root>/<assetDir>/<take>. The asset id is the directory name.
       const parts = file.webkitRelativePath.split('/');
-      const id = parts.length >= 2 ? parts[parts.length - 2] : assetIdOf(file.name);
+      // Strip the extension before assetIdOf: its regex is $-anchored, so
+      // "click-tick-v1-take3.mp3" would not match and every file would become
+      // its own single-take asset. Extension handling belongs at the call
+      // site, not in assetIdOf, whose contract is about ids and not filenames.
+      const bare = file.name.replace(/\.(?:mp3|wav|ogg)$/u, '');
+      const id = parts.length >= 2 ? parts[parts.length - 2] : assetIdOf(bare);
       if (!byAsset.has(id)) byAsset.set(id, []);
       byAsset.get(id).push({ name: file.name, url: URL.createObjectURL(file) });
     }
@@ -2018,10 +2050,17 @@ The page imports the **leaf** module from `dist/`, never `dist/index.js`: `index
 - [ ] **Step 6: Verify the page loads**
 
 ```bash
-npx --yes http-server tools/audition -p 8099 --no-dotfiles
+npx --yes http-server . -p 8099 --no-dotfiles
 ```
 
-Open `http://localhost:8099`, confirm the page renders and the keyboard bindings respond with an empty selection set. This step is manual; there is nothing to assert automatically about a file-picker UI.
+Serve the **repository root**, not `tools/audition`: the page imports
+`../../packages/content/dist/audio-selection-merge.js`, which traverses outside `tools/audition`
+and 404s if that directory is the server root. Run `npm run typecheck` first — `dist/` is gitignored
+and built.
+
+Open `http://localhost:8099/tools/audition/`, then exercise the **directory** path with at least two
+takes of one asset in a folder, since that is the branch real use hits. This step is manual; there
+is nothing to assert automatically about a file-picker UI.
 
 - [ ] **Step 7: Run the full gate and commit**
 
