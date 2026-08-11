@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "003ecaa34dca2924d3d42b58539233e6433c545ef00161d30bae01a70eddd562",
+  "contentHash": "dc3f12b090477b9f23bb62a6fc814bdc33705ba61aa2a54f2777b863aa48e26d",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":10.240882605059596,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":30.72264781517879,"unit":"grimoires","value":525.07},
@@ -15,27 +15,31 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":1.328141059326677,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.9844231779800308,"unit":"people","value":210.375},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.3281410593266771,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.984423177980031,"unit":"people","value":66.375}
   ],
-  "notes": [
-    "These ten metrics are the reference scenario's vital signs, not the twelve balance metrics of contracts.md §7. Six of §7's twelve describe mechanics that have not shipped — raids, god actions, worship, prestige — and the rest need per-node and per-(species, tier) telemetry that the §4.1 observation does not carry. Nothing here is a balance claim: release-plan.md forbids one before 0.5.0 and this build is 0.3.0.",
-    "The universe these numbers describe is still degenerate, and the twenty-year horizon makes two of the ways worse rather than better. Every scripted strategy produces the same universe, because no system reads a god action — so all 200 runs here are the passive control under four different starting positions and nothing else. Library depth reaches 1.70 distinct nodes against 525 grimoires, because the scribable list is cost-ordered and the same cheap nodes are copied over and over; a twentyfold increase in books buys no increase in what the libraries hold. Population no longer halves at this horizon — it ends 66.4 people up — but that is a different run length, not a different mechanic.",
-    "referenceNodesKnown ends at 48.35 of the 51 v1 nodes, with a maximum of 49 over 200 runs. That is close enough to the ceiling that this metric is now partly a measure of the content, not only of the build: adding v1 nodes will move it, and so will removing them. referenceNodesGainedFinalQuarter is the companion that is not ceiling-bound in the same way — 0.66 nodes over world-years fifteen to twenty here, against 0.175 for the pre-frontier-fix build — and it is the metric that would still say something if content grew past what a universe can exhaust.",
-    "referenceNodesGainedFinalQuarter is a lagging indicator and was measured as one before it was committed. At sixty ticks it reads 8.63 on this build against 6.57 on the pre-frontier-fix build (10.6 SE), while referenceNodesKnown at the same horizon separates them by 52.7 SE. A derivative only goes to zero after the plateau has set in, so it is not a cheaper way to buy the long horizon — it is a second question, asked at a horizon long enough for the answer to exist. Its sharpest reading is around world-year ten: 5.07 against 1.77.",
-    "Sample size is 200 runs over 4 parameter cells at 240 world ticks — twenty world years, and the same horizon balance-full.sweep.json declares. It runs in about 35 seconds on four idle cores of a four-core container, measured on 2026-08-11; call it two minutes on a loaded or slower runner. That is deliberately the same 200 runs as the fast gate, so the two gates differ in their tick cap and in nothing else that would explain a divergence between them.",
-    "This baseline is keyed to a build in which no system reads ctx.actions. The god-agency change will make a god action change a universe, and when it lands every number in this file should move. That is the gate working. Regenerate it with a rationale naming god-agency; do not widen a tolerance."
-  ],
+  "notes": [],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "f813d90d3ddadb345c0a9d55505de432",
+    "contentHash": "0e63987b2823f4d991ea1c7a40944055",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "First baseline for the long-horizon gate. It supersedes nothing: balance-gate-horizon-v1 is a new instrument, added because the five-year gate has a measured blind spot rather than a suspected one. This build knows 32.65 nodes at world-year five; the build whose researchFrontier was a prefix window over interned node ids plateaued at 31.94 and stayed there through world-year twenty. The healthy universe's year-five level and the broken universe's permanent ceiling are the same number, so any future defect that caps discovery at or above roughly 33 nodes passes the fast gate in silence. Twenty years is where the difference is unmistakable: 48.35 against 31.94, and referenceNodesKnown's standard error falls to 0.0787 because the run reaches the ceiling of authored v1 content and the spread between universes collapses. Same four cells, same fifty replicates, same root seed as the fast gate; the tick cap is what differs.",
+  "rationale": "Re-keyed to the god-agency build, so both gates measure one build. god-agency (0.7.0) moves the provenance contentHash by adding content inside contentRevision. Unlike the five-year gate, movement here would be real: twenty years is long enough for ascension and stagnation to terminate a run, which nothing could do before this change. These numbers are a measurement and not a balance claim -- release-plan.md forbids any balance claim before 0.5.0 -- and they still describe a universe degenerate in known ways: all 200 runs are the passive control, which submits no god verb, so no strategy is exercised; and library depth stays near 1.7 distinct nodes against several hundred grimoires, because the scribable list is cost-ordered and the same cheap nodes are copied over and over.",
   "rootSeed": 20260811,
   "runCount": 200,
-  "supersededDeltas": [],
-  "supersedes": null,
+  "supersededDeltas": [
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":525.07,"value":525.07},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":1142.77,"value":1142.77},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":1.7,"value":1.7},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":37.63,"value":37.63},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":45.85,"value":45.85},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":0.66,"value":0.66},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":48.35,"value":48.35},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":368,"value":368},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":210.375,"value":210.375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":66.375,"value":66.375}
+  ],
+  "supersedes": "f99e25427bdfd03c9a32a0432b6b64ffa03c39d12e175687383ab275037d848a",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }

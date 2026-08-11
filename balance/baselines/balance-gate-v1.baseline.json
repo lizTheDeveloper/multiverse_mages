@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "20480ed825a75672d02388eccc75c2743e734bda799f4379fac3a7462e3c940d",
+  "contentHash": "b84f2181f89f3dc2c169d274d9030b77e00799968751ceac42aba002e2dcf499",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.648564310457522,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.945692931372566,"unit":"grimoires","value":116.7},
@@ -14,35 +14,30 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":0.4412285723536322,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3236857170608967,"unit":"people","value":129.13},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.4412285723536323,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3236857170608969,"unit":"people","value":-14.87}
   ],
-  "notes": [
-    "These nine metrics are the reference scenario's vital signs, not the twelve balance metrics of contracts.md §7. Six of §7's twelve describe mechanics that have not shipped — raids, god actions, worship, prestige — and the rest need per-node and per-(species, tier) telemetry that the §4.1 observation does not carry, so no executor in this tree can produce them yet.",
-    "The universe these numbers describe is still degenerate, and every item is an open finding rather than something this baseline settles: every scripted strategy produces the same universe because no system reads a god action; the population halves before it grows; library depth is 1.71 nodes against 116.7 grimoires, because the scribable list is cost-ordered and the same cheap nodes are written over and over; and several observation channels saturate. Node discovery has left that list — the frontier fix is why this baseline exists — but this sweep stops at world-year five and cannot say what happens after it.",
-    "referencePeakPopulation still has a standard error of exactly zero and therefore a tolerance of exactly zero, so the gate demands exact equality of it. That is deliberate: a deterministic sweep cannot move by chance, so a metric that has never varied has no noise behind which a real change could hide. referenceLibraryDepth was such a metric until the shelving regeneration, and the zero tolerance is what caught it moving.",
-    "Sample size is 200 runs over 4 parameter cells at 60 world ticks — five world years — sized so the gate runs on every push. It now takes about 8 seconds on four workers rather than the 45 recorded here before the world-loop throughput work. This horizon is the gate's known blind spot and it is not fixed by widening it: 32.65 nodes at year five is the same level the pre-frontier-fix build plateaued at forever, so a defect that caps discovery at or above that level cannot show here. balance-gate-horizon.sweep.json runs the same four cells to world-year twenty for that reason, and balance/README.md has the measurements."
-  ],
+  "notes": [],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "f813d90d3ddadb345c0a9d55505de432",
+    "contentHash": "0e63987b2823f4d991ea1c7a40944055",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "The frontier fix landed. researchFrontier was a prefix window over interned node ids, hiding roughly a third of v1 content including an entire technique; bounding the scan by legality instead made it reachable. referenceNodesKnown moves 25.195 to 32.650, and referenceNodesGained with it — 77.8 standard errors, the largest movement this gate has recorded — with referenceKnowledgeInstances up 20.065 and referenceGrimoires down 7.070 behind it. The world-loop throughput work that merged alongside it moved nothing: this sweep run at 7bdac17, before that work, produces these same nine numbers to the digit, which is what a performance change is supposed to do and what the gate is for. Still a measurement and not a verdict: release-plan.md forbids a balance claim before 0.5.0 and this build is 0.3.0.",
+  "rationale": "Re-keyed to the god-agency build. god-agency (0.7.0) adds two content files inside contentRevision, so the provenance hash moves and the gate correctly refuses to compare across builds. The nine measured values are unchanged to the decimal: this sweep is 200 runs of the passive control, which submits no god action, and the god systems installed versus removed were measured to produce identical metrics. This records a new build, not new behaviour. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0, and they describe a universe still degenerate in known ways -- the passive control exercises no god verb, and library depth stays near 1.7 distinct nodes against a hundred-odd grimoires because the scribable list is cost-ordered, so the same cheap nodes are copied over and over.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":-7.069999999999993,"deltaInStandardErrors":-3.758263354901335,"metricId":"referenceGrimoires","previousValue":123.77,"value":116.7},
-    {"delta":20.064999999999998,"deltaInStandardErrors":8.268593666365081,"metricId":"referenceKnowledgeInstances","previousValue":425.075,"value":445.14},
-    {"delta":0.010000000000000009,"deltaInStandardErrors":0.28101347606629534,"metricId":"referenceLibraryDepth","previousValue":1.7,"value":1.71},
-    {"delta":-0.005000000000002558,"deltaInStandardErrors":-0.04685970977005054,"metricId":"referenceLivingMages","previousValue":38.965,"value":38.96},
-    {"delta":7.454999999999998,"deltaInStandardErrors":77.80793572924615,"metricId":"referenceNodesGained","previousValue":22.695,"value":30.15},
-    {"delta":7.454999999999998,"deltaInStandardErrors":77.80793572924615,"metricId":"referenceNodesKnown","previousValue":25.195,"value":32.65},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":116.7,"value":116.7},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":445.14,"value":445.14},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":1.71,"value":1.71},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":38.96,"value":38.96},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":30.15,"value":30.15},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":32.65,"value":32.65},
     {"delta":0,"deltaInStandardErrors":null,"metricId":"referencePeakPopulation","previousValue":216,"value":216},
-    {"delta":-0.14500000000001023,"deltaInStandardErrors":-0.3213204065742037,"metricId":"referencePopulation","previousValue":129.275,"value":129.13},
-    {"delta":-0.14499999999999957,"deltaInStandardErrors":-0.32132040657418004,"metricId":"referencePopulationChange","previousValue":-14.725,"value":-14.87}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.13,"value":129.13},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.87,"value":-14.87}
   ],
-  "supersedes": "29b8952954739ed8431e25407b682aebf46f384b0e57018a922a6d2b79a4837a",
+  "supersedes": "8389aea026603ca6c3bc99002fcee884a4c0aedd63e89cd81f41d9d85de22661",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }
