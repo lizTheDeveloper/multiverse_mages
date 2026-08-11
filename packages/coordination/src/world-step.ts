@@ -234,10 +234,16 @@ export interface WorldStepDeps {
    * `researchMultiplierFor` returns `fp(1024)` for an unaffected mage, so a
    * world with no god is a world where every month is a month.
    */
-  readonly researchMultiplierFor?: ((mage: Handle, nodeId: number) => Fixed) | undefined;
-  readonly teachMultiplierFor?: ((mage: Handle) => Fixed) | undefined;
+  readonly researchMultiplierFor?:
+    | ((state: SimState, worldTick: number, mage: Handle, nodeId: number) => Fixed)
+    | undefined;
+  readonly teachMultiplierFor?:
+    | ((state: SimState, worldTick: number, mage: Handle) => Fixed)
+    | undefined;
   /** `lifespan` effect magnitudes in force on one mage, for the shared stacking. */
-  readonly lifespanEffectsFor?: ((mage: Handle) => readonly Fixed[]) | undefined;
+  readonly lifespanEffectsFor?:
+    | ((state: SimState, worldTick: number, mage: Handle) => readonly Fixed[])
+    | undefined;
 }
 
 /** What one world tick did. Reporting only; never an input to any rule. */
@@ -316,7 +322,14 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
       lastGodReport: () => undefined,
     };
   }
-  const god = godSystems(deps.god);
+  // The god's outcome system needs this tick's node losses, and the world loop
+  // has just computed them. Supplied here rather than by the caller because
+  // this function owns the report closure, and a caller wiring its own would be
+  // a second place the two could disagree about which tick a count belongs to.
+  const god = godSystems({
+    ...deps.god,
+    nodesLostThisTick: (worldTick) => (last?.worldTick === worldTick ? last.nodesLost : 0),
+  });
   return {
     schema: defineWorldStateSchema([god.intervention, frozenWhenTerminal(system), god.outcome]),
     lastReport: () => last,
@@ -435,7 +448,7 @@ export function worldSystem(
       const promoted = promoteMaturedStudents(state, cohorts, { rng, worldTick, deps });
 
       // ---- 5. Work -----------------------------------------------------------
-      const work = spendTheMonth(state, gatewayFor(), deps);
+      const work = spendTheMonth(state, gatewayFor(), deps, worldTick);
 
       // ---- 6. Autonomy -------------------------------------------------------
       const stockAtDecisionTime = materials;
@@ -670,6 +683,7 @@ function spendTheMonth(
   state: SimState,
   gateway: CoordinatingKnowledgeGateway,
   deps: WorldStepDeps,
+  worldTick: number,
 ): WorkPhaseOutcome {
   // The `alive` column and the handle, rather than a `MageRecord` per mage: the
   // two fields below are all this phase reads, and `collectRecords` builds an
@@ -683,7 +697,7 @@ function spendTheMonth(
     if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
     if (commitment === undefined) return;
-    workOne(handle, commitment, gateway, deps);
+    workOne(state, handle, commitment, gateway, deps, worldTick);
   });
 
   const completedBy = new Set<Handle>();
@@ -711,10 +725,12 @@ function spendTheMonth(
  * nothing; the feasibility mask moves her on at her next evaluation.
  */
 function workOne(
+  state: SimState,
   mage: Handle,
   commitment: MageGoalCommitment,
   gateway: CoordinatingKnowledgeGateway,
   deps: WorldStepDeps,
+  worldTick: number,
 ): void {
   const nodeId = commitment.targetNodeId;
   if (nodeId === 0) return;
@@ -723,7 +739,10 @@ function workOne(
   // and `teach-rate` channels and their caps. `fp(1024)` — a month is a month —
   // for a world with no god, so nothing below changes for a caller that did not
   // ask for one.
-  const researched = mul(MAGE_MONTHS_PER_TICK, deps.researchMultiplierFor?.(mage, nodeId) ?? FP_ONE);
+  const researched = mul(
+    MAGE_MONTHS_PER_TICK,
+    deps.researchMultiplierFor?.(state, worldTick, mage, nodeId) ?? FP_ONE,
+  );
 
   switch (commitment.goalId) {
     case GOAL.researchNode:
@@ -745,7 +764,7 @@ function workOne(
           mage,
           student,
           nodeId,
-          mul(MAGE_MONTHS_PER_TICK, deps.teachMultiplierFor?.(mage) ?? FP_ONE),
+          mul(MAGE_MONTHS_PER_TICK, deps.teachMultiplierFor?.(state, worldTick, mage) ?? FP_ONE),
         );
       }
       return;
@@ -757,7 +776,7 @@ function workOne(
           teacher,
           mage,
           nodeId,
-          mul(MAGE_MONTHS_PER_TICK, deps.teachMultiplierFor?.(mage) ?? FP_ONE),
+          mul(MAGE_MONTHS_PER_TICK, deps.teachMultiplierFor?.(state, worldTick, mage) ?? FP_ONE),
         );
       }
       return;
@@ -917,7 +936,7 @@ function lifespanMonths(
     // `god-agency` issues these now — a blessing contributes to `lifespan`
     // through the shared stacking arithmetic — but only when a god was
     // installed. Empty stays the ordinary case for a world without one.
-    effectMagnitudes: deps.lifespanEffectsFor?.(mage) ?? [],
+    effectMagnitudes: deps.lifespanEffectsFor?.(state, state.clock.worldTick, mage) ?? [],
   }).months;
 }
 

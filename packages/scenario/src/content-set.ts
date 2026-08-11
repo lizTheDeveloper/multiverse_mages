@@ -38,6 +38,7 @@
 
 import type { ContentId, ContentRegistry, PrimitiveRecord, SpeciesRecord } from '@mm/content';
 import { loadContent, shippedContentSource } from '@mm/content';
+import type { SimState } from '@mm/sim-core';
 import type { CatalogueNode, ContentCatalogue } from '@mm/agent-api';
 import { buildCatalogue } from '@mm/agent-api';
 import type { CellResolver, NodeCatalog, StorePolicy } from '@mm/rules-magic';
@@ -51,6 +52,7 @@ import {
 } from '@mm/rules-magic';
 import { territoryExtent } from '@mm/rules-world';
 import type { WorldStepDeps } from '@mm/coordination';
+import { godEffectHooks, resolveGodContent } from '@mm/coordination';
 
 /** The permitted-axis halves of a ruleset (`contracts.md` §1.1). */
 export interface RulesetAxes {
@@ -239,6 +241,26 @@ export function catalogAndCells(registry: ContentRegistry): {
 export function worldDeps(registry: ContentRegistry, traditionId: ContentId): WorldStepDeps {
   const { catalog, cells } = catalogAndCells(registry);
   const { speciesOf } = speciesTable(registry);
+  const knowledgeFor = (state: SimState): KnowledgeSubsystem =>
+    KnowledgeSubsystem.fromState(state, catalog.nodeCount);
+
+  const god = resolveGodContent(registry);
+  const lifespan = primitiveNamed(registry, 'lifespan');
+  // How much a blessing or an encouragement is worth is a *rule*, so it lives
+  // in the coordinating layer beside the rest of `god-agency` rather than here:
+  // §5 does not grant `scenario` an edge to `@mm/primitives`, and the
+  // dependency-graph test is right to refuse one. This file wires; it does not
+  // compute.
+  const effects = godEffectHooks({
+    constants: god.constants,
+    primitives: {
+      researchRate: primitiveNamed(registry, 'research-rate'),
+      teachRate: primitiveNamed(registry, 'teach-rate'),
+      lifespan,
+    },
+    cells,
+  });
+
   return {
     speciesOf,
     catalog,
@@ -246,11 +268,48 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
     store: storeHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
     primitives: {
-      lifespan: primitiveNamed(registry, 'lifespan'),
+      lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),
       scribeRate: primitiveNamed(registry, 'scribe-rate'),
       fertility: primitiveNamed(registry, 'fertility'),
     },
-    knowledgeFor: (state) => KnowledgeSubsystem.fromState(state, catalog.nodeCount),
+    knowledgeFor,
+    god: {
+      content: god,
+      catalog,
+      cells,
+      knowledgeFor,
+      worshipYield: primitiveNamed(registry, 'worship-yield'),
+      worshipYieldNodes: nodesCarrying(registry, 'worship-yield'),
+      portalNodes: new Set(nodesCarrying(registry, 'portal').keys()),
+      // `nodesLostThisTick` is deliberately absent: `defineWorldSimulation`
+      // supplies it from the world loop's own report closure, because that is
+      // the one place that knows which tick a loss count belongs to.
+    },
+    ...effects,
   };
+}
+
+/**
+ * Interned node ids that carry a primitive, and each node's magnitudes.
+ *
+ * The magnitudes are handed over as a **list per node, unstacked**. Summing
+ * them here would be inline stacking by another spelling — the lint rule says
+ * so in as many words — and it would also be the wrong arithmetic: how several
+ * sources of one primitive combine is the registry's declared `stacking` rule,
+ * and `stackMagnitudes` is the only thing permitted to apply it. Callers that
+ * want one number ask that function for it.
+ */
+function nodesCarrying(
+  registry: ContentRegistry,
+  primitiveId: string,
+): Map<number, readonly number[]> {
+  const found = new Map<number, readonly number[]>();
+  for (const entry of registry.nodes) {
+    const magnitudes = entry.record.effects
+      .filter((effect) => effect.primitive === primitiveId)
+      .map((effect) => effect.magnitude);
+    if (magnitudes.length > 0) found.set(entry.contentId, Object.freeze(magnitudes));
+  }
+  return found;
 }

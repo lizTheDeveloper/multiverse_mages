@@ -110,8 +110,14 @@ export interface GodDeps {
   readonly knowledgeFor: (state: SimState) => KnowledgeSubsystem;
   /** The `worship-yield` registry record, for the shared stacking channel and its cap. */
   readonly worshipYield: PrimitiveRecord;
-  /** `worship-yield` magnitude carried by each node that carries any. */
-  readonly worshipYieldNodes: ReadonlyMap<number, Fixed>;
+  /**
+   * `worship-yield` magnitudes carried by each node that carries any, unstacked.
+   *
+   * A list per node rather than a summed number, because how several sources of
+   * one primitive combine is the registry's declared `stacking` rule and
+   * `stackMagnitudes` is the only thing permitted to apply it.
+   */
+  readonly worshipYieldNodes: ReadonlyMap<number, readonly Fixed[]>;
   /** Node ids carrying the `portal` primitive. */
   readonly portalNodes: ReadonlySet<number>;
   /** Where `worship-yield` cap clamps are counted, when a caller keeps counters. */
@@ -119,13 +125,16 @@ export interface GodDeps {
   /**
    * Nodes whose last instance was destroyed during *this* tick's world phase.
    *
-   * Supplied by the composition root as a closure over the world loop's report,
-   * which is written at the end of the world system and read at the start of
-   * this one — inside the same `step`, never across ticks. A value that had to
-   * survive a tick boundary would be state outside the snapshot, and a replay
-   * from a save would silently lose it.
+   * Supplied by `defineWorldSimulation`, which owns the world loop's report
+   * closure: the report is written at the end of the world system and read by
+   * the outcome system a few lines later, inside the same `step` and never
+   * across ticks. A value that had to survive a tick boundary would be state
+   * outside the snapshot, and a replay from a save would silently lose it.
+   *
+   * Optional so that a test can drive the god systems alone. Absent means "no
+   * node was lost", which for a world with no mortality phase is the truth.
    */
-  readonly nodesLostThisTick: (worldTick: number) => number;
+  readonly nodesLostThisTick?: ((worldTick: number) => number) | undefined;
 }
 
 /** What one tick of god rules did. Reporting only; never an input to a rule. */
@@ -363,7 +372,7 @@ function outcomeSystem(
       // ---- 6. The era boundary ----------------------------------------------
       const known = knowledge.knownNodes();
       const everKnown = componentOf(state, EVER_KNOWN).size;
-      const lost = deps.nodesLostThisTick(ctx.tick);
+      const lost = deps.nodesLostThisTick?.(ctx.tick) ?? 0;
       god = { ...god, eraNodesLost: god.eraNodesLost + lost };
 
       const era = eraOf(ctx.tick);
@@ -597,8 +606,8 @@ function tierOf(worship: Fixed, constants: GodContent['constants']): number {
 function yieldSources(knowledge: KnowledgeSubsystem, deps: GodDeps): Fixed[] {
   if (deps.worshipYieldNodes.size === 0) return [];
   const found: Fixed[] = [];
-  for (const [nodeId, magnitude] of deps.worshipYieldNodes) {
-    if (knowledge.instanceCount(nodeId) > 0) found.push(magnitude);
+  for (const [nodeId, magnitudes] of deps.worshipYieldNodes) {
+    if (knowledge.instanceCount(nodeId) > 0) found.push(...magnitudes);
   }
   return found;
 }

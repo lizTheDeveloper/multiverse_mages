@@ -81,6 +81,9 @@ export {
   worshipShareOfRegeneration,
 } from './favor.js';
 
+export type { GodEffectDeps, GodEffectHooks, GodEffectPrimitives } from './effects.js';
+export { godEffectHooks } from './effects.js';
+
 export type { InterventionDeps, InterventionReport } from './interventions.js';
 export { ACTION, emphasisAt, resolveInterventions } from './interventions.js';
 
