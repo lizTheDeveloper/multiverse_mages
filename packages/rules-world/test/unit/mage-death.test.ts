@@ -76,7 +76,10 @@ class FakeKnowledge {
           for (const grimoire of this.grimoires) {
             if (grimoire.holderKind === HOLDER_KIND.mage && grimoire.holderId === mage) {
               if (inheritor === NO_INHERITOR) {
-                grimoire.holderKind = HOLDER_KIND.inTransit;
+                // `unowned`, not `in transit` — see the assertion below for the
+                // conflict between the spec and the contract, and why the
+                // contract wins.
+                grimoire.holderKind = HOLDER_KIND.unowned;
                 grimoire.holderId = 0;
               } else {
                 grimoire.holderKind = HOLDER_KIND.library;
@@ -166,14 +169,29 @@ describe('grimoires survive their author', () => {
     ]);
   });
 
-  it('sends an unaffiliated mage’s book to a holder kind the contract enumerates', () => {
+  it('leaves an unaffiliated mage’s book unowned, not in transit to anywhere', () => {
+    // ## A deviation from the spec, resolved in favour of the contract
+    //
+    // The `mage-lifecycle` spec says these books become `in transit`, and gives
+    // its reason: *"since that enumeration admits only mage, library, and in
+    // transit."* That reason is false against the contract as it now stands.
+    // `contracts.md` §1.5 enumerates **four** holder kinds — "mage, library, in
+    // transit, or *unowned* — a dead unaffiliated mage's books are not in
+    // transit to anywhere" — and `state/src/enums.ts` numbers `unowned` at 0
+    // precisely so that a zeroed row means what a zeroed row is.
+    //
+    // Two landed files already encode the contract's reading: the `HOLDER_KIND`
+    // enumeration, and `coordination.ts`'s note on `NO_INHERITOR`. The spec
+    // sentence is stale, so the contract wins and the discrepancy is reported
+    // upward rather than resolved silently in either direction.
     const world = new FakeKnowledge();
     world.grimoires = [
       { nodeId: 2, holderKind: HOLDER_KIND.mage, holderId: MAGE, durability: 1024 },
     ];
     const outcome = killMage(MAGE, mageRow({ universityId: 0 }), world.port());
     expect(outcome.inheritor).toBe(NO_INHERITOR);
-    expect(world.grimoires[0]?.holderKind).toBe(HOLDER_KIND.inTransit);
+    expect(world.grimoires[0]?.holderKind).toBe(HOLDER_KIND.unowned);
+    expect(world.grimoires[0]?.holderId).toBe(0);
     // No fifth holder kind was invented for the case.
     expect(Object.values(HOLDER_KIND)).toContain(world.grimoires[0]?.holderKind);
   });

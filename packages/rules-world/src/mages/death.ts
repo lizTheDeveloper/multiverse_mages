@@ -35,6 +35,17 @@ import { NO_INHERITOR } from '../coordination.js';
  * anywhere."* That is why {@link NO_INHERITOR} exists as a named constant and
  * why this module does not invent a fifth holder kind for the case.
  *
+ * **A recorded deviation from the spec, and the one place this group departs
+ * from it.** The `mage-lifecycle` spec says an unaffiliated mage's grimoires
+ * become `in transit`, justified by the claim that §1.5's enumeration "admits
+ * only mage, library, and in transit". It admits four kinds, not three, and
+ * `unowned` is the fourth — added, per `state/src/enums.ts`, precisely so that
+ * a zeroed grimoire row does not read as *held by mage 0*. The contract and two
+ * already-landed files agree with each other and not with the spec sentence, so
+ * the contract is followed and the spec is the artefact that should be amended.
+ * `mage-death.test.ts` asserts the contract's reading and carries the reasoning
+ * where a reader will meet it.
+ *
  * ## Why so much of this file is an interface
  *
  * Everything death *does* belongs to somebody else. Destroying knowledge
