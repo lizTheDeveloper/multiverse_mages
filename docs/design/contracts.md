@@ -262,8 +262,17 @@ serialized into snapshots.
   "scribeCost": 2048,               // fp; scribe-months + materials
   "rediscoveryMultiplier": 3072,    // fp; applied to researchCost when relearning a lost node.
                                     // Content invariant: >= fp(3072). Species rediscoveryAffinity is
-                                    // applied, then a hard fp(3072) floor -- otherwise affinity alone
-                                    // drops the effective cost to 2.25x and falsifies the 0.3.0 claim.
+                                    // applied, then a hard fp(3072) floor -- otherwise the BEST
+                                    // rediscoverer's affinity alone drops the effective cost to
+                                    // 3072*1024/1792 = 1755, i.e. 1.71x, falsifying the 0.3.0 claim.
+                                    // (An earlier draft of this line said "2.25x". That number is
+                                    // 3072*768/1024 -- affinity as a MULTIPLIER, against a dwarf's
+                                    // value. It was the only sentence in this document written under
+                                    // that reading, and it taught an implementation the wrong
+                                    // direction: rules-magic shipped `mul` where every other artifact
+                                    // -- this field's own "fp DIVISOR" note in §2.4, the species data,
+                                    // the loader's 5376 authoring floor -- assumes `div`. Found when
+                                    // two agents independently reported the contradiction.)
                                     // Author v1 bases at >= fp(5376). NOT fp(4096) -- that number does
                                     // not achieve its own purpose: the best rediscoverer (gnome,
                                     // affinity 1792) turns 4096 into 4096*1024/1792 = 2340, BELOW the
