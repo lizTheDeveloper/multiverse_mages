@@ -1,13 +1,12 @@
 {
-  "sweepId": "balance-full-v1",
-  "kind": "full",
+  "sweepId": "balance-gate-horizon-v1",
+  "kind": "gate",
   "rootSeed": 20260811,
   "factors": [
-    { "id": "cohortSize", "levels": [2, 4, 8, 12] },
-    { "id": "foundingMages", "levels": [1, 4] },
-    { "id": "foundingNodes", "levels": [1, 2, 4, 8, 16] }
+    { "id": "cohortSize", "levels": [4, 12] },
+    { "id": "foundingNodes", "levels": [1, 4] }
   ],
-  "replicates": 250,
+  "replicates": 50,
   "agentPool": {
     "strategies": ["passive-control"],
     "assignment": "fixed",
@@ -15,7 +14,7 @@
   },
   "termination": {
     "worldTickCap": 240,
-    "perRunTimeoutMs": 600000
+    "perRunTimeoutMs": 60000
   },
   "metrics": [
     "referenceGrimoires",

@@ -46,21 +46,38 @@ Flow for a push to `main` or a same-repo PR:
 `scripts/ci-check.sh` must stay equivalent to `npm run verify`. If they drift, a commit can pass
 locally and fail on the runner, or worse, the reverse.
 
-## The balance regression gate
+## The balance regression gates
 
-`npm run balance:gate` runs the committed gate sweep — 200 real universes, about a minute — and
-compares every metric against `balance/baselines/balance-gate-v1.baseline.json`. It is a
-build-failing step in both systems, and it is wired into each of them differently on purpose:
+There are two, and they are not redundant either.
 
-- The self-hosted runner gets it through **`npm run verify`**, which the gate script is part of.
-  Nothing in `ci-check.sh` names it, because the script's whole contract is to stay equivalent to
-  `verify`.
-- GitHub Actions gets it as **its own named step**, in both jobs, because that workflow lists every
-  step by hand and would otherwise never run it.
+| | `npm run balance:gate` | `npm run balance:gate:horizon` |
+|---|---|---|
+| sweep | `balance-gate.sweep.json` | `balance-gate-horizon.sweep.json` |
+| horizon | 60 world ticks — five world years | 240 world ticks — twenty world years |
+| runs | 200 real universes | 200 real universes |
+| wall clock | ~8 s on four idle cores | ~35 s on four idle cores |
+
+Each compares every metric against its own committed baseline under `balance/baselines/`. Both are
+build-failing steps in both systems, and both are wired into each of them the same way, on purpose:
+
+- The self-hosted runner gets them through **`npm run verify`**, which both gate scripts are part
+  of. Nothing in `ci-check.sh` names either, because the script's whole contract is to stay
+  equivalent to `verify`.
+- GitHub Actions gets each as **its own named step**, in both jobs, because that workflow lists
+  every step by hand and would otherwise never run them.
 
 Adding a check to only one of those is the drift this file warns about, in its most expensive form:
 the gate would pass on one system and be absent on the other, and nobody would notice until the two
-disagreed about a commit.
+disagreed about a commit. `packages/scenario/test/unit/horizon-gate.test.ts` reads this workflow and
+this script and fails if either gate goes missing from either.
+
+**The second gate is not a slower copy of the first, and the fix for a slow CI run is not to delete
+it.** The five-year gate has a measured blind spot: the level of node discovery it reports at year
+five is the level the pre-frontier-fix build plateaued at permanently, so a defect that caps
+discovery there is invisible to it. The twenty-year gate is what sees that. Lengthening the fast
+gate instead would cost about three quarters of its sample size and roughly double every tolerance,
+which trades one blind spot for another. `balance/README.md` has the table of measurements, and the
+test above fails if the horizon is shortened.
 
 Two things the gate deliberately does *not* do. It never writes a baseline — regeneration is a
 separate entrypoint under `packages/mc-harness/bin/`, invoked by a person with a written rationale,

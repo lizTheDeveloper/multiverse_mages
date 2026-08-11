@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "6943c6123a59a30a058304f1650c6ca42a83cea63abfc2fa770b63adf111188a",
+  "contentHash": "20480ed825a75672d02388eccc75c2743e734bda799f4379fac3a7462e3c940d",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.648564310457522,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.945692931372566,"unit":"grimoires","value":116.7},
@@ -15,19 +15,20 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.4412285723536323,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3236857170608969,"unit":"people","value":-14.87}
   ],
   "notes": [
-    "Attribution, measured rather than assumed. The nine metrics here move by exactly the same amounts with the god systems installed and with them removed from the scenario's deps — checked by building the reference universe both ways against the superseded baseline. So none of this delta is god-agency's: for a passive-control sweep the god does nothing and the universe is unchanged, which is what 'the verbs are the player's' has to mean.",
-    "The delta belongs to 512ef00, 'Bound the frontier scan by legality, not by a range of interned node ids', which merged into this branch's base at 3894bde without a regenerated baseline. That change made roughly a third of the v1 catalogue reachable again, and referenceNodesGained and referenceNodesKnown both rise by 7.455 nodes — one number, because every node gained in a 60-tick run is a node newly known. referenceGrimoires falls 7.07 and referenceKnowledgeInstances rises 20.07 for the same reason: mages spread across a wider frontier, so more heads hold more distinct nodes and fewer months go into writing any one of them down.",
-    "Still a degenerate universe, and still not a balance claim. release-plan.md forbids one before 0.5.0 and this build is 0.3.0. Every god-agency magnitude carries tuningStatus: untuned, and this sweep runs passive-control for 60 ticks — so the god holds sixteen verbs and uses none of them, no universe here ever reaches worship tier 1, and nothing terminates. What is gated is the reference scenario's vital signs, not §7's metrics."
+    "These nine metrics are the reference scenario's vital signs, not the twelve balance metrics of contracts.md §7. Six of §7's twelve describe mechanics that have not shipped — raids, god actions, worship, prestige — and the rest need per-node and per-(species, tier) telemetry that the §4.1 observation does not carry, so no executor in this tree can produce them yet.",
+    "The universe these numbers describe is still degenerate, and every item is an open finding rather than something this baseline settles: every scripted strategy produces the same universe because no system reads a god action; the population halves before it grows; library depth is 1.71 nodes against 116.7 grimoires, because the scribable list is cost-ordered and the same cheap nodes are written over and over; and several observation channels saturate. Node discovery has left that list — the frontier fix is why this baseline exists — but this sweep stops at world-year five and cannot say what happens after it.",
+    "referencePeakPopulation still has a standard error of exactly zero and therefore a tolerance of exactly zero, so the gate demands exact equality of it. That is deliberate: a deterministic sweep cannot move by chance, so a metric that has never varied has no noise behind which a real change could hide. referenceLibraryDepth was such a metric until the shelving regeneration, and the zero tolerance is what caught it moving.",
+    "Sample size is 200 runs over 4 parameter cells at 60 world ticks — five world years — sized so the gate runs on every push. It now takes about 8 seconds on four workers rather than the 45 recorded here before the world-loop throughput work. This horizon is the gate's known blind spot and it is not fixed by widening it: 32.65 nodes at year five is the same level the pre-frontier-fix build plateaued at forever, so a defect that caps discovery at or above that level cannot show here. balance-gate-horizon.sweep.json runs the same four cells to world-year twenty for that reason, and balance/README.md has the measurements."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "0e63987b2823f4d991ea1c7a40944055",
-    "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
+    "contentHash": "f813d90d3ddadb345c0a9d55505de432",
+    "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "god-agency lands, and the frontier fix that preceded it on this branch has never had a baseline taken against it. The contentHash moves to 0e63987b2823f4d991ea1c7a40944055 because god-cost.json and god-constant.json are inside contentRevision — deliberately, since two universes disagreeing about what forbidding a technique costs while their revisions call them compatible would be playing different games.",
+  "rationale": "The frontier fix landed. researchFrontier was a prefix window over interned node ids, hiding roughly a third of v1 content including an entire technique; bounding the scan by legality instead made it reachable. referenceNodesKnown moves 25.195 to 32.650, and referenceNodesGained with it — 77.8 standard errors, the largest movement this gate has recorded — with referenceKnowledgeInstances up 20.065 and referenceGrimoires down 7.070 behind it. The world-loop throughput work that merged alongside it moved nothing: this sweep run at 7bdac17, before that work, produces these same nine numbers to the digit, which is what a performance change is supposed to do and what the gate is for. Still a measurement and not a verdict: release-plan.md forbids a balance claim before 0.5.0 and this build is 0.3.0.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [

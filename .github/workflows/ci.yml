@@ -57,7 +57,7 @@ jobs:
       - name: Test (unit + golden replay)
         run: npm test
 
-      - name: Balance regression gate
+      - name: Balance regression gate (five world years)
         # The committed baseline for the gate sweep, compared metric by metric.
         # Fails the build when a gated metric moves beyond its tolerance, and
         # equally when the baseline is missing — a gate that passes without one
@@ -65,6 +65,16 @@ jobs:
         # the self-hosted runner picks it up through `npm run verify`, which the
         # script is also part of. Both, or the two gates disagree.
         run: npm run balance:gate
+
+      - name: Balance regression gate (twenty world years)
+        # The same four cells and the same 200 runs, run to world-year twenty
+        # instead of five, against its own baseline. It is a separate step and
+        # not a longer version of the one above because the two answer different
+        # questions: the fast gate is sensitive and cheap, and this one can see a
+        # plateau that has not started yet at year five. Deleting either leaves a
+        # blind spot the other does not cover — balance/README.md has the
+        # measurements, and horizon-gate.test.ts fails if this step goes missing.
+        run: npm run balance:gate:horizon
 
   next-node:
     # Early warning only: a failure here means the next Node major may change
@@ -109,7 +119,7 @@ jobs:
       - name: Test (unit + golden replay)
         run: npm test
 
-      - name: Balance regression gate
+      - name: Balance regression gate (five world years)
         # The committed baseline for the gate sweep, compared metric by metric.
         # Fails the build when a gated metric moves beyond its tolerance, and
         # equally when the baseline is missing — a gate that passes without one
@@ -117,3 +127,13 @@ jobs:
         # the self-hosted runner picks it up through `npm run verify`, which the
         # script is also part of. Both, or the two gates disagree.
         run: npm run balance:gate
+
+      - name: Balance regression gate (twenty world years)
+        # The same four cells and the same 200 runs, run to world-year twenty
+        # instead of five, against its own baseline. It is a separate step and
+        # not a longer version of the one above because the two answer different
+        # questions: the fast gate is sensitive and cheap, and this one can see a
+        # plateau that has not started yet at year five. Deleting either leaves a
+        # blind spot the other does not cover — balance/README.md has the
+        # measurements, and horizon-gate.test.ts fails if this step goes missing.
+        run: npm run balance:gate:horizon

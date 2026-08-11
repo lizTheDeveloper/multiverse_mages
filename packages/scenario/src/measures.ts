@@ -62,6 +62,38 @@ export interface ReferenceMeasure {
   collect(run: RunMeasurement): MetricEntry;
 }
 
+/**
+ * The tail fraction of a run {@link referenceNodesGainedFinalQuarter} reads.
+ *
+ * Four, so the window is the final quarter. Named rather than inlined because it
+ * is an invented constant of the same kind `metrics-registry.ts` insists on
+ * declaring: a later change that made it a third would be measuring a different
+ * quantity under the same id.
+ */
+export const FINAL_WINDOW_DENOMINATOR = 4;
+
+/**
+ * The census reading the final-window measures count forward from.
+ *
+ * The window is defined in **world ticks** — `ticksRun / 4` back from the last
+ * reading — and then widened to the census grid, because a census taken every
+ * twelve ticks cannot answer a question asked between two of them. So the anchor
+ * is the *latest* reading at or before the boundary, which makes the measured
+ * window the smallest grid-aligned window that contains the final quarter. At a
+ * tick cap that is a multiple of four census intervals — 240, which is what
+ * `balance-gate-horizon.sweep.json` runs — the two coincide exactly and no
+ * widening happens.
+ */
+function finalWindowAnchor(run: RunMeasurement): CensusSample {
+  const boundary = run.last.worldTick - Math.floor(run.ticksRun / FINAL_WINDOW_DENOMINATOR);
+  let anchor = run.samples[0] ?? run.last;
+  for (const sample of run.samples) {
+    if (sample.worldTick > boundary) break;
+    anchor = sample;
+  }
+  return anchor;
+}
+
 /** A measured entry. Every measure here always measures — none is mechanic-gated. */
 function measured(value: number): MetricEntry {
   return { status: 'measured', value };
@@ -102,6 +134,38 @@ export const REFERENCE_MEASURES: readonly ReferenceMeasure[] = Object.freeze([
     'nodes',
     'mean',
     (run) => run.last.nodesKnown - run.first.nodesKnown,
+  ),
+  /**
+   * Distinct nodes the universe gained over the **final quarter** of the run.
+   *
+   * A shape statistic, and the only measure here that is a derivative rather
+   * than a level. It exists because of a specific thing the level metrics cannot
+   * do, which was measured rather than imagined.
+   *
+   * `referenceNodesKnown` at the five-year gate reads 32.65 on this build. The
+   * build that shipped `researchFrontier` as a prefix window over interned node
+   * ids — a third of v1 content unreachable, an entire technique among it —
+   * plateaued at 32–33 nodes and stayed there for the rest of a twenty-year run.
+   * The healthy universe's *year-five level* and the broken universe's
+   * *permanent ceiling* are the same number. A level metric read at the end of a
+   * five-year window therefore cannot tell a universe that is still learning
+   * from one that has stopped, and a defect that caps discovery anywhere at or
+   * above the level the reference reaches by year five passes it in silence.
+   *
+   * A plateau is a derivative going to zero. This measure reads the derivative
+   * directly: near zero means the universe stopped learning before the run
+   * ended, whatever level it stopped at, and no comparison against a
+   * remembered level is needed to see it.
+   *
+   * Zero is a real answer and is not special-cased. A run that advanced no ticks
+   * gained nothing over its final quarter, which is both what this returns and
+   * what is true.
+   */
+  measure(
+    'referenceNodesGainedFinalQuarter',
+    'nodes',
+    'mean',
+    (run) => run.last.nodesKnown - finalWindowAnchor(run).nodesKnown,
   ),
   measure(
     'referencePopulationChange',
