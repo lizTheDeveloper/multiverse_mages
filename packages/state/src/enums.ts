@@ -123,6 +123,30 @@ export const AXIS_KIND = {
 
 export type AxisKindValue = (typeof AXIS_KIND)[keyof typeof AXIS_KIND];
 
+/**
+ * What kind of unfinished work a `effort-progress` row is accumulating
+ * (`contracts.md` §1.2, "Effort progress").
+ *
+ * `0` is left unassigned, per §0's null convention: a zeroed row is a malformed
+ * record rather than a research project nobody started. The three members are
+ * the three operations `rules-magic` takes accumulated progress for, and there
+ * is no fourth because there is no fourth such operation — a goal that needs no
+ * accrual (`idle`, `affiliate`, `ward-duty`, `raid-readiness`) has no row.
+ *
+ * **A discriminator is required and not decorative.** A mage who holds a node
+ * can be part-way through teaching it *and* part-way through writing it down at
+ * the same moment, and those two projects have different costs — `teachCost`
+ * against `scribeCost`. Keying an effort on `(subject, nodeId)` alone would let
+ * a month at the writing desk finish a student's education.
+ */
+export const EFFORT_KIND = {
+  research: 1,
+  teaching: 2,
+  scribing: 3,
+} as const;
+
+export type EffortKindValue = (typeof EFFORT_KIND)[keyof typeof EFFORT_KIND];
+
 /** `contracts.md` §1.6: what a combatant was made from. */
 export const COMBATANT_SOURCE_KIND = {
   mage: 0,

@@ -47,26 +47,38 @@
  *    least this mage's copy.
  * 4. **Promotion.** After deaths, so a mage promoted this tick is not judged
  *    against a hazard computed before she existed.
- * 5. **Autonomy.** After promotion, so a new mage decides in the tick she
- *    appears. She carries no commitment, so she reads as `no-incumbent` and
- *    evaluates immediately — which is what the absent component means.
- * 6. **Knowledge decay.** After autonomy, so a decision is made against the
+ * 5. **Work.** Every mage who has held a goal since last tick spends her month
+ *    on it. Before autonomy, because `selectGoal` asks the caller whether the
+ *    incumbent goal *completed* — so the work has to have happened before the
+ *    question is asked, or a mage would defend a finished project for a whole
+ *    commitment period. After promotion and after the deaths, so that the tick's
+ *    labour is the living mages' and a mage who died this month contributes
+ *    nothing, which `mage-lifecycle` states as a scenario.
+ * 6. **Autonomy.** After work, so a new mage decides in the tick she appears and
+ *    a finishing mage decides in the tick she finishes. A newly promoted mage
+ *    carries no commitment, so she reads as `no-incumbent` and evaluates
+ *    immediately — which is what the absent component means.
+ * 7. **Knowledge decay.** After autonomy, so a decision is made against the
  *    mastery the mage had when the tick began.
- * 7. **Births.** After the deaths, so newborns are not aged, reallocated or
+ * 8. **Births.** After the deaths, so newborns are not aged, reallocated or
  *    killed in the tick they arrive, and against a carrying capacity computed
  *    from this tick's stock.
- * 8. **Consumption, then the non-negative invariant.** Last, because every other
+ * 9. **Consumption, then the non-negative invariant.** Last, because every other
  *    phase is a claimant: subsistence is charged for the population that
  *    survived, and upkeep for the shelves that survived.
  *
- * ## What this loop deliberately does not do
+ * ## Scribing is the one claimant that pays at the desk
  *
- * **It accrues no work.** Research, teaching and scribing progress have nowhere
- * to persist — `gateway.ts` explains at length, and the three `contribute*`
- * methods throw rather than pretend. Mages here choose goals, hold them through
- * hysteresis, and lose knowledge to decay and death; they do not yet complete
- * anything. That is the next decision, and it has the same shape as the
- * goal-commitment one: a component, a schema revision, a migration.
+ * Every other cost is settled in phase 9 through `consumeMaterials`, which pays
+ * the four claimants down a fixed priority order. Scribing cannot wait for it: a
+ * grimoire either exists at the end of the tick or does not, and a book charged
+ * after the fact could be charged against a stock that phase 9 had already
+ * emptied. So the work phase deducts a finished book's `scribeCost` at the
+ * moment it is written, and only ever offers a scribe what is left **after this
+ * tick's subsistence is set aside** — which is how the priority order is
+ * honoured by a claimant that is paid out of order.
+ *
+ * ## What this loop deliberately does not do
  *
  * **It founds no universities and grants no founding knowledge.** Both are god
  * actions (`contracts.md` §4.2, actions 11 and 8) and belong to `god-agency`. A
@@ -83,6 +95,7 @@ import type { EntityHandle, Fixed, SimState, System } from '@mm/sim-core';
 import { TIME_MODE } from '@mm/sim-core';
 import type { Handle, MageRecord, Ruleset } from '@mm/state';
 import {
+  EFFORT_KIND,
   MAGE,
   OCCUPATION,
   POPULACE_COHORT,
@@ -98,9 +111,18 @@ import {
 } from '@mm/state';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog, StorePolicy } from '@mm/rules-magic';
 import { decayHeldKnowledge } from '@mm/rules-magic';
-import type { CohortDemography, ScaleFreeHazard, StepRng, TerritoryExtent } from '@mm/rules-world';
+import type { RediscoveryClampCounter } from '@mm/primitives';
+import { createRediscoveryClampCounter } from '@mm/primitives';
+import type {
+  CohortDemography,
+  MageGoalCommitment,
+  ScaleFreeHazard,
+  StepRng,
+  TerritoryExtent,
+} from '@mm/rules-world';
 import {
   CohortStore,
+  GOAL,
   assertMaterialsNonNegative,
   carryingCapacity,
   clearCommitment,
@@ -115,6 +137,7 @@ import {
   killMage,
   materialsProduced,
   promoteStudentCohort,
+  readCommitment,
   rollMortality,
   scribingThroughput,
   stepMageAutonomy,
@@ -122,12 +145,29 @@ import {
   subsistenceDemand,
 } from '@mm/rules-world';
 
+import { EffortLedger } from './effort-store.js';
 import { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { MageRates } from './gateway.js';
-import { buildOutlook } from './outlook.js';
+import { buildOutlook, universityPreference } from './outlook.js';
 
 /** `fp(1.0)`. `buildProgress` at which a university is complete (`contracts.md` §1.4). */
 const FP_ONE = 1024;
+
+/**
+ * What one mage contributes to her committed project in one world tick.
+ *
+ * `fp(1)` — one mage-month per month, which is the definition of the unit rather
+ * than a tuning value: `contracts.md` §0 makes a world tick a month, and §2.3
+ * authors `researchCost` and `teachCost` in mage-months. A mage who worked at
+ * some other rate would be a mage whose month was not a month.
+ *
+ * What *is* untuned, and deliberately absent, is every multiplier that should
+ * eventually scale it: a library's `research-rate` contribution, a mage's
+ * `vigor`, a professor's teaching load. Each belongs to a mechanism that is not
+ * built, and a placeholder factor here would be a balance number nobody authored
+ * sitting in the middle of the one loop every later measurement runs through.
+ */
+const MAGE_MONTHS_PER_TICK: Fixed = FP_ONE;
 
 /** Everything the loop needs that is content or configuration rather than state. */
 export interface WorldStepDeps {
@@ -181,6 +221,16 @@ export interface WorldStepReport {
   /** Nodes whose last instance was destroyed this tick, by death or by decay. */
   readonly nodesLost: number;
   readonly goalSwitches: number;
+  /** Research projects that reached their requirement and became instances. */
+  readonly researchCompleted: number;
+  /** Teaching projects that paid `teachCost` and transmitted the node. */
+  readonly lessonsTaught: number;
+  /** Books finished this tick. */
+  readonly grimoiresScribed: number;
+  /** Materials those books cost, deducted at the desk. `fp`. */
+  readonly materialsScribed: Fixed;
+  /** Projects with progress banked at the end of the tick, finished or not. */
+  readonly effortsInFlight: number;
 }
 
 /** A world schema with the coordinating loop installed, and its last report. */
@@ -188,6 +238,12 @@ export interface WorldSimulation {
   readonly schema: ReturnType<typeof defineWorldStateSchema>;
   /** The last tick's report, or `undefined` before the first step. */
   lastReport: () => WorldStepReport | undefined;
+  /**
+   * How often the `fp(3072)` rediscovery floor discarded species affinity, over
+   * the whole run so far. A snapshot of the counter, so a caller cannot advance
+   * it. Reporting only, like every other projection here.
+   */
+  rediscoveryClamps: () => RediscoveryClampCounter;
 }
 
 /**
@@ -200,10 +256,19 @@ export interface WorldSimulation {
  */
 export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
   let last: WorldStepReport | undefined;
+  // One counter for the whole simulation, not one per tick. `primitives` is
+  // explicit that the figure worth having is the *share* of rediscovery
+  // evaluations the `fp(3072)` floor ate over a run, and a counter rebuilt every
+  // phase reads zero forever while looking like it is measuring something.
+  const clampCounter = createRediscoveryClampCounter();
   const system = worldSystem(deps, (report) => {
     last = report;
-  });
-  return { schema: defineWorldStateSchema([system]), lastReport: () => last };
+  }, clampCounter);
+  return {
+    schema: defineWorldStateSchema([system]),
+    lastReport: () => last,
+    rediscoveryClamps: () => ({ ...clampCounter }),
+  };
 }
 
 /**
@@ -217,6 +282,7 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
 export function worldSystem(
   deps: WorldStepDeps,
   onReport?: (report: WorldStepReport) => void,
+  clampCounter: RediscoveryClampCounter = createRediscoveryClampCounter(),
 ): System {
   const hazard: ScaleFreeHazard = deps.hazard ?? hazardAt;
 
@@ -238,6 +304,29 @@ export function worldSystem(
 
       const knowledge = deps.knowledgeFor(state);
       const cohorts = new CohortStore(state.entities, componentOf(state, POPULACE_COHORT));
+      // One ledger per tick, for the reason the gateway is one per phase: it
+      // keys an index off the component's rows, and it is the only writer, so it
+      // stays correct exactly as long as nothing else touches them.
+      const efforts = new EffortLedger(state);
+
+      // ---- 1. Materials production ---------------------------------------
+      const produced = produceMaterials(cohorts, deps);
+      let materials = readRecord(state, UNIVERSE, universe).materials + produced;
+
+      // Scribing is paid at the desk rather than in phase 9 — see the module
+      // note — so what a scribe may spend is the stock less this tick's
+      // subsistence, which outranks her in `CONSUMPTION_ORDER`. Read once,
+      // before the populace phase changes the headcount, so that every scribe in
+      // a tick is offered the same stock.
+      const subsistenceReserve = subsistenceDemand(cohorts.totalCount());
+      let materialsScribed = 0;
+      const materialsAccess = {
+        available: () => Math.max(materials - subsistenceReserve, 0),
+        consume: (amount: Fixed) => {
+          materials -= amount;
+          materialsScribed += amount;
+        },
+      };
 
       // A gateway memoizes its scans and is therefore a view of one phase, not
       // of one tick — see `gateway.ts`. One is built for each phase that runs
@@ -253,11 +342,11 @@ export function worldSystem(
           ruleset,
           ratesOf: (mage) => ratesOf(state, mage, deps),
           store: deps.store,
+          effort: efforts,
+          rng,
+          materials: materialsAccess,
+          clampCounter,
         });
-
-      // ---- 1. Materials production ---------------------------------------
-      const produced = produceMaterials(cohorts, deps);
-      let materials = readRecord(state, UNIVERSE, universe).materials + produced;
 
       // ---- 2. Populace ----------------------------------------------------
       const populace = stepPopulace(cohorts, {
@@ -274,18 +363,35 @@ export function worldSystem(
       });
 
       // ---- 3. Mage mortality, and what a death costs -----------------------
-      const mortality = killTheDead(state, { rng, worldTick, gateway: gatewayFor(), deps });
+      const mortality = killTheDead(state, {
+        rng,
+        worldTick,
+        gateway: gatewayFor(),
+        efforts,
+        deps,
+      });
 
       // ---- 4. Promotion -----------------------------------------------------
       const promoted = promoteMaturedStudents(state, cohorts, { rng, worldTick, deps });
 
-      // ---- 5. Autonomy -------------------------------------------------------
+      // ---- 5. Work -----------------------------------------------------------
+      const work = spendTheMonth(state, gatewayFor());
+
+      // ---- 6. Autonomy -------------------------------------------------------
       const stockAtDecisionTime = materials;
       const gateway = gatewayFor();
+      // One scan of the shelves for the whole phase, not one per mage. See
+      // `universityPreference`.
+      const preferredUniversityFor = universityPreference(state);
       const autonomy = stepMageAutonomy({
         state,
         worldTick,
         rng,
+        // The caller's judgement, which is exactly how `select.ts` asks for it:
+        // completion is a fact about the work, and the work happened one phase
+        // ago. A mage who finished this month reconsiders this month rather than
+        // guarding a project that no longer exists for a commitment period.
+        isComplete: (mage) => work.completedBy.has(mage),
         outlookFor: (mage) => {
           const row = mageRowOf(state, mage);
           if (row === undefined || row.alive === 0) return undefined;
@@ -300,11 +406,12 @@ export function worldSystem(
             scribeThroughputOf: (universityId) =>
               scribeThroughputFor(state, universityId, cohorts, deps),
             tierOf: (nodeId) => deps.catalog.node(nodeId)?.tier ?? 1,
+            preferredUniversityFor,
           });
         },
       });
 
-      // ---- 6. Knowledge decay ------------------------------------------------
+      // ---- 7. Knowledge decay ------------------------------------------------
       const decayed = decayHeldKnowledge({
         knowledge,
         cells: deps.cells,
@@ -314,7 +421,7 @@ export function worldSystem(
         retentionOf: (holder) => retentionOf(state, holder, deps),
       });
 
-      // ---- 7. Births ----------------------------------------------------------
+      // ---- 8. Births ----------------------------------------------------------
       const capacity = carryingCapacity({
         territory: deps.territory,
         materials,
@@ -327,10 +434,13 @@ export function worldSystem(
         deps,
       });
 
-      // ---- 8. Consumption, then the invariant ---------------------------------
+      // ---- 9. Consumption, then the invariant ---------------------------------
       const consumption = consumeMaterials(materials, {
         subsistence: subsistenceDemand(cohorts.totalCount()),
         libraryUpkeep: 0,
+        // Zero because scribing has already been paid, at the desk, in phase 5.
+        // Charging it twice is the obvious mistake here; the tick's spend is
+        // reported as `materialsScribed` rather than hidden.
         scribing: 0,
         construction: 0,
       });
@@ -350,6 +460,11 @@ export function worldSystem(
         livingMages: countLivingMages(state),
         nodesLost: mortality.nodesLost + decayed.length,
         goalSwitches: autonomy.histogram.goalSwitches,
+        researchCompleted: work.researchCompleted,
+        lessonsTaught: work.lessonsTaught,
+        grimoiresScribed: work.grimoiresScribed,
+        materialsScribed,
+        effortsInFlight: efforts.size,
       });
     },
   };
@@ -386,6 +501,7 @@ interface MortalityPhase {
   readonly rng: StepRng;
   readonly worldTick: number;
   readonly gateway: CoordinatingKnowledgeGateway;
+  readonly efforts: EffortLedger;
   readonly deps: WorldStepDeps;
 }
 
@@ -434,6 +550,13 @@ function killTheDead(
       },
       abandonGoal: (mage) => {
         clearCommitment(state, mage);
+        // And everything she had set down. A dead mage's entity is retained so
+        // that a grimoire naming her as its last holder keeps a valid handle,
+        // which means her effort rows would otherwise sit there describing work
+        // nobody is doing — and a teaching row she was half of would leave a
+        // student paired with a corpse, which `mage-lifecycle` forbids in as
+        // many words.
+        phase.efforts.clearSubject(mage);
       },
     });
     // The entity survives its owner — a grimoire naming her as its last holder
@@ -445,6 +568,112 @@ function killTheDead(
   }
 
   return { deaths: doomed.length, nodesLost };
+}
+
+/** What the work phase did, and who it freed to reconsider. */
+interface WorkPhaseOutcome {
+  /** Mages whose committed project finished this tick, either side of a lesson. */
+  readonly completedBy: ReadonlySet<Handle>;
+  readonly researchCompleted: number;
+  readonly lessonsTaught: number;
+  readonly grimoiresScribed: number;
+}
+
+/**
+ * Every living mage spends her month on whatever she committed to.
+ *
+ * ## Only a held commitment is worked
+ *
+ * The commitment read here is the one written *last* tick, because this phase
+ * runs before autonomy. That is what makes a month of work a month: a mage who
+ * decided and worked in the same tick would be paid for a decision she had not
+ * made when the month began, and a mage who switched goals would be paid twice.
+ *
+ * ## Ascending slot order, and the draws do not care
+ *
+ * Mages are visited through a slot-ordered roster, for the reason
+ * `stepMageAutonomy` gives: row order is a function of the destroy history, so
+ * two identical universes would work in different orders. The RNG is unaffected
+ * either way — `contracts.md` §6 keys research on the subject, teaching on the
+ * teacher and scribing on the scribe, so no mage's draws can move another's, and
+ * a mage who is idle draws nothing at all.
+ *
+ * ## A lesson is one project with two people pushing it
+ *
+ * `teach` and `seek-teaching` are the two ends of the same work, and the effort
+ * row is keyed on the pair. So a teacher and her student each spend a month and
+ * the row advances by two, which is what `teachCost` being *the pair's* cost
+ * means. Neither goal requires the other to exist: a teacher with a willing
+ * student advances the lesson alone, at half speed.
+ */
+function spendTheMonth(state: SimState, gateway: CoordinatingKnowledgeGateway): WorkPhaseOutcome {
+  for (const { handle, row } of collectRecords(state, MAGE)) {
+    if (row.alive === 0) continue;
+    const commitment = readCommitment(state, handle);
+    if (commitment === undefined) continue;
+    workOne(handle, commitment, gateway);
+  }
+
+  const completedBy = new Set<Handle>();
+  let researchCompleted = 0;
+  let lessonsTaught = 0;
+  let grimoiresScribed = 0;
+  for (const done of gateway.completions()) {
+    completedBy.add(done.subject);
+    if (done.counterparty !== 0) completedBy.add(done.counterparty);
+    if (done.kind === EFFORT_KIND.research) researchCompleted += 1;
+    else if (done.kind === EFFORT_KIND.teaching) lessonsTaught += 1;
+    else grimoiresScribed += 1;
+  }
+  return { completedBy, researchCompleted, lessonsTaught, grimoiresScribed };
+}
+
+/**
+ * One mage's month, routed to the accrual her goal names.
+ *
+ * A goal with no accrual behind it — `idle`, `affiliate`, `ward-duty`,
+ * `raid-readiness` — falls through and spends nothing, which is honest: two of
+ * those wait on capabilities that do not exist, and `affiliate` completes
+ * through `completeAffiliation` rather than by accumulating months. A mage whose
+ * committed goal needs a counterparty and has none this tick also spends
+ * nothing; the feasibility mask moves her on at her next evaluation.
+ */
+function workOne(
+  mage: Handle,
+  commitment: MageGoalCommitment,
+  gateway: CoordinatingKnowledgeGateway,
+): void {
+  const nodeId = commitment.targetNodeId;
+  if (nodeId === 0) return;
+
+  switch (commitment.goalId) {
+    case GOAL.researchNode:
+    case GOAL.rediscoverNode:
+      // One accrual for both, because they are one operation: `rules-magic`'s
+      // `research` decides for itself whether a node is a rediscovery, from the
+      // ever-known record, and a second code path here could disagree with it.
+      gateway.contributeResearch(mage, nodeId, MAGE_MONTHS_PER_TICK);
+      return;
+    case GOAL.teach: {
+      const student = gateway.studentFor(mage, nodeId);
+      if (student !== undefined) {
+        gateway.contributeTeaching(mage, student, nodeId, MAGE_MONTHS_PER_TICK);
+      }
+      return;
+    }
+    case GOAL.seekTeaching: {
+      const teacher = gateway.teacherFor(mage, nodeId);
+      if (teacher !== undefined) {
+        gateway.contributeTeaching(teacher, mage, nodeId, MAGE_MONTHS_PER_TICK);
+      }
+      return;
+    }
+    case GOAL.scribe:
+      gateway.contributeScribing(mage, nodeId, MAGE_MONTHS_PER_TICK);
+      return;
+    default:
+      return;
+  }
 }
 
 interface PromotionPhase {
@@ -565,6 +794,7 @@ function ratesOf(state: SimState, mage: Handle, deps: WorldStepDeps): MageRates 
     learnRate: species.learnRate,
     rediscoveryAffinity: species.rediscoveryAffinity,
     depthCeiling: species.depthCeiling,
+    scribeAffinity: species.scribeAffinity,
   };
 }
 

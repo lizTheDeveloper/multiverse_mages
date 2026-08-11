@@ -159,6 +159,57 @@ The reasoning, in the order it forced the decision:
   rather than a behaviour diff. The container and the component set are versioned separately, and
   the second is inferred from the snapshot's own self-describing component tables.
 
+**Effort progress** — a separate component, **one entity per project**, present only for work a
+mage has actually started and not yet finished.
+
+| Field | Type | Notes |
+|---|---|---|
+| `subject` | `uint32` | the mage the work is counted against; for teaching, the **teacher** |
+| `kind` | `uint8` | research \| teaching \| scribing. `0` is the reserved null |
+| `nodeId` | `uint16` | the node being worked toward |
+| `counterparty` | `uint32` | the student, for a teaching effort; `0` for the other two |
+| `progress` | `fp` | work accumulated, in the unit `kind` implies |
+
+**This is the second deviation from this document as originally drawn, added during
+`mages-and-species`, and the fifth overall after `state`, `primitives` and `coordination` in §5 and
+the goal commitment above.** It is recorded here for the same reason that one is: `mages-and-species`
+promised `state-schema` would be *"consumed unchanged"*, and this breaks that promise a second time.
+
+The reasoning, in the order it forced the decision:
+
+- **Somebody had to own partial progress.** `rules-magic`'s `research` takes *"progress accumulated
+  before this step"* as a parameter and states that *"the caller owns storing it"*; teaching and
+  scribing have a cost to reach and no accumulator at all. Nothing owned it, so
+  `packages/coordination`'s three `contribute*` methods threw rather than invent a home for it —
+  which left mages choosing goals, holding them through hysteresis, and completing nothing.
+- **Storing it on the goal commitment was rejected first.** It is the obvious place and it is
+  wrong: hysteresis exists precisely to move a mage off a goal, so progress living on the
+  commitment would be destroyed by the mechanism most likely to touch it. A mage displaced from a
+  node after fifteen years of work would silently restart it at zero on returning, and no metric in
+  the project would attribute that loss to the rule that caused it. **Progress must outlive a goal
+  switch**, and that single requirement is what the shape below is derived from.
+- **Widening §1.2's mage row was rejected second, and for the same reasons as before.** Fields
+  exist for every mage, so a fixed row could carry only a fixed number of projects, chosen by
+  whoever wrote it; a mage with none would pay for them anyway; and "no project" would need a
+  sentinel node id. An absent row says all of that with nothing invented.
+- **A project is therefore an entity, keyed by its fields rather than by a handle.** A mage may
+  have several projects set down at once, so this cannot hang on her handle the way the goal
+  commitment does — the precedent is §1.1's `axisChangeCounters`, one entity per axis ever flipped.
+  All four addressing fields earn their place. `kind` separates work over the same node that is not
+  the same work: a mage who holds a node can be teaching it and writing it down at once, against
+  `teachCost` and `scribeCost` respectively, and without the discriminator a month at the desk
+  finishes a student's education. `counterparty` makes a lesson belong to the **pair**, because
+  §2.3 prices teaching as one cost for two people and both of them have goals pointed at it — the
+  teacher's `teach` and the student's `seek-teaching`. Two rows would let one lesson complete twice
+  and put two instances of one node in one student's head.
+- **The number of projects one mage may hold is bounded.** Without a bound the component grows with
+  *how often mages change their minds*, which is not a number the design controls; the bound is
+  `MAX_EFFORTS_PER_MAGE` in `packages/coordination/src/effort-store.ts`, and starting a project past
+  it gives up the least-invested one. Untuned, like every magnitude before 0.5.0.
+- **The cost is a second schema revision**, repaired exactly as the first one was: world-schema
+  revision 3 appends an empty `effort-progress` section, and `sim-core`'s `SNAPSHOT_VERSION` again
+  does not move. A revision-1 save reaches revision 3 by running both steps in turn.
+
 ### 1.3 Populace cohort (aggregate entity)
 
 | Field | Type | Notes |
