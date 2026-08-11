@@ -82,6 +82,12 @@ export * from './mages/index.js';
 export * from './populace/index.js';
 
 /**
+ * The three-input economy: materials production and consumption, carrying
+ * capacity, births, and the counts `god-agency` will read.
+ */
+export * from './economy/index.js';
+
+/**
  * Universities, libraries, and the derived profile that is never written down.
  * Re-exported wholesale for the reason the populace layer is: growing the
  * institution layer should touch `universities/index.ts` and not this file.

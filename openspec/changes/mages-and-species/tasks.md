@@ -99,16 +99,16 @@
 
 ## 8. Materials and the three-input economy
 
-- [ ] 8.1 Implement materials production from laborer cohorts, `laborAffinity`, and capped `resource-yield` stacking
-- [ ] 8.2 Implement materials consumption by construction, scribing, library upkeep, and populace subsistence, in a documented deterministic priority order
-- [ ] 8.3 Implement the non-negative materials invariant with recorded shortfalls
-- [ ] 8.4 Implement carrying capacity `K` from materials stock and completed university capacity
-- [ ] 8.5 Implement the logistic fertility brake and the subsistence-shortfall effect on `K`
-- [ ] 8.6 Implement births into the youngest `idle` bucket, with extinction as an absorbing state and no synthesized founding population
+- [x] 8.1 Implement materials production from laborer cohorts, `laborAffinity`, and capped `resource-yield` stacking
+- [x] 8.2 Implement materials consumption by construction, scribing, library upkeep, and populace subsistence, in a documented deterministic priority order
+- [x] 8.3 Implement the non-negative materials invariant with recorded shortfalls
+- [x] 8.4 Implement carrying capacity `K` from materials stock and completed university capacity
+- [x] 8.5 Implement the logistic fertility brake and the subsistence-shortfall effect on `K`
+- [x] 8.6 Implement births into the youngest `idle` bucket, with extinction as an absorbing state and no synthesized founding population
 - [ ] 8.7 Test that births and deaths per tick balance within a documented tolerance once the reference scenario reaches carrying capacity
-- [ ] 8.8 Add the check asserting exactly three tracked economic inputs and that this package never writes `favor` or `worship`
-- [ ] 8.9 Expose mage, university, and populace counts for `god-agency` to consume, computing no worship value
-- [ ] 8.10 Add the conformance check that no populace cohort carries a position and the economy path computes no distance
+- [x] 8.8 Add the check asserting exactly three tracked economic inputs and that this package never writes `favor` or `worship`
+- [x] 8.9 Expose mage, university, and populace counts for `god-agency` to consume, computing no worship value
+- [x] 8.10 Add the conformance check that no populace cohort carries a position and the economy path computes no distance
 
 ## 9. Reference scenario and release claims
 

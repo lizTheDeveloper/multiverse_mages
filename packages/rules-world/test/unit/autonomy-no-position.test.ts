@@ -27,7 +27,8 @@
  * about why there is no position in it, and a text search would report the
  * argument as the violation.
  *
- * It reports on:
+ * The scanner itself lives in `positional-scan.ts`, shared with the economy's
+ * copy of the same prohibition. It reports on:
  *
  * - **property access and property names** — `something.x`, `{ y: … }`,
  *   `distance`, `travelTime`. This is the shape a position enters through.
@@ -54,80 +55,10 @@ import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { POSITION_FIELD_NAMES } from '@mm/state';
-import ts from 'typescript';
 
 import { richOutlook } from './autonomy-fixtures.js';
-import { repoRoot, wordsIn } from './species-fixtures.js';
-
-interface Violation {
-  readonly path: string;
-  readonly line: number;
-  readonly detail: string;
-}
-
-/** Whole words that mean a place, a gap between places, or a trip between them. */
-const POSITIONAL_WORDS = new Set([
-  ...POSITION_FIELD_NAMES,
-  'position',
-  'coordinate',
-  'coordinates',
-  'distance',
-  'distances',
-  'nearest',
-  'nearby',
-  'proximity',
-  'travel',
-  'journey',
-  'adjacency',
-  'metres',
-  'meters',
-]);
-
-/**
- * The positional words a name uses, as whole words.
- *
- * Whole words for the reason the species scanner gives: `maxVigor` contains no
- * position and `context` contains no coordinate, but a substring scan on "x"
- * would report every identifier in the directory. `POSITION_FIELD_NAMES` — the
- * two single letters §0 names — are only ever matched as complete words.
- */
-function positionalWordsIn(text: string): string[] {
-  return wordsIn(text).filter((word) => POSITIONAL_WORDS.has(word));
-}
-
-/**
- * Every place a source file reaches for a position, outside a comment.
- *
- * Exported so the controls below can feed it synthetic source: a scanner that
- * can only run against the real tree has a "no violations" result that is
- * indistinguishable from one that returns nothing for every input.
- */
-export function positionalReferences(path: string, source: string): Violation[] {
-  const parsed = ts.createSourceFile(path, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
-  const found: Violation[] = [];
-
-  const report = (node: ts.Node, text: string, kind: string): void => {
-    for (const word of positionalWordsIn(text)) {
-      const { line } = parsed.getLineAndCharacterOfPosition(node.getStart(parsed));
-      found.push({ path, line: line + 1, detail: `${kind} "${text}" names "${word}"` });
-    }
-  };
-
-  const visit = (node: ts.Node): void => {
-    if (ts.isPropertyAccessExpression(node)) report(node.name, node.name.text, 'property access');
-    else if (ts.isPropertySignature(node) && ts.isIdentifier(node.name)) {
-      report(node.name, node.name.text, 'property');
-    } else if (ts.isPropertyAssignment(node) && ts.isIdentifier(node.name)) {
-      report(node.name, node.name.text, 'property');
-    } else if (ts.isIdentifier(node) && !ts.isPropertyAccessExpression(node.parent)) {
-      report(node, node.text, 'identifier');
-    }
-    ts.forEachChild(node, visit);
-  };
-
-  visit(parsed);
-  return found;
-}
+import { positionalReferences, positionalWordsIn } from './positional-scan.js';
+import { repoRoot } from './species-fixtures.js';
 
 function listTypeScript(dir: string): string[] {
   let entries: string[];
