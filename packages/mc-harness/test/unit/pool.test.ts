@@ -168,7 +168,19 @@ describe('one crashed worker does not lose the sweep', () => {
     const spec = toySweep({
       replicates: 4,
       failureThreshold: 4,
-      termination: { worldTickCap: 64, perRunTimeoutMs: 250 },
+      // Raised from 250 ms. The assertions below are unchanged — the hung run
+      // never settles, so it times out at any budget — but 250 ms was not a
+      // budget for *the run*: `pool.ts` arms the timer in `pump`, at dispatch,
+      // so a run handed to a freshly spawned worker is charged for that
+      // worker's boot. Node boots a worker and type-strips the fixture in well
+      // over 250 ms on a loaded machine, and because the pool replaces a worker
+      // after every timeout, one slow boot cascaded: the run after the
+      // legitimate timeout also "timed out", replacing another worker, and the
+      // sweep came back with 5 failures on a bad day and 24 on a worse one.
+      // The suite grows test files that run in parallel with this one, so the
+      // machine only gets busier. A budget an order of magnitude above worker
+      // boot keeps this a test of the timeout and not of the scheduler.
+      termination: { worldTickCap: 64, perRunTimeoutMs: 4000 },
     });
     const result = await runSweep({
       spec,
