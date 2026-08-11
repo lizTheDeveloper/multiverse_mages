@@ -72,6 +72,37 @@ const CORE_TEST = [
 const PRIMITIVES_SRC = ['packages/primitives/src/**/*.ts'];
 
 /**
+ * `agent-api` is `contracts.md` §4.1's export boundary, and the exemption above
+ * is meant to be **one file wide**: `normalize.ts` divides, and every other file
+ * in the package emits integers. Nothing enforced that. The package was outside
+ * {@link RULES_SRC} wholesale, so `observation.ts` — the file whose entire job is
+ * emitting integers — could have grown `1e-9`, `Math.PI`, `Math.sqrt` or
+ * `Math.random` with no tool in this repository saying a word.
+ *
+ * The guard is deliberately split across two tools, because neither can do the
+ * whole job:
+ *
+ * - **Here**, the shapes that are wrong on the integer side and are wrong under
+ *   any filename: floating-point `Math`, `Math.random`, the float members of
+ *   `Number`, and negative-exponent literals like `1e-9`, which
+ *   {@link BAN_DECIMAL_LITERAL}'s regex does not match because they contain no
+ *   `.`.
+ * - **In `agent-api/test/unit/float-boundary.test.ts`**, decimal literals and
+ *   `/`. Those cannot be banned here: `1.0` is legal in `normalize.ts`, eslint
+ *   sees only a path, and the two probes that assert the package really is
+ *   exempt lint synthetic filenames. The test enumerates the real source files
+ *   by name and can tell `observation.ts` from a probe, which is exactly the
+ *   distinction a glob cannot express.
+ *
+ * `Math.random` is banned on both sides of the boundary and the rest only on the
+ * integer side. A float in `normalize.ts` is the contract; a wall-clock or a
+ * random draw there would still make an exported observation irreproducible, and
+ * §4.1 licenses the division, not the nondeterminism.
+ */
+const AGENT_API_SRC = ['packages/agent-api/src/**/*.ts'];
+const AGENT_API_FLOAT_SIDE = ['packages/agent-api/src/normalize.ts'];
+
+/**
  * Globals whose values are not a function of `(state, actions, rng)`. Reading
  * any of them makes a run irreproducible, which breaks lockstep PvP and makes
  * every committed Monte Carlo baseline meaningless. `Date` is banned whole
@@ -385,9 +416,46 @@ export default tseslint.config(
     // `sim-core` and `primitives/src` were already excluded for the same
     // reason; the rules packages were missed because they were added later.
     files: ['packages/*/src/**/*.ts'],
-    ignores: ['packages/sim-core/**/*.ts', ...PRIMITIVES_SRC, ...RULES_SRC],
+    ignores: [
+      'packages/sim-core/**/*.ts',
+      ...PRIMITIVES_SRC,
+      ...RULES_SRC,
+      // The two agent-api blocks below carry these same bans themselves, for the
+      // reason this block's own comment gives: an overlap would silently replace
+      // whichever array lost the ordering, and losing it here would delete the
+      // integer-side float ban from the package that has the narrowest exemption
+      // in the repository.
+      ...AGENT_API_SRC,
+    ],
     rules: {
       'no-restricted-syntax': ['error', ...BAN_INLINE_PRIMITIVE_STACKING],
+    },
+  },
+
+  {
+    // ---- agent-api, integer side: the exemption is one file wide. ----
+    // See AGENT_API_SRC above for why this is split with a test rather than
+    // banning every float shape here.
+    files: AGENT_API_SRC,
+    ignores: AGENT_API_FLOAT_SIDE,
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        BAN_MATH_RANDOM,
+        BAN_FLOAT_MATH,
+        BAN_FLOAT_NUMBER_MEMBERS,
+        BAN_NEGATIVE_EXPONENT_LITERAL,
+        ...BAN_INLINE_PRIMITIVE_STACKING,
+      ],
+    },
+  },
+
+  {
+    // ---- agent-api, float side: §4.1 licenses the division, not the clock. ----
+    files: AGENT_API_FLOAT_SIDE,
+    rules: {
+      'no-restricted-globals': ['error', ...NONDETERMINISTIC_GLOBALS.slice(0, 3)],
+      'no-restricted-syntax': ['error', BAN_MATH_RANDOM, ...BAN_INLINE_PRIMITIVE_STACKING],
     },
   },
 

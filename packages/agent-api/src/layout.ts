@@ -49,6 +49,26 @@
  * move underneath it with nothing failing anywhere. Each scale below is a
  * literal, and raising one is a breaking contract change of the same kind as
  * raising `EDICT_BUDGET_MAX`.
+ *
+ * ## How §4.1's `fp(1024) → 1.0` is read here
+ *
+ * §4.1 pins the export as *"`Float64Array`, values in `[0, 1]`, with `fp(1024)`
+ * mapping to `1.0`"*, and then immediately says each block declares **its own**
+ * descriptor. Read as "every fixed-point channel divides by 1024" the two
+ * sentences contradict each other: `favor`, `worship`, `materials` and
+ * `prestige` are `fp` fields holding tens to thousands, so dividing them by
+ * `fp(1.0)` and clamping makes every one of them constant, which is the exact
+ * loss of an existing policy's inputs the second sentence exists to prevent.
+ *
+ * So it is read per *rule*, which is also how the `agent-api` capability states
+ * it — *"**a slot whose rule is `bounded`** holds the core value `1024`"*, and
+ * `bounded` is defined there as *"`fp` value divided by `fp(1024)`"*. The
+ * `bounded` rule maps `fp(1024)` to exactly 1.0 and always will; which channels
+ * elect it is the descriptor table's business, and the table is the thing §4.1
+ * makes each block declare. A channel holding a *fraction* in fixed point is
+ * `bounded`; a channel holding a *magnitude* in fixed point is a `ratio` over a
+ * constant sized to the magnitude. This is the reading under which both
+ * sentences are true at once, and it is the one the layout digest publishes.
  */
 
 import { FP_ONE } from '@mm/sim-core';
@@ -142,6 +162,34 @@ export const OBSERVATION_MAX_WORSHIP_TIER = 16;
  * Pinned count scales. Each answers "what integer maps to 1.0 in this channel",
  * and each is a round number comfortably above what a run is expected to reach
  * — a channel that saturates is far less damaging than one whose divisor moves.
+ *
+ * ## The fixed-point scales, and why they are not all `FP_ONE`
+ *
+ * The five `*Fp` constants below are the saturation constants for quantities the
+ * core holds in fixed point but which are **not fractions**. They were `FP_ONE`
+ * — the fp representation of the real number 1.0 — until an adversarial pass
+ * measured what that exported: `favor`, `worship`, `materials`, `prestige` and
+ * an objective's `valueFp` all read exactly `1.0` for every universe that ever
+ * got off the ground, because 5.0 favor divided by 1.0 and clamped is 1.0 and so
+ * is 90.0 favor. Four of the five resource channels were flags, across the whole
+ * operating range, and the twelve objective slots ranked by a value the agent
+ * could not read.
+ *
+ * That is not a criticism of the `bounded` rule, whose arithmetic §4.1 pins and
+ * which is correct for a quantity genuinely living in `[0, 1]` — a mastery
+ * fraction, a stability ratio. It was the wrong *election*: §4.1 says each block
+ * declares its own descriptor, and it nowhere says the resources block must be
+ * `bounded`. The pattern for the fix was already in this file, one table down —
+ * {@link OBSERVATION_SCALE.sideFpTotal} is `256 * FP_ONE` and `SIDE_DESCRIPTORS`
+ * uses `ratioScale` over it, because a side's summed hp exceeds 1.0 and the same
+ * author had already met the same problem.
+ *
+ * Each constant below is justified against a magnitude that exists in the
+ * document or in shipped content, because a saturation constant nobody can
+ * defend is a tuning value pretending to be a definition. All five are a power
+ * of two times `FP_ONE`, which is not decoration: dividing a dyadic integer by a
+ * power of two is exact in a double, so the exported channel has no rounding in
+ * it at all and a second implementation lands on the same bits.
  */
 export const OBSERVATION_SCALE = {
   /** People in one cohort. */
@@ -176,6 +224,75 @@ export const OBSERVATION_SCALE = {
   portalDecay: 1024,
   /** Objective `kind`, whose values `raid-engagement` names. A `uint8`. */
   objectiveKind: 255,
+
+  /**
+   * The god's `favor` pool — 128.0.
+   *
+   * §1.1 caps favor at `favorCap`, *"rises with worship tier; overflow is
+   * discarded and counted as `favorWasted`"*, so this channel has a ceiling in
+   * the design even though the number is not a constant. Every shipped fixture
+   * sets `favorCap` to 100.0 or 20.0, and `god-agency` (0.7.0) owns the formula
+   * that will raise it. 128 is the next power of two above the largest of those:
+   * an ordinary universe spends most of the channel's range, and one whose cap
+   * eventually climbs past 128.0 saturates, which reads honestly as "at the
+   * ceiling" rather than rescaling every policy trained before it.
+   */
+  favorFp: 128 * FP_ONE,
+
+  /**
+   * `worship` — 256.0.
+   *
+   * One octave above favor, and for a stated reason: §1.1 gives worship no cap
+   * at all — it *"drives favor regen"* and grows with the mages, universities
+   * and populace revering the god, which vision §7 names as a compounding loop
+   * the balance harness has to watch specifically. A channel measuring the input
+   * to a snowball needs more headroom than the pool it feeds. The coarse
+   * magnitude is already carried next door by `worshipTier` over
+   * {@link OBSERVATION_MAX_WORSHIP_TIER}, so this channel's job is the detail
+   * within a tier, which it keeps for the first eight tiers' worth of range.
+   */
+  worshipFp: 256 * FP_ONE,
+
+  /**
+   * `materials` — 8192.0.
+   *
+   * A stock rather than a rate, and the largest of the resources by construction:
+   * vision §6a has *"buildings consume it; so does every grimoire"*, so a
+   * producing universe holds orders of magnitude more materials than favor. The
+   * two adversarial fixtures hold 12.0 and 4000.0 for a lean and a rich universe
+   * of the same age, and 8192 is the power of two above the rich one.
+   *
+   * This is the channel with the widest realistic span, and therefore the first
+   * candidate for `log-bucket` if a baseline ever shows a ratio spending its
+   * range badly here. Not adopted now: {@link logBucketScale} says the rule
+   * ships so that *whoever has evidence* can adopt it as a reviewable move, and
+   * there is no baseline yet to be evidence.
+   */
+  materialsFp: 8192 * FP_ONE,
+
+  /**
+   * `prestige` — 256.0.
+   *
+   * §1.1 makes prestige *"carried in from prior runs; read-only during a run"*,
+   * so it is the one resource that accumulates across runs rather than within
+   * one. It gets favor's headroom doubled for that reason: a first run and a
+   * tenth run should not read the same, which is the whole point of the field.
+   */
+  prestigeFp: 256 * FP_ONE,
+
+  /**
+   * One raid objective's `valueFp` — 64.0.
+   *
+   * `contracts.md` gives an objective a `valueFp` and no range for it;
+   * `raid-engagement` owns the quantity and has not shipped. So this is an
+   * invented constant of the same kind as {@link OBSERVATION_MAX_TRADITION_ID},
+   * and it is anchored to the one engagement magnitude that *has* shipped:
+   * {@link OBSERVATION_SCALE.sideFpTotal} is 256.0 for a whole side's summed hp,
+   * so an objective at this constant is worth a quarter of a side. Twelve slots
+   * ranked against a common constant is what makes the ranking readable — which
+   * is the entire reason the channel exists.
+   */
+  objectiveValueFp: 64 * FP_ONE,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -270,10 +387,24 @@ export function ratioScale(saturation: number): NormalizationDescriptor {
  * `bounded`: a fixed-point quantity over `fp(1024)`.
  *
  * **This is the rule §4.1 names explicitly**: *"values in `[0, 1]`, with
- * `fp(1024)` mapping to `1.0`"*. It takes no argument, which is the point —
- * every `fp` channel divides by the same constant and none may choose another,
- * since a second fixed-point divisor would mean two channels reporting the same
- * magnitude as different numbers.
+ * `fp(1024)` mapping to `1.0`"*. It takes no argument, which is the point — a
+ * `bounded` channel is one whose quantity is a *fraction*, and every fraction
+ * divides by the same constant.
+ *
+ * **No slot elects it at 0.5.0**, which is a change and is worth stating plainly
+ * rather than leaving to be noticed. It was elected by `favor`, `worship`,
+ * `materials`, `prestige` and objective `valueFp`, none of which is a fraction;
+ * all five now take `ratioScale` over a resource-sized constant, and the note on
+ * {@link OBSERVATION_SCALE} records what the old election exported and why each
+ * new constant is the number it is.
+ *
+ * The rule stays implemented, tested and exported for the same reason
+ * {@link identityScale} and {@link logBucketScale} do: it is one of the five the
+ * `agent-api` capability permits, its arithmetic is pinned by a spec scenario
+ * (*"a slot whose rule is `bounded` holds the core value `1024`"* exports
+ * exactly `1.0`), and the first genuinely fractional channel — a mastery
+ * proportion, a stability ratio — should adopt it rather than invent a sixth
+ * rule. What changed is which channels it governs, not what it means.
  */
 export function boundedScale(): NormalizationDescriptor {
   return Object.freeze({ rule: 'bounded' as const, divisor: FP_ONE, min: 0, max: 1 });
@@ -372,7 +503,7 @@ export function logBucketScale(edges: readonly number[]): NormalizationDescripto
  */
 export const BOOLEAN_SCALE = flagScale();
 
-/** The one fixed-point descriptor. See {@link boundedScale}. */
+/** The fraction descriptor. No slot elects it — see {@link boundedScale}. */
 export const FP_SCALE = boundedScale();
 
 /** The `identity` descriptor. No slot elects it — see {@link identityScale}. */
@@ -434,12 +565,22 @@ const RULESET_DESCRIPTORS: readonly NormalizationDescriptor[] = [
   ]).flat(),
 ];
 
+/**
+ * §4.1's five resources, in the document's order.
+ *
+ * Four of them are `fp` quantities that are not fractions, so they take
+ * `ratioScale` over a resource-sized constant rather than `bounded` over
+ * `FP_ONE` — see the note on {@link OBSERVATION_SCALE} for what the latter
+ * exported and why each constant is the number it is. `worshipTier` was always a
+ * `ratio`: it is a small integer, not a fixed-point value, and it was the only
+ * channel in this block still carrying magnitude.
+ */
 const RESOURCE_DESCRIPTORS: readonly NormalizationDescriptor[] = [
-  FP_SCALE, // favor
-  FP_SCALE, // worship
+  ratioScale(OBSERVATION_SCALE.favorFp),
+  ratioScale(OBSERVATION_SCALE.worshipFp),
   ratioScale(OBSERVATION_MAX_WORSHIP_TIER), // worshipTier
-  FP_SCALE, // materials
-  FP_SCALE, // prestige
+  ratioScale(OBSERVATION_SCALE.materialsFp),
+  ratioScale(OBSERVATION_SCALE.prestigeFp),
 ];
 
 const KNOWLEDGE_DESCRIPTORS: readonly NormalizationDescriptor[] = Array.from(
@@ -503,7 +644,10 @@ const OBJECTIVE_DESCRIPTORS: readonly NormalizationDescriptor[] = [
   // largest value is 3. Divided by 3 rather than by 4 so that `destroyed` reads
   // as exactly 1.0 and the four statuses are evenly spaced.
   ratioScale(3),
-  FP_SCALE, // valueFp
+  // `valueFp` is a magnitude, not a fraction: two objectives worth 9.0 and 2.0
+  // are the ranking this channel exists to expose, and over `FP_ONE` both read
+  // exactly 1.0. See OBSERVATION_SCALE.objectiveValueFp.
+  ratioScale(OBSERVATION_SCALE.objectiveValueFp),
   BOOLEAN_SCALE, // captured by anyone at all
 ];
 

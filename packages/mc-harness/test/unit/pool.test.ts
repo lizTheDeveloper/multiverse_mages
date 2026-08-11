@@ -165,18 +165,30 @@ describe('one crashed worker does not lose the sweep', () => {
   }, 60_000);
 
   it('abandons a run that outlives the per-run timeout and keeps going', async () => {
-    // The budget is generous on purpose. The hung run never settles — the toy
-    // executor awaits a promise with no resolver — so *any* finite timeout
-    // catches it, and the assertion below is unaffected by how large this is.
-    // What a small budget does affect is the other 23 runs: at 250 ms a loaded
-    // machine running the whole workspace suite in parallel timed them out too,
-    // and the test failed with 24 failures where it expects 1. That is a false
-    // negative about the harness, produced by whatever else was running.
-    // Raising it removes the flap without relaxing anything.
+    // The budget is generous on purpose. `hangOn` hangs forever, so it trips any
+    // timeout at all, while a healthy toy run finishes in single-digit
+    // milliseconds -- and the assertion below is that *only* the hung run timed
+    // out. At 250ms that assertion also quietly required the machine to schedule
+    // every other run inside a quarter second, which a loaded CI box does not
+    // promise: this test failed on a builder running four test suites at once,
+    // reporting a harness defect that was really an unlucky scheduler. Two
+    // seconds is still nothing against a hang, and no longer measures the host.
     const spec = toySweep({
       replicates: 4,
       failureThreshold: 4,
-      termination: { worldTickCap: 64, perRunTimeoutMs: 5_000 },
+      // Raised from 250 ms. The assertions below are unchanged — the hung run
+      // never settles, so it times out at any budget — but 250 ms was not a
+      // budget for *the run*: `pool.ts` arms the timer in `pump`, at dispatch,
+      // so a run handed to a freshly spawned worker is charged for that
+      // worker's boot. Node boots a worker and type-strips the fixture in well
+      // over 250 ms on a loaded machine, and because the pool replaces a worker
+      // after every timeout, one slow boot cascaded: the run after the
+      // legitimate timeout also "timed out", replacing another worker, and the
+      // sweep came back with 5 failures on a bad day and 24 on a worse one.
+      // The suite grows test files that run in parallel with this one, so the
+      // machine only gets busier. A budget an order of magnitude above worker
+      // boot keeps this a test of the timeout and not of the scheduler.
+      termination: { worldTickCap: 64, perRunTimeoutMs: 4000 },
     });
     const result = await runSweep({
       spec,
@@ -197,7 +209,19 @@ describe('one crashed worker does not lose the sweep', () => {
     expect(hung?.status).toBe('failed');
     expect(hung?.failure?.classification).toBe('timeout');
     expect(result.records).toHaveLength(spec.replicates * result.plan.cellCount);
-    expect(result.summary.failureCount).toBe(1);
+
+    // Asserted by identity rather than by count. The property is "the abandoned
+    // run is the one that hung, and the pool kept going" -- a count of 1 says
+    // that only if you already know which run it was, and would be satisfied by
+    // a harness that abandoned an innocent run and let the hung one through.
+    expect(
+      result.records
+        .filter((record) => record.status === 'failed')
+        .map(({ coordinates }) => ({
+          cellIndex: coordinates.cellIndex,
+          replicateIndex: coordinates.replicateIndex,
+        })),
+    ).toEqual([{ cellIndex: 1, replicateIndex: 1 }]);
   }, 60_000);
 });
 

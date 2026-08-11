@@ -15,28 +15,41 @@
 /**
  * Task 3.6, and the harness's half of the `agent-api` boundary.
  *
- * ## This interface is written from the harness's side, on purpose
+ * ## This interface was written from the harness's side, and has now been
+ * reconciled with the session that landed next door
  *
- * Task group 2 implements the episode session inside `packages/agent-api` —
- * `reset`, `observe`, `legalActions`, `submit`, `status`, and the illegal-action
- * accounting. That work is in flight in parallel with this file. Rather than
- * block on it, or worse, guess at its import names and produce a package that
- * does not typecheck, the harness declares the **structural** surface it needs
- * and drives anything that satisfies it.
+ * The harness was built while task group 2's session was still in flight, so it
+ * declared the **structural** surface it needed and drove anything that
+ * satisfied it. Both halves now exist, and {@link adaptAgentSession} is the
+ * reconciliation. It is nine lines of body, which was the bet the original note
+ * made; what follows is the list of what the two sides actually disagreed
+ * about, because "it was thin" is only useful to a later reader if the seams
+ * are named.
  *
- * The assumption is therefore explicit and small, and it is written here so that
- * reconciling the two is a diff rather than an archaeology exercise:
+ * 1. **`submit` takes an `Action`, not an action id.** `agent-api`'s session
+ *    takes `{kind, params}` and resolves `params[0]` against §4.4's candidate
+ *    list. The harness passed a bare integer, which cannot address a
+ *    parameterized action at all — a policy could name `blessMage` but not
+ *    *which* mage. Fixed here rather than there: {@link ActionSubmission} adds
+ *    one optional `parameter` field, and {@link SlotPolicy} may return either
+ *    an id or a submission.
+ * 2. **`accounting()` disagreed on three key names.** `submitted`/`rejected`/
+ *    `rejectedByAction` against `submissions`/`rejections`/`byActionId`. The
+ *    harness's names are the ones already in every written run record
+ *    (`records.ts`), so the adapter renames rather than the record format
+ *    moving — a stored record's key set is a compatibility surface and the
+ *    session's is not.
+ * 3. **`reset` returns the first observation; the harness ignores it.** Not a
+ *    conflict: a function returning a value satisfies a `void` return position.
+ * 4. **`status()` is narrower on the session's side.** `agent-api` has four
+ *    statuses and the harness has five, the extra one being `failed`, which is
+ *    the harness's own verdict about a run that threw. A session can never
+ *    report it, and that asymmetry is correct.
  *
- * - `reset(runSeed, scenarioConfig)` starts a fresh episode; nothing carries
- *   over from a previous one.
- * - `observe()` returns the normalized observation. Typed as `Float64Array`,
- *   which `contracts.md` §4.1 and the change proposal both pin.
- * - `legalActions()` returns the legality mask, one entry per action id.
- * - `submit(actionId)` offers one action and raises on a terminated session.
- * - `status()` returns `running` until the episode ends, then one of the
- *   terminal statuses.
- * - `accounting()` reports total submissions, rejections, and the per-action-id
- *   breakdown, readable at episode end.
+ * The one thing the adapter cannot paper over is stated on
+ * {@link EpisodeInput.worldTickCap}: `agent-api`'s `submit` advances one world
+ * tick per submission, so an *n*-slot episode advances *n* world ticks per loop
+ * iteration.
  *
  * Nothing here mentions reward, return, score, or fitness, and nothing should:
  * §4.3 puts the objective in the training loop, not in the game.
@@ -48,6 +61,15 @@
  * rather than inside the session is what makes that "in addition": a session
  * that never terminates is a bug the harness must survive, and a cap
  * administered by the thing being capped cannot catch it.
+ *
+ * **That decision still holds after reconciliation, and is now load-bearing for
+ * a second reason.** `agent-api`'s session does have a cap of its own, in
+ * `ScenarioConfig.worldTickCap`, and it fires first for a single-slot episode.
+ * But it is enforced by reading `state.clock.worldTick`, so it protects against
+ * a *simulation* that will not terminate and not against a *session* that will
+ * not — one whose clock never advances, or whose `status()` never leaves
+ * `running`, reaches the session's cap never and the harness's cap always. Two
+ * caps is not redundancy here; they catch different failures.
  */
 
 /** How an episode ended. `failed` is the harness's, not the session's. */
@@ -80,7 +102,8 @@ export interface IllegalActionAccounting {
 }
 
 /**
- * The episode surface the harness drives. Satisfied by `agent-api`'s session.
+ * The episode surface the harness drives. Satisfied by `agent-api`'s session
+ * through {@link adaptAgentSession}.
  *
  * @typeParam TConfig - The scenario configuration a `reset` accepts. The harness
  * builds it from the sweep's factor levels and never inspects it.
@@ -89,9 +112,96 @@ export interface AgentSession<TConfig = unknown> {
   reset(runSeed: number, scenarioConfig: TConfig): void;
   observe(): Float64Array;
   legalActions(): Uint8Array;
-  submit(actionId: number): void;
+  /**
+   * Offers one action, and raises only on a *terminated* session.
+   *
+   * An illegal action is not an error: §4.2 makes it a no-op and a counter
+   * increment, and {@link IllegalActionAccounting} is where it lands.
+   *
+   * @param actionId - An id from §4.2's table.
+   * @param parameter - The action's single parameter, when it has one. See
+   * {@link ActionSubmission.parameter} for what the number means, which differs
+   * between the parameterized actions and the rest.
+   */
+  submit(actionId: number, parameter?: number): void;
   status(): TerminalStatus;
   accounting(): IllegalActionAccounting;
+}
+
+/**
+ * One action a policy names, with its parameter.
+ *
+ * `parameter` means two different things depending on the action, because
+ * `contracts.md` §4.2 and §4.4 make it mean two different things:
+ *
+ * - For the **parameterized actions** (8–14) it is a §4.4 **candidate slot
+ *   index**, resolved against the current tick's list at submission. Slot 3 of
+ *   `blessMage` is "the fourth most depleted living mage", not mage 3.
+ * - For **1–7** it is the action's direct parameter — a technique index, a form
+ *   index, a cell id, an edict index. These name nothing that can die between
+ *   observation and submission, which is why the gate passes them through
+ *   unresolved.
+ * - For `noop` and `declareAscension` there is none; leave it undefined.
+ *
+ * One field rather than a params tuple, because §4.4's whole design is that a
+ * discrete policy emits **one** integer per action: *"the agent selects a slot
+ * index"*, and a slot names every parameter §4.2 lists, including both halves
+ * of a `(mage, node)` pair.
+ */
+export interface ActionSubmission {
+  readonly action: number;
+  readonly parameter?: number;
+}
+
+/** The `agent-api` half of {@link adaptAgentSession}'s contract, structurally. */
+interface ApiSessionLike<TConfig> {
+  reset(runSeed: number, config: TConfig): unknown;
+  observe(): Float64Array;
+  legalActions(): Uint8Array;
+  submit(action: { readonly kind: number; readonly params?: readonly number[] }): unknown;
+  status(): 'running' | 'ascended' | 'stagnated' | 'truncated';
+  accounting(): {
+    readonly submitted: number;
+    readonly rejected: number;
+    readonly rejectedByAction: Readonly<Record<number, number>>;
+  };
+}
+
+/**
+ * Drives `agent-api`'s session through the surface {@link runEpisode} expects.
+ *
+ * Typed structurally rather than against the imported `AgentSession` from
+ * `@mm/agent-api`, for one reason worth the extra ten lines: the harness's test
+ * suite must be able to build a session double, and `contracts.md` §5 forbids
+ * `mc-harness` from importing anything that could construct a `SimState`. A
+ * structural parameter accepts the real session — which satisfies it exactly —
+ * and a double, without the harness needing a world to make one.
+ *
+ * The `byActionId` keys are emitted in ascending numeric order rather than in
+ * insertion order. `canonical.ts` sorts keys again on the way to disk, so this
+ * changes no stored byte; it is here so that an accounting record read in a
+ * debugger looks the same as the one written to the file.
+ */
+export function adaptAgentSession<TConfig>(session: ApiSessionLike<TConfig>): AgentSession<TConfig> {
+  return {
+    reset(runSeed: number, scenarioConfig: TConfig): void {
+      session.reset(runSeed, scenarioConfig);
+    },
+    observe: () => session.observe(),
+    legalActions: () => session.legalActions(),
+    submit(actionId: number, parameter?: number): void {
+      session.submit(parameter === undefined ? { kind: actionId } : { kind: actionId, params: [parameter] });
+    },
+    status: () => session.status(),
+    accounting(): IllegalActionAccounting {
+      const source = session.accounting();
+      const byActionId: Record<string, number> = {};
+      for (const key of Object.keys(source.rejectedByAction).sort((a, b) => Number(a) - Number(b))) {
+        byActionId[key] = source.rejectedByAction[Number(key)] as number;
+      }
+      return { submissions: source.submitted, rejections: source.rejected, byActionId };
+    },
+  };
 }
 
 /**
@@ -104,7 +214,22 @@ export interface AgentSession<TConfig = unknown> {
  * loop below does not second-guess it, because filtering here would hide exactly
  * the `illegalActionRate` signal §7 asks for.
  */
-export type SlotPolicy = (observation: Float64Array, mask: Uint8Array, slot: number) => number;
+export type SlotPolicy = (
+  observation: Float64Array,
+  mask: Uint8Array,
+  slot: number,
+) => number | ActionSubmission;
+
+/**
+ * A policy's return value as the loop needs it: an id and a parameter.
+ *
+ * A bare number stays legal so that a policy over an unparameterized action
+ * space — every test double in this package, and the passive control — reads as
+ * `() => 0` rather than as `() => ({ action: 0 })`.
+ */
+export function normalizeSubmission(chosen: number | ActionSubmission): ActionSubmission {
+  return typeof chosen === 'number' ? { action: chosen } : chosen;
+}
 
 /** What one episode did. Everything here is reproducible from the run seed. */
 export interface EpisodeOutcome {
@@ -121,7 +246,19 @@ export interface EpisodeInput<TConfig = unknown> {
   readonly scenarioConfig: TConfig;
   /** One policy per agent slot, in slot order. */
   readonly policies: readonly SlotPolicy[];
-  /** Task 3.6: the declared cap, enforced here. */
+  /**
+   * Task 3.6: the declared cap, enforced here.
+   *
+   * **It bounds loop iterations, and a loop iteration is one round of slot
+   * submissions.** For the single-slot episode every sweep in this repository
+   * currently runs, that is one world tick and the two readings coincide. For
+   * an *n*-slot episode driving `agent-api`'s session it is *n* world ticks,
+   * because that session advances the clock once per `submit`. The session's
+   * own `ScenarioConfig.worldTickCap` is the one measured in world ticks, and
+   * it therefore fires first; this one is the backstop described at the top of
+   * the file, and a backstop measured in rounds catches the case a backstop
+   * measured in the session's own clock cannot.
+   */
   readonly worldTickCap: number;
 }
 
@@ -141,17 +278,26 @@ export interface EpisodeInput<TConfig = unknown> {
  * 2. **A session that terminates before the first submission is honoured.** The
  *    status is read before the loop, not after, so a scenario that is over at
  *    tick zero records zero ticks rather than one.
- * 3. **Every slot submits every tick, in slot order, until the episode ends.**
+ * 3. **Every slot submits every round, in slot order, until the episode ends.**
  *    Fixed order, because the order two agents act in is a rule of the game and
- *    not a scheduling detail — and the loop stops mid-tick when a submission
+ *    not a scheduling detail — and the loop stops mid-round when a submission
  *    terminates the session, because task 2.2 requires `submit` on a terminated
  *    session to raise. Without the guard, a two-slot episode that ended on slot
  *    zero's action would throw out of the *harness*, and a legitimate ascension
- *    would be recorded as a `failed` run.
+ *    would be recorded as a `failed` run. That guard was written against an
+ *    assumption and is now a fact: `agent-api`'s `submit` raises with
+ *    *"This episode is …; it cannot be advanced"*.
+ * 4. **Each slot observes for itself.** The observation and the mask are read
+ *    inside the slot loop, not once above it. With `agent-api`'s session every
+ *    submission advances a tick, so slot 1 acting on the vector slot 0 saw
+ *    would be acting on a world that has already moved — and the mask it saw
+ *    could name an action that is now illegal, which the run would record as
+ *    the *agent's* mistake. For a single-slot episode this is the same two
+ *    calls in the same order, and the session caches its view, so it costs
+ *    nothing to be right here.
  *
- * @throws Error if the session is still `running` after the cap, which cannot
- * happen — the cap forces `truncated` — or if a policy names a non-integer
- * action, which is a strategy bug worth failing the run over rather than
+ * @throws Error if a policy names a non-integer action or a non-integer
+ * parameter, which is a strategy bug worth failing the run over rather than
  * silently coercing.
  */
 export function runEpisode<TConfig>(input: EpisodeInput<TConfig>): EpisodeOutcome {
@@ -167,17 +313,22 @@ export function runEpisode<TConfig>(input: EpisodeInput<TConfig>): EpisodeOutcom
         accounting: session.accounting(),
       };
     }
-    const observation = session.observe();
-    const mask = session.legalActions();
     for (let slot = 0; slot < policies.length; slot += 1) {
       const policy = policies[slot] as SlotPolicy;
-      const actionId = policy(observation, mask, slot);
-      if (!Number.isInteger(actionId)) {
+      const chosen = normalizeSubmission(policy(session.observe(), session.legalActions(), slot));
+      if (!Number.isInteger(chosen.action)) {
         throw new Error(
-          `Policy for slot ${String(slot)} returned ${String(actionId)}, which is not an action id.`,
+          `Policy for slot ${String(slot)} returned ${String(chosen.action)}, which is not an action id.`,
         );
       }
-      session.submit(actionId);
+      if (chosen.parameter !== undefined && !Number.isInteger(chosen.parameter)) {
+        throw new Error(
+          `Policy for slot ${String(slot)} named action ${String(chosen.action)} with parameter ` +
+            `${String(chosen.parameter)}, which is not an integer. A fractional slot index would ` +
+            'resolve to nothing and be recorded as an ordinary illegal action, hiding the bug.',
+        );
+      }
+      session.submit(chosen.action, chosen.parameter);
       if (session.status() !== TERMINAL_STATUS.running) break;
     }
     ticksRun += 1;
