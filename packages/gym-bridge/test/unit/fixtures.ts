@@ -140,7 +140,17 @@ export function probeScenario(scenarioId = PROBE_SCENARIO_ID): Scenario {
 
 /** What a {@link fixedSession} should report. */
 export interface FixedSessionOptions {
+  /** Reported once {@link FixedSessionOptions.after} submissions have landed. */
   readonly status?: EpisodeStatus;
+  /**
+   * How many submissions the episode runs for before {@link status} applies.
+   *
+   * Defaults to `1`. A session that reported a terminal status from tick zero
+   * could never be stepped at all — the bridge refuses `step` on a finished
+   * episode, correctly — so the fixture has to run for at least one tick to be
+   * able to report anything.
+   */
+  readonly after?: number;
   readonly terminal?: boolean;
   readonly truncated?: boolean;
   readonly terminalReason?: number;
@@ -158,16 +168,20 @@ export interface FixedSessionOptions {
  * asking a question about a frame rather than about a world.
  */
 export function fixedSession(options: FixedSessionOptions = {}): AgentSession {
-  const status: EpisodeStatus = options.status ?? 'running';
+  const eventual: EpisodeStatus = options.status ?? 'running';
+  const after = options.after ?? 1;
   const observation = new Float64Array(OBSERVATION_SIZE).fill(options.observationFill ?? 0);
   const mask = new Uint8Array(ACTION_SPACE_SIZE).fill(1);
   let submitted = 0;
 
+  const status = (): EpisodeStatus => (submitted >= after ? eventual : 'running');
+  const settled = (): boolean => submitted >= after;
+
   const outcome = (): OutcomeRecord =>
     Object.freeze({
-      terminal: options.terminal ?? (status === 'ascended' || status === 'stagnated'),
-      truncated: options.truncated ?? status === 'truncated',
-      terminalReason: options.terminalReason ?? 0,
+      terminal: settled() && (options.terminal ?? (eventual === 'ascended' || eventual === 'stagnated')),
+      truncated: settled() && (options.truncated ?? eventual === 'truncated'),
+      terminalReason: settled() ? (options.terminalReason ?? 0) : 0,
       era: 0,
       metricDeltas: Object.freeze({}),
     });
@@ -187,10 +201,10 @@ export function fixedSession(options: FixedSessionOptions = {}): AgentSession {
         admitted: options.admitted ?? true,
         ...(options.rejection === undefined ? {} : { rejection: options.rejection as never }),
         observation,
-        status,
+        status: status(),
       };
     },
-    status: () => status,
+    status,
     outcome,
     accounting: (): EpisodeAccounting =>
       Object.freeze({ submitted, rejected: 0, rejectedByAction: {}, enabled: true }),
