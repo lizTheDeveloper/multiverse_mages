@@ -87,9 +87,14 @@ const COMMITTED_PINS: DefinitionPins = {
     definitionVersion: 1,
     digest: 'af19e7a8c52842476c0ee43d9222d891f079b368327d4b9f4c56286a69b84951',
   },
+  // Bumped to 2 by task group 7. The metric was a placeholder that could only
+  // report `mechanic-absent`; it is now an interval-gated estimate with a
+  // pinned z, a stated no-detected-effect rule and a named `not-attributable`
+  // exclusion. Same name, different quantity — which is exactly what a
+  // definitionVersion is for.
   winRateByPrimitive: {
-    definitionVersion: 1,
-    digest: 'e8fda3ed1baaff7dc08bac31b92a22fd80e96b1030d846c4370a6b3971572d0c',
+    definitionVersion: 2,
+    digest: '52943601b98d6ff400c8965f8fe1492977c6cc6620a98c8e44bb4d32ddc197f1',
   },
   worshipSnowball: {
     definitionVersion: 1,

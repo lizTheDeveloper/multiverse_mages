@@ -41,6 +41,7 @@
  * `definitionVersion` fails a check that names the metric (task 6.13).
  */
 
+import { NOT_ATTRIBUTABLE_PRIMITIVES, WILSON_Z_95 } from './ablation.js';
 import type { MetricDefinition, MetricEntries, MetricEntry, MetricRegistry, MetricScope } from './metrics.js';
 import { METRIC_SCOPE, UNAVAILABLE_REASON } from './metrics.js';
 import type { JsonValue } from './canonical.js';
@@ -108,14 +109,25 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
     id: 'winRateByPrimitive',
     definition:
       'Raid win rate of the arm retaining primitive p against the arm in which p is neutralized, ' +
-      'over mirrored pairs sharing derived run seeds with the sides swapped. 0.5 means no ' +
-      'measured contribution.',
+      'over mirrored pairs sharing derived run seeds with the sides swapped, reported with a 95% ' +
+      'Wilson score interval. An interval containing 0.5 is reported as no-detected-effect ' +
+      'alongside the point estimate; the portal primitive is not-attributable.',
     scope: METRIC_SCOPE.perArm,
     collectArm: collectWinRateByPrimitive,
     aggregation: 'mean',
     unit: 'win rate (fraction of mirrored plays)',
-    definitionVersion: 1,
-    pinnedConstants: { mirrored: true, pairwiseAblation: false },
+    // Bumped by task group 7: the metric was a placeholder reporting
+    // `mechanic-absent` and is now an interval-gated estimate with a stated z, a
+    // stated no-effect rule and a named exclusion. Same name, different quantity.
+    definitionVersion: 2,
+    pinnedConstants: {
+      mirrored: true,
+      pairwiseAblation: false,
+      interval: 'wilson-score',
+      intervalZ: WILSON_Z_95,
+      noDetectedEffectRule: 'interval contains 0.5',
+      notAttributablePrimitives: Object.keys(NOT_ATTRIBUTABLE_PRIMITIVES).sort(),
+    },
     thresholdOwner: 'raid-engagement',
   },
   {

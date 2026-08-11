@@ -219,6 +219,29 @@ export interface ArmTelemetry {
   /** Present only for a `prestigeAdvantage` arm. */
   readonly mirroredPlays?: readonly MirroredPlay[];
   /**
+   * The primitive this arm neutralizes, or `null` on a control arm.
+   *
+   * `winRateByPrimitive` reads it for one reason that is not bookkeeping: §7
+   * reports `not-attributable` for `portal`, and that decision is made from the
+   * primitive's *name* rather than from its results, because a `portal` arm
+   * produces no results to decide from. See `ablation.ts`.
+   */
+  readonly ablatedPrimitiveId?: string | null;
+  /**
+   * The arm's mirrored ablation plays, in canonical run order.
+   *
+   * Shaped like {@link MirroredPlay} and deliberately not the same type: the
+   * side that matters here is the *retaining* one, and a shared type would let a
+   * caller hand prestige plays to the ablation collector and get a plausible
+   * number. `ablation.ts` owns the type; this is `unknown`-free because the
+   * telemetry record must survive a structured clone.
+   */
+  readonly ablationPlays?: readonly {
+    readonly runSeed: number;
+    readonly retainingSide: 0 | 1;
+    readonly retainingWon: boolean;
+  }[];
+  /**
    * The maximum permitted prestige carry-forward, once `god-agency` defines it.
    *
    * `null` here is not a default: it is the statement that nobody has chosen a

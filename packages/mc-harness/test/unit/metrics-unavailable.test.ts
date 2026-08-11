@@ -60,21 +60,34 @@ function records(entries: readonly MetricEntries[]): RunRecord[] {
   );
 }
 
-describe('the four reason codes are distinct and complete', () => {
-  it('names exactly the four the capability spec requires', () => {
+describe('the reason codes are distinct and complete', () => {
+  it('carries the four the capability spec requires at minimum', () => {
+    for (const required of ['censored', 'mechanic-absent', 'no-observations', 'per-arm-scope']) {
+      expect(Object.values(UNAVAILABLE_REASON)).toContain(required);
+    }
+  });
+
+  it('names its one addition, and says which task added it', () => {
+    // The capability spec requires those four *"at minimum"*. Task 7.7 adds the
+    // fifth deliberately: `winRateByPrimitive` for `portal` is neither an absent
+    // mechanic nor an empty sample — neutralizing a presence gate removes
+    // raiding, so the ablation arm plays no raid and there is nothing to
+    // attribute. Enumerated here so a *sixth* code cannot arrive unnoticed;
+    // the value of the codes is entirely in each being a different answer to
+    // "why is there no number here", and one added without thought collapses two.
     expect(Object.values(UNAVAILABLE_REASON).sort()).toEqual([
       'censored',
       'mechanic-absent',
       'no-observations',
+      'not-attributable',
       'per-arm-scope',
     ]);
   });
 
   it('gives each a different meaning a reader can act on', () => {
-    // Enumerated rather than asserted structurally, because the value of the
-    // codes is entirely in their being four different answers to "why is there
-    // no number here" — and a fifth added without thought would collapse two.
-    expect(new Set(Object.values(UNAVAILABLE_REASON)).size).toBe(4);
+    expect(new Set(Object.values(UNAVAILABLE_REASON)).size).toBe(
+      Object.values(UNAVAILABLE_REASON).length,
+    );
   });
 });
 

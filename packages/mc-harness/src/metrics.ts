@@ -47,6 +47,18 @@ export const UNAVAILABLE_REASON = {
   censored: 'censored',
   /** The metric is defined per arm and this record is a single run. */
   perArmScope: 'per-arm-scope',
+  /**
+   * The experiment cannot be run for this subject at all.
+   *
+   * The capability spec names four reason codes *"at minimum"*, and this is the
+   * fifth, added by task 7.7. It exists because `winRateByPrimitive` for the
+   * `portal` primitive is neither an absent mechanic nor an empty sample:
+   * neutralizing a presence gate removes raiding, so the ablation arm plays no
+   * raid and there is no outcome to attribute. Reporting `no-observations` there
+   * would say the experiment ran and found nothing, which invites somebody to
+   * fix it by running more of it.
+   */
+  notAttributable: 'not-attributable',
 } as const;
 
 /** Any reason code from {@link UNAVAILABLE_REASON}. */

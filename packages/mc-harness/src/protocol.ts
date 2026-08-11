@@ -84,6 +84,16 @@ export interface RunTask {
   readonly metrics: readonly string[];
   /** Primitives to neutralize, or empty. Task group 7 gives this meaning. */
   readonly ablatedPrimitives: readonly string[];
+  /**
+   * The agent slot that plays the neutralized ruleset, on a mirrored ablation
+   * arm; absent on the control arm and on every non-ablation sweep.
+   *
+   * Optional because it is meaningless without {@link ablatedPrimitives}, and
+   * because a required field here would change every task ever constructed by a
+   * caller that has no ablation in it. See `ablation.ts` on why one primitive
+   * produces two arms and why the side is what distinguishes them.
+   */
+  readonly ablatedSlotIndex?: number;
 }
 
 /** What an executor returns for a run that completed, however it ended. */

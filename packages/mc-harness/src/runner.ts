@@ -109,7 +109,11 @@ const NO_ACCOUNTING = Object.freeze({ submissions: 0, rejections: 0, byActionId:
  * build it the same way — a second construction site for tasks is a second
  * opinion about what a run is.
  */
-export function buildTasks(spec: SweepSpec, plan: SweepPlan): Map<number, RunTask> {
+export function buildTasks(
+  spec: SweepSpec,
+  plan: SweepPlan,
+  options: { readonly ablatedSlotIndex?: number } = {},
+): Map<number, RunTask> {
   const tasks = new Map<number, RunTask>();
   for (const cell of plan.cells) {
     for (let replicateIndex = 0; replicateIndex < spec.replicates; replicateIndex += 1) {
@@ -128,6 +132,9 @@ export function buildTasks(spec: SweepSpec, plan: SweepPlan): Map<number, RunTas
         worldTickCap: spec.termination.worldTickCap,
         metrics: [...spec.metrics].sort(),
         ablatedPrimitives: [...spec.ablation.primitives].sort(),
+        ...(options.ablatedSlotIndex === undefined
+          ? {}
+          : { ablatedSlotIndex: options.ablatedSlotIndex }),
       });
     }
   }

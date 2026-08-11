@@ -274,6 +274,37 @@ export {
 export type { RunSweepOptions, SweepExecution, SweepResult } from './runner.js';
 export { buildTasks, reaggregate, runSweep } from './runner.js';
 
+export type {
+  AblationArm,
+  AblationPlay,
+  AblationRole,
+  ArmSchedule,
+  AttributionStatus,
+  PrimitiveAttribution,
+  WilsonInterval,
+} from './ablation.js';
+export {
+  ABLATION_ROLE,
+  ATTRIBUTION_STATUS,
+  CONTROL_ARM,
+  MIRRORED_SLOT_COUNT,
+  NOT_ATTRIBUTABLE_PRIMITIVES,
+  WILSON_Z_95,
+  ablationArms,
+  ablationPairProblems,
+  ablationProblems,
+  armSpec,
+  attributePrimitive,
+  attributionDetail,
+  attributionEntry,
+  isAttributable,
+  mirroredSideProblems,
+  pairedSeedProblems,
+  scheduleAblation,
+  validateAblationSweep,
+  wilsonInterval,
+} from './ablation.js';
+
 export type { ReproduceOptions, ReproductionResult, RunSelector } from './reproduce.js';
 export { compareToRecord, reproduceRun, taskFor } from './reproduce.js';
 

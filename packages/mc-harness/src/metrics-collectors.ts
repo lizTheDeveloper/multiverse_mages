@@ -47,6 +47,7 @@
  * number has somewhere to be traced to.
  */
 
+import { attributePrimitive, attributionEntry, mirroredSideProblems } from './ablation.js';
 import type { MetricDetail, MetricEntry } from './metrics.js';
 import { UNAVAILABLE_REASON } from './metrics.js';
 import { nearestRank } from './metrics-gini.js';
@@ -872,23 +873,9 @@ export function collectPrestigeAdvantage(arm: ArmTelemetry): MetricEntry {
 export function mirroredPairProblems(
   plays: readonly { readonly runSeed: number; readonly prestigeSide: 0 | 1 }[],
 ): string[] {
-  const problems: string[] = [];
-  const bySeed = new Map<number, number[]>();
-  for (const play of plays) {
-    const sides = bySeed.get(play.runSeed) ?? [];
-    sides.push(play.prestigeSide);
-    bySeed.set(play.runSeed, sides);
-  }
-  for (const seed of [...bySeed.keys()].sort((a, b) => a - b)) {
-    const sides = (bySeed.get(seed) as number[]).slice().sort();
-    if (sides.length !== 2 || sides[0] !== 0 || sides[1] !== 1) {
-      problems.push(
-        `run seed ${String(seed)} was played on sides [${sides.join(', ')}] rather than once on ` +
-          'each. Mirroring is what cancels side bias; an unmirrored pair leaves it in the estimate.',
-      );
-    }
-  }
-  return problems;
+  return mirroredSideProblems(
+    plays.map((play) => ({ runSeed: play.runSeed, side: play.prestigeSide })),
+  );
 }
 
 /* ------------------------------------------------------------------------- *
@@ -1031,12 +1018,22 @@ export function illegalActionsByStrategy(
  * *raid* win rate, and there are no raids. Neutralizing `research-rate` in a
  * build with no combat produces no outcome that could be attributed to it.
  *
- * The ablation machinery — the mask in the primitive stacking layer,
- * draw-count invariance, paired-seed scheduling, the Wilson interval,
- * `not-attributable` for `portal` — is task group 7 and is **not implemented
- * here**. This collector exists so the registry can satisfy §7's key set
- * honestly in the meantime, and it is wired to the same `raidEngagement` flag
- * every other raid metric reads, so it becomes available exactly when they do.
+ * Everything downstream of that flag now exists: the mask in the primitive
+ * stacking layer and its draw-count invariance (tasks 7.1–7.3, in
+ * `@mm/primitives`), and paired-seed arm scheduling, mirrored sides, the Wilson
+ * interval, `no-detected-effect` and `not-attributable` (tasks 7.4–7.8, in
+ * `ablation.ts`). The order of the checks below is the order the claims get
+ * weaker in, and it matters:
+ *
+ * 1. no raids at all — `mechanic-absent`, owned by `raid-engagement`;
+ * 2. this arm is `portal`'s — `not-attributable`, whatever it produced;
+ * 3. this arm scheduled no ablation — `no-observations`;
+ * 4. otherwise, the Wilson-interval attribution.
+ *
+ * Checking `portal` *after* the mechanic flag rather than before it is
+ * deliberate: on a build with no raids, "there are no raids" is the more
+ * informative answer, and `not-attributable` would read as a permanent verdict
+ * on a primitive when it is really a statement about the experiment.
  */
 export function collectWinRateByPrimitive(arm: ArmTelemetry): MetricEntry {
   if (!arm.mechanics.raidEngagement) {
@@ -1044,14 +1041,18 @@ export function collectWinRateByPrimitive(arm: ArmTelemetry): MetricEntry {
       owner: 'raid-engagement',
       reasonDetail:
         'winRateByPrimitive is a raid win rate and this build has no raids; the ablation ' +
-        'methodology backing it is agent-interface task group 7 and has not landed.',
+        'arms can be scheduled and their seeds paired, but nothing resolves a raid to attribute.',
     });
   }
-  return unavailable(UNAVAILABLE_REASON.noObservations, {
-    reasonDetail:
-      'no ablation arms were scheduled. Task group 7 owns the paired-seed ablation sweep that ' +
-      'produces this attribution.',
-  });
+  const primitiveId = arm.ablatedPrimitiveId;
+  if (primitiveId === undefined || primitiveId === null) {
+    return unavailable(UNAVAILABLE_REASON.noObservations, {
+      reasonDetail:
+        'this is a control arm, or an arm that named no ablated primitive. An attribution is a ' +
+        'comparison between two arms and a control arm is one half of it.',
+    });
+  }
+  return attributionEntry(attributePrimitive(primitiveId, arm.ablationPlays ?? []));
 }
 
 /** Rebuilds a counts object with sorted keys, so details serialize canonically. */
