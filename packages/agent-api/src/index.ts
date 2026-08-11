@@ -75,11 +75,19 @@ export {
 
 export type {
   NormalizationDescriptor,
+  NormalizationRule,
   ObservationBlock,
   ObservationBlockName,
 } from './layout.js';
 export {
   BOOLEAN_SCALE,
+  IDENTITY_SCALE,
+  NORMALIZATION_RULES,
+  boundedScale,
+  flagScale,
+  identityScale,
+  logBucketScale,
+  ratioScale,
   ENGAGEMENT_OBJECTIVE_CHANNELS,
   ENGAGEMENT_SIDE_CHANNELS,
   FP_SCALE,
@@ -121,6 +129,18 @@ export type { AdmissionResult, GateInput, RejectedAction, RejectionReason } from
 export { admit } from './gate.js';
 
 export { applyDescriptor, normalizedObservation } from './normalize.js';
+
+export type { ObservationSlot } from './digest.js';
+export {
+  OBSERVATION_LAYOUT_DIGEST,
+  OBSERVATION_SCHEMA_VERSION,
+  OBSERVATION_SLOTS,
+  assertLayoutValid,
+  layoutDigest,
+  layoutEncoding,
+  layoutProblems,
+  slotDescriptor,
+} from './digest.js';
 
 export type {
   BalanceMetricDeltas,

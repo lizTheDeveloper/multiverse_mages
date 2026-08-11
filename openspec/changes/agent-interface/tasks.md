@@ -1,14 +1,14 @@
 ## 1. Agent API package
 
-- [ ] 1.1 Scaffold `packages/agent-api` per `contracts.md` §5, depending on `sim-core` and the `rules-*` packages only
-- [ ] 1.2 Author the normalization descriptor table with one descriptor per observation slot, covering every block in `contracts.md` §4.1
-- [ ] 1.3 Implement the five normalization rules — `ratio`, `bounded`, `log-bucket`, `flag`, `identity` — with clamping at the declared saturation constant
-- [ ] 1.4 Implement descriptor-table validation rejecting any saturation constant that is not a compile-time constant, and any slot lacking a descriptor
-- [ ] 1.5 Implement export as `Float64Array` in `[0, 1]` with `fp(1024)` mapping to exactly `1.0`, keeping all division inside `agent-api`
-- [ ] 1.6 Implement `observationSchemaVersion` and the layout digest over block, index, rule, and saturation constant
-- [ ] 1.7 Unit test that identical world states observed after different histories export element-wise identical vectors
-- [ ] 1.8 Unit test that altering one saturation constant changes the layout digest without changing vector length
-- [ ] 1.9 Verify the float-ban lint still passes over `sim-core` and the rules packages after `agent-api` lands
+- [x] 1.1 Scaffold `packages/agent-api` per `contracts.md` §5, depending on `sim-core` and the `rules-*` packages only
+- [x] 1.2 Author the normalization descriptor table with one descriptor per observation slot, covering every block in `contracts.md` §4.1
+- [x] 1.3 Implement the five normalization rules — `ratio`, `bounded`, `log-bucket`, `flag`, `identity` — with clamping at the declared saturation constant
+- [x] 1.4 Implement descriptor-table validation rejecting any saturation constant that is not a compile-time constant, and any slot lacking a descriptor
+- [x] 1.5 Implement export as `Float64Array` in `[0, 1]` with `fp(1024)` mapping to exactly `1.0`, keeping all division inside `agent-api`
+- [x] 1.6 Implement `observationSchemaVersion` and the layout digest over block, index, rule, and saturation constant
+- [x] 1.7 Unit test that identical world states observed after different histories export element-wise identical vectors
+- [x] 1.8 Unit test that altering one saturation constant changes the layout digest without changing vector length
+- [x] 1.9 Verify the float-ban lint still passes over `sim-core` and the rules packages after `agent-api` lands
 
 ## 2. Agent session interface
 
