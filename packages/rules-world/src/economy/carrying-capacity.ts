@@ -49,7 +49,38 @@ import type { StepRng } from '../mages/rng.js';
  * `contracts.md` §1.3 forbids per-person randomness, and a Bernoulli trial per
  * prospective parent is exactly that, arriving through a mechanism nobody
  * thinks of as "simulating individuals". Integer part plus one fractional draw
- * preserves the expected value exactly at O(cohorts).
+ * carries the expectation at O(cohorts) — but only down to the resolution the
+ * expectation is computed at, which is the next section.
+ *
+ * ## Births are computed at extended scale, and this is not optional
+ *
+ * A birth rate per member per month is a small number divided by a long span:
+ * a member has a handful of children across hundreds of months, so the per-tick
+ * figure is inherently below one `fp` unit. Computing it at `fp` scale floors it
+ * to **zero** — deterministically, for every seed — and the remainder draw that
+ * was supposed to carry the fraction never sees a fraction, because the floor
+ * happened upstream of it. That is the same defect `lifespan-rate.ts` exists to
+ * make impossible on the mortality side, arriving from the other direction:
+ * there the divisor is long, here the dividend is small, and the fix is the same
+ * one. `design.md` rejected plain truncation by name for promotion — *"it
+ * truncates to zero every time [...] and the bias is silent"* — and flooring
+ * before the draw is that truncation wearing a draw as a hat.
+ *
+ * Worse, the floor is per cohort, so it made the same headcount fertile or
+ * sterile according to how finely it happened to be bucketed. A populace is
+ * legitimately spread over `5 occupations × ceil(lifespanMonths / 120)` cohorts,
+ * so the penalty fell hardest on the longest-lived species — biasing exactly the
+ * differentiation 0.4.0 claims to ship.
+ *
+ * So {@link expectedBirths} returns units of `1 / BIRTH_RATE_ONE` and
+ * {@link cohortBirths} takes its draw over that same range. Nothing narrows back
+ * to `fp` before the draw — `lifespan-rate.ts` says why, and this module is the
+ * second call site its header predicted.
+ *
+ * Three floors remain, one per multiplier, each at most one extended unit. That
+ * is a residue of at most three parts in {@link BIRTH_RATE_ONE} per cohort per
+ * tick rather than the exact zero it was: not exact, and no longer the
+ * difference between a species that reproduces and one that does not.
  *
  * **Everything here is untuned** (`docs/design/release-plan.md`).
  */
@@ -134,18 +165,76 @@ export interface BirthInput {
   readonly counters?: ClampCounters | undefined;
 }
 
-/** Births per member per world tick at neutral fertility, `fp`. **Untuned.** */
-export const BIRTHS_PER_MEMBER: Fixed = 4;
+/**
+ * Extra bits of precision the birth expectation is carried at, beyond `fp`.
+ *
+ * Chosen the way `lifespan-rate.ts` chose its ten: by naming the worst case in
+ * shipped content and checking it is clear of zero. Here the worst case is one
+ * member of the least fertile species (`fertility` 96) with a neutral primitive
+ * multiplier and the smallest non-zero {@link fertilityBrake} — a universe
+ * sitting right under `K`. That is `(4 / 1024) × (96 / 1024) × (1 / 1024)`
+ * births per tick, which at `fp` scale is zero, at twelve bits is one unit, and
+ * at sixteen is **24**.
+ *
+ * Twelve bits is the least that clears zero at all, and a knife-edge one content
+ * change pushes back over. Sixteen leaves the worst case an order of magnitude
+ * clear and still keeps every cohort up to roughly twenty-two million members
+ * inside exact integer arithmetic at the highest shipped `fertility` — see
+ * {@link scaleAtExtendedScale}, which refuses rather than rounds beyond that.
+ *
+ * It is deliberately *not* `LIFESPAN_RATE_SHIFT`. The two constants answer the
+ * same question about different worst cases: ten bits is what a draconic hazard
+ * needs, and ten bits is not what a barren cohort under a full brake needs. One
+ * shared number would have to be the larger of the two, and widening the hazard
+ * path is a change to mortality nobody asked for.
+ */
+export const BIRTH_RATE_SHIFT = 16;
 
 /**
- * Expected births for one cohort this tick, in `fp` — the value before the
- * fractional draw.
+ * The value that means "one birth" at extended scale — the range the fractional
+ * draw is taken over.
+ *
+ * `fp(1024) << 16 = 2^26`. A power of two that divides `2^32` exactly, so
+ * `nextBounded` never rejects and one draw is still one word.
+ */
+export const BIRTH_RATE_ONE: number = FP_ONE << BIRTH_RATE_SHIFT;
+
+/**
+ * Births per member per world tick at neutral fertility, in units of
+ * `1 / BIRTH_RATE_ONE`. **Untuned.**
+ *
+ * Four `fp` units, written at extended scale — the same magnitude it has always
+ * been (`4 / 1024` of a child per member per month, so a member of a 600-month
+ * species has a little over two children in a lifetime), carried at a resolution
+ * fine enough that the three multipliers below cannot floor it away. Its scale
+ * is the return scale of {@link expectedBirths}; the two move together on
+ * purpose, because a test that reads one against the other should not have to
+ * know a conversion.
+ */
+export const BIRTHS_PER_MEMBER: number = 4 << BIRTH_RATE_SHIFT;
+
+/**
+ * Expected births for one cohort this tick, in units of `1 / BIRTH_RATE_ONE` —
+ * the value before the fractional draw.
  *
  * Separated from {@link cohortBirths} so a test can assert the *expectation*
  * without a stream, which is the only way to check that the brake is monotonic
  * without averaging over draws.
+ *
+ * The multiplications use {@link floorDiv} on the raw product rather than
+ * {@link mul}, because `mul` asserts both operands into the 32-bit `Fixed`
+ * domain and the running value here is deliberately outside it. The count enters
+ * *first*, before any of the three fp-scale factors, so that every floor lands
+ * on a value already multiplied up by the cohort — which is what keeps the
+ * relative loss at one part in the cohort's own expectation rather than one part
+ * in a per-member rate that is smaller than the quantum.
+ *
+ * @throws RangeError if the widened product would leave exact integer
+ * arithmetic. A refusal rather than a saturation, for the same reason
+ * `perLifespanRate` refuses: a cohort this function cannot count births for is
+ * not a cohort it should hand back a plausible-looking number for.
  */
-export function expectedBirths(input: BirthInput): Fixed {
+export function expectedBirths(input: BirthInput): number {
   if (!Number.isInteger(input.count) || input.count < 0) {
     throw new RangeError(`a cohort count must be a non-negative integer, received ${String(input.count)}`);
   }
@@ -154,9 +243,26 @@ export function expectedBirths(input: BirthInput): Fixed {
   }).value;
 
   const base = input.count * BIRTHS_PER_MEMBER;
-  const withSpecies = mul(base, input.fertility);
-  const withPrimitives = mul(withSpecies, multiplier);
-  return mul(withPrimitives, Math.min(FP_ONE, Math.max(0, input.brake)));
+  const withSpecies = scaleAtExtendedScale(base, input.fertility);
+  const withPrimitives = scaleAtExtendedScale(withSpecies, multiplier);
+  return scaleAtExtendedScale(withPrimitives, Math.min(FP_ONE, Math.max(0, input.brake)));
+}
+
+/**
+ * One extended-scale value multiplied by one `fp`-scale factor, floored.
+ *
+ * The one place the widened arithmetic is written, so that the overflow refusal
+ * is one refusal rather than three chances to forget it.
+ */
+function scaleAtExtendedScale(value: number, factor: Fixed): number {
+  const product = value * factor;
+  if (!Number.isSafeInteger(product)) {
+    throw new RangeError(
+      `expectedBirths overflowed extended scale at ${String(value)} × ${String(factor)}. A cohort ` +
+        'large enough to do this is a populace defect upstream, not a number to round off here.',
+    );
+  }
+  return floorDiv(product, FP_ONE);
 }
 
 /**
@@ -167,11 +273,15 @@ export function expectedBirths(input: BirthInput): Fixed {
  * count is a function of the cohort count and nothing else — a conditional draw
  * would make one cohort's sequence depend on another cohort's arithmetic, which
  * is the attribution loss `contracts.md` §6 is about.
+ *
+ * The draw is over {@link BIRTH_RATE_ONE}, the scale the expectation was
+ * computed at, and not over `FP_ONE`: narrowing first would put the floor back
+ * exactly where this module removed it.
  */
 export function cohortBirths(rng: StepRng, cohort: EntityHandle, input: BirthInput): number {
   const expected = expectedBirths(input);
-  const whole = floorDiv(expected, FP_ONE);
-  const remainder = expected - whole * FP_ONE;
-  const draw = nextBounded(rng.actorStream(RNG_STREAM.populace, cohort), FP_ONE);
+  const whole = floorDiv(expected, BIRTH_RATE_ONE);
+  const remainder = expected - whole * BIRTH_RATE_ONE;
+  const draw = nextBounded(rng.actorStream(RNG_STREAM.populace, cohort), BIRTH_RATE_ONE);
   return whole + (draw < remainder ? 1 : 0);
 }

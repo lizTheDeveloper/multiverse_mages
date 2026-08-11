@@ -40,6 +40,23 @@ import { UNIVERSITY, attachRecord, readRecord } from '@mm/state';
  * negative."* So the affordable amount of labour is computed first and the
  * progress is derived from what was actually paid for.
  *
+ * ## A site buys the labour it can use and not a month more
+ *
+ * The corollary of the paragraph above, and the one that was missing: if the
+ * progress is derived from what was paid for, then the payment must be derived
+ * from the work there was to do. Clamping the progress to the work remaining
+ * while charging for every month offered breaks the identity in the direction
+ * nobody notices — a site one month from done, handed ten thousand
+ * person-months, deducted forty thousand materials for two `fp` of building, and
+ * {@link ConstructionOutcome.labourStalled} stayed `0` because materials were
+ * never short. The economy lost the stock and no counter moved.
+ *
+ * So the clamp is applied to the *months*, and the progress and the charge are
+ * both read off the same figure. The months a site can absorb are found by
+ * inverting the progress arithmetic rather than by dividing through it, because
+ * the arithmetic floors twice and a division would disagree with it by a unit
+ * exactly when the site is one unit from complete.
+ *
  * ## `build-rate` is a primitive and `laborAffinity` is not
  *
  * `mages-and-species/design.md` flags the trap by name: vision §6 says orcs
@@ -86,10 +103,32 @@ export const MATERIALS_PER_LABOR_MONTH: Fixed = 4;
 export interface ConstructionOutcome {
   /** `buildProgress` added this tick, in `fp`. */
   readonly progressAdded: Fixed;
-  /** Materials deducted this tick, in `fp`. Never more than were available. */
+  /**
+   * Materials deducted this tick, in `fp`. Never more than were available, and
+   * never more than the work actually done cost.
+   */
   readonly materialsSpent: Fixed;
   /** Person-months that went unused for want of materials. */
   readonly labourStalled: number;
+  /**
+   * Person-months that went unused for want of *work* — labour the site could
+   * afford and had no building left to spend it on.
+   *
+   * A separate field rather than a second meaning for
+   * {@link ConstructionOutcome.labourStalled}, because the two say opposite
+   * things to whoever reads them. `labourStalled` is a materials shortage: the
+   * universe cannot pay for the work it wants. This is an assignment surplus:
+   * the work is paid for and finished, and the laborers should be somewhere
+   * else. Folding the second into the first would make the shortage counter fire
+   * on every completing university and turn the one number that says "produce
+   * more materials" into noise.
+   *
+   * Reported on a finished site too, for the labour it was handed and could not
+   * use. A caller that keeps forty laborers on a university built ninety years
+   * ago is the exact waste this field exists to make visible, and zeroing it
+   * there would hide the larger half of it.
+   */
+  readonly labourSurplus: number;
   /** Whether the university completed on this tick. */
   readonly completed: boolean;
 }
@@ -187,7 +226,13 @@ export function advanceConstruction(
     );
   }
   if (isComplete(university)) {
-    return { progressAdded: 0, materialsSpent: 0, labourStalled: 0, completed: false };
+    return {
+      progressAdded: 0,
+      materialsSpent: 0,
+      labourStalled: 0,
+      labourSurplus: input.laborMonths,
+      completed: false,
+    };
   }
 
   // Pay first. `floorDiv` rather than `div`: both operands are fp-scale
@@ -196,22 +241,65 @@ export function advanceConstruction(
     input.laborMonths,
     floorDiv(Math.max(0, input.materials), MATERIALS_PER_LABOR_MONTH),
   );
-  const materialsSpent = affordableMonths * MATERIALS_PER_LABOR_MONTH;
 
-  const paidForProgress = affordableMonths * BUILD_PROGRESS_PER_LABOR_MONTH;
-  const withAffinity = mul(paidForProgress, input.laborAffinity);
-  const scaled = mul(withAffinity, buildRateMultiplier(input));
-
+  const rate = buildRateMultiplier(input);
   const remaining = BUILD_COMPLETE - university.buildProgress;
-  const progressAdded = Math.min(scaled, remaining);
+  const usedMonths = monthsWorthBuying(affordableMonths, remaining, input, rate);
+
+  const materialsSpent = usedMonths * MATERIALS_PER_LABOR_MONTH;
+  const progressAdded = Math.min(progressFrom(usedMonths, input, rate), remaining);
   university.buildProgress += progressAdded;
 
   return {
     progressAdded,
     materialsSpent,
     labourStalled: input.laborMonths - affordableMonths,
+    labourSurplus: affordableMonths - usedMonths,
     completed: isComplete(university),
   };
+}
+
+/**
+ * The progress a given number of person-months delivers, in `fp`.
+ *
+ * The two multiplications in the order the spec names them — labour scaled by
+ * `laborAffinity`, then by the `build-rate` multiplier. Both floor, which is why
+ * {@link monthsWorthBuying} inverts this function by search rather than by
+ * dividing: at one `fp` unit from completion the difference between the two is
+ * the whole answer.
+ */
+function progressFrom(months: number, input: ConstructionInput, rate: Fixed): Fixed {
+  return mul(mul(months * BUILD_PROGRESS_PER_LABOR_MONTH, input.laborAffinity), rate);
+}
+
+/**
+ * The fewest of `affordableMonths` whose progress covers what is left to build.
+ *
+ * Binary search, because {@link progressFrom} is non-decreasing in its months
+ * and is the definition of the answer — inverting it arithmetically would give a
+ * number that disagrees with it by a unit in exactly the case this exists for.
+ * `O(log labourMonths)` integer steps, no division of one rounded quantity by
+ * another, and no floating point.
+ *
+ * Returns `affordableMonths` unchanged whenever the site can absorb all of it,
+ * which is every tick but the last one.
+ */
+function monthsWorthBuying(
+  affordableMonths: number,
+  remaining: Fixed,
+  input: ConstructionInput,
+  rate: Fixed,
+): number {
+  if (progressFrom(affordableMonths, input, rate) <= remaining) return affordableMonths;
+
+  let low = 0;
+  let high = affordableMonths;
+  while (low < high) {
+    const middle = low + floorDiv(high - low, 2);
+    if (progressFrom(middle, input, rate) >= remaining) high = middle;
+    else low = middle + 1;
+  }
+  return low;
 }
 
 /** Reads a university row, for callers holding only a handle. */

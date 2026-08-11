@@ -27,6 +27,7 @@ import { FP_ONE, RNG_STREAM } from '@mm/sim-core';
 
 import {
   BIRTHS_PER_MEMBER,
+  BIRTH_RATE_ONE,
   CAPACITY_PER_UNIVERSITY_SEAT,
   MAX_SUBSISTENCE_PENALTY,
   OCCUPATION_COUNT,
@@ -196,7 +197,11 @@ describe('births and deaths settle against each other', () => {
     for (let tick = 0; tick < 3000; tick += 1) {
       const brake = fertilityBrake(population, capacity);
       const expected = expectedBirths(births({ count: population, brake }));
-      const added = Math.floor(expected / FP_ONE);
+      // `expectedBirths` is in units of 1 / BIRTH_RATE_ONE, not of 1 / FP_ONE.
+      // The shape this test asserts is unchanged -- the same headcounts arrive
+      // on the same ticks -- but reading it at fp scale would multiply every
+      // figure by 2^16 and the run would clear capacity on the first tick.
+      const added = Math.floor(expected / BIRTH_RATE_ONE);
       population += added;
       growth.push(added);
     }
