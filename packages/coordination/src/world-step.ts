@@ -109,7 +109,13 @@ import {
   readRecord,
   readRulesetForObservation,
 } from '@mm/state';
-import type { CellResolver, KnowledgeSubsystem, NodeCatalog, StorePolicy } from '@mm/rules-magic';
+import type {
+  AcquirePolicy,
+  CellResolver,
+  KnowledgeSubsystem,
+  NodeCatalog,
+  StorePolicy,
+} from '@mm/rules-magic';
 import { decayHeldKnowledge } from '@mm/rules-magic';
 import type { RediscoveryClampCounter } from '@mm/primitives';
 import { createRediscoveryClampCounter } from '@mm/primitives';
@@ -180,6 +186,15 @@ export interface WorldStepDeps {
   readonly cells: CellResolver;
   /** The universe's resolved `store` hook, from its tradition. */
   readonly store: StorePolicy;
+  /**
+   * The universe's resolved `acquire` hook, from its tradition.
+   *
+   * Beside `store` because it arrives the same way and for the same reason: the
+   * loop may not read a tradition id, so arbitration happens once at the
+   * composition root and what reaches here is a resolved hook. What it governs
+   * is `GatewayDeps.acquire`'s to say.
+   */
+  readonly acquire: AcquirePolicy;
   /**
    * The universe's territory, summed from content by `territoryExtent`.
    *
@@ -415,6 +430,7 @@ export function worldSystem(
           ruleset,
           ratesOf: (mage) => ratesOf(state, mage, deps),
           store: deps.store,
+          acquire: deps.acquire,
           effort: efforts,
           rng,
           materials: materialsAccess,

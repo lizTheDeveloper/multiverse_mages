@@ -28,7 +28,13 @@ import { KnowledgeSubsystem } from '@mm/rules-magic';
 
 import { CoordinatingKnowledgeGateway } from '../../src/index.js';
 
-import { catalogAndCells, registry, shippedStorePolicy, speciesTable } from './world-fixtures.js';
+import {
+  catalogAndCells,
+  registry,
+  shippedAcquirePolicy,
+  shippedStorePolicy,
+  speciesTable,
+} from './world-fixtures.js';
 
 function universeWithOneMage(): ReturnType<typeof buildWorld> {
   return buildWorld();
@@ -92,6 +98,7 @@ function buildWorld() {
       scribeAffinity: species.scribeAffinity,
     }),
     store: shippedStorePolicy(traditionId),
+    acquire: shippedAcquirePolicy(traditionId),
   });
 
   return { state, knowledge, gateway, mage, catalog, species };
@@ -186,5 +193,6 @@ function buildGatewayOver(
       scribeAffinity: species.scribeAffinity,
     }),
     store: shippedStorePolicy(traditionId),
+    acquire: shippedAcquirePolicy(traditionId),
   });
 }

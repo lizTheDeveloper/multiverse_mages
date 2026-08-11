@@ -76,7 +76,13 @@ import { compareTargets } from '@mm/rules-world';
 
 import { CoordinatingKnowledgeGateway } from '../../src/index.js';
 
-import { catalogAndCells, registry, shippedStorePolicy, speciesTable } from './world-fixtures.js';
+import {
+  catalogAndCells,
+  registry,
+  shippedAcquirePolicy,
+  shippedStorePolicy,
+  speciesTable,
+} from './world-fixtures.js';
 
 /**
  * The id the frontier scan used to stop at.
@@ -217,6 +223,7 @@ function universePermitting(
         scribeAffinity: species.scribeAffinity,
       }),
       store: shippedStorePolicy(traditionId),
+      acquire: shippedAcquirePolicy(traditionId),
     }),
   };
 }
