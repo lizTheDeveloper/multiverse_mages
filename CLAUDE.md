@@ -139,6 +139,16 @@ branch out from under anyone else working in it.
 own, so run `npm ci` in it before `npm run verify`, or npm will silently resolve workspace binaries
 from the parent checkout and you will be verifying the wrong tree.
 
+**Adding a workspace package means regenerating `package-lock.json` with `npm install`.** `npm ci`
+refuses a lock file that does not list every workspace — `Missing: @mm/<name> from lock file` — and
+CI runs `npm ci`, so a missing entry breaks both jobs and every fresh worktree. Worse on a merge:
+`package-lock.json` auto-merges without a conflict, which makes it look resolved while it has
+quietly dropped a workspace one side added. The failure then surfaces as a wall of
+`Cannot find module '@mm/sim-core'` typecheck errors that read as broken code and are not. If
+`npm ci` fails after a merge, run `npm install` and commit the lock before believing anything else
+the tree tells you. Three separate agents lost time to this in one session before it was written
+down.
+
 The reason is concrete: more than one agent or person may be editing this repository at the same
 time. Files changing underneath a running command produce failures that look like real defects and
 are not, and `git stash` in a shared tree can sweep up someone else's uncommitted work.

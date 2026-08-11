@@ -75,11 +75,19 @@ export {
 
 export type {
   NormalizationDescriptor,
+  NormalizationRule,
   ObservationBlock,
   ObservationBlockName,
 } from './layout.js';
 export {
   BOOLEAN_SCALE,
+  IDENTITY_SCALE,
+  NORMALIZATION_RULES,
+  boundedScale,
+  flagScale,
+  identityScale,
+  logBucketScale,
+  ratioScale,
   ENGAGEMENT_OBJECTIVE_CHANNELS,
   ENGAGEMENT_SIDE_CHANNELS,
   FP_SCALE,
@@ -122,6 +130,18 @@ export { admit } from './gate.js';
 
 export { applyDescriptor, normalizedObservation } from './normalize.js';
 
+export type { ObservationSlot } from './digest.js';
+export {
+  OBSERVATION_LAYOUT_DIGEST,
+  OBSERVATION_SCHEMA_VERSION,
+  OBSERVATION_SLOTS,
+  assertLayoutValid,
+  layoutDigest,
+  layoutEncoding,
+  layoutProblems,
+  slotDescriptor,
+} from './digest.js';
+
 export type {
   BalanceMetricDeltas,
   OutcomeInput,
@@ -134,3 +154,17 @@ export type { AgentView, ObserveInput } from './view.js';
 export { observe } from './view.js';
 
 export type { ExplainProjection, ExplainedDecision } from './explain.js';
+
+export type { AgentRng, AgentRngInput } from './agent-rng.js';
+export { agentRng } from './agent-rng.js';
+
+export type {
+  AgentSession,
+  EpisodeAccounting,
+  EpisodeStatus,
+  Scenario,
+  ScenarioConfig,
+  SessionOptions,
+  SubmitResult,
+} from './session.js';
+export { createSession } from './session.js';
