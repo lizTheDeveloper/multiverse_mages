@@ -146,6 +146,7 @@ import {
 } from '@mm/rules-world';
 
 import { EffortLedger } from './effort-store.js';
+import { cellNodeIndex } from './frontier-index.js';
 import { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { MageRates } from './gateway.js';
 import { buildOutlook, universityPreference } from './outlook.js';
@@ -285,6 +286,11 @@ export function worldSystem(
   clampCounter: RediscoveryClampCounter = createRediscoveryClampCounter(),
 ): System {
   const hazard: ScaleFreeHazard = deps.hazard ?? hazardAt;
+  // `cellOf` inverted, once for the whole system rather than once per gateway.
+  // It is a function of the content set alone — see `frontier-index.ts` — and
+  // `deps` is fixed at install time, so a per-phase rebuild would be an
+  // `O(catalog)` pass three times a tick to compute the same answer.
+  const nodesByCell = cellNodeIndex(deps.catalog, deps.cells);
 
   return {
     name: 'world-tick',
@@ -339,6 +345,7 @@ export function worldSystem(
           knowledge,
           catalog: deps.catalog,
           cells: deps.cells,
+          nodesByCell,
           ruleset,
           ratesOf: (mage) => ratesOf(state, mage, deps),
           store: deps.store,

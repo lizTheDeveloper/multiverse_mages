@@ -543,68 +543,55 @@ export class KnowledgeSubsystem {
   }
 
   /**
-   * Pairs each shelved grimoire with an unclaimed instance of its node.
+   * Pairs shelved books with shelved instances: one pass over each side.
    *
-   * **The shelves are gathered once, not once per book.** This used to call
-   * `instancesAt` inside the loop, which is a pass over every instance in the
-   * universe — and a five-field view of each — per shelved grimoire. `rebuild`
-   * runs every world tick, so that is `shelvedBooks × instances` per tick,
-   * invisible while nothing is ever shelved and quadratic from the first
-   * library that fills up.
+   * The matching rule is the one the {@link rebuild} note states — for each
+   * shelved grimoire in ascending slot order, the first unclaimed instance of
+   * the same node in the same library, also in ascending slot order — and it is
+   * unchanged. What changed is the cost. Asking `instancesAt` per grimoire
+   * re-scanned every instance in the universe once per book, so a load was
+   * `shelvedGrimoires × instances`: invisible for as long as nothing was ever
+   * shelved, and quadratic from the tick something was. The world loop rebuilds
+   * a subsystem *every tick*, so that was not a load-time cost.
    *
-   * The order is exactly what it was: ascending slot order on both sides, which
-   * `forEach` gives for the books and which the gathering pass gives for the
-   * instances, so the pairing — and the `acquiredTick` ambiguity documented on
-   * {@link rebuild} — is unchanged.
+   * So the candidates are bucketed once by `(library, node)`, each bucket in
+   * ascending slot order, and a match takes the next one in its bucket. The
+   * cursor is what makes a bucket its own `claimed` set; instances the direct
+   * `(2, grimoireId)` pass already claimed are at a grimoire location and so are
+   * never bucketed at all. A cursor rather than `shift`, because one library
+   * holding four hundred copies of one node is the ordinary case this loop meets
+   * and repeatedly shifting that array is the same quadratic in a smaller hat.
    */
   #relinkShelvedGrimoires(): void {
-    const claimed = new Set<Handle>(this.#instanceOfGrimoire.values());
+    const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
+    const locationKinds = store.field('locationKind');
+    const locationIds = store.field('locationId');
+    const instanceNodes = store.field('nodeId');
+
+    const unclaimed = new Map<string, { items: Handle[]; next: number }>();
+    store.forEach((row, handle) => {
+      if ((locationKinds[row] as number) !== LOCATION_KIND.library) return;
+      const key = shelfKey(locationIds[row] as number, instanceNodes[row] as number);
+      const bucket = unclaimed.get(key);
+      if (bucket === undefined) unclaimed.set(key, { items: [handle as Handle], next: 0 });
+      else bucket.items.push(handle as Handle);
+    });
+
     const grimoires = componentOf(this.#state, GRIMOIRE);
     const grimoireNodes = grimoires.field('nodeId');
     const holderKinds = grimoires.field('holderKind');
     const holderIds = grimoires.field('holderId');
 
-    let shelves: Map<Handle, { handle: Handle; nodeId: ContentId }[]> | undefined;
     grimoires.forEach((row, grimoire) => {
       if ((holderKinds[row] as number) !== HOLDER_KIND.library) return;
       if (this.#instanceOfGrimoire.has(grimoire)) return;
-      shelves ??= this.#shelvedInstancesByLibrary();
-      const library = holderIds[row] as number;
-      const nodeId = grimoireNodes[row] as number;
-      for (const candidate of shelves.get(library) ?? []) {
-        if (claimed.has(candidate.handle)) continue;
-        if (candidate.nodeId !== nodeId) continue;
-        this.#instanceOfGrimoire.set(grimoire, candidate.handle);
-        claimed.add(candidate.handle);
-        return;
-      }
+      const bucket = unclaimed.get(
+        shelfKey(holderIds[row] as number, grimoireNodes[row] as number),
+      );
+      if (bucket === undefined || bucket.next >= bucket.items.length) return;
+      this.#instanceOfGrimoire.set(grimoire, bucket.items[bucket.next] as Handle);
+      bucket.next += 1;
     });
-  }
-
-  /**
-   * Every shelved instance, grouped by the library it sits in, ascending by
-   * slot within each group.
-   *
-   * Built lazily by the pass above, so a universe with no shelved book — every
-   * universe until one shelves one — pays nothing for it at all.
-   */
-  #shelvedInstancesByLibrary(): Map<Handle, { handle: Handle; nodeId: ContentId }[]> {
-    const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
-    const nodeIds = store.field('nodeId');
-    const locationKinds = store.field('locationKind');
-    const locationIds = store.field('locationId');
-    const byLibrary = new Map<Handle, { handle: Handle; nodeId: ContentId }[]>();
-    store.forEach((row, handle) => {
-      if ((locationKinds[row] as number) !== LOCATION_KIND.library) return;
-      const library = locationIds[row] as number;
-      let shelf = byLibrary.get(library);
-      if (shelf === undefined) {
-        shelf = [];
-        byLibrary.set(library, shelf);
-      }
-      shelf.push({ handle, nodeId: nodeIds[row] as number });
-    });
-    return byLibrary;
   }
 
   /**
@@ -734,4 +721,15 @@ export class KnowledgeSubsystem {
     const handle = this.#state.entities.create();
     attachRecord(this.#state, EVER_KNOWN, handle, { nodeId });
   }
+}
+
+/**
+ * The bucket a shelved copy belongs to: its library and its node.
+ *
+ * A string rather than a nested map because the two parts are handles and a
+ * numeric pairing would need a bound on either one that nothing here has. It is
+ * built and discarded inside one rebuild, never stored and never hashed.
+ */
+function shelfKey(library: Handle, nodeId: ContentId): string {
+  return `${String(library)}:${String(nodeId)}`;
 }

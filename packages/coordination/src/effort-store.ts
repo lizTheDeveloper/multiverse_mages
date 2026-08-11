@@ -66,13 +66,19 @@ import { EFFORT_KIND, EFFORT_PROGRESS, attachRecord, collectRecords, componentOf
 /**
  * The most projects one mage may have set down at once.
  *
- * A bound in the same family as `MAX_FRONTIER_SCAN` and
- * `MAX_TEACHING_COUNTERPARTIES`, and for the same reason: without one, the
- * component grows with *how often mages change their minds*, which is a number
- * the design does not control and which nothing would notice until a 200-year
- * run's snapshots stopped fitting anywhere. A mage who lives eight centuries and
- * reconsiders every commitment period would otherwise carry a row for every node
- * she ever glanced at.
+ * A bound in the same family as `MAX_TEACHING_COUNTERPARTIES`, and for the same
+ * reason: without one, the component grows with *how often mages change their
+ * minds*, which is a number the design does not control and which nothing would
+ * notice until a 200-year run's snapshots stopped fitting anywhere. A mage who
+ * lives eight centuries and reconsiders every commitment period would otherwise
+ * carry a row for every node she ever glanced at.
+ *
+ * The family used to have a third member, `MAX_FRONTIER_SCAN`, and it is worth
+ * saying why it does not any more: that one bounded a scan over *content*, and a
+ * constant over content silently deletes whatever falls outside it. This one
+ * bounds a scan over a mage's own history, where the surplus is a project she
+ * gave up rather than a node the universe never had. `gateway.ts` records the
+ * difference at length.
  *
  * It is not a cap on what a mage may *pursue* — she can always start a project;
  * the least-invested one is given up to make room. **Untuned**, like every

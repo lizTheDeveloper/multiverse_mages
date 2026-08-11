@@ -61,6 +61,63 @@
  * after both. Construction is a field read and a few empty maps. An
  * invalidate-me method would have been cheaper and would have put the
  * correctness of every phase in the hands of whoever remembers to call it.
+ *
+ * ## A book belongs to the scriptorium that produced it
+ *
+ * This is the one rule in this file that is a *design decision* rather than a
+ * translation, so it is argued here rather than left to be inferred from
+ * {@link CoordinatingKnowledgeGateway.contributeScribing}.
+ *
+ * A finished grimoire is shelved in the library of the university its author is
+ * affiliated with, at the moment it is finished, with no intervening tick in
+ * which a mage carries it. Not because shelving is convenient to code there, but
+ * because at this build **a book cannot be written any other way**: the capacity
+ * a scribing project is measured in comes from `scribeThroughputFor`, which
+ * counts the *university's* scribe cohorts, and `isFeasible` masks the `scribe`
+ * goal outright when that throughput is zero. Every book in the universe is
+ * therefore produced by institutional labour, out of a universe-level materials
+ * stock (§1.1), at an institution's desk. A book that then became the private
+ * property of the mage who dictated it would be the only place in the loop where
+ * an institution's output is privately appropriated, and no rule says so.
+ *
+ * `rules-magic`'s `scribe` anticipated exactly this: `holderKind` and `holderId`
+ * are already its inputs, documented as *"a university scribe copying a treatise
+ * straight into the stacks, with no moment at which a mage is carrying it"*. So
+ * the shelf is chosen *before* the record is written and the location is derived
+ * once, by `writtenInstanceLocation`, inside `scribe`. There is no window in
+ * which the book says `library` and its contents say `grimoire` — the window a
+ * shelve-after-write would open, and the one `createInstance`'s invariant exists
+ * to catch after the fact.
+ *
+ * **Three cases fall out rather than being special-cased.** A mage under the Art
+ * of Memory reaches none of this: `scribe` refuses at the `store` hook, before
+ * anything is created. A mage with no affiliation, or one whose university keeps
+ * no library, writes into her own hands — which is the behaviour that was there
+ * before, kept as the fallback rather than deleted, because the feasibility mask
+ * that currently makes it unreachable is not a contract.
+ *
+ * **It is not a goal, and that is deliberate.** Shelving costs no mage-month:
+ * the book is finished either way and the only question is whose shelf it lands
+ * on. A goal is how a mage chooses between *uses of her month*, so a `donate`
+ * goal would be a branch that is never not-taken, scored against base appeals
+ * and weights nobody could tune, in an enumeration whose ids every committed
+ * baseline is keyed on. The interesting version of that choice — a mage
+ * withholding her work, hoarding it, carrying it away when she re-affiliates —
+ * needs pressures that do not exist yet: no ownership, no trade, no prestige in
+ * a private collection. `withdrawGrimoire` is unused and stays unused; it is the
+ * seam that mechanic lands on.
+ *
+ * ## What death does to a book
+ *
+ * §1.5 says a dead unaffiliated mage's books are *unowned*, and are **not** in
+ * transit to anywhere. Under the rule above an affiliated mage's books are
+ * already on her university's shelf when she dies, so the common case is settled
+ * before the mortality phase reaches it. The fallback case is not, and left
+ * alone it produces a book that names a corpse as its holder — which is what
+ * "every book stays in its author's hands" was actually describing.
+ * {@link CoordinatingKnowledgeGateway.onMageDied} settles it: to the inheritor's
+ * library when there is one, to `unowned` when there is not. Nothing is
+ * destroyed either way; a book is a thing, and burning it takes a fire.
  */
 
 import type { ContentId, Fp } from '@mm/content';
@@ -68,9 +125,13 @@ import type { EntityHandle, Fixed, SimState } from '@mm/sim-core';
 import type { EffortKindValue, Handle, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
+  GRIMOIRE,
+  HOLDER_KIND,
   KNOWLEDGE_INSTANCE,
+  LIBRARY,
   LOCATION_KIND,
   MAGE,
+  UNIVERSITY,
   componentOf,
   permits,
 } from '@mm/state';
@@ -84,10 +145,12 @@ import type {
 } from '@mm/rules-magic';
 import {
   DEFAULT_TEACH_THRESHOLD,
+  disownGrimoire,
   research,
   researchRequirement,
   scribe,
   scribeCapacityCost,
+  shelveGrimoire,
   teach,
 } from '@mm/rules-magic';
 import type { RediscoveryClampCounter } from '@mm/primitives';
@@ -98,8 +161,12 @@ import type {
   MageHandle,
   UniversityHandle,
 } from '@mm/rules-world';
+import { compareTargets } from '@mm/rules-world';
+import { NO_INHERITOR } from '@mm/rules-world';
 
 import type { EffortKey, EffortLedger } from './effort-store.js';
+import type { CellNodeIndex } from './frontier-index.js';
+import { cellNodeIndex } from './frontier-index.js';
 
 /** Species rates the gateway needs about whichever mage it is asked about. */
 export interface MageRates {
@@ -188,22 +255,24 @@ export interface GatewayDeps {
    * nobody is counting, which is honest for a query-only gateway.
    */
   readonly clampCounter?: RediscoveryClampCounter | undefined;
+  /**
+   * `cellOf` inverted: which nodes live in which cell.
+   *
+   * What the frontier scan walks instead of an id range — see
+   * {@link CoordinatingKnowledgeGateway.researchFrontier} and
+   * `frontier-index.ts`. Supplied by the caller so that it outlives a phase, for
+   * the same reason `clampCounter` is: the index is a function of the content
+   * set alone, and one built here would be rebuilt three times a tick and cost
+   * an `O(catalog)` pass each time — which is precisely the cost the scan is
+   * being changed to stop paying.
+   *
+   * Omitted means this gateway builds its own, lazily, on the first frontier
+   * question and not at all if none is asked. That keeps a query-only caller —
+   * a test, an outlook build — from having to construct one, and it is the slow
+   * path by construction: the world loop supplies the shared index.
+   */
+  readonly nodesByCell?: CellNodeIndex | undefined;
 }
-
-/**
- * The most nodes the frontier scan considers before giving up.
- *
- * The scan is over the whole catalog, which content grows without anyone
- * thinking about the AI — the same argument `MAX_CANDIDATE_TARGETS` makes one
- * layer up, applied to the layer that produces the list rather than the one that
- * consumes it. The caller's `limit` bounds the *result*; this bounds the *work*,
- * so a catalog of ten thousand nodes costs the same per mage as one of three
- * hundred.
- *
- * Nodes are visited in ascending id, which is content-authored order and
- * therefore a total order that depends on nothing but the content set.
- */
-export const MAX_FRONTIER_SCAN = 256;
 
 /**
  * The mages a teachability scan will consider as counterparties.
@@ -230,12 +299,14 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   readonly #rates = new Map<MageHandle, MageRates | undefined>();
   /** Every mage's held nodes and mastery, from one pass. See {@link #holdings}. */
   #heldByMage: Map<MageHandle, Map<ContentId, Fp>> | undefined;
-  /** Node id to whether this universe's ruleset permits its cell. See {@link #permitted}. */
-  readonly #permittedNode = new Map<ContentId, boolean>();
-  /** Teacher to the nodes she could pass on to *somebody*. See {@link #teachable}. */
-  readonly #teachableFrom = new Map<MageHandle, readonly ContentId[]>();
-  /** The frontier scan's candidate list, built once. See {@link #scannable}. */
-  #scannableNodes: readonly ScannableNode[] | undefined;
+  /** `cellOf` inverted. The caller's, or this gateway's own. See {@link #legalNodeIds}. */
+  #nodesByCell: CellNodeIndex | undefined;
+  /** Every node this universe's ruleset permits, ascending. Memoized for this phase. */
+  #legalNodes: readonly ContentId[] | undefined;
+  /** A mage's shelf, resolved once per mage per phase. See {@link #shelfFor}. */
+  readonly #shelves = new Map<MageHandle, Handle>();
+  /** Books in mages' hands, from one pass. See {@link #grimoiresHeldBy}. */
+  #grimoiresByHolder: Map<MageHandle, Handle[]> | undefined;
 
   /** Projects finished while this gateway was alive. Reporting only. */
   readonly #completed: CompletedEffort[] = [];
@@ -272,23 +343,61 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * project cheaper to resume than to start, which is the whole reason progress
    * has a home: `compareTargets` sorts cheapest first, so a half-finished node
    * outranks an untouched one of the same cost without any rule saying so.
+   *
+   * ## The scan is bounded by legality, not by an id range
+   *
+   * It used to walk `1..min(nodeCount, 256)`. That constant was documented as
+   * bounding *work* and in fact bounded *reachability*: the shipped catalog
+   * holds 300 nodes, so 44 of them — the whole `rego` technique, four of the
+   * twelve v1 cells, four tier-1 roots with no prerequisites at all — were
+   * invisible to every mage at every tick for the life of the universe. Teaching
+   * could not route around it, because nobody can hold a node nobody can
+   * research. `test/unit/frontier-scan-window.test.ts` carries the diagnosis.
+   *
+   * What replaces it is the index the ruleset already implies: the nodes in
+   * permitted cells ({@link #legalNodeIds}). That is `O(legal nodes)` and flat
+   * in total catalog size — which is what the old constant claimed and did not
+   * deliver, since content authored into cells nobody permitted now costs
+   * nothing at all. It is also a bound that **cannot delete content**: the only
+   * way to narrow it is for the god to forbid a cell, which is a rule, is
+   * visible in the ruleset, and is reversible.
+   *
+   * ## `limit` bounds the result, and the cheapest survive it
+   *
+   * The old loop also stopped at `found.length < limit` while walking ascending
+   * id, so a mage with more candidates than the limit got the lowest-numbered
+   * ones — the same defect at smaller scale, with interned id again deciding
+   * what she may consider.
+   *
+   * It does not bite today, and that is measured rather than assumed: over a
+   * fifty-year reference run the longest frontier any mage ever holds is 16,
+   * against `gatherFrontier`'s request of 32, because the v1 graph gates most of
+   * its 51 nodes behind prerequisites. It is a trap rather than a live defect —
+   * the ceiling is 51 against a limit of 32, and the `rego` block is the
+   * highest-numbered of the 51, so the day a content set widens the graph the
+   * truncation would quietly start deleting exactly what the index above just
+   * made reachable.
+   *
+   * So the whole frontier is gathered and `compareTargets` — the caller's own
+   * total order, imported rather than restated — decides which `limit` of it
+   * comes back. Cheapest first, which is what this method has always claimed to
+   * return and now does. It costs one sort of at most `legal nodes` per mage per
+   * evaluation, and buys a bound whose meaning does not depend on interning
+   * order.
    */
   researchFrontier(mage: MageHandle, limit: number): readonly KnowledgeTarget[] {
     const rates = this.#ratesOf(mage);
     if (rates === undefined) return [];
 
     const found: KnowledgeTarget[] = [];
-    // One read of this mage's ledger rows for the whole scan. See
-    // `EffortLedger.bankedResearch`: the alternative is a key string per
-    // candidate to look up the eight rows she could have.
-    const banked = this.#deps.effort?.bankedResearch(mage) ?? EMPTY_PROGRESS;
-    const discarded = createRediscoveryClampCounter();
-    for (const { nodeId, node } of this.#scannable()) {
-      if (found.length >= limit) break;
+    for (const nodeId of this.#legalNodeIds()) {
+      const node = this.#deps.catalog.node(nodeId);
+      if (node === undefined) continue;
       if (this.knows(mage, nodeId)) continue;
       if (!this.#prerequisitesHeld(mage, node.prerequisites)) continue;
 
-      const bankedHere = banked.get(nodeId) ?? 0;
+      const banked =
+        this.#deps.effort?.progressOf(effortKey(EFFORT_KIND.research, mage, nodeId, 0)) ?? 0;
       const requirement = researchRequirement(node, {
         rediscovery: this.#deps.knowledge.wasEverKnown(nodeId),
         rediscoveryAffinity: rates.rediscoveryAffinity,
@@ -302,17 +411,12 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
         // not the accrual that pays it. The share that matters at 0.5.0 is
         // counted where the work happens, and folding scan-time quotes into it
         // would inflate the denominator with evaluations nobody paid for.
-        //
-        // One throwaway for the whole scan rather than one per node. Nothing
-        // ever reads it, so what it accumulates cannot be observed — and a
-        // fresh object per candidate per mage per tick was a hundred thousand
-        // allocations a tick in a garbage collector that was already 13% of
-        // the run.
-        clampCounter: discarded,
+        clampCounter: createRediscoveryClampCounter(),
       });
-      found.push({ nodeId, tier: node.tier, remainingCost: Math.max(requirement - bankedHere, 0) });
+      found.push({ nodeId, tier: node.tier, remainingCost: Math.max(requirement - banked, 0) });
     }
-    return found;
+    found.sort(compareTargets);
+    return found.length > limit ? found.slice(0, limit) : found;
   }
 
   canTeach(teacher: MageHandle, nodeId: ContentId): boolean {
@@ -333,10 +437,12 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (rates === undefined) return undefined;
 
     let best: ContentId | undefined;
-    for (const nodeId of this.#teachable(teacher)) {
+    for (const [nodeId, mastery] of this.#holdings(teacher)) {
       if (best !== undefined && nodeId >= best) continue;
+      if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
       const node = this.#deps.catalog.node(nodeId);
       if (node === undefined || node.tier > rates.depthCeiling) continue;
+      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
       if (this.knows(student, nodeId)) continue;
       if (!this.#prerequisitesHeld(student, node.prerequisites)) continue;
       best = nodeId;
@@ -352,7 +458,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (!this.#deps.store.scribingAvailable) return undefined;
     const node = this.#deps.catalog.node(nodeId);
     if (node === undefined) return undefined;
-    if (!this.#permitted(nodeId)) return undefined;
+    if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return undefined;
     if (!this.knows(mage, nodeId)) return undefined;
     return { nodeId, tier: node.tier, remainingCost: node.scribeCost };
   }
@@ -529,6 +635,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * A refusal for want of materials therefore holds the finished work at the
    * requirement and tries again next tick, which is what a scribe with a full
    * desk and an empty storeroom actually does.
+   *
+   * **The finished book is shelved, not handed over.** See the module note on
+   * why the scriptorium's output is the institution's. The holder is chosen here
+   * and passed *into* `scribe`, so the grimoire record and the instance's
+   * location are written from one derivation in one call.
    */
   contributeScribing(mage: MageHandle, nodeId: ContentId, scribeMonths: Fixed): void {
     const ledger = this.#ledger('scribing');
@@ -549,6 +660,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     const progress = ledger.accrue(key, scribeMonths);
     if (progress < required) return;
 
+    const shelf = this.#shelfFor(mage);
     const outcome = scribe({
       knowledge: this.#deps.knowledge,
       catalog: this.#deps.catalog,
@@ -562,6 +674,8 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       scribeAffinity: rates.scribeAffinity,
       scribeCapacity: progress,
       materials: materials.available(),
+      holderKind: shelf === 0 ? HOLDER_KIND.mage : HOLDER_KIND.library,
+      holderId: shelf === 0 ? mage : shelf,
     });
 
     if (outcome.refusal !== undefined) {
@@ -598,9 +712,17 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * the books go; this call is the single path by which the knowledge side hears
    * about it, which is what makes vision §5's "knowledge is physical" claim
    * testable in one place instead of five.
+   *
+   * The estate is settled **here** rather than through
+   * {@link GatewayDeps.onGrimoiresInherited}, because §1.5's answer needs the
+   * knowledge subsystem to rewrite each book's one instance alongside its holder
+   * field, and the subsystem is this class's. The hook survives for a caller that
+   * wants to *observe* the transfer; it is no longer the thing that performs it,
+   * and a caller that omitted it no longer silently leaves books on a corpse.
    */
   onMageDied(mage: MageHandle, inheritor: UniversityHandle): void {
     this.#deps.knowledge.destroyInstancesHeldBy(mage, this.#deps.state.clock.worldTick);
+    this.#settleEstate(mage, inheritor);
     this.#deps.onGrimoiresInherited?.(mage, inheritor);
   }
 
@@ -681,82 +803,125 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   }
 
   /**
-   * Whether this universe's ruleset permits the cell a node sits in.
+   * Every node this universe's ruleset permits, ascending by id.
    *
-   * `permits` reads two bitmasks and then walks the edict list, and it decodes
-   * the cell's two axes with a division to do it. The frontier scan asks it once
-   * per candidate per mage, and the teachability scan once per held node per
-   * pair, so a tick at a thousand mages asked the same few hundred questions
-   * hundreds of thousands of times. It was 12% of a profiled run.
+   * One `permits()` call per populated cell for the whole phase, rather than one
+   * per node per mage: the ruleset is fixed for a gateway's life — that is what
+   * makes a gateway a view of one phase — so the answer cannot change underneath
+   * this. A universe running the v1 rectangle turns 300 nodes into 51 here, once,
+   * and every mage's frontier walks the 51.
    *
-   * Memoized on the gateway rather than anywhere longer-lived, because a gateway
-   * is a view of one phase and a ruleset can be changed by an edict between two
-   * of them — see the staleness note at the top of this file. Cached per *node*
-   * rather than per cell because the caller always has a node id and the extra
-   * entries cost one map slot each.
+   * Ascending id rather than cell-major, which is the order the cell index hands
+   * them over in. Both are total orders over the content set and neither is
+   * observable through {@link researchFrontier} — its result is sorted by
+   * `compareTargets`, which breaks its own ties on node id. Ascending is chosen
+   * because it is the order the frontier walked before this changed, so the
+   * *only* behavioural difference this method introduces is which nodes are in
+   * the list, and a reader diffing a run has one thing to account for.
    */
-  /**
-   * The nodes the frontier scan considers, in ascending id, built once.
-   *
-   * The scan's first two tests — is there a node with this id, and does the
-   * ruleset permit its cell — mention no mage, and the scan runs per mage, so
-   * at a thousand mages the same few hundred questions were asked a few hundred
-   * thousand times a tick. This answers them once for the phase and leaves the
-   * loop with the two tests that are actually about the researcher.
-   *
-   * The candidate order and the point the caller's `limit` cuts the list are
-   * unchanged: the ids come out ascending, exactly as the counting loop
-   * produced them, and the entries this drops are entries that loop skipped.
-   */
-  #scannable(): readonly ScannableNode[] {
-    if (this.#scannableNodes !== undefined) return this.#scannableNodes;
-    const scanned = Math.min(this.#deps.catalog.nodeCount, MAX_FRONTIER_SCAN);
-    const candidates: ScannableNode[] = [];
-    for (let nodeId = 1; nodeId <= scanned; nodeId += 1) {
-      const node = this.#deps.catalog.node(nodeId);
-      if (node === undefined) continue;
-      if (!this.#permitted(nodeId)) continue;
-      candidates.push({ nodeId, node });
-    }
-    this.#scannableNodes = candidates;
-    return candidates;
-  }
+  #legalNodeIds(): readonly ContentId[] {
+    if (this.#legalNodes !== undefined) return this.#legalNodes;
+    this.#nodesByCell ??=
+      this.#deps.nodesByCell ?? cellNodeIndex(this.#deps.catalog, this.#deps.cells);
 
-  #permitted(nodeId: ContentId): boolean {
-    const known = this.#permittedNode.get(nodeId);
-    if (known !== undefined) return known;
-    const legal = permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId));
-    this.#permittedNode.set(nodeId, legal);
+    const legal: ContentId[] = [];
+    for (const cellId of this.#nodesByCell.populatedCellIds()) {
+      if (!permits(this.#deps.ruleset, cellId)) continue;
+      for (const nodeId of this.#nodesByCell.nodesIn(cellId)) legal.push(nodeId);
+    }
+    legal.sort((a, b) => a - b);
+    this.#legalNodes = legal;
     return legal;
   }
 
   /**
-   * The nodes a teacher could pass to *somebody*: mastered well enough, in the
-   * catalog, and legal here.
+   * Moves every book still in a dead mage's hands to where §1.5 puts it.
    *
-   * The half of {@link teachableTo}'s filter that does not mention the student,
-   * lifted out and memoized per teacher. The outlook asks that question sixty-four
-   * times for every mage — once per counterparty in each direction — and the
-   * three checks here have the same answer every time. Only the depth ceiling,
-   * what the student already knows, and her prerequisites actually depend on who
-   * is receiving the lesson, and those stay in the loop.
+   * The affiliated case is ordinarily empty — her books went to the shelf as
+   * they were written — so this is the fallback path made correct rather than
+   * the mechanism library depth depends on. Both branches go through
+   * `rules-magic`'s single `placeGrimoire` derivation, so the holder field and
+   * the instance's location cannot disagree.
    *
-   * Lifting them cannot move the answer: every predicate is a pure read, and
-   * `teachableTo` returns the *lowest* node id satisfying all of them, which is
-   * the same value whatever order the tests are applied in.
+   * Ascending slot order, from {@link #grimoiresHeldBy}'s one pass, because the
+   * mortality phase settles several estates against one gateway and a raid
+   * report two peers ordered differently is a desync attributed to something
+   * else a month later.
    */
-  #teachable(teacher: MageHandle): readonly ContentId[] {
-    const known = this.#teachableFrom.get(teacher);
-    if (known !== undefined) return known;
-    const ready: ContentId[] = [];
-    for (const [nodeId, mastery] of this.#holdings(teacher)) {
-      if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
-      if (this.#deps.catalog.node(nodeId) === undefined) continue;
-      if (!this.#permitted(nodeId)) continue;
-      ready.push(nodeId);
+  #settleEstate(mage: MageHandle, inheritor: UniversityHandle): void {
+    const books = this.#grimoiresHeldBy(mage);
+    if (books.length === 0) return;
+    const library = inheritor === NO_INHERITOR ? 0 : this.#libraryOf(inheritor);
+    for (const grimoire of books) {
+      if (library === 0) disownGrimoire(this.#deps.knowledge, grimoire);
+      else shelveGrimoire(this.#deps.knowledge, grimoire, library);
     }
-    this.#teachableFrom.set(teacher, ready);
-    return ready;
+    this.#grimoiresByHolder?.delete(mage);
+  }
+
+  /**
+   * The library this mage's books are written into, or `0` for her own hands.
+   *
+   * Two field reads behind a per-phase memo, because the work phase asks it once
+   * per finished book and a mage who writes a shelf-ful in one run of the sweep
+   * should not pay for the lookup each time.
+   */
+  #shelfFor(mage: MageHandle): Handle {
+    const cached = this.#shelves.get(mage);
+    if (cached !== undefined) return cached;
+
+    const mages = componentOf(this.#deps.state, MAGE);
+    const shelf = mages.has(mage as EntityHandle)
+      ? this.#libraryOf(mages.get(mage as EntityHandle, 'universityId'))
+      : 0;
+    this.#shelves.set(mage, shelf);
+    return shelf;
+  }
+
+  /**
+   * A university's library handle, or `0`.
+   *
+   * `0` for an unaffiliated mage (§0's absent reference), for a university whose
+   * row is gone, and for a `libraryId` that names no live library — the last
+   * because shelving into a handle nothing owns would put a book somewhere
+   * `libraryDepth` counts and `destroyLibrary` can never reach, which is the
+   * shape of loss a metric silently understates.
+   */
+  #libraryOf(university: UniversityHandle): Handle {
+    if (university === 0) return 0;
+    const universities = componentOf(this.#deps.state, UNIVERSITY);
+    if (!universities.has(university as EntityHandle)) return 0;
+    const library = universities.get(university as EntityHandle, 'libraryId');
+    if (library === 0) return 0;
+    return componentOf(this.#deps.state, LIBRARY).has(library as EntityHandle) ? library : 0;
+  }
+
+  /**
+   * Books a mage is recorded as holding, ascending by slot, from one pass.
+   *
+   * One scan of `GRIMOIRE` for the whole phase rather than one per death: the
+   * mortality phase kills a batch against a single gateway, and per-death
+   * scanning is `deaths × grimoires`, which is free while nothing writes books
+   * and quadratic once a universe has spent twenty years writing them. The map
+   * stays true across the phase because the only holder a settlement changes is
+   * the one it removes.
+   */
+  #grimoiresHeldBy(mage: MageHandle): readonly Handle[] {
+    if (this.#grimoiresByHolder === undefined) {
+      const byHolder = new Map<MageHandle, Handle[]>();
+      const store = componentOf(this.#deps.state, GRIMOIRE);
+      const holderKinds = store.field('holderKind');
+      const holderIds = store.field('holderId');
+      store.forEach((row, handle) => {
+        if ((holderKinds[row] as number) !== HOLDER_KIND.mage) return;
+        const holder = holderIds[row] as Handle;
+        const held = byHolder.get(holder);
+        if (held === undefined) byHolder.set(holder, [handle as Handle]);
+        else held.push(handle as Handle);
+      });
+      this.#grimoiresByHolder = byHolder;
+    }
+    return this.#grimoiresByHolder.get(mage) ?? EMPTY_BOOKS;
   }
 
   #ratesOf(mage: MageHandle): MageRates | undefined {
@@ -788,7 +953,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (rates === undefined) return false;
     const node = this.#deps.catalog.node(nodeId);
     if (node === undefined || node.tier > rates.depthCeiling) return false;
-    if (!this.#permitted(nodeId)) return false;
+    if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return false;
     if (this.knows(student, nodeId)) return false;
     return this.#prerequisitesHeld(student, node.prerequisites);
   }
@@ -846,17 +1011,11 @@ function storeHookOf(policy: StorePolicy): StoreHook {
 /** `fp(1.0)` — an unmodified rate (`contracts.md` §2.4's convention). */
 const NEUTRAL_RATE: Fixed = 1024;
 
-/** One node the frontier scan may offer: its id, and the record behind it. */
-interface ScannableNode {
-  readonly nodeId: ContentId;
-  readonly node: NonNullable<ReturnType<NodeCatalog['node']>>;
-}
-
 /** A mage who holds nothing. Shared, and never written to. */
 const EMPTY_HOLDINGS: ReadonlyMap<ContentId, Fp> = new Map<ContentId, Fp>();
 
-/** A mage who has banked nothing, for a gateway built without a ledger. */
-const EMPTY_PROGRESS: ReadonlyMap<ContentId, Fp> = new Map<ContentId, Fp>();
+/** A mage with no books. Shared, and never written to. */
+const EMPTY_BOOKS: readonly Handle[] = Object.freeze([]);
 
 /** Whether a location kind is one a mage carries in her own head. */
 export function isHeldAtMind(locationKind: number): boolean {

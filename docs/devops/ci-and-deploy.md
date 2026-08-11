@@ -46,6 +46,29 @@ Flow for a push to `main` or a same-repo PR:
 `scripts/ci-check.sh` must stay equivalent to `npm run verify`. If they drift, a commit can pass
 locally and fail on the runner, or worse, the reverse.
 
+## The balance regression gate
+
+`npm run balance:gate` runs the committed gate sweep — 200 real universes, about a minute — and
+compares every metric against `balance/baselines/balance-gate-v1.baseline.json`. It is a
+build-failing step in both systems, and it is wired into each of them differently on purpose:
+
+- The self-hosted runner gets it through **`npm run verify`**, which the gate script is part of.
+  Nothing in `ci-check.sh` names it, because the script's whole contract is to stay equivalent to
+  `verify`.
+- GitHub Actions gets it as **its own named step**, in both jobs, because that workflow lists every
+  step by hand and would otherwise never run it.
+
+Adding a check to only one of those is the drift this file warns about, in its most expensive form:
+the gate would pass on one system and be absent on the other, and nobody would notice until the two
+disagreed about a commit.
+
+Two things the gate deliberately does *not* do. It never writes a baseline — regeneration is a
+separate entrypoint under `packages/mc-harness/bin/`, invoked by a person with a written rationale,
+and a test asserts that no CI job and no npm script can reach it. And it does not treat a missing
+baseline as "nothing to compare, carry on": a missing or malformed baseline fails the build, because
+a gate that passes without one reports green forever. `balance/README.md` is the operator's copy of
+all of this.
+
 The script asserts the runner's Node major matches `.nvmrc` and fails loudly if not. That is not
 pedantry: `sim-core` is a determinism project, and a green check produced on an unpinned Node major
 is a check that means nothing. The runner image was on Node 20 until this was set up; if it drifts

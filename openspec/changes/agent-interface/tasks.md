@@ -89,26 +89,26 @@
 
 ## 8. Baselines and the regression gate
 
-- [ ] 8.1 Define the baseline file format with canonical key order and one metric per line
-- [ ] 8.2 Implement the provenance block and its completeness check, rejecting malformed baselines
-- [ ] 8.3 Implement per-metric point estimate, standard error at the gate sweep's sample size, sample size, and tolerance
-- [ ] 8.4 Implement the *k*-standard-error tolerance rule with *k* recorded in the baseline
-- [ ] 8.5 Author the gate sweep and the full sweep specifications under `balance/sweeps/`
-- [ ] 8.6 Implement the gate comparison reporting metric, baseline value, current value, raw delta, and delta in standard errors
-- [ ] 8.7 Implement `baseline-invalid` failures for a missing baseline, a provenance mismatch, and a `definitionVersion` mismatch
-- [ ] 8.8 Implement the pass-through for metrics `unavailable` in both baseline and current run, and the newly-available report path
-- [ ] 8.9 Wire the gate sweep into CI as a build-failing job
-- [ ] 8.10 Test that deleting a baseline fails the gate rather than passing it
+- [x] 8.1 Define the baseline file format with canonical key order and one metric per line
+- [x] 8.2 Implement the provenance block and its completeness check, rejecting malformed baselines
+- [x] 8.3 Implement per-metric point estimate, standard error at the gate sweep's sample size, sample size, and tolerance
+- [x] 8.4 Implement the *k*-standard-error tolerance rule with *k* recorded in the baseline
+- [x] 8.5 Author the gate sweep and the full sweep specifications under `balance/sweeps/`
+- [x] 8.6 Implement the gate comparison reporting metric, baseline value, current value, raw delta, and delta in standard errors
+- [x] 8.7 Implement `baseline-invalid` failures for a missing baseline, a provenance mismatch, and a `definitionVersion` mismatch
+- [x] 8.8 Implement the pass-through for metrics `unavailable` in both baseline and current run, and the newly-available report path
+- [x] 8.9 Wire the gate sweep into CI as a build-failing job
+- [x] 8.10 Test that deleting a baseline fails the gate rather than passing it
 
 ## 9. Baseline regeneration
 
-- [ ] 9.1 Implement the regeneration command as a separate entrypoint, unreachable from the test script
-- [ ] 9.2 Implement the mandatory rationale, refusing to write when it is absent
-- [ ] 9.3 Implement `supersedes` recording the prior baseline's content hash and the per-metric delta from it
-- [ ] 9.4 Implement tolerance changes through the same command, and reject baselines whose tolerances were hand-edited outside it
-- [ ] 9.5 Implement refusal to regenerate from a disqualified sweep, naming the failure count
-- [ ] 9.6 Add the CI check asserting the regeneration entrypoint is unreachable from any CI job
-- [ ] 9.7 Test that running the suite while the gate fails leaves baseline files byte-identical on disk
+- [x] 9.1 Implement the regeneration command as a separate entrypoint, unreachable from the test script
+- [x] 9.2 Implement the mandatory rationale, refusing to write when it is absent
+- [x] 9.3 Implement `supersedes` recording the prior baseline's content hash and the per-metric delta from it
+- [x] 9.4 Implement tolerance changes through the same command, and reject baselines whose tolerances were hand-edited outside it
+- [x] 9.5 Implement refusal to regenerate from a disqualified sweep, naming the failure count
+- [x] 9.6 Add the CI check asserting the regeneration entrypoint is unreachable from any CI job
+- [x] 9.7 Test that running the suite while the gate fails leaves baseline files byte-identical on disk
 
 ## 10. Closeout
 
