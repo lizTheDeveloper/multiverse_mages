@@ -4,16 +4,31 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "./test",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "emitDeclarationOnly": true,
     "outDir": "../../.tsbuild/rules-world-test",
     "tsBuildInfoFile": "../../.tsbuild/rules-world-test.tsbuildinfo"
   },
-  "include": ["test/**/*.ts"],
+  "include": [
+    "test/**/*.ts"
+  ],
   "references": [
-    { "path": "./tsconfig.json" },
-    { "path": "../content" },
-    { "path": "../sim-core" },
-    { "path": "../state" }
+    {
+      "path": "./tsconfig.json"
+    },
+    {
+      "path": "../content"
+    },
+    {
+      "path": "../sim-core"
+    },
+    {
+      "path": "../state"
+    },
+    {
+      "path": "../primitives"
+    }
   ]
 }

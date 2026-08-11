@@ -51,6 +51,14 @@ export {
   perLifespanRate,
 } from './lifespan-rate.js';
 
+/**
+ * The mage lifecycle: promotion, personality, derived age, the mortality
+ * hazard, and death. Re-exported wholesale because `mages/index.ts` is already
+ * an explicit list rather than a star, so nothing reaches this surface without
+ * having been named once.
+ */
+export * from './mages/index.js';
+
 export type { RediscoveryClampCounter } from './rediscovery.js';
 export {
   REDISCOVERY_FLOOR,

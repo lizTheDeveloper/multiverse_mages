@@ -37,20 +37,20 @@
 
 ## 4. Mage lifecycle
 
-- [ ] 4.1 Implement student-cohort promotion using integer arithmetic plus exactly one stream 1 remainder draw per cohort
-- [ ] 4.2 Assert in test that promoting a cohort of 10,000 makes exactly one RNG draw
-- [ ] 4.3 Implement the personality roll from means `(species.curiosity, fp(1024), fp(1024))` with bounded symmetric deviation and clamping to `[0, fp(2048)]`
-- [ ] 4.4 Implement derived age and add the conformance check rejecting any stored age, age band, death tick, or effective lifespan
-- [ ] 4.5 Implement the extended-scale division helper for per-tick rates derived from a lifespan, and require its use wherever such a rate is computed
-- [ ] 4.6 Author the scale-free mortality hazard table `H(normalizedAge)` as data, marked untuned
-- [ ] 4.7 Implement the per-tick mortality roll on stream 2 using the extended-scale helper
-- [ ] 4.8 Implement per-mage lifespan variance derived from `(rootSeed, mageId, generation, birthTick)`, with no stored field
-- [ ] 4.9 Implement `lifespan` primitive application recomputed at each hazard evaluation, clamped to 50% of species base with a clamp counter
-- [ ] 4.10 Test that a draconic hazard is strictly non-zero and that at least one draconic dies in the 200-year reference run
-- [ ] 4.11 Implement death consequences: destroy `mind` and `palace` instances, transfer grimoires to the affiliated library or unaffiliated holding, clear `alive`, release role and university slots
-- [ ] 4.12 Implement notification to the coordinating layer when a node's instance count reaches zero, writing no cached existence flag to state
-- [ ] 4.13 Implement mid-goal death handling: abandon the goal, dissolve any teaching pair, contribute no mage-months
-- [ ] 4.14 Implement default role assignment at promotion and role persistence across affiliation and goal changes
+- [x] 4.1 Implement student-cohort promotion using integer arithmetic plus exactly one stream 1 remainder draw per cohort
+- [x] 4.2 Assert in test that promoting a cohort of 10,000 makes exactly one RNG draw
+- [x] 4.3 Implement the personality roll from means `(species.curiosity, fp(1024), fp(1024))` with bounded symmetric deviation and clamping to `[0, fp(2048)]`
+- [x] 4.4 Implement derived age and add the conformance check rejecting any stored age, age band, death tick, or effective lifespan
+- [x] 4.5 Implement the extended-scale division helper for per-tick rates derived from a lifespan, and require its use wherever such a rate is computed
+- [x] 4.6 Author the scale-free mortality hazard table `H(normalizedAge)` as data, marked untuned
+- [x] 4.7 Implement the per-tick mortality roll on stream 2 using the extended-scale helper
+- [x] 4.8 Implement per-mage lifespan variance derived from `(rootSeed, mageId, generation, birthTick)`, with no stored field
+- [x] 4.9 Implement `lifespan` primitive application recomputed at each hazard evaluation, clamped to 50% of species base with a clamp counter
+- [x] 4.10 Test that a draconic hazard is strictly non-zero and that at least one draconic dies in the 200-year reference run
+- [x] 4.11 Implement death consequences: destroy `mind` and `palace` instances, transfer grimoires to the affiliated library or unaffiliated holding, clear `alive`, release role and university slots
+- [x] 4.12 Implement notification to the coordinating layer when a node's instance count reaches zero, writing no cached existence flag to state
+- [x] 4.13 Implement mid-goal death handling: abandon the goal, dissolve any teaching pair, contribute no mage-months
+- [x] 4.14 Implement default role assignment at promotion and role persistence across affiliation and goal changes
 
 ## 5. Mage autonomy
 
