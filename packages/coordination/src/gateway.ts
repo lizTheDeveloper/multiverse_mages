@@ -61,6 +61,63 @@
  * after both. Construction is a field read and a few empty maps. An
  * invalidate-me method would have been cheaper and would have put the
  * correctness of every phase in the hands of whoever remembers to call it.
+ *
+ * ## A book belongs to the scriptorium that produced it
+ *
+ * This is the one rule in this file that is a *design decision* rather than a
+ * translation, so it is argued here rather than left to be inferred from
+ * {@link CoordinatingKnowledgeGateway.contributeScribing}.
+ *
+ * A finished grimoire is shelved in the library of the university its author is
+ * affiliated with, at the moment it is finished, with no intervening tick in
+ * which a mage carries it. Not because shelving is convenient to code there, but
+ * because at this build **a book cannot be written any other way**: the capacity
+ * a scribing project is measured in comes from `scribeThroughputFor`, which
+ * counts the *university's* scribe cohorts, and `isFeasible` masks the `scribe`
+ * goal outright when that throughput is zero. Every book in the universe is
+ * therefore produced by institutional labour, out of a universe-level materials
+ * stock (§1.1), at an institution's desk. A book that then became the private
+ * property of the mage who dictated it would be the only place in the loop where
+ * an institution's output is privately appropriated, and no rule says so.
+ *
+ * `rules-magic`'s `scribe` anticipated exactly this: `holderKind` and `holderId`
+ * are already its inputs, documented as *"a university scribe copying a treatise
+ * straight into the stacks, with no moment at which a mage is carrying it"*. So
+ * the shelf is chosen *before* the record is written and the location is derived
+ * once, by `writtenInstanceLocation`, inside `scribe`. There is no window in
+ * which the book says `library` and its contents say `grimoire` — the window a
+ * shelve-after-write would open, and the one `createInstance`'s invariant exists
+ * to catch after the fact.
+ *
+ * **Three cases fall out rather than being special-cased.** A mage under the Art
+ * of Memory reaches none of this: `scribe` refuses at the `store` hook, before
+ * anything is created. A mage with no affiliation, or one whose university keeps
+ * no library, writes into her own hands — which is the behaviour that was there
+ * before, kept as the fallback rather than deleted, because the feasibility mask
+ * that currently makes it unreachable is not a contract.
+ *
+ * **It is not a goal, and that is deliberate.** Shelving costs no mage-month:
+ * the book is finished either way and the only question is whose shelf it lands
+ * on. A goal is how a mage chooses between *uses of her month*, so a `donate`
+ * goal would be a branch that is never not-taken, scored against base appeals
+ * and weights nobody could tune, in an enumeration whose ids every committed
+ * baseline is keyed on. The interesting version of that choice — a mage
+ * withholding her work, hoarding it, carrying it away when she re-affiliates —
+ * needs pressures that do not exist yet: no ownership, no trade, no prestige in
+ * a private collection. `withdrawGrimoire` is unused and stays unused; it is the
+ * seam that mechanic lands on.
+ *
+ * ## What death does to a book
+ *
+ * §1.5 says a dead unaffiliated mage's books are *unowned*, and are **not** in
+ * transit to anywhere. Under the rule above an affiliated mage's books are
+ * already on her university's shelf when she dies, so the common case is settled
+ * before the mortality phase reaches it. The fallback case is not, and left
+ * alone it produces a book that names a corpse as its holder — which is what
+ * "every book stays in its author's hands" was actually describing.
+ * {@link CoordinatingKnowledgeGateway.onMageDied} settles it: to the inheritor's
+ * library when there is one, to `unowned` when there is not. Nothing is
+ * destroyed either way; a book is a thing, and burning it takes a fire.
  */
 
 import type { ContentId, Fp } from '@mm/content';
@@ -68,9 +125,13 @@ import type { EntityHandle, Fixed, SimState } from '@mm/sim-core';
 import type { EffortKindValue, Handle, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
+  GRIMOIRE,
+  HOLDER_KIND,
   KNOWLEDGE_INSTANCE,
+  LIBRARY,
   LOCATION_KIND,
   MAGE,
+  UNIVERSITY,
   componentOf,
   permits,
 } from '@mm/state';
@@ -84,10 +145,12 @@ import type {
 } from '@mm/rules-magic';
 import {
   DEFAULT_TEACH_THRESHOLD,
+  disownGrimoire,
   research,
   researchRequirement,
   scribe,
   scribeCapacityCost,
+  shelveGrimoire,
   teach,
 } from '@mm/rules-magic';
 import type { RediscoveryClampCounter } from '@mm/primitives';
@@ -99,6 +162,7 @@ import type {
   UniversityHandle,
 } from '@mm/rules-world';
 import { compareTargets } from '@mm/rules-world';
+import { NO_INHERITOR } from '@mm/rules-world';
 
 import type { EffortKey, EffortLedger } from './effort-store.js';
 import type { CellNodeIndex } from './frontier-index.js';
@@ -239,6 +303,10 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   #nodesByCell: CellNodeIndex | undefined;
   /** Every node this universe's ruleset permits, ascending. Memoized for this phase. */
   #legalNodes: readonly ContentId[] | undefined;
+  /** A mage's shelf, resolved once per mage per phase. See {@link #shelfFor}. */
+  readonly #shelves = new Map<MageHandle, Handle>();
+  /** Books in mages' hands, from one pass. See {@link #grimoiresHeldBy}. */
+  #grimoiresByHolder: Map<MageHandle, Handle[]> | undefined;
 
   /** Projects finished while this gateway was alive. Reporting only. */
   readonly #completed: CompletedEffort[] = [];
@@ -567,6 +635,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * A refusal for want of materials therefore holds the finished work at the
    * requirement and tries again next tick, which is what a scribe with a full
    * desk and an empty storeroom actually does.
+   *
+   * **The finished book is shelved, not handed over.** See the module note on
+   * why the scriptorium's output is the institution's. The holder is chosen here
+   * and passed *into* `scribe`, so the grimoire record and the instance's
+   * location are written from one derivation in one call.
    */
   contributeScribing(mage: MageHandle, nodeId: ContentId, scribeMonths: Fixed): void {
     const ledger = this.#ledger('scribing');
@@ -587,6 +660,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     const progress = ledger.accrue(key, scribeMonths);
     if (progress < required) return;
 
+    const shelf = this.#shelfFor(mage);
     const outcome = scribe({
       knowledge: this.#deps.knowledge,
       catalog: this.#deps.catalog,
@@ -600,6 +674,8 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       scribeAffinity: rates.scribeAffinity,
       scribeCapacity: progress,
       materials: materials.available(),
+      holderKind: shelf === 0 ? HOLDER_KIND.mage : HOLDER_KIND.library,
+      holderId: shelf === 0 ? mage : shelf,
     });
 
     if (outcome.refusal !== undefined) {
@@ -636,9 +712,17 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * the books go; this call is the single path by which the knowledge side hears
    * about it, which is what makes vision §5's "knowledge is physical" claim
    * testable in one place instead of five.
+   *
+   * The estate is settled **here** rather than through
+   * {@link GatewayDeps.onGrimoiresInherited}, because §1.5's answer needs the
+   * knowledge subsystem to rewrite each book's one instance alongside its holder
+   * field, and the subsystem is this class's. The hook survives for a caller that
+   * wants to *observe* the transfer; it is no longer the thing that performs it,
+   * and a caller that omitted it no longer silently leaves books on a corpse.
    */
   onMageDied(mage: MageHandle, inheritor: UniversityHandle): void {
     this.#deps.knowledge.destroyInstancesHeldBy(mage, this.#deps.state.clock.worldTick);
+    this.#settleEstate(mage, inheritor);
     this.#deps.onGrimoiresInherited?.(mage, inheritor);
   }
 
@@ -750,6 +834,96 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     return legal;
   }
 
+  /**
+   * Moves every book still in a dead mage's hands to where §1.5 puts it.
+   *
+   * The affiliated case is ordinarily empty — her books went to the shelf as
+   * they were written — so this is the fallback path made correct rather than
+   * the mechanism library depth depends on. Both branches go through
+   * `rules-magic`'s single `placeGrimoire` derivation, so the holder field and
+   * the instance's location cannot disagree.
+   *
+   * Ascending slot order, from {@link #grimoiresHeldBy}'s one pass, because the
+   * mortality phase settles several estates against one gateway and a raid
+   * report two peers ordered differently is a desync attributed to something
+   * else a month later.
+   */
+  #settleEstate(mage: MageHandle, inheritor: UniversityHandle): void {
+    const books = this.#grimoiresHeldBy(mage);
+    if (books.length === 0) return;
+    const library = inheritor === NO_INHERITOR ? 0 : this.#libraryOf(inheritor);
+    for (const grimoire of books) {
+      if (library === 0) disownGrimoire(this.#deps.knowledge, grimoire);
+      else shelveGrimoire(this.#deps.knowledge, grimoire, library);
+    }
+    this.#grimoiresByHolder?.delete(mage);
+  }
+
+  /**
+   * The library this mage's books are written into, or `0` for her own hands.
+   *
+   * Two field reads behind a per-phase memo, because the work phase asks it once
+   * per finished book and a mage who writes a shelf-ful in one run of the sweep
+   * should not pay for the lookup each time.
+   */
+  #shelfFor(mage: MageHandle): Handle {
+    const cached = this.#shelves.get(mage);
+    if (cached !== undefined) return cached;
+
+    const mages = componentOf(this.#deps.state, MAGE);
+    const shelf = mages.has(mage as EntityHandle)
+      ? this.#libraryOf(mages.get(mage as EntityHandle, 'universityId'))
+      : 0;
+    this.#shelves.set(mage, shelf);
+    return shelf;
+  }
+
+  /**
+   * A university's library handle, or `0`.
+   *
+   * `0` for an unaffiliated mage (§0's absent reference), for a university whose
+   * row is gone, and for a `libraryId` that names no live library — the last
+   * because shelving into a handle nothing owns would put a book somewhere
+   * `libraryDepth` counts and `destroyLibrary` can never reach, which is the
+   * shape of loss a metric silently understates.
+   */
+  #libraryOf(university: UniversityHandle): Handle {
+    if (university === 0) return 0;
+    const universities = componentOf(this.#deps.state, UNIVERSITY);
+    if (!universities.has(university as EntityHandle)) return 0;
+    const library = universities.get(university as EntityHandle, 'libraryId');
+    if (library === 0) return 0;
+    return componentOf(this.#deps.state, LIBRARY).has(library as EntityHandle) ? library : 0;
+  }
+
+  /**
+   * Books a mage is recorded as holding, ascending by slot, from one pass.
+   *
+   * One scan of `GRIMOIRE` for the whole phase rather than one per death: the
+   * mortality phase kills a batch against a single gateway, and per-death
+   * scanning is `deaths × grimoires`, which is free while nothing writes books
+   * and quadratic once a universe has spent twenty years writing them. The map
+   * stays true across the phase because the only holder a settlement changes is
+   * the one it removes.
+   */
+  #grimoiresHeldBy(mage: MageHandle): readonly Handle[] {
+    if (this.#grimoiresByHolder === undefined) {
+      const byHolder = new Map<MageHandle, Handle[]>();
+      const store = componentOf(this.#deps.state, GRIMOIRE);
+      const holderKinds = store.field('holderKind');
+      const holderIds = store.field('holderId');
+      store.forEach((row, handle) => {
+        if ((holderKinds[row] as number) !== HOLDER_KIND.mage) return;
+        const holder = holderIds[row] as Handle;
+        const held = byHolder.get(holder);
+        if (held === undefined) byHolder.set(holder, [handle as Handle]);
+        else held.push(handle as Handle);
+      });
+      this.#grimoiresByHolder = byHolder;
+    }
+    return this.#grimoiresByHolder.get(mage) ?? EMPTY_BOOKS;
+  }
+
   #ratesOf(mage: MageHandle): MageRates | undefined {
     if (this.#rates.has(mage)) return this.#rates.get(mage);
     const rates = this.#deps.ratesOf(mage);
@@ -839,6 +1013,9 @@ const NEUTRAL_RATE: Fixed = 1024;
 
 /** A mage who holds nothing. Shared, and never written to. */
 const EMPTY_HOLDINGS: ReadonlyMap<ContentId, Fp> = new Map<ContentId, Fp>();
+
+/** A mage with no books. Shared, and never written to. */
+const EMPTY_BOOKS: readonly Handle[] = Object.freeze([]);
 
 /** Whether a location kind is one a mage carries in her own head. */
 export function isHeldAtMind(locationKind: number): boolean {
