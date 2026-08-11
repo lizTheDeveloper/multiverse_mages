@@ -13,19 +13,23 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { ERA_TICKS } from '@mm/sim-core';
+import { ERA_TICKS, NULL_ENTITY, createState } from '@mm/sim-core';
+import type { UniverseRecord } from '@mm/state';
 import {
   EDICT,
   EDICT_BUDGET_MAX,
   EDICT_KIND,
   UNIVERSE,
+  assertTraditionSelected,
   attachRecord,
   canIssueEdict,
   captureRuleset,
   cellIdAt,
+  collectRecords,
   componentOf,
   createUniverse,
   currentEra,
+  defineWorldStateSchema,
   findUniverse,
   permits,
   readUniverse,
@@ -46,6 +50,61 @@ describe('the universe is a singleton', () => {
     const { state } = populatedWorld();
     createUniverse(state, { ...readUniverse(state, findUniverse(state)) });
     expect(() => findUniverse(state)).toThrow(/singleton/);
+  });
+});
+
+describe('a universe holds exactly one tradition', () => {
+  // `magic-traditions`: "WHEN a universe is constructed with `traditionId` `0`
+  // THEN state validation fails and reports that exactly one tradition is
+  // required." Enforced at construction, which is the only place §1.1's "never
+  // 0" can be checked without making a read throw — `readRulesetForObservation`
+  // is forbidden from throwing at all (§4.2), so a check there would turn a
+  // recoverable rules mistake into a crashed training run.
+  //
+  // The nearest previous assertion was that `hookFor` throws when it is *used*,
+  // which is a different claim: it fires only if something reaches for a hook,
+  // and a universe that never resolved one would sit unconstructed and silent.
+  const withTradition = (traditionId: number): UniverseRecord => ({
+    ...readUniverse(populatedWorld().state, findUniverse(populatedWorld().state)),
+    traditionId,
+  });
+
+  it('refuses to construct one with no tradition selected', () => {
+    const state = createState({ schema: defineWorldStateSchema(), rootSeed: 1 });
+    expect(() => createUniverse(state, withTradition(0))).toThrow(
+      /exactly one tradition is required/,
+    );
+  });
+
+  it('names the field and the section, so the message is actionable', () => {
+    const state = createState({ schema: defineWorldStateSchema(), rootSeed: 1 });
+    expect(() => createUniverse(state, withTradition(0))).toThrow(/traditionId/);
+    expect(() => createUniverse(state, withTradition(0))).toThrow(/§1\.1/);
+  });
+
+  it('creates no entity and attaches no row when it refuses', () => {
+    // A half-constructed universe would be worse than none: `findUniverse`
+    // would return it, every read would succeed, and the missing selection
+    // would surface as "standard everything" somewhere downstream.
+    const state = createState({ schema: defineWorldStateSchema(), rootSeed: 1 });
+    expect(() => createUniverse(state, withTradition(0))).toThrow();
+    expect(findUniverse(state)).toBe(NULL_ENTITY);
+    expect(collectRecords(state, UNIVERSE)).toEqual([]);
+  });
+
+  it('constructs one that names a tradition', () => {
+    // The positive control. Without it the check above would also pass against
+    // a `createUniverse` that had simply started throwing on everything.
+    const state = createState({ schema: defineWorldStateSchema(), rootSeed: 1 });
+    const universe = createUniverse(state, withTradition(3));
+    expect(readUniverse(state, universe).traditionId).toBe(3);
+  });
+
+  it('is exposed as an assertion the load path can call for itself', () => {
+    expect(() => assertTraditionSelected(withTradition(0))).toThrow(
+      /exactly one tradition is required/,
+    );
+    expect(() => assertTraditionSelected(withTradition(1))).not.toThrow();
   });
 });
 
