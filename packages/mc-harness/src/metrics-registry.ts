@@ -197,19 +197,24 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
     definition:
       'Gini coefficient of instantaneous favor regeneration per world tick, across the runs of an ' +
       'arm, at fixed checkpoint world ticks. Runs terminating before a checkpoint are excluded ' +
-      'from it and counted.',
+      'from it and counted. The three saturated worship source classes are reported alongside it, ' +
+      'per checkpoint, so a runaway is attributable without a second sweep.',
     scope: METRIC_SCOPE.perArm,
     collectArm: collectWorshipSnowball,
     aggregation: 'mean',
     unit: 'Gini coefficient',
-    definitionVersion: 1,
+    // Bumped by god-agency task 7.2: the quantity is now named as the ledger's
+    // regeneration rather than "favor regen", and the per-class decomposition is
+    // part of what the metric reports.
+    definitionVersion: 2,
     pinnedConstants: {
       checkpointTicks: [...SNOWBALL_CHECKPOINT_TICKS],
       estimator: 'G = (2·Σ i·x_i) / (n·Σ x_i) − (n+1)/n, ascending, 1-based',
       smallSampleCorrection: false,
       degenerateTotalIsZero: 0,
-      quantity: 'instantaneous favor regeneration per world tick',
+      quantity: 'instantaneous favor regeneration per world tick, off the god favor ledger',
       scalarCheckpoint: 'last checkpoint with a sample',
+      perClassContributions: ['mages', 'universities', 'populace'],
     },
     thresholdOwner: 'god-agency',
   },

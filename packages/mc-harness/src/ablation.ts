@@ -77,7 +77,7 @@ import { UNAVAILABLE_REASON } from './metrics.js';
 import type { AblationSpec, SweepPlan, SweepRegistries, SweepSpec } from './sweep-spec.js';
 import { expandSweep, validateSweep } from './sweep-spec.js';
 import type { RunTask } from './protocol.js';
-import { buildTasks } from './runner.js';
+import { buildTasks } from './tasks.js';
 
 /* ------------------------------------------------------------------------- *
  * 7.7 — the primitive whose ablation has nothing to attribute

@@ -40,13 +40,23 @@
 import type { JsonValue } from './canonical.js';
 import { canonicalJson } from './canonical.js';
 import type { MetricEntries } from './metrics.js';
-import type { FailureClass, Provenance, RunTask } from './protocol.js';
+import type { ArmContribution, FailureClass, Provenance, RunTask } from './protocol.js';
 import type { IllegalActionAccounting, TerminalStatus } from './session.js';
 import type { RunCoordinates } from './seed.js';
 import { SEED_DERIVATION_VERSION, deriveRunSeed } from './seed.js';
 
-/** The record format's own version, so a reader knows what shape to expect. */
-export const RECORD_FORMAT_VERSION = 1;
+/**
+ * The record format's own version, so a reader knows what shape to expect.
+ *
+ * **2** since task group 6's arm metrics were wired into the pipeline: a record
+ * may now carry an {@link ArmContribution}, which is the per-run input to the
+ * five `per-arm` metrics of `contracts.md` §7. Additive and optional — a version
+ * 1 reader finds everything it expects — but the version moves anyway, because
+ * offline re-aggregation of the arm metrics is only possible against records
+ * that carry it, and "this file predates arm metrics" is a thing a reader in
+ * 2031 needs to be able to establish without inspecting every line.
+ */
+export const RECORD_FORMAT_VERSION = 2;
 
 /** One completed run, as written to the results file. */
 export interface RunRecord {
@@ -67,6 +77,11 @@ export interface RunRecord {
   readonly provenance: Provenance;
   /** Present only when `status` is `failed`. */
   readonly failure?: { readonly classification: FailureClass; readonly message: string };
+  /**
+   * This run's contribution to the arm-scoped metrics, when its executor
+   * described one. See {@link ArmContribution}.
+   */
+  readonly armContribution?: ArmContribution;
 }
 
 /** Wall-clock figures. Excluded from every reproducibility comparison (task 4.9). */
@@ -113,6 +128,26 @@ export interface SweepSummary {
   /** True when the failure count exceeded the threshold (task 3.8). */
   readonly disqualified: boolean;
   readonly aggregates: readonly MetricAggregate[];
+  /**
+   * The arm this sweep's runs constitute, when its executor described one.
+   *
+   * A non-ablation sweep is exactly one arm and its id is the `sweepId`; an
+   * ablation sweep executes one sweep per arm, so this is still one arm. Absent
+   * when no run carried an {@link ArmContribution}, which is the honest report
+   * for an executor that describes no arm — see {@link armMetrics}.
+   */
+  readonly armId?: string;
+  /**
+   * Every `per-arm` metric of `contracts.md` §7, measured over this arm.
+   *
+   * Kept separate from {@link aggregates} rather than merged into it, and the
+   * separation is the point: an aggregate is a **fold of per-run values**, and
+   * `sampleCount` on one means "how many runs produced a number". A Gini
+   * coefficient across an arm has no per-run values to count, so presenting it
+   * in the same list would attach a sample count that means something else to a
+   * number that reads the same.
+   */
+  readonly armMetrics?: MetricEntries;
   readonly provenance: Provenance;
   /** Kept apart from everything above; see {@link reproducibleSummary}. */
   readonly performance: PerformanceSection;
@@ -133,6 +168,7 @@ export function buildRunRecord(input: {
   readonly accounting: IllegalActionAccounting;
   readonly provenance: Provenance;
   readonly failure?: { readonly classification: FailureClass; readonly message: string };
+  readonly armContribution?: ArmContribution;
 }): RunRecord {
   const { task } = input;
   const derived = deriveRunSeed(task.coordinates);
@@ -169,6 +205,7 @@ export function buildRunRecord(input: {
     accounting: input.accounting,
     provenance: input.provenance,
     ...(input.failure === undefined ? {} : { failure: input.failure }),
+    ...(input.armContribution === undefined ? {} : { armContribution: input.armContribution }),
   };
   return record;
 }

@@ -99,7 +99,7 @@ export type {
   RunTelemetry,
   TierReach,
 } from './metrics-telemetry.js';
-export { MECHANICS_AT_0_5_0 } from './metrics-telemetry.js';
+export { MECHANICS_AT_0_5_0, NO_MECHANICS } from './metrics-telemetry.js';
 
 export {
   KNOWLEDGE_CENSUS_INTERVAL_TICKS,
@@ -222,6 +222,7 @@ export {
 } from './session.js';
 
 export type {
+  ArmContribution,
   FailureClass,
   Provenance,
   RunExecutor,
@@ -256,6 +257,7 @@ export {
 
 export {
   aggregateMetrics,
+  buildArmTelemetry,
   countByFailureClass,
   countByStatus,
   sortCanonically,
@@ -272,7 +274,9 @@ export {
 } from './storage.js';
 
 export type { RunSweepOptions, SweepExecution, SweepResult } from './runner.js';
-export { buildTasks, reaggregate, runSweep } from './runner.js';
+export { reaggregate, runSweep } from './runner.js';
+
+export { buildTasks } from './tasks.js';
 
 export type {
   AblationArm,

@@ -96,9 +96,14 @@ const COMMITTED_PINS: DefinitionPins = {
     definitionVersion: 2,
     digest: '52943601b98d6ff400c8965f8fe1492977c6cc6620a98c8e44bb4d32ddc197f1',
   },
+  // Bumped to 2 by `god-agency` task 7.2. The quantity is now named as the
+  // god's favor-ledger regeneration rather than the looser "favor regen", and
+  // the three saturated worship source classes are reported with it — a
+  // coefficient over 0.35 says inequality is growing and says nothing about
+  // which class produced it, and the retunes differ.
   worshipSnowball: {
-    definitionVersion: 1,
-    digest: 'a6e7a304b8eb876300e7d7b64961b92bea93df513881ba609c4326440772f697',
+    definitionVersion: 2,
+    digest: 'a33987823d4d24af4c9444fb89984ee5131c4498ddb8dcc2d26378437ca67ec9',
   },
 };
 

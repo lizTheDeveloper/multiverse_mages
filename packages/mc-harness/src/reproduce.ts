@@ -42,7 +42,7 @@ import { runTasksInline } from './pool.js';
 import type { Provenance, RunExecutor, RunTask } from './protocol.js';
 import type { RunRecord } from './records.js';
 import { buildRunRecord } from './records.js';
-import { buildTasks } from './runner.js';
+import { buildTasks } from './tasks.js';
 import { seedMatchesCoordinates } from './seed.js';
 import type { SweepRegistries, SweepSpec } from './sweep-spec.js';
 import { expandSweep } from './sweep-spec.js';
@@ -136,6 +136,12 @@ export async function reproduceRun(options: ReproduceOptions): Promise<Reproduct
       metrics: outcome.metrics,
       accounting: outcome.accounting,
       provenance: outcome.provenance,
+      // Carried, because a reproduction that dropped it would be byte-different
+      // from the record it reproduces — and the whole claim of this path is that
+      // it is not.
+      ...(outcome.armContribution === undefined
+        ? {}
+        : { armContribution: outcome.armContribution }),
     }),
   };
 }

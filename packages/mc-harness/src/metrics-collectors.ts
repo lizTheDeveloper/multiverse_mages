@@ -48,6 +48,7 @@
  */
 
 import { attributePrimitive, attributionEntry, mirroredSideProblems } from './ablation.js';
+import type { JsonValue } from './canonical.js';
 import type { MetricDetail, MetricEntry } from './metrics.js';
 import { UNAVAILABLE_REASON } from './metrics.js';
 import { nearestRank } from './metrics-gini.js';
@@ -564,7 +565,51 @@ export function collectWorshipSnowball(arm: ArmTelemetry): MetricEntry {
     });
   }
   const checkpoints = checkpointGinis(arm, 'favorRegenPerTick');
-  return snowballEntry(checkpoints, { quantity: 'favorRegenPerTick', thresholdMax: 0.35 });
+  return snowballEntry(checkpoints, {
+    quantity: 'favorRegenPerTick',
+    thresholdMax: 0.35,
+    worshipByClass: worshipClassShares(arm),
+  });
+}
+
+/**
+ * The arm's mean worship contribution per source class, at each checkpoint.
+ *
+ * `god-agency` task 7.2, and the argument for it is that the coefficient alone
+ * is not actionable: `worshipSnowball` above 0.35 says inequality is growing and
+ * says nothing about *which* of the three saturated classes produced it, while
+ * the retune for a mage-driven runaway and a populace-driven one are different
+ * knobs. Reported here rather than in a separate sweep because it is a
+ * decomposition of the very samples the coefficient was taken over.
+ *
+ * Means are folded over the arm's runs **in the order `ArmTelemetry.runs`
+ * already guarantees**, which is canonical. `null` for a class at a checkpoint
+ * no run reported, never 0 — a class contributing nothing and a class nobody
+ * measured are different findings, and one of them is a balance result.
+ */
+function worshipClassShares(arm: ArmTelemetry): JsonValue {
+  return SNOWBALL_CHECKPOINT_TICKS.map((worldTick) => {
+    let mages = 0;
+    let universities = 0;
+    let populace = 0;
+    let samples = 0;
+    for (const run of arm.runs) {
+      if (run.ticksRun < worldTick) continue;
+      const sample = run.checkpoints.find((candidate) => candidate.worldTick === worldTick);
+      if (sample?.worshipByClass === undefined) continue;
+      mages += sample.worshipByClass.mages;
+      universities += sample.worshipByClass.universities;
+      populace += sample.worshipByClass.populace;
+      samples += 1;
+    }
+    return {
+      worldTick,
+      samples,
+      mages: samples === 0 ? null : mages / samples,
+      universities: samples === 0 ? null : universities / samples,
+      populace: samples === 0 ? null : populace / samples,
+    };
+  });
 }
 
 /**
