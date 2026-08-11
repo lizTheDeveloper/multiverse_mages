@@ -57,6 +57,15 @@ jobs:
       - name: Test (unit + golden replay)
         run: npm test
 
+      - name: Balance regression gate
+        # The committed baseline for the gate sweep, compared metric by metric.
+        # Fails the build when a gated metric moves beyond its tolerance, and
+        # equally when the baseline is missing — a gate that passes without one
+        # reports green forever. Listed here by hand because this workflow does;
+        # the self-hosted runner picks it up through `npm run verify`, which the
+        # script is also part of. Both, or the two gates disagree.
+        run: npm run balance:gate
+
   next-node:
     # Early warning only: a failure here means the next Node major may change
     # simulation behaviour, which we want to know about before it is pinned.
@@ -99,3 +108,12 @@ jobs:
 
       - name: Test (unit + golden replay)
         run: npm test
+
+      - name: Balance regression gate
+        # The committed baseline for the gate sweep, compared metric by metric.
+        # Fails the build when a gated metric moves beyond its tolerance, and
+        # equally when the baseline is missing — a gate that passes without one
+        # reports green forever. Listed here by hand because this workflow does;
+        # the self-hosted runner picks it up through `npm run verify`, which the
+        # script is also part of. Both, or the two gates disagree.
+        run: npm run balance:gate

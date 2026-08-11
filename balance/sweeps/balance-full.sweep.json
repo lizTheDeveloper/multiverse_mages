@@ -1,0 +1,33 @@
+{
+  "sweepId": "balance-full-v1",
+  "kind": "full",
+  "rootSeed": 20260811,
+  "factors": [
+    { "id": "cohortSize", "levels": [2, 4, 8, 12] },
+    { "id": "foundingMages", "levels": [1, 4] },
+    { "id": "foundingNodes", "levels": [1, 2, 4, 8, 16] }
+  ],
+  "replicates": 250,
+  "agentPool": {
+    "strategies": ["passive-control"],
+    "assignment": "fixed",
+    "slots": 1
+  },
+  "termination": {
+    "worldTickCap": 240,
+    "perRunTimeoutMs": 600000
+  },
+  "metrics": [
+    "referenceGrimoires",
+    "referenceKnowledgeInstances",
+    "referenceLibraryDepth",
+    "referenceLivingMages",
+    "referenceNodesGained",
+    "referenceNodesKnown",
+    "referencePeakPopulation",
+    "referencePopulation",
+    "referencePopulationChange"
+  ],
+  "ablation": { "mode": "none", "primitives": [] },
+  "failureThreshold": 0
+}
