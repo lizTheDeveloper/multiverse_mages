@@ -69,23 +69,31 @@
  * the save.
  */
 
-import type { SnapshotComponent, SnapshotEnvelope, SimState, WorldSchema } from '@mm/sim-core';
+import type {
+  ComponentFields,
+  ComponentSpec,
+  SnapshotComponent,
+  SnapshotEnvelope,
+  SimState,
+  WorldSchema,
+} from '@mm/sim-core';
 import { decodeSnapshot, envelopeToState } from '@mm/sim-core';
 
-import { GOAL_COMMITMENT } from './components.js';
+import { EFFORT_PROGRESS, GOAL_COMMITMENT } from './components.js';
 
 /**
  * The revision of the §1 world component set this build declares.
  *
- * | Revision | Introduced by       | Change                                    |
- * | -------- | ------------------- | ----------------------------------------- |
- * | 1        | `core-contracts`    | the original twelve §1 components          |
- * | 2        | `mages-and-species` | adds `goal-commitment` (`contracts.md` §1.2) |
+ * | Revision | Introduced by       | Change                                       |
+ * | -------- | ------------------- | -------------------------------------------- |
+ * | 1        | `core-contracts`    | the original twelve §1 components             |
+ * | 2        | `mages-and-species` | adds `goal-commitment` (`contracts.md` §1.2)  |
+ * | 3        | `mages-and-species` | adds `effort-progress` (`contracts.md` §1.2)  |
  *
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 2;
+export const WORLD_SCHEMA_VERSION = 3;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -103,6 +111,7 @@ export const WORLD_SCHEMA_VERSION = 2;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  if (carried.has(EFFORT_PROGRESS.name)) return 3;
   if (carried.has(GOAL_COMMITMENT.name)) return 2;
   return 1;
 }
@@ -127,23 +136,24 @@ export interface WorldSchemaMigration {
 /**
  * An empty section for a component the snapshot predates.
  *
- * Zero rows, not zeroed rows. `goal-commitment` is absent for a mage who has
- * never chosen a goal (see the component's own note), so "every mage in a
- * pre-0.4.0 save has no commitment" is expressed by the section being empty —
- * and every one of those mages re-evaluates on her next scheduled phase, which
- * is exactly what a mage who has never decided anything should do.
+ * Zero rows, not zeroed rows, and both additions so far rely on that. A mage who
+ * has never chosen a goal carries no `goal-commitment` row, and a mage with
+ * nothing in flight carries no `effort-progress` row, so "nobody in a pre-0.4.0
+ * save had either" is expressed by the sections being empty. Every one of those
+ * mages re-evaluates on her next scheduled phase and starts her next project at
+ * zero, which is exactly right for a save that never recorded one.
  *
- * Synthesising a commitment per mage instead would be the wrong repair twice
- * over: it would invent an `adoptedTick` nobody ever adopted anything on, and it
- * would hand every restored mage a full commitment period of hysteresis
- * protecting a goal she was never observed to hold.
+ * Synthesising rows instead would be the wrong repair twice over: it would
+ * invent an `adoptedTick` nobody ever adopted anything on, and it would hand
+ * every restored mage a full commitment period of hysteresis protecting a goal
+ * she was never observed to hold.
  */
-function emptySection(spec: typeof GOAL_COMMITMENT): SnapshotComponent {
+function emptySection<F extends ComponentFields>(spec: ComponentSpec<F>): SnapshotComponent {
   return {
     name: spec.name,
     fields: Object.keys(spec.fields).map((name) => ({
       name,
-      kind: spec.fields[name as keyof typeof spec.fields],
+      kind: spec.fields[name as keyof F],
     })),
     slots: new Uint32Array(0),
     values: new Uint32Array(0),
@@ -169,8 +179,36 @@ export const addGoalCommitment: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 2 → 3: append an empty `effort-progress` section.
+ *
+ * Appended for the same reason `goal-commitment` was, and declared after it in
+ * `WORLD_COMPONENTS` for the same reason: section order in an envelope is
+ * declaration order, so a component inserted anywhere but the end would line
+ * every older save's sections up against the wrong layouts.
+ *
+ * A revision-1 save reaches revision 3 by running both steps in turn, which is
+ * what {@link migrateWorldEnvelope}'s loop is for. There is deliberately no
+ * combined 1 → 3 shortcut: two steps that each do one thing can each be tested
+ * for the one thing they do, and a shortcut is a third code path that only the
+ * oldest saves in the wild ever exercise.
+ */
+export const addEffortProgress: WorldSchemaMigration = {
+  from: 2,
+  to: 3,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(EFFORT_PROGRESS)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
-export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [addGoalCommitment];
+export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
+  addGoalCommitment,
+  addEffortProgress,
+];
 
 /**
  * Walks an envelope forward to {@link WORLD_SCHEMA_VERSION}.

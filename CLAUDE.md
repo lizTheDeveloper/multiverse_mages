@@ -71,8 +71,11 @@ Next up is `mages-and-species` (0.4.0).
 
 Three packages are **deviations from `contracts.md` §5 as originally drawn**, all recorded there with
 their reasoning: `state`, `primitives`, and `coordination`. §5 was written before anyone tried to
-satisfy it. A fourth deviation, from **§1.2**, is recorded in that section: the `goal-commitment`
-component, which `mages-and-species` promised would not be needed.
+satisfy it. Two further deviations, both from **§1.2**, are recorded in that section: the
+`goal-commitment` component and the `effort-progress` component, neither of which
+`mages-and-species` expected to need. Each cost a world-schema revision — `WORLD_SCHEMA_VERSION` is
+now 3 — and neither moved `sim-core`'s `SNAPSHOT_VERSION`, which is inside the hashed header and
+would break every golden fixture with a version error instead of a behaviour diff.
 
 Two commands worth knowing before touching the core:
 
