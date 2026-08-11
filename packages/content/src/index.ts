@@ -86,4 +86,7 @@ export type {
   VoiceLineBankRecord,
 } from './audio-types.js';
 
+export type { GenerationRequest } from './audio-generation.js';
+export { planRequests, redact } from './audio-generation.js';
+
 export * from './types.js';
