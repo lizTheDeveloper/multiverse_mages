@@ -12,7 +12,7 @@
  */
 
 /**
- * Shapes for the seven content files of `docs/design/contracts.md` §2, plus the
+ * Shapes for the eight content files of `docs/design/contracts.md` §2, plus the
  * interned registry the loader returns.
  *
  * Every `Fp` here is a fixed-point integer at scale 1024 (`contracts.md` §0).
@@ -31,7 +31,7 @@ export type ContentId = number;
 /** The reserved null content id. Never assigned to a record. */
 export const NULL_CONTENT_ID = 0;
 
-/** Which of the seven content namespaces an interned id belongs to. */
+/** Which of the eight content namespaces an interned id belongs to. */
 export type ContentNamespace =
   | 'technique'
   | 'form'
@@ -39,7 +39,8 @@ export type ContentNamespace =
   | 'node'
   | 'species'
   | 'tradition'
-  | 'primitive';
+  | 'primitive'
+  | 'territory';
 
 export interface TechniqueRecord {
   readonly id: string;
@@ -158,6 +159,32 @@ export interface PrimitiveRecord {
   readonly cap: PrimitiveCap;
 }
 
+/**
+ * One region of a universe, and the people it can hold.
+ *
+ * Territory is the **fixed** resource of `contracts.md` §2.7: nothing a
+ * universe does in a run creates land. That is the whole reason the record
+ * exists — carrying capacity is derived from it precisely because no in-run
+ * process can grow it, which is not true of the materials stock that used to
+ * carry that job alone.
+ *
+ * The two numbers answer different questions and are deliberately not folded
+ * into one: `capacityPerLandUnit` is what this *kind* of country is like, and
+ * `landUnits` is how much of it this universe holds. When universes stop being
+ * singletons — a raid that takes ground, a scenario that seeds a smaller world —
+ * `landUnits` becomes state and this record keeps the habitability.
+ */
+export interface TerritoryRecord {
+  readonly id: string;
+  readonly name: string;
+  readonly gloss: string;
+  /** How much of this region the universe holds. A count, not `fp`. */
+  readonly landUnits: number;
+  /** People one land unit of this region carries, `fp`. */
+  readonly capacityPerLandUnit: Fp;
+  readonly tuningStatus: TuningStatus;
+}
+
 /** A record plus the integer it was interned to. */
 export interface Interned<T> {
   readonly contentId: ContentId;
@@ -174,6 +201,7 @@ export interface ContentCounts {
   readonly species: number;
   readonly traditions: number;
   readonly primitives: number;
+  readonly territories: number;
 }
 
 /**
@@ -194,6 +222,7 @@ export interface ContentRegistry {
   readonly species: readonly Interned<SpeciesRecord>[];
   readonly traditions: readonly Interned<TraditionRecord>[];
   readonly primitives: readonly Interned<PrimitiveRecord>[];
+  readonly territories: readonly Interned<TerritoryRecord>[];
 
   /** String id to interned integer, per namespace. */
   intern(namespace: ContentNamespace, id: string): ContentId;

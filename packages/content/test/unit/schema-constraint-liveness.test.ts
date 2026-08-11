@@ -22,7 +22,7 @@
  *
  * ## How each constraint is proven
  *
- * For every constraint in the seven schemas, enumerated by walking the documents
+ * For every constraint in the eight schemas, enumerated by walking the documents
  * rather than by a list:
  *
  *  1. Find a place the constraint was actually applied to shipped content — the
@@ -113,7 +113,16 @@ const SYNTHESIZED: readonly {
  * unreachable. These are decoration — reported, not silently passed over.
  */
 const SHADOWED: readonly { readonly constraint: string; readonly why: string }[] = [
-  ...(['technique', 'form', 'cell', 'node', 'species', 'tradition', 'primitive'] as const).map(
+  ...([
+    'technique',
+    'form',
+    'cell',
+    'node',
+    'species',
+    'tradition',
+    'primitive',
+    'territory',
+  ] as const).map(
     (name) => ({
       constraint: `${name}.schema.json#/$defs/contentId minLength`,
       why:
@@ -136,6 +145,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'node.schema.json#/$defs/node/properties/tuningStatus',
     'node.schema.json#/$defs/effect/properties/target',
     'species.schema.json#/$defs/species/properties/tuningStatus',
+    'territory.schema.json#/$defs/territory/properties/tuningStatus',
     'primitive.schema.json#/$defs/primitive/properties/scale',
     'primitive.schema.json#/$defs/primitive/properties/stacking',
     'primitive.schema.json#/$defs/cap/properties/kind',
@@ -460,8 +470,8 @@ function isAtOrUnder(diagnosticPointer: string, mutatedPointer: string): boolean
 // The suite
 
 describe('the constraint walk is looking at real schemas and real content', () => {
-  it('enumerated constraints in all seven schemas', () => {
-    expect(schemas.size).toBe(7);
+  it('enumerated constraints in all eight schemas', () => {
+    expect(schemas.size).toBe(8);
     for (const file of CONTENT_FILES) {
       expect(
         constraints.filter((constraint) => constraint.contentFile === file).length,

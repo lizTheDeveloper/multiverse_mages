@@ -46,6 +46,7 @@ const NAMESPACES: readonly ContentNamespace[] = [
   'species',
   'tradition',
   'primitive',
+  'territory',
 ];
 
 /** Every string id to its integer, across every namespace. */
@@ -59,6 +60,7 @@ function fullMapping(registry: ContentRegistry): Record<string, number> {
     ['species', registry.species],
     ['tradition', registry.traditions],
     ['primitive', registry.primitives],
+    ['territory', registry.territories],
   ] as const;
   for (const [namespace, entries] of namespaced) {
     for (const entry of entries) mapping[`${namespace}:${entry.record.id}`] = entry.contentId;
@@ -130,7 +132,7 @@ describe('interning', () => {
   });
 
   it('pins the interned integers of the shipped content set', () => {
-    // A golden table, deliberately spanning all seven namespaces. If a future
+    // A golden table, deliberately spanning all eight namespaces. If a future
     // change renumbers content, this fails and the fix is a considered decision
     // about whether the contentRevision bump is acceptable — not a surprise.
     expect(registry.intern('technique', 'rego')).toBe(5);
@@ -148,6 +150,7 @@ describe('interning', () => {
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
+    expect(registry.intern('territory', 'arable-lowland')).toBe(1);
   });
 
   it('round-trips an interned id back to its string', () => {
@@ -194,7 +197,13 @@ describe('contentRevision', () => {
     // behaviour and the reason `contentRevision` gates raiding rather than some
     // v1-only fingerprint — two universes disagreeing about the inert 58 cells
     // would disagree the moment either one enabled a cell.
-    expect(registry.contentRevision).toBe('4f90d08940a3f0224893a2731eed41e9');
+    //
+    // 4f90d08940a3f0224893a2731eed41e9 -> f813d90d3ddadb345c0a9d55505de432,
+    // when `territory.json` was added as the eighth content file (§2.7) so that
+    // carrying capacity could be derived from a fixed resource instead of from
+    // the materials stock, which by construction only grows. Five new records
+    // and a new namespace in the preimage; nothing existing changed a byte.
+    expect(registry.contentRevision).toBe('f813d90d3ddadb345c0a9d55505de432');
   });
 
   it('is stable across loads of identical content', () => {

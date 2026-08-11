@@ -46,6 +46,11 @@ export function speciesNamed(id: string): SpeciesRecord {
   return found;
 }
 
+/** The shipped registry, for tests that need a content set rather than one record. */
+export function shippedRegistry(): ContentRegistry {
+  return registry;
+}
+
 /** One shipped primitive record, by id. */
 export function primitiveNamed(id: string): PrimitiveRecord {
   const found = registry.primitives.find((entry) => entry.record.id === id);

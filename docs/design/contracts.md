@@ -432,6 +432,39 @@ it is the only place outside the four dispatch points permitted to read a `tradi
 Declares the units and stacking rule for each effect primitive. See §3 — the table there is
 normative and this file must match it.
 
+### 2.7 `territory.json`
+
+```jsonc
+{
+  "id": "arable-lowland",
+  "name": "The Arable Lowland",
+  "gloss": "The ordinary country most people live in, and the reason there are most people.",
+  "landUnits": 1600,             // how much of this region the universe holds. A count, not fp
+  "capacityPerLandUnit": 20480,  // fp; people one land unit carries. 20480 = 20 people
+  "tuningStatus": "untuned"
+}
+```
+
+**Territory is the fixed resource, and that is its entire job.** Carrying capacity `K` is derived
+from `Σ landUnits × capacityPerLandUnit` because nothing a universe does during a run creates land.
+Every other economic quantity a universe holds — the materials stock above all — is something the
+universe produces, so deriving `K` from one of those makes `K` a function of its own consequences:
+more people produce more materials, more materials raise `K`, and the population bound is whatever
+number the run happened to reach. This file exists so that the bound is a property of the world
+rather than of the run's length.
+
+Materials and completed university seats still *modulate* `K` — a well-supplied territory holds more
+people than a bare one — but only as a **bounded multiplier** on the territory term, never as an
+addend that can grow without limit. `packages/rules-world/src/economy/carrying-capacity.ts` states
+the shape and the ceiling it implies.
+
+`landUnits` is a per-universe endowment carried in content because a simulation instance holds
+exactly one universe (§1.1). When that stops being true — a raid that takes ground, a scenario that
+seeds a smaller world — `landUnits` moves to §1.1 and this record keeps `capacityPerLandUnit`, which
+is a property of the *kind* of country and not of who holds it.
+
+**Every magnitude here is untuned** and carries `tuningStatus` saying so.
+
 ---
 
 ## 3. Effect Primitive Semantics
