@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/audio/voice-line.schema.json",
+  "title": "voice-line.json",
+  "description": "Voice-line banks (docs/design/sound-design.md §8). A later task fills this schema out; for now it accepts only the empty array shipped alongside audio-cue.json, so the audio plumbing is complete from this commit.",
+  "type": "array",
+  "maxItems": 0,
+  "items": { "$ref": "#/$defs/bank" },
+  "$defs": {
+    "bank": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" }
+      }
+    },
+    "contentId": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 64 }
+  }
+}

@@ -50,7 +50,7 @@ const SEEDED_VIOLATIONS = [
   'inverted-tier', // a prerequisite deeper than the node it gates
   'prerequisite-cycle', // a two-node ring
   'edict-conflict', // a cell carrying both edict kinds
-  'node-outside-v1', // a node authored in an unflagged cell
+  'v1-unreachable-prerequisite', // a playable node gated behind disabled content
   'species-invariant', // a species that matures after it dies
 ] as const;
 
@@ -60,8 +60,27 @@ function sixViolationDocuments(): Record<ContentFileName, unknown> {
   // 1. unknown reference
   recordById(documents, 'node.json', 'rl-step-across')['prerequisites'] = ['rl-nonexistent'];
 
-  // 2. inverted tier: a tier-3 node gated behind a tier-4 one
-  recordById(documents, 'node.json', 'im-follow-the-thought')['tier'] = 4;
+  // 2. inverted tier: a tier-2 node gated behind a tier-4 one.
+  //    Built from fresh records rather than by deepening a shipped node. Every cell of
+  //    the grid is pre-authored now, so mutating a shipped node inverts it against every
+  //    spell that gates on it -- a count that changes whenever anyone writes content,
+  //    which would make this fixture's "exactly six" assertion quietly wrong.
+  const donor = recordById(documents, 'node.json', 'rt-set-the-stone');
+  const deep = { ...donor, id: 'mau-fixture-deep', cell: 'muto-auram', tier: 4, prerequisites: [] };
+  const shallow = {
+    ...donor,
+    id: 'mau-fixture-shallow',
+    cell: 'muto-auram',
+    tier: 2,
+    prerequisites: ['mau-fixture-deep'],
+  };
+  (documents['node.json'] as unknown[]).push(deep, shallow);
+  const invertedCell = recordById(documents, 'cell.json', 'muto-auram');
+  invertedCell['nodes'] = [
+    ...(invertedCell['nodes'] as string[]),
+    'mau-fixture-deep',
+    'mau-fixture-shallow',
+  ];
 
   // 3. cycle, at equal tiers so it is unambiguously a cycle diagnostic
   recordById(documents, 'node.json', 'rm-hold-the-attention')['prerequisites'] = [
@@ -72,12 +91,13 @@ function sixViolationDocuments(): Record<ContentFileName, unknown> {
   // 4. a cell carrying both an interdiction and a dispensation
   recordById(documents, 'cell.json', 'perdo-mentem')['edicts'] = ['dispensation', 'interdiction'];
 
-  // 5. a node authored outside the v1 subset
-  const strayNode = recordById(documents, 'node.json', 'pt-crumble');
-  strayNode['cell'] = 'muto-aquam';
-  recordById(documents, 'cell.json', 'muto-aquam')['nodes'] = ['pt-crumble'];
-  const formerCell = recordById(documents, 'cell.json', 'perdo-terram');
-  formerCell['nodes'] = (formerCell['nodes'] as string[]).filter((id) => id !== 'pt-crumble');
+  // 5. a playable node gated behind a cell the release does not enable, so it can
+  //    never be reached. Authoring outside v1 is fine; depending on it from v1 is not.
+  const stranded = { ...recordById(documents, 'node.json', 'pt-crumble'), id: 'maq-stranded', cell: 'muto-aquam' };
+  (documents['node.json'] as unknown[]).push(stranded);
+  const strandedCell = recordById(documents, 'cell.json', 'muto-aquam');
+  strandedCell['nodes'] = [...(strandedCell['nodes'] as string[]), 'maq-stranded'];
+  recordById(documents, 'node.json', 'pt-open-the-ground')['prerequisites'] = ['maq-stranded'];
 
   // 6. a species that matures after it dies
   recordById(documents, 'species.json', 'orc')['maturityMonths'] = 720;
@@ -149,7 +169,7 @@ describe('validation reports every violation in a run', () => {
     expect(code).toBe(0);
     expect(output.errors).toEqual([]);
     expect(output.lines.join('\n')).toContain(
-      'OK — 5 techniques, 14 forms, 70 cells (12 flagged v1), 51 nodes, 6 species, ' +
+      'OK — 5 techniques, 14 forms, 70 cells (12 flagged v1), 300 nodes, 6 species, ' +
         '3 traditions, 16 primitives',
     );
     expect(output.lines.join('\n')).toMatch(/contentRevision [0-9a-f]{32}/u);

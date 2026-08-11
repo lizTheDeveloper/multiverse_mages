@@ -590,17 +590,6 @@ function checkNodes(
         ),
       );
     } else {
-      if (cell.v1 !== true) {
-        out.push(
-          diagnostic(
-            file,
-            `${at}/cell`,
-            'node-outside-v1',
-            `node "${node.id}" is authored in cell "${node.cell}", which is not flagged "v1": true. ` +
-              'No node may be authored outside the v1 subset for this release',
-          ),
-        );
-      }
       if (!cell.nodes.includes(node.id)) {
         out.push(
           diagnostic(
@@ -611,14 +600,14 @@ function checkNodes(
           ),
         );
       }
-      if (cell.v1 === true && node.rediscoveryMultiplier < V1_REDISCOVERY_AUTHORING_FLOOR) {
+      if (node.rediscoveryMultiplier < V1_REDISCOVERY_AUTHORING_FLOOR) {
         out.push(
           diagnostic(
             file,
             `${at}/rediscoveryMultiplier`,
             'content-invariant',
             `node "${node.id}" authors rediscoveryMultiplier ${String(node.rediscoveryMultiplier)}, below the ` +
-              `v1 authoring floor of fp(${String(V1_REDISCOVERY_AUTHORING_FLOOR)}). Species rediscoveryAffinity is ` +
+              `rediscovery authoring floor of fp(${String(V1_REDISCOVERY_AUTHORING_FLOOR)}). Species rediscoveryAffinity is ` +
               'applied before the hard fp(3072) floor, so a node authored at the floor clamps every species ' +
               'to the same effective cost and the trait stops differentiating (contracts.md §2.3)',
           ),
@@ -652,6 +641,20 @@ function checkNodes(
         );
         continue;
       }
+      const prerequisiteCell = cellById.get(prerequisite.cell);
+      if (cell?.v1 === true && prerequisiteCell !== undefined && prerequisiteCell.v1 !== true) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/prerequisites/${String(index)}`,
+            'v1-unreachable-prerequisite',
+            `node "${node.id}" is in the v1 cell "${node.cell}" but requires "${prerequisiteId}" from ` +
+              `"${prerequisite.cell}", which is not flagged "v1": true. A playable node may never sit ` +
+              'behind content the release does not enable — it would be permanently unreachable',
+          ),
+        );
+      }
+
       if (prerequisite.tier > node.tier) {
         out.push(
           diagnostic(
