@@ -85,17 +85,17 @@
 
 ## 7. Knowledge as capital, and its brakes
 
-- [ ] 7.1 Author the library contribution table as data, marked untuned
-- [ ] 7.2 Implement the property test asserting strictly non-increasing marginal return per segment and a documented saturation value
-- [ ] 7.3 Implement the per-university per-tier relevance prefix-sum array, recomputed on library change
-- [ ] 7.4 Implement relevance gating by learner species `depthCeiling`
-- [ ] 7.5 Route the library contribution into the shared `(1 + Σ)` accumulator for `research-rate`, `teach-rate`, and `scribe-rate` with the `fp(4096)` cap
-- [ ] 7.6 Add the conformance check rejecting any library multiplier applied outside the shared stacking implementation
-- [ ] 7.7 Implement library upkeep proportional to instance count, with deterministic degradation on shortfall and no negative materials
-- [ ] 7.8 Implement per-tick emission of relevant depth by tier, effective contribution, and clamp count, per university
-- [ ] 7.9 Verify `capitalSnowball` as defined in `contracts.md` §7 is computable from the emitted outputs with no added instrumentation
-- [ ] 7.10 Test that doubling relevant depth from 96 to 192 increases contribution by strictly less than double
-- [ ] 7.11 Test that a library beyond the saturation point contributes no more than at saturation
+- [x] 7.1 Author the library contribution table as data, marked untuned
+- [x] 7.2 Implement the property test asserting strictly non-increasing marginal return per segment and a documented saturation value
+- [x] 7.3 Implement the per-university per-tier relevance prefix-sum array, recomputed on library change
+- [x] 7.4 Implement relevance gating by learner species `depthCeiling`
+- [x] 7.5 Route the library contribution into the shared `(1 + Σ)` accumulator for `research-rate`, `teach-rate`, and `scribe-rate` with the `fp(4096)` cap
+- [x] 7.6 Add the conformance check rejecting any library multiplier applied outside the shared stacking implementation
+- [x] 7.7 Implement library upkeep proportional to instance count, with deterministic degradation on shortfall and no negative materials
+- [x] 7.8 Implement per-tick emission of relevant depth by tier, effective contribution, and clamp count, per university
+- [x] 7.9 Verify `capitalSnowball` as defined in `contracts.md` §7 is computable from the emitted outputs with no added instrumentation
+- [x] 7.10 Test that doubling relevant depth from 96 to 192 increases contribution by strictly less than double
+- [x] 7.11 Test that a library beyond the saturation point contributes no more than at saturation
 
 ## 8. Materials and the three-input economy
 

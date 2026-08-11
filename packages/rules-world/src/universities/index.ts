@@ -34,6 +34,20 @@
  * otherwise (`docs/design/release-plan.md`).
  */
 
+export type { CapitalEmission, CapitalRateOutcome, ContributionKnot, UpkeepOutcome } from './capital.js';
+export {
+  CAPITAL_TABLE_TUNING_STATUS,
+  DEGRADATION_PER_SHORTFALL,
+  LIBRARY_CONTRIBUTION,
+  SATURATION_CONTRIBUTION,
+  SATURATION_NODES,
+  applyLibraryUpkeep,
+  capitalRateMultiplier,
+  contributionFor,
+  emitCapital,
+  libraryContribution,
+} from './capital.js';
+
 export type { AdmissionOutcome } from './capacity.js';
 export { AdmissionRefusals, admitStudents } from './capacity.js';
 
