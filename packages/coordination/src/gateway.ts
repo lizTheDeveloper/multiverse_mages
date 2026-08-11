@@ -232,6 +232,8 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   #heldByMage: Map<MageHandle, Map<ContentId, Fp>> | undefined;
   /** Node id to whether this universe's ruleset permits its cell. See {@link #permitted}. */
   readonly #permittedNode = new Map<ContentId, boolean>();
+  /** Teacher to the nodes she could pass on to *somebody*. See {@link #teachable}. */
+  readonly #teachableFrom = new Map<MageHandle, readonly ContentId[]>();
 
   /** Projects finished while this gateway was alive. Reporting only. */
   readonly #completed: CompletedEffort[] = [];
@@ -332,12 +334,10 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (rates === undefined) return undefined;
 
     let best: ContentId | undefined;
-    for (const [nodeId, mastery] of this.#holdings(teacher)) {
+    for (const nodeId of this.#teachable(teacher)) {
       if (best !== undefined && nodeId >= best) continue;
-      if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
       const node = this.#deps.catalog.node(nodeId);
       if (node === undefined || node.tier > rates.depthCeiling) continue;
-      if (!this.#permitted(nodeId)) continue;
       if (this.knows(student, nodeId)) continue;
       if (!this.#prerequisitesHeld(student, node.prerequisites)) continue;
       best = nodeId;
@@ -702,6 +702,35 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     const legal = permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId));
     this.#permittedNode.set(nodeId, legal);
     return legal;
+  }
+
+  /**
+   * The nodes a teacher could pass to *somebody*: mastered well enough, in the
+   * catalog, and legal here.
+   *
+   * The half of {@link teachableTo}'s filter that does not mention the student,
+   * lifted out and memoized per teacher. The outlook asks that question sixty-four
+   * times for every mage — once per counterparty in each direction — and the
+   * three checks here have the same answer every time. Only the depth ceiling,
+   * what the student already knows, and her prerequisites actually depend on who
+   * is receiving the lesson, and those stay in the loop.
+   *
+   * Lifting them cannot move the answer: every predicate is a pure read, and
+   * `teachableTo` returns the *lowest* node id satisfying all of them, which is
+   * the same value whatever order the tests are applied in.
+   */
+  #teachable(teacher: MageHandle): readonly ContentId[] {
+    const known = this.#teachableFrom.get(teacher);
+    if (known !== undefined) return known;
+    const ready: ContentId[] = [];
+    for (const [nodeId, mastery] of this.#holdings(teacher)) {
+      if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
+      if (this.#deps.catalog.node(nodeId) === undefined) continue;
+      if (!this.#permitted(nodeId)) continue;
+      ready.push(nodeId);
+    }
+    this.#teachableFrom.set(teacher, ready);
+    return ready;
   }
 
   #ratesOf(mage: MageHandle): MageRates | undefined {
