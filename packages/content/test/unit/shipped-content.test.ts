@@ -66,6 +66,9 @@ describe('shipped content', () => {
       // loader; these are the counts they come out at.
       godCosts: 16,
       godConstants: 64,
+      // One per magnitude the raid rules read by name, checked in both
+      // directions by the loader for the reason the god constants are.
+      raidConstants: 35,
     });
   });
 

@@ -212,7 +212,15 @@ describe('contentRevision', () => {
     // a technique costs, or about the worship saturation constants, would be
     // playing different games while their revisions agreed they were
     // compatible. Nothing existing changed a byte.
-    expect(registry.contentRevision).toBe('0e63987b2823f4d991ea1c7a40944055');
+    //
+    // 0e63987b2823f4d991ea1c7a40944055 -> f66b312c914c5c1159d12626bcf40ff8,
+    // when `raid-engagement` added `raid-constant.json` (§2.10) — every
+    // magnitude an engagement is made of, and with them the two authored
+    // integers the termination proof rests on. They are in the preimage for the
+    // reason the god tables are: two universes that disagreed about how long a
+    // portal holds would fight two different battles while their revisions
+    // agreed they were compatible. Nothing existing changed a byte.
+    expect(registry.contentRevision).toBe('f66b312c914c5c1159d12626bcf40ff8');
   });
 
   it('is stable across loads of identical content', () => {
