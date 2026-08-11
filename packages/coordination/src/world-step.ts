@@ -146,6 +146,7 @@ import {
 } from '@mm/rules-world';
 
 import { EffortLedger } from './effort-store.js';
+import { cellNodeIndex } from './frontier-index.js';
 import { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { MageRates } from './gateway.js';
 import type { GodDeps, GodTickReport } from './god/index.js';
@@ -338,6 +339,11 @@ export function worldSystem(
   clampCounter: RediscoveryClampCounter = createRediscoveryClampCounter(),
 ): System {
   const hazard: ScaleFreeHazard = deps.hazard ?? hazardAt;
+  // `cellOf` inverted, once for the whole system rather than once per gateway.
+  // It is a function of the content set alone — see `frontier-index.ts` — and
+  // `deps` is fixed at install time, so a per-phase rebuild would be an
+  // `O(catalog)` pass three times a tick to compute the same answer.
+  const nodesByCell = cellNodeIndex(deps.catalog, deps.cells);
 
   return {
     name: 'world-tick',
@@ -392,6 +398,7 @@ export function worldSystem(
           knowledge,
           catalog: deps.catalog,
           cells: deps.cells,
+          nodesByCell,
           ruleset,
           ratesOf: (mage) => ratesOf(state, mage, deps),
           store: deps.store,
@@ -664,12 +671,20 @@ function spendTheMonth(
   gateway: CoordinatingKnowledgeGateway,
   deps: WorldStepDeps,
 ): WorkPhaseOutcome {
-  for (const { handle, row } of collectRecords(state, MAGE)) {
-    if (row.alive === 0) continue;
+  // The `alive` column and the handle, rather than a `MageRecord` per mage: the
+  // two fields below are all this phase reads, and `collectRecords` builds an
+  // object carrying every field of §1.2 to supply one of them. Same component,
+  // same ascending slot order — `collectRecords` gets its order from this very
+  // `forEach` — and this phase adds and removes no mage, so the walk cannot be
+  // disturbed by what it does.
+  const mages = componentOf(state, MAGE);
+  const alive = mages.field('alive');
+  mages.forEach((row, handle) => {
+    if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
-    if (commitment === undefined) continue;
+    if (commitment === undefined) return;
     workOne(handle, commitment, gateway, deps);
-  }
+  });
 
   const completedBy = new Set<Handle>();
   let researchCompleted = 0;
@@ -866,8 +881,10 @@ function deliverBirths(cohorts: CohortStore, phase: BirthPhase): number {
 // ---------------------------------------------------------------------------
 
 function ratesOf(state: SimState, mage: Handle, deps: WorldStepDeps): MageRates | undefined {
-  const row = mageRowOf(state, mage);
-  const species = row === undefined ? undefined : deps.speciesOf(row.speciesId);
+  const store = componentOf(state, MAGE);
+  const species = store.has(mage as EntityHandle)
+    ? deps.speciesOf(store.get(mage as EntityHandle, 'speciesId'))
+    : undefined;
   if (species === undefined) return undefined;
   return {
     learnRate: species.learnRate,
@@ -904,10 +921,18 @@ function lifespanMonths(
   }).months;
 }
 
+/**
+ * This holder's species retention, or `0` for a handle that is not a mage.
+ *
+ * Reads the one field it needs rather than the whole `MAGE` row. The decay
+ * phase asks this once per held instance, which is tens of thousands of times a
+ * tick in a mature universe, and `readRecord` builds an object carrying every
+ * field of §1.2 to answer a question about one of them.
+ */
 function retentionOf(state: SimState, holder: Handle, deps: WorldStepDeps): number {
-  const row = mageRowOf(state, holder);
-  if (row === undefined) return 0;
-  return deps.speciesOf(row.speciesId)?.retention ?? 0;
+  const store = componentOf(state, MAGE);
+  if (!store.has(holder as EntityHandle)) return 0;
+  return deps.speciesOf(store.get(holder as EntityHandle, 'speciesId'))?.retention ?? 0;
 }
 
 function mageRowOf(state: SimState, mage: Handle): MageRecord | undefined {

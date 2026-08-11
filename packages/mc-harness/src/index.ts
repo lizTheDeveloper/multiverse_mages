@@ -12,15 +12,17 @@
  */
 
 /**
- * `@mm/mc-harness` — the Monte Carlo runner of `agent-interface` task groups 3,
- * 4 and 5: the `worker_threads` pool, the sweep specification format,
+ * `@mm/mc-harness` — the Monte Carlo runner of `agent-interface` task groups 3
+ * through 6, 8 and 9: the `worker_threads` pool, the sweep specification format,
  * deterministic seed derivation, append-only result storage, canonical-order
- * aggregation, single-run reproduction, the scripted bot pool, and tournament
- * scheduling with its pairwise outcome matrix.
+ * aggregation, single-run reproduction, the scripted bot pool, tournament
+ * scheduling with its pairwise outcome matrix, the §7 metric registry, and — in
+ * `baseline.ts`, `standard-error.ts`, `gate.ts` and `regenerate.ts` — the
+ * committed balance baselines, the regression gate that reads them, and the
+ * separately-invoked command that is the only thing allowed to write one.
  *
- * Group 6 (the metric registry proper) and group 7 (ablation) land on top of
- * this; the shapes they need — {@link MetricRegistry}, {@link AblationSpec} —
- * are declared here and left empty.
+ * Group 7 (ablation) lands on top of this; the shape it needs —
+ * {@link AblationSpec} — is declared here and left mostly empty.
  *
  * ## The one property everything else serves
  *
@@ -277,6 +279,38 @@ export { compareToRecord, reproduceRun, taskFor } from './reproduce.js';
 
 export type { CliSink, ReproduceArgs, RunSweepArgs, ScenarioModule } from './cli.js';
 export { DEFAULT_OUTPUT_MODE, describeSweep, reproduceCommand, runSweepCommand } from './cli.js';
+
+export type { SweepFileResult } from './sweep-file.js';
+export { parseSweepFile, readSweepFile } from './sweep-file.js';
+
+export type { StandardErrorEstimate, StandardErrorMethod } from './standard-error.js';
+export { STANDARD_ERROR_METHOD, standardErrorOf } from './standard-error.js';
+
+export type { Baseline, BaselineMetric, SupersededDelta, UnhashedBaseline } from './baseline.js';
+export {
+  BASELINE_FORMAT_VERSION,
+  baselineContentHash,
+  baselineMetrics,
+  baselineProblems,
+  encodeBaseline,
+  parseBaseline,
+  sealBaseline,
+} from './baseline.js';
+
+export type { GateComparison, GateInput, GateReport, GateStatus } from './gate.js';
+export {
+  GATE_STATUS,
+  compareToBaseline,
+  describeGate,
+  missingBaselineReport,
+  provenanceMismatches,
+} from './gate.js';
+
+export type { RegenerateInput, RegenerateResult } from './regenerate.js';
+export { regenerateBaseline } from './regenerate.js';
+
+export type { GateCommandResult, GateSweepOptions, RegenerateArgs } from './balance-cli.js';
+export { gateCommand, loadBaseline, regenerateCommand } from './balance-cli.js';
 
 export type {
   BotStrategyRegistry,

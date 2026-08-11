@@ -79,6 +79,26 @@ export function withdrawGrimoire(
 }
 
 /**
+ * Releases a book into nobody's hands: `unowned`, holder `0`.
+ *
+ * The state `contracts.md` §1.5 names for a dead unaffiliated mage's books —
+ * *"a dead unaffiliated mage's books are not in transit to anywhere"* — and the
+ * reason `HOLDER_KIND.unowned` is `0` rather than last in the enumeration.
+ * Without this, such a book keeps naming its dead author as its holder, which
+ * reads as *owned by a corpse*: a holder the estate has already settled, and a
+ * grimoire that no library, no heir and no looter can be said to have missed.
+ *
+ * The instance goes back to `(2, grimoireId)`, because that is what
+ * `writtenInstanceLocation` says an unshelved book's contents are at, and the
+ * book is unshelved. Nothing is destroyed: an unowned book is still a book, and
+ * the knowledge in it still counts toward the node's instance count. Losing it
+ * is `destroyGrimoire`'s job and takes a fire.
+ */
+export function disownGrimoire(knowledge: KnowledgeSubsystem, grimoire: Handle): void {
+  placeGrimoire(knowledge, grimoire, HOLDER_KIND.unowned, 0, 'disown');
+}
+
+/**
  * Destroys a grimoire and the one instance that is its contents.
  *
  * The instance is what is destroyed; the book goes with it, because

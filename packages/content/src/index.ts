@@ -42,6 +42,7 @@ export {
 
 export type { ValidationResult } from './load.js';
 export {
+  MAX_CONTENT_NODES,
   REQUIRED_V1_CELL,
   V1_CELL_COUNT,
   V1_FORM_COUNT,
