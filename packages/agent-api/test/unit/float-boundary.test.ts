@@ -38,6 +38,31 @@
  * The scan is over syntax, not text, for the reason `module-boundaries.test.ts`
  * gives: this very file contains the string `0.5` inside a lint probe, and a
  * regex would report itself.
+ *
+ * ## What this scan covers, and what `eslint.config.mjs` covers
+ *
+ * Claim 2 was false as written for as long as it stood. The scan looked for two
+ * shapes — a decimal literal and a `/` — and the rules-path ban rejects four:
+ * `1e-9` has no `.` and matched neither regex, and floating-point `Math`,
+ * including `Math.random`, was invisible to both. An adversarial pass probed the
+ * claim instead of reading it and found `Math.random()` could have been written
+ * into `candidates.ts` — which ranks the slots an agent chooses between — with
+ * every test in the repository staying green.
+ *
+ * The guard is now two tools, and the split is not arbitrary:
+ *
+ * - **`eslint.config.mjs`** carries the shapes that are wrong under any
+ *   filename: floating-point `Math`, `Math.random`, `Number`'s float members,
+ *   and negative-exponent literals. eslint sees a path and nothing else, so
+ *   these are what a glob can express.
+ * - **This file** carries decimal literals and `/`, which are *legal in
+ *   `normalize.ts`* and illegal beside it. Telling those apart needs the
+ *   enumeration below, which is a list of real source files rather than a
+ *   pattern — and it is what lets the lint probes above use synthetic filenames
+ *   without exempting the real ones.
+ *
+ * Both halves are scanned here regardless, so this file fails on its own if the
+ * lint block is deleted or narrowed.
  */
 
 import { readFileSync, readdirSync } from 'node:fs';
@@ -80,24 +105,41 @@ const INTEGER_SIDE = [
 /** The one file §4.1 licenses to divide. */
 const FLOAT_SIDE = ['normalize.ts'] as const;
 
-/** Every `.ts` file in `packages/agent-api/src`, by basename. */
-function sourceFileNames(): string[] {
-  return readdirSync(fileURLToPath(new URL('../../src/', import.meta.url)))
-    .filter((name) => name.endsWith('.ts'))
-    .sort();
+const SRC_DIR = fileURLToPath(new URL('../../src/', import.meta.url));
+
+/**
+ * Every TypeScript source under `packages/agent-api/src`, at any depth.
+ *
+ * Recursive, and matching every TypeScript extension rather than `.ts` alone.
+ * The flat `readdirSync(...).filter(endsWith('.ts'))` this replaces was correct
+ * for the tree as it stands and silently wrong for the tree of the first day
+ * somebody adds `src/observe/encode.ts` or `src/encode.mts` — a file in neither
+ * list is the whole point of the assertion below, and a file the enumeration
+ * never saw is in neither list without anybody deciding.
+ */
+function sourceFileNames(directory = SRC_DIR, prefix = ''): string[] {
+  const found: string[] = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const name = `${prefix}${entry.name}`;
+    if (entry.isDirectory()) {
+      found.push(...sourceFileNames(`${directory}${entry.name}/`, `${name}/`));
+      continue;
+    }
+    if (/\.(?:ts|tsx|mts|cts)$/.test(entry.name)) found.push(name);
+  }
+  return found.sort();
 }
 
 function sourceOf(basename: string): string {
-  return readFileSync(fileURLToPath(new URL(`../../src/${basename}`, import.meta.url)), 'utf8');
+  return readFileSync(`${SRC_DIR}${basename}`, 'utf8');
 }
 
-/** Non-integer numeric literals in a file, as `line:text`. */
-function decimalLiterals(basename: string): string[] {
-  const source = sourceOf(basename);
-  const parsed = ts.createSourceFile(basename, source, ts.ScriptTarget.ES2022, true);
+/** Every node in a file's AST satisfying `predicate`, as `basename:line`. */
+function nodesWhere(basename: string, predicate: (node: ts.Node) => boolean): string[] {
+  const parsed = ts.createSourceFile(basename, sourceOf(basename), ts.ScriptTarget.ES2022, true);
   const found: string[] = [];
   const visit = (node: ts.Node): void => {
-    if (ts.isNumericLiteral(node) && /^[0-9_]*\.[0-9_]*([eE][-+]?[0-9_]+)?$/.test(node.getText())) {
+    if (predicate(node)) {
       const { line } = parsed.getLineAndCharacterOfPosition(node.getStart());
       found.push(`${basename}:${String(line + 1)} ${node.getText()}`);
     }
@@ -107,24 +149,64 @@ function decimalLiterals(basename: string): string[] {
   return found;
 }
 
-/** Divisions in a file, as `line:text`. Fixed-point division is `div()`. */
+/**
+ * The float shapes the rules-path ban rejects that a decimal-literal regex does
+ * not see, transcribed from `eslint.config.mjs` selector by selector.
+ *
+ * Duplicated with the lint block on purpose. The lint block is what stops a bad
+ * commit; this is what notices if the lint block stops matching this package,
+ * which a lint block cannot report about itself.
+ */
+const UNSEEN_FLOAT_SHAPES: readonly (readonly [string, (node: ts.Node) => boolean])[] = [
+  [
+    'negative-exponent literal',
+    (node) => ts.isNumericLiteral(node) && /^[0-9_]+[eE]-[0-9_]+$/.test(node.getText()),
+  ],
+  [
+    'floating-point Math member',
+    (node) =>
+      ts.isPropertyAccessExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'Math' &&
+      !/^(?:abs|min|max|sign|imul|clz32)$/.test(node.name.text),
+  ],
+  [
+    'computed Math access',
+    (node) =>
+      ts.isElementAccessExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'Math',
+  ],
+  [
+    '** operator',
+    (node) =>
+      ts.isBinaryExpression(node) &&
+      node.operatorToken.kind === ts.SyntaxKind.AsteriskAsteriskToken,
+  ],
+  [
+    'parseFloat or Number.EPSILON',
+    (node) => ts.isIdentifier(node) && (node.text === 'parseFloat' || node.text === 'EPSILON'),
+  ],
+];
+
+/** Non-integer numeric literals in a file, as `basename:line text`. */
+function decimalLiterals(basename: string): string[] {
+  return nodesWhere(
+    basename,
+    (node) =>
+      ts.isNumericLiteral(node) && /^[0-9_]*\.[0-9_]*([eE][-+]?[0-9_]+)?$/.test(node.getText()),
+  );
+}
+
+/** Divisions in a file. Fixed-point division is `div()`. */
 function divisions(basename: string): string[] {
-  const source = sourceOf(basename);
-  const parsed = ts.createSourceFile(basename, source, ts.ScriptTarget.ES2022, true);
-  const found: string[] = [];
-  const visit = (node: ts.Node): void => {
-    if (
+  return nodesWhere(
+    basename,
+    (node) =>
       ts.isBinaryExpression(node) &&
       (node.operatorToken.kind === ts.SyntaxKind.SlashToken ||
-        node.operatorToken.kind === ts.SyntaxKind.SlashEqualsToken)
-    ) {
-      const { line } = parsed.getLineAndCharacterOfPosition(node.getStart());
-      found.push(`${basename}:${String(line + 1)}`);
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(parsed);
-  return found;
+        node.operatorToken.kind === ts.SyntaxKind.SlashEqualsToken),
+  );
 }
 
 describe('the float ban still holds everywhere it is supposed to', () => {
@@ -181,5 +263,74 @@ describe('the exemption is one file wide', () => {
     // The positive control. Without it, a scanner that returned an empty array
     // for every file would pass every assertion above.
     expect(divisions('normalize.ts').length).toBeGreaterThan(0);
+  });
+
+  it.each(INTEGER_SIDE)('keeps %s free of the float shapes a decimal regex misses', (basename) => {
+    // `1e-9`, `Math.PI`, `Math[name]`, `**` and `parseFloat` are all rejected by
+    // the rules-path ban and all invisible to the two scans above. The claim
+    // this file makes is *"the same shapes the rules-path ban rejects"*, and for
+    // a long time it checked half of them.
+    for (const [shape, predicate] of UNSEEN_FLOAT_SHAPES) {
+      expect(nodesWhere(basename, predicate), `${basename}: ${shape}`).toEqual([]);
+    }
+  });
+
+  it('finds each unseen shape when it is there, so this scan is not looking at nothing', () => {
+    // The positive control for the scan above, on synthetic sources rather than
+    // on a real file — the real files are clean, which is what makes a control
+    // necessary.
+    const probes = [
+      'export const epsilon = 1e-9;\n',
+      'export const turn = Math.PI;\n',
+      'export const pick = (k: string) => Math[k];\n',
+      'export const square = (a: number) => a ** 2;\n',
+      'export const read = (s: string) => parseFloat(s);\n',
+    ];
+    for (const [index, [shape, predicate]] of UNSEEN_FLOAT_SHAPES.entries()) {
+      const source = probes[index] as string;
+      const parsed = ts.createSourceFile('probe.ts', source, ts.ScriptTarget.ES2022, true);
+      let hits = 0;
+      const visit = (node: ts.Node): void => {
+        if (predicate(node)) hits += 1;
+        ts.forEachChild(node, visit);
+      };
+      visit(parsed);
+      expect(hits, shape).toBeGreaterThan(0);
+    }
+  });
+
+  it('has eslint reject every one of those shapes on an integer-side file', async () => {
+    // The other half of the guard, asserted from this side so that narrowing the
+    // agent-api block in eslint.config.mjs fails a test here rather than
+    // silently re-opening the hole. Decimal literals and `/` are excluded: they
+    // are legal in normalize.ts, eslint sees only a path, and the scans above
+    // are what tell the two apart.
+    for (const source of [
+      'export const epsilon = 1e-9;\n',
+      'export const turn = Math.PI;\n',
+      'export const root = (a: number) => Math.sqrt(a);\n',
+      'export const roll = () => Math.random();\n',
+      'export const tiny = Number.EPSILON;\n',
+    ]) {
+      const [result] = await eslint.lintText(source, {
+        filePath: 'packages/agent-api/src/observation.ts',
+      });
+      expect(result?.errorCount ?? 0, source.trim()).toBeGreaterThan(0);
+    }
+  });
+
+  it('still lets normalize.ts divide, and still refuses it a random draw', async () => {
+    const [dividing] = await eslint.lintText('export const half = (a: number) => a / 2;\n', {
+      filePath: 'packages/agent-api/src/normalize.ts',
+    });
+    expect(dividing?.errorCount ?? 0).toBe(0);
+
+    const [rolling] = await eslint.lintText('export const roll = () => Math.random();\n', {
+      filePath: 'packages/agent-api/src/normalize.ts',
+    });
+    // §4.1 licenses the division, not the nondeterminism: an observation drawn
+    // from a random number is irreproducible whichever side of the boundary the
+    // draw happens on.
+    expect(rolling?.errorCount ?? 0).toBeGreaterThan(0);
   });
 });

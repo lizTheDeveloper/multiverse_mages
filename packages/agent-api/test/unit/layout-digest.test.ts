@@ -52,8 +52,16 @@ import { describe, expect, it } from 'vitest';
  * must not do. If this fails, the observation's meaning changed: update the
  * literal *and* say in the commit what moved, because every baseline recorded
  * under the old digest is now incomparable rather than merely stale.
+ *
+ * Moved once, from `ae4ffd5a251d9ba2`, when `favor`, `worship`, `materials`,
+ * `prestige` and objective `valueFp` stopped being `bounded` over `FP_ONE` —
+ * under which every one of them read a constant `1.0` — and became ratios over
+ * constants sized to what they hold. That is a change of meaning in five
+ * channels and the digest is supposed to say so. No baseline had been recorded
+ * under the old value, which is why the change was made now rather than after
+ * 0.5.0 shipped one.
  */
-const EXPECTED_DIGEST = 'ae4ffd5a251d9ba2';
+const EXPECTED_DIGEST = '46182c35d829b205';
 
 /** A deep, structurally independent copy of the shipped table. */
 function copyOfTable(): ObservationSlot[] {
