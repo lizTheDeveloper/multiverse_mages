@@ -23,15 +23,15 @@
 
 ## 3. Monte Carlo harness core
 
-- [ ] 3.1 Scaffold `packages/mc-harness` depending on `agent-api` only, and confirm the `core-contracts` dependency-graph test covers it
-- [ ] 3.2 Implement the `worker_threads` pool with a configurable worker count and no shared mutable state between runs
-- [ ] 3.3 Implement seed derivation as a pure function of `(rootSeed, sweepId, cellIndex, replicateIndex)`, published and stable
-- [ ] 3.4 Implement the sweep specification format and its validator, rejecting unknown factors, metrics, and strategies before dispatch
-- [ ] 3.5 Implement factorial expansion reporting cell count and run count before execution begins
-- [ ] 3.6 Implement the world-tick cap and terminal-status recording for `ascended`, `stagnated`, `truncated`, and `failed`
-- [ ] 3.7 Implement per-run timeout, worker replacement, and failure classification so one crash cannot abort a sweep
-- [ ] 3.8 Implement the sweep disqualification threshold on failure count
-- [ ] 3.9 Unit test that 1-worker and 8-worker executions produce identical records and aggregates
+- [x] 3.1 Scaffold `packages/mc-harness` depending on `agent-api` only, and confirm the `core-contracts` dependency-graph test covers it
+- [x] 3.2 Implement the `worker_threads` pool with a configurable worker count and no shared mutable state between runs
+- [x] 3.3 Implement seed derivation as a pure function of `(rootSeed, sweepId, cellIndex, replicateIndex)`, published and stable
+- [x] 3.4 Implement the sweep specification format and its validator, rejecting unknown factors, metrics, and strategies before dispatch
+- [x] 3.5 Implement factorial expansion reporting cell count and run count before execution begins
+- [x] 3.6 Implement the world-tick cap and terminal-status recording for `ascended`, `stagnated`, `truncated`, and `failed`
+- [x] 3.7 Implement per-run timeout, worker replacement, and failure classification so one crash cannot abort a sweep
+- [x] 3.8 Implement the sweep disqualification threshold on failure count
+- [x] 3.9 Unit test that 1-worker and 8-worker executions produce identical records and aggregates
 
 ## 4. Results, aggregation, and reproduction
 
