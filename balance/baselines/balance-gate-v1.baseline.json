@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "b84f2181f89f3dc2c169d274d9030b77e00799968751ceac42aba002e2dcf499",
+  "contentHash": "20b244e9e1ebca27657c6e3a91add467d6566594ba6a9b151516160ae9f321b0",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.648564310457522,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.945692931372566,"unit":"grimoires","value":116.7},
@@ -14,7 +14,10 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":0.4412285723536322,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3236857170608967,"unit":"people","value":129.13},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.4412285723536323,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3236857170608969,"unit":"people","value":-14.87}
   ],
-  "notes": [],
+  "notes": [
+    "Regenerated at the close of agent-interface, alongside the reference sweep of 10,000 runs that task 10.1 owns. That sweep measured 2,400,000 world ticks in 3392 s on four workers -- 2.95 runs/s, 708 world ticks/s -- with zero failures and every one of its 100,000 metric entries present and measured.",
+    "contracts.md section 7's arm-scoped metrics are now collected and are NOT gated by this file: ascensionRate 0, capitalSnowball 0.380, worshipSnowball 0.090 over the 10,000-run sweep. capitalSnowball above 0.35 is a finding about the degenerate library economy described above, not a balance claim, and it has no committed tolerance yet by design."
+  ],
   "provenance": {
     "buildVersion": "0.3.0",
     "contentHash": "0e63987b2823f4d991ea1c7a40944055",
@@ -23,7 +26,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Re-keyed to the god-agency build. god-agency (0.7.0) adds two content files inside contentRevision, so the provenance hash moves and the gate correctly refuses to compare across builds. The nine measured values are unchanged to the decimal: this sweep is 200 runs of the passive control, which submits no god action, and the god systems installed versus removed were measured to produce identical metrics. This records a new build, not new behaviour. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0, and they describe a universe still degenerate in known ways -- the passive control exercises no god verb, and library depth stays near 1.7 distinct nodes against a hundred-odd grimoires because the scribable list is cost-ordered, so the same cheap nodes are copied over and over.",
+  "rationale": "Initial baseline, 0.5.0: the committed five-year gate baseline for the agent-interface release. These numbers are a measurement and not a balance claim -- release-plan.md forbids a balance claim before 0.5.0, and 0.5.0 is the release that builds the instrument rather than one that tunes the game. Nothing moved: every one of the nine values is identical to the decimal against the baseline this supersedes, which is the honest outcome, because agent-interface's closeout added an arm-scoped metric layer that is written beside a run record and reads nothing the simulation did not already compute. The universe these vital signs describe is still degenerate in ways that are named rather than hidden: all 200 gated runs are the passive control, which submits no god verb, so god-agency's verbs are installed and unexercised here; library depth sits near 1.7 distinct nodes against a hundred-odd grimoires because the scribable list is cost-ordered and the same cheap nodes are copied over and over; the population halves before it grows at five years; and several observation channels saturate.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
@@ -37,7 +40,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.13,"value":129.13},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.87,"value":-14.87}
   ],
-  "supersedes": "8389aea026603ca6c3bc99002fcee884a4c0aedd63e89cd81f41d9d85de22661",
+  "supersedes": "b84f2181f89f3dc2c169d274d9030b77e00799968751ceac42aba002e2dcf499",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }

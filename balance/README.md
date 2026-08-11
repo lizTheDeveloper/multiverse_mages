@@ -124,8 +124,8 @@ if that ever stops being true.
 | cells × replicates | 4 × 50 = **200 runs** | 4 × 50 = **200 runs** | 40 × 250 = **10,000 runs** |
 | world-tick cap | 60 (five world years) | 240 (twenty world years) | 240 (twenty world years) |
 | metrics | 9 vital signs | 9 + `referenceNodesGainedFinalQuarter` | 9 + `referenceNodesGainedFinalQuarter` |
-| wall clock | ~8 s idle, ~7 s in `verify` | ~35 s idle, ~57 s in `verify` | see below |
-| committed baseline | yes | yes | **no** |
+| wall clock | ~8 s idle, ~7 s in `verify` | ~35 s idle, ~57 s in `verify` | **3392 s measured** — see below |
+| committed baseline | yes | yes | **no**, and deliberately |
 
 Both gate sweeps are sized to run on every push. That is the whole design constraint: a gate that
 takes ten minutes gets deleted, and a gate that never runs is worse than none. Their resulting
@@ -157,22 +157,91 @@ idle cores of a four-core container:
   extra sensitivity: it keeps the tick cap the single difference between the two gates. The
   remaining budget is the margin for a loaded or slower runner.
 
-**The full sweep has never been run, and no baseline is committed for it.** Task 10.1 of
-`agent-interface` owns running it. It is now within reach for the first time: 10,000 runs × 240
-ticks = 2,400,000 world ticks, which at the horizon gate's measured 1,380 ticks per second on four
-workers is about **29 minutes** on this container — down from the four days the superlinear loop
-implied. That is a claim from an extrapolation, not a measurement, and the sweep is still committed
-as the declared experiment rather than as numbers nobody produced.
+### The full sweep, run — task 10.1
+
+**It has now been run, once, and the figures below are measured rather than extrapolated.** On
+2026-08-11, on a four-core container:
+
+| | |
+|---|---|
+| runs | 10,000 — 40 cells × 250 replicates |
+| world ticks | 2,400,000 (10,000 × 240) |
+| wall clock | **3392 s** — 56 min 32 s |
+| throughput | **2.95 runs/s**, **708 world ticks/s** |
+| workers | **4** |
+| terminal statuses | `truncated` 10,000 |
+| failures | **0**, so the sweep is not disqualified |
+| metric entries | 100,000 — every one of the ten declared metrics, in every one of the 10,000 records, all `measured` |
+
+Three caveats, because the number is only useful with them:
+
+- **Four workers, not eight.** `release-plan.md`'s 0.5.0 claim says eight, and this container has
+  four cores; running eight workers on four cores measures scheduling, not throughput. The figure is
+  what four workers did.
+- **The container was shared.** Another agent's test suite was running against a sibling worktree
+  for part of the sweep, and the run averaged roughly 300% of four cores rather than 400%. So 708
+  world ticks per second is a *floor*, not the machine's best.
+- 708 ticks/s against the horizon gate's 1,380 is about half, and both directions of that gap are
+  explained above: contention, and a full sweep's 40 cells reaching starting positions (16 founding
+  nodes, cohorts of 12) that the gate's four cells never visit and that carry more population per
+  tick.
+
+**No baseline is committed for the full sweep, and that is deliberate.** It is not a gate: it runs
+once per release, not once per push, and a tolerance derived from 10,000 runs would be far tighter
+than anything a gate sweep could clear. What the run produced is recorded here and in the two gate
+baselines' `notes`.
+
+### Reproducibility, and exactly what was checked — task 10.3
+
+`release-plan.md`'s second 0.5.0 claim is that *"the same sweep configuration and root seed produce
+identical aggregate metrics"*. Three checks, and the third is the one the wording asks for least
+directly and matters most:
+
+1. **Two executions of the twenty-year gate sweep** — 200 runs, the same 240-tick horizon as the
+   full sweep, the same root seed — produced **byte-identical run records**, identical aggregates,
+   identical arm metrics, and identical summaries with the performance section excluded. Exact
+   equality, no tolerance.
+2. **Offline re-aggregation of the 10,000-run sweep** from its stored records alone reproduced the
+   live aggregates, the arm metrics, the arm id and the status counts exactly. That is what makes
+   the numbers re-derivable by someone who has the results file and not the machine.
+3. **Forty of the 10,000 runs — one per parameter cell** — were re-executed alone, single-threaded,
+   from their four coordinates, and all forty came back **byte-identical** to the records the
+   40-cell, four-worker sweep wrote.
+
+**What was not done: a second execution of the full 10,000-run sweep.** At 56 minutes each that is
+two hours of a shared four-core container, and the three checks above cover the same property at
+the same tick cap, over the same executor, at both ends of the scale. Stated here rather than
+implied, because "reproducible" is the claim everything else in this directory rests on.
+
+The arm-scoped metrics of `contracts.md` §7 were collected over it, which is the first time any of
+them has had a real sample:
+
+| §7 arm metric | over 10,000 runs | |
+|---|---|---|
+| `ascensionRate` | **0** | denominator 10,000, no run ascended — see the degeneracies below |
+| `capitalSnowball` | **0.380** | at tick 240; 0.384 at tick 60 |
+| `worshipSnowball` | **0.090** | at tick 240, against §7's ≤ 0.35 |
+| `prestigeAdvantage` | `no-observations` | the mechanic exists; nothing schedules a mirrored pair yet |
+| `winRateByPrimitive` | `mechanic-absent` | it is a raid win rate, and there are no raids |
+
+`capitalSnowball` at 0.380 sits above the 0.35 §7 gives `worshipSnowball` and inherits to *"same,
+over library depth"*. **That is a finding, not a balance claim, and specifically a finding about the
+degenerate library economy described below** — 2.19 distinct nodes per library against 720
+grimoires, because the scribable list is cost-ordered. It has no committed tolerance, on purpose:
+gating a number produced by a known-degenerate mechanism would be defending the degeneracy.
 
 ## What these numbers are not
 
-They are not a balance claim. `docs/design/release-plan.md` forbids one before 0.5.0 and this build
-is 0.3.0. They are not `contracts.md` §7's twelve balance metrics either: six of those describe
-mechanics that have not shipped — raids, god actions, worship, prestige — and the rest need
-per-node and per-`(species, tier)` telemetry that the §4.1 observation does not carry, so no
-executor in this tree can produce them yet. What is gated instead is the reference scenario's
-**vital signs**: population, living mages, distinct nodes known, instances, grimoires, library
-depth.
+They are not a balance claim. `docs/design/release-plan.md` forbids one before 0.5.0, and 0.5.0 is
+the release that builds the instrument rather than one that tunes the game.
+
+They are also not `contracts.md` §7's twelve balance metrics. Five of the twelve are now collected
+— the three above plus `illegalActionRate` and `libraryDependence`'s machinery — but they are
+reported, not gated, and the other seven are honest absences: four need raids, and
+`timeToTierBySpecies` and `knowledgeHalfLife` need per-node and per-`(species, tier)` telemetry that
+the §4.1 observation does not carry, so no executor in this tree can produce them yet. What is
+**gated** is the reference scenario's **vital signs**: population, living mages, distinct nodes
+known, instances, grimoires, library depth.
 
 What is gated by the horizon sweep is those nine plus one shape statistic,
 `referenceNodesGainedFinalQuarter`: distinct nodes gained over the final quarter of the run. A

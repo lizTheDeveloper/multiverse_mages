@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "dc3f12b090477b9f23bb62a6fc814bdc33705ba61aa2a54f2777b863aa48e26d",
+  "contentHash": "1a2ca46fed9164afcb204666d8f7ca9f9ff3e47e69f3ae554a152a111059fb0f",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":10.240882605059596,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":30.72264781517879,"unit":"grimoires","value":525.07},
@@ -15,7 +15,10 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":1.328141059326677,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.9844231779800308,"unit":"people","value":210.375},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.3281410593266771,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.984423177980031,"unit":"people","value":66.375}
   ],
-  "notes": [],
+  "notes": [
+    "Regenerated at the close of agent-interface, alongside the reference sweep of 10,000 runs that task 10.1 owns. That sweep shares this sweep's 240-tick horizon and measured 2,400,000 world ticks in 3392 s on four workers -- 2.95 runs/s, 708 world ticks/s -- with zero failures and every one of its 100,000 metric entries present and measured.",
+    "contracts.md section 7's arm-scoped metrics are now collected and are NOT gated by this file: ascensionRate 0, capitalSnowball 0.380, worshipSnowball 0.090 over the 10,000-run sweep. capitalSnowball above 0.35 is a finding about the degenerate library economy described above, not a balance claim, and it has no committed tolerance yet by design."
+  ],
   "provenance": {
     "buildVersion": "0.3.0",
     "contentHash": "0e63987b2823f4d991ea1c7a40944055",
@@ -24,7 +27,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Re-keyed to the god-agency build, so both gates measure one build. god-agency (0.7.0) moves the provenance contentHash by adding content inside contentRevision. Unlike the five-year gate, movement here would be real: twenty years is long enough for ascension and stagnation to terminate a run, which nothing could do before this change. These numbers are a measurement and not a balance claim -- release-plan.md forbids any balance claim before 0.5.0 -- and they still describe a universe degenerate in known ways: all 200 runs are the passive control, which submits no god verb, so no strategy is exercised; and library depth stays near 1.7 distinct nodes against several hundred grimoires, because the scribable list is cost-ordered and the same cheap nodes are copied over and over.",
+  "rationale": "Initial baseline, 0.5.0: the committed twenty-year gate baseline for the agent-interface release. These numbers are a measurement and not a balance claim -- release-plan.md forbids a balance claim before 0.5.0, and 0.5.0 is the release that builds the instrument rather than one that tunes the game. Nothing moved: all ten values are identical to the decimal against the baseline this supersedes, because agent-interface's closeout added an arm-scoped metric layer written beside a run record that reads nothing the simulation did not already compute. The universe these vital signs describe is still degenerate in ways that are named rather than hidden: all 200 gated runs are the passive control, which submits no god verb, so god-agency's verbs are installed and unexercised here; library depth sits near 1.7 distinct nodes against 525 grimoires because the scribable list is cost-ordered and the same cheap nodes are copied over and over; and several observation channels saturate. This is the gate that reads whether the universe stopped -- referenceNodesGainedFinalQuarter at 0.66 nodes over the final five years says it has nearly, at 48.35 of the 51 v1 nodes.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
@@ -39,7 +42,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":210.375,"value":210.375},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":66.375,"value":66.375}
   ],
-  "supersedes": "f99e25427bdfd03c9a32a0432b6b64ffa03c39d12e175687383ab275037d848a",
+  "supersedes": "dc3f12b090477b9f23bb62a6fc814bdc33705ba61aa2a54f2777b863aa48e26d",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }
