@@ -93,9 +93,14 @@ describe('direction one: a primitive stops being exercised', () => {
 describe('direction two: an exclusion becomes covered', () => {
   it('fails and says the exclusion list must be updated deliberately', () => {
     const registry = registryWith((documents) => {
-      const nodes = nodeDocuments(documents);
-      const first = nodes[0];
-      if (first === undefined) throw new Error('node.json is empty');
+      // Must be a *v1* node: the check examines the v1 subset only, and since
+      // the rest of the grid was pre-authored, node.json's first entry is a
+      // creo-animal node the checker never looks at. Injecting there would
+      // leave the report clean and the assertion below would read as the
+      // checker being broken.
+      const v1 = v1CellIds(shippedRegistry());
+      const first = nodeDocuments(documents).find((node) => v1.has(node['cell'] as string));
+      if (first === undefined) throw new Error('no v1 node in node.json');
       effectsOf(first).push({
         primitive: 'lifespan',
         magnitude: 12,
@@ -136,8 +141,14 @@ describe('portal belongs to the mandated cell', () => {
 
   it('fails when portal is authored anywhere else', () => {
     const registry = registryWith((documents) => {
-      const stray = nodeDocuments(documents).find((node) => node['cell'] !== PORTAL_HOME_CELL_ID);
-      if (stray === undefined) throw new Error('every node is in rego-limen; fixture impossible');
+      // v1 and not rego-limen, for the same reason as the exclusion fixture
+      // above: a misplaced portal outside the v1 subset is invisible to a check
+      // scoped to it.
+      const v1 = v1CellIds(shippedRegistry());
+      const stray = nodeDocuments(documents).find(
+        (node) => node['cell'] !== PORTAL_HOME_CELL_ID && v1.has(node['cell'] as string),
+      );
+      if (stray === undefined) throw new Error('every v1 node is in rego-limen; fixture impossible');
       effectsOf(stray).push({
         primitive: PORTAL_PRIMITIVE_ID,
         magnitude: 1024,

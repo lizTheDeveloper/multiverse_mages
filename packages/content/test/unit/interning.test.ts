@@ -137,11 +137,12 @@ describe('interning', () => {
     expect(registry.intern('form', 'nomen')).toBe(14);
     expect(registry.intern('cell', 'creo-animal')).toBe(1);
     expect(registry.intern('cell', 'rego-nomen')).toBe(70);
-    expect(registry.intern('node', 'il-count-the-doors')).toBe(1);
-    // 51, not 50: `knowledge-model` task 2.5 added `rn-keep-the-name-close` to
-    // `rego-nomen`, and node ids intern in sort order, so every node after it
-    // shifts by one. That is the renumbering this assertion exists to surface.
-    expect(registry.intern('node', 'rt-the-vaulted-hall')).toBe(51);
+    expect(registry.intern('node', 'can-call-the-pack')).toBe(1);
+    // 300, not 299: `knowledge-model` task 2.5's `rn-keep-the-name-close` sorts
+    // before this node, so pre-authoring the rest of the grid landed on top of a
+    // set that already carried one extra node. This assertion exists to surface
+    // exactly that renumbering.
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(300);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
@@ -181,7 +182,7 @@ describe('contentRevision', () => {
     // `knowledge-model` task 2.5 added the `rn-keep-the-name-close` node so that
     // `rego-nomen` carries `concealment`, which the task list requires of that
     // cell and which no rego cell previously supplied.
-    expect(registry.contentRevision).toBe('5444a4e2727aa7ba20ffaa4ef67981d1');
+    expect(registry.contentRevision).toBe('4f90d08940a3f0224893a2731eed41e9');
   });
 
   it('is stable across loads of identical content', () => {

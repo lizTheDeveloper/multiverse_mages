@@ -54,7 +54,7 @@ describe('shipped content', () => {
       forms: 14,
       cells: 70,
       v1Cells: 12,
-      nodes: 51,
+      nodes: 300,
       species: 6,
       traditions: 3,
       primitives: 16,
@@ -102,10 +102,13 @@ describe('shipped content', () => {
     expect(seen.size).toBe(70);
   });
 
-  it('resolves a non-v1 cell as addressable but empty', () => {
+  // A non-v1 cell is addressable and populated, but not enabled. That separation is
+  // the whole point of pre-authoring: the world is deeper than the playable slice,
+  // and enabling a cell later is a flag change rather than a content project.
+  it('resolves a non-v1 cell as addressable and authored, but unflagged', () => {
     const cellId = registry.intern('cell', 'creo-ignem');
     const cell = registry.cell(cellId);
-    expect(cell?.nodes).toEqual([]);
+    expect(cell?.nodes.length).toBeGreaterThan(0);
     expect(cell?.v1).toBeUndefined();
   });
 
@@ -119,10 +122,24 @@ describe('shipped content', () => {
     expect(flagged).toContain(REQUIRED_V1_CELL);
   });
 
-  it('authors every node inside the v1 subset', () => {
+  // All seventy cells carry spells; only twelve are enabled. Authoring ahead of the
+  // release is the point -- what would be a defect is a *playable* node gated behind
+  // a cell the release does not enable, which no amount of play could ever reach.
+  it('never gates a v1 node behind content outside the v1 subset', () => {
+    const cellOf = new Map(registry.nodes.map((entry) => [entry.record.id, entry.record.cell]));
     for (const entry of registry.nodes) {
-      expect(V1_CELLS).toContain(entry.record.cell);
+      if (!V1_CELLS.includes(entry.record.cell)) continue;
+      for (const prerequisiteId of entry.record.prerequisites) {
+        const cell = cellOf.get(prerequisiteId);
+        expect(cell, `${entry.record.id} requires ${prerequisiteId}`).toBeDefined();
+        expect(V1_CELLS, `${entry.record.id} requires ${prerequisiteId}`).toContain(cell);
+      }
     }
+  });
+
+  it('carries authored spells in every cell of the grid', () => {
+    const withContent = new Set(registry.nodes.map((entry) => entry.record.cell));
+    expect(withContent.size).toBe(70);
   });
 
   it('marks every authored magnitude as untuned', () => {
@@ -206,14 +223,17 @@ describe('shipped content', () => {
     expect(cellsWithConcealment).toContain('rego-nomen');
   });
 
-  it('exercises every primitive except the two that await Corpus and Animal', () => {
+  // Was 'except the two that await Corpus and Animal'. lifespan and fertility were the
+  // only unexercised primitives because both are Corpus/Animal-bound; pre-authoring the
+  // rest of the grid is what finally gave them somewhere to live.
+  it('exercises every primitive in the registry', () => {
     const declared = new Set<string>();
     for (const entry of registry.nodes) {
       for (const effect of entry.record.effects) declared.add(effect.primitive);
     }
     const registered = registry.primitives.map((entry) => entry.record.id);
     const uncovered = registered.filter((id) => !declared.has(id)).sort();
-    expect(uncovered).toEqual(['fertility', 'lifespan']);
+    expect(uncovered).toEqual([]);
   });
 
   it('confines the portal primitive to rego-limen', () => {
