@@ -95,8 +95,10 @@ produce no reduction. Any stochastic outcome in teaching MUST draw from RNG stre
 
 ### Requirement: Scribing writes a mind instance into a grimoire
 
-Scribing SHALL create a grimoire holding exactly one node, together with a knowledge instance at
-`locationKind` grimoire, consuming supplied scribe capacity and materials. The operation MUST refuse
+Scribing SHALL create a grimoire holding exactly one node, together with the one knowledge instance
+that is its contents — placed at the location that grimoire's holder implies, per "Instance location
+follows its grimoire's holder" below — consuming supplied scribe capacity and materials. The
+operation MUST refuse
 when the node's cell is not permitted, when the source instance is dormant, when the active
 tradition's `store` kind does not permit written storage, or when supplied capacity or materials are
 insufficient. The grimoire's `durability` MUST be derived from the supplied scribe affinity. Any
@@ -109,6 +111,13 @@ stochastic outcome in scribing, including durability rolls, MUST draw from RNG s
 - **THEN** a grimoire is created carrying that node, a knowledge instance is created at
   `locationKind` grimoire referencing it, and the supplied capacity and materials are reported as
   consumed
+
+#### Scenario: A book scribed onto a shelf is shelved
+
+- **WHEN** a scribing operation names a library as the new grimoire's holder
+- **THEN** the instance is created at `locationKind` library with `locationId` set to that library,
+  so the book counts toward that library's depth, is enumerable among its grimoires, and is
+  destroyed with it
 
 #### Scenario: Insufficient materials refuse the operation
 

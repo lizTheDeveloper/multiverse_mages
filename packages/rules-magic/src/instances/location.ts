@@ -51,6 +51,7 @@ import { GRIMOIRE, HOLDER_KIND, LOCATION_KIND, componentOf } from '@mm/state';
 
 import type { KnowledgeLossEvent } from './outcomes.js';
 import type { KnowledgeSubsystem } from './subsystem.js';
+import { writtenInstanceLocation } from './subsystem.js';
 
 /**
  * Shelves a grimoire in a library.
@@ -65,9 +66,7 @@ export function shelveGrimoire(
   grimoire: Handle,
   library: Handle,
 ): void {
-  const instance = requireInstance(knowledge, grimoire, 'shelve');
-  knowledge.setLocation(instance, LOCATION_KIND.library, library);
-  setHolder(knowledge, grimoire, HOLDER_KIND.library, library);
+  placeGrimoire(knowledge, grimoire, HOLDER_KIND.library, library, 'shelve');
 }
 
 /** Withdraws a shelved grimoire into a mage's hands, reversing the rewrite. */
@@ -76,13 +75,16 @@ export function withdrawGrimoire(
   grimoire: Handle,
   holder: Handle,
 ): void {
-  const instance = requireInstance(knowledge, grimoire, 'withdraw');
-  knowledge.setLocation(instance, LOCATION_KIND.grimoire, grimoire);
-  setHolder(knowledge, grimoire, HOLDER_KIND.mage, holder);
+  placeGrimoire(knowledge, grimoire, HOLDER_KIND.mage, holder, 'withdraw');
 }
 
 /**
  * Destroys a grimoire and the one instance that is its contents.
+ *
+ * The instance is what is destroyed; the book goes with it, because
+ * `KnowledgeSubsystem.destroyInstance` owns that pair — a grimoire whose
+ * contents are gone is exactly the object {@link requireInstance} refuses to
+ * operate on, and there is no path that should be able to produce one.
  *
  * @returns the loss event if that copy was the node's last instance anywhere.
  */
@@ -91,10 +93,7 @@ export function destroyGrimoire(
   grimoire: Handle,
   worldTick: Tick,
 ): KnowledgeLossEvent | undefined {
-  const instance = requireInstance(knowledge, grimoire, 'destroy');
-  const event = knowledge.destroyInstance(instance, worldTick);
-  knowledge.state.entities.destroy(grimoire as EntityHandle);
-  return event;
+  return knowledge.destroyInstance(requireInstance(knowledge, grimoire, 'destroy'), worldTick);
 }
 
 /**
@@ -154,13 +153,29 @@ function requireInstance(
   return instance;
 }
 
-function setHolder(
+/**
+ * Hands a book to a holder: writes §1.5's holder fields and moves the one
+ * instance that is its contents, in a single call.
+ *
+ * Shelving and withdrawal are the same operation with different arguments, and
+ * they are written as one so that neither can be performed without the other.
+ * Two functions each doing half is how a book ends up on a shelf its library
+ * cannot see — and the location is *derived* from the holder by
+ * `writtenInstanceLocation` rather than passed alongside it, so there is no
+ * argument a caller could get wrong.
+ */
+function placeGrimoire(
   knowledge: KnowledgeSubsystem,
   grimoire: Handle,
   holderKind: number,
   holderId: Handle,
+  operation: string,
 ): void {
+  const instance = requireInstance(knowledge, grimoire, operation);
   const store = componentOf(knowledge.state, GRIMOIRE);
   store.set(grimoire as EntityHandle, 'holderKind', holderKind);
   store.set(grimoire as EntityHandle, 'holderId', holderId);
+
+  const location = writtenInstanceLocation(grimoire, holderKind, holderId);
+  knowledge.setLocation(instance, location.locationKind, location.locationId);
 }

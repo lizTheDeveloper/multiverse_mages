@@ -235,12 +235,19 @@ describe('a grimoire that outlived its instance', () => {
     expect(grimoiresIn(after, LIBRARY)).toEqual([real]);
 
     // The spec scenario, verbatim: destroying a shelved grimoire destroys its
-    // instance. Today this throws instead.
-    expect(destroyGrimoire(after, real, 40)).toEqual({
-      nodeId: ROOT_NODE,
-      worldTick: 40,
-      location: LOCATION_KIND.library,
-    });
-    expect(after.instanceCount(ROOT_NODE)).toBe(1);
+    // instance, "and no other instance is affected". Today this throws instead.
+    //
+    // Corrected while fixing: this file first asserted a loss event here *and*
+    // a surviving instance afterward, and no implementation can satisfy both —
+    // §1.5 emits the event only when the count reaches zero. The scenario also
+    // leaves ROOT_NODE with two mind instances, the archmage's original (which
+    // the Art of Memory keeps) and the one she relearned, so the node does not
+    // leave the universe at all. Asserted as the scenario's own two clauses
+    // instead, which is the stronger statement: exactly the book's own instance
+    // goes, the two minds are untouched, and the book goes with its contents.
+    expect(destroyGrimoire(after, real, 40)).toBeUndefined();
+    expect(after.instancesAt(LOCATION_KIND.library, LIBRARY)).toEqual([]);
+    expect(after.instanceCount(ROOT_NODE)).toBe(2);
+    expect(componentOf(after.state, GRIMOIRE).size).toBe(0);
   });
 });

@@ -36,7 +36,7 @@
 
 import type { ContentId, Fp } from '@mm/content';
 import type { Handle, Ruleset, Tick } from '@mm/state';
-import { GRIMOIRE, HOLDER_KIND, LOCATION_KIND, attachRecord, permits } from '@mm/state';
+import { GRIMOIRE, HOLDER_KIND, attachRecord, permits } from '@mm/state';
 import { RNG_STREAM, mul, nextBounded } from '@mm/sim-core';
 
 import type { CellResolver, KnowledgeRng, NodeCatalog } from './catalog.js';
@@ -48,6 +48,7 @@ import {
 } from './constants.js';
 import type { KnowledgeRefusal } from './outcomes.js';
 import type { KnowledgeSubsystem } from './subsystem.js';
+import { writtenInstanceLocation } from './subsystem.js';
 import { heldMastery } from './teaching.js';
 
 /**
@@ -94,7 +95,14 @@ export interface ScribingInputs {
   readonly scribeCapacity: Fp;
   /** Materials available to this operation. */
   readonly materials: Fp;
-  /** Who ends up holding the book. Defaults to the scribe. */
+  /**
+   * Who ends up holding the book. Defaults to the scribe.
+   *
+   * `HOLDER_KIND.library` is a legal value and means what it says: a university
+   * scribe copying a treatise straight into the stacks, with no moment at which
+   * a mage is carrying it. The instance lands wherever the holder puts it —
+   * `writtenInstanceLocation` decides, not this operation.
+   */
   readonly holderKind?: number;
   readonly holderId?: Handle;
 }
@@ -129,6 +137,11 @@ export function scribeCapacityCost(tier: number): Fp {
  *
  * The instance created is the *only* instance of that written copy: shelving it
  * in a library later rewrites its location rather than producing a second one.
+ * Where it starts is therefore the same question shelving answers, asked at
+ * creation — a book written onto a shelf is shelved from its first tick — so
+ * the location comes from `writtenInstanceLocation` rather than from a constant
+ * here. Reading the holder off the record we just wrote and then placing the
+ * instance somewhere else is how the two disagree.
  */
 export function scribe(inputs: ScribingInputs): ScribingOutcome {
   const node = requireNode(inputs.catalog, inputs.nodeId);
@@ -174,18 +187,22 @@ export function scribe(inputs: ScribingInputs): ScribingOutcome {
     mul(SCRIBE_DURABILITY_BASE, inputs.scribeAffinity) +
     nextBounded(stream, SCRIBE_DURABILITY_ROLL_SPAN);
 
+  const holderKind = inputs.holderKind ?? HOLDER_KIND.mage;
+  const holderId = inputs.holderId ?? inputs.scribe;
+
   const grimoire = inputs.knowledge.state.entities.create();
   attachRecord(inputs.knowledge.state, GRIMOIRE, grimoire, {
     nodeId: inputs.nodeId,
     durability,
-    holderKind: inputs.holderKind ?? HOLDER_KIND.mage,
-    holderId: inputs.holderId ?? inputs.scribe,
+    holderKind,
+    holderId,
   });
 
+  const location = writtenInstanceLocation(grimoire, holderKind, holderId);
   const instance = inputs.knowledge.createInstance({
     nodeId: inputs.nodeId,
-    locationKind: LOCATION_KIND.grimoire,
-    locationId: grimoire,
+    locationKind: location.locationKind,
+    locationId: location.locationId,
     acquiredTick: inputs.worldTick,
     // A book does not know its subject well or badly; it says what it says.
     // Mastery is a fact about a mind, and written instances never decay.

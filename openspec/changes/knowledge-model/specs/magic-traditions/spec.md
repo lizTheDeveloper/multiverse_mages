@@ -223,7 +223,9 @@ domains produce identical results.
 Changing a universe's tradition SHALL leave no knowledge instance in a state the incoming `store`
 kind does not define. The operation MUST resolve every instance whose location kind the new `store`
 kind cannot hold, MUST report what it resolved, and MUST NOT leave an instance addressable at an
-undefined location.
+undefined location. Applying the reported resolution MUST leave no grimoire behind whose instance it
+destroyed: a universe that switched into a `store` kind holding no written copy MUST be
+indistinguishable from one founded under it.
 
 #### Scenario: Switching to a palace store resolves written instances
 
@@ -231,6 +233,13 @@ undefined location.
   Memory
 - **THEN** every grimoire and library instance is resolved by the declared rule, the resolution is
   reported per instance, and no instance remains at `locationKind` grimoire or library
+
+#### Scenario: A resolved written instance takes its book with it
+
+- **WHEN** the reported resolution of that change is applied through the knowledge subsystem's
+  destroy path
+- **THEN** no grimoire record survives the change, so the universe holds no book whose contents
+  nothing can destroy and none that could claim a later book's instance when the world is reloaded
 
 #### Scenario: Switching away from a palace store resolves palace instances
 
