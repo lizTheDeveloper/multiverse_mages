@@ -16,3 +16,6 @@ coverage/
 !.env.example
 
 .playwright-mcp/
+
+# Generated audio candidates. Selected takes are committed under assets/selected/.
+assets/candidates/

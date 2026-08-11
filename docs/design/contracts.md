@@ -483,6 +483,39 @@ it is the only place outside the four dispatch points permitted to read a `tradi
 Declares the units and stacking rule for each effect primitive. See §3 — the table there is
 normative and this file must match it.
 
+### 2.7 `territory.json`
+
+```jsonc
+{
+  "id": "arable-lowland",
+  "name": "The Arable Lowland",
+  "gloss": "The ordinary country most people live in, and the reason there are most people.",
+  "landUnits": 1600,             // how much of this region the universe holds. A count, not fp
+  "capacityPerLandUnit": 20480,  // fp; people one land unit carries. 20480 = 20 people
+  "tuningStatus": "untuned"
+}
+```
+
+**Territory is the fixed resource, and that is its entire job.** Carrying capacity `K` is derived
+from `Σ landUnits × capacityPerLandUnit` because nothing a universe does during a run creates land.
+Every other economic quantity a universe holds — the materials stock above all — is something the
+universe produces, so deriving `K` from one of those makes `K` a function of its own consequences:
+more people produce more materials, more materials raise `K`, and the population bound is whatever
+number the run happened to reach. This file exists so that the bound is a property of the world
+rather than of the run's length.
+
+Materials and completed university seats still *modulate* `K` — a well-supplied territory holds more
+people than a bare one — but only as a **bounded multiplier** on the territory term, never as an
+addend that can grow without limit. `packages/rules-world/src/economy/carrying-capacity.ts` states
+the shape and the ceiling it implies.
+
+`landUnits` is a per-universe endowment carried in content because a simulation instance holds
+exactly one universe (§1.1). When that stops being true — a raid that takes ground, a scenario that
+seeds a smaller world — `landUnits` moves to §1.1 and this record keeps `capacityPerLandUnit`, which
+is a property of the *kind* of country and not of who holds it.
+
+**Every magnitude here is untuned** and carries `tuningStatus` saying so.
+
 ---
 
 ## 3. Effect Primitive Semantics
@@ -643,6 +676,18 @@ what mages *did* but never why, and autonomy reads as randomness.
 It is **not** part of the RL observation. It is emitted on request, is never an input to any rules
 computation, and no simulation behaviour may depend on whether it was requested.
 
+**Consumer note, added while drafting `docs/design/sound-design.md` (§10.1).** The core's guarantee
+above is unchanged and should stay. But a planned consumer — the client's bark system — wants
+*per-mage decision reasons at world-tick granularity*, which is a different shape from *on-demand
+explanation of one decision*. Two consequences, neither urgent:
+
+- Whoever pins the explain channel's payload in `agent-interface` should know that shape is wanted,
+  because it is much cheaper to know before the format is fixed than after.
+- `electron-client` should treat the channel as required for its own read path even though the core
+  keeps it optional. A client that skipped it to save bandwidth would ship a game where mages are
+  silent about why they act — which is the exact failure this section exists to prevent, arriving
+  through a door nobody was watching.
+
 ---
 
 ## 5. Module Boundaries
@@ -650,7 +695,7 @@ computation, and no simulation behaviour may depend on whether it was requested.
 ```
 packages/
   sim-core        deterministic substrate. Depends on: nothing.
-  content         data files + loader + validator. Depends on: sim-core (types only).
+  content         data files + loader + validator, plus a parallel audio content set and its own leaf modules. Depends on: sim-core (types only).
   state           §1 world state types, component layouts, permits().     → sim-core, content (types only)
   primitives      §3 stacking arithmetic and cap clamping.                → sim-core, content (types only)
   rules-magic     grid legality, nodes, knowledge instances, traditions. → sim-core, content, state, primitives
@@ -678,6 +723,20 @@ the primitive registry that lives in `content`. `content` is in the dependency-p
 `PURE_PACKAGES` and may take no runtime dependency, so the arithmetic cannot live there; and §3
 forbids re-deriving a floor outside the one shared helper, so it cannot live anywhere that would
 have to reimplement one. A package between the two is the only placement that satisfies both.
+
+**`content` also carries a second, parallel audio content set — cues and voice-line banks under
+`data/audio`, validated by their own schemas — deliberately outside `contentRevision` (§0):
+renderer-only content that never reaches the simulation must never perturb the hash two universes
+compare to agree they can play together. Alongside it live two pure leaf modules,
+`audio-selection-merge.ts` and `audio-generation.ts`, added for asset production rather than for
+the simulation.** A separate package for either would be worse. `audio-selection-merge.ts` is
+loaded directly by a browser (`tools/audition/`) and must import nothing — a package boundary
+would not tighten that constraint, only add a `package.json` for it to point at. And
+`audio-generation.ts` is ~100 lines whose only input is audio content records already defined
+here; a new package would add build infrastructure — its own `tsconfig`, its own entry in the
+dependency-purity check, its own place in this diagram — to hold two files. Boundaries that are
+only true in practice, not enforced anywhere, are the ones that get "tidied up" by someone who
+does not know why they were drawn that way.
 
 **`coordination` is the third deviation, added during `mages-and-species`, and it is rule 3's own
 coordinating layer given a home.** Rule 3 says the `rules-magic`/`rules-world` interaction *"lives

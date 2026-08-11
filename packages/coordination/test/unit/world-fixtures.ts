@@ -42,6 +42,7 @@ import {
   storePolicy,
   traditionTableFrom,
 } from '@mm/rules-magic';
+import { territoryExtent } from '@mm/rules-world';
 import type { WorldStepDeps } from '../../src/index.js';
 
 /** The shipped content, loaded once for a whole test file. */
@@ -109,6 +110,7 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     catalog,
     cells,
     store: shippedStorePolicy(traditionId),
+    territory: territoryExtent(registry().territories.map((entry) => entry.record)),
     primitives: {
       lifespan: primitiveNamed('lifespan'),
       resourceYield: primitiveNamed('resource-yield'),
@@ -126,10 +128,9 @@ export interface SeedOptions {
    * Members per starting cohort, per species, per seeded occupation.
    *
    * Small on purpose. The logistic brake in `carrying-capacity.ts` shuts births
-   * off entirely at and above `K`, and `K` is derived from the materials stock —
-   * so a "generous" starting population is a population above its own carrying
-   * capacity, in which the births phase correctly does nothing and a test of it
-   * asserts nothing.
+   * off entirely at and above `K` — so a "generous" starting population is a
+   * population against its own carrying capacity, in which the births phase
+   * correctly does nothing and a test of it asserts nothing.
    */
   readonly cohortSize?: number;
   /** Mages seeded per species. */
@@ -175,10 +176,10 @@ export function seededWorld(
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    // Enough stock that carrying capacity sits above the seeded population, so
-    // the brake is damping births rather than forbidding them. `K` is
-    // `materials × 2 / fp(1024)` plus completed university seats, of which
-    // there are none until a god founds one.
+    // A working stock, not a lever on `K`. Carrying capacity comes from the
+    // shipped territory (`contracts.md` §2.7) and sits far above the seeded
+    // population whatever the stock is; materials only modulate it, within the
+    // bound `carrying-capacity.ts` states.
     materials: 1000 * 1024,
     prestige: 0,
     prestigeEarned: 0,

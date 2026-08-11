@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
  *
  * The indirection exists so that the loader's failure paths are testable
  * without a fixture directory per case: a test that wants "a node missing a
- * required field" writes one object literal, not a tree of seven files.
+ * required field" writes one object literal, not a tree of eight files.
  */
 export interface ContentSource {
   /** Prefix used in diagnostics, e.g. `data` or `fixture:cycle`. */
@@ -28,7 +28,7 @@ export interface ContentSource {
   read(fileName: string): string | undefined;
 }
 
-/** The seven content files of `docs/design/contracts.md` §2, in load order. */
+/** The eight content files of `docs/design/contracts.md` §2, in load order. */
 export const CONTENT_FILES = [
   'technique.json',
   'form.json',
@@ -37,6 +37,7 @@ export const CONTENT_FILES = [
   'species.json',
   'tradition.json',
   'primitive.json',
+  'territory.json',
 ] as const;
 
 export type ContentFileName = (typeof CONTENT_FILES)[number];
@@ -78,7 +79,7 @@ export function shippedSchemaDirectory(): string {
   return fileURLToPath(new URL('../schema', import.meta.url));
 }
 
-/** The content set this package ships: the v1 grid, nodes, species, traditions. */
+/** The content set this package ships: the v1 grid, nodes, species, traditions, territory. */
 export function shippedContentSource(): ContentSource {
   return directorySource(shippedDataDirectory(), 'data');
 }

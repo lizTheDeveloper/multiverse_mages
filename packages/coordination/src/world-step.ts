@@ -113,7 +113,13 @@ import type { CellResolver, KnowledgeSubsystem, NodeCatalog, StorePolicy } from 
 import { decayHeldKnowledge } from '@mm/rules-magic';
 import type { RediscoveryClampCounter } from '@mm/primitives';
 import { createRediscoveryClampCounter } from '@mm/primitives';
-import type { CohortDemography, MageGoalCommitment, ScaleFreeHazard, StepRng } from '@mm/rules-world';
+import type {
+  CohortDemography,
+  MageGoalCommitment,
+  ScaleFreeHazard,
+  StepRng,
+  TerritoryExtent,
+} from '@mm/rules-world';
 import {
   CohortStore,
   GOAL,
@@ -171,6 +177,15 @@ export interface WorldStepDeps {
   readonly cells: CellResolver;
   /** The universe's resolved `store` hook, from its tradition. */
   readonly store: StorePolicy;
+  /**
+   * The universe's territory, summed from content by `territoryExtent`.
+   *
+   * Carried on the deps rather than read from state because it is fixed for the
+   * length of a run (`contracts.md` §2.7) — and because `carrying-capacity.ts`
+   * derives `K` from it precisely so that `K` cannot be moved by anything the
+   * loop below produces.
+   */
+  readonly territory: TerritoryExtent;
   /** Primitive records, for the stacking rules and caps their magnitudes obey. */
   readonly primitives: {
     readonly lifespan: PrimitiveRecord;
@@ -408,6 +423,7 @@ export function worldSystem(
 
       // ---- 8. Births ----------------------------------------------------------
       const capacity = carryingCapacity({
+        territory: deps.territory,
         materials,
         completedCapacity: completedCapacity(state),
       });

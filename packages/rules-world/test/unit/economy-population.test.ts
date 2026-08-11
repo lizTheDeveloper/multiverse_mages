@@ -28,20 +28,32 @@ import { FP_ONE, RNG_STREAM } from '@mm/sim-core';
 import {
   BIRTHS_PER_MEMBER,
   BIRTH_RATE_ONE,
-  CAPACITY_PER_UNIVERSITY_SEAT,
+  MATERIALS_PROVISION_CAP,
+  MATERIALS_PROVISION_SATURATION,
+  MAX_PROVISIONING,
   MAX_SUBSISTENCE_PENALTY,
+  NO_TERRITORY,
   OCCUPATION_COUNT,
+  SEATS_PROVISION_CAP,
   carryingCapacity,
   cohortBirths,
   createCohortStore,
   expectedBirths,
   fertilityBrake,
   insertNewborns,
+  maxCarryingCapacity,
+  territoryExtent,
 } from '../../src/index.js';
 import type { BirthInput } from '../../src/index.js';
 
-import { primitiveNamed, speciesNamed } from './universities-fixtures.js';
+import { primitiveNamed, shippedRegistry, speciesNamed } from './universities-fixtures.js';
 import { recordingRng, stepRng } from './mage-fixtures.js';
+
+/** The shipped territory, which is what a universe's `K` is actually derived from. */
+const TERRITORY = territoryExtent(shippedRegistry().territories.map((entry) => entry.record));
+
+/** The materials stock at which the materials term reaches its cap. */
+const SATURATING_STOCK = TERRITORY.landUnits * MATERIALS_PROVISION_SATURATION;
 
 const births = (overrides: Partial<BirthInput> = {}): BirthInput => ({
   count: 1000,
@@ -52,33 +64,101 @@ const births = (overrides: Partial<BirthInput> = {}): BirthInput => ({
   ...overrides,
 });
 
-describe('carrying capacity comes from materials and completed seats', () => {
-  it('grows with the materials stock', () => {
-    expect(carryingCapacity({ materials: 0, completedCapacity: 0 })).toBe(0);
-    expect(carryingCapacity({ materials: 1024, completedCapacity: 0 })).toBeGreaterThan(0);
-    expect(carryingCapacity({ materials: 4096, completedCapacity: 0 })).toBeGreaterThan(
-      carryingCapacity({ materials: 1024, completedCapacity: 0 }),
+describe('carrying capacity comes from territory, modulated by materials and seats', () => {
+  it('sums the shipped regions into a fixed base, and holds that base with nothing else', () => {
+    // The property that makes `K` a bound rather than a reading: bare land, an
+    // empty stock and no universities still carry a population, and that number
+    // is a function of content alone.
+    expect(TERRITORY.landUnits).toBeGreaterThan(0);
+    expect(TERRITORY.baseCapacity).toBeGreaterThan(0);
+    expect(carryingCapacity({ territory: TERRITORY, materials: 0, completedCapacity: 0 })).toBe(
+      TERRITORY.baseCapacity,
     );
   });
 
-  it('counts completed seats and nothing from unfinished ones', () => {
+  it('carries nobody without land, however much is stockpiled on it', () => {
+    expect(
+      carryingCapacity({ territory: NO_TERRITORY, materials: 1_000_000, completedCapacity: 500 }),
+    ).toBe(0);
+  });
+
+  it('rises with the materials stock and then stops rising', () => {
+    // This is the whole fix, as an assertion. The old shape was
+    // `CAPACITY_PER_MATERIAL × materials`, which is monotone with no upper
+    // limit, so a stock that grows every tick produced a `K` that grew every
+    // tick. Here the ramp ends.
+    const bare = carryingCapacity({ territory: TERRITORY, materials: 0, completedCapacity: 0 });
+    const stocked = carryingCapacity({
+      territory: TERRITORY,
+      materials: Math.floor(SATURATING_STOCK / 2),
+      completedCapacity: 0,
+    });
+    const saturated = carryingCapacity({
+      territory: TERRITORY,
+      materials: SATURATING_STOCK,
+      completedCapacity: 0,
+    });
+    const absurd = carryingCapacity({
+      territory: TERRITORY,
+      materials: SATURATING_STOCK * 1_000,
+      completedCapacity: 0,
+    });
+
+    expect(stocked).toBeGreaterThan(bare);
+    expect(saturated).toBeGreaterThan(stocked);
+    expect(absurd).toBe(saturated);
+    expect(saturated).toBe(
+      Math.floor((TERRITORY.baseCapacity * (FP_ONE + MATERIALS_PROVISION_CAP)) / FP_ONE),
+    );
+  });
+
+  it('counts completed seats, nothing from unfinished ones, and stops there too', () => {
     // `completedCapacity` is the caller's sum over `effectiveCapacity`, which is
     // zero for a site under construction -- so an unfinished university reaches
     // this function as a zero rather than as a special case here.
-    expect(carryingCapacity({ materials: 0, completedCapacity: 10 })).toBe(
-      10 * CAPACITY_PER_UNIVERSITY_SEAT,
+    const bare = carryingCapacity({ territory: TERRITORY, materials: 0, completedCapacity: 0 });
+    const few = carryingCapacity({ territory: TERRITORY, materials: 0, completedCapacity: 10 });
+    const many = carryingCapacity({
+      territory: TERRITORY,
+      materials: 0,
+      completedCapacity: 10_000_000,
+    });
+
+    expect(few).toBeGreaterThan(bare);
+    expect(many).toBe(
+      Math.floor((TERRITORY.baseCapacity * (FP_ONE + SEATS_PROVISION_CAP)) / FP_ONE),
     );
   });
 
+  it('never exceeds the documented bound, whatever it is given', () => {
+    // The number task 9.4 asserts against. It names content and nothing else --
+    // no stock, no seat count, no tick index.
+    const bound = maxCarryingCapacity(TERRITORY);
+    expect(bound).toBe(Math.floor((TERRITORY.baseCapacity * MAX_PROVISIONING) / FP_ONE));
+
+    for (const materials of [0, 1024, SATURATING_STOCK, SATURATING_STOCK * 10_000]) {
+      for (const completedCapacity of [0, 10, 100_000]) {
+        expect(
+          carryingCapacity({ territory: TERRITORY, materials, completedCapacity }),
+          `K exceeded its stated bound at materials ${String(materials)} and ` +
+            `${String(completedCapacity)} seats`,
+        ).toBeLessThanOrEqual(bound);
+      }
+    }
+  });
+
   it('falls when subsistence goes unmet, and no further than the documented bound', () => {
-    const fed = carryingCapacity({ materials: 10_240, completedCapacity: 0 });
+    const stock = SATURATING_STOCK / 4;
+    const fed = carryingCapacity({ territory: TERRITORY, materials: stock, completedCapacity: 0 });
     const hungry = carryingCapacity({
-      materials: 10_240,
+      territory: TERRITORY,
+      materials: stock,
       completedCapacity: 0,
       subsistenceShortfallShare: FP_ONE,
     });
     const peckish = carryingCapacity({
-      materials: 10_240,
+      territory: TERRITORY,
+      materials: stock,
       completedCapacity: 0,
       subsistenceShortfallShare: FP_ONE / 2,
     });

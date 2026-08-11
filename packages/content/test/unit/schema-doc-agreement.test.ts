@@ -20,7 +20,7 @@
  * `packages/rules-world/test/unit/species-contract-conformance.test.ts` does
  * this for §2.4 and found two real defects that way (`name` and `tuningStatus`
  * were required by the schema and absent from the example). This file
- * generalises it to all seven content files, and asserts two things per section
+ * generalises it to all eight content files, and asserts two things per section
  * rather than one:
  *
  *  - **Field sets match in both directions.** A field in the schema and not the
@@ -63,7 +63,7 @@ const schemas = shippedSchemaDocuments();
 /**
  * The fenced example under a numbered heading.
  *
- * Anchored on the heading rather than on "the nth jsonc block": §2 has six of
+ * Anchored on the heading rather than on "the nth jsonc block": §2 has seven of
  * them, and matching the wrong one would compare, say, the species schema
  * against `tradition.json` and fail for a reason that reads as a contract
  * violation.
@@ -174,6 +174,7 @@ const SECTIONS: readonly DocumentedSection[] = [
   { contentFile: 'node.json', heading: '### 2.3 `node.json`', recordIndex: 0 },
   { contentFile: 'species.json', heading: '### 2.4 `species.json`', recordIndex: 0 },
   { contentFile: 'tradition.json', heading: '### 2.5 `tradition.json`', recordIndex: 0 },
+  { contentFile: 'territory.json', heading: '### 2.7 `territory.json`', recordIndex: 0 },
 ];
 
 /**
@@ -181,7 +182,7 @@ const SECTIONS: readonly DocumentedSection[] = [
  * for the checks below to compare against. This is named rather than skipped.
  *
  * It is a genuine gap and the report says so, but it is the least consequential
- * of the seven: §3's normative table *is* compared against the shipped registry,
+ * of the eight: §3's normative table *is* compared against the shipped registry,
  * field for field, by `primitive-contract.test.ts`. What is missing is the
  * copyable record shape, not the semantics.
  */
@@ -332,8 +333,17 @@ describe('the section with no example is named rather than passed over', () => {
   it('records that §2.6 shows no primitive record', () => {
     const headingAt = contracts.indexOf('### 2.6 `primitive.json`');
     expect(headingAt).toBeGreaterThan(-1);
-    const nextSection = contracts.indexOf('\n---', headingAt);
-    const body = contracts.slice(headingAt, nextSection);
+    // Bounded by the *next heading* as well as by the horizontal rule. §2.6 is
+    // no longer the last subsection of §2 — §2.7 `territory.json` follows it and
+    // carries an example — so slicing to `\n---` alone would read §2.7's fence
+    // as §2.6's and report a worked example that is not there.
+    const bodyEnd = Math.min(
+      ...['\n---', '\n### '].map((marker) => {
+        const at = contracts.indexOf(marker, headingAt + 1);
+        return at === -1 ? contracts.length : at;
+      }),
+    );
+    const body = contracts.slice(headingAt, bodyEnd);
 
     // If §2.6 gains an example, this fails, and the fix is to move
     // primitive.json into SECTIONS so it is checked like the other six.

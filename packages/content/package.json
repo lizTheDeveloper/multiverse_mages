@@ -2,7 +2,7 @@
   "name": "@mm/content",
   "version": "0.3.0",
   "private": true,
-  "description": "Validated game content — the grid, its nodes, species, traditions, and effect primitives — plus the hard-failing loader that interns it.",
+  "description": "Validated game content — the grid, its nodes, species, traditions, and effect primitives — plus the hard-failing loader that interns it, and a parallel audio content set (cues, voice-line banks) with its own loader and generation-request planner.",
   "license": "AGPL-3.0-or-later",
   "author": "Ann Kelner",
   "type": "module",
@@ -15,7 +15,8 @@
     }
   },
   "bin": {
-    "validate-content": "./bin/validate-content.mjs"
+    "validate-content": "./bin/validate-content.mjs",
+    "validate-audio": "./bin/validate-audio.mjs"
   },
   "files": [
     "bin",
@@ -29,6 +30,7 @@
   "//": "This package MUST NOT gain runtime dependencies. The loader ships a small JSON Schema interpreter (src/json-schema.ts) precisely so that content validation is available wherever the simulation runs, with no install step. A schema validator would only ever be usable as a test-side cross-check.",
   "scripts": {
     "build": "tsc --build",
-    "validate": "node ./bin/validate-content.mjs"
+    "validate": "node ./bin/validate-content.mjs && node ./bin/validate-audio.mjs",
+    "validate:audio": "node ./bin/validate-audio.mjs"
   }
 }

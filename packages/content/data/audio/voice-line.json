@@ -1,1 +1,1270 @@
-[]
+[
+  {
+    "id": "bank-human",
+    "speaker": "human",
+    "speakerKind": "species",
+    "voicePrompt": "Mid-thirties, quick and slightly breathless, warm, always sounds like they are already late. Neutral accent. Reads sincerely, never for laughs.",
+    "lines": [
+      {
+        "id": "human-selection-1",
+        "tier": "selection",
+        "text": "Adjunct, actually.",
+        "about": ""
+      },
+      {
+        "id": "human-selection-2",
+        "tier": "selection",
+        "text": "I've read about this.",
+        "about": ""
+      },
+      {
+        "id": "human-selection-3",
+        "tier": "selection",
+        "text": "Ready. Ish.",
+        "about": ""
+      },
+      {
+        "id": "human-selection-4",
+        "tier": "selection",
+        "text": "I have three papers in progress.",
+        "about": ""
+      },
+      {
+        "id": "human-selection-5",
+        "tier": "selection",
+        "text": "Make it quick, I'm mortal.",
+        "about": ""
+      },
+      {
+        "id": "human-acknowledgement-1",
+        "tier": "acknowledgement",
+        "text": "I'll fit it in.",
+        "about": ""
+      },
+      {
+        "id": "human-acknowledgement-2",
+        "tier": "acknowledgement",
+        "text": "Adding it to the pile.",
+        "about": ""
+      },
+      {
+        "id": "human-acknowledgement-3",
+        "tier": "acknowledgement",
+        "text": "Yes. Yes! ...Yes?",
+        "about": ""
+      },
+      {
+        "id": "human-acknowledgement-4",
+        "tier": "acknowledgement",
+        "text": "This is fine. This is fine.",
+        "about": ""
+      },
+      {
+        "id": "human-acknowledgement-5",
+        "tier": "acknowledgement",
+        "text": "Sure, I'll just do that *as well*.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-polite-1",
+        "tier": "annoyance-polite",
+        "text": "Still here.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-polite-2",
+        "tier": "annoyance-polite",
+        "text": "Did you need something else?",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-polite-3",
+        "tier": "annoyance-polite",
+        "text": "I'm on a deadline. It's a hard one. It's death.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-irritated-1",
+        "tier": "annoyance-irritated",
+        "text": "I heard you the first four times.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-irritated-2",
+        "tier": "annoyance-irritated",
+        "text": "You know I can hear the clicking.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-irritated-3",
+        "tier": "annoyance-irritated",
+        "text": "Some of us have a *lifespan*.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-irritated-4",
+        "tier": "annoyance-irritated",
+        "text": "That's four minutes of it. Gone.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-cracking-1",
+        "tier": "annoyance-cracking",
+        "text": "Eighty years! I get eighty! The elf gets seven hundred!",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-cracking-2",
+        "tier": "annoyance-cracking",
+        "text": "Do you know what I could do with seven hundred years?",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-cracking-3",
+        "tier": "annoyance-cracking",
+        "text": "She's been a junior researcher for two centuries and they still call her *promising*.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-cracking-4",
+        "tier": "annoyance-cracking",
+        "text": "I'm going to die before this conversation ends.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-unhinged-1",
+        "tier": "annoyance-unhinged",
+        "text": "I HAVE A WIFE. I THINK. IT'S BEEN A BUSY CENTURY.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-unhinged-2",
+        "tier": "annoyance-unhinged",
+        "text": "Ah — no. Sorry, that's gone. That's the mortality. That happens now.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-unhinged-3",
+        "tier": "annoyance-unhinged",
+        "text": "I could have written something. I could have written something that *outlived* me.",
+        "about": ""
+      },
+      {
+        "id": "human-annoyance-unhinged-4",
+        "tier": "annoyance-unhinged",
+        "text": "Click me again and I swear the only thing I'll be remembered for is this.",
+        "about": ""
+      },
+      {
+        "id": "human-breakthrough-1",
+        "tier": "breakthrough",
+        "text": "It works! Write it down, write it down, write it down—",
+        "about": ""
+      },
+      {
+        "id": "human-breakthrough-2",
+        "tier": "breakthrough",
+        "text": "That's mine. That one's *mine*.",
+        "about": ""
+      },
+      {
+        "id": "human-blessed-1",
+        "tier": "blessed",
+        "text": "Oh. Oh, that's — thank you.",
+        "about": ""
+      },
+      {
+        "id": "human-blessed-2",
+        "tier": "blessed",
+        "text": "I felt that. Did everyone feel that?",
+        "about": ""
+      },
+      {
+        "id": "human-death-1",
+        "tier": "death",
+        "text": "I didn't— there was more—",
+        "about": ""
+      },
+      {
+        "id": "human-last-copy-1",
+        "tier": "last-copy",
+        "text": "I'm the only one who knows this. That's — you understand that's a problem, yes?",
+        "about": ""
+      },
+      {
+        "id": "human-cross-species-1",
+        "tier": "cross-species",
+        "text": "She's been reading the same page since I was born. I've checked.",
+        "about": "elf"
+      },
+      {
+        "id": "human-cross-species-2",
+        "tier": "cross-species",
+        "text": "We just... work around her. Like weather.",
+        "about": "draconic"
+      }
+    ]
+  },
+  {
+    "id": "bank-elf",
+    "speaker": "elf",
+    "speakerKind": "species",
+    "voicePrompt": "Age indeterminate, very slow, quiet, never raises volume, leaves long gaps between clauses. Utterly unhurried. Faintly amused at nothing in particular.",
+    "lines": [
+      {
+        "id": "elf-selection-1",
+        "tier": "selection",
+        "text": "Mm.",
+        "about": ""
+      },
+      {
+        "id": "elf-selection-2",
+        "tier": "selection",
+        "text": "I was mid-thought.",
+        "about": ""
+      },
+      {
+        "id": "elf-selection-3",
+        "tier": "selection",
+        "text": "Continue.",
+        "about": ""
+      },
+      {
+        "id": "elf-selection-4",
+        "tier": "selection",
+        "text": "It's early yet.",
+        "about": ""
+      },
+      {
+        "id": "elf-selection-5",
+        "tier": "selection",
+        "text": "You've come at an interesting moment. It has lasted sixty years.",
+        "about": ""
+      },
+      {
+        "id": "elf-acknowledgement-1",
+        "tier": "acknowledgement",
+        "text": "In time.",
+        "about": ""
+      },
+      {
+        "id": "elf-acknowledgement-2",
+        "tier": "acknowledgement",
+        "text": "I'll have an answer for you shortly. ...Within the century.",
+        "about": ""
+      },
+      {
+        "id": "elf-acknowledgement-3",
+        "tier": "acknowledgement",
+        "text": "As you like.",
+        "about": ""
+      },
+      {
+        "id": "elf-acknowledgement-4",
+        "tier": "acknowledgement",
+        "text": "I had assumed you would ask eventually.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-polite-1",
+        "tier": "annoyance-polite",
+        "text": "You're rushing me.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-polite-2",
+        "tier": "annoyance-polite",
+        "text": "You're always rushing me.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-polite-3",
+        "tier": "annoyance-polite",
+        "text": "I have not finished my *introduction*.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-irritated-1",
+        "tier": "annoyance-irritated",
+        "text": "That is the ninth time.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-irritated-2",
+        "tier": "annoyance-irritated",
+        "text": "I began this work before your first mage was born.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-irritated-3",
+        "tier": "annoyance-irritated",
+        "text": "The humans have published four hundred papers on this. All of them wrong. Charmingly.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-cracking-1",
+        "tier": "annoyance-cracking",
+        "text": "That is the fourteenth time. I am counting. I have the time.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-cracking-2",
+        "tier": "annoyance-cracking",
+        "text": "Do you understand that I will remember this? Not the way they remember. *Properly.*",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-cracking-3",
+        "tier": "annoyance-cracking",
+        "text": "I have watched six generations of them ask me this same question.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-cracking-4",
+        "tier": "annoyance-cracking",
+        "text": "Every one of them thought they were the first.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-unhinged-1",
+        "tier": "annoyance-unhinged",
+        "text": "I WILL OUTLIVE THIS. I WILL OUTLIVE YOU FINDING IT FUNNY.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-unhinged-2",
+        "tier": "annoyance-unhinged",
+        "text": "In four hundred years I will still be here, and this will still have happened.",
+        "about": ""
+      },
+      {
+        "id": "elf-annoyance-unhinged-3",
+        "tier": "annoyance-unhinged",
+        "text": "...You've stopped. Good. Where was I. Yes. Sixty years ago.",
+        "about": ""
+      },
+      {
+        "id": "elf-breakthrough-1",
+        "tier": "breakthrough",
+        "text": "There. As expected. Eventually.",
+        "about": ""
+      },
+      {
+        "id": "elf-breakthrough-2",
+        "tier": "breakthrough",
+        "text": "I said it would come. I did not say when. I never say when.",
+        "about": ""
+      },
+      {
+        "id": "elf-blessed-1",
+        "tier": "blessed",
+        "text": "Ah. You've noticed me.",
+        "about": ""
+      },
+      {
+        "id": "elf-blessed-2",
+        "tier": "blessed",
+        "text": "That was unnecessary. Thank you.",
+        "about": ""
+      },
+      {
+        "id": "elf-death-1",
+        "tier": "death",
+        "text": "Well. That was abrupt.",
+        "about": ""
+      },
+      {
+        "id": "elf-last-copy-1",
+        "tier": "last-copy",
+        "text": "It is only in me. I have not decided whether to write it down.",
+        "about": ""
+      },
+      {
+        "id": "elf-cross-species-1",
+        "tier": "cross-species",
+        "text": "They burn so brightly. And then they've stopped. It's very rude.",
+        "about": "human"
+      },
+      {
+        "id": "elf-cross-species-2",
+        "tier": "cross-species",
+        "text": "He built this hall in a season. I have not decided what to think about that.",
+        "about": "orc"
+      }
+    ]
+  },
+  {
+    "id": "bank-dwarf",
+    "speaker": "dwarf",
+    "speakerKind": "species",
+    "voicePrompt": "Dry, precise, mid-range, the cadence of someone reading a catalogue number aloud. Certain. Not unkind.",
+    "lines": [
+      {
+        "id": "dwarf-selection-1",
+        "tier": "selection",
+        "text": "Catalogued.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-selection-2",
+        "tier": "selection",
+        "text": "It's in the index.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-selection-3",
+        "tier": "selection",
+        "text": "Cross-referenced.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-selection-4",
+        "tier": "selection",
+        "text": "Where's your source?",
+        "about": ""
+      },
+      {
+        "id": "dwarf-selection-5",
+        "tier": "selection",
+        "text": "You'll want the third shelf.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-acknowledgement-1",
+        "tier": "acknowledgement",
+        "text": "Logged.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-acknowledgement-2",
+        "tier": "acknowledgement",
+        "text": "I'll want that in writing.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-acknowledgement-3",
+        "tier": "acknowledgement",
+        "text": "Filed.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-acknowledgement-4",
+        "tier": "acknowledgement",
+        "text": "Under what heading?",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-polite-1",
+        "tier": "annoyance-polite",
+        "text": "You're disturbing the reading room.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-polite-2",
+        "tier": "annoyance-polite",
+        "text": "Did you write it down? You didn't write it down.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-polite-3",
+        "tier": "annoyance-polite",
+        "text": "There is a *form* for this.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-irritated-1",
+        "tier": "annoyance-irritated",
+        "text": "Nothing is real until it's in a book.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-irritated-2",
+        "tier": "annoyance-irritated",
+        "text": "Three copies. Minimum. This is not negotiable.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-irritated-3",
+        "tier": "annoyance-irritated",
+        "text": "The elf says she remembers it. The elf is not a backup.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-irritated-4",
+        "tier": "annoyance-irritated",
+        "text": "The gnome discovered it twice because nobody wrote it down the first time.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-cracking-1",
+        "tier": "annoyance-cracking",
+        "text": "I have filed a complaint. With myself. It has been upheld.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-cracking-2",
+        "tier": "annoyance-cracking",
+        "text": "Every single thing this civilization has lost, it lost because someone was in a hurry.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-cracking-3",
+        "tier": "annoyance-cracking",
+        "text": "I am not the pedant here. I am the only one who isn't.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-unhinged-1",
+        "tier": "annoyance-unhinged",
+        "text": "I HAVE RE-SHELVED THIS ENTIRE WING FOUR TIMES BECAUSE OF YOU.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-unhinged-2",
+        "tier": "annoyance-unhinged",
+        "text": "There were nine hundred volumes in the east vault. There are eight hundred and forty. I know which sixty. I know all sixty.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-annoyance-unhinged-3",
+        "tier": "annoyance-unhinged",
+        "text": "Go on. Click. It'll go in the record. Everything goes in the record.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-breakthrough-1",
+        "tier": "breakthrough",
+        "text": "Copied. Twice. Before you ask.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-breakthrough-2",
+        "tier": "breakthrough",
+        "text": "Now it exists.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-blessed-1",
+        "tier": "blessed",
+        "text": "Noted, with thanks.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-blessed-2",
+        "tier": "blessed",
+        "text": "I'll record that it happened.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-death-1",
+        "tier": "death",
+        "text": "The grimoires are in the north vault. Third shelf. ...Please.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-last-copy-1",
+        "tier": "last-copy",
+        "text": "One copy. *One.* I've requested materials four times.",
+        "about": ""
+      },
+      {
+        "id": "dwarf-cross-species-1",
+        "tier": "cross-species",
+        "text": "He discovered it. Then he discovered it. Then he discovered it.",
+        "about": "gnome"
+      },
+      {
+        "id": "dwarf-cross-species-2",
+        "tier": "cross-species",
+        "text": "Her memory is excellent. Her memory is also *one copy*.",
+        "about": "elf"
+      }
+    ]
+  },
+  {
+    "id": "bank-draconic",
+    "speaker": "draconic",
+    "speakerKind": "species",
+    "voicePrompt": "Enormous and quiet. Extremely slow. Low fundamental with a lot of chest. Never shouts, never needs to. Occasional, unexpected sadness.",
+    "lines": [
+      {
+        "id": "draconic-selection-1",
+        "tier": "selection",
+        "text": "...Yes.",
+        "about": ""
+      },
+      {
+        "id": "draconic-selection-2",
+        "tier": "selection",
+        "text": "Speak.",
+        "about": ""
+      },
+      {
+        "id": "draconic-selection-3",
+        "tier": "selection",
+        "text": "You woke me.",
+        "about": ""
+      },
+      {
+        "id": "draconic-selection-4",
+        "tier": "selection",
+        "text": "I know it already.",
+        "about": ""
+      },
+      {
+        "id": "draconic-acknowledgement-1",
+        "tier": "acknowledgement",
+        "text": "If you insist.",
+        "about": ""
+      },
+      {
+        "id": "draconic-acknowledgement-2",
+        "tier": "acknowledgement",
+        "text": "It will be done. Not soon.",
+        "about": ""
+      },
+      {
+        "id": "draconic-acknowledgement-3",
+        "tier": "acknowledgement",
+        "text": "Very well.",
+        "about": ""
+      },
+      {
+        "id": "draconic-acknowledgement-4",
+        "tier": "acknowledgement",
+        "text": "I have done this before. It was tedious then.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-polite-1",
+        "tier": "annoyance-polite",
+        "text": "Again?",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-polite-2",
+        "tier": "annoyance-polite",
+        "text": "Again.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-polite-3",
+        "tier": "annoyance-polite",
+        "text": "...Again.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-polite-4",
+        "tier": "annoyance-polite",
+        "text": "Which one is that. No. Don't tell me. It won't be relevant long.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-irritated-1",
+        "tier": "annoyance-irritated",
+        "text": "Ask the small ones.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-irritated-2",
+        "tier": "annoyance-irritated",
+        "text": "I knew this before your species had a word for 'know'.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-irritated-3",
+        "tier": "annoyance-irritated",
+        "text": "I have forgotten more than your libraries contain. Deliberately. It was clutter.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-cracking-1",
+        "tier": "annoyance-cracking",
+        "text": "You are a very small god.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-cracking-2",
+        "tier": "annoyance-cracking",
+        "text": "I slept four hundred years. You have improved nothing.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-cracking-3",
+        "tier": "annoyance-cracking",
+        "text": "I will answer you. Give me a century to consider the phrasing.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-unhinged-1",
+        "tier": "annoyance-unhinged",
+        "text": "There were seven of us.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-unhinged-2",
+        "tier": "annoyance-unhinged",
+        "text": "There are three.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-unhinged-3",
+        "tier": "annoyance-unhinged",
+        "text": "You will not click me into a fourth.",
+        "about": ""
+      },
+      {
+        "id": "draconic-annoyance-unhinged-4",
+        "tier": "annoyance-unhinged",
+        "text": "I remember the one before you. I remember what became of them. I am not threatening you. I am the only one left who remembers, and I am telling you.",
+        "about": ""
+      },
+      {
+        "id": "draconic-breakthrough-1",
+        "tier": "breakthrough",
+        "text": "Obviously.",
+        "about": ""
+      },
+      {
+        "id": "draconic-breakthrough-2",
+        "tier": "breakthrough",
+        "text": "It took longer than I expected. That has not happened in some time.",
+        "about": ""
+      },
+      {
+        "id": "draconic-blessed-1",
+        "tier": "blessed",
+        "text": "I felt that. Do not do it again without asking.",
+        "about": ""
+      },
+      {
+        "id": "draconic-blessed-2",
+        "tier": "blessed",
+        "text": "...Acknowledged.",
+        "about": ""
+      },
+      {
+        "id": "draconic-death-1",
+        "tier": "death",
+        "text": "Finally.",
+        "about": ""
+      },
+      {
+        "id": "draconic-last-copy-1",
+        "tier": "last-copy",
+        "text": "When I go, it goes. I have made my peace. You may wish to make other arrangements.",
+        "about": ""
+      }
+    ]
+  },
+  {
+    "id": "bank-gnome",
+    "speaker": "gnome",
+    "speakerKind": "species",
+    "voicePrompt": "Fast, bright, interrupts itself constantly, genuinely delighted by everything. Trails off mid-sentence and starts a new one.",
+    "lines": [
+      {
+        "id": "gnome-selection-1",
+        "tier": "selection",
+        "text": "OH. Hello!",
+        "about": ""
+      },
+      {
+        "id": "gnome-selection-2",
+        "tier": "selection",
+        "text": "I was just— what was I— *yes*!",
+        "about": ""
+      },
+      {
+        "id": "gnome-selection-3",
+        "tier": "selection",
+        "text": "I've had an idea. I've had another one. That's two.",
+        "about": ""
+      },
+      {
+        "id": "gnome-selection-4",
+        "tier": "selection",
+        "text": "Do we know fire? We should know fire.",
+        "about": ""
+      },
+      {
+        "id": "gnome-acknowledgement-1",
+        "tier": "acknowledgement",
+        "text": "Ooh, yes.",
+        "about": ""
+      },
+      {
+        "id": "gnome-acknowledgement-2",
+        "tier": "acknowledgement",
+        "text": "Already started. Started twice, actually.",
+        "about": ""
+      },
+      {
+        "id": "gnome-acknowledgement-3",
+        "tier": "acknowledgement",
+        "text": "On it! On what?",
+        "about": ""
+      },
+      {
+        "id": "gnome-acknowledgement-4",
+        "tier": "acknowledgement",
+        "text": "Say it again in a minute, I'll have forgotten.",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-polite-1",
+        "tier": "annoyance-polite",
+        "text": "Yes? Yes. Yes?",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-polite-2",
+        "tier": "annoyance-polite",
+        "text": "Someone already did this. It was me. Last week.",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-polite-3",
+        "tier": "annoyance-polite",
+        "text": "I've solved it! I've solved it *again*!",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-irritated-1",
+        "tier": "annoyance-irritated",
+        "text": "Yes yes yes yes what.",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-irritated-2",
+        "tier": "annoyance-irritated",
+        "text": "I've forgotten the question but I'm confident in the answer.",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-irritated-3",
+        "tier": "annoyance-irritated",
+        "text": "Every time you click, I lose a fact. That's not a joke. That's my retention.",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-cracking-1",
+        "tier": "annoyance-cracking",
+        "text": "The dwarf says I should write things down. The dwarf is right. I will not.",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-cracking-2",
+        "tier": "annoyance-cracking",
+        "text": "I HAVE DISCOVERED IT FOR THE SIXTH TIME AND IT IS STILL BEAUTIFUL.",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-cracking-3",
+        "tier": "annoyance-cracking",
+        "text": "Do you know what it's like? To find it? Every time is the first time. Every time!",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-unhinged-1",
+        "tier": "annoyance-unhinged",
+        "text": "I had it. I had it just then. It was — no. It's gone. You did that.",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-unhinged-2",
+        "tier": "annoyance-unhinged",
+        "text": "That's four. That's four things I knew when you started.",
+        "about": ""
+      },
+      {
+        "id": "gnome-annoyance-unhinged-3",
+        "tier": "annoyance-unhinged",
+        "text": "It's fine! It's fine. I'll find them again. I always find them again. That's the — that's my whole thing, that's what I'm *for*—",
+        "about": ""
+      },
+      {
+        "id": "gnome-breakthrough-1",
+        "tier": "breakthrough",
+        "text": "AGAIN! I've done it AGAIN!",
+        "about": ""
+      },
+      {
+        "id": "gnome-breakthrough-2",
+        "tier": "breakthrough",
+        "text": "Oh, that's *lovely*. Did I know that before? Doesn't matter. Look at it.",
+        "about": ""
+      },
+      {
+        "id": "gnome-blessed-1",
+        "tier": "blessed",
+        "text": "Ooh! Warm.",
+        "about": ""
+      },
+      {
+        "id": "gnome-blessed-2",
+        "tier": "blessed",
+        "text": "Was that you? That was you. Do it again— no, don't, I'll forget why.",
+        "about": ""
+      },
+      {
+        "id": "gnome-death-1",
+        "tier": "death",
+        "text": "Wait— I remember what it was—",
+        "about": ""
+      },
+      {
+        "id": "gnome-last-copy-1",
+        "tier": "last-copy",
+        "text": "I know something nobody else knows! ...That's bad, isn't it. That's bad.",
+        "about": ""
+      },
+      {
+        "id": "gnome-cross-species-1",
+        "tier": "cross-species",
+        "text": "He wrote down what I said! Including the wrong bit! It's in the *index* now!",
+        "about": "dwarf"
+      },
+      {
+        "id": "gnome-cross-species-2",
+        "tier": "cross-species",
+        "text": "I asked her a question in the spring. I'm very excited about the answer.",
+        "about": "draconic"
+      }
+    ]
+  },
+  {
+    "id": "bank-orc",
+    "speaker": "orc",
+    "speakerKind": "species",
+    "voicePrompt": "Warm, blunt, unbothered. Working-voice — the sound of someone talking while carrying something. Quietly amused by everyone else.",
+    "lines": [
+      {
+        "id": "orc-selection-1",
+        "tier": "selection",
+        "text": "Ready.",
+        "about": ""
+      },
+      {
+        "id": "orc-selection-2",
+        "tier": "selection",
+        "text": "It's built.",
+        "about": ""
+      },
+      {
+        "id": "orc-selection-3",
+        "tier": "selection",
+        "text": "Wall's up.",
+        "about": ""
+      },
+      {
+        "id": "orc-selection-4",
+        "tier": "selection",
+        "text": "You want it fast, or you want it standing?",
+        "about": ""
+      },
+      {
+        "id": "orc-acknowledgement-1",
+        "tier": "acknowledgement",
+        "text": "Done by evening.",
+        "about": ""
+      },
+      {
+        "id": "orc-acknowledgement-2",
+        "tier": "acknowledgement",
+        "text": "Who's it for?",
+        "about": ""
+      },
+      {
+        "id": "orc-acknowledgement-3",
+        "tier": "acknowledgement",
+        "text": "Right.",
+        "about": ""
+      },
+      {
+        "id": "orc-acknowledgement-4",
+        "tier": "acknowledgement",
+        "text": "I'll need materials. I always need materials.",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-polite-1",
+        "tier": "annoyance-polite",
+        "text": "Still holding this beam, by the way.",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-polite-2",
+        "tier": "annoyance-polite",
+        "text": "You clicking, or you helping?",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-polite-3",
+        "tier": "annoyance-polite",
+        "text": "The theory's lovely. The roof leaks.",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-irritated-1",
+        "tier": "annoyance-irritated",
+        "text": "Sixty years, me. I built four universities. What'd the elf build?",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-irritated-2",
+        "tier": "annoyance-irritated",
+        "text": "The archmage asked me to move her library. Twice. Same library.",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-irritated-3",
+        "tier": "annoyance-irritated",
+        "text": "I don't cast. I *carry*.",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-cracking-1",
+        "tier": "annoyance-cracking",
+        "text": "Nobody writes down who built the place. Plenty about what's inside it.",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-cracking-2",
+        "tier": "annoyance-cracking",
+        "text": "You know the north vault? That's mine. All of it. Every stone.",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-cracking-3",
+        "tier": "annoyance-cracking",
+        "text": "I've buried more of my own than any of them. We go quick.",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-unhinged-1",
+        "tier": "annoyance-unhinged",
+        "text": "I HAVE PUT UP EVERY BUILDING YOU HAVE EVER LOVED.",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-unhinged-2",
+        "tier": "annoyance-unhinged",
+        "text": "Not asking for a statue. Wouldn't mind a *chair*.",
+        "about": ""
+      },
+      {
+        "id": "orc-annoyance-unhinged-3",
+        "tier": "annoyance-unhinged",
+        "text": "Sixty years is plenty, if you build. It's nothing if you sit and think.",
+        "about": ""
+      },
+      {
+        "id": "orc-breakthrough-1",
+        "tier": "breakthrough",
+        "text": "Huh. Look at that.",
+        "about": ""
+      },
+      {
+        "id": "orc-breakthrough-2",
+        "tier": "breakthrough",
+        "text": "Told you it'd hold.",
+        "about": ""
+      },
+      {
+        "id": "orc-blessed-1",
+        "tier": "blessed",
+        "text": "Ta.",
+        "about": ""
+      },
+      {
+        "id": "orc-blessed-2",
+        "tier": "blessed",
+        "text": "Feels good. Back to it.",
+        "about": ""
+      },
+      {
+        "id": "orc-death-1",
+        "tier": "death",
+        "text": "Roof's finished, though.",
+        "about": ""
+      },
+      {
+        "id": "orc-last-copy-1",
+        "tier": "last-copy",
+        "text": "Only one who knows it. Me. The one you send through portals.",
+        "about": ""
+      },
+      {
+        "id": "orc-cross-species-1",
+        "tier": "cross-species",
+        "text": "Four hundred years and she's still 'settling in'.",
+        "about": "elf"
+      },
+      {
+        "id": "orc-cross-species-2",
+        "tier": "cross-species",
+        "text": "Now *that* one works. Runs everywhere. Dies tired.",
+        "about": "human"
+      },
+      {
+        "id": "orc-cross-species-3",
+        "tier": "cross-species",
+        "text": "Best mage we've got. Couldn't tell you where he lives. Neither could he.",
+        "about": "gnome"
+      }
+    ]
+  },
+  {
+    "id": "bank-scribe",
+    "speaker": "scribe",
+    "speakerKind": "populace",
+    "voicePrompt": "Tired, patient, mid-range, talking while doing something else with their hands.",
+    "lines": [
+      {
+        "id": "scribe-selection-1",
+        "tier": "selection",
+        "text": "Copying.",
+        "about": ""
+      },
+      {
+        "id": "scribe-selection-2",
+        "tier": "selection",
+        "text": "My hand hurts.",
+        "about": ""
+      },
+      {
+        "id": "scribe-selection-3",
+        "tier": "selection",
+        "text": "Vellum's expensive. Nobody tells them that.",
+        "about": ""
+      },
+      {
+        "id": "scribe-selection-4",
+        "tier": "selection",
+        "text": "This one's dwarven. It'll outlive us both.",
+        "about": ""
+      },
+      {
+        "id": "scribe-selection-5",
+        "tier": "selection",
+        "text": "She dictates faster than I write. I've stopped saying so.",
+        "about": ""
+      },
+      {
+        "id": "scribe-selection-6",
+        "tier": "selection",
+        "text": "Third copy of this. Ask me what it says. Go on. I've no idea.",
+        "about": ""
+      }
+    ]
+  },
+  {
+    "id": "bank-student",
+    "speaker": "student",
+    "speakerKind": "populace",
+    "voicePrompt": "Young, eager, slightly too loud, checking whether that was right.",
+    "lines": [
+      {
+        "id": "student-selection-1",
+        "tier": "selection",
+        "text": "Am I doing it right?",
+        "about": ""
+      },
+      {
+        "id": "student-selection-2",
+        "tier": "selection",
+        "text": "I'm *nearly* a mage.",
+        "about": ""
+      },
+      {
+        "id": "student-selection-3",
+        "tier": "selection",
+        "text": "Is this on the exam?",
+        "about": ""
+      },
+      {
+        "id": "student-selection-4",
+        "tier": "selection",
+        "text": "Professor says I have promise. She says that to everyone.",
+        "about": ""
+      },
+      {
+        "id": "student-selection-5",
+        "tier": "selection",
+        "text": "I saw an archmage once. She didn't see me.",
+        "about": ""
+      }
+    ]
+  },
+  {
+    "id": "bank-laborer",
+    "speaker": "laborer",
+    "speakerKind": "populace",
+    "voicePrompt": "Practical, level, unhurried. Talking over noise.",
+    "lines": [
+      {
+        "id": "laborer-selection-1",
+        "tier": "selection",
+        "text": "Materials are low.",
+        "about": ""
+      },
+      {
+        "id": "laborer-selection-2",
+        "tier": "selection",
+        "text": "Another university? Where?",
+        "about": ""
+      },
+      {
+        "id": "laborer-selection-3",
+        "tier": "selection",
+        "text": "It'll hold.",
+        "about": ""
+      },
+      {
+        "id": "laborer-selection-4",
+        "tier": "selection",
+        "text": "We built the last one twice. Foundations.",
+        "about": ""
+      },
+      {
+        "id": "laborer-selection-5",
+        "tier": "selection",
+        "text": "They study in it. We're in it more than they are.",
+        "about": ""
+      }
+    ]
+  },
+  {
+    "id": "bank-soldier",
+    "speaker": "soldier",
+    "speakerKind": "populace",
+    "voicePrompt": "Steady, low, economical. Says as little as the sentence needs.",
+    "lines": [
+      {
+        "id": "soldier-selection-1",
+        "tier": "selection",
+        "text": "No magic. Just me.",
+        "about": ""
+      },
+      {
+        "id": "soldier-selection-2",
+        "tier": "selection",
+        "text": "Point me at it.",
+        "about": ""
+      },
+      {
+        "id": "soldier-selection-3",
+        "tier": "selection",
+        "text": "I've held a door before.",
+        "about": ""
+      },
+      {
+        "id": "soldier-selection-4",
+        "tier": "selection",
+        "text": "The mages go through the portal. Someone's got to be on this side.",
+        "about": ""
+      }
+    ]
+  }
+]

@@ -267,11 +267,11 @@ function diagnosticsFor(schema: SchemaObject, instance: unknown): number {
 }
 
 describe('the keyword walk sees what it claims to see', () => {
-  it('walked all seven schemas and found keywords in each', () => {
+  it('walked all eight schemas and found keywords in each', () => {
     // Every assertion below is over `occurrences`. If the walker returned
     // nothing — a renamed directory, a broken parse — they would all pass while
     // checking nothing at all.
-    expect(schemas.size).toBe(7);
+    expect(schemas.size).toBe(8);
     for (const contentFile of schemas.keys()) {
       const forFile = occurrences.filter((o) => o.contentFile === contentFile);
       expect(forFile.length, `no keywords found in ${schemaFileFor(contentFile)}`).toBeGreaterThan(10);
