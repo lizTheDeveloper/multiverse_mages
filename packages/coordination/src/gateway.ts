@@ -234,6 +234,8 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   readonly #permittedNode = new Map<ContentId, boolean>();
   /** Teacher to the nodes she could pass on to *somebody*. See {@link #teachable}. */
   readonly #teachableFrom = new Map<MageHandle, readonly ContentId[]>();
+  /** The frontier scan's candidate list, built once. See {@link #scannable}. */
+  #scannableNodes: readonly ScannableNode[] | undefined;
 
   /** Projects finished while this gateway was alive. Reporting only. */
   readonly #completed: CompletedEffort[] = [];
@@ -281,11 +283,8 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     // candidate to look up the eight rows she could have.
     const banked = this.#deps.effort?.bankedResearch(mage) ?? EMPTY_PROGRESS;
     const discarded = createRediscoveryClampCounter();
-    const scanned = Math.min(this.#deps.catalog.nodeCount, MAX_FRONTIER_SCAN);
-    for (let nodeId = 1; nodeId <= scanned && found.length < limit; nodeId += 1) {
-      const node = this.#deps.catalog.node(nodeId);
-      if (node === undefined) continue;
-      if (!this.#permitted(nodeId)) continue;
+    for (const { nodeId, node } of this.#scannable()) {
+      if (found.length >= limit) break;
       if (this.knows(mage, nodeId)) continue;
       if (!this.#prerequisitesHeld(mage, node.prerequisites)) continue;
 
@@ -696,6 +695,33 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * rather than per cell because the caller always has a node id and the extra
    * entries cost one map slot each.
    */
+  /**
+   * The nodes the frontier scan considers, in ascending id, built once.
+   *
+   * The scan's first two tests — is there a node with this id, and does the
+   * ruleset permit its cell — mention no mage, and the scan runs per mage, so
+   * at a thousand mages the same few hundred questions were asked a few hundred
+   * thousand times a tick. This answers them once for the phase and leaves the
+   * loop with the two tests that are actually about the researcher.
+   *
+   * The candidate order and the point the caller's `limit` cuts the list are
+   * unchanged: the ids come out ascending, exactly as the counting loop
+   * produced them, and the entries this drops are entries that loop skipped.
+   */
+  #scannable(): readonly ScannableNode[] {
+    if (this.#scannableNodes !== undefined) return this.#scannableNodes;
+    const scanned = Math.min(this.#deps.catalog.nodeCount, MAX_FRONTIER_SCAN);
+    const candidates: ScannableNode[] = [];
+    for (let nodeId = 1; nodeId <= scanned; nodeId += 1) {
+      const node = this.#deps.catalog.node(nodeId);
+      if (node === undefined) continue;
+      if (!this.#permitted(nodeId)) continue;
+      candidates.push({ nodeId, node });
+    }
+    this.#scannableNodes = candidates;
+    return candidates;
+  }
+
   #permitted(nodeId: ContentId): boolean {
     const known = this.#permittedNode.get(nodeId);
     if (known !== undefined) return known;
@@ -819,6 +845,12 @@ function storeHookOf(policy: StorePolicy): StoreHook {
 
 /** `fp(1.0)` — an unmodified rate (`contracts.md` §2.4's convention). */
 const NEUTRAL_RATE: Fixed = 1024;
+
+/** One node the frontier scan may offer: its id, and the record behind it. */
+interface ScannableNode {
+  readonly nodeId: ContentId;
+  readonly node: NonNullable<ReturnType<NodeCatalog['node']>>;
+}
 
 /** A mage who holds nothing. Shared, and never written to. */
 const EMPTY_HOLDINGS: ReadonlyMap<ContentId, Fp> = new Map<ContentId, Fp>();
