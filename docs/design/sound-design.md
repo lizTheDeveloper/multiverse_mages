@@ -885,6 +885,31 @@ Annoyance tiers, on the repeat counter, resetting after 8 seconds of not being c
 - **Clicks 16+ — unhinged.** The good stuff. Weight so that later lines are rarer; the deepest
   line in each species should be genuinely hard to reach.
 
+### 8.1a Each species owns a distinct comedic register
+
+**The six registers differ from each other as much as the lifespans do.** A single house voice
+across six species reads as one writer doing six impressions; six genuinely different comedic
+shapes make clicking between species feel like changing channel, which is the thing this genre's
+barks do best.
+
+| Species | Register | Why it fits the species |
+|---|---|---|
+| **Human** | Competent panic — working the problem aloud, arithmetic on their own mortality | Eighty years is an engineering constraint, and finding that *interesting* rather than frightening is the whole character |
+| **Elf** | Cosmic deadpan, self-undercutting precision | "Sixty years. Sixty-one, if you count the year I spent deciding whether to count it." A seven-hundred-year horizon *is* the joke |
+| **Dwarf** | Institutional absurdity played with total moral seriousness | The setup-then-swerve, absurdly specific bureaucratic nouns, and a pedant who is entirely correct |
+| **Gnome** | Manic, self-interrupting, run-on | A mind fast enough to solve anything and leaky enough to lose it immediately, ecstatic every time it finds the same thing again |
+| **Orc** | A dry site foreman — who breaks register upward when pushed | Escalation is the mask coming off: foreman at the low tiers, an operatic aria about who actually built this civilization at the top |
+| **Draconic** | **Deliberately not funny** | The contrast that makes the other five land. Heavy, minimal, unsettling. Escalation here means becoming *quieter*, and this is the one bank that never uses capitals |
+
+Two rules follow, and both are easy to erode later:
+
+- **Escalation may change register, not only volume.** The orc is the worked example: the annoyance
+  tiers move from dry to operatic, and the death line drops back to understatement — which only
+  devastates *because* the register dropped.
+- **Do not flatten the registers toward a house voice.** Five funny species and one that refuses to
+  be is better than six funny ones, and a later editor smoothing draconic into wryness would cost
+  the other five their contrast.
+
 Delivery note that applies to all six: **these are read dry and sincere, not comic.** Every line
 below is funnier delivered by someone who means it. The elf is not doing a bit.
 
@@ -933,43 +958,59 @@ Publish or perish, except perish is on the calendar. **Voice: mid-30s, quick, sl
 breath, always mid-thought.**
 
 **Selection**
-- "Adjunct, actually."
-- "I've read about this."
-- "Ready. Ish."
-- "I have three papers in progress."
-- "Make it quick, I'm mortal."
+- "Okay. So. What's the constraint?"
+- "I've read about this. Twice. Neither time took."
+- "Ready. Ish. Ish is a working state."
+- "Three papers in progress. Two are the same paper. Just noticed that."
+- "Quick, ideally. The clock started at birth and it doesn't pause."
 
 **Acknowledgement**
-- "I'll fit it in."
-- "Adding it to the pile."
-- "Yes. Yes! ...Yes?"
-- "This is fine. This is fine."
-- "Sure, I'll just do that *as well*."
+- "Two-hundred-year project. I've got forty. Okay. Okay, I can work with that."
+- "Adding it to the pile. The pile is structural now."
+- "Yes. Yes! ...Okay, how. Give me a second, I'll get there."
+- "Fine. That's fine. I'll build the thing that builds the thing."
+- "Sure, I'll do that *as well*. Sleep was always the soft requirement."
 
-**Annoyance**
-- *(polite)* "Still here."
-- "Did you need something else?"
+**Annoyance** *(polite)*
+- "Still here. Still aging. But still here."
+- "Did you need something? I can multitask. Badly, but I can."
 - "I'm on a deadline. It's a hard one. It's death."
-- *(irritated)* "I heard you the first four times."
-- "You know I can hear the clicking."
-- "Some of us have a *lifespan*."
-- "That's four minutes of it. Gone."
-- *(cracking)* "Eighty years! I get eighty! The elf gets seven hundred!"
-- "Do you know what I could do with seven hundred years?"
-- "She's been a junior researcher for two centuries and they still call her *promising*."
-- "I'm going to die before this conversation ends."
-- *(unhinged)* "I HAVE A WIFE. I THINK. IT'S BEEN A BUSY CENTURY."
-- "Ah — no. Sorry, that's gone. That's the mortality. That happens now."
-- "I could have written something. I could have written something that *outlived* me."
-- "Click me again and I swear the only thing I'll be remembered for is this."
+
+*(irritated)*
+- "I heard you the first four times. I logged all four."
+- "You know I can hear the clicking. I've started timing the gaps."
+- "Some of us have a *lifespan*. Mine's the short one. Ask anyone."
+- "That's four minutes. Out of forty-two million. I'm counting them now."
+
+*(cracking)*
+- "Eighty years! The elf gets seven hundred! That's eight and three-quarters of me, end to end!"
+- "Seven hundred years. Do you know what I'd do? Finish. I'd *finish* something."
+- "Two centuries a junior researcher and they still call her *promising*!"
+- "Six minutes now! Six! I ran the percentage and I wish I hadn't!"
+
+*(unhinged)*
+- "I HAVE A WIFE. I think. I'd have to check the correspondence."
+- "Ah — no. That's gone. That thought is gone. That's the mortality. It does that now."
+- "I could have written something down. Something that outlived me. That was the entire plan."
+- "ELEVEN MINUTES. That's the citation. That's what I get remembered for. ELEVEN MINUTES."
 
 **Breakthrough**
-- "It works! Write it down, write it down, write it down—"
-- "That's mine. That one's *mine*."
+- "It works! It works — write it down, write it down, somebody write it down—"
+- "That's mine. That one's *mine*, and it's on paper, and paper doesn't age."
 
-**Blessed** — "Oh. Oh, that's — thank you." / "I felt that. Did everyone feel that?"
+**Blessed**
+- "Oh. Oh, that's — that's a measurable improvement. Thank you. Genuinely."
+- "I felt that. Did the instruments feel that? Somebody check the instruments."
 
-**Death** — "I didn't— there was more—"
+**Death**
+- "No — wait — get a pen, I can still dictate the—"
+
+**Last copy**
+- "Nobody else knows this. Just me. Just the one skull. Plan accordingly."
+
+**Cross-species**
+- → *elf*: "That one's turned three pages since I was born. I keep a tally."
+- → *draconic*: "Fifteen hundred years. I'm a rounding error to them. Fine. Rounding errors compound."
 
 ### 8.4 Elf — ~700 years, high depth ceiling, slow to learn
 
@@ -977,40 +1018,56 @@ breath, always mid-thought.**
 worse. **Voice: unplaceable age, very slow, never raises volume, leaves gaps.**
 
 **Selection**
-- "Mm."
-- "I was mid-thought."
-- "Continue."
-- "It's early yet."
-- "You've come at an interesting moment. It has lasted sixty years."
+- "You've caught me at a bad moment. It has been a bad moment for eleven years."
+- "I was mid-thought. I have been mid-thought since a spring. Not this one."
+- "Speak freely. I have allocated the afternoon. And the one after it."
+- "It's early yet. It has been early for some time and shows no sign of stopping."
+- "You've arrived at the interesting part. The interesting part is ninety years long. This is minute two."
 
 **Acknowledgement**
-- "In time."
-- "I'll have an answer for you shortly. ...Within the century."
-- "As you like."
-- "I had assumed you would ask eventually."
+- "Consider it begun. Beginning is the part I'm best at."
+- "You'll have an answer shortly. I use 'shortly' in the technical sense."
+- "As you wish. I've added it to a list. The list is itself on a list."
+- "I had assumed you would ask. I had not assumed a date."
 
-**Annoyance**
-- *(polite)* "You're rushing me."
-- "You're always rushing me."
-- "I have not finished my *introduction*."
-- *(irritated)* "That is the ninth time."
-- "I began this work before your first mage was born."
-- "The humans have published four hundred papers on this. All of them wrong. Charmingly."
-- *(cracking)* "That is the fourteenth time. I am counting. I have the time."
-- "Do you understand that I will remember this? Not the way they remember. *Properly.*"
-- "I have watched six generations of them ask me this same question."
-- "Every one of them thought they were the first."
-- *(unhinged)* "I WILL OUTLIVE THIS. I WILL OUTLIVE YOU FINDING IT FUNNY."
-- "In four hundred years I will still be here, and this will still have happened."
-- "...You've stopped. Good. Where was I. Yes. Sixty years ago."
+**Annoyance** *(polite)*
+- "You're rushing me. I don't mind. I want to be clear that you are, though."
+- "That's twice today. Today has been eleven days."
+- "I have not finished the introduction. The introduction is going *very well*."
+
+*(irritated)*
+- "That is the ninth time. I mention it only because I happen to have the figure."
+- "I began this before your first mage was born. She has since also died, which I felt was hasty."
+- "The humans have published four hundred papers on this. All wrong — but wrong in an increasingly sophisticated way, which I find almost moving."
+
+*(cracking)*
+- "That is the fourteenth time. I have kept count, which tells you a good deal about my afternoon."
+- "I will remember this. Not the way the short-lived remember things. *Accurately.*"
+- "Six generations have asked me this. I have given six slightly worse answers."
+- "Each was certain they were the first to ask. I never corrected them. It seemed unkind, and it was restful."
+
+*(unhinged)*
+- "I WILL OUTLIVE THIS. I HAVE OUTLIVED CONSIDERABLY BETTER THINGS THAN THIS."
+- "In four hundred years I will still be here. So will this. That is simply how the past works."
+- "...You've stopped. Thank you. Now. Where was I. ...Ah. Sixty years ago."
 
 **Breakthrough**
-- "There. As expected. Eventually."
-- "I said it would come. I did not say when. I never say when."
+- "There. As predicted, and only slightly later than predicted."
+- "I said this would come. I was careful never to say when. That is the entire art."
 
-**Blessed** — "Ah. You've noticed me." / "That was unnecessary. Thank you."
+**Blessed**
+- "Ah. You've noticed me. I have been here throughout, but I appreciate the gesture."
+- "That was unnecessary. Thank you."
 
-**Death** — "Well. That was abrupt."
+**Death**
+- "Well. That was abrupt."
+
+**Last copy**
+- "It exists only in me. I've been meaning to write it down for ninety years. There's no rush."
+
+**Cross-species**
+- → *human*: "They burn very brightly and then simply stop. I have never got used to it, and I have had ample opportunity."
+- → *orc*: "That hall went up in a season. I have been forming an opinion about it for forty years."
 
 ### 8.5 Dwarf — ~250 years, exceptional retention and scribing
 
@@ -1019,41 +1076,56 @@ citation, and correct about everything, which is the annoying part. **Voice: dry
 mid-range, the cadence of someone reading a shelf mark aloud.**
 
 **Selection**
-- "Catalogued."
-- "It's in the index."
-- "Cross-referenced."
-- "Where's your source?"
-- "You'll want the third shelf."
+- "You're in the day book now. Time, date, nature of interruption."
+- "It's in the index. So is the fact that you asked."
+- "Cross-referenced twice. The second one is for after the first one burns."
+- "Before anything else: who told you, and did they write it down?"
+- "North vault, third shelf. Take a lamp. Not a candle."
 
 **Acknowledgement**
-- "Logged."
-- "I'll want that in writing."
-- "Filed."
-- "Under what heading?"
+- "Logged, timed, countersigned. I'm also the countersignatory. Small department."
+- "I'll want that in writing. I've written it. Sign under where it says you agreed."
+- "Filed under new duties. Cross-filed under things I was not consulted about."
+- "Under what heading? Not for me. For whoever holds this post in a hundred years."
 
-**Annoyance**
-- *(polite)* "You're disturbing the reading room."
-- "Did you write it down? You didn't write it down."
-- "There is a *form* for this."
-- *(irritated)* "Nothing is real until it's in a book."
-- "Three copies. Minimum. This is not negotiable."
-- "The elf says she remembers it. The elf is not a backup."
-- "The gnome discovered it twice because nobody wrote it down the first time."
-- *(cracking)* "I have filed a complaint. With myself. It has been upheld."
-- "Every single thing this civilization has lost, it lost because someone was in a hurry."
-- "I am not the pedant here. I am the only one who isn't."
-- *(unhinged)* "I HAVE RE-SHELVED THIS ENTIRE WING FOUR TIMES BECAUSE OF YOU."
-- "There were nine hundred volumes in the east vault. There are eight hundred and forty. I know
-  which sixty. I know all sixty."
-- "Go on. Click. It'll go in the record. Everything goes in the record."
+**Annoyance** *(polite)*
+- "You are disturbing the reading room. I'd have to note it. Don't make me note it."
+- "Did you write it down? ...You have the face of someone who didn't write it down."
+- "There's a form. Requisition Twelve. I keep blanks in my coat, for precisely this."
+
+*(irritated)*
+- "Nothing is real until it's written down. I know how that sounds. I'm still right."
+- "Three copies. One here, one in the deep vault, one somewhere I tell nobody. Including you."
+- "The elf assures me she remembers it. An assurance is not an archive."
+- "The gnome has discovered it twice. Nobody wrote it down the first time. Nobody has this time either."
+
+*(cracking)*
+- "I have filed a complaint about you. With myself. I upheld it. There is no higher authority in this building."
+- "Everything this civilisation has ever lost, it lost because somebody was busy that afternoon."
+- "You all call me the pedant. The pedant is the only reason any of you still know how to make ink."
+
+*(unhinged)*
+- "I HAVE RE-SHELVED THIS WING FOUR TIMES TODAY AND YOU HAVE CARRIED NOTHING."
+- "Nine hundred volumes in the east vault. Eight hundred and forty now. I can list the sixty. In order. Some nights I do."
+- "GO ON. CLICK AGAIN. It goes in the record, and the record outlasts us both, and it will be about this."
 
 **Breakthrough**
-- "Copied. Twice. Before you ask."
-- "Now it exists."
+- "Copied twice before I told anyone. Now you may congratulate me."
+- "It's written down. So it's real now. Until this morning it was only something I believed."
 
-**Blessed** — "Noted, with thanks." / "I'll record that it happened."
+**Blessed**
+- "Noted, with thanks, in the ledger of things freely given. It is a thin ledger."
+- "I'll record that you did this. Otherwise in two hundred years it's a story people doubt."
 
-**Death** — "The grimoires are in the north vault. Third shelf. ...Please."
+**Death**
+- "The grimoires are in the north vault. Third shelf. ...Please."
+
+**Last copy**
+- "One copy. I requisitioned vellum four times. I have all four refusals, beautifully filed."
+
+**Cross-species**
+- → *gnome*: "Discovered it three times. Delighted each time. I write it down for them and don't mention it."
+- → *elf*: "Remembers everything, perfectly, for seven hundred years. And then they won't."
 
 ### 8.6 Draconic — ~1,500 years, highest depth ceiling, barely curious
 
@@ -1068,34 +1140,46 @@ shouts. The threat is that it never needs to.**
 - "I know it already."
 
 **Acknowledgement**
-- "If you insist."
+- "Then it is mine."
 - "It will be done. Not soon."
 - "Very well."
-- "I have done this before. It was tedious then."
+- "I have done this before."
 
-**Annoyance**
-- *(polite)* "Again?"
+**Annoyance** *(polite)*
+- "Again?"
 - "Again."
 - "...Again."
-- *(irritated)* "Ask the small ones."
-- "I knew this before your species had a word for 'know'."
-- "I have forgotten more than your libraries contain. Deliberately. It was clutter."
-- *(cracking)* "You are a very small god."
+- "Which one is that. No. Don't tell me. They will not be here long."
+
+*(irritated)*
+- "Ask the small ones."
+- "I knew this before there was anyone to tell."
+- "I have forgotten more than your libraries hold. Deliberately."
+
+*(cracking)*
+- "You are a very small god."
 - "I slept four hundred years. You have improved nothing."
-- "I will answer you. Give me a century to consider the phrasing."
-- *(unhinged)* "There were seven of us."
+- "I will answer you. Not this century."
+
+*(unhinged)*
+- "There were seven of us."
 - "There are three."
 - "You will not click me into a fourth."
-- "I remember the one before you. I remember what became of them. I am not threatening you. I am
-  the only one left who remembers, and I am telling you."
+- "I remember the one before you. I remember what became of them. I am not threatening you. I am the only one left who remembers, and I am telling you."
 
 **Breakthrough**
 - "Obviously."
-- "It took longer than I expected. That has not happened in some time."
+- "It took longer than I expected. That has not happened in six hundred years."
 
-**Blessed** — "I felt that. Do not do it again without asking." / "...Acknowledged."
+**Blessed**
+- "I felt that. Do not do it again without asking."
+- "...Acknowledged."
 
-**Death** — "Finally."
+**Death**
+- "Finally."
+
+**Last copy**
+- "When I go, it goes. I have made my peace. You have not."
 
 ### 8.7 Gnome — ~350 years, highest curiosity, poor retention
 
@@ -1104,39 +1188,54 @@ own solved problems. The rediscovery bonus is a character trait: they are good a
 get so much practice. **Voice: fast, bright, frequently interrupts itself, delighted.**
 
 **Selection**
-- "OH. Hello!"
-- "I was just— what was I— *yes*!"
-- "I've had an idea. I've had another one. That's two."
-- "Do we know fire? We should know fire."
+- "Oh! Hello. Hello— you've startled a whole idea out of me."
+- "I was mid-something. It was brilliant. It's gone. What do you need?"
+- "I've had two ideas since you clicked. One of them's already gone."
+- "Do we know fire? We should know fire. Do we know fire?"
 
 **Acknowledgement**
-- "Ooh, yes."
-- "Already started. Started twice, actually."
-- "On it! On what?"
-- "Say it again in a minute, I'll have forgotten."
+- "Ooh. Yes. Yes-yes-yes, yes— give me that one, I want that one."
+- "Already started. Started it twice. The second one's better, I think."
+- "On it! On what? Doesn't matter. On it."
+- "Tell me again in a minute. I'll be new to it."
 
-**Annoyance**
-- *(polite)* "Yes? Yes. Yes?"
-- "Someone already did this. It was me. Last week."
-- "I've solved it! I've solved it *again*!"
-- *(irritated)* "Yes yes yes yes what."
-- "I've forgotten the question but I'm confident in the answer."
-- "Every time you click, I lose a fact. That's not a joke. That's my retention."
-- *(cracking)* "The dwarf says I should write things down. The dwarf is right. I will not."
-- "I HAVE DISCOVERED IT FOR THE SIXTH TIME AND IT IS STILL BEAUTIFUL."
-- "Do you know what it's like? To find it? Every time is the first time. Every time!"
-- *(unhinged)* "I had it. I had it just then. It was — no. It's gone. You did that."
-- "That's four. That's four things I knew when you started."
-- "It's fine! It's fine. I'll find them again. I always find them again. That's the — that's my
-  whole thing, that's what I'm *for*—"
+**Annoyance** *(polite)*
+- "Yes? Yes. Yes— what. What."
+- "Someone's already done this. It was me. I'm citing myself again."
+- "Solved it! Solved it again! The second time felt exactly as good."
+
+*(irritated)*
+- "Yes-yes-yes-yes, what. What. I was holding something and now I'm not."
+- "I've forgotten the question. I remain extremely confident about the answer."
+- "Every time you do that, I lose a fact. That's three. Three facts."
+
+*(cracking)*
+- "I could write this down. I could— I own pens, I've owned several excellent pens— I won't."
+- "I have found this six times. Six! And it's new every time and I love it every time."
+- "Do you know what that's like? To find it, and find it again, and it's new— it's always new, it's never not new—"
+
+*(unhinged)*
+- "I had it. I had it right then, it was gorgeous, it was— no. Gone. You did that."
+- "That's nine. NINE things I knew when you sat down. Now there are nine holes where they were."
+- "It's fine! It's fine. I'll find them again, I always find them again, that's what I'm FOR, that's the whole— what were we doing?"
 
 **Breakthrough**
-- "AGAIN! I've done it AGAIN!"
-- "Oh, that's *lovely*. Did I know that before? Doesn't matter. Look at it."
+- "Again! I've done it again! I don't remember the first time— doesn't matter!"
+- "Oh, that's lovely. Everything gets lost eventually, all of it. Doesn't matter. Look at it."
 
-**Blessed** — "Ooh! Warm." / "Was that you? That was you. Do it again— no, don't, I'll forget why."
+**Blessed**
+- "Ooh. Warm. Something enormous just noticed me and I'm thrilled about it."
+- "That was you! Do it again— no, don't, I'll forget why it was good."
 
-**Death** — "Wait— I remember what it was—"
+**Death**
+- "Wait— wait, I remember what it was, it's—"
+
+**Last copy**
+- "Nobody else knows this! Nobody— wait. That means it's only in here. And I'm the leakiest thing alive. Somebody write this down. Somebody—"
+
+**Cross-species**
+- → *dwarf*: "Wrote down what I said. Three times! Including the wrong bit— in the index, forever. Tedious, glorious pedant. I'd be lost without them."
+- → *draconic*: "I asked a question in the spring. Still inhaling. I've forgotten the question; the answer will be magnificent."
 
 ### 8.8 Orc — ~60 years, low magical aptitude, high build-rate, martial
 
@@ -1146,64 +1245,78 @@ the game and the least precious about it. **Voice: warm, blunt, unbothered, slig
 everyone else.**
 
 **Selection**
-- "Ready."
-- "It's built."
-- "Wall's up."
+- "Ready. Been ready."
+- "It's up already."
+- "Wall's up. Say the next one."
 - "You want it fast, or you want it standing?"
 
 **Acknowledgement**
-- "Done by evening."
-- "Who's it for?"
-- "Right."
+- "Up by evening."
+- "Who's it for? Changes the doors."
+- "Right. Where's it going?"
 - "I'll need materials. I always need materials."
 
-**Annoyance**
-- *(polite)* "Still holding this beam, by the way."
-- "You clicking, or you helping?"
+**Annoyance** *(polite)*
+- "Still holding this beam, by the way."
+- "You clicking, or you lifting?"
 - "The theory's lovely. The roof leaks."
-- *(irritated)* "Sixty years, me. I built four universities. What'd the elf build?"
+
+*(irritated)*
+- "Sixty years, me. Four universities. Ask the elf her total."
 - "The archmage asked me to move her library. Twice. Same library."
-- "I don't cast. I *carry*."
-- *(cracking)* "Nobody writes down who built the place. Plenty about what's inside it."
-- "You know the north vault? That's mine. All of it. Every stone."
-- "I've buried more of my own than any of them. We go quick."
-- *(unhinged)* "I HAVE PUT UP EVERY BUILDING YOU HAVE EVER LOVED."
-- "Not asking for a statue. Wouldn't mind a *chair*."
-- "Sixty years is plenty, if you build. It's nothing if you sit and think."
+- "I don't cast. I carry."
+
+*(cracking)*
+- "You catalogue the books, the shelves, the ink. Nothing about the roof."
+- "The north vault. Four hundred courses of stone. I set every one."
+- "We go quick, us. Sixty years. I've spent forty holding things up."
+
+*(unhinged)*
+- "The hall, the stairs, the lintel you walk under daily — I RAISED ALL OF IT."
+- "I don't want a statue. Statues need plinths. WHO DO YOU THINK CUTS PLINTHS?"
+- "Sixty years! Foundations, walls, roof, out. And I'd take it again. Gladly."
 
 **Breakthrough**
 - "Huh. Look at that."
-- "Told you it'd hold."
+- "Told you it'd hold. Write it down this time."
 
-**Blessed** — "Ta." / "Feels good. Back to it."
+**Blessed**
+- "Ta."
+- "Kind of you. Mind the wet mortar."
 
-**Death** — "Roof's finished, though."
+**Death**
+- "Roof's finished, though."
+
+**Last copy**
+- "Only copy's up here. And I'm who you send through portals."
+
+**Cross-species**
+- → *elf*: "Four hundred years in that chair. Still 'settling in'."
+- → *human*: "Now that one works. Runs everywhere. Dies tired."
+- → *gnome*: "Brilliant, that one. Couldn't find their own front door. I built it."
 
 ### 8.9 Cross-species lines
 
 Barks that reference another species fire only when a mage of that species is on screen or in the
 same university. These are cheap, they make the civilization feel like one place rather than six
-rosters, and they are where the funniest material lives — the species are funny *at each other*.
+rosters, and they are where the funniest material lives — the species are funny *at each other*,
+and a register clash is funnier than either register alone.
 
-Sample set; the full bank should run 3–4 per ordered pair that matters:
+**The lines themselves live in the speaker's bank in §§8.3–8.8**, tagged `cross-species` with an
+`about` naming the target. They are not duplicated here: this section was a separate list until the
+registers landed, and two copies of the same joke drift apart within a release.
 
-- **Human → Elf:** "She's been reading the same page since I was born. I've checked."
-- **Human → Draconic:** "We just... work around her. Like weather."
-- **Dwarf → Gnome:** "He discovered it. Then he discovered it. Then he discovered it."
-- **Dwarf → Elf:** "Her memory is excellent. Her memory is also *one copy*."
-- **Gnome → Dwarf:** "He wrote down what I said! Including the wrong bit! It's in the *index* now!"
-- **Gnome → Draconic:** "I asked her a question in the spring. I'm very excited about the answer."
-- **Elf → Human:** "They burn so brightly. And then they've stopped. It's very rude."
-- **Elf → Orc:** "He built this hall in a season. I have not decided what to think about that."
-- **Draconic → anyone:** "Which one is that. No. Don't tell me. It won't be relevant long."
-- **Orc → Elf:** "Four hundred years and she's still 'settling in'."
-- **Orc → Human:** "Now *that* one works. Runs everywhere. Dies tired."
-- **Orc → Gnome:** "Best mage we've got. Couldn't tell you where he lives. Neither could he."
+**No cross-species line may hardcode a gendered pronoun.** A bark fires while a specific mage is on
+screen, and any mage of any species may be of any gender, so a baked-in pronoun misgenders the
+character being pointed at roughly half the time. Write around it — *"that one"*, *"they"*, or the
+species noun. This is not a stylistic preference; it is the same class of defect as a mistimed
+sound, and it reads as the game not knowing who its own people are. The orc's lines are the model.
 
-Shipped content re-tiers the Draconic → anyone line above as `draconic-annoyance-polite-4` rather
-than a cross-species line, because a cross-species line's `about` must name a real species and
-"anyone" does not. Defensible — the line reads the same either way — but recorded here so it is a
-decision and not a silent drift from this section.
+**One re-tiering, recorded so it is a decision and not a silent drift.** An early draft had a
+Draconic → *anyone* line. A cross-species `about` must name a real species and "anyone" does not, so
+it ships as `draconic-annoyance-polite-4`. It reads the same either way, and it leaves the draconic
+bank with no cross-species lines at all — which suits a species that does not distinguish between
+the short-lived.
 
 ### 8.10 Non-magical populace
 

@@ -136,6 +136,7 @@ import {
   permits,
 } from '@mm/state';
 import type {
+  AcquirePolicy,
   CellResolver,
   KnowledgeRng,
   KnowledgeSubsystem,
@@ -231,6 +232,22 @@ export interface GatewayDeps {
    * Memory answers no, and that is the whole of its cost.
    */
   readonly store: StorePolicy;
+  /**
+   * The universe's resolved `acquire` hook.
+   *
+   * Required, exactly as `store` is, and for the reason `store` learned the hard
+   * way. `applyAcquire` shipped in 0.3.0 with no caller outside a test, so True
+   * Naming's `researchCostMultiplier`, `teachCostMultiplier` and `instanceMastery`
+   * were arithmetic nobody paid: one of the four declared hooks was inert in
+   * every running universe. An optional dep here would leave that reachable —
+   * a caller who omitted it would get the authored costs back and no error, and
+   * the tradition would go quiet again for whatever path forgot.
+   *
+   * It reaches the three places a node's price is read: the frontier quote, the
+   * research accrual, and the teaching gate. Nothing else consults it, because
+   * nothing else is `acquire`'s business.
+   */
+  readonly acquire: AcquirePolicy;
   /** Where a dead mage's grimoires go. Supplied by the death path. */
   readonly onGrimoiresInherited?: ((mage: MageHandle, inheritor: UniversityHandle) => void) | undefined;
   /**
@@ -407,6 +424,10 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
         // baking this tick's value into a commitment that lasts six months
         // would make the cost a mage decided against stale by construction.
         researchRate: NEUTRAL_RATE,
+        // The tradition's price, so that what a mage is quoted while choosing is
+        // what she is charged while working. Omitted here, a True Naming mage
+        // would rank a node at half what deriving it actually costs her.
+        acquire: this.#deps.acquire,
         // A throwaway counter: this is a *quotation* of a cost for a decision,
         // not the accrual that pays it. The share that matters at 0.5.0 is
         // counted where the work happens, and folding scan-time quotes into it
@@ -497,7 +518,14 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   }
 
   /**
-   * A node's authored `teachCost` (`contracts.md` §2.3), in `fp` mage-months.
+   * A node's `teachCost` (`contracts.md` §2.3) under this universe's `acquire`
+   * hook, in `fp` mage-months.
+   *
+   * Under the hook rather than as authored, because this is what the outlook
+   * builder scores a `seek-teaching` goal against and
+   * {@link contributeTeaching} charges the same number. Quoting the authored
+   * cost here made True Naming's halved teaching invisible to every mage
+   * deciding whether to seek a teacher at all.
    *
    * The pair's cost rather than a learner's solo cost, which is what makes a
    * teachable node score above researching the same node alone. Not on the port
@@ -505,7 +533,8 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * offered here for the outlook builder next door.
    */
   teachCostOf(nodeId: ContentId): Fp {
-    return this.#deps.catalog.node(nodeId)?.teachCost ?? 0;
+    const node = this.#deps.catalog.node(nodeId);
+    return node === undefined ? 0 : this.#deps.acquire.teachCost(node.teachCost);
   }
 
   /**
@@ -550,6 +579,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       rediscoveryAffinity: rates.rediscoveryAffinity,
       clampCounter: this.#clampCounter,
       store: this.#deps.store,
+      // Both of `acquire`'s research-side answers arrive as one object: what the
+      // node costs her, and what mastery the instance she finishes is created
+      // at. `initialMastery` is deliberately not passed alongside it — one
+      // route, so the two cannot be wired half-way.
+      acquire: this.#deps.acquire,
     });
 
     if (outcome.refusal !== undefined) return;
@@ -592,9 +626,12 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     const node = this.#deps.catalog.node(nodeId);
     if (node === undefined) return;
 
+    // The tradition's price, not the authored one, and read once so the gate
+    // below and the clamp further down cannot come to different conclusions.
+    const required = this.#deps.acquire.teachCost(node.teachCost);
     const key = effortKey(EFFORT_KIND.teaching, teacher, nodeId, student);
     const progress = ledger.accrue(key, mageMonths);
-    if (progress < node.teachCost) return;
+    if (progress < required) return;
 
     const outcome = teach({
       knowledge: this.#deps.knowledge,
@@ -610,7 +647,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     });
 
     if (outcome.refusal !== undefined) {
-      ledger.clampTo(key, node.teachCost);
+      ledger.clampTo(key, required);
       return;
     }
     ledger.clear(key);

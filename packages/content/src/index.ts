@@ -107,4 +107,11 @@ export {
   checkGodCosts,
 } from './god.js';
 
+export {
+  MAX_ENGAGEMENT_TICKS,
+  REQUIRED_RAID_CONSTANTS,
+  checkRaidConstants,
+  engagementTickBound,
+} from './raid.js';
+
 export * from './types.js';

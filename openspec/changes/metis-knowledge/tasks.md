@@ -1,6 +1,7 @@
 ## 0. Preconditions
 
-- [ ] 0.1 Confirm `knowledge-model` has landed and archived, so `knowledge-instances` and `magic-traditions` exist in `openspec/specs/` and the delta specs in this change can be re-based against their archived text rather than against the unmerged branch they were drafted from
+- [x] 0.1 Re-base the delta specs against `knowledge-model`'s **archived** text rather than the unmerged branch they were drafted from. Done: `knowledge-model` archived while this change was being written, and its scribing requirement had been refined in the interim — the archived text places the new instance "at the location that grimoire's holder implies" and carries a fifth scenario, "A book scribed onto a shelf is shelved", neither of which existed in the draft. Both are now preserved verbatim in the `MODIFIED` block. `openspec validate --strict` does not catch this class of drift, because it checks structure and not whether `MODIFIED` content is a superset of what it replaces — so **any future delta in this change must be diffed against `openspec/specs/` by hand before it lands**
+- [ ] 0.1a Re-run that hand diff for `magic-traditions` and `content-schemas` if either is amended again before this change is implemented
 - [ ] 0.2 Confirm the balance harness (`agent-interface`, 0.5.0) is present, since `metisSuccessionRisk` is a registry addition and the sequencing in `proposal.md` holds implementation until it exists
 - [ ] 0.3 Re-read `docs/design/vision.md` §5 and §4a and confirm the mētis framing still matches the vision of record after any amendments made since this change was proposed
 

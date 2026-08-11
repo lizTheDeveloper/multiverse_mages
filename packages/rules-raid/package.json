@@ -2,7 +2,7 @@
   "name": "@mm/rules-raid",
   "version": "0.3.0",
   "private": true,
-  "description": "Engagement space, combat, objectives, and raid consequences. Skeleton — the rules land in raid-engagement.",
+  "description": "Engagement space, combat, objectives, and raid consequences — the behaviour behind contracts.md §1.6 and the combat resolution §8 leaves to this package.",
   "license": "AGPL-3.0-or-later",
   "author": "Ann Kelner",
   "type": "module",
@@ -20,7 +20,16 @@
   "engines": {
     "node": ">=22.0.0 <23"
   },
-  "//": "Rules-path code: no runtime dependencies, no Node built-ins, integer-only. Per contracts.md §5 this is the coordinating layer that may import BOTH rules-magic and rules-world — and MUST NOT import agent-api.",
+  "//": "Rules-path code: no third-party runtime dependencies, no Node built-ins, integer-only. Per contracts.md §5 this is the coordinating layer that may import BOTH rules-magic and rules-world, plus coordination for the world-state port a raid's consequences land through — and MUST NOT import agent-api. @mm/content is declared but imported for TYPES ONLY, following rules-magic: content's public surface re-exports a filesystem loader, and this package builds under `types: []` so it runs unchanged in a browser.",
+  "dependencies": {
+    "@mm/content": "*",
+    "@mm/coordination": "*",
+    "@mm/primitives": "*",
+    "@mm/rules-magic": "*",
+    "@mm/rules-world": "*",
+    "@mm/sim-core": "*",
+    "@mm/state": "*"
+  },
   "scripts": {
     "build": "tsc --build"
   }
