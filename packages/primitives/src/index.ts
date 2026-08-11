@@ -43,6 +43,13 @@ export {
   neutralizing,
 } from './ablation.js';
 
+export type {
+  AblationConformanceProblem,
+  AblationConformanceReport,
+  AblationConformanceRow,
+} from './conformance.js';
+export { ablationConformance } from './conformance.js';
+
 export type { CapContext, CapOutcome } from './caps.js';
 export { ClampCounters, applyCap, capLimit } from './caps.js';
 

@@ -84,8 +84,8 @@
 - [ ] 7.6 Implement the Wilson score interval and the `no-detected-effect` status when the interval contains 0.5
 - [ ] 7.7 Implement `not-attributable` for the `portal` primitive with its stated reason
 - [ ] 7.8 Implement rejection of pairwise ablation requests with an explanation
-- [ ] 7.9 Implement the ablation conformance check asserting every primitive in `contracts.md` §3 has a neutralization rule matching its stacking class
-- [ ] 7.10 Test that a control run and its paired ablation run consume identical RNG draw sequences up to genuine divergence, and record identical content hashes
+- [x] 7.9 Implement the ablation conformance check asserting every primitive in `contracts.md` §3 has a neutralization rule matching its stacking class
+- [x] 7.10 Test that a control run and its paired ablation run consume identical RNG draw sequences up to genuine divergence, and record identical content hashes
 
 ## 8. Baselines and the regression gate
 
