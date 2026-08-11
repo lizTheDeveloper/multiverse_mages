@@ -76,16 +76,16 @@
 
 ## 7. Ablation
 
-- [ ] 7.1 Implement the ablation mask inside the shared primitive stacking implementation, leaving content untouched
-- [ ] 7.2 Implement neutralization per stacking class: additive, additive-into-multiplier, multiplicative-on-remainder, `max`, and presence-gate
-- [ ] 7.3 Implement draw-count invariance so a neutralized primitive still consumes and discards its draws
+- [x] 7.1 Implement the ablation mask inside the shared primitive stacking implementation, leaving content untouched
+- [x] 7.2 Implement neutralization per stacking class: additive, additive-into-multiplier, multiplicative-on-remainder, `max`, and presence-gate
+- [x] 7.3 Implement draw-count invariance so a neutralized primitive still consumes and discards its draws
 - [ ] 7.4 Implement paired-seed scheduling: one shared control arm and one ablation arm per primitive, on identical derived seeds
 - [ ] 7.5 Implement mirrored slot assignment for the one-sided ablation used by `winRateByPrimitive`
 - [ ] 7.6 Implement the Wilson score interval and the `no-detected-effect` status when the interval contains 0.5
 - [ ] 7.7 Implement `not-attributable` for the `portal` primitive with its stated reason
 - [ ] 7.8 Implement rejection of pairwise ablation requests with an explanation
-- [ ] 7.9 Implement the ablation conformance check asserting every primitive in `contracts.md` §3 has a neutralization rule matching its stacking class
-- [ ] 7.10 Test that a control run and its paired ablation run consume identical RNG draw sequences up to genuine divergence, and record identical content hashes
+- [x] 7.9 Implement the ablation conformance check asserting every primitive in `contracts.md` §3 has a neutralization rule matching its stacking class
+- [x] 7.10 Test that a control run and its paired ablation run consume identical RNG draw sequences up to genuine divergence, and record identical content hashes
 
 ## 8. Baselines and the regression gate
 
