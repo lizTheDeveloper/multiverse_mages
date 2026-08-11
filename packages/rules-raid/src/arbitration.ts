@@ -368,6 +368,21 @@ export class CastArbiter {
     ).succeeded;
   }
 
+  /**
+   * The `knowledge-steal` magnitudes a node carries.
+   *
+   * Here rather than at the theft call site so that `effect.magnitude` is read
+   * in exactly one file. The conformance check enforces that, and the rule it
+   * enforces is the interesting one: a magnitude read anywhere else is a second
+   * place where a node's effects become numbers, which is the shape a bypassed
+   * legality check actually takes.
+   */
+  theftMagnitudes(nodeId: ContentId): readonly Fixed[] {
+    return requireRegistryNode(this.#registry, nodeId)
+      .effects.filter((effect) => effect.primitive === COMBAT_PRIMITIVES.knowledgeSteal)
+      .map((effect) => effect.magnitude);
+  }
+
   /** The summed damage a target takes, after exactly one ward application. */
   applyWardOnce(rawDamage: Fixed, wardSources: readonly Fixed[]): Fixed {
     const ward = this.#stack(COMBAT_PRIMITIVES.ward, wardSources);

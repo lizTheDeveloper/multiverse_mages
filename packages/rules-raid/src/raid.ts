@@ -843,11 +843,7 @@ function resolveTheft(
     return;
   }
 
-  const node = raid.registry.node(nodeId);
-  if (node === undefined) return;
-  const magnitudes = node.effects
-    .filter((effect) => effect.primitive === COMBAT_PRIMITIVES.knowledgeSteal)
-    .map((effect) => effect.magnitude);
+  const magnitudes = raid.arbiter.theftMagnitudes(nodeId);
 
   const stream = raid.rng.actorStream(RNG_STREAM.knowledgeTheft, tick, packCombatantKey(thief.key));
   if (!raid.arbiter.attemptTheft(nodeId, magnitudes, stream)) return;
