@@ -32,6 +32,7 @@ import {
   IDENTITY_SCALE,
   NORMALIZATION_RULES,
   OBSERVATION_DESCRIPTORS,
+  OBSERVATION_MAX_WORSHIP_TIER,
   OBSERVATION_SIZE,
   OBSERVATION_SLOTS,
   applyDescriptor,
@@ -87,11 +88,20 @@ describe('task 1.2 — one descriptor per slot, declaring a rule and a saturatio
     const resources = observationBlock('resources');
     for (const offset of [0, 1, 3, 4]) {
       const descriptor = resources.descriptors[offset] as NormalizationDescriptor;
-      expect(descriptor.rule, `resources channel ${offset}`).toBe('bounded');
-      expect(descriptor.divisor).toBe(FP_ONE);
+      // favor, worship, materials and prestige are fp *magnitudes*, not
+      // fractions: a universe holds tens to thousands of each. `bounded` over
+      // `FP_ONE` made all four constant `1.0` for every universe past its first
+      // decade, so they are ratios over resource-sized constants — and each
+      // constant is above fp unity, which is the property that distinguishes a
+      // magnitude channel from a fraction channel whatever number is chosen.
+      expect(descriptor.rule, `resources channel ${offset}`).toBe('ratio');
+      expect(descriptor.divisor, `resources channel ${offset}`).toBeGreaterThan(FP_ONE);
     }
     // worshipTier is a small integer, not an fp quantity.
     expect((resources.descriptors[2] as NormalizationDescriptor).rule).toBe('ratio');
+    expect((resources.descriptors[2] as NormalizationDescriptor).divisor).toBe(
+      OBSERVATION_MAX_WORSHIP_TIER,
+    );
 
     const ruleset = observationBlock('ruleset');
     // The 19 axis bits are flags; the edict pairs are (cellId, kind).

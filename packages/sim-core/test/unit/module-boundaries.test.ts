@@ -76,7 +76,7 @@ type Area = (typeof SCANNED_AREAS)[number];
  * must be written `import type` — they are erased at compile time and are not
  * permitted to become runtime coupling.
  *
- * Three packages here are not in §5's original list, all added for the same
+ * Four packages here are not in §5's original list, all added for the same
  * underlying reason — §5 was written before anyone tried to satisfy it — and
  * all recorded beside the §5 diagram:
  *
@@ -95,6 +95,13 @@ type Area = (typeof SCANNED_AREAS)[number];
  *   package, and `agent-api` cannot be reached by `rules-raid` under rule 4.
  *   `rules-raid` is given an inbound edge to it, since a raid's consequences
  *   land in world state through the same layer.
+ * - `scenario`: the composition root. Something has to load content, install
+ *   the world loop, seed a starting position and hand it to `agent-api`'s
+ *   session as a `Scenario`, and §5 named no package for it: `agent-api` may
+ *   not load content (its surface must run in a browser), `mc-harness` has one
+ *   edge on purpose, and `coordination` is rules-path code the client loads. It
+ *   is a leaf — nothing here imports it — and this table is what keeps that
+ *   true.
  */
 const ALLOWED: Readonly<Record<string, { value: readonly string[]; typeOnly: readonly string[] }>> =
   {
@@ -134,6 +141,19 @@ const ALLOWED: Readonly<Record<string, { value: readonly string[]; typeOnly: rea
       typeOnly: [],
     },
     'mc-harness': { value: ['agent-api'], typeOnly: [] },
+    scenario: {
+      value: [
+        'sim-core',
+        'content',
+        'state',
+        'rules-magic',
+        'rules-world',
+        'coordination',
+        'agent-api',
+        'mc-harness',
+      ],
+      typeOnly: [],
+    },
   };
 
 /**
@@ -483,6 +503,20 @@ describe('the workspace dependency graph matches contracts.md §5', () => {
         magic.filter((edge) => edge.specifier.slice(WORKSPACE_SCOPE.length).split('/')[0] === forbidden),
       ).toEqual([]);
     }
+  });
+
+  it('keeps the scenario package a leaf', () => {
+    // The §5 argument for giving the composition root a package of its own
+    // rests on nothing depending on it: it may import both halves of the
+    // boundary precisely because it is where a run is assembled and not
+    // something the simulation, the observation layer or the harness can reach
+    // back into. `ALLOWED` enforces that already — no other package lists it —
+    // but the failure message would name a missing edge rather than the
+    // property, and this is the property.
+    const inbound = workspaceEdges.filter(
+      (edge) => edge.pkg !== 'scenario' && edge.specifier.startsWith(`${WORKSPACE_SCOPE}scenario`),
+    );
+    expect(inbound.map((edge) => edge.path)).toEqual([]);
   });
 
   it('keeps sim-core free of workspace and Node built-in imports (rule 1)', () => {

@@ -1,0 +1,38 @@
+{
+  "name": "@mm/scenario",
+  "version": "0.3.0",
+  "private": true,
+  "description": "The reference universe: a starting position built from shipped content, the world loop that advances it, and the Monte Carlo run executor that joins the two.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "//": "The composition root contracts.md §5 never named: it is the only package that may load content, install coordination's world loop, and hand the result to agent-api's session as a Scenario — see the fourth-deviation note beside the §5 diagram. It is a leaf; nothing in this workspace imports it, and the dependency-graph test is what keeps that true. Host-side, so it sees Node's ambient types and reads the filesystem. Zero third-party runtime dependencies: everything here is a workspace sibling or the standard library.",
+  "dependencies": {
+    "@mm/agent-api": "*",
+    "@mm/content": "*",
+    "@mm/coordination": "*",
+    "@mm/mc-harness": "*",
+    "@mm/rules-magic": "*",
+    "@mm/rules-world": "*",
+    "@mm/sim-core": "*",
+    "@mm/state": "*"
+  },
+  "scripts": {
+    "build": "tsc --build"
+  }
+}

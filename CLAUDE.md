@@ -69,9 +69,12 @@ traditions confined to their four hooks — plus `rules-world`'s species and mag
 grid is pre-authored: 300 nodes across all seventy cells, of which twelve cells are enabled.
 Next up is `mages-and-species` (0.4.0).
 
-Three packages are **deviations from `contracts.md` §5 as originally drawn**, all recorded there with
-their reasoning: `state`, `primitives`, and `coordination`. §5 was written before anyone tried to
-satisfy it. Two further deviations, both from **§1.2**, are recorded in that section: the
+Four packages are **deviations from `contracts.md` §5 as originally drawn**, all recorded there with
+their reasoning: `state`, `primitives`, `coordination`, and `scenario`. §5 was written before anyone
+tried to satisfy it. `scenario` is the newest: the composition root that loads content, installs the
+world loop, seeds a starting position and hands it to `agent-api`'s session as a `Scenario`, so that
+the Monte Carlo harness can run a real universe instead of a toy one. It is a **leaf** — nothing here
+imports it — and that is what makes its unusually wide edge list safe. Two further deviations, both from **§1.2**, are recorded in that section: the
 `goal-commitment` component and the `effort-progress` component, neither of which
 `mages-and-species` expected to need. Each cost a world-schema revision — `WORLD_SCHEMA_VERSION` is
 now 3 — and neither moved `sim-core`'s `SNAPSHOT_VERSION`, which is inside the hashed header and

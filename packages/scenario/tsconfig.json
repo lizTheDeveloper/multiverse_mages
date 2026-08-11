@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Library build. Like mc-harness and unlike the rules packages, this one loads content off disk and names a worker entry point by URL, so it sees Node's ambient types.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../sim-core" },
+    { "path": "../content" },
+    { "path": "../state" },
+    { "path": "../rules-magic" },
+    { "path": "../rules-world" },
+    { "path": "../coordination" },
+    { "path": "../agent-api" },
+    { "path": "../mc-harness" }
+  ]
+}

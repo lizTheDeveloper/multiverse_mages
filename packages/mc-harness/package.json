@@ -2,7 +2,7 @@
   "name": "@mm/mc-harness",
   "version": "0.3.0",
   "private": true,
-  "description": "Monte Carlo worker pool, parameter sweeps, and balance metric collection. Skeleton — the harness lands in balance-harness.",
+  "description": "Monte Carlo worker pool, sweep specifications, deterministic seed derivation, append-only result storage, and canonical-order aggregation.",
   "license": "AGPL-3.0-or-later",
   "author": "Ann Kelner",
   "type": "module",
@@ -14,13 +14,21 @@
       "default": "./dist/index.js"
     }
   },
+  "bin": {
+    "mm-run-sweep": "./bin/run-sweep.mjs",
+    "mm-reproduce-run": "./bin/reproduce-run.mjs"
+  },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
   "engines": {
     "node": ">=22.0.0 <23"
   },
-  "//": "Host-side tooling, not rules-path code: it owns worker processes and file output, so it sees Node's ambient types. Per contracts.md §5 it reaches the simulation only through agent-api.",
+  "//": "Host-side tooling, not rules-path code: it owns worker processes, a wall clock for throughput, and file output, so it sees Node's ambient types. Per contracts.md §5 it may reach the simulation only through agent-api, and both adaptAgentSession and the scripted bot pool use that edge: the strategies name §4.2 action ids and read §4.1 observation block offsets from agent-api rather than from a copy. Zero THIRD-PARTY runtime dependencies: worker_threads and crypto are in the standard library, and a harness with no third-party code is one fewer licence to audit against AGPL-3.0-or-later.",
+  "dependencies": {
+    "@mm/agent-api": "*"
+  },
   "scripts": {
     "build": "tsc --build"
   }

@@ -121,6 +121,47 @@ function assertLabel(value: string, role: string): void {
   }
 }
 
+/**
+ * One coordinate field, with the delimiter made unmistakable.
+ *
+ * `/` separates the fields of the coordinate string, and it used to be permitted
+ * *inside* one, so two structurally different generators flattened to the same
+ * text and drew byte-identical sequences:
+ *
+ * ```
+ * agentRng(…, strategyId: 'greedy').fork('explore')
+ * agentRng(…, strategyId: 'greedy/fork/explore')
+ *   → both 'mm-agent-rng/1/7/0/greedy/fork/explore'
+ * ```
+ *
+ * and likewise `fork('a').fork('b')` against `fork('a/fork/b')`. That is the
+ * coincidence {@link assertLabel} refuses an empty label for, reached by another
+ * route, so permitting it was an inconsistency rather than a considered
+ * tradeoff. A tournament running `greedy` with an `explore` fork alongside a
+ * strategy registered as `greedy/fork/explore` would have got two arms that are
+ * not independent, with nothing anywhere reporting it.
+ *
+ * Escaping rather than banning `/` outright. A ban is one line shorter and
+ * refuses a strategy id that is not otherwise illegal — a caller who names a
+ * strategy after a path has done nothing wrong, and the derivation, not the
+ * caller, is what was ambiguous. `%` is escaped first so the escape is itself
+ * unambiguous, which makes the mapping injective: an escaped field contains no
+ * `/` at all, so the coordinate string splits uniquely back into
+ * `(runSeed, agentSlotIndex, strategyId)` and its fork path.
+ *
+ * **This does not re-seed anything.** A field containing neither `%` nor `/`
+ * escapes to itself, and no id or label in this repository contains either, so
+ * every derivation that has ever been drawn is byte-identical to what it was.
+ * The only coordinates whose numbers move are the ones that were ambiguous, and
+ * a number drawn from an ambiguous coordinate was not reproducible in the sense
+ * §6 means anyway. That is why {@link AGENT_DOMAIN} does not move: the domain
+ * version exists so that a *silent re-seed of every recorded tournament* is
+ * impossible, and there is no re-seed here to be silent about.
+ */
+function escapeField(value: string): string {
+  return value.replaceAll('%', '%25').replaceAll('/', '%2F');
+}
+
 /** ASCII bytes. See `digest.ts` for why `TextEncoder` is avoided. */
 function asciiBytes(text: string): Uint8Array {
   const bytes = new Uint8Array(text.length);
@@ -162,7 +203,7 @@ function generatorOver(coordinates: string): AgentRng {
     },
     fork(label: string): AgentRng {
       assertLabel(label, 'A fork label');
-      return generatorOver(`${coordinates}/fork/${label}`);
+      return generatorOver(`${coordinates}/fork/${escapeField(label)}`);
     },
   };
 }
@@ -180,6 +221,7 @@ export function agentRng(input: AgentRngInput): AgentRng {
   assertUint32(input.agentSlotIndex, 'agentSlotIndex');
   assertLabel(input.strategyId, 'strategyId');
   return generatorOver(
-    `${AGENT_DOMAIN}/${String(input.runSeed)}/${String(input.agentSlotIndex)}/${input.strategyId}`,
+    `${AGENT_DOMAIN}/${String(input.runSeed)}/${String(input.agentSlotIndex)}/` +
+      escapeField(input.strategyId),
   );
 }
