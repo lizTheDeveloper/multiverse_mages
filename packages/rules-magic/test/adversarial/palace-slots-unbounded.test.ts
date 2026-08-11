@@ -70,6 +70,16 @@
  * A fix may thread the bound through `research`/`teach` (a store policy plus the
  * subject's current personal-instance count), or `KnowledgeSubsystem` may learn
  * to refuse. This file asserts the outcome and not the mechanism.
+ *
+ * ## (d) What the fix changed here, and what it did not
+ *
+ * The first route was taken: `research` and `teach` no longer accept a bare
+ * `locationKind`, they accept the `store` hook itself, and a location without
+ * its bound is no longer expressible. So the two wiring lines below now read
+ * `store: palace` instead of `locationKind: palace.personalLocationKind` —
+ * because the input they used to name no longer exists, not because the
+ * assertions needed help. **Every assertion in this file is unchanged**, and
+ * the numbers are still twelve and thirteen, still read from shipped content.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -111,8 +121,8 @@ const palace = storePolicy(hooksOfTradition(ART_OF_MEMORY, TRADITIONS).store);
 
 /**
  * Research one node to completion, wired the way the release-claim transcript
- * wires the Art of Memory: the tradition supplies the location kind and nothing
- * else.
+ * wires the Art of Memory: the tradition supplies its `store` hook, and nothing
+ * else about the tradition reaches this call.
  */
 function acquire(knowledge: KnowledgeSubsystem, nodeId: number): boolean {
   let progress = 0;
@@ -133,7 +143,7 @@ function acquire(knowledge: KnowledgeSubsystem, nodeId: number): boolean {
       rediscoveryAffinity: 1024,
       clampCounter: createRediscoveryClampCounter(),
       initialMastery: MASTERY_MAX,
-      locationKind: palace.personalLocationKind,
+      store: palace,
     });
     progress = outcome.progress;
     if (outcome.completed) return true;
@@ -198,7 +208,7 @@ describe('the Art of Memory bounds a palace at its declared slot count', () => {
         student: STUDENT,
         nodeId,
         worldTick: 200 + nodeId,
-        locationKind: palace.personalLocationKind,
+        store: palace,
       });
       if (outcome.instance !== 0) taught += 1;
     }

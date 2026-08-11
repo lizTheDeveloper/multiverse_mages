@@ -88,6 +88,7 @@ import { teach } from '../../src/instances/teaching.js';
 import type { InstanceView, StorePolicy } from '../../src/traditions/index.js';
 import {
   RESOLUTION,
+  UNBOUNDED_SLOTS,
   admitToStore,
   applyAcquire,
   canHoldAt,
@@ -128,6 +129,17 @@ import {
 
 const ARCHMAGE = 700;
 const STUDENT = 701;
+/** A mage who exists only to have her personal store filled to its brim. */
+const HOARDER = 702;
+/**
+ * How full a personal store is driven before one more acquisition is attempted,
+ * when the tradition declares no bound of its own.
+ *
+ * Deeper than the deepest v1 bound, so the unbounded traditions are probed past
+ * the point the bounded one refuses and the comparison is not an artefact of
+ * stopping early.
+ */
+const PROBE_FILL = 12;
 /** Base costs before any hook has a say. Identical for every tradition. */
 const BASE_RESEARCH_COST = 4096;
 const BASE_TEACH_COST = 1024;
@@ -155,6 +167,12 @@ interface Transcript {
   readonly grimoiresInWorld: number;
   readonly instancesAfterScribing: number;
   readonly thirteenthAdmitted: boolean;
+  /** What the tradition's `store` hook declares. `0` when it declares no bound. */
+  readonly declaredSlots: number;
+  /** The refusal a full personal store produced from the shipped `research` path. */
+  readonly overflowRefusal: string;
+  /** What the probed mage was left holding once the store had been overfilled. */
+  readonly heldAfterOverflow: number;
   readonly prepared: boolean;
   readonly preparedAfterCast: readonly number[];
   readonly costAtPreparation: number;
@@ -162,6 +180,77 @@ interface Transcript {
   readonly palaceDepth: number;
   readonly lossesOnHolderDeath: readonly number[];
   readonly survivesItsHolder: boolean;
+}
+
+/** What a full personal store did to one more acquisition. */
+interface OverflowProbe {
+  readonly refusal: string;
+  readonly held: number;
+}
+
+/**
+ * Fills a mage's personal store and then researches one node too many.
+ *
+ * **This is the store bound as an outcome rather than as a question.** Asking
+ * `admitToStore(store, 12)` proves the policy object can do arithmetic; it
+ * proved nothing about acquisition, and for the whole of 0.3.0's development it
+ * was true while a mage could research her thirtieth palace instance unimpeded.
+ * So the probe drives the shipped `research` path and reports what the mage is
+ * left holding.
+ *
+ * Run on its own world so that overfilling one does not perturb the scripted
+ * transcript's existence counts, loss events or grimoire tally — the probe is
+ * about the bound, and a probe that moved the other readings would make every
+ * one of them harder to attribute.
+ *
+ * A tradition declaring no bound is filled to {@link PROBE_FILL} anyway, so
+ * that "refused at twelve" and "not refused at twelve" are the same experiment
+ * run twice rather than two different ones.
+ */
+function overflowProbe(store: StorePolicy): OverflowProbe {
+  const fill = store.slotsPerMage === UNBOUNDED_SLOTS ? PROBE_FILL : store.slotsPerMage;
+  const knowledge = new KnowledgeSubsystem(testWorld(), TEST_NODE_COUNT);
+  for (let held = 0; held < fill; held += 1) {
+    // A founding grant through the subsystem's own writer: how a universe
+    // starts out knowing things. The acquisition under test is the one below.
+    knowledge.createInstance({
+      nodeId: ROOT_NODE,
+      locationKind: store.personalLocationKind,
+      locationId: HOARDER,
+      acquiredTick: 0,
+      mastery: MASTERY_MAX,
+    });
+  }
+
+  let refusal = '';
+  let progress = 0;
+  for (let tick = 400; tick < 460; tick += 1) {
+    const outcome = research({
+      knowledge,
+      catalog: testCatalog(),
+      cells: testCells,
+      ruleset: permissiveRuleset(),
+      rng: stepRng(23, tick),
+      subject: HOARDER,
+      nodeId: OTHER_CELL_NODE,
+      worldTick: tick,
+      progress,
+      effort: BASE_RESEARCH_COST,
+      ...UNITY,
+      rediscoveryAffinity: 1024,
+      clampCounter: createRediscoveryClampCounter(),
+      initialMastery: MASTERY_MAX,
+      store,
+    });
+    progress = outcome.progress;
+    refusal = outcome.refusal?.reason ?? '';
+    if (outcome.completed || outcome.refusal !== undefined) break;
+  }
+
+  return {
+    refusal,
+    held: knowledge.instancesAt(store.personalLocationKind, HOARDER).length,
+  };
 }
 
 /**
@@ -215,7 +304,7 @@ function transcript(tradition: number): Transcript {
       rediscoveryAffinity: 1024,
       clampCounter: createRediscoveryClampCounter(),
       initialMastery: acquire.initialMastery,
-      locationKind: store.personalLocationKind,
+      store,
     });
     researchSteps += 1;
     progress = outcome.progress;
@@ -235,7 +324,7 @@ function transcript(tradition: number): Transcript {
     student: STUDENT,
     nodeId: ROOT_NODE,
     worldTick: 220,
-    locationKind: store.personalLocationKind,
+    store,
   });
 
   // 3. She tries to write it down. Only the `store` hook can refuse this.
@@ -261,6 +350,9 @@ function transcript(tradition: number): Transcript {
   // 5. She dies. What survives her is the whole bargain of the `store` hook.
   const losses = knowledge.destroyInstancesHeldBy(ARCHMAGE, 240);
 
+  // 6. Elsewhere, a mage fills her personal store and reaches for one more.
+  const overflow = overflowProbe(store);
+
   return {
     researchCost: acquire.researchCost,
     researchSteps,
@@ -272,7 +364,10 @@ function transcript(tradition: number): Transcript {
     scribeRefusal: scribed.refusal?.reason ?? '',
     grimoiresInWorld: componentOf(knowledge.state, GRIMOIRE).size,
     instancesAfterScribing: knowledge.instanceCount(ROOT_NODE) + losses.length,
-    thirteenthAdmitted: admitToStore(store, 12).admitted,
+    thirteenthAdmitted: admitToStore(store, PROBE_FILL).admitted,
+    declaredSlots: store.slotsPerMage,
+    overflowRefusal: overflow.refusal,
+    heldAfterOverflow: overflow.held,
     prepared: preparation.prepared,
     preparedAfterCast: released.preparedSpells,
     costAtPreparation: preparationCost(cost, BASE_CAST_COST),
@@ -366,6 +461,18 @@ describe('release claim 0.3.0 — each v1 tradition changes measurable behaviour
     expect(artOfMemory?.instanceLocationKind).toBe(LOCATION_KIND.palace);
     expect(artOfMemory?.thirteenthAdmitted).toBe(false);
     expect(vancian?.thirteenthAdmitted).toBe(true);
+
+    // And bounded *in the simulation*, not only in the policy object: a mage
+    // whose palace is full is refused by the shipped `research` path, the
+    // refusal names the declared count, and she ends holding exactly it —
+    // where a standard mage sails past the same depth. The claim is
+    // "changes measurable behaviour", and this is the measurement.
+    expect(artOfMemory?.overflowRefusal).toBe('personal-store-full');
+    expect(artOfMemory?.heldAfterOverflow).toBe(artOfMemory?.declaredSlots);
+    expect(artOfMemory?.declaredSlots).toBeGreaterThan(0);
+    expect(vancian?.overflowRefusal).toBe('');
+    expect(vancian?.heldAfterOverflow).toBe(PROBE_FILL + 1);
+    expect(vancian?.declaredSlots).toBe(UNBOUNDED_SLOTS);
 
     // Nothing is written down — and this is the shipped `scribe` refusing,
     // not a flag: no grimoire entity exists in the world afterwards.

@@ -302,9 +302,11 @@ function agreementScenario(tradition: number) {
     // outputs depend on the order they were run in. Nothing here reads it --
     // this script compares refusals and requirements, not clamp rates.
     clampCounter: createRediscoveryClampCounter(),
-    // The two tradition-derived inputs a research step legitimately takes.
+    // The two tradition-derived inputs a research step legitimately takes:
+    // what `acquire` says the instance arrives at, and the `store` hook itself
+    // — which carries both where the instance lands and how many may land there.
     initialMastery: terms.initialMastery,
-    locationKind: store.personalLocationKind,
+    store,
   });
 
   const permitted = permissiveRuleset();

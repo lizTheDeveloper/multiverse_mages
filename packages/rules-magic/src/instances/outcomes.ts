@@ -71,6 +71,25 @@ export type KnowledgeRefusal =
       readonly mastery: Fp;
       readonly threshold: Fp;
     }
+  /**
+   * The subject's personal store is full at the active `store` hook's bound.
+   *
+   * Carries both numbers rather than one. `slotsPerMage` is the declared
+   * content the requirement says must be named; `held` is what the mage
+   * actually has, and the two disagreeing is the only signal that would
+   * distinguish a correct refusal from an index that has lost count.
+   */
+  | {
+      readonly reason: 'personal-store-full';
+      readonly nodeId: ContentId;
+      readonly subject: Handle;
+      /** The `store` hook kind that declared the bound, for the message. */
+      readonly storeKind: string;
+      /** Instances the subject already holds at the store's personal location. */
+      readonly held: number;
+      /** The declared bound. `magic-traditions` requires the count be named. */
+      readonly slotsPerMage: number;
+    }
   /** The active `store` hook does not keep written copies. */
   | {
       readonly reason: 'written-storage-unavailable';
@@ -116,6 +135,13 @@ export function describeRefusal(refusal: KnowledgeRefusal): string {
       return (
         `the teacher's mastery of node ${String(refusal.nodeId)} is ${String(refusal.mastery)}, ` +
         `below the teaching-eligibility threshold of ${String(refusal.threshold)}`
+      );
+    case 'personal-store-full':
+      return (
+        `${String(refusal.subject)} already holds ${String(refusal.held)} instances at the ` +
+        `"${refusal.storeKind}" store hook's personal location, which allows ` +
+        `${String(refusal.slotsPerMage)} per mage, so node ${String(refusal.nodeId)} cannot be ` +
+        'acquired'
       );
     case 'written-storage-unavailable':
       return (

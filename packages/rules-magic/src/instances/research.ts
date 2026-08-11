@@ -33,6 +33,20 @@
  * everything dangerous, keep researching it in perfect safety, and carry a full
  * spellbook abroad. Forbidding has to have a price, and this is the price.
  *
+ * ## A full store refuses before any effort is spent
+ *
+ * The `store` hook's `slotsPerMage` is checked with the other refusals, up
+ * front, rather than at the moment the instance would be created. Two reasons,
+ * and the second is the one that matters. A mage who cannot possibly keep the
+ * result should not spend months deriving it. And `mages-and-species` will
+ * score research options speculatively — an operation that only reveals it was
+ * impossible after the progress has accumulated cannot be scored at all.
+ *
+ * The cost is that a mage cannot bank progress against a slot she expects to
+ * free. That is a real behaviour and it is deliberate: progress is caller-owned
+ * (see above), so a caller that wants to model it can, and nothing here has to
+ * decide what a reserved slot means.
+ *
  * ## The rediscovery multiplier is not computed here
  *
  * This file used to carry its own `effectiveRediscoveryMultiplier`, reading
@@ -57,6 +71,9 @@ import { LOCATION_KIND, permits } from '@mm/state';
 import type { RediscoveryClampCounter } from '@mm/primitives';
 import { effectiveRediscoveryMultiplier } from '@mm/primitives';
 import { FP_ONE, RNG_STREAM, div, mul, nextBounded } from '@mm/sim-core';
+
+import type { PersonalStore } from '../traditions/store.js';
+import { UNBOUNDED_SLOTS, admitToStore } from '../traditions/store.js';
 
 import type { CellResolver, KnowledgeNode, KnowledgeRng, NodeCatalog } from './catalog.js';
 import { requireNode } from './catalog.js';
@@ -104,8 +121,20 @@ export interface ResearchInputs {
   readonly clampCounter: RediscoveryClampCounter;
   /** Mastery a completed instance is created at. Defaults to the placeholder. */
   readonly initialMastery?: Fp;
-  /** Where the instance lands. `mind` unless the tradition stores in a palace. */
-  readonly locationKind?: number;
+  /**
+   * The active `store` hook: where a completed instance lands, and how many the
+   * subject may hold there.
+   *
+   * **This replaced a bare `locationKind`.** A caller could previously send an
+   * instance to a memory palace while supplying nothing that could refuse one,
+   * so the Art of Memory's declared `slotsPerMage` was unreachable from every
+   * acquisition path in the package. The location and the bound are one
+   * decision of one hook, and they now arrive together or not at all.
+   *
+   * Omitted means the caller's tradition has no say: `mind`, unbounded, which
+   * is what `store: standard` resolves to.
+   */
+  readonly store?: PersonalStore;
 }
 
 export interface ResearchOutcome {
@@ -221,7 +250,7 @@ export function research(inputs: ResearchInputs): ResearchOutcome {
 
   const instance = inputs.knowledge.createInstance({
     nodeId: inputs.nodeId,
-    locationKind: inputs.locationKind ?? LOCATION_KIND.mind,
+    locationKind: personalLocationKind(inputs.store),
     locationId: inputs.subject,
     acquiredTick: inputs.worldTick,
     mastery: inputs.initialMastery ?? DEFAULT_INITIAL_MASTERY,
@@ -234,7 +263,60 @@ function refuseResearch(inputs: ResearchInputs, node: KnowledgeNode): KnowledgeR
   if (!permits(inputs.ruleset, cellId)) {
     return { reason: 'forbidden-cell', nodeId: inputs.nodeId, cellId };
   }
-  return unsatisfiedPrerequisite(inputs, node);
+  const missing = unsatisfiedPrerequisite(inputs, node);
+  if (missing !== undefined) return missing;
+  return personalStoreFull(inputs.knowledge, inputs.store, inputs.subject, inputs.nodeId);
+}
+
+/**
+ * Where a personal instance lands under a `store` hook — `mind` without one.
+ *
+ * The default is `store: standard`'s answer rather than a fallback: a caller
+ * that resolved no tradition is describing a universe whose knowledge sits in
+ * heads, which is every universe that has not declared otherwise.
+ */
+export function personalLocationKind(store: PersonalStore | undefined): number {
+  return store?.personalLocationKind ?? LOCATION_KIND.mind;
+}
+
+/**
+ * The refusal a full personal store produces, or `undefined` if there is room.
+ *
+ * Shared with teaching, because a bound one route honours and the other does
+ * not is not a bound — a mage barred from researching a thirteenth node would
+ * simply enrol for it.
+ *
+ * **Counted at the store's own location kind, per mage.** A palace's twelve are
+ * twelve palace instances belonging to that mage, and a mind instance she
+ * carried in from a tradition change does not spend one of them: `slotsPerMage`
+ * is declared as a bound on `personalLocationKind` and nothing else, and
+ * `magic-traditions` is explicit that switching into the Art of Memory must not
+ * erase what its mages already know.
+ *
+ * The unbounded case returns before counting. That is not only speed: it means
+ * a tradition declaring no bound performs no scan and cannot be perturbed by
+ * one, so `standard` and `true-naming` behaviour is unchanged by this rule
+ * existing.
+ */
+export function personalStoreFull(
+  knowledge: KnowledgeSubsystem,
+  store: PersonalStore | undefined,
+  subject: Handle,
+  nodeId: ContentId,
+): KnowledgeRefusal | undefined {
+  if (store === undefined || store.slotsPerMage === UNBOUNDED_SLOTS) return undefined;
+
+  const held = knowledge.instancesAt(store.personalLocationKind, subject).length;
+  if (admitToStore(store, held).admitted) return undefined;
+
+  return {
+    reason: 'personal-store-full',
+    nodeId,
+    subject,
+    storeKind: store.kind,
+    held,
+    slotsPerMage: store.slotsPerMage,
+  };
 }
 
 /**

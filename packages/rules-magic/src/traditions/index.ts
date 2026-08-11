@@ -74,7 +74,13 @@ export {
 export type { CarriedNode, PortalEntry, PortalHooks, ReleaseAbroad } from './portal.js';
 export { populatePreparedSpells, releaseAbroad, resolvePortalHooks } from './portal.js';
 
-export type { PalaceContribution, ScribeAvailability, StoreAdmission, StorePolicy } from './store.js';
+export type {
+  PalaceContribution,
+  PersonalStore,
+  ScribeAvailability,
+  StoreAdmission,
+  StorePolicy,
+} from './store.js';
 export {
   UNBOUNDED_SLOTS,
   admitToStore,

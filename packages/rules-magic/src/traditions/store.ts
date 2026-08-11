@@ -83,6 +83,24 @@ export interface StorePolicy {
 /** {@link StorePolicy.slotsPerMage} when the tradition declares no bound. */
 export const UNBOUNDED_SLOTS = 0;
 
+/**
+ * As much of a {@link StorePolicy} as an acquisition needs to be bounded.
+ *
+ * `research` and `teach` take one of these rather than the whole policy: the
+ * three fields here are everything the slot bound is a function of, and a
+ * narrower input is one a caller can satisfy without resolving looting,
+ * burning, mortality and library depth as well. `StorePolicy` is assignable to
+ * it, so the tradition layer hands its policy straight through.
+ *
+ * `kind` is carried only so a refusal can name the hook that refused. Nothing
+ * in the acquisition path branches on it — that would be the fifth hook
+ * `vision.md` §4a caps out.
+ */
+export type PersonalStore = Pick<
+  StorePolicy,
+  'kind' | 'personalLocationKind' | 'slotsPerMage'
+>;
+
 /** Written copies: the two location kinds a grimoire's instance moves between. */
 const WRITTEN_KINDS: readonly LocationKindValue[] = [LOCATION_KIND.grimoire, LOCATION_KIND.library];
 
@@ -190,8 +208,13 @@ export interface StoreAdmission {
  * The refusal names the number because the number is content: a player who
  * cannot see *twelve* in the message has no way to tell a tradition's declared
  * bound from a bug, and `magic-traditions` asks for the count by name.
+ *
+ * **Takes a {@link PersonalStore} rather than the whole policy.** It reads
+ * three fields and always did; demanding the rest made it callable only from
+ * somewhere that had already resolved looting and mortality, which is a reason
+ * the acquisition path never called it at all.
  */
-export function admitToStore(policy: StorePolicy, heldPersonalInstances: number): StoreAdmission {
+export function admitToStore(policy: PersonalStore, heldPersonalInstances: number): StoreAdmission {
   const locationKind = policy.personalLocationKind;
 
   if (policy.slotsPerMage !== UNBOUNDED_SLOTS && heldPersonalInstances >= policy.slotsPerMage) {
