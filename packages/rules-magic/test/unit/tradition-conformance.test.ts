@@ -32,7 +32,21 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-const SRC_ROOT = fileURLToPath(new URL('../../src/', import.meta.url));
+/** From packages/rules-magic/test/unit/ up to the repository root. */
+const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
+
+/**
+ * The packages that decide rules — the same three
+ * `rules-path-conformance.test.ts` lists, and for the same reason.
+ *
+ * **Widened from `rules-magic` alone.** The spec says the check scans *"the
+ * rules path"*, and the rules path is three packages. A `traditionId` read in
+ * `rules-world` is the *more* likely mistake, not the less: `rules-world` owns
+ * mages, universities and mortality, and "under the Art of Memory a mage's
+ * death also…" is the sentence that writes itself. The narrow scan passed it
+ * without comment.
+ */
+const RULES_PATH = ['rules-magic', 'rules-world', 'rules-raid'];
 
 /**
  * The one file permitted to turn an id into behaviour.
@@ -42,22 +56,39 @@ const SRC_ROOT = fileURLToPath(new URL('../../src/', import.meta.url));
  * exemption at all — they take a `ResolvedHook` — which is a stronger result
  * than the task asked for and is asserted separately below.
  */
-const ARBITRATION_FILE = 'traditions/hook-for.ts';
+const ARBITRATION_FILE = 'packages/rules-magic/src/traditions/hook-for.ts';
 
 /** `traditionId` as a whole identifier or property, in any access form. */
 const TRADITION_ID_READ = /(?<![A-Za-z0-9_$])traditionId(?![A-Za-z0-9_$])|\['traditionId'\]/g;
 
-/** Every `.ts` file under `packages/rules-magic/src`, path-relative, sorted. */
-function sourceFiles(directory = '', out: string[] = []): string[] {
-  for (const entry of readdirSync(SRC_ROOT + directory).sort()) {
-    const relative = directory === '' ? entry : `${directory}/${entry}`;
-    if (statSync(SRC_ROOT + relative).isDirectory()) {
-      sourceFiles(relative, out);
+/** Every `.ts` file under one directory, repo-relative, sorted. */
+function listTypeScript(directory: string, out: string[] = []): string[] {
+  let entries: string[];
+  try {
+    entries = readdirSync(REPO_ROOT + directory).sort();
+  } catch {
+    return out;
+  }
+  for (const entry of entries) {
+    if (entry === 'node_modules' || entry === 'dist') continue;
+    const relative = `${directory}/${entry}`;
+    if (statSync(REPO_ROOT + relative).isDirectory()) {
+      listTypeScript(relative, out);
       continue;
     }
-    if (relative.endsWith('.ts')) out.push(relative);
+    if (relative.endsWith('.ts') && !relative.endsWith('.d.ts')) out.push(relative);
   }
   return out;
+}
+
+/** Every `.ts` file in the rules path's three `src` trees, repo-relative. */
+function rulesPathFiles(): string[] {
+  return RULES_PATH.flatMap((pkg) => listTypeScript(`packages/${pkg}/src`));
+}
+
+/** Every `.ts` file under `packages/rules-magic/src`, repo-relative, sorted. */
+function magicSourceFiles(): string[] {
+  return listTypeScript('packages/rules-magic/src');
 }
 
 /**
@@ -68,24 +99,33 @@ function sourceFiles(directory = '', out: string[] = []): string[] {
  * avoid naming the thing it documents teaches people to write worse comments.
  */
 function code(relative: string): string {
-  return readFileSync(SRC_ROOT + relative, 'utf8')
+  return readFileSync(REPO_ROOT + relative, 'utf8')
     .replaceAll(/\/\*[\s\S]*?\*\//g, ' ')
     .replaceAll(/\/\/[^\n]*/g, ' ')
     .replaceAll(/'(?:[^'\\\n]|\\.)*'/g, "''")
     .replaceAll(/`(?:[^`\\]|\\.)*`/g, '``');
 }
 
-describe('traditionId is readable in exactly one place', () => {
-  const files = sourceFiles();
+describe('traditionId is readable in exactly one place in the rules path', () => {
+  const files = rulesPathFiles();
 
-  it('finds source to scan at all', () => {
+  it('finds source to scan in every rules package', () => {
     // A scanner over an empty directory passes for the wrong reason, silently,
-    // and would keep passing after a refactor moved every file.
+    // and would keep passing after a refactor moved every file. Each of the
+    // three packages must be represented, or the widening is decorative —
+    // `rules-raid` is a skeleton today and a scan that quietly dropped it would
+    // look exactly like a scan that covered it.
     expect(files.length).toBeGreaterThan(5);
     expect(files).toContain(ARBITRATION_FILE);
+    for (const pkg of RULES_PATH) {
+      expect(
+        files.filter((file) => file.startsWith(`packages/${pkg}/src/`)),
+        `the scan found no source in ${pkg}; the rules path is three packages`,
+      ).not.toEqual([]);
+    }
   });
 
-  it.each(sourceFiles().filter((file) => file !== ARBITRATION_FILE))(
+  it.each(rulesPathFiles().filter((file) => file !== ARBITRATION_FILE))(
     '%s does not read traditionId',
     (file) => {
       const found = code(file).match(TRADITION_ID_READ) ?? [];
@@ -114,10 +154,10 @@ describe('traditionId is readable in exactly one place', () => {
 
 describe('the four dispatch points take a resolved hook, not an identity', () => {
   const DISPATCH = [
-    'traditions/acquire.ts',
-    'traditions/store.ts',
-    'traditions/cast.ts',
-    'traditions/cost.ts',
+    'packages/rules-magic/src/traditions/acquire.ts',
+    'packages/rules-magic/src/traditions/store.ts',
+    'packages/rules-magic/src/traditions/cast.ts',
+    'packages/rules-magic/src/traditions/cost.ts',
   ];
 
   it.each(DISPATCH)('%s never names a tradition in any casing', (file) => {
@@ -136,8 +176,13 @@ describe('the four dispatch points take a resolved hook, not an identity', () =>
 });
 
 describe('every rules-magic source file carries the licence header', () => {
-  it.each(sourceFiles())('%s', (file) => {
-    const head = readFileSync(SRC_ROOT + file, 'utf8').slice(0, 800);
+  // Deliberately still scoped to this package. The `traditionId` scan above
+  // widened to the whole rules path; this one did not, because the other two
+  // packages' headers are their own suites' business and a silent widening
+  // here would make this file the place a `rules-world` header failure
+  // surfaces.
+  it.each(magicSourceFiles())('%s', (file) => {
+    const head = readFileSync(REPO_ROOT + file, 'utf8').slice(0, 800);
     expect(head).toContain('SPDX-License-Identifier: AGPL-3.0-or-later');
     expect(head).toContain('Copyright (C) 2026 Ann Kelner');
   });
