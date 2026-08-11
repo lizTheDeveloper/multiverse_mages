@@ -27,7 +27,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { SnapshotEnvelope } from '@mm/sim-core';
+import type { ComponentFields, ComponentSpec, SnapshotEnvelope } from '@mm/sim-core';
 import {
   SNAPSHOT_VERSION,
   decodeSnapshot,
@@ -38,12 +38,18 @@ import {
   stateToEnvelope,
 } from '@mm/sim-core';
 import {
+  BLESSING,
   EFFORT_PROGRESS,
+  ERA_EVALUATION,
   GOAL_COMMITMENT,
+  GOD_STATE,
   MAGE,
+  UPHEAVAL,
   WORLD_SCHEMA_VERSION,
   addEffortProgress,
   addGoalCommitment,
+  addGodAgencyState,
+  collectRecords,
   componentOf,
   defineWorldStateSchema,
   loadWorldSnapshot,
@@ -64,20 +70,29 @@ function envelopeWithout(...names: readonly string[]): SnapshotEnvelope {
   };
 }
 
+/** The four sections `god-agency` appended, named once. */
+const GOD_SECTIONS = [GOD_STATE.name, BLESSING.name, UPHEAVAL.name, ERA_EVALUATION.name];
+
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name);
+  return envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, ...GOD_SECTIONS);
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(EFFORT_PROGRESS.name);
+  return envelopeWithout(EFFORT_PROGRESS.name, ...GOD_SECTIONS);
+}
+
+/** The world as the last build before the god had verbs saw it. */
+function revisionThreeEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(...GOD_SECTIONS);
 }
 
 describe('the world-schema revision is read off the snapshot itself', () => {
   it('reads each revision from the newest component it carries', () => {
     expect(worldSchemaVersionOf(revisionOneEnvelope())).toBe(1);
     expect(worldSchemaVersionOf(revisionTwoEnvelope())).toBe(2);
+    expect(worldSchemaVersionOf(revisionThreeEnvelope())).toBe(3);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -90,7 +105,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(3);
+    expect(WORLD_SCHEMA_VERSION).toBe(4);
   });
 });
 
@@ -123,13 +138,15 @@ describe('migrating a revision-1 world snapshot forward', () => {
   });
 
   it('walks a revision-1 envelope to the current revision, one step at a time', () => {
-    // Two steps, not a shortcut: a revision-1 save has to pass through
-    // revision 2 to reach 3, and the loop is what makes that true without a
-    // third code path only the oldest saves would ever exercise.
+    // Three steps, not a shortcut: a revision-1 save has to pass through
+    // revisions 2 and 3 to reach 4, and the loop is what makes that true
+    // without an extra code path only the oldest saves would ever exercise.
     const walked = migrateWorldEnvelope(revisionOneEnvelope());
+    const carried = walked.components.map((component) => component.name);
     expect(worldSchemaVersionOf(walked)).toBe(WORLD_SCHEMA_VERSION);
-    expect(walked.components.map((component) => component.name)).toContain(GOAL_COMMITMENT.name);
-    expect(walked.components.map((component) => component.name)).toContain(EFFORT_PROGRESS.name);
+    expect(carried).toContain(GOAL_COMMITMENT.name);
+    expect(carried).toContain(EFFORT_PROGRESS.name);
+    for (const name of GOD_SECTIONS) expect(carried).toContain(name);
   });
 
   it('returns an already-current envelope untouched, as the same object', () => {
@@ -182,6 +199,50 @@ describe('migrating a revision-2 world snapshot forward', () => {
   });
 });
 
+describe('migrating a revision-3 world snapshot forward', () => {
+  it("appends god-agency's four sections, in WORLD_COMPONENTS order, all empty", () => {
+    const before = revisionThreeEnvelope();
+    const after = addGodAgencyState.migrate(before);
+    const appended = after.components.slice(before.components.length);
+
+    expect(appended.map((component) => component.name)).toEqual(GOD_SECTIONS);
+    for (const component of appended) {
+      expect(component.slots.length).toBe(0);
+      expect(component.values.length).toBe(0);
+    }
+    expect(appended[0]?.fields.map((field) => field.name)).toEqual(Object.keys(GOD_STATE.fields));
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionThreeEnvelope();
+    expect(addGodAgencyState.migrate(before).version).toBe(before.version);
+    expect(addGodAgencyState.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionThreeEnvelope();
+    const componentCount = before.components.length;
+    addGodAgencyState.migrate(before);
+    expect(before.components).toHaveLength(componentCount);
+  });
+
+  it('restores a pre-god-agency save with no god state at all', () => {
+    // Empty sections rather than a synthesised singleton, and the distinction
+    // is the whole repair: "no god-state row" is the state a universe is in
+    // before it has ever been stepped, which is exactly what a save written
+    // before this capability existed describes. A zeroed row would hand the
+    // stagnation check counters describing a run that never happened.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionThreeEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, GOD_STATE).size).toBe(0);
+    expect(componentOf(migrated, BLESSING).size).toBe(0);
+    expect(componentOf(migrated, UPHEAVAL).size).toBe(0);
+    expect(componentOf(migrated, ERA_EVALUATION).size).toBe(0);
+  });
+});
+
 describe('an older save loads into a current world', () => {
   it('loads, and nobody in it is committed to anything or part-way through anything', () => {
     const bytes = encodeSnapshot(revisionOneEnvelope());
@@ -202,6 +263,23 @@ describe('an older save loads into a current world', () => {
     // fixture and therefore from the same entity table; destroying one here
     // would be comparing two different allocation histories.
     componentOf(state, EFFORT_PROGRESS).remove(effort);
+    // And every row of everything revision 4 added, for the same reason: the
+    // revision-1 envelope carries none of those sections, so the fresh save it
+    // is compared against must carry none of those rows.
+    // Widened to the base spec type on purpose, the way `fixtures.ts` widens
+    // `WORLD_COMPONENTS`: a `const` tuple's element type is a union of four
+    // distinct layouts, and `componentOf` would try to infer one of them for
+    // all four.
+    const godSpecs: readonly ComponentSpec<ComponentFields>[] = [
+      GOD_STATE,
+      BLESSING,
+      UPHEAVAL,
+      ERA_EVALUATION,
+    ];
+    for (const spec of godSpecs) {
+      const store = componentOf(state, spec);
+      for (const { handle } of collectRecords(state, spec)) store.remove(handle);
+    }
 
     const migrated = loadWorldSnapshot(
       encodeSnapshot(revisionOneEnvelope()),
@@ -234,6 +312,7 @@ describe('an older save loads into a current world', () => {
     for (const [bytes, missing] of [
       [encodeSnapshot(revisionOneEnvelope()), /goal-commitment/],
       [encodeSnapshot(revisionTwoEnvelope()), /effort-progress/],
+      [encodeSnapshot(revisionThreeEnvelope()), /god-state/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(

@@ -61,6 +61,11 @@ describe('shipped content', () => {
       traditions: 3,
       territories: 5,
       primitives: 16,
+      // One per action id in contracts.md §4.2, and one per magnitude the
+      // god-agency rules read by name. Both coverings are checked by the
+      // loader; these are the counts they come out at.
+      godCosts: 16,
+      godConstants: 64,
     });
   });
 

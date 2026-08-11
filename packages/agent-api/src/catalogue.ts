@@ -48,12 +48,49 @@ export interface CatalogueNode {
   readonly tier: number;
 }
 
+/**
+ * What each action in §4.2 costs, projected out of `god-agency`'s content.
+ *
+ * Here so that the legality mask can answer *"can this god afford this"*, which
+ * the favor-economy spec makes a mask condition rather than a failure: *"an
+ * action whose cost exceeds the current favor pool MUST have its legality mask
+ * entry set false"*. Without it the mask says yes and the rules say no, and the
+ * disagreement lands in `illegalActionRate` as noise that looks like a confused
+ * agent.
+ *
+ * A projection, like everything else here — the numbers come from
+ * `god-cost.json` and `god-constant.json` and are decided nowhere in this
+ * package. The one thing this table has to carry beyond the prices is
+ * `hysteresisStep`, because the price of flipping an axis depends on how
+ * recently it was flipped, and that counter is in state where the mask can read
+ * it.
+ */
+export interface ActionCostTable {
+  /** Base favor price per §4.2 action id, ascending, all sixteen. */
+  readonly byAction: readonly number[];
+  /** Action 11 with a target of 0 — §4.2 gives founding and funding one id. */
+  readonly foundUniversity: number;
+  /** What one recent flip of an axis adds to its multiplier, `fp`. */
+  readonly hysteresisStep: number;
+}
+
 /** Everything the observation needs from content, indexed for lookup. */
 export interface ContentCatalogue {
   /** Every node, in ascending node id. */
   readonly nodes: readonly CatalogueNode[];
   /** Tradition ids that exist, ascending. §1.1: exactly one is held, never 0. */
   readonly traditionIds: readonly number[];
+  /**
+   * The favor prices, or `undefined` for a catalogue built without them.
+   *
+   * Optional because a caller that only wants an observation encoded — a test
+   * building a two-node catalogue, a client rendering a snapshot — should not
+   * have to supply a cost table to get one. Absent means the mask reports
+   * structural legality only, which is what it did before `god-agency` shipped
+   * and is an honest answer rather than a wrong one: it says *"this action is
+   * well formed"*, and stays silent on a price it was not told.
+   */
+  readonly costs?: ActionCostTable | undefined;
   /** A node by id, or `undefined` if the catalogue does not name it. */
   node(nodeId: number): CatalogueNode | undefined;
 }
@@ -70,6 +107,7 @@ export interface ContentCatalogue {
 export function buildCatalogue(
   nodes: readonly CatalogueNode[],
   traditionIds: readonly number[],
+  costs?: ActionCostTable,
 ): ContentCatalogue {
   const byId = new Map<number, CatalogueNode>();
   for (const node of nodes) {
@@ -100,6 +138,7 @@ export function buildCatalogue(
   return Object.freeze({
     nodes: ordered,
     traditionIds: traditions,
+    costs: costs === undefined ? undefined : Object.freeze({ ...costs, byAction: Object.freeze([...costs.byAction]) }),
     node: (nodeId: number) => byId.get(nodeId),
   });
 }

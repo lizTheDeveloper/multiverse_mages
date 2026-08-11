@@ -13,11 +13,11 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { CompiledSchema, SchemaCompileError, canonicalJson, contentSchemas } from '@mm/content';
+import { CONTENT_FILES, CompiledSchema, SchemaCompileError, canonicalJson, contentSchemas } from '@mm/content';
 
 describe('the schema interpreter', () => {
   it('compiles every shipped schema', () => {
-    expect([...contentSchemas().keys()]).toHaveLength(8);
+    expect([...contentSchemas().keys()]).toHaveLength(CONTENT_FILES.length);
   });
 
   it('refuses a keyword it does not implement, rather than ignoring it', () => {

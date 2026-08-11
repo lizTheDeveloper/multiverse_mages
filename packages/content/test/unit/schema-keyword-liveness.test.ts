@@ -42,7 +42,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { CompiledSchema, SchemaCompileError } from '@mm/content';
+import { CONTENT_FILES, CompiledSchema, SchemaCompileError } from '@mm/content';
 
 import type { KeywordOccurrence, SchemaObject } from './schema-verifier-support.js';
 import {
@@ -267,11 +267,11 @@ function diagnosticsFor(schema: SchemaObject, instance: unknown): number {
 }
 
 describe('the keyword walk sees what it claims to see', () => {
-  it('walked all eight schemas and found keywords in each', () => {
+  it('walked every shipped schema and found keywords in each', () => {
     // Every assertion below is over `occurrences`. If the walker returned
     // nothing — a renamed directory, a broken parse — they would all pass while
     // checking nothing at all.
-    expect(schemas.size).toBe(8);
+    expect(schemas.size).toBe(CONTENT_FILES.length);
     for (const contentFile of schemas.keys()) {
       const forFile = occurrences.filter((o) => o.contentFile === contentFile);
       expect(forFile.length, `no keywords found in ${schemaFileFor(contentFile)}`).toBeGreaterThan(10);

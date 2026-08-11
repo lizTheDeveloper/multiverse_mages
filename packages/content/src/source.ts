@@ -28,7 +28,21 @@ export interface ContentSource {
   read(fileName: string): string | undefined;
 }
 
-/** The eight content files of `docs/design/contracts.md` §2, in load order. */
+/**
+ * The content files, in load order.
+ *
+ * The first eight are `docs/design/contracts.md` §2's. The last two are
+ * `god-agency`'s and are a deliberate extension of that list rather than a
+ * violation of it: §2 was written before the god had verbs, and `CLAUDE.md`
+ * requires that content — *"grid cells, nodes, species, primitives,
+ * traditions"* — live in validated data files rather than in code. An
+ * intervention's price and the worship formula's saturation constants are the
+ * same kind of thing as a node's `researchCost`: numbers a balance sweep turns.
+ * Putting them in the rules path as literals would make retuning them a code
+ * change, and would put a balance magnitude somewhere `contentRevision` does not
+ * cover — so two universes could disagree about what forbidding a technique
+ * costs and still agree they were compatible.
+ */
 export const CONTENT_FILES = [
   'technique.json',
   'form.json',
@@ -38,6 +52,8 @@ export const CONTENT_FILES = [
   'tradition.json',
   'primitive.json',
   'territory.json',
+  'god-cost.json',
+  'god-constant.json',
 ] as const;
 
 export type ContentFileName = (typeof CONTENT_FILES)[number];

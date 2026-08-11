@@ -100,4 +100,11 @@ export { assetIdOf, mergeSelections, selectionCoverage } from './audio-selection
 
 export { runAudioValidation } from './audio-cli.js';
 
+export {
+  GOD_ACTION_ID_MAX,
+  REQUIRED_GOD_CONSTANTS,
+  checkGodConstants,
+  checkGodCosts,
+} from './god.js';
+
 export * from './types.js';

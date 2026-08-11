@@ -115,6 +115,25 @@ export const TERMINAL_REASON = {
 
 export type TerminalReasonValue = (typeof TERMINAL_REASON)[keyof typeof TERMINAL_REASON];
 
+/**
+ * Which ascension path a universe currently satisfies (`god-agency`).
+ *
+ * `0` is "none", per §0's null convention, so a zeroed god-state row is a
+ * universe that qualifies for nothing — which is what a universe that has never
+ * been evaluated is. The two named paths line up with
+ * {@link TERMINAL_REASON.ascensionApotheosis} and
+ * {@link TERMINAL_REASON.ascensionCanon} deliberately: a declaration records
+ * *which* path it was declared on, and `ascensionRateByPath` (§7) is the
+ * difference between them.
+ */
+export const ASCENSION_PATH = {
+  none: 0,
+  apotheosis: 1,
+  canon: 2,
+} as const;
+
+export type AscensionPathValue = (typeof ASCENSION_PATH)[keyof typeof ASCENSION_PATH];
+
 /** `contracts.md` §1.1: which axis an entry in `axisChangeCounters` counts. */
 export const AXIS_KIND = {
   technique: 0,

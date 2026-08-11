@@ -32,6 +32,7 @@
 
 import type { ContentDiagnostic, ContentDiagnosticCode } from './diagnostics.js';
 import { ContentValidationError, pointerAppend, sortDiagnostics } from './diagnostics.js';
+import { checkGodConstants, checkGodCosts } from './god.js';
 import { HOOK_KINDS, HOOK_POINTS, checkHookParams, hookPointOwning, permittedKinds } from './hooks.js';
 import {
   CELL_COUNT,
@@ -53,6 +54,8 @@ import type {
   ContentNamespace,
   ContentRegistry,
   FormRecord,
+  GodConstantRecord,
+  GodCostRecord,
   Interned,
   NodeRecord,
   PrimitiveRecord,
@@ -195,6 +198,8 @@ interface ParsedDocuments {
   readonly tradition: readonly TraditionRecord[];
   readonly primitive: readonly PrimitiveRecord[];
   readonly territory: readonly TerritoryRecord[];
+  readonly godCost: readonly GodCostRecord[];
+  readonly godConstant: readonly GodConstantRecord[];
 }
 
 let cachedSchemas: ReadonlyMap<ContentFileName, CompiledSchema> | undefined;
@@ -277,6 +282,8 @@ export function validateContent(source: ContentSource): ValidationResult {
     tradition: raw.get('tradition.json') as readonly TraditionRecord[],
     primitive: raw.get('primitive.json') as readonly PrimitiveRecord[],
     territory: raw.get('territory.json') as readonly TerritoryRecord[],
+    godCost: raw.get('god-cost.json') as readonly GodCostRecord[],
+    godConstant: raw.get('god-constant.json') as readonly GodConstantRecord[],
   };
 
   // ---- Phase 3: graph integrity. ----
@@ -343,6 +350,8 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   indexById(documents.tradition, 'tradition.json', out);
   const primitiveById = indexById(documents.primitive, 'primitive.json', out);
   indexById(documents.territory, 'territory.json', out);
+  indexById(documents.godCost, 'god-cost.json', out);
+  indexById(documents.godConstant, 'god-constant.json', out);
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
@@ -351,6 +360,10 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   checkNodes(documents.node, cellById, nodeById, primitiveById, out);
   checkSpecies(documents.species, formById, cellById, out);
   checkTraditions(documents.tradition, out);
+  // `god-agency`'s two tables. Their coverings and identities are checks a JSON
+  // Schema cannot express — see `god.ts`.
+  out.push(...checkGodCosts(documents.godCost));
+  out.push(...checkGodConstants(documents.godConstant));
 
   return out;
 }
@@ -1009,6 +1022,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const traditions = internNamespace(documents.tradition);
   const primitives = internNamespace(documents.primitive);
   const territories = internNamespace(documents.territory);
+  const godCosts = internNamespace(documents.godCost);
+  const godConstants = internNamespace(documents.godConstant);
 
   const tables = new Map<ContentNamespace, ReadonlyMap<string, ContentId>>([
     ['technique', tableOf(techniques)],
@@ -1019,6 +1034,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     ['tradition', tableOf(traditions)],
     ['primitive', tableOf(primitives)],
     ['territory', tableOf(territories)],
+    ['god-cost', tableOf(godCosts)],
+    ['god-constant', tableOf(godConstants)],
   ]);
   const reverse = new Map<ContentNamespace, ReadonlyMap<ContentId, string>>();
   for (const [namespace, table] of tables) {
@@ -1027,6 +1044,11 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
 
   const cellByContentId = new Map(cells.map((entry) => [entry.contentId, entry.record]));
   const nodeByContentId = new Map(nodes.map((entry) => [entry.contentId, entry.record]));
+  // Keyed on the §4.2 action id and the constant name rather than on the
+  // interned id: both tables are looked up by what they mean, never by the
+  // integer interning happened to assign them.
+  const godCostByAction = new Map(godCosts.map((entry) => [entry.record.actionId, entry.record]));
+  const godConstantById = new Map(godConstants.map((entry) => [entry.record.id, entry.record.value]));
 
   const revisionEntries: RevisionEntry[] = [];
   const append = (namespace: ContentNamespace, entries: readonly Interned<unknown>[]): void => {
@@ -1042,6 +1064,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   append('tradition', traditions);
   append('primitive', primitives);
   append('territory', territories);
+  append('god-cost', godCosts);
+  append('god-constant', godConstants);
 
   const counts: ContentCounts = {
     techniques: techniques.length,
@@ -1053,6 +1077,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     traditions: traditions.length,
     primitives: primitives.length,
     territories: territories.length,
+    godCosts: godCosts.length,
+    godConstants: godConstants.length,
   };
 
   return {
@@ -1066,6 +1092,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     traditions,
     primitives,
     territories,
+    godCosts,
+    godConstants,
     intern(namespace, id) {
       return tables.get(namespace)?.get(id) ?? 0;
     },
@@ -1082,6 +1110,20 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     },
     node(contentId) {
       return nodeByContentId.get(contentId);
+    },
+    godCost(actionId) {
+      return godCostByAction.get(actionId);
+    },
+    godConstant(id) {
+      const found = godConstantById.get(id);
+      if (found === undefined) {
+        throw new Error(
+          `No god-agency constant named "${id}" is declared in god-constant.json. The loader ` +
+            'checks the required set on every load, so this is a caller inventing a name — and ' +
+            'returning 0 would put a silently wrong magnitude in the middle of a balance formula.',
+        );
+      }
+      return found;
     },
   };
 }

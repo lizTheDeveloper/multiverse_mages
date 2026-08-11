@@ -79,7 +79,14 @@ import type {
 } from '@mm/sim-core';
 import { decodeSnapshot, envelopeToState } from '@mm/sim-core';
 
-import { EFFORT_PROGRESS, GOAL_COMMITMENT } from './components.js';
+import {
+  BLESSING,
+  EFFORT_PROGRESS,
+  ERA_EVALUATION,
+  GOAL_COMMITMENT,
+  GOD_STATE,
+  UPHEAVAL,
+} from './components.js';
 
 /**
  * The revision of the §1 world component set this build declares.
@@ -89,11 +96,20 @@ import { EFFORT_PROGRESS, GOAL_COMMITMENT } from './components.js';
  * | 1        | `core-contracts`    | the original twelve §1 components             |
  * | 2        | `mages-and-species` | adds `goal-commitment` (`contracts.md` §1.2)  |
  * | 3        | `mages-and-species` | adds `effort-progress` (`contracts.md` §1.2)  |
+ * | 4        | `god-agency`        | adds `god-state`, `blessing`, `upheaval`, `era-evaluation` (§1.1) |
+ *
+ * Revision 4 adds four components in one step, where the two before it added
+ * one each. That is not a loosening of the rule — it is what the rule is for.
+ * The four arrive together because they are one capability's world state and no
+ * build has ever carried a proper subset of them, so there is no snapshot in
+ * existence that a finer-grained walk could describe. Splitting them into four
+ * revisions would invent three intermediate versions nothing ever wrote, and
+ * three migration steps that could only ever be exercised by a test.
  *
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 3;
+export const WORLD_SCHEMA_VERSION = 4;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -111,6 +127,13 @@ export const WORLD_SCHEMA_VERSION = 3;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  // `god-state` is revision 4's marker rather than one of the other three
+  // because it is the one every stepped universe necessarily has a *section*
+  // for — the section exists from the moment the schema declares it, whether or
+  // not any row was written — and because it is the first of the four in
+  // `WORLD_COMPONENTS`, so a partially-appended envelope reads as the older
+  // revision and is completed rather than being read as current and left short.
+  if (carried.has(GOD_STATE.name)) return 4;
   if (carried.has(EFFORT_PROGRESS.name)) return 3;
   if (carried.has(GOAL_COMMITMENT.name)) return 2;
   return 1;
@@ -204,10 +227,44 @@ export const addEffortProgress: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 3 → 4: append `god-agency`'s four world-scale sections.
+ *
+ * Empty, like both steps before it, and for a sharper reason here. A god-state
+ * row is *created lazily* by the god systems on their first tick, so "no row"
+ * is the state a universe is in before it has been stepped — which is precisely
+ * what a save written before `god-agency` existed describes. Synthesising one
+ * would mean inventing a `favorWasted` nobody wasted and a `peakWorshipTier`
+ * for a universe that never had worship, and the first stagnation check would
+ * then read counters describing a run that never happened.
+ *
+ * The order below is `WORLD_COMPONENTS`' order and must stay that way: section
+ * order in an envelope is declaration order, so appending these in a different
+ * sequence would line every migrated save's sections up against the wrong
+ * layouts.
+ */
+export const addGodAgencyState: WorldSchemaMigration = {
+  from: 3,
+  to: 4,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [
+        ...envelope.components,
+        emptySection(GOD_STATE),
+        emptySection(BLESSING),
+        emptySection(UPHEAVAL),
+        emptySection(ERA_EVALUATION),
+      ],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
   addEffortProgress,
+  addGodAgencyState,
 ];
 
 /**

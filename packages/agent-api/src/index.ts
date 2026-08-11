@@ -58,7 +58,7 @@
  * and the signature it satisfies is the contract.
  */
 
-export type { CatalogueNode, ContentCatalogue } from './catalogue.js';
+export type { ActionCostTable, CatalogueNode, ContentCatalogue } from './catalogue.js';
 export { EMPTY_CATALOGUE, buildCatalogue } from './catalogue.js';
 
 export type { GodActionId } from './actions.js';

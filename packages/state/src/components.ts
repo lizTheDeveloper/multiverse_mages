@@ -242,6 +242,176 @@ export const AXIS_CHANGE_COUNTER_FIELDS_MATCH: KeysMatch<
   typeof AXIS_CHANGE_COUNTER
 > = true;
 
+/**
+ * The god's own bookkeeping: counters no formula can recompute from a single
+ * tick of state (`contracts.md` §1.1, added by `god-agency`).
+ *
+ * **A singleton component beside the universe rather than fifteen more fields
+ * on it.** Widening {@link UNIVERSE} would have been the obvious move and is
+ * the expensive one: a snapshot section carries its field table inline, so an
+ * added field changes the universe section's shape and every older save has to
+ * be rewritten column by column, where an added *component* is an appended
+ * empty section — the migration shape this project has already used twice and
+ * tested. See `migrations.ts`.
+ *
+ * **Everything here is a counter, a high-water mark, or a cached derivation
+ * that has nowhere else to live.** Nothing that can be recomputed from one
+ * tick's state is here: worship is not (it is on the universe, because §1.1 puts
+ * it there), the favor ledger is not (it is derivable from state and actions and
+ * is deliberately outside the snapshot), and node existence is not (§1.5 forbids
+ * caching it). What *is* here is the things a single tick cannot see — how many
+ * consecutive ticks a condition has held, how deep the universe ever got, how
+ * much favor it has thrown away.
+ *
+ * **The row is created lazily**, by the god systems on their first tick, so
+ * that a world built before this component existed — a migrated save, or any of
+ * the many test worlds that construct a universe by hand — is a world with no
+ * god-state row rather than a world that fails to build. Absence means "this
+ * universe has not been stepped yet", which is exactly what it means.
+ */
+export const GOD_STATE = {
+  name: 'god-state',
+  fields: {
+    favorWasted: 'i32',
+    magelessTicks: 'i32',
+    lowWorshipTicks: 'i32',
+    stasisTicks: 'i32',
+    lastEverKnown: 'u16',
+    lastExisting: 'u16',
+    ascensionFirstMetTick: 'i32',
+    ascensionPath: 'u8',
+    peakWorshipTier: 'u8',
+    deepestTier: 'u8',
+    lastEraRecorded: 'u16',
+    eraNodesLost: 'u16',
+    goodEraRun: 'u16',
+    overBudgetEdicts: 'u8',
+    terminalTick: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface GodStateRecord {
+  /** Regeneration discarded at the pool cap, summed over the run. §7's early snowball signal. */
+  favorWasted: Fp;
+  /** Consecutive world ticks with no living mage. */
+  magelessTicks: number;
+  /** Consecutive world ticks below the stagnation worship floor. */
+  lowWorshipTicks: number;
+  /** Consecutive world ticks with no node newly entering the universe. */
+  stasisTicks: number;
+  /** Ever-known node count as of last tick, so a genuinely new node is detectable. */
+  lastEverKnown: number;
+  /** Existing-node count as of last tick, so a rediscovery is detectable too. */
+  lastExisting: number;
+  /** World tick an ascension path was **first** satisfied, or `0` for never. */
+  ascensionFirstMetTick: Tick;
+  /** {@link ASCENSION_PATH} currently satisfied, recomputed every world tick. */
+  ascensionPath: Enum8;
+  /** Highest worship tier ever held. An input to `prestigeEarned`. */
+  peakWorshipTier: Enum8;
+  /** Deepest node tier ever held in a mind. An input to `prestigeEarned`. */
+  deepestTier: number;
+  /** The last era whose boundary was evaluated, so each is evaluated once. */
+  lastEraRecorded: number;
+  /** Nodes that have left the universe during the current era. */
+  eraNodesLost: number;
+  /** Consecutive era boundaries that passed the Enduring Canon test. */
+  goodEraRun: number;
+  /** Edicts in force beyond the current budget. Reported, never auto-revoked. */
+  overBudgetEdicts: number;
+  /** World tick the run terminated on, or `0` while it is running. */
+  terminalTick: Tick;
+}
+
+export const GOD_STATE_FIELDS_MATCH: KeysMatch<GodStateRecord, typeof GOD_STATE> = true;
+
+/**
+ * One active blessing (`contracts.md` §1.1, added by `god-agency`).
+ *
+ * One row per blessed mage, which is what makes *"re-blessing refreshes its
+ * duration without stacking its magnitude"* structural rather than checked: the
+ * refresh writes `expiryTick` on the row that is already there, and there is no
+ * representation in which a mage holds two blessings. The concurrency cap
+ * (`1 + worshipTier`) is then a count of rows, not a tally somebody maintains.
+ */
+export const BLESSING = {
+  name: 'blessing',
+  fields: {
+    mageId: 'u32',
+    expiryTick: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface BlessingRecord {
+  mageId: Handle;
+  /** World tick at which the blessing lapses. */
+  expiryTick: Tick;
+}
+
+export const BLESSING_FIELDS_MATCH: KeysMatch<BlessingRecord, typeof BLESSING> = true;
+
+/**
+ * One worship shock in force (`contracts.md` §1.1, added by `god-agency`).
+ *
+ * An entity per shock rather than one factor on the universe, because two
+ * forbiddings can overlap and the combined factor is the shared
+ * multiplicative-on-remainder arithmetic over both. Folding them into one
+ * stored number at the moment the second arrives would make the *order* they
+ * arrived in matter, and would leave nothing to expire independently.
+ */
+export const UPHEAVAL = {
+  name: 'upheaval',
+  fields: {
+    factor: 'i32',
+    expiryTick: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface UpheavalRecord {
+  /** Multiplier on the worship target, `fp`. Below `fp(1024)`; never below the declared floor. */
+  factor: Fp;
+  expiryTick: Tick;
+}
+
+export const UPHEAVAL_FIELDS_MATCH: KeysMatch<UpheavalRecord, typeof UPHEAVAL> = true;
+
+/**
+ * What one era boundary found (`contracts.md` §1.1, added by `god-agency`).
+ *
+ * The Enduring Canon ascension path is evaluated over era boundaries, and the
+ * spec requires the evaluations to be *available* rather than recomputed: a
+ * universe at era 4 must be able to answer "was every boundary since era 1
+ * good" without replaying its own history, which it could not do anyway because
+ * `libraryDependence` at era 2 is not recoverable from state at era 4.
+ *
+ * Rows rather than a single run-length counter, even though the counter would
+ * be enough to decide the path. Ten rows over a full-length run is nothing, and
+ * `ascensionRateByPath` needs to say *why* a universe failed the canon — which
+ * boundary, and by how much — or a dead path looks identical to an unlucky one.
+ */
+export const ERA_EVALUATION = {
+  name: 'era-evaluation',
+  fields: {
+    era: 'u16',
+    libraryDependence: 'i32',
+    nodesLost: 'u16',
+    passed: 'u8',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface EraEvaluationRecord {
+  /** The era that ended at this boundary. */
+  era: number;
+  /** §7's `libraryDependence` at the boundary, `fp`. */
+  libraryDependence: Fp;
+  /** Nodes that left the universe during that era. */
+  nodesLost: number;
+  passed: Bool8;
+}
+
+export const ERA_EVALUATION_FIELDS_MATCH: KeysMatch<EraEvaluationRecord, typeof ERA_EVALUATION> =
+  true;
+
 // ---------------------------------------------------------------------------
 // §1.2 Mage. §1.3 Populace cohort.
 // ---------------------------------------------------------------------------
@@ -759,6 +929,10 @@ export const WORLD_COMPONENTS = [
   EVER_KNOWN,
   GOAL_COMMITMENT,
   EFFORT_PROGRESS,
+  GOD_STATE,
+  BLESSING,
+  UPHEAVAL,
+  ERA_EVALUATION,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

@@ -83,9 +83,53 @@ state would have no mechanism preventing mid-raid rule changes at all.
 | `prestigeEarned` | `fp` | written once at run end; the input to the next run's `prestige` |
 | `terminalReason` | `uint8` | none \| ascension-apotheosis \| ascension-canon \| stagnation \| truncated |
 | `favorCap` | `fp` | rises with worship tier; overflow is discarded and counted as `favorWasted` |
-| `encouragedCells` | array of `{cellId, expiryTick}` | action 12 had nowhere to persist |
+| `encouragedCells` | array of `{cellId, expiryTick}` | action 12 had nowhere to persist. Magnitude is derived from the remaining ticks, not stored: a stored magnitude and a stored expiry are two records of one linear decay, and they can disagree |
 | `axisChangeCounters` | array per technique/form | hysteresis; repeated flips of one axis escalate in cost |
+| `blessings` | array of `{mageId, expiryTick}` | one row per blessed mage, which is what makes "re-blessing refreshes rather than stacks" structural: there is no representation in which a mage holds two |
+| `upheavals` | array of `{factor, expiryTick}` | worship shocks in force. An entity per shock, because two forbiddings can overlap and the combined factor is the shared multiplicative-on-remainder arithmetic over both |
+| `eraEvaluations` | array of `{era, libraryDependence, nodesLost, passed}` | what each era boundary found. `libraryDependence` at era 2 is not recoverable from state at era 4, so the Enduring Canon ascension path cannot be decided without retaining these |
+| `godState` | singleton, below | counters, high-water marks, and cached derivations that one tick of state cannot see |
 | `ascended` | `bool` | terminal flag |
+
+**`godState` — one row beside the universe, not fifteen more universe fields.** Widening the
+universe row would have been the obvious move and is the expensive one: a snapshot section carries
+its field table inline, so an added field reshapes the universe section and every older save has to
+be rewritten column by column, where an added *component* is an appended empty section — the
+migration shape this project has used three times and tested. The row is created lazily on the
+first god tick, so "no row" means "this universe has not been stepped yet", which is exactly what a
+pre-`god-agency` save describes.
+
+| Field | Type | Notes |
+|---|---|---|
+| `favorWasted` | `fp` | regeneration discarded at the pool cap, summed over the run. §7's early snowball signal — it moves long before a Gini coefficient does |
+| `magelessTicks` | `int32` | consecutive world ticks with no living mage |
+| `lowWorshipTicks` | `int32` | consecutive world ticks below the stagnation worship floor |
+| `stasisTicks` | `int32` | consecutive world ticks with no node newly entering the universe |
+| `lastEverKnown` / `lastExisting` | `uint16` | last tick's ever-known and existing node counts, so "a node entered" is decidable without storing a set |
+| `ascensionFirstMetTick` | `int32` | world tick a path was **first** satisfied, `0` for never. The gap to the declaring tick is what says whether the terminal reward is mispriced against continued play |
+| `ascensionPath` | `uint8` | none \| apotheosis \| canon. Recomputed every world tick, so the condition can lapse |
+| `peakWorshipTier`, `deepestTier` | `uint8` | high-water marks; inputs to `prestigeEarned` |
+| `lastEraRecorded` | `uint16` | so each era boundary is evaluated exactly once |
+| `eraNodesLost` | `uint16` | nodes lost so far in the current era |
+| `goodEraRun` | `uint16` | consecutive passing era boundaries |
+| `overBudgetEdicts` | `uint8` | edicts in force beyond the current budget. **Reported, never auto-revoked** |
+| `terminalTick` | `int32` | world tick the run ended on, `0` while running |
+
+**A terminated universe is frozen in its component rows, and not in its clock.** `god-agency`'s
+ascension spec asks that *"no world tick may further alter the universe's state"* and that a
+stepped, ascended universe's *snapshot hash is unchanged*. The first is implemented and tested: a
+universe carrying a `terminalReason` runs no world phase and no god phase, so no component row
+moves and every submitted action is refused and counted. The second is **not**, and the difference
+is deliberate rather than an oversight — `step` advances the clock unconditionally, and that is
+`sim-core`'s contract rather than any capability's to override. So the hash of a terminated
+universe moves by exactly the clock, every tick, forever.
+
+The layer that stops advancing a finished run is `agent-api`'s session, which already refuses to
+`submit` to a terminated episode. Making the hash literally constant instead would mean either a
+rules layer suppressing a core clock advance — the inversion §5 rule 4 exists to prevent, wearing
+a different hat — or a second `step` that sometimes does not advance, which is the duplication the
+one-step-contract rule forbids. Recorded here because a reader comparing the spec's sentence
+against the code will otherwise think one of them is wrong.
 
 **Ruleset legality — the single arbitration function.** Every consumer must call this rather than
 reimplementing it:
@@ -515,6 +559,65 @@ seeds a smaller world — `landUnits` moves to §1.1 and this record keeps `capa
 is a property of the *kind* of country and not of who holds it.
 
 **Every magnitude here is untuned** and carries `tuningStatus` saying so.
+
+### 2.8 `god-cost.json`
+
+```jsonc
+{
+  "id": "forbid-technique",
+  "actionId": 2,                 // the §4.2 action id. Permanent, like the action
+  "favorCost": 8192,             // fp. Base price, before hysteresis and node-tier scaling
+  "gloss": "Exactly what permitting costs.",
+  "tuningStatus": "untuned"
+}
+```
+
+What each action in §4.2 costs the god in favor, as data rather than as literals in the rules
+path — so that retuning a price is a content change a sweep can turn rather than a code change,
+and so that the price is inside `contentRevision`. Two universes that disagreed about the cost of
+forbidding a technique while agreeing they were compatible would be playing different games.
+
+The loader enforces three things a JSON Schema cannot: **exactly one record per action id 0–15**
+(a missing entry is a free action); **permitting costs exactly what forbidding costs** on both
+axes, because vision pillar 1 rests on the decision being symmetric and any asymmetry makes denial
+a penalty rather than a peer strategy; and **assigning a role is strictly the cheapest non-zero
+action**, because it is the verb the god performs constantly and a priced one turns most of the
+action space into unaffordable no-ops, inflating `illegalActionRate` into noise.
+
+Founding a university has no id of its own — §4.2 gives funding and founding one action — so its
+price is the `found-university-cost` constant in §2.9 rather than a second row here.
+
+### 2.9 `god-constant.json`
+
+```jsonc
+{
+  "id": "worship-lag-fall",
+  "value": 154,                  // ~15% of the gap to the target closed per world tick
+  "unit": "fp",                  // fp | ticks | count | months | tier
+  "gloss": "Strictly greater than the rise rate; the asymmetry is the loop's damping.",
+  "tuningStatus": "untuned"
+}
+```
+
+Every magnitude of the worship loop, the favor economy, the interventions, ascension, stagnation
+and prestige. **The set of ids is structural and the values are not.** The rules read each constant
+by name, so the loader fails a set that omits one — an absent constant arrives in a formula as `0`,
+and a worship lag of zero is a plausible-looking answer to a question nobody asked — and equally
+fails a set that declares one nothing reads, because an unread constant is a tuning knob that does
+nothing and the sweep that turned it would report the null result as a finding about the game.
+
+Three identities among these constants are checked at load, because each is one a retune can break
+silently:
+
+- `worship-max` equals the three saturation caps summed. The ceiling is a property of the formula,
+  not a clamp applied afterwards, and lowering a cap without lowering the stated ceiling turns that
+  sentence into a comment.
+- `prestige-cap × (fp(1024) − prestige-retention) == prestige-earn-max × fp(1024)`. `PRESTIGE_CAP`
+  is the analytic limit of the carry-over recurrence at maximum earning, which is what makes the
+  meta-game's bound arithmetic rather than a clamp.
+- `worship-lag-fall > worship-lag-rise`. The asymmetry *is* the damping.
+
+**Every value here is untuned** and carries `tuningStatus` saying so.
 
 ---
 

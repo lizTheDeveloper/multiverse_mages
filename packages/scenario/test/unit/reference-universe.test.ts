@@ -152,12 +152,19 @@ describe('the universe does something when it is stepped', () => {
 });
 
 describe('what this build cannot do, asserted rather than assumed', () => {
-  it('produces the same universe whichever of the eight strategies plays it', () => {
-    // Limit 1, made visible. No system reads `ctx.actions`, so a god's verbs
-    // have no consequences and every strategy in the pool is measuring the same
-    // universe. That is worth an assertion rather than a comment, because the
-    // day `god-agency` lands this test fails — and it failing is how anyone
-    // finds out that the pool has started to differentiate.
+  it('produces a different universe depending on which strategy plays it', () => {
+    // This assertion used to run the other way, and the comment on it said the
+    // day `god-agency` landed the test would fail and that failing was how
+    // anyone would find out the pool had started to differentiate. It did, and
+    // this is that. Until the god's verbs had consequences, no system read
+    // `ctx.actions`, every strategy produced a byte-identical universe, and the
+    // 0.6.0 tournament was measuring the harness rather than the game.
+    //
+    // What is asserted now is the weakest honest form of the claim: **at least
+    // two strategies reach different final states**. Not "all eight differ" —
+    // two strategies whose legal moves happen to coincide on this seed are
+    // entitled to agree, and a test demanding total separation would be a test
+    // of the bot pool's diversity rather than of whether actions do anything.
     const base = task(1, 3);
     const outcomes = BOT_POOL_REGISTRY.ids.map((strategyId) =>
       executeReferenceRun({ ...base, strategies: [strategyId] }, { content }),
@@ -165,15 +172,14 @@ describe('what this build cannot do, asserted rather than assumed', () => {
 
     const first = outcomes[0];
     if (first === undefined) throw new Error('the bot pool is empty');
-    for (const run of outcomes) {
-      expect(run.outcome.metrics).toEqual(first.outcome.metrics);
-      expect(run.outcome.status).toBe(first.outcome.status);
-      expect(run.outcome.ticksRun).toBe(first.outcome.ticksRun);
-    }
 
-    // The control: the strategies really are submitting different things, so
-    // the equality above is a statement about the *rules* and not about eight
-    // copies of the passive control.
+    const finalStates = new Set(outcomes.map((run) => JSON.stringify(run.outcome.metrics)));
+    expect(finalStates.size).toBeGreaterThan(1);
+
+    // The control, kept from the original: the strategies really are submitting
+    // different things, so the difference above is a statement about the *rules*
+    // acting on those submissions and not about eight different action logs
+    // being replayed into one outcome.
     const submitted = new Set(
       outcomes.map((run) => JSON.stringify(run.outcome.accounting.byActionId)),
     );
