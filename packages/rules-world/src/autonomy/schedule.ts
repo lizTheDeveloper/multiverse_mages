@@ -13,8 +13,7 @@
  */
 
 import type { Fixed } from '@mm/sim-core';
-import type { ContentId } from '@mm/content';
-import type { Tick } from '@mm/state';
+import type { GoalCommitmentRecord } from '@mm/state';
 
 import type { MageHandle } from '../coordination.js';
 import type { GoalId } from './goals.js';
@@ -91,27 +90,28 @@ export const HYSTERESIS_MARGIN: Fixed = 128;
 /**
  * What a mage is currently working on.
  *
- * Deliberately a value rather than a component read. Everything in this
- * directory is a pure function of an outlook and a commitment, so nothing here
- * needs to know where a commitment lives — and at 0.4.0 nothing has decided.
+ * **`@mm/state`'s `GoalCommitmentRecord`, with the goal id narrowed to this
+ * package's registry — not a second declaration of it.** `state-schema` requires
+ * one set of world-state types that every rules package consumes, and a
+ * conformance check over the workspace enforces it; the field names here are
+ * therefore the component's field names, so reading and writing a commitment is
+ * a plain record access with no translation step to transpose.
  *
- * That is an open question rather than an oversight, and it is recorded as one:
- * `contracts.md` §1.2's mage row has no goal field, so persisting a commitment
- * across a snapshot needs either a new world component or a field amendment,
- * and neither should be chosen by whoever happens to write the first caller.
- * Keeping the commitment a value means the decision is still available. Keeping
- * it in a JavaScript map beside the state would not be — that is state which
- * does not round-trip through a save, which `components.ts` names as the defect
- * that shows up as a loaded game missing the player's edicts.
+ * The only thing added is the narrowing. The component stores `goalId` as a
+ * `uint8`, because `@mm/state` may not import a rules package and so cannot know
+ * the registry; on this side of the boundary it is a {@link GoalId}, and
+ * `commitment-store.ts` is where an out-of-registry value from a foreign
+ * snapshot is caught rather than allowed to flow into a scoring table lookup.
+ *
+ * Where a commitment lives was an open question in this file at 0.4.0 — a new
+ * world component, or an amendment to `contracts.md` §1.2's mage row. The
+ * component won, §1.2 now names it, and the deviation that creates from
+ * `mages-and-species`' "state-schema is consumed unchanged" is recorded there
+ * with its reasoning, in the style of the two §5 deviations before it.
  */
-export interface GoalCommitment {
-  readonly goal: GoalId;
-  /** The node this goal is pointed at, or `0` for a goal that needs none. */
-  readonly targetNodeId: ContentId;
-  /** The world tick the goal was adopted on. The commitment clock. */
-  readonly adoptedTick: Tick;
-  /** The score it was adopted at, for reporting rather than for comparison. */
-  readonly score: Fixed;
+export interface MageGoalCommitment extends GoalCommitmentRecord {
+  /** The chosen goal. Narrowed from the component's `uint8` to the registry. */
+  readonly goalId: GoalId;
 }
 
 /** Tuning knobs, so a test can shorten a period without editing a constant. */
@@ -147,7 +147,7 @@ export interface ReevaluationInput {
   readonly worldTick: number;
   readonly mage: MageHandle;
   /** The current commitment, or `undefined` for a mage who has never chosen. */
-  readonly incumbent: GoalCommitment | undefined;
+  readonly incumbent: MageGoalCommitment | undefined;
   /** Whether the incumbent goal is still feasible this tick. */
   readonly incumbentFeasible: boolean;
   /** Whether the incumbent goal finished — the caller's judgement, not ours. */

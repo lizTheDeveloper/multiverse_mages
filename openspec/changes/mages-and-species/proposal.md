@@ -67,9 +67,17 @@ raids and combat, god interventions, and the observation/action space.
 
 ### Modified Capabilities
 
-None. `state-schema`, `content-schemas`, and `primitive-semantics` from `core-contracts` are
-consumed unchanged; the species schema addition above is an amendment to `docs/design/contracts.md`
-carried by this change's tasks, not a requirement change to an existing capability spec.
+`content-schemas` and `primitive-semantics` from `core-contracts` are consumed unchanged; the
+species schema addition above is an amendment to `docs/design/contracts.md` carried by this
+change's tasks, not a requirement change to an existing capability spec.
+
+**`state-schema` is not.** This paragraph originally said it was, and implementation found
+otherwise: a mage's goal commitment has to survive from one tick to the next for hysteresis and the
+staggered re-evaluation to mean anything, and `contracts.md` §1.2 had nowhere to put it. It is now a
+world component — `goal-commitment`, keyed on the mage's own handle and absent while she has never
+chosen — recorded with its reasoning in `contracts.md` §1.2 beside the two §5 deviations that came
+before it, along with the world-schema migration the addition obliges. The correction is written
+here rather than only there because this sentence is what a planner reads.
 
 ## Impact
 

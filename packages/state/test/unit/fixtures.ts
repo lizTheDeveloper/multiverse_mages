@@ -31,6 +31,7 @@ import {
   EDICT_KIND,
   ENCOURAGED_CELL,
   EVER_KNOWN,
+  GOAL_COMMITMENT,
   GRIMOIRE,
   HOLDER_KIND,
   KNOWLEDGE_INSTANCE,
@@ -173,6 +174,16 @@ export function populatedWorld(): PopulatedWorld {
 
   const everKnown = state.entities.create();
   attachRecord(state, EVER_KNOWN, everKnown, { nodeId: 7 });
+
+  // On the mage's own handle, which is the whole point of the component: a
+  // commitment is found by the handle every other subsystem already holds, and
+  // a mage with no row is a mage who has never chosen.
+  attachRecord(state, GOAL_COMMITMENT, mage, {
+    goalId: 5,
+    targetNodeId: 7,
+    adoptedTick: 30,
+    score: 640,
+  });
 
   assertEveryWorldComponentPopulated(state);
   return { state, universe, mage, cohort, university, library, grimoire };

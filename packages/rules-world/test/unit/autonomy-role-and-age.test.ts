@@ -126,7 +126,7 @@ describe('a role changes the ordering without closing anything off', () => {
       incumbent: undefined,
       rng: stepRng(5, 0),
     });
-    expect(selection.commitment.goal).toBe(GOAL.teach);
+    expect(selection.commitment.goalId).toBe(GOAL.teach);
   });
 
   it('leaves every goal selectable under every role', () => {

@@ -119,6 +119,46 @@ universal would silently pre-decide how raid theft works, which belongs to `raid
 
 Mages are individuals. Everyone else is not.
 
+**Goal commitment** — a separate component, keyed on the mage's own entity handle, and **present
+only while she has chosen a goal**.
+
+| Field | Type | Notes |
+|---|---|---|
+| `goalId` | `uint8` | `rules-world`'s permanent, append-only goal registry. `0` is `idle` |
+| `targetNodeId` | `uint16` | the node the goal is pointed at, or `0` for a goal that needs none |
+| `adoptedTick` | `int32` | the commitment clock, which hysteresis and the stagger both compare against |
+| `score` | `fp` | what it was adopted at. Reported, never compared — the incumbent is re-scored |
+
+**This is a deviation from this document as originally drawn, added during `mages-and-species`, and
+the third of its kind after `state` and `primitives` in §5.** `mages-and-species`' proposal says
+`state-schema` is *"consumed unchanged"*. This addition breaks that, and it is recorded here rather
+than absorbed quietly because the promise was made in writing and somebody planning against it
+should meet the correction where they read the original.
+
+The reasoning, in the order it forced the decision:
+
+- **A commitment must outlive a tick.** §7's autonomy has a commitment minimum and a hysteresis
+  margin, both of which compare `worldTick` against the tick a goal was adopted on. That comparison
+  needs the adoption tick to still be there next tick — and therefore after a save, because a
+  commitment that vanished on load would make a resumed run diverge from an uninterrupted one. That
+  is a desync in `pvp-server` and a silently spoiled baseline in Monte Carlo, and neither announces
+  itself.
+- **A JavaScript map beside the state was rejected first.** It is state that does not round-trip,
+  the defect `state`'s component model exists to prevent.
+- **Widening §1.2's mage row was rejected second, and this is why the addition is a component.** A
+  mage who has never chosen and a mage who chose `idle` are different states, and the autonomy layer
+  reads the difference. Fields exist for every mage, so telling those two apart on the mage row
+  would need a sentinel goal id — a tenth entry in a registry whose entire contract is that its ids
+  are permanent and mean one thing each. An absent component says the same thing with nothing
+  invented, and costs nothing for the mages not using it, which at any moment is most of them.
+- **The cost is a schema revision.** Adding a component means an older world snapshot is missing a
+  section, which `deserializeState` refuses. That is repaired by a world-schema migration in
+  `packages/state/src/migrations.ts`, which appends the empty section. It deliberately does **not**
+  bump `sim-core`'s `SNAPSHOT_VERSION`: that number is inside the hashed header, so moving it
+  changes every snapshot hash in the project and breaks every golden fixture with a version error
+  rather than a behaviour diff. The container and the component set are versioned separately, and
+  the second is inferred from the snapshot's own self-describing component tables.
+
 ### 1.3 Populace cohort (aggregate entity)
 
 | Field | Type | Notes |
@@ -564,8 +604,9 @@ packages/
   primitives      §3 stacking arithmetic and cap clamping.                → sim-core, content (types only)
   rules-magic     grid legality, nodes, knowledge instances, traditions. → sim-core, content, state, primitives
   rules-world     mages, species, populace, universities, economy.        → sim-core, content, state, primitives
-  rules-raid      engagement space, combat, objectives, consequences.     → sim-core, content, state, primitives, rules-magic, rules-world
-  agent-api       observation/action space, legality masks.               → sim-core, content, state, primitives, rules-*
+  rules-raid      engagement space, combat, objectives, consequences.     → sim-core, content, state, primitives, rules-magic, rules-world, coordination
+  coordination    the world step loop, and the rules-world → rules-magic port. → sim-core, content, state, primitives, rules-magic, rules-world
+  agent-api       observation/action space, legality masks.               → sim-core, content, state, primitives, rules-*, coordination
   mc-harness      worker pool, sweeps, balance metrics.                   → agent-api
   client-electron renderer. Reads snapshots. Computes no rules.           → agent-api (read path only)
   server          authoritative lockstep, Hetzner deployment.             → agent-api
@@ -586,6 +627,28 @@ the primitive registry that lives in `content`. `content` is in the dependency-p
 `PURE_PACKAGES` and may take no runtime dependency, so the arithmetic cannot live there; and §3
 forbids re-deriving a floor outside the one shared helper, so it cannot live anywhere that would
 have to reimplement one. A package between the two is the only placement that satisfies both.
+
+**`coordination` is the third deviation, added during `mages-and-species`, and it is rule 3's own
+coordinating layer given a home.** Rule 3 says the `rules-magic`/`rules-world` interaction *"lives
+in a coordinating layer"* without naming one, and the two candidates this list already held both
+fail a **world** loop:
+
+- **`rules-raid`** may import both, and the dependency-graph test names it as the example. But this
+  list defines it as *"engagement space, combat, objectives, consequences"*, and a world tick is
+  none of those. Putting the world loop there makes a headless Monte Carlo worker load the combat
+  package in order to advance a month, and hands ownership of 0.4.0's central loop to
+  `raid-engagement`, a capability that has not started. It also inverts §0's clock rule: an
+  engagement *freezes* world time, so the raid layer is the thing that pauses the world loop, and
+  one module should not be both the thing paused and the thing pausing.
+- **`agent-api`** may import every `rules-*` package, but rule 4 runs the dependency one way only.
+  A world loop living there could never be reached by `rules-raid` when a raid writes its
+  consequences back into world state — and the observation layer becoming an input to the rules it
+  observes is precisely what rule 4 exists to prevent.
+
+So the layer gets a package, above both rules packages and below `agent-api`, with an inbound edge
+from `rules-raid` because a raid's consequences land in world state through it. It is in
+`PURE_PACKAGES`: it is rules-path code, loaded by the client, the server and the Monte Carlo
+workers alike.
 
 **Enforced rules:**
 

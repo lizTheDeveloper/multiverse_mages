@@ -23,7 +23,7 @@ import { isFeasible, maskGoals } from './feasibility.js';
 import type { GoalId } from './goals.js';
 import { GOAL, needsTarget } from './goals.js';
 import type { MageOutlook } from './outlook.js';
-import type { GoalCommitment, ReevaluationReason, ScheduleOptions } from './schedule.js';
+import type { MageGoalCommitment, ReevaluationReason, ScheduleOptions } from './schedule.js';
 import { HYSTERESIS_MARGIN, displaces, reevaluationReason } from './schedule.js';
 import type { GoalScore, ScoringOptions } from './scoring.js';
 import { scoreGoal, scoreGoals } from './scoring.js';
@@ -65,7 +65,7 @@ import { scoreGoal, scoreGoals } from './scoring.js';
 /** What one evaluation decided, with everything a metric or a test needs. */
 export interface Selection {
   /** The commitment after this tick. Identical to the incumbent when held. */
-  readonly commitment: GoalCommitment;
+  readonly commitment: MageGoalCommitment;
   /** Why the mage did or did not reconsider. */
   readonly reason: ReevaluationReason;
   /** Whether goals were scored this tick. `false` means the phase held. */
@@ -85,7 +85,7 @@ export interface SelectionInput {
   readonly outlook: MageOutlook;
   readonly worldTick: number;
   /** The mage's current commitment, or `undefined` for a newly promoted mage. */
-  readonly incumbent: GoalCommitment | undefined;
+  readonly incumbent: MageGoalCommitment | undefined;
   /** Whether the incumbent goal finished this tick. The caller's judgement. */
   readonly incumbentComplete?: boolean | undefined;
   readonly rng: StepRng;
@@ -130,9 +130,9 @@ export function chooseTarget(goal: GoalId, outlook: MageOutlook): ContentId {
 }
 
 /** Whether a committed target is still among the goal's candidates. */
-function targetStillAvailable(commitment: GoalCommitment, outlook: MageOutlook): boolean {
-  if (!needsTarget(commitment.goal)) return true;
-  return targetsFor(commitment.goal, outlook).some(
+function targetStillAvailable(commitment: MageGoalCommitment, outlook: MageOutlook): boolean {
+  if (!needsTarget(commitment.goalId)) return true;
+  return targetsFor(commitment.goalId, outlook).some(
     (candidate) => candidate.nodeId === commitment.targetNodeId,
   );
 }
@@ -173,8 +173,8 @@ export function argmaxWithTieBreak(
 }
 
 /** The commitment a mage holds when nothing has been chosen yet. */
-function idleCommitment(worldTick: number): GoalCommitment {
-  return { goal: GOAL.idle, targetNodeId: 0, adoptedTick: worldTick, score: 0 };
+function idleCommitment(worldTick: number): MageGoalCommitment {
+  return { goalId: GOAL.idle, targetNodeId: 0, adoptedTick: worldTick, score: 0 };
 }
 
 /**
@@ -193,7 +193,7 @@ export function selectGoal(input: SelectionInput): Selection {
   const incumbentComplete = input.incumbentComplete ?? false;
   const incumbentFeasible =
     incumbent !== undefined &&
-    isFeasible(incumbent.goal, outlook) &&
+    isFeasible(incumbent.goalId, outlook) &&
     targetStillAvailable(incumbent, outlook);
 
   const reason = reevaluationReason({
@@ -230,8 +230,8 @@ export function selectGoal(input: SelectionInput): Selection {
     incumbent !== undefined &&
     incumbentFeasible &&
     !incumbentComplete &&
-    winner.goal !== incumbent.goal &&
-    !displaces(winner.score, scoreGoal(incumbent.goal, outlook, input.scoring ?? {}).score, margin);
+    winner.goal !== incumbent.goalId &&
+    !displaces(winner.score, scoreGoal(incumbent.goalId, outlook, input.scoring ?? {}).score, margin);
 
   if (keepsIncumbent && incumbent !== undefined) {
     return {
@@ -245,13 +245,13 @@ export function selectGoal(input: SelectionInput): Selection {
     };
   }
 
-  const sameGoal = incumbent !== undefined && !incumbentComplete && winner.goal === incumbent.goal;
+  const sameGoal = incumbent !== undefined && !incumbentComplete && winner.goal === incumbent.goalId;
   const targetNodeId =
     sameGoal && incumbentFeasible ? incumbent.targetNodeId : chooseTarget(winner.goal, outlook);
 
   return {
     commitment: {
-      goal: winner.goal,
+      goalId: winner.goal,
       targetNodeId,
       // Re-adopting the same goal does not restart the commitment clock. A goal
       // that reset its own clock every evaluation could never be displaced by

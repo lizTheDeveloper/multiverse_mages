@@ -76,9 +76,9 @@ type Area = (typeof SCANNED_AREAS)[number];
  * must be written `import type` — they are erased at compile time and are not
  * permitted to become runtime coupling.
  *
- * Two packages here are not in §5's original list, both added by
- * `core-contracts` for the same underlying reason — §5 was written before
- * anyone tried to satisfy it — and both recorded beside the §5 diagram:
+ * Three packages here are not in §5's original list, all added for the same
+ * underlying reason — §5 was written before anyone tried to satisfy it — and
+ * all recorded beside the §5 diagram:
  *
  * - `state`: the shared world-state types have to live somewhere every
  *   `rules-*` package can reach. `sim-core` must stay content-agnostic, and
@@ -89,6 +89,12 @@ type Area = (typeof SCANNED_AREAS)[number];
  *   PURE_PACKAGES and may not take a runtime dependency, and §3 forbids
  *   re-deriving a floor outside the one shared helper, so it can live in
  *   neither and needs a package between them.
+ * - `coordination`: rule 3's coordinating layer, for the **world** loop. The
+ *   two places §5 offered both fail it — `rules-raid` is defined as the
+ *   engagement space and would make a headless world tick load the combat
+ *   package, and `agent-api` cannot be reached by `rules-raid` under rule 4.
+ *   `rules-raid` is given an inbound edge to it, since a raid's consequences
+ *   land in world state through the same layer.
  */
 const ALLOWED: Readonly<Record<string, { value: readonly string[]; typeOnly: readonly string[] }>> =
   {
@@ -99,6 +105,18 @@ const ALLOWED: Readonly<Record<string, { value: readonly string[]; typeOnly: rea
     'rules-magic': { value: ['sim-core', 'content', 'state', 'primitives'], typeOnly: [] },
     'rules-world': { value: ['sim-core', 'content', 'state', 'primitives'], typeOnly: [] },
     'rules-raid': {
+      value: [
+        'sim-core',
+        'content',
+        'state',
+        'primitives',
+        'rules-magic',
+        'rules-world',
+        'coordination',
+      ],
+      typeOnly: [],
+    },
+    coordination: {
       value: ['sim-core', 'content', 'state', 'primitives', 'rules-magic', 'rules-world'],
       typeOnly: [],
     },
@@ -111,6 +129,7 @@ const ALLOWED: Readonly<Record<string, { value: readonly string[]; typeOnly: rea
         'rules-magic',
         'rules-world',
         'rules-raid',
+        'coordination',
       ],
       typeOnly: [],
     },
