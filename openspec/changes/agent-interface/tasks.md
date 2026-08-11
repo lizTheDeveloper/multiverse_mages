@@ -12,14 +12,14 @@
 
 ## 2. Agent session interface
 
-- [ ] 2.1 Implement `reset(runSeed, scenarioConfig)`, `observe()`, `legalActions()`, `submit(action)`, and `status()`
-- [ ] 2.2 Implement terminal statuses `running`, `ascended`, `stagnated`, `truncated`, with `submit` on a terminated session raising
-- [ ] 2.3 Implement illegal-action accounting: total submissions, rejections, and a per-action-id breakdown readable at episode end
-- [ ] 2.4 Implement the agent-side RNG derived from `(runSeed, agentSlotIndex, strategyId)`, structurally unable to reference a `contracts.md` §6 stream id
-- [ ] 2.5 Confirm the session exposes no reward, return, score, or fitness value
-- [ ] 2.6 Unit test that two sessions reset with the same seed and scenario config produce identical initial observations
-- [ ] 2.7 Unit test that enabling accounting does not change the final snapshot hash
-- [ ] 2.8 Unit test that per-stream simulation draw counts are unchanged between a passive agent and a random-legal agent submitting only no-ops
+- [x] 2.1 Implement `reset(runSeed, scenarioConfig)`, `observe()`, `legalActions()`, `submit(action)`, and `status()`
+- [x] 2.2 Implement terminal statuses `running`, `ascended`, `stagnated`, `truncated`, with `submit` on a terminated session raising
+- [x] 2.3 Implement illegal-action accounting: total submissions, rejections, and a per-action-id breakdown readable at episode end
+- [x] 2.4 Implement the agent-side RNG derived from `(runSeed, agentSlotIndex, strategyId)`, structurally unable to reference a `contracts.md` §6 stream id
+- [x] 2.5 Confirm the session exposes no reward, return, score, or fitness value
+- [x] 2.6 Unit test that two sessions reset with the same seed and scenario config produce identical initial observations
+- [x] 2.7 Unit test that enabling accounting does not change the final snapshot hash
+- [x] 2.8 Unit test that per-stream simulation draw counts are unchanged between a passive agent and a random-legal agent submitting only no-ops
 
 ## 3. Monte Carlo harness core
 

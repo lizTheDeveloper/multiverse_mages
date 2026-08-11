@@ -72,6 +72,8 @@ const INTEGER_SIDE = [
   'mask.ts',
   'observation.ts',
   'outcome.ts',
+  'agent-rng.ts',
+  'session.ts',
   'view.ts',
 ] as const;
 

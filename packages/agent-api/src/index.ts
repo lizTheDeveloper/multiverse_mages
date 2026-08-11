@@ -154,3 +154,17 @@ export type { AgentView, ObserveInput } from './view.js';
 export { observe } from './view.js';
 
 export type { ExplainProjection, ExplainedDecision } from './explain.js';
+
+export type { AgentRng, AgentRngInput } from './agent-rng.js';
+export { agentRng } from './agent-rng.js';
+
+export type {
+  AgentSession,
+  EpisodeAccounting,
+  EpisodeStatus,
+  Scenario,
+  ScenarioConfig,
+  SessionOptions,
+  SubmitResult,
+} from './session.js';
+export { createSession } from './session.js';
