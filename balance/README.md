@@ -14,7 +14,7 @@ There are **two** of them, and they are two instruments rather than one instrume
 | sweep | `balance-gate.sweep.json` | `balance-gate-horizon.sweep.json` |
 | horizon | 60 ticks — **five** world years | 240 ticks — **twenty** world years |
 | runs | 4 cells × 50 = 200 | 4 cells × 50 = 200 |
-| wall clock | ~8 s on 4 idle cores | ~35 s on 4 idle cores |
+| wall clock | ~8 s idle, ~7 s in `verify` | ~35 s idle, ~57 s in `verify` |
 | answers | *did anything move?* | *did the universe stop?* |
 
 Each runs its sweep against the reference universe, compares every metric to its own committed
@@ -124,7 +124,7 @@ if that ever stops being true.
 | cells × replicates | 4 × 50 = **200 runs** | 4 × 50 = **200 runs** | 40 × 250 = **10,000 runs** |
 | world-tick cap | 60 (five world years) | 240 (twenty world years) | 240 (twenty world years) |
 | metrics | 9 vital signs | 9 + `referenceNodesGainedFinalQuarter` | 9 + `referenceNodesGainedFinalQuarter` |
-| wall clock | ~8 s on 4 idle cores | ~35 s on 4 idle cores | see below |
+| wall clock | ~8 s idle, ~7 s in `verify` | ~35 s idle, ~57 s in `verify` | see below |
 | committed baseline | yes | yes | **no** |
 
 Both gate sweeps are sized to run on every push. That is the whole design constraint: a gate that
@@ -148,6 +148,9 @@ idle cores of a four-core container:
 - The horizon gate does 200 runs × 240 ticks = 48,000 world ticks in **34.8 s** — about 1,380 world
   ticks per second. Four times the ticks for 4.5 times the wall clock: the cost per tick still
   rises with population, but it is close to flat now.
+- Run at the end of `npm run verify`, on a container that has just finished the test suite, the
+  same 200 runs take **57 s**. That is the number to plan CI around, and it is the reason the
+  sweep was not sized to fill a two-minute budget on an idle machine.
 - Extrapolating the horizon gate from two smaller probes — 16 runs in 6.87 s, 96 runs in 25.6 s —
   gives 0.234 s per run plus 3.1 s of fixed startup, so a two-minute budget would buy about 500
   runs. 200 was chosen instead, because matching the fast gate's sample size is worth more than the
