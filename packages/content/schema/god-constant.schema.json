@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/god-constant.schema.json",
+  "title": "god-constant.json",
+  "description": "Every magnitude in the worship loop, the favor economy, the interventions, ascension, stagnation and prestige — as data rather than as literals in the rules path. The *set* of ids is structural: the rules read each one by name and the loader rejects a set that is missing one or carries an unknown one. The *values* are untuned placeholders awaiting the balance harness, and each names the metric that would move it.",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/godConstant" },
+  "$defs": {
+    "godConstant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "value", "unit", "gloss", "tuningStatus"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "value": { "type": "integer", "minimum": 0, "maximum": 1073741823 },
+        "unit": { "type": "string", "enum": ["fp", "ticks", "count", "months", "tier"] },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
+      }
+    },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}

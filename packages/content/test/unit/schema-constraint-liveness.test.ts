@@ -22,7 +22,7 @@
  *
  * ## How each constraint is proven
  *
- * For every constraint in the eight schemas, enumerated by walking the documents
+ * For every constraint in every shipped schema, enumerated by walking the documents
  * rather than by a list:
  *
  *  1. Find a place the constraint was actually applied to shipped content — the
@@ -122,6 +122,8 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'tradition',
     'primitive',
     'territory',
+    'god-cost',
+    'god-constant',
   ] as const).map(
     (name) => ({
       constraint: `${name}.schema.json#/$defs/contentId minLength`,
@@ -149,6 +151,9 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'primitive.schema.json#/$defs/primitive/properties/scale',
     'primitive.schema.json#/$defs/primitive/properties/stacking',
     'primitive.schema.json#/$defs/cap/properties/kind',
+    'god-cost.schema.json#/$defs/godCost/properties/tuningStatus',
+    'god-constant.schema.json#/$defs/godConstant/properties/unit',
+    'god-constant.schema.json#/$defs/godConstant/properties/tuningStatus',
   ].map((pointer) => ({
     constraint: `${pointer} type`,
     why:
@@ -470,8 +475,8 @@ function isAtOrUnder(diagnosticPointer: string, mutatedPointer: string): boolean
 // The suite
 
 describe('the constraint walk is looking at real schemas and real content', () => {
-  it('enumerated constraints in all eight schemas', () => {
-    expect(schemas.size).toBe(8);
+  it('enumerated constraints in every shipped schema', () => {
+    expect(schemas.size).toBe(CONTENT_FILES.length);
     for (const file of CONTENT_FILES) {
       expect(
         constraints.filter((constraint) => constraint.contentFile === file).length,

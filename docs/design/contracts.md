@@ -516,6 +516,65 @@ is a property of the *kind* of country and not of who holds it.
 
 **Every magnitude here is untuned** and carries `tuningStatus` saying so.
 
+### 2.8 `god-cost.json`
+
+```jsonc
+{
+  "id": "forbid-technique",
+  "actionId": 2,                 // the §4.2 action id. Permanent, like the action
+  "favorCost": 8192,             // fp. Base price, before hysteresis and node-tier scaling
+  "gloss": "Exactly what permitting costs.",
+  "tuningStatus": "untuned"
+}
+```
+
+What each action in §4.2 costs the god in favor, as data rather than as literals in the rules
+path — so that retuning a price is a content change a sweep can turn rather than a code change,
+and so that the price is inside `contentRevision`. Two universes that disagreed about the cost of
+forbidding a technique while agreeing they were compatible would be playing different games.
+
+The loader enforces three things a JSON Schema cannot: **exactly one record per action id 0–15**
+(a missing entry is a free action); **permitting costs exactly what forbidding costs** on both
+axes, because vision pillar 1 rests on the decision being symmetric and any asymmetry makes denial
+a penalty rather than a peer strategy; and **assigning a role is strictly the cheapest non-zero
+action**, because it is the verb the god performs constantly and a priced one turns most of the
+action space into unaffordable no-ops, inflating `illegalActionRate` into noise.
+
+Founding a university has no id of its own — §4.2 gives funding and founding one action — so its
+price is the `found-university-cost` constant in §2.9 rather than a second row here.
+
+### 2.9 `god-constant.json`
+
+```jsonc
+{
+  "id": "worship-lag-fall",
+  "value": 154,                  // ~15% of the gap to the target closed per world tick
+  "unit": "fp",                  // fp | ticks | count | months | tier
+  "gloss": "Strictly greater than the rise rate; the asymmetry is the loop's damping.",
+  "tuningStatus": "untuned"
+}
+```
+
+Every magnitude of the worship loop, the favor economy, the interventions, ascension, stagnation
+and prestige. **The set of ids is structural and the values are not.** The rules read each constant
+by name, so the loader fails a set that omits one — an absent constant arrives in a formula as `0`,
+and a worship lag of zero is a plausible-looking answer to a question nobody asked — and equally
+fails a set that declares one nothing reads, because an unread constant is a tuning knob that does
+nothing and the sweep that turned it would report the null result as a finding about the game.
+
+Three identities among these constants are checked at load, because each is one a retune can break
+silently:
+
+- `worship-max` equals the three saturation caps summed. The ceiling is a property of the formula,
+  not a clamp applied afterwards, and lowering a cap without lowering the stated ceiling turns that
+  sentence into a comment.
+- `prestige-cap × (fp(1024) − prestige-retention) == prestige-earn-max × fp(1024)`. `PRESTIGE_CAP`
+  is the analytic limit of the carry-over recurrence at maximum earning, which is what makes the
+  meta-game's bound arithmetic rather than a clamp.
+- `worship-lag-fall > worship-lag-rise`. The asymmetry *is* the damping.
+
+**Every value here is untuned** and carries `tuningStatus` saying so.
+
 ---
 
 ## 3. Effect Primitive Semantics
