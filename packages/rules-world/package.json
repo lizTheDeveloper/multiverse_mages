@@ -23,7 +23,9 @@
   "//": "Rules-path code: no third-party runtime dependencies, no Node built-ins, integer-only. Per contracts.md §5 it may import sim-core, content, state, and primitives — and MUST NOT import rules-magic or agent-api. Only the two it actually imports are declared: an undeclared-but-imported dependency resolves through workspace hoisting and breaks the moment the package is consumed from outside this repository, while a declared-but-unused one is a boundary nobody is really holding.",
   "dependencies": {
     "@mm/content": "*",
-    "@mm/sim-core": "*"
+    "@mm/primitives": "*",
+    "@mm/sim-core": "*",
+    "@mm/state": "*"
   },
   "scripts": {
     "build": "tsc --build"
