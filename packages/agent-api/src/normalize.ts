@@ -72,11 +72,21 @@ function clamp(value: number, descriptor: NormalizationDescriptor): number {
  * spanning more than a dozen orders of magnitude is a channel that should have
  * been two — and a scan is the version whose correctness is obvious at the one
  * place it matters, the boundary between two buckets.
+ *
+ * The stop condition is `!(value >= edge)` and not `value < edge`, for the same
+ * reason {@link clamp} is written `!(value > min)`: every comparison against
+ * `NaN` is false, so `value < edge` never stopped the scan, `reached` ran to
+ * `edges.length`, and the quotient was exactly `1`. A `NaN` count therefore read
+ * as a *saturated* channel under this rule while the other four floored it — and
+ * saturation is the loudest signal a channel can send, so a corrupt count was
+ * being reported as "this universe is at the ceiling" rather than "this universe
+ * has none of that". The negated form floors it, which is what the other four
+ * rules do and what `clamp`'s own trailing comment says the boundary intends.
  */
 function bucketOf(value: number, edges: readonly number[]): number {
   let reached = 0;
   for (const edge of edges) {
-    if (value < edge) break;
+    if (!(value >= edge)) break;
     reached += 1;
   }
   return reached;
