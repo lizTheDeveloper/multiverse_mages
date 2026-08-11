@@ -37,8 +37,6 @@ import { FP_ONE, fromInt, mul } from '@mm/sim-core';
 import type { Ruleset } from '@mm/state';
 import { EDICT_KIND, LOCATION_KIND } from '@mm/state';
 
-import { createRediscoveryClampCounter } from '@mm/primitives';
-
 import { isDormant } from '../../src/dormancy.js';
 import { MagicGrid } from '../../src/grid.js';
 import { DEFAULT_INITIAL_MASTERY, MASTERY_MAX } from '../../src/instances/constants.js';
