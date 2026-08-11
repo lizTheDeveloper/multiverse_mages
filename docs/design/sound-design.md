@@ -61,16 +61,54 @@ client is a different package written later, and a function that is only describ
 reimplemented subtly differently. Regenerating them is a claim that audio selection changed on
 purpose, and reviewers should read it as one.
 
-### 0.3 Audio must not become a second source of truth
+### 0.3 Audio carries mētis, not episteme
 
-Anything the player can learn by listening must also be visible. This is an accessibility floor —
-deaf and hard-of-hearing players must not be playing a different, worse game — but it is also a
-design constraint, because §6 of this document deliberately loads knowledge loss with more
-information than any other event. If loss is only audible, loss is invisible to a large fraction of
-players, and it is the emotional core of the design.
+**Mētis** is the Greek word for the practitioner's cunning — the feel for a system that comes from
+living inside it. James C. Scott sets it against *episteme* in *Seeing Like a State*: episteme is
+knowledge that survives being written down, mētis is knowledge that is destroyed by the attempt.
+The helmsman reading a sea he cannot chart. The physician who knows the patient is failing before
+the numbers say so.
 
-Rule: **every sonified state change has a visual equivalent in the same frame.** Where this
-document says "you hear X," read it as "X is also shown, and the sound is what makes you *feel* it."
+> **The interface is this universe's episteme. The soundscape is its mētis.**
+
+That is the whole argument for the audio in this document, and it is why sound here is not
+decoration. A readout gives you a value. It is structurally bad at rate, trend, proportion and
+health — the things that are true of a system rather than true *in* it. Worship quickening tells
+you that you are snowballing, which is a derivative and not a number on any panel. The arrangement
+thinning tells you knowledge is leaving faster than it arrives. The bed drifting flat tells you the
+civilization has stopped becoming anything. A player who has run three universes hears these before
+they could tell you what they heard, and that is exactly the kind of knowing the word names.
+
+It is also the right idea for *this* game specifically, which is about the difference between
+knowledge that can be scribed and knowledge that dies with its holder (§5). A soundscape is the one
+part of the interface that behaves like the thing the game is about.
+
+**Two constraints follow, and they pull in opposite directions on purpose.**
+
+**First: audio may not lie.** Every sound corresponds to a real state change in the simulation.
+No stingers for feel, no rising tension the model does not have, no juice suggesting something
+happened when nothing did. The core is deterministic and the balance harness exists so that claims
+about this game are checkable; an audio layer that editorialised would be the one component
+licensed to be dishonest. Mētis is a feel *for something true*. A soundtrack that flatters the
+player is not mētis, it is a slot machine.
+
+**Second: no fact may exist only in audio.** Deaf and hard-of-hearing players must not be playing a
+different, worse game — and §6 deliberately loads knowledge loss with more meaning than any other
+event, so if loss is audible-only it is invisible to a large fraction of players.
+
+The resolution is that **audio's job is salience, not payload.** It does not carry facts the
+interface lacks; it makes you *notice* facts you would never have gone looking for. §8.2's
+last-copy bark is the model — it invents nothing, it surfaces `libraryDependence` at the moment you
+are looking at the mage.
+
+That raises the accessibility bar rather than lowering it. The old rule here was data parity:
+every sonified change has a visual equivalent somewhere. The rule is now **salience parity**:
+
+> **Whatever the sound makes urgent, something visual must make equally urgent.**
+
+"It is on the mage's card" no longer discharges the obligation, because being available is not the
+same as being noticed, and noticing is the entire function. Where this document says "you hear X,"
+read it as "X is also *surfaced*, and the sound is what makes you feel it."
 
 ### 0.4 Population scale forbids per-entity sound
 
