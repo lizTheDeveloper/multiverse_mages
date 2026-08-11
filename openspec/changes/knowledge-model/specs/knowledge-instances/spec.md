@@ -164,8 +164,11 @@ a subsystem-owned index keyed on the grimoire handle, never in a state field.
 Mastery SHALL change only for instances at `locationKind` mind or palace; grimoire and library
 instances MUST NOT decay. Decay MUST be a deterministic function of elapsed world ticks, the supplied
 retention value, and dormancy, and MUST NOT draw from any RNG stream. A non-dormant instance MUST NOT
-decay below a floor derived from the supplied retention. A dormant instance MUST have no floor, and
-MUST be destroyed when its mastery reaches zero.
+decay below a floor derived from the supplied retention. A dormant instance MUST have no floor.
+Decay MUST be monotonically non-increasing in mastery: the retention-derived floor bounds further
+loss only and MUST NOT raise an instance whose mastery is already below it, so an instance eroded
+while dormant keeps whatever fragment survived when its cell is re-permitted. A held instance whose
+mastery reaches zero MUST be destroyed, whether or not it is dormant.
 
 #### Scenario: Written knowledge does not decay
 
@@ -184,12 +187,26 @@ MUST be destroyed when its mastery reaches zero.
   `fp(768)`
 - **THEN** the instance under the higher retention settles at a strictly higher floor
 
+#### Scenario: Re-permitting a fragment does not restore it
+
+- **WHEN** an interdicted mind instance has eroded, floorless, to a mastery below the
+  retention-derived floor, and the interdiction is then lifted before the instance is destroyed
+- **THEN** the next decay sweep leaves its mastery no higher than it found it, rather than raising
+  the survivor to the floor a never-forbidden instance would have settled at
+
 #### Scenario: Dormant knowledge decays to nothing and is lost
 
 - **WHEN** a mind instance in an interdicted cell is carried forward long enough for its mastery to
   reach zero
 - **THEN** the instance is destroyed, and if it was the last instance the node ceases to exist in
   the universe
+
+#### Scenario: Zero mastery is destruction even in a permitted cell
+
+- **WHEN** a non-dormant mind instance is held at a retention low enough that its derived floor is
+  zero, and is carried forward until its mastery reaches zero
+- **THEN** the instance is destroyed and a loss event is emitted, rather than surviving at zero
+  mastery as an instance nobody can teach, scribe, or lose
 
 #### Scenario: Decay is deterministic
 

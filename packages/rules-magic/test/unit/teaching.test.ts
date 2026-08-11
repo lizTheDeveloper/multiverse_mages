@@ -17,7 +17,7 @@ import { LOCATION_KIND } from '@mm/state';
 
 import { DEFAULT_TEACH_THRESHOLD, MASTERY_MAX } from '../../src/instances/constants.js';
 import type { TeachingInputs } from '../../src/instances/teaching.js';
-import { teach } from '../../src/instances/teaching.js';
+import { teach, transmittedMastery } from '../../src/instances/teaching.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
 import {
   CHILD_NODE,
@@ -164,6 +164,44 @@ describe('teaching', () => {
 
     expect(outcome.refusal).toBeUndefined();
     expect(knowledge.read(outcome.instance).locationId).toBe(123456);
+  });
+
+  it('loses at least one unit at the smallest possible shortfall, for every jitter', () => {
+    // The regression this file did not have. `transmittedMastery` claimed
+    // strict loss below full mastery and did not deliver it: at a shortfall of
+    // one unit, `mul(1, FP_ONE + jitter)` floors to 0 for every negative
+    // jitter, which is roughly half of the real [-256, 256] draw range, and the
+    // student then received the teacher's mastery unchanged.
+    //
+    // A teacher at 1023 is not a hand-picked impossibility: full mastery
+    // decayed one ordinary tick at a high retention lands near 1020. What
+    // settled it: `knowledge-instances`' "Degradation compounds across a chain"
+    // scenario words the THEN clause with strict "lower than" twice, and a
+    // plateau at the top of the curve would mean an archmage chain never
+    // degrades — exactly the effect `knowledgeHalfLife` exists to detect.
+    for (let jitter = -256; jitter <= 256; jitter += 1) {
+      expect(transmittedMastery(1023, jitter), `jitter=${String(jitter)}`).toBeLessThan(1023);
+    }
+  });
+
+  it('still transmits a fully masterful teacher exactly, for every jitter', () => {
+    // The other half of the same property, and the reason the fix clamps the
+    // jittered *shortfall* rather than the transmitted mastery: at full mastery
+    // there is no shortfall to clamp, so losslessness stays exact rather than
+    // becoming "lossless on average".
+    for (let jitter = -256; jitter <= 256; jitter += 1) {
+      expect(transmittedMastery(MASTERY_MAX, jitter), `jitter=${String(jitter)}`).toBe(MASTERY_MAX);
+    }
+  });
+
+  it('degrades a chain that starts one unit below full, tick after tick', () => {
+    // The chain scenario at the values that used to flatten it entirely.
+    let mastery = MASTERY_MAX - 1;
+    for (let link = 0; link < 8; link += 1) {
+      const next = transmittedMastery(mastery, -1);
+      expect(next, `link=${String(link)}`).toBeLessThan(mastery);
+      mastery = next;
+    }
   });
 
   it('draws from stream 4 keyed on the teacher, reproducibly', () => {

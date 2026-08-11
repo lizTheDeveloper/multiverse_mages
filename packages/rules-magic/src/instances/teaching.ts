@@ -82,9 +82,32 @@ export interface TeachingOutcome {
  *
  * `mul(teacherMastery, retained)` where `retained` is full mastery less the
  * jittered shortfall. Two properties are load-bearing and both are asserted:
- * at `fp(1024)` the result is `fp(1024)` exactly, and below it the result is
- * strictly lower than the teacher's own mastery — which is what makes
- * degradation *compound* down a chain rather than settle at a plateau.
+ * at `fp(1024)` the result is `fp(1024)` exactly, and anywhere in
+ * `0 < mastery < fp(1024)` the result is strictly lower than the teacher's own
+ * mastery — which is what makes degradation *compound* down a chain rather
+ * than settle at a plateau. (At mastery `0` there is nothing to lose; that
+ * teacher is refused by the eligibility threshold long before reaching here.)
+ *
+ * ## Why the naive `mul` cannot express "strictly lossy"
+ *
+ * `mul(a, b)` floors `(a * b) / FP_ONE`, and flooring destroys the property at
+ * the one place it is easiest to reach. A teacher one unit below full mastery
+ * has `shortfall === 1`, and `mul(1, factor)` is `0` for **every** factor
+ * strictly below `FP_ONE` — so any negative jitter, roughly half the real
+ * `[-TEACHING_JITTER_SPAN, TEACHING_JITTER_SPAN]` draw range, rounds the whole
+ * shortfall away before it can act. `jittered === 0` makes `retained ===
+ * MASTERY_MAX`, and `mul(capped, MASTERY_MAX) === capped` exactly: teaching
+ * became lossless for a teacher who is *not* fully masterful. A mastery around
+ * `1020` is one ordinary decay tick away from full, not a contrived input, so
+ * this was reachable in play and would have flattened the compounding chain.
+ *
+ * The fix is to floor the *loss* at one unit — the finest thing fixed point at
+ * 1/1024 can represent — rather than at zero, whenever the teacher is short of
+ * full at all. `jittered >= 1` with `capped >= 1` makes
+ * `capped * (MASTERY_MAX - jittered) / MASTERY_MAX` strictly less than `capped`
+ * as a real number, so its floor is at most `capped - 1`. A teacher at exactly
+ * `MASTERY_MAX` still has `shortfall === 0`, and the clamp does not apply to
+ * her: losslessness at the top stays exact rather than becoming "usually".
  *
  * **Untuned.** That this curve is the right one is not a claim 0.3.0 can make;
  * that it is monotone and lossless at the top is.
@@ -92,7 +115,12 @@ export interface TeachingOutcome {
 export function transmittedMastery(teacherMastery: Fp, jitter: Fp): Fp {
   const capped = Math.min(teacherMastery, MASTERY_MAX);
   const shortfall = MASTERY_MAX - capped;
-  const jittered = Math.min(Math.max(mul(shortfall, FP_ONE + jitter), 0), MASTERY_MAX);
+  if (shortfall <= 0) return capped;
+
+  const scaled = mul(shortfall, FP_ONE + jitter);
+  // At least one unit: see the docstring. Zero here would mean "taught without
+  // loss by a teacher who has not mastered it", which the spec forbids.
+  const jittered = Math.min(Math.max(scaled, 1), MASTERY_MAX);
   const retained = MASTERY_MAX - jittered;
   return mul(capped, retained);
 }

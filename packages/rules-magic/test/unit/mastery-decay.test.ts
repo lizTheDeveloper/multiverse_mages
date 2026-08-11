@@ -138,10 +138,83 @@ describe('dormant knowledge', () => {
     expect(knowledge.isInstance(instance)).toBe(true);
     expect(knowledge.read(instance).mastery).toBeGreaterThan(0);
 
-    // Re-permitting restores the survivor with no migration step: the next
-    // sweep is an ordinary floored one.
+    // Re-permitting needs no migration step: the next sweep is an ordinary
+    // floored one. The survivor here is still above the floor (10 dormant ticks
+    // at retention 1024 leave 944, well above 256), so it keeps decaying down
+    // to the floor — it is not raised to anything. The case where the survivor
+    // is *below* the floor is the next test.
     sweep(knowledge, 1000, 1010);
     expect(knowledge.read(instance).mastery).toBe(masteryFloor(RETENTION, false));
+  });
+
+  it('never has its fragment restored when the interdiction lifts', () => {
+    // The exploit this guards: revoke an interdiction one tick before the
+    // instance would have hit zero and been destroyed, and the old floor clamp
+    // healed the fragment all the way up to the ordinary retention floor in a
+    // single "decay" tick — free mastery for changing your mind late.
+    //
+    // What settled it, since `knowledge-instances`' MUST clause bounds decay
+    // only from below: decay is monotonically non-increasing in mastery, and a
+    // floor is a floor on *further loss*, not a level to be raised to. The spec
+    // now says so outright ("Re-permitting a fragment does not restore it").
+    const floor = masteryFloor(RETENTION, false);
+    const fragment = 40;
+    expect(fragment).toBeLessThan(floor);
+
+    expect(decayedMastery(fragment, 1, RETENTION, false)).toBeLessThanOrEqual(fragment);
+    expect(decayedMastery(fragment, 1000, RETENTION, false)).toBeLessThanOrEqual(fragment);
+
+    const { knowledge, instance } = held(LOCATION_KIND.mind, fragment);
+    sweep(knowledge, 1, 1);
+    expect(knowledge.read(instance).mastery).toBeLessThanOrEqual(fragment);
+    expect(knowledge.isInstance(instance)).toBe(true);
+  });
+
+  it('never raises mastery, at any incoming value, dormant or not', () => {
+    for (const dormant of [false, true]) {
+      for (const mastery of [1, 40, 255, 256, 257, 512, MASTERY_MAX]) {
+        for (const elapsed of [1, 7, 1000]) {
+          const after = decayedMastery(mastery, elapsed, RETENTION, dormant);
+          expect(after, `${String(mastery)}/${String(elapsed)}/${String(dormant)}`).toBeLessThanOrEqual(
+            mastery,
+          );
+          expect(after).toBeGreaterThanOrEqual(0);
+        }
+      }
+    }
+  });
+
+  it('is not the only way an instance reaches zero, and zero is destruction either way', () => {
+    // `species.schema.json` admits any fixed-point trait down to 1, and
+    // `masteryFloor` is `mul(MASTERY_FLOOR_SHARE, retention)` — which floors to
+    // zero for any retention at or below 3. Such a holder's non-dormant
+    // instance decays to zero with no floor to stop it, and destruction used to
+    // be checked only on the dormant path, so it survived at mastery zero
+    // forever: counted by the existence index, unteachable (below the
+    // eligibility threshold), unscribable, and never emitting the loss event
+    // `knowledgeHalfLife` is computed from. Shipped v1 content is 512–1536, so
+    // this is an authoring hazard rather than a live bug — but a silent one.
+    //
+    // Decided here: zero mastery is destruction whether or not the cell is
+    // forbidden, so that "the node exists" keeps meaning "somebody knows it".
+    // Dormancy still owns the whole distinction that matters — it is the floor
+    // dormancy removes.
+    const brittleRetention = 3;
+    expect(masteryFloor(brittleRetention, false)).toBe(0);
+
+    const { knowledge, instance } = held();
+    const lost = decayHeldKnowledge({
+      knowledge,
+      cells: testCells,
+      ruleset: permissiveRuleset(),
+      elapsedTicks: 1,
+      worldTick: 12,
+      retentionOf: () => brittleRetention,
+    });
+
+    expect(knowledge.isInstance(instance)).toBe(false);
+    expect(knowledge.exists(ROOT_NODE)).toBe(false);
+    expect(lost).toEqual([{ nodeId: ROOT_NODE, worldTick: 12, location: LOCATION_KIND.mind }]);
   });
 
   it('emits no loss event while another copy survives', () => {
