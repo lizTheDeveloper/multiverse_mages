@@ -33,28 +33,34 @@
  * everything dangerous, keep researching it in perfect safety, and carry a full
  * spellbook abroad. Forbidding has to have a price, and this is the price.
  *
- * ## Why the rediscovery floor is applied here rather than in content
+ * ## The rediscovery multiplier is not computed here
  *
- * `contracts.md` §2.3's `rediscoveryMultiplier` is a content invariant of at
- * least `fp(3072)`, and §2.4's species `rediscoveryAffinity` multiplies it —
- * which composes below 3× for any species better than average. The release
- * claim is about what rediscovery *costs*, not about what content declares, so
- * the clamp belongs at the point the cost is computed. See
- * {@link effectiveRediscoveryMultiplier}.
+ * This file used to carry its own `effectiveRediscoveryMultiplier`, reading
+ * species `rediscoveryAffinity` as a *multiplier* — so a species good at
+ * rediscovery paid *more*. `rules-world` carried a second copy reading it as a
+ * divisor, the opposite. `contracts.md` §2.4 is normative and says divisor
+ * (*"Higher is better"*), the shipped species data agrees (gnome `fp(1792)`
+ * leads, orc `fp(512)` trails), and the copy here was the wrong one. It is
+ * deleted; the survivor is `@mm/primitives`' {@link effectiveRediscoveryMultiplier},
+ * which §5 rule 3 lets both rules packages reach without a cycle.
+ *
+ * The floor still applies at the point the cost is computed rather than in
+ * content: §2.3's `rediscoveryMultiplier` is a content invariant of at least
+ * `fp(3072)`, and affinity composes below 3× for any species better than
+ * average, so the release claim — which is about what rediscovery *costs*, not
+ * about what content declares — has to be enforced after affinity.
  */
 
 import type { ContentId, Fp } from '@mm/content';
 import type { Handle, Ruleset, Tick } from '@mm/state';
 import { LOCATION_KIND, permits } from '@mm/state';
+import type { RediscoveryClampCounter } from '@mm/primitives';
+import { effectiveRediscoveryMultiplier } from '@mm/primitives';
 import { FP_ONE, RNG_STREAM, div, mul, nextBounded } from '@mm/sim-core';
 
 import type { CellResolver, KnowledgeNode, KnowledgeRng, NodeCatalog } from './catalog.js';
 import { requireNode } from './catalog.js';
-import {
-  DEFAULT_INITIAL_MASTERY,
-  REDISCOVERY_MULTIPLIER_FLOOR,
-  RESEARCH_JITTER_SPAN,
-} from './constants.js';
+import { DEFAULT_INITIAL_MASTERY, RESEARCH_JITTER_SPAN } from './constants.js';
 import type { KnowledgeRefusal } from './outcomes.js';
 import type { KnowledgeSubsystem } from './subsystem.js';
 import { isHeldLocation } from './subsystem.js';
@@ -81,8 +87,21 @@ export interface ResearchInputs {
   readonly learnRate: Fp;
   /** The **already stacked** `research-rate` multiplier. See the note below. */
   readonly researchRate: Fp;
-  /** Species `rediscoveryAffinity`. Used only when the node was lost. */
+  /**
+   * Species `rediscoveryAffinity` (`contracts.md` §2.4). Used only when the
+   * node was lost. A **divisor**: higher is better, so a gnome at `fp(1792)`
+   * rediscovers more cheaply than an orc at `fp(512)`.
+   */
   readonly rediscoveryAffinity: Fp;
+  /**
+   * Accumulates how often the `fp(3072)` rediscovery floor discarded affinity.
+   *
+   * Required rather than optional, and threaded down from here rather than
+   * created per call, because the figure that matters is the share over a whole
+   * run: a floor that binds on every evaluation has silently eaten the species
+   * trait, and produces output identical to one that never binds.
+   */
+  readonly clampCounter: RediscoveryClampCounter;
   /** Mastery a completed instance is created at. Defaults to the placeholder. */
   readonly initialMastery?: Fp;
   /** Where the instance lands. `mind` unless the tradition stores in a palace. */
@@ -106,23 +125,12 @@ export interface ResearchOutcome {
 /** The rates a requirement is computed against. */
 export interface RequirementInputs {
   readonly rediscovery: boolean;
+  /** Species `rediscoveryAffinity`. A divisor: higher is better (§2.4). */
   readonly rediscoveryAffinity: Fp;
   readonly learnRate: Fp;
   readonly researchRate: Fp;
-}
-
-/**
- * A node's rediscovery multiplier after species affinity, clamped at `fp(3072)`.
- *
- * **The clamp is the release claim.** Affinity applies first so that a gnome's
- * `vision.md` §5 rediscovery bonus is real wherever content authors above the
- * floor, and the clamp then guarantees that no composition of content and
- * species produces a rediscovery cheaper than three times original research.
- * The alternative — clamping the content value and then applying affinity —
- * would put the guarantee back where the composition breaks it.
- */
-export function effectiveRediscoveryMultiplier(multiplier: Fp, affinity: Fp): Fp {
-  return Math.max(mul(multiplier, affinity), REDISCOVERY_MULTIPLIER_FLOOR);
+  /** Counts floor clamps. See {@link ResearchInputs.clampCounter}. */
+  readonly clampCounter: RediscoveryClampCounter;
 }
 
 /**
@@ -142,7 +150,11 @@ export function effectiveRediscoveryMultiplier(multiplier: Fp, affinity: Fp): Fp
  */
 export function researchRequirement(node: KnowledgeNode, inputs: RequirementInputs): Fp {
   const multiplier = inputs.rediscovery
-    ? effectiveRediscoveryMultiplier(node.rediscoveryMultiplier, inputs.rediscoveryAffinity)
+    ? effectiveRediscoveryMultiplier(
+        node.rediscoveryMultiplier,
+        inputs.rediscoveryAffinity,
+        inputs.clampCounter,
+      )
     : FP_ONE;
   const base = mul(node.researchCost, multiplier);
   const rate = mul(inputs.learnRate, inputs.researchRate);
@@ -184,6 +196,7 @@ export function research(inputs: ResearchInputs): ResearchOutcome {
     rediscoveryAffinity: inputs.rediscoveryAffinity,
     learnRate: inputs.learnRate,
     researchRate: inputs.researchRate,
+    clampCounter: inputs.clampCounter,
   });
 
   const refusal = refuseResearch(inputs, node);

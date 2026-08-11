@@ -16,7 +16,9 @@ import { describe, expect, it } from 'vitest';
 import { deserializeState, mul, serializeState } from '@mm/sim-core';
 import { LOCATION_KIND, defineWorldStateSchema } from '@mm/state';
 
-import { MASTERY_MAX, REDISCOVERY_MULTIPLIER_FLOOR } from '../../src/instances/constants.js';
+import { REDISCOVERY_FLOOR, createRediscoveryClampCounter } from '@mm/primitives';
+
+import { MASTERY_MAX } from '../../src/instances/constants.js';
 import { research } from '../../src/instances/research.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
 import {
@@ -60,6 +62,7 @@ function requiredProgress(knowledge: KnowledgeSubsystem): number {
     learnRate: 1024,
     researchRate: 1024,
     rediscoveryAffinity: 1024,
+    clampCounter: createRediscoveryClampCounter(),
   }).required;
 }
 
@@ -75,7 +78,7 @@ describe('the ever-known record across a snapshot', () => {
     expect(after.wasEverKnown(ROOT_NODE)).toBe(true);
     expect(after.exists(ROOT_NODE)).toBe(false);
     expect(requiredProgress(after)).toBe(requiredProgress(before));
-    expect(requiredProgress(after)).toBeGreaterThanOrEqual(mul(4096, REDISCOVERY_MULTIPLIER_FLOOR));
+    expect(requiredProgress(after)).toBeGreaterThanOrEqual(mul(4096, REDISCOVERY_FLOOR));
   });
 
   it('is what distinguishes a lost node from one never known', () => {
@@ -88,7 +91,7 @@ describe('the ever-known record across a snapshot', () => {
 
     expect(after.wasEverKnown(ROOT_NODE)).toBe(false);
     expect(requiredProgress(after)).toBe(4096);
-    expect(requiredProgress(after)).toBeLessThan(mul(4096, REDISCOVERY_MULTIPLIER_FLOOR));
+    expect(requiredProgress(after)).toBeLessThan(mul(4096, REDISCOVERY_FLOOR));
   });
 
   it('survives a round trip taken while the node still exists', () => {

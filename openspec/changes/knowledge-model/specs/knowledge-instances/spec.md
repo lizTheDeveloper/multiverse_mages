@@ -258,11 +258,20 @@ any prerequisite.
 
 A node that has previously existed in the universe and whose instances have all been destroyed SHALL
 be re-derivable only by rediscovery, at a cost of `researchCost` multiplied by the node's
-`rediscoveryMultiplier` and then by the supplied `rediscoveryAffinity`. The resulting effective
-multiplier MUST be clamped to a floor of `fp(3072)`, so no rediscovery ever completes below three
-times the node's `researchCost`. Content validation MUST reject any node declaring a
+`rediscoveryMultiplier` and then **divided** by the supplied `rediscoveryAffinity`. The resulting
+effective multiplier MUST be clamped to a floor of `fp(3072)`, so no rediscovery ever completes below
+three times the node's `researchCost`. Content validation MUST reject any node declaring a
 `rediscoveryMultiplier` below `fp(3072)`. Distinguishing a lost node from a never-known one MUST use
 a persisted per-node ever-known record, set on first instance creation and never cleared.
+
+`rediscoveryAffinity` is a **divisor**, so a *higher* affinity makes rediscovery *cheaper*. This
+requirement previously said "multiplied", which contradicted `docs/design/contracts.md` §2.4 — the
+normative document, which states the field is an *"fp DIVISOR against `rediscoveryMultiplier`.
+Higher is better"* so that all eight species traits read the same way round. The shipped species
+data settles it the same way: gnomes, whom vision §6 makes unusually good rediscoverers, carry
+`fp(1792)` and orcs `fp(512)`, and the loader's `V1_REDISCOVERY_AUTHORING_FLOOR` of `fp(5376)` is
+`3072 × 1792 / 1024` — a break-even that only exists under division. The wording here was the
+contradiction, not the contract.
 
 #### Scenario: Rediscovery costs the declared multiplier
 
@@ -273,15 +282,15 @@ a persisted per-node ever-known record, set on first instance creation and never
 
 #### Scenario: Affinity differentiates above the floor
 
-- **WHEN** the same node is rediscovered by subjects with `rediscoveryAffinity` `fp(768)` and
+- **WHEN** the same node is rediscovered by subjects with `rediscoveryAffinity` `fp(1792)` and
   `fp(1024)`
-- **THEN** the subject with the lower affinity requires strictly less progress, and both requirements
-  remain at or above three times `researchCost`
+- **THEN** the subject with the **higher** affinity requires strictly less progress, and both
+  requirements remain at or above three times `researchCost`
 
 #### Scenario: The floor holds against a strong affinity
 
 - **WHEN** a node with `rediscoveryMultiplier` `fp(3072)` is rediscovered by a subject with
-  `rediscoveryAffinity` `fp(512)`
+  `rediscoveryAffinity` `fp(2048)`
 - **THEN** the effective multiplier is clamped to `fp(3072)` and the required progress is exactly
   three times `researchCost`
 

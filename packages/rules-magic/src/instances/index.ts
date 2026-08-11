@@ -34,7 +34,6 @@ export {
   MASTERY_DECAY_PER_TICK,
   MASTERY_FLOOR_SHARE,
   MASTERY_MAX,
-  REDISCOVERY_MULTIPLIER_FLOOR,
   RESEARCH_JITTER_SPAN,
   SCRIBE_CAPACITY_PER_TIER,
   SCRIBE_DURABILITY_BASE,
@@ -50,7 +49,6 @@ export { KnowledgeSubsystem, isHeldLocation, isWrittenLocation } from './subsyst
 
 export type { RequirementInputs, ResearchInputs, ResearchOutcome } from './research.js';
 export {
-  effectiveRediscoveryMultiplier,
   holdsUsable,
   isRediscovery,
   research,
