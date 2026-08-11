@@ -72,11 +72,16 @@ export interface RaidTuning {
   readonly theftRange: Fixed;
   readonly objectiveInteractionRadius: Fixed;
   readonly objectiveProgressPerTick: Fixed;
+  readonly portalMargin: Fixed;
+  /** Remaining stability below which withdrawal outscores everything. Raw. */
+  readonly withdrawStabilityMargin: number;
 
   // ---- Derived combatant statistics. Untuned placeholders, every one. ----
   readonly combatantBaseMaxHp: Fixed;
   readonly combatantHpPerTier: Fixed;
   readonly combatantBaseConcealment: Fixed;
+  readonly castVigorBase: Fixed;
+  readonly castVigorPerTier: Fixed;
   readonly summonMaxHp: Fixed;
   readonly summonDamage: Fixed;
   readonly detachmentMaxHp: Fixed;
@@ -126,10 +131,14 @@ export function readRaidTuning(source: RaidConstantSource): RaidTuning {
     theftRange: at('theft-range'),
     objectiveInteractionRadius: at('objective-interaction-radius'),
     objectiveProgressPerTick: at('objective-progress-per-tick'),
+    portalMargin: at('portal-margin'),
+    withdrawStabilityMargin: at('withdraw-stability-margin'),
 
     combatantBaseMaxHp: at('combatant-base-max-hp'),
     combatantHpPerTier: at('combatant-hp-per-tier'),
     combatantBaseConcealment: at('combatant-base-concealment'),
+    castVigorBase: at('cast-vigor-base'),
+    castVigorPerTier: at('cast-vigor-per-tier'),
     summonMaxHp: at('summon-max-hp'),
     summonDamage: at('summon-damage'),
     detachmentMaxHp: at('detachment-max-hp'),

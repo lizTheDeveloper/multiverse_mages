@@ -63,5 +63,89 @@ export { generateTerrain } from './terrain.js';
 
 export { blinkToward, moveToward, resolvePath } from './movement.js';
 
+export { TerrainNavigator } from './navigation.js';
+
 export type { Located, SpatialIndex } from './spatial.js';
 export { buildSpatialIndex } from './spatial.js';
+
+export type {
+  ArbitrationFaults,
+  CastEffects,
+  CastRefusal,
+  CastRequest,
+  CastResolution,
+  HeldInstance,
+} from './arbitration.js';
+export { COMBAT_PRIMITIVES, CastArbiter, summonCount } from './arbitration.js';
+
+export type { CombatantBrief, EligibleCohort, EligibleMage, SideRoster } from './combatants.js';
+export {
+  ATTACKER,
+  DEFENDER,
+  DEFENDING_ROLES,
+  RAIDING_ROLES,
+  eligibleCohorts,
+  eligibleMages,
+  emptyRoster,
+  mageMaxHp,
+  sideHasRoom,
+  sideHasSummonRoom,
+  spawnCombatant,
+} from './combatants.js';
+
+export type { ObjectiveBrief, ObjectiveKindValue, ObjectiveSources } from './objectives.js';
+export {
+  OBJECTIVE_KIND,
+  allObjectivesResolved,
+  generateObjectives,
+  libraryValue,
+  objectiveHoldsKnowledge,
+  readObjectiveSources,
+  syncObjectiveRow,
+  takenObjectiveValue,
+  totalObjectiveValue,
+} from './objectives.js';
+
+export type { RaidEndReasonValue, Termination } from './termination.js';
+export {
+  EngagementCeilingReached,
+  MAX_ENGAGEMENT_TICKS,
+  RAID_END_REASON,
+  decayStability,
+  maxEngagementTicks,
+  terminationOf,
+  victorOf,
+} from './termination.js';
+
+export type {
+  CasualtyRecord,
+  CohortLossRecord,
+  KnowledgeMovement,
+  ObjectiveOutcome,
+  PrimitiveApplication,
+  RaidOutcome,
+} from './outcome.js';
+export { OutcomeLedger } from './outcome.js';
+
+export type { OpenPortalOptions, Raid, RaidFaults, RaidParticipant } from './raid.js';
+export {
+  CASTABLE_MASTERY,
+  closePortal,
+  deploymentPosition,
+  engagementTickOf,
+  existingNodes,
+  heldInstancesOf,
+  isAlive,
+  livingCombatants,
+  openPortal,
+  positionOf,
+  resolveRaid,
+  runRaid,
+  stepEngagement,
+} from './raid.js';
+
+export type { PortalGate, PortalRefusal } from './portal.js';
+export { PORTAL_CELL_ID, deployRaid, portalGate } from './portal.js';
+
+export type { AppliedConsequences } from './consequences.js';
+export { applyRaidOutcome, returnedWithKnowledge, strandedAttackers } from './consequences.js';

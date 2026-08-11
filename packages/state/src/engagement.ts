@@ -207,14 +207,17 @@ export function raidHasEnded(raid: RaidState): boolean {
   return raid.portalStability <= 0;
 }
 
-/**
- * Applies one engagement tick of portal decay, clamped at zero.
+/*
+ * There is deliberately no `decayPortal` here, and there used to be.
  *
- * Clamped so that `portalStability` never goes negative and `raidHasEnded`
- * stays a simple comparison. The decay itself is the authored integer, applied
- * whole — see {@link RaidState.stabilityDecayPerTick}.
+ * `raid-engagement`'s termination claim is that **exactly one function in this
+ * repository assigns `portalStability`**, checked by a conformance scan over
+ * every package's source. A helper here and the engine's own decrement in
+ * `@mm/rules-raid` would be two assignment sites, and "exactly one writer"
+ * would become a claim about two files that happen to agree today. The
+ * arithmetic is four tokens; the guarantee is the whole point of the mechanic.
+ *
+ * So the decrement lives with the phase that performs it, in
+ * `packages/rules-raid/src/termination.ts`, and this package keeps only the
+ * question — {@link raidHasEnded} — which reads and never writes.
  */
-export function decayPortal(raid: RaidState): void {
-  const remaining = raid.portalStability - raid.stabilityDecayPerTick;
-  raid.portalStability = remaining > 0 ? remaining : 0;
-}

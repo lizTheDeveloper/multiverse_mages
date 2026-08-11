@@ -243,5 +243,33 @@
     "unit": "fp",
     "gloss": "Ceiling on the probability that a grimoire survives a burning attempt, whatever its durability. fp(922) is 90%, the same ceiling contracts.md section 3 puts on ward — a dwarven book resists fire; it is not fireproof.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "cast-vigor-base",
+    "value": 2048,
+    "unit": "fp",
+    "gloss": "Vigor a cast costs before tier. fp(2). contracts.md section 2.3 gives a node a researchCost, a teachCost and a scribeCost and no cast cost, so the price of releasing a spell is derived from its tier here rather than invented as a fourth node field — a field this change has no authority to add and no measurement to author.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cast-vigor-per-tier",
+    "value": 1024,
+    "unit": "fp",
+    "gloss": "Vigor added per tier of the node being cast. fp(1) a tier, so a tier-7 working costs five times a tier-1 one.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "withdraw-stability-margin",
+    "value": 409600,
+    "unit": "raw",
+    "gloss": "Remaining portal stability below which a raider starts scoring withdrawal above everything else. fp(400) of raw stability, about 400 ticks at the authored decay. The stranded-raider rule makes this the difference between a live mage and a dead one, and it is the number most likely to need softening.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "portal-margin",
+    "value": 8192,
+    "unit": "fp",
+    "gloss": "How close to the portal's position a raider must stand to count as having withdrawn through it. fp(8) metres.",
+    "tuningStatus": "untuned"
   }
 ]

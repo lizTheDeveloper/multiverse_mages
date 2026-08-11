@@ -128,7 +128,50 @@ export function moveToward(
   // the division, so a heavy movement penalty produces a short step rather than
   // flooring to a combatant who cannot move at all.
   const scaled = floorDiv(allowance * cost, FP_ONE);
-  return resolvePath(from, stepToward(from, goal, scaled), terrain);
+
+  const direct = resolvePath(from, stepToward(from, goal, scaled), terrain);
+  if (direct.x !== from.x || direct.y !== from.y) return direct;
+
+  // ---- Sliding, and why it is not optional ----
+  //
+  // Without it a combatant that walks into rock stops there **for the rest of
+  // the raid**: the goal has not moved, so next tick it tries the same blocked
+  // line and stays. That is not a slow raid, it is a raid in which nothing
+  // happens — a stalemate produced by terrain generation rather than by play,
+  // and every metric would report it as a finding about the game. It was
+  // observed on the first end-to-end run: both sides walked eight ticks and
+  // then stood still for two and a half thousand.
+  //
+  // The candidates are tried in a fixed order — dominant axis first, then the
+  // other, then the four cardinals — so which way a combatant goes round an
+  // obstacle is a fact about the obstacle rather than about the iteration.
+  // This is deliberately *not* pathfinding: a combatant can still be enclosed,
+  // and an enclosed combatant is a raid that ends on portal collapse, which is
+  // a bounded outcome rather than a hang.
+  return slideAround(from, goal, scaled, terrain);
+}
+
+/** The fixed-order detour a blocked combatant tries. */
+function slideAround(from: Point, goal: Point, scaled: Fixed, terrain: TerrainGrid): Point {
+  const dx = goal.x - from.x;
+  const dy = goal.y - from.y;
+  const alongX: Point = { x: from.x + Math.sign(dx) * scaled, y: from.y };
+  const alongY: Point = { x: from.x, y: from.y + Math.sign(dy) * scaled };
+
+  const candidates: Point[] =
+    Math.abs(dx) >= Math.abs(dy) ? [alongX, alongY] : [alongY, alongX];
+  candidates.push(
+    { x: from.x + scaled, y: from.y },
+    { x: from.x - scaled, y: from.y },
+    { x: from.x, y: from.y + scaled },
+    { x: from.x, y: from.y - scaled },
+  );
+
+  for (const candidate of candidates) {
+    const landed = resolvePath(from, candidate, terrain);
+    if (landed.x !== from.x || landed.y !== from.y) return landed;
+  }
+  return from;
 }
 
 /**

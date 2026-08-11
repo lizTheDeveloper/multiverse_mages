@@ -84,6 +84,8 @@ export const REQUIRED_RAID_CONSTANTS: readonly string[] = Object.freeze([
   'area-denial-radius',
   'battlefield-extent',
   'cast-range',
+  'cast-vigor-base',
+  'cast-vigor-per-tier',
   'combatant-base-concealment',
   'combatant-base-max-hp',
   'combatant-hp-per-tier',
@@ -102,6 +104,7 @@ export const REQUIRED_RAID_CONSTANTS: readonly string[] = Object.freeze([
   'objective-progress-per-tick',
   'objective-value-per-instance',
   'objective-value-per-tier',
+  'portal-margin',
   'portal-stability-initial',
   'portal-stability-jitter',
   'stability-decay-per-tick',
@@ -115,6 +118,7 @@ export const REQUIRED_RAID_CONSTANTS: readonly string[] = Object.freeze([
   'theft-range',
   'university-objective-value',
   'victory-threshold-fraction',
+  'withdraw-stability-margin',
 ]);
 
 /** Radii that must fit inside the spatial index's cell, so a query stays nine cells. */
@@ -123,6 +127,7 @@ const RADII_BOUNDED_BY_INTERACTION: readonly string[] = Object.freeze([
   'cast-range',
   'detachment-range',
   'objective-interaction-radius',
+  'portal-margin',
   'theft-range',
 ]);
 

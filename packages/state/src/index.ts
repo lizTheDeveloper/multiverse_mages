@@ -181,7 +181,6 @@ export {
 export type { BeginEngagementOptions, Engagement, RaidState } from './engagement.js';
 export {
   beginEngagement,
-  decayPortal,
   endEngagement,
   inEngagement,
   raidHasEnded,
