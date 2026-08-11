@@ -35,9 +35,31 @@
  *   relative imports of their own.
  */
 
+import { setInterval } from 'node:timers';
 import { workerData } from 'node:worker_threads';
 
 import { serveRuns } from '../../src/worker-main.ts';
 import { makeToyExecutor } from './toy-world.ts';
 
-serveRuns(makeToyExecutor(workerData ?? {}));
+const options = workerData ?? {};
+
+/**
+ * Blocks this thread, standing in for a slow boot.
+ *
+ * `Atomics.wait` rather than a busy loop or a timer: it genuinely blocks the
+ * thread the way loading a large module graph does, which is what the pool's
+ * boot budget has to survive. A `setTimeout` would leave the worker responsive
+ * and prove nothing.
+ */
+if (typeof options.bootDelayMs === 'number' && options.bootDelayMs > 0) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, options.bootDelayMs);
+}
+
+if (options.neverReady === true) {
+  // Alive, listening to nothing, and never announcing itself: the case the boot
+  // budget exists for. Without the interval the thread would run out of work and
+  // exit, which the pool classifies as `worker-exit` — a different failure.
+  setInterval(() => {}, 1000);
+} else {
+  serveRuns(makeToyExecutor(options));
+}
