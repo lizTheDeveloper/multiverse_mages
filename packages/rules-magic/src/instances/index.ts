@@ -72,6 +72,7 @@ export { PALACE_STORE, STANDARD_STORE, scribe, scribeCapacityCost } from './scri
 export {
   destroyGrimoire,
   destroyLibrary,
+  disownGrimoire,
   grimoiresIn,
   shelveGrimoire,
   withdrawGrimoire,
