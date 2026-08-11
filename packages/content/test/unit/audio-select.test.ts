@@ -58,18 +58,25 @@ describe('audioSelect', () => {
     }
   });
 
-  it('varies with every input independently', () => {
-    const base = audioSelect(1, 1, 1, 'selection', 1, 8);
-    const differs = [
-      audioSelect(2, 1, 1, 'selection', 1, 8),
-      audioSelect(1, 2, 1, 'selection', 1, 8),
-      audioSelect(1, 1, 2, 'selection', 1, 8),
-      audioSelect(1, 1, 1, 'death', 1, 8),
-      audioSelect(1, 1, 1, 'selection', 2, 8),
-    ];
-    // Any single-input change should move the result for at least most inputs;
-    // a function ignoring one of its arguments fails this decisively.
-    expect(differs.filter((d) => d !== base).length).toBeGreaterThanOrEqual(3);
+  it('depends on every one of its inputs', () => {
+    // Vary one argument at a time across many values, holding the rest fixed.
+    // A hash that ignores an argument yields exactly one distinct result for
+    // that argument's sweep, which fails here — where a "3 of 5 mutations
+    // differ" threshold does not, because the four live arguments clear it on
+    // their own.
+    const distinct = (values: readonly number[], select: (v: number) => number): number =>
+      new Set(values.map(select)).size;
+
+    const sweep = Array.from({ length: 64 }, (_, i) => i + 1);
+
+    expect(distinct(sweep, (v) => audioSelect(v, 7, 3, 'selection', 1, 8)), 'rootSeed').toBeGreaterThan(1);
+    expect(distinct(sweep, (v) => audioSelect(5, v, 3, 'selection', 1, 8)), 'tick').toBeGreaterThan(1);
+    expect(distinct(sweep, (v) => audioSelect(5, 7, v, 'selection', 1, 8)), 'entityId').toBeGreaterThan(1);
+    expect(distinct(sweep, (v) => audioSelect(5, 7, 3, 'selection', v, 8)), 'repeat').toBeGreaterThan(1);
+
+    // `kind` is a string, so sweep it separately over real cue and bark kinds.
+    const kinds = ['selection', 'death', 'annoyance-unhinged', 'click-tick', 'last-copy'];
+    expect(new Set(kinds.map((k) => audioSelect(5, 7, 3, k, 1, 8))).size, 'kind').toBeGreaterThan(1);
   });
 
   it('spreads roughly evenly across variants', () => {
