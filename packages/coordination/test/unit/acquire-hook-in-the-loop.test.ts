@@ -71,7 +71,7 @@ import { registry, seededWorld, sourceFor, worldDeps } from './world-fixtures.js
 
 const ROOT_SEED = 0x00ac_0001;
 /**
- * Budget for the replay check, which is two more whole runs.
+ * Budget for the replay check, which is another whole run.
  *
  * Stated rather than left to the 5s default because a universe with teaching in
  * it is genuinely slower than one without — that is the fix working — and a
@@ -230,7 +230,11 @@ describe('the acquire hook reaches a running universe', () => {
   });
 
   it('is reproducible: the same seeded universe twice', () => {
+    // The hooked run only. Both arms are the same machinery over the same
+    // fixture, and this file already runs the world loop three times — a fourth
+    // whole universe to re-establish a property `world-step.test.ts` asserts
+    // tick by tick is cost the suite pays on every commit for no extra
+    // information.
     expect(universe(hooked)).toEqual(withHook);
-    expect(universe(standard)).toEqual(withoutHook);
   }, REPLAY_TIMEOUT_MS);
 });
