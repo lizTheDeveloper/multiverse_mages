@@ -26,6 +26,8 @@ import { catalogOf } from '../../src/instances/catalog.js';
 import type { ResearchInputs } from '../../src/instances/research.js';
 import { research, researchRequirement } from '../../src/instances/research.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
+import type { PersonalStore } from '../../src/traditions/store.js';
+import { UNBOUNDED_SLOTS } from '../../src/traditions/store.js';
 import {
   CHILD_NODE,
   CROSS_CELL_CHILD,
@@ -196,6 +198,113 @@ describe('research', () => {
   it('throws on a node this content set does not declare', () => {
     const { knowledge } = fixture();
     expect(() => research(inputs(knowledge, { nodeId: 99 }))).toThrow(/No node with id 99/u);
+  });
+
+  describe("the store hook's slot bound", () => {
+    /** A two-slot palace: small enough to fill, shaped like the shipped one. */
+    const BOUNDED: PersonalStore = {
+      kind: 'palace',
+      personalLocationKind: LOCATION_KIND.palace,
+      slotsPerMage: 2,
+    };
+    /** What `store: standard` resolves to, and what every other tradition gets. */
+    const UNBOUNDED: PersonalStore = {
+      kind: 'standard',
+      personalLocationKind: LOCATION_KIND.mind,
+      slotsPerMage: UNBOUNDED_SLOTS,
+    };
+
+    function fill(knowledge: KnowledgeSubsystem, store: PersonalStore, count: number): void {
+      for (let held = 0; held < count; held += 1) {
+        knowledge.createInstance({
+          nodeId: ROOT_NODE,
+          locationKind: store.personalLocationKind,
+          locationId: SUBJECT,
+          acquiredTick: 0,
+          mastery: FULL,
+        });
+      }
+    }
+
+    it('refuses once the store is full, and names the declared count', () => {
+      const { knowledge } = fixture();
+      fill(knowledge, BOUNDED, BOUNDED.slotsPerMage);
+
+      const outcome = research(
+        inputs(knowledge, { nodeId: CHILD_NODE, progress: 99999, effort: 0, store: BOUNDED }),
+      );
+
+      expect(outcome.refusal).toEqual({
+        reason: 'personal-store-full',
+        nodeId: CHILD_NODE,
+        subject: SUBJECT,
+        storeKind: 'palace',
+        held: 2,
+        slotsPerMage: 2,
+      });
+      expect(outcome.completed).toBe(false);
+      // Refused before the effort was spent, not after: progress is untouched.
+      expect(outcome.progress).toBe(99999);
+    });
+
+    it('admits up to the bound and lands the instance where the hook says', () => {
+      const { knowledge } = fixture();
+      fill(knowledge, BOUNDED, BOUNDED.slotsPerMage - 1);
+
+      const outcome = research(
+        inputs(knowledge, { nodeId: CHILD_NODE, progress: 99999, effort: 0, store: BOUNDED }),
+      );
+
+      expect(outcome.refusal).toBeUndefined();
+      expect(knowledge.read(outcome.instance).locationKind).toBe(LOCATION_KIND.palace);
+      expect(knowledge.instancesAt(LOCATION_KIND.palace, SUBJECT)).toHaveLength(2);
+    });
+
+    it('leaves a tradition that declares no bound exactly as it was', () => {
+      const { knowledge } = fixture();
+      fill(knowledge, UNBOUNDED, 50);
+
+      const outcome = research(
+        inputs(knowledge, { nodeId: CHILD_NODE, progress: 99999, effort: 0, store: UNBOUNDED }),
+      );
+
+      // Fifty deep and still admitted — this is the Vancian and True Naming
+      // case, and the bound existing must not cost them a single instance.
+      expect(outcome.refusal).toBeUndefined();
+      expect(knowledge.instancesHeldBy(SUBJECT)).toHaveLength(51);
+    });
+
+    it('counts only that mage, at only that store', () => {
+      const { knowledge } = fixture();
+      // A full palace's worth of instances — but in a *mind*, which is where a
+      // tradition change into the Art of Memory leaves what a mage already
+      // knew. `slotsPerMage` bounds the palace, so these spend nothing.
+      for (let held = 0; held < 5; held += 1) {
+        knowledge.createInstance({
+          nodeId: ROOT_NODE,
+          locationKind: LOCATION_KIND.mind,
+          locationId: SUBJECT,
+          acquiredTick: 0,
+          mastery: FULL,
+        });
+      }
+      // And another mage's full palace is her own business.
+      for (let held = 0; held < 5; held += 1) {
+        knowledge.createInstance({
+          nodeId: ROOT_NODE,
+          locationKind: LOCATION_KIND.palace,
+          locationId: SUBJECT + 1,
+          acquiredTick: 0,
+          mastery: FULL,
+        });
+      }
+
+      const outcome = research(
+        inputs(knowledge, { nodeId: CHILD_NODE, progress: 99999, effort: 0, store: BOUNDED }),
+      );
+      expect(outcome.refusal).toBeUndefined();
+      expect(outcome.completed).toBe(true);
+    });
   });
 
   it('draws its jitter from stream 3, so the same seed reproduces the step', () => {

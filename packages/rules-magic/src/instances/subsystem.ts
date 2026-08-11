@@ -100,6 +100,35 @@ export function isWrittenLocation(locationKind: number): boolean {
   return locationKind === LOCATION_KIND.grimoire || locationKind === LOCATION_KIND.library;
 }
 
+/**
+ * Where the one instance of a written copy sits, given who holds the book.
+ *
+ * `contracts.md` §1.5 states the pairing as a rule about *holders*, not about
+ * call sites: grimoire kind while a mage holds the book, carries it, or nobody
+ * owns it, and library kind while it is shelved. So this is a function of the
+ * grimoire's own `holderKind`/`holderId`, and every writer of those two fields
+ * derives the instance's location from it rather than choosing one.
+ *
+ * It is one function rather than a convention because the two halves
+ * disagreeing is not a visible failure. A book whose record says *shelved in
+ * library 900* paired with an instance that says *in a mage's hands* throws
+ * nothing and reads nowhere: the library measures its shelves at nothing,
+ * `grimoiresIn` cannot see it, `destroyLibrary` leaves it standing, and a
+ * universe razes a university's collection without losing a single node —
+ * which makes `libraryDependence` and `knowledgeHalfLife` understate loss in
+ * the reassuring direction, the one direction a warning metric must never take.
+ */
+export function writtenInstanceLocation(
+  grimoire: Handle,
+  holderKind: number,
+  holderId: Handle,
+): { readonly locationKind: number; readonly locationId: Handle } {
+  if (holderKind === HOLDER_KIND.library) {
+    return { locationKind: LOCATION_KIND.library, locationId: holderId };
+  }
+  return { locationKind: LOCATION_KIND.grimoire, locationId: grimoire };
+}
+
 export class KnowledgeSubsystem {
   readonly #state: SimState;
   readonly #existence: NodeExistenceIndex;
@@ -236,8 +265,9 @@ export class KnowledgeSubsystem {
    * scribing and raid theft all make a node known, and a site that forgot would
    * make that node rediscoverable at ordinary cost forever after.
    *
-   * @throws RangeError if a written copy arrives without its grimoire, or a
-   * held instance arrives with one. The pairing is the invariant the
+   * @throws RangeError if a written copy arrives without its grimoire, if a
+   * held instance arrives with one, or if a written copy's location disagrees
+   * with the holder its own grimoire records. The pairing is the invariant the
    * grimoire-to-instance index exists to maintain, and an unpaired written copy
    * is an instance that can never be burned.
    */
@@ -256,6 +286,8 @@ export class KnowledgeSubsystem {
           'written, so it has no grimoire. Passing one would put a book in someone’s memory.',
       );
     }
+    const disagreement = this.#holderDisagreement(spec);
+    if (disagreement !== '') throw new RangeError(disagreement);
 
     const handle = this.#state.entities.create();
     attachRecord(this.#state, KNOWLEDGE_INSTANCE, handle, {
@@ -280,6 +312,16 @@ export class KnowledgeSubsystem {
    * grimoire — routes through here, which is what makes the 0.3.0 loss claim
    * testable in one place rather than in five.
    *
+   * **The book goes with its contents.** A written instance is not stored *in*
+   * a grimoire, it *is* the grimoire's contents — §1.5 keeps exactly one per
+   * written copy — so destroying it and leaving the `GRIMOIRE` row behind
+   * leaves an object nothing can ever open, burn, or shelve, and one that will
+   * claim the next same-node instance on that shelf when the world is next
+   * loaded. That is why the entity is destroyed here rather than by each
+   * caller: unlinking the index and destroying the row are the same act, and a
+   * caller that did only the first would be indistinguishable from one that
+   * remembered.
+   *
    * @returns the loss event when this was the node's last instance, and
    * `undefined` otherwise. Losing one of several copies is not a loss, and
    * emitting an event for it would drown the signal `knowledgeHalfLife` reads.
@@ -291,6 +333,7 @@ export class KnowledgeSubsystem {
     for (const [grimoire, held] of this.#instanceOfGrimoire) {
       if (held === instance) {
         this.#instanceOfGrimoire.delete(grimoire);
+        this.#state.entities.destroy(grimoire as EntityHandle);
         break;
       }
     }
@@ -373,6 +416,9 @@ export class KnowledgeSubsystem {
    * observable difference is confined to `acquiredTick`. This is recorded as a
    * gap in `contracts.md` §1.5 rather than closed by adding the state field §1.5
    * rules out.
+   *
+   * **A book left without contents does not survive the load.** The pass after
+   * the relinking discards it, for the reasons given on that method.
    */
   rebuild(): void {
     const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
@@ -392,6 +438,7 @@ export class KnowledgeSubsystem {
       }
     });
     this.#relinkShelvedGrimoires();
+    this.#discardContentlessGrimoires();
 
     this.#everKnown = new Set();
     const everKnown = componentOf(this.#state, EVER_KNOWN);
@@ -433,6 +480,80 @@ export class KnowledgeSubsystem {
         return;
       }
     });
+  }
+
+  /**
+   * Destroys every grimoire the rebuild could not pair with an instance.
+   *
+   * A grimoire without contents is not a state this package can reach: scribing
+   * makes the pair, shelving and withdrawal move it, and {@link
+   * destroyInstance} takes both away together. It arrives only from a snapshot
+   * written by a build that did not, and `location.ts` already calls it "a book
+   * whose contents nothing can destroy" when it refuses to shelve one. Loading
+   * is where this class repairs what it is handed, so this is where the row
+   * goes.
+   *
+   * Discarding it is not cosmetic tidying. Left in place, a contentless
+   * library-held grimoire is matched by the pass above against *any* unclaimed
+   * instance of its node in its library, and being the older row it matches
+   * first — so it takes a later book's instance and leaves the real book paired
+   * with nothing, at which point burning that book throws instead of burning
+   * it. The pairing ambiguity that pass documents is confined to `acquiredTick`;
+   * this one decides whether a book can be destroyed at all.
+   *
+   * **What the repair cannot recover** is which grimoire handle survives. When
+   * two books of one node sit in one library and only one has contents, state
+   * holds nothing that says which — the rows differ only in `durability`, which
+   * is a roll, not a link. So the pass above pairs the first row and this one
+   * discards the second, and a caller holding the discarded handle across the
+   * load sees its book gone rather than its book empty. Every count, every
+   * loss event and every burn is right afterward; one opaque handle is not the
+   * one it was. Closing that would take the state field §1.5 rules out.
+   */
+  #discardContentlessGrimoires(): void {
+    const grimoires = componentOf(this.#state, GRIMOIRE);
+    const contentless: EntityHandle[] = [];
+    grimoires.forEach((_row, grimoire) => {
+      if (!this.#instanceOfGrimoire.has(grimoire)) contentless.push(grimoire);
+    });
+    // Collected first: destroying a row while iterating its component moves
+    // another row into the slot just visited.
+    for (const grimoire of contentless) this.#state.entities.destroy(grimoire);
+  }
+
+  /**
+   * Names the disagreement between a written instance's location and the holder
+   * its own grimoire records, or `''` when the two agree.
+   *
+   * Checked only for a grimoire that carries a §1.5 record. A bare handle is an
+   * opaque token this subsystem has been asked to associate — `rules-raid` will
+   * pass one for a looted book before the record follows — and there is nothing
+   * for it to disagree with.
+   */
+  #holderDisagreement(spec: InstanceSpec): string {
+    if (spec.grimoire === undefined) return '';
+    const grimoires = componentOf(this.#state, GRIMOIRE);
+    const handle = spec.grimoire as EntityHandle;
+    if (!grimoires.has(handle)) return '';
+
+    const expected = writtenInstanceLocation(
+      spec.grimoire,
+      grimoires.get(handle, 'holderKind'),
+      grimoires.get(handle, 'holderId'),
+    );
+    if (
+      spec.locationKind === expected.locationKind &&
+      spec.locationId === expected.locationId
+    ) {
+      return '';
+    }
+    return (
+      `Grimoire ${String(spec.grimoire)} records holder kind ` +
+      `${String(grimoires.get(handle, 'holderKind'))}, so contracts.md §1.5 puts its instance at ` +
+      `location (${String(expected.locationKind)}, ${String(expected.locationId)}), not ` +
+      `(${String(spec.locationKind)}, ${String(spec.locationId)}). A written copy whose location ` +
+      'disagrees with its book is on a shelf the library cannot see.'
+    );
   }
 
   #collect(matches: (view: KnowledgeInstanceRecord) => boolean): Handle[] {
