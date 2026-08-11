@@ -57,13 +57,17 @@ table uses the real change and capability IDs so it stays in sync with `openspec
 - `openspec show <change>` / `openspec validate <change> --strict`
 - `/opsx:apply` — implement a change's tasks
 
-Current state: released through **0.2.0**. `sim-core-foundation` gave `packages/sim-core` its
+Current state: released through **0.3.0**. `sim-core-foundation` gave `packages/sim-core` its
 deterministic substrate — fixed-point arithmetic, the splittable PRNG, the entity store, the
 dual-scale clock, the pure `step` contract, versioned snapshots, replay, golden fixtures and the
 benchmark. `core-contracts` added `content` (schemas, loader, v1 data), `state` (the §1 world state
 types and the one `permits()`), `primitives` (§3 stacking arithmetic), and `agent-api` (the §4
-observation, action space and legality mask), plus skeletons for the `rules-*` packages. Next up is
-`knowledge-model` (0.3.0).
+observation, action space and legality mask), plus skeletons for the `rules-*` packages.
+`knowledge-model` added `rules-magic` — the seventy-cell grid and its twelve enabled cells, the
+effect pipeline, knowledge instances with decay, loss and 3× rediscovery, and the three v1
+traditions confined to their four hooks — plus `rules-world`'s species and mage layers. The whole
+grid is pre-authored: 300 nodes across all seventy cells, of which twelve cells are enabled.
+Next up is `mages-and-species` (0.4.0).
 
 Two packages are **deviations from `contracts.md` §5 as originally drawn**, both recorded there with
 their reasoning: `state` and `primitives`. §5 was written before anyone tried to satisfy it.
