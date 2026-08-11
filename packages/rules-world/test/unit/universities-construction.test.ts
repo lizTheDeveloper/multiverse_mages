@@ -191,6 +191,11 @@ describe('completion unlocks capacity', () => {
       progressAdded: 0,
       materialsSpent: 0,
       labourStalled: 0,
+      // The five hundred months were not short of materials -- they were short
+      // of anything to build. That is `labourSurplus`, and it is reported here
+      // rather than dropped, because a caller still staffing a finished
+      // university is the waste the field exists to show.
+      labourSurplus: 500,
       completed: false,
     });
   });
