@@ -57,6 +57,18 @@ const { cues, banks } = loadAudioContent(directorySource(shippedAudioDirectory()
 let requests = planRequests(cues, banks, { takes });
 if (only) requests = requests.filter((r) => r.id.startsWith(only));
 
+// Validated before any spend, and before the dry-run exit: a half-configured
+// environment is exactly what a first run looks like, and finding that out at
+// dry-run time is the entire value of a dry run. Checked after the `--only`
+// filter so `--only=click-` — which plans no voice lines — never requires a
+// voice id it does not need.
+if (!voiceId && requests.some((request) => request.endpoint === 'text-to-speech')) {
+  fail(
+    'ELEVENLABS_VOICE_ID is not set, and this plan plans voice lines. ' +
+      'Set it, or narrow the run with --only= to generate cues only.',
+  );
+}
+
 console.log(`${requests.length} requests planned (${takes} takes each).`);
 if (dryRun) {
   for (const request of requests.slice(0, 20)) console.log(`  ${request.endpoint}  ${request.outputPath}`);
@@ -76,10 +88,6 @@ for (const request of requests) {
     request.endpoint === 'sound-effect'
       ? `${BASE}/sound-generation`
       : `${BASE}/text-to-speech/${voiceId}`;
-
-  if (request.endpoint === 'text-to-speech' && !voiceId) {
-    fail('ELEVENLABS_VOICE_ID is not set, and voice lines were planned. Set it, or use --only= to generate cues.');
-  }
 
   let response;
   try {
