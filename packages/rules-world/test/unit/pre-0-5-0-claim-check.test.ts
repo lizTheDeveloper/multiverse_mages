@@ -49,7 +49,9 @@ import ts from 'typescript';
 
 import { repoRoot, wordsIn } from './species-fixtures.js';
 
-const SPECIES_IDS = loadContent(shippedContentSource()).species.map((entry) => entry.record.id);
+const CONTENT = loadContent(shippedContentSource());
+const SPECIES_IDS = CONTENT.species.map((entry) => entry.record.id);
+const TRADITION_IDS = CONTENT.traditions.map((entry) => entry.record.id);
 
 /**
  * Words that name a property only the balance harness can measure.
@@ -74,8 +76,55 @@ const BALANCE_TERMS = [
   'underpowered',
 ];
 
-/** Words that mean "this is about a species". */
-const SPECIES_TERMS = [...SPECIES_IDS, 'species'];
+/**
+ * Words too generic to identify a subject, stripped out of the content ids
+ * below.
+ *
+ * `true-naming` contributes `true`; `art-of-memory` contributes `art` and `of`.
+ * A subject term matching `true` would fire on half the assertions in the
+ * workspace and the check would be relaxed until it meant nothing — which is
+ * the failure mode this whole file exists to prevent, arriving from the other
+ * direction.
+ */
+const TOO_GENERIC = new Set(['true', 'of', 'art', 'the', 'a', 'an']);
+
+/** The distinctive words of each shipped tradition's id. */
+const TRADITION_WORDS = [...new Set(TRADITION_IDS.flatMap(wordsIn))].filter(
+  (word) => !TOO_GENERIC.has(word),
+);
+
+/**
+ * Words that mean "this assertion is about something this release ships".
+ *
+ * **Widened from species alone.** The rule `release-plan.md` states is about
+ * *balance claims before 0.5.0*, not about species specifically; the species
+ * list was simply what `species-traits` happened to name when the check was
+ * written. That made it incidental to `knowledge-model`, whose subject matter
+ * is traditions, nodes, primitives and the grid — so a test asserting that the
+ * three traditions are balanced against each other, or that a primitive's
+ * magnitude sits in a target band, passed this scan untouched while being
+ * exactly the pre-committed conclusion the balance harness must be free to
+ * contradict at 0.5.0.
+ *
+ * Species ids stay whole-word matched for the reason recorded below — "orc" is
+ * a substring of "orchestrate" — and every term added here is matched the same
+ * way, which is why `node` and `cell` are safe to include: `nodeId` splits into
+ * `node` and `id`, while `encoded` does not split at all.
+ */
+const SUBJECT_TERMS = [
+  ...SPECIES_IDS,
+  'species',
+  ...TRADITION_WORDS,
+  'tradition',
+  'traditions',
+  'node',
+  'nodes',
+  'primitive',
+  'primitives',
+  'grid',
+  'cell',
+  'cells',
+];
 
 interface Claim {
   readonly path: string;
@@ -84,7 +133,7 @@ interface Claim {
 }
 
 /**
- * Assertions that pair a balance term with a species term.
+ * Assertions that pair a balance term with a subject term.
  *
  * Exported so the controls can feed it synthetic source. The scan reads parsed
  * syntax and only inside an `expect(...)` call, so a comment explaining balance
@@ -137,13 +186,13 @@ export function balanceClaims(path: string, source: string): Claim[] {
         compact.some((name) => name.includes(term)),
       );
       const wordSet = new Set(names.flatMap(wordsIn));
-      const species = SPECIES_TERMS.filter((term) => wordSet.has(term));
-      if (balance.length > 0 && species.length > 0) {
+      const subject = SUBJECT_TERMS.filter((term) => wordSet.has(term));
+      if (balance.length > 0 && subject.length > 0) {
         const { line } = parsed.getLineAndCharacterOfPosition(node.getStart(parsed));
         found.push({
           path,
           line: line + 1,
-          text: `asserts ${balance.join('/')} over ${species.join('/')}`,
+          text: `asserts ${balance.join('/')} over ${subject.join('/')}`,
         });
       }
     }
@@ -209,12 +258,26 @@ const testFiles = readdirSync(join(repoRoot, 'packages'))
     source: readFileSync(full, 'utf8'),
   }));
 
-describe('no test asserts a balance property over species magnitudes', () => {
+describe('no test asserts a balance property over an untuned magnitude', () => {
   it('found tests to scan, so the assertion below is not vacuous', () => {
     expect(testFiles.length).toBeGreaterThan(20);
     expect(testFiles.map((file) => file.path)).toContain(
       'packages/rules-world/test/unit/species-traits.test.ts',
     );
+    // And the release whose subject matter the widening was for.
+    expect(testFiles.map((file) => file.path)).toContain(
+      'packages/rules-magic/test/unit/tradition-differentiation.test.ts',
+    );
+  });
+
+  it('knows the vocabulary of both releases it now covers', () => {
+    // A derived term list can go empty without anything failing: rename the
+    // content field and `TRADITION_WORDS` becomes `[]`, and the check quietly
+    // stops covering traditions while every assertion stays green.
+    expect(SUBJECT_TERMS).toContain('species');
+    expect(SUBJECT_TERMS).toContain('tradition');
+    expect(SUBJECT_TERMS).toContain('vancian');
+    expect(SUBJECT_TERMS.length).toBeGreaterThan(SPECIES_IDS.length + 5);
   });
 
   it('finds no pre-0.5.0 balance claim anywhere in the workspace suite', () => {
@@ -222,8 +285,9 @@ describe('no test asserts a balance property over species magnitudes', () => {
     expect(
       claims.map((claim) => `${claim.path}:${String(claim.line)} ${claim.text}`),
       'No balance measurement exists before agent-interface at 0.5.0, so no test may assert that a ' +
-        'species magnitude is balanced, fair, or on target. Every species number is an untuned ' +
-        'placeholder (release-plan.md). Assert differentiation, ordering, or arithmetic instead.',
+        'species trait, tradition, node, primitive or grid magnitude is balanced, fair, or on ' +
+        'target. Every one of those numbers is an untuned placeholder (release-plan.md). Assert ' +
+        'differentiation, ordering, or arithmetic instead.',
     ).toEqual([]);
   });
 });
@@ -253,6 +317,55 @@ describe('the pre-0.5.0 claim check would catch a violation', () => {
       "expect(speciesTable.balanced).toBe(true);\n",
     );
     expect(claims).toHaveLength(1);
+  });
+
+  it('catches a balance claim about a tradition, which is this release’s subject', () => {
+    // The hole the widening closes. Before it, every assertion below passed
+    // this scan without a word, because the vocabulary knew only about species.
+    const claims = balanceClaims(
+      'packages/rules-magic/test/unit/__probe__.test.ts',
+      'expect(traditionWinRate).toBeGreaterThan(400);\n',
+    );
+    expect(claims).toHaveLength(1);
+    expect(claims[0]?.text).toContain('tradition');
+  });
+
+  it('catches a balance claim naming a shipped tradition by id', () => {
+    const claims = balanceClaims(
+      'packages/rules-magic/test/unit/__probe__.test.ts',
+      "expect(winRateOf('vancian-memorization')).toBeGreaterThan(400);\n",
+    );
+    expect(claims).toHaveLength(1);
+    expect(claims[0]?.text).toContain('vancian');
+  });
+
+  it('catches balance claims over nodes, primitives and the grid', () => {
+    for (const [source, subject] of [
+      ['expect(nodeSnowball).toBeLessThan(200);\n', 'node'],
+      ['expect(primitiveStacking.balanced).toBe(true);\n', 'primitive'],
+      ['expect(gridFairnessIndex).toBeLessThan(350);\n', 'grid'],
+      ["expect(cellWinRate('perdo-mentem')).toBe(512);\n", 'cell'],
+    ] as const) {
+      const claims = balanceClaims('packages/rules-magic/test/unit/__probe__.test.ts', source);
+      expect(claims, subject).toHaveLength(1);
+      expect(claims[0]?.text).toContain(subject);
+    }
+  });
+
+  it('permits a tradition differentiation assertion, which is the 0.3.0 claim', () => {
+    // The positive control for the widening, and the one that matters most:
+    // 0.3.0's release claim *is* that each tradition changes measurable
+    // behaviour. A check that also rejected its own release's evidence would be
+    // reverted rather than fixed.
+    const claims = balanceClaims(
+      'packages/rules-magic/test/unit/__probe__.test.ts',
+      [
+        'expect(outcomes.get(left)).not.toEqual(outcomes.get(right));',
+        'expect(traditionOutcome.researchCost).toBeGreaterThan(other.researchCost);',
+        'expect(new Set(nodeTiers).size).toBeGreaterThan(1);',
+      ].join('\n'),
+    );
+    expect(claims).toEqual([]);
   });
 
   it('permits the differentiation assertion 0.4.0 is allowed to make', () => {

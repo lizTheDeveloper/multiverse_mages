@@ -139,6 +139,7 @@ export type { RowOf } from './records.js';
 export { attachRecord, collectRecords, readRecord } from './records.js';
 
 export {
+  assertTraditionSelected,
   canIssueEdict,
   captureRuleset,
   readRulesetForObservation,

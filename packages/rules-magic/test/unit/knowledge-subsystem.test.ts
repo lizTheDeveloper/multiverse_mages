@@ -13,7 +13,14 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { EVER_KNOWN, KNOWLEDGE_INSTANCE, LOCATION_KIND, collectRecords } from '@mm/state';
+import {
+  ENGAGEMENT_COMPONENTS,
+  EVER_KNOWN,
+  KNOWLEDGE_INSTANCE,
+  LOCATION_KIND,
+  WORLD_COMPONENTS,
+  collectRecords,
+} from '@mm/state';
 
 import { describeRefusal } from '../../src/instances/outcomes.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
@@ -63,6 +70,10 @@ describe('the instance index', () => {
     // The only §1 components a created instance writes are the instance itself
     // and the persisted ever-known record. Existence is answerable only through
     // the index, per contracts.md §1.5.
+    //
+    // This is the *runtime* half, and on its own it saw almost nothing: one
+    // row of one component, matched against one literal string. The schema
+    // scan below is the half that covers the rest.
     const instances = collectRecords(knowledge.state, KNOWLEDGE_INSTANCE);
     expect(instances).toHaveLength(1);
     expect(Object.keys(instances[0]?.row ?? {})).not.toContain('exists');
@@ -108,6 +119,147 @@ describe('the instance index', () => {
     );
     expect(knowledge.instancesHeldBy(41)).toEqual([held[0], held[1]]);
     expect(knowledge.instancesHeldBy(42)).toEqual([held[2]]);
+  });
+});
+
+/**
+ * `contracts.md` §1.5: current existence is derived, and **nothing may cache it
+ * in state**.
+ *
+ * ## Why a schema scan and not a row inspection
+ *
+ * The check that used to stand alone read one `KNOWLEDGE_INSTANCE` row's keys
+ * and asserted the literal string `'exists'` was not among them. That catches
+ * exactly one spelling of the mistake, on exactly one component. A per-node
+ * boolean named `known`, `present` or `alive`, or one added to `UNIVERSE`
+ * instead, walked past it in silence — and the whole reason §1.5 forbids the
+ * cache is that a cached flag is *serialized*, so any disagreement with the
+ * instances it was derived from is persisted, restored, and carried forward
+ * forever. The place to catch that is the schema, before a row exists.
+ *
+ * ## Two rules, because the mistake has two shapes
+ *
+ * **A flag on a node-bearing component.** `KNOWLEDGE_INSTANCE`, `GRIMOIRE`,
+ * `EVER_KNOWN` and `PREPARED_SPELL` all carry a `nodeId`, and a boolean beside
+ * it saying whether the node is *currently* here is the cache §1.5 names. This
+ * rule is scoped to node-bearing components on purpose: `MAGE.alive` is a
+ * legitimate field about a mage, and a check that failed on it would be deleted
+ * within a week.
+ *
+ * **A node-existence field anywhere.** `UNIVERSE.nodesKnown`, a `knownNodes`
+ * bitmask on a university, a `nodeExists` byte on anything: a name pairing a
+ * node word with an existence word is the same cache wearing a different hat,
+ * and it does not need a `nodeId` beside it to be one.
+ *
+ * Neither rule can see a cache smuggled in under an innocuous name — a
+ * conformance check catches drift, not an adversary. What it does catch is the
+ * shape the mistake is actually written in.
+ */
+
+/** Words that assert a thing is here *now*. Forbidden beside a `nodeId`. */
+const EXISTENCE_WORDS = [
+  'exists',
+  'existing',
+  'extant',
+  'known',
+  'isknown',
+  'present',
+  'alive',
+  'live',
+  'current',
+  'discovered',
+  'remembered',
+  'surviving',
+];
+
+/** Words that mean the subject is a knowledge node. */
+const NODE_WORDS = ['node'];
+
+interface ScannedComponent {
+  readonly name: string;
+  readonly fields: Readonly<Record<string, string>>;
+}
+
+/**
+ * Component fields that cache current node existence.
+ *
+ * Exported shape kept simple — `component.field` strings — so a failure names
+ * the thing to delete rather than describing it.
+ */
+export function cachedExistenceFields(components: readonly ScannedComponent[]): string[] {
+  const found: string[] = [];
+  for (const spec of components) {
+    const fields = Object.keys(spec.fields);
+    const carriesNode = fields.some((field) => NODE_WORDS.includes(field.toLowerCase()) || field === 'nodeId');
+    for (const field of fields) {
+      const lowered = field.toLowerCase();
+      const existence = EXISTENCE_WORDS.includes(lowered);
+      const compound =
+        NODE_WORDS.some((word) => lowered.includes(word)) &&
+        EXISTENCE_WORDS.some((word) => lowered.includes(word));
+      if ((carriesNode && existence) || compound) found.push(`${spec.name}.${field}`);
+    }
+  }
+  return found.sort();
+}
+
+describe('no component caches current node existence', () => {
+  const ALL_COMPONENTS = [...WORLD_COMPONENTS, ...ENGAGEMENT_COMPONENTS];
+
+  it('scans every world and engagement component, not one row of one of them', () => {
+    // "No offenders" and "the scanner read nothing" are the same green run
+    // otherwise, and the components it most needs in view are the ones that
+    // carry a node.
+    expect(ALL_COMPONENTS.length).toBeGreaterThan(10);
+    const carryingNode = ALL_COMPONENTS.filter((spec) =>
+      Object.keys(spec.fields).includes('nodeId'),
+    ).map((spec) => spec.name);
+    expect(carryingNode).toEqual(
+      expect.arrayContaining(['grimoire', 'knowledge-instance', 'ever-known', 'prepared-spell']),
+    );
+  });
+
+  it('finds no cached existence flag in the schema', () => {
+    expect(
+      cachedExistenceFields(ALL_COMPONENTS),
+      'contracts.md §1.5: current node existence is derived from the surviving instances and ' +
+        'nothing may cache it in state. A cached flag is serialized, so a disagreement with the ' +
+        'instances is persisted and restored rather than recomputed. Ask the subsystem index.',
+    ).toEqual([]);
+  });
+
+  it('would catch a flag beside a nodeId, whatever it is called', () => {
+    for (const field of ['exists', 'known', 'present', 'alive', 'extant', 'discovered']) {
+      expect(
+        cachedExistenceFields([{ name: 'probe', fields: { nodeId: 'u16', [field]: 'u8' } }]),
+        field,
+      ).toEqual([`probe.${field}`]);
+    }
+  });
+
+  it('would catch a node-existence field on a component carrying no nodeId', () => {
+    // The `UNIVERSE.nodesKnown` shape — the cache one level up, which the
+    // per-row inspection could never have seen.
+    expect(cachedExistenceFields([{ name: 'universe', fields: { nodesKnown: 'i32' } }])).toEqual([
+      'universe.nodesKnown',
+    ]);
+    expect(cachedExistenceFields([{ name: 'university', fields: { knownNodes: 'i32' } }])).toEqual([
+      'university.knownNodes',
+    ]);
+  });
+
+  it('permits the fields that are legitimately about something else', () => {
+    // `MAGE.alive` is the control that matters: a mage's liveness is a fact
+    // about a mage, and a check that rejected it would be relaxed until it
+    // meant nothing. `EVER_KNOWN` is the other one — §1.5 requires that
+    // component to exist, and it is *not* current existence.
+    expect(cachedExistenceFields([{ name: 'mage', fields: { speciesId: 'u16', alive: 'u8' } }])).toEqual(
+      [],
+    );
+    expect(cachedExistenceFields([{ name: 'ever-known', fields: { nodeId: 'u16' } }])).toEqual([]);
+    expect(
+      cachedExistenceFields([{ name: 'probe', fields: { nodeId: 'u16', acquiredTick: 'i32' } }]),
+    ).toEqual([]);
   });
 });
 
