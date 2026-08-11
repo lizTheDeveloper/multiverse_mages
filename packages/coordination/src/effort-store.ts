@@ -39,14 +39,27 @@
  * therefore stale the moment something else touches the component, which is why
  * the world loop builds one per tick rather than keeping one around.
  *
- * The index is a `Map` and is used **only** for lookup. Nothing iterates it:
- * `contracts.md`-driven determinism forbids a rule whose outcome depends on the
- * insertion history of a hash structure, and the one place this class needs an
- * order — eviction — sorts a slot-ordered list by declared fields instead.
+ * The indices are `Map`s and are used **only** for lookup. Nothing depends on
+ * the order they enumerate in: `contracts.md`-driven determinism forbids a rule
+ * whose outcome depends on the insertion history of a hash structure, so the
+ * two methods that hand rows to a caller sort what they gathered back into
+ * ascending slot order before returning it, and eviction breaks its ties on
+ * declared fields rather than on position.
+ *
+ * ## Whose rows, without reading everybody's
+ *
+ * "Which projects belong to this mage" used to be `collectRecords` over the
+ * whole component, a record object per row, and a `filter`. `#evictIfFull` asks
+ * it every time a mage starts a project, so a tick in which two hundred mages
+ * each began one cost two hundred passes over every project in the universe —
+ * 14% of a profiled two-hundred-year run. So the subject and the counterparty
+ * each get a handle set, maintained by the same two writers that maintain the
+ * key index.
  */
 
 import type { ContentId, Fp } from '@mm/content';
 import type { EntityHandle, SimState } from '@mm/sim-core';
+import { handleIndex } from '@mm/sim-core';
 import type { EffortKindValue, EffortProgressRecord, Handle } from '@mm/state';
 import { EFFORT_PROGRESS, attachRecord, collectRecords, componentOf } from '@mm/state';
 
@@ -95,11 +108,24 @@ export class EffortLedger {
   readonly #state: SimState;
   /** `keyOf(...)` to entity handle. Lookup only; never iterated. */
   readonly #index = new Map<string, EntityHandle>();
+  /** Mage to the projects counted against her. Lookup only; see the module note. */
+  readonly #bySubject = new Map<Handle, Set<EntityHandle>>();
+  /**
+   * Counterparty to the rows naming it — a mage, for the lessons she is the
+   * *student* half of, and `0` for everything that has no second person in it.
+   *
+   * The `0` bucket is kept rather than skipped so that this pair of maps answers
+   * `counterparty === mage` for *every* argument, exactly as the `filter` it
+   * replaced did. Skipping it would be free and would quietly change the answer
+   * to a question about the null handle.
+   */
+  readonly #byCounterparty = new Map<Handle, Set<EntityHandle>>();
 
   constructor(state: SimState) {
     this.#state = state;
     for (const { handle, row } of collectRecords(state, EFFORT_PROGRESS)) {
       this.#index.set(keyOf(row), handle);
+      this.#link(row, handle);
     }
   }
 
@@ -139,6 +165,7 @@ export class EffortLedger {
     };
     attachRecord(this.#state, EFFORT_PROGRESS, handle, record);
     this.#index.set(keyOf(key), handle);
+    this.#link(key, handle);
     return amount;
   }
 
@@ -178,14 +205,25 @@ export class EffortLedger {
     }
   }
 
-  /** Every project this mage is on either side of, in ascending slot order. */
+  /**
+   * Every project this mage is on either side of, in ascending slot order.
+   *
+   * The order is load-bearing here in a way it is not for {@link effortsOf}:
+   * `clearSubject` destroys these entities in the order they arrive, entity
+   * slots are recycled, and a mage promoted later takes a handle that is also
+   * her stream-1 actor key. Two peers that destroyed one dead scholar's rows in
+   * different orders would hand different handles to different mages and roll
+   * different personalities from the same seed.
+   */
   effortsInvolving(mage: Handle): readonly EffortRow[] {
-    return this.#rows().filter((row) => row.subject === mage || row.counterparty === mage);
+    const handles = new Set<EntityHandle>(this.#bySubject.get(mage) ?? []);
+    for (const handle of this.#byCounterparty.get(mage) ?? []) handles.add(handle);
+    return this.#rowsOf(handles);
   }
 
   /** Every project counted against this mage, in ascending slot order. */
   effortsOf(mage: Handle): readonly EffortRow[] {
-    return this.#rows().filter((row) => row.subject === mage);
+    return this.#rowsOf(this.#bySubject.get(mage) ?? EMPTY_HANDLES);
   }
 
   /** How many rows the component holds. For reporting and for tests. */
@@ -214,22 +252,78 @@ export class EffortLedger {
     this.#remove(keyOf(worst), worst.handle);
   }
 
-  #rows(): EffortRow[] {
-    return collectRecords(this.#state, EFFORT_PROGRESS).map(({ handle, row }) => ({
-      handle,
-      subject: row.subject,
-      kind: row.kind as EffortKindValue,
-      nodeId: row.nodeId,
-      counterparty: row.counterparty,
-      progress: row.progress,
-    }));
+  /**
+   * Reads a set of effort entities into rows, ascending by slot.
+   *
+   * Sorted rather than gathered in order, because a `Set` enumerates in
+   * insertion order and insertion order here is the history of who started what
+   * when. `collectRecords` sorts by slot for exactly this reason and says so;
+   * this is the same guarantee over a handful of rows instead of all of them.
+   */
+  #rowsOf(handles: ReadonlySet<EntityHandle>): EffortRow[] {
+    const store = componentOf(this.#state, EFFORT_PROGRESS);
+    const rows: EffortRow[] = [];
+    for (const handle of handles) {
+      rows.push({
+        handle,
+        subject: store.get(handle, 'subject'),
+        kind: store.get(handle, 'kind') as EffortKindValue,
+        nodeId: store.get(handle, 'nodeId'),
+        counterparty: store.get(handle, 'counterparty'),
+        progress: store.get(handle, 'progress'),
+      });
+    }
+    rows.sort((a, b) => handleIndex(a.handle) - handleIndex(b.handle));
+    return rows;
+  }
+
+  #link(address: EffortAddress, handle: EntityHandle): void {
+    addTo(this.#bySubject, address.subject, handle);
+    addTo(this.#byCounterparty, address.counterparty, handle);
   }
 
   #remove(key: string, handle: EntityHandle): void {
-    componentOf(this.#state, EFFORT_PROGRESS).remove(handle);
+    const store = componentOf(this.#state, EFFORT_PROGRESS);
+    // Read before the row goes: unlinking needs the two mages the row names, and
+    // afterwards there is nothing left to ask.
+    const subject = store.get(handle, 'subject');
+    const counterparty = store.get(handle, 'counterparty');
+    store.remove(handle);
     this.#state.entities.destroy(handle);
     this.#index.delete(key);
+    removeFrom(this.#bySubject, subject, handle);
+    removeFrom(this.#byCounterparty, counterparty, handle);
   }
+}
+
+/** A mage who is in the middle of nothing. Shared, and never written to. */
+const EMPTY_HANDLES: ReadonlySet<EntityHandle> = new Set<EntityHandle>();
+
+function addTo(index: Map<Handle, Set<EntityHandle>>, mage: Handle, handle: EntityHandle): void {
+  let held = index.get(mage);
+  if (held === undefined) {
+    held = new Set<EntityHandle>();
+    index.set(mage, held);
+  }
+  held.add(handle);
+}
+
+/**
+ * Drops a handle, and the mage with her last one.
+ *
+ * The empty set goes too. A two-hundred-year run kills every mage in it several
+ * times over, and a residue keyed on the dead grows with the length of the run —
+ * which is the axis a balance sweep pushes hardest.
+ */
+function removeFrom(
+  index: Map<Handle, Set<EntityHandle>>,
+  mage: Handle,
+  handle: EntityHandle,
+): void {
+  const held = index.get(mage);
+  if (held === undefined) return;
+  held.delete(handle);
+  if (held.size === 0) index.delete(mage);
 }
 
 /** The four addressing fields, however they arrive. */
