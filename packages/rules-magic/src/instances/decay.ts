@@ -54,7 +54,7 @@
  * signature change, which is what makes it a decision rather than an accident.
  */
 
-import type { Fp } from '@mm/content';
+import type { ContentId, Fp } from '@mm/content';
 import type { Handle, Ruleset, Tick } from '@mm/state';
 import { permits } from '@mm/state';
 import { div, mul } from '@mm/sim-core';
@@ -187,11 +187,21 @@ export interface DecayInputs {
  */
 export function decayHeldKnowledge(inputs: DecayInputs): KnowledgeLossEvent[] {
   const lost: KnowledgeLossEvent[] = [];
+  // Dormancy is a fact about the ruleset and the node, not about the instance,
+  // and the sweep asks it once per instance — thousands of times a tick for the
+  // handful of distinct nodes a universe knows. The ruleset cannot change
+  // inside one sweep, so the answers are reused within it and discarded with
+  // it. Nothing here caches across a tick.
+  const dormantByNode = new Map<ContentId, boolean>();
   for (const instance of inputs.knowledge.instances()) {
     const view = inputs.knowledge.read(instance);
     if (!isHeldLocation(view.locationKind)) continue;
 
-    const dormant = !permits(inputs.ruleset, inputs.cells.cellOf(view.nodeId));
+    let dormant = dormantByNode.get(view.nodeId);
+    if (dormant === undefined) {
+      dormant = !permits(inputs.ruleset, inputs.cells.cellOf(view.nodeId));
+      dormantByNode.set(view.nodeId, dormant);
+    }
     const retention = inputs.retentionOf(view.locationId);
     const mastery = decayedMastery(view.mastery, inputs.elapsedTicks, retention, dormant);
 

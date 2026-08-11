@@ -247,16 +247,23 @@ export class KnowledgeSubsystem {
     return 0;
   }
 
-  /** A knowledge instance's fields. Throws on a handle carrying no instance. */
+  /**
+   * A knowledge instance's fields. Throws on a handle carrying no instance.
+   *
+   * The row is resolved once and the five columns indexed directly, rather than
+   * five `get` calls each re-resolving the same handle through the sparse map.
+   * The decay sweep calls this once per instance per world tick, so the four
+   * saved lookups are four per instance per tick for the length of a run.
+   */
   read(instance: Handle): KnowledgeInstanceRecord {
     const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
-    const handle = instance as EntityHandle;
+    const row = store.rowOf(instance as EntityHandle);
     return {
-      nodeId: store.get(handle, 'nodeId'),
-      locationKind: store.get(handle, 'locationKind'),
-      locationId: store.get(handle, 'locationId'),
-      acquiredTick: store.get(handle, 'acquiredTick'),
-      mastery: store.get(handle, 'mastery'),
+      nodeId: store.field('nodeId')[row] as number,
+      locationKind: store.field('locationKind')[row] as number,
+      locationId: store.field('locationId')[row] as number,
+      acquiredTick: store.field('acquiredTick')[row] as number,
+      mastery: store.field('mastery')[row] as number,
     };
   }
 
@@ -387,9 +394,21 @@ export class KnowledgeSubsystem {
     return { nodeId: view.nodeId, worldTick, location: view.locationKind };
   }
 
-  /** Every live instance in the universe, in ascending slot order. */
+  /**
+   * Every live instance in the universe, in ascending slot order.
+   *
+   * Not `#collect(() => true)`: that builds a five-field view of every row to
+   * hand to a predicate that ignores it. The decay sweep asks for this list
+   * every world tick and reads each row itself, so the views were an object per
+   * instance per tick that nothing ever looked at.
+   */
   instances(): Handle[] {
-    return this.#collect(() => true);
+    const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
+    const found: Handle[] = [];
+    store.forEach((_row, handle) => {
+      found.push(handle);
+    });
+    return found;
   }
 
   /** Every live instance of a node, in ascending slot order. */
@@ -523,6 +542,21 @@ export class KnowledgeSubsystem {
     this.#instanceOfGrimoire.set(grimoire, instance);
   }
 
+  /**
+   * Pairs each shelved grimoire with an unclaimed instance of its node.
+   *
+   * **The shelves are gathered once, not once per book.** This used to call
+   * `instancesAt` inside the loop, which is a pass over every instance in the
+   * universe — and a five-field view of each — per shelved grimoire. `rebuild`
+   * runs every world tick, so that is `shelvedBooks × instances` per tick,
+   * invisible while nothing is ever shelved and quadratic from the first
+   * library that fills up.
+   *
+   * The order is exactly what it was: ascending slot order on both sides, which
+   * `forEach` gives for the books and which the gathering pass gives for the
+   * instances, so the pairing — and the `acquiredTick` ambiguity documented on
+   * {@link rebuild} — is unchanged.
+   */
   #relinkShelvedGrimoires(): void {
     const claimed = new Set<Handle>(this.#instanceOfGrimoire.values());
     const grimoires = componentOf(this.#state, GRIMOIRE);
@@ -530,19 +564,47 @@ export class KnowledgeSubsystem {
     const holderKinds = grimoires.field('holderKind');
     const holderIds = grimoires.field('holderId');
 
+    let shelves: Map<Handle, { handle: Handle; nodeId: ContentId }[]> | undefined;
     grimoires.forEach((row, grimoire) => {
       if ((holderKinds[row] as number) !== HOLDER_KIND.library) return;
       if (this.#instanceOfGrimoire.has(grimoire)) return;
+      shelves ??= this.#shelvedInstancesByLibrary();
       const library = holderIds[row] as number;
       const nodeId = grimoireNodes[row] as number;
-      for (const candidate of this.instancesAt(LOCATION_KIND.library, library)) {
-        if (claimed.has(candidate)) continue;
-        if (this.read(candidate).nodeId !== nodeId) continue;
-        this.#instanceOfGrimoire.set(grimoire, candidate);
-        claimed.add(candidate);
+      for (const candidate of shelves.get(library) ?? []) {
+        if (claimed.has(candidate.handle)) continue;
+        if (candidate.nodeId !== nodeId) continue;
+        this.#instanceOfGrimoire.set(grimoire, candidate.handle);
+        claimed.add(candidate.handle);
         return;
       }
     });
+  }
+
+  /**
+   * Every shelved instance, grouped by the library it sits in, ascending by
+   * slot within each group.
+   *
+   * Built lazily by the pass above, so a universe with no shelved book — every
+   * universe until one shelves one — pays nothing for it at all.
+   */
+  #shelvedInstancesByLibrary(): Map<Handle, { handle: Handle; nodeId: ContentId }[]> {
+    const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
+    const nodeIds = store.field('nodeId');
+    const locationKinds = store.field('locationKind');
+    const locationIds = store.field('locationId');
+    const byLibrary = new Map<Handle, { handle: Handle; nodeId: ContentId }[]>();
+    store.forEach((row, handle) => {
+      if ((locationKinds[row] as number) !== LOCATION_KIND.library) return;
+      const library = locationIds[row] as number;
+      let shelf = byLibrary.get(library);
+      if (shelf === undefined) {
+        shelf = [];
+        byLibrary.set(library, shelf);
+      }
+      shelf.push({ handle, nodeId: nodeIds[row] as number });
+    });
+    return byLibrary;
   }
 
   /**
