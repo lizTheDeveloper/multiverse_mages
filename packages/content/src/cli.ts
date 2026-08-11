@@ -65,7 +65,7 @@ export function runValidation(argv: readonly string[], output: CliOutput = conso
         `${source.origin}: OK — ${String(counts.techniques)} techniques, ${String(counts.forms)} forms, ` +
           `${String(counts.cells)} cells (${String(counts.v1Cells)} flagged v1), ${String(counts.nodes)} nodes, ` +
           `${String(counts.species)} species, ${String(counts.traditions)} traditions, ` +
-          `${String(counts.primitives)} primitives`,
+          `${String(counts.primitives)} primitives, ${String(counts.territories)} territories`,
       );
       output.out(`${source.origin}: contentRevision ${result.registry.contentRevision}`);
       continue;

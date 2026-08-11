@@ -384,14 +384,52 @@ class of measurement artifact as the bang-bang reallocation rejected below.
 
 ### Fertility is braked by carrying capacity; population is not hard-capped
 
-Births per cohort scale by `clamp((K − population) × fp(1024) / K, 0, fp(1024))`, where `K` is a
-carrying capacity derived from materials stock and completed university capacity. Population
+Births per cohort scale by `clamp((K − population) × fp(1024) / K, 0, fp(1024))`. Population
 approaches `K` and does not exceed it, without any step function.
 
 *Alternative considered:* a hard population ceiling that simply rejects births. Rejected — a hard
 ceiling makes population a sawtooth against the cap, and every downstream rate inherits the
 sawtooth. A logistic brake is the same bound with a continuous approach, which is what the 0.4.0
 "no unbounded growth" claim needs to be checkable against a stated number.
+
+### `K` comes from territory, and this section is a correction
+
+**This paragraph originally read "`K` is derived from materials stock and completed university
+capacity", and that was the defect.** Both are quantities the universe *produces*, so `K` was a
+function of its own consequences: people make materials, materials raise `K`, `K` permits more
+people. Net materials per person per tick is
+`laborShare × MATERIALS_PER_LABORER − SUBSISTENCE_PER_PERSON` in raw `fp`, so above a laborer share
+of one eighth the stock grows without limit and `K` grew with it. An adversarial audit composed the
+five shipped functions in the order the world step composes them and measured `K = 289,997` at a
+laborer share of one half after 2,400 ticks, still accelerating.
+
+The audit's second finding is the one worth keeping in front of a reader: `P < K` held at every tick
+of every one of those runs, so the spec's *"total population never exceeds `K`"* **passed
+vacuously**. A bound that outruns the thing it bounds is never violated and never tested, and task
+9.4's "documented bound" had no document to point at.
+
+So `K` is derived from `territory.json` (`contracts.md` §2.7), the one economic quantity nothing in
+a run creates. Materials and seats survive as a **bounded multiplier** on that base — a
+well-supplied territory holds more people than a bare one, which is a reading worth keeping — with a
+saturation point per term, giving
+`maxCarryingCapacity = base × MAX_PROVISIONING / fp(1024)`: 109,800 for the shipped territory.
+
+*Alternative considered:* clamping the old `K` at a constant. Rejected — the runaway is still there,
+pressed against the ceiling, and every rate derived from `K` reads as saturated forever from
+whichever tick the stock passed the clamp. The bound has to come from the shape, not from a
+`Math.min` bolted on after it.
+
+*Alternative considered:* measuring the modulators **per person** rather than per land unit, so that
+a crowded universe is a poorer one. Rejected — it makes `K` fall as population rises, so `K` can
+drop below a population already born and the spec's "never exceeds `K`" starts being violated by a
+`K` that moved rather than by a population that grew. Per land unit keeps `K` independent of
+population, and the brake stays the only thing between the two.
+
+*Not fixed here, and named rather than absorbed:* the materials stock itself still grows without
+limit at any laborer share above one eighth, because nothing consumes in proportion to `K`. That is
+now a stock-management question rather than a population one, and the convergence test asserts the
+stock is *still* diverging — because a convergence proof over an input that settled on its own would
+prove nothing about the shape of `K`.
 
 Extinction remains possible in principle: a species cohort at zero produces no births, and that is
 an absorbing state. That is a legitimate world outcome and is deliberately not prevented. The 0.4.0

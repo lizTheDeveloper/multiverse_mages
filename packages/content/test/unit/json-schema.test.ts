@@ -17,7 +17,7 @@ import { CompiledSchema, SchemaCompileError, canonicalJson, contentSchemas } fro
 
 describe('the schema interpreter', () => {
   it('compiles every shipped schema', () => {
-    expect([...contentSchemas().keys()]).toHaveLength(7);
+    expect([...contentSchemas().keys()]).toHaveLength(8);
   });
 
   it('refuses a keyword it does not implement, rather than ignoring it', () => {

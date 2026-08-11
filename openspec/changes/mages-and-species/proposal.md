@@ -67,9 +67,22 @@ raids and combat, god interventions, and the observation/action space.
 
 ### Modified Capabilities
 
-`content-schemas` and `primitive-semantics` from `core-contracts` are consumed unchanged; the
-species schema addition above is an amendment to `docs/design/contracts.md` carried by this
-change's tasks, not a requirement change to an existing capability spec.
+`primitive-semantics` from `core-contracts` is consumed unchanged.
+
+**`content-schemas` is not.** This paragraph originally listed it beside `primitive-semantics`, and
+implementation found otherwise twice over: the species schema addition above, and then an eighth
+content file, `territory.json` (`contracts.md` §2.7). The second is the more consequential and is
+recorded here because it began as a defect rather than as a plan.
+
+Carrying capacity was drawn as `K` from the materials stock and completed university seats. Both are
+things the universe produces, so `K` was a function of its own consequences and diverged: an
+adversarial audit composing the shipped functions over 2,400 ticks measured `K = 289,997` at a
+laborer share of one half, still accelerating, with `P < K` at every tick — so the spec's
+"population never exceeds `K`" passed while asserting nothing. `K` is now derived from **territory**,
+the one economic quantity nothing in a run creates, with materials and seats surviving as a bounded
+multiplier on it. Territory is content because content is where this project keeps the world's
+furniture, and because a number that decides a population bound should be authored and validated
+rather than compiled in.
 
 **`state-schema` is not.** This paragraph originally said it was, and implementation found
 otherwise: a mage's goal commitment has to survive from one tick to the next for hysteresis and the
@@ -90,8 +103,10 @@ here rather than only there because this sentence is what a planner reads.
   tradition hooks. Per `contracts.md` §5 rule 3, `rules-world` MUST NOT import `rules-magic`; every
   mage↔knowledge interaction crosses through the coordinating layer.
 - **Amends:** `docs/design/contracts.md` §2.4, adding `maturityMonths`, `mageAptitude`, and
-  `laborAffinity`. Permitted at a MINOR boundary per `docs/design/release-plan.md`, and named
-  explicitly in the 0.4.0 release notes.
+  `laborAffinity`; and §2 itself, adding §2.7 `territory.json` as an eighth content file. Both move
+  `contentRevision`, which §0 makes a compatibility gate — two universes may interact only if theirs
+  are equal — so both are breaking for any snapshot written before them. Permitted at a MINOR
+  boundary per `docs/design/release-plan.md`, and named explicitly in the 0.4.0 release notes.
 - **Downstream:** `agent-interface` reads the `population` (30 slots), `mages` (42 slots), and
   `institutions` (4 slots) observation blocks defined in `contracts.md` §4.1 directly from the
   structures this change creates; `god-agency` attaches favor and worship to the populace,

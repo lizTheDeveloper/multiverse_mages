@@ -58,6 +58,7 @@ import type {
   PrimitiveRecord,
   SpeciesRecord,
   TechniqueRecord,
+  TerritoryRecord,
   TraditionRecord,
 } from './types.js';
 
@@ -165,12 +166,13 @@ interface ParsedDocuments {
   readonly species: readonly SpeciesRecord[];
   readonly tradition: readonly TraditionRecord[];
   readonly primitive: readonly PrimitiveRecord[];
+  readonly territory: readonly TerritoryRecord[];
 }
 
 let cachedSchemas: ReadonlyMap<ContentFileName, CompiledSchema> | undefined;
 
 /**
- * Compiles the seven schema documents once per process.
+ * Compiles the eight schema documents once per process.
  *
  * Compilation throws on any keyword the interpreter does not implement, so a
  * schema cannot outgrow its validator without the very first load saying so.
@@ -246,6 +248,7 @@ export function validateContent(source: ContentSource): ValidationResult {
     species: raw.get('species.json') as readonly SpeciesRecord[],
     tradition: raw.get('tradition.json') as readonly TraditionRecord[],
     primitive: raw.get('primitive.json') as readonly PrimitiveRecord[],
+    territory: raw.get('territory.json') as readonly TerritoryRecord[],
   };
 
   // ---- Phase 3: graph integrity. ----
@@ -311,6 +314,7 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   indexById(documents.species, 'species.json', out);
   indexById(documents.tradition, 'tradition.json', out);
   const primitiveById = indexById(documents.primitive, 'primitive.json', out);
+  indexById(documents.territory, 'territory.json', out);
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
@@ -960,6 +964,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const species = internNamespace(documents.species);
   const traditions = internNamespace(documents.tradition);
   const primitives = internNamespace(documents.primitive);
+  const territories = internNamespace(documents.territory);
 
   const tables = new Map<ContentNamespace, ReadonlyMap<string, ContentId>>([
     ['technique', tableOf(techniques)],
@@ -969,6 +974,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     ['species', tableOf(species)],
     ['tradition', tableOf(traditions)],
     ['primitive', tableOf(primitives)],
+    ['territory', tableOf(territories)],
   ]);
   const reverse = new Map<ContentNamespace, ReadonlyMap<ContentId, string>>();
   for (const [namespace, table] of tables) {
@@ -991,6 +997,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   append('species', species);
   append('tradition', traditions);
   append('primitive', primitives);
+  append('territory', territories);
 
   const counts: ContentCounts = {
     techniques: techniques.length,
@@ -1001,6 +1008,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     species: species.length,
     traditions: traditions.length,
     primitives: primitives.length,
+    territories: territories.length,
   };
 
   return {
@@ -1013,6 +1021,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     species,
     traditions,
     primitives,
+    territories,
     intern(namespace, id) {
       return tables.get(namespace)?.get(id) ?? 0;
     },
