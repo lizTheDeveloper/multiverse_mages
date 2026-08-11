@@ -32,6 +32,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { createRediscoveryClampCounter } from '@mm/primitives';
 import { FP_ONE, fromInt, mul } from '@mm/sim-core';
 import type { Ruleset } from '@mm/state';
 import { EDICT_KIND, LOCATION_KIND } from '@mm/state';
