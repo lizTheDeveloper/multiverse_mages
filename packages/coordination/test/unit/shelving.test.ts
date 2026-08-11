@@ -56,6 +56,7 @@ import {
   catalogAndCells,
   registry,
   scribingTraditionId,
+  shippedAcquirePolicy,
   shippedStorePolicy,
   speciesTable,
 } from './world-fixtures.js';
@@ -178,6 +179,7 @@ function desk(options: DeskOptions = {}): Desk {
           scribeAffinity: species.scribeAffinity,
         }),
         store: shippedStorePolicy(traditionId),
+        acquire: shippedAcquirePolicy(traditionId),
         effort: efforts,
         rng: pinnedRng(ROOT_SEED),
         materials: {

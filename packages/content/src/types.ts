@@ -42,7 +42,8 @@ export type ContentNamespace =
   | 'primitive'
   | 'territory'
   | 'god-cost'
-  | 'god-constant';
+  | 'god-constant'
+  | 'raid-constant';
 
 export interface TechniqueRecord {
   readonly id: string;
@@ -225,6 +226,25 @@ export interface GodConstantRecord {
   readonly tuningStatus: TuningStatus;
 }
 
+/**
+ * One named magnitude an engagement is made of.
+ *
+ * The same shape as {@link GodConstantRecord}, and deliberately a separate
+ * table rather than more rows in that one. `god-constant.json`'s loader rejects
+ * any id its own required set does not name — correctly, because an unread
+ * constant there is a knob that does nothing — so a raid magnitude added to it
+ * would have to be added to `god-agency`'s contract as well, and the worship
+ * loop would acquire an opinion about how long a portal holds.
+ */
+export interface RaidConstantRecord {
+  readonly id: string;
+  readonly value: number;
+  /** What the number is: `fp`, a `raw` countdown integer, a `count`, or `ticks`. */
+  readonly unit: 'fp' | 'raw' | 'count' | 'ticks';
+  readonly gloss: string;
+  readonly tuningStatus: TuningStatus;
+}
+
 /** A record plus the integer it was interned to. */
 export interface Interned<T> {
   readonly contentId: ContentId;
@@ -244,6 +264,7 @@ export interface ContentCounts {
   readonly territories: number;
   readonly godCosts: number;
   readonly godConstants: number;
+  readonly raidConstants: number;
 }
 
 /**
@@ -267,6 +288,7 @@ export interface ContentRegistry {
   readonly territories: readonly Interned<TerritoryRecord>[];
   readonly godCosts: readonly Interned<GodCostRecord>[];
   readonly godConstants: readonly Interned<GodConstantRecord>[];
+  readonly raidConstants: readonly Interned<RaidConstantRecord>[];
 
   /** String id to interned integer, per namespace. */
   intern(namespace: ContentNamespace, id: string): ContentId;
@@ -290,4 +312,13 @@ export interface ContentRegistry {
    * zero, which is a plausible-looking answer to a question nobody asked.
    */
   godConstant(id: string): number;
+  /**
+   * A named `raid-engagement` magnitude.
+   *
+   * @throws Error for an id the table does not declare, for the reason
+   * {@link ContentRegistry.godConstant} does: the loader has already checked
+   * the required set, so a miss means a caller invented a name, and a silent
+   * `0` would be a cast range of zero or a portal that never decays.
+   */
+  raidConstant(id: string): number;
 }

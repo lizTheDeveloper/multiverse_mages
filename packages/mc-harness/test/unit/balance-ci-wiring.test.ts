@@ -214,12 +214,27 @@ describe('the full sweep is committed beside the gate sweep, and is a different 
     expect(runs(full)).toBe(10_000);
   });
 
-  it('has no committed baseline, because it has never been run', () => {
-    // Task 10.1 owns running it. Committing a baseline for a sweep nobody has
-    // executed would be committing numbers nobody produced, which is the one
-    // thing a baseline may never be.
+  it('has no committed baseline, because it is not a gate', () => {
+    // It has been run — task 10.1, 10,000 runs in 3392 s, recorded in
+    // `balance/README.md`. It still has no baseline, and now for a different
+    // reason than "nobody has executed it": a baseline exists to be compared
+    // against on every push, this sweep runs once per release, and a tolerance
+    // derived from 10,000 runs would be far tighter than any gate sweep could
+    // clear. Committing one would create a gate nothing runs.
     expect(existsSync(join(repoRoot, `balance/baselines/${full.sweepId}.baseline.json`))).toBe(
       false,
     );
+  });
+
+  it('has its measured throughput recorded, rather than an extrapolation', () => {
+    // The 0.5.0 release claim is that ten thousand runs complete within a
+    // recorded budget. A budget nobody wrote down is not one, and an
+    // extrapolation presented as a measurement is worse than neither.
+    const readme = read('balance/README.md');
+    expect(readme).toContain('3392 s');
+    expect(readme).toContain('708 world ticks/s');
+    // And the caveat that makes the figure usable: it is four workers, not the
+    // eight the release plan names.
+    expect(readme).toContain('Four workers, not eight');
   });
 });

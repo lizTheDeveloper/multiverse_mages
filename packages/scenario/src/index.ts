@@ -38,6 +38,7 @@
 
 export type { RulesetAxes } from './content-set.js';
 export {
+  acquireHookOf,
   catalogAndCells,
   contentCatalogue,
   foundingCandidates,
@@ -82,3 +83,24 @@ export {
 } from './executor.js';
 
 export { REFERENCE_REGISTRIES, REFERENCE_SWEEP } from './sweep.js';
+
+export type {
+  LongRunOptions,
+  LongRunResult,
+  LongRunTick,
+  RunWindow,
+  WindowActivity,
+} from './long-run.js';
+export {
+  LONG_RUN_OPTIONS,
+  LONG_RUN_SEED,
+  LONG_RUN_TICKS,
+  LONG_RUN_YEARS,
+  TICKS_PER_WORLD_YEAR,
+  activityIn,
+  longRunLines,
+  longestOccupationAlternation,
+  runLongReference,
+  timeToTierBySpecies,
+  windowsOf,
+} from './long-run.js';

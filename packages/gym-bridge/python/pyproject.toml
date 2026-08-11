@@ -1,0 +1,43 @@
+# Multiverse Mages — the Python reference client.
+# Copyright (C) 2026 Ann Kelner
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version. See the LICENSE file at the repository root, or
+# <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mm-gym"
+version = "0.3.0"
+description = "The Python side of the Multiverse Mages agent boundary — contracts.md §4 over NDJSON."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "AGPL-3.0-or-later"
+authors = [{ name = "Ann Kelner" }]
+
+# Deliberately empty, and the emptiness is the decision.
+#
+# proposal.md: shipping without a dependency on any RL framework "removes the
+# question rather than answering it repeatedly". The practical consequence is
+# that an AGPL project which pulls in a training stack acquires a transitive
+# licence surface to re-audit on every upgrade, forever, in an ecosystem where a
+# permissive-looking package occasionally vendors something that is not. Zero
+# dependencies is the only version of that audit that stays true.
+#
+# numpy is not here either. `Observation.data` is an `array.array('d')`, which
+# `numpy.frombuffer` wraps with no copy — the conversion costs a line in user
+# code and costs this package nothing.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/lizTheDeveloper/multiverse_mages"
+
+[tool.setuptools.packages.find]
+include = ["mm_gym*"]

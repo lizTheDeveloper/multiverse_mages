@@ -74,7 +74,22 @@ type Area = (typeof SCANNED_AREAS)[number];
  *
  * `value` edges may be imported however the importer likes. `typeOnly` edges
  * must be written `import type` — they are erased at compile time and are not
- * permitted to become runtime coupling.
+ * permitted to become runtime coupling. `testOnly` edges may not appear in
+ * `src` at all, in any form.
+ *
+ * **`testOnly` was added for `gym-bridge` and states something the two existing
+ * columns could not.** A test area has always been allowed everything its
+ * package is allowed, because a cross-package test legitimately pins a
+ * type-only edge against its runtime counterpart. What had no expression was an
+ * edge a package's *tests* need and its *source* must never have. The bridge is
+ * the first package to need one: its release claim is that a recorded episode
+ * replays to an identical snapshot hash, that claim is vacuous against a stubbed
+ * session, and observing a real one requires `@mm/state`'s world schema to build
+ * a universe at all. Building universes properly is `scenario`'s job and
+ * `scenario` is a leaf nothing may import, so the choice was a test-only edge or
+ * a claim nothing checks. Widening `value` would have been the quiet option and
+ * would have licensed the bridge's *source* to reach into world state, which is
+ * exactly the coupling §5 draws this package's single edge to prevent.
  *
  * Four packages here are not in §5's original list, all added for the same
  * underlying reason — §5 was written before anyone tried to satisfy it — and
@@ -103,7 +118,14 @@ type Area = (typeof SCANNED_AREAS)[number];
  *   is a leaf — nothing here imports it — and this table is what keeps that
  *   true.
  */
-const ALLOWED: Readonly<Record<string, { value: readonly string[]; typeOnly: readonly string[] }>> =
+interface PackageEdges {
+  readonly value: readonly string[];
+  readonly typeOnly: readonly string[];
+  /** Reachable from `test/` only. Never from `src/`, in any form. */
+  readonly testOnly?: readonly string[];
+}
+
+const ALLOWED: Readonly<Record<string, PackageEdges>> =
   {
     'sim-core': { value: [], typeOnly: [] },
     content: { value: [], typeOnly: ['sim-core'] },
@@ -141,6 +163,12 @@ const ALLOWED: Readonly<Record<string, { value: readonly string[]; typeOnly: rea
       typeOnly: [],
     },
     'mc-harness': { value: ['agent-api'], typeOnly: [] },
+    // §5's own last line: `gym-bridge  JSON-over-stdio RL wrapper. → agent-api`.
+    // One value edge, and that is the whole of what the transport may reach.
+    // `sim-core` and `state` are `testOnly`: the fixture universe the replay
+    // claim is measured against needs both to exist at all, and the bridge's
+    // source needs neither — see the note on {@link PackageEdges.testOnly}.
+    'gym-bridge': { value: ['agent-api'], typeOnly: [], testOnly: ['sim-core', 'state'] },
     scenario: {
       value: [
         'sim-core',
@@ -372,9 +400,12 @@ export function violationsOf(edges: readonly ImportEdge[], packages: readonly st
 
     // Tests may reach anything the package itself may reach, by value: they run
     // in Node against a built graph, and pinning a type-only edge against its
-    // runtime counterpart is exactly what a cross-package test is for.
+    // runtime counterpart is exactly what a cross-package test is for. They may
+    // also reach the `testOnly` list, which `src` may not touch at all.
     const valueTargets =
-      edge.area === 'src' ? allowed.value : [...allowed.value, ...allowed.typeOnly];
+      edge.area === 'src'
+        ? allowed.value
+        : [...allowed.value, ...allowed.typeOnly, ...(allowed.testOnly ?? [])];
 
     if (valueTargets.includes(target)) continue;
 
@@ -389,9 +420,19 @@ export function violationsOf(edges: readonly ImportEdge[], packages: readonly st
       continue;
     }
 
+    if ((allowed.testOnly ?? []).includes(target)) {
+      problems.push(
+        `${edge.path} imports @mm/${target}, which §5 grants ${edge.pkg} for its tests only. A ` +
+          'test-only edge exists so a claim can be measured against a real universe; letting it ' +
+          'into src would give the package a capability its single §5 edge exists to withhold.',
+      );
+      continue;
+    }
+
     problems.push(
       `${edge.path} imports @mm/${target}, an edge §5 does not grant ${edge.pkg}. Permitted: ` +
-        `${[...allowed.value, ...allowed.typeOnly].map((name) => `@mm/${name}`).join(', ') || '(none)'}.`,
+        `${[...allowed.value, ...allowed.typeOnly].map((name) => `@mm/${name}`).join(', ') || '(none)'}` +
+        `${(allowed.testOnly ?? []).length > 0 ? ` (plus ${(allowed.testOnly ?? []).map((name) => `@mm/${name}`).join(', ')} in test/ only)` : ''}.`,
     );
   }
 
@@ -519,6 +560,18 @@ describe('the workspace dependency graph matches contracts.md §5', () => {
     expect(inbound.map((edge) => edge.path)).toEqual([]);
   });
 
+  it('keeps the gym-bridge package a leaf', () => {
+    // Same property as `scenario`'s above, for a different reason. §5 puts the
+    // RL bridge downstream of the observation layer, and an inbound edge would
+    // make some part of the simulation, the harness or the observation layer
+    // depend on a *transport* — after which the wire format would be a
+    // constraint on the game rather than a view of it.
+    const inbound = workspaceEdges.filter(
+      (edge) => edge.pkg !== 'gym-bridge' && edge.specifier.startsWith(`${WORKSPACE_SCOPE}gym-bridge`),
+    );
+    expect(inbound.map((edge) => edge.path)).toEqual([]);
+  });
+
   it('keeps sim-core free of workspace and Node built-in imports (rule 1)', () => {
     const coreSource = workspaceEdges.filter(
       (edge) => edge.pkg === 'sim-core' && edge.area !== 'test',
@@ -585,6 +638,16 @@ describe('the dependency-graph check would catch a violation', () => {
     expect(backward[0]).toContain('must not');
     expect(forward[0]).toContain('packages/rules-magic/src/probe.ts');
     expect(backward[0]).toContain('packages/rules-world/src/probe.ts');
+  });
+
+  it('catches a test-only edge reaching into src, and permits it in test', () => {
+    // Both halves, because a column that permitted everything everywhere would
+    // pass the positive half and would be no boundary at all.
+    const inSource = violationsOf([edge('gym-bridge', 'src', '@mm/state')], workspacePackages);
+    expect(inSource).toHaveLength(1);
+    expect(inSource[0]).toContain('for its tests only');
+
+    expect(violationsOf([edge('gym-bridge', 'test', '@mm/state')], workspacePackages)).toEqual([]);
   });
 
   it('catches a rules package importing agent-api (rule 4)', () => {

@@ -38,9 +38,9 @@
  * ## How "no other path" is actually defended, and by what jointly
  *
  * `rules-magic` has no coordinator: the shipped operations receive a tradition's
- * effects as *parameters* (a scaled cost, a location kind, a `StoreHook`), which
- * is what `contracts.md` §5 requires of a package that may not import
- * `rules-world`. So the wiring below — `applyAcquire` → costs and mastery,
+ * effects as *parameters* (a resolved policy, a location kind, a `StoreHook`),
+ * which is what `contracts.md` §5 requires of a package that may not import
+ * `rules-world`. So the wiring below — `acquirePolicy` → costs and mastery,
  * `storePolicy` → location kind and written storage — is the wiring a caller
  * would do, and this file cannot by itself prove that no *other* caller wires
  * something extra. Three things prove it together, and only the first two are
@@ -66,6 +66,25 @@
  * on purpose: it drives the knowledge subsystem, so a hook that resolved
  * correctly and then failed to change what a mage can actually do would pass
  * there and fail here.
+ *
+ * ## What this file could not see, and where that half now lives
+ *
+ * It could not see whether anything *outside a test* did that wiring, and for
+ * the whole of 0.3.0 nothing did: `applyAcquire` had no caller in
+ * `coordination`, `scenario` or either rules package, so True Naming's declared
+ * multipliers were paid by nobody. The transcript below hid it by assembling
+ * the acquire terms itself and handing them to `research` — proving the
+ * operations honour a cost this file had computed, which was never in doubt.
+ *
+ * Two things changed in response. The transcript now drives the **resolved
+ * policy the world loop takes** rather than a hand-scaled catalog, so what is
+ * exercised here is the shipped wiring and not a second assembly of it. And the
+ * leg this package structurally cannot carry — that the loop supplies the
+ * policy at all — is measured next door, in
+ * `packages/coordination/test/unit/acquire-hook-in-the-loop.test.ts`, which runs
+ * two whole universes and compares what their mages are left holding. §5 forbids
+ * `rules-magic` from reaching the world loop, so that evidence cannot live in
+ * this file; it can only be pointed at.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -89,8 +108,8 @@ import type { InstanceView, StorePolicy } from '../../src/traditions/index.js';
 import {
   RESOLUTION,
   UNBOUNDED_SLOTS,
+  acquirePolicy,
   admitToStore,
-  applyAcquire,
   canHoldAt,
   castCost,
   castPolicy,
@@ -173,6 +192,12 @@ interface Transcript {
   readonly overflowRefusal: string;
   /** What the probed mage was left holding once the store had been overfilled. */
   readonly heldAfterOverflow: number;
+  /** Months of work the probed mage spent deriving one node. */
+  readonly monthsToDerive: number;
+  /** The mastery that node arrived in her head at. */
+  readonly masteryOnArrival: number;
+  /** Whether she could pass it on the moment she had it. */
+  readonly teachableOnArrival: boolean;
   readonly prepared: boolean;
   readonly preparedAfterCast: readonly number[];
   readonly costAtPreparation: number;
@@ -253,6 +278,81 @@ function overflowProbe(store: StorePolicy): OverflowProbe {
   };
 }
 
+/** What one mage's acquisition cost her, and what she got for it. */
+interface AcquireProbe {
+  readonly months: number;
+  readonly mastery: number;
+  readonly teachable: boolean;
+}
+
+/**
+ * Researches one node at a fixed monthly effort and reports what it cost and
+ * what arrived.
+ *
+ * **This is the acquire hook as an outcome rather than as a quotation**, and it
+ * is the `acquire` counterpart of {@link overflowProbe}. Comparing
+ * `applyAcquire`'s output to itself was true for the whole of 0.3.0 while no
+ * running universe called it at all, exactly as `admitToStore(store, 12)` was
+ * true while a mage could research her thirtieth palace instance unimpeded. So
+ * the probe hands `research` **the resolved policy the world loop is given** and
+ * nothing else — no pre-scaled catalog, no `initialMastery` computed here — and
+ * reads back the three things a mage would notice: how many months she worked,
+ * what mastery the node arrived at, and whether she could pass it on.
+ *
+ * Run on its own world, like the overflow probe and for the same reason: a probe
+ * that perturbed the scripted transcript's counts would make every one of them
+ * harder to attribute.
+ *
+ * The remaining gap is structural and is named in this file's header: that the
+ * *loop* supplies this policy is not something `rules-magic` can observe, and is
+ * measured in `coordination`.
+ */
+function acquireProbe(acquire: ReturnType<typeof acquirePolicy>): AcquireProbe {
+  const knowledge = new KnowledgeSubsystem(testWorld(), TEST_NODE_COUNT);
+  const catalog = testCatalog();
+
+  let months = 0;
+  let progress = 0;
+  let instance = 0;
+  for (let tick = 600; tick < 900 && instance === 0; tick += 1) {
+    const outcome = research({
+      knowledge,
+      catalog,
+      cells: testCells,
+      ruleset: permissiveRuleset(),
+      rng: stepRng(31, tick),
+      subject: ARCHMAGE,
+      nodeId: ROOT_NODE,
+      worldTick: tick,
+      progress,
+      effort: 512,
+      ...UNITY,
+      rediscoveryAffinity: 1024,
+      clampCounter: createRediscoveryClampCounter(),
+      acquire,
+    });
+    months += 1;
+    progress = outcome.progress;
+    instance = outcome.instance;
+  }
+
+  const created = knowledge.read(instance);
+  const taught = teach({
+    knowledge,
+    catalog,
+    cells: testCells,
+    ruleset: permissiveRuleset(),
+    rng: stepRng(31, 900),
+    teacher: ARCHMAGE,
+    student: STUDENT,
+    nodeId: ROOT_NODE,
+    worldTick: 900,
+    store: { kind: 'standard', personalLocationKind: LOCATION_KIND.mind, slotsPerMage: UNBOUNDED_SLOTS },
+  });
+
+  return { months, mastery: created.mastery, teachable: taught.refusal === undefined };
+}
+
 /**
  * One seeded scenario, run under one tradition, through the shipped operations.
  *
@@ -263,21 +363,18 @@ function overflowProbe(store: StorePolicy): OverflowProbe {
  */
 function transcript(tradition: number): Transcript {
   const hooks = hooksOfTradition(tradition, TRADITIONS);
-  const acquire = applyAcquire(hooks.acquire, {
-    baseResearchCost: BASE_RESEARCH_COST,
-    baseTeachCost: BASE_TEACH_COST,
-    baseInitialMastery: DEFAULT_INITIAL_MASTERY,
-    baseStolenMastery: DEFAULT_INITIAL_MASTERY,
-  });
+  const acquire = acquirePolicy(hooks.acquire);
   const store = storePolicy(hooks.store);
   const cast = castPolicy(hooks.cast);
   const cost = costPolicy(hooks.cost);
 
   const knowledge = new KnowledgeSubsystem(testWorld(), TEST_NODE_COUNT);
-  const catalog = testCatalog({
-    researchCost: acquire.researchCost,
-    teachCost: acquire.teachCost,
-  });
+  // The **authored** catalog. The hook prices it inside `research`, from the
+  // policy handed in below, which is the arrangement a running universe has.
+  // Pre-scaling the catalog here — what this file used to do — tested that the
+  // operations honour a cost this file had already computed, and was green for
+  // the whole of 0.3.0 while nothing outside a test computed one.
+  const catalog = testCatalog();
   const ruleset = permissiveRuleset();
   const written: StoreHook = { kind: store.kind, keepsWrittenCopies: store.scribingAvailable };
 
@@ -303,7 +400,7 @@ function transcript(tradition: number): Transcript {
       ...UNITY,
       rediscoveryAffinity: 1024,
       clampCounter: createRediscoveryClampCounter(),
-      initialMastery: acquire.initialMastery,
+      acquire,
       store,
     });
     researchSteps += 1;
@@ -353,12 +450,15 @@ function transcript(tradition: number): Transcript {
   // 6. Elsewhere, a mage fills her personal store and reaches for one more.
   const overflow = overflowProbe(store);
 
+  // 7. And elsewhere again, a mage derives one node under this hook alone.
+  const acquired = acquireProbe(acquire);
+
   return {
-    researchCost: acquire.researchCost,
+    researchCost: acquire.researchCost(BASE_RESEARCH_COST),
     researchSteps,
     instanceLocationKind: created.locationKind,
     instanceMastery: created.mastery,
-    teachCost: acquire.teachCost,
+    teachCost: acquire.teachCost(BASE_TEACH_COST),
     teachRefusal: taught.refusal?.reason ?? '',
     studentMastery: taught.mastery,
     scribeRefusal: scribed.refusal?.reason ?? '',
@@ -368,6 +468,9 @@ function transcript(tradition: number): Transcript {
     declaredSlots: store.slotsPerMage,
     overflowRefusal: overflow.refusal,
     heldAfterOverflow: overflow.held,
+    monthsToDerive: acquired.months,
+    masteryOnArrival: acquired.mastery,
+    teachableOnArrival: acquired.teachable,
     prepared: preparation.prepared,
     preparedAfterCast: released.preparedSpells,
     costAtPreparation: preparationCost(cost, BASE_CAST_COST),
@@ -446,6 +549,19 @@ describe('release claim 0.3.0 — each v1 tradition changes measurable behaviour
     expect(vancian?.instanceMastery).toBe(DEFAULT_INITIAL_MASTERY);
     expect(vancian?.teachRefusal).toBe('teacher-below-threshold');
     expect(DEFAULT_INITIAL_MASTERY).toBeLessThan(DEFAULT_TEACH_THRESHOLD);
+
+    // And bounded *in the simulation*, not only in the terms: a mage who
+    // derives one node under this hook alone — no pre-scaled catalog, no
+    // mastery computed by this file, just the resolved policy the world loop is
+    // handed — works longer for it and is left holding something she can teach
+    // the month she has it, where a standard mage is left below the threshold
+    // and can pass on nothing. The claim is "changes measurable behaviour", and
+    // this is the measurement.
+    expect(trueNaming?.monthsToDerive).toBeGreaterThan(vancian?.monthsToDerive ?? 0);
+    expect(trueNaming?.masteryOnArrival).toBe(MASTERY_MAX);
+    expect(trueNaming?.teachableOnArrival).toBe(true);
+    expect(vancian?.masteryOnArrival).toBe(DEFAULT_INITIAL_MASTERY);
+    expect(vancian?.teachableOnArrival).toBe(false);
 
     // And it stores, casts and pays exactly as a standard tradition does.
     expect(trueNaming?.instanceLocationKind).toBe(LOCATION_KIND.mind);

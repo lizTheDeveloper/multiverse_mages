@@ -59,6 +59,7 @@ import {
   catalogAndCells,
   registry,
   scribingTraditionId,
+  shippedAcquirePolicy,
   shippedStorePolicy,
   speciesTable,
 } from './world-fixtures.js';
@@ -168,6 +169,7 @@ function laboratory(mageCount = 2, rootSeed = ROOT_SEED): Laboratory {
           scribeAffinity: species.scribeAffinity,
         }),
         store: shippedStorePolicy(traditionId),
+        acquire: shippedAcquirePolicy(traditionId),
         effort: efforts,
         rng: pinnedRng(rootSeed),
         materials,

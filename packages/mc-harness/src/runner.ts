@@ -35,19 +35,27 @@
 
 import { performance } from 'node:perf_hooks';
 
-import { aggregateMetrics, countByFailureClass, countByStatus, sortCanonically, totalWorldTicks } from './aggregate.js';
+import {
+  aggregateMetrics,
+  buildArmTelemetry,
+  countByFailureClass,
+  countByStatus,
+  sortCanonically,
+  totalWorldTicks,
+} from './aggregate.js';
 import type { MetricEntries } from './metrics.js';
+import { collectArmMetrics } from './metrics-registry.js';
 import type { PoolResult } from './pool.js';
 import { runTasksInline, runTasksOnPool } from './pool.js';
 import type { Provenance, RunExecutor, RunTask } from './protocol.js';
 import type { RunRecord, SweepSummary } from './records.js';
 import { RECORD_FORMAT_VERSION, buildRunRecord, provenanceDisagreements, provenanceProblems } from './records.js';
-import { deriveRunSeed } from './seed.js';
 import { TERMINAL_STATUS } from './session.js';
 import type { OutputMode } from './storage.js';
 import { openSweepOutput } from './storage.js';
 import type { SweepPlan, SweepRegistries, SweepSpec } from './sweep-spec.js';
-import { assignStrategies, expandSweep } from './sweep-spec.js';
+import { expandSweep } from './sweep-spec.js';
+import { buildTasks } from './tasks.js';
 
 /** Where the runs execute. */
 export type SweepExecution =
@@ -102,38 +110,6 @@ const NO_METRICS: MetricEntries = Object.freeze({});
 /** Accounting for a run that never submitted an action. */
 const NO_ACCOUNTING = Object.freeze({ submissions: 0, rejections: 0, byActionId: Object.freeze({}) });
 
-/**
- * Builds every task of a sweep, in canonical order, with seeds already derived.
- *
- * Exported because the reproduction path builds exactly one of these and must
- * build it the same way — a second construction site for tasks is a second
- * opinion about what a run is.
- */
-export function buildTasks(spec: SweepSpec, plan: SweepPlan): Map<number, RunTask> {
-  const tasks = new Map<number, RunTask>();
-  for (const cell of plan.cells) {
-    for (let replicateIndex = 0; replicateIndex < spec.replicates; replicateIndex += 1) {
-      const coordinates = {
-        rootSeed: spec.rootSeed,
-        sweepId: spec.sweepId,
-        cellIndex: cell.cellIndex,
-        replicateIndex,
-      };
-      const taskId = cell.cellIndex * spec.replicates + replicateIndex;
-      tasks.set(taskId, {
-        coordinates,
-        runSeed: deriveRunSeed(coordinates),
-        levels: cell.levels,
-        strategies: assignStrategies(spec.agentPool, cell.cellIndex, replicateIndex),
-        worldTickCap: spec.termination.worldTickCap,
-        metrics: [...spec.metrics].sort(),
-        ablatedPrimitives: [...spec.ablation.primitives].sort(),
-      });
-    }
-  }
-  return tasks;
-}
-
 /** Turns one pool result into a record. Failures become `failed` records. */
 function recordFor(task: RunTask, result: PoolResult | undefined, fallback: Provenance): RunRecord {
   if (result === undefined) {
@@ -170,7 +146,40 @@ function recordFor(task: RunTask, result: PoolResult | undefined, fallback: Prov
     metrics: outcome.metrics,
     accounting: outcome.accounting,
     provenance: outcome.provenance,
+    ...(outcome.armContribution === undefined
+      ? {}
+      : { armContribution: outcome.armContribution }),
   });
+}
+
+/**
+ * The `per-arm` half of a sweep's metrics, or nothing.
+ *
+ * A sweep is one arm — the ablation runner executes one sweep per arm, so that
+ * stays true there — and the arm is identified by the `sweepId`. Nothing is
+ * reported when no run described an arm; see {@link buildArmTelemetry} on why an
+ * empty arm is not the same as an arm of zeros.
+ *
+ * The registry is `BALANCE_METRIC_REGISTRY` and not the sweep's own, deliberately.
+ * A sweep declares the *per-run* metrics it wants collected inside its workers;
+ * the five arm-scoped metrics of §7 are properties of the arm's runs and can be
+ * computed for any arm that describes itself, whatever the sweep declared. A
+ * sweep of the reference universe therefore gets `ascensionRate` and
+ * `capitalSnowball` without naming them — which is the point, because those two
+ * are exactly the numbers nobody could produce before.
+ */
+function armMetricsFor(
+  sweepId: string,
+  records: readonly RunRecord[],
+  ablatedPrimitives: readonly string[],
+): { armId: string; armMetrics: MetricEntries } | undefined {
+  const telemetry = buildArmTelemetry({
+    armId: sweepId,
+    records,
+    ...(ablatedPrimitives.length === 1 ? { ablatedPrimitiveId: ablatedPrimitives[0] as string } : {}),
+  });
+  if (telemetry === undefined) return undefined;
+  return { armId: telemetry.armId, armMetrics: collectArmMetrics(telemetry) };
 }
 
 /**
@@ -238,6 +247,8 @@ export async function runSweep(options: RunSweepOptions): Promise<SweepResult> {
     const failuresByClass = countByFailureClass(records);
     const failureCount = records.filter((record) => record.status === TERMINAL_STATUS.failed).length;
 
+    const arm = armMetricsFor(spec.sweepId, records, spec.ablation.primitives);
+
     const summary: SweepSummary = {
       recordFormatVersion: RECORD_FORMAT_VERSION,
       sweepId: spec.sweepId,
@@ -252,6 +263,7 @@ export async function runSweep(options: RunSweepOptions): Promise<SweepResult> {
       failureThreshold: spec.failureThreshold,
       disqualified: failureCount > spec.failureThreshold,
       aggregates: aggregateMetrics(records, spec.metrics, registries.metrics),
+      ...(arm === undefined ? {} : { armId: arm.armId, armMetrics: arm.armMetrics }),
       provenance,
       performance: {
         wallClockMs,
@@ -291,10 +303,26 @@ export function reaggregate(
   records: readonly RunRecord[],
   spec: SweepSpec,
   registries: SweepRegistries,
-): Pick<SweepSummary, 'aggregates' | 'countsByStatus' | 'failuresByClass' | 'failureCount' | 'disqualified'> {
+): Pick<
+  SweepSummary,
+  | 'aggregates'
+  | 'armId'
+  | 'armMetrics'
+  | 'countsByStatus'
+  | 'failuresByClass'
+  | 'failureCount'
+  | 'disqualified'
+> {
   const failureCount = records.filter((record) => record.status === TERMINAL_STATUS.failed).length;
+  // The arm metrics are recomputed here too, from the stored contributions and
+  // nothing else. That is what makes them re-derivable offline rather than a
+  // number that only exists inside the process that produced it — and it is why
+  // `ArmContribution` is written into every record instead of being kept in
+  // memory for the length of a sweep.
+  const arm = armMetricsFor(spec.sweepId, records, spec.ablation.primitives);
   return {
     aggregates: aggregateMetrics(records, spec.metrics, registries.metrics),
+    ...(arm === undefined ? {} : { armId: arm.armId, armMetrics: arm.armMetrics }),
     countsByStatus: countByStatus(records),
     failuresByClass: countByFailureClass(records),
     failureCount,

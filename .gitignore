@@ -19,3 +19,7 @@ coverage/
 
 # Generated audio candidates. Selected takes are committed under assets/selected/.
 assets/candidates/
+
+# Python bytecode, from packages/gym-bridge/python.
+__pycache__/
+*.py[cod]

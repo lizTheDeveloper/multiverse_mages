@@ -41,6 +41,7 @@
  * `definitionVersion` fails a check that names the metric (task 6.13).
  */
 
+import { NOT_ATTRIBUTABLE_PRIMITIVES, WILSON_Z_95 } from './ablation.js';
 import type { MetricDefinition, MetricEntries, MetricEntry, MetricRegistry, MetricScope } from './metrics.js';
 import { METRIC_SCOPE, UNAVAILABLE_REASON } from './metrics.js';
 import type { JsonValue } from './canonical.js';
@@ -108,14 +109,25 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
     id: 'winRateByPrimitive',
     definition:
       'Raid win rate of the arm retaining primitive p against the arm in which p is neutralized, ' +
-      'over mirrored pairs sharing derived run seeds with the sides swapped. 0.5 means no ' +
-      'measured contribution.',
+      'over mirrored pairs sharing derived run seeds with the sides swapped, reported with a 95% ' +
+      'Wilson score interval. An interval containing 0.5 is reported as no-detected-effect ' +
+      'alongside the point estimate; the portal primitive is not-attributable.',
     scope: METRIC_SCOPE.perArm,
     collectArm: collectWinRateByPrimitive,
     aggregation: 'mean',
     unit: 'win rate (fraction of mirrored plays)',
-    definitionVersion: 1,
-    pinnedConstants: { mirrored: true, pairwiseAblation: false },
+    // Bumped by task group 7: the metric was a placeholder reporting
+    // `mechanic-absent` and is now an interval-gated estimate with a stated z, a
+    // stated no-effect rule and a named exclusion. Same name, different quantity.
+    definitionVersion: 2,
+    pinnedConstants: {
+      mirrored: true,
+      pairwiseAblation: false,
+      interval: 'wilson-score',
+      intervalZ: WILSON_Z_95,
+      noDetectedEffectRule: 'interval contains 0.5',
+      notAttributablePrimitives: Object.keys(NOT_ATTRIBUTABLE_PRIMITIVES).sort(),
+    },
     thresholdOwner: 'raid-engagement',
   },
   {
@@ -185,19 +197,24 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
     definition:
       'Gini coefficient of instantaneous favor regeneration per world tick, across the runs of an ' +
       'arm, at fixed checkpoint world ticks. Runs terminating before a checkpoint are excluded ' +
-      'from it and counted.',
+      'from it and counted. The three saturated worship source classes are reported alongside it, ' +
+      'per checkpoint, so a runaway is attributable without a second sweep.',
     scope: METRIC_SCOPE.perArm,
     collectArm: collectWorshipSnowball,
     aggregation: 'mean',
     unit: 'Gini coefficient',
-    definitionVersion: 1,
+    // Bumped by god-agency task 7.2: the quantity is now named as the ledger's
+    // regeneration rather than "favor regen", and the per-class decomposition is
+    // part of what the metric reports.
+    definitionVersion: 2,
     pinnedConstants: {
       checkpointTicks: [...SNOWBALL_CHECKPOINT_TICKS],
       estimator: 'G = (2·Σ i·x_i) / (n·Σ x_i) − (n+1)/n, ascending, 1-based',
       smallSampleCorrection: false,
       degenerateTotalIsZero: 0,
-      quantity: 'instantaneous favor regeneration per world tick',
+      quantity: 'instantaneous favor regeneration per world tick, off the god favor ledger',
       scalarCheckpoint: 'last checkpoint with a sample',
+      perClassContributions: ['mages', 'universities', 'populace'],
     },
     thresholdOwner: 'god-agency',
   },
@@ -265,15 +282,21 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
     definition:
       'Win rate of a universe seeded with the maximum permitted prestige carry-forward against an ' +
       'otherwise identical universe seeded with zero prestige, over mirrored pairs sharing run ' +
-      'seeds with the sides swapped. Must stay under 60%.',
+      'seeds with the sides swapped. Must stay under 60%. The maximum is PRESTIGE_CAP, read out ' +
+      'of loaded god-constant content, which the loader asserts is the analytic limit of the ' +
+      'carry-forward recurrence at its earning ceiling.',
     scope: METRIC_SCOPE.perArm,
     collectArm: collectPrestigeAdvantage,
     aggregation: 'mean',
     unit: 'win rate (fraction of mirrored plays)',
-    definitionVersion: 1,
+    // Bumped by agent-interface task group 10: `carryForwardMax` was `null` —
+    // the statement that nobody had chosen a magnitude — and is now a named
+    // content constant. The collector's arithmetic did not change; what it is
+    // allowed to run against did.
+    definitionVersion: 2,
     pinnedConstants: {
       mirrored: true,
-      carryForwardMax: null,
+      carryForwardMax: 'PRESTIGE_CAP, from loaded god-constant content',
       thresholdMax: 0.6,
     },
     thresholdOwner: 'god-agency',

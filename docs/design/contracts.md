@@ -558,6 +558,19 @@ exactly one universe (§1.1). When that stops being true — a raid that takes g
 seeds a smaller world — `landUnits` moves to §1.1 and this record keeps `capacityPerLandUnit`, which
 is a property of the *kind* of country and not of who holds it.
 
+**A universe that cannot feed itself carries fewer people, and the world loop is what says so.**
+`carryingCapacity` has taken a `subsistenceShortfallShare` since `mages-and-species` task 8.5 and
+nothing passed one until the change's closeout, so `K` was the well-fed `K` for the length of any
+run. The 200-year reference run is what made that visible: the materials stock empties around world
+year seventy and `K` did not move. The share is now computed inside the births phase — this tick's
+subsistence demand against the stock as it stands, before consumption runs — because consumption is
+phase 9 and births are phase 8, and the alternatives were storing last tick's share in state (a
+world-schema revision for a number one line reads) or charging subsistence for a population and
+then letting it grow inside the same tick. With it wired, the reference run's `K` falls from 57,205
+to 29,831 across two centuries while the population rises to 18,722, so *"population never exceeds
+`K`"* is finally a question with a narrow answer rather than a bound running away ahead of the thing
+it bounds.
+
 **Every magnitude here is untuned** and carries `tuningStatus` saying so.
 
 ### 2.8 `god-cost.json`
@@ -616,6 +629,46 @@ silently:
   is the analytic limit of the carry-over recurrence at maximum earning, which is what makes the
   meta-game's bound arithmetic rather than a clamp.
 - `worship-lag-fall > worship-lag-rise`. The asymmetry *is* the damping.
+
+**Every value here is untuned** and carries `tuningStatus` saying so.
+
+### 2.10 `raid-constant.json`
+
+```jsonc
+{
+  "id": "stability-decay-per-tick",
+  "value": 1024,                 // raw integer. NOT fp, and never derived
+  "unit": "raw",                 // fp | raw | count | ticks
+  "gloss": "Subtracted from portal stability every engagement tick, unconditionally.",
+  "tuningStatus": "untuned"
+}
+```
+
+Every magnitude an engagement is made of: the portal's opening stability and its decay, the
+battlefield and its terrain, the per-side caps, the derived combatant statistics, the objective
+values, and the victory threshold. Added by `raid-engagement`, and a deliberate extension of this
+section for the same reason §2.8 and §2.9 are — a number a balance sweep turns belongs in content,
+and inside `contentRevision`, or two universes could disagree about how long a portal holds while
+agreeing they may fight.
+
+**The set of ids is structural and the values are not**, exactly as in §2.9: the loader fails a set
+that omits a constant the rules read, and equally one that declares a constant nothing reads.
+
+Three checks here are not tuning hygiene — they are the **termination proof**, and they are the
+reason this file exists rather than a `const` block in `rules-raid`:
+
+- `stability-decay-per-tick` must be an **authored raw integer of at least 1**. §1.6 states why: a
+  decay derived by fixed-point division silently becomes `0` whenever the divisor exceeds the
+  numerator, and a decay of zero is a raid that runs forever with no error and no symptom.
+- `ceil((portal-stability-initial + portal-stability-jitter) / stability-decay-per-tick)` must not
+  exceed `MAX_ENGAGEMENT_TICKS`, the compile-time ceiling in `packages/content/src/raid.ts`. The
+  jitter is inside the numerator because a bound that holds on average is not a bound. The ceiling
+  is deliberately **not** a content value: it is what the engine trips over when the decrement
+  guarantee has been broken, and a ceiling a sweep can raise is one that gets raised the first time
+  a run reaches it.
+- No radius may exceed `max-interaction-radius`, which is the spatial index's cell size. The index
+  promises a radius query inspects at most nine cells; past that it silently stops finding
+  combatants at the edge of an effect, which reads as balance rather than as a bug.
 
 **Every value here is untuned** and carries `tuningStatus` saying so.
 
@@ -945,6 +998,12 @@ asserts the implemented registry's keys equal this list exactly.
 census intervals, censoring rules, denominators, whether a rate is instantaneous or cumulative. A
 metric whose definition drifts silently makes every committed baseline meaningless while still
 appearing green, so the definition is versioned alongside the numbers it produces.
+
+**Every constant that pinning invented is listed in
+[`metric-constants.md`](./metric-constants.md), with the ambiguity it resolves.** That note is
+checked against the implemented registry in both directions — a constant in the code and not in the
+note fails, and so does a row in the note for a constant the code does not declare — so it cannot go
+stale without the suite going red.
 
 **Ownership splits two ways.** `agent-interface` owns each metric's *definition and collection*;
 the capability that owns the mechanic owns its *threshold value* — `worshipSnowball`,

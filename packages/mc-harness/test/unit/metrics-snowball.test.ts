@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ArmRunSummary, CheckpointSample } from '@mm/mc-harness';
 import {
+  NO_MECHANICS,
   SNOWBALL_CHECKPOINT_TICKS,
   checkpointGinis,
   collectCapitalSnowball,
@@ -144,13 +145,25 @@ describe('checkpoints, exclusions, and their counts', () => {
   });
 });
 
-describe('worshipSnowball is mechanic-absent at 0.5.0', () => {
-  it('reports mechanic-absent rather than a coefficient of nothing', () => {
+describe('worshipSnowball gates on the mechanic, not on the sample', () => {
+  it('reports mechanic-absent rather than a coefficient of nothing, on a build with no god', () => {
+    // Not the 0.5.0 default any more: `god-agency` landed, so this build has a
+    // worship formula and a favor regeneration rate, and `MECHANICS_AT_0_5_0`
+    // says so. The flag is still what the collector reads, and a caller running
+    // a world with no god installed must still get `mechanic-absent` rather
+    // than a Gini coefficient of a quantity that does not exist.
     const entry = collectWorshipSnowball(
-      arm({ runs: [armRun({ checkpoints: checkpoints(0, 4) })] }),
+      arm({ mechanics: NO_MECHANICS, runs: [armRun({ checkpoints: checkpoints(0, 4) })] }),
     );
     expect(entry).toMatchObject({ status: 'unavailable', reason: 'mechanic-absent' });
     expect(entry.detail?.['owner']).toBe('god-agency');
+  });
+
+  it('does not report mechanic-absent on this build, because the mechanic is here', () => {
+    const entry = collectWorshipSnowball(
+      arm({ runs: [armRun({ checkpoints: checkpoints(0, 4) })] }),
+    );
+    expect(entry.status === 'unavailable' ? entry.reason : 'measured').not.toBe('mechanic-absent');
   });
 
   it('measures the instantaneous rate once the mechanic exists', () => {

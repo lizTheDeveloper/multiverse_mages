@@ -33,10 +33,11 @@ import {
   attachRecord,
   createUniverse,
 } from '@mm/state';
-import type { CellResolver, NodeCatalog, StorePolicy } from '@mm/rules-magic';
+import type { AcquirePolicy, CellResolver, NodeCatalog, StorePolicy } from '@mm/rules-magic';
 import {
   KnowledgeSubsystem,
   MagicGrid,
+  acquirePolicy,
   catalogFromRegistry,
   hookFor,
   storePolicy,
@@ -78,6 +79,12 @@ export function shippedStorePolicy(traditionId: number): StorePolicy {
   return storePolicy(hookFor('store', traditionId, traditionId, table));
 }
 
+/** The v1 tradition's resolved `acquire` hook: what learning costs here. */
+export function shippedAcquirePolicy(traditionId: number): AcquirePolicy {
+  const table = traditionTableFrom(registry());
+  return acquirePolicy(hookFor('acquire', traditionId, traditionId, table));
+}
+
 /**
  * A shipped tradition whose `store` hook keeps written copies.
  *
@@ -110,6 +117,7 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     catalog,
     cells,
     store: shippedStorePolicy(traditionId),
+    acquire: shippedAcquirePolicy(traditionId),
     territory: territoryExtent(registry().territories.map((entry) => entry.record)),
     primitives: {
       lifespan: primitiveNamed('lifespan'),
