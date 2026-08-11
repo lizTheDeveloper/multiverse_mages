@@ -165,10 +165,18 @@ describe('one crashed worker does not lose the sweep', () => {
   }, 60_000);
 
   it('abandons a run that outlives the per-run timeout and keeps going', async () => {
+    // The budget is generous on purpose. The hung run never settles — the toy
+    // executor awaits a promise with no resolver — so *any* finite timeout
+    // catches it, and the assertion below is unaffected by how large this is.
+    // What a small budget does affect is the other 23 runs: at 250 ms a loaded
+    // machine running the whole workspace suite in parallel timed them out too,
+    // and the test failed with 24 failures where it expects 1. That is a false
+    // negative about the harness, produced by whatever else was running.
+    // Raising it removes the flap without relaxing anything.
     const spec = toySweep({
       replicates: 4,
       failureThreshold: 4,
-      termination: { worldTickCap: 64, perRunTimeoutMs: 250 },
+      termination: { worldTickCap: 64, perRunTimeoutMs: 5_000 },
     });
     const result = await runSweep({
       spec,
