@@ -201,25 +201,38 @@ describe('two hundred world years of the reference universe', () => {
     }
   });
 
-  it('9.5 — but teaching and scribing both stop, and the box stays unchecked', () => {
-    // A tripwire in the shape this repository already uses: the assertion is
-    // the *current* behaviour, stated so plainly that fixing it fails this test
-    // and forces somebody to come back and tick the box.
+  it('9.5 — teaching now sustains; scribing still dies of the economy', () => {
+    // This tripwire has fired once already and been rewritten, which is what a
+    // tripwire is for. It used to assert that teaching happened in the first
+    // window and *never again* — because nothing a mage researched for herself
+    // cleared the `fp(512)` teach threshold, so only the founding grants were
+    // ever teachable and they were taught out inside twenty years.
+    //
+    // The cause was not the threshold. It was that the `acquire` tradition hook
+    // was inert: `applyAcquire` was called from tests and from nowhere else, so
+    // a tradition's `initialMastery` never reached a created instance and every
+    // mage finished her research at the placeholder `fp(256)`. Wiring the hook
+    // into the real acquisition path fixed the deadlock as a side effect, which
+    // is worth recording — the symptom looked like a threshold that wanted
+    // retuning, and retuning it would have hidden a dead contract instead.
     const windows = windowsOf(run, WINDOW_YEARS).map((window) => activityIn(window));
     const taught = windows.map((activity) => activity.lessonsTaught);
     const scribed = windows.map((activity) => activity.grimoiresScribed);
     console.log(`9.5 lessons taught per 20-year window: ${taught.join(' / ')}`);
     console.log(`9.5 books scribed per 20-year window:  ${scribed.join(' / ')}`);
 
-    // Teaching happens at all — the founding grants are at MASTERY_MAX and are
-    // above the teach threshold — and then never again, because nothing a mage
-    // researches for herself clears `fp(512)`.
-    expect(taught[0] ?? 0).toBeGreaterThan(0);
-    expect(taught.slice(1).reduce((sum, value) => sum + value, 0)).toBe(0);
+    // Teaching happens in *every* window now, so knowledge moves mind to mind
+    // for the whole run rather than for its first twenty years. Asserted per
+    // window rather than as a total: a total would be satisfied by one enormous
+    // early burst, which is the behaviour this replaced.
+    for (const [index, lessons] of taught.entries()) {
+      expect(lessons, `no lesson taught in 20-year window ${String(index)}`).toBeGreaterThan(0);
+    }
 
-    // Scribing survives longer, and dies of the economy rather than of the
-    // mastery threshold: books cost materials, and the stock is empty from
-    // roughly world year seventy.
+    // Scribing still stops, and still dies of the economy rather than of the
+    // mastery threshold: books cost materials and the stock is empty from
+    // roughly world year seventy. That half of 9.5 stays unchecked, and this
+    // stays a tripwire for it.
     expect(scribed[0] ?? 0).toBeGreaterThan(0);
     expect(scribed[scribed.length - 1] ?? 0).toBe(0);
   });

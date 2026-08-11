@@ -177,6 +177,7 @@ const SECTIONS: readonly DocumentedSection[] = [
   { contentFile: 'territory.json', heading: '### 2.7 `territory.json`', recordIndex: 0 },
   { contentFile: 'god-cost.json', heading: '### 2.8 `god-cost.json`', recordIndex: 0 },
   { contentFile: 'god-constant.json', heading: '### 2.9 `god-constant.json`', recordIndex: 0 },
+  { contentFile: 'raid-constant.json', heading: '### 2.10 `raid-constant.json`', recordIndex: 0 },
 ];
 
 /**

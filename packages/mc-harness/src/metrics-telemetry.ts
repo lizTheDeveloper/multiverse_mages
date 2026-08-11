@@ -74,12 +74,39 @@ export interface MechanicAvailability {
 /**
  * What this build has, as of 0.5.0.
  *
- * Three `false`s and nothing else, and each one is checked against the tree:
- * `god-agency` (0.6.0) has not landed, so there is no favor-regeneration formula
- * and no prestige magnitude; `raid-engagement` (0.7.0) has not landed, so
- * `rules-raid` is a skeleton and no run produces a raid.
+ * Two of the three are now `true`, and the flip is what `god-agency` bought:
+ * `coordination`'s god systems compute worship from three saturated source
+ * classes and regenerate favor from it every world tick, and `PRESTIGE_CAP` is
+ * a loaded content constant with an asserted identity behind it, so both
+ * `worshipSnowball` and `prestigeAdvantage` have a mechanic to measure. Neither
+ * flag says the *sweep* produced a sample — `worshipSnowball` still needs
+ * checkpoint samples and `prestigeAdvantage` still needs mirrored pairs, and
+ * both report `no-observations` without them. That is the distinction these
+ * flags exist to keep: absent is declared, empty is measured.
+ *
+ * `raidEngagement` stays `false`, and stays checked against the tree:
+ * `raid-engagement` has not landed, `rules-raid` is a skeleton, and no run
+ * produces a raid. Four §7 metrics depend on it and all four correctly report
+ * `mechanic-absent`.
+ *
+ * **This is a default, not a fact about every run.** An executor reports its own
+ * availability — see {@link RunTelemetry.mechanics} — and a caller running a
+ * world with no god installed must say so rather than inheriting these.
  */
 export const MECHANICS_AT_0_5_0: MechanicAvailability = Object.freeze({
+  worship: true,
+  raidEngagement: false,
+  prestigeCarryForward: true,
+});
+
+/**
+ * A world with none of the three. The shape a toy or god-less executor reports.
+ *
+ * Named rather than spelled out at each call site, because "all false" written
+ * inline three times is three places that can drift from each other and from
+ * the thing they describe.
+ */
+export const NO_MECHANICS: MechanicAvailability = Object.freeze({
   worship: false,
   raidEngagement: false,
   prestigeCarryForward: false,
@@ -118,6 +145,24 @@ export interface CheckpointSample {
    * across all libraries. The §6a capital loop's stock variable.
    */
   readonly libraryNodeCount: number;
+  /**
+   * The three saturated worship source classes, separately, or absent when the
+   * build has no worship.
+   *
+   * `god-agency`'s task 7.2: *"report per-class saturated worship contributions
+   * with the metric so a runaway is attributable without a second sweep"*. A
+   * Gini coefficient over 0.35 says inequality is growing and says nothing about
+   * which of mages, universities or populace is producing it — and the three
+   * saturate independently, so the answer changes what you would retune. Kept
+   * beside the checkpoint rather than in a second telemetry channel because it
+   * is a decomposition *of this sample*, and a decomposition taken at a
+   * different moment would not add up.
+   */
+  readonly worshipByClass?: {
+    readonly mages: number;
+    readonly universities: number;
+    readonly populace: number;
+  };
 }
 
 /** One raid, as `raid-engagement` will report it. */
@@ -218,6 +263,29 @@ export interface ArmTelemetry {
   readonly runs: readonly ArmRunSummary[];
   /** Present only for a `prestigeAdvantage` arm. */
   readonly mirroredPlays?: readonly MirroredPlay[];
+  /**
+   * The primitive this arm neutralizes, or `null` on a control arm.
+   *
+   * `winRateByPrimitive` reads it for one reason that is not bookkeeping: §7
+   * reports `not-attributable` for `portal`, and that decision is made from the
+   * primitive's *name* rather than from its results, because a `portal` arm
+   * produces no results to decide from. See `ablation.ts`.
+   */
+  readonly ablatedPrimitiveId?: string | null;
+  /**
+   * The arm's mirrored ablation plays, in canonical run order.
+   *
+   * Shaped like {@link MirroredPlay} and deliberately not the same type: the
+   * side that matters here is the *retaining* one, and a shared type would let a
+   * caller hand prestige plays to the ablation collector and get a plausible
+   * number. `ablation.ts` owns the type; this is `unknown`-free because the
+   * telemetry record must survive a structured clone.
+   */
+  readonly ablationPlays?: readonly {
+    readonly runSeed: number;
+    readonly retainingSide: 0 | 1;
+    readonly retainingWon: boolean;
+  }[];
   /**
    * The maximum permitted prestige carry-forward, once `god-agency` defines it.
    *

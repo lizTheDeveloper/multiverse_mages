@@ -24,6 +24,7 @@
 
 import type { JsonValue } from './canonical.js';
 import type { MetricEntries } from './metrics.js';
+import type { CheckpointSample, MechanicAvailability, MirroredPlay } from './metrics-telemetry.js';
 import type { IllegalActionAccounting, TerminalStatus } from './session.js';
 import type { RunCoordinates } from './seed.js';
 
@@ -84,6 +85,58 @@ export interface RunTask {
   readonly metrics: readonly string[];
   /** Primitives to neutralize, or empty. Task group 7 gives this meaning. */
   readonly ablatedPrimitives: readonly string[];
+  /**
+   * The agent slot that plays the neutralized ruleset, on a mirrored ablation
+   * arm; absent on the control arm and on every non-ablation sweep.
+   *
+   * Optional because it is meaningless without {@link ablatedPrimitives}, and
+   * because a required field here would change every task ever constructed by a
+   * caller that has no ablation in it. See `ablation.ts` on why one primitive
+   * produces two arms and why the side is what distinguishes them.
+   */
+  readonly ablatedSlotIndex?: number;
+}
+
+/**
+ * What one run contributes to the metrics defined **across** an arm.
+ *
+ * `contracts.md` §7 has five `per-arm` metrics — two Gini coefficients, two win
+ * rates, one ascension rate — and none of them has a per-run value. The run
+ * record carries `{unavailable, per-arm-scope}` for each; the number itself can
+ * only be computed once every run of the arm has finished. This is the per-run
+ * *input* to that computation, and it exists because the alternative — the
+ * runner reaching back into the simulation after the fact — is not available to
+ * a package whose only edge is `agent-api` and whose runs happen in other
+ * threads.
+ *
+ * Every field is structured-cloneable, because it crosses a worker boundary, and
+ * every field is also written into the run record, because task 4.5's offline
+ * re-aggregation has to reproduce the arm metrics from stored records alone.
+ *
+ * **Optional in its entirety.** An executor that describes no arm — the toy
+ * world in this package's fixtures, or any caller written before task group 6 —
+ * contributes nothing, and the sweep reports no arm metrics rather than
+ * reporting them over an empty arm. A Gini coefficient of nothing is 0, and 0 is
+ * the answer for a perfectly equal population; the two must not be confused.
+ */
+export interface ArmContribution {
+  /** What the build implements. Must agree across every run of the arm. */
+  readonly mechanics: MechanicAvailability;
+  /** This run's samples at the pinned snowball checkpoints, ascending by tick. */
+  readonly checkpoints: readonly CheckpointSample[];
+  /**
+   * The maximum permitted prestige carry-forward, or `null` when nobody has
+   * chosen one. Must agree across every run of the arm.
+   */
+  readonly prestigeCarryForwardMax: number | null;
+  /** This run's mirrored `prestigeAdvantage` play, when it was one half of a pair. */
+  readonly mirroredPlay?: MirroredPlay;
+  /** This run's mirrored ablation play, when the arm is an ablation arm. */
+  readonly ablationPlay?: {
+    readonly runSeed: number;
+    readonly retainingSide: 0 | 1;
+    readonly retainingWon: boolean;
+  };
 }
 
 /** What an executor returns for a run that completed, however it ended. */
@@ -93,6 +146,8 @@ export interface RunOutcome {
   readonly metrics: MetricEntries;
   readonly accounting: IllegalActionAccounting;
   readonly provenance: Provenance;
+  /** See {@link ArmContribution}. Absent when the executor describes no arm. */
+  readonly armContribution?: ArmContribution;
 }
 
 /**

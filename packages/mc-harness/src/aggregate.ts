@@ -56,6 +56,11 @@
 import type { MetricAggregate, RunRecord } from './records.js';
 import type { MetricRegistry } from './metrics.js';
 import { isMeasured } from './metrics.js';
+import type { ArmRunSummary, ArmTelemetry, MirroredPlay } from './metrics-telemetry.js';
+import type { ArmContribution } from './protocol.js';
+
+/** The ablation play shape `ArmTelemetry` carries. Named so the fold can hold one. */
+type ArmTelemetryAblationPlay = NonNullable<ArmTelemetry['ablationPlays']>[number];
 
 /**
  * Records in canonical order: by `cellIndex`, then by `replicateIndex`.
@@ -205,6 +210,97 @@ function sortedCounts(counts: Readonly<Record<string, number>>): Record<string, 
     sorted[key] = counts[key] as number;
   }
   return sorted;
+}
+
+/**
+ * Assembles the arm the sweep's runs constitute, or reports why it cannot.
+ *
+ * This is the piece task group 6 declared and left unbuilt: `ArmTelemetry`
+ * existed as a type with five collectors reading it, and nothing in the pipeline
+ * ever constructed one — so every `per-arm` metric reported `per-arm-scope` in
+ * the run records and then nothing at all in the summary. The five arm-scoped
+ * metrics of `contracts.md` §7 were, in effect, declared and never measured.
+ *
+ * Three rules, each of which is a way the number could otherwise be wrong:
+ *
+ * 1. **Runs are folded in canonical order**, because a Gini coefficient is a
+ *    floating-point fold and eight workers do not finish in an order. This is
+ *    the same argument the rest of this file makes, and `ArmTelemetry.runs`
+ *    documents the requirement rather than enforcing it, so it is enforced here.
+ * 2. **No contribution means no arm.** An executor that describes no arm gets
+ *    `undefined`, not an arm with zero runs. `gini([])` is 0 and 0 is the
+ *    coefficient of a perfectly equal population, so an empty arm would report
+ *    perfect equality of a quantity nobody measured.
+ * 3. **Disagreement throws.** Two runs of one arm claiming different mechanic
+ *    availability, or different prestige carry-forward maxima, is the same class
+ *    of defect as two runs reporting different content hashes — and the whole
+ *    arm's numbers would describe neither build.
+ *
+ * `failed` runs contribute their status and nothing else. That is deliberate and
+ * `ascensionRate` depends on it: a failed run is excluded from the denominator
+ * and reported separately, which the collector does from the status alone.
+ *
+ * @throws Error naming the disagreeing runs.
+ */
+export function buildArmTelemetry(input: {
+  readonly armId: string;
+  readonly records: readonly RunRecord[];
+  /** The primitive this arm neutralizes, when it is an ablation arm. */
+  readonly ablatedPrimitiveId?: string | null;
+}): ArmTelemetry | undefined {
+  const ordered = sortCanonically(input.records);
+  const described = ordered.filter((record) => record.armContribution !== undefined);
+  if (described.length === 0) return undefined;
+
+  const first = described[0] as RunRecord;
+  const reference = first.armContribution as ArmContribution;
+  const problems: string[] = [];
+  for (const record of described.slice(1)) {
+    const contribution = record.armContribution as ArmContribution;
+    if (
+      JSON.stringify(contribution.mechanics) !== JSON.stringify(reference.mechanics) ||
+      contribution.prestigeCarryForwardMax !== reference.prestigeCarryForwardMax
+    ) {
+      problems.push(
+        `run ${String(record.runSeed)} (cell ${String(record.coordinates.cellIndex)}, replicate ` +
+          `${String(record.coordinates.replicateIndex)}) reports different mechanic availability ` +
+          `or prestige carry-forward from run ${String(first.runSeed)}.`,
+      );
+    }
+  }
+  if (problems.length > 0) {
+    throw new Error(
+      `Arm ${input.armId} was assembled from runs that disagree about what the build implements, ` +
+        `so its per-arm metrics would describe neither:\n  ${problems.join('\n  ')}`,
+    );
+  }
+
+  const mirroredPlays: MirroredPlay[] = [];
+  const ablationPlays: ArmTelemetryAblationPlay[] = [];
+  const runs: ArmRunSummary[] = [];
+  for (const record of ordered) {
+    const contribution = record.armContribution;
+    runs.push({
+      coordinates: record.coordinates,
+      status: record.status,
+      ticksRun: record.ticksRun,
+      checkpoints: contribution?.checkpoints ?? [],
+    });
+    if (contribution?.mirroredPlay !== undefined) mirroredPlays.push(contribution.mirroredPlay);
+    if (contribution?.ablationPlay !== undefined) ablationPlays.push(contribution.ablationPlay);
+  }
+
+  return {
+    armId: input.armId,
+    mechanics: reference.mechanics,
+    runs,
+    prestigeCarryForwardMax: reference.prestigeCarryForwardMax,
+    ...(mirroredPlays.length === 0 ? {} : { mirroredPlays }),
+    ...(ablationPlays.length === 0 ? {} : { ablationPlays }),
+    ...(input.ablatedPrimitiveId === undefined
+      ? {}
+      : { ablatedPrimitiveId: input.ablatedPrimitiveId }),
+  };
 }
 
 /** Total world ticks executed across the sweep, folded in canonical order. */

@@ -41,10 +41,11 @@ import { loadContent, shippedContentSource } from '@mm/content';
 import type { SimState } from '@mm/sim-core';
 import type { CatalogueNode, ContentCatalogue } from '@mm/agent-api';
 import { buildCatalogue } from '@mm/agent-api';
-import type { CellResolver, NodeCatalog, StorePolicy } from '@mm/rules-magic';
+import type { AcquirePolicy, CellResolver, NodeCatalog, StorePolicy } from '@mm/rules-magic';
 import {
   KnowledgeSubsystem,
   MagicGrid,
+  acquirePolicy,
   catalogFromRegistry,
   hookFor,
   storePolicy,
@@ -204,6 +205,21 @@ export function storeHookOf(registry: ContentRegistry, traditionId: ContentId): 
 }
 
 /**
+ * A tradition's resolved `acquire` hook — what learning costs, and what a fresh
+ * instance is worth.
+ *
+ * Written beside {@link storeHookOf} rather than folded into it, because the two
+ * hooks are resolved from the same id and are otherwise unrelated: `hookFor`
+ * arbitrates each one separately, and a portal will one day resolve them from
+ * different universes (`vision.md` §4a puts both on world-time today, which is
+ * an answer, not an accident).
+ */
+export function acquireHookOf(registry: ContentRegistry, traditionId: ContentId): AcquirePolicy {
+  const table = traditionTableFrom(registry);
+  return acquirePolicy(hookFor('acquire', traditionId, traditionId, table));
+}
+
+/**
  * The §4.1 catalogue: every node's cell and tier, plus the tradition ids.
  *
  * This is the projection `agent-api` asks callers to build for it, and building
@@ -273,6 +289,7 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
     catalog,
     cells,
     store: storeHookOf(registry, traditionId),
+    acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
     primitives: {
       lifespan,

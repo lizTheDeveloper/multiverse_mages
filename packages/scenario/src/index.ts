@@ -38,6 +38,7 @@
 
 export type { RulesetAxes } from './content-set.js';
 export {
+  acquireHookOf,
   catalogAndCells,
   contentCatalogue,
   foundingCandidates,

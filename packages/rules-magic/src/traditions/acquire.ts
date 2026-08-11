@@ -14,6 +14,8 @@
 import type { Fixed } from '@mm/sim-core';
 import { FP_ONE, mul } from '@mm/sim-core';
 
+import { DEFAULT_INITIAL_MASTERY } from '../instances/constants.js';
+
 import type { ResolvedHook } from './hook-for.js';
 import { assertHookPoint, integerParam, unimplementedKind } from './hook-for.js';
 
@@ -134,6 +136,92 @@ function trueNameAcquire(hook: ResolvedHook, inputs: AcquireInputs): AcquireTerm
     teachCost: scaleCost(inputs.baseTeachCost, integerParam(hook, 'teachCostMultiplier')),
     initialMastery: mastery,
     stolenMastery: mastery,
+  };
+}
+
+/**
+ * The `acquire` hook resolved once, in the shape a running universe consumes.
+ *
+ * ## Why this exists, when {@link applyAcquire} already did the arithmetic
+ *
+ * {@link applyAcquire} prices *one* acquisition: it takes four base numbers and
+ * returns four terms. A universe does not have one acquisition, it has a
+ * catalog and a loop, and the loop needs the same hook applied to a different
+ * node every time it asks. For the whole of 0.3.0 the only callers that ever
+ * assembled those four base numbers were tests — so True Naming declared a
+ * `teachCostMultiplier` and no mage anywhere paid it. The hook was correct and
+ * unreachable, which is the same defect `slotsPerMage` had and is caught the
+ * same way: by giving the caller something it can hold onto for the length of a
+ * universe and cannot supply half of.
+ *
+ * So this is the `acquire` counterpart of `store.ts`'s `StorePolicy`: resolved once
+ * from a hook, carried on the world loop's deps, and consulted per node. It
+ * adds no authority — every number below comes out of {@link applyAcquire}, and
+ * the two mastery terms are read from one call so they cannot disagree.
+ *
+ * **Its vocabulary is still exactly four numbers.** There is deliberately no
+ * method here for decay, storage, casting or cost, because a policy object is
+ * exactly where a fifth hook would grow.
+ */
+export interface AcquirePolicy {
+  /** The hook kind that produced this policy, for diagnostics and reporting. */
+  readonly kind: string;
+  /**
+   * What deriving a node unaided costs under this tradition, from the node's
+   * authored `researchCost`.
+   *
+   * Applied to the **authored** cost, before rediscovery and before species
+   * rates. Multiplication commutes, so the order matters only for rounding, and
+   * this order is the one a reader can check against content: it is the node's
+   * price under this tradition, which rediscovery then triples and a quick
+   * learner then divides.
+   */
+  researchCost(authored: Fixed): Fixed;
+  /** What one lesson costs under this tradition, from the node's `teachCost`. */
+  teachCost(authored: Fixed): Fixed;
+  /** Mastery a freshly derived instance is created at. */
+  readonly initialMastery: Fixed;
+  /**
+   * Mastery an instance taken by `knowledge-steal` arrives at.
+   *
+   * Carried, and at this build consumed by nothing: theft is `rules-raid`'s and
+   * that package is a skeleton. Stated rather than omitted so that the raid path
+   * has one place to read it from when it lands, instead of assembling its own
+   * {@link AcquireInputs} and reintroducing the split this type exists to close.
+   */
+  readonly stolenMastery: Fixed;
+}
+
+/**
+ * Resolves an `acquire` hook into the policy a universe consults per node.
+ *
+ * The costs are `applyAcquire` called with the node in hand; the two masteries
+ * come from a single call made here, because they are constants of the hook
+ * rather than functions of a node. Each call supplies `0` for the cost it is
+ * not asking about — {@link scaleCost} returns a non-positive base untouched, so
+ * the unasked half costs a comparison and cannot influence the answer.
+ *
+ * The mastery bases are {@link DEFAULT_INITIAL_MASTERY} for both: `contracts.md`
+ * §1.5 defines `0` as "just learned", and a tradition that does not speak about
+ * mastery leaves a derived instance and a stolen one exactly where the
+ * un-hooked path would have put them.
+ */
+export function acquirePolicy(hook: ResolvedHook): AcquirePolicy {
+  const terms = (baseResearchCost: Fixed, baseTeachCost: Fixed): AcquireTerms =>
+    applyAcquire(hook, {
+      baseResearchCost,
+      baseTeachCost,
+      baseInitialMastery: DEFAULT_INITIAL_MASTERY,
+      baseStolenMastery: DEFAULT_INITIAL_MASTERY,
+    });
+  const mastery = terms(0, 0);
+
+  return {
+    kind: hook.kind,
+    researchCost: (authored) => terms(authored, 0).researchCost,
+    teachCost: (authored) => terms(0, authored).teachCost,
+    initialMastery: mastery.initialMastery,
+    stolenMastery: mastery.stolenMastery,
   };
 }
 

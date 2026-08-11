@@ -169,17 +169,17 @@ describe('the two tempo metrics §7 names', () => {
   });
 });
 
-describe('winRateByPrimitive, registered here and measured by task group 7', () => {
+describe('winRateByPrimitive, registered here and scheduled by task group 7', () => {
   it('reports mechanic-absent because it is a raid win rate and there are no raids', () => {
     const entry = collectWinRateByPrimitive(arm());
     expect(entry).toMatchObject({ status: 'unavailable', reason: 'mechanic-absent' });
-    expect(String(entry.detail?.['reasonDetail'])).toContain('task group 7');
+    expect(String(entry.detail?.['reasonDetail'])).toContain('no raids');
   });
 
   it('reports no-observations once raids exist but no ablation arm was scheduled', () => {
-    // The honest intermediate state: the mechanic is there, the ablation sweep
-    // that would attribute it is not. Group 7 owns that sweep, and this
-    // collector must not fabricate an attribution in the meantime.
+    // The honest intermediate state: the mechanic is there, this arm is the
+    // control half of a comparison that has no other half. The collector must
+    // not fabricate an attribution out of one arm.
     expect(collectWinRateByPrimitive(arm({ mechanics: ALL_MECHANICS }))).toMatchObject({
       status: 'unavailable',
       reason: 'no-observations',

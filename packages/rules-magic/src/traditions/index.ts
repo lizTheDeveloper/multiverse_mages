@@ -38,8 +38,8 @@
  * numbers is balanced.
  */
 
-export type { AcquireInputs, AcquireTerms } from './acquire.js';
-export { UNCHANGED_MULTIPLIER, applyAcquire } from './acquire.js';
+export type { AcquireInputs, AcquirePolicy, AcquireTerms } from './acquire.js';
+export { UNCHANGED_MULTIPLIER, acquirePolicy, applyAcquire } from './acquire.js';
 
 export type { CastOutcome, CastPolicy, PreparationCandidate, PreparationOutcome } from './cast.js';
 export { UNBOUNDED_PREPARATION, castPolicy, expendOnCast, isCastable, prepare } from './cast.js';

@@ -28,10 +28,14 @@
 import { OBSERVATION_LAYOUT_DIGEST, OBSERVATION_SCHEMA_VERSION, createSession } from '@mm/agent-api';
 import type { ScenarioConfig } from '@mm/agent-api';
 import { RNG_STREAM } from '@mm/sim-core';
+import type { GodTickReport } from '@mm/coordination';
 import type {
   AgentSession,
+  ArmContribution,
+  CheckpointSample,
   IllegalActionAccounting,
   JsonValue,
+  MechanicAvailability,
   Provenance,
   RunExecutor,
   RunOutcome,
@@ -40,6 +44,7 @@ import type {
 } from '@mm/mc-harness';
 import {
   BOT_POOL_REGISTRY,
+  SNOWBALL_CHECKPOINT_TICKS,
   adaptAgentSession,
   canonicalHash,
   policiesForRun,
@@ -74,11 +79,30 @@ export const SCENARIO_BUILD_VERSION = '0.3.0';
  */
 export const CENSUS_INTERVAL_TICKS = 12;
 
+/**
+ * What this build implements, as the §7 collectors need to be told.
+ *
+ * Checked against the tree rather than copied from a milestone plan:
+ * `worldDeps` supplies `deps.god`, so `coordination`'s worship and favor systems
+ * run every world tick and both `worship` and `prestigeCarryForward` are real;
+ * `rules-raid` is a skeleton and nothing opens a portal, so `raidEngagement` is
+ * not. The four raid-dependent metrics of §7 report `mechanic-absent` because of
+ * that last `false`, and they will stop doing so on the commit that flips it and
+ * on no other.
+ */
+const REFERENCE_MECHANICS: MechanicAvailability = Object.freeze({
+  worship: true,
+  raidEngagement: false,
+  prestigeCarryForward: true,
+});
+
 /** A session that keeps a census every {@link CENSUS_INTERVAL_TICKS} ticks. */
 interface CensusRecorder<TConfig> {
   readonly session: AgentSession<TConfig>;
   /** Readings so far, ascending by world tick. */
   readonly samples: readonly CensusSample[];
+  /** The snowball checkpoints this run reached, ascending by world tick. */
+  readonly checkpoints: readonly CheckpointSample[];
   /** Takes a reading now, whatever the interval says. */
   takeNow(): CensusSample;
 }
@@ -95,8 +119,12 @@ interface CensusRecorder<TConfig> {
 function recordingSession<TConfig>(
   inner: AgentSession<TConfig>,
   intervalTicks: number,
+  godReport: () => GodTickReport | undefined,
 ): CensusRecorder<TConfig> {
   const samples: CensusSample[] = [];
+  const checkpoints: CheckpointSample[] = [];
+  const checkpointTicks = new Set(SNOWBALL_CHECKPOINT_TICKS);
+  const checkpointsTaken = new Set<number>();
   let lastRecordedTick = -1;
 
   const record = (sample: CensusSample): CensusSample => {
@@ -107,15 +135,57 @@ function recordingSession<TConfig>(
     return sample;
   };
 
-  const takeNow = (): CensusSample => record(censusOf(inner.observe()));
+  /**
+   * Takes a snowball checkpoint, once, at each pinned tick this run reaches.
+   *
+   * `favorRegenPerTick` is the **last completed world tick's** regeneration, off
+   * the god's favor ledger. There is a one-tick lag in that and it is stated
+   * rather than corrected: the report is written at the end of a tick and the
+   * observation is taken at the start of the next, so the alternative would be
+   * to sample the rate before the tick that produced it had run. Regeneration is
+   * a smooth function of worship, which is a first-order lag on its own target,
+   * so one tick of lag is far below the resolution of a Gini coefficient over
+   * two hundred universes.
+   *
+   * `null` before the first god report — at world tick 0 no tick has completed —
+   * and `null` is not 0. The collector counts it as an exclusion and says so.
+   */
+  const checkpoint = (sample: CensusSample): void => {
+    if (!checkpointTicks.has(sample.worldTick) || checkpointsTaken.has(sample.worldTick)) return;
+    checkpointsTaken.add(sample.worldTick);
+    const report = godReport();
+    checkpoints.push({
+      worldTick: sample.worldTick,
+      favorRegenPerTick: report === undefined ? null : report.ledger.regenerated,
+      libraryNodeCount: sample.libraryDepth,
+      ...(report === undefined
+        ? {}
+        : {
+            worshipByClass: {
+              mages: report.worshipByClass.mages,
+              universities: report.worshipByClass.universities,
+              populace: report.worshipByClass.populace,
+            },
+          }),
+    });
+  };
+
+  const takeNow = (): CensusSample => {
+    const sample = record(censusOf(inner.observe()));
+    checkpoint(sample);
+    return sample;
+  };
 
   return {
     samples,
+    checkpoints,
     takeNow,
     session: {
       reset(runSeed: number, scenarioConfig: TConfig): void {
         inner.reset(runSeed, scenarioConfig);
         samples.length = 0;
+        checkpoints.length = 0;
+        checkpointsTaken.clear();
         lastRecordedTick = -1;
         takeNow();
       },
@@ -123,6 +193,7 @@ function recordingSession<TConfig>(
         const observation = inner.observe();
         const sample = censusOf(observation);
         if (sample.worldTick % intervalTicks === 0) record(sample);
+        checkpoint(sample);
         return observation;
       },
       legalActions: () => inner.legalActions(),
@@ -203,7 +274,7 @@ export function executeReferenceRun(
   const content = options.content ?? referenceContent();
   const interval = options.censusIntervalTicks ?? CENSUS_INTERVAL_TICKS;
 
-  const { scenario } = referenceScenario(content);
+  const { scenario, lastGodReport } = referenceScenario(content);
   const strategyId = task.strategies[0];
   if (strategyId === undefined) {
     throw new Error(
@@ -215,6 +286,7 @@ export function executeReferenceRun(
   const recorder = recordingSession(
     adaptAgentSession(createSession({ scenario, agentSlotIndex: 0, strategyId })),
     interval,
+    lastGodReport,
   );
 
   const episode = runEpisode({
@@ -246,7 +318,44 @@ export function executeReferenceRun(
       metrics: collectReferenceMetrics(task.metrics, measurement),
       accounting: episode.accounting,
       provenance: referenceProvenance(content),
+      armContribution: armContributionOf(recorder.checkpoints, content),
     },
+  };
+}
+
+/**
+ * What this run contributes to the five `per-arm` metrics of `contracts.md` §7.
+ *
+ * The piece the harness declared and nothing built: `ArmTelemetry` existed with
+ * five collectors reading it and no code anywhere constructed one, so every
+ * arm-scoped metric was defined and never measured. This is the executor half —
+ * `aggregate.ts`'s `buildArmTelemetry` folds these into the arm.
+ *
+ * `prestigeCarryForwardMax` is `PRESTIGE_CAP`, read out of loaded content rather
+ * than chosen here. That number is not a knob: `god-agency`'s content check
+ * asserts `PRESTIGE_CAP × (fp(1024) − PRESTIGE_RETENTION) == PRESTIGE_EARN_MAX ×
+ * fp(1024)`, which makes it the analytic limit of the carry-forward recurrence
+ * at its earning ceiling — the level an infinite streak of perfect runs
+ * approaches and never exceeds. That is exactly *"the maximum permitted prestige
+ * carry-forward"* `prestigeAdvantage` asks for, and it is why the collector can
+ * stop reporting `mechanic-absent` without anybody inventing a magnitude.
+ *
+ * No `mirroredPlay` and no `ablationPlay` are reported, and neither is an
+ * oversight. A `prestigeAdvantage` play needs a winner between two universes and
+ * this build has no way to declare one — `god-agency`'s provisional
+ * terminal-score ordering (its task 5.7) is not implemented and raids do not
+ * exist. So the collector sees a mechanic that exists and an arm with no pairs,
+ * and reports `no-observations`. That is a different and more useful sentence
+ * than `mechanic-absent`, and it is the true one.
+ */
+function armContributionOf(
+  checkpoints: readonly CheckpointSample[],
+  content: ReferenceContent,
+): ArmContribution {
+  return {
+    mechanics: REFERENCE_MECHANICS,
+    checkpoints,
+    prestigeCarryForwardMax: content.prestigeCap,
   };
 }
 

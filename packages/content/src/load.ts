@@ -33,6 +33,7 @@
 import type { ContentDiagnostic, ContentDiagnosticCode } from './diagnostics.js';
 import { ContentValidationError, pointerAppend, sortDiagnostics } from './diagnostics.js';
 import { checkGodConstants, checkGodCosts } from './god.js';
+import { checkRaidConstants } from './raid.js';
 import { HOOK_KINDS, HOOK_POINTS, checkHookParams, hookPointOwning, permittedKinds } from './hooks.js';
 import {
   CELL_COUNT,
@@ -55,6 +56,7 @@ import type {
   ContentRegistry,
   FormRecord,
   GodConstantRecord,
+  RaidConstantRecord,
   GodCostRecord,
   Interned,
   NodeRecord,
@@ -200,6 +202,7 @@ interface ParsedDocuments {
   readonly territory: readonly TerritoryRecord[];
   readonly godCost: readonly GodCostRecord[];
   readonly godConstant: readonly GodConstantRecord[];
+  readonly raidConstant: readonly RaidConstantRecord[];
 }
 
 let cachedSchemas: ReadonlyMap<ContentFileName, CompiledSchema> | undefined;
@@ -284,6 +287,7 @@ export function validateContent(source: ContentSource): ValidationResult {
     territory: raw.get('territory.json') as readonly TerritoryRecord[],
     godCost: raw.get('god-cost.json') as readonly GodCostRecord[],
     godConstant: raw.get('god-constant.json') as readonly GodConstantRecord[],
+    raidConstant: raw.get('raid-constant.json') as readonly RaidConstantRecord[],
   };
 
   // ---- Phase 3: graph integrity. ----
@@ -352,6 +356,7 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   indexById(documents.territory, 'territory.json', out);
   indexById(documents.godCost, 'god-cost.json', out);
   indexById(documents.godConstant, 'god-constant.json', out);
+  indexById(documents.raidConstant, 'raid-constant.json', out);
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
@@ -364,6 +369,9 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   // Schema cannot express — see `god.ts`.
   out.push(...checkGodCosts(documents.godCost));
   out.push(...checkGodConstants(documents.godConstant));
+  // `raid-engagement`'s table. Two of its checks are not tuning hygiene but the
+  // termination proof — see `raid.ts`.
+  out.push(...checkRaidConstants(documents.raidConstant));
 
   return out;
 }
@@ -1024,6 +1032,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const territories = internNamespace(documents.territory);
   const godCosts = internNamespace(documents.godCost);
   const godConstants = internNamespace(documents.godConstant);
+  const raidConstants = internNamespace(documents.raidConstant);
 
   const tables = new Map<ContentNamespace, ReadonlyMap<string, ContentId>>([
     ['technique', tableOf(techniques)],
@@ -1036,6 +1045,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     ['territory', tableOf(territories)],
     ['god-cost', tableOf(godCosts)],
     ['god-constant', tableOf(godConstants)],
+    ['raid-constant', tableOf(raidConstants)],
   ]);
   const reverse = new Map<ContentNamespace, ReadonlyMap<ContentId, string>>();
   for (const [namespace, table] of tables) {
@@ -1049,6 +1059,9 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   // integer interning happened to assign them.
   const godCostByAction = new Map(godCosts.map((entry) => [entry.record.actionId, entry.record]));
   const godConstantById = new Map(godConstants.map((entry) => [entry.record.id, entry.record.value]));
+  const raidConstantById = new Map(
+    raidConstants.map((entry) => [entry.record.id, entry.record.value]),
+  );
 
   const revisionEntries: RevisionEntry[] = [];
   const append = (namespace: ContentNamespace, entries: readonly Interned<unknown>[]): void => {
@@ -1066,6 +1079,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   append('territory', territories);
   append('god-cost', godCosts);
   append('god-constant', godConstants);
+  append('raid-constant', raidConstants);
 
   const counts: ContentCounts = {
     techniques: techniques.length,
@@ -1079,6 +1093,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     territories: territories.length,
     godCosts: godCosts.length,
     godConstants: godConstants.length,
+    raidConstants: raidConstants.length,
   };
 
   return {
@@ -1094,6 +1109,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     territories,
     godCosts,
     godConstants,
+    raidConstants,
     intern(namespace, id) {
       return tables.get(namespace)?.get(id) ?? 0;
     },
@@ -1121,6 +1137,17 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
           `No god-agency constant named "${id}" is declared in god-constant.json. The loader ` +
             'checks the required set on every load, so this is a caller inventing a name — and ' +
             'returning 0 would put a silently wrong magnitude in the middle of a balance formula.',
+        );
+      }
+      return found;
+    },
+    raidConstant(id) {
+      const found = raidConstantById.get(id);
+      if (found === undefined) {
+        throw new Error(
+          `No raid constant named "${id}" is declared in raid-constant.json. The loader checks ` +
+            'the required set on every load, so this is a caller inventing a name — and returning ' +
+            '0 would be a cast that reaches nowhere or a portal that never decays.',
         );
       }
       return found;
