@@ -32,6 +32,10 @@ export default defineConfig({
       '@mm/rules-magic': packageSrc('rules-magic'),
       '@mm/rules-world': packageSrc('rules-world'),
       '@mm/agent-api': packageSrc('agent-api'),
+      // The harness's own tests import it by name. Its worker fixture cannot —
+      // a bare Node worker knows nothing of this alias — so that one file
+      // reaches into src/ with explicit .ts extensions and says why.
+      '@mm/mc-harness': packageSrc('mc-harness'),
     },
   },
   test: {
