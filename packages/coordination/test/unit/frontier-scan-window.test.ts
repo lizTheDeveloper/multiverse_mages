@@ -46,7 +46,38 @@
  *
  * The remaining nineteenth unlearned node is *not* this: `pm-the-empty-room`
  * (tier 5, interned 221, inside the window) is merely slow, and a fifty-year run
- * reaches it around year thirty-two. Only eighteen nodes are unreachable.
+ * reaches it around year thirty-one. Only eighteen nodes are unreachable.
+ *
+ * ## The control, with its honest figures
+ *
+ * Two agents diagnosed this independently and reached the same line. The
+ * counterfactual both ran — raise `MAX_FRONTIER_SCAN` to 1024, change nothing
+ * else, same seed:
+ *
+ * | | year 10 | year 20 | year 50 |
+ * |---|---|---|---|
+ * | as shipped | 32 | 32 | 33 |
+ * | scan = 1024 | ~41-43 | ~49 | **50 of 51** |
+ *
+ * Fifty, not fifty-one. `rl-the-standing-gate` is tier 5 and still merely slow
+ * at the fifty-year mark, exactly as `pm-the-empty-room` is. Recorded here
+ * because a merge commit on this branch rounded it up to "all 51", and the
+ * difference matters: the claim being made is *the plateau is gone and the
+ * curve keeps rising*, not *everything is learned*. A slow tail on tier-5 nodes
+ * is the prerequisite chain doing its job, and is the one thing the missing
+ * study loop genuinely does explain.
+ *
+ * Raising the constant is **not** the recommended fix — it defers the same
+ * defect to the next catalog. See the second prefix bias below.
+ *
+ * ## The second prefix bias, which a naive fix would leave behind
+ *
+ * The same loop exits on `found.length < limit`, where limit is
+ * `MAX_CANDIDATE_TARGETS * 2`, and it also runs in ascending id. So "lowest ids
+ * win" survives one layer up. It does not bind today because the legal frontier
+ * is far smaller than the limit — but widening the window without addressing it
+ * reintroduces this plateau as a *soft* cap the moment more than `limit` nodes
+ * are simultaneously eligible, which is a harder defect to see than this one.
  */
 
 import { describe, expect, it } from 'vitest';
