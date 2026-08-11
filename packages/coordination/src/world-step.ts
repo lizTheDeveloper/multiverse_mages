@@ -607,12 +607,20 @@ interface WorkPhaseOutcome {
  * student advances the lesson alone, at half speed.
  */
 function spendTheMonth(state: SimState, gateway: CoordinatingKnowledgeGateway): WorkPhaseOutcome {
-  for (const { handle, row } of collectRecords(state, MAGE)) {
-    if (row.alive === 0) continue;
+  // The `alive` column and the handle, rather than a `MageRecord` per mage: the
+  // two fields below are all this phase reads, and `collectRecords` builds an
+  // object carrying every field of §1.2 to supply one of them. Same component,
+  // same ascending slot order — `collectRecords` gets its order from this very
+  // `forEach` — and this phase adds and removes no mage, so the walk cannot be
+  // disturbed by what it does.
+  const mages = componentOf(state, MAGE);
+  const alive = mages.field('alive');
+  mages.forEach((row, handle) => {
+    if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
-    if (commitment === undefined) continue;
+    if (commitment === undefined) return;
     workOne(handle, commitment, gateway);
-  }
+  });
 
   const completedBy = new Set<Handle>();
   let researchCompleted = 0;

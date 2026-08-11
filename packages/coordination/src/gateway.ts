@@ -274,6 +274,10 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (rates === undefined) return [];
 
     const found: KnowledgeTarget[] = [];
+    // One read of this mage's ledger rows for the whole scan. See
+    // `EffortLedger.bankedResearch`: the alternative is a key string per
+    // candidate to look up the eight rows she could have.
+    const banked = this.#deps.effort?.bankedResearch(mage) ?? EMPTY_PROGRESS;
     const discarded = createRediscoveryClampCounter();
     const scanned = Math.min(this.#deps.catalog.nodeCount, MAX_FRONTIER_SCAN);
     for (let nodeId = 1; nodeId <= scanned && found.length < limit; nodeId += 1) {
@@ -283,8 +287,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       if (this.knows(mage, nodeId)) continue;
       if (!this.#prerequisitesHeld(mage, node.prerequisites)) continue;
 
-      const banked =
-        this.#deps.effort?.progressOf(effortKey(EFFORT_KIND.research, mage, nodeId, 0)) ?? 0;
+      const bankedHere = banked.get(nodeId) ?? 0;
       const requirement = researchRequirement(node, {
         rediscovery: this.#deps.knowledge.wasEverKnown(nodeId),
         rediscoveryAffinity: rates.rediscoveryAffinity,
@@ -306,7 +309,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
         // the run.
         clampCounter: discarded,
       });
-      found.push({ nodeId, tier: node.tier, remainingCost: Math.max(requirement - banked, 0) });
+      found.push({ nodeId, tier: node.tier, remainingCost: Math.max(requirement - bankedHere, 0) });
     }
     return found;
   }
@@ -790,6 +793,9 @@ const NEUTRAL_RATE: Fixed = 1024;
 
 /** A mage who holds nothing. Shared, and never written to. */
 const EMPTY_HOLDINGS: ReadonlyMap<ContentId, Fp> = new Map<ContentId, Fp>();
+
+/** A mage who has banked nothing, for a gateway built without a ledger. */
+const EMPTY_PROGRESS: ReadonlyMap<ContentId, Fp> = new Map<ContentId, Fp>();
 
 /** Whether a location kind is one a mage carries in her own head. */
 export function isHeldAtMind(locationKind: number): boolean {

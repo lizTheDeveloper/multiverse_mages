@@ -61,7 +61,7 @@ import type { ContentId, Fp } from '@mm/content';
 import type { EntityHandle, SimState } from '@mm/sim-core';
 import { handleIndex } from '@mm/sim-core';
 import type { EffortKindValue, EffortProgressRecord, Handle } from '@mm/state';
-import { EFFORT_PROGRESS, attachRecord, collectRecords, componentOf } from '@mm/state';
+import { EFFORT_KIND, EFFORT_PROGRESS, attachRecord, collectRecords, componentOf } from '@mm/state';
 
 /**
  * The most projects one mage may have set down at once.
@@ -226,6 +226,35 @@ export class EffortLedger {
     return this.#rowsOf(this.#bySubject.get(mage) ?? EMPTY_HANDLES);
   }
 
+  /**
+   * What this mage has banked against each node she is deriving alone.
+   *
+   * The frontier scan subtracts banked progress from every candidate's
+   * requirement, once per candidate per mage per tick, and asking
+   * {@link progressOf} for each of them built a key string per question — a few
+   * hundred throwaway strings per mage per tick, to look up the eight rows she
+   * could possibly have. This reads those eight and hands back a map.
+   *
+   * Research only, and solo research at that: a teaching row is the pair's and
+   * is keyed on the student as well, so folding one in here would report a
+   * lesson's progress as a discount on researching the same node alone.
+   *
+   * A `Map` the caller only ever reads by key. Its insertion order is the order
+   * the mage's rows happen to sit in, and nothing may iterate it.
+   */
+  bankedResearch(subject: Handle): ReadonlyMap<ContentId, Fp> {
+    const handles = this.#bySubject.get(subject);
+    if (handles === undefined) return EMPTY_PROGRESS;
+    const store = componentOf(this.#state, EFFORT_PROGRESS);
+    const banked = new Map<ContentId, Fp>();
+    for (const handle of handles) {
+      if (store.get(handle, 'kind') !== EFFORT_KIND.research) continue;
+      if (store.get(handle, 'counterparty') !== 0) continue;
+      banked.set(store.get(handle, 'nodeId'), store.get(handle, 'progress'));
+    }
+    return banked;
+  }
+
   /** How many rows the component holds. For reporting and for tests. */
   get size(): number {
     return componentOf(this.#state, EFFORT_PROGRESS).size;
@@ -298,6 +327,9 @@ export class EffortLedger {
 
 /** A mage who is in the middle of nothing. Shared, and never written to. */
 const EMPTY_HANDLES: ReadonlySet<EntityHandle> = new Set<EntityHandle>();
+
+/** A mage who has banked nothing. Shared, and never written to. */
+const EMPTY_PROGRESS: ReadonlyMap<ContentId, Fp> = new Map<ContentId, Fp>();
 
 function addTo(index: Map<Handle, Set<EntityHandle>>, mage: Handle, handle: EntityHandle): void {
   let held = index.get(mage);
