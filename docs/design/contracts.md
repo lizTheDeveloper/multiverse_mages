@@ -469,6 +469,18 @@ what mages *did* but never why, and autonomy reads as randomness.
 It is **not** part of the RL observation. It is emitted on request, is never an input to any rules
 computation, and no simulation behaviour may depend on whether it was requested.
 
+**Consumer note, added while drafting `docs/design/sound-design.md` (§10.1).** The core's guarantee
+above is unchanged and should stay. But a planned consumer — the client's bark system — wants
+*per-mage decision reasons at world-tick granularity*, which is a different shape from *on-demand
+explanation of one decision*. Two consequences, neither urgent:
+
+- Whoever pins the explain channel's payload in `agent-interface` should know that shape is wanted,
+  because it is much cheaper to know before the format is fixed than after.
+- `electron-client` should treat the channel as required for its own read path even though the core
+  keeps it optional. A client that skipped it to save bandwidth would ship a game where mages are
+  silent about why they act — which is the exact failure this section exists to prevent, arriving
+  through a door nobody was watching.
+
 ---
 
 ## 5. Module Boundaries
