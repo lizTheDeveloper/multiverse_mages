@@ -24,6 +24,8 @@
 import type { Fixed } from '@mm/sim-core';
 import type { PrimitiveRecord, PrimitiveStacking } from '@mm/content';
 
+import { NO_ABLATION, neutralizedMagnitude } from './ablation.js';
+import type { AblationMask } from './ablation.js';
 import { ClampCounters, applyCap } from './caps.js';
 import type { CapContext } from './caps.js';
 import {
@@ -41,6 +43,12 @@ export interface StackOptions extends CapContext {
    * uncounted clamp is a balance finding that never surfaces (see `caps.ts`).
    */
   readonly counters?: ClampCounters;
+  /**
+   * Which primitive this arm neutralizes, if any. Defaults to
+   * {@link NO_ABLATION}, so every existing caller and every golden replay
+   * fixture takes the path it always took.
+   */
+  readonly ablation?: AblationMask;
 }
 
 /** The stacked, capped magnitude, and whether the cap bound producing it. */
@@ -83,19 +91,39 @@ function stackByRule(stacking: PrimitiveStacking, magnitudes: readonly Fixed[]):
  * Stacks the magnitudes of every source of one primitive on one target, then
  * clamps to the primitive's cap and counts the clamp.
  *
+ * ## Where ablation happens, and why it is these three lines
+ *
+ * A neutralized primitive contributes its rule's identity instead of its
+ * sources (`ablation.ts`). That substitution is here rather than at any call
+ * site for the same reason the arithmetic is: `BAN_INLINE_PRIMITIVE_STACKING`
+ * makes this the one function a rules package may use to turn sources into a
+ * magnitude, so putting the mask inside it means no consumer can read an
+ * unmasked value, and none of them needs to know ablation exists.
+ *
+ * The masked branch takes the same cap and the same counter as the unmasked
+ * one — not a shortcut return — so an arm ablating `lifespan` still raises the
+ * same missing-`speciesBase` error its control would, rather than passing
+ * where the control fails.
+ *
+ * Nothing is *combined* on the masked path, which is the point: neutralization
+ * is "this primitive had no sources", and there is no arithmetic in that.
+ *
  * @param primitive - The registry record; its `stacking` and `cap` decide
  * everything this function does.
  * @param magnitudes - One entry per applying source, in the primitive's own
  * units. Order never matters: every rule here is commutative.
- * @param options - `speciesBase` for a `fraction-of-species-base` cap, and the
- * `counters` the clamp is reported into.
+ * @param options - `speciesBase` for a `fraction-of-species-base` cap, the
+ * `counters` the clamp is reported into, and the `ablation` mask.
  */
 export function stackMagnitudes(
   primitive: PrimitiveRecord,
   magnitudes: readonly Fixed[],
   options: StackOptions = {},
 ): StackOutcome {
-  const stacked = stackByRule(primitive.stacking, magnitudes);
+  const ablation = options.ablation ?? NO_ABLATION;
+  const stacked = ablation.neutralizes(primitive.id)
+    ? neutralizedMagnitude(primitive.stacking)
+    : stackByRule(primitive.stacking, magnitudes);
   const capped = applyCap(
     primitive.cap,
     stacked,
