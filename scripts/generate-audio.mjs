@@ -61,14 +61,24 @@ if (only) requests = requests.filter((r) => r.id.startsWith(only));
 // environment is exactly what a first run looks like, and finding that out at
 // dry-run time is the entire value of a dry run. Checked after the `--only`
 // filter so `--only=click-` — which plans no voice lines — never requires a
-// voice id it does not need. Checked against requests that would actually be
+// voice it does not need. Checked against requests that would actually be
 // attempted, not the raw plan: a resumed run whose voice-line takes are all
-// already on disk must not be blocked on a voice id it will never call for,
-// or resume stops working on exactly the metered-API runs it exists for.
-if (!voiceId && requests.some((r) => r.endpoint === 'text-to-speech' && !existsSync(r.outputPath))) {
+// already on disk must not be blocked on a voice it will never call for, or
+// resume stops working on exactly the metered-API runs it exists for.
+//
+// The voice comes from each bank in content, because §9.5 gives all ten banks
+// their own direction and one process-wide id cannot express a cast.
+// ELEVENLABS_VOICE_ID remains as a fallback for banks that declare none, which
+// is useful for a quick single-voice test and wrong for a real recording.
+const unvoiced = requests.filter(
+  (r) => r.endpoint === 'text-to-speech' && !r.voiceId && !voiceId && !existsSync(r.outputPath),
+);
+if (unvoiced.length > 0) {
+  const banks = [...new Set(unvoiced.map((r) => r.id.split('-')[0]))].sort();
   fail(
-    'ELEVENLABS_VOICE_ID is not set, and this plan plans voice lines. ' +
-      'Set it, or narrow the run with --only= to generate cues only.',
+    `no voice is assigned for: ${banks.join(', ')}. ` +
+      'Set `voiceId` on those banks in packages/content/data/audio/voice-line.json, ' +
+      'or set ELEVENLABS_VOICE_ID to record them all in one voice.',
   );
 }
 
@@ -90,7 +100,7 @@ for (const request of requests) {
   const url =
     request.endpoint === 'sound-effect'
       ? `${BASE}/sound-generation`
-      : `${BASE}/text-to-speech/${voiceId}`;
+      : `${BASE}/text-to-speech/${request.voiceId || voiceId}`;
 
   let response;
   try {
