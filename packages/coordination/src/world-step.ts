@@ -62,7 +62,9 @@
  *    mastery the mage had when the tick began.
  * 8. **Births.** After the deaths, so newborns are not aged, reallocated or
  *    killed in the tick they arrive, and against a carrying capacity computed
- *    from this tick's stock.
+ *    from this tick's stock *and this tick's subsistence shortfall* — a
+ *    universe that cannot feed the population it has carries fewer people, and
+ *    the share it cannot cover is known here because phase 9 has not run yet.
  * 9. **Consumption, then the non-negative invariant.** Last, because every other
  *    phase is a claimant: subsistence is charged for the population that
  *    survived, and upkeep for the shelves that survived.
@@ -92,7 +94,7 @@
 
 import type { PrimitiveRecord, SpeciesRecord } from '@mm/content';
 import type { EntityHandle, Fixed, SimState, System } from '@mm/sim-core';
-import { FP_ONE as FP_UNIT, TIME_MODE, mul } from '@mm/sim-core';
+import { FP_ONE as FP_UNIT, TIME_MODE, floorDiv, mul } from '@mm/sim-core';
 import type { Handle, MageRecord, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
@@ -270,6 +272,30 @@ export interface WorldStepReport {
   readonly mageDeaths: number;
   readonly magesPromoted: number;
   readonly births: number;
+  /**
+   * Populace members lost to the cohort hazard table this tick.
+   *
+   * Reported beside {@link births} because the question `mages-and-species`
+   * task 8.7 asks — *do births and deaths balance at carrying capacity* — was
+   * not answerable from this report at all while only one side of it was
+   * emitted. A caller could see a population that stopped growing and could not
+   * tell a universe in equilibrium from one where nothing happens.
+   *
+   * Cohort deaths only. Mages are counted by {@link mageDeaths} and are not
+   * members of a cohort once promoted, so adding the two would be the right
+   * total for "people who died" and the wrong total for either mechanism.
+   */
+  readonly populaceDeaths: number;
+  /** Members moved into `idle` this tick because they passed retirement age. */
+  readonly populaceRetired: number;
+  /**
+   * The share of this tick's subsistence demand the stock could not cover,
+   * `fp` in `[0, fp(1024)]`, as it was when `K` was computed.
+   *
+   * Emitted because it is the input that makes {@link carryingCapacity} fall,
+   * and a `K` that drops for no visible reason is a `K` nobody can argue with.
+   */
+  readonly subsistenceShortfallShare: Fixed;
   readonly population: number;
   readonly livingMages: number;
   /** Nodes whose last instance was destroyed this tick, by death or by decay. */
@@ -511,10 +537,35 @@ export function worldSystem(
       });
 
       // ---- 8. Births ----------------------------------------------------------
+      // A universe that cannot feed itself carries fewer people, and until this
+      // tick the loop never said so. `carrying-capacity.ts` has taken a
+      // `subsistenceShortfallShare` since task 8.5 and no caller ever passed
+      // one, so the shipped `K` was the well-fed `K` for the length of any run
+      // — which the 200-year reference run makes visible: the stock empties
+      // around world-year seventy and nothing changes.
+      //
+      // The share is computed **here** rather than read back out of phase 9,
+      // because phase 9 runs after births. Reading it back would mean either
+      // storing last tick's share in state — a world-schema revision for a
+      // number no rule outside this line reads — or reordering consumption
+      // ahead of birth, which would charge subsistence for a population and
+      // then let that population grow inside the same tick.
+      const subsistenceThisTick = subsistenceDemand(cohorts.totalCount());
+      const subsistenceShortfallShare =
+        subsistenceThisTick <= 0
+          ? 0
+          : Math.min(
+              FP_UNIT,
+              floorDiv(
+                Math.max(0, subsistenceThisTick - Math.max(0, materials)) * FP_UNIT,
+                subsistenceThisTick,
+              ),
+            );
       const capacity = carryingCapacity({
         territory: deps.territory,
         materials,
         completedCapacity: completedCapacity(state),
+        subsistenceShortfallShare,
       });
       const births = deliverBirths(cohorts, {
         rng,
@@ -545,6 +596,9 @@ export function worldSystem(
         mageDeaths: mortality.deaths,
         magesPromoted: promoted,
         births,
+        populaceDeaths: populace.mortality.deaths,
+        populaceRetired: populace.retired,
+        subsistenceShortfallShare,
         population: populace.population,
         livingMages: countLivingMages(state),
         nodesLost: mortality.nodesLost + decayed.length,
