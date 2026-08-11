@@ -136,9 +136,16 @@ describe('DEFECT 4 — two validated tables, different exports, one digest', () 
   const positive = tableWithFloor(0);
   const negative = tableWithFloor(-0);
 
-  it('HOLDS: both tables validate clean, which is what makes the collision matter', () => {
+  it('the +0 table validates and the -0 table no longer does', () => {
+    // As shipped by the breaker this read `expect(layoutProblems(negative))
+    // .toEqual([])`, describing the collision's precondition. That line and the
+    // one four tests below — `expect(layoutProblems(negative).length)
+    // .toBeGreaterThan(0)` — cannot both hold, so the pair pinned the defect and
+    // demanded its fix at the same time. The second is the one that states the
+    // contract, so it is the one kept, and this test now says which table
+    // validates rather than that both do.
     expect(layoutProblems(positive)).toEqual([]);
-    expect(layoutProblems(negative)).toEqual([]);
+    expect(layoutProblems(negative)).not.toEqual([]);
   });
 
   it('HOLDS: the two tables export different values, so they are not the same layout', () => {
@@ -158,11 +165,13 @@ describe('DEFECT 4 — two validated tables, different exports, one digest', () 
     expect(layoutProblems(negative).length).toBeGreaterThan(0);
   });
 
-  it('documents the mechanism: the encoding writes both floors as the same text', () => {
-    // Not an assertion about right or wrong — the evidence, so a fixer does not
-    // have to rediscover why two different tables hash the same.
+  it('documents the mechanism, and that the encoding no longer falls for it', () => {
+    // The evidence, kept so a reader does not have to rediscover why two
+    // different tables once hashed the same. `String(-0)` is still `'0'` — that
+    // is the language, and it is not going to change — so the encoding stopped
+    // using it for the clamp and writes the sign of a zero itself.
     expect(String(-0)).toBe('0');
-    expect(layoutEncoding(negative)).toBe(layoutEncoding(positive));
+    expect(layoutEncoding(negative)).not.toBe(layoutEncoding(positive));
   });
 });
 

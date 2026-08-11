@@ -53,6 +53,18 @@
  * - **The action space.** §4.2's table is a separate contract with a separate
  *   permanence rule, and a policy's output layer is not its input layer.
  *
+ * That list is meant to be exhaustive, and for a while it was not. A fourth gap
+ * existed and went unstated: `-0 !== 0` is `false`, so a descriptor declaring a
+ * floor of negative zero passed {@link layoutProblems}, and `String(-0)` is
+ * `"0"`, so it hashed identically to a `+0` table — while `clamp` returns the
+ * floor by identity, so the two tables exported different `Float64Array`
+ * contents. Two validated layouts, one digest, different vectors, against a
+ * capability scenario that names *"no negative zero"* in as many words. Both
+ * halves are closed below — validation rejects a floor that is not `+0`, and the
+ * encoding renders the sign of a zero rather than dropping it — and the gap is
+ * recorded here rather than deleted, because a list of stated gaps is only worth
+ * anything if somebody has tried to find an unstated one.
+ *
  * ## Why FNV-1a, and why `sim-core`'s
  *
  * `hashBytes` is already the project's specified content hash: 64-bit FNV-1a,
@@ -234,12 +246,17 @@ export function layoutProblems(slots: readonly ObservationSlot[]): string[] {
           'things in two different runs.',
       );
     }
-    if (descriptor.min !== 0 || descriptor.max !== 1) {
+    // `Object.is` and not `!==` on the floor. `-0 !== 0` is `false`, so a
+    // negative-zero floor passed this check, hashed as `"0"`, and exported `-0`
+    // — the capability spec names negative zero as a thing the export must not
+    // contain, so that was a difference the contract cares about slipping
+    // through the one function whose job is to notice.
+    if (!Object.is(descriptor.min, 0) || descriptor.max !== 1) {
       say(
         slot,
         position,
-        `clamps to [${String(descriptor.min)}, ${String(descriptor.max)}] rather than [0, 1], ` +
-          'which §4.1 pins for the exported vector.',
+        `clamps to [${numberText(descriptor.min)}, ${numberText(descriptor.max)}] rather than ` +
+          '[0, 1], which §4.1 pins for the exported vector.',
       );
     }
 
@@ -307,6 +324,23 @@ export function assertLayoutValid(slots: readonly ObservationSlot[]): void {
 const DIGEST_FORMAT = 'mm-observation-layout/1';
 
 /**
+ * A number as the encoding writes it, with the sign of a zero kept.
+ *
+ * `String(-0)` is `"0"`, which is the JavaScript-specific behaviour that let a
+ * `-0` floor hash as a `+0` floor. A canonical encoding a second implementation
+ * reproduces *from the document* must not depend on one language's opinion about
+ * which zero prints as which text, so the sign is written out.
+ *
+ * The format version does not move for this. {@link layoutProblems} now rejects
+ * a floor that is not `+0`, so no table this module will validate can contain a
+ * negative zero, and the encoding of every valid layout — including every layout
+ * that ever shipped — is byte-identical to what it was before.
+ */
+function numberText(value: number): string {
+  return Object.is(value, -0) ? '-0' : String(value);
+}
+
+/**
  * The canonical text a layout hashes as.
  *
  * Exported because a digest whose input cannot be inspected is a digest nobody
@@ -315,7 +349,8 @@ const DIGEST_FORMAT = 'mm-observation-layout/1';
  *
  * One header line, then one line per slot, `\n`-separated, ASCII only. Fields
  * are tab-separated because no field can contain a tab — block names and rule
- * names come from closed sets and everything else is a decimal integer.
+ * names come from closed sets and everything else is a decimal integer, written
+ * through {@link numberText} so that the sign of a zero survives.
  */
 export function layoutEncoding(slots: readonly ObservationSlot[]): string {
   const lines: string[] = [`${DIGEST_FORMAT}\tslots=${String(slots.length)}`];
@@ -327,9 +362,9 @@ export function layoutEncoding(slots: readonly ObservationSlot[]): string {
         slot.block,
         String(slot.blockIndex),
         descriptor.rule,
-        String(descriptor.divisor),
-        String(descriptor.min),
-        String(descriptor.max),
+        numberText(descriptor.divisor),
+        numberText(descriptor.min),
+        numberText(descriptor.max),
         descriptor.edges === undefined ? '-' : descriptor.edges.join(','),
       ].join('\t'),
     );
