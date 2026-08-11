@@ -54,21 +54,21 @@
 
 ## 5. Mage autonomy
 
-- [ ] 5.1 Implement the append-only goal registry with stable ids and the test that rejects renumbering, with an error explaining the baseline consequence
-- [ ] 5.2 Implement feasibility masking for every goal, with `idle` always feasible, and a per-evaluation masked-goal counter
-- [ ] 5.3 Implement bounded candidate-target scanning with a documented constant, sourced from the mage's research frontier within its `depthCeiling`
-- [ ] 5.4 Implement additive fixed-point scoring with a single trailing clamp at `fp(4096)`
-- [ ] 5.5 Author the role bias table as data, bounded so no entry dominates the sum of all other terms at their extremes
-- [ ] 5.6 Implement the species, personality, and age-band scoring terms, including the senescent shift toward `teach` and `scribe`
-- [ ] 5.7 Implement age bands derived from normalized age so species with different lifespans share band boundaries
-- [ ] 5.8 Implement staggered re-evaluation on `(worldTick + mageId) mod evalPeriod`, plus immediate re-evaluation on completion or infeasibility
-- [ ] 5.9 Implement commitment minimum and hysteresis margin for goal displacement
-- [ ] 5.10 Implement deterministic tie-breaking on RNG stream 7
-- [ ] 5.11 Add the conformance check that the autonomy module accesses no position component and computes no distance
-- [ ] 5.12 Implement instantaneous affiliation change on `affiliate` completion
-- [ ] 5.13 Implement the per-tick goal histogram by species and role, plus the goal-switch counter, available without a debug mode
-- [ ] 5.14 Test term ablation: zeroing one scoring term changes selections attributably, on a fixed seed
-- [ ] 5.15 Test that no synchronized goal stampede occurs when a shared input changes
+- [x] 5.1 Implement the append-only goal registry with stable ids and the test that rejects renumbering, with an error explaining the baseline consequence
+- [x] 5.2 Implement feasibility masking for every goal, with `idle` always feasible, and a per-evaluation masked-goal counter
+- [x] 5.3 Implement bounded candidate-target scanning with a documented constant, sourced from the mage's research frontier within its `depthCeiling`
+- [x] 5.4 Implement additive fixed-point scoring with a single trailing clamp at `fp(4096)`
+- [x] 5.5 Author the role bias table as data, bounded so no entry dominates the sum of all other terms at their extremes
+- [x] 5.6 Implement the species, personality, and age-band scoring terms, including the senescent shift toward `teach` and `scribe`
+- [x] 5.7 Implement age bands derived from normalized age so species with different lifespans share band boundaries
+- [x] 5.8 Implement staggered re-evaluation on `(worldTick + mageId) mod evalPeriod`, plus immediate re-evaluation on completion or infeasibility
+- [x] 5.9 Implement commitment minimum and hysteresis margin for goal displacement
+- [x] 5.10 Implement deterministic tie-breaking on RNG stream 7
+- [x] 5.11 Add the conformance check that the autonomy module accesses no position component and computes no distance
+- [x] 5.12 Implement instantaneous affiliation change on `affiliate` completion
+- [x] 5.13 Implement the per-tick goal histogram by species and role, plus the goal-switch counter, available without a debug mode
+- [x] 5.14 Test term ablation: zeroing one scoring term changes selections attributably, on a fixed seed
+- [x] 5.15 Test that no synchronized goal stampede occurs when a shared input changes
 
 ## 6. Universities
 

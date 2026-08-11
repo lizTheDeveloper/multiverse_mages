@@ -35,6 +35,13 @@
  * 0.5.0.
  */
 
+/**
+ * The utility-AI. One re-export rather than a named list, so that growing the
+ * goal set touches `autonomy/index.ts` and not this file — the same reason the
+ * populace layer is re-exported wholesale below.
+ */
+export * from './autonomy/index.js';
+
 export type {
   KnowledgeGateway,
   KnowledgeTarget,
