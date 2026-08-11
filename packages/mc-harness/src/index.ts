@@ -48,11 +48,13 @@
  * rules-path purity block. Its determinism obligation is to run the core
  * faithfully, not to be integer-only itself.
  *
- * §5 grants it one edge, to `@mm/agent-api`, and it currently uses none of it:
- * the agent session it will drive is being built in parallel, so the harness
- * declares the session surface it needs structurally (`session.ts`) and drives
- * anything that satisfies it. What reaches the simulation is a caller-supplied
- * {@link RunExecutor} and nothing else.
+ * §5 grants it one edge, to `@mm/agent-api`, and `session.ts`'s
+ * {@link adaptAgentSession} is what uses it: a caller's executor wraps
+ * `agent-api`'s session in the adapter and hands the result to `runEpisode`.
+ * What reaches the *simulation* is still a caller-supplied {@link RunExecutor}
+ * and nothing else — building a world needs `@mm/content` and
+ * `@mm/coordination`, which the harness may not import, so the scenario stays
+ * on the caller's side of the boundary.
  */
 
 export type { JsonValue } from './canonical.js';
@@ -112,6 +114,7 @@ export {
 } from './sweep-spec.js';
 
 export type {
+  ActionSubmission,
   AgentSession,
   EpisodeInput,
   EpisodeOutcome,
@@ -119,7 +122,13 @@ export type {
   SlotPolicy,
   TerminalStatus,
 } from './session.js';
-export { RECORDED_STATUSES, TERMINAL_STATUS, runEpisode } from './session.js';
+export {
+  RECORDED_STATUSES,
+  TERMINAL_STATUS,
+  adaptAgentSession,
+  normalizeSubmission,
+  runEpisode,
+} from './session.js';
 
 export type {
   FailureClass,
