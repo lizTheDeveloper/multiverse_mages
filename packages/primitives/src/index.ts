@@ -58,6 +58,9 @@ export {
 export type { StackOptions, StackOutcome } from './stack.js';
 export { stackMagnitudes } from './stack.js';
 
+export type { ProbabilityRoll } from './probability.js';
+export { rollStackedProbability } from './probability.js';
+
 export type { RediscoveryClampCounter } from './rediscovery.js';
 export {
   REDISCOVERY_FLOOR,
