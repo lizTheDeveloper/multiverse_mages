@@ -36,6 +36,8 @@ import { FP_ONE, fromInt, mul } from '@mm/sim-core';
 import type { Ruleset } from '@mm/state';
 import { EDICT_KIND, LOCATION_KIND } from '@mm/state';
 
+import { createRediscoveryClampCounter } from '@mm/primitives';
+
 import { isDormant } from '../../src/dormancy.js';
 import { MagicGrid } from '../../src/grid.js';
 import { DEFAULT_INITIAL_MASTERY, MASTERY_MAX } from '../../src/instances/constants.js';
@@ -295,6 +297,11 @@ function agreementScenario(tradition: number) {
     learnRate: LEARN_RATE,
     researchRate: RESEARCH_RATE,
     rediscoveryAffinity: FP_ONE,
+    // Fresh per step, deliberately: the counter is a mutable accumulator, and
+    // sharing one across the three scripted steps would make the traditions'
+    // outputs depend on the order they were run in. Nothing here reads it --
+    // this script compares refusals and requirements, not clamp rates.
+    clampCounter: createRediscoveryClampCounter(),
     // The two tradition-derived inputs a research step legitimately takes.
     initialMastery: terms.initialMastery,
     locationKind: store.personalLocationKind,
@@ -385,6 +392,7 @@ describe('all three traditions agree outside their differing hooks', () => {
       learnRate: LEARN_RATE,
       researchRate: RESEARCH_RATE,
       rediscoveryAffinity: FP_ONE,
+      clampCounter: createRediscoveryClampCounter(),
       nodeId: CHILD_NODE,
     };
 
