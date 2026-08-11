@@ -16,7 +16,9 @@
   },
   "bin": {
     "mm-run-sweep": "./bin/run-sweep.mjs",
-    "mm-reproduce-run": "./bin/reproduce-run.mjs"
+    "mm-reproduce-run": "./bin/reproduce-run.mjs",
+    "mm-balance-gate": "./bin/balance-gate.mjs",
+    "mm-regenerate-baseline": "./bin/regenerate-baseline.mjs"
   },
   "files": [
     "dist",

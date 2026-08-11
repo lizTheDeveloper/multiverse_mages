@@ -1,0 +1,32 @@
+{
+  "sweepId": "balance-gate-v1",
+  "kind": "gate",
+  "rootSeed": 20260811,
+  "factors": [
+    { "id": "cohortSize", "levels": [4, 12] },
+    { "id": "foundingNodes", "levels": [1, 4] }
+  ],
+  "replicates": 50,
+  "agentPool": {
+    "strategies": ["passive-control"],
+    "assignment": "fixed",
+    "slots": 1
+  },
+  "termination": {
+    "worldTickCap": 60,
+    "perRunTimeoutMs": 60000
+  },
+  "metrics": [
+    "referenceGrimoires",
+    "referenceKnowledgeInstances",
+    "referenceLibraryDepth",
+    "referenceLivingMages",
+    "referenceNodesGained",
+    "referenceNodesKnown",
+    "referencePeakPopulation",
+    "referencePopulation",
+    "referencePopulationChange"
+  ],
+  "ablation": { "mode": "none", "primitives": [] },
+  "failureThreshold": 0
+}
