@@ -92,7 +92,7 @@
 
 import type { PrimitiveRecord, SpeciesRecord } from '@mm/content';
 import type { EntityHandle, Fixed, SimState, System } from '@mm/sim-core';
-import { TIME_MODE } from '@mm/sim-core';
+import { FP_ONE as FP_UNIT, TIME_MODE, mul } from '@mm/sim-core';
 import type { Handle, MageRecord, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
@@ -148,10 +148,12 @@ import {
 import { EffortLedger } from './effort-store.js';
 import { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { MageRates } from './gateway.js';
+import type { GodDeps, GodTickReport } from './god/index.js';
+import { frozenWhenTerminal, godSystems } from './god/index.js';
 import { buildOutlook, universityPreference } from './outlook.js';
 
 /** `fp(1.0)`. `buildProgress` at which a university is complete (`contracts.md` §1.4). */
-const FP_ONE = 1024;
+const FP_ONE = FP_UNIT;
 
 /**
  * What one mage contributes to her committed project in one world tick.
@@ -205,6 +207,36 @@ export interface WorldStepDeps {
   readonly knowledgeFor: (state: SimState) => KnowledgeSubsystem;
   /** The scale-free mortality hazard. Defaults to the shipped table. */
   readonly hazard?: ScaleFreeHazard | undefined;
+  /**
+   * `god-agency`'s two systems, or `undefined` for a world with no god in it.
+   *
+   * Optional so that every caller written before the god had verbs — the unit
+   * fixtures, the throughput benchmark, anything measuring the loop in
+   * isolation — keeps building exactly the world it built before, with the same
+   * systems in the same order. Supplying it installs {@link godSystems} either
+   * side of this loop and wraps this loop so that a terminated universe stops.
+   *
+   * See `god/system.ts` for why the god is two systems and why they sit where
+   * they do.
+   */
+  readonly god?: GodDeps | undefined;
+  /**
+   * Per-mage multipliers the god's interventions contribute, `fp`.
+   *
+   * The two seams this file already named as `god-agency`'s. `MAGE_MONTHS_PER_TICK`
+   * says every multiplier that should eventually scale a mage's month *"belongs
+   * to a mechanism that is not built"*, and `lifespanMonths` says `lifespan`
+   * effects *"come from blessings and curses, which are `god-agency`'s to
+   * issue"*. These are those mechanisms arriving, as callbacks rather than as
+   * imports, so that this file gains no knowledge of what a blessing is.
+   *
+   * `researchMultiplierFor` returns `fp(1024)` for an unaffected mage, so a
+   * world with no god is a world where every month is a month.
+   */
+  readonly researchMultiplierFor?: ((mage: Handle, nodeId: number) => Fixed) | undefined;
+  readonly teachMultiplierFor?: ((mage: Handle) => Fixed) | undefined;
+  /** `lifespan` effect magnitudes in force on one mage, for the shared stacking. */
+  readonly lifespanEffectsFor?: ((mage: Handle) => readonly Fixed[]) | undefined;
 }
 
 /** What one world tick did. Reporting only; never an input to any rule. */
@@ -244,6 +276,11 @@ export interface WorldSimulation {
    * it. Reporting only, like every other projection here.
    */
   rediscoveryClamps: () => RediscoveryClampCounter;
+  /**
+   * The last tick's god report, or `undefined` — before the first tick, or for
+   * a world built without `deps.god`.
+   */
+  lastGodReport: () => GodTickReport | undefined;
 }
 
 /**
@@ -264,10 +301,26 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
   const system = worldSystem(deps, (report) => {
     last = report;
   }, clampCounter);
+
+  // ---- god-agency: three systems where there was one --------------------
+  // The god acts before the tick and is paid after it. `frozenWhenTerminal`
+  // stops this loop for a universe that has ascended or stagnated, which is a
+  // wrapper at the composition point rather than a guard inside the loop —
+  // see `god/system.ts`.
+  if (deps.god === undefined) {
+    return {
+      schema: defineWorldStateSchema([system]),
+      lastReport: () => last,
+      rediscoveryClamps: () => ({ ...clampCounter }),
+      lastGodReport: () => undefined,
+    };
+  }
+  const god = godSystems(deps.god);
   return {
-    schema: defineWorldStateSchema([system]),
+    schema: defineWorldStateSchema([god.intervention, frozenWhenTerminal(system), god.outcome]),
     lastReport: () => last,
     rediscoveryClamps: () => ({ ...clampCounter }),
+    lastGodReport: god.lastReport,
   };
 }
 
@@ -375,7 +428,7 @@ export function worldSystem(
       const promoted = promoteMaturedStudents(state, cohorts, { rng, worldTick, deps });
 
       // ---- 5. Work -----------------------------------------------------------
-      const work = spendTheMonth(state, gatewayFor());
+      const work = spendTheMonth(state, gatewayFor(), deps);
 
       // ---- 6. Autonomy -------------------------------------------------------
       const stockAtDecisionTime = materials;
@@ -606,12 +659,16 @@ interface WorkPhaseOutcome {
  * means. Neither goal requires the other to exist: a teacher with a willing
  * student advances the lesson alone, at half speed.
  */
-function spendTheMonth(state: SimState, gateway: CoordinatingKnowledgeGateway): WorkPhaseOutcome {
+function spendTheMonth(
+  state: SimState,
+  gateway: CoordinatingKnowledgeGateway,
+  deps: WorldStepDeps,
+): WorkPhaseOutcome {
   for (const { handle, row } of collectRecords(state, MAGE)) {
     if (row.alive === 0) continue;
     const commitment = readCommitment(state, handle);
     if (commitment === undefined) continue;
-    workOne(handle, commitment, gateway);
+    workOne(handle, commitment, gateway, deps);
   }
 
   const completedBy = new Set<Handle>();
@@ -642,9 +699,16 @@ function workOne(
   mage: Handle,
   commitment: MageGoalCommitment,
   gateway: CoordinatingKnowledgeGateway,
+  deps: WorldStepDeps,
 ): void {
   const nodeId = commitment.targetNodeId;
   if (nodeId === 0) return;
+
+  // The god's contribution to this month, through the shared `research-rate`
+  // and `teach-rate` channels and their caps. `fp(1024)` — a month is a month —
+  // for a world with no god, so nothing below changes for a caller that did not
+  // ask for one.
+  const researched = mul(MAGE_MONTHS_PER_TICK, deps.researchMultiplierFor?.(mage, nodeId) ?? FP_ONE);
 
   switch (commitment.goalId) {
     case GOAL.researchNode:
@@ -652,19 +716,34 @@ function workOne(
       // One accrual for both, because they are one operation: `rules-magic`'s
       // `research` decides for itself whether a node is a rediscovery, from the
       // ever-known record, and a second code path here could disagree with it.
-      gateway.contributeResearch(mage, nodeId, MAGE_MONTHS_PER_TICK);
+      gateway.contributeResearch(mage, nodeId, researched);
       return;
     case GOAL.teach: {
       const student = gateway.studentFor(mage, nodeId);
       if (student !== undefined) {
-        gateway.contributeTeaching(mage, student, nodeId, MAGE_MONTHS_PER_TICK);
+        // The *teacher's* multiplier, on the teacher's half of the pair. §2.3
+        // prices a lesson as the pair's cost and both push the same row, so a
+        // blessed teacher advances it faster and a blessed student advances her
+        // own half faster — which is what "one project with two people pushing
+        // it" means when the two are not equally favoured.
+        gateway.contributeTeaching(
+          mage,
+          student,
+          nodeId,
+          mul(MAGE_MONTHS_PER_TICK, deps.teachMultiplierFor?.(mage) ?? FP_ONE),
+        );
       }
       return;
     }
     case GOAL.seekTeaching: {
       const teacher = gateway.teacherFor(mage, nodeId);
       if (teacher !== undefined) {
-        gateway.contributeTeaching(teacher, mage, nodeId, MAGE_MONTHS_PER_TICK);
+        gateway.contributeTeaching(
+          teacher,
+          mage,
+          nodeId,
+          mul(MAGE_MONTHS_PER_TICK, deps.teachMultiplierFor?.(mage) ?? FP_ONE),
+        );
       }
       return;
     }
@@ -818,9 +897,10 @@ function lifespanMonths(
     birthTick: row.birthTick,
     rootSeed: state.rootSeed,
     lifespanPrimitive: deps.primitives.lifespan,
-    // Empty is the ordinary case: `lifespan` effects come from blessings and
-    // curses, which are `god-agency`'s to issue.
-    effectMagnitudes: [],
+    // `god-agency` issues these now — a blessing contributes to `lifespan`
+    // through the shared stacking arithmetic — but only when a god was
+    // installed. Empty stays the ordinary case for a world without one.
+    effectMagnitudes: deps.lifespanEffectsFor?.(mage) ?? [],
   }).months;
 }
 

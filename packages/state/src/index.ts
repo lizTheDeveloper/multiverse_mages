@@ -187,4 +187,16 @@ export {
   raidHasEnded,
 } from './engagement.js';
 
+export type { ActiveBlessing, ActiveEncouragement, ActiveUpheaval } from './god.js';
+export {
+  EMPTY_GOD_STATE,
+  activeBlessings,
+  activeEncouragements,
+  activeUpheavals,
+  axisChangeCount,
+  godStateOrEmpty,
+  isBlessed,
+  readGodState,
+} from './god.js';
+
 export { NodeExistenceIndex } from './node-index.js';

@@ -80,5 +80,14 @@ export {
 export type { OutlookDeps } from './outlook.js';
 export { buildOutlook, universityPreference } from './outlook.js';
 
+/**
+ * `god-agency` — the player's verbs, and the loop that pays for them.
+ *
+ * Re-exported wholesale, because `god/index.ts` is already an explicit list
+ * rather than a star and carries the argument for why the capability lives in
+ * this package rather than in `rules-world`.
+ */
+export * from './god/index.js';
+
 export type { WorldSimulation, WorldStepDeps, WorldStepReport } from './world-step.js';
 export { defineWorldSimulation, worldSystem } from './world-step.js';
