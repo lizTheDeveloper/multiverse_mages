@@ -80,15 +80,17 @@ const ROOT_SEED = 0x00ac_0001;
  */
 const REPLAY_TIMEOUT_MS = 120_000;
 /**
- * Ten world years.
+ * Five world years.
  *
- * Long enough that both universes derive nodes steadily rather than once —
- * "fewer nodes" is then a rate, not a truncation — and short enough that four
- * runs of it fit inside a unit test's budget. The 200-year question belongs to
- * the Monte Carlo harness, which runs the reference universe rather than this
- * six-species fixture.
+ * Long enough that both universes derive nodes steadily rather than once — so
+ * "fewer nodes" is a rate and not a truncation — and short enough that four runs
+ * of it are a couple of seconds each. That second half is not tidiness: this
+ * file runs the whole world loop four times, and a suite where one test's cost
+ * pushes another over its timeout reports a defect that is not there. The
+ * 200-year question belongs to the Monte Carlo harness, which runs the reference
+ * universe rather than this six-species fixture.
  */
-const TICKS = 120;
+const TICKS = 60;
 
 /** One run's mage-facing outcome. Comparable with `toEqual`. */
 interface Universe {
