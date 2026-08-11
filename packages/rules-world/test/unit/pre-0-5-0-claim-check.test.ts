@@ -126,10 +126,76 @@ const SUBJECT_TERMS = [
   'cells',
 ];
 
+/**
+ * The metric identifiers `contracts.md` §7 tabulates.
+ *
+ * Parsed from the document rather than imported, because §5 grants `rules-world`
+ * no edge to `mc-harness` and this check must not be the reason one appears.
+ * The same table is parsed by `mc-harness`'s own registry conformance check; two
+ * parsers of one table is the cost of the boundary and is cheaper than the edge.
+ */
+const SECTION_7_METRIC_IDS: readonly string[] = (() => {
+  const markdown = readFileSync(join(repoRoot, 'docs/design/contracts.md'), 'utf8');
+  const start = markdown.indexOf('## 7. Balance Metrics');
+  if (start < 0) throw new Error('contracts.md has no §7 to read metric names from.');
+  const rest = markdown.slice(start);
+  const end = rest.indexOf('\n## ', 1);
+  const section = end < 0 ? rest : rest.slice(0, end);
+  const ids = [...section.matchAll(/^\|\s*`([A-Za-z][A-Za-z0-9]*)`\s*\|/gmu)].map(
+    (match) => match[1] as string,
+  );
+  if (ids.length === 0) throw new Error('contracts.md §7 parsed to no metric names.');
+  return ids;
+})();
+
+/**
+ * The package where a §7 metric name is the *subject under test*, not a claim.
+ *
+ * `mc-harness` is the measurement layer 0.5.0 exists to build. Its tests
+ * necessarily write `collectWinRateByPrimitive`, `worshipSnowball` and
+ * `timeToTierBySpecies` — every one of which welds a balance word to a subject
+ * word inside a single identifier, and every one of which this scan therefore
+ * read as a claim that primitives are balanced.
+ *
+ * They are the opposite of that claim. The assertions those names appear in
+ * check that the metric reports `mechanic-absent`, that its key is present, that
+ * an unavailable value does not fold into a mean — i.e. that **no number is
+ * being claimed**. A check that forbade the harness from naming the metrics it
+ * registers would forbid 0.5.0 from being implemented at all, and would be
+ * deleted rather than fixed.
+ *
+ * So inside this one path, and only there, a §7 metric identifier is stripped
+ * out of a name before the vocabularies are matched. Nothing else changes:
+ * `expect(dwarfWinRate)` inside `mc-harness` still fires, and a §7 metric name
+ * inside any *other* package still fires, which is what stops a rules package
+ * from laundering a balance claim through a metric name. Both are asserted in
+ * the controls below.
+ */
+const MEASUREMENT_PACKAGE_PREFIX = 'packages/mc-harness/';
+
+/** Removes §7 metric identifiers from a collected name, longest first. */
+function withoutMetricNames(name: string): string {
+  let stripped = name;
+  for (const id of [...SECTION_7_METRIC_IDS].sort((a, b) => b.length - a.length)) {
+    stripped = stripped.replace(new RegExp(id, 'giu'), ' ');
+  }
+  return stripped;
+}
+
 interface Claim {
   readonly path: string;
   readonly line: number;
   readonly text: string;
+}
+
+/** How a file is scanned. */
+export interface ClaimScanOptions {
+  /**
+   * Whether a `contracts.md` §7 metric identifier names the subject under test
+   * rather than a magnitude being claimed. True only for
+   * {@link MEASUREMENT_PACKAGE_PREFIX}; see its note.
+   */
+  readonly metricNamesAreSubjectsUnderTest?: boolean;
 }
 
 /**
@@ -140,7 +206,11 @@ interface Claim {
  * methodology is invisible to it — which matters, because the alternative is a
  * check that fires on this file's own docstring.
  */
-export function balanceClaims(path: string, source: string): Claim[] {
+export function balanceClaims(
+  path: string,
+  source: string,
+  options: ClaimScanOptions = {},
+): Claim[] {
   const parsed = ts.createSourceFile(path, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
   const found: Claim[] = [];
 
@@ -175,7 +245,9 @@ export function balanceClaims(path: string, source: string): Claim[] {
 
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node) && rootCalleeName(node) === 'expect') {
-      const names = namesIn(node);
+      const names = (options.metricNamesAreSubjectsUnderTest ?? false)
+        ? namesIn(node).map(withoutMetricNames)
+        : namesIn(node);
       // Balance terms match as substrings of a name, because the vocabulary
       // arrives welded into identifiers — `winRateOf`, `speciesFairnessIndex`,
       // `isBalanced` — and each of them is distinctive enough that a substring
@@ -281,7 +353,11 @@ describe('no test asserts a balance property over an untuned magnitude', () => {
   });
 
   it('finds no pre-0.5.0 balance claim anywhere in the workspace suite', () => {
-    const claims = testFiles.flatMap((file) => balanceClaims(file.path, file.source));
+    const claims = testFiles.flatMap((file) =>
+      balanceClaims(file.path, file.source, {
+        metricNamesAreSubjectsUnderTest: file.path.startsWith(MEASUREMENT_PACKAGE_PREFIX),
+      }),
+    );
     expect(
       claims.map((claim) => `${claim.path}:${String(claim.line)} ${claim.text}`),
       'No balance measurement exists before agent-interface at 0.5.0, so no test may assert that a ' +
@@ -350,6 +426,64 @@ describe('the pre-0.5.0 claim check would catch a violation', () => {
       expect(claims, subject).toHaveLength(1);
       expect(claims[0]?.text).toContain(subject);
     }
+  });
+
+  it('reads the §7 metric names out of the document rather than a copy', () => {
+    // If this list ever parses to nothing the exemption below silently stops
+    // exempting anything and the harness suite fails for a reason nobody would
+    // connect to a table format change.
+    //
+    // The two names are held in a variable rather than written inside the
+    // `expect()` for the reason this whole file is about: the scan reads its own
+    // source, and an assertion literally containing `winRateByPrimitive` in a
+    // rules package is — correctly — a balance claim about a primitive. The
+    // check catching its own control is the failure mode the opening note
+    // warns about, and the indirection is how every other control here avoids it.
+    const namesTheExemptionDependsOn = ['winRateByPrimitive', 'timeToTierBySpecies'];
+    expect(
+      namesTheExemptionDependsOn.filter((id) => !SECTION_7_METRIC_IDS.includes(id)),
+    ).toEqual([]);
+    expect(SECTION_7_METRIC_IDS.length).toBeGreaterThanOrEqual(12);
+  });
+
+  it('treats a §7 metric name as a claim outside the measurement package', () => {
+    // The hole the exemption could have opened: a rules package laundering a
+    // balance claim through a §7 metric name. It stays shut.
+    const claims = balanceClaims(
+      'packages/rules-magic/test/unit/__probe__.test.ts',
+      'expect(winRateByPrimitive).toBeGreaterThan(400);\n',
+    );
+    expect(claims).toHaveLength(1);
+    expect(claims[0]?.text).toContain('primitive');
+  });
+
+  it('permits the measurement package to name the metrics it registers', () => {
+    // What the harness's own tests say about those names: not a number, an
+    // absence. Forbidding this would forbid 0.5.0 from being implemented.
+    const claims = balanceClaims(
+      'packages/mc-harness/test/unit/__probe__.test.ts',
+      [
+        "expect(collectWinRateByPrimitive(arm())).toMatchObject({ reason: 'mechanic-absent' });",
+        "expect(entries['worshipSnowball']).toMatchObject({ status: 'unavailable' });",
+        'expect(collectTimeToTierBySpecies(telemetry()).status).toBe(“censored”);',
+      ]
+        .join('\n')
+        .replace(/[“”]/gu, "'"),
+      { metricNamesAreSubjectsUnderTest: true },
+    );
+    expect(claims).toEqual([]);
+  });
+
+  it('still catches a real balance claim inside the measurement package', () => {
+    // The exemption is one identifier wide, not one package wide. A harness test
+    // asserting that dwarves win often enough is still a pre-0.5.0 claim.
+    const claims = balanceClaims(
+      'packages/mc-harness/test/unit/__probe__.test.ts',
+      "expect(winRateOf('dwarf')).toBeGreaterThan(400);\n",
+      { metricNamesAreSubjectsUnderTest: true },
+    );
+    expect(claims).toHaveLength(1);
+    expect(claims[0]?.text).toContain('dwarf');
   });
 
   it('permits a tradition differentiation assertion, which is the 0.3.0 claim', () => {

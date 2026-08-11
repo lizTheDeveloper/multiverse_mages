@@ -62,9 +62,11 @@ export type {
   AggregationRule,
   FactorRegistry,
   MetricDefinition,
+  MetricDetail,
   MetricEntries,
   MetricEntry,
   MetricRegistry,
+  MetricScope,
   StrategyRegistry,
   UnavailableReason,
 } from './metrics.js';
@@ -72,12 +74,97 @@ export {
   EMPTY_FACTOR_REGISTRY,
   EMPTY_METRIC_REGISTRY,
   EMPTY_STRATEGY_REGISTRY,
+  METRIC_SCOPE,
   UNAVAILABLE_REASON,
   factorRegistry,
   isMeasured,
   metricRegistry,
   strategyRegistry,
 } from './metrics.js';
+
+export type {
+  ArmRunSummary,
+  ArmTelemetry,
+  CensusSample,
+  CheckpointSample,
+  MechanicAvailability,
+  MirroredPlay,
+  RaidObservation,
+  RunTelemetry,
+  TierReach,
+} from './metrics-telemetry.js';
+export { MECHANICS_AT_0_5_0 } from './metrics-telemetry.js';
+
+export {
+  KNOWLEDGE_CENSUS_INTERVAL_TICKS,
+  KnowledgeCensus,
+  censusProblems,
+  censusTicks,
+  isCensusTick,
+} from './metrics-census.js';
+
+export type { SurvivalCurve, SurvivalObservation, SurvivalStep } from './metrics-survival.js';
+export { kaplanMeier, survivalQuantile } from './metrics-survival.js';
+
+export type { GiniResult } from './metrics-gini.js';
+export { gini, nearestRank, tailRatio } from './metrics-gini.js';
+
+export type {
+  CheckpointGini,
+  RaidLengthHistogram,
+  SnowballQuantity,
+  StrategyIllegalActions,
+  TierPairAggregate,
+  TierPairOutcome,
+} from './metrics-collectors.js';
+export {
+  HALF_LIFE_QUANTILE,
+  HEAVY_CENSORING_FRACTION,
+  MetricCollectionError,
+  NOOP_ACTION_ID,
+  RAID_LENGTH_BIN_WIDTH_TICKS,
+  SNOWBALL_CHECKPOINT_TICKS,
+  TIER_MAX,
+  TIER_MIN,
+  TIER_PAIR_COUNT,
+  aggregateTierPairs,
+  checkpointGinis,
+  collectAscensionRate,
+  collectCapitalSnowball,
+  collectIllegalActionRate,
+  collectInboundRaidTempoLoss,
+  collectKnowledgeHalfLife,
+  collectLibraryDependence,
+  collectPrestigeAdvantage,
+  collectRaidInitiationCost,
+  collectRaidLengthDistribution,
+  collectTimeToTierBySpecies,
+  collectWinRateByPrimitive,
+  collectWorshipSnowball,
+  illegalActionsByStrategy,
+  mirroredPairProblems,
+  raidLengthHistogram,
+  survivalObservationsFrom,
+  tierPairOutcomes,
+} from './metrics-collectors.js';
+
+export type { BalanceMetricDefinition, BalanceMetricRegistry } from './metrics-registry.js';
+export {
+  BALANCE_METRIC_IDS,
+  BALANCE_METRIC_REGISTRY,
+  collectArmMetrics,
+  collectRunMetrics,
+  metricDefinitionVersions,
+} from './metrics-registry.js';
+
+export type { ConformanceReport, DefinitionPin, DefinitionPins } from './metrics-conformance.js';
+export {
+  contractSection7MetricIds,
+  currentDefinitionPins,
+  definitionDigest,
+  definitionVersionConformance,
+  registryConformance,
+} from './metrics-conformance.js';
 
 export type { RunCoordinates } from './seed.js';
 export {

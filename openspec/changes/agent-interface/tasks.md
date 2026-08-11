@@ -60,19 +60,19 @@
 
 ## 6. Metric registry and definitions
 
-- [ ] 6.1 Implement the metric registry with identifier, definition, collector, scope, aggregation rule, unit, and `definitionVersion`
-- [ ] 6.2 Implement the conformance check asserting the registry's identifier set equals `contracts.md` §7
-- [ ] 6.3 Implement the `unavailable` status with reason codes `mechanic-absent`, `no-observations`, `censored`, and `per-arm-scope`, and the rule that unavailable values never fold into aggregates
-- [ ] 6.4 Implement the knowledge census at 12-world-tick intervals from tick 0
-- [ ] 6.5 Implement `knowledgeHalfLife` as a pooled Kaplan–Meier estimate with right-censoring, and the censored-status path when survival never reaches 0.5
-- [ ] 6.6 Implement `libraryDependence` as the mean over census samples, with maximum and final sample, excluding empty-universe samples
-- [ ] 6.7 Implement `timeToTierBySpecies` over all 42 pairs with right-censoring and the heavily-censored aggregate rule
-- [ ] 6.8 Implement the shared Gini estimator and both snowball metrics at checkpoints 60, 120, 240, 480, and 1200, with exclusion counts
-- [ ] 6.9 Implement `raidLengthDistribution` with 10-tick bins, an overflow bin that must stay empty, and p50/p95/max
-- [ ] 6.10 Implement `ascensionRate` with truncated runs in the denominator and failed runs excluded and reported separately
-- [ ] 6.11 Implement `prestigeAdvantage` as a mirrored-pair collector reporting `mechanic-absent` until `god-agency` defines the carry-forward maximum
-- [ ] 6.12 Implement `illegalActionRate` from the `agent-api` counters, with per-action-id and per-strategy breakdowns
-- [ ] 6.13 Implement the `definitionVersion` conformance check that fails when a pinned constant changes without a version bump
+- [x] 6.1 Implement the metric registry with identifier, definition, collector, scope, aggregation rule, unit, and `definitionVersion`
+- [x] 6.2 Implement the conformance check asserting the registry's identifier set equals `contracts.md` §7
+- [x] 6.3 Implement the `unavailable` status with reason codes `mechanic-absent`, `no-observations`, `censored`, and `per-arm-scope`, and the rule that unavailable values never fold into aggregates
+- [x] 6.4 Implement the knowledge census at 12-world-tick intervals from tick 0
+- [x] 6.5 Implement `knowledgeHalfLife` as a pooled Kaplan–Meier estimate with right-censoring, and the censored-status path when survival never reaches 0.5
+- [x] 6.6 Implement `libraryDependence` as the mean over census samples, with maximum and final sample, excluding empty-universe samples
+- [x] 6.7 Implement `timeToTierBySpecies` over all 42 pairs with right-censoring and the heavily-censored aggregate rule
+- [x] 6.8 Implement the shared Gini estimator and both snowball metrics at checkpoints 60, 120, 240, 480, and 1200, with exclusion counts
+- [x] 6.9 Implement `raidLengthDistribution` with 10-tick bins, an overflow bin that must stay empty, and p50/p95/max
+- [x] 6.10 Implement `ascensionRate` with truncated runs in the denominator and failed runs excluded and reported separately
+- [x] 6.11 Implement `prestigeAdvantage` as a mirrored-pair collector reporting `mechanic-absent` until `god-agency` defines the carry-forward maximum
+- [x] 6.12 Implement `illegalActionRate` from the `agent-api` counters, with per-action-id and per-strategy breakdowns
+- [x] 6.13 Implement the `definitionVersion` conformance check that fails when a pinned constant changes without a version bump
 
 ## 7. Ablation
 
