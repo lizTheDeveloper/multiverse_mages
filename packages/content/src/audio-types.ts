@@ -104,6 +104,16 @@ export interface VoiceLineBankRecord {
   readonly id: string;
   readonly speaker: string;
   readonly speakerKind: 'species' | 'populace';
+  /**
+   * The text-to-speech voice this bank records in.
+   *
+   * sound-design.md §9.5 gives all ten banks their own voice direction, and
+   * §8.1a makes each species' comedic register distinct — so the cast is
+   * content, not a process-wide setting. An empty string means deliberately
+   * unassigned, and the generator refuses such a bank by name rather than
+   * recording every species in one voice.
+   */
+  readonly voiceId: string;
   readonly voicePrompt: string;
   readonly lines: readonly VoiceLineRecord[];
 }
