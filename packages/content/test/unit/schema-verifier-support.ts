@@ -12,7 +12,7 @@
  */
 
 /**
- * The seven content schemas are enforcement machinery, and this repository has
+ * The eight content schemas are enforcement machinery, and this repository has
  * shipped three enforcement rules that read correctly and enforced nothing. A
  * JSON Schema fails that way twice over: a keyword the interpreter does not
  * implement, and a constraint no content could ever violate.
@@ -52,7 +52,7 @@ export function schemaFileFor(contentFile: ContentFileName): string {
   return contentFile.replace(/\.json$/u, '.schema.json');
 }
 
-/** Parses the seven shipped schema documents, keyed by the content file. */
+/** Parses the eight shipped schema documents, keyed by the content file. */
 export function shippedSchemaDocuments(): Map<ContentFileName, SchemaObject> {
   const directory = shippedSchemaDirectory();
   const out = new Map<ContentFileName, SchemaObject>();

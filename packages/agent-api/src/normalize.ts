@@ -58,8 +58,32 @@
 import type { NormalizationDescriptor } from './layout.js';
 import { OBSERVATION_DESCRIPTORS, OBSERVATION_SIZE, descriptorAt } from './layout.js';
 
+/** The clamp half of every descriptor. */
+function clamp(value: number, descriptor: NormalizationDescriptor): number {
+  if (!(value > descriptor.min)) return descriptor.min; // also catches NaN and -0
+  if (value > descriptor.max) return descriptor.max;
+  return value;
+}
+
 /**
- * Applies one descriptor: divide, then clamp.
+ * How many of a descriptor's edges a count has reached.
+ *
+ * A linear scan rather than a binary search. The lists are short — a channel
+ * spanning more than a dozen orders of magnitude is a channel that should have
+ * been two — and a scan is the version whose correctness is obvious at the one
+ * place it matters, the boundary between two buckets.
+ */
+function bucketOf(value: number, edges: readonly number[]): number {
+  let reached = 0;
+  for (const edge of edges) {
+    if (value < edge) break;
+    reached += 1;
+  }
+  return reached;
+}
+
+/**
+ * Applies one descriptor's rule, then clamps.
  *
  * The clamp is not a safety net around a divisor that is nearly right — it is
  * half the descriptor. §4.1 wants a quantity whose range later grows to
@@ -68,12 +92,36 @@ import { OBSERVATION_DESCRIPTORS, OBSERVATION_SIZE, descriptorAt } from './layou
  * cohort scale reads `1.0`, which is honest, rather than `2.0`, which is
  * outside the pinned range and would put a trained policy's input distribution
  * somewhere it has never been.
+ *
+ * The switch is exhaustive over the five rules and has no `default`. That is
+ * deliberate: adding a sixth rule to `NORMALIZATION_RULES` without teaching this
+ * function what it means should fail the typecheck, not fall through to a
+ * plausible-looking division.
  */
 export function applyDescriptor(value: number, descriptor: NormalizationDescriptor): number {
-  const scaled = value / descriptor.divisor;
-  if (scaled < descriptor.min) return descriptor.min;
-  if (scaled > descriptor.max) return descriptor.max;
-  return scaled;
+  switch (descriptor.rule) {
+    case 'ratio':
+    case 'bounded':
+      // One arm for two rules, and that is the honest shape: `bounded` *is* a
+      // ratio whose constant §4.1 fixes at `fp(1024)` and forbids anyone from
+      // choosing. They differ in what they promise, not in what they compute,
+      // which is why the layout digest records the rule separately.
+      return clamp(value / descriptor.divisor, descriptor);
+    case 'log-bucket': {
+      const edges = descriptor.edges;
+      if (edges === undefined || edges.length === 0) {
+        throw new RangeError(
+          'A log-bucket descriptor reached the exporter with no edges. `layoutProblems` rejects ' +
+            'this at load, so arriving here means the descriptor bypassed the table.',
+        );
+      }
+      return clamp(bucketOf(value, edges) / edges.length, descriptor);
+    }
+    case 'flag':
+      return value > 0 ? descriptor.max : descriptor.min;
+    case 'identity':
+      return clamp(value, descriptor);
+  }
 }
 
 /**

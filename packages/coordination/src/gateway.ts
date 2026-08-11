@@ -20,23 +20,31 @@
  * This is the implementation, and it is the only file in the repository that
  * names both packages in one breath.
  *
- * ## The three `contribute*` methods refuse, loudly, and that is the honest
- * state of this layer
+ * ## The three `contribute*` methods used to refuse, and now accrue
  *
  * `ResearchInputs.progress` in `@mm/rules-magic` is documented as *"Progress
- * accumulated before this step. The caller owns storing it."* Nothing owns
- * storing it yet. Where partial research, partial teaching and partial scribing
- * persist is exactly the class of decision the goal commitment just resolved —
- * it needs a world component, a schema revision and a migration, and
- * `contracts.md` §1.2's note argues at length that such a decision must not be
- * made silently by whoever writes the first caller.
+ * accumulated before this step. The caller owns storing it."* Nobody owned it,
+ * so these three threw, naming the missing decision rather than inventing an
+ * accrual that lives for one tick and is discarded — which would have run,
+ * looked plausible in a 200-year scenario, and produced a universe where
+ * research never completes for reasons no measurement would attribute
+ * correctly.
  *
- * So these three throw, naming the missing decision. The alternative was an
- * accrual that lives for one tick and is discarded, which would run, look
- * plausible in a 200-year scenario, and produce a universe where research never
- * completes for reasons no measurement would attribute correctly. The world step
- * loop does not call them; a test asserts the refusal so the gap is a checked
- * fact rather than a comment.
+ * The decision is made: {@link EffortLedger} over `@mm/state`'s
+ * `EFFORT_PROGRESS`, one entity per project, so that progress survives a goal
+ * switch and a mage resumes a node she set down. The reasoning is in
+ * `contracts.md` §1.2 and in `effort-store.ts`; what matters here is the shape
+ * it gives these three methods. Each one reads the project's stored progress,
+ * hands `rules-magic` the month of work, and either stores the new total or —
+ * when the requirement is reached — performs the operation and forgets the
+ * project.
+ *
+ * **Completion is reported, not returned.** The port types all three as `void`,
+ * and widening it would put a knowledge outcome into a `rules-world` interface
+ * that is deliberately narrow. So a completed project lands in
+ * {@link CoordinatingKnowledgeGateway.completions}, which the world loop reads
+ * once per phase and turns into `stepMageAutonomy`'s `isComplete` — the
+ * caller's judgement the autonomy layer already asks for.
  *
  * ## A gateway is a view of one phase, not of one tick
  *
@@ -48,19 +56,41 @@
  *
  * That makes the instance **stale the moment the world changes**, which is why
  * the world loop builds a new one for each phase that mutates: one for the
- * mortality phase, which destroys instances and kills mages, and a fresh one for
- * the autonomy phase, which runs after promotion has created new ones.
- * Construction is a field read and three empty maps. An invalidate-me method
- * would have been cheaper and would have put the correctness of every phase in
- * the hands of whoever remembers to call it.
+ * mortality phase, which destroys instances and kills mages; one for the work
+ * phase, which creates them; and a fresh one for the autonomy phase, which runs
+ * after both. Construction is a field read and a few empty maps. An
+ * invalidate-me method would have been cheaper and would have put the
+ * correctness of every phase in the hands of whoever remembers to call it.
  */
 
 import type { ContentId, Fp } from '@mm/content';
 import type { EntityHandle, Fixed, SimState } from '@mm/sim-core';
-import type { Handle, LocationKindValue, Ruleset } from '@mm/state';
-import { LOCATION_KIND, MAGE, componentOf, permits } from '@mm/state';
-import type { CellResolver, KnowledgeSubsystem, NodeCatalog, StorePolicy } from '@mm/rules-magic';
-import { DEFAULT_TEACH_THRESHOLD, heldMastery, researchRequirement } from '@mm/rules-magic';
+import type { EffortKindValue, Handle, Ruleset } from '@mm/state';
+import {
+  EFFORT_KIND,
+  KNOWLEDGE_INSTANCE,
+  LOCATION_KIND,
+  MAGE,
+  componentOf,
+  permits,
+} from '@mm/state';
+import type {
+  CellResolver,
+  KnowledgeRng,
+  KnowledgeSubsystem,
+  NodeCatalog,
+  StoreHook,
+  StorePolicy,
+} from '@mm/rules-magic';
+import {
+  DEFAULT_TEACH_THRESHOLD,
+  research,
+  researchRequirement,
+  scribe,
+  scribeCapacityCost,
+  teach,
+} from '@mm/rules-magic';
+import type { RediscoveryClampCounter } from '@mm/primitives';
 import { createRediscoveryClampCounter } from '@mm/primitives';
 import type {
   KnowledgeGateway,
@@ -68,6 +98,8 @@ import type {
   MageHandle,
   UniversityHandle,
 } from '@mm/rules-world';
+
+import type { EffortKey, EffortLedger } from './effort-store.js';
 
 /** Species rates the gateway needs about whichever mage it is asked about. */
 export interface MageRates {
@@ -77,6 +109,35 @@ export interface MageRates {
   readonly rediscoveryAffinity: Fp;
   /** Species `depthCeiling`, 1..7. */
   readonly depthCeiling: number;
+  /** Species `scribeAffinity`. Raises a finished book's durability. */
+  readonly scribeAffinity: Fp;
+}
+
+/**
+ * The universe's materials stock, as much of it as scribing needs.
+ *
+ * A pair of callbacks rather than a number, because a book's cost is deducted in
+ * the tick it is finished and the loop that owns the stock is one layer up.
+ * `contracts.md` §1.1 makes materials a universe-level balance and
+ * `rules-magic`'s `scribe` deliberately *reports* consumption instead of
+ * applying it — this is the seam that keeps that true while still letting the
+ * deduction happen at the moment of the write.
+ */
+export interface MaterialsAccess {
+  /** What the universe can spend right now, `fp`. */
+  readonly available: () => Fixed;
+  /** Deducts what a finished book cost. Never called on a refusal. */
+  readonly consume: (amount: Fixed) => void;
+}
+
+/** A project that reached its requirement this phase, for the caller's report. */
+export interface CompletedEffort {
+  readonly kind: EffortKindValue;
+  /** The mage the effort was counted against; for teaching, the teacher. */
+  readonly subject: MageHandle;
+  /** The student, for teaching; `0` otherwise. */
+  readonly counterparty: MageHandle;
+  readonly nodeId: ContentId;
 }
 
 /** Everything the adapter needs that is not the state itself. */
@@ -105,6 +166,28 @@ export interface GatewayDeps {
   readonly store: StorePolicy;
   /** Where a dead mage's grimoires go. Supplied by the death path. */
   readonly onGrimoiresInherited?: ((mage: MageHandle, inheritor: UniversityHandle) => void) | undefined;
+  /**
+   * Where unfinished work lives. Omitted means this gateway is query-only.
+   *
+   * Optional rather than required because most of the port is questions, and a
+   * caller that only asks them — a test of the frontier, an observation build —
+   * should not have to construct a ledger to be handed nothing back. The three
+   * `contribute*` methods refuse without one, and say so.
+   */
+  readonly effort?: EffortLedger | undefined;
+  /** The step's RNG. Required to accrue: research, teaching and scribing all draw. */
+  readonly rng?: KnowledgeRng | undefined;
+  /** The universe's materials stock. Required to finish a book. */
+  readonly materials?: MaterialsAccess | undefined;
+  /**
+   * Accumulates how often the `fp(3072)` rediscovery floor discarded affinity.
+   *
+   * Supplied by the caller so that it outlives a phase: the figure that matters
+   * at 0.5.0 is the share over a whole run, and a counter created here would be
+   * discarded with the gateway every phase and always read zero. Omitted means
+   * nobody is counting, which is honest for a query-only gateway.
+   */
+  readonly clampCounter?: RediscoveryClampCounter | undefined;
 }
 
 /**
@@ -145,10 +228,16 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   /** Memoized for this phase. See the module note on staleness. */
   #roster: readonly MageHandle[] | undefined;
   readonly #rates = new Map<MageHandle, MageRates | undefined>();
-  readonly #held = new Map<MageHandle, ReadonlySet<ContentId>>();
+  /** Every mage's held nodes and mastery, from one pass. See {@link #holdings}. */
+  #heldByMage: Map<MageHandle, Map<ContentId, Fp>> | undefined;
+
+  /** Projects finished while this gateway was alive. Reporting only. */
+  readonly #completed: CompletedEffort[] = [];
+  readonly #clampCounter: RediscoveryClampCounter;
 
   constructor(deps: GatewayDeps) {
     this.#deps = deps;
+    this.#clampCounter = deps.clampCounter ?? createRediscoveryClampCounter();
   }
 
   instanceCount(nodeId: ContentId): number {
@@ -160,7 +249,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   }
 
   knows(mage: MageHandle, nodeId: ContentId): boolean {
-    return this.#heldSet(mage).has(nodeId);
+    return this.#holdings(mage).has(nodeId);
   }
 
   /**
@@ -171,9 +260,12 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * (`gatherFrontier`) so that the filter runs before the caller's limit is
    * spent.
    *
-   * `remainingCost` is the full requirement, because no progress is stored yet
-   * — see this module's header. When progress persists it is subtracted here and
-   * nowhere else, so that "remaining" has one definition.
+   * `remainingCost` is the requirement **less whatever this mage has already
+   * banked against that node**, and that subtraction happens here and nowhere
+   * else so that "remaining" has one definition. It is what makes a set-down
+   * project cheaper to resume than to start, which is the whole reason progress
+   * has a home: `compareTargets` sorts cheapest first, so a half-finished node
+   * outranks an untouched one of the same cost without any rule saying so.
    */
   researchFrontier(mage: MageHandle, limit: number): readonly KnowledgeTarget[] {
     const rates = this.#ratesOf(mage);
@@ -188,31 +280,30 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       if (this.knows(mage, nodeId)) continue;
       if (!this.#prerequisitesHeld(mage, node.prerequisites)) continue;
 
-      found.push({
-        nodeId,
-        tier: node.tier,
-        remainingCost: researchRequirement(node, {
-          rediscovery: this.#deps.knowledge.wasEverKnown(nodeId),
-          rediscoveryAffinity: rates.rediscoveryAffinity,
-          learnRate: rates.learnRate,
-          // Neutral: the stacked `research-rate` multiplier is a property of the
-          // tick the work happens in, not of the decision to attempt it, and
-          // baking this tick's value into a commitment that lasts six months
-          // would make the cost a mage decided against stale by construction.
-          researchRate: NEUTRAL_RATE,
-          // A throwaway counter: this is a *quotation* of a cost for a decision,
-          // not the accrual that pays it. The share that matters at 0.5.0 is
-          // counted where the work happens, and folding scan-time quotes into
-          // it would inflate the denominator with evaluations nobody paid for.
-          clampCounter: createRediscoveryClampCounter(),
-        }),
+      const banked =
+        this.#deps.effort?.progressOf(effortKey(EFFORT_KIND.research, mage, nodeId, 0)) ?? 0;
+      const requirement = researchRequirement(node, {
+        rediscovery: this.#deps.knowledge.wasEverKnown(nodeId),
+        rediscoveryAffinity: rates.rediscoveryAffinity,
+        learnRate: rates.learnRate,
+        // Neutral: the stacked `research-rate` multiplier is a property of the
+        // tick the work happens in, not of the decision to attempt it, and
+        // baking this tick's value into a commitment that lasts six months
+        // would make the cost a mage decided against stale by construction.
+        researchRate: NEUTRAL_RATE,
+        // A throwaway counter: this is a *quotation* of a cost for a decision,
+        // not the accrual that pays it. The share that matters at 0.5.0 is
+        // counted where the work happens, and folding scan-time quotes into it
+        // would inflate the denominator with evaluations nobody paid for.
+        clampCounter: createRediscoveryClampCounter(),
       });
+      found.push({ nodeId, tier: node.tier, remainingCost: Math.max(requirement - banked, 0) });
     }
     return found;
   }
 
   canTeach(teacher: MageHandle, nodeId: ContentId): boolean {
-    const mastery = heldMastery(this.#deps.knowledge, teacher, nodeId);
+    const mastery = this.#holdings(teacher).get(nodeId);
     return mastery !== undefined && mastery >= DEFAULT_TEACH_THRESHOLD;
   }
 
@@ -229,15 +320,15 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (rates === undefined) return undefined;
 
     let best: ContentId | undefined;
-    for (const instance of this.#deps.knowledge.instancesHeldBy(teacher)) {
-      const view = this.#deps.knowledge.read(instance);
-      const node = this.#deps.catalog.node(view.nodeId);
+    for (const [nodeId, mastery] of this.#holdings(teacher)) {
+      if (best !== undefined && nodeId >= best) continue;
+      if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
+      const node = this.#deps.catalog.node(nodeId);
       if (node === undefined || node.tier > rates.depthCeiling) continue;
-      if (view.mastery < DEFAULT_TEACH_THRESHOLD) continue;
-      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(view.nodeId))) continue;
-      if (this.knows(student, view.nodeId)) continue;
+      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
+      if (this.knows(student, nodeId)) continue;
       if (!this.#prerequisitesHeld(student, node.prerequisites)) continue;
-      if (best === undefined || view.nodeId < best) best = view.nodeId;
+      best = nodeId;
     }
     return best;
   }
@@ -247,12 +338,45 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     // all — the Art of Memory's whole cost. Asking the hook rather than
     // checking a tradition id keeps the four extension points the only place a
     // tradition changes anything.
-    if (!this.#deps.store.holdableLocationKinds.includes(GRIMOIRE_LOCATION)) return undefined;
+    if (!this.#deps.store.scribingAvailable) return undefined;
     const node = this.#deps.catalog.node(nodeId);
     if (node === undefined) return undefined;
     if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return undefined;
     if (!this.knows(mage, nodeId)) return undefined;
     return { nodeId, tier: node.tier, remainingCost: node.scribeCost };
+  }
+
+  /**
+   * The lowest-handle living mage this teacher could pass `nodeId` to, or
+   * `undefined`.
+   *
+   * The counterpart {@link teachableTo} does not answer: that one asks *what*
+   * this pair could exchange and returns the cheapest node, so a student who
+   * could receive the committed node but could also receive a lower-numbered one
+   * would look like no student at all. A `teach` commitment names the node, so
+   * the question at accrual time is the other way round.
+   *
+   * Lowest handle rather than any other order, because a handle is a total order
+   * that depends on nothing but the state, and the roster it walks is already
+   * bounded by {@link MAX_TEACHING_COUNTERPARTIES}.
+   */
+  studentFor(teacher: MageHandle, nodeId: ContentId): MageHandle | undefined {
+    if (!this.canTeach(teacher, nodeId)) return undefined;
+    for (const student of this.livingMages()) {
+      if (student === teacher) continue;
+      if (this.#admitsLesson(student, nodeId)) return student;
+    }
+    return undefined;
+  }
+
+  /** The lowest-handle living mage who could teach this student `nodeId`. */
+  teacherFor(student: MageHandle, nodeId: ContentId): MageHandle | undefined {
+    if (!this.#admitsLesson(student, nodeId)) return undefined;
+    for (const teacher of this.livingMages()) {
+      if (teacher === student) continue;
+      if (this.canTeach(teacher, nodeId)) return teacher;
+    }
+    return undefined;
   }
 
   /**
@@ -267,16 +391,192 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     return this.#deps.catalog.node(nodeId)?.teachCost ?? 0;
   }
 
-  contributeResearch(): void {
-    throw new Error(unpersistedProgress('research'));
+  /**
+   * Spends mage-months on deriving a node, and creates the instance on the tick
+   * the requirement is met.
+   *
+   * The arithmetic is entirely `rules-magic`'s `research`: it owns the
+   * requirement, the stream-3 jitter, the legality and prerequisite refusals and
+   * the store bound. What this method owns is the one thing that function
+   * deliberately does not — where the running total sits between two calls.
+   *
+   * A refusal leaves the stored total exactly where it was. `research` returns
+   * the input progress unchanged on a refusal and draws nothing, so a mage whose
+   * project became illegal keeps what she had spent: re-permitting the cell
+   * restores the project along with the instances, which is the same
+   * no-migration-needed property dormancy has.
+   */
+  contributeResearch(mage: MageHandle, nodeId: ContentId, mageMonths: Fixed): void {
+    const ledger = this.#ledger('research');
+    const rates = this.#ratesOf(mage);
+    if (rates === undefined) return;
+
+    const key = effortKey(EFFORT_KIND.research, mage, nodeId, 0);
+    const outcome = research({
+      knowledge: this.#deps.knowledge,
+      catalog: this.#deps.catalog,
+      cells: this.#deps.cells,
+      ruleset: this.#deps.ruleset,
+      rng: this.#rng('research'),
+      subject: mage,
+      nodeId,
+      worldTick: this.#deps.state.clock.worldTick,
+      progress: ledger.progressOf(key),
+      effort: mageMonths,
+      learnRate: rates.learnRate,
+      // Neutral until the library's `research-rate` contribution is wired to a
+      // staffed university. Stated rather than silently omitted: a stacked
+      // multiplier defaulted to something other than `fp(1)` is a balance change
+      // nobody asked for, and one defaulted to `fp(1)` is a bonus that is simply
+      // not in effect yet.
+      researchRate: NEUTRAL_RATE,
+      rediscoveryAffinity: rates.rediscoveryAffinity,
+      clampCounter: this.#clampCounter,
+      store: this.#deps.store,
+    });
+
+    if (outcome.refusal !== undefined) return;
+    if (!outcome.completed) {
+      ledger.accrue(key, outcome.progress - ledger.progressOf(key));
+      return;
+    }
+    ledger.clear(key);
+    this.#completed.push({
+      kind: EFFORT_KIND.research,
+      subject: mage,
+      counterparty: 0,
+      nodeId,
+    });
   }
 
-  contributeTeaching(): void {
-    throw new Error(unpersistedProgress('teaching'));
+  /**
+   * Spends mage-months on one lesson, and transmits the node when the pair has
+   * paid `teachCost`.
+   *
+   * **One project for the two of them.** `contracts.md` §2.3 prices teaching as
+   * a single cost, and both mages have goals pointed at it — the teacher's
+   * `teach` and the student's `seek-teaching`. So the row is keyed on the pair
+   * and either side's month lands in the same total. Two rows would have let one
+   * lesson finish twice and put two instances of one node in one student's head.
+   *
+   * Progress is **clamped at the requirement** when the transmission itself is
+   * refused — the pair has done the work, and the lesson is blocked by something
+   * else (a prerequisite the student lost, a full personal store, an
+   * interdiction). Left unclamped it would climb forever while the feasibility
+   * mask took its time noticing.
+   */
+  contributeTeaching(
+    teacher: MageHandle,
+    student: MageHandle,
+    nodeId: ContentId,
+    mageMonths: Fixed,
+  ): void {
+    const ledger = this.#ledger('teaching');
+    const node = this.#deps.catalog.node(nodeId);
+    if (node === undefined) return;
+
+    const key = effortKey(EFFORT_KIND.teaching, teacher, nodeId, student);
+    const progress = ledger.accrue(key, mageMonths);
+    if (progress < node.teachCost) return;
+
+    const outcome = teach({
+      knowledge: this.#deps.knowledge,
+      catalog: this.#deps.catalog,
+      cells: this.#deps.cells,
+      ruleset: this.#deps.ruleset,
+      rng: this.#rng('teaching'),
+      teacher,
+      student,
+      nodeId,
+      worldTick: this.#deps.state.clock.worldTick,
+      store: this.#deps.store,
+    });
+
+    if (outcome.refusal !== undefined) {
+      ledger.clampTo(key, node.teachCost);
+      return;
+    }
+    ledger.clear(key);
+    this.#completed.push({
+      kind: EFFORT_KIND.teaching,
+      subject: teacher,
+      counterparty: student,
+      nodeId,
+    });
   }
 
-  contributeScribing(): void {
-    throw new Error(unpersistedProgress('scribing'));
+  /**
+   * Spends scribe-months at the desk, and writes the book when the tier's
+   * capacity cost is met.
+   *
+   * Two costs, and only one of them accrues. `scribeCapacityCost(tier)` is
+   * *time* and is what this total counts; the node's `scribeCost` is *materials*
+   * and is paid in the single tick the book is finished, because §1.1 makes
+   * materials a universe balance and a half-written book that had already
+   * consumed half its parchment would be a stock nobody could reconcile.
+   *
+   * A refusal for want of materials therefore holds the finished work at the
+   * requirement and tries again next tick, which is what a scribe with a full
+   * desk and an empty storeroom actually does.
+   */
+  contributeScribing(mage: MageHandle, nodeId: ContentId, scribeMonths: Fixed): void {
+    const ledger = this.#ledger('scribing');
+    const materials = this.#deps.materials;
+    if (materials === undefined) {
+      throw new Error(
+        'Scribing needs the universe materials stock: contracts.md §1.1 makes materials a ' +
+          "universe-level balance and rules-magic's `scribe` reports what it consumed rather " +
+          'than deducting it. Supply `materials` on the gateway deps.',
+      );
+    }
+    const node = this.#deps.catalog.node(nodeId);
+    const rates = this.#ratesOf(mage);
+    if (node === undefined || rates === undefined) return;
+
+    const key = effortKey(EFFORT_KIND.scribing, mage, nodeId, 0);
+    const required = scribeCapacityCost(node.tier);
+    const progress = ledger.accrue(key, scribeMonths);
+    if (progress < required) return;
+
+    const outcome = scribe({
+      knowledge: this.#deps.knowledge,
+      catalog: this.#deps.catalog,
+      cells: this.#deps.cells,
+      ruleset: this.#deps.ruleset,
+      rng: this.#rng('scribing'),
+      scribe: mage,
+      nodeId,
+      worldTick: this.#deps.state.clock.worldTick,
+      store: storeHookOf(this.#deps.store),
+      scribeAffinity: rates.scribeAffinity,
+      scribeCapacity: progress,
+      materials: materials.available(),
+    });
+
+    if (outcome.refusal !== undefined) {
+      ledger.clampTo(key, required);
+      return;
+    }
+    materials.consume(outcome.materialsConsumed);
+    ledger.clear(key);
+    this.#completed.push({
+      kind: EFFORT_KIND.scribing,
+      subject: mage,
+      counterparty: 0,
+      nodeId,
+    });
+  }
+
+  /**
+   * Every project that reached its requirement while this gateway was alive.
+   *
+   * A projection, never an input to a rule: `contracts.md` §4.4 keeps the
+   * explain channel out of the rules path, and the one thing the world loop does
+   * with this is hand `stepMageAutonomy` the `isComplete` judgement it already
+   * asks the caller for.
+   */
+  completions(): readonly CompletedEffort[] {
+    return this.#completed;
   }
 
   /**
@@ -295,7 +595,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
 
   /** Every node this mage holds in mind or palace, ascending by node id. */
   heldNodes(mage: MageHandle): readonly ContentId[] {
-    return [...this.#heldSet(mage)].sort((a, b) => a - b);
+    return [...this.#holdings(mage).keys()].sort((a, b) => a - b);
   }
 
   /**
@@ -321,23 +621,52 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   }
 
   /**
-   * The nodes a subject holds in mind or palace, as a set.
+   * What one mage holds in mind or palace: node id to best mastery.
    *
-   * A set rather than a mastery lookup per node: the frontier scan asks "does
-   * she know this?" once per candidate node, and answering each by walking the
-   * instance component is what makes the scan quadratic. Mastery is still read
-   * instance by instance where mastery is what matters — {@link canTeach} and
-   * {@link teachableTo} — because a set cannot answer "well enough to teach".
+   * ## One pass over the instances for the whole phase, not one per question
+   *
+   * Every question this class answers about holdings — `knows`, `canTeach`,
+   * `teachableTo`, the frontier's "does she have this already" — used to walk
+   * the instance component, and `KnowledgeSubsystem.instancesHeldBy` is a scan.
+   * The teachability scan asks per *pair*, so the cost was
+   * `mages × counterparties × instances`, which is invisible while nobody
+   * finishes anything and quadratic the moment they do. Nothing was wrong with
+   * it until this file started completing research; it is fixed here rather than
+   * left as a surprise for the first long run.
+   *
+   * So the whole table is built once, lazily, from a single pass over
+   * `KNOWLEDGE_INSTANCE` — and it is a `Map` per mage rather than a set, because
+   * "well enough to teach" is a question a set cannot answer and reading mastery
+   * separately would put the scan straight back.
+   *
+   * Highest mastery wins where a mage holds two instances of one node, which is
+   * reachable through raid theft; `heldMastery` makes the same choice, and
+   * teaching from the worse copy would be a rule nobody wrote down.
    */
-  #heldSet(mage: MageHandle): ReadonlySet<ContentId> {
-    const cached = this.#held.get(mage);
-    if (cached !== undefined) return cached;
-    const nodes = new Set<ContentId>();
-    for (const instance of this.#deps.knowledge.instancesHeldBy(mage)) {
-      nodes.add(this.#deps.knowledge.read(instance).nodeId);
+  #holdings(mage: MageHandle): ReadonlyMap<ContentId, Fp> {
+    if (this.#heldByMage === undefined) {
+      const byMage = new Map<MageHandle, Map<ContentId, Fp>>();
+      const store = componentOf(this.#deps.state, KNOWLEDGE_INSTANCE);
+      const nodeIds = store.field('nodeId');
+      const locationKinds = store.field('locationKind');
+      const locationIds = store.field('locationId');
+      const masteries = store.field('mastery');
+      store.forEach((row) => {
+        if (!isHeldAtMind(locationKinds[row] as number)) return;
+        const holder = locationIds[row] as Handle;
+        const nodeId = nodeIds[row] as ContentId;
+        const mastery = masteries[row] as Fp;
+        let held = byMage.get(holder);
+        if (held === undefined) {
+          held = new Map<ContentId, Fp>();
+          byMage.set(holder, held);
+        }
+        const best = held.get(nodeId);
+        if (best === undefined || mastery > best) held.set(nodeId, mastery);
+      });
+      this.#heldByMage = byMage;
     }
-    this.#held.set(mage, nodes);
-    return nodes;
+    return this.#heldByMage.get(mage) ?? EMPTY_HOLDINGS;
   }
 
   #ratesOf(mage: MageHandle): MageRates | undefined {
@@ -353,28 +682,86 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     }
     return true;
   }
+
+  /**
+   * Whether a student could receive this node from somebody: within her depth
+   * ceiling, legal here, not already known, prerequisites held.
+   *
+   * Everything the pair needs *except* the teacher's mastery, which is the
+   * teacher's half and is asked separately by {@link canTeach}. Split that way
+   * because the two questions have different answers for the same node depending
+   * which end you stand at, and one predicate that took both would be called
+   * with the arguments the wrong way round eventually.
+   */
+  #admitsLesson(student: MageHandle, nodeId: ContentId): boolean {
+    const rates = this.#ratesOf(student);
+    if (rates === undefined) return false;
+    const node = this.#deps.catalog.node(nodeId);
+    if (node === undefined || node.tier > rates.depthCeiling) return false;
+    if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return false;
+    if (this.knows(student, nodeId)) return false;
+    return this.#prerequisitesHeld(student, node.prerequisites);
+  }
+
+  /** The ledger, or a refusal naming what the caller left out. */
+  #ledger(kind: string): EffortLedger {
+    const ledger = this.#deps.effort;
+    if (ledger === undefined) {
+      throw new Error(
+        `Cannot accrue ${kind} work: this gateway was built without an effort ledger, so there is ` +
+          'nowhere for partial progress to persist. Pass `effort` on the gateway deps. A gateway ' +
+          'without one is query-only by construction, which is what the observation and outlook ' +
+          'paths want.',
+      );
+    }
+    return ledger;
+  }
+
+  /** The step's RNG, or a refusal. Every accrual draws; see `rules-magic`. */
+  #rng(kind: string): KnowledgeRng {
+    const rng = this.#deps.rng;
+    if (rng === undefined) {
+      throw new Error(
+        `Cannot accrue ${kind} work without the step's RNG: research, teaching and scribing each ` +
+          'draw from their own stream, and a draw skipped is a stream whose ordinals no longer ' +
+          'line up with any recorded baseline. Pass `rng` on the gateway deps.',
+      );
+    }
+    return rng;
+  }
+}
+
+/** One project's addressing key. See `effort-store.ts` for why it has four parts. */
+export function effortKey(
+  kind: EffortKindValue,
+  subject: MageHandle,
+  nodeId: ContentId,
+  counterparty: MageHandle,
+): EffortKey {
+  return { subject, kind, nodeId, counterparty };
+}
+
+/**
+ * The narrow view of the `store` hook that scribing takes.
+ *
+ * `keepsWrittenCopies` is the policy's own `scribingAvailable`, not anything
+ * this file infers, so the Art of Memory refuses because of what it declares and
+ * not because this module knows its name — the four extension points stay the
+ * only place a tradition changes anything.
+ */
+function storeHookOf(policy: StorePolicy): StoreHook {
+  return { kind: policy.kind, keepsWrittenCopies: policy.scribingAvailable };
 }
 
 /** `fp(1.0)` — an unmodified rate (`contracts.md` §2.4's convention). */
 const NEUTRAL_RATE: Fixed = 1024;
 
-/** Where a written copy sits while a mage holds the book (`contracts.md` §1.5). */
-const GRIMOIRE_LOCATION: LocationKindValue = LOCATION_KIND.grimoire;
+/** A mage who holds nothing. Shared, and never written to. */
+const EMPTY_HOLDINGS: ReadonlyMap<ContentId, Fp> = new Map<ContentId, Fp>();
 
 /** Whether a location kind is one a mage carries in her own head. */
 export function isHeldAtMind(locationKind: number): boolean {
   return locationKind === LOCATION_KIND.mind || locationKind === LOCATION_KIND.palace;
-}
-
-function unpersistedProgress(kind: string): string {
-  return (
-    `Cannot accrue ${kind} work: partial progress has nowhere to persist. @mm/rules-magic's ` +
-    'operations take the progress so far as a parameter and say "the caller owns storing it", and ' +
-    'nothing owns it yet. Storing it needs a world component, a WORLD_SCHEMA_VERSION bump and a ' +
-    'migration — the same decision contracts.md §1.2 records for the goal commitment, and it says ' +
-    'why such a decision must not be made by whoever writes the first caller. Make it, then ' +
-    'implement this method against it.'
-  );
 }
 
 /** A mage entity handle, re-exported so callers need not reach past this layer. */

@@ -71,8 +71,11 @@ Next up is `mages-and-species` (0.4.0).
 
 Three packages are **deviations from `contracts.md` §5 as originally drawn**, all recorded there with
 their reasoning: `state`, `primitives`, and `coordination`. §5 was written before anyone tried to
-satisfy it. A fourth deviation, from **§1.2**, is recorded in that section: the `goal-commitment`
-component, which `mages-and-species` promised would not be needed.
+satisfy it. Two further deviations, both from **§1.2**, are recorded in that section: the
+`goal-commitment` component and the `effort-progress` component, neither of which
+`mages-and-species` expected to need. Each cost a world-schema revision — `WORLD_SCHEMA_VERSION` is
+now 3 — and neither moved `sim-core`'s `SNAPSHOT_VERSION`, which is inside the hashed header and
+would break every golden fixture with a version error instead of a behaviour diff.
 
 Two commands worth knowing before touching the core:
 
@@ -135,6 +138,16 @@ branch out from under anyone else working in it.
 `.claude/worktrees/` is gitignored and excluded from eslint. A worktree has no `node_modules` of its
 own, so run `npm ci` in it before `npm run verify`, or npm will silently resolve workspace binaries
 from the parent checkout and you will be verifying the wrong tree.
+
+**Adding a workspace package means regenerating `package-lock.json` with `npm install`.** `npm ci`
+refuses a lock file that does not list every workspace — `Missing: @mm/<name> from lock file` — and
+CI runs `npm ci`, so a missing entry breaks both jobs and every fresh worktree. Worse on a merge:
+`package-lock.json` auto-merges without a conflict, which makes it look resolved while it has
+quietly dropped a workspace one side added. The failure then surfaces as a wall of
+`Cannot find module '@mm/sim-core'` typecheck errors that read as broken code and are not. If
+`npm ci` fails after a merge, run `npm install` and commit the lock before believing anything else
+the tree tells you. Three separate agents lost time to this in one session before it was written
+down.
 
 The reason is concrete: more than one agent or person may be editing this repository at the same
 time. Files changing underneath a running command produce failures that look like real defects and

@@ -42,6 +42,7 @@ import {
   storePolicy,
   traditionTableFrom,
 } from '@mm/rules-magic';
+import { territoryExtent } from '@mm/rules-world';
 import type { WorldStepDeps } from '../../src/index.js';
 
 /** The shipped content, loaded once for a whole test file. */
@@ -77,6 +78,23 @@ export function shippedStorePolicy(traditionId: number): StorePolicy {
   return storePolicy(hookFor('store', traditionId, traditionId, table));
 }
 
+/**
+ * A shipped tradition whose `store` hook keeps written copies.
+ *
+ * `traditions[0]` is not it — content ids are interned, so first is not the file
+ * order, and the first tradition happens to resolve to the Art of Memory, which
+ * writes nothing down and caps a mage at twelve nodes. A test of scribing under
+ * that tradition asserts that the Art of Memory refuses, which is true and is
+ * not what the test is for. Chosen by asking the hook rather than by naming a
+ * tradition, so content may reorder without this going quietly wrong.
+ */
+export function scribingTraditionId(): number {
+  for (const entry of registry().traditions) {
+    if (shippedStorePolicy(entry.contentId).scribingAvailable) return entry.contentId;
+  }
+  throw new Error('no shipped tradition keeps written copies, so nothing can ever be scribed');
+}
+
 /** The node catalog and the grid's node-to-cell addressing. */
 export function catalogAndCells(): { catalog: NodeCatalog; cells: CellResolver } {
   const grid = MagicGrid.from(registry());
@@ -92,6 +110,7 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     catalog,
     cells,
     store: shippedStorePolicy(traditionId),
+    territory: territoryExtent(registry().territories.map((entry) => entry.record)),
     primitives: {
       lifespan: primitiveNamed('lifespan'),
       resourceYield: primitiveNamed('resource-yield'),
@@ -109,14 +128,18 @@ export interface SeedOptions {
    * Members per starting cohort, per species, per seeded occupation.
    *
    * Small on purpose. The logistic brake in `carrying-capacity.ts` shuts births
-   * off entirely at and above `K`, and `K` is derived from the materials stock —
-   * so a "generous" starting population is a population above its own carrying
-   * capacity, in which the births phase correctly does nothing and a test of it
-   * asserts nothing.
+   * off entirely at and above `K` — so a "generous" starting population is a
+   * population against its own carrying capacity, in which the births phase
+   * correctly does nothing and a test of it asserts nothing.
    */
   readonly cohortSize?: number;
   /** Mages seeded per species. */
   readonly magesPerSpecies?: number;
+  /**
+   * The universe's tradition. Defaults to the first shipped one, which is the
+   * Art of Memory — see {@link scribingTraditionId} before assuming otherwise.
+   */
+  readonly traditionId?: number;
 }
 
 /**
@@ -141,7 +164,7 @@ export function seededWorld(
   const magesPerSpecies = options.magesPerSpecies ?? 2;
 
   const traditions = registry().traditions;
-  const traditionId = traditions[0]?.contentId ?? 1;
+  const traditionId = options.traditionId ?? traditions[0]?.contentId ?? 1;
 
   createUniverse(state, {
     // Three techniques × four forms is the v1 rectangle's shape; the exact bits
@@ -153,10 +176,10 @@ export function seededWorld(
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    // Enough stock that carrying capacity sits above the seeded population, so
-    // the brake is damping births rather than forbidding them. `K` is
-    // `materials × 2 / fp(1024)` plus completed university seats, of which
-    // there are none until a god founds one.
+    // A working stock, not a lever on `K`. Carrying capacity comes from the
+    // shipped territory (`contracts.md` §2.7) and sits far above the seeded
+    // population whatever the stock is; materials only modulate it, within the
+    // bound `carrying-capacity.ts` states.
     materials: 1000 * 1024,
     prestige: 0,
     prestigeEarned: 0,

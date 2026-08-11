@@ -24,7 +24,9 @@
  * - **A brake, not a ceiling** (`carrying-capacity.ts`). Population approaches
  *   `K` because births fall to nothing there, not because a birth is ever
  *   refused — a refusal makes population a sawtooth and every derived rate
- *   inherits it.
+ *   inherits it. And `K` itself comes from **territory**, the one economic
+ *   quantity a run cannot manufacture, so the bound is a property of the world
+ *   rather than of how long the world has been running.
  * - **Worship is somebody else's** (`counts.ts`). The counts are exposed; the
  *   formula is `god-agency`'s, and a helpful `worshipFrom()` here would be a
  *   formula authored by a capability with no way to measure it.
@@ -32,18 +34,24 @@
  * Every magnitude is **untuned** (`docs/design/release-plan.md`).
  */
 
-export type { BirthInput, CapacityInput } from './carrying-capacity.js';
+export type { BirthInput, CapacityInput, TerritoryExtent } from './carrying-capacity.js';
 export {
   BIRTHS_PER_MEMBER,
   BIRTH_RATE_ONE,
   BIRTH_RATE_SHIFT,
-  CAPACITY_PER_MATERIAL,
-  CAPACITY_PER_UNIVERSITY_SEAT,
+  MATERIALS_PROVISION_CAP,
+  MATERIALS_PROVISION_SATURATION,
+  MAX_PROVISIONING,
   MAX_SUBSISTENCE_PENALTY,
+  NO_TERRITORY,
+  SEATS_PROVISION_CAP,
+  SEATS_PROVISION_SATURATION,
   carryingCapacity,
   cohortBirths,
   expectedBirths,
   fertilityBrake,
+  maxCarryingCapacity,
+  territoryExtent,
 } from './carrying-capacity.js';
 
 export type { EconomicInput, WorshipInputs } from './counts.js';

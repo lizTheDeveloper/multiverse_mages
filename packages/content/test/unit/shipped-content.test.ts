@@ -58,6 +58,7 @@ describe('shipped content', () => {
       nodes: 300,
       species: 6,
       traditions: 3,
+      territories: 5,
       primitives: 16,
     });
   });
