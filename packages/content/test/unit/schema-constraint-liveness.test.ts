@@ -272,7 +272,9 @@ function mutate(box: DocumentBox, constraint: Constraint, pointer: InstancePoint
       return undefined;
     }
     case 'minLength': {
-      writeAt(box, pointer, 'a'.repeat((schema['minLength'] as number) - 1));
+      const minLength = schema['minLength'] as number;
+      if (minLength <= 0) return 'minLength is 0, so no string is short enough to violate it';
+      writeAt(box, pointer, 'a'.repeat(minLength - 1));
       return undefined;
     }
     case 'maxLength': {
@@ -290,7 +292,9 @@ function mutate(box: DocumentBox, constraint: Constraint, pointer: InstancePoint
     }
     case 'minItems': {
       if (!Array.isArray(current)) return 'the instance is not an array';
-      writeAt(box, pointer, current.slice(0, (schema['minItems'] as number) - 1));
+      const minItems = schema['minItems'] as number;
+      if (minItems <= 0) return 'minItems is 0, so no array is short enough to violate it';
+      writeAt(box, pointer, current.slice(0, minItems - 1));
       return undefined;
     }
     case 'maxItems': {
