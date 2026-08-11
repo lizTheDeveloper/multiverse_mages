@@ -101,7 +101,7 @@ import {
   gatherFrontier,
   selectGoal,
 } from '../../src/index.js';
-import type { GoalCommitment, KnowledgeGateway, KnowledgeTarget } from '../../src/index.js';
+import type { MageGoalCommitment, KnowledgeGateway, KnowledgeTarget } from '../../src/index.js';
 
 import { outlook, speciesNamed, target } from '../unit/autonomy-fixtures.js';
 import { stepRng } from '../unit/mage-fixtures.js';
@@ -151,10 +151,10 @@ describe('a bounded candidate scan must not end a commitment', () => {
       incumbent: undefined,
       rng: stepRng(4242, 0),
     });
-    expect(first.commitment.goal).toBe(GOAL.researchNode);
+    expect(first.commitment.goalId).toBe(GOAL.researchNode);
     expect(first.commitment.targetNodeId).toBe(COMMITTED_NODE);
 
-    const committed: GoalCommitment = first.commitment;
+    const committed: MageGoalCommitment = first.commitment;
 
     // Tick 1, well inside the minimum commitment period. Thirty-two cheaper
     // nodes have appeared — new content, or other mages' progress. Nothing has

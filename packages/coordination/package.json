@@ -1,0 +1,35 @@
+{
+  "name": "@mm/coordination",
+  "version": "0.3.0",
+  "private": true,
+  "description": "The coordinating layer: the world step loop, and the port through which world rules reach knowledge rules.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "//": "Rules-path code: no third-party runtime dependencies, no Node built-ins, integer-only. This is the coordinating layer contracts.md §5 rule 3 names, so it is one of the two packages permitted to import both @mm/rules-magic and @mm/rules-world — and it MUST NOT import @mm/agent-api, because the dependency runs one way only.",
+  "dependencies": {
+    "@mm/content": "*",
+    "@mm/primitives": "*",
+    "@mm/rules-magic": "*",
+    "@mm/rules-world": "*",
+    "@mm/sim-core": "*",
+    "@mm/state": "*"
+  },
+  "scripts": {
+    "build": "tsc --build"
+  }
+}

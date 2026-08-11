@@ -32,7 +32,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { EVAL_PERIOD, GOAL, GoalHistogram, selectGoal } from '../../src/index.js';
-import type { GoalCommitment, MageOutlook } from '../../src/index.js';
+import type { MageGoalCommitment, MageOutlook } from '../../src/index.js';
 
 import { richOutlook, target } from './autonomy-fixtures.js';
 import { stepRng } from './mage-fixtures.js';
@@ -68,7 +68,7 @@ function excitedOutlook(mage: number): MageOutlook {
 
 describe('no synchronized goal stampede', () => {
   it('spreads the switch over at least evalPeriod ticks', () => {
-    const commitments = new Map<number, GoalCommitment>();
+    const commitments = new Map<number, MageGoalCommitment>();
 
     // Settle the population on research first, so the switch below is a
     // displacement rather than a first choice.
@@ -84,7 +84,7 @@ describe('no synchronized goal stampede', () => {
       }
     }
     const settled = [...commitments.values()].filter(
-      (commitment) => commitment.goal === GOAL.researchNode,
+      (commitment) => commitment.goalId === GOAL.researchNode,
     ).length;
     expect(settled).toBe(POPULATION);
 
@@ -100,7 +100,7 @@ describe('no synchronized goal stampede', () => {
           rng: stepRng(31337, tick),
         });
         commitments.set(mage, selection.commitment);
-        histogram.record(1, 0, selection.commitment.goal, {
+        histogram.record(1, 0, selection.commitment.goalId, {
           switched: selection.switched,
           evaluated: selection.evaluated,
           maskedCount: selection.maskedCount,
@@ -127,10 +127,10 @@ describe('no synchronized goal stampede', () => {
     // due on every tick and the whole population moves at once -- which is the
     // behaviour the stagger exists to prevent, demonstrated rather than
     // asserted about in prose.
-    const commitments = new Map<number, GoalCommitment>();
+    const commitments = new Map<number, MageGoalCommitment>();
     for (let mage = 1; mage <= POPULATION; mage += 1) {
       commitments.set(mage, {
-        goal: GOAL.researchNode,
+        goalId: GOAL.researchNode,
         targetNodeId: 11,
         adoptedTick: 0,
         score: 900,

@@ -296,6 +296,60 @@ export interface MageRecord {
 export const MAGE_FIELDS_MATCH: KeysMatch<MageRecord, typeof MAGE> = true;
 
 /**
+ * What a mage is currently working on (`contracts.md` §1.2, "Goal commitment").
+ *
+ * **Attached to the mage's own entity handle, and only while she has chosen.**
+ * That is the whole of the design, and both halves are load-bearing:
+ *
+ * - *On her own handle*, so the commitment is found by the handle everything
+ *   else already has, and so a dead mage's commitment leaves with her entity.
+ * - *Only while she has chosen*, so a mage who has never made a decision — every
+ *   mage on the tick she is promoted, and every mage in a universe whose
+ *   autonomy has not run yet — carries no row at all. The absence is the
+ *   distinction `select.ts` reads as `no-incumbent`, which is a different state
+ *   from a mage who considered her options and committed to `idle`. Widening
+ *   §1.2's mage row instead would have made those two indistinguishable without
+ *   a sentinel, and would have cost four fields on every mage in a Monte Carlo
+ *   run to carry a value most of them are not using.
+ *
+ * **Why this is a component rather than a value beside the state.** Hysteresis
+ * (`MIN_COMMITMENT_TICKS`) and the stagger both compare against `adoptedTick`,
+ * so the commitment has to survive from one tick to the next — and therefore
+ * across a save. A JavaScript map beside the state is the defect this file's
+ * header names: state that does not round-trip, showing up as a loaded game
+ * whose mages all reconsider on the first tick because none of them remembers
+ * committing to anything.
+ *
+ * `goalId` values are `@mm/rules-world`'s permanent, append-only goal registry.
+ * This package deliberately does not enumerate them: it would be a second copy
+ * of a table whose whole contract is that there is one, and `state` may not
+ * import a rules package to get the first.
+ */
+export const GOAL_COMMITMENT = {
+  name: 'goal-commitment',
+  fields: {
+    goalId: 'u8',
+    targetNodeId: 'u16',
+    adoptedTick: 'i32',
+    score: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface GoalCommitmentRecord {
+  /** `@mm/rules-world`'s `GOAL` registry. Permanent ids; `0` is `idle`. */
+  goalId: Enum8;
+  /** The node the goal is pointed at, or `0` for a goal that needs none. */
+  targetNodeId: ContentId;
+  /** The world tick the goal was adopted on. The commitment clock. */
+  adoptedTick: Tick;
+  /** The score it was adopted at, for reporting rather than for comparison. */
+  score: Fp;
+}
+
+export const GOAL_COMMITMENT_FIELDS_MATCH: KeysMatch<GoalCommitmentRecord, typeof GOAL_COMMITMENT> =
+  true;
+
+/**
  * An aggregate populace cohort (`contracts.md` §1.3).
  *
  * **This is a performance contract, not a modelling preference.** Simulating a
@@ -628,6 +682,7 @@ export const WORLD_COMPONENTS = [
   GRIMOIRE,
   KNOWLEDGE_INSTANCE,
   EVER_KNOWN,
+  GOAL_COMMITMENT,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

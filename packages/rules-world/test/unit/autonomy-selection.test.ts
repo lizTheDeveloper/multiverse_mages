@@ -119,7 +119,7 @@ describe('identical runs select identical goals', () => {
             incumbent: undefined,
             rng: stepRng(20260811, tick),
           });
-          trace.push(`${String(selection.commitment.goal)}/${String(selection.commitment.targetNodeId)}`);
+          trace.push(`${String(selection.commitment.goalId)}/${String(selection.commitment.targetNodeId)}`);
         }
       }
       return trace;

@@ -106,7 +106,7 @@ describe('switches and masking are counted alongside', () => {
         incumbent: undefined,
         rng: stepRng(808, 4),
       });
-      histogram.record(1, MAGE_ROLE.researcher, selection.commitment.goal, {
+      histogram.record(1, MAGE_ROLE.researcher, selection.commitment.goalId, {
         switched: selection.switched,
         evaluated: selection.evaluated,
         maskedCount: selection.maskedCount,

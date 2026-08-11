@@ -112,7 +112,7 @@ describe('a masked goal is unreachable, not merely unattractive', () => {
       incumbent: undefined,
       rng: stepRng(99, 0),
     });
-    expect(mask.feasible).toContain(chosen.commitment.goal);
+    expect(mask.feasible).toContain(chosen.commitment.goalId);
   });
 });
 
@@ -129,7 +129,7 @@ describe('idle is always feasible', () => {
       incumbent: undefined,
       rng: stepRng(1, 0),
     });
-    expect(GOALS_IN_ORDER).toContain(selection.commitment.goal);
+    expect(GOALS_IN_ORDER).toContain(selection.commitment.goalId);
   });
 });
 

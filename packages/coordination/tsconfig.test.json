@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the coordination tests. Never emits into dist/. Tests may see Node's ambient types: they load shipped content off disk, which the package itself may not do.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./test",
+    "types": ["node"],
+    "emitDeclarationOnly": true,
+    "outDir": "../../.tsbuild/coordination-test",
+    "tsBuildInfoFile": "../../.tsbuild/coordination-test.tsbuildinfo"
+  },
+  "include": [
+    "test/**/*.ts"
+  ],
+  "references": [
+    { "path": "./tsconfig.json" },
+    { "path": "../content" },
+    { "path": "../sim-core" },
+    { "path": "../state" },
+    { "path": "../primitives" },
+    { "path": "../rules-magic" },
+    { "path": "../rules-world" }
+  ]
+}
