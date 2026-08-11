@@ -1,0 +1,120 @@
+/*
+ * Multiverse Mages — the task and result shapes exchanged with a run worker.
+ * Copyright (C) 2026 Ann Kelner
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/>.
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/**
+ * The wire between the pool and a worker, and the shape of what comes back.
+ *
+ * Everything here must survive the structured clone algorithm, which rules out
+ * functions, class instances, and anything holding a closure. That is not a
+ * limitation to work around — it is the enforcement mechanism for "no shared
+ * mutable state between runs". A task that could carry a live object could carry
+ * a metric accumulator, and two runs sharing one accumulator is the defect the
+ * capability spec names in its second scenario.
+ */
+
+import type { JsonValue } from './canonical.js';
+import type { MetricEntries } from './metrics.js';
+import type { IllegalActionAccounting, TerminalStatus } from './session.js';
+import type { RunCoordinates } from './seed.js';
+
+/**
+ * The provenance keys every record carries (task 4.2).
+ *
+ * All of them are supplied by the caller's executor rather than computed here.
+ * The harness cannot compute a content hash without importing content, and §5
+ * grants it no such edge — which is the right answer for a different reason
+ * too: the hash must describe the content *the worker actually loaded*, and only
+ * the worker knows that.
+ */
+export interface Provenance {
+  /** The build the run executed against. A version, a commit, or both. */
+  readonly buildVersion: string;
+  /** Hash of the content set loaded. */
+  readonly contentHash: string;
+  /** Hash of the `contracts.md` §6 RNG stream registry. */
+  readonly rngRegistryHash: string;
+  /** `agent-api`'s `observationSchemaVersion`. */
+  readonly observationSchemaVersion: number;
+  /** `agent-api`'s observation layout digest. */
+  readonly observationLayoutDigest: string;
+  /** Every collected metric's `definitionVersion`, keyed by metric id. */
+  readonly metricDefinitionVersions: Readonly<Record<string, number>>;
+}
+
+/** Why a run failed. Recorded instead of a status the simulation could produce. */
+export const FAILURE_CLASS = {
+  /** The executor threw. */
+  threw: 'threw',
+  /** The run exceeded `termination.perRunTimeoutMs` and was abandoned. */
+  timeout: 'timeout',
+  /** The worker emitted an `error` event. */
+  workerError: 'worker-error',
+  /** The worker exited while holding a task. */
+  workerExit: 'worker-exit',
+  /** The worker sent something the pool could not interpret. */
+  protocol: 'protocol',
+} as const;
+
+/** Any classification from {@link FAILURE_CLASS}. */
+export type FailureClass = (typeof FAILURE_CLASS)[keyof typeof FAILURE_CLASS];
+
+/** One unit of work, as handed to a worker. Structured-cloneable throughout. */
+export interface RunTask {
+  /** The run's coordinates. Also its identity, everywhere. */
+  readonly coordinates: RunCoordinates;
+  /** Derived from the coordinates, carried so the worker never re-derives it. */
+  readonly runSeed: number;
+  /** This cell's factor levels, keyed by factor id. */
+  readonly levels: Readonly<Record<string, JsonValue>>;
+  /** Strategy id per agent slot, in slot order. */
+  readonly strategies: readonly string[];
+  /** The declared world-tick cap. */
+  readonly worldTickCap: number;
+  /** Metric ids to collect. Every one gets an entry in the result. */
+  readonly metrics: readonly string[];
+  /** Primitives to neutralize, or empty. Task group 7 gives this meaning. */
+  readonly ablatedPrimitives: readonly string[];
+}
+
+/** What an executor returns for a run that completed, however it ended. */
+export interface RunOutcome {
+  readonly status: TerminalStatus;
+  readonly ticksRun: number;
+  readonly metrics: MetricEntries;
+  readonly accounting: IllegalActionAccounting;
+  readonly provenance: Provenance;
+}
+
+/**
+ * Executes one run. The caller supplies this; the harness never writes one.
+ *
+ * It is the *only* place the simulation is reached, which is what lets this
+ * package sit behind `contracts.md` §5's boundary while the session API is
+ * still being built next door.
+ */
+export type RunExecutor = (task: RunTask) => RunOutcome | Promise<RunOutcome>;
+
+/** Pool to worker. */
+export type WorkerRequest =
+  | { readonly kind: 'run'; readonly taskId: number; readonly task: RunTask }
+  | { readonly kind: 'shutdown' };
+
+/** Worker to pool. */
+export type WorkerResponse =
+  | { readonly kind: 'ready' }
+  | { readonly kind: 'result'; readonly taskId: number; readonly outcome: RunOutcome }
+  | {
+      readonly kind: 'threw';
+      readonly taskId: number;
+      readonly message: string;
+    };

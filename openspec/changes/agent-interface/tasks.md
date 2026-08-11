@@ -23,27 +23,27 @@
 
 ## 3. Monte Carlo harness core
 
-- [ ] 3.1 Scaffold `packages/mc-harness` depending on `agent-api` only, and confirm the `core-contracts` dependency-graph test covers it
-- [ ] 3.2 Implement the `worker_threads` pool with a configurable worker count and no shared mutable state between runs
-- [ ] 3.3 Implement seed derivation as a pure function of `(rootSeed, sweepId, cellIndex, replicateIndex)`, published and stable
-- [ ] 3.4 Implement the sweep specification format and its validator, rejecting unknown factors, metrics, and strategies before dispatch
-- [ ] 3.5 Implement factorial expansion reporting cell count and run count before execution begins
-- [ ] 3.6 Implement the world-tick cap and terminal-status recording for `ascended`, `stagnated`, `truncated`, and `failed`
-- [ ] 3.7 Implement per-run timeout, worker replacement, and failure classification so one crash cannot abort a sweep
-- [ ] 3.8 Implement the sweep disqualification threshold on failure count
-- [ ] 3.9 Unit test that 1-worker and 8-worker executions produce identical records and aggregates
+- [x] 3.1 Scaffold `packages/mc-harness` depending on `agent-api` only, and confirm the `core-contracts` dependency-graph test covers it
+- [x] 3.2 Implement the `worker_threads` pool with a configurable worker count and no shared mutable state between runs
+- [x] 3.3 Implement seed derivation as a pure function of `(rootSeed, sweepId, cellIndex, replicateIndex)`, published and stable
+- [x] 3.4 Implement the sweep specification format and its validator, rejecting unknown factors, metrics, and strategies before dispatch
+- [x] 3.5 Implement factorial expansion reporting cell count and run count before execution begins
+- [x] 3.6 Implement the world-tick cap and terminal-status recording for `ascended`, `stagnated`, `truncated`, and `failed`
+- [x] 3.7 Implement per-run timeout, worker replacement, and failure classification so one crash cannot abort a sweep
+- [x] 3.8 Implement the sweep disqualification threshold on failure count
+- [x] 3.9 Unit test that 1-worker and 8-worker executions produce identical records and aggregates
 
 ## 4. Results, aggregation, and reproduction
 
-- [ ] 4.1 Implement newline-delimited per-run result records carrying derivation inputs, factor levels, assigned strategies, terminal status, and every registered metric entry
-- [ ] 4.2 Implement the provenance block: build version, content hash, RNG registry hash, observation schema version, layout digest, and per-metric `definitionVersion`
-- [ ] 4.3 Implement the sweep summary record with configuration hash, counts by terminal status, and aggregate metrics
-- [ ] 4.4 Implement canonical-order aggregation sorted by `(cellIndex, replicateIndex)` for every floating-point fold
-- [ ] 4.5 Implement offline re-aggregation from stored records and test that it equals the aggregates written during execution
-- [ ] 4.6 Implement the single-run reproduction CLI, executing one recorded run in-process and single-threaded
-- [ ] 4.7 Implement append-only output semantics: a re-executed sweep writes a new file or exits non-zero
-- [ ] 4.8 Test exact reproducibility across two executions, including under randomized per-run delays that change completion order
-- [ ] 4.9 Implement the performance section — wall clock, runs per second, world ticks per second — excluded from the reproducibility comparison
+- [x] 4.1 Implement newline-delimited per-run result records carrying derivation inputs, factor levels, assigned strategies, terminal status, and every registered metric entry
+- [x] 4.2 Implement the provenance block: build version, content hash, RNG registry hash, observation schema version, layout digest, and per-metric `definitionVersion`
+- [x] 4.3 Implement the sweep summary record with configuration hash, counts by terminal status, and aggregate metrics
+- [x] 4.4 Implement canonical-order aggregation sorted by `(cellIndex, replicateIndex)` for every floating-point fold
+- [x] 4.5 Implement offline re-aggregation from stored records and test that it equals the aggregates written during execution
+- [x] 4.6 Implement the single-run reproduction CLI, executing one recorded run in-process and single-threaded
+- [x] 4.7 Implement append-only output semantics: a re-executed sweep writes a new file or exits non-zero
+- [x] 4.8 Test exact reproducibility across two executions, including under randomized per-run delays that change completion order
+- [x] 4.9 Implement the performance section — wall clock, runs per second, world ticks per second — excluded from the reproducibility comparison
 
 ## 5. Scripted bot pool and tournament
 
