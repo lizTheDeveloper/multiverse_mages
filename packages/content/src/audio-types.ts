@@ -76,7 +76,34 @@ export interface AudioCueRecord {
   readonly densityThreshold: number;
 }
 
-/** Filled in by Task 3. Present now so `AUDIO_FILES` is complete from the start. */
+/** A bark's escalation slot (sound-design.md §8.1, §8.2, §8.9). */
+export type VoiceLineTier =
+  | 'selection'
+  | 'acknowledgement'
+  | 'annoyance-polite'
+  | 'annoyance-irritated'
+  | 'annoyance-cracking'
+  | 'annoyance-unhinged'
+  | 'breakthrough'
+  | 'blessed'
+  | 'death'
+  | 'last-copy'
+  | 'cross-species';
+
+/** A single bark line (sound-design.md §8). */
+export interface VoiceLineRecord {
+  readonly id: string;
+  readonly tier: VoiceLineTier;
+  readonly text: string;
+  /** Target species id for `cross-species` lines; `""` otherwise. */
+  readonly about: string;
+}
+
+/** One species' or role's bark bank (sound-design.md §8). */
 export interface VoiceLineBankRecord {
   readonly id: string;
+  readonly speaker: string;
+  readonly speakerKind: 'species' | 'populace';
+  readonly voicePrompt: string;
+  readonly lines: readonly VoiceLineRecord[];
 }

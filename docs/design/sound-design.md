@@ -55,6 +55,12 @@ same barks in the same order. That makes recorded video reproducible and makes "
 here" a bug report someone can act on. A wall-clock-seeded `Math.random` in the renderer would have
 been defensible under §0.1 and would have thrown this away for nothing.
 
+**Implemented and pinned.** `audioSelect()` in `packages/content/src/audio.ts`, with committed
+vectors at `packages/content/test/fixtures/audio-select-vectors.json`. The vectors exist because the
+client is a different package written later, and a function that is only described gets
+reimplemented subtly differently. Regenerating them is a claim that audio selection changed on
+purpose, and reviewers should read it as one.
+
 ### 0.3 Audio must not become a second source of truth
 
 Anything the player can learn by listening must also be visible. This is an accessibility floor —
@@ -1108,6 +1114,11 @@ Sample set; the full bank should run 3–4 per ordered pair that matters:
 - **Orc → Elf:** "Four hundred years and she's still 'settling in'."
 - **Orc → Human:** "Now *that* one works. Runs everywhere. Dies tired."
 - **Orc → Gnome:** "Best mage we've got. Couldn't tell you where he lives. Neither could he."
+
+Shipped content re-tiers the Draconic → anyone line above as `draconic-annoyance-polite-4` rather
+than a cross-species line, because a cross-species line's `about` must name a real species and
+"anyone" does not. Defensible — the line reads the same either way — but recorded here so it is a
+decision and not a silent drift from this section.
 
 ### 8.10 Non-magical populace
 

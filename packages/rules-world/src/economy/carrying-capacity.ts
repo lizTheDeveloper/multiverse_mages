@@ -14,13 +14,72 @@
 
 import type { EntityHandle, Fixed } from '@mm/sim-core';
 import { FP_ONE, RNG_STREAM, floorDiv, mul, nextBounded } from '@mm/sim-core';
-import type { PrimitiveRecord } from '@mm/content';
+import type { PrimitiveRecord, TerritoryRecord } from '@mm/content';
 import type { ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
 import type { StepRng } from '../mages/rng.js';
 
 /**
+ * ## `K` is derived from land, because land is the one thing a run cannot make
+ *
+ * Carrying capacity used to be `CAPACITY_PER_MATERIAL × materials`, plus a flat
+ * addend per completed university seat. Both terms are quantities the universe
+ * *produces*, and that is a loop rather than a bound: people make materials,
+ * materials raise `K`, `K` permits more people. Net materials per person per
+ * tick is `laborShare × MATERIALS_PER_LABORER − SUBSISTENCE_PER_PERSON` in raw
+ * `fp`, so for any laborer share above one eighth the stock grows without limit
+ * and `K` grows with it. Composing the shipped functions —
+ * {@link materialsProduced} → {@link consumeMaterials} → `carryingCapacity` →
+ * {@link fertilityBrake} → {@link expectedBirths} — over 2,400 ticks reached
+ * `K` = 289,997 at a laborer share of one half, still accelerating at the end.
+ *
+ * The failure was worse than a large number, because `P < K` held the whole way.
+ * The `economy` spec's *"total population never exceeds `K`"* therefore passed
+ * **vacuously**: a bound that runs away ahead of the thing it bounds is never
+ * violated and never checked. The requirement had no documented number in it,
+ * so there was nothing a test could have compared against.
+ *
+ * So `K` is a function of **territory** (`contracts.md` §2.7), the one economic
+ * quantity nothing in a run creates:
+ *
+ * ```
+ * base         = Σ landUnits × capacityPerLandUnit        (content, fixed)
+ * provisioning = fp(1024) + materialsBonus + seatsBonus   (each separately capped)
+ * K            = base × provisioning / fp(1024), less the subsistence penalty
+ * ```
+ *
+ * ## Materials still matter, and still cannot run away with it
+ *
+ * A well-supplied territory holds more people than a bare one — that reading is
+ * worth keeping, and dropping materials entirely would have thrown it away to
+ * fix the loop. What changes is *where* materials enter: as a bounded multiplier
+ * on a fixed base rather than as an unbounded addend. Two properties follow, and
+ * both are the point:
+ *
+ * - **`K` has a stated ceiling**, {@link maxCarryingCapacity} — `base ×
+ *   MAX_PROVISIONING / fp(1024)`, which is a function of content and of nothing
+ *   that happens during a run. That is the number task 9.4 asserts against.
+ * - **The bound is structural, not a clamp.** `Math.min` on a runaway leaves the
+ *   runaway there, pressed against the ceiling, and every derived rate reads as
+ *   saturated forever. Here the two modulating terms saturate on their own
+ *   ramps, and `K` stops moving because its inputs stopped mattering, not
+ *   because a comparison caught it.
+ *
+ * Each modulator is measured **per land unit**, not in total and not per person.
+ * Per land unit is what makes it a *density*: the same stock spread over more
+ * country is thinner, which is the sentence the arithmetic should mean. Per
+ * person was considered and rejected — it makes `K` fall as population rises,
+ * so `K` can drop below a population that has already been born, and the spec's
+ * "never exceeds `K`" would then be violated by a `K` that moved rather than by
+ * a population that grew. Per land unit keeps `K` independent of population, so
+ * the brake remains the only thing standing between the two.
+ *
+ * The shape — `(1 + Σ)` with a cap per term and a cap on the sum — is the same
+ * one `@mm/primitives` uses for every other multiplier in the project. It is not
+ * imported from there because these are not primitive bonuses and routing them
+ * through `stackMagnitudes` would put territory under an effect primitive's cap.
+ *
  * ## A brake, not a ceiling
  *
  * `mages-and-species/design.md` rejects the hard cap by name: *"a hard ceiling
@@ -85,11 +144,54 @@ import type { StepRng } from '../mages/rng.js';
  * **Everything here is untuned** (`docs/design/release-plan.md`).
  */
 
-/** People one unit of materials stock can carry. **Untuned.** */
-export const CAPACITY_PER_MATERIAL: Fixed = 2;
+/**
+ * The most the materials stock can add to the provisioning multiplier, `fp`.
+ *
+ * `fp(512)` — a fully-stocked territory holds half again as many people as a
+ * bare one, and not one more however much is piled up beyond saturation.
+ * **Untuned.**
+ */
+export const MATERIALS_PROVISION_CAP: Fixed = 512;
 
-/** People one completed university seat can carry, beyond materials. **Untuned.** */
-export const CAPACITY_PER_UNIVERSITY_SEAT = 40;
+/**
+ * The materials stock **per land unit** at which {@link MATERIALS_PROVISION_CAP}
+ * is reached, `fp`. **Untuned.**
+ *
+ * `fp(4096)` — four materials per land unit. Read against the shipped territory
+ * (6,000 land units, 54,900 base capacity) and `SUBSISTENCE_PER_PERSON`, that is
+ * 24,000 materials, or roughly 450 ticks of subsistence for the base populace:
+ * a generation's food in the barns. Stated in those terms rather than left as a
+ * bare number, because a saturation point nobody can read against anything is a
+ * saturation point nobody can argue with.
+ *
+ * The ramp to it is linear, for the reason the subsistence penalty below is
+ * linear: a curve that "feels like development" is one nobody could tune against
+ * a measurement.
+ */
+export const MATERIALS_PROVISION_SATURATION: Fixed = 4096;
+
+/** The most completed university seats can add to the multiplier, `fp`. **Untuned.** */
+export const SEATS_PROVISION_CAP: Fixed = 512;
+
+/**
+ * Completed seats **per land unit** at which {@link SEATS_PROVISION_CAP} is
+ * reached, `fp`. **Untuned.**
+ *
+ * `fp(128)` — one seat per eight land units, so 750 seats over the shipped
+ * territory's 6,000. Institutions raise what a country can hold, and a country
+ * with a seat for every seventy-odd people is as institutional as this term is
+ * willing to credit.
+ */
+export const SEATS_PROVISION_SATURATION: Fixed = 128;
+
+/**
+ * The largest provisioning multiplier `K` can be built with, `fp`.
+ *
+ * `fp(1024) + fp(512) + fp(512) = fp(2048)`: a fully-provisioned territory holds
+ * twice what bare land holds. This is the constant the population bound is
+ * stated in terms of — see {@link maxCarryingCapacity}.
+ */
+export const MAX_PROVISIONING: Fixed = FP_ONE + MATERIALS_PROVISION_CAP + SEATS_PROVISION_CAP;
 
 /**
  * How far sustained subsistence shortfall can drive `K` down, in `fp`.
@@ -101,9 +203,65 @@ export const CAPACITY_PER_UNIVERSITY_SEAT = 40;
  */
 export const MAX_SUBSISTENCE_PENALTY: Fixed = 512;
 
+/**
+ * A universe's territory, reduced to the two numbers `K` reads.
+ *
+ * Built by {@link territoryExtent} from content and then carried, rather than
+ * recomputed per tick from the records: the sum is fixed for the length of a run
+ * by construction, and summing it inside the births phase would invite somebody
+ * to make it depend on something that is not.
+ */
+export interface TerritoryExtent {
+  /** Land units summed across every region. A count, not `fp`. */
+  readonly landUnits: number;
+  /** People the bare land carries, a headcount: `Σ landUnits × capacityPerLandUnit`. */
+  readonly baseCapacity: number;
+}
+
+/** A universe with no land at all, which carries nobody. */
+export const NO_TERRITORY: TerritoryExtent = { landUnits: 0, baseCapacity: 0 };
+
+/**
+ * Sums content territory records into the extent `K` is derived from.
+ *
+ * An empty list yields {@link NO_TERRITORY} rather than throwing. A universe
+ * with no land carries nobody, the brake stops every birth, and that is a
+ * coherent — if short — world; the shipped schema requires at least one region,
+ * so reaching this case at all means somebody built a content set on purpose.
+ */
+export function territoryExtent(regions: readonly TerritoryRecord[]): TerritoryExtent {
+  let landUnits = 0;
+  let baseCapacity = 0;
+  for (const region of regions) {
+    if (!Number.isInteger(region.landUnits) || region.landUnits < 0) {
+      throw new RangeError(
+        `territory "${region.id}" declares ${String(region.landUnits)} land units; land is a ` +
+          'non-negative count, and a negative one would subtract capacity from the regions beside it',
+      );
+    }
+    landUnits += region.landUnits;
+    baseCapacity += floorDiv(region.landUnits * Math.max(0, region.capacityPerLandUnit), FP_ONE);
+  }
+  return { landUnits, baseCapacity };
+}
+
+/**
+ * The ceiling `K` cannot pass for a given territory — the **documented bound**.
+ *
+ * `mages-and-species` task 9.4 asks the reference run to keep total population
+ * "within its documented bound". This is that bound, and it is assertable
+ * because it names only content: no materials stock, no seat count, and nothing
+ * about how long the run went on. For the shipped territory it is 109,800.
+ */
+export function maxCarryingCapacity(territory: TerritoryExtent): number {
+  return floorDiv(Math.max(0, territory.baseCapacity) * MAX_PROVISIONING, FP_ONE);
+}
+
 /** What carrying capacity is derived from. */
 export interface CapacityInput {
-  /** The universe's materials stock, `fp`. */
+  /** The fixed resource: what the land itself holds. */
+  readonly territory: TerritoryExtent;
+  /** The universe's materials stock, `fp`. Modulates, never drives. */
   readonly materials: Fixed;
   /** Seats across **completed** universities. Unfinished ones carry nobody. */
   readonly completedCapacity: number;
@@ -115,15 +273,50 @@ export interface CapacityInput {
 }
 
 /**
+ * One modulating term's contribution to the provisioning multiplier, `fp`.
+ *
+ * `have` and `saturation` are in whatever unit the caller chose, so long as both
+ * are in the same one; the ramp is linear from zero to `cap` and flat after.
+ *
+ * The early return past saturation is not an optimisation. It is what keeps the
+ * multiplication off a stock that has been accumulating for a hundred thousand
+ * ticks — the product would still be a safe integer for any run this project
+ * will do, and "still" is not an argument anybody should have to check again.
+ */
+function provisionBonus(have: number, saturation: number, cap: Fixed): Fixed {
+  if (saturation <= 0) return have > 0 ? cap : 0;
+  if (have <= 0) return 0;
+  if (have >= saturation) return cap;
+  return floorDiv(have * cap, saturation);
+}
+
+/**
  * The population a universe can carry.
  *
  * @returns A headcount, not a fixed-point value: `K` is compared against a
- * population, and carrying half a person is not a thing.
+ * population, and carrying half a person is not a thing. Never more than
+ * {@link maxCarryingCapacity} of the territory it was given.
  */
 export function carryingCapacity(input: CapacityInput): number {
-  const fromMaterials = floorDiv(Math.max(0, input.materials) * CAPACITY_PER_MATERIAL, FP_ONE);
-  const fromSeats = Math.max(0, input.completedCapacity) * CAPACITY_PER_UNIVERSITY_SEAT;
-  const base = fromMaterials + fromSeats;
+  const { landUnits, baseCapacity } = input.territory;
+  if (baseCapacity <= 0) return 0;
+
+  // Both terms are densities over the fixed resource: materials per land unit at
+  // `fp` scale (the stock is already `fp`, land units are a count), and seats per
+  // land unit compared at `fp` scale for the same reason.
+  const materialsBonus = provisionBonus(
+    Math.max(0, input.materials),
+    landUnits * MATERIALS_PROVISION_SATURATION,
+    MATERIALS_PROVISION_CAP,
+  );
+  const seatsBonus = provisionBonus(
+    Math.max(0, input.completedCapacity) * FP_ONE,
+    landUnits * SEATS_PROVISION_SATURATION,
+    SEATS_PROVISION_CAP,
+  );
+
+  const provisioning = FP_ONE + materialsBonus + seatsBonus;
+  const base = floorDiv(baseCapacity * provisioning, FP_ONE);
 
   const share = Math.min(FP_ONE, Math.max(0, input.subsistenceShortfallShare ?? 0));
   if (share === 0) return base;

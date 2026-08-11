@@ -152,10 +152,12 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       'grimoire',
       'knowledge-instance',
       'ever-known',
-      // Appended by `mages-and-species`. Last, so that a world snapshot written
-      // before it existed lines its twelve sections up against the twelve
-      // layouts they were written from, and the migration has only to append.
+      // Appended by `mages-and-species`, in the order the two decisions were
+      // made. Each is last when it lands, so that a world snapshot written
+      // before it existed lines its sections up against the layouts they were
+      // written from, and each migration has only to append.
       'goal-commitment',
+      'effort-progress',
     ]);
   });
 

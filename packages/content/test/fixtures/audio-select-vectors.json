@@ -1,0 +1,5186 @@
+[
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 6
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 7
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 8
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 9
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 15
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 14
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 8
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 9
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 9
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 8
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 8
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 9
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 15
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 14
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 6
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 7
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 8
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 9
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 14
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 15
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 14
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 1,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 15
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 14
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 15
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 7
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 6
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 8
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 9
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 7
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 6
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 8
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 9
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 14
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 15
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 6
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 7
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 9
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 8
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 6
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 12345,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 7
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 9
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 8
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 9
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 8
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 7
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 6
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 15
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 14
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 6
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 7
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 15
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 14
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 0,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 14
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 15
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 14
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 15
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 8
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 9
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 1,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 700,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 10
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 0,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 2
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 13
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "selection",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 12
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "annoyance-unhinged",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 1
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 5
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 3
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "death",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 0,
+    "variantCount": 16,
+    "expected": 11
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 1,
+    "expected": 0
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 5,
+    "expected": 4
+  },
+  {
+    "rootSeed": 2147483647,
+    "tick": 65535,
+    "entityId": 42,
+    "kind": "click-tick",
+    "repeat": 17,
+    "variantCount": 16,
+    "expected": 10
+  }
+]

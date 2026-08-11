@@ -101,12 +101,50 @@ allocation order.
 - **WHEN** total demand across occupations exceeds the transferable populace in a tick
 - **THEN** the unmet demand per occupation is recorded and is observable
 
+### Requirement: Carrying capacity is derived from territory and is bounded
+
+`K` SHALL be derived from the universe's **territory** — `Σ landUnits × capacityPerLandUnit` over
+the `territory.json` records of `docs/design/contracts.md` §2.7 — which no process in a run may
+grow. The materials stock and completed university capacity MAY modulate `K`, but only through a
+**bounded multiplier** on the territory-derived base: each term SHALL saturate at a documented value
+and `K` SHALL NOT be an unbounded function of any quantity the universe produces.
+
+The bound is
+`maxCarryingCapacity = floor(Σ landUnits × capacityPerLandUnit × MAX_PROVISIONING / fp(1024))`,
+where `MAX_PROVISIONING` is `fp(1024)` plus the sum of the per-term caps. For the shipped
+territory it is **109,800**. Every magnitude in it is untuned and no release before 0.5.0 may claim
+otherwise.
+
+#### Scenario: A stock that grows without limit does not grow `K` without limit
+
+- **WHEN** the materials stock rises past its documented saturation point and keeps rising
+- **THEN** `K` stops rising and equals the base times the saturated multiplier, and never exceeds
+  `maxCarryingCapacity`
+
+#### Scenario: The bound names content and nothing else
+
+- **WHEN** the bound is computed
+- **THEN** it is a function of the `territory.json` records alone — not of the materials stock, the
+  seat count, the population, or the number of ticks elapsed
+
+#### Scenario: Bare land still carries people
+
+- **WHEN** a universe holds territory, an empty materials stock and no completed universities
+- **THEN** `K` equals the territory-derived base rather than zero, so the multiplier modulates a
+  world rather than constituting one
+
+#### Scenario: No land carries nobody
+
+- **WHEN** a content set declares no territory
+- **THEN** `K` is zero whatever the materials stock, the brake stops every birth, and nothing
+  synthesizes a capacity to keep the world going
+
 ### Requirement: Births are logistically braked by carrying capacity
 
 Births per cohort per world tick SHALL scale by species `fertility`, the capped `fertility`
 primitive stacking, and a carrying-capacity brake of
-`clamp((K − population) × fp(1024) / K, 0, fp(1024))`, where `K` is derived from materials stock and
-completed university capacity. Population MUST NOT be enforced by a hard rejection ceiling.
+`clamp((K − population) × fp(1024) / K, 0, fp(1024))`. Population MUST NOT be enforced by a hard
+rejection ceiling.
 
 #### Scenario: Growth slows as capacity is approached
 
@@ -117,6 +155,16 @@ completed university capacity. Population MUST NOT be enforced by a hard rejecti
 
 - **WHEN** the reference scenario runs for 200 world years
 - **THEN** total population never exceeds `K` and never exhibits a sawtooth against a fixed ceiling
+
+#### Scenario: The composed loop converges
+
+- **WHEN** `materialsProduced`, `consumeMaterials`, `carryingCapacity`, `fertilityBrake` and
+  `expectedBirths` are composed and stepped for 2,400 ticks at laborer shares of 0.15, 0.20, 0.30
+  and 0.50 — every one of them above the one-eighth share at which net materials per person turns
+  positive
+- **THEN** `K` reaches a value and stays there, under `maxCarryingCapacity` at every tick, while the
+  materials stock is still growing at the end of the run. The last clause is what stops the
+  assertion being satisfiable by an input that settled on its own
 
 #### Scenario: Fertile species grow faster
 
@@ -247,6 +295,11 @@ The project SHALL provide a deterministic reference scenario seeded with all six
 stay within its documented bound, and the run MUST complete without a stall in which no knowledge
 operation occurs for a sustained period.
 
+**The documented bound is `maxCarryingCapacity` of the scenario's territory** — for the shipped
+`territory.json`, 109,800 people. It is stated as a function of the fixed resource so that the
+assertion is checkable: a bound derived from the materials stock would rise ahead of the population
+it bounds and the requirement would pass without ever being tested.
+
 #### Scenario: No species is lost
 
 - **WHEN** the reference scenario runs for 200 world years from its committed seed
@@ -255,8 +308,9 @@ operation occurs for a sustained period.
 #### Scenario: Population stays bounded
 
 - **WHEN** the same run completes
-- **THEN** total population never exceeds the documented bound, and the observed peak is recorded in
-  the test output
+- **THEN** total population never exceeds `maxCarryingCapacity` of the scenario's territory, and the
+  observed peak is recorded in the test output **beside that bound**, so a reader can tell a run
+  that pressed against its bound from one that never came near it
 
 #### Scenario: The civilization does not stall
 

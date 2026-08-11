@@ -89,6 +89,7 @@ function buildWorld() {
       learnRate: species.learnRate,
       rediscoveryAffinity: species.rediscoveryAffinity,
       depthCeiling: species.depthCeiling,
+      scribeAffinity: species.scribeAffinity,
     }),
     store: shippedStorePolicy(traditionId),
   });
@@ -135,21 +136,22 @@ describe('the port answers the questions rules-world asks', () => {
   });
 });
 
-describe('the port refuses to accrue work it cannot persist', () => {
-  // The honest state of this layer, asserted rather than commented. Partial
-  // research, teaching and scribing progress has nowhere to live: `rules-magic`
-  // takes it as a parameter and says the caller owns storing it, and nothing
-  // owns it yet. A silent per-tick accrual would run, look plausible over two
-  // hundred years, and produce a universe where research never completes.
-  it('names the missing decision rather than discarding the work', () => {
-    const { gateway } = universeWithOneMage();
+describe('a gateway built without a ledger is query-only, and says so', () => {
+  // This replaces the refusal that used to stand here. That one said partial
+  // progress had nowhere in the *project* to live, which is no longer true — it
+  // lives in `EFFORT_PROGRESS`, and `effort-progress.test.ts` exercises it. What
+  // survives is the narrower guard: most of this port is questions, and a
+  // caller that only asks them need not build a ledger. Accruing without one is
+  // a wiring mistake, and a wiring mistake that silently discarded a month of
+  // work is the failure the original refusal was protecting against.
+  it('refuses to accrue rather than dropping the month on the floor', () => {
+    const { gateway, mage } = universeWithOneMage();
+    const nodeId = gateway.researchFrontier(mage, 1)[0]?.nodeId ?? 1;
     for (const accrue of [
-      () => gateway.contributeResearch(),
-      () => gateway.contributeTeaching(),
-      () => gateway.contributeScribing(),
+      () => gateway.contributeResearch(mage, nodeId, 1024),
+      () => gateway.contributeTeaching(mage, mage, nodeId, 1024),
     ]) {
-      expect(accrue).toThrow(/nowhere to persist/);
-      expect(accrue).toThrow(/migration/);
+      expect(accrue).toThrow(/effort ledger/);
     }
   });
 });
@@ -181,6 +183,7 @@ function buildGatewayOver(
       learnRate: species.learnRate,
       rediscoveryAffinity: species.rediscoveryAffinity,
       depthCeiling: species.depthCeiling,
+      scribeAffinity: species.scribeAffinity,
     }),
     store: shippedStorePolicy(traditionId),
   });

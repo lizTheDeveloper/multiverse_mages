@@ -6,8 +6,9 @@ separately, because the AGPL does not cover non-software assets cleanly.
 ## Written material — CC BY-SA 4.0
 
 The voice-line text in `docs/design/sound-design.md` §8 and
-`packages/content/data/audio/voice-line.json`, and the design prose throughout
-`docs/design/`, are © Ann Kelner and licensed
+`packages/content/data/audio/voice-line.json`, the §9 generation prompts carried verbatim in
+`packages/content/data/audio/audio-cue.json`'s `prompt` and `post` fields, and the design prose
+throughout `docs/design/`, are © Ann Kelner and licensed
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 
 These were written by a human author, are unambiguously ours to license, and the

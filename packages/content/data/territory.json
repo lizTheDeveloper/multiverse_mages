@@ -1,0 +1,42 @@
+[
+  {
+    "id": "river-delta",
+    "name": "The River Delta",
+    "gloss": "Silt, flood, and three harvests a year. Small, and worth more than everything around it.",
+    "landUnits": 300,
+    "capacityPerLandUnit": 40960,
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "arable-lowland",
+    "name": "The Arable Lowland",
+    "gloss": "The ordinary country most people live in, and the reason there are most people.",
+    "landUnits": 1600,
+    "capacityPerLandUnit": 20480,
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "upland-pasture",
+    "name": "The Upland Pasture",
+    "gloss": "Thin soil that carries herds rather than fields.",
+    "landUnits": 1200,
+    "capacityPerLandUnit": 6144,
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "deep-forest",
+    "name": "The Deep Forest",
+    "gloss": "Timber and game, and a long walk to either.",
+    "landUnits": 900,
+    "capacityPerLandUnit": 3072,
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "highland-waste",
+    "name": "The Highland Waste",
+    "gloss": "Rock, weather, and the occasional stubborn holdfast.",
+    "landUnits": 2000,
+    "capacityPerLandUnit": 512,
+    "tuningStatus": "untuned"
+  }
+]

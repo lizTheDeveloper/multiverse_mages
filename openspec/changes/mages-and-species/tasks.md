@@ -102,7 +102,9 @@
 - [x] 8.1 Implement materials production from laborer cohorts, `laborAffinity`, and capped `resource-yield` stacking
 - [x] 8.2 Implement materials consumption by construction, scribing, library upkeep, and populace subsistence, in a documented deterministic priority order
 - [x] 8.3 Implement the non-negative materials invariant with recorded shortfalls
-- [x] 8.4 Implement carrying capacity `K` from materials stock and completed university capacity
+- [x] 8.4 Implement carrying capacity `K` from the universe's territory (`contracts.md` §2.7), modulated by materials stock and completed university capacity through a bounded multiplier that saturates
+- [x] 8.4a Author `territory.json` and its schema as the eighth content file, every magnitude marked `untuned`
+- [x] 8.4b Test the composed loop — `materialsProduced` → `consumeMaterials` → `carryingCapacity` → `fertilityBrake` → `expectedBirths` — over 2,400 ticks at laborer shares 0.15/0.20/0.30/0.50, asserting `K` converges under its stated bound while the materials stock is still diverging
 - [x] 8.5 Implement the logistic fertility brake and the subsistence-shortfall effect on `K`
 - [x] 8.6 Implement births into the youngest `idle` bucket, with extinction as an absorbing state and no synthesized founding population
 - [ ] 8.7 Test that births and deaths per tick balance within a documented tolerance once the reference scenario reaches carrying capacity
@@ -115,7 +117,7 @@
 - [ ] 9.1 Author the committed reference scenario seeded with all six species and zero player input
 - [ ] 9.2 Implement the 200-world-year deterministic long-run test
 - [ ] 9.3 Assert no species population reaches zero at any recorded checkpoint
-- [ ] 9.4 Assert total population stays within the documented bound and record the observed peak
+- [ ] 9.4 Assert total population stays within `maxCarryingCapacity` of the scenario's territory — 109,800 for the shipped `territory.json` — and record the observed peak beside that bound
 - [ ] 9.5 Assert research, teaching, and scribing each occur within every recorded window, and the final node count exceeds the founding count
 - [ ] 9.6 Assert the run produces a byte-identical final snapshot hash across two executions
 - [ ] 9.7 Assert the occupation mix shows no sustained two-tick alternation
