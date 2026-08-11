@@ -185,9 +185,7 @@ This is the most important test in the plan. Create `packages/content/test/unit/
 
 import { describe, expect, it } from 'vitest';
 
-import { AUDIO_FILES, CONTENT_FILES, loadContent } from '@mm/content';
-
-import { shippedSource } from './fixtures.js';
+import { AUDIO_FILES, CONTENT_FILES, loadContent, shippedContentSource } from '@mm/content';
 
 describe('audio content isolation', () => {
   it('shares no file name with the simulation content set', () => {
@@ -211,7 +209,7 @@ describe('audio content isolation', () => {
             `the loader read audio file ${fileName} — audio must never reach contentRevision`,
           );
         }
-        return shippedSource().read(fileName);
+        return shippedContentSource().read(fileName);
       },
     };
 
@@ -220,7 +218,7 @@ describe('audio content isolation', () => {
 });
 ```
 
-Add `shippedSource()` to `packages/content/test/unit/fixtures.ts` if it is not already exported there — it returns `directorySource(shippedContentDirectory())`. Check first; the existing `shipped-content.test.ts` already loads shipped content and the helper may be named differently. Reuse whatever it uses rather than adding a second one.
+`shippedContentSource()` is already exported from `@mm/content` (`packages/content/src/source.ts`). Use it; do not add a near-duplicate helper to `fixtures.ts`.
 
 - [ ] **Step 4: Run it to verify it fails**
 
@@ -691,12 +689,16 @@ Create `packages/content/test/unit/audio-grid.test.ts` with the AGPL header and 
 
 import { describe, expect, it } from 'vitest';
 
-import { loadAudioContent, loadContent, shippedAudioDirectory, directorySource } from '@mm/content';
-
-import { shippedSource } from './fixtures.js';
+import {
+  directorySource,
+  loadAudioContent,
+  loadContent,
+  shippedAudioDirectory,
+  shippedContentSource,
+} from '@mm/content';
 
 const cues = loadAudioContent(directorySource(shippedAudioDirectory(), 'data/audio')).cues;
-const registry = loadContent(shippedSource());
+const registry = loadContent(shippedContentSource());
 
 describe('the audio grid', () => {
   it('gives every technique an envelope', () => {
@@ -1023,17 +1025,20 @@ Create `packages/content/test/unit/voice-line.test.ts` with the AGPL header:
 
 import { describe, expect, it } from 'vitest';
 
-import { directorySource, loadAudioContent, shippedAudioDirectory } from '@mm/content';
-import { loadContent } from '@mm/content';
-
-import { shippedSource } from './fixtures.js';
+import {
+  directorySource,
+  loadAudioContent,
+  loadContent,
+  shippedAudioDirectory,
+  shippedContentSource,
+} from '@mm/content';
 
 const banks = loadAudioContent(directorySource(shippedAudioDirectory(), 'data/audio')).banks;
 const speciesBanks = banks.filter((b) => b.speakerKind === 'species');
 
 describe('voice line banks', () => {
   it('gives every playable species a bank', () => {
-    const species = loadContent(shippedSource()).species.map((s) => s.record.id).sort();
+    const species = loadContent(shippedContentSource()).species.map((s) => s.record.id).sort();
     expect(speciesBanks.map((b) => b.speaker).sort()).toEqual(species);
   });
 
