@@ -77,9 +77,33 @@
 
 ## 7. Closeout
 
-- [ ] 7.1 Confirm every scenario across `magic-grid`, `magic-primitives`, `knowledge-instances`, and `magic-traditions` has a corresponding passing test
+- [x] 7.1 Confirm every scenario across `magic-grid`, `magic-primitives`, `knowledge-instances`, and `magic-traditions` has a corresponding passing test
+  - All 115 scenarios map to at least one passing test. Two had none and were written at closeout:
+    `magic-grid` *"Labels do not affect legality"*, which only the source scan covered, is now
+    `packages/rules-magic/test/unit/classical-labels-legality.test.ts`; and
+    `knowledge-instances` *"Existence returns when an instance returns"*, whose covering test showed
+    a node appearing but never re-appearing after total loss, in `knowledge-subsystem.test.ts`.
+  - **Blocker for whoever merges `content-integration` (95b37fc).** That line deletes the
+    `node-outside-v1` loader rule — pre-authoring the other 58 cells makes it false by construction —
+    and replaces it with `v1-unreachable-prerequisite`. `magic-grid`'s *"A node outside the subset is
+    rejected"* scenario and the requirement sentence above it then describe behaviour the loader no
+    longer has, and this box stops being true. Amend the spec as part of that merge; it is covered on
+    this line and not on that one.
 - [x] 7.2 Add the 0.3.0 release-claim tests: a node ceases to exist when its last instance is destroyed, and rediscovery never completes below three times `researchCost`
 - [x] 7.3 Add the 0.3.0 release-claim test that each v1 tradition changes measurable behaviour through its declared hook and through no other path
-- [ ] 7.4 Run the full suite, typecheck, lint, purity check, content validation, coverage check, and dependency-graph test together
-- [ ] 7.5 Record the ambiguities this change resolved against `docs/design/contracts.md` — the `rediscoveryAffinity` direction and the 3× floor, library-instance location, whose tradition populates `preparedSpells`, teaching loss below `fp(1024)`, whether legality gates acquisition, the persisted ever-known record, and the absence of any caster resource for the `cost` hook to deduct from — and update that document or confirm the resolutions stand
-- [ ] 7.6 Confirm no release note or spec in this change makes a balance claim, per the measurement pivot in `docs/design/release-plan.md`
+- [x] 7.4 Run the full suite, typecheck, lint, purity check, content validation, coverage check, and dependency-graph test together
+  - `npm run verify` green in one pass: typecheck, lint, dependency-purity (7 packages, no
+    third-party runtime dependencies), content validation (70 cells, 12 flagged v1, 51 nodes, 3
+    traditions), primitive coverage (14 exercised, `fertility` and `lifespan` the declared
+    exclusions), and 1848 tests across 130 files — the dependency-graph test among them, since
+    `module-boundaries.test.ts` runs inside the suite rather than beside it. No golden fixture moved.
+- [x] 7.5 Record the ambiguities this change resolved against `docs/design/contracts.md` — the `rediscoveryAffinity` direction and the 3× floor, library-instance location, whose tradition populates `preparedSpells`, teaching loss below `fp(1024)`, whether legality gates acquisition, the persisted ever-known record, and the absence of any caster resource for the `cost` hook to deduct from — and update that document or confirm the resolutions stand
+  - Six of the seven already stood in `contracts.md`, and the audit confirms they still say what
+    `rules-magic` implements. The seventh needed an amendment: §1.5 defined teaching loss as
+    "proportionally reduced" without saying the reduction is strict, which fixed point does not
+    deliver on its own. All seven are now tabulated with their §-anchors in `design.md`.
+- [x] 7.6 Confirm no release note or spec in this change makes a balance claim, per the measurement pivot in `docs/design/release-plan.md`
+  - None. The 0.3.0 notes make two mechanical claims and close with "Explicitly not claimed: that any
+    of this is *balanced*"; `proposal.md` says the same in its Impact section; every authored
+    magnitude carries `tuningStatus: "untuned"`, asserted by a test. The three places the change
+    reaches for a word like "interesting" are all about what the harness will decide at 0.5.0.
