@@ -87,3 +87,6 @@ export type {
 } from './audio-types.js';
 
 export * from './types.js';
+
+export type { SelectionCoverage, SelectionPass, Selections } from './audio-selection-merge.js';
+export { assetIdOf, mergeSelections, selectionCoverage } from './audio-selection-merge.js';
