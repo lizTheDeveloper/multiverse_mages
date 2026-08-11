@@ -59,6 +59,11 @@ export {
   speciesRediscoveryMultiplier,
 } from './rediscovery.js';
 
+// Counted populace: cohorts, occupations, cohort mortality. One re-export
+// rather than a named list, so that growing the populace layer touches
+// `populace/index.ts` and not this file, which several capabilities share.
+export * from './populace/index.js';
+
 export type {
   SpeciesFpTrait,
   SpeciesTraitDescriptor,

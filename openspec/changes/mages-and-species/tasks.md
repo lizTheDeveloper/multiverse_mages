@@ -22,18 +22,18 @@
 
 ## 3. Populace cohorts and occupations
 
-- [ ] 3.1 Implement the cohort store keyed on `(speciesId, occupation, birthTickBucket)` with decade bucketing
-- [ ] 3.2 Implement the merge-on-collision invariant and end-of-tick validation that no two cohorts share a key
-- [ ] 3.3 Implement cohort destruction and free-list return at a count of zero
-- [ ] 3.4 Implement the five occupations with `idle` covering pre-maturity and post-productive members, and newborn insertion into the youngest `idle` bucket
-- [ ] 3.5 Implement demand computation from construction sites, the scribing queue, university capacity, and the standing soldier target
-- [ ] 3.6 Implement rate-limited occupation reallocation with a deterministic allocation order and unmet-demand counters
-- [ ] 3.7 Assert the cohort entity count bound `6 × 5 × ceil(maxLifespanMonths / 120)` in a long-run test, recording the observed peak
-- [ ] 3.8 Implement cohort mortality from the shared scale-free hazard table, indexed by the normalized age implied by `birthTickBucket`, using the extended-scale division helper
-- [ ] 3.9 Implement expected-deaths arithmetic as an integer part plus exactly one stream 6 fractional draw per cohort per tick
-- [ ] 3.10 Test that a cohort past its species lifespan decays monotonically to zero and its entity is destroyed
-- [ ] 3.11 Test that no live cohort's birth bucket is older than its species `lifespanMonths` plus the documented tail allowance across the 200-year run
-- [ ] 3.12 Unit test that RNG draw count on stream 6 is independent of population size at fixed cohort count
+- [x] 3.1 Implement the cohort store keyed on `(speciesId, occupation, birthTickBucket)` with decade bucketing
+- [x] 3.2 Implement the merge-on-collision invariant and end-of-tick validation that no two cohorts share a key
+- [x] 3.3 Implement cohort destruction and free-list return at a count of zero
+- [x] 3.4 Implement the five occupations with `idle` covering pre-maturity and post-productive members, and newborn insertion into the youngest `idle` bucket
+- [x] 3.5 Implement demand computation from construction sites, the scribing queue, university capacity, and the standing soldier target
+- [x] 3.6 Implement rate-limited occupation reallocation with a deterministic allocation order and unmet-demand counters
+- [x] 3.7 Assert the cohort entity count bound `6 × 5 × ceil(maxLifespanMonths / 120)` in a long-run test, recording the observed peak
+- [x] 3.8 Implement cohort mortality from the shared scale-free hazard table, indexed by the normalized age implied by `birthTickBucket`, using the extended-scale division helper
+- [x] 3.9 Implement expected-deaths arithmetic as an integer part plus exactly one stream 6 fractional draw per cohort per tick
+- [x] 3.10 Test that a cohort past its species lifespan decays monotonically to zero and its entity is destroyed
+- [x] 3.11 Test that no live cohort's birth bucket is older than its species `lifespanMonths` plus the documented tail allowance across the 200-year run
+- [x] 3.12 Unit test that RNG draw count on stream 6 is independent of population size at fixed cohort count
 
 ## 4. Mage lifecycle
 
