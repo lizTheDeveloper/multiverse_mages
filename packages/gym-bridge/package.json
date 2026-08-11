@@ -1,0 +1,32 @@
+{
+  "name": "@mm/gym-bridge",
+  "version": "0.3.0",
+  "private": true,
+  "description": "The out-of-process agent boundary: a line-delimited JSON protocol over stdio that carries agent-api's observation, legality mask, candidate lists and outcome record to a Python client — contracts.md §4 and §5.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin",
+    "python"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "//": "contracts.md §5 grants this package one edge, to @mm/agent-api, and that is the whole dependency list. It is host-side — it owns a process's stdin and stdout — so it sees Node's ambient types and is outside the rules-path float ban, but it performs no normalization of its own: §4.1 makes agent-api's normalize.ts the single licensed float boundary, and a bridge that rescaled anything would decouple what a policy learns from what the harness measures. It is a leaf; nothing in this workspace imports it.",
+  "dependencies": {
+    "@mm/agent-api": "*"
+  },
+  "scripts": {
+    "build": "tsc --build"
+  }
+}

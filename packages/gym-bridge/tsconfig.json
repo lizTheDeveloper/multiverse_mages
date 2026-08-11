@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Library build. Host-side, like mc-harness: this package owns a process's stdin and stdout, so it sees Node's ambient types. It emits no observation of its own — contracts.md §4.1 makes agent-api's normalize.ts the one float boundary — so it is outside the rules-path bans for the same reason mc-harness is, and for no other.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../agent-api" }]
+}

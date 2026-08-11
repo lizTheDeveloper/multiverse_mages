@@ -46,6 +46,10 @@ export default defineConfig({
       // `@mm/*` for itself, because a bare Node worker knows nothing of this
       // table. See `packages/scenario/test/fixtures/source-resolution.mjs`.
       '@mm/scenario': packageSrc('scenario'),
+      // The RL bridge's own tests import it by name. Its Python client does not
+      // go through this table at all — it speaks the wire to a spawned process,
+      // which is the boundary the package exists to be.
+      '@mm/gym-bridge': packageSrc('gym-bridge'),
     },
   },
   test: {
