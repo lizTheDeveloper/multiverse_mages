@@ -270,30 +270,39 @@ describe('the digest held along these axes', () => {
   });
 });
 
-describe('what layoutProblems does not check — reported, not asserted as a defect', () => {
-  it('accepts a table whose blockIndex column is uniformly zero', () => {
+describe('what layoutProblems did not check — reported here, then closed', () => {
+  it('rejects a table whose blockIndex column is uniformly zero', () => {
     // `ObservationSlot.blockIndex` is documented as *"Position within that
-    // block"* and is hashed into the digest, but nothing validates it against
-    // the block's offset. A table can therefore be internally inconsistent,
-    // validate clean, and publish a digest that misdescribes it — which matters
-    // for the Python bridge that `digest.ts` says must be able to reproduce the
-    // encoding *"from the document rather than from the source"*. Left as a
-    // passing observation rather than a red test because no contract sentence
-    // pins the column's derivation; the note is the finding.
+    // block"* and is hashed into the digest, and nothing validated it against
+    // the block's offset: a table could be internally inconsistent, validate
+    // clean, and publish a digest that misdescribes it — which matters for the
+    // Python bridge that `digest.ts` says must reproduce the encoding *"from the
+    // document rather than from the source"*, since it would derive the column
+    // the documented way and compute a different digest for the same table.
+    //
+    // Reported by the breaker as an observation rather than a red test, because
+    // no contract sentence pins the column's derivation. Closed anyway: it is a
+    // derivation and not a free field, and a validator already anchored to
+    // OBSERVATION_SIZE and to §4.1's block names is not overreaching by
+    // anchoring it to their offsets.
     const slots = copyOfTable().map((slot) => ({ ...slot, blockIndex: 0 }));
-    expect(layoutProblems(slots)).toEqual([]);
+    expect(layoutProblems(slots).length).toBeGreaterThan(0);
     expect(layoutDigest(slots)).not.toBe(OBSERVATION_LAYOUT_DIGEST);
   });
 
-  it('accepts a frozen descriptor whose divisor is an accessor', () => {
+  it('rejects a frozen descriptor whose divisor is an accessor', () => {
     // `digest.ts` calls the frozen-descriptor check *"the load-bearing one"* for
     // rejecting a run-relative denominator, and caveats that *"a determined
     // author can freeze an object built from a measurement"*. This is a sharper
-    // version of that caveat and worth recording: `Object.freeze` makes an
+    // version of that caveat and not the same thing: `Object.freeze` makes an
     // accessor non-configurable but does not make it constant, so the value the
-    // digest records and the value the exporter divides by can differ within one
-    // process. Passing, because the caveat is stated; reported, because the
-    // stated caveat describes a *fixed* measurement and this one moves.
+    // digest records and the value the exporter divides by could differ within
+    // one process. The stated caveat describes a *fixed* measurement; this one
+    // moves, which nothing had licensed.
+    //
+    // Closed by checking that the numeric fields are own data properties, which
+    // is the one shape a descriptor that *computes* a constant must take and a
+    // descriptor that *holds* one never does.
     let reads = 0;
     const shifting = Object.freeze({
       rule: 'ratio' as const,
@@ -306,8 +315,17 @@ describe('what layoutProblems does not check — reported, not asserted as a def
     }) as unknown as NormalizationDescriptor;
 
     expect(Object.isFrozen(shifting)).toBe(true);
-    expect(layoutProblems(withSlot(0, { descriptor: shifting }))).toEqual([]);
-    // The digest saw one constant; the exporter divides by another.
+    expect(layoutProblems(withSlot(0, { descriptor: shifting })).length).toBeGreaterThan(0);
+    // The mechanism, unchanged and still worth showing: the digest would have
+    // seen one constant and the exporter divided by another.
     expect(applyDescriptor(512, shifting)).toBe(1);
+  });
+
+  it('still accepts the shipped table, so neither check is over-tight', () => {
+    // The control both new checks need. A validator that rejected the real
+    // layout would fail at import and never reach a test, but a validator that
+    // rejected a legitimate *copy* of it would break every caller that builds
+    // one — which is what `copyOfTable` is.
+    expect(layoutProblems(copyOfTable())).toEqual([]);
   });
 });

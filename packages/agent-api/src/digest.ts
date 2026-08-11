@@ -143,6 +143,23 @@ export const OBSERVATION_SLOTS: readonly ObservationSlot[] = buildSlots();
 const RULE_SET: ReadonlySet<string> = new Set<string>(NORMALIZATION_RULES);
 const BLOCK_SET: ReadonlySet<string> = new Set<string>(OBSERVATION_BLOCK_NAMES);
 
+/** Where each §4.1 block starts, for checking a slot's position within it. */
+const BLOCK_OFFSET: ReadonlyMap<string, number> = new Map(
+  OBSERVATION_BLOCKS.map((block) => [block.name as string, block.offset]),
+);
+
+/**
+ * Whether a field is an own data property — a value, not an accessor.
+ *
+ * `Object.freeze` seals a getter without making it constant, so this is what
+ * separates a descriptor that *holds* a saturation constant from one that
+ * *computes* one on each read.
+ */
+function isDataProperty(subject: object, field: string): boolean {
+  const descriptor = Object.getOwnPropertyDescriptor(subject, field);
+  return descriptor !== undefined && 'value' in descriptor;
+}
+
 /**
  * Every way a descriptor table fails the `agent-api` capability, as readable
  * lines naming the offending slot.
@@ -169,11 +186,37 @@ const BLOCK_SET: ReadonlySet<string> = new Set<string>(OBSERVATION_BLOCK_NAMES);
  *   forbidden design has, whether or not anyone has written to it yet.
  * - Its **clamp is not `[0, 1]`**, which would let a channel export outside the
  *   pinned range whatever its constant said.
+ * - Its numeric fields are **not own data properties**. `Object.freeze` makes an
+ *   accessor non-configurable; it does not make it constant. A frozen descriptor
+ *   whose `divisor` is a getter returning `1024` the first time and `4`
+ *   thereafter passes the frozen check, publishes one constant to the digest,
+ *   and divides by another in the exporter — within one process, with nothing
+ *   able to notice. That is a sharper version of the caveat below and not the
+ *   same thing as it, so it is checked rather than caveated.
  *
- * This is a tripwire rather than a proof, in the same sense the inline-stacking
- * lint is one, and it is labelled as such: a determined author can freeze an
- * object built from a measurement. What it buys is that the obvious way to write
- * the mistake fails at import.
+ * This is still a tripwire rather than a proof, in the same sense the
+ * inline-stacking lint is one: a determined author can freeze a data property
+ * whose value came from a measurement, and no runtime inspection can see where a
+ * number came from. What it buys is that every obvious way to write the mistake
+ * — and the one non-obvious way somebody actually found — fails at import.
+ *
+ * ## `blockIndex` is checked against the block it names
+ *
+ * Nothing validated it, while the digest hashes it. A table could therefore
+ * declare every slot's `blockIndex` as `0`, validate with no problems, and
+ * publish a digest describing a layout that does not exist. That matters
+ * concretely rather than theoretically: this module's own argument for FNV-1a is
+ * that a second implementation must be able to reproduce the encoding *"from the
+ * document rather than from the source"*, and a Python bridge deriving
+ * `blockIndex` the documented way — position within the block — would compute a
+ * different digest for the same table and refuse a comparison that should have
+ * been allowed.
+ *
+ * No contract sentence pins the column's derivation, so this is a judgement:
+ * `ObservationSlot.blockIndex` is documented as *"Position within that block"*,
+ * that is a derivation and not a free field, and a validator that already
+ * anchors the table to `OBSERVATION_SIZE` and to §4.1's block names is not
+ * overreaching by anchoring it to their offsets too.
  */
 export function layoutProblems(slots: readonly ObservationSlot[]): string[] {
   if (slots.length !== OBSERVATION_SIZE) {
@@ -212,6 +255,19 @@ export function layoutProblems(slots: readonly ObservationSlot[]): string[] {
     }
     if (!Number.isSafeInteger(slot.blockIndex) || slot.blockIndex < 0) {
       say(slot, position, `declares a block index of ${String(slot.blockIndex)}.`);
+    } else {
+      const offset = BLOCK_OFFSET.get(slot.block);
+      if (offset !== undefined && slot.blockIndex !== position - offset) {
+        say(
+          slot,
+          position,
+          `declares block index ${String(slot.blockIndex)} while sitting ${String(
+            position - offset,
+          )} channels into ${slot.block}. The column is a derivation, not a free field, and the ` +
+            'digest hashes it — a table that disagrees with itself here validates clean and ' +
+            'publishes a digest describing a layout that does not exist.',
+        );
+      }
     }
 
     const descriptor = slot.descriptor as NormalizationDescriptor | undefined;
@@ -226,6 +282,18 @@ export function layoutProblems(slots: readonly ObservationSlot[]): string[] {
         'has a descriptor that is not frozen. A run-relative denominator has to be stored ' +
           'somewhere, and a mutable descriptor is the only place it fits — so a descriptor that ' +
           'can be written to is the shape contracts.md §4.1 forbids, written or not.',
+      );
+    }
+    const accessors = ['divisor', 'min', 'max'].filter(
+      (field) => !isDataProperty(descriptor, field),
+    );
+    if (accessors.length > 0) {
+      say(
+        slot,
+        position,
+        `computes ${accessors.join(', ')} rather than holding it. Object.freeze seals an accessor ` +
+          'without making it constant, so such a descriptor can publish one saturation constant ' +
+          'to the digest and divide by another in the exporter, inside one process.',
       );
     }
     if (!RULE_SET.has(descriptor.rule)) {
