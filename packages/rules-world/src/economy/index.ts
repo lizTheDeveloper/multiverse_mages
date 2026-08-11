@@ -35,6 +35,8 @@
 export type { BirthInput, CapacityInput } from './carrying-capacity.js';
 export {
   BIRTHS_PER_MEMBER,
+  BIRTH_RATE_ONE,
+  BIRTH_RATE_SHIFT,
   CAPACITY_PER_MATERIAL,
   CAPACITY_PER_UNIVERSITY_SEAT,
   MAX_SUBSISTENCE_PENALTY,
