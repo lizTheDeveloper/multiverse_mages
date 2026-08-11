@@ -1446,6 +1446,14 @@ it is the entire music budget for the game.
 One voice per species, plus the four populace roles. Direction, not accent — per §0.6, no species
 voice may read as a real people's accent.
 
+**The cast lives in content, not in the environment.** Each bank in `voice-line.json` carries a
+`voiceId` alongside its `voicePrompt`, because ten banks with ten directions cannot be expressed by
+one process-wide setting — and a generator that quietly recorded every species in the same voice
+would collapse §8.1a's six registers into one performance, which is invisible until somebody
+listens. A bank with an empty `voiceId` is deliberately uncast, and the generator refuses it **by
+name** rather than substituting a default. A content test asserts every bank is cast and that no two
+share a voice.
+
 | Species | Voice design prompt |
 |---|---|
 | Human | "Mid-thirties, quick and slightly breathless, warm, always sounds like they are already late. Neutral accent. Reads sincerely, never for laughs." |

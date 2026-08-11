@@ -32,6 +32,16 @@ export interface GenerationRequest {
   readonly endpoint: 'sound-effect' | 'text-to-speech';
   readonly body: Record<string, unknown>;
   readonly outputPath: string;
+  /**
+   * The text-to-speech voice for this request, taken from its bank.
+   *
+   * Empty on every sound-effect request, and on a voice request whose bank
+   * declares no voice. §9.5 gives each of the ten banks its own voice
+   * direction, so a single process-wide voice id cannot express the cast —
+   * the driver refuses an unassigned bank by name rather than quietly
+   * recording every species in the same voice.
+   */
+  readonly voiceId: string;
 }
 
 /** The API caps a single sound-effect request; clamp rather than fail the batch. */
@@ -66,6 +76,7 @@ export function planRequests(
         requests.push({
           id: `${cue.id}-v${variant}-take${take}`,
           endpoint: 'sound-effect',
+          voiceId: '',
           body: {
             text: cue.prompt,
             duration_seconds: Math.min(
@@ -86,6 +97,7 @@ export function planRequests(
         requests.push({
           id: `${line.id}-take${take}`,
           endpoint: 'text-to-speech',
+          voiceId: bank.voiceId ?? '',
           body: {
             text: line.text,
             model_id: 'eleven_multilingual_v2',
