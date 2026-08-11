@@ -56,6 +56,8 @@ export type { RequirementInputs, ResearchInputs, ResearchOutcome } from './resea
 export {
   holdsUsable,
   isRediscovery,
+  personalLocationKind,
+  personalStoreFull,
   research,
   researchRequirement,
   unsatisfiedPrerequisite,

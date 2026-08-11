@@ -38,14 +38,16 @@
 
 import type { ContentId, Fp } from '@mm/content';
 import type { Handle, Ruleset, Tick } from '@mm/state';
-import { LOCATION_KIND, permits } from '@mm/state';
+import { permits } from '@mm/state';
 import { FP_ONE, RNG_STREAM, mul, nextBounded } from '@mm/sim-core';
+
+import type { PersonalStore } from '../traditions/store.js';
 
 import type { CellResolver, KnowledgeRng, NodeCatalog } from './catalog.js';
 import { requireNode } from './catalog.js';
 import { DEFAULT_TEACH_THRESHOLD, MASTERY_MAX, TEACHING_JITTER_SPAN } from './constants.js';
 import type { KnowledgeRefusal } from './outcomes.js';
-import { unsatisfiedPrerequisite } from './research.js';
+import { personalLocationKind, personalStoreFull, unsatisfiedPrerequisite } from './research.js';
 import type { KnowledgeSubsystem } from './subsystem.js';
 import { isHeldLocation } from './subsystem.js';
 
@@ -63,8 +65,16 @@ export interface TeachingInputs {
   readonly worldTick: Tick;
   /** `contracts.md` §1.5's `TEACH_THRESHOLD`. Defaults to the placeholder. */
   readonly threshold?: Fp;
-  /** Where the student's instance lands. `mind` unless the tradition says palace. */
-  readonly locationKind?: number;
+  /**
+   * The active `store` hook: where the **student's** instance lands, and how
+   * many she may hold there.
+   *
+   * The bound is the student's, never the teacher's. An archmage with a full
+   * palace may still teach everything in it — she is transmitting, not
+   * acquiring — and reading the bound off the teacher would make the Art of
+   * Memory's most learned mages its worst instructors.
+   */
+  readonly store?: PersonalStore;
 }
 
 export interface TeachingOutcome {
@@ -168,13 +178,16 @@ export function teach(inputs: TeachingInputs): TeachingOutcome {
   );
   if (missing !== undefined) return refuse(missing, teacherMastery);
 
+  const full = personalStoreFull(inputs.knowledge, inputs.store, inputs.student, inputs.nodeId);
+  if (full !== undefined) return refuse(full, teacherMastery);
+
   const stream = inputs.rng.actorStream(RNG_STREAM.teaching, inputs.teacher);
   const jitter = nextBounded(stream, TEACHING_JITTER_SPAN * 2 + 1) - TEACHING_JITTER_SPAN;
   const mastery = transmittedMastery(teacherMastery, jitter);
 
   const instance = inputs.knowledge.createInstance({
     nodeId: inputs.nodeId,
-    locationKind: inputs.locationKind ?? LOCATION_KIND.mind,
+    locationKind: personalLocationKind(inputs.store),
     locationId: inputs.student,
     acquiredTick: inputs.worldTick,
     mastery,

@@ -518,6 +518,21 @@ describe('refusal messages', () => {
       }),
     ).toContain('512');
   });
+
+  it('name the slot count when a personal store is full', () => {
+    // `magic-traditions` requires the count by name: a player who cannot read
+    // *twelve* in the message cannot tell a declared bound from a defect.
+    const message = describeRefusal({
+      reason: 'personal-store-full',
+      nodeId: ROOT_NODE,
+      subject: 700,
+      storeKind: 'palace',
+      held: 12,
+      slotsPerMage: 12,
+    });
+    expect(message).toContain('12');
+    expect(message).toContain('palace');
+  });
 });
 
 describe('loss events', () => {
