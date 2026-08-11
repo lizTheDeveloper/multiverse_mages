@@ -1,0 +1,43 @@
+{
+  "baselineFormatVersion": 1,
+  "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
+  "contentHash": "b84f2181f89f3dc2c169d274d9030b77e00799968751ceac42aba002e2dcf499",
+  "kind": "gate",
+  "metrics": [
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.648564310457522,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.945692931372566,"unit":"grimoires","value":116.7},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":2.4068571258987923,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":7.220571377696377,"unit":"instances","value":445.14},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":0.03748469075257692,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.11245407225773076,"unit":"nodes","value":1.71},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":200,"standardError":0.1062294397874291,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.3186883193622873,"unit":"mages","value":38.96},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":200,"standardError":0.10755160128410693,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.3226548038523208,"unit":"nodes","value":30.15},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":200,"standardError":0.10755160128410693,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.3226548038523208,"unit":"nodes","value":32.65},
+    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":200,"standardError":0,"standardErrorMethod":"jackknife","status":"measured","tolerance":0,"unit":"people","value":216},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":0.4412285723536322,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3236857170608967,"unit":"people","value":129.13},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.4412285723536323,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3236857170608969,"unit":"people","value":-14.87}
+  ],
+  "notes": [],
+  "provenance": {
+    "buildVersion": "0.3.0",
+    "contentHash": "0e63987b2823f4d991ea1c7a40944055",
+    "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
+    "observationLayoutDigest": "46182c35d829b205",
+    "observationSchemaVersion": 1,
+    "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
+  },
+  "rationale": "Re-keyed to the god-agency build. god-agency (0.7.0) adds two content files inside contentRevision, so the provenance hash moves and the gate correctly refuses to compare across builds. The nine measured values are unchanged to the decimal: this sweep is 200 runs of the passive control, which submits no god action, and the god systems installed versus removed were measured to produce identical metrics. This records a new build, not new behaviour. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0, and they describe a universe still degenerate in known ways -- the passive control exercises no god verb, and library depth stays near 1.7 distinct nodes against a hundred-odd grimoires because the scribable list is cost-ordered, so the same cheap nodes are copied over and over.",
+  "rootSeed": 20260811,
+  "runCount": 200,
+  "supersededDeltas": [
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":116.7,"value":116.7},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":445.14,"value":445.14},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":1.71,"value":1.71},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":38.96,"value":38.96},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":30.15,"value":30.15},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":32.65,"value":32.65},
+    {"delta":0,"deltaInStandardErrors":null,"metricId":"referencePeakPopulation","previousValue":216,"value":216},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.13,"value":129.13},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.87,"value":-14.87}
+  ],
+  "supersedes": "8389aea026603ca6c3bc99002fcee884a4c0aedd63e89cd81f41d9d85de22661",
+  "sweepId": "balance-gate-v1",
+  "toleranceK": 3
+}

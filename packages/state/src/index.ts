@@ -43,6 +43,7 @@
  */
 
 export {
+  ASCENSION_PATH,
   AXIS_KIND,
   COMBATANT_SOURCE_KIND,
   EDICT_BUDGET_MAX,
@@ -58,6 +59,7 @@ export {
   TERMINAL_REASON,
 } from './enums.js';
 export type {
+  AscensionPathValue,
   AxisKindValue,
   CombatantSourceKindValue,
   EdictKindValue,
@@ -88,6 +90,7 @@ export { assertNoEdictConflict, findEdictConflict, permits } from './permits.js'
 
 export type {
   AxisChangeCounterRecord,
+  BlessingRecord,
   Bool8,
   CombatantRecord,
   ContentId,
@@ -95,9 +98,11 @@ export type {
   EffortProgressRecord,
   EncouragedCellRecord,
   Enum8,
+  EraEvaluationRecord,
   EverKnownRecord,
   Fp,
   GoalCommitmentRecord,
+  GodStateRecord,
   GrimoireRecord,
   Handle,
   KeysMatch,
@@ -111,17 +116,21 @@ export type {
   UniverseRecord,
   UniversityRecord,
   UniversityStaffRecord,
+  UpheavalRecord,
 } from './components.js';
 export {
   AXIS_CHANGE_COUNTER,
+  BLESSING,
   COMBATANT,
   EDICT,
   EFFORT_PROGRESS,
   ENCOURAGED_CELL,
   ENGAGEMENT_COMPONENTS,
   ENGAGEMENT_MAX_SLOTS,
+  ERA_EVALUATION,
   EVER_KNOWN,
   GOAL_COMMITMENT,
+  GOD_STATE,
   GRIMOIRE,
   KNOWLEDGE_INSTANCE,
   LIBRARY,
@@ -133,6 +142,7 @@ export {
   UNIVERSE,
   UNIVERSITY,
   UNIVERSITY_STAFF,
+  UPHEAVAL,
   WORLD_COMPONENTS,
   assertNoWorldPositions,
   componentOf,
@@ -147,6 +157,7 @@ export {
   WORLD_SCHEMA_VERSION,
   addEffortProgress,
   addGoalCommitment,
+  addGodAgencyState,
   loadWorldSnapshot,
   migrateWorldEnvelope,
   worldSchemaVersionOf,
@@ -175,5 +186,17 @@ export {
   inEngagement,
   raidHasEnded,
 } from './engagement.js';
+
+export type { ActiveBlessing, ActiveEncouragement, ActiveUpheaval } from './god.js';
+export {
+  EMPTY_GOD_STATE,
+  activeBlessings,
+  activeEncouragements,
+  activeUpheavals,
+  axisChangeCount,
+  godStateOrEmpty,
+  isBlessed,
+  readGodState,
+} from './god.js';
 
 export { NodeExistenceIndex } from './node-index.js';

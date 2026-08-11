@@ -203,7 +203,16 @@ describe('contentRevision', () => {
     // carrying capacity could be derived from a fixed resource instead of from
     // the materials stock, which by construction only grows. Five new records
     // and a new namespace in the preimage; nothing existing changed a byte.
-    expect(registry.contentRevision).toBe('f813d90d3ddadb345c0a9d55505de432');
+    //
+    // f813d90d3ddadb345c0a9d55505de432 -> 0e63987b2823f4d991ea1c7a40944055,
+    // when `god-agency` added `god-cost.json` and `god-constant.json` — the
+    // price of every §4.2 action, and every magnitude of the worship loop, the
+    // favor economy, ascension, stagnation and prestige. They are in the
+    // preimage deliberately: two universes that disagreed about what forbidding
+    // a technique costs, or about the worship saturation constants, would be
+    // playing different games while their revisions agreed they were
+    // compatible. Nothing existing changed a byte.
+    expect(registry.contentRevision).toBe('0e63987b2823f4d991ea1c7a40944055');
   });
 
   it('is stable across loads of identical content', () => {

@@ -175,6 +175,8 @@ const SECTIONS: readonly DocumentedSection[] = [
   { contentFile: 'species.json', heading: '### 2.4 `species.json`', recordIndex: 0 },
   { contentFile: 'tradition.json', heading: '### 2.5 `tradition.json`', recordIndex: 0 },
   { contentFile: 'territory.json', heading: '### 2.7 `territory.json`', recordIndex: 0 },
+  { contentFile: 'god-cost.json', heading: '### 2.8 `god-cost.json`', recordIndex: 0 },
+  { contentFile: 'god-constant.json', heading: '### 2.9 `god-constant.json`', recordIndex: 0 },
 ];
 
 /**

@@ -156,7 +156,7 @@ export interface GateInput extends CandidateInput {
 export function admit(input: GateInput, submissions: readonly Action[]): AdmissionResult {
   const { state } = input;
   const candidates = buildCandidates(input);
-  const mask = legalityMask({ state, candidates });
+  const mask = legalityMask({ state, candidates, catalogue: input.catalogue });
 
   const admitted: Action[] = [];
   const rejected: RejectedAction[] = [];

@@ -23,8 +23,10 @@
 import type { ComponentFields, ComponentSpec, EntityHandle, SimState } from '@mm/sim-core';
 import { createState } from '@mm/sim-core';
 import {
+  ASCENSION_PATH,
   AXIS_CHANGE_COUNTER,
   AXIS_KIND,
+  BLESSING,
   COMBATANT,
   COMBATANT_SOURCE_KIND,
   EDICT,
@@ -32,8 +34,10 @@ import {
   EFFORT_KIND,
   EFFORT_PROGRESS,
   ENCOURAGED_CELL,
+  ERA_EVALUATION,
   EVER_KNOWN,
   GOAL_COMMITMENT,
+  GOD_STATE,
   GRIMOIRE,
   HOLDER_KIND,
   KNOWLEDGE_INSTANCE,
@@ -49,6 +53,7 @@ import {
   RAID_SIDE,
   UNIVERSITY,
   UNIVERSITY_STAFF,
+  UPHEAVAL,
   WORLD_COMPONENTS,
   attachRecord,
   cellIdAt,
@@ -198,6 +203,43 @@ export function populatedWorld(): PopulatedWorld {
     nodeId: 9,
     counterparty: 0,
     progress: 3 * FP_ONE,
+  });
+
+  // `god-agency`'s four. The god-state row hangs on the universe's own handle,
+  // which is what makes it a singleton without a second uniqueness rule: there
+  // is one universe per instance (§1.1), so there is one place to put it.
+  attachRecord(state, GOD_STATE, universe, {
+    favorWasted: 544,
+    magelessTicks: 3,
+    lowWorshipTicks: 7,
+    stasisTicks: 11,
+    lastEverKnown: 4,
+    lastExisting: 3,
+    ascensionFirstMetTick: 612,
+    ascensionPath: ASCENSION_PATH.apotheosis,
+    peakWorshipTier: 4,
+    deepestTier: 5,
+    lastEraRecorded: 2,
+    eraNodesLost: 1,
+    goodEraRun: 2,
+    overBudgetEdicts: 1,
+    terminalTick: 0,
+  });
+
+  // On the mage's own handle, like her goal commitment and for the same reason:
+  // one mage holds at most one blessing, so re-blessing refreshes the row she
+  // already has rather than adding a second.
+  attachRecord(state, BLESSING, mage, { mageId: mage, expiryTick: 150 });
+
+  const upheaval = state.entities.create();
+  attachRecord(state, UPHEAVAL, upheaval, { factor: 512, expiryTick: 54 });
+
+  const eraEvaluation = state.entities.create();
+  attachRecord(state, ERA_EVALUATION, eraEvaluation, {
+    era: 2,
+    libraryDependence: 192,
+    nodesLost: 1,
+    passed: 1,
   });
 
   assertEveryWorldComponentPopulated(state);

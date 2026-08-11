@@ -80,7 +80,6 @@ import { requireNode } from './catalog.js';
 import { DEFAULT_INITIAL_MASTERY, RESEARCH_JITTER_SPAN } from './constants.js';
 import type { KnowledgeRefusal } from './outcomes.js';
 import type { KnowledgeSubsystem } from './subsystem.js';
-import { isHeldLocation } from './subsystem.js';
 
 /** What research needs. Every world-side rate arrives as a parameter. */
 export interface ResearchInputs {
@@ -355,7 +354,20 @@ export function unsatisfiedPrerequisite(
   return undefined;
 }
 
-/** Whether a subject holds a non-dormant instance of a node in mind or palace. */
+/**
+ * Whether a subject holds a non-dormant instance of a node in mind or palace.
+ *
+ * The membership half is {@link KnowledgeSubsystem.holdsHeldNode} rather than a
+ * walk of {@link KnowledgeSubsystem.instancesHeldBy}. It is the same predicate —
+ * a held location, this holder, this node — read off an index instead of
+ * recovered by a pass over every instance in the universe.
+ *
+ * The legality half stays here. It is a fact about the ruleset and the grid
+ * rather than about what anybody holds, and an index that folded it in would
+ * have to be rebuilt on every edict — at which point a stale one would make a
+ * forbidden node satisfy a prerequisite, which is precisely the *"research
+ * through your own interdiction"* hole this function exists to close.
+ */
 export function holdsUsable(
   knowledge: KnowledgeSubsystem,
   cells: CellResolver,
@@ -364,9 +376,5 @@ export function holdsUsable(
   nodeId: ContentId,
 ): boolean {
   if (!permits(ruleset, cells.cellOf(nodeId))) return false;
-  for (const instance of knowledge.instancesHeldBy(subject)) {
-    const view = knowledge.read(instance);
-    if (view.nodeId === nodeId && isHeldLocation(view.locationKind)) return true;
-  }
-  return false;
+  return knowledge.holdsHeldNode(subject, nodeId);
 }

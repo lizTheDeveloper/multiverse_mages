@@ -37,7 +37,6 @@ import {
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
   UNIVERSITY,
-  collectRecords,
   componentOf,
 } from '@mm/state';
 import type { KnowledgeTarget, MageOutlook } from '@mm/rules-world';
@@ -188,11 +187,20 @@ function scribableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
  * disagree with this one.
  */
 export function universityPreference(state: SimState): (current: Handle) => Handle {
+  // The two columns, not a record per instance: this counts shelved copies and
+  // reads two of the five fields, and `collectRecords` would build an object
+  // carrying all of them for every instance in the universe — tens of thousands
+  // of them a tick, once the world has been running a while. Row order is not
+  // even consulted; the result is a tally.
   const shelvedBy = new Map<Handle, number>();
-  for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
-    if (row.locationKind !== LOCATION_KIND.library) continue;
-    shelvedBy.set(row.locationId, (shelvedBy.get(row.locationId) ?? 0) + 1);
-  }
+  const instances = componentOf(state, KNOWLEDGE_INSTANCE);
+  const locationKinds = instances.field('locationKind');
+  const locationIds = instances.field('locationId');
+  instances.forEach((row) => {
+    if ((locationKinds[row] as number) !== LOCATION_KIND.library) return;
+    const library = locationIds[row] as Handle;
+    shelvedBy.set(library, (shelvedBy.get(library) ?? 0) + 1);
+  });
 
   const universities = componentOf(state, UNIVERSITY);
   const libraryIds = universities.field('libraryId');

@@ -152,12 +152,19 @@ describe('the universe does something when it is stepped', () => {
 });
 
 describe('what this build cannot do, asserted rather than assumed', () => {
-  it('produces the same universe whichever of the eight strategies plays it', () => {
-    // Limit 1, made visible. No system reads `ctx.actions`, so a god's verbs
-    // have no consequences and every strategy in the pool is measuring the same
-    // universe. That is worth an assertion rather than a comment, because the
-    // day `god-agency` lands this test fails — and it failing is how anyone
-    // finds out that the pool has started to differentiate.
+  it('produces a different universe depending on which strategy plays it', () => {
+    // This assertion used to run the other way, and the comment on it said the
+    // day `god-agency` landed the test would fail and that failing was how
+    // anyone would find out the pool had started to differentiate. It did, and
+    // this is that. Until the god's verbs had consequences, no system read
+    // `ctx.actions`, every strategy produced a byte-identical universe, and the
+    // 0.6.0 tournament was measuring the harness rather than the game.
+    //
+    // What is asserted now is the weakest honest form of the claim: **at least
+    // two strategies reach different final states**. Not "all eight differ" —
+    // two strategies whose legal moves happen to coincide on this seed are
+    // entitled to agree, and a test demanding total separation would be a test
+    // of the bot pool's diversity rather than of whether actions do anything.
     const base = task(1, 3);
     const outcomes = BOT_POOL_REGISTRY.ids.map((strategyId) =>
       executeReferenceRun({ ...base, strategies: [strategyId] }, { content }),
@@ -165,34 +172,55 @@ describe('what this build cannot do, asserted rather than assumed', () => {
 
     const first = outcomes[0];
     if (first === undefined) throw new Error('the bot pool is empty');
-    for (const run of outcomes) {
-      expect(run.outcome.metrics).toEqual(first.outcome.metrics);
-      expect(run.outcome.status).toBe(first.outcome.status);
-      expect(run.outcome.ticksRun).toBe(first.outcome.ticksRun);
-    }
 
-    // The control: the strategies really are submitting different things, so
-    // the equality above is a statement about the *rules* and not about eight
-    // copies of the passive control.
+    const finalStates = new Set(outcomes.map((run) => JSON.stringify(run.outcome.metrics)));
+    expect(finalStates.size).toBeGreaterThan(1);
+
+    // The control, kept from the original: the strategies really are submitting
+    // different things, so the difference above is a statement about the *rules*
+    // acting on those submissions and not about eight different action logs
+    // being replayed into one outcome.
     const submitted = new Set(
       outcomes.map((run) => JSON.stringify(run.outcome.accounting.byActionId)),
     );
     expect(submitted.size).toBeGreaterThan(1);
   });
 
-  it('never shelves a grimoire, so library depth stays zero', () => {
-    // A finding, recorded as a tripwire. `contracts.md` §7 measures
-    // `libraryDependence` and `capitalSnowball` off library depth, and at this
-    // build the world loop writes books and never shelves one: `shelveGrimoire`
-    // exists in `rules-magic` and nothing in the tick calls it. So both metrics
-    // would be measuring an empty shelf.
-    //
-    // **When shelving lands this test fails, and that is the point** — the note
-    // above is what needs updating, not the assertion below.
+  it('shelves what it writes, so library depth tracks the books rather than reading zero', () => {
+    // **This test used to assert the opposite**, as a tripwire: the loop wrote
+    // books and never shelved one, `shelveGrimoire` sat unused in `rules-magic`,
+    // and the channel §7's `capitalSnowball` is pinned to read zero for as long
+    // as a run lasted. Shelving has landed — a finished book goes to the library
+    // of the university whose scriptorium produced it, argued in `gateway.ts` —
+    // so the tripwire has done its job and this is now an assertion about the
+    // behaviour it was waiting for.
     const run = executeReferenceRun(task(3, 2), { content, censusIntervalTicks: 12 });
     const last = run.samples[run.samples.length - 1];
     expect(last?.grimoires).toBeGreaterThan(0);
-    expect(last?.libraryDepth).toBe(0);
+    // The channel is *distinct nodes shelved*, so it is bounded above by the
+    // nodes the universe knows and far below the book count. Both bounds are
+    // asserted rather than a magnitude: how deep a library gets is a balance
+    // question and `release-plan.md` forbids answering one before 0.5.0.
+    expect(last?.libraryDepth).toBeGreaterThan(0);
+    expect(last?.libraryDepth).toBeLessThanOrEqual(last?.nodesKnown ?? 0);
+  });
+
+  it('writes many copies of few nodes, which is what the shelf now lets anyone see', () => {
+    // The finding the previous test's number is worth reading for, recorded as
+    // an assertion so it cannot quietly stop being true. This universe writes
+    // hundreds of books and they are copies of a handful of nodes: the scribable
+    // list is ordered by cost, so every mage picks the same cheap node, and
+    // depth-as-breadth stays flat while the shelf fills.
+    //
+    // Not a defect of shelving, and **not a balance claim** — it is a statement
+    // about what this build's utility-AI does, of the kind `libraryDependence`
+    // exists to make visible. Recorded here because it was invisible while the
+    // shelf was empty, and because the ratio is the thing a later tuning pass
+    // will want to have watched from the beginning.
+    const run = executeReferenceRun(task(3, 2), { content, censusIntervalTicks: 12 });
+    const last = run.samples[run.samples.length - 1];
+    if (last === undefined) throw new Error('no census was taken');
+    expect(last.grimoires).toBeGreaterThan(last.libraryDepth);
   });
 });
 

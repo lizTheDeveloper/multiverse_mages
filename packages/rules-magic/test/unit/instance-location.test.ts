@@ -19,6 +19,7 @@ import { MASTERY_MAX } from '../../src/instances/constants.js';
 import {
   destroyGrimoire,
   destroyLibrary,
+  disownGrimoire,
   grimoiresIn,
   shelveGrimoire,
   withdrawGrimoire,
@@ -94,6 +95,40 @@ describe('shelving and withdrawal', () => {
     expect(back.locationId).toBe(grimoire);
     expect(knowledge.instanceCount(ROOT_NODE)).toBe(2);
     expect(readRecord(knowledge.state, GRIMOIRE, grimoire).holderKind).toBe(HOLDER_KIND.mage);
+  });
+
+  it('releases a book to nobody without destroying it', () => {
+    // `contracts.md` §1.5's state for a dead unaffiliated mage's books. The
+    // holder goes to `unowned` — which is `0`, so that a zeroed row means this
+    // and not "held by mage 0" — and the contents come back to the book itself,
+    // because an unowned book is an unshelved one. Nothing is lost: the node
+    // still has both copies, and burning it still takes a fire.
+    const { knowledge, grimoire, instance } = written();
+    shelveGrimoire(knowledge, grimoire, LIBRARY);
+
+    disownGrimoire(knowledge, grimoire);
+
+    const record = readRecord(knowledge.state, GRIMOIRE, grimoire);
+    expect(record.holderKind).toBe(HOLDER_KIND.unowned);
+    expect(record.holderKind).not.toBe(HOLDER_KIND.inTransit);
+    expect(record.holderId).toBe(0);
+
+    const loose = knowledge.read(instance);
+    expect(loose.locationKind).toBe(LOCATION_KIND.grimoire);
+    expect(loose.locationId).toBe(grimoire);
+    expect(knowledge.instanceCount(ROOT_NODE)).toBe(2);
+    // And it is off the shelf it was on, rather than on two at once.
+    expect(knowledge.instancesAt(LOCATION_KIND.library, LIBRARY)).toHaveLength(0);
+  });
+
+  it('keeps an unowned book destroyable, and its link across a reload', () => {
+    const { knowledge, grimoire, instance } = written();
+    disownGrimoire(knowledge, grimoire);
+
+    const restored = KnowledgeSubsystem.fromState(knowledge.state, TEST_NODE_COUNT);
+    expect(restored.instanceForGrimoire(grimoire)).toBe(instance);
+    expect(destroyGrimoire(restored, grimoire, 70)).toBeUndefined();
+    expect(restored.instanceCount(ROOT_NODE)).toBe(1);
   });
 
   it('never double-counts a shelved copy', () => {
@@ -188,6 +223,56 @@ describe('destroying written knowledge', () => {
     const restored = KnowledgeSubsystem.fromState(knowledge.state, TEST_NODE_COUNT);
     expect(restored.instanceForGrimoire(grimoire)).toBe(instance);
     expect(destroyGrimoire(restored, grimoire, 60)).toBeUndefined();
+    expect(restored.instanceCount(ROOT_NODE)).toBe(1);
+  });
+
+  it('pairs a shelf of duplicates one book to one instance across a reload', () => {
+    // The case the reload's pairing pass is bucketed for. A real universe shelves
+    // hundreds of copies of a handful of nodes in one library — which is what the
+    // reference run does — so this is the ordinary shape, not a corner. The pass
+    // may swap two copies of one node in one library (the `rebuild` note says
+    // so and says why it is unobservable), but it must never hand two books the
+    // same instance or leave one holding nothing: the first makes a burn destroy
+    // a row twice, the second makes it throw.
+    const knowledge = new KnowledgeSubsystem(testWorld(), TEST_NODE_COUNT);
+    knowledge.createInstance({
+      nodeId: ROOT_NODE,
+      locationKind: LOCATION_KIND.mind,
+      locationId: SCRIBE,
+      acquiredTick: 0,
+      mastery: MASTERY_MAX,
+    });
+    const copies = 8;
+    const books: number[] = [];
+    for (let index = 0; index < copies; index += 1) {
+      const outcome = scribe({
+        knowledge,
+        catalog: testCatalog(),
+        cells: testCells,
+        ruleset: permissiveRuleset(),
+        rng: stepRng(3, 2),
+        scribe: SCRIBE,
+        nodeId: ROOT_NODE,
+        worldTick: 2,
+        store: STANDARD_STORE,
+        scribeAffinity: 1024,
+        scribeCapacity: 4096,
+        materials: 4096,
+        holderKind: HOLDER_KIND.library,
+        holderId: LIBRARY,
+      });
+      books.push(outcome.grimoire);
+    }
+
+    const restored = KnowledgeSubsystem.fromState(knowledge.state, TEST_NODE_COUNT);
+    const paired = books.map((book) => restored.instanceForGrimoire(book));
+    expect(paired).toHaveLength(copies);
+    expect(paired.every((instance) => instance !== 0)).toBe(true);
+    expect(new Set(paired).size).toBe(copies);
+
+    // And every one of them burns, which is the property the pairing exists for.
+    for (const book of books) destroyGrimoire(restored, book, 61);
+    expect(restored.instancesAt(LOCATION_KIND.library, LIBRARY)).toHaveLength(0);
     expect(restored.instanceCount(ROOT_NODE)).toBe(1);
   });
 });
