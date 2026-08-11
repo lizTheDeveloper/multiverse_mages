@@ -269,7 +269,8 @@ produce. That is a fact about the build, not about the protocol.
 **5. "What is the throughput budget, and where does it actually go?"** Closed by measuring rather
 than by choosing. `bin/throughput.mjs` runs a fixed number of ticks and reports the split — session
 step, observation read, frame encode, frame decode — and the release claim is the recorded figure.
-No binary mode and no tick batching are added, per the proposal's own instruction.
+No binary mode and no tick batching are added, per the proposal's own instruction. **The measurement
+is below**, and it settles the question decisively rather than narrowly.
 
 **6. "Can a single bridge process host multiple concurrent universes?"** Closed: yes, as a vector
 for amortization; no, as a parallelism story. See *Vectorized environments* above.
@@ -371,7 +372,50 @@ serves both commands.
 deviation rests on, and it would hard-code the reference universe as the only universe an RL agent
 can ever be pointed at.
 
+## The recorded throughput figure
+
+`node packages/gym-bridge/bin/throughput.mjs --scenario ./packages/scenario/bin/scenario.mjs
+--ticks 300 --envs 4`, against `reference-universe-v1`:
+
+| | |
+|---|---|
+| world ticks | 1200 (300 × 4 envs) |
+| wall clock | 4115.8 ms |
+| **ticks / second** | **292** |
+| session step | 3896.2 ms (94.7%) |
+| observation read | 39.6 ms (1.0%) |
+| frame encode | 91.7 ms (2.2%) |
+| frame decode | 37.9 ms (0.9%) |
+
+**The proposal's suspects were both wrong, and the answer is not close.** JSON encode plus decode is
+3.1% of a step, and the `fp`-normalization pass is 1.0%. A binary encoding would buy back three
+percent of a number the simulation dominates by a factor of thirty. So none was added — and the
+figure is what makes that a decision rather than a preference. Vision §10 already names the fix
+this points at, if throughput ever becomes the constraint: *"written so the hot loop could be
+ported to Rust if throughput demands it, without touching game design."*
+
+One thing the measurement found and changed, rather than merely reported: `snapshotHash` was being
+computed on every tick of every env, and it walks every component array of every entity. It is what
+a *record* needs and what a *policy* never reads, so it is now withheld unless the frame asks
+(`hash: true`) and always present once an episode ends. Charging a training run the reproducibility
+claim's price on every step that is not part of the claim was the largest avoidable cost in the
+loop, and it was avoidable only because the split was measured rather than assumed.
+
+Timing figures are excluded from every reproducibility comparison, as `mc-harness`'s
+`reproducibleSummary` excludes its own — and no recorded episode, frame or snapshot hash carries
+one, which is why `src/` reads no clock at all and a test asserts it.
+
 ## Risks / Trade-offs
+
+**The suite is red on a test this change does not touch.**
+`packages/coordination/test/unit/god-loop.test.ts` — *"records one evaluation per era boundary
+crossed"* — takes 8.4 s alone and exceeds the 30 s global timeout under full-suite CPU contention.
+It reproduces on this tree with `packages/gym-bridge/**` excluded from the run, sometimes taking
+`world-step.test.ts` with it, so it is a pre-existing load-sensitive flake and not a consequence of
+adding 74 tests. It is left alone deliberately: `coordination` is where the `mages-and-species`
+closeout is working, and raising a shared timeout to hide someone else's slow test is how a
+timeout stops meaning anything. Both balance gates pass with a **zero delta on every metric**, and
+the golden fixtures are untouched.
 
 **The Python package is not covered by `npm run verify`.** There is no pinned Python toolchain in
 either CI job, and adding one to a TypeScript monorepo's gate is a larger decision than this change
@@ -406,14 +450,25 @@ the instrument that finds them; nothing in it is adjusted to make the findings s
 
 Additive. `packages/gym-bridge` is new, it is a leaf, and no existing package imports it.
 
-Two files outside the new package change, both mechanically required by adding a workspace package
-and both named here because three agents are working in this tree concurrently:
+Files outside the new package that change, all named here because three agents are working in this
+tree concurrently:
 
 - `packages/sim-core/test/unit/module-boundaries.test.ts` — the §5 `ALLOWED` table gains a
-  `'gym-bridge': { value: ['agent-api'], typeOnly: [] }` entry and a leaf assertion. The test fails
-  loudly on an undescribed package, which is the intended behaviour and the reason this edit is not
-  optional.
+  `'gym-bridge'` entry and a leaf assertion. The test fails loudly on an undescribed package, which
+  is the intended behaviour and the reason this edit is not optional. It also gains a **`testOnly`
+  column**, described in that file at length: an edge a package's *tests* may take and its *source*
+  may not. `gym-bridge` needed one because its release claim is vacuous against a stubbed session
+  and observing a real one needs `@mm/state` to build a universe at all. The quiet alternative was
+  to widen `value`, which would have licensed the transport's own source to reach into world state
+  — exactly the coupling this package's single §5 edge exists to prevent. The column defaults to
+  empty, so no other package's row changes meaning, and a control test asserts both halves: the
+  edge is refused in `src` and permitted in `test`.
+- `packages/scenario/bin/scenario.mjs` — gains `createScenario()`, additively, so one module serves
+  both `mm-run-sweep` (which wants a `RunExecutor`) and this bridge (which wants the `Scenario` a
+  stepping session is built on). Asking a caller to name two modules for one universe would be two
+  chances to point them at different worlds.
 - `tsconfig.json`, `vitest.config.ts`, `package-lock.json` — the standard cost of a new workspace.
+- `docs/design/vision.md` §11 — the roadmap row moves from *proposal only* to *in progress*.
 
 `docs/design/contracts.md` §5's diagram already lists `gym-bridge → agent-api`. This change
 implements that line rather than deviating from it, so §5 gains no fifth deviation note.
