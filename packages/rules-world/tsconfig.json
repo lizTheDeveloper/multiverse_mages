@@ -9,5 +9,5 @@
     "types": []
   },
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../sim-core" }, { "path": "../content" }]
+  "references": [{ "path": "../sim-core" }, { "path": "../content" }, { "path": "../state" }]
 }

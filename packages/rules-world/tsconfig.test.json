@@ -10,5 +10,10 @@
     "tsBuildInfoFile": "../../.tsbuild/rules-world-test.tsbuildinfo"
   },
   "include": ["test/**/*.ts"],
-  "references": [{ "path": "./tsconfig.json" }, { "path": "../content" }]
+  "references": [
+    { "path": "./tsconfig.json" },
+    { "path": "../content" },
+    { "path": "../sim-core" },
+    { "path": "../state" }
+  ]
 }
