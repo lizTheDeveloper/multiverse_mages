@@ -72,16 +72,16 @@
 
 ## 6. Universities
 
-- [ ] 6.1 Implement university creation with `buildProgress` 0 and effective capacity 0
-- [ ] 6.2 Implement construction from laborer cohort-months scaled by `laborAffinity` and capped `build-rate` stacking, consuming materials
-- [ ] 6.3 Implement construction stall when materials are insufficient, without driving materials negative
-- [ ] 6.4 Implement capacity unlock at `buildProgress` of `fp(1024)`
-- [ ] 6.5 Implement capacity-gated student admission with refusal and an unmet-demand counter
-- [ ] 6.6 Implement scribing throughput from staff cohorts, `scribeAffinity`, and capped `scribe-rate` stacking, including the zero-staff case
-- [ ] 6.7 Implement the library as a container of `locationKind` 3 instances, with grimoire aggregation
-- [ ] 6.8 Implement the derived university profile from library contents and resident mage knowledge, computed on demand and never cached in state
-- [ ] 6.9 Add the conformance check rejecting any specialization, focus, or preferred-cell field on a university
-- [ ] 6.10 Verify the `institutions` observation block still occupies exactly four slots
+- [x] 6.1 Implement university creation with `buildProgress` 0 and effective capacity 0
+- [x] 6.2 Implement construction from laborer cohort-months scaled by `laborAffinity` and capped `build-rate` stacking, consuming materials
+- [x] 6.3 Implement construction stall when materials are insufficient, without driving materials negative
+- [x] 6.4 Implement capacity unlock at `buildProgress` of `fp(1024)`
+- [x] 6.5 Implement capacity-gated student admission with refusal and an unmet-demand counter
+- [x] 6.6 Implement scribing throughput from staff cohorts, `scribeAffinity`, and capped `scribe-rate` stacking, including the zero-staff case
+- [x] 6.7 Implement the library as a container of `locationKind` 3 instances, with grimoire aggregation
+- [x] 6.8 Implement the derived university profile from library contents and resident mage knowledge, computed on demand and never cached in state
+- [x] 6.9 Add the conformance check rejecting any specialization, focus, or preferred-cell field on a university
+- [x] 6.10 Verify the `institutions` observation block still occupies exactly four slots
 
 ## 7. Knowledge as capital, and its brakes
 

@@ -81,6 +81,13 @@ export * from './mages/index.js';
 // `populace/index.ts` and not this file, which several capabilities share.
 export * from './populace/index.js';
 
+/**
+ * Universities, libraries, and the derived profile that is never written down.
+ * Re-exported wholesale for the reason the populace layer is: growing the
+ * institution layer should touch `universities/index.ts` and not this file.
+ */
+export * from './universities/index.js';
+
 export type {
   SpeciesFpTrait,
   SpeciesTraitDescriptor,
