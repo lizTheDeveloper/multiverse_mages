@@ -42,6 +42,29 @@
  * the action is actually being submitted against, and a stale slot falls out as
  * an ordinary rejection — no exception, no special case, no separate counter.
  *
+ * ## Why the gate is where a non-integer parameter dies
+ *
+ * `agent-api` is the last thing between a policy and `step`, and `step` does not
+ * judge parameters — its `default:` arm says an unrecognised kind is *"somebody
+ * else's vocabulary"* — so no layer downstream re-validates. A `techniqueId` of
+ * `0.5`, a `NaN` cell id or an infinite edict index would therefore travel into
+ * `ctx.actions` and be read by rules systems, which is a float in the rules path
+ * and the first of `CLAUDE.md`'s non-negotiable constraints broken. `sim-core`'s
+ * own `Action` calls its parameters *"deliberately flat integers"*; this is the
+ * boundary that makes the sentence true rather than aspirational.
+ *
+ * Two placement decisions, both deliberate:
+ *
+ * - **After the mask, not before.** §4.2's remedy is the same either way — a
+ *   no-op and a counted rejection — so the only thing the order changes is which
+ *   reason is reported, and a masked action is masked whatever it carries.
+ * - **On the direct-parameter arm only.** Actions 8–14 never forward the agent's
+ *   number at all: the slot index goes through `candidateAt`, which checks
+ *   `Number.isInteger` itself, and what is admitted comes from the candidate
+ *   list this package built. There is nothing left there to validate, and
+ *   checking anyway would silently change the reason a stale slot is reported
+ *   under.
+ *
  * ## Why the gate is allowed to touch `illegalActionCount`
  *
  * `SimState.noteIllegalAction` is the one mutator the core exposes for exactly
@@ -84,7 +107,18 @@ export type RejectionReason =
   /** A parameterized action arrived without a slot index. */
   | 'missing-slot'
   /** The slot is outside `0..k-1`, or names nothing in the current list. */
-  | 'empty-slot';
+  | 'empty-slot'
+  /**
+   * A parameter is not an integer — a fraction, a `NaN`, or an infinity.
+   *
+   * Distinct from `'unknown-action'`, which says the *id* is not in §4.2's
+   * table. This one says the id is fine and the value carried under it is not a
+   * value of the type §4.2 gives it. Naming the two apart is what lets
+   * `illegalActionRate`'s breakdown tell a policy emitting nonsense ids from one
+   * emitting continuous parameters into a discrete action space — which are two
+   * different bugs in two different layers.
+   */
+  | 'non-integer-parameter';
 
 /** The outcome of screening one tick's submissions. */
 export interface AdmissionResult {
@@ -144,8 +178,14 @@ export function admit(input: GateInput, submissions: readonly Action[]): Admissi
     if (!PARAMETERIZED_ACTIONS.includes(action.kind)) {
       // 0–7 and 15 carry their parameters directly: technique bits, form bits,
       // cell ids, and edict indices are small, enumerable, and do not name
-      // entities that can die. They pass through as submitted.
-      admitted.push({ kind: action.kind, params: [...(action.params ?? [])] });
+      // entities that can die. They pass through as submitted — but only after
+      // the one check the other arm gets for free.
+      const params = [...(action.params ?? [])];
+      if (!params.every((value) => Number.isInteger(value))) {
+        reject(action, 'non-integer-parameter');
+        continue;
+      }
+      admitted.push({ kind: action.kind, params });
       continue;
     }
 
