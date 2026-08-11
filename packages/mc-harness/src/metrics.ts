@@ -35,6 +35,8 @@
  * fold into an aggregate — see `aggregate.ts`, which counts them instead.
  */
 
+import type { JsonValue } from './canonical.js';
+
 /** Why a metric could not be measured. `contracts.md` §7 and the capability spec. */
 export const UNAVAILABLE_REASON = {
   /** The mechanic the metric describes has not shipped. */
@@ -50,10 +52,52 @@ export const UNAVAILABLE_REASON = {
 /** Any reason code from {@link UNAVAILABLE_REASON}. */
 export type UnavailableReason = (typeof UNAVAILABLE_REASON)[keyof typeof UNAVAILABLE_REASON];
 
-/** One metric's entry in one run record. */
+/**
+ * Everything a metric entry may carry beyond its single number.
+ *
+ * A histogram, forty-two `(species, tier)` censoring records, a per-action-id
+ * breakdown, the lower bound on a censored half-life. `value` stays a scalar
+ * because that is what folds into an aggregate and what a baseline gates on; the
+ * detail is what makes a surprising scalar diagnosable without re-running the
+ * sweep. Restricted to `JsonValue` so a record still serializes canonically.
+ */
+export type MetricDetail = Readonly<Record<string, JsonValue>>;
+
+/**
+ * One metric's entry in one run record.
+ *
+ * `detail` is optional and, when present, must never be `undefined` — build it
+ * with a conditional spread. `canonicalJson` rejects an explicit `undefined`
+ * object value on purpose, because `JSON.stringify` would drop the key and a
+ * dropped key in a record whose contract is "every metric has an entry" is the
+ * failure the contract exists to catch.
+ */
 export type MetricEntry =
-  | { readonly status: 'measured'; readonly value: number }
-  | { readonly status: 'unavailable'; readonly reason: UnavailableReason };
+  | { readonly status: 'measured'; readonly value: number; readonly detail?: MetricDetail }
+  | {
+      readonly status: 'unavailable';
+      readonly reason: UnavailableReason;
+      readonly detail?: MetricDetail;
+    };
+
+/**
+ * Whether a metric has a per-run value at all.
+ *
+ * A `per-arm` metric — a Gini coefficient across an arm's runs, a win rate over
+ * mirrored pairs — has no meaningful value for one run, and the capability spec
+ * requires it to appear in every run record as
+ * `{status: 'unavailable', reason: 'per-arm-scope'}` and to carry its value only
+ * in the sweep summary. That is a *fourth* reason code rather than an omission
+ * for the same reason the other three exist: "this metric is arm-scoped" and
+ * "this metric's collector broke" must not look the same in a file.
+ */
+export const METRIC_SCOPE = {
+  perRun: 'per-run',
+  perArm: 'per-arm',
+} as const;
+
+/** Any scope from {@link METRIC_SCOPE}. */
+export type MetricScope = (typeof METRIC_SCOPE)[keyof typeof METRIC_SCOPE];
 
 /** Every registered metric's entry for one run. Complete, or the run is a failure. */
 export type MetricEntries = Readonly<Record<string, MetricEntry>>;
@@ -174,6 +218,6 @@ export const EMPTY_FACTOR_REGISTRY: FactorRegistry = factorRegistry([]);
 /** Narrowing helper — reads better than the discriminant at every call site. */
 export function isMeasured(
   entry: MetricEntry,
-): entry is { readonly status: 'measured'; readonly value: number } {
+): entry is { readonly status: 'measured'; readonly value: number; readonly detail?: MetricDetail } {
   return entry.status === 'measured';
 }
