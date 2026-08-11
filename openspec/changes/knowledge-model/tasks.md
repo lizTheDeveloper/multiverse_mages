@@ -78,8 +78,8 @@
 ## 7. Closeout
 
 - [ ] 7.1 Confirm every scenario across `magic-grid`, `magic-primitives`, `knowledge-instances`, and `magic-traditions` has a corresponding passing test
-- [ ] 7.2 Add the 0.3.0 release-claim tests: a node ceases to exist when its last instance is destroyed, and rediscovery never completes below three times `researchCost`
-- [ ] 7.3 Add the 0.3.0 release-claim test that each v1 tradition changes measurable behaviour through its declared hook and through no other path
+- [x] 7.2 Add the 0.3.0 release-claim tests: a node ceases to exist when its last instance is destroyed, and rediscovery never completes below three times `researchCost`
+- [x] 7.3 Add the 0.3.0 release-claim test that each v1 tradition changes measurable behaviour through its declared hook and through no other path
 - [ ] 7.4 Run the full suite, typecheck, lint, purity check, content validation, coverage check, and dependency-graph test together
 - [ ] 7.5 Record the ambiguities this change resolved against `docs/design/contracts.md` — the `rediscoveryAffinity` direction and the 3× floor, library-instance location, whose tradition populates `preparedSpells`, teaching loss below `fp(1024)`, whether legality gates acquisition, the persisted ever-known record, and the absence of any caster resource for the `cost` hook to deduct from — and update that document or confirm the resolutions stand
 - [ ] 7.6 Confirm no release note or spec in this change makes a balance claim, per the measurement pivot in `docs/design/release-plan.md`
