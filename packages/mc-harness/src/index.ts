@@ -12,15 +12,15 @@
  */
 
 /**
- * `@mm/mc-harness` — the Monte Carlo runner of `agent-interface` task groups 3
- * and 4: the `worker_threads` pool, the sweep specification format,
+ * `@mm/mc-harness` — the Monte Carlo runner of `agent-interface` task groups 3,
+ * 4 and 5: the `worker_threads` pool, the sweep specification format,
  * deterministic seed derivation, append-only result storage, canonical-order
- * aggregation, and single-run reproduction.
+ * aggregation, single-run reproduction, the scripted bot pool, and tournament
+ * scheduling with its pairwise outcome matrix.
  *
- * Task group 5 (the scripted bot pool and tournament scheduling), group 6 (the
- * metric registry proper) and group 7 (ablation) land on top of this; the shapes
- * they need — {@link MetricRegistry}, {@link StrategyRegistry},
- * {@link AblationSpec} — are declared here and left empty.
+ * Group 6 (the metric registry proper) and group 7 (ablation) land on top of
+ * this; the shapes they need — {@link MetricRegistry}, {@link AblationSpec} —
+ * are declared here and left empty.
  *
  * ## The one property everything else serves
  *
@@ -48,11 +48,15 @@
  * rules-path purity block. Its determinism obligation is to run the core
  * faithfully, not to be integer-only itself.
  *
- * §5 grants it one edge, to `@mm/agent-api`, and it currently uses none of it:
- * the agent session it will drive is being built in parallel, so the harness
- * declares the session surface it needs structurally (`session.ts`) and drives
- * anything that satisfies it. What reaches the simulation is a caller-supplied
- * {@link RunExecutor} and nothing else.
+ * §5 grants it one edge, to `@mm/agent-api`, and the bot pool is what finally
+ * uses it: the strategies name §4.2's action ids, read §4.1's observation block
+ * offsets, and draw from `agent-api`'s own agent-side generator, rather than
+ * from local copies of any of the three. What still reaches the *simulation* is
+ * a caller-supplied {@link RunExecutor} and nothing else — `session.ts`'s
+ * {@link adaptAgentSession} is what such an executor wraps `agent-api`'s
+ * session in, and `contracts.md` §5 keeps the world-building on the caller's
+ * side of the boundary because building one needs `@mm/content` and
+ * `@mm/coordination`, which the harness may not import.
  */
 
 export type { JsonValue } from './canonical.js';
@@ -112,6 +116,7 @@ export {
 } from './sweep-spec.js';
 
 export type {
+  ActionSubmission,
   AgentSession,
   EpisodeInput,
   EpisodeOutcome,
@@ -119,7 +124,13 @@ export type {
   SlotPolicy,
   TerminalStatus,
 } from './session.js';
-export { RECORDED_STATUSES, TERMINAL_STATUS, runEpisode } from './session.js';
+export {
+  RECORDED_STATUSES,
+  TERMINAL_STATUS,
+  adaptAgentSession,
+  normalizeSubmission,
+  runEpisode,
+} from './session.js';
 
 export type {
   FailureClass,
@@ -179,3 +190,41 @@ export { compareToRecord, reproduceRun, taskFor } from './reproduce.js';
 
 export type { CliSink, ReproduceArgs, RunSweepArgs, ScenarioModule } from './cli.js';
 export { DEFAULT_OUTPUT_MODE, describeSweep, reproduceCommand, runSweepCommand } from './cli.js';
+
+export type {
+  BotStrategyRegistry,
+  DegeneracyReport,
+  PreferenceInput,
+  StrategyContext,
+  StrategyDefinition,
+} from './strategies.js';
+export {
+  BOT_POOL,
+  BOT_POOL_REGISTRY,
+  POOL_BUILD_LIMITS,
+  botStrategyRegistry,
+  degeneracyOf,
+  policiesForRun,
+  policyFor,
+  poolDegeneracy,
+} from './strategies.js';
+
+export type { BlockDivergence, ObservationDivergence } from './divergence.js';
+export { describeDivergence, observationDivergence } from './divergence.js';
+
+export type {
+  DominanceStatus,
+  PairwiseMatrix,
+  PairwiseOutcome,
+  TournamentRun,
+  TournamentSchedule,
+} from './tournament.js';
+export {
+  DOMINANCE_STATUS,
+  TOURNAMENT_WORLD_SEED_FACTOR,
+  describeMatrix,
+  orderedPairings,
+  pairwiseMatrix,
+  tournamentSchedule,
+  tournamentSpec,
+} from './tournament.js';

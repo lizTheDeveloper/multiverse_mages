@@ -25,7 +25,10 @@
   "engines": {
     "node": ">=22.0.0 <23"
   },
-  "//": "Host-side tooling, not rules-path code: it owns worker processes, a wall clock for throughput, and file output, so it sees Node's ambient types. Per contracts.md §5 it may reach the simulation only through agent-api — and it currently reaches it through nothing at all, driving a caller-supplied executor instead. Zero runtime dependencies: worker_threads and crypto are in the standard library, and a harness with no third-party code is one fewer licence to audit against AGPL-3.0-or-later.",
+  "//": "Host-side tooling, not rules-path code: it owns worker processes, a wall clock for throughput, and file output, so it sees Node's ambient types. Per contracts.md §5 it may reach the simulation only through agent-api, and both adaptAgentSession and the scripted bot pool use that edge: the strategies name §4.2 action ids and read §4.1 observation block offsets from agent-api rather than from a copy. Zero THIRD-PARTY runtime dependencies: worker_threads and crypto are in the standard library, and a harness with no third-party code is one fewer licence to audit against AGPL-3.0-or-later.",
+  "dependencies": {
+    "@mm/agent-api": "*"
+  },
   "scripts": {
     "build": "tsc --build"
   }

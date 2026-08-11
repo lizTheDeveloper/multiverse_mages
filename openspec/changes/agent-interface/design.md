@@ -193,6 +193,53 @@ that assumes an action is available and stalls is a bug caught now rather than i
 presupposes the pool, so deferring it would make the first balance claim unverifiable at the moment
 it is made.
 
+### A tournament's common random numbers live in a factor level, not in the run seed
+
+*Recorded during task group 5, because two requirements of the `mc-harness` capability cannot both
+be read literally.* The tournament requirement asks that *"every pairing of interest is played on
+the same set of derived run seeds"*; the seed requirement, two paragraphs earlier, asks that the
+seeds of distinct cells and replicates be **pairwise distinct**. Under `deriveRunSeed` two runs
+never share a seed, so two pairings never can either.
+
+The resolution separates two things the phrase was carrying at once:
+
+- **The world's seed is a declared sweep factor**, `worldSeed`. Its levels are the worlds the
+  tournament is played on, and the scenario builds its `SimState` from the level rather than from
+  the run seed. Because the mirrored assignment cycles every ordered pairing within every cell,
+  every strategy encounters every level — which is what *"the same set"* was asking for, applied to
+  the numbers that decide what world a run is.
+- **The derived run seed stays pairwise distinct** and feeds the *agent-side* generator only. That
+  is what it is for: two arms drawing identical tie-breaks would be sharing a nuisance variable
+  rather than controlling for one.
+
+This is common random numbers in the variance-reduction sense — the stochastic environment is
+shared across arms, the decisions are not — and it is the sense the ablation section above already
+relies on.
+
+The cost is that the property depends on the caller's scenario honouring the factor. A scenario
+that seeded its world from the run seed instead would produce a tournament with no variance
+reduction and no error anywhere, so `tournamentSchedule` reports the part it can check — the world
+seeds each strategy encountered — and a test asserts set equality across the pool.
+
+`tournamentSchedule` also refuses a replicate count that is not a whole multiple of the ordered
+pairing count. The mirrored cycle would otherwise stop partway round, giving the pairings at the
+front of the list one more run each than those at the back, and every difference the pairwise
+matrix then showed would be partly a difference in sample size.
+
+### The pairwise matrix reports status counts, and refuses to name a winner
+
+*Also recorded during task group 5.* Task 5.8 asks for the matrix *"whether or not a strategy
+dominates"*. At 0.5.0 nothing dominates and nothing could: §1.1 puts one universe in a simulation
+instance, so a run's terminal status belongs to the universe rather than to an agent slot, and
+there is no per-arm outcome to compare. The matrix therefore carries terminal-status counts per
+ordered pairing — complete, reproducible, and reported for every pairing including those that drew
+zero runs — and the dominance verdict carries the explicit status `not-attributable` with its
+reason. A per-arm outcome arrives with raids in 0.9.0.
+
+*Alternative considered:* assigning the run's outcome to slot 0 and reporting a win rate. Rejected —
+it is an attribution the simulation never made, and it would be a balance claim at a version
+`release-plan.md` does not permit one from.
+
 ### `winRateByPrimitive` is measured by one-sided mirrored ablation on paired seeds
 
 Attribution requires an asymmetry: if a primitive is removed from both sides, nobody wins because

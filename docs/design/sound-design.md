@@ -61,16 +61,54 @@ client is a different package written later, and a function that is only describ
 reimplemented subtly differently. Regenerating them is a claim that audio selection changed on
 purpose, and reviewers should read it as one.
 
-### 0.3 Audio must not become a second source of truth
+### 0.3 Audio carries mētis, not episteme
 
-Anything the player can learn by listening must also be visible. This is an accessibility floor —
-deaf and hard-of-hearing players must not be playing a different, worse game — but it is also a
-design constraint, because §6 of this document deliberately loads knowledge loss with more
-information than any other event. If loss is only audible, loss is invisible to a large fraction of
-players, and it is the emotional core of the design.
+**Mētis** is the Greek word for the practitioner's cunning — the feel for a system that comes from
+living inside it. James C. Scott sets it against *episteme* in *Seeing Like a State*: episteme is
+knowledge that survives being written down, mētis is knowledge that is destroyed by the attempt.
+The helmsman reading a sea he cannot chart. The physician who knows the patient is failing before
+the numbers say so.
 
-Rule: **every sonified state change has a visual equivalent in the same frame.** Where this
-document says "you hear X," read it as "X is also shown, and the sound is what makes you *feel* it."
+> **The interface is this universe's episteme. The soundscape is its mētis.**
+
+That is the whole argument for the audio in this document, and it is why sound here is not
+decoration. A readout gives you a value. It is structurally bad at rate, trend, proportion and
+health — the things that are true of a system rather than true *in* it. Worship quickening tells
+you that you are snowballing, which is a derivative and not a number on any panel. The arrangement
+thinning tells you knowledge is leaving faster than it arrives. The bed drifting flat tells you the
+civilization has stopped becoming anything. A player who has run three universes hears these before
+they could tell you what they heard, and that is exactly the kind of knowing the word names.
+
+It is also the right idea for *this* game specifically, which is about the difference between
+knowledge that can be scribed and knowledge that dies with its holder (§5). A soundscape is the one
+part of the interface that behaves like the thing the game is about.
+
+**Two constraints follow, and they pull in opposite directions on purpose.**
+
+**First: audio may not lie.** Every sound corresponds to a real state change in the simulation.
+No stingers for feel, no rising tension the model does not have, no juice suggesting something
+happened when nothing did. The core is deterministic and the balance harness exists so that claims
+about this game are checkable; an audio layer that editorialised would be the one component
+licensed to be dishonest. Mētis is a feel *for something true*. A soundtrack that flatters the
+player is not mētis, it is a slot machine.
+
+**Second: no fact may exist only in audio.** Deaf and hard-of-hearing players must not be playing a
+different, worse game — and §6 deliberately loads knowledge loss with more meaning than any other
+event, so if loss is audible-only it is invisible to a large fraction of players.
+
+The resolution is that **audio's job is salience, not payload.** It does not carry facts the
+interface lacks; it makes you *notice* facts you would never have gone looking for. §8.2's
+last-copy bark is the model — it invents nothing, it surfaces `libraryDependence` at the moment you
+are looking at the mage.
+
+That raises the accessibility bar rather than lowering it. The old rule here was data parity:
+every sonified change has a visual equivalent somewhere. The rule is now **salience parity**:
+
+> **Whatever the sound makes urgent, something visual must make equally urgent.**
+
+"It is on the mage's card" no longer discharges the obligation, because being available is not the
+same as being noticed, and noticing is the entire function. Where this document says "you hear X,"
+read it as "X is also *surfaced*, and the sound is what makes you feel it."
 
 ### 0.4 Population scale forbids per-entity sound
 
@@ -115,6 +153,53 @@ Write them knowing that. It is also worth saying that jokes age worse than mecha
 depends on a 2026 reference will read as a fossil in 2031, and the lines below are deliberately
 built out of the game's own material — tenure, citation, mortality, retention stats — rather than
 out of anything external.
+
+---
+
+### 0.8 The variation budget: generative where it repeats, rendered where it matters
+
+**A fixed library fatigues, and the sounds it fatigues on first are the ones it can least afford to.**
+A player who has been in one universe for an hour has heard the click language thousands of times
+and the scribing texture continuously. Five round-robin variants (§2.3) delay that; they do not
+prevent it. Meanwhile a §9.4 arrangement stem or an ascension cadence is heard a handful of times
+per run, where being *identical* each time is part of its weight.
+
+So the rule, and it governs §9's asset budget rather than the other way round:
+
+> **Variation budget scales with repetition frequency.**
+
+Three tiers. **§0.4's density threshold is the classifier** — the same events-per-tick number that
+decides discrete-versus-texture also decides generated-versus-rendered, so this is a threshold on a
+quantity the design already carries, not a new judgement call per sound.
+
+| Tier | Examples | Production |
+|---|---|---|
+| **Synthesised at runtime** | Clicks, scribing 16ths, research 8ths, teaching, the ambient bed | Parameters drawn from the §0.2 hash. Never twice identical, and never a stored file. |
+| **Granular over rendered material** | Form materials, technique envelopes, raid primitives | Rendered assets are the *grain source*; the client recombines them per event. Organic material, unbounded variation. |
+| **Rendered whole** | Grant founding knowledge, tradition change, ascension, last-instance loss, the seal click | Heard rarely. Fidelity beats variation, and sameness is part of the ceremony. |
+
+**This does not cost determinism, which is the whole reason it is affordable.** Synthesis parameters
+come from §0.2's state hash, exactly as variant selection does. The same replay produces the same
+parameters and therefore the same sound — infinite variation across a session, byte-reproducible
+across two playbacks of one recording. A wall-clock or `Math.random` parameter source would buy the
+same variety and throw that away.
+
+**Generated audio is therefore source material, not output.** The §9 prompts still get run, and the
+takes still get auditioned — but for the middle tier the selected take becomes a grain bank the
+client draws from, not a one-shot it plays. That reframes what §9.6's numbers are counting: they
+are how much *material* to produce, not how many distinct sounds exist. The number of distinct
+sounds is unbounded by construction, which was the point.
+
+**Voice is the exception, and it is a real one.** A bark cannot be convincingly synthesised, so §8's
+banks are a fixed library and will fatigue like one. Three mitigations, none of them complete: write
+more lines; gate lines on state (§8.2) so a line is only reachable when it is apt, which makes the
+bank feel larger than it is; and rely on the escalation tiers (§8.1), which make the deepest and
+most memorable lines rare by construction. If barks still wear out in playtest, the answer is more
+lines — not a synthesiser.
+
+**What this costs, stated plainly:** `electron-client` needs a synthesis and granular layer, not a
+sample player. That is a materially larger piece of work than triggering files, and §10 carries it
+as a requirement rather than leaving it to be discovered.
 
 ---
 
@@ -1159,6 +1244,11 @@ mages'; the joke is that they are the only ones being straightforward.
 
 ## 9. Generation prompts
 
+**Scoped by §0.8.** These prompts still get run, but what the output *is* depends on the tier:
+runtime-synthesised cues need no asset at all, middle-tier cues need grain material rather than
+one-shots, and only the rendered-whole tier consumes a take directly. Read §0.8 before treating any
+number below as a file count.
+
 Written for a text-to-audio SFX generator (ElevenLabs Sound Effects or equivalent) and a
 text-to-speech voice-design model. Every prompt below is a **starting point for a batch job**, not a
 finished asset: expect to generate 4–8 candidates per line and select, and expect the click set in
@@ -1276,6 +1366,11 @@ after an hour, not like a different character.
 | Barks — populace | ~26 |
 | **Total** | **≈520 assets** |
 
+**These are material counts, not sound counts (§0.8).** The clicks and the high-repetition
+knowledge cues are synthesised at runtime and need no rendered asset; the form materials and
+envelopes are grain sources feeding a granular layer; only the ceremonial tier is played back whole.
+The number of *distinct sounds a player hears* is unbounded, which is the entire point of the split.
+
 **About 250 of those are voice lines** — genuinely cheap to generate and genuinely expensive to
 *select*. At 6 candidates per line that is 1,500 takes to audition. Budget selection time, not
 generation time; it is the larger number by an order of magnitude and it is the one that decides
@@ -1308,6 +1403,11 @@ path. This is the list, written now because two of these are cheaper to honour i
    list.
 7. **The explain channel** (contracts §4.4) for barks tied to autonomous decisions.
 8. **Portal stability quartile**, for §7.2.
+9. **A synthesis and granular layer, not a sample player** (§0.8). The high-repetition tier is
+   generated at runtime from hashed parameters and the middle tier is grains recombined per event.
+   This is materially more work than triggering files, and it is a requirement rather than an
+   optimisation: a sample-player client would ship a game whose most-heard sounds fatigue within an
+   hour.
 
 ### 10.1 One finding worth raising now
 
@@ -1346,8 +1446,9 @@ Two things follow, and neither is urgent, which is why this is a note rather tha
 
 In order of feel-per-unit-effort:
 
-1. **The click language** (§2), and the latch in particular. It is 28 assets and it is most of what
-   the game feels like moment to moment.
+1. **The click language** (§2), and the latch in particular. It is most of what the game feels like
+   moment to moment — and per §0.8 it is **synthesised, not sampled**, because it is the most
+   repeated sound in the game and a fixed set of it is the first thing a player would tire of.
 2. **Teaching on the backbeat** (§3.1, §6.2). One sound, placed on 2 and 4, and the whole management
    layer acquires a groove that tracks whether the civilization is healthy.
 3. **Loss, off-grid** (§3.2, §6.5). The single highest-value sound in the game, and it works even

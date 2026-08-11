@@ -375,6 +375,7 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 | 0.11.0 | `gym-bridge` | `rl-bridge` | proposal only |
 | 0.13.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only |
 | 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | proposal only |
+| — | `metis-knowledge` | `metis-knowledge` | proposal only |
 | 1.0.0 | — | contracts freeze; public release | — |
 
 Versions skip because **MINOR parity encodes balance validation from 0.5.0 onward** — odd means
@@ -428,6 +429,13 @@ Tracked for resolution during the changes that need them, not blocking:
 - How large is the edict budget, and how does it scale with worship tier? Deferred to
   `god-agency` and expected to be retuned repeatedly by the balance harness.
 - What is the exact worship formula? Deferred to `god-agency`, same caveat.
+- How much of the grid is **mētis** — knowledge that cannot be written down at all? Proposed in
+  `metis-knowledge` and deliberately held at proposal depth until the balance harness exists: it
+  adds a decay pressure that runs on a demographic clock rather than an adversarial one, and how
+  many nodes should carry it is a tuning output, not an up-front decision. The change's own design
+  document raises three further questions it does not answer — whether mētis crosses a portal by
+  teaching, whether mind-reading theft is too easy a workaround for succession pressure, and
+  whether the ever-known record should distinguish the two kinds.
 
 ### Measured simulation throughput
 

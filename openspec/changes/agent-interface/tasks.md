@@ -47,16 +47,16 @@
 
 ## 5. Scripted bot pool and tournament
 
-- [ ] 5.1 Implement the strategy registry with stable `strategyId`, version, and documented probe hypothesis per strategy
-- [ ] 5.2 Implement the passive control and the uniform-random-legal noise floor
-- [ ] 5.3 Implement the permissive-breadth and narrow-depth specialist strategies
-- [ ] 5.4 Implement the denial warden and the archivist strategies
-- [ ] 5.5 Implement the portal-rush and worship-maximizer strategies
-- [ ] 5.6 Implement fall-through behaviour so a strategy whose preferred action is masked submits its next-preferred legal action
-- [ ] 5.7 Implement tournament scheduling under common random numbers with mirrored slot assignments
-- [ ] 5.8 Implement the pairwise outcome matrix in the tournament summary, reported whether or not a strategy dominates
-- [ ] 5.9 Test that the whole pool runs to termination against a build where every god action is masked out
-- [ ] 5.10 Test that each strategy is deterministic at a fixed agent-side seed and that three strategies diverge observably on the same run seed
+- [x] 5.1 Implement the strategy registry with stable `strategyId`, version, and documented probe hypothesis per strategy
+- [x] 5.2 Implement the passive control and the uniform-random-legal noise floor
+- [x] 5.3 Implement the permissive-breadth and narrow-depth specialist strategies
+- [x] 5.4 Implement the denial warden and the archivist strategies
+- [x] 5.5 Implement the portal-rush and worship-maximizer strategies
+- [x] 5.6 Implement fall-through behaviour so a strategy whose preferred action is masked submits its next-preferred legal action
+- [x] 5.7 Implement tournament scheduling under common random numbers with mirrored slot assignments
+- [x] 5.8 Implement the pairwise outcome matrix in the tournament summary, reported whether or not a strategy dominates
+- [x] 5.9 Test that the whole pool runs to termination against a build where every god action is masked out
+- [x] 5.10 Test that each strategy is deterministic at a fixed agent-side seed and that three strategies diverge observably on the same run seed
 
 ## 6. Metric registry and definitions
 

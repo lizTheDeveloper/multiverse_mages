@@ -235,10 +235,17 @@ function runToyEpisode(
   let ticksRun = 0;
   while (session.status() === 'running') {
     if (ticksRun >= worldTickCap) return { status: 'truncated', ticksRun };
-    const observation = session.observe();
-    const mask = session.legalActions();
     for (let slot = 0; slot < policies.length; slot += 1) {
-      session.submit((policies[slot] as SlotPolicy)(observation, mask, slot));
+      const chosen = (policies[slot] as SlotPolicy)(
+        session.observe(),
+        session.legalActions(),
+        slot,
+      );
+      // `normalizeSubmission`, inlined — this file may not import it. The toy
+      // action space is unparameterized, so a submission's `parameter` is
+      // always absent here; reading the union anyway keeps the copy honest
+      // against the real loop, which is what the parity test below checks.
+      session.submit(typeof chosen === 'number' ? chosen : chosen.action);
       if (session.status() !== 'running') break;
     }
     ticksRun += 1;
