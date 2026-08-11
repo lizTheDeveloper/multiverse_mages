@@ -558,6 +558,19 @@ exactly one universe (§1.1). When that stops being true — a raid that takes g
 seeds a smaller world — `landUnits` moves to §1.1 and this record keeps `capacityPerLandUnit`, which
 is a property of the *kind* of country and not of who holds it.
 
+**A universe that cannot feed itself carries fewer people, and the world loop is what says so.**
+`carryingCapacity` has taken a `subsistenceShortfallShare` since `mages-and-species` task 8.5 and
+nothing passed one until the change's closeout, so `K` was the well-fed `K` for the length of any
+run. The 200-year reference run is what made that visible: the materials stock empties around world
+year seventy and `K` did not move. The share is now computed inside the births phase — this tick's
+subsistence demand against the stock as it stands, before consumption runs — because consumption is
+phase 9 and births are phase 8, and the alternatives were storing last tick's share in state (a
+world-schema revision for a number one line reads) or charging subsistence for a population and
+then letting it grow inside the same tick. With it wired, the reference run's `K` falls from 57,205
+to 29,831 across two centuries while the population rises to 18,722, so *"population never exceeds
+`K`"* is finally a question with a narrow answer rather than a bound running away ahead of the thing
+it bounds.
+
 **Every magnitude here is untuned** and carries `tuningStatus` saying so.
 
 ### 2.8 `god-cost.json`
