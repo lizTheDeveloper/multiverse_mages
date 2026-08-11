@@ -199,10 +199,15 @@ export function createBridge(options: BridgeOptions): Bridge {
       const options_ = entry['options'] as
         | Readonly<Record<string, number | string | boolean>>
         | undefined;
-      return vector.reset(entry['env'] as number, entry['runSeed'] as number, {
-        worldTickCap: entry['worldTickCap'] as number,
-        ...(options_ === undefined ? {} : { options: options_ }),
-      });
+      return vector.reset(
+        entry['env'] as number,
+        entry['runSeed'] as number,
+        {
+          worldTickCap: entry['worldTickCap'] as number,
+          ...(options_ === undefined ? {} : { options: options_ }),
+        },
+        entry['hash'] === true,
+      );
     });
     return reply({ type: 'observation', ...idField(frame['id']), envs: views });
   };
@@ -259,6 +264,7 @@ export function createBridge(options: BridgeOptions): Bridge {
         entry['env'] as number,
         entry['action'] as number,
         typeof slot === 'number' ? slot : undefined,
+        entry['hash'] === true,
       );
     });
     return reply({ type: 'step', ...idField(frame['id']), envs: views });

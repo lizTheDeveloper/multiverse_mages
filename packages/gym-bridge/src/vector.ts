@@ -123,11 +123,11 @@ export class EnvVector {
   }
 
   /** Starts one env's episode and returns its first view. */
-  reset(env: number, runSeed: number, config: ScenarioConfig): EnvView {
+  reset(env: number, runSeed: number, config: ScenarioConfig, hash = false): EnvView {
     const slot = this.slotAt(env);
     slot.session.reset(runSeed, config);
     slot.started = true;
-    return this.view(env, slot.session);
+    return this.view(env, slot.session, hash);
   }
 
   /**
@@ -153,11 +153,11 @@ export class EnvVector {
    * list and resolves no handle, which is what makes that sentence true here
    * rather than merely quoted.
    */
-  step(env: number, action: number, slot?: number): StepView {
+  step(env: number, action: number, slot?: number, hash = false): StepView {
     const held = this.slotAt(env);
     const params = slot === undefined ? [] : [slot];
     const result = held.session.submit({ kind: action, params });
-    const view = this.view(env, held.session);
+    const view = this.view(env, held.session, hash);
     return {
       ...view,
       admitted: result.admitted,
@@ -166,8 +166,8 @@ export class EnvVector {
   }
 
   /** The current view of one env, without advancing it. */
-  observe(env: number): EnvView {
-    return this.view(env, this.slotAt(env).session);
+  observe(env: number, hash = false): EnvView {
+    return this.view(env, this.slotAt(env).session, hash);
   }
 
   /** One env's session, for a caller that needs the snapshot hash after the fact. */
@@ -186,8 +186,22 @@ export class EnvVector {
     return slot;
   }
 
-  private view(env: number, session: AgentSession): EnvView {
+  /**
+   * One env's view.
+   *
+   * **The snapshot hash is computed on request and at the end of an episode,
+   * never on every tick.** `snapshotHash` walks the whole state — every
+   * component array of every entity — and `bin/throughput.mjs` measured it as
+   * the single largest cost in a step, larger than the simulation itself at
+   * small world sizes. It is what a *record* needs and what a *policy* never
+   * looks at, so charging every tick of every training run for it would be
+   * paying the reproducibility claim's price on every step that is not part of
+   * the claim.
+   */
+  private view(env: number, session: AgentSession, hash: boolean): EnvView {
     const outcome = session.outcome();
+    const status = session.status();
+    const wanted = hash || status !== 'running';
     return {
       env,
       // `Array.from` and not a shared reference: the session documents that the
@@ -197,10 +211,10 @@ export class EnvVector {
       mask: Array.from(session.legalActions()),
       candidates: candidateFrames(session.candidates()),
       outcome: outcomeFrame(outcome),
-      status: session.status(),
+      status,
       worldTick: worldTickOf(session),
       illegalActionCount: session.illegalActionCount(),
-      snapshotHash: session.snapshotHash(),
+      ...(wanted ? { snapshotHash: session.snapshotHash() } : {}),
     };
   }
 }

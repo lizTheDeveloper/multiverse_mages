@@ -48,7 +48,7 @@ import {
   OBSERVATION_SCHEMA_VERSION,
   OBSERVATION_SIZE,
 } from '@mm/agent-api';
-import type { Action, SimState, System } from '@mm/sim-core';
+import type { SimState, System } from '@mm/sim-core';
 import { RNG_STREAM, TIME_MODE, createState, nextUint32 } from '@mm/sim-core';
 import {
   OCCUPATION,
@@ -195,7 +195,7 @@ export function fixedSession(options: FixedSessionOptions = {}): AgentSession {
     observe: () => observation,
     legalActions: () => mask,
     candidates: (): CandidateLists => new Map(),
-    submit: (_action: Action): SubmitResult => {
+    submit: (): SubmitResult => {
       submitted += 1;
       return {
         admitted: options.admitted ?? true,

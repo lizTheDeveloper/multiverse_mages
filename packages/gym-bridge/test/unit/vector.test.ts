@@ -56,7 +56,13 @@ function driveOne(subject: ReturnType<typeof opened>, env: number, runSeed: numb
   let last: Record<string, unknown> = {};
   const observations: number[][] = [];
   for (let tick = 0; tick < ticks; tick += 1) {
-    const reply = send(subject, { type: 'step', envs: [{ env, action: GOD_ACTION.noop }] });
+    // `hash: true` on every step. The bridge withholds the snapshot hash by
+    // default because it walks the whole state and a policy never reads it —
+    // these tests are the callers who do, so they ask.
+    const reply = send(subject, {
+      type: 'step',
+      envs: [{ env, action: GOD_ACTION.noop, hash: true }],
+    });
     last = envsOf(reply.frames[0] as Record<string, unknown>)[0] as Record<string, unknown>;
     observations.push(last['observation'] as number[]);
   }
@@ -219,10 +225,33 @@ describe('what crosses the boundary is what agent-api exported', () => {
     for (const one of candidates) expect(one.slots).toBeGreaterThan(0);
   });
 
-  it('carries the snapshot hash and the core’s illegal-action count', () => {
+  it('carries the core’s illegal-action count on every frame', () => {
     const { last } = driveOne(opened(1), 0, 0x77_77_77_77, 1);
-    expect(String(last['snapshotHash'])).toMatch(/^[0-9a-f]+$/);
     expect(last['illegalActionCount']).toBe(0);
+  });
+
+  it('withholds the snapshot hash until it is asked for, and gives it at the end', () => {
+    // It walks every component array of every entity, and `bin/throughput.mjs`
+    // measured it as the largest single cost in a step. A policy never reads
+    // it; a record does. So a training run does not pay the reproducibility
+    // claim's price on every tick that is not part of the claim.
+    const subject = opened(1);
+    send(subject, { type: 'reset', envs: [{ env: 0, runSeed: 0x77_77_77_77, worldTickCap: 2 }] });
+    const quiet = envsOf(
+      send(subject, { type: 'step', envs: [{ env: 0, action: GOD_ACTION.noop }] })
+        .frames[0] as Record<string, unknown>,
+    )[0] as Record<string, unknown>;
+    expect('snapshotHash' in quiet).toBe(false);
+
+    // The last tick of the episode carries it whether or not anyone asked: a
+    // record's footer needs it, and an episode that ended has no later frame
+    // to ask on.
+    const final = envsOf(
+      send(subject, { type: 'step', envs: [{ env: 0, action: GOD_ACTION.noop }] })
+        .frames[0] as Record<string, unknown>,
+    )[0] as Record<string, unknown>;
+    expect(final['status']).toBe('truncated');
+    expect(String(final['snapshotHash'])).toMatch(/^[0-9a-f]+$/);
   });
 });
 

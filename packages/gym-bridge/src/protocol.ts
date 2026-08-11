@@ -216,6 +216,8 @@ export interface ResetEntry {
   readonly runSeed: number;
   readonly worldTickCap: number;
   readonly options?: Readonly<Record<string, number | string | boolean>>;
+  /** Ask for {@link EnvView.snapshotHash} on this frame. Default `false`. */
+  readonly hash?: boolean;
 }
 
 export interface ResetRequest extends RequestBase {
@@ -234,6 +236,8 @@ export interface StepEntry {
    * *current* state by `agent-api`'s gate — never by this package.
    */
   readonly slot?: number;
+  /** Ask for {@link EnvView.snapshotHash} on this frame. Default `false`. */
+  readonly hash?: boolean;
 }
 
 export interface StepRequest extends RequestBase {
@@ -297,7 +301,17 @@ export interface EnvView {
   readonly worldTick: number;
   /** The core's own count, which §7's `illegalActionRate` is computed from. */
   readonly illegalActionCount: number;
-  readonly snapshotHash: string;
+  /**
+   * The state's content hash — present on request, and always once the episode
+   * is over.
+   *
+   * Absent by default because it is not free: it walks every component array of
+   * every entity, and `bin/throughput.mjs` measured it as the largest single
+   * cost in a step. It is what a *record* needs and what a *policy* never looks
+   * at, so a training run should not pay the reproducibility claim's price on
+   * every tick that is not part of the claim. Ask for it with `hash: true`.
+   */
+  readonly snapshotHash?: string;
 }
 
 /** One env's step result. Everything in {@link EnvView}, plus what the gate did. */

@@ -31,9 +31,31 @@
 
 import { URL } from 'node:url';
 
-import { makeReferenceExecutor, referenceProvenance, REFERENCE_REGISTRIES } from '../dist/index.js';
+import {
+  makeReferenceExecutor,
+  referenceProvenance,
+  referenceScenario,
+  REFERENCE_REGISTRIES,
+} from '../dist/index.js';
 
 export const executor = makeReferenceExecutor();
 export const registries = REFERENCE_REGISTRIES;
 export const provenance = referenceProvenance();
 export const workerUrl = new URL('./sweep-worker.mjs', import.meta.url);
+
+/**
+ * The `Scenario` an *episode-level* driver takes, for `gym-bridge`.
+ *
+ * Added so one module serves both commands. `mm-run-sweep` wants a
+ * `RunExecutor` — a whole episode run to termination inside a worker — and the
+ * RL bridge wants the `Scenario` a stepping session is built on, because a
+ * Python policy cannot live inside a run-to-completion call. Both are the same
+ * universe, and asking a caller to name two different modules for it would be
+ * two chances to point them at different worlds.
+ *
+ * **One per call, not one per process**, for the reason `referenceScenario`
+ * gives: the world simulation it installs holds a per-run report closure and a
+ * rediscovery-clamp counter, and sharing one across episodes would describe
+ * whichever episode finished last.
+ */
+export const createScenario = () => referenceScenario().scenario;
