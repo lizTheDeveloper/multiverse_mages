@@ -55,6 +55,7 @@ export { censusLine, censusOf } from './census.js';
 
 export type { ReferenceMeasure, RunMeasurement } from './measures.js';
 export {
+  FINAL_WINDOW_DENOMINATOR,
   REFERENCE_MEASURES,
   REFERENCE_METRIC_IDS,
   REFERENCE_METRIC_VERSIONS,
