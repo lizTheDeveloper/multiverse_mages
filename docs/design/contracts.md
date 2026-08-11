@@ -83,9 +83,37 @@ state would have no mechanism preventing mid-raid rule changes at all.
 | `prestigeEarned` | `fp` | written once at run end; the input to the next run's `prestige` |
 | `terminalReason` | `uint8` | none \| ascension-apotheosis \| ascension-canon \| stagnation \| truncated |
 | `favorCap` | `fp` | rises with worship tier; overflow is discarded and counted as `favorWasted` |
-| `encouragedCells` | array of `{cellId, expiryTick}` | action 12 had nowhere to persist |
+| `encouragedCells` | array of `{cellId, expiryTick}` | action 12 had nowhere to persist. Magnitude is derived from the remaining ticks, not stored: a stored magnitude and a stored expiry are two records of one linear decay, and they can disagree |
 | `axisChangeCounters` | array per technique/form | hysteresis; repeated flips of one axis escalate in cost |
+| `blessings` | array of `{mageId, expiryTick}` | one row per blessed mage, which is what makes "re-blessing refreshes rather than stacks" structural: there is no representation in which a mage holds two |
+| `upheavals` | array of `{factor, expiryTick}` | worship shocks in force. An entity per shock, because two forbiddings can overlap and the combined factor is the shared multiplicative-on-remainder arithmetic over both |
+| `eraEvaluations` | array of `{era, libraryDependence, nodesLost, passed}` | what each era boundary found. `libraryDependence` at era 2 is not recoverable from state at era 4, so the Enduring Canon ascension path cannot be decided without retaining these |
+| `godState` | singleton, below | counters, high-water marks, and cached derivations that one tick of state cannot see |
 | `ascended` | `bool` | terminal flag |
+
+**`godState` — one row beside the universe, not fifteen more universe fields.** Widening the
+universe row would have been the obvious move and is the expensive one: a snapshot section carries
+its field table inline, so an added field reshapes the universe section and every older save has to
+be rewritten column by column, where an added *component* is an appended empty section — the
+migration shape this project has used three times and tested. The row is created lazily on the
+first god tick, so "no row" means "this universe has not been stepped yet", which is exactly what a
+pre-`god-agency` save describes.
+
+| Field | Type | Notes |
+|---|---|---|
+| `favorWasted` | `fp` | regeneration discarded at the pool cap, summed over the run. §7's early snowball signal — it moves long before a Gini coefficient does |
+| `magelessTicks` | `int32` | consecutive world ticks with no living mage |
+| `lowWorshipTicks` | `int32` | consecutive world ticks below the stagnation worship floor |
+| `stasisTicks` | `int32` | consecutive world ticks with no node newly entering the universe |
+| `lastEverKnown` / `lastExisting` | `uint16` | last tick's ever-known and existing node counts, so "a node entered" is decidable without storing a set |
+| `ascensionFirstMetTick` | `int32` | world tick a path was **first** satisfied, `0` for never. The gap to the declaring tick is what says whether the terminal reward is mispriced against continued play |
+| `ascensionPath` | `uint8` | none \| apotheosis \| canon. Recomputed every world tick, so the condition can lapse |
+| `peakWorshipTier`, `deepestTier` | `uint8` | high-water marks; inputs to `prestigeEarned` |
+| `lastEraRecorded` | `uint16` | so each era boundary is evaluated exactly once |
+| `eraNodesLost` | `uint16` | nodes lost so far in the current era |
+| `goodEraRun` | `uint16` | consecutive passing era boundaries |
+| `overBudgetEdicts` | `uint8` | edicts in force beyond the current budget. **Reported, never auto-revoked** |
+| `terminalTick` | `int32` | world tick the run ended on, `0` while running |
 
 **Ruleset legality — the single arbitration function.** Every consumer must call this rather than
 reimplementing it:
