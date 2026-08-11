@@ -5,10 +5,11 @@
   "compilerOptions": {
     "rootDir": "./test",
     "types": ["node"],
+    "resolveJsonModule": true,
     "emitDeclarationOnly": true,
     "outDir": "../../.tsbuild/content-test",
     "tsBuildInfoFile": "../../.tsbuild/content-test.tsbuildinfo"
   },
-  "include": ["test/**/*.ts"],
+  "include": ["test/**/*.ts", "test/fixtures/**/*.json"],
   "references": [{ "path": "./tsconfig.json" }]
 }

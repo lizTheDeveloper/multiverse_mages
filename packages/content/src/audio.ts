@@ -126,3 +126,40 @@ export function loadAudioContent(source: ContentSource): {
   if (result.diagnostics.length > 0) throw new ContentValidationError(result.diagnostics);
   return { cues: result.cues ?? [], banks: result.banks ?? [] };
 }
+
+/**
+ * Deterministic audio variant selection (sound-design.md §0.2).
+ *
+ * Never draws from a simulation RNG stream. Contracts §6 makes the registry
+ * append-only and baseline-coupled, so an audio draw would invalidate every
+ * committed balance baseline. Hashing state costs nothing and makes replays
+ * sound identical to the run that recorded them.
+ *
+ * Integer-only, so it behaves identically in the renderer and in a test.
+ */
+export function audioSelect(
+  rootSeed: number,
+  tick: number,
+  entityId: number,
+  kind: string,
+  repeat: number,
+  variantCount: number,
+): number {
+  if (variantCount < 1) throw new RangeError('variantCount must be at least 1');
+  let hash = 0x811c9dc5;
+  const mix = (value: number): void => {
+    let remaining = value >>> 0;
+    for (let byte = 0; byte < 4; byte += 1) {
+      hash = Math.imul(hash ^ (remaining & 0xff), 0x01000193) >>> 0;
+      remaining >>>= 8;
+    }
+  };
+  mix(rootSeed);
+  mix(tick);
+  mix(entityId);
+  for (let i = 0; i < kind.length; i += 1) {
+    hash = Math.imul(hash ^ kind.charCodeAt(i), 0x01000193) >>> 0;
+  }
+  mix(repeat);
+  return hash % variantCount;
+}
