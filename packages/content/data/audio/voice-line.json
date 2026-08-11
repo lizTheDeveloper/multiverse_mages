@@ -3,6 +3,7 @@
     "id": "bank-human",
     "speaker": "human",
     "speakerKind": "species",
+    "voiceId": "TX3LPaxmHKxFdv7VOQHJ",
     "voicePrompt": "Mid-thirties, quick and slightly breathless, warm, always sounds like they are already late. Neutral accent. Reads sincerely, never for laughs.",
     "lines": [
       {
@@ -209,6 +210,7 @@
     "id": "bank-elf",
     "speaker": "elf",
     "speakerKind": "species",
+    "voiceId": "pFZP5JQG7iQjIQuC4Bku",
     "voicePrompt": "Age indeterminate, very slow, quiet, never raises volume, leaves long gaps between clauses. Utterly unhurried. Faintly amused at nothing in particular.",
     "lines": [
       {
@@ -397,6 +399,7 @@
     "id": "bank-dwarf",
     "speaker": "dwarf",
     "speakerKind": "species",
+    "voiceId": "onwK4e9ZLuTAKqWW03F9",
     "voicePrompt": "Dry, precise, mid-range, the cadence of someone reading a catalogue number aloud. Certain. Not unkind.",
     "lines": [
       {
@@ -585,6 +588,7 @@
     "id": "bank-draconic",
     "speaker": "draconic",
     "speakerKind": "species",
+    "voiceId": "uVKHymY7OYMd6OailpG5",
     "voicePrompt": "Enormous and quiet. Extremely slow. Low fundamental with a lot of chest. Never shouts, never needs to. Occasional, unexpected sadness.",
     "lines": [
       {
@@ -761,6 +765,7 @@
     "id": "bank-gnome",
     "speaker": "gnome",
     "speakerKind": "species",
+    "voiceId": "FGY2WhTYpPnrIDTdsKH5",
     "voicePrompt": "Fast, bright, interrupts itself constantly, genuinely delighted by everything. Trails off mid-sentence and starts a new one.",
     "lines": [
       {
@@ -937,6 +942,7 @@
     "id": "bank-orc",
     "speaker": "orc",
     "speakerKind": "species",
+    "voiceId": "CwhRBWXzGAHq8TQ4Fs17",
     "voicePrompt": "Warm, blunt, unbothered. Working-voice — the sound of someone talking while carrying something. Quietly amused by everyone else.",
     "lines": [
       {
@@ -1119,6 +1125,7 @@
     "id": "bank-scribe",
     "speaker": "scribe",
     "speakerKind": "populace",
+    "voiceId": "XrExE9yKIg1WjnnlVkGX",
     "voicePrompt": "Tired, patient, mid-range, talking while doing something else with their hands.",
     "lines": [
       {
@@ -1163,6 +1170,7 @@
     "id": "bank-student",
     "speaker": "student",
     "speakerKind": "populace",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
     "voicePrompt": "Young, eager, slightly too loud, checking whether that was right.",
     "lines": [
       {
@@ -1201,6 +1209,7 @@
     "id": "bank-laborer",
     "speaker": "laborer",
     "speakerKind": "populace",
+    "voiceId": "iP95p4xoKVk53GoZ742B",
     "voicePrompt": "Practical, level, unhurried. Talking over noise.",
     "lines": [
       {
@@ -1239,6 +1248,7 @@
     "id": "bank-soldier",
     "speaker": "soldier",
     "speakerKind": "populace",
+    "voiceId": "pNInz6obpgDQGcFmaJgB",
     "voicePrompt": "Steady, low, economical. Says as little as the sentence needs.",
     "lines": [
       {

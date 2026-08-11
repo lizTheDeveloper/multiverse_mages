@@ -87,6 +87,18 @@ describe('voice line banks', () => {
     }
   });
 
+  it('casts every bank, and gives no two banks the same voice', () => {
+    // §9.5 writes ten distinct voice directions and §8.1a makes each species'
+    // comedic register distinct. Two banks sharing a voice would collapse two
+    // registers into one performance, which is the failure this whole design
+    // exists to avoid — and it is invisible until someone listens.
+    const voices = banks.map((bank) => bank.voiceId);
+    for (const bank of banks) {
+      expect(bank.voiceId, `${bank.speaker} has no voice assigned`).not.toBe('');
+    }
+    expect(new Set(voices).size, 'two banks share a voice').toBe(voices.length);
+  });
+
   it('has no duplicate line ids across all banks', () => {
     const ids = banks.flatMap((b) => b.lines.map((l) => l.id));
     expect(new Set(ids).size).toBe(ids.length);

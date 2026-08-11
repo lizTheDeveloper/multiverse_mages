@@ -40,7 +40,7 @@ const cues: AudioCueRecord[] = [
 
 const banks: VoiceLineBankRecord[] = [
   {
-    id: 'bank-human', speaker: 'human', speakerKind: 'species',
+    id: 'bank-human', speaker: 'human', speakerKind: 'species', voiceId: 'voice-human',
     voicePrompt: 'Mid-thirties, quick and slightly breathless',
     lines: [{ id: 'human-selection-1', tier: 'selection', text: 'Adjunct, actually.', about: '' }],
   },
@@ -92,6 +92,39 @@ describe('planRequests', () => {
     const long: AudioCueRecord[] = [{ ...cues[0]!, id: 'click-seal', durationMs: 700000, variants: 1 }];
     const [request] = planRequests(long, [], { takes: 1 });
     expect(request!.body.duration_seconds).toBeLessThanOrEqual(22);
+  });
+
+  it('carries each bank\'s own voice onto its requests', () => {
+    const twoBanks: VoiceLineBankRecord[] = [
+      banks[0]!,
+      {
+        id: 'bank-elf', speaker: 'elf', speakerKind: 'species', voiceId: 'voice-elf',
+        voicePrompt: 'Unhurried, quiet',
+        lines: [{ id: 'elf-selection-1', tier: 'selection', text: 'Mm.', about: '' }],
+      },
+    ];
+    const requests = planRequests(cues, twoBanks, { takes: 1 });
+    expect(requests.find((r) => r.id.startsWith('human-selection-1'))?.voiceId).toBe('voice-human');
+    expect(requests.find((r) => r.id.startsWith('elf-selection-1'))?.voiceId).toBe('voice-elf');
+  });
+
+  it('leaves voiceId empty on sound-effect requests', () => {
+    const requests = planRequests(cues, banks, { takes: 1 });
+    for (const request of requests.filter((r) => r.endpoint === 'sound-effect')) {
+      expect(request.voiceId).toBe('');
+    }
+  });
+
+  it('reports an unassigned bank as empty rather than inventing a voice', () => {
+    // An empty voiceId is how content says "not cast yet". The planner must
+    // pass that through untouched so the driver can refuse the bank by name;
+    // substituting a default here would record a species in the wrong voice
+    // and nothing downstream would notice.
+    const unassigned: VoiceLineBankRecord[] = [{ ...banks[0]!, voiceId: '' }];
+    const requests = planRequests(cues, unassigned, { takes: 1 });
+    const voice = requests.find((r) => r.endpoint === 'text-to-speech');
+    expect(voice).toBeDefined();
+    expect(voice?.voiceId).toBe('');
   });
 
   it('produces unique output paths across the whole plan', () => {
