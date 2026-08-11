@@ -54,12 +54,26 @@
   const audio = new Audio();
 
   document.getElementById('picker').addEventListener('change', (event) => {
+    // Revoke the previous batch's object URLs before replacing them — this
+    // tool audits ~1,500 takes, plausibly across repeated folder picks, so an
+    // unrevoked URL per take would leak for the life of the tab.
+    for (const asset of assets) {
+      for (const take of asset.takes) URL.revokeObjectURL(take.url);
+    }
+    audio.pause();
+    audio.src = '';
+    lastPlayed = null;
+
     const byAsset = new Map();
     for (const file of event.target.files) {
       if (!/\.(mp3|wav|ogg)$/u.test(file.name)) continue;
       // Path is <root>/<assetDir>/<take>. The asset id is the directory name.
       const parts = file.webkitRelativePath.split('/');
-      const id = parts.length >= 2 ? parts[parts.length - 2] : assetIdOf(file.name);
+      // The fallback (no directory info) still has the extension on file.name;
+      // assetIdOf's suffix match is $-anchored, so strip it first or every
+      // take becomes its own single-take asset.
+      const bare = file.name.replace(/\.(?:mp3|wav|ogg)$/u, '');
+      const id = parts.length >= 2 ? parts[parts.length - 2] : assetIdOf(bare);
       if (!byAsset.has(id)) byAsset.set(id, []);
       byAsset.get(id).push({ name: file.name, url: URL.createObjectURL(file) });
     }
