@@ -607,7 +607,7 @@ function checkNodes(
             `${at}/rediscoveryMultiplier`,
             'content-invariant',
             `node "${node.id}" authors rediscoveryMultiplier ${String(node.rediscoveryMultiplier)}, below the ` +
-              `v1 authoring floor of fp(${String(V1_REDISCOVERY_AUTHORING_FLOOR)}). Species rediscoveryAffinity is ` +
+              `rediscovery authoring floor of fp(${String(V1_REDISCOVERY_AUTHORING_FLOOR)}). Species rediscoveryAffinity is ` +
               'applied before the hard fp(3072) floor, so a node authored at the floor clamps every species ' +
               'to the same effective cost and the trait stops differentiating (contracts.md §2.3)',
           ),
