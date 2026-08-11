@@ -29,6 +29,12 @@
  * wiring names are paths that exist. A gate script pointed at a sweep file
  * somebody renamed fails for a reason that has nothing to do with balance, and
  * whoever sees it first will be tempted to delete the step.
+ *
+ * There are now **two** gates — five world years and twenty — and every
+ * assertion here is made of each of them, because a second gate wired into only
+ * one of the two CI systems is the same drift as the first one would have been.
+ * Why the second exists at all is in
+ * `packages/scenario/test/unit/horizon-gate.test.ts`, with the measurements.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -48,67 +54,88 @@ const manifest = JSON.parse(read('package.json')) as {
   readonly scripts: Record<string, string>;
 };
 
-/** The npm script both CI systems reach the gate through. */
-const GATE_SCRIPT = 'balance:gate';
+/**
+ * The npm scripts both CI systems reach the gates through.
+ *
+ * The five-year gate and the twenty-year gate. Neither substitutes for the
+ * other: the fast one is sensitive and runs on every push, and the slow one is
+ * the only one that can see a plateau that has not started yet at year five.
+ */
+const GATE_SCRIPTS = ['balance:gate', 'balance:gate:horizon'] as const;
 
-describe('the gate is a build-failing step in both CI systems', () => {
-  it('exists as an npm script', () => {
-    expect(manifest.scripts[GATE_SCRIPT]).toBeDefined();
-    expect(manifest.scripts[GATE_SCRIPT]).toContain('balance-gate.mjs');
+describe('every gate is a build-failing step in both CI systems', () => {
+  it.each(GATE_SCRIPTS)('%s exists as an npm script', (script) => {
+    expect(manifest.scripts[script]).toBeDefined();
+    expect(manifest.scripts[script]).toContain('balance-gate.mjs');
   });
 
-  it('is part of npm run verify, which is what the self-hosted runner runs', () => {
-    expect(manifest.scripts['verify']).toContain(`npm run ${GATE_SCRIPT}`);
+  it.each(GATE_SCRIPTS)(
+    '%s is part of npm run verify, which is what the self-hosted runner runs',
+    (script) => {
+      expect(manifest.scripts['verify']).toContain(`npm run ${script}`);
 
-    const runner = read('scripts/ci-check.sh');
-    expect(runner).toContain('npm run verify');
-    // The runner must stay equivalent to `verify` rather than growing a step of
-    // its own; a gate invoked twice would double a minute of CI for nothing.
-    expect(runner).not.toContain(GATE_SCRIPT);
-  });
+      const runner = read('scripts/ci-check.sh');
+      expect(runner).toContain('npm run verify');
+      // The runner must stay equivalent to `verify` rather than growing a step
+      // of its own; a gate invoked twice would double a minute of CI for
+      // nothing.
+      expect(runner).not.toContain(script);
+    },
+  );
 
-  it('runs after the typecheck that builds the dist the gate loads', () => {
+  it.each(GATE_SCRIPTS)('%s runs after the typecheck that builds the dist it loads', (script) => {
     const verify = manifest.scripts['verify'] as string;
-    expect(verify.indexOf('npm run typecheck')).toBeLessThan(verify.indexOf(GATE_SCRIPT));
+    expect(verify.indexOf('npm run typecheck')).toBeLessThan(verify.indexOf(script));
   });
 
-  it('is named explicitly in the Actions workflow, which lists its steps by hand', () => {
-    const workflow = read('.github/workflows/ci.yml');
-    const steps = [...workflow.matchAll(new RegExp(`run: npm run ${GATE_SCRIPT}`, 'g'))];
-    // Once per job: the pinned-Node gate and the next-major early warning.
-    expect(steps).toHaveLength(2);
-    expect(workflow).toContain('Balance regression gate');
-  });
+  it.each(GATE_SCRIPTS)(
+    '%s is named explicitly in the Actions workflow, which lists its steps by hand',
+    (script) => {
+      const workflow = read('.github/workflows/ci.yml');
+      // Anchored at the end of the line, so `balance:gate` does not count the
+      // `balance:gate:horizon` steps as its own and report a green four.
+      const steps = [...workflow.matchAll(new RegExp(`run: npm run ${script}$`, 'gm'))];
+      // Once per job: the pinned-Node gate and the next-major early warning.
+      expect(steps).toHaveLength(2);
+      expect(workflow).toContain('Balance regression gate');
+    },
+  );
 
-  it('is not silenced by continue-on-error in the blocking job', () => {
+  it.each(GATE_SCRIPTS)('%s is not silenced by continue-on-error in the blocking job', (script) => {
     const workflow = read('.github/workflows/ci.yml');
     const verifyJob = workflow.slice(
       workflow.indexOf('  verify:'),
       workflow.indexOf('  next-node:'),
     );
-    expect(verifyJob).toContain(GATE_SCRIPT);
+    expect(verifyJob).toContain(script);
     expect(verifyJob).not.toContain('continue-on-error');
   });
 });
 
 describe('the artifacts the wiring names are the artifacts that exist', () => {
-  /** The `--flag value` pairs of the gate script. */
-  const flags = Object.fromEntries(
-    [...(manifest.scripts[GATE_SCRIPT] as string).matchAll(/--(\w+)\s+(\S+)/g)].map((match) => [
-      match[1] as string,
-      match[2] as string,
-    ]),
+  /** The `--flag value` pairs of one gate script. */
+  const flagsOf = (script: string): Record<string, string> =>
+    Object.fromEntries(
+      [...(manifest.scripts[script] as string).matchAll(/--(\w+)\s+(\S+)/g)].map((match) => [
+        match[1] as string,
+        match[2] as string,
+      ]),
+    );
+
+  const cases = GATE_SCRIPTS.flatMap((script) =>
+    ['scenario', 'sweep', 'baseline'].map((flag) => [script, flag] as const),
   );
 
-  it.each(['scenario', 'sweep', 'baseline'])('names a %s that is on disk', (flag) => {
-    const path = flags[flag];
-    expect(path, `the gate script passes no --${flag}`).toBeDefined();
+  it.each(cases)('%s names a %s that is on disk', (script, flag) => {
+    const path = flagsOf(script)[flag];
+    expect(path, `${script} passes no --${flag}`).toBeDefined();
     expect(existsSync(join(repoRoot, path as string)), `${path as string} does not exist`).toBe(
       true,
     );
   });
 
-  it('gates the sweep declared as the gate sweep, not the full one', () => {
+  it.each(GATE_SCRIPTS)('%s gates a sweep declared as a gate sweep, not the full one', (script) => {
+    const flags = flagsOf(script);
     const sweep = JSON.parse(read((flags['sweep'] as string).replace(/^\.\//, ''))) as {
       kind: string;
       sweepId: string;
@@ -117,20 +144,30 @@ describe('the artifacts the wiring names are the artifacts that exist', () => {
     expect(flags['baseline'] as string).toContain(sweep.sweepId);
   });
 
-  it('carries a committed baseline that is valid on its own terms', () => {
-    const parsed = parseBaseline(read((flags['baseline'] as string).replace(/^\.\//, '')));
+  it.each(GATE_SCRIPTS)('%s carries a committed baseline valid on its own terms', (script) => {
+    const parsed = parseBaseline(read((flagsOf(script)['baseline'] as string).replace(/^\.\//, '')));
     expect('problems' in parsed ? parsed.problems : []).toEqual([]);
   });
 
-  it('states in the baseline that it is a measurement and not a balance claim', () => {
-    const parsed = parseBaseline(read((flags['baseline'] as string).replace(/^\.\//, '')));
-    if ('problems' in parsed) throw new Error(parsed.problems.join('; '));
-    const prose = [parsed.baseline.rationale, ...parsed.baseline.notes].join('\n');
-    // `release-plan.md` forbids a balance claim before 0.5.0, and a baseline
-    // committed under that rule has to say so in the file rather than in a
-    // commit message nobody will read beside it.
-    expect(prose).toContain('0.5.0');
-    expect(prose).toContain('degenerate');
+  it.each(GATE_SCRIPTS)(
+    '%s states in its baseline that it is a measurement and not a balance claim',
+    (script) => {
+      const parsed = parseBaseline(
+        read((flagsOf(script)['baseline'] as string).replace(/^\.\//, '')),
+      );
+      if ('problems' in parsed) throw new Error(parsed.problems.join('; '));
+      const prose = [parsed.baseline.rationale, ...parsed.baseline.notes].join('\n');
+      // `release-plan.md` forbids a balance claim before 0.5.0, and a baseline
+      // committed under that rule has to say so in the file rather than in a
+      // commit message nobody will read beside it.
+      expect(prose).toContain('0.5.0');
+      expect(prose).toContain('degenerate');
+    },
+  );
+
+  it('gates two different sweeps, so neither baseline could satisfy the other', () => {
+    const ids = GATE_SCRIPTS.map((script) => flagsOf(script)['sweep']);
+    expect(new Set(ids).size).toBe(GATE_SCRIPTS.length);
   });
 });
 
