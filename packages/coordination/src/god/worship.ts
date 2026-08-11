@@ -198,16 +198,39 @@ export function worshipTarget(
 }
 
 /**
+ * The strongest shock the content declares: the floor a *combination* is held at.
+ *
+ * Not `upheavalShockFloor` on its own, and that distinction is a defect this
+ * function exists to keep fixed. `upheaval-shock-floor` is `fp(512)` and
+ * `tradition-shock` is `fp(256)`, and the constant's own gloss says what it
+ * bounds — *"the strongest a **forbidding** shock may be"*. Flooring a combined
+ * factor against it silently raised a tradition change's shock to exactly the
+ * magnitude of an ordinary forbidding, so the requirement that *"the worship
+ * target is multiplied by `fp(256)` for 120 world ticks"* was unsatisfiable and
+ * vision §4a's *"throws the civilization into upheaval"* cost the same as
+ * forbidding one form.
+ *
+ * Taking the minimum over the declared magnitudes fixes that without loosening
+ * the bound: no combination of shocks, of any kinds, in any number, can take the
+ * worship target below the single most ruinous thing the content prices. So
+ * upheaval remains a decade of ruin rather than an extinction event, and the
+ * bound moves with a retune rather than having to be remembered.
+ */
+export function strongestDeclaredShock(constants: GodConstants): Fixed {
+  return Math.min(constants.upheavalShockFloor, constants.traditionShock);
+}
+
+/**
  * Applies the shocks in force to a worship target.
  *
  * Shocks combine through the shared multiplicative-on-remainder arithmetic —
  * each takes its fraction of what the previous one left — rather than by
  * summing their reductions, which could take the target below zero with three
- * overlapping shocks. The result is then held at the declared floor, so no
- * combination of forbiddings can drive worship to nothing: upheaval is meant to
- * be a decade of ruin, not an extinction event.
+ * overlapping shocks. The product is then held at
+ * {@link strongestDeclaredShock}, so overlapping shocks bite harder than one
+ * shock and still cannot compound toward nothing.
  *
- * @param factors - One per shock in force, each `fp` and below `fp(1024)`.
+ * @param factors - One per shock in force, each `fp` and at or below `fp(1024)`.
  */
 export function shockedTarget(
   target: Fixed,
@@ -222,8 +245,7 @@ export function shockedTarget(
     // favours.
     combined = mul(combined, Math.max(Math.min(factor, FP_ONE), 0));
   }
-  const floored = Math.max(combined, constants.upheavalShockFloor);
-  return mul(target, floored);
+  return mul(target, Math.max(combined, strongestDeclaredShock(constants)));
 }
 
 /**

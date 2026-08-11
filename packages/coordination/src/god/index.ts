@@ -65,6 +65,7 @@ export {
   laggedWorship,
   sat,
   shockedTarget,
+  strongestDeclaredShock,
   worshipTarget,
   worshipTierOf,
 } from './worship.js';
