@@ -46,8 +46,11 @@ export function redact(text: string, key: string): string {
 /**
  * Expands content into one request per take.
  *
- * Cues with an empty prompt are assembled from other assets (sound-design §4.1
- * envelopes are processing chains, not standalone sounds) and are skipped.
+ * Cues with an empty prompt are skipped rather than sent to the API as a
+ * blank generation request. No shipped cue currently has an empty prompt —
+ * §9.2 gives even the §4.1 envelopes a generation prompt of their own — but
+ * a cue assembled entirely from other assets at runtime, with nothing of its
+ * own to generate, is a legitimate future case this guard exists for.
  */
 export function planRequests(
   cues: readonly AudioCueRecord[],

@@ -1115,6 +1115,11 @@ Sample set; the full bank should run 3–4 per ordered pair that matters:
 - **Orc → Human:** "Now *that* one works. Runs everywhere. Dies tired."
 - **Orc → Gnome:** "Best mage we've got. Couldn't tell you where he lives. Neither could he."
 
+Shipped content re-tiers the Draconic → anyone line above as `draconic-annoyance-polite-4` rather
+than a cross-species line, because a cross-species line's `about` must name a real species and
+"anyone" does not. Defensible — the line reads the same either way — but recorded here so it is a
+decision and not a silent drift from this section.
+
 ### 8.10 Non-magical populace
 
 Vision §6: non-magical individuals exist across all species and matter mechanically — a universe of

@@ -1673,8 +1673,11 @@ if (only) requests = requests.filter((r) => r.id.startsWith(only));
 
 // Validate before any spend. planRequests emits every sound-effect request
 // before the first voice line, so an in-loop check would bill the whole cue
-// set and only then discover the voice id was missing.
-if (!voiceId && requests.some((request) => request.endpoint === 'text-to-speech')) {
+// set and only then discover the voice id was missing. Checked against
+// requests that would actually be attempted, not the raw plan: a resumed run
+// whose voice-line takes are all already on disk must not be blocked on a
+// voice id it will never call for.
+if (!voiceId && requests.some((r) => r.endpoint === 'text-to-speech' && !existsSync(r.outputPath))) {
   fail(
     'ELEVENLABS_VOICE_ID is not set, and this plan plans voice lines. ' +
       'Set it, or narrow the run with --only= to generate cues only.',
@@ -2155,3 +2158,4 @@ Stated so the gap is deliberate rather than discovered later:
 - **No key derivation.** §1.1 makes the universe's root and mode a pure function of `rootSeed`, in the same family as `audioSelect` and cheap to add. It is left out because nothing consumes it until there is a synthesiser to tune, and a pinned function with no caller is a function that drifts from the design without anyone noticing.
 - **No selected-take pipeline.** Task 6 exports `selections.json`; converting chosen takes to a shipping format and committing them under `assets/selected/` needs a format decision (Opus at what bitrate) that is better made with real files in hand.
 - **Nothing from Appendix A.** The on-beat input layer stays designed-and-not-proposed, and would need a vision §12 amendment and an answer from the balance-harness owner first.
+- **No arrangement stems.** §9.4's 6 stems × 3 tempos × 4 modes, plus the per-form beds — "the entire music budget for the game" — are deferred wholesale from this content-plumbing branch. `arrangement-stem` exists in `AudioCueKind` and the audio-cue schema's enum so the layer has somewhere to land when it is built, but zero shipped cues use it. This is also why `favor-pulse` appears in `audio-grid.test.ts`'s `UI_SUBJECTS` with no cue behind it — it is §5.6's worship-sub stem waiting for its layer, not a stray subject.

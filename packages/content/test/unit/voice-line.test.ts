@@ -31,6 +31,7 @@ import {
 
 const banks = loadAudioContent(directorySource(shippedAudioDirectory(), 'data/audio')).banks;
 const speciesBanks = banks.filter((b) => b.speakerKind === 'species');
+const populaceBanks = banks.filter((b) => b.speakerKind === 'populace');
 
 describe('voice line banks', () => {
   it('gives every playable species a bank', () => {
@@ -70,6 +71,19 @@ describe('voice line banks', () => {
       for (const line of bank.lines.filter((l) => l.tier === 'cross-species')) {
         expect(speakers.has(line.about), `${line.id} -> ${line.about}`).toBe(true);
       }
+    }
+  });
+
+  it('gives every populace role a non-empty bank of uniquely-id\'d lines (vision §6, sound-design §8.10)', () => {
+    // No line-count floor here, unlike the species banks above: the shipped
+    // counts (6/5/5/4) faithfully reflect §8.10's own enumerated lines, and a
+    // floor pinned to today's count would just be re-deriving that number.
+    const expectedRoles = ['scribe', 'student', 'laborer', 'soldier'].sort();
+    expect(populaceBanks.map((b) => b.speaker).sort()).toEqual(expectedRoles);
+    for (const bank of populaceBanks) {
+      expect(bank.lines.length, `${bank.speaker} bank size`).toBeGreaterThan(0);
+      const ids = bank.lines.map((l) => l.id);
+      expect(new Set(ids).size, `${bank.speaker} unique line ids`).toBe(ids.length);
     }
   });
 

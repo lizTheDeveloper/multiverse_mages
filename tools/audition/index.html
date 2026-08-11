@@ -18,6 +18,16 @@
   dist/ is gitignored and built — run `npm run typecheck` (or `npm run build`
   in packages/content) before opening this page, or it will load blank with a
   module-not-found error in the console.
+
+  This page must be served over HTTP from the repository root, not opened as a
+  `file://` URL: it imports a module from outside its own directory
+  (`../../packages/content/dist/audio-selection-merge.js`), and browsers block
+  ES module loading across origins under CORS, which a bare `file://` open
+  always triggers. From the repository root:
+
+    npx --yes http-server . -p 8099
+
+  then open http://localhost:8099/tools/audition/.
 -->
 <meta charset="utf-8">
 <title>Multiverse Mages — take audition</title>

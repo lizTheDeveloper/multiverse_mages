@@ -48,6 +48,9 @@ jobs:
       - name: Content validation
         run: npm run check:content
 
+      - name: Audio content validation
+        run: npm run check:audio
+
       - name: Test (unit + golden replay)
         run: npm test
 
@@ -84,6 +87,9 @@ jobs:
 
       - name: Content validation
         run: npm run check:content
+
+      - name: Audio content validation
+        run: npm run check:audio
 
       - name: Test (unit + golden replay)
         run: npm test

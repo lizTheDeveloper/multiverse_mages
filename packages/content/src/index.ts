@@ -76,6 +76,7 @@ export {
   validateAudioContent,
   loadAudioContent,
   shippedAudioDirectory,
+  shippedAudioSchemaDirectory,
   audioSelect,
 } from './audio.js';
 export type { AudioFileName, AudioValidationResult } from './audio.js';
@@ -84,13 +85,17 @@ export type {
   AudioCueKind,
   AudioBand,
   AudioGridPosition,
+  VoiceLineRecord,
+  VoiceLineTier,
   VoiceLineBankRecord,
 } from './audio-types.js';
 
 export type { GenerationRequest } from './audio-generation.js';
 export { planRequests, redact } from './audio-generation.js';
 
-export * from './types.js';
-
 export type { SelectionCoverage, SelectionPass, Selections } from './audio-selection-merge.js';
 export { assetIdOf, mergeSelections, selectionCoverage } from './audio-selection-merge.js';
+
+export { runAudioValidation } from './audio-cli.js';
+
+export * from './types.js';

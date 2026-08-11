@@ -61,8 +61,11 @@ if (only) requests = requests.filter((r) => r.id.startsWith(only));
 // environment is exactly what a first run looks like, and finding that out at
 // dry-run time is the entire value of a dry run. Checked after the `--only`
 // filter so `--only=click-` — which plans no voice lines — never requires a
-// voice id it does not need.
-if (!voiceId && requests.some((request) => request.endpoint === 'text-to-speech')) {
+// voice id it does not need. Checked against requests that would actually be
+// attempted, not the raw plan: a resumed run whose voice-line takes are all
+// already on disk must not be blocked on a voice id it will never call for,
+// or resume stops working on exactly the metered-API runs it exists for.
+if (!voiceId && requests.some((r) => r.endpoint === 'text-to-speech' && !existsSync(r.outputPath))) {
   fail(
     'ELEVENLABS_VOICE_ID is not set, and this plan plans voice lines. ' +
       'Set it, or narrow the run with --only= to generate cues only.',
