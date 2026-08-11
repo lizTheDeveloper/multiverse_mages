@@ -35,15 +35,15 @@
 
 ## 4. Results, aggregation, and reproduction
 
-- [ ] 4.1 Implement newline-delimited per-run result records carrying derivation inputs, factor levels, assigned strategies, terminal status, and every registered metric entry
-- [ ] 4.2 Implement the provenance block: build version, content hash, RNG registry hash, observation schema version, layout digest, and per-metric `definitionVersion`
-- [ ] 4.3 Implement the sweep summary record with configuration hash, counts by terminal status, and aggregate metrics
-- [ ] 4.4 Implement canonical-order aggregation sorted by `(cellIndex, replicateIndex)` for every floating-point fold
-- [ ] 4.5 Implement offline re-aggregation from stored records and test that it equals the aggregates written during execution
-- [ ] 4.6 Implement the single-run reproduction CLI, executing one recorded run in-process and single-threaded
-- [ ] 4.7 Implement append-only output semantics: a re-executed sweep writes a new file or exits non-zero
-- [ ] 4.8 Test exact reproducibility across two executions, including under randomized per-run delays that change completion order
-- [ ] 4.9 Implement the performance section — wall clock, runs per second, world ticks per second — excluded from the reproducibility comparison
+- [x] 4.1 Implement newline-delimited per-run result records carrying derivation inputs, factor levels, assigned strategies, terminal status, and every registered metric entry
+- [x] 4.2 Implement the provenance block: build version, content hash, RNG registry hash, observation schema version, layout digest, and per-metric `definitionVersion`
+- [x] 4.3 Implement the sweep summary record with configuration hash, counts by terminal status, and aggregate metrics
+- [x] 4.4 Implement canonical-order aggregation sorted by `(cellIndex, replicateIndex)` for every floating-point fold
+- [x] 4.5 Implement offline re-aggregation from stored records and test that it equals the aggregates written during execution
+- [x] 4.6 Implement the single-run reproduction CLI, executing one recorded run in-process and single-threaded
+- [x] 4.7 Implement append-only output semantics: a re-executed sweep writes a new file or exits non-zero
+- [x] 4.8 Test exact reproducibility across two executions, including under randomized per-run delays that change completion order
+- [x] 4.9 Implement the performance section — wall clock, runs per second, world ticks per second — excluded from the reproducibility comparison
 
 ## 5. Scripted bot pool and tournament
 
