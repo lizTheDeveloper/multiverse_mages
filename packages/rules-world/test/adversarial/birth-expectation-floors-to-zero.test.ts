@@ -13,9 +13,14 @@
  */
 
 /**
- * # THESE TESTS FAIL ON PURPOSE
+ * # A regression guard on the births expectation
  *
- * ## (a) The behaviour believed to be incorrect
+ * These tests were written to fail, and did. The defect is fixed —
+ * `expectedBirths` now carries the expectation at `BIRTH_RATE_ONE` and the draw
+ * is taken over that same range — so they are kept as the guard, with the
+ * original analysis intact because the fix is not self-evident from the code.
+ *
+ * ## (a) The behaviour that was incorrect
  *
  * `expectedBirths` computes
  * `mul(mul(mul(count × BIRTHS_PER_MEMBER, fertility), primitiveMultiplier), brake)`.
@@ -57,7 +62,7 @@
  *   > **and the bias is silent**.
  *
  * The births path reintroduces that rejected behaviour by flooring upstream of
- * the draw instead of instead of it.
+ * the draw instead of it.
  *
  * `docs/design/contracts.md` §3 states the general rule this is an instance of:
  *
@@ -74,14 +79,22 @@
  *
  * ## (c) Why the asserted values are the right ones
  *
- * Test 1 asserts only that a positive population with a positive fertility and
- * an unbraked world produces **at least one child in two hundred world years**.
- * At the lowest `fertility` in shipped content the true expectation over 2,400
- * ticks is ≈1.76 births; the implementation delivers 0, deterministically, for
- * every seed. "More than zero children in two centuries" is not a balance claim
- * and needs no harness to adjudicate — an implementation that carried the
- * expectation at extended scale, exactly as the hazard path already does,
- * satisfies it.
+ * Test 1 asserts that the per-tick *expectation* is non-zero, and that sampling
+ * it over many seeds converges on the analytic figure. At the lowest `fertility`
+ * in shipped content the true expectation over 2,400 ticks is ≈1.76 births; the
+ * implementation delivered 0, deterministically, for every seed, because the
+ * expectation itself was 0.
+ *
+ * **Corrected during the fix.** This test originally ran one seed and required
+ * at least one child, and this paragraph claimed that "an implementation that
+ * carried the expectation at extended scale satisfies it". That was wrong, and
+ * finding out why is the reason it is written down here: at an expectation of
+ * 1.76, an unbiased implementation still yields zero for about e^-1.76 ≈ 17% of
+ * seeds, so the assertion was a coin flip that happened to land on the seed
+ * chosen — and one that would have gone red on any later change to draw
+ * ordering or scale. A red test that a correct change causes is worse than no
+ * test. Asserted as the expectation and its mean instead, which is the property
+ * the defect actually violated.
  *
  * Test 2 asserts that a headcount which expects births when held as one cohort
  * does not expect *exactly zero* when the same people are held as several. Both
@@ -98,6 +111,7 @@ import { FP_ONE } from '@mm/sim-core';
 
 import {
   BIRTHS_PER_MEMBER,
+  BIRTH_RATE_ONE,
   cohortBirths,
   expectedBirths,
   fertilityBrake,
@@ -130,8 +144,8 @@ const birthsOf = (overrides: Partial<BirthInput> = {}): BirthInput => ({
   ...overrides,
 });
 
-describe('a small cohort at a low fertility is sterile rather than slow', () => {
-  it('produces no child at all in two hundred world years', () => {
+describe('a small cohort at a low fertility is slow rather than sterile', () => {
+  it('carries an expectation a small low-fertility cohort can actually sample', () => {
     // Control: the same arithmetic at a neutral rate is fine, so the inputs
     // below are not simply degenerate.
     expect(expectedBirths(birthsOf({ count: 2 }))).toBe(2 * BIRTHS_PER_MEMBER);
@@ -139,14 +153,54 @@ describe('a small cohort at a low fertility is sterile rather than slow', () => 
     const input = birthsOf({ count: 2, fertility: LOW_FERTILITY });
 
     // True expectation: 2 × 4 × 96 / 1024 = 0.75 fp units per tick, i.e. about
-    // 1.76 children across the run. The first `mul` floors it to 0 and the
-    // remainder draw never sees a remainder.
-    let born = 0;
-    for (let tick = 0; tick < TWO_HUNDRED_YEARS; tick += 1) {
-      born += cohortBirths(stepRng(4242, tick), 11, input);
+    // 1.76 children across the run. The first `mul` floored it to 0 and the
+    // remainder draw never saw a remainder.
+    //
+    // ## Asserted as an expectation, not as one sample
+    //
+    // This originally ran one seed for two hundred years and required at least
+    // one child. That assertion is a coin flip wearing a property's clothes: at
+    // a true expectation of 1.76, *any* unbiased implementation produces zero
+    // for about e^-1.76 ≈ 17% of seeds. It would have passed or failed on which
+    // seed was written down, and it would have flipped on any change to draw
+    // ordering or scale — a test that goes red for a correct change is worse
+    // than no test, because the next person to see it red will assume it lies.
+    //
+    // The defect was never about one run. It was that the *expectation itself*
+    // was zero, so the two things worth asserting are that the expectation
+    // survives the arithmetic, and that sampling it is unbiased in the mean.
+
+    // The expectation survives: this is the defect, stated directly. At fp
+    // scale this was 0; at BIRTH_RATE_ONE it is the real 0.75 of an fp unit.
+    const expectedPerTick = expectedBirths(input);
+    expect(expectedPerTick).toBeGreaterThan(0);
+    expect(expectedPerTick).toBe((2 * BIRTHS_PER_MEMBER * LOW_FERTILITY) / FP_ONE);
+
+    // And sampling it is unbiased. Averaged over many seeds the run converges
+    // on the analytic figure; a single seed is allowed to be a 0 or a 4.
+    const SEEDS = 200;
+    const expectedPerRun = (expectedPerTick * TWO_HUNDRED_YEARS) / BIRTH_RATE_ONE;
+    let total = 0;
+    let seedsWithAnyChild = 0;
+    for (let seed = 0; seed < SEEDS; seed += 1) {
+      let born = 0;
+      for (let tick = 0; tick < TWO_HUNDRED_YEARS; tick += 1) {
+        born += cohortBirths(stepRng(seed, tick), 11, input);
+      }
+      total += born;
+      if (born > 0) seedsWithAnyChild += 1;
     }
 
-    expect(born).toBeGreaterThan(0);
+    // Within 15% of 1.76 children per run. Wide enough that it is not a
+    // restatement of the generator, tight enough that reinstating any of the
+    // three floors — which zeroes it outright — cannot pass.
+    const mean = total / SEEDS;
+    expect(mean).toBeGreaterThan(expectedPerRun * 0.85);
+    expect(mean).toBeLessThan(expectedPerRun * 1.15);
+
+    // And the sterility claim, which is what the defect actually produced:
+    // the great majority of seeds must yield a child, not merely the mean.
+    expect(seedsWithAnyChild).toBeGreaterThan(SEEDS * 0.7);
   });
 });
 
