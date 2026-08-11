@@ -119,10 +119,19 @@ executor in this tree can produce them yet. What is gated instead is the referen
 **vital signs**: population, living mages, distinct nodes known, instances, grimoires, library
 depth.
 
-The universe those vital signs describe is degenerate in five known ways, all recorded in the
-baseline's own `notes` so that nobody reads the numbers as a description of the finished game:
-node discovery plateaus at 32 of the 51 v1 nodes; library depth is identically zero because nothing
-shelves a grimoire; every scripted strategy produces the same universe because no system reads a
-god action; the population halves before it grows; and several observation channels saturate.
+The universe those vital signs describe is still degenerate, and the ways it is are recorded in the
+baseline's own `notes` so that nobody reads the numbers as a description of the finished game: node
+discovery plateaus well short of the 51 v1 nodes; every scripted strategy produces the same universe
+because no system reads a god action; the population halves before it grows; and several observation
+channels saturate.
+
+One item has already left that list, and the way it left is the best argument for the gate that
+exists. The first baseline recorded `referenceLibraryDepth` at exactly zero — nothing shelved a
+grimoire — with a standard error of zero and therefore a tolerance of zero, and a note saying in as
+many words that the day something shelved a book this metric would move and the gate would fail.
+Grimoire shelving landed a few commits later, `referenceLibraryDepth` went to 1.7 nodes per
+universe, the gate failed on it and passed everything else, and the baseline was regenerated with a
+rationale naming the change. The movement is in the file, under `supersededDeltas`. A softened
+tolerance would have let all of that pass in silence.
 
 A baseline says what the build did on a date. It does not say the build is right.

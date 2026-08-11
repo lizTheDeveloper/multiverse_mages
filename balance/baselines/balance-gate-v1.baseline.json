@@ -1,12 +1,12 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "d15185c3441ab78638c56747c6768ebf0ef0490e80e9c6caf568197b9b939e9d",
+  "contentHash": "29b8952954739ed8431e25407b682aebf46f384b0e57018a922a6d2b79a4837a",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.8811880202007825,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":5.643564060602348,"unit":"grimoires","value":123.77},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":2.4266520776828404,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":7.279956233048521,"unit":"instances","value":425.075},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":0,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0,"unit":"nodes","value":0},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":0.03558548202023186,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.10675644606069558,"unit":"nodes","value":1.7},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":200,"standardError":0.10670147178756556,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.3201044153626967,"unit":"mages","value":38.965},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":200,"standardError":0.09581284903819702,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.28743854711459105,"unit":"nodes","value":22.695},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":200,"standardError":0.09581284903819702,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.28743854711459105,"unit":"nodes","value":25.195},
@@ -15,11 +15,10 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.451262966911891,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.353788900735673,"unit":"people","value":-14.725}
   ],
   "notes": [
-    "NOT a balance claim. docs/design/release-plan.md forbids one before 0.5.0, and nothing here could support one. This file records what the build did on 2026-08-11; it says nothing about whether that is good.",
-    "These are the reference vital signs from packages/scenario/src/measures.ts, NOT the twelve contracts.md §7 balance metrics. The reference executor does not collect §7 metrics yet: six of those twelve describe mechanics (raids, god actions, worship, prestige) that have not shipped and would report mechanic-absent, and the other six have no wiring from a real universe. No §7 metric is gated by this file.",
-    "The universe measured here is degenerate in five known ways, all under active repair: node discovery plateaus at 32 of the 51 v1 nodes; referenceLibraryDepth is identically zero because nothing shelves a grimoire; every strategy produces an identical universe because no god action has any effect at this build; population halves before it grows; and the agent observation saturates. Read these numbers as a description of that universe, not of the finished game.",
-    "referenceLibraryDepth and referencePeakPopulation have a standard error of zero, so their tolerance is zero and the gate demands exact equality. That is deliberate: a quantity that has never varied across 200 universes cannot move by chance. When grimoire shelving lands, referenceLibraryDepth will move and the gate will fail — that failure is the gate working, and the answer is a regeneration with a rationale, never a widened tolerance.",
-    "worldTickCap is 60 world ticks — five world years — and 4 cells x 50 replicates is 200 runs, which is about 46 seconds on four workers. A gate is only worth having if it runs on every push, and that bounded it more than any statistical argument did. The standard errors below are at that sample size and no other."
+    "These nine metrics are the reference scenario's vital signs, not the twelve balance metrics of contracts.md §7. Six of §7's twelve describe mechanics that have not shipped — raids, god actions, worship, prestige — and the rest need per-node and per-(species, tier) telemetry that the §4.1 observation does not carry, so no executor in this tree can produce them yet.",
+    "The universe these numbers describe is still degenerate, and every item is an open finding rather than something this baseline settles: node discovery plateaus well short of the 51 v1 nodes; every scripted strategy produces the same universe because no system reads a god action; the population halves before it grows; and several observation channels saturate. Grimoire shelving is the one item that has been fixed since the first baseline.",
+    "referencePeakPopulation still has a standard error of exactly zero and therefore a tolerance of exactly zero, so the gate demands exact equality of it. That is deliberate: a deterministic sweep cannot move by chance, so a metric that has never varied has no noise behind which a real change could hide. referenceLibraryDepth was such a metric until this regeneration, and the zero tolerance is what caught it moving.",
+    "Sample size is 200 runs over 4 parameter cells at 60 world ticks, sized so the gate runs in about a minute on four workers and can therefore run on every push. The 10,000-run instrument is balance/sweeps/balance-full.sweep.json, which is not runnable on this build — balance/README.md has the arithmetic."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -29,11 +28,21 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Initial measurement of the 0.3.0 reference universe, not a balance claim. It exists so that a later change which moves any of these vital signs is visible in a diff rather than discovered months later.",
+  "rationale": "Grimoire shelving landed. referenceLibraryDepth leaves zero for the first time — 0 to 1.7 nodes per universe — which is the movement the previous baseline's own note predicted and asked to be caught. Nothing else moved. Still a measurement and not a verdict: release-plan.md forbids a balance claim before 0.5.0 and this build is 0.3.0.",
   "rootSeed": 20260811,
   "runCount": 200,
-  "supersededDeltas": [],
-  "supersedes": null,
+  "supersededDeltas": [
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":123.77,"value":123.77},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":425.075,"value":425.075},
+    {"delta":1.7,"deltaInStandardErrors":null,"metricId":"referenceLibraryDepth","previousValue":0,"value":1.7},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":38.965,"value":38.965},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":22.695,"value":22.695},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":25.195,"value":25.195},
+    {"delta":0,"deltaInStandardErrors":null,"metricId":"referencePeakPopulation","previousValue":216,"value":216},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.275,"value":129.275},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.725,"value":-14.725}
+  ],
+  "supersedes": "d15185c3441ab78638c56747c6768ebf0ef0490e80e9c6caf568197b9b939e9d",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }
