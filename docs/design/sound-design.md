@@ -55,6 +55,12 @@ same barks in the same order. That makes recorded video reproducible and makes "
 here" a bug report someone can act on. A wall-clock-seeded `Math.random` in the renderer would have
 been defensible under §0.1 and would have thrown this away for nothing.
 
+**Implemented and pinned.** `audioSelect()` in `packages/content/src/audio.ts`, with committed
+vectors at `packages/content/test/fixtures/audio-select-vectors.json`. The vectors exist because the
+client is a different package written later, and a function that is only described gets
+reimplemented subtly differently. Regenerating them is a claim that audio selection changed on
+purpose, and reviewers should read it as one.
+
 ### 0.3 Audio must not become a second source of truth
 
 Anything the player can learn by listening must also be visible. This is an accessibility floor —

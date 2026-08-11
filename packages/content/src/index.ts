@@ -76,6 +76,7 @@ export {
   validateAudioContent,
   loadAudioContent,
   shippedAudioDirectory,
+  audioSelect,
 } from './audio.js';
 export type { AudioFileName, AudioValidationResult } from './audio.js';
 export type {
