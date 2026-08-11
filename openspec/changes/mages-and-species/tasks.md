@@ -1,24 +1,24 @@
 ## 1. Contract amendment and package skeleton
 
-- [ ] 1.1 Amend `docs/design/contracts.md` §2.4 to add `maturityMonths`, `mageAptitude`, and `laborAffinity`, and note that soldier effectiveness is deliberately absent and owned by `raid-engagement`
-- [ ] 1.2 Amend `docs/design/contracts.md` §2.4 to state the direction of `rediscoveryAffinity` as higher-is-better, applied as a divisor
-- [ ] 1.3 Record the `fp(3072)` floor on the effective rediscovery multiplier in `docs/design/contracts.md`, citing the 0.3.0 release claim it protects
-- [ ] 1.4 Update the `species.json` JSON Schema in `packages/content` to match the amended contract
-- [ ] 1.5 Create `packages/rules-world` with dependencies on `sim-core` and `content` only, and no dependency on `rules-magic`
-- [ ] 1.6 Extend the dependency-graph test to assert `rules-world` does not import `rules-magic`, and verify it fails on a deliberately added import before reverting
-- [ ] 1.7 Define the narrow coordinating-layer interface through which `rules-world` reaches knowledge instances, research, teaching, and scribing
+- [x] 1.1 Amend `docs/design/contracts.md` §2.4 to add `maturityMonths`, `mageAptitude`, and `laborAffinity`, and note that soldier effectiveness is deliberately absent and owned by `raid-engagement`
+- [x] 1.2 Amend `docs/design/contracts.md` §2.4 to state the direction of `rediscoveryAffinity` as higher-is-better, applied as a divisor
+- [x] 1.3 Record the `fp(3072)` floor on the effective rediscovery multiplier in `docs/design/contracts.md`, citing the 0.3.0 release claim it protects
+- [x] 1.4 Update the `species.json` JSON Schema in `packages/content` to match the amended contract
+- [x] 1.5 Create `packages/rules-world` with dependencies on `sim-core` and `content` only, and no dependency on `rules-magic`
+- [x] 1.6 Extend the dependency-graph test to assert `rules-world` does not import `rules-magic`, and verify it fails on a deliberately added import before reverting
+- [x] 1.7 Define the narrow coordinating-layer interface through which `rules-world` reaches knowledge instances, research, teaching, and scribing
 
 ## 2. Species content and traits
 
-- [ ] 2.1 Author the six species content files with the placeholder magnitudes from `design.md`, reproducing the `contracts.md` §2.4 dwarf example verbatim
-- [ ] 2.2 Add the machine-readable `untuned` tuning-status marker to every species file and record it at load
-- [ ] 2.3 Implement the trait registry declaring each `fp` trait's direction as higher-is-better
-- [ ] 2.4 Implement `effectiveRediscoveryMultiplier` as a divisor with the `fp(3072)` floor and a clamp counter
-- [ ] 2.5 Implement content validation for `maturityMonths` greater than zero and less than `lifespanMonths`, and for unknown `affinities` keys
-- [ ] 2.6 Add the CI check comparing the loaded species field set against `docs/design/contracts.md` §2.4
-- [ ] 2.7 Add the conformance check rejecting species-keyed numeric literals in `packages/rules-world/src`
-- [ ] 2.8 Add the pre-0.5.0 claim check that fails any test asserting a balance property over species magnitudes
-- [ ] 2.9 Unit test that all six species load, that a missing field fails the load, and that trait direction is applied consistently at every call site
+- [x] 2.1 Author the six species content files with the placeholder magnitudes from `design.md`, reproducing the `contracts.md` §2.4 dwarf example verbatim
+- [x] 2.2 Add the machine-readable `untuned` tuning-status marker to every species file and record it at load
+- [x] 2.3 Implement the trait registry declaring each `fp` trait's direction as higher-is-better
+- [x] 2.4 Implement `effectiveRediscoveryMultiplier` as a divisor with the `fp(3072)` floor and a clamp counter
+- [x] 2.5 Implement content validation for `maturityMonths` greater than zero and less than `lifespanMonths`, and for unknown `affinities` keys
+- [x] 2.6 Add the CI check comparing the loaded species field set against `docs/design/contracts.md` §2.4
+- [x] 2.7 Add the conformance check rejecting species-keyed numeric literals in `packages/rules-world/src`
+- [x] 2.8 Add the pre-0.5.0 claim check that fails any test asserting a balance property over species magnitudes
+- [x] 2.9 Unit test that all six species load, that a missing field fails the load, and that trait direction is applied consistently at every call site
 
 ## 3. Populace cohorts and occupations
 
