@@ -69,8 +69,10 @@ traditions confined to their four hooks — plus `rules-world`'s species and mag
 grid is pre-authored: 300 nodes across all seventy cells, of which twelve cells are enabled.
 Next up is `mages-and-species` (0.4.0).
 
-Two packages are **deviations from `contracts.md` §5 as originally drawn**, both recorded there with
-their reasoning: `state` and `primitives`. §5 was written before anyone tried to satisfy it.
+Three packages are **deviations from `contracts.md` §5 as originally drawn**, all recorded there with
+their reasoning: `state`, `primitives`, and `coordination`. §5 was written before anyone tried to
+satisfy it. A fourth deviation, from **§1.2**, is recorded in that section: the `goal-commitment`
+component, which `mages-and-species` promised would not be needed.
 
 Two commands worth knowing before touching the core:
 

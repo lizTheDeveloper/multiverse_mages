@@ -604,8 +604,9 @@ packages/
   primitives      §3 stacking arithmetic and cap clamping.                → sim-core, content (types only)
   rules-magic     grid legality, nodes, knowledge instances, traditions. → sim-core, content, state, primitives
   rules-world     mages, species, populace, universities, economy.        → sim-core, content, state, primitives
-  rules-raid      engagement space, combat, objectives, consequences.     → sim-core, content, state, primitives, rules-magic, rules-world
-  agent-api       observation/action space, legality masks.               → sim-core, content, state, primitives, rules-*
+  rules-raid      engagement space, combat, objectives, consequences.     → sim-core, content, state, primitives, rules-magic, rules-world, coordination
+  coordination    the world step loop, and the rules-world → rules-magic port. → sim-core, content, state, primitives, rules-magic, rules-world
+  agent-api       observation/action space, legality masks.               → sim-core, content, state, primitives, rules-*, coordination
   mc-harness      worker pool, sweeps, balance metrics.                   → agent-api
   client-electron renderer. Reads snapshots. Computes no rules.           → agent-api (read path only)
   server          authoritative lockstep, Hetzner deployment.             → agent-api
@@ -626,6 +627,28 @@ the primitive registry that lives in `content`. `content` is in the dependency-p
 `PURE_PACKAGES` and may take no runtime dependency, so the arithmetic cannot live there; and §3
 forbids re-deriving a floor outside the one shared helper, so it cannot live anywhere that would
 have to reimplement one. A package between the two is the only placement that satisfies both.
+
+**`coordination` is the third deviation, added during `mages-and-species`, and it is rule 3's own
+coordinating layer given a home.** Rule 3 says the `rules-magic`/`rules-world` interaction *"lives
+in a coordinating layer"* without naming one, and the two candidates this list already held both
+fail a **world** loop:
+
+- **`rules-raid`** may import both, and the dependency-graph test names it as the example. But this
+  list defines it as *"engagement space, combat, objectives, consequences"*, and a world tick is
+  none of those. Putting the world loop there makes a headless Monte Carlo worker load the combat
+  package in order to advance a month, and hands ownership of 0.4.0's central loop to
+  `raid-engagement`, a capability that has not started. It also inverts §0's clock rule: an
+  engagement *freezes* world time, so the raid layer is the thing that pauses the world loop, and
+  one module should not be both the thing paused and the thing pausing.
+- **`agent-api`** may import every `rules-*` package, but rule 4 runs the dependency one way only.
+  A world loop living there could never be reached by `rules-raid` when a raid writes its
+  consequences back into world state — and the observation layer becoming an input to the rules it
+  observes is precisely what rule 4 exists to prevent.
+
+So the layer gets a package, above both rules packages and below `agent-api`, with an inbound edge
+from `rules-raid` because a raid's consequences land in world state through it. It is in
+`PURE_PACKAGES`: it is rules-path code, loaded by the client, the server and the Monte Carlo
+workers alike.
 
 **Enforced rules:**
 
