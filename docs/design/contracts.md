@@ -999,6 +999,12 @@ census intervals, censoring rules, denominators, whether a rate is instantaneous
 metric whose definition drifts silently makes every committed baseline meaningless while still
 appearing green, so the definition is versioned alongside the numbers it produces.
 
+**Every constant that pinning invented is listed in
+[`metric-constants.md`](./metric-constants.md), with the ambiguity it resolves.** That note is
+checked against the implemented registry in both directions — a constant in the code and not in the
+note fails, and so does a row in the note for a constant the code does not declare — so it cannot go
+stale without the suite going red.
+
 **Ownership splits two ways.** `agent-interface` owns each metric's *definition and collection*;
 the capability that owns the mechanic owns its *threshold value* — `worshipSnowball`,
 `ascensionRate`, and `prestigeAdvantage` thresholds belong to `god-agency`, and the tempo metrics

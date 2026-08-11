@@ -71,9 +71,13 @@ const COMMITTED_PINS: DefinitionPins = {
     definitionVersion: 1,
     digest: '65f18d4984a02fb786917f86f51892d0c458a3d57f5f819c1e9f8305f692a4ca',
   },
+  // Bumped to 2 by agent-interface task group 10. `carryForwardMax` used to be
+  // `null` — the statement that nobody had chosen a magnitude — and is now
+  // PRESTIGE_CAP out of loaded content. The arithmetic is unchanged; what the
+  // collector is allowed to run against is not.
   prestigeAdvantage: {
-    definitionVersion: 1,
-    digest: 'eea4226d0b9fc419dfe80b40a3d10ad9cff25880abe0acae845651db2d120466',
+    definitionVersion: 2,
+    digest: '87609d4538435b4b3410b41b89622ef5cde7e54520ec813f4ae9b3514bf871e2',
   },
   raidInitiationCost: {
     definitionVersion: 1,
@@ -87,13 +91,23 @@ const COMMITTED_PINS: DefinitionPins = {
     definitionVersion: 1,
     digest: 'af19e7a8c52842476c0ee43d9222d891f079b368327d4b9f4c56286a69b84951',
   },
+  // Bumped to 2 by task group 7. The metric was a placeholder that could only
+  // report `mechanic-absent`; it is now an interval-gated estimate with a
+  // pinned z, a stated no-detected-effect rule and a named `not-attributable`
+  // exclusion. Same name, different quantity — which is exactly what a
+  // definitionVersion is for.
   winRateByPrimitive: {
-    definitionVersion: 1,
-    digest: 'e8fda3ed1baaff7dc08bac31b92a22fd80e96b1030d846c4370a6b3971572d0c',
+    definitionVersion: 2,
+    digest: '52943601b98d6ff400c8965f8fe1492977c6cc6620a98c8e44bb4d32ddc197f1',
   },
+  // Bumped to 2 by `god-agency` task 7.2. The quantity is now named as the
+  // god's favor-ledger regeneration rather than the looser "favor regen", and
+  // the three saturated worship source classes are reported with it — a
+  // coefficient over 0.35 says inequality is growing and says nothing about
+  // which class produced it, and the retunes differ.
   worshipSnowball: {
-    definitionVersion: 1,
-    digest: 'a6e7a304b8eb876300e7d7b64961b92bea93df513881ba609c4326440772f697',
+    definitionVersion: 2,
+    digest: 'a33987823d4d24af4c9444fb89984ee5131c4498ddb8dcc2d26378437ca67ec9',
   },
 };
 

@@ -33,9 +33,14 @@
  * Three limits shape every number this scenario produces, and none of them is
  * papered over:
  *
- * 1. **No god action has any effect.** No system reads `ctx.actions`, so a
- *    strategy cannot influence a universe. Every measurement taken here is about
- *    the simulation's own evolution, not about play.
+ * 1. **A god action now has an effect, but nothing here takes one.** `god-agency`
+ *    installed the intervention and outcome systems — `worldDeps` supplies
+ *    `deps.god`, so `ctx.actions` is read, worship accumulates, favor
+ *    regenerates and a universe can ascend or stagnate. What has not changed is
+ *    this scenario's *starting position*: it seeds zero favor, zero worship and
+ *    zero prestige, so a sweep of the passive control still measures the
+ *    simulation's own evolution. Substituting a strategy that acts is now a
+ *    different experiment rather than the same one.
  * 2. **There is no study loop.** A researched instance is created at
  *    `DEFAULT_INITIAL_MASTERY` (`fp(256)`) and from there only decays, while the
  *    teach threshold is `fp(512)` — so a mage can never teach what she worked
@@ -70,8 +75,8 @@ import {
 } from '@mm/state';
 import { KnowledgeSubsystem, MASTERY_MAX } from '@mm/rules-magic';
 import { createMage } from '@mm/rules-world';
-import type { WorldStepReport } from '@mm/coordination';
-import { defineWorldSimulation } from '@mm/coordination';
+import type { GodTickReport, WorldStepReport } from '@mm/coordination';
+import { defineWorldSimulation, resolveGodContent } from '@mm/coordination';
 
 import type { RulesetAxes } from './content-set.js';
 import {
@@ -213,6 +218,14 @@ export interface ReferenceContent {
   readonly foundingNodeIds: readonly ContentId[];
   readonly catalogue: ReturnType<typeof contentCatalogue>;
   readonly deps: ReturnType<typeof worldDeps>;
+  /**
+   * `PRESTIGE_CAP`, `fp` — the analytic limit of the carry-forward recurrence.
+   *
+   * Surfaced here rather than re-resolved by the executor because it is the one
+   * number §7's `prestigeAdvantage` needs and cannot invent, and because
+   * resolving it twice is two places that could read different content.
+   */
+  readonly prestigeCap: number;
 }
 
 /** Resolves everything a reference universe needs out of a content registry. */
@@ -225,6 +238,7 @@ export function referenceContent(registry: ContentRegistry = shippedContent()): 
     foundingNodeIds: foundingCandidates(registry),
     catalogue: contentCatalogue(registry),
     deps: worldDeps(registry, traditionId),
+    prestigeCap: resolveGodContent(registry).constants.prestigeCap,
   };
 }
 
@@ -375,6 +389,26 @@ export interface ReferenceRun {
   readonly scenario: Scenario;
   /** The last tick's report, or `undefined` before the first step. */
   lastReport: () => WorldStepReport | undefined;
+  /**
+   * The last tick's god report, or `undefined` before the first step.
+   *
+   * The only place a favor *rate* exists. §7's `worshipSnowball` is the Gini
+   * coefficient of *"instantaneous favor regeneration per world tick"*, and the
+   * §4.1 observation carries the favor **pool**, not its derivative — a universe
+   * at its `favorCap` regenerates steadily while its pool does not move at all,
+   * which is exactly the case §7's own scenario names ("a run has accumulated
+   * large favor but its regeneration rate at the checkpoint is small"). The
+   * ledger's `regenerated` is that rate, computed once by the rule that applies
+   * it, and re-deriving it from two observations would be a second answer to a
+   * question that already has one.
+   *
+   * This is a report, not state: `census.ts` refuses to read `SimState` because
+   * a *vital sign* an agent cannot see would overstate what §4.1 supports, and
+   * that argument holds. It does not extend to §7's balance metrics, which
+   * `RunTelemetry` already defines in terms of per-node and per-`(species,
+   * tier)` quantities the observation was never meant to carry.
+   */
+  lastGodReport: () => GodTickReport | undefined;
 }
 
 /** The scenario id every reference run records. Stable; a baseline is keyed on it. */
@@ -404,5 +438,6 @@ export function referenceScenario(content: ReferenceContent = referenceContent()
         }),
     },
     lastReport: simulation.lastReport,
+    lastGodReport: simulation.lastGodReport,
   };
 }
