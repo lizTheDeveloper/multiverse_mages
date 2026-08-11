@@ -27,6 +27,17 @@
  * validator that quietly skips `maxItems` because nobody taught it that keyword
  * is worse than no validator: it reports success it did not establish.
  *
+ * **Nor can a keyword it does implement be written somewhere it has no effect.**
+ * There are four ways to do that, and all four compile clean in a naive reading:
+ * a sibling of `$ref` (resolution replaces the whole subschema, so the sibling
+ * is discarded), a `$ref` whose target is itself a `$ref` (resolution is one
+ * lookup, so the second hop never happens), a `$defs` below the root (no `$ref`
+ * can name it), and a keyword whose *value* has the wrong shape — `minItems:
+ * "5"`, `uniqueItems: "true"`, `enum` as a string — which every assertion below
+ * skips past its `typeof` guard without a word. Each is rejected at compile
+ * time, for the same reason an unimplemented keyword is: a constraint that
+ * enforces nothing while reading as though it did is worse than its absence.
+ *
  * `type: "number"` is rejected outright. Content is fixed-point integers at
  * scale 1024 (`docs/design/contracts.md` §0); a schema that admits a float is a
  * schema that admits a determinism bug.
@@ -123,6 +134,61 @@ export class CompiledSchema {
   }
 
   /**
+   * Rejects a keyword whose value has a shape the assertion cannot read.
+   *
+   * Every check in `validate` is guarded by `typeof`, so `minItems: "5"` is not
+   * an error there — it is a silent no-op, and the schema still reads as though
+   * the bound existed. That is the same defect as an unimplemented keyword,
+   * arrived at by a typo instead of an omission.
+   */
+  #checkKeywordShapes(schema: SchemaObject, where: string): void {
+    const bad = (keyword: string, wanted: string): never => {
+      throw new SchemaCompileError(
+        `${this.#origin}: "${keyword}" at ${where} must be ${wanted}, got ` +
+          `${JSON.stringify(schema[keyword]) ?? 'undefined'}. A keyword the assertions cannot read ` +
+          'is skipped in silence, which is a constraint that enforces nothing.',
+      );
+    };
+
+    for (const keyword of ['minimum', 'maximum'] as const) {
+      const value = schema[keyword];
+      if (value !== undefined && !Number.isInteger(value)) bad(keyword, 'an integer');
+    }
+    for (const keyword of ['minLength', 'maxLength', 'minItems', 'maxItems'] as const) {
+      const value = schema[keyword];
+      if (value === undefined) continue;
+      if (!Number.isInteger(value) || (value as number) < 0) bad(keyword, 'a non-negative integer');
+    }
+
+    const unique = schema['uniqueItems'];
+    if (unique !== undefined && typeof unique !== 'boolean') bad('uniqueItems', 'a boolean');
+
+    const enumValues = schema['enum'];
+    if (enumValues !== undefined && (!Array.isArray(enumValues) || enumValues.length === 0)) {
+      bad('enum', 'a non-empty array');
+    }
+
+    const required = schema['required'];
+    if (required !== undefined) {
+      if (!Array.isArray(required) || required.some((name) => typeof name !== 'string')) {
+        bad('required', 'an array of strings');
+      }
+    }
+
+    const pattern = schema['pattern'];
+    if (typeof pattern === 'string') {
+      try {
+        new RegExp(pattern, 'u');
+      } catch {
+        throw new SchemaCompileError(
+          `${this.#origin}: "pattern" at ${where} is not a valid regular expression: ${pattern}. ` +
+            'Left to validation it would throw from inside whichever record was checked first.',
+        );
+      }
+    }
+  }
+
+  /**
    * Walks a subschema rejecting anything the interpreter would not enforce.
    * Called for its throws; it returns nothing.
    */
@@ -148,6 +214,14 @@ export class CompiledSchema {
       }
     }
 
+    if (Object.hasOwn(schema, '$defs') && where !== '#') {
+      throw new SchemaCompileError(
+        `${this.#origin}: "$defs" at ${where} is not at the document root. Only "#/$defs/<name>" ` +
+          'references resolve, so nothing can ever reach a nested definition and any constraint ' +
+          'written inside one is dead.',
+      );
+    }
+
     const ref = schema['$ref'];
     if (ref !== undefined) {
       if (typeof ref !== 'string' || !ref.startsWith('#/$defs/')) {
@@ -155,8 +229,32 @@ export class CompiledSchema {
           `${this.#origin}: "$ref" at ${where} must be a local "#/$defs/<name>" reference, got ${JSON.stringify(ref)}`,
         );
       }
-      if (!this.#defs.has(ref.slice('#/$defs/'.length))) {
+      const target = this.#defs.get(ref.slice('#/$defs/'.length));
+      if (target === undefined) {
         throw new SchemaCompileError(`${this.#origin}: "$ref" at ${where} names a missing def: ${ref}`);
+      }
+
+      // Resolution replaces the subschema wholesale, so anything written beside
+      // a `$ref` is discarded. `$defs` and the annotations are exempt: they are
+      // not assertions, and a root `$ref` has to be able to sit beside `$defs`.
+      const siblings = Object.keys(schema).filter(
+        (keyword) => keyword !== '$ref' && keyword !== '$defs' && !ANNOTATION_KEYWORDS.has(keyword),
+      );
+      if (siblings.length > 0) {
+        throw new SchemaCompileError(
+          `${this.#origin}: "$ref" at ${where} carries sibling keyword(s) ${siblings.sort().join(', ')}. ` +
+            'Resolution replaces the subschema with the definition, so a sibling assertion is ' +
+            'silently discarded — move it into the definition, or inline the definition here.',
+        );
+      }
+
+      // Resolution is a single lookup, not a loop, so a definition that is
+      // itself a `$ref` enforces nothing at all.
+      if (typeof target['$ref'] === 'string') {
+        throw new SchemaCompileError(
+          `${this.#origin}: "$ref" at ${where} resolves to ${ref}, which is itself a "$ref". ` +
+            'Resolution does not chain, so the second definition is never applied.',
+        );
       }
     }
 
@@ -164,6 +262,8 @@ export class CompiledSchema {
     if (pattern !== undefined && typeof pattern !== 'string') {
       throw new SchemaCompileError(`${this.#origin}: "pattern" at ${where} must be a string`);
     }
+
+    this.#checkKeywordShapes(schema, where);
 
     for (const nested of ['items', 'propertyNames'] as const) {
       const value = schema[nested];
