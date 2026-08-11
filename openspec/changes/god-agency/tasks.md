@@ -28,7 +28,7 @@
 - [x] 3.2 Implement `favorCap` from `worshipTier`, overflow discard, and the `favorWasted` counter
 - [x] 3.3 Implement cost lookup from the content table, including the node-tier scaling on founding knowledge
 - [x] 3.4 Implement the per-axis hysteresis counters, their decay, and the cost multiplier they produce
-- [ ] 3.5 Implement affordability as a mask predicate, and route unaffordable submissions through the existing no-op-plus-counter path
+- [x] 3.5 Implement affordability as a mask predicate, and route unaffordable submissions through the existing no-op-plus-counter path
 - [x] 3.6 Implement atomic resolution: deduct, apply, and roll back the whole action within the tick if effect application fails
 - [x] 3.7 Implement the per-tick favor ledger, derivable from state and actions, and excluded from snapshots
 - [x] 3.8 Unit test the regeneration spread between zero worship and the worship ceiling, the non-zero floor, and suspension during engagement

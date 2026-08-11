@@ -217,10 +217,17 @@ export function contentCatalogue(registry: ContentRegistry): ContentCatalogue {
     cellId: registry.intern('cell', entry.record.cell),
     tier: entry.record.tier,
   }));
-  return buildCatalogue(
-    nodes,
-    registry.traditions.map((entry) => entry.contentId),
-  );
+  // The cost table travels with the catalogue so that `agent-api`'s mask can
+  // answer affordability without importing `@mm/content` — which it refuses to
+  // do on purpose, because that package's surface re-exports a filesystem
+  // loader and the observation layer has to run in a browser. Projected here,
+  // where loading is legal, and decided nowhere.
+  const god = resolveGodContent(registry);
+  return buildCatalogue(nodes, registry.traditions.map((entry) => entry.contentId), {
+    byAction: god.costs.byAction,
+    foundUniversity: god.costs.foundUniversity,
+    hysteresisStep: god.constants.hysteresisStep,
+  });
 }
 
 /** The node catalog and the node-to-cell addressing the world loop resolves against. */

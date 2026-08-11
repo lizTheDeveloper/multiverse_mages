@@ -31,6 +31,8 @@
 import type { SimState } from '@mm/sim-core';
 import {
   ASCENSION_PATH,
+  AXIS_CHANGE_COUNTER,
+  AXIS_KIND,
   EDICT,
   EDICT_KIND,
   EMPTY_GOD_STATE,
@@ -39,13 +41,16 @@ import {
   UNIVERSE,
   attachRecord,
   cellIdAt,
+  readUniverse,
 } from '@mm/state';
+import type { ContentCatalogue } from '@mm/agent-api';
 import {
   ACTION_SPACE_SIZE,
   ALL_GOD_ACTIONS,
   GOD_ACTION,
   RULESET_ACTIONS,
   buildCandidates,
+  buildCatalogue,
   isLegal,
   legalityMask,
   observe,
@@ -226,3 +231,122 @@ const SETTLED_RULESET = {
   favorCap: 100 * 1024,
   ascended: 0,
 } as const;
+
+/**
+ * A cost table with every price the same, so that "can this god afford it" is a
+ * question about one number rather than about a lookup.
+ *
+ * Built here rather than loaded, for the reason `catalogue.ts` gives: this
+ * package refuses `@mm/content` so that the observation layer can run in a
+ * browser, and the cost table therefore arrives as data. A test that had to load
+ * the shipped content to exercise a comparison would be asserting the shipped
+ * prices, which is `god-agency`'s business and not this module's.
+ */
+function pricedCatalogue(price: number, hysteresisStep = 1024): ContentCatalogue {
+  return buildCatalogue(
+    FIXTURE_CATALOGUE.nodes,
+    [...FIXTURE_CATALOGUE.traditionIds],
+    {
+      byAction: Array.from({ length: ACTION_SPACE_SIZE }, (_, action) =>
+        action === GOD_ACTION.noop || action === GOD_ACTION.declareAscension ? 0 : price,
+      ),
+      foundUniversity: price * 2,
+      hysteresisStep,
+    },
+  );
+}
+
+function pricedMask(world: { state: SimState }, catalogue: ContentCatalogue): Uint8Array {
+  const candidates = buildCandidates({ state: world.state, catalogue });
+  return legalityMask({ state: world.state, candidates, catalogue });
+}
+
+describe('affordability is a mask condition, not a failure', () => {
+  it('reports structural legality only when the catalogue carries no prices', () => {
+    // The pre-`god-agency` behaviour, kept: a catalogue built for an encoder
+    // should not have to supply a cost table to get an observation, and silence
+    // about a price nobody was told is honest where a guess would not be.
+    const world = firstUniverse();
+    const bare = legalityMask({
+      state: world.state,
+      candidates: buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE }),
+      catalogue: FIXTURE_CATALOGUE,
+    });
+    expect(isLegal(bare, GOD_ACTION.forbidTechnique)).toBe(true);
+  });
+
+  it('closes an action the pool cannot pay for, and opens it at exactly the price', () => {
+    const world = firstUniverse();
+    const favor = readUniverse(world.state, world.universe).favor;
+
+    expect(isLegal(pricedMask(world, pricedCatalogue(favor + 1)), GOD_ACTION.forbidTechnique)).toBe(
+      false,
+    );
+    // Exactly affordable is affordable: the resolver refuses only when
+    // `cost > favor`, and a mask that used `>=` would report an action illegal
+    // on the tick a god had saved precisely enough for it.
+    expect(isLegal(pricedMask(world, pricedCatalogue(favor)), GOD_ACTION.forbidTechnique)).toBe(
+      true,
+    );
+  });
+
+  it('never closes the no-op, whatever the pool holds', () => {
+    const world = firstUniverse();
+    // A price at the top of the fixed-point domain rather than at the top of
+    // the safe-integer range: §0 puts every rules-path number in `int32`, and
+    // handing `mul` a larger operand is a content bug rather than a poor god.
+    const mask = pricedMask(world, pricedCatalogue(2_000_000_000));
+    expect(isLegal(mask, GOD_ACTION.noop)).toBe(true);
+    for (const action of RULESET_ACTIONS) expect(isLegal(mask, action)).toBe(false);
+  });
+
+  it('leaves a structurally illegal action closed rather than reopening it when it is free', () => {
+    // Ordering matters: affordability runs *after* structural legality, so a
+    // free action that names nothing stays masked for the reason that does not
+    // change when the pool refills.
+    const world = secondUniverse();
+    const free = pricedCatalogue(0);
+    const mask = pricedMask(world, free);
+    expect(isLegal(mask, GOD_ACTION.declareAscension)).toBe(false);
+  });
+
+  it('prices a flip at the cheapest axis, not at the most recently churned one', () => {
+    // A god who has flipped one technique twice may still flip a different one
+    // at the base price, so the entry stays open while any axis is affordable.
+    const world = firstUniverse();
+    const favor = readUniverse(world.state, world.universe).favor;
+    const catalogue = pricedCatalogue(favor);
+
+    const churned = world.state.entities.create();
+    attachRecord(world.state, AXIS_CHANGE_COUNTER, churned, {
+      axisKind: AXIS_KIND.technique,
+      axisBit: 0,
+      changeCount: 3,
+    });
+    // Axis 0 now costs four times the pool; every other technique still costs
+    // exactly the pool.
+    expect(isLegal(pricedMask(world, catalogue), GOD_ACTION.forbidTechnique)).toBe(true);
+
+    for (let bit = 1; bit < 5; bit += 1) {
+      const handle = world.state.entities.create();
+      attachRecord(world.state, AXIS_CHANGE_COUNTER, handle, {
+        axisKind: AXIS_KIND.technique,
+        axisBit: bit,
+        changeCount: 3,
+      });
+    }
+    // Now every technique carries the escalation, and none is affordable.
+    expect(isLegal(pricedMask(world, catalogue), GOD_ACTION.forbidTechnique)).toBe(false);
+  });
+
+  it('keeps funding legal while founding alone is out of reach', () => {
+    // §4.2 gives founding and funding one id, so the entry is legal while
+    // *either* is affordable — and the fixture universes carry universities to
+    // fund.
+    const world = firstUniverse();
+    const favor = readUniverse(world.state, world.universe).favor;
+    const catalogue = pricedCatalogue(favor);
+    expect(catalogue.costs?.foundUniversity).toBeGreaterThan(favor);
+    expect(isLegal(pricedMask(world, catalogue), GOD_ACTION.fundUniversity)).toBe(true);
+  });
+});
