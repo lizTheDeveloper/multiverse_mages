@@ -24,6 +24,7 @@ import {
   REQUIRED_V1_CELL,
   V1_CELL_COUNT,
   V1_REDISCOVERY_AUTHORING_FLOOR,
+  WORST_REDISCOVERY_AFFINITY,
   loadContent,
   shippedContentSource,
 } from '@mm/content';
@@ -168,6 +169,26 @@ describe('shipped content', () => {
       ...registry.nodes.map((entry) => entry.record.rediscoveryMultiplier),
     );
     expect(Math.floor((cheapest * 1024) / bestAffinity)).toBeGreaterThan(3072);
+  });
+
+  it('authors no node whose rediscovery cost the rules path cannot compute', () => {
+    // `researchRequirement` evaluates mul(researchCost, effectiveMultiplier), and
+    // mul throws rather than saturating. The loader rejects content that would
+    // overflow, using WORST_REDISCOVERY_AFFINITY as a literal; this assertion is
+    // the one that notices if the *species* side moves under it, because the
+    // worst case is a function of the lowest affinity actually authored.
+    const worstAffinity = Math.min(
+      ...registry.species.map((entry) => entry.record.rediscoveryAffinity),
+    );
+    expect(worstAffinity).toBeGreaterThanOrEqual(WORST_REDISCOVERY_AFFINITY);
+
+    for (const entry of registry.nodes) {
+      const scaled = Math.floor(
+        (entry.record.rediscoveryMultiplier * 1024) / WORST_REDISCOVERY_AFFINITY,
+      );
+      const effective = Math.max(scaled, 3072);
+      expect(entry.record.researchCost * effective).toBeLessThanOrEqual(2147483647 * 1024);
+    }
   });
 
   it('exercises, cell by cell, the primitives the v1 subset was chosen to deliver', () => {

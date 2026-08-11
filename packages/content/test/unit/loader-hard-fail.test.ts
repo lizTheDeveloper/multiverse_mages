@@ -27,6 +27,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ContentValidationError,
   V1_REDISCOVERY_AUTHORING_FLOOR,
+  WORST_REDISCOVERY_AFFINITY,
   loadContent,
   validateContent,
 } from '@mm/content';
@@ -218,6 +219,54 @@ describe('invalid content is a hard load failure', () => {
         V1_REDISCOVERY_AUTHORING_FLOOR;
     });
     expect(validateContent(source).diagnostics).toEqual([]);
+  });
+
+  it('rejects a node whose rediscovery cost overflows fixed point', () => {
+    // `researchRequirement` computes mul(researchCost, effectiveMultiplier), and
+    // mul throws rather than saturating -- deliberately, since a silently
+    // saturated cost is a balance change nobody authored. The schema admits
+    // researchCost up to fp(1073741823), so without this check the loader
+    // accepts a node that makes the simulation throw the first time anyone
+    // rediscovers it. Checked at the worst species affinity, not fp(1024): the
+    // requirement is per-species, so a node that only overflows for orcs still
+    // overflows.
+    const diagnostics = expectHardFail(
+      brokenSource((documents) => {
+        recordById(documents, 'node.json', 'rl-open-the-portal')['researchCost'] = 400_000_000;
+      }),
+    );
+    const invariant = diagnostics.filter((d) => d.code === 'content-invariant');
+    expect(invariant).toHaveLength(1);
+    expect(invariant[0]?.message).toContain('rl-open-the-portal');
+    expect(invariant[0]?.message).toContain(String(WORST_REDISCOVERY_AFFINITY));
+    expect(invariant[0]?.pointer).toContain('/researchCost');
+  });
+
+  it('accepts the largest researchCost that still computes', () => {
+    // The passing control, so the rejection above is about the arithmetic rather
+    // than about the field having been touched at all. Derived from the shipped
+    // multiplier rather than hardcoded, so it stays the boundary if content moves.
+    let largest = 0;
+    const atBoundary = brokenSource((documents) => {
+      const node = recordById(documents, 'node.json', 'rl-open-the-portal');
+      const effective = Math.max(
+        Math.floor(((node['rediscoveryMultiplier'] as number) * 1024) / WORST_REDISCOVERY_AFFINITY),
+        3072,
+      );
+      largest = Math.floor((2147483647 * 1024) / effective);
+      node['researchCost'] = largest;
+    });
+    expect(validateContent(atBoundary).diagnostics).toEqual([]);
+    expect(largest).toBeGreaterThan(0);
+
+    // And one unit past it is rejected, so the control is pinned to the boundary
+    // rather than merely being some value that happens to pass.
+    const pastBoundary = brokenSource((documents) => {
+      recordById(documents, 'node.json', 'rl-open-the-portal')['researchCost'] = largest + 1;
+    });
+    expect(
+      validateContent(pastBoundary).diagnostics.filter((d) => d.code === 'content-invariant'),
+    ).toHaveLength(1);
   });
 
   it('rejects removing rego-limen from the v1 subset', () => {
