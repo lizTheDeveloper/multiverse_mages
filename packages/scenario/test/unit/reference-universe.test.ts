@@ -180,19 +180,41 @@ describe('what this build cannot do, asserted rather than assumed', () => {
     expect(submitted.size).toBeGreaterThan(1);
   });
 
-  it('never shelves a grimoire, so library depth stays zero', () => {
-    // A finding, recorded as a tripwire. `contracts.md` §7 measures
-    // `libraryDependence` and `capitalSnowball` off library depth, and at this
-    // build the world loop writes books and never shelves one: `shelveGrimoire`
-    // exists in `rules-magic` and nothing in the tick calls it. So both metrics
-    // would be measuring an empty shelf.
-    //
-    // **When shelving lands this test fails, and that is the point** — the note
-    // above is what needs updating, not the assertion below.
+  it('shelves what it writes, so library depth tracks the books rather than reading zero', () => {
+    // **This test used to assert the opposite**, as a tripwire: the loop wrote
+    // books and never shelved one, `shelveGrimoire` sat unused in `rules-magic`,
+    // and the channel §7's `capitalSnowball` is pinned to read zero for as long
+    // as a run lasted. Shelving has landed — a finished book goes to the library
+    // of the university whose scriptorium produced it, argued in `gateway.ts` —
+    // so the tripwire has done its job and this is now an assertion about the
+    // behaviour it was waiting for.
     const run = executeReferenceRun(task(3, 2), { content, censusIntervalTicks: 12 });
     const last = run.samples[run.samples.length - 1];
     expect(last?.grimoires).toBeGreaterThan(0);
-    expect(last?.libraryDepth).toBe(0);
+    // The channel is *distinct nodes shelved*, so it is bounded above by the
+    // nodes the universe knows and far below the book count. Both bounds are
+    // asserted rather than a magnitude: how deep a library gets is a balance
+    // question and `release-plan.md` forbids answering one before 0.5.0.
+    expect(last?.libraryDepth).toBeGreaterThan(0);
+    expect(last?.libraryDepth).toBeLessThanOrEqual(last?.nodesKnown ?? 0);
+  });
+
+  it('writes many copies of few nodes, which is what the shelf now lets anyone see', () => {
+    // The finding the previous test's number is worth reading for, recorded as
+    // an assertion so it cannot quietly stop being true. This universe writes
+    // hundreds of books and they are copies of a handful of nodes: the scribable
+    // list is ordered by cost, so every mage picks the same cheap node, and
+    // depth-as-breadth stays flat while the shelf fills.
+    //
+    // Not a defect of shelving, and **not a balance claim** — it is a statement
+    // about what this build's utility-AI does, of the kind `libraryDependence`
+    // exists to make visible. Recorded here because it was invisible while the
+    // shelf was empty, and because the ratio is the thing a later tuning pass
+    // will want to have watched from the beginning.
+    const run = executeReferenceRun(task(3, 2), { content, censusIntervalTicks: 12 });
+    const last = run.samples[run.samples.length - 1];
+    if (last === undefined) throw new Error('no census was taken');
+    expect(last.grimoires).toBeGreaterThan(last.libraryDepth);
   });
 });
 
