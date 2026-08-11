@@ -28,6 +28,7 @@ import { FP_ONE } from '@mm/sim-core';
 import {
   FP_SCALE,
   OBSERVATION_DESCRIPTORS,
+  OBSERVATION_SCALE,
   OBSERVATION_SIZE,
   applyDescriptor,
   descriptorAt,
@@ -140,12 +141,15 @@ describe('normalization descriptors are pinned constants', () => {
 
     expect(OBSERVATION_DESCRIPTORS.map((descriptor) => descriptor.divisor)).toEqual(before);
 
-    // Every fixed-point channel shares the one fixed-point divisor. A second
-    // fp divisor would mean two channels reporting the same magnitude as
-    // different numbers.
+    // The resource channels hold fp *magnitudes*, so each declares a constant
+    // sized to its own quantity rather than sharing `FP_ONE`, which made all
+    // four read a constant 1.0. What matters for this test is the property under
+    // attack: the constants are the same two observations later as they were
+    // before, whatever the two universes hold.
     const resources = observationBlock('resources');
     for (const index of [0, 1, 3, 4]) {
-      expect(descriptorAt(resources.offset + index).divisor).toBe(FP_ONE);
+      expect(descriptorAt(resources.offset + index).divisor).toBeGreaterThan(FP_ONE);
     }
+    expect(descriptorAt(resources.offset).divisor).toBe(OBSERVATION_SCALE.favorFp);
   });
 });

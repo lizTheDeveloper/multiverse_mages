@@ -209,8 +209,17 @@ describe('DEFECT 3 — the fixed-point resource channels carry no magnitude', ()
     const descriptor = descriptorAt(
       engagement.offset + 2 * OBSERVATION_SIDE_CHANNELS + valueChannel,
     );
-    expect(descriptor.rule).toBe('bounded');
-    expect(descriptor.divisor).toBe(FP_ONE);
+    // As shipped by the breaker these two lines read `expect(descriptor.rule)
+    // .toBe('bounded')` and `expect(descriptor.divisor).toBe(FP_ONE)`, which
+    // describe the defect and are not satisfiable alongside the assertion below:
+    // the capability spec defines `bounded` as an fp value over `fp(1024)` with
+    // the export clamped to [0, 1], so a `bounded` channel with a constant of
+    // `FP_ONE` reads exactly 1.0 for both 9.0 and 2.0 *by definition*. The
+    // distinguishability assertion is the one this file argues for, so it is the
+    // one kept, and the descriptor check is restated in the rule-agnostic form
+    // the file's own note asks for: whatever rule the channel elects, its
+    // saturation constant has to be above fp unity.
+    expect(descriptor.divisor).toBeGreaterThan(FP_ONE);
 
     expect(applyDescriptor(9 * FP, descriptor)).not.toBe(applyDescriptor(2 * FP, descriptor));
   });
