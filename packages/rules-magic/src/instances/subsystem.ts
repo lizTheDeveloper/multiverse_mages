@@ -150,6 +150,33 @@ export class KnowledgeSubsystem {
   #instanceOfGrimoire = new Map<Handle, Handle>();
 
   /**
+   * Who holds what, in mind or memory palace: holder, to node id, to how many
+   * instances of that node the holder carries.
+   *
+   * **A second derived index, and it is here for the reason the first one is.**
+   * *"Does this mage hold this node?"* is what the prerequisite check asks, and
+   * `research` asks it once per prerequisite per mage per world tick. Answered
+   * by walking {@link instancesHeldBy} it costs a pass over every instance in
+   * the universe, an array, and a record object per row — so a universe with a
+   * thousand mages and ten thousand instances paid millions of reads a tick for
+   * a question whose answer is one bit. It was the single largest cost in a
+   * profiled two-hundred-year run: forty-eight per cent of it.
+   *
+   * A **count**, not a set. A mage can hold two instances of one node — raid
+   * theft puts one there, and {@link instancesHeldBy} says as much already — and
+   * a set would forget the node when the first of the two was destroyed, which
+   * is a prerequisite vanishing from under a project that is still perfectly
+   * legal, with nothing thrown and nothing logged.
+   *
+   * Nothing iterates it, so no rule can come to depend on the order a hash map
+   * happens to hold its keys in. It answers membership and nothing else, and
+   * {@link rebuild} discards and re-derives it exactly as it does the existence
+   * index — so a snapshot loaded into a fresh process is indexed from what state
+   * says rather than from what some earlier process remembered.
+   */
+  #heldByHolder = new Map<Handle, Map<ContentId, number>>();
+
+  /**
    * @param state - The world state. Must carry `@mm/state`'s §1 components.
    * @param nodeCount - Node ids the loaded content declares, `1..nodeCount`.
    */
@@ -252,8 +279,22 @@ export class KnowledgeSubsystem {
    */
   setLocation(instance: Handle, locationKind: number, locationId: Handle): void {
     const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
-    store.set(instance as EntityHandle, 'locationKind', locationKind);
-    store.set(instance as EntityHandle, 'locationId', locationId);
+    const handle = instance as EntityHandle;
+    // Read before the write. An instance moving out of a mind — or into one,
+    // which is the direction a study loop will eventually want — has to leave
+    // the held index it was in before it joins the one it is going to. Here
+    // rather than at the call sites, for the reason create and destroy are here:
+    // a mover that forgot would leave a mage reading a prerequisite she no
+    // longer holds, or unable to read one she does.
+    const previousKind = store.get(handle, 'locationKind');
+    if (isHeldLocation(previousKind)) {
+      this.#unholdNode(store.get(handle, 'locationId'), store.get(handle, 'nodeId'));
+    }
+    store.set(handle, 'locationKind', locationKind);
+    store.set(handle, 'locationId', locationId);
+    if (isHeldLocation(locationKind)) {
+      this.#holdNode(locationId, store.get(handle, 'nodeId'));
+    }
   }
 
   /**
@@ -300,6 +341,7 @@ export class KnowledgeSubsystem {
 
     this.#existence.add(spec.nodeId);
     this.#markEverKnown(spec.nodeId);
+    if (isHeldLocation(spec.locationKind)) this.#holdNode(spec.locationId, spec.nodeId);
     if (spec.grimoire !== undefined) this.#instanceOfGrimoire.set(spec.grimoire, handle);
     return handle;
   }
@@ -329,6 +371,7 @@ export class KnowledgeSubsystem {
   destroyInstance(instance: Handle, worldTick: Tick): KnowledgeLossEvent | undefined {
     const view = this.read(instance);
     this.#existence.remove(view.nodeId);
+    if (isHeldLocation(view.locationKind)) this.#unholdNode(view.locationId, view.nodeId);
 
     for (const [grimoire, held] of this.#instanceOfGrimoire) {
       if (held === instance) {
@@ -352,6 +395,21 @@ export class KnowledgeSubsystem {
   /** Every live instance of a node, in ascending slot order. */
   instancesOf(nodeId: ContentId): Handle[] {
     return this.#collect((view) => view.nodeId === nodeId);
+  }
+
+  /**
+   * Whether a holder carries a node in mind or memory palace.
+   *
+   * Exactly {@link instancesHeldBy} filtered to one node and asked whether
+   * anything came back — the question `holdsUsable` asks — answered from
+   * {@link #heldByHolder} in constant time instead of by the pass that made
+   * that check the most expensive thing in a world tick. It reports membership
+   * and nothing else: mastery, dormancy, and which of two copies is the better
+   * one are separate questions, and none of them can be answered without
+   * reading rows.
+   */
+  holdsHeldNode(holder: Handle, nodeId: ContentId): boolean {
+    return (this.#heldByHolder.get(holder)?.get(nodeId) ?? 0) > 0;
   }
 
   /**
@@ -430,11 +488,16 @@ export class KnowledgeSubsystem {
     });
 
     this.#instanceOfGrimoire = new Map();
+    this.#heldByHolder = new Map();
     const locationKinds = store.field('locationKind');
     const locationIds = store.field('locationId');
     store.forEach((row, handle) => {
-      if ((locationKinds[row] as number) === LOCATION_KIND.grimoire) {
+      const locationKind = locationKinds[row] as number;
+      if (locationKind === LOCATION_KIND.grimoire) {
         this.#instanceOfGrimoire.set(locationIds[row] as number, handle);
+      }
+      if (isHeldLocation(locationKind)) {
+        this.#holdNode(locationIds[row] as number, nodeIds[row] as number);
       }
     });
     this.#relinkShelvedGrimoires();
@@ -575,6 +638,32 @@ export class KnowledgeSubsystem {
       if (matches(view)) found.push(handle);
     });
     return found;
+  }
+
+  #holdNode(holder: Handle, nodeId: ContentId): void {
+    let held = this.#heldByHolder.get(holder);
+    if (held === undefined) {
+      held = new Map<ContentId, number>();
+      this.#heldByHolder.set(holder, held);
+    }
+    held.set(nodeId, (held.get(nodeId) ?? 0) + 1);
+  }
+
+  /**
+   * Drops one instance from the held index, and the holder with her last one.
+   *
+   * The empty map is deleted rather than left behind: a universe that runs for
+   * two centuries kills every mage in it several times over, and a residue of
+   * empty maps keyed on the dead grows with the length of the run — which is the
+   * one axis a balance sweep pushes hardest.
+   */
+  #unholdNode(holder: Handle, nodeId: ContentId): void {
+    const held = this.#heldByHolder.get(holder);
+    if (held === undefined) return;
+    const remaining = (held.get(nodeId) ?? 0) - 1;
+    if (remaining > 0) held.set(nodeId, remaining);
+    else held.delete(nodeId);
+    if (held.size === 0) this.#heldByHolder.delete(holder);
   }
 
   #markEverKnown(nodeId: ContentId): void {
