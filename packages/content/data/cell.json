@@ -6,14 +6,25 @@
     "classicalLabels": [
       "conjuration"
     ],
-    "nodes": []
+    "nodes": [
+      "can-mend-the-beast",
+      "can-quicken-the-herd",
+      "can-call-the-pack",
+      "can-the-fat-year",
+      "can-the-made-beast"
+    ]
   },
   {
     "id": "creo-aquam",
     "technique": "creo",
     "form": "aquam",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "caq-draw-the-sweet-water",
+      "caq-the-unfailing-well",
+      "caq-turn-the-channel",
+      "caq-raise-the-river"
+    ]
   },
   {
     "id": "creo-auram",
@@ -22,7 +33,13 @@
     "classicalLabels": [
       "evocation"
     ],
-    "nodes": []
+    "nodes": [
+      "cau-turn-the-wind",
+      "cau-clear-the-sky",
+      "cau-call-the-storm",
+      "cau-the-borrowed-season",
+      "cau-keep-the-sky"
+    ]
   },
   {
     "id": "creo-corpus",
@@ -32,14 +49,25 @@
       "conjuration",
       "necromancy"
     ],
-    "nodes": []
+    "nodes": [
+      "cc-close-the-wound",
+      "cc-the-mended-decade",
+      "cc-quicken-the-cohort",
+      "cc-the-long-tenure",
+      "cc-the-unfinished-death"
+    ]
   },
   {
     "id": "creo-herbam",
     "technique": "creo",
     "form": "herbam",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "ch-quicken-the-seed",
+      "ch-grow-the-beam",
+      "ch-paper-without-rags",
+      "ch-the-grown-hall"
+    ]
   },
   {
     "id": "creo-ignem",
@@ -48,7 +76,13 @@
     "classicalLabels": [
       "evocation"
     ],
-    "nodes": []
+    "nodes": [
+      "cig-strike-the-light",
+      "cig-hold-the-temperature",
+      "cig-the-assayers-flame",
+      "cig-the-uncontained-hour",
+      "cig-the-standing-furnace"
+    ]
   },
   {
     "id": "creo-imaginem",
@@ -57,14 +91,25 @@
     "classicalLabels": [
       "illusion"
     ],
-    "nodes": []
+    "nodes": [
+      "cim-cast-the-likeness",
+      "cim-the-shown-interior",
+      "cim-the-absent-scholar",
+      "cim-the-crowded-hall",
+      "cim-the-perfect-forgery"
+    ]
   },
   {
     "id": "creo-mentem",
     "technique": "creo",
     "form": "mentem",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "cm-kindle-the-question",
+      "cm-the-given-memory",
+      "cm-the-second-attention",
+      "cm-the-made-scholar"
+    ]
   },
   {
     "id": "creo-terram",
@@ -73,42 +118,74 @@
     "classicalLabels": [
       "conjuration"
     ],
-    "nodes": []
+    "nodes": [
+      "ct-make-the-brick",
+      "ct-the-poured-wall",
+      "ct-the-conjured-vein",
+      "ct-the-raised-bastion"
+    ]
   },
   {
     "id": "creo-vim",
     "technique": "creo",
     "form": "vim",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "cv-kindle-the-aura",
+      "cv-feed-the-working",
+      "cv-the-standing-aura",
+      "cv-the-warded-precinct",
+      "cv-the-made-vis"
+    ]
   },
   {
     "id": "creo-umbra",
     "technique": "creo",
     "form": "umbra",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "cu-cast-the-shadow",
+      "cu-the-lengthened-dusk",
+      "cu-the-kept-shadow",
+      "cu-the-unlit-hall"
+    ]
   },
   {
     "id": "creo-fatum",
     "technique": "creo",
     "form": "fatum",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "cf-make-the-small-luck",
+      "cf-the-promised-year",
+      "cf-the-fated-hand",
+      "cf-write-the-ending",
+      "cf-the-given-destiny"
+    ]
   },
   {
     "id": "creo-limen",
     "technique": "creo",
     "form": "limen",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "cl-set-the-doorstep",
+      "cl-draw-the-circle",
+      "cl-the-made-door",
+      "cl-the-threshold-that-was-always-there"
+    ]
   },
   {
     "id": "creo-nomen",
     "technique": "creo",
     "form": "nomen",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "cn-give-the-use-name",
+      "cn-name-the-unnamed",
+      "cn-the-name-that-teaches",
+      "cn-the-second-name"
+    ]
   },
   {
     "id": "intellego-animal",
@@ -117,7 +194,12 @@
     "classicalLabels": [
       "divination"
     ],
-    "nodes": []
+    "nodes": [
+      "ian-cut-the-sign",
+      "ian-number-the-herd",
+      "ian-chart-the-migration",
+      "ian-the-beasts-own-eye"
+    ]
   },
   {
     "id": "intellego-aquam",
@@ -126,7 +208,12 @@
     "classicalLabels": [
       "divination"
     ],
-    "nodes": []
+    "nodes": [
+      "iaq-sound-the-well",
+      "iaq-sip-the-standing-pool",
+      "iaq-trace-the-current",
+      "iaq-fathom-the-watershed"
+    ]
   },
   {
     "id": "intellego-auram",
@@ -135,7 +222,12 @@
     "classicalLabels": [
       "divination"
     ],
-    "nodes": []
+    "nodes": [
+      "iau-the-ache-before-rain",
+      "iau-gauge-the-winds-road",
+      "iau-reckon-the-season",
+      "iau-the-lightnings-chosen-ground"
+    ]
   },
   {
     "id": "intellego-corpus",
@@ -144,7 +236,12 @@
     "classicalLabels": [
       "divination"
     ],
-    "nodes": []
+    "nodes": [
+      "ic-take-the-pulse",
+      "ic-sift-the-humours",
+      "ic-listen-at-the-ribs",
+      "ic-tell-the-hour-of-a-body"
+    ]
   },
   {
     "id": "intellego-herbam",
@@ -153,7 +250,12 @@
     "classicalLabels": [
       "divination"
     ],
-    "nodes": []
+    "nodes": [
+      "ih-sight-the-blight",
+      "ih-question-the-orchard",
+      "ih-pick-out-the-simple",
+      "ih-the-root-beneath-the-root"
+    ]
   },
   {
     "id": "intellego-ignem",
@@ -162,7 +264,12 @@
     "classicalLabels": [
       "divination"
     ],
-    "nodes": []
+    "nodes": [
+      "iig-judge-the-kiln",
+      "iig-the-colour-of-ready-iron",
+      "iig-scry-the-coals",
+      "iig-where-the-fire-will-go"
+    ]
   },
   {
     "id": "intellego-imaginem",
@@ -171,7 +278,12 @@
     "classicalLabels": [
       "divination"
     ],
-    "nodes": []
+    "nodes": [
+      "iim-catch-the-painted-thing",
+      "iim-watch-the-light-lie",
+      "iim-the-room-you-are-not-in",
+      "iim-nothing-painted-passes"
+    ]
   },
   {
     "id": "intellego-mentem",
@@ -210,7 +322,12 @@
     "classicalLabels": [
       "divination"
     ],
-    "nodes": []
+    "nodes": [
+      "iv-feel-the-air-go-tight",
+      "iv-price-the-working",
+      "iv-the-residue-in-the-room",
+      "iv-know-the-hand-that-cast-it"
+    ]
   },
   {
     "id": "intellego-umbra",
@@ -219,7 +336,13 @@
     "classicalLabels": [
       "divination"
     ],
-    "nodes": []
+    "nodes": [
+      "iu-the-second-shadow",
+      "iu-what-the-shadow-remembers",
+      "iu-look-along-the-shadow",
+      "iu-the-unlit-line",
+      "iu-the-shadow-before-the-thing"
+    ]
   },
   {
     "id": "intellego-fatum",
@@ -228,7 +351,13 @@
     "classicalLabels": [
       "divination"
     ],
-    "nodes": []
+    "nodes": [
+      "if-cast-the-lots",
+      "if-the-omen-and-the-coincidence",
+      "if-the-fork-seen-from-above",
+      "if-the-appointed-hour",
+      "if-the-thread-fate-set-down"
+    ]
   },
   {
     "id": "intellego-limen",
@@ -267,7 +396,12 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "ma-turn-the-coat",
+      "ma-the-willing-ox",
+      "ma-the-changed-kennel",
+      "ma-what-the-beast-remembers"
+    ]
   },
   {
     "id": "muto-aquam",
@@ -276,7 +410,12 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "maq-sweeten-the-cistern",
+      "maq-thicken-the-ford",
+      "maq-the-standing-river",
+      "maq-the-river-remembers-salt"
+    ]
   },
   {
     "id": "muto-auram",
@@ -285,7 +424,12 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "mau-turn-the-wind",
+      "mau-the-mild-season",
+      "mau-the-air-that-carries-nothing",
+      "mau-the-storm-turned-inward"
+    ]
   },
   {
     "id": "muto-corpus",
@@ -294,7 +438,13 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "mc-borrowed-hands",
+      "mc-the-body-for-the-work",
+      "mc-wear-another-face",
+      "mc-the-long-body",
+      "mc-the-shape-that-holds"
+    ]
   },
   {
     "id": "muto-herbam",
@@ -303,7 +453,12 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "mh-season-the-green-wood",
+      "mh-the-second-harvest",
+      "mh-the-grown-beam",
+      "mh-the-thicket-that-was-a-road"
+    ]
   },
   {
     "id": "muto-ignem",
@@ -312,7 +467,12 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "mi-bank-the-forge",
+      "mi-the-cold-flame",
+      "mi-teach-the-fire-what-to-eat",
+      "mi-the-heat-that-was-a-hearth"
+    ]
   },
   {
     "id": "muto-imaginem",
@@ -321,7 +481,12 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "mim-turn-the-diagram",
+      "mim-the-lecture-made-visible",
+      "mim-wear-the-room",
+      "mim-the-image-that-argues-back"
+    ]
   },
   {
     "id": "muto-mentem",
@@ -330,7 +495,12 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "mm-turn-the-difficulty",
+      "mm-the-changed-appetite",
+      "mm-translate-the-expert",
+      "mm-the-mind-made-a-library"
+    ]
   },
   {
     "id": "muto-terram",
@@ -339,7 +509,12 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "mt-soften-the-stone",
+      "mt-turn-the-poor-ore",
+      "mt-the-stone-that-was-sand",
+      "mt-turn-the-ground-under-them"
+    ]
   },
   {
     "id": "muto-vim",
@@ -348,7 +523,13 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "mv-turn-the-working",
+      "mv-convert-the-form",
+      "mv-turn-the-incoming",
+      "mv-the-second-tradition",
+      "mv-the-common-root"
+    ]
   },
   {
     "id": "muto-umbra",
@@ -357,7 +538,12 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "mu-turn-the-shadow",
+      "mu-the-shadow-of-something-else",
+      "mu-give-the-shade-weight",
+      "mu-trade-shadows"
+    ]
   },
   {
     "id": "muto-fatum",
@@ -366,7 +552,13 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "mf-turn-the-small-luck",
+      "mf-change-the-debt",
+      "mf-the-later-appointment",
+      "mf-divide-it-among-the-heirs",
+      "mf-the-fate-that-was-yours"
+    ]
   },
   {
     "id": "muto-limen",
@@ -375,7 +567,12 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "ml-change-what-the-wall-means",
+      "ml-the-door-that-was-a-window",
+      "ml-which-side-the-courtyard-is-on",
+      "ml-the-seam-made-a-hinge"
+    ]
   },
   {
     "id": "muto-nomen",
@@ -384,56 +581,97 @@
     "classicalLabels": [
       "transmutation"
     ],
-    "nodes": []
+    "nodes": [
+      "mn-alter-one-letter",
+      "mn-lend-the-name",
+      "mn-call-it-iron-until-it-is",
+      "mn-trade-true-names",
+      "mn-the-second-true-name"
+    ]
   },
   {
     "id": "perdo-animal",
     "technique": "perdo",
     "form": "animal",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "pan-founder-the-horse",
+      "pan-nothing-takes-the-scent",
+      "pan-empty-the-pasture",
+      "pan-nothing-answers-the-horn"
+    ]
   },
   {
     "id": "perdo-aquam",
     "technique": "perdo",
     "form": "aquam",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "paq-thirst",
+      "paq-unwrite",
+      "paq-the-dry-season",
+      "paq-leave-them-the-salt"
+    ]
   },
   {
     "id": "perdo-auram",
     "technique": "perdo",
     "form": "auram",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "pau-take-the-breath",
+      "pau-unmake-the-gale",
+      "pau-the-airless-room",
+      "pau-the-sky-withdraws"
+    ]
   },
   {
     "id": "perdo-corpus",
     "technique": "perdo",
     "form": "corpus",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "pc-wither-the-hand",
+      "pc-the-long-fever",
+      "pc-take-the-years",
+      "pc-the-hand-that-wrote-it"
+    ]
   },
   {
     "id": "perdo-herbam",
     "technique": "perdo",
     "form": "herbam",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "ph-wither-the-row",
+      "ph-take-the-haft",
+      "ph-the-failed-harvest",
+      "ph-the-shelves-give-way"
+    ]
   },
   {
     "id": "perdo-ignem",
     "technique": "perdo",
     "form": "ignem",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "pig-snuff",
+      "pig-take-the-warmth",
+      "pig-the-unburnt-library",
+      "pig-nothing-will-catch"
+    ]
   },
   {
     "id": "perdo-imaginem",
     "technique": "perdo",
     "form": "imaginem",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "pim-take-the-likeness",
+      "pim-the-quiet-working",
+      "pim-unmake-the-demonstration",
+      "pim-no-one-can-describe-it"
+    ]
   },
   {
     "id": "perdo-mentem",
@@ -469,21 +707,36 @@
     "classicalLabels": [
       "abjuration"
     ],
-    "nodes": []
+    "nodes": [
+      "pv-let-it-lapse",
+      "pv-the-unfinished-sentence",
+      "pv-where-nothing-takes"
+    ]
   },
   {
     "id": "perdo-umbra",
     "technique": "perdo",
     "form": "umbra",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "pu-thin-the-shade",
+      "pu-lay-the-shade",
+      "pu-nothing-casts-here",
+      "pu-make-sure"
+    ]
   },
   {
     "id": "perdo-fatum",
     "technique": "perdo",
     "form": "fatum",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "pf-spoil-the-omen",
+      "pf-take-the-luck",
+      "pf-nothing-is-owed",
+      "pf-where-nothing-turns-out",
+      "pf-the-unmade-discovery"
+    ]
   },
   {
     "id": "perdo-limen",
@@ -518,21 +771,37 @@
     "technique": "rego",
     "form": "animal",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "ran-the-quiet-halter",
+      "ran-drive-the-herd",
+      "ran-the-borrowed-eye",
+      "ran-bring-the-pack-to-heel"
+    ]
   },
   {
     "id": "rego-aquam",
     "technique": "rego",
     "form": "aquam",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "raq-turn-the-channel",
+      "raq-raise-the-weir",
+      "raq-stand-the-water-off",
+      "raq-the-held-breath",
+      "raq-shut-the-harbour-mouth"
+    ]
   },
   {
     "id": "rego-auram",
     "technique": "rego",
     "form": "auram",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "rau-set-the-wind",
+      "rau-step-on-the-air",
+      "rau-turn-the-storm-aside",
+      "rau-the-held-gale"
+    ]
   },
   {
     "id": "rego-corpus",
@@ -541,28 +810,49 @@
     "classicalLabels": [
       "necromancy"
     ],
-    "nodes": []
+    "nodes": [
+      "rc-still-the-limb",
+      "rc-the-steady-hand",
+      "rc-puppet-flesh",
+      "rc-the-lengthened-term",
+      "rc-the-unclaimed-body"
+    ]
   },
   {
     "id": "rego-herbam",
     "technique": "rego",
     "form": "herbam",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "rh-set-the-graft",
+      "rh-the-obedient-coppice",
+      "rh-close-the-hedge",
+      "rh-the-standing-timber"
+    ]
   },
   {
     "id": "rego-ignem",
     "technique": "rego",
     "form": "ignem",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "rig-bank-the-forge",
+      "rig-hold-the-fire-off",
+      "rig-drive-the-flame",
+      "rig-the-walled-fire"
+    ]
   },
   {
     "id": "rego-imaginem",
     "technique": "rego",
     "form": "imaginem",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "rim-hold-the-likeness",
+      "rim-the-turned-glance",
+      "rim-show-the-working",
+      "rim-the-standing-demonstration"
+    ]
   },
   {
     "id": "rego-mentem",
@@ -599,21 +889,38 @@
     "classicalLabels": [
       "abjuration"
     ],
-    "nodes": []
+    "nodes": [
+      "rv-steady-the-working",
+      "rv-turn-the-casting",
+      "rv-the-working-kept-in-iron",
+      "rv-forbid-the-casting",
+      "rv-the-standing-prohibition"
+    ]
   },
   {
     "id": "rego-umbra",
     "technique": "rego",
     "form": "umbra",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "ru-hold-the-shadow-still",
+      "ru-the-lent-shadow",
+      "ru-step-by-shadow",
+      "ru-the-held-dark"
+    ]
   },
   {
     "id": "rego-fatum",
     "technique": "rego",
     "form": "fatum",
     "classicalLabels": [],
-    "nodes": []
+    "nodes": [
+      "rf-hold-the-lot",
+      "rf-the-kept-oath",
+      "rf-turn-the-ill-hour",
+      "rf-the-appointed-hour",
+      "rf-the-settled-question"
+    ]
   },
   {
     "id": "rego-limen",
