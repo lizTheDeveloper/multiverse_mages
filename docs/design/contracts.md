@@ -239,10 +239,13 @@ serialized into snapshots.
   "form": "corpus",
   "classicalLabels": ["necromancy"],                 // display only, never mechanical.
                                                      // Vision §4's mapping table is authoritative
+  "v1": true,                                        // optional; flags membership of the 12-cell
+                                                     // v1 rectangle. Absent means not in v1
   "edicts": [],                                      // optional; "dispensation" | "interdiction".
                                                      // §1.1 requires the loader to reject a cell
                                                      // carrying both, which needs a slot to carry one
-  "nodes": ["rc-still-the-limb", "rc-puppet-flesh", "..."]
+  "nodes": ["rc-still-the-limb", "rc-puppet-flesh"]   // every id must resolve in node.json; there is
+                                                     // no elision syntax, "..." is not a contentId
 }
 ```
 
@@ -255,6 +258,8 @@ serialized into snapshots.
 {
   "id": "rc-puppet-flesh",
   "cell": "rego-corpus",
+  "name": "Puppet Flesh",           // display label; required, and not a mechanical value
+  "gloss": "Walk a body that is not yours, one limb at a time.",  // required; <= 400 chars
   "tier": 3,                        // 1..7; depth ceilings are per-species
   "prerequisites": ["rc-still-the-limb"],
   "researchCost": 4096,             // fp; mage-months of self-directed work
@@ -280,7 +285,9 @@ serialized into snapshots.
                                     // 3072 * 1792 / 1024 = 5376
   "effects": [
     { "primitive": "direct-damage", "magnitude": 512, "target": "single", "durationTicks": 0 }
-  ]
+  ],
+  "tuningStatus": "untuned"         // "untuned" | "tuned". Same meaning as in §2.4: every magnitude
+                                    // above is a placeholder awaiting the balance harness
 }
 ```
 

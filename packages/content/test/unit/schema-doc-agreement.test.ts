@@ -205,49 +205,6 @@ interface PendingAmendment {
  * fails and the failure says to delete it.
  */
 const PENDING_DOC_AMENDMENTS: readonly PendingAmendment[] = [
-  {
-    contentFile: 'cell.json',
-    kind: 'undocumented',
-    at: 'v1',
-    why:
-      "§2.2's prose says the v1 subset is flagged per-cell with `\"v1\": true`, but the copyable " +
-      'example does not carry the field, so an author copying it authors a non-v1 cell without ' +
-      'noticing there was a choice',
-  },
-  {
-    contentFile: 'cell.json',
-    kind: 'invalid-example',
-    at: '/nodes/2',
-    why:
-      "§2.2's `nodes` list ends in a `\"...\"` elision. It reads clearly and it is not a contentId, " +
-      'so the example as written fails schema validation on the third element',
-  },
-  {
-    contentFile: 'node.json',
-    kind: 'undocumented',
-    at: 'gloss',
-    why: '§2.3 does not show `gloss`, which the node schema requires',
-  },
-  {
-    contentFile: 'node.json',
-    kind: 'undocumented',
-    at: 'name',
-    why: '§2.3 does not show `name`, which the node schema requires',
-  },
-  {
-    contentFile: 'node.json',
-    kind: 'undocumented',
-    at: 'tuningStatus',
-    why:
-      '§2.3 does not show `tuningStatus`, which the node schema requires — the same defect §2.4 ' +
-      'already had for species, in the section right below it',
-  },
-  {
-    contentFile: 'node.json',
-    kind: 'invalid-example',
-    at: '',
-    why: 'the missing `name`, `gloss` and `tuningStatus` are reported at the record itself',
-  },
 ];
 
 function pendingFor(contentFile: ContentFileName, kind: PendingAmendment['kind']): string[] {
@@ -439,6 +396,13 @@ describe('the pending amendments are honest about themselves', () => {
     );
     process.stdout.write(`\n  contracts.md §2 amendments outstanding: ${String(lines.length)}\n`);
     for (const line of lines) process.stdout.write(`    ${line}\n`);
-    expect(lines.length).toBeGreaterThan(0);
+
+    // An empty list is the goal state, not a failure. This assertion used to
+    // require at least one outstanding amendment, which quietly encoded "there
+    // will always be documentation debt" as an invariant — so clearing the last
+    // one broke the suite. What matters is that the list is honest, and the two
+    // tests above already enforce that: every entry must name a field the schema
+    // genuinely declares and the document genuinely still omits.
+    expect(lines.length).toBeGreaterThanOrEqual(0);
   });
 });
