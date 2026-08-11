@@ -17,7 +17,7 @@ import type { ContentId } from '@mm/content';
 
 import type { KnowledgeTarget } from '../coordination.js';
 import type { StepRng } from '../mages/rng.js';
-import { compareTargets } from './candidates.js';
+import { MAX_CANDIDATE_TARGETS, compareTargets } from './candidates.js';
 import type { FeasibilityOutcome } from './feasibility.js';
 import { isFeasible, maskGoals } from './feasibility.js';
 import type { GoalId } from './goals.js';
@@ -129,12 +129,53 @@ export function chooseTarget(goal: GoalId, outlook: MageOutlook): ContentId {
   return best?.nodeId ?? 0;
 }
 
-/** Whether a committed target is still among the goal's candidates. */
+/**
+ * Whether a committed target is still among the goal's candidates.
+ *
+ * ## A full list is evidence and a truncated one is not
+ *
+ * The candidate lists on a {@link MageOutlook} are `candidates.ts`' output, and
+ * that module is explicit about what its bound is for: it is a **cost** device,
+ * bought so that *"adding a hundred nodes is a content decision rather than a
+ * performance regression"*. A cost device that changes behaviour has not been
+ * bought, it has been borrowed against.
+ *
+ * It did change behaviour. Absence from the list was read as infeasibility, and
+ * `reevaluationReason` ranks `'infeasible'` above both the evaluation phase and
+ * `MIN_COMMITMENT_TICKS` — so sixteen cheaper nodes appearing anywhere in the
+ * universe threw every mage off a perfectly researchable target, reset her
+ * `adoptedTick`, and reported a goal switch indistinguishable in the histogram
+ * from a mage whose project genuinely became impossible.
+ *
+ * So the rule here is about what the list can *support*. A list shorter than the
+ * bound is everything the gather found: a target missing from it is missing
+ * because it is not a candidate, and that is real information the commitment
+ * must yield to — a node someone else finished, or one a lost prerequisite put
+ * out of reach. A list *at* the bound has been cut off, and the absence of any
+ * particular node from it says nothing at all. Reading the second case as the
+ * first is reading a truncation as a fact about the world.
+ *
+ * ## Why this seam and not the other two
+ *
+ * The fix could have gone in `candidates.ts` (seed the gather with the committed
+ * node) or in whatever assembles the outlook (keep the incumbent's target
+ * pinned). Both push the commitment down into a layer that has no business
+ * knowing about commitments: `gatherFrontier` answers "what could this mage work
+ * on", a question with one answer per mage per tick, and giving it a second
+ * answer that depends on what she happens to be doing makes it un-cacheable and
+ * un-shareable for the sake of one caller. It would also have to be repeated in
+ * `boundCandidates` for teaching and scribing, which is the "a filter one call
+ * site can forget" failure that file already warns about.
+ *
+ * `select.ts` is the only place that holds a commitment and a candidate list at
+ * the same time, which makes it the only place that can tell the difference
+ * between the two absences. One function, one rule, every target-taking goal.
+ */
 function targetStillAvailable(commitment: GoalCommitment, outlook: MageOutlook): boolean {
   if (!needsTarget(commitment.goal)) return true;
-  return targetsFor(commitment.goal, outlook).some(
-    (candidate) => candidate.nodeId === commitment.targetNodeId,
-  );
+  const candidates = targetsFor(commitment.goal, outlook);
+  if (candidates.some((candidate) => candidate.nodeId === commitment.targetNodeId)) return true;
+  return candidates.length >= MAX_CANDIDATE_TARGETS;
 }
 
 /**
