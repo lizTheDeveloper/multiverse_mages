@@ -14,8 +14,13 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { loadAudioContent, shippedAudioDirectory, validateAudioContent } from '@mm/content';
-import { directorySource, memorySource } from '@mm/content';
+import {
+  directorySource,
+  loadAudioContent,
+  memorySource,
+  shippedAudioDirectory,
+  validateAudioContent,
+} from '@mm/content';
 
 function shippedAudio() {
   return directorySource(shippedAudioDirectory(), 'data/audio');

@@ -32,21 +32,25 @@ describe('audio content isolation', () => {
     }
   });
 
-  it('does not change contentRevision when audio data changes', () => {
-    const before = loadContent(shippedContentSource()).contentRevision;
-
-    // The loader reads by file name. If audio ever joined CONTENT_FILES, an
-    // audio file present in the source would contribute to the preimage.
-    const withAudio = {
-      origin: 'fixture:with-audio',
+  it('never lets the loader read an audio file at all', () => {
+    // A tripwire, not an assertion about a returned value. Asserting that
+    // contentRevision is unchanged when audio files are present would pass
+    // vacuously: loadContent iterates the fixed CONTENT_FILES array and never
+    // scans a source for extra files, so a stowaway is simply never read.
+    // Throwing on the read is what actually fails if audio joins CONTENT_FILES
+    // — or if any other loader path starts reading it.
+    const tripwire = {
+      origin: 'fixture:tripwire',
       read(fileName: string): string | undefined {
         if ((AUDIO_FILES as readonly string[]).includes(fileName)) {
-          return JSON.stringify([{ id: 'stowaway' }]);
+          throw new Error(
+            `the loader read audio file ${fileName} — audio must never reach contentRevision`,
+          );
         }
         return shippedContentSource().read(fileName);
       },
     };
 
-    expect(loadContent(withAudio).contentRevision).toBe(before);
+    expect(() => loadContent(tripwire)).not.toThrow();
   });
 });
