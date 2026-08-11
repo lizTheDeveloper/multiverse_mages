@@ -8,73 +8,73 @@
       {
         "id": "human-selection-1",
         "tier": "selection",
-        "text": "Adjunct, actually.",
+        "text": "Okay. So. What's the constraint?",
         "about": ""
       },
       {
         "id": "human-selection-2",
         "tier": "selection",
-        "text": "I've read about this.",
+        "text": "I've read about this. Twice. Neither time took.",
         "about": ""
       },
       {
         "id": "human-selection-3",
         "tier": "selection",
-        "text": "Ready. Ish.",
+        "text": "Ready. Ish. Ish is a working state.",
         "about": ""
       },
       {
         "id": "human-selection-4",
         "tier": "selection",
-        "text": "I have three papers in progress.",
+        "text": "Three papers in progress. Two are the same paper. Just noticed that.",
         "about": ""
       },
       {
         "id": "human-selection-5",
         "tier": "selection",
-        "text": "Make it quick, I'm mortal.",
+        "text": "Quick, ideally. The clock started at birth and it doesn't pause.",
         "about": ""
       },
       {
         "id": "human-acknowledgement-1",
         "tier": "acknowledgement",
-        "text": "I'll fit it in.",
+        "text": "Two-hundred-year project. I've got forty. Okay. Okay, I can work with that.",
         "about": ""
       },
       {
         "id": "human-acknowledgement-2",
         "tier": "acknowledgement",
-        "text": "Adding it to the pile.",
+        "text": "Adding it to the pile. The pile is structural now.",
         "about": ""
       },
       {
         "id": "human-acknowledgement-3",
         "tier": "acknowledgement",
-        "text": "Yes. Yes! ...Yes?",
+        "text": "Yes. Yes! ...Okay, how. Give me a second, I'll get there.",
         "about": ""
       },
       {
         "id": "human-acknowledgement-4",
         "tier": "acknowledgement",
-        "text": "This is fine. This is fine.",
+        "text": "Fine. That's fine. I'll build the thing that builds the thing.",
         "about": ""
       },
       {
         "id": "human-acknowledgement-5",
         "tier": "acknowledgement",
-        "text": "Sure, I'll just do that *as well*.",
+        "text": "Sure, I'll do that *as well*. Sleep was always the soft requirement.",
         "about": ""
       },
       {
         "id": "human-annoyance-polite-1",
         "tier": "annoyance-polite",
-        "text": "Still here.",
+        "text": "Still here. Still aging. But still here.",
         "about": ""
       },
       {
         "id": "human-annoyance-polite-2",
         "tier": "annoyance-polite",
-        "text": "Did you need something else?",
+        "text": "Did you need something? I can multitask. Badly, but I can.",
         "about": ""
       },
       {
@@ -86,121 +86,121 @@
       {
         "id": "human-annoyance-irritated-1",
         "tier": "annoyance-irritated",
-        "text": "I heard you the first four times.",
+        "text": "I heard you the first four times. I logged all four.",
         "about": ""
       },
       {
         "id": "human-annoyance-irritated-2",
         "tier": "annoyance-irritated",
-        "text": "You know I can hear the clicking.",
+        "text": "You know I can hear the clicking. I've started timing the gaps.",
         "about": ""
       },
       {
         "id": "human-annoyance-irritated-3",
         "tier": "annoyance-irritated",
-        "text": "Some of us have a *lifespan*.",
+        "text": "Some of us have a *lifespan*. Mine's the short one. Ask anyone.",
         "about": ""
       },
       {
         "id": "human-annoyance-irritated-4",
         "tier": "annoyance-irritated",
-        "text": "That's four minutes of it. Gone.",
+        "text": "That's four minutes. Out of forty-two million. I'm counting them now.",
         "about": ""
       },
       {
         "id": "human-annoyance-cracking-1",
         "tier": "annoyance-cracking",
-        "text": "Eighty years! I get eighty! The elf gets seven hundred!",
+        "text": "Eighty years! The elf gets seven hundred! That's eight and three-quarters of me, end to end!",
         "about": ""
       },
       {
         "id": "human-annoyance-cracking-2",
         "tier": "annoyance-cracking",
-        "text": "Do you know what I could do with seven hundred years?",
+        "text": "Seven hundred years. Do you know what I'd do? Finish. I'd *finish* something.",
         "about": ""
       },
       {
         "id": "human-annoyance-cracking-3",
         "tier": "annoyance-cracking",
-        "text": "She's been a junior researcher for two centuries and they still call her *promising*.",
+        "text": "Two centuries a junior researcher and they still call her *promising*!",
         "about": ""
       },
       {
         "id": "human-annoyance-cracking-4",
         "tier": "annoyance-cracking",
-        "text": "I'm going to die before this conversation ends.",
+        "text": "Six minutes now! Six! I ran the percentage and I wish I hadn't!",
         "about": ""
       },
       {
         "id": "human-annoyance-unhinged-1",
         "tier": "annoyance-unhinged",
-        "text": "I HAVE A WIFE. I THINK. IT'S BEEN A BUSY CENTURY.",
+        "text": "I HAVE A WIFE. I think. I'd have to check the correspondence.",
         "about": ""
       },
       {
         "id": "human-annoyance-unhinged-2",
         "tier": "annoyance-unhinged",
-        "text": "Ah — no. Sorry, that's gone. That's the mortality. That happens now.",
+        "text": "Ah — no. That's gone. That thought is gone. That's the mortality. It does that now.",
         "about": ""
       },
       {
         "id": "human-annoyance-unhinged-3",
         "tier": "annoyance-unhinged",
-        "text": "I could have written something. I could have written something that *outlived* me.",
+        "text": "I could have written something down. Something that outlived me. That was the entire plan.",
         "about": ""
       },
       {
         "id": "human-annoyance-unhinged-4",
         "tier": "annoyance-unhinged",
-        "text": "Click me again and I swear the only thing I'll be remembered for is this.",
+        "text": "ELEVEN MINUTES. That's the citation. That's what I get remembered for. ELEVEN MINUTES.",
         "about": ""
       },
       {
         "id": "human-breakthrough-1",
         "tier": "breakthrough",
-        "text": "It works! Write it down, write it down, write it down—",
+        "text": "It works! It works — write it down, write it down, somebody write it down—",
         "about": ""
       },
       {
         "id": "human-breakthrough-2",
         "tier": "breakthrough",
-        "text": "That's mine. That one's *mine*.",
+        "text": "That's mine. That one's *mine*, and it's on paper, and paper doesn't age.",
         "about": ""
       },
       {
         "id": "human-blessed-1",
         "tier": "blessed",
-        "text": "Oh. Oh, that's — thank you.",
+        "text": "Oh. Oh, that's — that's a measurable improvement. Thank you. Genuinely.",
         "about": ""
       },
       {
         "id": "human-blessed-2",
         "tier": "blessed",
-        "text": "I felt that. Did everyone feel that?",
+        "text": "I felt that. Did the instruments feel that? Somebody check the instruments.",
         "about": ""
       },
       {
         "id": "human-death-1",
         "tier": "death",
-        "text": "I didn't— there was more—",
+        "text": "No — wait — get a pen, I can still dictate the—",
         "about": ""
       },
       {
         "id": "human-last-copy-1",
         "tier": "last-copy",
-        "text": "I'm the only one who knows this. That's — you understand that's a problem, yes?",
+        "text": "Nobody else knows this. Just me. Just the one skull. Plan accordingly.",
         "about": ""
       },
       {
         "id": "human-cross-species-1",
         "tier": "cross-species",
-        "text": "She's been reading the same page since I was born. I've checked.",
+        "text": "That one's turned three pages since I was born. I keep a tally.",
         "about": "elf"
       },
       {
         "id": "human-cross-species-2",
         "tier": "cross-species",
-        "text": "We just... work around her. Like weather.",
+        "text": "Fifteen hundred years. I'm a rounding error to them. Fine. Rounding errors compound.",
         "about": "draconic"
       }
     ]
@@ -214,151 +214,151 @@
       {
         "id": "elf-selection-1",
         "tier": "selection",
-        "text": "Mm.",
+        "text": "You've caught me at a bad moment. It has been a bad moment for eleven years.",
         "about": ""
       },
       {
         "id": "elf-selection-2",
         "tier": "selection",
-        "text": "I was mid-thought.",
+        "text": "I was mid-thought. I have been mid-thought since a spring. Not this one.",
         "about": ""
       },
       {
         "id": "elf-selection-3",
         "tier": "selection",
-        "text": "Continue.",
+        "text": "Speak freely. I have allocated the afternoon. And the one after it.",
         "about": ""
       },
       {
         "id": "elf-selection-4",
         "tier": "selection",
-        "text": "It's early yet.",
+        "text": "It's early yet. It has been early for some time and shows no sign of stopping.",
         "about": ""
       },
       {
         "id": "elf-selection-5",
         "tier": "selection",
-        "text": "You've come at an interesting moment. It has lasted sixty years.",
+        "text": "You've arrived at the interesting part. The interesting part is ninety years long. This is minute two.",
         "about": ""
       },
       {
         "id": "elf-acknowledgement-1",
         "tier": "acknowledgement",
-        "text": "In time.",
+        "text": "Consider it begun. Beginning is the part I'm best at.",
         "about": ""
       },
       {
         "id": "elf-acknowledgement-2",
         "tier": "acknowledgement",
-        "text": "I'll have an answer for you shortly. ...Within the century.",
+        "text": "You'll have an answer shortly. I use 'shortly' in the technical sense.",
         "about": ""
       },
       {
         "id": "elf-acknowledgement-3",
         "tier": "acknowledgement",
-        "text": "As you like.",
+        "text": "As you wish. I've added it to a list. The list is itself on a list.",
         "about": ""
       },
       {
         "id": "elf-acknowledgement-4",
         "tier": "acknowledgement",
-        "text": "I had assumed you would ask eventually.",
+        "text": "I had assumed you would ask. I had not assumed a date.",
         "about": ""
       },
       {
         "id": "elf-annoyance-polite-1",
         "tier": "annoyance-polite",
-        "text": "You're rushing me.",
+        "text": "You're rushing me. I don't mind. I want to be clear that you are, though.",
         "about": ""
       },
       {
         "id": "elf-annoyance-polite-2",
         "tier": "annoyance-polite",
-        "text": "You're always rushing me.",
+        "text": "That's twice today. Today has been eleven days.",
         "about": ""
       },
       {
         "id": "elf-annoyance-polite-3",
         "tier": "annoyance-polite",
-        "text": "I have not finished my *introduction*.",
+        "text": "I have not finished the introduction. The introduction is going *very well*.",
         "about": ""
       },
       {
         "id": "elf-annoyance-irritated-1",
         "tier": "annoyance-irritated",
-        "text": "That is the ninth time.",
+        "text": "That is the ninth time. I mention it only because I happen to have the figure.",
         "about": ""
       },
       {
         "id": "elf-annoyance-irritated-2",
         "tier": "annoyance-irritated",
-        "text": "I began this work before your first mage was born.",
+        "text": "I began this before your first mage was born. She has since also died, which I felt was hasty.",
         "about": ""
       },
       {
         "id": "elf-annoyance-irritated-3",
         "tier": "annoyance-irritated",
-        "text": "The humans have published four hundred papers on this. All of them wrong. Charmingly.",
+        "text": "The humans have published four hundred papers on this. All wrong — but wrong in an increasingly sophisticated way, which I find almost moving.",
         "about": ""
       },
       {
         "id": "elf-annoyance-cracking-1",
         "tier": "annoyance-cracking",
-        "text": "That is the fourteenth time. I am counting. I have the time.",
+        "text": "That is the fourteenth time. I have kept count, which tells you a good deal about my afternoon.",
         "about": ""
       },
       {
         "id": "elf-annoyance-cracking-2",
         "tier": "annoyance-cracking",
-        "text": "Do you understand that I will remember this? Not the way they remember. *Properly.*",
+        "text": "I will remember this. Not the way the short-lived remember things. *Accurately.*",
         "about": ""
       },
       {
         "id": "elf-annoyance-cracking-3",
         "tier": "annoyance-cracking",
-        "text": "I have watched six generations of them ask me this same question.",
+        "text": "Six generations have asked me this. I have given six slightly worse answers.",
         "about": ""
       },
       {
         "id": "elf-annoyance-cracking-4",
         "tier": "annoyance-cracking",
-        "text": "Every one of them thought they were the first.",
+        "text": "Each was certain they were the first to ask. I never corrected them. It seemed unkind, and it was restful.",
         "about": ""
       },
       {
         "id": "elf-annoyance-unhinged-1",
         "tier": "annoyance-unhinged",
-        "text": "I WILL OUTLIVE THIS. I WILL OUTLIVE YOU FINDING IT FUNNY.",
+        "text": "I WILL OUTLIVE THIS. I HAVE OUTLIVED CONSIDERABLY BETTER THINGS THAN THIS.",
         "about": ""
       },
       {
         "id": "elf-annoyance-unhinged-2",
         "tier": "annoyance-unhinged",
-        "text": "In four hundred years I will still be here, and this will still have happened.",
+        "text": "In four hundred years I will still be here. So will this. That is simply how the past works.",
         "about": ""
       },
       {
         "id": "elf-annoyance-unhinged-3",
         "tier": "annoyance-unhinged",
-        "text": "...You've stopped. Good. Where was I. Yes. Sixty years ago.",
+        "text": "...You've stopped. Thank you. Now. Where was I. ...Ah. Sixty years ago.",
         "about": ""
       },
       {
         "id": "elf-breakthrough-1",
         "tier": "breakthrough",
-        "text": "There. As expected. Eventually.",
+        "text": "There. As predicted, and only slightly later than predicted.",
         "about": ""
       },
       {
         "id": "elf-breakthrough-2",
         "tier": "breakthrough",
-        "text": "I said it would come. I did not say when. I never say when.",
+        "text": "I said this would come. I was careful never to say when. That is the entire art.",
         "about": ""
       },
       {
         "id": "elf-blessed-1",
         "tier": "blessed",
-        "text": "Ah. You've noticed me.",
+        "text": "Ah. You've noticed me. I have been here throughout, but I appreciate the gesture.",
         "about": ""
       },
       {
@@ -376,19 +376,19 @@
       {
         "id": "elf-last-copy-1",
         "tier": "last-copy",
-        "text": "It is only in me. I have not decided whether to write it down.",
+        "text": "It exists only in me. I've been meaning to write it down for ninety years. There's no rush.",
         "about": ""
       },
       {
         "id": "elf-cross-species-1",
         "tier": "cross-species",
-        "text": "They burn so brightly. And then they've stopped. It's very rude.",
+        "text": "They burn very brightly and then simply stop. I have never got used to it, and I have had ample opportunity.",
         "about": "human"
       },
       {
         "id": "elf-cross-species-2",
         "tier": "cross-species",
-        "text": "He built this hall in a season. I have not decided what to think about that.",
+        "text": "That hall went up in a season. I have been forming an opinion about it for forty years.",
         "about": "orc"
       }
     ]
@@ -402,157 +402,157 @@
       {
         "id": "dwarf-selection-1",
         "tier": "selection",
-        "text": "Catalogued.",
+        "text": "You're in the day book now. Time, date, nature of interruption.",
         "about": ""
       },
       {
         "id": "dwarf-selection-2",
         "tier": "selection",
-        "text": "It's in the index.",
+        "text": "It's in the index. So is the fact that you asked.",
         "about": ""
       },
       {
         "id": "dwarf-selection-3",
         "tier": "selection",
-        "text": "Cross-referenced.",
+        "text": "Cross-referenced twice. The second one is for after the first one burns.",
         "about": ""
       },
       {
         "id": "dwarf-selection-4",
         "tier": "selection",
-        "text": "Where's your source?",
+        "text": "Before anything else: who told you, and did they write it down?",
         "about": ""
       },
       {
         "id": "dwarf-selection-5",
         "tier": "selection",
-        "text": "You'll want the third shelf.",
+        "text": "North vault, third shelf. Take a lamp. Not a candle.",
         "about": ""
       },
       {
         "id": "dwarf-acknowledgement-1",
         "tier": "acknowledgement",
-        "text": "Logged.",
+        "text": "Logged, timed, countersigned. I'm also the countersignatory. Small department.",
         "about": ""
       },
       {
         "id": "dwarf-acknowledgement-2",
         "tier": "acknowledgement",
-        "text": "I'll want that in writing.",
+        "text": "I'll want that in writing. I've written it. Sign under where it says you agreed.",
         "about": ""
       },
       {
         "id": "dwarf-acknowledgement-3",
         "tier": "acknowledgement",
-        "text": "Filed.",
+        "text": "Filed under new duties. Cross-filed under things I was not consulted about.",
         "about": ""
       },
       {
         "id": "dwarf-acknowledgement-4",
         "tier": "acknowledgement",
-        "text": "Under what heading?",
+        "text": "Under what heading? Not for me. For whoever holds this post in a hundred years.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-polite-1",
         "tier": "annoyance-polite",
-        "text": "You're disturbing the reading room.",
+        "text": "You are disturbing the reading room. I'd have to note it. Don't make me note it.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-polite-2",
         "tier": "annoyance-polite",
-        "text": "Did you write it down? You didn't write it down.",
+        "text": "Did you write it down? ...You have the face of someone who didn't write it down.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-polite-3",
         "tier": "annoyance-polite",
-        "text": "There is a *form* for this.",
+        "text": "There's a form. Requisition Twelve. I keep blanks in my coat, for precisely this.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-irritated-1",
         "tier": "annoyance-irritated",
-        "text": "Nothing is real until it's in a book.",
+        "text": "Nothing is real until it's written down. I know how that sounds. I'm still right.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-irritated-2",
         "tier": "annoyance-irritated",
-        "text": "Three copies. Minimum. This is not negotiable.",
+        "text": "Three copies. One here, one in the deep vault, one somewhere I tell nobody. Including you.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-irritated-3",
         "tier": "annoyance-irritated",
-        "text": "The elf says she remembers it. The elf is not a backup.",
+        "text": "The elf assures me she remembers it. An assurance is not an archive.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-irritated-4",
         "tier": "annoyance-irritated",
-        "text": "The gnome discovered it twice because nobody wrote it down the first time.",
+        "text": "The gnome has discovered it twice. Nobody wrote it down the first time. Nobody has this time either.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-cracking-1",
         "tier": "annoyance-cracking",
-        "text": "I have filed a complaint. With myself. It has been upheld.",
+        "text": "I have filed a complaint about you. With myself. I upheld it. There is no higher authority in this building.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-cracking-2",
         "tier": "annoyance-cracking",
-        "text": "Every single thing this civilization has lost, it lost because someone was in a hurry.",
+        "text": "Everything this civilisation has ever lost, it lost because somebody was busy that afternoon.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-cracking-3",
         "tier": "annoyance-cracking",
-        "text": "I am not the pedant here. I am the only one who isn't.",
+        "text": "You all call me the pedant. The pedant is the only reason any of you still know how to make ink.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-unhinged-1",
         "tier": "annoyance-unhinged",
-        "text": "I HAVE RE-SHELVED THIS ENTIRE WING FOUR TIMES BECAUSE OF YOU.",
+        "text": "I HAVE RE-SHELVED THIS WING FOUR TIMES TODAY AND YOU HAVE CARRIED NOTHING.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-unhinged-2",
         "tier": "annoyance-unhinged",
-        "text": "There were nine hundred volumes in the east vault. There are eight hundred and forty. I know which sixty. I know all sixty.",
+        "text": "Nine hundred volumes in the east vault. Eight hundred and forty now. I can list the sixty. In order. Some nights I do.",
         "about": ""
       },
       {
         "id": "dwarf-annoyance-unhinged-3",
         "tier": "annoyance-unhinged",
-        "text": "Go on. Click. It'll go in the record. Everything goes in the record.",
+        "text": "GO ON. CLICK AGAIN. It goes in the record, and the record outlasts us both, and it will be about this.",
         "about": ""
       },
       {
         "id": "dwarf-breakthrough-1",
         "tier": "breakthrough",
-        "text": "Copied. Twice. Before you ask.",
+        "text": "Copied twice before I told anyone. Now you may congratulate me.",
         "about": ""
       },
       {
         "id": "dwarf-breakthrough-2",
         "tier": "breakthrough",
-        "text": "Now it exists.",
+        "text": "It's written down. So it's real now. Until this morning it was only something I believed.",
         "about": ""
       },
       {
         "id": "dwarf-blessed-1",
         "tier": "blessed",
-        "text": "Noted, with thanks.",
+        "text": "Noted, with thanks, in the ledger of things freely given. It is a thin ledger.",
         "about": ""
       },
       {
         "id": "dwarf-blessed-2",
         "tier": "blessed",
-        "text": "I'll record that it happened.",
+        "text": "I'll record that you did this. Otherwise in two hundred years it's a story people doubt.",
         "about": ""
       },
       {
@@ -564,19 +564,19 @@
       {
         "id": "dwarf-last-copy-1",
         "tier": "last-copy",
-        "text": "One copy. *One.* I've requested materials four times.",
+        "text": "One copy. I requisitioned vellum four times. I have all four refusals, beautifully filed.",
         "about": ""
       },
       {
         "id": "dwarf-cross-species-1",
         "tier": "cross-species",
-        "text": "He discovered it. Then he discovered it. Then he discovered it.",
+        "text": "Discovered it three times. Delighted each time. I write it down for them and don't mention it.",
         "about": "gnome"
       },
       {
         "id": "dwarf-cross-species-2",
         "tier": "cross-species",
-        "text": "Her memory is excellent. Her memory is also *one copy*.",
+        "text": "Remembers everything, perfectly, for seven hundred years. And then they won't.",
         "about": "elf"
       }
     ]
@@ -614,7 +614,7 @@
       {
         "id": "draconic-acknowledgement-1",
         "tier": "acknowledgement",
-        "text": "If you insist.",
+        "text": "Then it is mine.",
         "about": ""
       },
       {
@@ -632,7 +632,7 @@
       {
         "id": "draconic-acknowledgement-4",
         "tier": "acknowledgement",
-        "text": "I have done this before. It was tedious then.",
+        "text": "I have done this before.",
         "about": ""
       },
       {
@@ -656,7 +656,7 @@
       {
         "id": "draconic-annoyance-polite-4",
         "tier": "annoyance-polite",
-        "text": "Which one is that. No. Don't tell me. It won't be relevant long.",
+        "text": "Which one is that. No. Don't tell me. They will not be here long.",
         "about": ""
       },
       {
@@ -668,13 +668,13 @@
       {
         "id": "draconic-annoyance-irritated-2",
         "tier": "annoyance-irritated",
-        "text": "I knew this before your species had a word for 'know'.",
+        "text": "I knew this before there was anyone to tell.",
         "about": ""
       },
       {
         "id": "draconic-annoyance-irritated-3",
         "tier": "annoyance-irritated",
-        "text": "I have forgotten more than your libraries contain. Deliberately. It was clutter.",
+        "text": "I have forgotten more than your libraries hold. Deliberately.",
         "about": ""
       },
       {
@@ -692,7 +692,7 @@
       {
         "id": "draconic-annoyance-cracking-3",
         "tier": "annoyance-cracking",
-        "text": "I will answer you. Give me a century to consider the phrasing.",
+        "text": "I will answer you. Not this century.",
         "about": ""
       },
       {
@@ -728,7 +728,7 @@
       {
         "id": "draconic-breakthrough-2",
         "tier": "breakthrough",
-        "text": "It took longer than I expected. That has not happened in some time.",
+        "text": "It took longer than I expected. That has not happened in six hundred years.",
         "about": ""
       },
       {
@@ -752,7 +752,7 @@
       {
         "id": "draconic-last-copy-1",
         "tier": "last-copy",
-        "text": "When I go, it goes. I have made my peace. You may wish to make other arrangements.",
+        "text": "When I go, it goes. I have made my peace. You have not.",
         "about": ""
       }
     ]
@@ -766,169 +766,169 @@
       {
         "id": "gnome-selection-1",
         "tier": "selection",
-        "text": "OH. Hello!",
+        "text": "Oh! Hello. Hello— you've startled a whole idea out of me.",
         "about": ""
       },
       {
         "id": "gnome-selection-2",
         "tier": "selection",
-        "text": "I was just— what was I— *yes*!",
+        "text": "I was mid-something. It was brilliant. It's gone. What do you need?",
         "about": ""
       },
       {
         "id": "gnome-selection-3",
         "tier": "selection",
-        "text": "I've had an idea. I've had another one. That's two.",
+        "text": "I've had two ideas since you clicked. One of them's already gone.",
         "about": ""
       },
       {
         "id": "gnome-selection-4",
         "tier": "selection",
-        "text": "Do we know fire? We should know fire.",
+        "text": "Do we know fire? We should know fire. Do we know fire?",
         "about": ""
       },
       {
         "id": "gnome-acknowledgement-1",
         "tier": "acknowledgement",
-        "text": "Ooh, yes.",
+        "text": "Ooh. Yes. Yes-yes-yes, yes— give me that one, I want that one.",
         "about": ""
       },
       {
         "id": "gnome-acknowledgement-2",
         "tier": "acknowledgement",
-        "text": "Already started. Started twice, actually.",
+        "text": "Already started. Started it twice. The second one's better, I think.",
         "about": ""
       },
       {
         "id": "gnome-acknowledgement-3",
         "tier": "acknowledgement",
-        "text": "On it! On what?",
+        "text": "On it! On what? Doesn't matter. On it.",
         "about": ""
       },
       {
         "id": "gnome-acknowledgement-4",
         "tier": "acknowledgement",
-        "text": "Say it again in a minute, I'll have forgotten.",
+        "text": "Tell me again in a minute. I'll be new to it.",
         "about": ""
       },
       {
         "id": "gnome-annoyance-polite-1",
         "tier": "annoyance-polite",
-        "text": "Yes? Yes. Yes?",
+        "text": "Yes? Yes. Yes— what. What.",
         "about": ""
       },
       {
         "id": "gnome-annoyance-polite-2",
         "tier": "annoyance-polite",
-        "text": "Someone already did this. It was me. Last week.",
+        "text": "Someone's already done this. It was me. I'm citing myself again.",
         "about": ""
       },
       {
         "id": "gnome-annoyance-polite-3",
         "tier": "annoyance-polite",
-        "text": "I've solved it! I've solved it *again*!",
+        "text": "Solved it! Solved it again! The second time felt exactly as good.",
         "about": ""
       },
       {
         "id": "gnome-annoyance-irritated-1",
         "tier": "annoyance-irritated",
-        "text": "Yes yes yes yes what.",
+        "text": "Yes-yes-yes-yes, what. What. I was holding something and now I'm not.",
         "about": ""
       },
       {
         "id": "gnome-annoyance-irritated-2",
         "tier": "annoyance-irritated",
-        "text": "I've forgotten the question but I'm confident in the answer.",
+        "text": "I've forgotten the question. I remain extremely confident about the answer.",
         "about": ""
       },
       {
         "id": "gnome-annoyance-irritated-3",
         "tier": "annoyance-irritated",
-        "text": "Every time you click, I lose a fact. That's not a joke. That's my retention.",
+        "text": "Every time you do that, I lose a fact. That's three. Three facts.",
         "about": ""
       },
       {
         "id": "gnome-annoyance-cracking-1",
         "tier": "annoyance-cracking",
-        "text": "The dwarf says I should write things down. The dwarf is right. I will not.",
+        "text": "I could write this down. I could— I own pens, I've owned several excellent pens— I won't.",
         "about": ""
       },
       {
         "id": "gnome-annoyance-cracking-2",
         "tier": "annoyance-cracking",
-        "text": "I HAVE DISCOVERED IT FOR THE SIXTH TIME AND IT IS STILL BEAUTIFUL.",
+        "text": "I have found this six times. Six! And it's new every time and I love it every time.",
         "about": ""
       },
       {
         "id": "gnome-annoyance-cracking-3",
         "tier": "annoyance-cracking",
-        "text": "Do you know what it's like? To find it? Every time is the first time. Every time!",
+        "text": "Do you know what that's like? To find it, and find it again, and it's new— it's always new, it's never not new—",
         "about": ""
       },
       {
         "id": "gnome-annoyance-unhinged-1",
         "tier": "annoyance-unhinged",
-        "text": "I had it. I had it just then. It was — no. It's gone. You did that.",
+        "text": "I had it. I had it right then, it was gorgeous, it was— no. Gone. You did that.",
         "about": ""
       },
       {
         "id": "gnome-annoyance-unhinged-2",
         "tier": "annoyance-unhinged",
-        "text": "That's four. That's four things I knew when you started.",
+        "text": "That's nine. NINE things I knew when you sat down. Now there are nine holes where they were.",
         "about": ""
       },
       {
         "id": "gnome-annoyance-unhinged-3",
         "tier": "annoyance-unhinged",
-        "text": "It's fine! It's fine. I'll find them again. I always find them again. That's the — that's my whole thing, that's what I'm *for*—",
+        "text": "It's fine! It's fine. I'll find them again, I always find them again, that's what I'm FOR, that's the whole— what were we doing?",
         "about": ""
       },
       {
         "id": "gnome-breakthrough-1",
         "tier": "breakthrough",
-        "text": "AGAIN! I've done it AGAIN!",
+        "text": "Again! I've done it again! I don't remember the first time— doesn't matter!",
         "about": ""
       },
       {
         "id": "gnome-breakthrough-2",
         "tier": "breakthrough",
-        "text": "Oh, that's *lovely*. Did I know that before? Doesn't matter. Look at it.",
+        "text": "Oh, that's lovely. Everything gets lost eventually, all of it. Doesn't matter. Look at it.",
         "about": ""
       },
       {
         "id": "gnome-blessed-1",
         "tier": "blessed",
-        "text": "Ooh! Warm.",
+        "text": "Ooh. Warm. Something enormous just noticed me and I'm thrilled about it.",
         "about": ""
       },
       {
         "id": "gnome-blessed-2",
         "tier": "blessed",
-        "text": "Was that you? That was you. Do it again— no, don't, I'll forget why.",
+        "text": "That was you! Do it again— no, don't, I'll forget why it was good.",
         "about": ""
       },
       {
         "id": "gnome-death-1",
         "tier": "death",
-        "text": "Wait— I remember what it was—",
+        "text": "Wait— wait, I remember what it was, it's—",
         "about": ""
       },
       {
         "id": "gnome-last-copy-1",
         "tier": "last-copy",
-        "text": "I know something nobody else knows! ...That's bad, isn't it. That's bad.",
+        "text": "Nobody else knows this! Nobody— wait. That means it's only in here. And I'm the leakiest thing alive. Somebody write this down. Somebody—",
         "about": ""
       },
       {
         "id": "gnome-cross-species-1",
         "tier": "cross-species",
-        "text": "He wrote down what I said! Including the wrong bit! It's in the *index* now!",
+        "text": "Wrote down what I said. Three times! Including the wrong bit— in the index, forever. Tedious, glorious pedant. I'd be lost without them.",
         "about": "dwarf"
       },
       {
         "id": "gnome-cross-species-2",
         "tier": "cross-species",
-        "text": "I asked her a question in the spring. I'm very excited about the answer.",
+        "text": "I asked a question in the spring. Still inhaling. I've forgotten the question; the answer will be magnificent.",
         "about": "draconic"
       }
     ]
@@ -942,19 +942,19 @@
       {
         "id": "orc-selection-1",
         "tier": "selection",
-        "text": "Ready.",
+        "text": "Ready. Been ready.",
         "about": ""
       },
       {
         "id": "orc-selection-2",
         "tier": "selection",
-        "text": "It's built.",
+        "text": "It's up already.",
         "about": ""
       },
       {
         "id": "orc-selection-3",
         "tier": "selection",
-        "text": "Wall's up.",
+        "text": "Wall's up. Say the next one.",
         "about": ""
       },
       {
@@ -966,19 +966,19 @@
       {
         "id": "orc-acknowledgement-1",
         "tier": "acknowledgement",
-        "text": "Done by evening.",
+        "text": "Up by evening.",
         "about": ""
       },
       {
         "id": "orc-acknowledgement-2",
         "tier": "acknowledgement",
-        "text": "Who's it for?",
+        "text": "Who's it for? Changes the doors.",
         "about": ""
       },
       {
         "id": "orc-acknowledgement-3",
         "tier": "acknowledgement",
-        "text": "Right.",
+        "text": "Right. Where's it going?",
         "about": ""
       },
       {
@@ -996,7 +996,7 @@
       {
         "id": "orc-annoyance-polite-2",
         "tier": "annoyance-polite",
-        "text": "You clicking, or you helping?",
+        "text": "You clicking, or you lifting?",
         "about": ""
       },
       {
@@ -1008,7 +1008,7 @@
       {
         "id": "orc-annoyance-irritated-1",
         "tier": "annoyance-irritated",
-        "text": "Sixty years, me. I built four universities. What'd the elf build?",
+        "text": "Sixty years, me. Four universities. Ask the elf her total.",
         "about": ""
       },
       {
@@ -1020,43 +1020,43 @@
       {
         "id": "orc-annoyance-irritated-3",
         "tier": "annoyance-irritated",
-        "text": "I don't cast. I *carry*.",
+        "text": "I don't cast. I carry.",
         "about": ""
       },
       {
         "id": "orc-annoyance-cracking-1",
         "tier": "annoyance-cracking",
-        "text": "Nobody writes down who built the place. Plenty about what's inside it.",
+        "text": "You catalogue the books, the shelves, the ink. Nothing about the roof.",
         "about": ""
       },
       {
         "id": "orc-annoyance-cracking-2",
         "tier": "annoyance-cracking",
-        "text": "You know the north vault? That's mine. All of it. Every stone.",
+        "text": "The north vault. Four hundred courses of stone. I set every one.",
         "about": ""
       },
       {
         "id": "orc-annoyance-cracking-3",
         "tier": "annoyance-cracking",
-        "text": "I've buried more of my own than any of them. We go quick.",
+        "text": "We go quick, us. Sixty years. I've spent forty holding things up.",
         "about": ""
       },
       {
         "id": "orc-annoyance-unhinged-1",
         "tier": "annoyance-unhinged",
-        "text": "I HAVE PUT UP EVERY BUILDING YOU HAVE EVER LOVED.",
+        "text": "The hall, the stairs, the lintel you walk under daily — I RAISED ALL OF IT.",
         "about": ""
       },
       {
         "id": "orc-annoyance-unhinged-2",
         "tier": "annoyance-unhinged",
-        "text": "Not asking for a statue. Wouldn't mind a *chair*.",
+        "text": "I don't want a statue. Statues need plinths. WHO DO YOU THINK CUTS PLINTHS?",
         "about": ""
       },
       {
         "id": "orc-annoyance-unhinged-3",
         "tier": "annoyance-unhinged",
-        "text": "Sixty years is plenty, if you build. It's nothing if you sit and think.",
+        "text": "Sixty years! Foundations, walls, roof, out. And I'd take it again. Gladly.",
         "about": ""
       },
       {
@@ -1068,7 +1068,7 @@
       {
         "id": "orc-breakthrough-2",
         "tier": "breakthrough",
-        "text": "Told you it'd hold.",
+        "text": "Told you it'd hold. Write it down this time.",
         "about": ""
       },
       {
@@ -1080,7 +1080,7 @@
       {
         "id": "orc-blessed-2",
         "tier": "blessed",
-        "text": "Feels good. Back to it.",
+        "text": "Kind of you. Mind the wet mortar.",
         "about": ""
       },
       {
@@ -1092,25 +1092,25 @@
       {
         "id": "orc-last-copy-1",
         "tier": "last-copy",
-        "text": "Only one who knows it. Me. The one you send through portals.",
+        "text": "Only copy's up here. And I'm who you send through portals.",
         "about": ""
       },
       {
         "id": "orc-cross-species-1",
         "tier": "cross-species",
-        "text": "Four hundred years and she's still 'settling in'.",
+        "text": "Four hundred years in that chair. Still 'settling in'.",
         "about": "elf"
       },
       {
         "id": "orc-cross-species-2",
         "tier": "cross-species",
-        "text": "Now *that* one works. Runs everywhere. Dies tired.",
+        "text": "Now that one works. Runs everywhere. Dies tired.",
         "about": "human"
       },
       {
         "id": "orc-cross-species-3",
         "tier": "cross-species",
-        "text": "Best mage we've got. Couldn't tell you where he lives. Neither could he.",
+        "text": "Brilliant, that one. Couldn't find their own front door. I built it.",
         "about": "gnome"
       }
     ]
