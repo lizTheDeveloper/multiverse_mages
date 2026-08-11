@@ -365,10 +365,10 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 
 | Version | OpenSpec change | Capabilities delivered | Status |
 |---|---|---|---|
-| 0.1.0 | `sim-core-foundation` | `simulation-core`, `world-persistence`, `deterministic-replay` | in progress |
-| 0.2.0 | `core-contracts` | `state-schema`, `content-schemas`, `primitive-semantics`, `observation-action-space`, `module-boundaries` | specified |
-| 0.3.0 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | not started |
-| 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | not started |
+| 0.1.0 | `sim-core-foundation` | `simulation-core`, `world-persistence`, `deterministic-replay` | released |
+| 0.2.0 | `core-contracts` | `state-schema`, `content-schemas`, `primitive-semantics`, `observation-action-space`, `module-boundaries` | released |
+| 0.3.0 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | released |
+| 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | in progress |
 | 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | not started |
 | 0.7.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | not started |
 | 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | not started |

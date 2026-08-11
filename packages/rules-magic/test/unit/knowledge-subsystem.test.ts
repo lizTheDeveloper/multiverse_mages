@@ -16,9 +16,12 @@ import { describe, expect, it } from 'vitest';
 import {
   ENGAGEMENT_COMPONENTS,
   EVER_KNOWN,
+  GRIMOIRE,
+  HOLDER_KIND,
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
   WORLD_COMPONENTS,
+  attachRecord,
   collectRecords,
 } from '@mm/state';
 
@@ -55,6 +58,32 @@ describe('the instance index', () => {
     expect(knowledge.exists(ROOT_NODE)).toBe(true);
     expect(knowledge.destroyInstance(second, 11)).toBeDefined();
     expect(knowledge.exists(ROOT_NODE)).toBe(false);
+  });
+
+  it('reports the node as existing again the moment an instance returns', () => {
+    // `knowledge-instances`: *"Existence returns when an instance returns"*. The
+    // index is a count, so this ought to be free — but the ever-known record is
+    // written on first creation and never cleared, and an implementation that
+    // answered existence from it, or that latched a "lost" state to avoid
+    // re-emitting a loss event, would pass every assertion above and fail here.
+    const knowledge = subsystem();
+    const grant = {
+      nodeId: ROOT_NODE,
+      locationKind: LOCATION_KIND.mind,
+      locationId: 41,
+      acquiredTick: 0,
+      mastery: 512,
+    };
+
+    const first = knowledge.createInstance(grant);
+    expect(knowledge.destroyInstance(first, 11)).toBeDefined();
+    expect(knowledge.exists(ROOT_NODE)).toBe(false);
+
+    knowledge.createInstance({ ...grant, locationId: 42, acquiredTick: 12 });
+    expect(knowledge.exists(ROOT_NODE)).toBe(true);
+    expect(knowledge.instanceCount(ROOT_NODE)).toBe(1);
+    // The node came back; that it was once lost did not.
+    expect(knowledge.wasEverKnown(ROOT_NODE)).toBe(true);
   });
 
   it('records no current-existence flag in state', () => {
@@ -366,6 +395,110 @@ describe('the written-copy invariant', () => {
       }),
     ).toThrow(/no grimoire/u);
   });
+
+  /**
+   * The half of §1.5 that has no schema to enforce it: a grimoire's holder and
+   * its instance's location are two fields that must say the same thing, and
+   * nothing in the component layout notices when they do not.
+   */
+  it('refuses a written instance whose location disagrees with its book’s holder', () => {
+    const knowledge = subsystem();
+    const grimoire = knowledge.state.entities.create();
+    attachRecord(knowledge.state, GRIMOIRE, grimoire, {
+      nodeId: ROOT_NODE,
+      durability: 1024,
+      holderKind: HOLDER_KIND.library,
+      holderId: 900,
+    });
+
+    expect(() =>
+      knowledge.createInstance({
+        nodeId: ROOT_NODE,
+        locationKind: LOCATION_KIND.grimoire,
+        locationId: grimoire,
+        acquiredTick: 0,
+        mastery: 0,
+        grimoire,
+      }),
+    ).toThrow(/a shelf the library cannot see/u);
+
+    // And the location the holder does name is accepted.
+    expect(
+      knowledge.createInstance({
+        nodeId: ROOT_NODE,
+        locationKind: LOCATION_KIND.library,
+        locationId: 900,
+        acquiredTick: 0,
+        mastery: 0,
+        grimoire,
+      }),
+    ).toBeGreaterThan(0);
+  });
+
+  it('destroys the book when its contents are destroyed', () => {
+    const knowledge = subsystem();
+    const grimoire = knowledge.state.entities.create();
+    attachRecord(knowledge.state, GRIMOIRE, grimoire, {
+      nodeId: ROOT_NODE,
+      durability: 1024,
+      holderKind: HOLDER_KIND.mage,
+      holderId: 41,
+    });
+    const instance = knowledge.createInstance({
+      nodeId: ROOT_NODE,
+      locationKind: LOCATION_KIND.grimoire,
+      locationId: grimoire,
+      acquiredTick: 0,
+      mastery: 0,
+      grimoire,
+    });
+
+    knowledge.destroyInstance(instance, 12);
+    expect(collectRecords(knowledge.state, GRIMOIRE)).toEqual([]);
+    expect(knowledge.instanceForGrimoire(grimoire)).toBe(0);
+  });
+
+  /**
+   * The load-path repair, exercised directly because no operation in this
+   * package can still produce its input: a grimoire row that outlived its
+   * instance. Left alone it would be matched against the *next* book's instance
+   * on the same shelf, since state says nothing that tells the two apart.
+   */
+  it('discards a grimoire left without contents when the world is reloaded', () => {
+    const knowledge = subsystem();
+    const contentless = knowledge.state.entities.create();
+    attachRecord(knowledge.state, GRIMOIRE, contentless, {
+      nodeId: ROOT_NODE,
+      durability: 1024,
+      holderKind: HOLDER_KIND.library,
+      holderId: 900,
+    });
+    const shelved = knowledge.state.entities.create();
+    attachRecord(knowledge.state, GRIMOIRE, shelved, {
+      nodeId: ROOT_NODE,
+      durability: 1024,
+      holderKind: HOLDER_KIND.library,
+      holderId: 900,
+    });
+    const instance = knowledge.createInstance({
+      nodeId: ROOT_NODE,
+      locationKind: LOCATION_KIND.library,
+      locationId: 900,
+      acquiredTick: 5,
+      mastery: 0,
+      grimoire: shelved,
+    });
+
+    const restored = KnowledgeSubsystem.fromState(knowledge.state, TEST_NODE_COUNT);
+
+    // One book, one instance, and the book can be burned — which is the whole
+    // of it. Which of the two identical rows survived is not recoverable from
+    // state and is not asserted; that they cannot both survive is.
+    expect(collectRecords(restored.state, GRIMOIRE)).toHaveLength(1);
+    const survivor = collectRecords(restored.state, GRIMOIRE)[0]?.handle as number;
+    expect(restored.instanceForGrimoire(survivor)).toBe(instance);
+    expect(restored.instanceCount(ROOT_NODE)).toBe(1);
+  });
 });
 
 describe('refusal messages', () => {
@@ -384,6 +517,21 @@ describe('refusal messages', () => {
         threshold: 512,
       }),
     ).toContain('512');
+  });
+
+  it('name the slot count when a personal store is full', () => {
+    // `magic-traditions` requires the count by name: a player who cannot read
+    // *twelve* in the message cannot tell a declared bound from a defect.
+    const message = describeRefusal({
+      reason: 'personal-store-full',
+      nodeId: ROOT_NODE,
+      subject: 700,
+      storeKind: 'palace',
+      held: 12,
+      slotsPerMage: 12,
+    });
+    expect(message).toContain('12');
+    expect(message).toContain('palace');
   });
 });
 

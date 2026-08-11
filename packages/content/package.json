@@ -1,6 +1,6 @@
 {
   "name": "@mm/content",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Validated game content — the grid, its nodes, species, traditions, and effect primitives — plus the hard-failing loader that interns it.",
   "license": "AGPL-3.0-or-later",

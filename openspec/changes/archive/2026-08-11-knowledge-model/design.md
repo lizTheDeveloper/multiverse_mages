@@ -419,12 +419,35 @@ edit plus a re-tune, not a structural change.
   conservative placeholder. The capital loop is one of the two compounding loops `vision.md` §6a
   flags, and the weighting is a prime suspect for `capitalSnowball`; it is a tuning constant, first
   measured at 0.5.0.
-- **What resource does the `cost` hook deduct from?** `contracts.md` §1.2 gives a mage no fatigue,
-  vigor, or reserve field, and §1.6 gives a combatant only `hp` and `concealment`. The `cost` hook
-  therefore has nothing declared to spend. This change specifies `cost` as a function returning a
-  magnitude — `standard` returns non-zero, `prepaid` returns zero — so the hook is fully testable
-  without the resource existing; whichever capability introduces the caster resource must add it to
-  `contracts.md` §1.2 and §1.6. Reported to the contract owner rather than invented here.
 - **Is `fp(1024)` the right teaching-eligibility threshold, or should it sit below full mastery?**
   Authored as a content constant so it can move without a code change, but which value produces
   interesting generational degradation is unanswerable before the harness exists.
+
+**Closed since this section was written.** *What resource does the `cost` hook deduct from?* was an
+open question here: `contracts.md` §1.2 gave a mage no fatigue, vigor, or reserve field and §1.6
+gave a combatant only `hp` and `concealment`, so `cost` had nothing declared to spend, and this
+change specified the hook as a function returning a magnitude — `standard` non-zero, `prepaid` zero
+— so it was testable without the resource existing. The contract owner took the report: §1.2 now
+gives a mage `vigor`/`maxVigor` and §1.6 carries it onto the combatant, and `rules-world` promotes
+mages with a vigor pool. The hook is no longer decorative, and the question is answered rather than
+still open.
+
+## Resolved against `contracts.md`
+
+Task 7.5. Every ambiguity this change had to decide, and where the decision is now written down —
+because a resolution that survives only in a commit message is a resolution the next reader will
+have to make again, differently.
+
+| Ambiguity | Resolution | Recorded in |
+|---|---|---|
+| Is `rediscoveryAffinity` a multiplier or a divisor, and where does the 3× floor apply? | **Divisor** — higher affinity is cheaper, uniform with every other species trait — with the `fp(3072)` floor clamped *after* affinity, so no rediscovery completes below 3× `researchCost`. Content is authored at or above `fp(5376)`, the break-even at which the best rediscoverer's trait still does something. | `contracts.md` §2.3 (`rediscoveryMultiplier`, including the retraction of the one sentence that taught the multiplier reading) and §2.4 (`rediscoveryAffinity`) |
+| Where does a written copy's instance live once its grimoire is shelved? | One instance per written copy, its location *rewritten* `(2, grimoireId)` ↔ `(3, libraryId)` on shelving and withdrawal; the grimoire-to-library association lives in a subsystem index, never a second instance. | `contracts.md` §1.5, *"One instance per written copy"* |
+| Whose tradition populates a raider's `preparedSpells`? | The raider's **home** `cast` kind, at portal entry; the **host's** `cast` kind governs expenditure and the host's `cost` kind sets the price. A purely host-governed `cast` would strip a Vancian raider of her preparations on arrival, which `vision.md` §4a forbids in as many words. | `contracts.md` §1.6, the combatant `preparedSpells` row |
+| What does "teachable without loss at `fp(1024)`" imply below `fp(1024)`? | Eligibility threshold below which a mage may not teach at all; above it and below full, a **strict** reduction floored at one unit, so degradation compounds down a chain instead of plateauing. Lossless only at exactly `fp(1024)`. | `contracts.md` §1.5, *"`mastery` thresholds"* and the strictness paragraph beneath it |
+| Does legality gate acquisition, or only casting? | Both. Legality gates research, teaching, and scribing as well as casting — but is deliberately **not** a universal invariant over instances, so a mage may hold knowledge her universe has since forbidden and it lies dormant rather than being erased. | `contracts.md` §1.1, *"Legality gates world-time acquisition"* |
+| How is a lost node told apart from one never known? | A persisted per-node **ever-known** record, set on first instance creation, never cleared, carried in snapshots. Current existence stays derived from the instance index; only ever-known is state. | `contracts.md` §1.5, *"Persisted, and not derivable"* |
+| What does the `cost` hook deduct from? | `vigor`/`maxVigor` on the mage, carried onto the combatant for the duration of a raid. The hook itself is specified as returning a magnitude, so it is testable independently of the resource. | `contracts.md` §1.2 and §1.6 |
+
+No resolution in this table required an amendment at closeout except the strictness paragraph in
+§1.5: the rest were amended into `contracts.md` as the change went, and this audit confirms they
+still stand and still say what `rules-magic` implements.

@@ -102,6 +102,54 @@ export const V1_FORM_COUNT = 4;
  */
 export const V1_REDISCOVERY_AUTHORING_FLOOR = 5376;
 
+/**
+ * Fixed-point scale and ceiling, restated here because `content` carries no
+ * runtime dependencies — not even on `sim-core`, which owns the real ones.
+ * Asserted equal to `sim-core`'s from `test/unit/shipped-content.test.ts`.
+ */
+const FP_SCALE = 1024;
+const FP_CEILING = 2147483647;
+
+/**
+ * The least `rediscoveryAffinity` any species may carry, as a divisor.
+ *
+ * Affinity divides, so the *smallest* affinity produces the *largest* effective
+ * rediscovery multiplier and therefore the largest requirement. v1 species
+ * content bottoms out at the orc's `fp(512)`, which doubles the authored
+ * multiplier — that is the worst case the rules path must survive.
+ *
+ * A literal rather than a value derived from `species.json`, for the same
+ * reason `V1_REDISCOVERY_AUTHORING_FLOOR` is one: deriving it would make
+ * whether `node.json` loads depend on whoever last edited the species records.
+ * `test/unit/shipped-content.test.ts` asserts the coupling and fails naming the
+ * real cause if a species is ever authored below this.
+ */
+export const WORST_REDISCOVERY_AFFINITY = 512;
+
+/** `contracts.md` §2.3's hard floor, below which the effective multiplier clamps. */
+const REDISCOVERY_HARD_FLOOR = 3072;
+
+/**
+ * Whether the rules path can actually compute this node's rediscovery cost.
+ *
+ * `researchRequirement` evaluates `mul(researchCost, effectiveMultiplier)`, and
+ * `mul` throws `RangeError` rather than saturating — deliberately, because a
+ * silently saturated cost is a balance change nobody authored. The schema
+ * admits `researchCost` and `rediscoveryMultiplier` up to `fp(1073741823)`
+ * each, and their product overflows long before that, so without this check
+ * content validation accepts a node that makes the simulation throw the first
+ * time anyone tries to rediscover it.
+ *
+ * Checked at the worst affinity rather than at `fp(1024)`: the requirement is
+ * computed per-species, so a node that only overflows for orcs is still a node
+ * that overflows.
+ */
+function rediscoveryRequirementOverflows(researchCost: number, multiplier: number): boolean {
+  const scaled = Math.floor((multiplier * FP_SCALE) / WORST_REDISCOVERY_AFFINITY);
+  const effective = Math.max(scaled, REDISCOVERY_HARD_FLOOR);
+  return researchCost * effective > FP_CEILING * FP_SCALE;
+}
+
 /** Result of a validation pass that is allowed to fail without throwing. */
 export interface ValidationResult {
   readonly diagnostics: readonly ContentDiagnostic[];
@@ -590,17 +638,6 @@ function checkNodes(
         ),
       );
     } else {
-      if (cell.v1 !== true) {
-        out.push(
-          diagnostic(
-            file,
-            `${at}/cell`,
-            'node-outside-v1',
-            `node "${node.id}" is authored in cell "${node.cell}", which is not flagged "v1": true. ` +
-              'No node may be authored outside the v1 subset for this release',
-          ),
-        );
-      }
       if (!cell.nodes.includes(node.id)) {
         out.push(
           diagnostic(
@@ -611,16 +648,30 @@ function checkNodes(
           ),
         );
       }
-      if (cell.v1 === true && node.rediscoveryMultiplier < V1_REDISCOVERY_AUTHORING_FLOOR) {
+      if (node.rediscoveryMultiplier < V1_REDISCOVERY_AUTHORING_FLOOR) {
         out.push(
           diagnostic(
             file,
             `${at}/rediscoveryMultiplier`,
             'content-invariant',
             `node "${node.id}" authors rediscoveryMultiplier ${String(node.rediscoveryMultiplier)}, below the ` +
-              `v1 authoring floor of fp(${String(V1_REDISCOVERY_AUTHORING_FLOOR)}). Species rediscoveryAffinity is ` +
+              `rediscovery authoring floor of fp(${String(V1_REDISCOVERY_AUTHORING_FLOOR)}). Species rediscoveryAffinity is ` +
               'applied before the hard fp(3072) floor, so a node authored at the floor clamps every species ' +
               'to the same effective cost and the trait stops differentiating (contracts.md §2.3)',
+          ),
+        );
+      }
+      if (rediscoveryRequirementOverflows(node.researchCost, node.rediscoveryMultiplier)) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/researchCost`,
+            'content-invariant',
+            `node "${node.id}" authors researchCost ${String(node.researchCost)} against ` +
+              `rediscoveryMultiplier ${String(node.rediscoveryMultiplier)}, whose rediscovery ` +
+              `requirement overflows fixed point at the worst species affinity of ` +
+              `fp(${String(WORST_REDISCOVERY_AFFINITY)}). The rules path throws rather than ` +
+              'saturating, so this node would fail the first time anyone rediscovered it',
           ),
         );
       }
@@ -652,6 +703,20 @@ function checkNodes(
         );
         continue;
       }
+      const prerequisiteCell = cellById.get(prerequisite.cell);
+      if (cell?.v1 === true && prerequisiteCell !== undefined && prerequisiteCell.v1 !== true) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/prerequisites/${String(index)}`,
+            'v1-unreachable-prerequisite',
+            `node "${node.id}" is in the v1 cell "${node.cell}" but requires "${prerequisiteId}" from ` +
+              `"${prerequisite.cell}", which is not flagged "v1": true. A playable node may never sit ` +
+              'behind content the release does not enable — it would be permanently unreachable',
+          ),
+        );
+      }
+
       if (prerequisite.tier > node.tier) {
         out.push(
           diagnostic(

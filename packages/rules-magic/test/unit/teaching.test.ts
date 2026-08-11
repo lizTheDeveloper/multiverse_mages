@@ -19,6 +19,7 @@ import { DEFAULT_TEACH_THRESHOLD, MASTERY_MAX } from '../../src/instances/consta
 import type { TeachingInputs } from '../../src/instances/teaching.js';
 import { teach, transmittedMastery } from '../../src/instances/teaching.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
+import type { PersonalStore } from '../../src/traditions/store.js';
 import {
   CHILD_NODE,
   HOME_CELL,
@@ -156,6 +157,46 @@ describe('teaching', () => {
     const outcome = teach(inputs(knowledge, { teacher: 999 }));
 
     expect(outcome.refusal).toEqual({ reason: 'node-not-held', nodeId: ROOT_NODE, subject: 999 });
+  });
+
+  it("refuses when the *student's* store is full, and teaches on when the teacher's is", () => {
+    const store: PersonalStore = {
+      kind: 'palace',
+      personalLocationKind: LOCATION_KIND.palace,
+      slotsPerMage: 2,
+    };
+    const knowledge = new KnowledgeSubsystem(testWorld(), TEST_NODE_COUNT);
+    // The teacher's palace is full to bursting. She is transmitting, not
+    // acquiring, so her own bound has nothing to say about it.
+    for (let held = 0; held < 9; held += 1) {
+      knowledge.createInstance({
+        nodeId: ROOT_NODE,
+        locationKind: LOCATION_KIND.palace,
+        locationId: TEACHER,
+        acquiredTick: 0,
+        mastery: MASTERY_MAX,
+      });
+    }
+
+    const taught = teach(inputs(knowledge, { store }));
+    expect(taught.refusal).toBeUndefined();
+    expect(knowledge.read(taught.instance).locationKind).toBe(LOCATION_KIND.palace);
+
+    // One more fills the student to her two slots; the third is refused, and
+    // the refusal names her count and not her teacher's nine.
+    expect(teach(inputs(knowledge, { store, worldTick: 9 })).refusal).toBeUndefined();
+    const refused = teach(inputs(knowledge, { store, worldTick: 10 }));
+
+    expect(refused.refusal).toEqual({
+      reason: 'personal-store-full',
+      nodeId: ROOT_NODE,
+      subject: STUDENT,
+      storeKind: 'palace',
+      held: 2,
+      slotsPerMage: 2,
+    });
+    expect(refused.instance).toBe(0);
+    expect(knowledge.instancesAt(LOCATION_KIND.palace, STUDENT)).toHaveLength(2);
   });
 
   it('resolves against the index alone, so handles need name no mage record', () => {

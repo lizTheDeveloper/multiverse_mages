@@ -27,6 +27,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ContentValidationError,
   V1_REDISCOVERY_AUTHORING_FLOOR,
+  WORST_REDISCOVERY_AFFINITY,
   loadContent,
   validateContent,
 } from '@mm/content';
@@ -122,9 +123,14 @@ describe('invalid content is a hard load failure', () => {
         recordById(documents, 'node.json', 'im-follow-the-thought')['tier'] = 4;
       }),
     );
-    const inverted = diagnostics.filter((d) => d.code === 'inverted-tier');
+    // Scoped to the pair under test rather than the whole run. Deepening one node
+    // inverts it against every node that gates on it, and the grid is pre-authored,
+    // so that count grows with content. Asserting a global count here would make
+    // this test fail whenever someone writes an unrelated spell.
+    const inverted = diagnostics.filter(
+      (d) => d.code === 'inverted-tier' && d.message.includes('im-read-the-surface'),
+    );
     expect(inverted).toHaveLength(1);
-    expect(inverted[0]?.message).toContain('im-read-the-surface');
     expect(inverted[0]?.message).toContain('im-follow-the-thought');
     expect(inverted[0]?.message).toContain('is tier 3');
     expect(inverted[0]?.message).toContain('tier 4');
@@ -215,6 +221,54 @@ describe('invalid content is a hard load failure', () => {
     expect(validateContent(source).diagnostics).toEqual([]);
   });
 
+  it('rejects a node whose rediscovery cost overflows fixed point', () => {
+    // `researchRequirement` computes mul(researchCost, effectiveMultiplier), and
+    // mul throws rather than saturating -- deliberately, since a silently
+    // saturated cost is a balance change nobody authored. The schema admits
+    // researchCost up to fp(1073741823), so without this check the loader
+    // accepts a node that makes the simulation throw the first time anyone
+    // rediscovers it. Checked at the worst species affinity, not fp(1024): the
+    // requirement is per-species, so a node that only overflows for orcs still
+    // overflows.
+    const diagnostics = expectHardFail(
+      brokenSource((documents) => {
+        recordById(documents, 'node.json', 'rl-open-the-portal')['researchCost'] = 400_000_000;
+      }),
+    );
+    const invariant = diagnostics.filter((d) => d.code === 'content-invariant');
+    expect(invariant).toHaveLength(1);
+    expect(invariant[0]?.message).toContain('rl-open-the-portal');
+    expect(invariant[0]?.message).toContain(String(WORST_REDISCOVERY_AFFINITY));
+    expect(invariant[0]?.pointer).toContain('/researchCost');
+  });
+
+  it('accepts the largest researchCost that still computes', () => {
+    // The passing control, so the rejection above is about the arithmetic rather
+    // than about the field having been touched at all. Derived from the shipped
+    // multiplier rather than hardcoded, so it stays the boundary if content moves.
+    let largest = 0;
+    const atBoundary = brokenSource((documents) => {
+      const node = recordById(documents, 'node.json', 'rl-open-the-portal');
+      const effective = Math.max(
+        Math.floor(((node['rediscoveryMultiplier'] as number) * 1024) / WORST_REDISCOVERY_AFFINITY),
+        3072,
+      );
+      largest = Math.floor((2147483647 * 1024) / effective);
+      node['researchCost'] = largest;
+    });
+    expect(validateContent(atBoundary).diagnostics).toEqual([]);
+    expect(largest).toBeGreaterThan(0);
+
+    // And one unit past it is rejected, so the control is pinned to the boundary
+    // rather than merely being some value that happens to pass.
+    const pastBoundary = brokenSource((documents) => {
+      recordById(documents, 'node.json', 'rl-open-the-portal')['researchCost'] = largest + 1;
+    });
+    expect(
+      validateContent(pastBoundary).diagnostics.filter((d) => d.code === 'content-invariant'),
+    ).toHaveLength(1);
+  });
+
   it('rejects removing rego-limen from the v1 subset', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {
@@ -225,20 +279,26 @@ describe('invalid content is a hard load failure', () => {
     expect(messages(diagnostics)).toContain('portal');
   });
 
-  it('rejects a node authored outside the v1 subset', () => {
+  // Authoring outside the v1 subset is permitted -- the grid holds seventy cells and
+  // only twelve are enabled, so the rest are written but inert. What is NOT permitted
+  // is a playable node sitting behind content the release does not enable: it would be
+  // permanently unreachable, and nothing else in the pipeline would notice.
+  it('rejects a v1 node whose prerequisite lies outside the v1 subset', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {
-        const node = recordById(documents, 'node.json', 'rt-set-the-stone');
-        node['cell'] = 'creo-terram';
-        recordById(documents, 'cell.json', 'creo-terram')['nodes'] = ['rt-set-the-stone'];
-        const oldCell = recordById(documents, 'cell.json', 'rego-terram');
-        oldCell['nodes'] = (oldCell['nodes'] as string[]).filter((id) => id !== 'rt-set-the-stone');
+        // Park a fresh node in a non-v1 cell, then make a playable node depend on it.
+        const donor = recordById(documents, 'node.json', 'rt-set-the-stone');
+        const stranded = { ...donor, id: 'ct-stranded-course', cell: 'creo-terram' };
+        (documents['node.json'] as unknown[]).push(stranded);
+        recordById(documents, 'cell.json', 'creo-terram')['nodes'] = ['ct-stranded-course'];
+        const playable = recordById(documents, 'node.json', 'rt-raise-the-course');
+        playable['prerequisites'] = ['ct-stranded-course'];
       }),
     );
-    const outside = diagnostics.filter((d) => d.code === 'node-outside-v1');
-    expect(outside).toHaveLength(1);
-    expect(outside[0]?.message).toContain('rt-set-the-stone');
-    expect(outside[0]?.message).toContain('creo-terram');
+    const unreachable = diagnostics.filter((d) => d.code === 'v1-unreachable-prerequisite');
+    expect(unreachable).toHaveLength(1);
+    expect(unreachable[0]?.message).toContain('rt-raise-the-course');
+    expect(unreachable[0]?.message).toContain('creo-terram');
   });
 
   it('rejects an effect naming a primitive the registry does not define', () => {

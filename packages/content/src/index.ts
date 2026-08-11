@@ -46,6 +46,7 @@ export {
   V1_CELL_COUNT,
   V1_FORM_COUNT,
   V1_REDISCOVERY_AUTHORING_FLOOR,
+  WORST_REDISCOVERY_AFFINITY,
   V1_TECHNIQUE_COUNT,
   contentSchemas,
   loadContent,
@@ -69,5 +70,21 @@ export {
 
 export type { CliOutput } from './cli.js';
 export { runValidation } from './cli.js';
+
+export {
+  AUDIO_FILES,
+  audioSchemas,
+  validateAudioContent,
+  loadAudioContent,
+  shippedAudioDirectory,
+} from './audio.js';
+export type { AudioFileName, AudioValidationResult } from './audio.js';
+export type {
+  AudioCueRecord,
+  AudioCueKind,
+  AudioBand,
+  AudioGridPosition,
+  VoiceLineBankRecord,
+} from './audio-types.js';
 
 export * from './types.js';

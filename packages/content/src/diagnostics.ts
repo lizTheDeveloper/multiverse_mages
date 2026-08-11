@@ -43,7 +43,7 @@ export type ContentDiagnosticCode =
   | 'unknown-reference'
   | 'cell-node-mismatch'
   | 'v1-subset'
-  | 'node-outside-v1'
+  | 'v1-unreachable-prerequisite'
   | 'prerequisite-cycle'
   | 'inverted-tier'
   | 'edict-conflict'

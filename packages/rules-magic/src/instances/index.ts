@@ -45,12 +45,19 @@ export type { KnowledgeLossEvent, KnowledgeRefusal } from './outcomes.js';
 export { describeRefusal } from './outcomes.js';
 
 export type { InstanceSpec } from './subsystem.js';
-export { KnowledgeSubsystem, isHeldLocation, isWrittenLocation } from './subsystem.js';
+export {
+  KnowledgeSubsystem,
+  isHeldLocation,
+  isWrittenLocation,
+  writtenInstanceLocation,
+} from './subsystem.js';
 
 export type { RequirementInputs, ResearchInputs, ResearchOutcome } from './research.js';
 export {
   holdsUsable,
   isRediscovery,
+  personalLocationKind,
+  personalStoreFull,
   research,
   researchRequirement,
   unsatisfiedPrerequisite,

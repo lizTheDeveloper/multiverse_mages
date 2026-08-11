@@ -1,6 +1,6 @@
 {
   "name": "@mm/rules-magic",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Grid legality, node prerequisites, dormancy, knowledge instances, and tradition hooks — the behaviour behind contracts.md §1.5, §2.2–§2.5 and §3.",
   "license": "AGPL-3.0-or-later",

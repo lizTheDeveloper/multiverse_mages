@@ -38,6 +38,16 @@ import { canHoldAt, storePolicy } from './store.js';
  * Pure, and returns a description rather than mutating: the caller applies the
  * whole result or none of it, which is how the operation's atomicity is
  * expressed in a package that owns no state.
+ *
+ * **The plan names instances and no grimoires, and that is sufficient.** It
+ * reads as an omission — a switch to the Art of Memory must leave no book
+ * behind, and this result has no field naming one — but a written instance *is*
+ * a book's contents, and `KnowledgeSubsystem.destroyInstance` destroys the pair.
+ * So `destroyAll(plan.destroyed)`, the one way this result is meant to be
+ * applied, takes the grimoires with them. Naming the books here as well would
+ * make the plan a description in two vocabularies, and a caller that applied one
+ * list and not the other would produce exactly the residue this operation
+ * exists to prevent.
  */
 
 /** What became of one instance the incoming store kind could not hold. */
