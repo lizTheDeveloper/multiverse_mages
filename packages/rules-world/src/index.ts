@@ -35,6 +35,13 @@
  * 0.5.0.
  */
 
+/**
+ * The utility-AI. One re-export rather than a named list, so that growing the
+ * goal set touches `autonomy/index.ts` and not this file — the same reason the
+ * populace layer is re-exported wholesale below.
+ */
+export * from './autonomy/index.js';
+
 export type {
   KnowledgeGateway,
   KnowledgeTarget,
@@ -73,6 +80,19 @@ export * from './mages/index.js';
 // rather than a named list, so that growing the populace layer touches
 // `populace/index.ts` and not this file, which several capabilities share.
 export * from './populace/index.js';
+
+/**
+ * The three-input economy: materials production and consumption, carrying
+ * capacity, births, and the counts `god-agency` will read.
+ */
+export * from './economy/index.js';
+
+/**
+ * Universities, libraries, and the derived profile that is never written down.
+ * Re-exported wholesale for the reason the populace layer is: growing the
+ * institution layer should touch `universities/index.ts` and not this file.
+ */
+export * from './universities/index.js';
 
 export type {
   SpeciesFpTrait,
