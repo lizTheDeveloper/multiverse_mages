@@ -384,6 +384,42 @@ So a **shaped** result is possible here and would be the more surprising outcome
 coordinator: separation despite an unwired effect pipeline would mean a second path from god actions
 to outcomes that nobody has mapped, and that would matter more than the wire.
 
+## Execution log: G1 fired, and the first comparison was thrown away
+
+Recorded because a validity gate that is never seen to fail is a validity gate nobody has tested.
+
+**Execution 1** lost one run of 400 to `perRunTimeoutMs` — classification `timeout`, `ticksRun` 0,
+worker replaced — while another agent's sweep held the machine at load ~250. A harness wall-clock
+cap, raised to 3,600,000 ms; it decides only whether a run is abandoned, never what it computes.
+
+**Execution 2 failed G1, decisively, and on exactly the mechanism G1 was written for.**
+
+| | concentrate | spread (v1) |
+|---|---|---|
+| applied favor per tick | 668.4 | 451.0 |
+| gate rejections, `blessMage` | **0** | **13,497** |
+| blessings bought per run | 110.3 | 24.4 |
+
+A **32.5% spend gap** against a 5% tolerance. The cause is a mismatch between a pinned `k` and a real
+population: `CANDIDATE_SLOTS` pins `blessMage` at **32**, and `blessCandidates` fills that list with
+*living mages* — of which the reference universe holds **13 to 18** through the early run. The
+spreading arm named slots past the end of the list for most of the run, and §4.4 makes that *"an
+ordinary illegal action"* — refused, buying nothing.
+
+So the two arms differed in **how much they bought**, not only in **where** — the single confound the
+pair exists to exclude. Per the pre-registered rule this is reported as **invalid**, not as a
+divergence, and the numbers it produced are not the answer to anything.
+
+The instrument was repaired (rotation cut to 8, strictly below the measured floor of 13) and the
+spreading arm re-run as **v2**. The concentrating arm is unchanged and its records stand. **The
+decision rule is unchanged; no threshold moved.** The repair is asserted rather than assumed: v2's
+gate rejections must read zero, and the re-run reports them.
+
+**Disclosure.** The v1 numbers were seen before the repair, including the direction of the node-count
+difference. The repair changes one slot range for a stated mechanical reason — a candidate list
+shorter than its declared length — and changes no threshold, no endpoint and no rule. Both the
+invalid v1 table and the valid v2 table are reported.
+
 ## What the four candidate explanations predict
 
 An external review offered four reasons the verbs produce no marginal value, and bet on the last two.
