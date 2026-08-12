@@ -303,28 +303,63 @@ then you find out what they do with it.**
 **Lootable objects are the raider's choice** for the same reason. You do not order a mage to carry the
 third shelf; she decides what is worth the weight.
 
-## 11. Pause is a bid
+## 11. Rewind to view, never to act — and a replay at the end
 
-> *"You should be able to click on any mage and pause the action at any point. But the opponent should
-> be able to unpause. And during a raid that costs favor or vis."*
+**Superseded ruling.** An earlier version of this section made pause a purchased bid the opponent
+could outbid, defender in favor and attacker in Vis. The author has replaced it, and the replacement
+is better:
 
-Click a mage, the action stops, you inspect them — **and you pay for it.** Your opponent pays to start
-it again. Time becomes something the two sides bid over.
+> *"Never mind about pause at any point. I think you should just be able to re-look — rewind to view,
+> but not to act. Like at the end, you should be able to replay it."*
 
-This solves the problem that normally makes pause-to-inspect unshippable in live PvP: one player
-freezing the world at will is intolerable, so most games forbid it. Making it **cost** and making it
-**contestable** turns it from an exploit into a decision. It also lands naturally on the asymmetry
-already ruled: **the defender bids favor, the attacker bids Vis**, so the two sides are spending
-different currencies and whoever has more slack in their own economy can hold the clock longer.
+**You cannot stop the clock. You can always look at what already happened.**
 
-**A flat price is the failure mode** — the richer side simply holds the clock forever. Repeated
-pausing has to get more expensive, by rising price, cooldown or cap. Which of those is open.
+### Why this is the right answer and the bid was not
+
+- **It is honest about multiplayer.** A live opponent's raid does not stop because you want a closer
+  look. The bid mechanic tried to price that; this one simply declines to offer it, which is a
+  cleaner rule and one nobody can argue with mid-match.
+- **It costs no new economy.** The bid needed a currency, an escalation ladder, a floor, a
+  deliberation window and a counter-bid. All of that is now deleted.
+- **It protects the muster window**, which is the thing the author praised — *"you only have a few
+  minutes to decide what to forbid, and you weren't prepared."* Nothing on offer can buy more of that
+  time, so the pressure stays real.
+- **It fits the game's stated tempo.** *"It's not the worst to not have to be twitch-gamey fast."*
+  You do not have to catch everything live, because nothing is lost — but you also cannot convert
+  attention into advantage.
+
+### It is nearly free, because the core already replays
+
+`sim-core` ships deterministic replay, golden replay fixtures and versioned snapshots. The simulation
+is a pure `step(state, actions, rng) -> state` with no wall-clock reads and no `Math.random`. **A raid
+replay is therefore not a feature to build; it is a capability to expose.** Given the seed and the
+action log, the engagement re-runs identically — which is the same property the golden fixtures are
+already asserting on every commit.
+
+Two consequences worth stating:
+
+- **Rewinding cannot desync anything**, because looking back re-runs a record rather than mutating
+  live state. The live engagement continues underneath.
+- **A replay is a shareable artifact.** Seed plus action log is small, and it reproduces the raid
+  exactly on anyone's machine. That is a PvP feature — disputes, highlights, study — that falls out
+  of a constraint adopted for balance reasons.
+
+### What it must not become
+
+**Rewind must never restore agency to the past.** You are reviewing a record, not editing one. Any
+directive issued while looking back applies to *now*, at the tick the live engagement has reached, or
+it is refused. If that is ever ambiguous in the interface, the interface is wrong.
+
+And the live raid must remain legible while someone is looking back — a player who rewinds and
+returns should not find they have lost the thread of the present.
 
 ## 12. Open
 
 1. **Do supply-chain sites exist yet?** Universities do. The supply chain is W29's work and is not
    merged. Raiding what is not built is not possible, so this may be a two-stage delivery.
-2. **The escalation rule for pause bids** — rising price, cooldown, or cap.
+2. **Does rewind exist during the raid, or only after it?** Reviewing live is the more useful
+   feature and the more expensive interface; a post-raid replay alone is much cheaper and may be
+   enough.
 3. **Does the defender see the target before contact?** If the raider chooses the target and the
    arrival is drawn, the defender's muster decisions are made under a different kind of uncertainty
    than the attacker's, which may be exactly right or may be too harsh.
