@@ -123,8 +123,18 @@ are made over the primitives, where Monte Carlo has enough samples to be truthfu
 *Rego Terram* letting universities go up faster is not a special case in code — it is a node
 weighted toward `build-rate`.
 
-**v1 ships a playable subset of the grid** — 3 techniques × 4 forms — against a schema built for
-all 70 cells.
+**v1 ships the whole grid.** The original line here scoped v1 to a playable subset — 3 techniques
+× 4 forms, twelve cells — against a schema built for all seventy. That scope was about bounding
+*authoring*, and **the authoring is done**: all 70 cells and 300 nodes are written, validated and
+in `packages/content/data`. What the subset bought is no longer worth its cost, because the twelve
+cells hold only 51 of those 300 nodes and W19 measured an idle universe holding **48.9 of 51 by
+world tick 300** — an eighth of a 2,400-tick run. A subset that a universe exhausts while doing
+nothing is not a scoped-down game; it is a game that is over before it starts.
+
+The twelve cells survive as the **starting** enabled set, not as the ceiling. Permitting an axis
+is still the god's core verb and still what opens the rest of the grid — that mechanic is
+unchanged and is, on the measurements so far, the only lever that adds content to a set the world
+exhausts on its own.
 
 ## 4a. Traditions: How Magic Is Performed
 
@@ -485,8 +495,9 @@ that are confidently wrong in ways nobody can see yet.
 
 ## 12. Deliberately Out of Scope for v1
 
-- Grid cells beyond the v1 subset (3 techniques × 4 forms), and traditions beyond the three
-  named in §4a
+- ~~Grid cells beyond the v1 subset (3 techniques × 4 forms)~~ — **in scope as of 2026-08-12**;
+  see §4. The line bounded authoring, the authoring is finished, and the subset is exhausted by an
+  idle universe by tick 300. Traditions beyond the three named in §4a remain out of scope
 - Animated RTS presentation, art pipeline, audio
 - Reinforcement learning *training*. The interface ships; the training does not
 - Ranked ladder, matchmaking beyond direct challenge, economy, monetization
@@ -527,8 +538,13 @@ Tracked for resolution during the changes that need them, not blocking:
   values.
 - How much prestige may carry between runs before the meta-game decides matches before they
   start? Deferred to `god-agency`; the balance harness must test it adversarially.
-- Which 3 techniques × 4 forms make the v1 subset? Deferred to `knowledge-model`; the subset must
-  contain *Rego Limen* for portals and enough asymmetry to make the permit/forbid decision real.
+- ~~Which 3 techniques × 4 forms make the v1 subset?~~ **Answered in 0.3.0, and then outgrown.**
+  The twelve cells are *Intellego / Perdo / Rego* × *Mentem / Terram / Limen / Nomen*, `rego-limen`
+  included so portals exist. They are now the **starting** enabled set rather than v1's ceiling
+  (§4, §12). What remains open is the successor question: does going wide mean every cell ships
+  enabled, or that the twelve-cell start stands and the other fifty-eight are reached by
+  permitting? The two are very different games and the second is the one §4's permit verb
+  describes.
 - How large is the edict budget, and how does it scale with worship tier? Deferred to
   `god-agency` and expected to be retuned repeatedly by the balance harness.
 - What is the exact worship formula? Deferred to `god-agency`, same caveat.
