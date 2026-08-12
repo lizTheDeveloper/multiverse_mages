@@ -358,6 +358,72 @@ to learn. It is recorded in `exclusion.ts`'s module comment rather than fixed, b
 answer is a design question — theft that can violate a commitment is arguably *correct*, and a very
 good reason to steal — and it belongs with whoever owns the raid layer.
 
+## 6b. Rituals: spells that require more than one mage
+
+**This mechanic is not traceable to any existing section, and that is stated first rather than
+last.** `vision.md`, `contracts.md` and `sound-design.md` contain nothing on rituals, covens or
+co-casting. It arrives as a new design decision from the author, it is built here, and **it needs a
+`vision.md` amendment** — `CLAUDE.md` is explicit that work not traceable to the vision is scope
+creep, and the honest way to hold that line is to name the exception rather than to let it pass.
+
+### 6b.1 Why it is the keystone rather than an addition
+
+Everything else in W20 says *no single mage can learn everything*. That produces **incomparable**
+mages, which the campaign wanted, and which on its own has no mechanical consequence — two mages who
+know different things are still just two mages.
+
+Rituals are the consequence. **The deepest magic requires casters who between them hold what no one
+of them could hold alone.** That inverts exclusivity from a limitation into the reason a faculty
+exists, and it is the first mechanic in the game that makes a *university* the unit of play rather
+than a worship generator.
+
+### 6b.2 The five decisions, and why each went the way it did
+
+**1. The gate is mutually exclusive tracks — the strong version.** A ritual declares two or more
+caster roles, each naming a `track` and a `minNodes`, and **the roles' tracks must be mutually
+exclusive of one another**. The ritual is therefore uncastable by any one mage *by construction,
+forever*, however long she lives.
+
+The weak alternative — *"any N mages who between them hold the prerequisites"* — was rejected because
+a long-lived mage plus time defeats it, which makes it a scheduling constraint rather than a
+structural one. The strong version is also self-enforcing: the loader refuses a ritual whose roles
+are not mutually exclusive (`ritual-castable-by-one`), because such a thing is not a ritual, it is an
+expensive spell wearing the word.
+
+**2. Co-location is "the same university".** `vision.md` §7a is explicit that world-scale entities
+**carry no coordinates at all**, so proximity cannot be spatial without inventing a map the vision
+deliberately does not have. Shared affiliation is the non-spatial expression, and it keeps §7a
+intact.
+
+**3. No ritual state is stored.** Availability is a **derived check at cast time** over the
+university's living, affiliated mages. It is cheaper, it cannot desynchronise, and — the actual
+reason — it makes a caster's death instantly consequential: the capability stops existing on the tick
+she dies, with nothing to clean up and no half-assembled team to reconcile. That is `sound-design.md`
+§3.3's *"a bar of silence where the scribing used to be"* at the level of a capability rather than a
+layer.
+
+**4. World time only, in v1.** `contracts.md` §4.2 masks nearly every action during engagement, and
+the raid model has no expression of "same university" to check against. A raid-time ritual is a
+genuinely different mechanic — under §3's portal rule the *host's* ruleset governs what a visiting
+team may cast — and it needs the co-location question answered again in a model that has none of the
+same furniture. Deferred deliberately, not overlooked.
+
+**5. Every caster pays, and the tradition `cost` hook applies per caster.** §4a defines cost as
+*"what casting takes out of the caster"*, and a ritual has several. Across a portal, cost is
+host-governed, so a visiting team would each pay the host's price — moot in v1 by decision 4, and
+stated so it is not re-derived differently later.
+
+### 6b.3 The seventh acceptance measure
+
+> **A capability exists that no single mage can ever hold, and a universe demonstrably loses it when
+> one caster dies.**
+
+This one is asserted as a **named deterministic test** rather than a Monte Carlo metric, and that is
+the right instrument for it: it is a claim about what is *possible*, not about what is *frequent*, and
+a sweep can only ever fail to observe something. A test that builds two mages on mutually exclusive
+tracks in one university, asserts the ritual is available, kills one, and asserts it is not, settles
+the claim exactly.
+
 ## 7. The open question, raised rather than answered
 
 The author's instruction says *"author a complex web of nodes **per tradition**"*. Tracks as
