@@ -133,9 +133,46 @@ workflow's existence, `pull_request` triggers, any balance gate or horizon, and
 - [x] 4.1 Every `npm run verify` stage green in the worktree — see the note below
 - [x] 4.2 Push `w14/ci-dedupe` with **no PR**; confirm via `gh run list` that exactly one run with
       two jobs fired, and that no `pull_request` run exists
-- [ ] 4.3 Push a second commit immediately; confirm the first run is **cancelled**, proving the
+- [x] 4.3 Push a second commit immediately; confirm the first run is **cancelled**, proving the
       `cancel-in-progress` expression evaluates truthy on a branch rather than failing silently
-- [ ] 4.4 Report before/after job count per SHA
+- [x] 4.4 Report before/after job count per SHA
+
+## Measured result
+
+**The workflow still fires, and now once.** Pushing `w14/ci-dedupe` with **no PR open** produced
+exactly one run — `31558071254`, event `push`, SHA `6320004` — with exactly the two expected jobs,
+`Verify (pinned Node)` and `Next Node major (non-blocking)`. No `pull_request` run exists, because no
+PR exists. That is the check that a workflow edit has not silently stopped triggering.
+
+**The cancel path is observed, not assumed.** A second commit pushed while `6320004`'s run was
+`in_progress` moved it to `completed / cancelled` while the new SHA's run continued. So the
+`cancel-in-progress` expression evaluates **truthy on a branch** rather than failing silently to
+`false` — which is the failure mode a malformed expression would produce, and the one that would
+have quietly restored the duplication.
+
+The **non-cancel path on `main` cannot be observed from this branch** and is not claimed to have
+been. `workflow_dispatch` reads the workflow file from the default branch, so the guard as written
+here is not reachable on `main` until this merges. It is sound by construction instead: the guard is
+constant across every run that can land in a given group, because group and guard are derived from
+the same effective (repo, ref) pair, and the pair that names this repository's `main` is the one
+value for which the guard is false.
+
+| | before | after |
+|---|---|---|
+| runs per PR-branch SHA | 2 (`push` + `pull_request`) | 1 |
+| **jobs per PR-branch SHA** | **4** | **2** |
+| compute per PR-branch SHA | 1655 s (measured, `c02fb481`) | ~840 s |
+| required status produced | one, 443 s | one, 443 s |
+| duplicate runs in last 100 | 26 | 0 by construction |
+
+Coverage is unchanged: both jobs, every step, all three balance gates, `push` on `'**'`, and
+`pull_request` untouched.
+
+One thing this exercise incidentally confirmed, and it strengthens the case against narrowing
+`push:`: no `ci/hetzner-lint` status was posted for either SHA. The self-hosted runner only acts on
+a push to `main` or a same-repo PR, so **a branch with no PR yet is checked by Actions and by nothing
+else.** Narrowing `push:` to `main` would have left those commits with no CI at all, from either
+system.
 
 ### Note on 4.1 — the local `npm run verify` and the machine it ran on
 
