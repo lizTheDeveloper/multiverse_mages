@@ -9,8 +9,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 eight workstreams merged. **Role:** measurer. No constant, rule or magnitude was changed. No golden
 fixture and no balance baseline was regenerated.
 
-*(Composition numbers land when the local arms finish. Everything below the production-arm heading
-is measured and final.)*
+**The answer, first: no.** Twelve horizons from 30 to 2400 world ticks, 9,600 runs across two
+independent execution paths. The strategy space is **one-dimensional at every horizon measured**,
+including tick 30, where a universe holds **31%** of the reachable set and **not one run in 2,000**
+holds all of it. The horizon really is far too long — 2400 ticks is roughly four times what the
+content can fill — but shortening it buys no variety, because the variety was never there to catch
+earlier. **The flatness is in the content graph.**
 
 ## The question
 
