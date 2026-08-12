@@ -200,6 +200,7 @@ export {
   SWEEP_KIND,
   assignStrategies,
   expandSweep,
+  roundRobinCoverageProblem,
   sweepConfigurationHash,
   validateSweep,
 } from './sweep-spec.js';
@@ -409,10 +410,16 @@ export type {
   TuningAxis,
 } from './tuner.js';
 export {
+  CORRELATION_MIN_SUPPORT,
   DOMINANCE_LIMIT,
+  EXPLOIT_MARGIN_MIN,
   EXPLOIT_PROBE,
+  EXPLOIT_PROBES,
   candidatesForAxis,
   correlationOf,
+  coverageProblem,
+  describeScore,
   scoreBalance,
+  spearmanOf,
   varietyOf,
 } from './tuner.js';
