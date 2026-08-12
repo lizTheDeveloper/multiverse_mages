@@ -336,17 +336,17 @@ regression, and the regeneration's per-metric deltas are the evidence for which 
 - [x] 3.1 Enumeration parity — code and `contracts.md` in one commit.
 - [x] 3.2 Structural-corner test: a new regime that lands on an occupied corner fails.
 - [x] 3.3 Trip wire on the reference-tradition sort-order hazard.
-- [ ] 3.4 Extend `tradition-differentiation` to the new regimes.
+- [x] 3.4 Extend `tradition-differentiation` to the new regimes — 21 pairs, both cohorts.
 
 ### 4. Measure
 - [x] 4.1 One sweep file per new arm, single-level `tradition` factor, sharing `sweepId` and
       `rootSeed` so CRN holds. n = 96.
-- [ ] 4.2 Re-run all seven arms on one content set; verify CRN post-hoc (mismatches must be 0).
-- [ ] 4.3 Report the per-tradition table in W13's format.
-- [ ] 4.4 Evaluate the pre-registered distance definition; report the number, held or not.
+- [x] 4.2 Re-run all seven arms on one content set; CRN verified: 576 pairs, 0 mismatches.
+- [x] 4.3 Report the per-tradition table in W13's format.
+- [x] 4.4 Evaluate the pre-registered distance definition: 3 of 6 pairs qualified.
 
 ### 5. Gate
-- [ ] 5.1 Regenerate the three balance baselines with written rationale. **Never `goldens:regen`.**
+- [x] 5.1 Regenerate the three balance baselines with written rationale; each reported no metric moved.
 - [ ] 5.2 `npm run verify`. **A failing golden fixture is a STOP-and-report, never a regen.**
 
 ## What landed that was not in the plan
@@ -381,4 +381,133 @@ regression, and the regeneration's per-metric deltas are the evidence for which 
 
 ## Result
 
-*(written after the sweep, whether or not the thesis holds)*
+**Four hooks sufficed, and the thesis held: the problem was that only one regime had ever been
+written.** Seven arms at n=96 under common random numbers, 576 (cellIndex, replicateIndex) pairs
+compared across arms, **0 seed or strategy mismatches**, one `sweepId`, no arm at the wrong level.
+Three of the four new regimes are mechanically buildable in hook *params* alone; exactly one needed
+a new `kind`, for exactly one reason.
+
+### The seven-arm table
+
+| tradition | asc. rate | nodesKnown | instances | grimoires | libDepth | livingMages | population |
+|---|---|---|---|---|---|---|---|
+| Vancian | 0.1146 | 64.2 ±7.7 | 1883 ±189 | 91 ±30 | 4.4 ±1.0 | 87.0 ±9.9 | 16,871 ±1303 |
+| True Naming | 0.1250 | 65.9 ±7.8 | 2364 ±218 | 195 ±40 | 15.1 ±2.6 | 82.9 ±10.1 | 16,154 ±1364 |
+| Art of Memory | 0.0000 | 23.8 ±1.4 | 385 ±53 | 0.0 ±0.0 | 0.0 ±0.0 | 81.7 ±10.1 | 14,135 ±1281 |
+| **Chorale** | **0.1250** | **62.0 ±6.8** | 2162 ±198 | 26 ±6 | 0.0 ±0.0 | 88.2 ±10.4 | 16,796 ±1337 |
+| **Flesh Codex** | 0.0000 | **10.9 ±1.2** | **119 ±17** | 0.0 ±0.0 | 0.0 ±0.0 | 83.9 ±10.5 | 14,831 ±1335 |
+| **Shared Mind** | 0.0000 | 22.5 ±1.3 | 668 ±80 | 1.0 ±0.4 | 0.0 ±0.0 | **92.2 ±10.1** | **18,897 ±1213** |
+| **Witch's Bond** | 0.0000 | 15.4 ±0.9 | 302 ±28 | **140 ±23** | 1.7 ±0.2 | 77.6 ±10.4 | 13,455 ±1381 |
+
+`capitalSnowball`: Vancian 0.4405, True Naming 0.4941, **Witch's Bond 0.5078** — and **0.0000** for
+Art of Memory, Chorale, Flesh Codex and Shared Mind.
+
+### The pre-registered distance test: met, three times over
+
+The bar is the Art-of-Memory-vs-Vancian separation **re-measured on this tree under CRN** — not
+W13's published separations, which are not comparable for the two reasons above. The yardstick came
+out at: ascension 3.51, grimoires 3.02, library depth 4.31, nodes known 5.18, living mages 0.37,
+population 1.50, capitalSnowball 0.44.
+
+| pair of new regimes | metrics met | qualifies |
+|---|---|---|
+| **Chorale vs Witch's Bond** | **7 / 7** | **YES** |
+| Shared Mind vs Witch's Bond | 5 / 7 | **YES** |
+| Flesh Codex vs Witch's Bond | 4 / 7 | **YES** |
+| Chorale vs Flesh Codex | 3 / 7 | no |
+| Chorale vs Shared Mind | 3 / 7 | no |
+| Flesh Codex vs Shared Mind | 3 / 7 | no |
+
+**Chorale and the Witch's Bond are further apart than the Art of Memory is from Vancian on every
+one of the seven metrics** — including nodes known at 6.82 SE against the yardstick's 5.18, and
+library depth at 8.43 against 4.31. Acceptance asked for one qualifying pair; three qualified.
+
+Note the three that did not qualify all fail the same way and it is not a wash: Chorale, Flesh Codex
+and Shared Mind are all unwritten traditions, so they agree at exactly 0.0 on library depth and
+0.0000 on capitalSnowball, which costs each pair two of the seven metrics by construction. On the
+metrics that can distinguish them they separate hard — Chorale vs Flesh Codex is **7.46 SE** apart
+on nodes known, the largest single separation in the whole table.
+
+### Four findings the sweep produced that nobody had asked for
+
+**1. The Art of Memory's 17.2 nodes known was slot-bound, and now that is measured.** Chorale is the
+Art of Memory with the cap removed (12 → 4096 slots) and teaching switched on: nodes known goes
+23.8 → 62.0, instances 385 → 2162, and ascension 0.0000 → 0.1250. The pre-registered metric was
+exactly this, and it moved.
+
+**2. Teaching spreads knowledge; it does not create it.** The Shared Mind was authored as a
+controlled arm — the Art of Memory with one number changed, `instanceMastery` 256 → 1024, i.e. the
+teach-threshold cliff crossed and nothing else. The result splits cleanly:
+
+| | Art of Memory | Shared Mind | moved? |
+|---|---|---|---|
+| nodes known | 23.8 ±1.4 | 22.5 ±1.3 | **no** |
+| instances | 385 ±53 | 668 ±80 | **+73%** |
+| living mages | 81.7 | 92.2 | +13% |
+| population | 14,135 | 18,897 | **+34%** |
+
+So W13's 11× difference in lessons taught is **not** invisible to the harness, as feared — it is
+visible in redundancy and in population, and invisible in *nodes known*, because the breadth of a
+universe's magic is research-bound and teaching only copies what research already found. That is a
+balance lever nobody was treating as one, and it means `instanceMastery` is a one-integer switch on
+a universe's population curve.
+
+**3. A tradition can hold books it did not write.** Chorale shows 26 grimoires and Shared Mind 1.0,
+despite both having `scribingAvailable: false` — while the Art of Memory and the Flesh Codex, also
+unwritable, show exactly 0.0. Library depth is 0.0 for all four, so the books are *held* and never
+*shelved*, which is the signature of raid loot rather than scribing. `referenceGrimoires` is
+therefore not a scribing metric once raids run, and the strong unwritten universes are carrying off
+other people's libraries. Consistent with the fiction and not something anyone authored.
+
+**4. Tradition choice moves a universe in and out of the §7 ascension band on its own.** Vancian
+(0.1146), True Naming (0.1250) and Chorale (0.1250) all sit inside the 0.05–0.20 target band; Art of
+Memory, Flesh Codex, Shared Mind and the Witch's Bond all sit at 0.0000, below it. No balance
+constant separates them. That is the strongest available evidence that traditions are a strategic
+axis rather than a label — and also a warning, since four of seven shipped traditions currently
+cannot ascend at all.
+
+### Did four hooks suffice? Yes — and here is the careful version
+
+- **All four registers the author named were built inside the four hooks**: deals with demons
+  (Witch's Bond), body horror (Flesh Codex), magic as music (Chorale), magic as telepathy (Shared
+  Mind). Three of the four required **no code at all** — only params no one had ever set.
+- **One new `kind` was required, and only one.** `bounded`, because `standard` hardcodes unbounded
+  capacity and `palace` cannot keep a written copy, so *"books exist AND a mage's memory is finite"*
+  had no kind to declare. `contracts.md` §2.5 explicitly sanctions adding a kind as a reviewed code
+  change, so this is expected work, **not** evidence against the cap. It is also the regime that
+  qualified in all three winning pairs.
+- **Two regimes could not be built, and the reason is not the hook contract.** The strongest reading
+  of *deals with demons* (knowledge lives in the contract, not the head) and of *telepathy*
+  (knowledge lives in the institution) both want `personalLocationKind` at `grimoire` or `library`.
+  The `store` hook has exactly that word. `KnowledgeSubsystem.createInstance` throws for either
+  without a grimoire handle, and the acquisition path supplies none. **That is a missing acquisition
+  path in `rules-magic`, not a missing hook**, and widening the four-hook contract would not help.
+- **The hook that would need widening first is `cost`** — one boolean, no params, cannot change the
+  price. Every one of the author's four registers wants something from it. W28 does not widen it,
+  because `cost` is raid-only and unmeasurable today, and vocabulary that cannot be tested is
+  vocabulary that cannot be balanced.
+
+### The reference tradition did not move
+
+`scribingTraditionId()` still returns **true-naming** on the seven-tradition set — verified by
+loading the shipped content, not argued. Three of the four new regimes cannot scribe; `witch-bond`
+can, and its id sorts after `true-naming`, which was part of why that id was chosen. The hazard
+itself — **a tradition's name decides which universe every balance baseline was measured in** — is
+now guarded by a trip wire in `packages/content/test/unit/tradition-hooks.test.ts`.
+
+### The gate
+
+`npm run verify`: **green**, in a clean-room run with the vitest cache cleared and nothing else
+running. No golden fixture was regenerated. All three balance baselines were regenerated once, and
+each reported **`no metric moved`** — provenance only. That is a stronger result than expected: it
+means adding four traditions and widening the god's action space from 2 candidates to 6 changed
+nothing measurable on any of the three gates.
+
+### The forced next step
+
+**Four of seven shipped traditions cannot ascend.** That is not W28's to fix — no balance constant
+distinguishes them and the harness does not exist until 0.5.0 — but it is now a measured fact with
+a named cause: ascension tracks nodes known, nodes known is research-bound, and the four
+non-ascending traditions are the four with either a hard slot cap or dear research. The tuning
+question that follows is whether `slotsPerMage` should be a species-scaled quantity rather than a
+universe constant, which the `store` hook currently cannot express.

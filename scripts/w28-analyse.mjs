@@ -268,9 +268,13 @@ console.log(
     "2. Adding four traditions widens the god's action space. Action 13's candidate list is\n" +
     '   "every tradition except the one held" (`agent-api/src/candidates.ts:311`), so it grows\n' +
     '   from 2 entries to 6, and the interned id is written into the observation vector\n' +
-    '   (`observation.ts:236`). Every strategy that samples the legal action set therefore\n' +
-    '   makes different choices than it did with three traditions. Common random numbers fix\n' +
-    '   the seed; they cannot fix the size of the choice set.\n' +
+    '   (`observation.ts:236`). Any strategy that samples the legal action set therefore has a\n' +
+    '   different choice set than it had with three traditions. Common random numbers fix the\n' +
+    '   seed; they cannot fix the size of the choice set.\n' +
+    '   **Measured, not assumed:** regenerating all three balance baselines on the new content\n' +
+    '   set moved *no metric on any of the three gates* — only provenance. So the mechanism is\n' +
+    '   real and its effect on the gate sweeps is zero, which bounds how much of the gap below\n' +
+    '   it can explain. Cause 1 is doing the work.\n' +
     '\n' +
     'Point 2 is worth stating on its own, because it is a property of the harness rather than\n' +
     "of this workstream: **the tradition axis cannot be swept without also perturbing the god's\n" +
