@@ -32,3 +32,4 @@ __pycache__/
 # writes tens of thousands of lines of JSON per arm and none of it is source.
 .w20/
 .w20-run-arm.sh
+.w20-*.sh
