@@ -176,6 +176,15 @@ const ALLOWED: Readonly<Record<string, PackageEdges>> =
         'state',
         'rules-magic',
         'rules-world',
+        // §5 gives `scenario` *"everything above; a leaf"*, and `rules-raid` is
+        // above it in that list. The edge went unlisted here only because
+        // nothing had reached for it: `rules-raid` shipped complete and
+        // uncalled, so the composition root had no portal to open. It does now
+        // — `raids.ts` drives `openPortal` through `applyRaidOutcome` — and the
+        // edge is safe for the same reason every other one in this entry is,
+        // which is that nothing imports `scenario`. The leaf test below is what
+        // holds that up.
+        'rules-raid',
         'coordination',
         'agent-api',
         'mc-harness',

@@ -232,7 +232,21 @@ describe('contentRevision', () => {
     // disagree about whether a game was over. That is exactly what the revision
     // exists to make incompatible, and it is why the digest is checked rather
     // than the file list.
-    expect(registry.contentRevision).toBe('ec506311ed7aadeb1aaf0e14f5750465');
+    //
+    // ec506311ed7aadeb1aaf0e14f5750465 -> 61f6aa53e091684809765b1f9020ee96, when
+    // `raid-engagement` added the constants that make a raid fire — the arrival
+    // process, the loot count, and the rival stand-in a warband is drawn from.
+    // They are in the preimage for the reason the god tables are: two universes
+    // that disagreed about how long a portal holds, or about how many books come
+    // off a shelf, would fight two different battles while their revisions agreed
+    // they were compatible.
+    //
+    // W6 and W8 each recorded a successor to 2512ea02 on their own branches —
+    // ec506311 and aeedc362 — because neither contained the other. This tree
+    // contains both sets of constants, so it is a third revision, and that it is
+    // neither of theirs is the whole point of a digest over the preimage rather
+    // than a hand-maintained list.
+    expect(registry.contentRevision).toBe('61f6aa53e091684809765b1f9020ee96');
   });
 
   it('is stable across loads of identical content', () => {
