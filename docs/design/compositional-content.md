@@ -826,6 +826,63 @@ impact at all; a filter opens"*, and nothing here contradicts it.
 Also confirmed: `technique.json` is byte-identical to base across this branch's whole history, so
 there is no content collision between the two workstreams.
 
+## 6e. Depth, and the trunk rule — both answered with numbers
+
+### 6e.1 The expansion went deep, and `depthCeiling` now separates five ways
+
+*"If everything is reachable then nothing is differentiatable."* The measured version of that was
+that `depthCeiling` ranges 3–7 against content that topped out at tier 6 with **one node there and
+none above**. Three of six species had functionally identical ceilings.
+
+| tier | 1 | 2 | 3 | 4 | **5** | **6** | **7** |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| v1, before | 12 | 13 | 13 | 11 | **2** | **0** | **0** |
+| **v1, after** | 12 | 24 | 24 | 24 | **12** | **6** | **6** |
+| whole game, before | 70 | 71 | 78 | 65 | **15** | **1** | **0** |
+| **whole game, after** | 70 | 82 | 89 | 78 | **25** | **7** | **6** |
+
+**The game had zero tier-7 nodes. It now has six**, all inside the v1 rectangle. Twenty-four v1 nodes
+sit above tier 4 where two did.
+
+What that buys, which is the whole point:
+
+| `depthCeiling` | species | v1 nodes reachable, before | **after** |
+|--:|---|--:|--:|
+| 3 | orc | 38 | **60** |
+| 4 | human, gnome | 49 | **84** |
+| 5 | dwarf | 51 | **96** |
+| 6 | elf | 51 | **102** |
+| 7 | draconic | 51 | **108** |
+
+**Three distinguishable outcomes became five.** Dwarf, elf and draconic previously reached the
+identical 51; they now reach 96, 102 and 108. A dragon's ceiling is worth six nodes an elf cannot
+reach, and an elf's is worth six a dwarf cannot — which is the first time the trait has meant
+anything.
+
+### 6e.2 The trunk rule: intact for Rego, deliberately not for Perdo
+
+The verified rule in the base content was that **all 11 of 11 cross-cell prerequisite edges
+originate in Intellego** — *you must perceive a thing before you can unmake or command it*. Measured
+on the expanded graph, over 87 v1 cross-cell edges:
+
+- **Every one of the 36 Rego nodes has an Intellego ancestor.** The rule holds completely for Rego,
+  including at tier 1: no Rego node is a root.
+- **12 of the 36 Perdo nodes do not** — the four Perdo tier-1 roots (`pm-blunt-the-edge`,
+  `pt-crumble`, `pl-fray-the-edge`, `pn-mispronounce`) and their tier-2 successors. Perdo keeps four
+  independent entry points into the graph.
+- By edge count the rule is diluted rather than broken: 48 of 87 cross-cell edges originate in
+  Intellego, against 26 in Perdo and 13 in Rego.
+
+**Whether Perdo should also be gated is a design question, and it is worth asking rather than
+assuming.** There is a real argument that it should not be: breaking a thing is the one act that
+does not require understanding it, and *Blunt the Edge* — taking the sharpness out of an attention —
+plainly does not need Intellego Mentem first. Keeping Perdo's roots free also means a universe that
+forbids Intellego is not left with literally nothing, which matters given §4's technique switches.
+
+**But it was not a decision, it was an authoring accident**, and that is the honest report. It should
+be made deliberately in one direction or the other before the Muto and Creo columns are authored,
+because those will need the same call and will otherwise inherit whichever way this fell.
+
 ## 7. The open question, raised rather than answered
 
 The author's instruction says *"author a complex web of nodes **per tradition**"*. Tracks as
