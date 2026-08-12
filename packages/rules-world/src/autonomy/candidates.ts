@@ -71,15 +71,33 @@ export function withinDepthCeiling(target: KnowledgeTarget, species: SpeciesReco
 }
 
 /**
- * Orders candidates cheapest first, breaking ties on node id.
+ * Orders candidates **novel first**, then cheapest, breaking ties on node id.
  *
  * A total order that depends on nothing but the targets themselves. Ordering by
  * the gateway's own return order would make selection depend on how
  * `rules-magic` happens to walk its index — the same class of divergence
  * `reallocation.ts` avoids by sorting cohorts on their key rather than on their
  * entity slot.
+ *
+ * ## Why novelty outranks cost, and only for scribing
+ *
+ * Cost alone is a total order over *content*, so the cheapest scribable node is
+ * the cheapest for every scribe in every century, and a universe writes the same
+ * book forever. That is not a hypothesis: the reference run ends with **1,263
+ * grimoires holding two distinct nodes** (vision §13; `mages-and-species` task
+ * 9.8), and vision §6a's capital loop reads *depth* — distinct nodes — so its
+ * input was pinned at two and could not compound.
+ *
+ * `libraryHolds` is set only by the scribing scan, so this tie-break is inert
+ * for research and teaching candidates and their ordering is unchanged. It is a
+ * *preference*, not a filter: a second copy is still selected when it is the
+ * only thing on the list, which is what keeps §5's redundancy against loss
+ * reachable.
  */
 export function compareTargets(a: KnowledgeTarget, b: KnowledgeTarget): number {
+  const aHolds = a.libraryHolds === true ? 1 : 0;
+  const bHolds = b.libraryHolds === true ? 1 : 0;
+  if (aHolds !== bHolds) return aHolds - bHolds;
   if (a.remainingCost !== b.remainingCost) return a.remainingCost - b.remainingCost;
   return a.nodeId - b.nodeId;
 }

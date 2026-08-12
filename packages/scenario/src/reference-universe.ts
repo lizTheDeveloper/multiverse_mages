@@ -165,7 +165,13 @@ export interface ReferenceOptions {
   readonly foundingNodes: number;
 }
 
-/** The factor ids a sweep may name. Exactly the keys of {@link ReferenceOptions}. */
+/**
+ * The factor ids a sweep may name.
+ *
+ * `tradition` is the one entry that is **not** a key of {@link ReferenceOptions}:
+ * it is resolved while the executor picks content, before the tick-zero state is
+ * built at all. See {@link TRADITION_FACTOR_ID}.
+ */
 export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'cohortSize',
   'foundingMages',
@@ -259,6 +265,13 @@ export interface ReferenceContent {
  * tradition is added — a sweep file that named `2` would then silently be an arm
  * for something else. Absent means byte-identical to the behaviour before this
  * parameter existed, which is what keeps the committed baselines meaningful.
+ *
+ * **W7 arrived with a second selector, `traditionIndex`, doing this same job by
+ * ordinal.** The integration merge kept exactly one, and kept this one: an
+ * ordinal into content order is the hazard that made the reference universe run
+ * True Naming by accident of the alphabet in the first place, and a committed
+ * sweep file naming `2` is that hazard with a baseline attached. See
+ * `docs/superpowers/plans/integration-round-2.md`, collision 5.
  */
 export function referenceContent(
   registry: ContentRegistry = shippedContent(),

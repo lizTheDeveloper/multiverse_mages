@@ -326,6 +326,11 @@ export function executeReferenceRun(
   task: RunTask,
   options: ReferenceExecutorOptions = {},
 ): ReferenceRunResult {
+  // The tradition is a *content* fact, so it is resolved before the scenario is
+  // built rather than read out of the options inside it, and it is memoized for
+  // the reason `referenceContent` is resolved once per process: a worker runs
+  // thousands of episodes and re-resolving the node graph for each is the
+  // dominant cost of a sweep. See `TRADITION_FACTOR_ID`.
   const content = contentForTask(task, options);
   const interval = options.censusIntervalTicks ?? CENSUS_INTERVAL_TICKS;
 
@@ -428,9 +433,14 @@ function armContributionOf(
  * invariance test is what holds that claim up.
  */
 export function makeReferenceExecutor(options: ReferenceExecutorOptions = {}): RunExecutor {
-  const content = options.content ?? referenceContent();
+  // A caller's explicit content set is honoured and pins the tradition with it;
+  // an *absent* one is resolved per run, because `tradition` is a sweep factor
+  // and a content set closed over here would silently answer every level of it
+  // with the same tradition. The resolve-once property the note above claims is
+  // kept by `contentForTask`'s process-level cache — three entries at most, one
+  // per shipped tradition, rather than one per run.
   const resolved: ReferenceExecutorOptions = {
-    content,
+    ...(options.content === undefined ? {} : { content: options.content }),
     ...(options.censusIntervalTicks === undefined
       ? {}
       : { censusIntervalTicks: options.censusIntervalTicks }),

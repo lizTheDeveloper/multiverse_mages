@@ -288,6 +288,10 @@ function readObservation(state: SimState, content: ReferenceContent): Omit<LongR
  * nothing measurable and lets the worker answer.
  */
 export async function runLongReference(input: LongRunOptions = {}): Promise<LongRunResult> {
+  // No tradition named, so this resolves `scribingTraditionId`'s pick — the
+  // tradition every measurement in this file has ever been taken under. The
+  // tradition is a content fact, not a `ReferenceOptions` field, so pinning it
+  // is done here and not in `LONG_RUN_OPTIONS`.
   const content = input.content ?? referenceContent();
   const ticks = input.ticks ?? LONG_RUN_TICKS;
   const simulation = defineWorldSimulation(content.deps);
