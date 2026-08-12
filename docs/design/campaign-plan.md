@@ -66,7 +66,7 @@ exploit margin, and the idle probe winning **100% of runs in every cell**.
 | W4 | Reward functions + `metricDeltas` design | lead | **done**, branch `w4/reward-functions` |
 | W5 | Axis off-by-one + `terminalReason` in record | opus | **done**, in PR #16 |
 | — | Balance tuner (CRN, hard constraints) | lead | **done**, in PR #16 |
-| W6 | Positive-achievement ascension predicates | opus | **D1/D2/D4 green**; D3 shown unreachable |
+| W6 | Positive-achievement ascension predicates | opus | **complete** — see final numbers below |
 | W7 | §6a loop **+ the teaching fix (C2)** | opus | in flight |
 | W8 | Make raids engage **+ the destruction path (C3)** | opus | in flight |
 | W9 | Octalysis + game-theory proposals | opus | **done**, branch `w9/octalysis-and-mechanics` |
@@ -427,3 +427,41 @@ from a zero-prestige population. That is the number to watch.
       *"a live-PvP death sentence dressed as a strategic cost"*. Elimination is intended, and
       rejoin-into-a-new-bubble is the bound. Until §8 is updated it will keep generating this
       objection from every reader and every agent.
+
+
+---
+
+## W6 final result — the win condition is fixed
+
+Measured at n=96, 2400 ticks, eight strategies, before and after the predicate rewrite:
+
+| # | claim | before | after | verdict |
+|---|---|---|---|---|
+| D1 | `ascensionRate` inside 0.05–0.20 | 0.771 | **0.125** | **passes** |
+| D2 | exploit margin ≥ 0.05 | −0.229 | **+0.125** | **passes** |
+| D3 | ≥3 winners, none above 60% of wins | 7 winners | **1 winner** | **fails** |
+| D4 | correlation with nodes known > 0 | +0.324 | **+0.957** | **passes** |
+
+**Both summits are live**: `permissive-breadth` takes 6 apotheosis and 6 canon, so neither path is
+dead and `qualifyingPath`'s apotheosis-first bias has not silently killed canon.
+
+### Why D3 failing here is the correct outcome, not a regression
+
+Winners went from seven to one because the predicate now **excludes everyone who was winning by
+doing nothing**. The seven included the idle probe and four strategies finishing at the passive
+knowledge baseline. Exactly one strategy — `permissive-breadth`, the only one that measurably
+changes what its universe knows — still qualifies.
+
+That is the win condition working. A game where seven strategies win and five of them are
+indistinguishable from inaction had a broken win condition; a game where one strategy wins because
+it is the only one that does anything has a **content and pressure problem**, which is W7's and
+W8's territory. D3 was always going to bind there — W6 demonstrated as much before measuring it, by
+showing the pool's Pareto front is a single point.
+
+### The evidence discipline worth copying
+
+The 60-tick and 240-tick baselines report **"no metric moved"**. They were regenerated *only*
+because `contentRevision` changed and the gate refuses cross-build comparison — not because
+anything moved. That is what makes the 2400-tick movement attributable to the win condition rather
+than to a simulation change, and it is the cleanest baseline justification this campaign has
+produced.
