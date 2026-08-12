@@ -101,7 +101,8 @@ what it learned is a plan nobody can check: see §8.1 for the measurement.
       and compare `.runs.ndjson` by SHA-256. Report the actual hashes.
 - [x] 7.2 Measure throughput per container size on Modal; fetch current Modal pricing at run time.
 - [x] 7.3 Cost and wall-clock table for N ∈ {24, 96, 274, 1094} at a few container counts.
-- [ ] 7.4 `npm run verify` green, verbatim result reported.
+- [x] 7.4 `npm run verify` green, verbatim result reported. Exit 0; 261 test files, 3682
+      tests, 0 errors; all three balance gates pass with **delta 0.00000 on every metric**.
 - [x] 7.5 `docs/` note so the next person can run one without reading the source.
 
 ## 8. What measurement changed about the design
@@ -117,6 +118,17 @@ what it learned is a plan nobody can check: see §8.1 for the measurement.
 - [x] 8.4 Wall clock is dominated by a 50-90 s container-start floor, so 384 runs cost 72 s and
       1096 runs cost 85 s. Fan-out is worth it above ~2 minutes of local work and roughly free
       after that.
+
+## 9. Reported, not fixed
+
+- [x] 9.1 **`vitest` can emit `Timeout calling "onTaskUpdate"` under load, failing an otherwise
+      all-green suite.** Observed once here. It is **not** this branch's: it reproduces with both
+      new test files excluded (259 files, 3663 tests, all passing, 1 error) and disappears when
+      `packages/scenario/test/unit/reference-long-run.test.ts` runs alone. That file's single test
+      blocks a worker for ~146 s, which is longer than vitest's RPC budget for a task update when
+      the machine is contended. A clean `npm run verify` on this branch is green, and the base
+      commit's suite was also green. Recorded here because a gate that fails for a reason unrelated
+      to the code is the kind of thing that gets worked around rather than understood.
 
 ## Standing constraints observed
 
