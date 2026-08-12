@@ -92,6 +92,7 @@
 
 import type { SimState } from '@mm/sim-core';
 import { floorDiv } from '@mm/sim-core';
+import type { KnowledgeInstanceRecord } from '@mm/state';
 import { KNOWLEDGE_INSTANCE, LOCATION_KIND, MAGE, componentOf } from '@mm/state';
 
 /** Instances of one node, and where each of them lives. */
@@ -219,18 +220,18 @@ export interface CensusOptions {
  * Only **held** instances (mind, palace) get a row. A grimoire is written at
  * `mastery: 0` by construction (`rules-magic`'s `scribing.ts`) and does not
  * decay at all, so a floor and a countdown would be meaningless numbers a
- * renderer would then have to know to ignore.
+ * renderer would then have to know to ignore. `locationKind` is therefore always
+ * `mind` or `palace`, and `locationId` is always a mage handle.
+ *
+ * **Extends `@mm/state`'s record rather than restating it.** `state-schema`
+ * requires one set of world-state type definitions that everything consumes —
+ * a second declaration of §1.5's five fields would be free to drift from the
+ * component layout, and `schema-duplication.test.ts` rejects one however it is
+ * named. So the columns below are the derived numbers and nothing else.
  */
-export interface InstanceMastery {
+export interface InstanceMastery extends KnowledgeInstanceRecord {
   /** The instance's entity handle. Rows are ascending by this. */
   readonly instanceHandle: number;
-  readonly nodeId: number;
-  /** `mind` or `palace`; see the note above on why nothing else appears. */
-  readonly locationKind: number;
-  /** The holding mage. */
-  readonly locationId: number;
-  readonly mastery: number;
-  readonly acquiredTick: number;
   /** The holder's species `retention`; `0` when no mage row carries the holder. */
   readonly retention: number;
   /** `masteryFloor(retention, dormant)` — what it settles at and never passes. */
@@ -387,14 +388,12 @@ function emptyTally(): NodeTally {
   return { total: 0, mind: 0, grimoire: 0, library: 0, palace: 0, locations: new Set<number>() };
 }
 
-/** A held instance's raw columns, carried from the instance pass to the mage pass. */
-interface HeldRow {
+/**
+ * A held instance's raw columns, carried from the instance pass to the mage
+ * pass. Extends the shared record for the reason {@link InstanceMastery} gives.
+ */
+interface HeldRow extends KnowledgeInstanceRecord {
   readonly instanceHandle: number;
-  readonly nodeId: number;
-  readonly locationKind: number;
-  readonly locationId: number;
-  readonly mastery: number;
-  readonly acquiredTick: number;
 }
 
 /**
