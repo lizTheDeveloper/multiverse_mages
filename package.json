@@ -32,6 +32,7 @@
     "prebalance:gate:ascension": "npm run typecheck",
     "test:watch": "vitest",
     "bench": "tsc -p packages/sim-core/bench/tsconfig.run.json && node scripts/bench.mjs",
+    "verify:nosweeps": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test",
     "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test && npm run balance:gate && npm run balance:gate:horizon && npm run balance:gate:ascension"
   },
   "devDependencies": {
