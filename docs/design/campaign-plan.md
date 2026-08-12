@@ -844,3 +844,49 @@ running hot. Not tuned away.
 Not worse than the parts — but better for a reason that is not good news. **This is the fifth
 independent confirmation that the binding constraint is content exhaustion**, and W8's looting, the
 only mechanism measured to cross the ceiling, **no longer does so durably on the combined tree.**
+
+---
+
+## W18: a metric failed its own controls, and the shipped constant was chosen by it
+
+**Both correlation coefficients pass a system that is known broken.** On the measured one-winner
+pool, Pearson reads **+0.71** and Spearman **+0.53** (+0.96 / +0.60 on the real gate sweep). Both
+look healthy.
+
+**No magnitude threshold on either coefficient separates a relationship from a single leveraged
+point — the degeneracy is in the *support*, not the magnitude.** Reporting Spearman beside Pearson,
+which this campaign proposed as the fix, does not fix it.
+
+Repaired with a **support gate**: the term contributes only at ≥ 3 winners, and contributes the
+*weaker* of the two coefficients. The blindness is declared as a `falseFriend` in the registry.
+
+**The consequence: the shipped ruleset scored +0.685 under the old instrument and −0.257 under the
+repaired one**, entirely because a +0.96 over one winner no longer counts.
+`ascension-summit-cells = 13` was chosen by a search that counted it.
+
+### Content exhaustion, restated as two instrument properties
+
+- **The measured node vector cannot supply a positive control for D4.** Five of ten strategies
+  finish on exactly 51 nodes, and `permit-then-idle` holds the pool's **second-highest** node count
+  (231) while correctly never winning. **No assignment of wins over measured data makes knowledge
+  monotone with winning.**
+- **`variety`'s positive control has never been observed** — 0.000 in every committed sweep since
+  the win condition changed.
+
+### Control separations, and the enforcement
+
+    ascensionRate 0.733 · variety 0.590 · correlation 1.212 · spearman 1.000
+    nonZeroStrategies 3.000 · exploitMargin 0.571 · topShare 0.667
+
+Fields are enumerated off a **real** score, so a new numeric field with neither controls nor a
+written exemption **fails the suite**.
+
+`replicates % poolSize === 0` is now **refused**, not warned — divisibility rather than "≥ pool
+size", because 12-over-8 passes a coverage check while making `ascensionRate` (run-weighted) and the
+pool mean (unweighted) different quantities.
+
+**The exploit margin was kept against both external reviews**, with evidence: excluding the probes
+makes it a genuinely different function, pinned in **both** directions — failing while the band
+passes, and passing while the band fails — which the old identity made impossible.
+
+`npm run verify` green; all three gates **delta 0.00000**; no golden and no baseline regenerated.
