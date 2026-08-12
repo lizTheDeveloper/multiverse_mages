@@ -1,0 +1,472 @@
+<!doctype html>
+<!--
+  Multiverse Mages — the god's light.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  A prototype of one rule, tested on three grounds.
+
+  THE RULE: cyan is the god's own light — potential, affordance, and the moment
+  of touch. The fourteen form hues stay the colour of magic that exists in the
+  world. Nothing glows that the god cannot currently do, so absence of light is
+  the legality mask, which is what sound-design §2.2 already makes the deny
+  sound do. That keeps art-plan §2's "magic reads as the only saturated thing
+  on screen" true, because the god is not part of the world.
+
+  THE QUESTION: glow wants a dark ground and art-plan §2 specifies vellum. This
+  page renders the same five controls on three grounds so the trade is visible
+  rather than argued:
+
+    A  vellum, bloom only     no dark anywhere; glow as warm ink-bloom
+    B  vellum with aether     light chrome, dark insets where magic lives
+    C  full dark              the natural home for light
+
+  Serve with `npm run ui`, then open /ui/glow/.
+
+  KNOWN COST: this reimplements nothing — the controls are inert demonstrations
+  of state, not a simulation. Favor spends and refills on a timer purely so the
+  charge/spend/deny states can be seen moving. No content is loaded and no rule
+  is evaluated; ui/ruleset/ is where legality actually runs.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — the god's light</title>
+
+<style>
+  :root {
+    /* ---- world palette, shared with the other prototypes ---- */
+    --vellum:   #E7E1D1;
+    --plate:    #F2EEE4;
+    --sunk:     #D8D1BD;
+    --ink:      #1C1913;
+    --soft:     #55503F;
+    --faint:    #7E7563;
+    --line:     #C9C1AC;
+
+    /* ---- the fourteen form hues own the world's magic (four of them here) ---- */
+    --limen:    #6A52B8;
+    --mentem:   #26775F;
+    --nomen:    #3E66A4;
+    --terram:   #9A5730;
+
+    /* ---- the god's light. Not a form hue: see the collision note on the page. ---- */
+    --god:      #12B8C6;
+    --god-lit:  #6FF0FA;
+    --god-deep: #06525C;
+
+    --deny:     #A2331F;
+
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+    --serif: "Hoefler Text", "Iowan Old Style", Palatino, "Book Antiqua", Georgia, serif;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #14120C; color: #E9E3D3;
+    font: 15px/1.55 var(--sans); -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 82rem; margin: 0 auto; padding: 1.9rem 1.25rem 5rem; }
+
+  .eyebrow { font: 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--god); }
+  h1 { font: 400 clamp(1.7rem, 3.4vw, 2.5rem)/1.08 var(--serif); margin: .35rem 0 .5rem; letter-spacing: -.015em; }
+  .lede { color: #A79D89; max-width: 64ch; margin: 0 0 .4rem; }
+  .lede em { color: #E9E3D3; font-style: italic; }
+  .lede b { color: var(--god-lit); font-weight: 500; }
+  code { font: 12.5px var(--mono); color: #C6BCA6; }
+
+  /* ------------------------------------------------ the taxonomy legend */
+  .taxo {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: .7rem; margin: 1.4rem 0 2.2rem;
+  }
+  .tx { border: 1px solid #2E2A20; border-radius: 4px; padding: .75rem .8rem; background: #1A1710; }
+  .tx .swatch {
+    height: 34px; border-radius: 3px; margin-bottom: .55rem;
+    display: flex; align-items: center; justify-content: center;
+    font: 10px var(--mono); letter-spacing: .14em; text-transform: uppercase;
+  }
+  .tx .n { font: 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: #E9E3D3; }
+  .tx .d { font-size: .82rem; color: #9A9078; margin-top: .2rem; line-height: 1.4; }
+
+  .sw-latent  { background: #12100A; border: 1px solid color-mix(in srgb, var(--god) 34%, #2A261C);
+                color: #4E9AA2; }
+  .sw-charged { background: color-mix(in srgb, var(--god) 12%, #12100A);
+                border: 1px solid var(--god); color: var(--god-lit);
+                box-shadow: 0 0 0 1px color-mix(in srgb, var(--god) 30%, transparent),
+                            0 0 14px -2px color-mix(in srgb, var(--god) 55%, transparent); }
+  .sw-touch   { background: color-mix(in srgb, var(--god) 38%, #12100A);
+                border: 1px solid var(--god-lit); color: #042226;
+                box-shadow: 0 0 22px -1px color-mix(in srgb, var(--god-lit) 75%, transparent),
+                            inset 0 0 12px color-mix(in srgb, var(--god-lit) 40%, transparent); }
+  .sw-world   { background: color-mix(in srgb, var(--limen) 26%, #12100A);
+                border: 1px solid var(--limen); color: #CFC2FF;
+                box-shadow: 0 0 14px -3px color-mix(in srgb, var(--limen) 65%, transparent); }
+  .sw-deny    { background: #100E09; border: 1px dashed color-mix(in srgb, var(--deny) 55%, #2A261C);
+                color: #9C4633; }
+
+  /* ------------------------------------------------ the three grounds */
+  .grounds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem; }
+  @media (max-width: 66rem) { .grounds { grid-template-columns: 1fr; } }
+
+  .ground { border-radius: 5px; overflow: hidden; border: 1px solid #2E2A20; display: flex; flex-direction: column; }
+  .ghead { padding: .7rem .9rem; border-bottom: 1px solid; display: flex; align-items: baseline; gap: .5rem; }
+  .ghead .letter { font: 700 13px var(--mono); }
+  .ghead .name { font: 400 1.05rem var(--serif); }
+  .ghead .verdict { margin-left: auto; font: 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+  .gbody { padding: 1rem .9rem 1.1rem; flex: 1; display: flex; flex-direction: column; gap: .9rem; }
+  /* every well is a column with its own rhythm — grounds A and C have no .aether
+     to supply one, and without this the favor row collides with the label under it */
+  [data-well] { display: flex; flex-direction: column; gap: .75rem; }
+  .gfoot { padding: .6rem .9rem .8rem; font: 11px var(--mono); line-height: 1.55; border-top: 1px solid; }
+  .measured { margin-top: .55rem; padding-top: .5rem; border-top: 1px dotted currentColor; opacity: .95; }
+  .measured b { font-weight: 700; }
+  .measured .pass { color: #1B7A5A; } .measured .fail { color: var(--deny); }
+  .g-b .measured .pass, .g-c .measured .pass { color: #4DBE97; }
+
+  /* ground A — vellum, no dark anywhere */
+  .g-a { background: var(--vellum); color: var(--ink); }
+  .g-a .ghead { background: var(--plate); border-color: var(--line); }
+  .g-a .ghead .letter, .g-a .ghead .verdict { color: #8A6207; }
+  .g-a .gfoot { border-color: var(--line); color: var(--faint); }
+
+  /* ground B — vellum chrome, dark aether insets */
+  .g-b { background: var(--vellum); color: var(--ink); }
+  .g-b .ghead { background: var(--plate); border-color: var(--line); }
+  .g-b .ghead .letter, .g-b .ghead .verdict { color: var(--god-deep); }
+  .g-b .gfoot { border-color: var(--line); color: var(--faint); }
+  .g-b .aether {
+    background: #0B0E10; color: #DCE6E7; border: 1px solid #1E2A2C; border-radius: 4px;
+    padding: .85rem .8rem; display: flex; flex-direction: column; gap: .75rem;
+    box-shadow: inset 0 0 26px -6px color-mix(in srgb, var(--god) 30%, transparent);
+  }
+
+  /* ground C — full dark */
+  .g-c { background: #0A0D0F; color: #DCE6E7; }
+  .g-c .ghead { background: #0E1315; border-color: #1C2628; }
+  .g-c .ghead .letter, .g-c .ghead .verdict { color: var(--god); }
+  .g-c .gfoot { border-color: #1C2628; color: #6B7B7D; }
+
+  /* ------------------------------------------------ the five controls */
+  .row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+  .rowlab { font: 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; opacity: .62; width: 100%; }
+
+  .ctl {
+    font: 12px var(--mono); letter-spacing: .05em; text-transform: uppercase;
+    padding: .5rem .8rem; border-radius: 3px; cursor: pointer; background: transparent;
+    color: inherit; border: 1px solid currentColor; position: relative;
+    transition: box-shadow 160ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+  .ctl:focus-visible { outline: 2px solid var(--god-lit); outline-offset: 2px; }
+  .ctl[disabled] { cursor: not-allowed; }
+
+  /* --- state: latent (possible, not currently charged) --- */
+  .g-a .ctl[data-s="latent"]  { color: #5F5947; border-color: #BDB49E; background: transparent; }
+  .g-b .aether .ctl[data-s="latent"],
+  .g-c .ctl[data-s="latent"]  { color: #4E9AA2; border-color: #1F3E42; background: #0C1214; }
+
+  /* --- state: charged (legal and affordable now) --- */
+  /* On vellum a cyan tint bright enough to read sits at the paper's own
+     luminance — measured 1.01:1 against latent, i.e. a hue difference and
+     nothing else. So the charged state blooms *darker*: ink drawn to the
+     control rather than light emitted from it. */
+  .g-a .ctl[data-s="charged"] {
+    color: #F2FBFB; border-color: #04454E; background: #0B5C66;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--god) 22%, transparent);
+  }
+  .g-b .aether .ctl[data-s="charged"],
+  .g-c .ctl[data-s="charged"] {
+    color: var(--god-lit); border-color: var(--god); background: color-mix(in srgb, var(--god) 10%, #0A1013);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--god) 28%, transparent),
+                0 0 16px -2px color-mix(in srgb, var(--god) 58%, transparent);
+  }
+  .g-a .ctl[data-s="charged"]:hover { box-shadow: 0 0 0 4px color-mix(in srgb, var(--god) 24%, transparent); }
+  .g-b .aether .ctl[data-s="charged"]:hover,
+  .g-c .ctl[data-s="charged"]:hover {
+    box-shadow: 0 0 0 1px var(--god), 0 0 24px -1px color-mix(in srgb, var(--god) 78%, transparent);
+  }
+
+  /* --- state: denied (masked; the light is absent, not red) --- */
+  /* Denied is carried by the dashed edge and the absence of glow — never by
+     dimming the label. `opacity` here measured 2.4:1 against the dark grounds,
+     under WCAG's 4.5 for body text, so the state was legible only to someone who
+     could already see it. The edge dims; the word does not. */
+  .ctl[data-s="denied"] { border-style: dashed; box-shadow: none; }
+  .g-a .ctl[data-s="denied"] { color: #635B48; border-color: #BCB29A; background: transparent; }
+  .g-b .aether .ctl[data-s="denied"],
+  .g-c .ctl[data-s="denied"] { color: #93A0A2; border-color: #2A3538; background: transparent; }
+
+  /* --- the touch: a flare that decays --- */
+  @keyframes flare-dark {
+    0%   { box-shadow: 0 0 0 1px var(--god-lit), 0 0 40px 2px color-mix(in srgb, var(--god-lit) 90%, transparent);
+           background: color-mix(in srgb, var(--god-lit) 42%, #0A1013); color: #03272B; }
+    100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--god) 28%, transparent),
+                       0 0 16px -2px color-mix(in srgb, var(--god) 58%, transparent);
+           background: color-mix(in srgb, var(--god) 10%, #0A1013); color: var(--god-lit); }
+  }
+  @keyframes flare-light {
+    0%   { box-shadow: 0 0 0 9px color-mix(in srgb, var(--god) 40%, transparent);
+           background: #02333B; color: #EAFDFF; }
+    100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--god) 22%, transparent);
+           background: #0B5C66; color: #F2FBFB; }
+  }
+  .g-a .ctl.touched { animation: flare-light 620ms ease-out; }
+  .g-b .aether .ctl.touched, .g-c .ctl.touched { animation: flare-dark 620ms ease-out; }
+
+  /* --- world magic: form hue, never cyan --- */
+  .cellrow { display: flex; gap: .4rem; flex-wrap: wrap; }
+  .cellchip {
+    font: 10px var(--mono); letter-spacing: .08em; text-transform: uppercase;
+    padding: .42rem .5rem; border-radius: 3px; border: 1px solid; position: relative;
+  }
+  .cellchip[data-live="false"] { opacity: .38; border-style: dashed; box-shadow: none !important; }
+  .c-limen  { color: var(--limen);  border-color: var(--limen); }
+  .c-mentem { color: var(--mentem); border-color: var(--mentem); }
+  .c-nomen  { color: var(--nomen);  border-color: var(--nomen); }
+  .c-terram { color: var(--terram); border-color: var(--terram); }
+  .g-b .aether .cellchip[data-live="true"], .g-c .cellchip[data-live="true"] {
+    box-shadow: 0 0 13px -3px currentColor; background: color-mix(in srgb, currentColor 12%, transparent);
+  }
+  .g-a .cellchip[data-live="true"] { background: color-mix(in srgb, currentColor 13%, transparent); }
+  .g-a .c-limen  { color: #4A3585; } .g-a .c-mentem { color: #1B5745; }
+  .g-a .c-nomen  { color: #2C4C7C; } .g-a .c-terram { color: #7A4322; }
+
+  /* --- favor meter --- */
+  .favor { display: flex; align-items: center; gap: .55rem; }
+  .favor .k { font: 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; opacity: .6; }
+  .favor .track { flex: 1; height: 6px; border-radius: 3px; position: relative; overflow: hidden; }
+  .g-a .favor .track { background: var(--sunk); }
+  .g-b .aether .favor .track, .g-c .favor .track { background: #131A1C; }
+  .favor .fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; transition: width 320ms ease; }
+  .g-a .favor .fill { background: var(--god-deep); }
+  .g-b .aether .favor .fill, .g-c .favor .fill {
+    background: linear-gradient(90deg, var(--god-deep), var(--god));
+    box-shadow: 0 0 10px -1px color-mix(in srgb, var(--god) 75%, transparent);
+  }
+  .favor .v { font: 12px var(--mono); font-variant-numeric: tabular-nums; min-width: 3.4rem; text-align: right; }
+
+  /* --- worship pulse: the sub-bass, made visible --- */
+  .pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--god); flex: none; }
+  @keyframes beat {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--god) 55%, transparent); opacity: .75; }
+    50%      { box-shadow: 0 0 12px 3px color-mix(in srgb, var(--god) 60%, transparent); opacity: 1; }
+  }
+  .g-b .aether .pulse, .g-c .pulse { animation: beat 2.4s ease-in-out infinite; }
+  .g-a .pulse { background: var(--god-deep); opacity: .8; }
+
+  .note { margin-top: 2.6rem; border-top: 1px solid #2E2A20; padding-top: 1.2rem; }
+  .note h2 { font: 400 1.4rem var(--serif); margin: 0 0 .5rem; }
+  .note p { color: #A79D89; max-width: 72ch; margin: 0 0 .7rem; }
+  .note b { color: #E9E3D3; font-weight: 600; }
+  .note .warn { color: var(--god-lit); }
+  footer { margin-top: 2rem; padding-top: .9rem; border-top: 1px solid #2E2A20; color: #7E7563; font: 11px var(--mono); line-height: 1.8; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages · light system · art-plan §2 · sound-design §2.2</div>
+  <h1>The god's light</h1>
+  <p class="lede">One rule: <b>cyan is the god — potential, affordance, and the moment of touch.</b>
+  The fourteen form hues stay the colour of magic that exists in the world, and <em>nothing glows that
+  the god cannot currently do</em>, so absence of light is the legality mask rather than a red warning.</p>
+  <p class="lede">Glow wants a dark ground. <code>art-plan §2</code> specifies vellum. Below is the same
+  set of controls on three grounds, so the trade can be looked at instead of argued about. Every control
+  is live — click the charged ones.</p>
+
+  <div class="taxo">
+    <div class="tx"><div class="swatch sw-latent">latent</div><div class="n">Latent</div>
+      <div class="d">The god could do this, but not now — unaffordable, or its preconditions are unmet.</div></div>
+    <div class="tx"><div class="swatch sw-charged">charged</div><div class="n">Charged</div>
+      <div class="d">Legal and affordable this tick. The mask says yes.</div></div>
+    <div class="tx"><div class="swatch sw-touch">touch</div><div class="n">Touch</div>
+      <div class="d">The instant of intervention. A flare that decays; never a steady state.</div></div>
+    <div class="tx"><div class="swatch sw-world">world</div><div class="n">World magic</div>
+      <div class="d">A live cell, in its form's own hue. Never cyan — this is not the god, it is what mages have.</div></div>
+    <div class="tx"><div class="swatch sw-deny">denied</div><div class="n">Denied</div>
+      <div class="d">Masked. Unlit and dashed. Absence carries it, so nothing shouts.</div></div>
+  </div>
+
+  <div class="grounds" id="grounds"></div>
+
+  <div class="note">
+    <h2>What this is for</h2>
+    <p><b>The collision to watch.</b> Cyan is not one of the fourteen form hues, and it must never become
+    one. <span class="warn">Aquam is the risk</span> — the obvious hue for water is the hue chosen here for
+    the god. Aquam is outside the v1 subset, so the collision is not live yet, and that is exactly why it
+    should be written down now rather than discovered when the eighth form gets its colour.</p>
+    <p><b>Why absence rather than red.</b> <code>sound-design §2.2</code> makes the deny sound the legality
+    mask made audible. Giving deny its own colour would make the interface shout on every illegal click,
+    and an RL agent submits illegal actions constantly. Unlit and dashed says the same thing quietly, and
+    keeps the one saturated register for things that are actually happening.</p>
+    <p><b>Why the touch decays.</b> A steady glow on a spent intervention would read as "still active".
+    Interventions resolve on the tick they are issued; the light should behave the same way.</p>
+  </div>
+
+  <footer>
+    Prototype · not the client. Controls are inert demonstrations of state; no content is loaded and no
+    rule is evaluated — <code>ui/ruleset/</code> is where legality actually runs.<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+</div>
+
+<script type="module">
+const GROUNDS = [
+  { key: 'a', letter: 'A', name: 'Vellum, bloom only',
+    verdict: 'no dark anywhere',
+    foot: 'Measured first, then fixed. A light cyan fill on vellum came out at 1.01:1 against latent — ' +
+          'a hue difference and no luminance at all. So charge blooms downward here: ink drawn to the ' +
+          'control rather than light emitted from it. It survives daylight and colour blindness, and it ' +
+          'is the only ground where "glow" is a lie about what is happening.' },
+  { key: 'b', letter: 'B', name: 'Vellum with aether',
+    verdict: 'light chrome, dark insets',
+    foot: 'The world stays vellum; anywhere the god reaches into it opens a dark well. Keeps the paper ' +
+          'identity and buys real contrast for the light — at the cost of two grounds to design, and a ' +
+          'rule about which is which that a reader has to learn.' },
+  { key: 'c', letter: 'C', name: 'Full dark',
+    verdict: 'the natural home',
+    foot: 'Everything the light does is easy here and the states separate cleanly. It also abandons ' +
+          'ink-and-vellum, which is the one thing art-plan §2 fixes on purpose — this is the direction ' +
+          'that costs a documented decision rather than a preference.' },
+];
+
+const CELLS = [
+  { id: 'rego-limen',       label: 'RL', cls: 'c-limen',  live: true  },
+  { id: 'intellego-mentem', label: 'IM', cls: 'c-mentem', live: true  },
+  { id: 'rego-nomen',       label: 'RN', cls: 'c-nomen',  live: true  },
+  { id: 'perdo-terram',     label: 'PT', cls: 'c-terram', live: false },
+];
+
+const CONTROLS = [
+  { id: 9,  label: 'Bless',            cost: 6  },
+  { id: 8,  label: 'Grant founding',   cost: 14 },
+  { id: 11, label: 'Fund university',  cost: 9  },
+  { id: 13, label: 'Change tradition', cost: 64, note: 'ruinous' },
+];
+
+function render() {
+  const host = document.getElementById('grounds');
+  host.innerHTML = '';
+  for (const g of GROUNDS) {
+    const el = document.createElement('section');
+    el.className = `ground g-${g.key}`;
+    el.innerHTML = `
+      <div class="ghead">
+        <span class="letter">${g.letter}</span>
+        <span class="name">${g.name}</span>
+        <span class="verdict">${g.verdict}</span>
+      </div>
+      <div class="gbody">
+        <div class="${g.key === 'b' ? 'aether' : ''}" data-well>
+          <div class="favor">
+            <span class="pulse" title="worship"></span>
+            <span class="k">Favor</span>
+            <span class="track"><span class="fill" style="width:64%"></span></span>
+            <span class="v" data-favor>32 / 50</span>
+          </div>
+          <div class="row">
+            <span class="rowlab">The god's verbs — contracts §4.2</span>
+          </div>
+          <div class="row" data-ctls></div>
+        </div>
+        <div>
+          <div class="rowlab" style="margin-bottom:.4rem">What the world holds — form hues, never cyan</div>
+          <div class="cellrow">
+            ${CELLS.map(c => `<span class="cellchip ${c.cls}" data-live="${c.live}" title="${c.id}">${c.label}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="gfoot">${g.foot}<div class="measured" data-measured></div></div>`;
+
+    const favorState = { cur: 32, max: 50 };
+    const ctls = el.querySelector('[data-ctls]');
+    const fill = el.querySelector('.fill');
+    const readout = el.querySelector('[data-favor]');
+
+    const paint = () => {
+      fill.style.width = `${(favorState.cur / favorState.max) * 100}%`;
+      readout.textContent = `${favorState.cur} / ${favorState.max}`;
+      for (const b of ctls.children) {
+        const cost = Number(b.dataset.cost);
+        b.dataset.s = b.dataset.masked === 'true' ? 'denied'
+                    : favorState.cur >= cost ? 'charged' : 'latent';
+        b.disabled = b.dataset.s !== 'charged';
+        b.title = b.dataset.masked === 'true'
+          ? 'masked by the legality mask'
+          : favorState.cur >= cost ? `costs ${cost} favor` : `needs ${cost} favor`;
+      }
+    };
+
+    for (const c of CONTROLS) {
+      const b = document.createElement('button');
+      b.className = 'ctl';
+      b.type = 'button';
+      b.dataset.cost = String(c.cost);
+      b.dataset.masked = 'false';
+      b.textContent = c.label;
+      b.addEventListener('click', () => {
+        favorState.cur = Math.max(0, favorState.cur - c.cost);
+        b.classList.remove('touched');
+        void b.offsetWidth;            // restart the animation
+        b.classList.add('touched');
+        paint();
+      });
+      ctls.append(b);
+    }
+
+    // one permanently masked control, so denied is always on screen
+    const masked = document.createElement('button');
+    masked.className = 'ctl';
+    masked.type = 'button';
+    masked.dataset.cost = '0';
+    masked.dataset.masked = 'true';
+    masked.textContent = 'Open portal';
+    masked.title = 'masked: no living mage holds the portal primitive';
+    ctls.append(masked);
+
+    // favor regenerates, so charged and latent both stay visible without interaction
+    setInterval(() => {
+      favorState.cur = Math.min(favorState.max, favorState.cur + 1);
+      paint();
+    }, 1400);
+
+    paint();
+    host.append(el);
+
+    // The page measures itself. A hand-written contrast figure is a number that
+    // was true once; this one cannot go stale when a colour changes.
+    requestAnimationFrame(() => {
+      const lum = (c) => {
+        const m = c.match(/[\d.]+/g).map(Number);
+        const v = c.startsWith('color(') ? m.slice(0, 3) : m.slice(0, 3).map(x => x / 255);
+        const f = v.map(x => (x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4)));
+        return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
+      };
+      const ratio = (a, b) => {
+        const [hi, lo] = [lum(a), lum(b)].sort((p, q) => q - p);
+        return (hi + 0.05) / (lo + 0.05);
+      };
+      const cs = (n) => getComputedStyle(n);
+      const wellEl = el.querySelector('[data-well]');
+      const wellBg = cs(wellEl).backgroundColor === 'rgba(0, 0, 0, 0)'
+        ? cs(el).backgroundColor : cs(wellEl).backgroundColor;
+      const bgOf = (n) => (cs(n).backgroundColor === 'rgba(0, 0, 0, 0)' ? wellBg : cs(n).backgroundColor);
+      const btns = [...el.querySelectorAll('.ctl')];
+      const pick = (st) => btns.find(b => b.dataset.s === st);
+      const ch = pick('charged'), la = pick('latent'), de = pick('denied');
+      if (!ch || !la || !de) return;
+      const sep = ratio(bgOf(ch), bgOf(la));
+      const dn = ratio(cs(de).color, bgOf(de));
+      const mark = (v, min) => `<span class="${v >= min ? 'pass' : 'fail'}">${v.toFixed(2)}</span>`;
+      el.querySelector('[data-measured]').innerHTML =
+        `<b>measured, live:</b> charged vs latent fill ${mark(sep, 1.2)} · ` +
+        `denied label ${mark(dn, 4.5)} : 1` +
+        (sep < 1.2 ? ' — fill carries nothing here; the glow does' : '');
+    });
+  }
+}
+
+render();
+</script>
