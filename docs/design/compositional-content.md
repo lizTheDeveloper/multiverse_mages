@@ -913,6 +913,40 @@ Three conclusions follow, and they are the useful part:
    Any exclusion touching Intellego Limen has consequences past the knowledge graph, into whether a
    universe can open a portal at all. Worth checking before any future pairing goes near that cell.
 
+## 6.7 What `npm run verify` says, stated exactly
+
+Every stage passes. The single combined invocation does not exit zero, and the reason is not this
+branch.
+
+| stage | result |
+|---|---|
+| `typecheck` | pass |
+| `lint` | pass |
+| `check:purity` | pass — the eight core packages declare no third-party runtime dependency |
+| `check:content` | pass — 357 nodes, 70 cells, 12 flagged v1 |
+| `check:audio` | pass |
+| `check:coverage` | pass — `lifespan` left the exclusion list, `fertility` stayed |
+| `test` | **283 / 283 files, 4134 / 4134 tests pass** |
+| `balance:gate` | **exit 0** |
+| `balance:gate:horizon` | **exit 0** |
+| `balance:gate:ascension` | **exit 0** |
+| **`npm run verify` (combined)** | **exit 1** |
+
+The combined run exits 1 on *"Unhandled Errors — `[vitest-worker]: Timeout calling onTaskUpdate`"*
+while reporting every test passed. That is vitest's **reporter RPC** timing out, not a test failing:
+a worker running a long synchronous simulation loop cannot service the main process's task-update
+call, and the main process is itself starved.
+
+**The machine was at a load average of 264** during the run, from three other workstreams executing
+Monte Carlo sweeps concurrently. The three balance gates were therefore executed separately, on the
+same tree, and all three returned exit 0 — which is the part of `verify` the combined run never
+reached, since `&&` stops at the first non-zero.
+
+**This is reported rather than worked around.** Two things are true at once and both belong in the
+record: nothing in this branch fails, and W20 did make the loop heavy enough that two tests crossed
+vitest's 30s default and had their bounds raised with the measurement written beside them (§6a). A
+re-run on an idle machine is the check that would close it, and it is owed before this merges.
+
 ## 7. The open question, raised rather than answered
 
 The author's instruction says *"author a complex web of nodes **per tradition**"*. Tracks as
