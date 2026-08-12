@@ -2,6 +2,7 @@
   {
     "id": "click-tick",
     "kind": "click",
+    "production": "synthesised",
     "band": "presence",
     "grid": "unquantized",
     "durationMs": 4,
@@ -17,6 +18,7 @@
   {
     "id": "click-latch",
     "kind": "click",
+    "production": "synthesised",
     "band": "presence",
     "grid": "unquantized",
     "durationMs": 12,
@@ -32,6 +34,7 @@
   {
     "id": "click-commit",
     "kind": "click",
+    "production": "synthesised",
     "band": "presence",
     "grid": "downbeat",
     "durationMs": 40,
@@ -47,6 +50,7 @@
   {
     "id": "click-deny",
     "kind": "click",
+    "production": "synthesised",
     "band": "presence",
     "grid": "unquantized",
     "durationMs": 8,
@@ -62,6 +66,7 @@
   {
     "id": "click-detent",
     "kind": "click",
+    "production": "synthesised",
     "band": "presence",
     "grid": "unquantized",
     "durationMs": 6,
@@ -77,6 +82,7 @@
   {
     "id": "click-seal",
     "kind": "click",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 700,
@@ -92,6 +98,7 @@
   {
     "id": "envelope-creo",
     "kind": "technique-envelope",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 1500,
@@ -107,6 +114,7 @@
   {
     "id": "envelope-intellego",
     "kind": "technique-envelope",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 1500,
@@ -122,6 +130,7 @@
   {
     "id": "envelope-muto",
     "kind": "technique-envelope",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 1500,
@@ -137,6 +146,7 @@
   {
     "id": "envelope-perdo",
     "kind": "technique-envelope",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 1500,
@@ -152,6 +162,7 @@
   {
     "id": "envelope-rego",
     "kind": "technique-envelope",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 1500,
@@ -167,6 +178,7 @@
   {
     "id": "material-animal",
     "kind": "form-material",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -182,6 +194,7 @@
   {
     "id": "material-aquam",
     "kind": "form-material",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -197,6 +210,7 @@
   {
     "id": "material-auram",
     "kind": "form-material",
+    "production": "granular",
     "band": "air",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -212,6 +226,7 @@
   {
     "id": "material-corpus",
     "kind": "form-material",
+    "production": "granular",
     "band": "low",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -227,6 +242,7 @@
   {
     "id": "material-herbam",
     "kind": "form-material",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -242,6 +258,7 @@
   {
     "id": "material-ignem",
     "kind": "form-material",
+    "production": "granular",
     "band": "sparkle",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -257,6 +274,7 @@
   {
     "id": "material-imaginem",
     "kind": "form-material",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -272,6 +290,7 @@
   {
     "id": "material-mentem",
     "kind": "form-material",
+    "production": "granular",
     "band": "presence",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -287,6 +306,7 @@
   {
     "id": "material-terram",
     "kind": "form-material",
+    "production": "granular",
     "band": "low",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -302,6 +322,7 @@
   {
     "id": "material-vim",
     "kind": "form-material",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -317,6 +338,7 @@
   {
     "id": "material-umbra",
     "kind": "form-material",
+    "production": "granular",
     "band": "air",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -332,6 +354,7 @@
   {
     "id": "material-fatum",
     "kind": "form-material",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -347,6 +370,7 @@
   {
     "id": "material-limen",
     "kind": "form-material",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -362,6 +386,7 @@
   {
     "id": "material-nomen",
     "kind": "form-material",
+    "production": "granular",
     "band": "presence",
     "grid": "unquantized",
     "durationMs": 3000,
@@ -377,6 +402,7 @@
   {
     "id": "knowledge-last-instance-loss",
     "kind": "knowledge",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "off-grid",
     "durationMs": 3300,
@@ -384,7 +410,7 @@
     "variants": 3,
     "pitchJitterCents": 0,
     "prompt": "A single sustained tone slightly out of tune with everything around it, held steady, then stopping without decay",
-    "post": "Hold exactly one bar. Detune 40 cents from the root. No impact transient. densityThreshold stays at 1 deliberately: §6.5 forbids aggregating last-instance loss away. That pin bets loss stays rare — if it becomes frequent, change the mechanic, not this number.",
+    "post": "Hold exactly one bar. Detune 40 cents from the universe root. No impact transient. densityThreshold stays at 1, the lowest legal value, deliberately not raised to an aggregation point: §6.5 says last-instance loss must never be aggregated away.",
     "subject": "knowledge-loss",
     "source": "6.5",
     "densityThreshold": 1
@@ -392,14 +418,15 @@
   {
     "id": "portal-transition",
     "kind": "knowledge",
+    "production": "rendered",
     "band": "sub",
     "grid": "off-grid",
     "durationMs": 1800,
     "levelDbTenths": -150,
     "variants": 2,
     "pitchJitterCents": 0,
-    "prompt": "A low sustained drone emerging from silence as if a door has opened onto a larger room",
-    "post": "Ritardando handled by the client; this is the drone the arrangement collapses into",
+    "prompt": "A large heavy door opening onto a much bigger stone room, the air changing, no music",
+    "post": "The ritardando and the layer-stripping in §3.3 are the client decelerating the arrangement. This is the acoustic change the arrangement collapses into.",
     "subject": "portal",
     "source": "3.3",
     "densityThreshold": 1
@@ -407,6 +434,7 @@
   {
     "id": "intervention-assign-role",
     "kind": "intervention",
+    "production": "synthesised",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 400,
@@ -422,6 +450,7 @@
   {
     "id": "intervention-fund-university",
     "kind": "intervention",
+    "production": "synthesised",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 400,
@@ -437,6 +466,7 @@
   {
     "id": "intervention-encourage-research",
     "kind": "intervention",
+    "production": "synthesised",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 400,
@@ -452,6 +482,7 @@
   {
     "id": "intervention-bless-mage",
     "kind": "intervention",
+    "production": "synthesised",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 2000,
@@ -467,6 +498,7 @@
   {
     "id": "intervention-grant-founding-knowledge",
     "kind": "intervention",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 2000,
@@ -482,6 +514,7 @@
   {
     "id": "intervention-permit-technique",
     "kind": "intervention",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 3000,
@@ -497,6 +530,7 @@
   {
     "id": "intervention-forbid-technique",
     "kind": "intervention",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 3000,
@@ -512,6 +546,7 @@
   {
     "id": "intervention-permit-form",
     "kind": "intervention",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 3000,
@@ -527,6 +562,7 @@
   {
     "id": "intervention-forbid-form",
     "kind": "intervention",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 3000,
@@ -542,6 +578,7 @@
   {
     "id": "intervention-dispensation",
     "kind": "intervention",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 3000,
@@ -557,6 +594,7 @@
   {
     "id": "intervention-interdiction",
     "kind": "intervention",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 3000,
@@ -572,6 +610,7 @@
   {
     "id": "intervention-revoke-edict",
     "kind": "intervention",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 3000,
@@ -587,14 +626,15 @@
   {
     "id": "intervention-change-tradition",
     "kind": "intervention",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 6000,
     "levelDbTenths": -120,
     "variants": 2,
     "pitchJitterCents": 0,
-    "prompt": "A hot wax seal press, then the entire ensemble slowly retuning and rebalancing around it, unsettled, taking several bars to resettle",
-    "post": "§5.4: seal, then the arrangement re-voices over ~6 bars with the new tradition's cast and cost colouring. Should not sound comfortable.",
+    "prompt": "A heavy wax seal pressed slowly onto parchment and lifted away, close mic, quiet room tone",
+    "post": "The six-bar re-voicing of the arrangement that follows is the client re-rendering every layer under the new tradition, not a rendered asset. This is only the seal.",
     "subject": "change-tradition",
     "source": "5.4",
     "densityThreshold": 0
@@ -602,6 +642,7 @@
   {
     "id": "intervention-declare-ascension",
     "kind": "intervention",
+    "production": "rendered",
     "band": "low-mid",
     "grid": "downbeat",
     "durationMs": 6000,
@@ -617,14 +658,15 @@
   {
     "id": "knowledge-research-motif",
     "kind": "knowledge",
+    "production": "synthesised",
     "band": "sparkle",
     "grid": "eighth",
     "durationMs": 900,
     "levelDbTenths": -190,
     "variants": 4,
     "pitchJitterCents": 10,
-    "prompt": "Three small struck metal bars ascending, bright and short, played evenly, stopping just short of returning home",
-    "post": "§6.1: loops for as long as the project runs. Above 8 concurrent motifs they blur into a running texture.",
+    "prompt": "A small brass bar struck once with a soft mallet, bright and short, close mic, dry room",
+    "post": "Grain source only. §6.1 pitches and sequences three of these at runtime; the ascending phrase and its unresolved ending cannot be rendered, because they depend on the universe key and tempo.",
     "subject": "research",
     "source": "6.1",
     "densityThreshold": 8
@@ -632,14 +674,15 @@
   {
     "id": "knowledge-discovery",
     "kind": "knowledge",
+    "production": "synthesised",
     "band": "sparkle",
     "grid": "downbeat",
     "durationMs": 500,
     "levelDbTenths": -180,
     "variants": 4,
     "pitchJitterCents": 0,
-    "prompt": "A single struck metal bar landing cleanly on the note the previous phrase was reaching for, complete, no ornament",
-    "post": "§6.1: the motif's resolution, on the downbeat, once. No fanfare — it costs one note.",
+    "prompt": "A small brass bar struck once and allowed to ring out fully, clean, warm, close mic",
+    "post": "Grain source only. §6.1 tunes this to the tonic at runtime — the resolution is the phrase completing, not this sample.",
     "subject": "discovery",
     "source": "6.1",
     "densityThreshold": 8
@@ -647,14 +690,15 @@
   {
     "id": "knowledge-teaching",
     "kind": "knowledge",
+    "production": "synthesised",
     "band": "sparkle",
     "grid": "backbeat",
     "durationMs": 900,
     "levelDbTenths": -190,
     "variants": 6,
     "pitchJitterCents": 10,
-    "prompt": "Two voices humming the same note, one arriving an eighth after the other and settling into unison, warm, close",
-    "post": "§6.2: successful teaching is the moment two voices agree. Failed teaching lands the second voice a semitone off and corrects.",
+    "prompt": "A single human voice humming one steady note, warm, close, no room tone",
+    "post": "Grain source only. §6.2 plays two of these an eighth apart and detunes them into unison at runtime. One hum is the material; the agreement is the event.",
     "subject": "teaching",
     "source": "6.2",
     "densityThreshold": 12
@@ -662,6 +706,7 @@
   {
     "id": "knowledge-scribing",
     "kind": "knowledge",
+    "production": "synthesised",
     "band": "sparkle",
     "grid": "sixteenth",
     "durationMs": 150,
@@ -677,14 +722,15 @@
   {
     "id": "knowledge-grimoire-complete",
     "kind": "knowledge",
+    "production": "synthesised",
     "band": "sparkle",
     "grid": "downbeat",
     "durationMs": 200,
     "levelDbTenths": -170,
     "variants": 3,
     "pitchJitterCents": 0,
-    "prompt": "A dry woodblock struck once, firm, no ring",
-    "post": "§6.3: dwarven grimoires resist destruction and get a longer, denser body — you can hear that a book is well-made.",
+    "prompt": "A dry hardwood block struck once, firm, no ring, close mic, dead room",
+    "post": "Dwarven grimoires get a longer, denser body at runtime — the durability is audible, and it is not in this sample.",
     "subject": "grimoire-complete",
     "source": "6.3",
     "densityThreshold": 6
@@ -692,14 +738,15 @@
   {
     "id": "knowledge-theft",
     "kind": "knowledge",
+    "production": "synthesised",
     "band": "sparkle",
     "grid": "backbeat",
     "durationMs": 900,
     "levelDbTenths": -190,
     "variants": 4,
     "pitchJitterCents": 10,
-    "prompt": "Two voices, the second arriving before the first, the first stopping partway through, no room tone at all",
-    "post": "§6.4: teaching violated three ways — response precedes call, source cuts off mid-phrase, no reverb because it happens in a mind.",
+    "prompt": "A single human voice humming one note and cutting off abruptly partway through, close, completely dry",
+    "post": "Grain source only. §6.4 arranges the pre-echo and the unresolved cut-off at runtime; only the cut-off is inherent to the sample.",
     "subject": "theft",
     "source": "6.4",
     "densityThreshold": 4
@@ -707,14 +754,15 @@
   {
     "id": "knowledge-rediscovery",
     "kind": "knowledge",
+    "production": "synthesised",
     "band": "sparkle",
     "grid": "downbeat",
     "durationMs": 500,
     "levelDbTenths": -180,
     "variants": 4,
     "pitchJitterCents": 0,
-    "prompt": "The same three ascending struck bars as research, landing this time in a different octave than expected",
-    "post": "§6.6: the same knowledge, rebuilt by someone who never heard the first one. Gnomish rediscovery runs the motif at a manic tempo.",
+    "prompt": "A small brass bar struck once with a hard mallet, bright, slightly thinner and more brittle than a soft strike",
+    "post": "Grain source only. §6.6 transposes this an octave from the research material at runtime — the same knowledge, rebuilt by someone who never heard the original.",
     "subject": "rediscovery",
     "source": "6.6",
     "densityThreshold": 4
@@ -722,14 +770,15 @@
   {
     "id": "knowledge-mage-death",
     "kind": "knowledge",
+    "production": "synthesised",
     "band": "low",
     "grid": "downbeat",
     "durationMs": 600,
     "levelDbTenths": -200,
     "variants": 4,
     "pitchJitterCents": 0,
-    "prompt": "A single soft mallet strike on a wooden bar, muted, respectful, in key",
-    "post": "§6.5: ordinary death is not loss. Density threshold 4, then a mortality texture — a plague sounds like weather.",
+    "prompt": "A wooden bar struck once with a felt mallet, muted, soft, no ring, close mic",
+    "post": "Grain source only. §6.5 tunes it into the universe key at runtime. Respectful, and quiet enough to become a mortality texture above the density threshold.",
     "subject": "mage-death",
     "source": "6.5",
     "densityThreshold": 4
@@ -737,6 +786,7 @@
   {
     "id": "raid-direct-damage",
     "kind": "raid-primitive",
+    "production": "granular",
     "band": "low",
     "grid": "unquantized",
     "durationMs": 300,
@@ -752,6 +802,7 @@
   {
     "id": "raid-ward",
     "kind": "raid-primitive",
+    "production": "granular",
     "band": "presence",
     "grid": "unquantized",
     "durationMs": 2000,
@@ -767,6 +818,7 @@
   {
     "id": "raid-area-denial",
     "kind": "raid-primitive",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 2500,
@@ -782,6 +834,7 @@
   {
     "id": "raid-blink",
     "kind": "raid-primitive",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 400,
@@ -797,6 +850,7 @@
   {
     "id": "raid-summon",
     "kind": "raid-primitive",
+    "production": "granular",
     "band": "low-mid",
     "grid": "unquantized",
     "durationMs": 1500,

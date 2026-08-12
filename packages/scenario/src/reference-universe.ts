@@ -126,6 +126,19 @@ const DEFAULT_FOUNDING_MAGES = 1;
 const DEFAULT_FOUNDING_NODES = 1;
 
 /**
+ * Every species founds the universe.
+ *
+ * Zero, and zero means "all of them" rather than "none of them", which is the
+ * one thing about this knob worth reading twice. The alternative encoding — a
+ * default of `(1 << speciesCount) - 1` — would have hardcoded the species count
+ * into a default, and `CLAUDE.md` puts species in validated content data. Zero
+ * is the only value that means *whatever the content declares* without knowing
+ * how many that is, and it makes the absent option and the documented default
+ * the same universe byte for byte.
+ */
+const DEFAULT_FOUNDING_SPECIES_MASK = 0;
+
+/**
  * The occupations a founding population is seeded into.
  *
  * Laborers produce the materials, students are what a mage is promoted from, and
@@ -162,6 +175,63 @@ export interface ReferenceOptions {
    * module note.
    */
   readonly foundingNodes: number;
+  /**
+   * Which species found the universe, as a bitmask over content order.
+   *
+   * Bit *i* selects the *i*th species `speciesTable` enumerates. **Zero selects
+   * every species**, which is what this scenario has always done, so an absent
+   * option and this default build the identical state.
+   *
+   * It exists because there was no founding-mix knob at all and the campaign's
+   * D7 — *"varying the founding species mix changes which strategy wins"* — is
+   * not measurable without one. It is an **instrument**, not a magnitude: it
+   * turns no constant and changes no rule. A bitmask rather than a list because
+   * `ScenarioConfig.options` is restricted to scalars, so that a sweep can hash
+   * a config into a run record without inventing a serialization.
+   *
+   * A mask that selects nothing is refused rather than silently building an
+   * empty universe — see {@link buildReferenceState}.
+   */
+  readonly foundingSpeciesMask: number;
+  /**
+   * Which tradition the universe holds, as an index into the shipped set
+   * ascending by content id.
+   *
+   * `vision.md` §4a makes the tradition *"an identity decision, not a build
+   * option"*, and the three v1 traditions were chosen because *"each stresses
+   * the knowledge model in a different direction"*. It had never been swept:
+   * every measurement ever taken of this game was taken under one of the three,
+   * chosen by {@link DEFAULT_TRADITION_INDEX}'s rule, and the other two were
+   * exercised only by unit tests.
+   *
+   * That is the cheapest untested axis of play there is, and it is not a small
+   * one — True Naming's `acquire` hook alone doubles research cost, halves
+   * teaching cost and creates every instance at full mastery, which is the
+   * difference between a universe whose teaching graph runs and one whose
+   * teaching graph waits on practice.
+   */
+  readonly traditionIndex: number;
+}
+
+/**
+ * The tradition a run takes when its config names none.
+ *
+ * The index of {@link scribingTraditionId} in the ascending-content-id order —
+ * that is, exactly the tradition every measurement before this factor existed
+ * was taken under. Chosen as *the default* rather than `0` so that adding the
+ * knob moved no committed number; a default that quietly re-pointed the
+ * reference universe at a different tradition would have made every baseline
+ * diff in this change unreadable.
+ */
+export function defaultTraditionIndex(registry: ContentRegistry): number {
+  const order = traditionOrder(registry);
+  const index = order.indexOf(scribingTraditionId(registry));
+  return index < 0 ? 0 : index;
+}
+
+/** Every shipped tradition's content id, ascending — a total order over content. */
+export function traditionOrder(registry: ContentRegistry): readonly ContentId[] {
+  return Object.freeze(registry.traditions.map((entry) => entry.contentId).sort((a, b) => a - b));
 }
 
 /** The factor ids a sweep may name. Exactly the keys of {@link ReferenceOptions}. */
@@ -169,6 +239,8 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'cohortSize',
   'foundingMages',
   'foundingNodes',
+  'foundingSpeciesMask',
+  'traditionIndex',
 ]);
 
 /**
@@ -194,11 +266,20 @@ function readCount(config: ScenarioConfig, key: keyof ReferenceOptions, fallback
 }
 
 /** The options a config names, with the documented defaults filled in. */
-export function referenceOptions(config: ScenarioConfig): ReferenceOptions {
+export function referenceOptions(
+  config: ScenarioConfig,
+  registry: ContentRegistry = shippedContent(),
+): ReferenceOptions {
   return {
     cohortSize: readCount(config, 'cohortSize', DEFAULT_COHORT_SIZE),
     foundingMages: readCount(config, 'foundingMages', DEFAULT_FOUNDING_MAGES),
     foundingNodes: readCount(config, 'foundingNodes', DEFAULT_FOUNDING_NODES),
+    foundingSpeciesMask: readCount(
+      config,
+      'foundingSpeciesMask',
+      DEFAULT_FOUNDING_SPECIES_MASK,
+    ),
+    traditionIndex: readCount(config, 'traditionIndex', defaultTraditionIndex(registry)),
   };
 }
 
@@ -229,8 +310,12 @@ export interface ReferenceContent {
 }
 
 /** Resolves everything a reference universe needs out of a content registry. */
-export function referenceContent(registry: ContentRegistry = shippedContent()): ReferenceContent {
-  const traditionId = scribingTraditionId(registry);
+export function referenceContent(
+  registry: ContentRegistry = shippedContent(),
+  traditionIndex: number = defaultTraditionIndex(registry),
+): ReferenceContent {
+  const order = traditionOrder(registry);
+  const traditionId = order[traditionIndex] ?? scribingTraditionId(registry);
   return {
     registry,
     traditionId,
@@ -305,8 +390,21 @@ export function buildReferenceState(input: {
   });
 
   const { speciesOf, ids } = speciesTable(content.registry);
+  // Zero means every species; see DEFAULT_FOUNDING_SPECIES_MASK. Refused rather
+  // than defaulted when a non-zero mask selects nothing the content declares: a
+  // universe founded with no species is a run of two hundred silent years that
+  // would be recorded as an ordinary observation.
+  const mask = options.foundingSpeciesMask;
+  if (mask !== 0 && (mask & ((1 << ids.length) - 1)) === 0) {
+    throw new Error(
+      `foundingSpeciesMask ${String(mask)} selects none of the ${String(ids.length)} species the ` +
+        'content declares. An empty founding population is not a starting position, and a run ' +
+        'taken from one would be recorded as a measurement of something.',
+    );
+  }
   const founders: EntityHandle[] = [];
-  for (const speciesId of ids) {
+  for (const [speciesIndex, speciesId] of ids.entries()) {
+    if (mask !== 0 && (mask & (1 << speciesIndex)) === 0) continue;
     const species = speciesOf(speciesId);
     if (species === undefined) continue;
 

@@ -82,6 +82,26 @@ describe('the audio grid', () => {
     expect(offGrid).toEqual(['knowledge-last-instance-loss', 'portal-transition']);
   });
 
+  it('puts every envelope and material in the granular tier', () => {
+    // sound-design §0.8: envelopes and form materials are grain sources the
+    // client recombines per event. Marking one `rendered` would mean a single
+    // chosen take played whole, which discards the unbounded variation that is
+    // the entire reason the compositional grid exists — and nothing about the
+    // sound would look wrong in a diff.
+    for (const cue of cues) {
+      if (cue.kind !== 'technique-envelope' && cue.kind !== 'form-material') continue;
+      expect(cue.production, `${cue.id} production tier`).toBe('granular');
+    }
+  });
+
+  it('never marks a bark-adjacent ceremonial cue synthesised', () => {
+    // The rendered tier is small on purpose: these are heard a handful of times
+    // a run, where fidelity beats variation and sameness is part of the weight.
+    for (const id of ['click-seal', 'knowledge-last-instance-loss']) {
+      expect(cues.find((c) => c.id === id)?.production, id).toBe('rendered');
+    }
+  });
+
   it('gives every event-class cue a density threshold', () => {
     // sound-design §0.4: no event class may be discrete without a stated
     // threshold. The one that lacks it is the one that turns a mature universe

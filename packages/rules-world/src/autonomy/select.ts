@@ -17,7 +17,7 @@ import type { ContentId } from '@mm/content';
 
 import type { KnowledgeTarget } from '../coordination.js';
 import type { StepRng } from '../mages/rng.js';
-import { MAX_CANDIDATE_TARGETS, compareTargets } from './candidates.js';
+import { MAX_CANDIDATE_TARGETS } from './candidates.js';
 import type { FeasibilityOutcome } from './feasibility.js';
 import { isFeasible, maskGoals } from './feasibility.js';
 import type { GoalId } from './goals.js';
@@ -27,6 +27,9 @@ import type { MageGoalCommitment, ReevaluationReason, ScheduleOptions } from './
 import { HYSTERESIS_MARGIN, displaces, reevaluationReason } from './schedule.js';
 import type { GoalScore, ScoringOptions } from './scoring.js';
 import { scoreGoal, scoreGoals } from './scoring.js';
+import type { TargetAppealWeights } from './target-appeal.js';
+import type { TargetScore } from './target-appeal.js';
+import { compareAppeal, targetAppeal } from './target-appeal.js';
 
 /**
  * ## Determinism has two halves and only one of them is the RNG
@@ -41,8 +44,8 @@ import { scoreGoal, scoreGoals } from './scoring.js';
  *
  * So every order in this file is a declared one: goals come out of
  * {@link maskGoals} ascending by permanent id, and targets are ordered by
- * {@link compareTargets} — cheapest first, node id second — which depends on
- * nothing but the targets.
+ * `compareAppeal` — highest utility first, then cheapest, then **node id**,
+ * which depends on nothing but the targets and the mage's own outlook.
  *
  * ## The draw happens only on an actual tie, and that is safe
  *
@@ -89,6 +92,15 @@ export interface SelectionInput {
   /** Whether the incumbent goal finished this tick. The caller's judgement. */
   readonly incumbentComplete?: boolean | undefined;
   readonly rng: StepRng;
+  /**
+   * Every magnitude {@link chooseTarget} is made of, read once from content.
+   *
+   * Required rather than defaulted. A default would have to be a literal, and
+   * `CLAUDE.md` puts every magnitude in validated content data; worse, a
+   * defaulted weight table is a universe silently running on numbers nobody
+   * authored while every test that supplied one went on passing.
+   */
+  readonly appeal: TargetAppealWeights;
   readonly scoring?: ScoringOptions | undefined;
   readonly schedule?: ScheduleOptions | undefined;
 }
@@ -114,19 +126,31 @@ function targetsFor(goal: GoalId, outlook: MageOutlook): readonly KnowledgeTarge
 /**
  * The node a goal points at, or `0`.
  *
- * Cheapest-first, because the cheapest target is the one that completes soonest
- * and therefore the one that returns the mage to a decision soonest. Ties on
- * cost fall to the lower node id, which is a content-authored number and so a
- * total order over any candidate set.
+ * **The argmax of a utility score**, which is what vision §7 asks for and what
+ * this function did not do until 0.4.0: *"mages act on utility-scored goals
+ * shaped by species, age, personality, and their assigned standing role."* Goal
+ * selection was already scored; target selection ordered by `remainingCost` and
+ * then `nodeId`, and because v1 `researchCost` is a pure function of tier that
+ * was one fixed queue every universe walked and stopped at a different point
+ * along. See `target-appeal.ts` for the measurement and the six terms.
+ *
+ * Ties fall to {@link compareTargets} — cheapest first, **then node id**, which
+ * remains the final tie-break. The order is therefore total and takes no draw,
+ * so no RNG stream moves and no balance baseline can rot from a re-roll.
  */
-export function chooseTarget(goal: GoalId, outlook: MageOutlook): ContentId {
+export function chooseTarget(
+  goal: GoalId,
+  outlook: MageOutlook,
+  weights: TargetAppealWeights,
+): ContentId {
   if (!needsTarget(goal)) return 0;
   const candidates = targetsFor(goal, outlook);
-  let best: KnowledgeTarget | undefined;
-  for (const candidate of candidates) {
-    if (best === undefined || compareTargets(candidate, best) < 0) best = candidate;
+  let best: { target: KnowledgeTarget; score: TargetScore } | undefined;
+  for (const target of candidates) {
+    const entry = { target, score: targetAppeal(target, outlook, weights) };
+    if (best === undefined || compareAppeal(entry, best) < 0) best = entry;
   }
-  return best?.nodeId ?? 0;
+  return best?.target.nodeId ?? 0;
 }
 
 /**
@@ -288,7 +312,9 @@ export function selectGoal(input: SelectionInput): Selection {
 
   const sameGoal = incumbent !== undefined && !incumbentComplete && winner.goal === incumbent.goalId;
   const targetNodeId =
-    sameGoal && incumbentFeasible ? incumbent.targetNodeId : chooseTarget(winner.goal, outlook);
+    sameGoal && incumbentFeasible
+      ? incumbent.targetNodeId
+      : chooseTarget(winner.goal, outlook, input.appeal);
 
   return {
     commitment: {

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/autonomy-weight.schema.json",
+  "title": "autonomy-weight.json",
+  "description": "Every magnitude a mage's choice of WHICH node to work on is made of — the six term weights, the six per-term bounds, and the role x primitive appeal table. Vision §7 says mages act on utility-scored goals shaped by species, age, personality and their assigned standing role; this file is the shaping, as data rather than as literals in the rules path. Two kinds of record share the file: a scalar has neither `role` nor `primitive`, a role-appeal row has both and its id must be role-appeal-<role>-<primitive>. The *set* of scalar ids is structural — the rules read each by name and the loader rejects a set missing one or carrying an unknown one — while every *value* is an untuned placeholder awaiting the balance harness.",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/autonomyWeight" },
+  "$defs": {
+    "autonomyWeight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "value", "unit", "gloss", "tuningStatus"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "value": { "type": "integer", "minimum": -1073741823, "maximum": 1073741823 },
+        "unit": { "type": "string", "enum": ["fp", "raw"] },
+        "role": { "type": "string", "enum": ["researcher", "warden", "professor", "raider"] },
+        "primitive": { "$ref": "#/$defs/contentId" },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
+      }
+    },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}

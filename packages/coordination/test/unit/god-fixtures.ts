@@ -113,15 +113,7 @@ export function godlyWorldDeps(traditionId: number): WorldStepDeps {
   return {
     ...worldDeps(traditionId),
     god: godDeps(),
-    ...godEffectHooks({
-      constants: constants(),
-      primitives: {
-        researchRate: primitiveNamed('research-rate'),
-        teachRate: primitiveNamed('teach-rate'),
-        lifespan: primitiveNamed('lifespan'),
-      },
-      cells,
-    }),
+    ...godEffectHooks({ constants: constants(), cells }),
   };
 }
 
