@@ -707,3 +707,70 @@ cells the god forbids.
 
 **Report every acceptance criterion as `failed` or `saturated` from here on.** They are different
 findings and only one of them is about the game.
+
+---
+
+## Round 3 review: where two independent models converge
+
+Qwen 3.8 Max and GLM 5.2 were given the same brief and agreed, unprompted, on six things.
+
+### The discipline that was missing — this is the durable lesson
+
+> "Before you use a metric to evaluate a fix, you must demonstrate that the metric can distinguish
+> between a system you *know* is broken and a system you *know* is working. If you cannot produce
+> both a **negative control** and a **positive control**, the metric is not ready to be used."
+
+And the diagnosis of why it was not obvious in advance:
+
+> "You were treating the metric as a **definition** — *diversity = participation ratio* — rather than
+> as a **claim**: *participation ratio tracks the thing I care about*. Definitions don't need
+> testing. Claims do."
+
+**Adopted as campaign policy.** Every metric gets an idle-bot negative control and a hand-designed
+positive control **before** it is trusted, not after it produces a surprising result. The
+adversarial verifier was the right instinct applied at the wrong end of the pipeline.
+
+### The structural answer on front-loading
+
+> "A strategy game with front-loaded decisions is salvageable if the front-loaded decision is
+> **incomplete** — if it sets a direction but doesn't determine the destination. Chess openings are
+> front-loaded; nobody calls chess solved at move 6. **The fix is not to delay the decision but to
+> make it insufficient.**"
+
+Both models propose the same shape: **permission should be necessary but not sufficient.** The god
+permits a cell, and must then fund, seed or encourage to reach specific nodes within it. That is
+traceable — §7 already calls `grantFoundingKnowledge` *"the only way to introduce a body of magic
+nobody in your world knows"* and `encourageResearch` a *research direction*. Both are currently
+inert, which is exactly what `permit-then-idle` proved.
+
+### Agreed, and unambiguous
+
+- **Delete the exploit-margin metric.** Algebraically identical to `ascensionRate`. (Our defect.)
+- **Never calibrate on a partial pool again.** (Our defect — `replicates` must be a multiple of pool size.)
+- **Reduce copy counts to 1–3 per node.** At 50–80, burning a library is cosmetic and
+  "knowledge lives at a location" is decorative.
+- **Stop building rate mechanics** until the ceiling moves. "Slower, same place" is not progress.
+- **Stop adding nodes** to a set an idle bot already exhausts.
+
+### GLM's distinct contributions
+
+- **Make the win condition relative** — rank within a bracket rather than an absolute threshold.
+  *"This is the single change that makes the idle bot lose."* It fits the author's bubble structure
+  directly.
+- **Enforce ruleset heterogeneity in the bot pool.** If every bot declares the same 12 cells,
+  **looting cannot create diversity** — a defect in the *instrument*, not the game.
+
+### Where I dissent: do NOT revert the knowledge-capital loop
+
+Both models call for reverting W7 as *"rate not ceiling, complexity for zero differentiation."*
+I disagree on two grounds they did not have:
+
+1. **§6a is normative.** *"Knowledge as capital… the consequential one"* is in the vision of record,
+   and `CLAUDE.md` treats an unshipped vision section as an unmet promise, not as optional scope.
+2. **It had a measured strategic effect neither model saw.** Novelty-first scribing flipped
+   `narrow-depth` from 12/12 to **0/12** on Enduring Canon, because shelves now hold single copies
+   that upkeep can destroy. That **partially breaks "doing nothing is perfect custodianship"** — the
+   defect this campaign named as the root of the broken win condition. It is also the mechanism that
+   makes their own recommendation #3, scarce copies, reachable.
+
+**Deprioritise, do not revert.** Recorded as a disagreement rather than settled.
