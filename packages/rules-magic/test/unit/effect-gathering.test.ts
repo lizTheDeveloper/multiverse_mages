@@ -230,13 +230,20 @@ describe('legality is evaluated once per candidate and carried nowhere', () => {
     expect(contribution).toBeDefined();
     if (contribution === undefined) return;
 
-    expect(Object.keys(contribution).sort()).toEqual([
-      'durationTicks',
-      'magnitude',
-      'nodeId',
-      'primitiveId',
-      'target',
-    ]);
+    // The always-present keys, whatever the effect's mode. `control` and
+    // `transformTo` are present only when the effect actually carries them
+    // (`exactOptionalPropertyTypes`) -- `control`-mode and `transform`-mode
+    // respectively -- so real v1 content, which mixes modes freely, is
+    // checked mode-aware rather than against one fixed key list.
+    const keys = new Set(Object.keys(contribution));
+    for (const required of ['durationTicks', 'magnitude', 'mode', 'nodeId', 'primitiveId', 'target']) {
+      expect(keys.has(required), `contribution should carry "${required}"`).toBe(true);
+    }
+    expect(keys.has('legal') || keys.has('permitted') || keys.has('dormant') || keys.has('cellId')).toBe(
+      false,
+    );
+    if (contribution.mode !== 'control') expect(keys.has('control')).toBe(false);
+    if (contribution.mode !== 'transform') expect(keys.has('transformTo')).toBe(false);
   });
 
   it('resolves each candidate instance cell exactly once', () => {

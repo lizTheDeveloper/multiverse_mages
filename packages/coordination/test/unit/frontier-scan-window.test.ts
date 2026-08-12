@@ -49,15 +49,34 @@
  *
  * {@link HISTORIC_SCAN_WINDOW} is kept here, in the test that remembers why,
  * rather than in `gateway.ts`, where a live constant would invite someone to
- * raise it. The content facts it addresses — 51 v1 nodes, 18 of them interned
- * above 256, all four `rego` cells — are asserted below because they are exactly
- * what made the defect a third of the v1 content rather than a rounding error,
- * and because content that drifted back across that line would tell a future
- * reader this file is about nothing.
+ * raise it. Since the window is gone, nothing is actually hidden *today* — the
+ * assertions below instead ask "if the id-range window still existed, what
+ * would today's content lose to it", so that a content reshuffle drifting a
+ * whole technique back under 256 is caught here rather than nowhere.
  *
  * The nineteenth unlearned node was *not* this: `pm-the-empty-room` (tier 5,
  * interned 221, inside the window) was merely slow, and a fifty-year run reaches
- * it around year thirty-two. Only eighteen nodes were unreachable.
+ * it around year thirty-two. Only eighteen nodes were unreachable, on the
+ * 51-node v1 content this file originally measured.
+ *
+ * **W20 update.** `docs/design/compositional-content.md` replaced the 51 v1
+ * ladder nodes with 108 compositional ones, which moves every number below:
+ * 50 of the 108 v1 nodes now intern above 256 (not 18 of 51), and they are no
+ * longer one contiguous technique. `perdo-nomen` (5 of 9 nodes) and
+ * `perdo-terram` (all 9) join the four `rego` cells (all 9 each) — the
+ * hypothetical window would now cost `perdo` as well as `rego`, roughly
+ * doubling the *fraction* lost (46% against the original 35%).
+ *
+ * More strikingly, the "hid four tier-1 roots" finding does not survive
+ * unchanged: only **one** prerequisite-free node interns above 256 today
+ * (`pt-crumble`, `perdo-terram`), not four. Not because the window shrank —
+ * because W20's `rego` cells are no longer roots at all. Every `rego` cell's
+ * tier-1 node now requires its form's `intellego` tier-1 node as a
+ * prerequisite (`rm-hold-the-attention` requires `im-weigh-the-attention`, and
+ * so on) — a deliberate cross-technique trunk connection, not a regression.
+ * The v1 rectangle has eight roots in total now (one per `intellego`/`perdo`
+ * cell; the four `rego` cells have none), and the hypothetical window would
+ * only ever have hidden the one that happens to fall in `perdo-terram`.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -289,8 +308,10 @@ describe('the frontier scan is bounded by legality, not by a range of node ids',
     // The legality half of the bound, on the rectangle a v1 universe actually
     // runs. Every offered node is in the twelve permitted cells — a scan that
     // walked the index and skipped `permits` would fail here — and every one of
-    // the rectangle's twelve roots is offered, including the four `rego` roots
-    // the window used to hide.
+    // the rectangle's eight roots is offered (W20: the four `rego` cells have
+    // no roots of their own — see this file's header note), including the one
+    // root — `pt-crumble` in `perdo-terram` — that the id-range window used to
+    // hide.
     const { gateway, mage, nodeCount } = universeOnTheV1Rectangle();
     const offered = gateway.researchFrontier(mage, nodeCount).map((t) => t.nodeId);
     const v1 = new Set(v1NodeIds());
@@ -299,7 +320,7 @@ describe('the frontier scan is bounded by legality, not by a range of node ids',
     expect(offered.length).toBeGreaterThan(0);
     for (const nodeId of offered) expect(v1.has(nodeId)).toBe(true);
     expect([...offered].sort((a, b) => a - b)).toEqual(roots);
-    expect(roots.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW)).toHaveLength(4);
+    expect(roots.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW)).toHaveLength(1);
   });
 
   it('spends its result bound on the cheapest candidates, not the lowest-numbered', () => {
@@ -319,7 +340,7 @@ describe('the frontier scan is bounded by legality, not by a range of node ids',
 });
 
 describe('what the window cost the shipped v1 subset', () => {
-  it('put eighteen of the fifty-one v1 nodes permanently out of reach', () => {
+  it('would put fifty of the hundred-eight v1 nodes permanently out of reach', () => {
     const v1 = v1NodeIds();
     const beyond = v1.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW);
 
@@ -328,25 +349,36 @@ describe('what the window cost the shipped v1 subset', () => {
     // moving a v1 cell across id 256 used to be a silent balance change — and
     // the `check:content` assertion in `@mm/content`'s loader now refuses the
     // class of reshuffle that would make an id range matter again.
-    expect(v1).toHaveLength(51);
-    expect(beyond).toHaveLength(18);
+    //
+    // W20 update: 108 v1 nodes, not 51, and 50 fall beyond the historic window,
+    // not 18 — a larger fraction (46% against the original 35%), because the
+    // grid grew inside the same twelve cells rather than only at the edges.
+    expect(v1).toHaveLength(108);
+    expect(beyond).toHaveLength(50);
 
-    // And they were one contiguous block — the four `rego` cells of the v1
-    // rectangle, which is why the symptom read as "a whole technique is missing"
-    // rather than as scattered gaps.
+    // No longer one contiguous technique. `rego`'s four cells are still fully
+    // beyond the window, but W20 also pushed `perdo-nomen` (5 of 9 nodes) and
+    // all of `perdo-terram` past it — the hypothetical window would now read as
+    // "two techniques are half-missing" rather than "one technique is gone".
     const names = new Set(
       registry()
         .nodes.filter((entry) => beyond.includes(entry.contentId))
         .map((entry) => entry.record.cell.split('-')[0]),
     );
-    expect([...names]).toEqual(['rego']);
+    expect([...names]).toEqual(['perdo', 'rego']);
   });
 
-  it('hid four v1 tier-1 roots, so the loss was not a depth or prerequisite effect', () => {
+  it('would have hidden one v1 tier-1 root, because the rego cells no longer have any', () => {
     // The hypothesis this rules out. If the plateau had been prerequisite
     // reachability, the unreachable set would be closed under prerequisites and
-    // would contain no roots. It contains four — one per `rego` cell — each with
-    // an empty prerequisite list and a tier of 1.
+    // would contain no roots. It contains one — `pt-crumble` in `perdo-terram`
+    // — with an empty prerequisite list and a tier of 1.
+    //
+    // W20 update: this used to be four, one per `rego` cell. It is one now not
+    // because the window changed, but because every `rego` cell's tier-1 node
+    // gained a prerequisite on its form's `intellego` tier-1 node — the four
+    // `rego` cells are no longer roots at all, so there is nothing of theirs
+    // left for a window to hide.
     const v1 = new Set(v1NodeIds());
     const roots = registry().nodes.filter(
       (entry) =>
@@ -355,14 +387,14 @@ describe('what the window cost the shipped v1 subset', () => {
         entry.contentId > HISTORIC_SCAN_WINDOW,
     );
 
-    expect(roots).toHaveLength(4);
+    expect(roots).toHaveLength(1);
     for (const root of roots) expect(root.record.tier).toBe(1);
   });
 
-  it('is over: all four of those roots are on a new mage\'s day-one frontier', () => {
-    // The regression, stated in the terms the symptom was reported in. These are
-    // the four nodes a fifty-year reference run never reached; a mage who has
-    // just been created can now begin any of them.
+  it("is over: that one root is on a new mage's day-one frontier", () => {
+    // The regression, stated in the terms the symptom was reported in. This is
+    // the node a fifty-year reference run under the old window would never have
+    // reached; a mage who has just been created can now begin it.
     const { gateway, mage, nodeCount } = universeSeeingEverything();
     const offered = new Set(gateway.researchFrontier(mage, nodeCount).map((t) => t.nodeId));
     const v1 = new Set(v1NodeIds());
@@ -375,7 +407,7 @@ describe('what the window cost the shipped v1 subset', () => {
       )
       .map((entry) => entry.contentId);
 
-    expect(roots).toHaveLength(4);
+    expect(roots).toHaveLength(1);
     for (const nodeId of roots) expect(offered.has(nodeId)).toBe(true);
   });
 });

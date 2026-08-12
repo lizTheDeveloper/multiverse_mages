@@ -126,6 +126,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'god-constant',
     'raid-constant',
     'autonomy-weight',
+    'track',
   ] as const).map(
     (name) => ({
       constraint: `${name}.schema.json#/$defs/contentId minLength`,
@@ -148,6 +149,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'cell.schema.json#/$defs/cell/properties/edicts/items',
     'node.schema.json#/$defs/node/properties/tuningStatus',
     'node.schema.json#/$defs/effect/properties/target',
+    'node.schema.json#/$defs/effect/properties/mode',
     'species.schema.json#/$defs/species/properties/tuningStatus',
     'territory.schema.json#/$defs/territory/properties/tuningStatus',
     'primitive.schema.json#/$defs/primitive/properties/scale',
@@ -161,12 +163,20 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/unit',
     'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/role',
     'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/tuningStatus',
+    'track.schema.json#/$defs/track/properties/tuningStatus',
   ].map((pointer) => ({
     constraint: `${pointer} type`,
     why:
       'the sibling enum lists only strings, so any value that violates `type: "string"` violates ' +
       'the enum as well and the type assertion never fires alone',
   })),
+  {
+    constraint: 'node.schema.json#/$defs/condition required:kind',
+    why:
+      'every oneOf branch declares its own "required": ["kind"] (or a superset of it), so an ' +
+      'instance missing "kind" fails every branch regardless of whether the outer required is ' +
+      'present — the outer constraint restates what each branch already guarantees',
+  },
 ];
 
 const shipped = shippedContentDocuments();

@@ -56,7 +56,7 @@ describe('shipped content', () => {
       forms: 14,
       cells: 70,
       v1Cells: 12,
-      nodes: 300,
+      nodes: 357,
       species: 6,
       traditions: 3,
       territories: 5,
@@ -75,6 +75,10 @@ describe('shipped content', () => {
       // end of the portal.
       raidConstants: 46,
       autonomyWeights: 36,
+      // The named routes through the grid W20 adds (compositional-content.md
+      // §3.1): the open mind, the sealed mind, the quarried world, the hollow
+      // ground, the standing gate, the nameless road, the unwritten.
+      tracks: 7,
     });
   });
 

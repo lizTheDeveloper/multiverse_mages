@@ -74,8 +74,22 @@ beforeEach(() => {
   calls.length = 0;
 });
 
-function contribution(primitiveId: string, magnitude: Fixed): EffectContribution {
-  return { nodeId: 1, primitiveId, magnitude, target: 'self', durationTicks: 0 };
+/** A `create`-mode contribution, unless told otherwise: `+magnitude`, matching every pre-W20 test's assumption. */
+function contribution(
+  primitiveId: string,
+  magnitude: Fixed,
+  extra: Partial<Pick<EffectContribution, 'mode' | 'control' | 'transformTo'>> = {},
+): EffectContribution {
+  return {
+    nodeId: 1,
+    primitiveId,
+    magnitude,
+    target: 'self',
+    durationTicks: 0,
+    mode: extra.mode ?? 'create',
+    ...(extra.control !== undefined ? { control: extra.control } : {}),
+    ...(extra.transformTo !== undefined ? { transformTo: extra.transformTo } : {}),
+  };
 }
 
 describe('every combination goes through the shared implementation', () => {
@@ -176,11 +190,26 @@ describe('an illegal contribution never reaches stacking', () => {
 
     // `magic-primitives` states this as a count reaching the stacker, so it is
     // asserted as one: everything the two surviving nodes declared, and not one
-    // magnitude more.
+    // magnitude more. Since W20, "one magnitude per contribution" is no longer
+    // literal — `reveal` and `control` contribute none, `transform` contributes
+    // two — so the expectation is computed the same way `stack.ts` computes it,
+    // independently, rather than assumed to be `gathered.length`.
     const delivered = calls.reduce((total, call) => total + call.magnitudes.length, 0);
-    expect(delivered).toBe(gathered.length);
+    const expectedMagnitudeCount = gathered.reduce((total, contribution) => {
+      switch (contribution.mode) {
+        case 'create':
+        case 'remove':
+          return total + 1;
+        case 'transform':
+          return total + 2;
+        case 'reveal':
+        case 'control':
+          return total;
+      }
+    }, 0);
+    expect(delivered).toBe(expectedMagnitudeCount);
     expect(new Set(gathered.map((entry) => entry.nodeId))).toEqual(new Set([first, second]));
-    expect(delivered).toBeGreaterThan(0);
+    expect(gathered.length).toBeGreaterThan(0);
   });
 });
 
@@ -209,14 +238,129 @@ describe('the pipeline end to end delegates too', () => {
     calls.length = 0;
     const stacked = stackContributions(gathered, { registry });
 
-    const magnitudes = gathered
-      .filter((entry) => entry.primitiveId === 'research-rate')
-      .map((entry) => entry.magnitude);
-    expect(calls.find((call) => call.primitiveId === 'research-rate')?.magnitudes).toEqual(
-      magnitudes,
-    );
+    // Not re-derived from `contribution.magnitude` directly: since W20 a
+    // contribution's *sign*, and which primitive it even lands on, depends on
+    // its `mode` (compositional-content.md §3.3), and real v1 content mixes
+    // `create`, `remove`, `reveal` and `control` freely. What this test can
+    // still prove without re-implementing that mapping is delegation itself:
+    // whatever `stackContributions` actually handed to `stackMagnitudes`
+    // reproduces the exact value `stackContributions` reports.
+    const delivered = calls.find((call) => call.primitiveId === 'research-rate');
+    if (delivered === undefined) {
+      // Both picked nodes happened to be `reveal`/`control`-only for
+      // research-rate under a bare two-mind hold (no active reveal, no cell
+      // at its `holds-cell` threshold) -- a real possibility now that v1
+      // content mixes modes freely. Nothing reached the stacker to compare,
+      // but gathering itself still ran; the mode-mapping this test would
+      // otherwise re-confirm is covered directly, and exhaustively, by "the
+      // mode table turns a contribution into a signed magnitude" below.
+      expect(gathered.length).toBeGreaterThan(0);
+      return;
+    }
+    expect(delivered.magnitudes.length).toBeGreaterThan(0);
     expect(stacked.get('research-rate')?.value).toBe(
-      stackMagnitudes(primitiveRecord(registry, 'research-rate'), magnitudes).value,
+      stackMagnitudes(primitiveRecord(registry, 'research-rate'), delivered.magnitudes).value,
     );
+  });
+});
+
+/**
+ * `compositional-content.md` §3.3's mode table, exercised directly: hand-built
+ * contributions rather than gathered ones, so each mode's sign (or absence of
+ * one) is pinned independently of what real content happens to author.
+ */
+describe('the mode table turns a contribution into a signed magnitude', () => {
+  it('create contributes +magnitude', () => {
+    const registry = shippedRegistry();
+    const stacked = stackContributions([contribution('build-rate', 512, { mode: 'create' })], {
+      registry,
+    });
+    // FP_ONE + 512.
+    expect(stacked.get('build-rate')?.value).toBe(1536);
+  });
+
+  it('remove contributes -magnitude', () => {
+    const registry = shippedRegistry();
+    const stacked = stackContributions([contribution('build-rate', 512, { mode: 'remove' })], {
+      registry,
+    });
+    // FP_ONE - 512.
+    expect(stacked.get('build-rate')?.value).toBe(512);
+  });
+
+  it('transform contributes -magnitude to its own primitive and +magnitude to transformTo', () => {
+    const registry = shippedRegistry();
+    const stacked = stackContributions(
+      [
+        contribution('build-rate', 300, {
+          mode: 'transform',
+          transformTo: 'research-rate',
+        }),
+      ],
+      { registry },
+    );
+    expect(stacked.get('build-rate')?.value).toBe(1024 - 300);
+    expect(stacked.get('research-rate')?.value).toBe(1024 + 300);
+  });
+
+  it('reveal contributes no magnitude, and the primitive never reaches the stacker for it alone', () => {
+    const registry = shippedRegistry();
+    calls.length = 0;
+    const stacked = stackContributions([contribution('build-rate', 1024, { mode: 'reveal' })], {
+      registry,
+    });
+    expect(stacked.has('build-rate')).toBe(false);
+    expect(calls.some((call) => call.primitiveId === 'build-rate')).toBe(false);
+  });
+
+  it('control contributes no magnitude either, but its payload still reaches the primitive as a clamp', () => {
+    const registry = shippedRegistry();
+    const stacked = stackContributions(
+      [
+        contribution('build-rate', 1024, { mode: 'create' }),
+        contribution('build-rate', 1024, { mode: 'control', control: { ceiling: 1200 } }),
+      ],
+      { registry },
+    );
+    // Raw: FP_ONE + 1024 = 2048, which clears fp(4096)'s cap easily but is
+    // pulled down by the control ceiling well before the cap would ever bind.
+    expect(stacked.get('build-rate')?.value).toBe(1200);
+  });
+
+  it('combines multiple control contributions on one primitive with combineControls', () => {
+    const registry = shippedRegistry();
+    const stacked = stackContributions(
+      [
+        contribution('research-rate', 4096, { mode: 'create' }),
+        contribution('research-rate', 1024, { mode: 'control', control: { ceiling: 3000 } }),
+        contribution('research-rate', 1024, { mode: 'control', control: { ceiling: 2500 } }),
+      ],
+      { registry },
+    );
+    // The tighter of the two ceilings wins (min), per combineControls.
+    expect(stacked.get('research-rate')?.value).toBe(2500);
+  });
+
+  it("stops a Perdo-driven research-rate at the primitive's own authored floor", () => {
+    const registry = shippedRegistry();
+    const counters = new ClampCounters();
+    const stacked = stackContributions(
+      [contribution('research-rate', 5000, { mode: 'remove' })],
+      { registry, counters },
+    );
+    // FP_ONE - 5000 would be deeply negative; primitive.json floors
+    // research-rate at fp(256) (docs/design/contracts.md §3, W20).
+    expect(stacked.get('research-rate')?.value).toBe(256);
+    expect(stacked.get('research-rate')?.clamped).toBe(true);
+    expect(counters.count('research-rate')).toBeGreaterThan(0);
+  });
+
+  it('a primitive with no authored floor is left free to go negative or to zero', () => {
+    const registry = shippedRegistry();
+    // `blink` (max stacking) carries no floor and no cap.
+    const stacked = stackContributions([contribution('blink', 5000, { mode: 'remove' })], {
+      registry,
+    });
+    expect(stacked.get('blink')?.value).toBe(-5000);
   });
 });

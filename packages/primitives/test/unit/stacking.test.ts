@@ -42,6 +42,7 @@ import {
   applyCap,
   applyWard,
   capLimit,
+  diminishing,
   maxOf,
   multiplicativeOnRemainder,
   presence,
@@ -200,6 +201,82 @@ describe('presence stacking', () => {
     expect(stackMagnitudes(portal, []).value).toBe(0);
     expect(presence([])).toBe(0);
   });
+
+  it('is suppressed to zero by a single negative source, however many positive sources remain', () => {
+    // sound-design.md §4.1: "Perdo's signature is a hole." A Perdo `remove` on
+    // a `presence` primitive (compositional-content.md §3.3) does not need to
+    // out-magnitude the sources that raised the gate; one hole is enough.
+    expect(presence([FP_ONE, -1])).toBe(0);
+    expect(presence([FP_ONE, FP_ONE, FP_ONE, -1])).toBe(0);
+    expect(presence([-FP_ONE])).toBe(0);
+  });
+
+  it('a Perdo unmaking a portal reads as absent through stackMagnitudes too', () => {
+    const portal = primitive('portal');
+    // Two sources asserting the portal, one Perdo source unmaking it: the gate
+    // reads closed, not "mostly open".
+    expect(stackMagnitudes(portal, [FP_ONE, FP_ONE, -FP_ONE]).value).toBe(0);
+  });
+});
+
+describe('diminishing stacking', () => {
+  it('the largest source counts in full, the second at half, the third at a quarter', () => {
+    const lifespan = primitive('lifespan');
+    expect(lifespan.stacking).toBe('diminishing');
+    // 100 in full, 80 at half (40), 40 at a quarter (10): 100 + 40 + 10 = 150,
+    // not 220 -- see contracts.md §3's "Why lifespan stacks by diminishing
+    // returns" paragraph.
+    expect(diminishing([fromInt(100), fromInt(80), fromInt(40)])).toBe(fromInt(150));
+  });
+
+  it('is order-independent: sorting happens inside the rule, not at the call site', () => {
+    const forward = diminishing([fromInt(100), fromInt(80), fromInt(40)]);
+    const reversed = diminishing([fromInt(40), fromInt(80), fromInt(100)]);
+    const shuffled = diminishing([fromInt(80), fromInt(100), fromInt(40)]);
+    expect(reversed).toBe(forward);
+    expect(shuffled).toBe(forward);
+  });
+
+  it('is zero for no sources', () => {
+    expect(diminishing([])).toBe(0);
+  });
+
+  it('one source counts in full', () => {
+    expect(diminishing([fromInt(40)])).toBe(fromInt(40));
+  });
+
+  it('N copies of one magnitude never reach N times its value', () => {
+    // The property the rule exists for: docs/design/contracts.md §3 -- "a
+    // naturally long-lived species has to stay worth having." Stacking many
+    // modest extensions must not substitute for one large one.
+    const magnitude = fromInt(60);
+    for (const count of [2, 3, 5, 10, 40]) {
+      const stacked = diminishing(Array<Fixed>(count).fill(magnitude));
+      expect(stacked).toBeLessThan(count * magnitude);
+      // And it stays under a fixed multiple of the largest single source --
+      // the series 1 + 1/2 + 1/4 + ... is bounded by 2, whatever N is.
+      expect(stacked).toBeLessThanOrEqual(2 * magnitude);
+    }
+  });
+
+  it('clamps the rank rather than letting the shift grow without bound', () => {
+    // MAX_DIMINISHING_RANK is 30: past it, every further source shares the
+    // same divisor (2^30), which has already floored fp(1) to 0. So a 32nd
+    // copy at rank 31 contributes exactly as much as one at rank 30 -- nothing
+    // -- and the two totals agree.
+    const thirtyOne = Array<Fixed>(31).fill(fromInt(1));
+    const thirtyTwo = [...thirtyOne, fromInt(1)];
+    expect(diminishing(thirtyTwo)).toBe(diminishing(thirtyOne));
+  });
+
+  it('stacks lifespan through stackMagnitudes using the registry-declared rule, not additive', () => {
+    const lifespan = primitive('lifespan');
+    const base = fromInt(10000);
+    const stacked = stackMagnitudes(lifespan, [fromInt(60), fromInt(30)], { speciesBase: base });
+    // Additive would give 90; diminishing gives 60 + 15 = 75.
+    expect(stacked.value).toBe(fromInt(75));
+    expect(stacked.value).not.toBe(fromInt(90));
+  });
 });
 
 describe('summed-then-single-ward stacking', () => {
@@ -261,13 +338,20 @@ describe('caps clamp and are counted', () => {
   it('caps the lifespan bonus at half the species base, not at a flat fp value', () => {
     const lifespan = primitive('lifespan');
     expect(lifespan.cap.kind).toBe('fraction-of-species-base');
+    // W20: lifespan stacks by diminishing returns (docs/design/
+    // compositional-content.md §3.3), so three sources are used rather than
+    // two — 200 + 100 + 50 = 350 months raw, which clears the cap the same
+    // way 400 did under the old additive rule. See `diminishing stacking`
+    // below for the rule itself.
+    expect(lifespan.stacking).toBe('diminishing');
 
     const base = fromInt(600);
     const counters = new ClampCounters();
-    const stacked = stackMagnitudes(lifespan, [fromInt(200), fromInt(200)], {
-      speciesBase: base,
-      counters,
-    });
+    const stacked = stackMagnitudes(
+      lifespan,
+      [fromInt(200), fromInt(200), fromInt(200)],
+      { speciesBase: base, counters },
+    );
     expect(stacked.value).toBe(fromInt(300));
     expect(stacked.clamped).toBe(true);
     expect(counters.count('lifespan')).toBe(1);

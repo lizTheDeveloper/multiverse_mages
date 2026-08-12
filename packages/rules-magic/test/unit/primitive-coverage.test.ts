@@ -32,7 +32,32 @@ import {
   formatPrimitiveCoverageReport,
 } from '../../src/effects/index.js';
 
+import type { ContentFileName } from '@mm/content';
+
 import { effectsOf, nodeDocuments, registryWith, shippedRegistry, v1CellIds } from './effect-fixtures.js';
+
+/**
+ * A v1 node in a `perdo`-technique cell, as a raw document.
+ *
+ * `remove` is the only W20 effect mode that needs no extra payload
+ * (`node.schema.json`'s `mode-payload-missing`/`mode-payload-extraneous`; see
+ * `TECHNIQUE_TO_MODE`/`MODE_PAYLOADS` in `load.ts`), and every v1 cell is
+ * intellego, perdo or rego (`compositional-content.md` §3.3's v1 rectangle),
+ * so `perdo` is the one technique these fixtures can push a bare
+ * `{ mode: 'remove' }` effect into without also authoring a `reveals` or
+ * `control` payload to stay coherent with the cell it lands in.
+ */
+function firstPerdoV1Node(
+  documents: Record<ContentFileName, unknown>,
+): Record<string, unknown> {
+  const cells = documents['cell.json'] as Record<string, unknown>[];
+  const perdoCells = new Set(
+    cells.filter((cell) => cell['technique'] === 'perdo' && cell['v1'] === true).map((cell) => cell['id']),
+  );
+  const found = nodeDocuments(documents).find((node) => perdoCells.has(node['cell']));
+  if (found === undefined) throw new Error('node.json declares no v1 node in a perdo cell');
+  return found;
+}
 
 describe('the v1 subset exercises every primitive but the declared exclusions', () => {
   it('passes on the shipped content', () => {
@@ -45,7 +70,7 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
     expect(report.misplacedPortalNodes).toEqual([]);
   });
 
-  it('exercises every registry primitive except lifespan and fertility', () => {
+  it('exercises every registry primitive except fertility', () => {
     const registry = shippedRegistry();
     const report = checkPrimitiveCoverage(registry);
     const exercised = new Set(report.exercised.map((entry) => entry.primitiveId));
@@ -56,14 +81,19 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
     expect([...exercised].sort()).toEqual([...expected].sort());
   });
 
-  it('declares exactly the two exclusions the design accepted', () => {
-    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility', 'lifespan']);
+  it('declares exactly the one exclusion the design accepted', () => {
+    // `lifespan` left this list in W20: a life-extension ladder is now
+    // authored in rego-nomen, and content exercising it is the whole point.
+    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility']);
   });
 
-  it('states the exclusions in the formatted report, so a reader sees the gap', () => {
-    const text = formatPrimitiveCoverageReport(checkPrimitiveCoverage(shippedRegistry()));
+  it('states the exclusion in the formatted report, and lifespan as exercised rather than excluded', () => {
+    const report = checkPrimitiveCoverage(shippedRegistry());
+    const text = formatPrimitiveCoverageReport(report);
     expect(text).toContain('fertility');
-    expect(text).toContain('lifespan');
+    expect(text).toContain('Declared exclusions: fertility');
+    expect(report.exercised.map((entry) => entry.primitiveId)).toContain('lifespan');
+    expect(report.coveredExclusions).toEqual([]);
   });
 });
 
@@ -92,27 +122,27 @@ describe('direction one: a primitive stops being exercised', () => {
 
 describe('direction two: an exclusion becomes covered', () => {
   it('fails and says the exclusion list must be updated deliberately', () => {
-    // Deliberately a *v1* node. The check reads only v1 content, and the grid is
-    // now pre-authored across all seventy cells, so `nodes[0]` is a creo-animal
-    // node the check never looks at -- mutating it would leave the exclusion
-    // uncovered and this test asserting the opposite of what it means.
-    const v1 = v1CellIds(shippedRegistry());
+    // Deliberately a *v1* node, and specifically one in a perdo cell -- see
+    // `firstPerdoV1Node`'s doc for why. `fertility` is the one exclusion left
+    // (W20 moved `lifespan` off this list: rego-nomen now authors it for
+    // real).
     const registry = registryWith((documents) => {
-      const first = nodeDocuments(documents).find((node) => v1.has(node['cell'] as string));
-      if (first === undefined) throw new Error('node.json declares no v1 node');
+      const first = firstPerdoV1Node(documents);
       effectsOf(first).push({
-        primitive: 'lifespan',
+        primitive: 'fertility',
         magnitude: 12,
         target: 'self',
         durationTicks: 0,
+        mode: 'remove',
+        gloss: 'test fixture: an extra effect pushed onto a real v1 node to cover an exclusion.',
       });
     });
 
     const report = checkPrimitiveCoverage(registry);
     expect(report.ok).toBe(false);
-    expect(report.coveredExclusions).toEqual(['lifespan']);
+    expect(report.coveredExclusions).toEqual(['fertility']);
     const text = formatPrimitiveCoverageReport(report);
-    expect(text).toContain('lifespan');
+    expect(text).toContain('fertility');
     expect(text).toMatch(/exclusion list/i);
   });
 });
@@ -141,18 +171,18 @@ describe('portal belongs to the mandated cell', () => {
   it('fails when portal is authored anywhere else', () => {
     // A v1 cell that is not rego-limen, for the same reason as above: portal
     // authored in a non-v1 cell is invisible to a check scoped to v1 content, so
-    // the stray has to be somewhere the check actually reads.
-    const v1 = v1CellIds(shippedRegistry());
+    // the stray has to be somewhere the check actually reads. A perdo cell,
+    // specifically, so `mode: 'remove'` needs no extra payload to stay
+    // coherent -- see `firstPerdoV1Node`'s doc.
     const registry = registryWith((documents) => {
-      const stray = nodeDocuments(documents).find(
-        (node) => node['cell'] !== PORTAL_HOME_CELL_ID && v1.has(node['cell'] as string),
-      );
-      if (stray === undefined) throw new Error('every v1 node is in rego-limen; fixture impossible');
+      const stray = firstPerdoV1Node(documents);
       effectsOf(stray).push({
         primitive: PORTAL_PRIMITIVE_ID,
         magnitude: 1024,
         target: 'universe',
         durationTicks: 0,
+        mode: 'remove',
+        gloss: 'test fixture: portal authored outside its mandated cell.',
       });
     });
 

@@ -81,7 +81,7 @@ import type { KnowledgeSubsystem, MagicGrid, PortalHooks } from '@mm/rules-magic
 import { MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
 
 import type { ArbitrationFaults, HeldInstance } from './arbitration.js';
-import { COMBAT_PRIMITIVES, CastArbiter, summonCount } from './arbitration.js';
+import { COMBAT_PRIMITIVES, CastArbiter, contributesMagnitude, summonCount } from './arbitration.js';
 import type { CombatantBrief, SideRoster } from './combatants.js';
 import { emptyRoster, sideHasSummonRoom, spawnCombatant } from './combatants.js';
 import type { Point } from './geometry.js';
@@ -585,7 +585,7 @@ function firstCastableNode(raid: Raid, brief: CombatantBrief): ContentId | undef
   for (const nodeId of [...pool].sort((a, b) => a - b)) {
     const node = raid.registry.node(nodeId);
     if (node === undefined) continue;
-    if (!node.effects.some((effect) => effect.primitive === COMBAT_PRIMITIVES.directDamage)) {
+    if (!node.effects.some((effect) => contributesMagnitude(effect, COMBAT_PRIMITIVES.directDamage))) {
       continue;
     }
     const price = raid.tuning.castVigorBase + raid.tuning.castVigorPerTier * node.tier;
@@ -595,11 +595,17 @@ function firstCastableNode(raid: Raid, brief: CombatantBrief): ContentId | undef
   return undefined;
 }
 
-/** The first legal node this combatant holds that carries a primitive. */
+/**
+ * The first legal node this combatant holds that actually contributes a
+ * magnitude to `primitiveId` — mode-aware via `contributesMagnitude`, so a
+ * `control`- or `reveal`-mode effect (which `gatherPrimitive` in
+ * `arbitration.ts` would give no magnitude at all) is never selected as if it
+ * were a working spell.
+ */
 function firstNodeWith(raid: Raid, brief: CombatantBrief, primitiveId: string): ContentId | undefined {
   for (const nodeId of [...brief.legalNodes].sort((a, b) => a - b)) {
     const node = raid.registry.node(nodeId);
-    if (node?.effects.some((effect) => effect.primitive === primitiveId) === true) return nodeId;
+    if (node?.effects.some((effect) => contributesMagnitude(effect, primitiveId)) === true) return nodeId;
   }
   return undefined;
 }
@@ -720,7 +726,7 @@ function resolveOneCast(
   // asymmetry that shows up months later as an unexplained vigor drain.
   const needsTarget = raid.registry
     .node(nodeId)
-    ?.effects.some((effect) => effect.primitive === COMBAT_PRIMITIVES.directDamage);
+    ?.effects.some((effect) => contributesMagnitude(effect, COMBAT_PRIMITIVES.directDamage));
   if (needsTarget === true && target === undefined) return;
 
   const resolution = raid.arbiter.resolveCast({
@@ -844,9 +850,10 @@ function resolveTheft(
   }
 
   const magnitudes = raid.arbiter.theftMagnitudes(nodeId);
+  const controls = raid.arbiter.theftControls(nodeId);
 
   const stream = raid.rng.actorStream(RNG_STREAM.knowledgeTheft, tick, packCombatantKey(thief.key));
-  if (!raid.arbiter.attemptTheft(nodeId, magnitudes, stream)) return;
+  if (!raid.arbiter.attemptTheft(nodeId, magnitudes, stream, controls)) return;
 
   const taken = stealableFrom(raid, thief, victim);
   if (taken === 0) return;

@@ -56,13 +56,70 @@
  * steal a node her own universe forbids; it enters her universe, occupies a
  * mind, counts toward existence, and is simply inert at home until the god
  * permits its cell. Nothing in this file may be used to delete an instance.
+ *
+ * ## Effect modes, at engagement scale
+ *
+ * `compositional-content.md` §3.3 gives every effect a `mode` — the
+ * technique's envelope, made mechanical — and this file is where engagement
+ * scale reads it. Every place that used to read `effect.magnitude` off a raw
+ * `.primitive` match now goes through {@link gatherPrimitive} or
+ * {@link gatherAreaDenial}, which apply exactly this table:
+ *
+ * - **`remove`** (Perdo) — `magnitude`, unchanged. This is "two scales, one
+ *   verb" (§3.3): at engagement scale Perdo subtracts hit points and always
+ *   did, so there is nothing to negate here — the magnitude *is* the
+ *   subtraction, applied by the caller (`addDamage`, `applyWardOnce`).
+ * - **`create`** (Creo) — `+magnitude`, exactly as every effect already
+ *   worked before `mode` existed. Creo is not gridded into v1, so this is the
+ *   path the non-v1 nodes take.
+ * - **`control`** (Rego) — **no magnitude.** A `control` effect contributes a
+ *   `{floor, ceiling}` clamp instead, combined across sources by `@mm/
+ *   primitives`' `combineControls` and applied by `stackMagnitudes`'/
+ *   `rollStackedProbability`'s own `clamp` stage — never reimplemented here
+ *   (`BAN_INLINE_PRIMITIVE_STACKING`). This is the bug this change closes: a
+ *   placeholder `magnitude` on a `control` effect (Rego's payload is its
+ *   `control` bound, not its `magnitude`) must never reach a stack as if it
+ *   were a source. A ward with only a `control` source therefore stacks to
+ *   whatever its clamp allows, not to a guaranteed near-total prevention, and
+ *   a `knowledge-steal` with only a `control` source is not a guaranteed
+ *   theft.
+ * - **`transform`** (Muto) — splits across two primitives: `-magnitude`
+ *   leaves the effect's own `primitive`, `+magnitude` arrives at its
+ *   `transformTo`. Muto is not gridded into v1, so nothing here is exercised
+ *   by shipped content yet; it is implemented and tested anyway so enabling a
+ *   Muto cell is a content change, not a code one.
+ * - **`reveal`** (Intellego) — **no magnitude, ever.** "No impact at all… a
+ *   filter opens" (`sound-design.md` §4.1).
+ *
+ * ## The reveal/latent decision
+ *
+ * §3.4 gives `effect.when` a `{kind:"revealed"}` value: an effect that
+ * contributes only while a held `reveal` effect names it — the other half of
+ * Intellego, the "something becomes audible that was always present" half.
+ *
+ * **This file never activates one.** A raid is engagement time, frozen at
+ * portal open; a reveal is world-time scholarship — the kind of thing that
+ * changes what a mage's *research* uncovers, not what her *spell* does
+ * mid-combat. Wiring reveal-activation in here would mean tracking, per
+ * combatant, which descriptors her held `reveal` effects name, matching them
+ * against every other held node's `when` on every gather, and keeping that
+ * live across an engagement whose ruleset is otherwise frozen — real
+ * machinery with no v1 content to exercise it (Muto and the reveal/latent
+ * pairing are not gridded onto anything raid-relevant in v1 either).
+ *
+ * So {@link isAlwaysOn} skips every effect whose `when` is anything but the
+ * default outright, at the one place every combat primitive is gathered — a
+ * latent effect never fires in a raid by accident, in one gather function and
+ * not another. If a later change gives engagement scale a real use for a
+ * latent effect, this is the one predicate that decision has to change, and
+ * changing it here changes it everywhere at once.
  */
 
-import type { ContentId, ContentRegistry, PrimitiveRecord } from '@mm/content';
+import type { ContentId, ContentRegistry, EffectRecord, PrimitiveRecord } from '@mm/content';
 import type { Fixed, RngStream } from '@mm/sim-core';
 import { FP_ONE, floorDiv, nextBounded } from '@mm/sim-core';
-import type { ClampCounters } from '@mm/primitives';
-import { rollStackedProbability, stackMagnitudes } from '@mm/primitives';
+import type { ClampCounters, EffectControl } from '@mm/primitives';
+import { combineControls, rollStackedProbability, stackMagnitudes } from '@mm/primitives';
 import type { RulesetSnapshot } from '@mm/state';
 import { LOCATION_KIND, permits } from '@mm/state';
 import type { CastPolicy, CostPolicy, MagicGrid } from '@mm/rules-magic';
@@ -115,6 +172,156 @@ const NO_EFFECTS: CastEffects = Object.freeze({
   summon: Object.freeze([]),
   knowledgeSteal: Object.freeze([]),
 });
+
+/**
+ * Whether an effect contributes at all right now — `when` absent or
+ * `{kind:"always"}`. See the module docblock's "reveal/latent decision":
+ * this file never activates a latent (`{kind:"revealed"}`) or conditional
+ * (`{kind:"holds-cell"}`) effect, so every non-`always` effect is inert here.
+ */
+function isAlwaysOn(effect: EffectRecord): boolean {
+  return effect.when === undefined || effect.when.kind === 'always';
+}
+
+/**
+ * One node's engagement-scale contribution to one primitive: the magnitudes
+ * that stack normally, and the `control` envelopes that clamp the stack
+ * instead of joining it. See the module docblock's effect-modes table.
+ *
+ * The only place `effect.magnitude` and `effect.control` are read for the
+ * combat primitives below — {@link CastArbiter.passiveDefences},
+ * {@link CastArbiter.theftMagnitudes}/`theftControls`, and
+ * {@link CastArbiter.resolveCast}'s effect gathering all go through this one
+ * function (or {@link gatherAreaDenial}, its `durationTicks`-carrying
+ * sibling), which is what keeps that read centralized as the existing
+ * `theftMagnitudes` docblock already promised.
+ */
+function gatherPrimitive(
+  effects: readonly EffectRecord[],
+  primitiveId: string,
+): { readonly magnitudes: Fixed[]; readonly controls: EffectControl[] } {
+  const magnitudes: Fixed[] = [];
+  const controls: EffectControl[] = [];
+  for (const effect of effects) {
+    if (!isAlwaysOn(effect)) continue;
+    switch (effect.mode) {
+      case 'create':
+      case 'remove':
+        if (effect.primitive === primitiveId) magnitudes.push(effect.magnitude);
+        break;
+      case 'transform':
+        if (effect.primitive === primitiveId) magnitudes.push(-effect.magnitude);
+        else if (effect.transformTo === primitiveId) magnitudes.push(effect.magnitude);
+        break;
+      case 'control':
+        if (effect.primitive === primitiveId && effect.control !== undefined) {
+          controls.push(effect.control);
+        }
+        break;
+      case 'reveal':
+        break;
+    }
+  }
+  return { magnitudes, controls };
+}
+
+/**
+ * `area-denial`'s contribution, mode-aware exactly like {@link
+ * gatherPrimitive} — kept as a sibling rather than a case inside it because a
+ * denial field also carries `durationTicks`, which a bare magnitude does not.
+ * `area-denial` has no `control` payload in v1 and none is invented here: a
+ * `control`-mode area-denial effect contributes nothing, symmetrically with
+ * every other primitive, until a real use for clamping a denial field exists.
+ */
+function gatherAreaDenial(
+  effects: readonly EffectRecord[],
+): { readonly magnitude: Fixed; readonly durationTicks: number }[] {
+  const denials: { magnitude: Fixed; durationTicks: number }[] = [];
+  for (const effect of effects) {
+    if (!isAlwaysOn(effect)) continue;
+    switch (effect.mode) {
+      case 'create':
+      case 'remove':
+        if (effect.primitive === COMBAT_PRIMITIVES.areaDenial) {
+          denials.push({ magnitude: effect.magnitude, durationTicks: effect.durationTicks });
+        }
+        break;
+      case 'transform':
+        if (effect.primitive === COMBAT_PRIMITIVES.areaDenial) {
+          denials.push({ magnitude: -effect.magnitude, durationTicks: effect.durationTicks });
+        } else if (effect.transformTo === COMBAT_PRIMITIVES.areaDenial) {
+          denials.push({ magnitude: effect.magnitude, durationTicks: effect.durationTicks });
+        }
+        break;
+      case 'control':
+      case 'reveal':
+        break;
+    }
+  }
+  return denials;
+}
+
+/**
+ * Whether one effect would contribute *some* magnitude to `primitiveId`
+ * through {@link gatherPrimitive} — without computing what that magnitude is.
+ *
+ * `raid.ts` uses this for two decisions that only need presence, never the
+ * value: whether a node is worth selecting as "the direct-damage spell to
+ * cast" or "the knowledge-steal node to attempt", before arbitration ever
+ * turns it into effects. Answering those with a bare `effect.primitive ===
+ * id` check (the pre-`mode` code) would let a `control`- or `reveal`-mode
+ * effect get a node selected for a magnitude it can never produce — a wasted
+ * action, not a legality bug, but one this file can rule out for free by
+ * asking the same mode question {@link gatherPrimitive} answers.
+ */
+export function contributesMagnitude(effect: EffectRecord, primitiveId: string): boolean {
+  if (!isAlwaysOn(effect)) return false;
+  switch (effect.mode) {
+    case 'create':
+    case 'remove':
+      return effect.primitive === primitiveId;
+    case 'transform':
+      return effect.primitive === primitiveId || effect.transformTo === primitiveId;
+    case 'control':
+    case 'reveal':
+      return false;
+  }
+}
+
+/**
+ * Whether one effect opens a `presence`-stacked gate like `portal`.
+ *
+ * `portal`'s stacking rule is `presence` (`@mm/primitives`' `presence()`),
+ * whose own doc is written against this exact design: a positive source
+ * opens the gate and a negative one suppresses it outright. This function is
+ * the mode-to-sign question for a presence primitive specifically, and it
+ * reads differently from {@link gatherPrimitive} on one mode:
+ *
+ * - **`create`** — opens the gate. Not gridded onto `rego-limen` in v1, but
+ *   the general rule, unchanged from every other `create` effect.
+ * - **`control`** — **also opens the gate.** Rego *is* the portal cell
+ *   (`sound-design.md` §4.3 — *"Rego Limen … the portal cell: a hard lock,
+ *   and then you are somewhere else"*), and a boolean gate has no continuous
+ *   range for a `{floor, ceiling}` clamp to bound. The general "`control`
+ *   contributes no magnitude" reading (§3.3) is about a fraction or a
+ *   probability being pushed to false certainty — a hazard a presence
+ *   primitive cannot have, since it is never a magnitude in the first place.
+ *   So for `portal` specifically, `control` behaves like `create`.
+ * - **`remove`** — **never opens the gate.** *"Perdo's signature is a hole"*
+ *   (`sound-design.md` §4.1): a Perdo Limen node unmakes a gate rather than
+ *   opening one, so it must never itself satisfy the check a `create` or
+ *   `control` node would — whatever else is true of the raider's knowledge.
+ * - **`reveal`** — never opens the gate. Intellego's "no impact at all".
+ *
+ * Latent effects (`isAlwaysOn` false) never open the gate either.
+ */
+export function enablesGate(effect: EffectRecord, primitiveId: string): boolean {
+  return (
+    effect.primitive === primitiveId &&
+    isAlwaysOn(effect) &&
+    (effect.mode === 'create' || effect.mode === 'control')
+  );
+}
 
 /** Why a cast produced nothing. `''` means it resolved. */
 export type CastRefusal =
@@ -298,14 +505,24 @@ export class CastArbiter {
    *
    * Both stack through `@mm/primitives`, so the caps in §3 and their clamp
    * counters behave exactly as they do everywhere else in the project.
+   *
+   * Mode-aware via {@link gatherPrimitive}: a `control`-mode ward or
+   * concealment effect (Rego's placeholder `magnitude` included) contributes
+   * a clamp rather than a source, so it can bound the stack — a floor bought,
+   * a ceiling sold — but can never *be* the stack. Before this, a `magnitude:
+   * 1024` control effect on `ward` stacked as a 100%-prevention source
+   * (capped to the §3 ceiling of 90%); now it stacks to nothing at all unless
+   * some `create`/`remove`/`transform` source also applies.
    */
   passiveDefences(
     held: Iterable<HeldInstance>,
     activationThreshold: Fixed,
     baseConcealment: Fixed,
   ): { readonly ward: Fixed; readonly concealment: Fixed } {
-    const wards: Fixed[] = [];
-    const concealments: Fixed[] = baseConcealment > 0 ? [baseConcealment] : [];
+    const wardMagnitudes: Fixed[] = [];
+    const wardControls: EffectControl[] = [];
+    const concealmentMagnitudes: Fixed[] = baseConcealment > 0 ? [baseConcealment] : [];
+    const concealmentControls: EffectControl[] = [];
 
     for (const instance of held) {
       if (instance.locationKind !== LOCATION_KIND.mind && instance.locationKind !== LOCATION_KIND.palace) {
@@ -313,15 +530,20 @@ export class CastArbiter {
       }
       if (instance.mastery < activationThreshold) continue;
       if (!this.#permitsNode(instance.nodeId)) continue;
-      for (const effect of requireRegistryNode(this.#registry, instance.nodeId).effects) {
-        if (effect.primitive === COMBAT_PRIMITIVES.ward) wards.push(effect.magnitude);
-        else if (effect.primitive === COMBAT_PRIMITIVES.concealment) concealments.push(effect.magnitude);
-      }
+      const effects = requireRegistryNode(this.#registry, instance.nodeId).effects;
+
+      const ward = gatherPrimitive(effects, COMBAT_PRIMITIVES.ward);
+      wardMagnitudes.push(...ward.magnitudes);
+      wardControls.push(...ward.controls);
+
+      const concealment = gatherPrimitive(effects, COMBAT_PRIMITIVES.concealment);
+      concealmentMagnitudes.push(...concealment.magnitudes);
+      concealmentControls.push(...concealment.controls);
     }
 
     return {
-      ward: this.#stack(COMBAT_PRIMITIVES.ward, wards),
-      concealment: this.#stack(COMBAT_PRIMITIVES.concealment, concealments),
+      ward: this.#stack(COMBAT_PRIMITIVES.ward, wardMagnitudes, wardControls),
+      concealment: this.#stack(COMBAT_PRIMITIVES.concealment, concealmentMagnitudes, concealmentControls),
     };
   }
 
@@ -354,8 +576,22 @@ export class CastArbiter {
    * inside the host's sky. A raider whose home forbids `rego-nomen` may still
    * read a name in a universe that permits it, and a host that forbids `mentem`
    * cannot be mind-read by anybody, including its own defenders.
+   *
+   * `controls` is `theftControls(nodeId)`, threaded through by the caller
+   * rather than re-read here — see `theftMagnitudes`' docblock on keeping the
+   * effect read centralized. A `control`-mode `knowledge-steal` effect
+   * therefore bounds the rolled probability (a floor bought, a ceiling sold)
+   * instead of becoming a magnitude in its own right: before this, a
+   * `magnitude: 1024` control effect rolled as fp(1024) — a guaranteed
+   * steal — regardless of the fp(1024) cap on the roll ever meaning "certain
+   * on purpose".
    */
-  attemptTheft(nodeId: ContentId, magnitudes: readonly Fixed[], stream: RngStream): boolean {
+  attemptTheft(
+    nodeId: ContentId,
+    magnitudes: readonly Fixed[],
+    stream: RngStream,
+    controls: readonly EffectControl[] = [],
+  ): boolean {
     if (!this.#permitsNode(nodeId)) {
       this.#forbiddenCastsBlocked += 1;
       return false;
@@ -364,12 +600,16 @@ export class CastArbiter {
       this.#primitive(COMBAT_PRIMITIVES.knowledgeSteal),
       magnitudes,
       stream,
-      this.#counters === undefined ? {} : { counters: this.#counters },
+      {
+        ...(this.#counters === undefined ? {} : { counters: this.#counters }),
+        ...(controls.length > 0 ? { clamp: combineControls(controls) } : {}),
+      },
     ).succeeded;
   }
 
   /**
-   * The `knowledge-steal` magnitudes a node carries.
+   * The `knowledge-steal` magnitudes a node carries — `create`/`remove`/
+   * `transform` sources only; see {@link gatherPrimitive}.
    *
    * Here rather than at the theft call site so that `effect.magnitude` is read
    * in exactly one file. The conformance check enforces that, and the rule it
@@ -378,9 +618,23 @@ export class CastArbiter {
    * legality check actually takes.
    */
   theftMagnitudes(nodeId: ContentId): readonly Fixed[] {
-    return requireRegistryNode(this.#registry, nodeId)
-      .effects.filter((effect) => effect.primitive === COMBAT_PRIMITIVES.knowledgeSteal)
-      .map((effect) => effect.magnitude);
+    return gatherPrimitive(
+      requireRegistryNode(this.#registry, nodeId).effects,
+      COMBAT_PRIMITIVES.knowledgeSteal,
+    ).magnitudes;
+  }
+
+  /**
+   * The `knowledge-steal` `control` envelopes a node carries — the other half
+   * of `theftMagnitudes`, split out because {@link attemptTheft} needs both
+   * but combines the controls itself (via `combineControls`), same as
+   * `passiveDefences` does for `ward`/`concealment`.
+   */
+  theftControls(nodeId: ContentId): readonly EffectControl[] {
+    return gatherPrimitive(
+      requireRegistryNode(this.#registry, nodeId).effects,
+      COMBAT_PRIMITIVES.knowledgeSteal,
+    ).controls;
   }
 
   /** The summed damage a target takes, after exactly one ward application. */
@@ -393,12 +647,15 @@ export class CastArbiter {
     return floorDiv(rawDamage * (FP_ONE - ward), FP_ONE);
   }
 
-  /** The effective, capped value of one primitive's sources. */
-  #stack(primitiveId: string, magnitudes: readonly Fixed[]): Fixed {
+  /** The effective, capped value of one primitive's sources, optionally clamped by `control` sources. */
+  #stack(primitiveId: string, magnitudes: readonly Fixed[], controls: readonly EffectControl[] = []): Fixed {
     return stackMagnitudes(
       this.#primitive(primitiveId),
       magnitudes,
-      this.#counters === undefined ? {} : { counters: this.#counters },
+      {
+        ...(this.#counters === undefined ? {} : { counters: this.#counters }),
+        ...(controls.length > 0 ? { clamp: combineControls(controls) } : {}),
+      },
     ).value;
   }
 
@@ -422,40 +679,31 @@ export class CastArbiter {
     return permits(this.#hostRuleset, this.#grid.cellOf(nodeId));
   }
 
-  /** A node's engagement-scale effects, grouped by primitive. */
+  /**
+   * A node's engagement-scale effects, grouped by primitive and mode-aware
+   * via {@link gatherPrimitive}/{@link gatherAreaDenial}.
+   *
+   * `control` envelopes on these five primitives are read (so a `control`
+   * effect correctly contributes no magnitude here either) but not applied:
+   * unlike `ward`, `concealment` and `knowledge-steal`, none of
+   * `direct-damage`/`area-denial`/`blink`/`summon` are stacked through
+   * `@mm/primitives` on the per-cast path — `raid.ts` ledgers damage and
+   * denial by hand and takes `blink`'s max and `summon`'s count at the point
+   * of use, which predates this change. So a `control`-mode effect on one of
+   * these correctly stops contributing a magnitude (the bug this file
+   * exists to close) but its clamp has no consumer yet; nothing in v1
+   * authors one, and wiring a clamp into raid.ts's hand-rolled damage ledger
+   * is a larger, separate change this task does not need.
+   */
   #effectsOf(nodeId: ContentId): CastEffects {
-    const directDamage: Fixed[] = [];
-    const areaDenial: { magnitude: Fixed; durationTicks: number }[] = [];
-    const blink: Fixed[] = [];
-    const summon: Fixed[] = [];
-    const knowledgeSteal: Fixed[] = [];
-
-    for (const effect of requireRegistryNode(this.#registry, nodeId).effects) {
-      switch (effect.primitive) {
-        case COMBAT_PRIMITIVES.directDamage:
-          directDamage.push(effect.magnitude);
-          break;
-        case COMBAT_PRIMITIVES.areaDenial:
-          areaDenial.push({ magnitude: effect.magnitude, durationTicks: effect.durationTicks });
-          break;
-        case COMBAT_PRIMITIVES.blink:
-          blink.push(effect.magnitude);
-          break;
-        case COMBAT_PRIMITIVES.summon:
-          summon.push(effect.magnitude);
-          break;
-        case COMBAT_PRIMITIVES.knowledgeSteal:
-          knowledgeSteal.push(effect.magnitude);
-          break;
-        default:
-          // Everything else is world-scale, or is passive and read by
-          // `passiveDefences`. A world primitive on a node cast in an
-          // engagement does nothing, which is what §3's scale column means.
-          break;
-      }
-    }
-
-    return { directDamage, areaDenial, blink, summon, knowledgeSteal };
+    const effects = requireRegistryNode(this.#registry, nodeId).effects;
+    return {
+      directDamage: gatherPrimitive(effects, COMBAT_PRIMITIVES.directDamage).magnitudes,
+      areaDenial: gatherAreaDenial(effects),
+      blink: gatherPrimitive(effects, COMBAT_PRIMITIVES.blink).magnitudes,
+      summon: gatherPrimitive(effects, COMBAT_PRIMITIVES.summon).magnitudes,
+      knowledgeSteal: gatherPrimitive(effects, COMBAT_PRIMITIVES.knowledgeSteal).magnitudes,
+    };
   }
 }
 

@@ -140,13 +140,13 @@ describe('interning', () => {
     expect(registry.intern('cell', 'creo-animal')).toBe(1);
     expect(registry.intern('cell', 'rego-nomen')).toBe(70);
     expect(registry.intern('node', 'can-call-the-pack')).toBe(1);
-    // 300, not 299: pre-authoring the other 58 cells brought 249 nodes, and
-    // `knowledge-model` task 2.5's `rn-keep-the-name-close` is the one neither
-    // side of that merge shared. Node ids intern in sort order, so it lands at
-    // 285 and every node after it shifts by one — the renumbering these
+    // 357, not 300: W20 replaced 51 ladder nodes with 108 compositional ones
+    // across the twelve v1 cells, moving the shipped total from 300 to 357.
+    // Node ids intern in sort order, so `rn-keep-the-name-close` moves from
+    // 285 to 334 and every node after it shifts too — the renumbering these
     // assertions exist to surface.
-    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(285);
-    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(300);
+    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(334);
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(357);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
@@ -258,7 +258,15 @@ describe('contentRevision', () => {
     // Three branches each recorded a successor to 2512ea02 — W6's ec506311,
     // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
     // other. This is the revision of the tree that holds all three.
-    expect(registry.contentRevision).toBe('a622452a3b55e38fd902a2d3264b44d7');
+    //
+    // a622452a3b55e38fd902a2d3264b44d7 -> 02b5a898c8fff086f669ce8ddbe8631c, when W20
+    // replaced 51 ladder nodes with 108 compositional ones across the twelve v1
+    // cells (300 -> 357 nodes) and gave every effect a required `mode`, plus
+    // `track.json` (§2.12) — the named routes an exclusion can bind to instead of
+    // node by node. Two universes disagreeing about which nodes exist, what their
+    // effects fold into, or which routes exclude which would be developing
+    // different magic while their revisions agreed they were compatible.
+    expect(registry.contentRevision).toBe('02b5a898c8fff086f669ce8ddbe8631c');
   });
 
   it('is stable across loads of identical content', () => {

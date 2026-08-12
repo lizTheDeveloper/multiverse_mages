@@ -50,11 +50,12 @@ import {
   hookFor,
   storePolicy,
   traditionTableFrom,
+  trackCatalogFromRegistry,
 } from '@mm/rules-magic';
 import type { SpeciesAffinities } from '@mm/rules-world';
 import { readTargetAppeal, resolveSpeciesAffinities, territoryExtent } from '@mm/rules-world';
 import type { WorldStepDeps } from '@mm/coordination';
-import { godEffectHooks, nodeFacetsFrom, resolveGodContent } from '@mm/coordination';
+import { godEffectHooks, knowledgeEffectHooks, nodeFacetsFrom, resolveGodContent } from '@mm/coordination';
 
 /** The permitted-axis halves of a ruleset (`contracts.md` §1.1). */
 export interface RulesetAxes {
@@ -344,6 +345,11 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
   // dependency-graph test is right to refuse one. This file wires; it does not
   // compute.
   const effects = godEffectHooks({ constants: god.constants, cells });
+  // Same reasoning, for the third source of these primitives: what a held
+  // node contributes at world scale is `knowledge-effects.ts`'s rule, not
+  // this file's. `registry` rather than `catalog` because `gatherEffects`
+  // reads a `ContentRegistry` directly — see that file's `KnowledgeEffectDeps`.
+  const knowledgeEffects = knowledgeEffectHooks({ registry, cells, knowledgeFor });
 
   // Species affinities are resolved once per species, not once per mage per
   // tick: six records against potentially thousands of mages, and the answer is
@@ -365,6 +371,10 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
     appeal: readTargetAppeal(registry),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
+    // `compositional-content.md` §3.1's exclusion graph. Built once, here,
+    // for the reason `territory` already is: a function of the content
+    // registry alone, fixed for the length of a run.
+    tracks: trackCatalogFromRegistry(registry),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
     primitives: {
       lifespan,
@@ -388,6 +398,7 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
       // the one place that knows which tick a loss count belongs to.
     },
     ...effects,
+    ...knowledgeEffects,
   };
 }
 

@@ -121,9 +121,10 @@ import type {
   KnowledgeSubsystem,
   NodeCatalog,
   StorePolicy,
+  TrackCatalog,
 } from '@mm/rules-magic';
 import { decayHeldKnowledge } from '@mm/rules-magic';
-import type { RediscoveryClampCounter } from '@mm/primitives';
+import type { EffectControl, RediscoveryClampCounter } from '@mm/primitives';
 import { ClampCounters, createRediscoveryClampCounter } from '@mm/primitives';
 import type {
   CapitalEmission,
@@ -169,6 +170,7 @@ import { EffortLedger } from './effort-store.js';
 import { cellNodeIndex } from './frontier-index.js';
 import { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { MageRates } from './gateway.js';
+import type { KnowledgeWorldEffects } from './knowledge-effects.js';
 import type { NodeFacetResolver } from './node-facets.js';
 import type { GodDeps, GodTickReport } from './god/index.js';
 import { frozenWhenTerminal, godSystems } from './god/index.js';
@@ -231,6 +233,18 @@ export interface WorldStepDeps {
    * is `GatewayDeps.acquire`'s to say.
    */
   readonly acquire: AcquirePolicy;
+  /**
+   * The loaded track graph — `compositional-content.md` §3.1's named routes
+   * and their exclusions, closed symmetric — for `GatewayDeps.tracks`.
+   *
+   * Carried on the deps for the same reason as {@link territory}: it is a
+   * function of the content registry alone, fixed for the length of a run, and
+   * building it per tick would repeat the same `Map` construction every tick
+   * for an answer that cannot change. `undefined` is a content set with no
+   * `'track'` records at all, which `acquisitionExclusion` reads as "no track
+   * exclusion ever fires" rather than as a defect.
+   */
+  readonly tracks?: TrackCatalog | undefined;
   /**
    * The universe's territory, summed from content by `territoryExtent`.
    *
@@ -315,6 +329,29 @@ export interface WorldStepDeps {
   readonly lifespanEffectsFor?:
     | ((state: SimState, worldTick: number, mage: Handle) => readonly Fixed[])
     | undefined;
+  /**
+   * One tick's world-scale knowledge effects — what the universe's *own held
+   * nodes* contribute to `research-rate`, `teach-rate`, `resource-yield`,
+   * `fertility`, `scribe-rate` and `lifespan`, unstacked, plus the combined
+   * Rego control clamp per primitive. From `knowledgeEffectHooks`
+   * (`knowledge-effects.ts`).
+   *
+   * This is the other half of the seam {@link researchBonusesFor} and
+   * {@link teachBonusesFor} already describe: a blessing is per-mage, a
+   * library's contribution is per-mage-at-an-institution, and a `universe`-
+   * target node's effect is neither — it does not vary by which mage is
+   * asking, so it is computed once per tick rather than threaded through a
+   * per-mage callback. Every call site below concatenates its magnitudes into
+   * the *same* array the god's and the library's already share, so there
+   * remains one `(1 + Σ)` channel and one cap per quantity — never a second
+   * one invented for this third source.
+   *
+   * Optional for the reason every other hook here is: every world built
+   * before this change, and every unit fixture that measures the loop without
+   * a content-backed knowledge subsystem, keeps building exactly the world it
+   * built before.
+   */
+  readonly knowledgeEffectsFor?: ((state: SimState, worldTick: number) => KnowledgeWorldEffects) | undefined;
 }
 
 /** What one world tick did. Reporting only; never an input to any rule. */
@@ -506,7 +543,7 @@ export function worldSystem(
       const efforts = new EffortLedger(state);
 
       // ---- 1. Materials production ---------------------------------------
-      const produced = produceMaterials(cohorts, deps);
+      const produced = produceMaterials(state, worldTick, cohorts, deps);
       let materials = readRecord(state, UNIVERSE, universe).materials + produced;
 
       // Every library's shelves, read once for the whole tick. Vision §6a's
@@ -568,6 +605,7 @@ export function worldSystem(
           rng,
           materials: materialsAccess,
           clampCounter,
+          tracks: deps.tracks,
         });
 
       // ---- 2. Populace ----------------------------------------------------
@@ -627,7 +665,7 @@ export function worldSystem(
               lifespanMonths(state, handle, record, species, deps),
             materials: stockAtDecisionTime,
             scribeThroughputOf: (universityId) =>
-              scribeThroughputFor(state, universityId, cohorts, deps),
+              scribeThroughputFor(state, worldTick, universityId, cohorts, deps),
             tierOf: (nodeId) => deps.catalog.node(nodeId)?.tier ?? 1,
             facetsOf: deps.facets,
             affinitiesOf: deps.affinitiesOf,
@@ -678,6 +716,7 @@ export function worldSystem(
         subsistenceShortfallShare,
       });
       const births = deliverBirths(cohorts, {
+        state,
         rng,
         worldTick,
         brake: fertilityBrake(cohorts.totalCount(), capacity),
@@ -759,7 +798,13 @@ export function worldSystem(
  * a universe holds several species, so an average would let one able cohort
  * raise the output of every other.
  */
-function produceMaterials(cohorts: CohortStore, deps: WorldStepDeps): Fixed {
+function produceMaterials(
+  state: SimState,
+  worldTick: number,
+  cohorts: CohortStore,
+  deps: WorldStepDeps,
+): Fixed {
+  const knowledge = knowledgeEffectsOf(state, worldTick, deps);
   let produced = 0;
   cohorts.forEach((_handle, key, count) => {
     if (key.occupation !== OCCUPATION.laborer) return;
@@ -769,7 +814,8 @@ function produceMaterials(cohorts: CohortStore, deps: WorldStepDeps): Fixed {
       laborerCount: count,
       laborAffinity: species.laborAffinity,
       resourceYield: deps.primitives.resourceYield,
-      resourceYieldBonuses: [],
+      resourceYieldBonuses: knowledge.resourceYieldBonuses,
+      clamp: knowledge.controlFor(deps.primitives.resourceYield.id),
     });
   });
   return produced;
@@ -958,17 +1004,27 @@ function workOne(
   const shelves = row === undefined ? undefined : capital.depthFor(row.universityId);
   const ceiling = row?.species?.depthCeiling ?? 0;
 
+  // World-scale, so read once per mage's month rather than once per source —
+  // `knowledge-effects.ts`'s own `WeakMap` cache makes the repeat lookup a
+  // no-op after the first mage in the tick.
+  const knowledge = knowledgeEffectsOf(state, worldTick, deps);
+
   /**
    * The stacked, capped multiplier for one primitive on this mage this month.
    *
-   * The god's magnitudes and the library's contribution go into one array and
-   * through `stackMagnitudes` once, so `contracts.md` §3's `(1 + Σ)` rule and
-   * its `fp(4096)` cap apply to their sum. That is the whole of the bound on
-   * the §6a loop, and it is a contract already committed rather than a second
-   * cap invented for the occasion.
+   * The god's magnitudes, the universe's held knowledge, and the library's
+   * contribution go into one array and through `stackMagnitudes` once, so
+   * `contracts.md` §3's `(1 + Σ)` rule and its `fp(4096)` cap apply to their
+   * sum. That is the whole of the bound on the §6a loop, and it is a contract
+   * already committed rather than a second cap invented for the occasion —
+   * see `WorldStepDeps.knowledgeEffectsFor`'s doc on why a third source joins
+   * the same array instead of stacking separately.
    */
-  const rate = (primitive: PrimitiveRecord, bonuses: readonly Fixed[]): Fixed =>
-    libraryRateMultiplier(primitive, bonuses, shelves, ceiling, rateClamps).multiplier;
+  const rate = (
+    primitive: PrimitiveRecord,
+    bonuses: readonly Fixed[],
+    clamp?: EffectControl,
+  ): Fixed => libraryRateMultiplier(primitive, bonuses, shelves, ceiling, rateClamps, clamp).multiplier;
 
   switch (commitment.goalId) {
     case GOAL.researchNode:
@@ -988,7 +1044,11 @@ function workOne(
         MAGE_MONTHS_PER_TICK,
         rate(
           deps.primitives.researchRate,
-          deps.researchBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
+          [
+            ...(deps.researchBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES),
+            ...knowledge.researchRateBonuses,
+          ],
+          knowledge.controlFor(deps.primitives.researchRate.id),
         ),
       );
       return;
@@ -1008,7 +1068,11 @@ function workOne(
             MAGE_MONTHS_PER_TICK,
             rate(
               deps.primitives.teachRate,
-              deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+              [
+                ...(deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES),
+                ...knowledge.teachRateBonuses,
+              ],
+              knowledge.controlFor(deps.primitives.teachRate.id),
             ),
           ),
         );
@@ -1026,7 +1090,11 @@ function workOne(
             MAGE_MONTHS_PER_TICK,
             rate(
               deps.primitives.teachRate,
-              deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+              [
+                ...(deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES),
+                ...knowledge.teachRateBonuses,
+              ],
+              knowledge.controlFor(deps.primitives.teachRate.id),
             ),
           ),
         );
@@ -1051,6 +1119,33 @@ function workOne(
 
 /** No source of a rate applies. Shared so the empty case allocates nothing. */
 const NO_BONUSES: readonly Fixed[] = Object.freeze([]);
+
+/** No `control`-mode source touches this primitive. Mirrors `knowledge-effects.ts`'s own default. */
+const NO_CONTROL_CLAMP: EffectControl = Object.freeze({});
+
+/** A tick with no knowledge-sourced world effects: every array empty, every clamp absent. */
+const NO_KNOWLEDGE_EFFECTS: KnowledgeWorldEffects = Object.freeze({
+  researchRateBonuses: NO_BONUSES,
+  teachRateBonuses: NO_BONUSES,
+  resourceYieldBonuses: NO_BONUSES,
+  fertilityBonuses: NO_BONUSES,
+  scribeRateBonuses: NO_BONUSES,
+  lifespanBonuses: NO_BONUSES,
+  controlFor: () => NO_CONTROL_CLAMP,
+});
+
+/**
+ * This tick's world-scale knowledge effects, or the all-empty answer for a
+ * world with no `knowledgeEffectsFor` installed.
+ *
+ * Every call site below may call this as often as it needs to: `knowledge-
+ * effects.ts`'s own `WeakMap` cache, keyed on `state`, makes every call after
+ * the first within one tick a lookup rather than a re-walk of every instance
+ * the universe holds.
+ */
+function knowledgeEffectsOf(state: SimState, worldTick: number, deps: WorldStepDeps): KnowledgeWorldEffects {
+  return deps.knowledgeEffectsFor?.(state, worldTick) ?? NO_KNOWLEDGE_EFFECTS;
+}
 
 /**
  * The depth ceiling the per-tick capital emission is reported at.
@@ -1163,6 +1258,7 @@ function promoteMaturedStudents(
 }
 
 interface BirthPhase {
+  readonly state: SimState;
   readonly rng: StepRng;
   readonly worldTick: number;
   readonly brake: Fixed;
@@ -1188,6 +1284,7 @@ function deliverBirths(cohorts: CohortStore, phase: BirthPhase): number {
     fertile.push({ cohort: handle, speciesId: key.speciesId, count });
   });
 
+  const knowledge = knowledgeEffectsOf(phase.state, phase.worldTick, phase.deps);
   let born = 0;
   for (const entry of fertile) {
     const species = phase.deps.speciesOf(entry.speciesId);
@@ -1196,7 +1293,8 @@ function deliverBirths(cohorts: CohortStore, phase: BirthPhase): number {
       count: entry.count,
       fertility: species.fertility,
       fertilityPrimitive: phase.deps.primitives.fertility,
-      fertilityBonuses: [],
+      fertilityBonuses: knowledge.fertilityBonuses,
+      clamp: knowledge.controlFor(phase.deps.primitives.fertility.id),
       brake: phase.brake,
     });
     if (count > 0) {
@@ -1239,16 +1337,26 @@ function lifespanMonths(
   species: SpeciesRecord,
   deps: WorldStepDeps,
 ): number {
+  const worldTick = state.clock.worldTick;
+  // `god-agency` issues a blessing's months and the universe's held knowledge
+  // contributes its own `universe`-target `lifespan` effects — both through
+  // the same shared stacking arithmetic, in the same array, so
+  // `effectiveLifespan`'s one `fraction-of-species-base` cap applies to their
+  // sum rather than to either alone. Empty stays the ordinary case for a
+  // world with neither installed. No `clamp` is threaded here —
+  // `mages/lifespan.ts`'s `effectiveLifespan` does not take one, and no v1
+  // content authors a `control`-mode `lifespan` effect.
+  const effectMagnitudes = [
+    ...(deps.lifespanEffectsFor?.(state, worldTick, mage) ?? []),
+    ...knowledgeEffectsOf(state, worldTick, deps).lifespanBonuses,
+  ];
   return effectiveLifespan({
     species,
     mage,
     birthTick: row.birthTick,
     rootSeed: state.rootSeed,
     lifespanPrimitive: deps.primitives.lifespan,
-    // `god-agency` issues these now — a blessing contributes to `lifespan`
-    // through the shared stacking arithmetic — but only when a god was
-    // installed. Empty stays the ordinary case for a world without one.
-    effectMagnitudes: deps.lifespanEffectsFor?.(state, state.clock.worldTick, mage) ?? [],
+    effectMagnitudes,
   }).months;
 }
 
@@ -1312,6 +1420,7 @@ function completedCapacity(state: SimState): number {
  */
 function scribeThroughputFor(
   state: SimState,
+  worldTick: number,
   universityId: Handle,
   cohorts: CohortStore,
   deps: WorldStepDeps,
@@ -1333,10 +1442,12 @@ function scribeThroughputFor(
   });
   if (scribes === 0) return 0;
 
+  const knowledge = knowledgeEffectsOf(state, worldTick, deps);
   return scribingThroughput(readRecord(state, UNIVERSITY, universityId as EntityHandle), {
     scribeCount: scribes,
     scribeAffinity: affinity,
     scribeRate: deps.primitives.scribeRate,
-    scribeRateBonuses: [],
+    scribeRateBonuses: knowledge.scribeRateBonuses,
+    clamp: knowledge.controlFor(deps.primitives.scribeRate.id),
   });
 }

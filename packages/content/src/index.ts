@@ -51,6 +51,8 @@ export {
   V1_TECHNIQUE_COUNT,
   contentSchemas,
   loadContent,
+  normaliseAntirequisites,
+  normaliseTrackExclusions,
   validateContent,
 } from './load.js';
 

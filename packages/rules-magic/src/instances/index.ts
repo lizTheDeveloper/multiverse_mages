@@ -28,6 +28,17 @@
 export type { CellResolver, KnowledgeNode, KnowledgeRng, NodeCatalog } from './catalog.js';
 export { catalogFromRegistry, catalogOf, requireNode } from './catalog.js';
 
+export type { TrackCatalog, TrackExclusion } from './exclusion.js';
+export {
+  acquisitionExclusion,
+  antirequisitesOf,
+  closeAntirequisites,
+  heldTrackCount,
+  internTrack,
+  trackCatalogFromRegistry,
+  trackIdOf,
+} from './exclusion.js';
+
 export {
   DEFAULT_INITIAL_MASTERY,
   DEFAULT_TEACH_THRESHOLD,

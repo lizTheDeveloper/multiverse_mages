@@ -15,8 +15,10 @@
 import type { Fixed } from '@mm/sim-core';
 import { mul } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
-import type { ClampCounters } from '@mm/primitives';
+import type { ClampCounters, EffectControl } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
+
+import { primitiveFloor } from './primitive-floor.js';
 
 /**
  * ## One stock, four claimants, and an order that is a decision
@@ -66,12 +68,21 @@ export interface ProductionInput {
   /** `resource-yield` bonuses from nodes and effects, `fp`. */
   readonly resourceYieldBonuses: readonly Fixed[];
   readonly counters?: ClampCounters | undefined;
+  /**
+   * Rego's combined `{floor, ceiling}` clamp for `resource-yield`, from
+   * `combineControls` over every `control`-mode source touching it. Applied
+   * after the primitive's own floor and before its cap — see `stack.ts`.
+   */
+  readonly clamp?: EffectControl | undefined;
 }
 
 /** The `(1 + Σ)` `resource-yield` multiplier, capped once by the shared implementation. */
 export function resourceYieldMultiplier(input: ProductionInput): Fixed {
+  const floor = primitiveFloor(input.resourceYield);
   return stackMagnitudes(input.resourceYield, input.resourceYieldBonuses, {
     ...(input.counters === undefined ? {} : { counters: input.counters }),
+    ...(input.clamp === undefined ? {} : { clamp: input.clamp }),
+    ...(floor === undefined ? {} : { floor }),
   }).value;
 }
 

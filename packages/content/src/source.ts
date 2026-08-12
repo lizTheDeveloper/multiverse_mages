@@ -51,6 +51,12 @@ export interface ContentSource {
  * `stabilityDecayPerTick` is an authored raw integer whose validity is the
  * difference between a raid that ends and a worker that never returns, and the
  * cheapest place to meet that failure is the load.
+ *
+ * `track.json` is `compositional-content.md`'s: a named route through the grid,
+ * the construct that turns twelve parallel staircases into one web
+ * (`contracts.md` §2.12). It is content for the same reason every file above it
+ * is — which tracks exist and what they exclude is a balance question a sweep
+ * turns, not a code change.
  */
 export const CONTENT_FILES = [
   'technique.json',
@@ -65,6 +71,7 @@ export const CONTENT_FILES = [
   'god-constant.json',
   'raid-constant.json',
   'autonomy-weight.json',
+  'track.json',
 ] as const;
 
 export type ContentFileName = (typeof CONTENT_FILES)[number];

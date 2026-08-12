@@ -44,7 +44,8 @@ export type ContentNamespace =
   | 'god-cost'
   | 'god-constant'
   | 'raid-constant'
-  | 'autonomy-weight';
+  | 'autonomy-weight'
+  | 'track';
 
 export interface TechniqueRecord {
   readonly id: string;
@@ -76,11 +77,63 @@ export interface CellRecord {
 
 export type EffectTarget = 'self' | 'single' | 'area' | 'side' | 'universe';
 
+/**
+ * The technique's envelope, made mechanical (`sound-design.md` §4.1,
+ * `compositional-content.md` §3.3). `create` (Creo), `reveal` (Intellego),
+ * `transform` (Muto), `remove` (Perdo), `control` (Rego) — one mode per
+ * technique, and `contracts.md` §3.1 states the fold each contributes.
+ */
+export type EffectMode = 'create' | 'reveal' | 'transform' | 'remove' | 'control';
+
+/**
+ * When an effect contributes at all. Absent on the record means `always`, the
+ * default that every effect authored before this change already means.
+ *
+ * `revealed` is the latent half of Intellego (`compositional-content.md`
+ * §3.4): the effect contributes only while a held `reveal` effect names it.
+ * `holds-cell` contributes only while the holder has at least `minNodes` of
+ * the named cell — value that depends on what else a mage holds.
+ */
+export type EffectCondition =
+  | { readonly kind: 'always' }
+  | { readonly kind: 'revealed' }
+  | { readonly kind: 'holds-cell'; readonly cell: string; readonly minNodes: number };
+
+/**
+ * What a `reveal` effect makes audible (`compositional-content.md` §3.3). At
+ * least one of the two is present; both means the conjunction — a latent
+ * effect matches only when its cell and its primitive both match.
+ */
+export interface RevealTarget {
+  readonly cell?: string;
+  readonly primitive?: string;
+}
+
+/**
+ * Rego's gate: a floor is reliability bought, a ceiling is upside sold
+ * (`compositional-content.md` §3.3, `contracts.md` §3.1). At least one of the
+ * two is present.
+ */
+export interface EffectControl {
+  readonly floor?: Fp;
+  readonly ceiling?: Fp;
+}
+
 export interface EffectRecord {
   readonly primitive: string;
   readonly magnitude: Fp;
   readonly target: EffectTarget;
   readonly durationTicks: number;
+  /** The technique's envelope. Required — every effect has one mode. */
+  readonly mode: EffectMode;
+  readonly gloss?: string;
+  readonly when?: EffectCondition;
+  /** Present exactly on a `reveal` effect. */
+  readonly reveals?: RevealTarget;
+  /** Present exactly on a `control` effect. */
+  readonly control?: EffectControl;
+  /** Present exactly on a `transform` effect: the primitive magnitude flows to. */
+  readonly transformTo?: string;
 }
 
 export type TuningStatus = 'untuned' | 'tuned';
@@ -97,6 +150,51 @@ export interface NodeRecord {
   readonly scribeCost: Fp;
   readonly rediscoveryMultiplier: Fp;
   readonly effects: readonly EffectRecord[];
+  readonly tuningStatus: TuningStatus;
+  /** The named route through the grid this node belongs to, if any (`compositional-content.md` §3.1). */
+  readonly track?: string;
+  /**
+   * Nodes this one may never be held alongside, **in one mind**
+   * (`compositional-content.md` §3.2). Absent means empty. Always symmetric —
+   * unlike a track exclusion, a node-level antirequisite has no field to
+   * declare a one-way reason, and every one authored in v1 is an
+   * opposed-in-kind pair. Declared on one side and enforced on both; see
+   * {@link ContentRegistry.antirequisitesOf} and `normaliseAntirequisites` in
+   * `load.ts`.
+   */
+  readonly antirequisites?: readonly string[];
+}
+
+/**
+ * One track a mage on this one may not also walk
+ * (`compositional-content.md` §3.1, `contracts.md` §2.12).
+ *
+ * Exclusion binds **one mind, never the universe**: a universe may hold every
+ * school it can reach, accumulated across many mages over many lifetimes,
+ * while an individual mage may not. `threshold` is how many nodes of the
+ * excluded track one mind may hold before this track closes to it — `1` shuts
+ * the door on first contact.
+ *
+ * `symmetric` is not a free choice — it follows from the reason a track
+ * excludes another, which is why `gloss` is required beside it. Two things
+ * opposed *in kind* (light and dark, making and unmaking) exclude each other
+ * mutually; a one-way reason gives a one-way lock. `load.ts`'s
+ * `normaliseTrackExclusions` honours whatever the data declares rather than
+ * imposing a direction of its own.
+ */
+export interface TrackExclusion {
+  readonly track: string;
+  readonly threshold: number;
+  readonly symmetric: boolean;
+  readonly gloss: string;
+}
+
+/** A named path through the grid (`compositional-content.md` §3.1, `contracts.md` §2.12). */
+export interface TrackRecord {
+  readonly id: string;
+  readonly name: string;
+  readonly gloss: string;
+  readonly excludes: readonly TrackExclusion[];
   readonly tuningStatus: TuningStatus;
 }
 
@@ -292,6 +390,7 @@ export interface ContentCounts {
   readonly godConstants: number;
   readonly raidConstants: number;
   readonly autonomyWeights: number;
+  readonly tracks: number;
 }
 
 /**
@@ -317,6 +416,7 @@ export interface ContentRegistry {
   readonly godConstants: readonly Interned<GodConstantRecord>[];
   readonly raidConstants: readonly Interned<RaidConstantRecord>[];
   readonly autonomyWeights: readonly Interned<AutonomyWeightRecord>[];
+  readonly tracks: readonly Interned<TrackRecord>[];
 
   /** String id to interned integer, per namespace. */
   intern(namespace: ContentNamespace, id: string): ContentId;
@@ -368,4 +468,12 @@ export interface ContentRegistry {
    * {@link ContentRegistry.autonomyWeight} throws.
    */
   roleAppeal(role: string, primitiveId: string): number;
+  /**
+   * Every node this one may never be held alongside, **in one mind**
+   * (`compositional-content.md` §3.2) — the symmetric closure of
+   * `node.antirequisites`. A node declaring the relation on only one side is
+   * enough; both sides is not an error. Always symmetric, unlike a track
+   * exclusion — see `normaliseAntirequisites` in `load.ts`.
+   */
+  antirequisitesOf(nodeId: string): ReadonlySet<string>;
 }

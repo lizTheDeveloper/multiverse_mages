@@ -15,9 +15,10 @@
 import type { EntityHandle, Fixed } from '@mm/sim-core';
 import { floorDiv } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
-import type { ClampCounters } from '@mm/primitives';
+import type { ClampCounters, EffectControl } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
+import { primitiveFloor } from '../economy/primitive-floor.js';
 import type { LibraryDepth } from './library.js';
 import { TIER_COUNT, libraryUpkeep, relevantDepth } from './library.js';
 
@@ -180,9 +181,10 @@ export function libraryRateMultiplier(
   depth: LibraryDepth | undefined,
   depthCeiling: number,
   counters?: ClampCounters,
+  clamp?: EffectControl,
 ): CapitalRateOutcome {
   const bonus = depth === undefined ? 0 : contributionFor(depth, depthCeiling);
-  return capitalRateMultiplier(primitive, nodeBonuses, bonus, counters);
+  return capitalRateMultiplier(primitive, nodeBonuses, bonus, counters, clamp);
 }
 
 /** What a capped rate evaluation produced, and whether the cap bound. */
@@ -210,12 +212,14 @@ export function capitalRateMultiplier(
   nodeBonuses: readonly Fixed[],
   contribution: Fixed,
   counters?: ClampCounters,
+  clamp?: EffectControl,
 ): CapitalRateOutcome {
-  const outcome = stackMagnitudes(
-    primitive,
-    [...nodeBonuses, contribution],
-    counters === undefined ? {} : { counters },
-  );
+  const floor = primitiveFloor(primitive);
+  const outcome = stackMagnitudes(primitive, [...nodeBonuses, contribution], {
+    ...(counters === undefined ? {} : { counters }),
+    ...(clamp === undefined ? {} : { clamp }),
+    ...(floor === undefined ? {} : { floor }),
+  });
   return { multiplier: outcome.value, clamped: outcome.clamped, contribution };
 }
 

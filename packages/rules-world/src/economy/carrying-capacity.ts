@@ -15,10 +15,11 @@
 import type { EntityHandle, Fixed } from '@mm/sim-core';
 import { FP_ONE, RNG_STREAM, floorDiv, mul, nextBounded } from '@mm/sim-core';
 import type { PrimitiveRecord, TerritoryRecord } from '@mm/content';
-import type { ClampCounters } from '@mm/primitives';
+import type { ClampCounters, EffectControl } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
 import type { StepRng } from '../mages/rng.js';
+import { primitiveFloor } from './primitive-floor.js';
 
 /**
  * ## `K` is derived from land, because land is the one thing a run cannot make
@@ -356,6 +357,8 @@ export interface BirthInput {
   /** The logistic brake, from {@link fertilityBrake}. */
   readonly brake: Fixed;
   readonly counters?: ClampCounters | undefined;
+  /** Rego's combined clamp for `fertility`. See `ProductionInput.clamp` in `materials.ts`. */
+  readonly clamp?: EffectControl | undefined;
 }
 
 /**
@@ -431,8 +434,11 @@ export function expectedBirths(input: BirthInput): number {
   if (!Number.isInteger(input.count) || input.count < 0) {
     throw new RangeError(`a cohort count must be a non-negative integer, received ${String(input.count)}`);
   }
+  const floor = primitiveFloor(input.fertilityPrimitive);
   const multiplier = stackMagnitudes(input.fertilityPrimitive, input.fertilityBonuses, {
     ...(input.counters === undefined ? {} : { counters: input.counters }),
+    ...(input.clamp === undefined ? {} : { clamp: input.clamp }),
+    ...(floor === undefined ? {} : { floor }),
   }).value;
 
   const base = input.count * BIRTHS_PER_MEMBER;

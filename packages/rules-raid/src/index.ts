@@ -76,7 +76,13 @@ export type {
   CastResolution,
   HeldInstance,
 } from './arbitration.js';
-export { COMBAT_PRIMITIVES, CastArbiter, summonCount } from './arbitration.js';
+export {
+  COMBAT_PRIMITIVES,
+  CastArbiter,
+  contributesMagnitude,
+  enablesGate,
+  summonCount,
+} from './arbitration.js';
 
 export type { CombatantBrief, EligibleCohort, EligibleMage, SideRoster } from './combatants.js';
 export {

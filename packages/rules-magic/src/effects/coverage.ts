@@ -56,18 +56,27 @@
 import type { ContentRegistry, NodeRecord } from '@mm/content';
 
 /**
- * The two primitives no v1 node exercises, and the reason.
+ * The one primitive no v1 node exercises, and the reason.
  *
- * `lifespan` and `fertility` are Corpus- and Animal-bound; including `corpus`
- * in the v1 form set would have cost either Nomen — stranding True Naming with
- * no form to bite on — or Terram, and neither primitive has anything to act on
- * until mages age, which is `mages-and-species` at 0.4.0.
+ * `fertility` is Corpus- and Animal-bound; including `corpus` in the v1 form
+ * set would have cost either Nomen — stranding True Naming with no form to
+ * bite on — or Terram. More directly: `vision.md` §6 ties `fertility` to
+ * population, and population is measurably inert to every strategy the
+ * balance sweep runs — there is nothing yet for a fertility node to be
+ * balanced *against*, which is a different and better-founded gap than "no
+ * content declares it".
  *
- * Sorted, and asserted to be exactly this pair by test. Adding a third entry is
- * a claim that a third primitive is unmeasurable at 0.5.0, and should be as
- * hard to do quietly as this list makes it.
+ * `lifespan` left this list in W20: a life-extension ladder is now authored in
+ * `rego-nomen` (`sound-design.md` §4.2 — Nomen is *"the only voice… naming is
+ * speech"*, and vision §5 puts compulsion-by-name there, so keeping your own
+ * true name is keeping yourself), so v1 content exercises `lifespan` directly
+ * and the exclusion would now be a lie about what the content does.
+ *
+ * Sorted, and asserted to be exactly this one by test. Adding an entry is a
+ * claim that a primitive is unmeasurable at 0.5.0, and should be as hard to do
+ * quietly as this list makes it.
  */
-export const PRIMITIVE_COVERAGE_EXCLUSIONS: readonly string[] = ['fertility', 'lifespan'];
+export const PRIMITIVE_COVERAGE_EXCLUSIONS: readonly string[] = ['fertility'];
 
 /** The primitive whose cell `contracts.md` §8 mandates. */
 export const PORTAL_PRIMITIVE_ID = 'portal';
