@@ -256,41 +256,46 @@ describe('time to tier, by species', () => {
     // Kept for the overlap assertions below. The trio is still a trio by
     // internal overlap; what it has lost is its separation from elf.
     const fastTrio = [gnome, dwarf, orc];
-    void fastTrio;
 
-    // **Rewritten a fourth time, and this one is a loss rather than a gain.**
+    // **Rewritten a fifth time, and the box W21 asked to have reopened has been
+    // reopened — by the merge, which is the only place it could have been.**
+    //
     // W21's research envelope (`sound-design.md` §4.1, technique as a cost curve
-    // over an acquisition's duration) narrowed the fast trio's separation from
-    // elf, and orc lost it outright:
+    // over an acquisition's duration) cost orc its separation from elf, and W21
+    // recorded that as a loss, pinned `orc.high >= elf.low`, and wrote *"asserted
+    // in the form that will reopen this box the day it separates again"*. It
+    // separated again the day W21 was merged with `w24/university-siting`, which
+    // no branch could have measured because neither contained the other:
     //
-    // | species | w17 (flat) | W21 (curved) |
-    // |---|---|---|
-    // | gnome    | [19, 20]  | [19, 20]  |
-    // | dwarf    | [21, 25]  | [21, 27]  |
-    // | orc      | [21, 27]  | **[21, 37]** |
-    // | human    | [26, 37]  | [26, 39]  |
-    // | elf      | [35, 58]  | [37, 60]  |
-    // | draconic | [26, 380] | [26, 298] |
+    // | species | w17 (flat) | W21 alone | **W21 + W24** |
+    // |---|---|---|---|
+    // | gnome    | [19, 20]  | [19, 20]     | **[20, 20]** |
+    // | dwarf    | [21, 25]  | [21, 27]     | **[21, 27]** |
+    // | orc      | [21, 27]  | **[21, 37]** | **[21, 29]** |
+    // | human    | [26, 37]  | [26, 39]     | **[27, 35]** |
+    // | elf      | [35, 58]  | [37, 60]     | **[36, 58]** |
+    // | draconic | [26, 380] | [26, 298]    | **[24, 282]** |
     //
-    // Orc's slowest seed moved 27 → 37 and now *ties* elf's fastest at 37, so
-    // `orc.high < elf.low` is false by one tick. Flattening all five curves and
-    // changing nothing else restores it, so this is the mechanic. The mechanism
-    // is legible: under Intellego's `open` and Perdo's `hole` a mage whose
-    // utility score walks her into a slow-attack cell banks progress on a
-    // different schedule, and orc — the lowest magical aptitude of the six — is
-    // where a schedule change shows first.
+    // Orc's slowest seed goes 37 → **29** against an elf floor of 36, so the
+    // whole fast trio clears elf again and the three-band separation W21 lost is
+    // back. The mechanism is W24's, and it is the same one that moved the gate
+    // baselines: five `territory-holding` entities are materialized on the first
+    // world tick, every later entity handle shifts, and `deriveActorStream` keys
+    // on the handle (`contracts.md` §6). Different mages walk into different
+    // cells, and orc's slow seeds stop landing in the slow-attack ones that
+    // Intellego's `open` and Perdo's `hole` penalise.
     //
-    // Recorded rather than repaired, for the reason the paragraphs above give
-    // twice: every species magnitude and every curve slot carries
-    // `tuningStatus: "untuned"`, and moving one to restore a separation this
-    // test exists to *measure* is the failure mode `release-plan.md`'s
-    // measurement pivot was written against. **Task 9.9 is further away than it
-    // was**, and that is the finding.
-    for (const entry of [gnome, dwarf]) expect(entry.high).toBeLessThan(elf.low);
-    // Orc is now indistinguishable from elf at the boundary, asserted in the
-    // form that will reopen this box the day it separates again.
-    expect(orc.high).toBeGreaterThanOrEqual(elf.low);
-    expect(orc.low).toBeLessThan(elf.low);
+    // **Read this as a fact about the instrument, not as good news about the
+    // game.** Nothing here made a species better at magic. A six-seed interval
+    // moved because the RNG was re-keyed, and it happened to move in the
+    // direction task 9.9 wants. The honest statement is that **orc's separation
+    // from elf is inside the noise of an entity-allocation change**, which is a
+    // weaker claim than either branch made on its own, and the reason the
+    // combined tree is the only place either claim could be checked.
+    //
+    // Still recorded rather than tuned: every species magnitude and every curve
+    // slot carries `tuningStatus: "untuned"`.
+    for (const entry of fastTrio) expect(entry.high).toBeLessThan(elf.low);
     expect(gnome.high).toBeLessThan(human.low);
 
     // Draconic is still the bridge, and elf is still not: one species spanning
