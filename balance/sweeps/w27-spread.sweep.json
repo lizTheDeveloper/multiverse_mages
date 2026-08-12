@@ -9,7 +9,7 @@
     "assignment": "fixed",
     "slots": 1
   },
-  "termination": { "worldTickCap": 2400, "perRunTimeoutMs": 600000 },
+  "termination": { "worldTickCap": 2400, "perRunTimeoutMs": 3600000 },
   "metrics": [
     "referenceGrimoires",
     "referenceKnowledgeInstances",
