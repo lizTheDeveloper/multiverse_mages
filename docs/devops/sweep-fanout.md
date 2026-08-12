@@ -93,8 +93,10 @@ keeps its zero runtime dependencies.
 ## What it costs
 
 Measured 2026-08-11, on the 2400-tick eight-strategy sweep. Modal's published CPU price on that
-date is **$0.0000131 per core-second** ($0.047 per core-hour); memory at $0.00000222/GiB/s is
-noise at this scale and is folded into the figures below as an overestimate.
+date is **$0.0000131 per core-second** ($0.047 per core-hour). The figures below are core-seconds
+at that price and **nothing else**: memory, at $0.00000222 per GiB-second, would add
+`wall x containers x GiB` — under one cent on every row here, even at a generous 1 GiB per
+container — and is omitted rather than folded in, so that every number traces to one price.
 
 "Billed" is an upper bound: wall clock × containers × cores, which charges for the image pull and
 the Node boot as well as the simulation. "Shard time" is the simulation alone, summed across
