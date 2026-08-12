@@ -446,6 +446,87 @@ civilization can do, and it should still cost the years the scholars spent insid
    deterrent or an ambush, and those are different games.
 3. **Snapshot cadence**, which is now a design parameter and not only an engineering one.
 
+## 11b. Information asymmetry, which is the mechanic all the others were waiting for
+
+> *"When you portal into a world, you don't know what is and isn't possible. You only know, based on
+> when you show up, what is allowed — and you don't know if that's permanent or just from your raid.
+> So it's information asymmetry. Maximum."*
+
+**A raider arrives blind.** §3 says the host's ruleset governs everything cast inside it, and the
+raider does not get to read it. The only way to learn a constitution is to **try something and have it
+refused**.
+
+That single rule turns four separate mechanics into one system.
+
+### The refused cast is the entire information channel
+
+W37 shipped `forbiddenCastsBlocked`. Under this reading it stops being telemetry and becomes **the
+raider's only sensor**: my mage tried, the world said no, so that cell is forbidden *right now*.
+
+And *right now* is the load-bearing part, because the raider **cannot tell which of these they are
+looking at**:
+
+- a cell forbidden in the host's standing constitution, long before anyone arrived;
+- a cell the defender forbade **thirty seconds ago because you turned up**, locked for the duration
+  by §1 and revertible the moment you leave.
+
+Same signal. Completely different meaning. One is intelligence worth carrying home; the other is a
+door that will not be shut tomorrow.
+
+### Which makes the revert cost a price on disinformation
+
+§1 charges substantially more favor to revert a mid-raid change than to make it. That was designed as
+a drain — a sink attached to a decision. Under information asymmetry it is also **the price of a
+lie.**
+
+You can forbid something you never intended to keep, purely so the raider goes home believing you
+cannot do it, and then pay to take it back. That is favor spent on a false impression, and it is a
+real strategy rather than an exploit: **it costs exactly what it is worth, and the more convincing
+the lie the more it costs**, because the thing you forbade for show was something you actually wanted.
+
+The defender's counterpart risk is symmetric and unpriced: forbid something for show, and it is
+**locked against you too** for the rest of the engagement (§1). You may lose the raid selling the lie.
+
+### It gives Intellego the job the grid always implied
+
+The perception trunk — *Count the Doors*, *Read the Binding*, *Stand in the Doorway* — has been the
+structural spine of the v1 lattice (29 of 36 cross-cell edges originate in Intellego) with nothing
+much to perceive. **Scouting a rival's constitution before committing a raiding party is what
+Intellego is for**, and it is the counter to arriving blind rather than a cancellation of it: a scout
+learns what was true *when they looked*, which is the same uncertainty one layer earlier.
+
+### And it prices alliances and betrayal in the same currency
+
+§2f's alliances trade scholars. Under asymmetry they also trade **the one thing nobody can buy** — an
+ally has been inside your universe and knows what you permit.
+
+- That is a large part of what an alliance is *worth*.
+- It is most of what betraying one is worth, which is why §2g's familiarity — *you know your rivals'
+  work better than anyone, because you trained with them* — has a second, colder meaning. You know
+  their rules too.
+- And it means an alliance's real cost is **not** the mage you send abroad. It is that you have shown
+  someone your constitution, and constitutions are slow to change.
+
+### The defender is also blind, which keeps it a game rather than a puzzle
+
+The asymmetry runs both ways and the design should keep it there. **The defender does not know what
+the raider knows.** Did they scout? Are they carrying a report from a former ally? Did they come
+because they heard you forbade Perdo last winter?
+
+If the defender knew what the raider knew, mid-raid policy would collapse into a lookup. Because they
+do not, forbidding under pressure is a bet about what your enemy already believes — which is the
+sharpest possible version of §1's *"commitment made under uncertainty"*.
+
+### What must be true for this to work
+
+- **Never show a raider the host's ruleset**, in the interface or the observation vector. If §4.1's
+  observation block exposes the host's permitted cells to an attacking agent, the entire mechanic is
+  void and no amount of interface discipline recovers it. **This needs checking before anything is
+  built on it.**
+- **A refused cast must be legible as a refusal** and must not distinguish standing from mid-raid.
+  The player should see *"the world said no"*, never *"the world said no, recently"*.
+- **What a scout learns must carry a timestamp**, not a guarantee.
+
 ## 12. Open
 
 1. **Do supply-chain sites exist yet?** Universities do. The supply chain is W29's work and is not
