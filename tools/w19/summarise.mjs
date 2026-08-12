@@ -41,8 +41,21 @@ import { join } from 'node:path';
 
 import { HORIZONS } from './fan-out.mjs';
 
-/** `ascension-min-tick`. Below it no universe can ascend by either path. */
+/**
+ * `ascension-min-tick`. Below it no universe can ascend by either path.
+ *
+ * The window at a cap of `H` is `[600, H)`, not `[600, H]`: a run capped at `H`
+ * executes ticks `0 .. H-1` — `passive-control` at cap 1200 reports
+ * `ticksRun: 1200` with 1199 as its last executed tick — and `qualifyingPath`
+ * refuses any tick below 600. **So the window is empty at exactly H = 600**, and
+ * a zero there is boundary arithmetic, not gameplay. Confirmed on the production
+ * arm: 400 runs at cap 600 return terminal reasons 0 and 3 only, no ascension of
+ * either path.
+ */
 export const ASCENSION_MIN_TICK = 600;
+
+/** The shortest cap at which the ascension window `[600, H)` is non-empty. */
+export const ASCENSION_FIRST_HORIZON = 601;
 
 /**
  * The earliest tick at which Enduring Canon can be satisfied.
@@ -54,9 +67,14 @@ export const ASCENSION_MIN_TICK = 600;
  */
 export const CANON_MIN_TICK = 960;
 
-/** `TERMINAL_REASON`, from `@mm/state`. */
+/**
+ * `TERMINAL_REASON`, from `@mm/state`. Reason 0 is `none` — the run never
+ * reached an ending and stopped because the cap did. The production executor
+ * records the same runs with `status: "truncated"`; one outcome, two words, and
+ * `hit-cap` is the word used throughout this workstream.
+ */
 const REASON = Object.freeze({
-  0: 'cap',
+  0: 'hit-cap',
   1: 'apotheosis',
   2: 'canon',
   3: 'stagnation',
@@ -78,8 +96,16 @@ function loadHorizon(dir) {
 
 const mean = (xs) => (xs.length === 0 ? Number.NaN : xs.reduce((a, b) => a + b, 0) / xs.length);
 
+/** One cached `analyse.mjs --json` result. See `analyse-all.mjs`. */
+function readAnalysis(cacheDir, ticks, variant) {
+  return JSON.parse(
+    readFileSync(join(cacheDir, `h${String(ticks)}-${variant}.json`), 'utf8'),
+  );
+}
+
 function main() {
   const root = process.argv[2] ?? '.w19/arm-a';
+  const cacheDir = process.argv[3] ?? '.w19/analysis';
   const v1 = v1NodeIds();
   const out = { root, v1Size: v1.size, horizons: {}, coverage: {}, seedCheck: {} };
 
@@ -147,12 +173,19 @@ function main() {
     const means = Object.values(strategies).map((s) => s.meanNodes);
 
     // --- 2/3/4: the spectrum, containment and prefix fidelity, from W15's tool --
-    const analysis = JSON.parse(
-      execFileSync(process.execPath, ['tools/w15/analyse.mjs', dir, 'strategyId', '--json'], {
-        encoding: 'utf8',
-        maxBuffer: 1 << 28,
-      }),
-    );
+    //
+    // Twice. The full pool answers "does the strategy space open up", and the
+    // pool minus the two ruleset editors answers W15's question — what the
+    // other eight do *inside* the twelve v1 cells. W15 reported the second and
+    // named the exclusion; reporting only the first here would make the two
+    // measurements incomparable, and reporting only the second would hide the
+    // permission axis that is the one live lever.
+    // Read from the cache `analyse-all.mjs` writes. Four Jacobi spectra over a
+    // 400 × 400 Gram matrix is minutes per call and there are fourteen calls;
+    // running them serially inside this file would make a summary look like a
+    // hang. `analyse-all.mjs` fans them out and writes the JSON; this reads it.
+    const analysis = readAnalysis(cacheDir, ticks, 'all');
+    const v1Only = readAnalysis(cacheDir, ticks, 'v1');
     const labels = Object.keys(analysis.overlap.containment).sort();
     const cross = [];
     const withinDiagonal = [];
@@ -178,7 +211,7 @@ function main() {
       runs: runs.length,
       saturation: { runs: saturated, fraction: saturated / runs.length },
       ascension: {
-        gatedByMinTick: ticks < ASCENSION_MIN_TICK,
+        gatedByMinTick: ticks < ASCENSION_FIRST_HORIZON,
         canonReachable: ticks >= CANON_MIN_TICK,
         ascensions: ascended,
         rate: ascended / runs.length,
@@ -197,6 +230,21 @@ function main() {
       },
       jaccard: { crossMean: mean(crossJ), withinMean: mean(withinJ) },
       prefixFidelity: analysis.prefixFidelity,
+      /** The same four numbers over the eight strategies that stay inside v1. */
+      v1Only: {
+        strategies: Object.keys(v1Only.groups).sort(),
+        prefixFidelity: v1Only.prefixFidelity,
+        dimensionality: {
+          binary: pick(v1Only.spectra.binary),
+          binaryShape: pick(v1Only.spectra['binary-shape']),
+        },
+        containment: containmentOf(v1Only),
+        withinJaccardMean: mean(
+          Object.values(v1Only.groups)
+            .map((g) => g.withinJaccard)
+            .filter(Number.isFinite),
+        ),
+      },
       strategies,
       spread: {
         minMeanNodes: Math.min(...means),
@@ -222,6 +270,26 @@ function main() {
   }
 
   process.stdout.write(`${JSON.stringify(out, null, 1)}\n`);
+}
+
+/** Mean/min cross-group and mean within-group containment out of an analysis. */
+function containmentOf(analysis) {
+  const labels = Object.keys(analysis.overlap.containment).sort();
+  const cross = [];
+  const within = [];
+  for (const a of labels) {
+    for (const b of labels) {
+      const value = analysis.overlap.containment[a][b];
+      if (!Number.isFinite(value)) continue;
+      if (a === b) within.push(value);
+      else cross.push(value);
+    }
+  }
+  return {
+    crossMean: mean(cross),
+    crossMin: cross.length === 0 ? Number.NaN : Math.min(...cross),
+    withinMean: mean(within),
+  };
 }
 
 function pick(spectrum) {
