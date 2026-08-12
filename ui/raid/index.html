@@ -587,8 +587,10 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
           <li><b>Mage rosters and their held nodes</b> — drawn from the seed. There is no world state
             behind them.</li>
           <li>Objective instance counts, and therefore objective values.</li>
-          <li>The <b>damage multiplier</b>, defaulting to ×24. Set it to ×1 to see the authored
-            magnitudes; finding 1 below is why the default is not ×1.</li>
+          <li>The <b>damage multiplier</b>, defaulting to ×24 and applied to both
+            <code>direct-damage</code> and <code>area-denial</code> magnitudes and to neither
+            intrinsic damage. Set it to ×1 to see the authored magnitudes; finding 1 below is why
+            the default is not ×1.</li>
           <li>Line of sight is <b>sampled</b> along the segment, not walked with
             <code>geometry.ts</code>'s supercover trace.</li>
         </ul>
@@ -611,30 +613,46 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
       </div>
     </div>
     <div class="findings">
-      <h3>Three things this prototype found, which is what a prototype is for</h3>
+      <h3>Four things this prototype found, which is what a prototype is for</h3>
       <ol>
-        <li><b>Node-driven damage is roughly two orders of magnitude below what a raid can spend.</b>
-          A mage has <code>fp(64)</code> hit points plus <code>fp(8)</code> a tier. The deepest
-          attack spell in the v1 rectangle, <code>pm-the-empty-room</code> at tier 5, deals
-          <code>fp(0.75)</code> per cast. At the authored cast cost and the authored 3,000-tick
-          portal lifetime, one archmage cannot fell one other mage inside a whole raid. Meanwhile
-          <code>summon-damage</code> is <code>fp(2)</code> <em>per tick</em> and
-          <code>detachment-damage</code> is <code>fp(3)</code> per tick — so a summoned servant
-          out-damages its summoner's best spell about a hundred and sixty times over. Every node is
-          <code>tuningStatus: untuned</code>, so this is a gap waiting on the balance harness rather
-          than a bug; but it means <b>the raid as currently authored terminates by portal collapse,
-          not by casualties</b>. Set damage to ×1 above and watch it happen.</li>
+        <li><b><code>direct-damage</code> is the one engagement primitive the authored magnitudes
+          leave inert.</b> Measured over eight seeds at the authored magnitudes — the ×1 setting
+          above — of every hit point removed in a raid: <b>area-denial 52.8%</b>, <b>summoned
+          servants and soldier detachments 45.3%</b>, and <b><code>direct-damage</code> 1.8%</b>.
+          The arithmetic is visible inside a single node. <code>pm-the-empty-room</code>, tier 5,
+          the deepest working in the v1 rectangle, carries <code>direct-damage: 768</code> —
+          <code>fp(0.75)</code> against a mage's <code>fp(64)</code> of hit points — and
+          <code>area-denial: 192</code> for 40 ticks, which is <code>fp(7.5)</code>: the same node's
+          field does ten times its own bolt. Meanwhile <code>summon-damage</code> is
+          <code>fp(2)</code> <em>per tick</em>. A per-cast primitive is competing with per-tick ones
+          and losing by two orders of magnitude. Every node is <code>tuningStatus: untuned</code>,
+          so this is a gap waiting on the balance harness rather than a bug — but it is exactly the
+          gap <code>winRateByPrimitive</code> exists to catch, and it is catchable now.</li>
+        <li><b>Every damaging node in the v1 rectangle is Perdo. All fourteen of them.</b> Which
+          makes raid-engagement.md §1's sharpest case sharper than it says, and different in kind:
+          forbidding Perdo mid-raid does not quiet the field, it changes what magic <em>is</em>.
+          Forbid all four Perdo cells at tick 340 and, measured over the same eight seeds, the share
+          of damage done by summons and soldiers goes from <b>14.6% to 47.8%</b> while total cast
+          volume goes <em>up</em> — because mages fall back to the cheaper Rego workings they can
+          still afford, and the field fills with wards, blinks and called servants.
+          <code>forbiddenCastsBlocked</code> comes off zero within a few ticks, from your own
+          defenders. You have not stopped the war. You have traded a war of unmaking for a war of
+          summoned servants, and you cannot trade back. Try it: forbid the whole Perdo row and
+          watch the tally.</li>
         <li><b>Two content files disagree about the summon cap.</b>
           <code>primitive.json</code> caps <code>summon</code> at <code>count-per-side: 8</code>;
           <code>raid-constant.json</code>'s <code>max-summons-per-side</code> is <code>16</code>.
           This page uses 16 as the alive-cap and 8 as the per-stack cap, which is one reading of two,
-          and the loader appears to enforce neither against the other.</li>
-        <li><b>Forbidding Perdo is as sharp as §1 promises, and sharper than it says.</b> Eleven of
-          the twelve direct-damage and area-denial nodes in the v1 rectangle are Perdo. Forbid the
-          four Perdo cells mid-raid and the field goes quiet for <em>both</em> sides within a few
-          ticks — the raider loses its offence, and so do you, and the cast log fills with
-          <code>forbidden</code> refusals from your own mages. Try it: it is the most legible thing
-          on this page, and it needs no new mechanism.</li>
+          and nothing appears to enforce either against the other.</li>
+        <li><b>The authored terrain makes most long casts blind, and leaves pockets nothing can
+          walk out of.</b> <code>terrain-blocking-chance</code> is <code>fp(154)</code> on top of an
+          8% impassable roll, so a sight-blocker sits in about a fifth of the 400 cells and a
+          <code>fp(50)</code> cast crosses enough of them that most long shots have no line.
+          Closing is therefore the dominant move — a property of the constants, not of any policy
+          on this page. The same 8% also produces pockets a greedy step cannot leave: before this
+          page grew an escape slide, combatants stood in them for the remaining three thousand
+          ticks. That is what <code>navigation.ts</code> is for, and it is a good argument for
+          plugging it in rather than reimplementing it.</li>
       </ol>
     </div>
   </section>
@@ -772,7 +790,9 @@ const A = {
   musterTicks: 300,      // 30 s at the 100 ms engagement tick. §6.5 is open.
   castCooldown: 9,       // ticks between casts by one mage
   mageVigor: 49152,      // fp(48)
-  vigorRegen: 24,        // fp per tick
+  vigorRegen: 288,       // fp per tick. There is no authored regeneration; this
+                         // is set so a mage casts on roughly her cooldown
+                         // rather than starving, which is a pacing choice.
   magesPerSide: 6,
   detachmentsAttacker: 2,
   detachmentsDefender: 3,
@@ -887,7 +907,7 @@ function buildRaid(seedText, damageMultiplier) {
     const band = K.deployDepth;
     const along = floorDiv(K.extent * (ordinal * 2 + 1), 2 * 12);
     const depth = floorDiv(band * (1 + (ordinal % 3)), 5);
-    return side === 'a' ? { x: along, y: depth } : { x: along, y: K.extent - depth };
+    return toPassable(terrain, side === 'a' ? { x: along, y: depth } : { x: along, y: K.extent - depth });
   };
 
   const makeMage = (side, ordinal) => {
@@ -952,7 +972,9 @@ function buildRaid(seedText, damageMultiplier) {
   return {
     seed: seedText, terrain, combatants, objectives, portal,
     permitted: new Set(CELL_IDS), locked: new Set(),
-    stability, maxTicks: floorDiv(stability, K.stabilityDecay),
+    /* termination.ts computes the ceiling from initial PLUS jitter, so jitter
+       can never make a raid outlast its declared ceiling. */
+    stability, maxTicks: floorDiv(K.stabilityInitial + K.stabilityJitter, K.stabilityDecay),
     tick: 0, phase: 'muster', damage: damageMultiplier,
     favor: A.favorStart, vis: A.visStart, exposure: new Map(),
     forbiddenCastsBlocked: 0, casts: 0, refusals: 0, evades: 0, thefts: 0,
@@ -1062,59 +1084,64 @@ function step(S) {
     c.vigor = Math.min(c.maxVigor, c.vigor + A.vigorRegen);
     if (c.cooldown > 0) c.cooldown--;
 
+    /* A working needs range AND sight. The authored terrain is harsh about the
+       second — terrain-blocking-chance is fp(154) on top of an 8% impassable
+       roll, so about a fifth of the field blocks sight and a 50 m shot crosses
+       enough cells that most long shots are blind. Closing is therefore the
+       dominant move, which is a property of the authored constants and not a
+       choice made here. */
+    const canShoot = target && inRange(c.pos, target.pos, K.castRange)
+      && hasLineOfSight(S.terrain, c.pos, target.pos);
+
+    /* The raider holds the initiative and chose the engagement, so she walks
+       toward what she came for; the host stands on her own ground and closes
+       only when she has no shot. Movement and casting both happen in a tick —
+       this is an authored intent policy, not rules-raid's. */
     if (c.side === 'a') {
       const obj = nearestObjective(S, c);
       if (obj && inRange(c.pos, obj.pos, K.objectiveRadius)) {
-        obj.progress += K.objectiveProgress;
+        /* objective-progress-per-tick is authored per combatant in contact.
+           Contesting it — a defender standing in the same radius cancelling a
+           raider's tick — is authored here; objectives.ts declares no such
+           rule, and without one an objective simply cannot be defended. */
+        const held = S.combatants.filter(t => t.alive && !t.withdrawn && t.side === 'd' && inRange(t.pos, obj.pos, K.objectiveRadius)).length;
+        if (held === 0) obj.progress += K.objectiveProgress;
         if (obj.progress >= K.FP && !obj.taken) {
           obj.taken = true; S.takenValue += obj.value;
           logRow(S, 'note', c, null, obj.label.toLowerCase() + ' taken', '+' + (obj.value / K.FP).toFixed(1) + ' val');
         }
-      } else if (obj && (!target || best > K.castRange * K.castRange)) moveToward(S, c, obj.pos);
-      else if (target && best > K.castRange * K.castRange) moveToward(S, c, target.pos);
-    } else if (target && best > K.castRange * K.castRange) {
-      moveToward(S, c, target.pos);
+      } else if (obj) moveToward(S, c, obj.pos);
+      else if (target) moveToward(S, c, target.pos);
+    } else if (!canShoot) {
+      /* the host stands on her own ground: hold the nearest unresolved
+         objective, and close on a raider only when she has no shot from it */
+      const unresolved = S.objectives.filter(o => !o.taken);
+      const guard = unresolved.length ? unresolved[c.key % unresolved.length] : null;  // spread the watch
+      if (guard && !inRange(c.pos, guard.pos, floorDiv(K.objectiveRadius, 2))) moveToward(S, c, guard.pos);
+      else if (target) moveToward(S, c, target.pos);
     }
 
-    /* ---- knowledge-steal, stream 9, at fp(16): closer than a cast ---- */
-    const victim = foes.find(t => t.kind === 'mage' && inRange(c.pos, t.pos, K.theftRange));
-    if (victim && c.cooldown === 0) {
-      const thiefNode = legalNodes(c.held, S.permitted)
-        .find(id => NODE.get(id).effects.some(e => e.primitive === 'knowledge-steal'));
-      if (thiefNode) {
-        const mags = NODE.get(thiefNode).effects.filter(e => e.primitive === 'knowledge-steal').map(e => e.magnitude);
-        const p = stack('knowledge-steal', mags);
-        const hit = below(S.rngs.theft, K.FP) < p;
-        const prize = victim.held.length ? victim.held[below(S.rngs.theft, victim.held.length)] : null;
-        S.fx.push({ kind: 'steal', t0: S.tick, life: 9, from: { ...c.pos }, to: { ...victim.pos },
-                    form: NODE.get(thiefNode).form, hit });
-        c.cooldown = A.castCooldown;
-        if (hit && prize) { c.stolen.push(prize); S.thefts++; }
-        recordExposure(S, c, thiefNode);
-        logRow(S, hit ? 'steal' : 'refused', c, thiefNode,
-               'knowledge-steal p=' + (p / K.FP * 100).toFixed(0) + '% → ' + victim.name,
-               hit ? 'took ' + (prize || '—') : 'failed');
-        continue;
-      }
-    }
+    if (c.cooldown > 0) continue;
+    if (!canShoot) { attemptTheft(S, c, foes); continue; }
 
-    if (!target || c.cooldown > 0) continue;
-    if (!inRange(c.pos, target.pos, K.castRange)) continue;
-    if (!hasLineOfSight(S.terrain, c.pos, target.pos)) continue;
-
-    /* ---- choose a node. Deepest affordable that does something here. ---- */
-    const candidates = legalNodes(c.held, S.permitted)
-      .filter(id => NODE.get(id).effects.some(e => ['direct-damage','area-denial','blink','summon'].includes(e.primitive)))
-      .sort((x, y) => NODE.get(y).tier - NODE.get(x).tier);
+    /* ---- choose a node. The intent policy is authored here; rules-raid's own
+       intent scoring is not in this file. Call the servant if none stands, then
+       the deepest affordable working that does something at this range. ---- */
+    const affordable = legalNodes(c.held, S.permitted).filter(id => castPrice(NODE.get(id).tier) <= c.vigor);
+    let reached = null;
+    const servant = affordable.find(id => NODE.get(id).effects.some(e => e.primitive === 'summon'));
+    if (servant && S.summonsAlive[c.side] === 0) reached = servant;
+    if (!reached) reached = affordable
+      .filter(id => NODE.get(id).effects.some(e => ['direct-damage', 'area-denial', 'blink'].includes(e.primitive)))
+      .sort((x, y) => NODE.get(y).tier - NODE.get(x).tier)[0] || null;
 
     /* Layer 1 is the mask above. Layer 2 below is redundant BY CONSTRUCTION —
-       that is arbitration.ts's whole argument, and the counter is why the
-       claim of zero is worth anything. Once every few hundred ticks a mage
-       reaches for something the ruleset no longer permits, which is what a
-       mid-raid forbid does to your own side. */
-    const reached = candidates.length ? candidates[0]
-      : c.held.filter(id => NODE.get(id).effects.some(e => e.primitive === 'direct-damage'))[0];
-    if (!reached) continue;
+       that is arbitration.ts's whole argument, and the counter is why a claim
+       of zero is worth anything. When the ruleset no longer permits anything
+       she can use, a mage still reaches for what she knows, and the counter
+       moves. That is exactly what a mid-raid forbid does to your own side. */
+    if (!reached) reached = c.held.find(id => NODE.get(id).effects.some(e => e.primitive === 'direct-damage')) || null;
+    if (!reached) { attemptTheft(S, c, foes); continue; }
 
     if (!S.permitted.has(NODE.get(reached).cell)) {
       S.forbiddenCastsBlocked++; S.refusals++;
@@ -1147,6 +1174,38 @@ function step(S) {
   else if (liveD === 0) end(S, 'defending side eliminated');
   else if (S.objectives.every(o => o.taken)) end(S, 'objectives resolved');
   else if (S.tick >= S.maxTicks + A.musterTicks) end(S, 'engagement ceiling reached');
+}
+
+/**
+ * knowledge-steal, at fp(16) — closer than a cast, because reading a mind is an
+ * intimacy. Raiders only: outcome.ts records `nodesGainedByRaider` and
+ * `nodesLostByHost`, and theft runs one way along the attack.
+ *
+ * It is the *fallback* intent rather than the first one. Made first, a raider
+ * standing beside a defender reads her forever and never casts, which starves
+ * the whole point of the screen. That priority is authored here.
+ */
+function attemptTheft(S, c, foes) {
+  if (c.side !== 'a' || c.kind !== 'mage' || c.cooldown > 0) return false;
+  if (c.stolen.length >= 6) return false;   // a raiding party carries only so much
+  const victim = foes.find(t => t.kind === 'mage' && inRange(c.pos, t.pos, K.theftRange));
+  if (!victim) return false;
+  const thiefNode = legalNodes(c.held, S.permitted)
+    .find(id => NODE.get(id).effects.some(e => e.primitive === 'knowledge-steal'));
+  if (!thiefNode) return false;
+  const mags = NODE.get(thiefNode).effects.filter(e => e.primitive === 'knowledge-steal').map(e => e.magnitude);
+  const p = stack('knowledge-steal', mags);
+  const hit = below(S.rngs.theft, K.FP) < p;
+  const prize = victim.held.length ? victim.held[below(S.rngs.theft, victim.held.length)] : null;
+  S.fx.push({ kind: 'steal', t0: S.tick, life: 9, from: { ...c.pos }, to: { ...victim.pos },
+              form: NODE.get(thiefNode).form, hit });
+  c.cooldown = A.castCooldown;
+  if (hit && prize) { c.stolen.push(prize); S.thefts++; }
+  recordExposure(S, c, thiefNode);
+  logRow(S, hit ? 'steal' : 'refused', c, thiefNode,
+         'knowledge-steal p=' + (p / K.FP * 100).toFixed(0) + '% → ' + victim.name,
+         hit ? 'took ' + (prize || '—') : 'failed');
+  return true;
 }
 
 function recordExposure(S, caster, nodeId) {
@@ -1226,20 +1285,44 @@ function applyCast(S, caster, target, nodeId) {
 
 const clampField = (v) => Math.max(0, Math.min(K.extent, v));
 
+/**
+ * A greedy step with an escape slide. `rules-raid` has a whole `navigation.ts`;
+ * this has none, so a combatant in a pocket of impassable rock would otherwise
+ * stand there for the rest of the raid — which is exactly what happened before
+ * the slide was added, and is worth knowing about the authored 8% impassable
+ * chance: at that density the field has pockets.
+ */
 function moveToward(S, c, to) {
   const dx = to.x - c.pos.x, dy = to.y - c.pos.y;
   const dist = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
   const cost = S.terrain.atPoint(c.pos.x, c.pos.y).moveCost;
-  const allowance = floorDiv(K.movePerTick * cost, K.FP);
-  const stepLen = Math.min(allowance, dist);
-  let nx = clampField(c.pos.x + floorDiv(dx * stepLen, dist)), ny = clampField(c.pos.y + floorDiv(dy * stepLen, dist));
+  const stepLen = Math.min(floorDiv(K.movePerTick * cost, K.FP), dist);
+  let nx = clampField(c.pos.x + floorDiv(dx * stepLen, dist));
+  let ny = clampField(c.pos.y + floorDiv(dy * stepLen, dist));
   if (!S.terrain.atPoint(nx, ny).passable) {
-    // slide along whichever axis stays passable, rather than stopping dead
-    if (S.terrain.atPoint(nx, c.pos.y).passable) ny = c.pos.y;
-    else if (S.terrain.atPoint(c.pos.x, ny).passable) nx = c.pos.x;
-    else { nx = c.pos.x; ny = c.pos.y; }
-  }
+    if (S.terrain.atPoint(nx, c.pos.y).passable) { ny = c.pos.y; c.stuck = 0; }
+    else if (S.terrain.atPoint(c.pos.x, ny).passable) { nx = c.pos.x; c.stuck = 0; }
+    else {
+      // both axes blocked: step perpendicular, flipping the hand every 16 ticks
+      c.stuck = (c.stuck || 0) + 1;
+      const sign = Math.floor(c.stuck / 16) % 2 === 0 ? 1 : -1;
+      const sx = clampField(c.pos.x + floorDiv(-dy * stepLen * sign, dist));
+      const sy = clampField(c.pos.y + floorDiv(dx * stepLen * sign, dist));
+      if (S.terrain.atPoint(sx, sy).passable) { nx = sx; ny = sy; }
+      else { nx = c.pos.x; ny = c.pos.y; }
+    }
+  } else c.stuck = 0;
   c.pos = { x: nx, y: ny };
+}
+
+/** Nudges a deployment point onto passable ground, spiralling outward. */
+function toPassable(terrain, p) {
+  if (terrain.atPoint(p.x, p.y).passable) return p;
+  for (let r = 1; r <= 6; r++) for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]) {
+    const q = { x: clampField(p.x + dx * r * K.cellSize), y: clampField(p.y + dy * r * K.cellSize) };
+    if (terrain.atPoint(q.x, q.y).passable) return q;
+  }
+  return p;
 }
 
 function nearestObjective(S, c) {
