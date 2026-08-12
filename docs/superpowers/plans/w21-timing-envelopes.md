@@ -401,7 +401,7 @@ interaction D7 and D9 have looked for and never found.
 
 | Piece | State |
 |---|---|
-| Five envelopes as acquisition cost curves | **Shipped**, applied to research, teaching and scribing |
+| Five envelopes as acquisition cost curves | **Shipped**, applied to **research only** — see §10 |
 | Harmonic invariant, enforced by the loader | **Shipped** |
 | §5.2's eight-bar unease on constitutional acts | **Shipped**, priced, mask-mirrored |
 | §3.1's subdivision table and the in-phase predicate | **Shipped as vocabulary**, reported on every phase |
@@ -425,3 +425,78 @@ things pushed the same way:
 refuses a `god-constant.json` row nothing reads, so `off-grid-surcharge` is
 **absent from content** rather than authored and inert. That rule is right and
 the constant arrives with the answer, not before it.
+
+
+---
+
+## 10. What running the suite changed, and the two pins it moved
+
+Three things were only findable by running it.
+
+### 10.1 The curve is research-only
+
+Teaching and scribing lost their envelope. The structural argument is the one
+that decides it: both have a **flat authored requirement** and their rate scales
+the *numerator* (`mageMonths`, `scribeMonths`), so `progress / required` is not a
+position within an acquisition's own duration the way it is for research, where
+the rates divide the requirement. There is no interior for a curve to be a curve
+over.
+
+A measurement agrees, and is stated carefully because the effect is real and is
+not the whole cause. Lessons in the last two 20-year windows of the reference
+universe's 200-year run:
+
+| arm | window 8 | window 9 |
+|---|---|---|
+| flat curves | 114 | 1 |
+| research envelope only | 19 | 0 |
+| research + teaching envelope | 5 | 0 |
+
+Curving teaching **deepened** the thinning without producing it.
+
+### 10.2 Two reference pins moved, and the ablation says it was the mechanic
+
+Setting all five envelopes to `rigid` and changing nothing else restores the
+previous numbers exactly. So these are the mechanic, not a defect in it.
+
+**`reference-long-run` 9.5 — teaching in every 20-year window.** Window 9 went
+`1 → 0`. **The pin held by exactly one lesson before this branch touched
+anything.** Re-pinned at nine of ten windows and the first eight without
+exception — which still fails outright the defect it was written to catch
+(teaching dead from window 1).
+
+> **Raised for the author.** If *"a lesson in every window"* is a design
+> invariant rather than a measured trajectory, the curve ratio is the knob:
+> every `slots` value is `untuned`, and the 8:1 spread was chosen because §4.1
+> gives a direction and no magnitude. Choosing that ratio by what makes the line
+> green would be tuning to the test, so it is raised rather than done.
+
+**`reference-time-to-tier` 9.9 — species bands at tier 3.** One loss and one
+gain, both recorded, because a pin that wrote down only the improvement would be
+advocacy:
+
+| species | flat | curved |
+|---|---|---|
+| gnome | [20, 21] | **[19, 20]** — now separates strictly from dwarf and orc |
+| dwarf | [21, 25] | [21, 27] |
+| orc | [21, 27] | **[21, 37]** — ties elf's fastest seed; separation lost |
+| human | [26, 37] | [26, 39] |
+| elf | [35, 58] | [37, 60] |
+| draconic | [26, 380] | [26, 298] |
+
+Gnome is the first species in this project distinguishable from every other at
+tier 3 by more than the cross-seed spread. Orc is no longer distinguishable from
+elf. **Task 9.9 still wants four species and still gets fewer.**
+
+### 10.3 A promised test that did not exist
+
+`mask.ts`'s `uneaseMultiplier` comment said the two implementations *"are bound
+by a test rather than by an import"*. No such test had been written — a claim
+without its check, in exactly the defect class integration round 2 found in
+`uniform-random-legal`, where the gate admitted actions coordination refused and
+the telemetry stayed clean.
+
+`god-timing-mask-agreement.test.ts` is that check. Its discriminating case is
+favor set **between** the base and surcharged prices — with plenty of favor it
+would pass whether or not the mask knew the rule — swept across every bar of the
+phrase, asserting the mask's verdict and the resolver's are the same verdict.
