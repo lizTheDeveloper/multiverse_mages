@@ -495,13 +495,74 @@ can, and its id sorts after `true-naming`, which was part of why that id was cho
 itself — **a tradition's name decides which universe every balance baseline was measured in** — is
 now guarded by a trip wire in `packages/content/test/unit/tradition-hooks.test.ts`.
 
-### The gate
+### The gate — RED, and not to be merged until it is understood
 
-`npm run verify`: **green**, in a clean-room run with the vitest cache cleared and nothing else
-running. No golden fixture was regenerated. All three balance baselines were regenerated once, and
-each reported **`no metric moved`** — provenance only. That is a stronger result than expected: it
-means adding four traditions and widening the god's action space from 2 candidates to 6 changed
-nothing measurable on any of the three gates.
+**`npm run verify` does not pass on this branch.** Every other deliverable above is complete and
+measured; this is not, and it is a blocker rather than a caveat.
+
+What passes: typecheck, lint, dependency purity, content validation, audio validation, primitive
+coverage, and all three balance gates. All three baselines were regenerated once, each reporting
+**`no metric moved`** — provenance only. **No golden fixture was regenerated at any point.**
+
+What fails: `npm run test`, in the **full 275-file suite only**, at roughly 2–6 tests across
+`packages/coordination` — `acquire-hook-in-the-loop`, `god-loop`, `work-phase`, `world-step`,
+`knowledge-capital`. Always the same error:
+
+> `RangeError: No implementation for "acquire" kind "true-name"` — and, in other runs, the same for
+> kind **`"standard"`**.
+
+Both kinds are implemented. The throw comes from `applyAcquire`'s `default:` branch
+(`packages/rules-magic/src/traditions/acquire.ts:93`), a `switch (hook.kind)` whose two cases are
+exactly `'standard'` and `'true-name'`.
+
+**What was established, in order:**
+
+1. **It is caused by W28.** `origin/integration/campaign-round-2` at `0b54c84`, checked out in this
+   worktree and run identically: **275 files, 3872 tests, all pass.**
+2. **It is not the content.** Every `kind` in `tradition.json` is clean ASCII (checked by code
+   point); the loader validates each against `HOOK_KINDS` and `check:content` passes; and a direct
+   reproduction through the built package resolves all seven traditions' acquire hooks correctly —
+   `researchCost` and `initialMastery` come out right for every one.
+3. **It is not a proxy or an accessor.** There is no `new Proxy`, no `defineProperty` and no getter
+   anywhere in `packages/*/src`. `hook` is a plain object literal built by `resolve()`.
+4. **The comparison itself is evaluating wrongly.** A guard placed *before* the switch —
+   `if (hook.kind !== 'standard' && hook.kind !== 'true-name') console.error(...)` — **fired**, on a
+   value that `JSON.stringify` renders as exactly `"true-name"`. In a separate instrumented run, a
+   probe inside the `default:` branch reported `hook.kind === 'true-name'` as **`true`** while
+   execution was inside that branch.
+5. **It is load-dependent.** It does not reproduce running the file alone, and only intermittently
+   running `packages/coordination` alone. Heavy instrumentation makes it disappear: `applyAcquire`
+   is called ~33 million times in one suite run, and logging every call changed the timing enough
+   to turn the suite green.
+
+**Reading.** A `switch` on a primitive string cannot take `default` while the discriminant compares
+`===` equal to one of its cases, and two separate `!==` comparisons cannot both be true of a value
+that prints as one of the two literals. So the code being executed is not the code as written. That
+points at the transform/JIT layer under a hot path — not at the rules. It is nonetheless **W28 that
+triggers it**, and W28 has not identified the mechanism, so it cannot be dismissed as a toolchain
+flake on this evidence alone.
+
+6. **Hoisting the discriminant does not fix it.** `const kind = hook.kind; switch (kind)` was tried
+   as the cheapest discriminator between "property load" and "comparison": the full suite still
+   failed, 2 files, same error. So it is not a repeated property read — the comparison itself is
+   what goes wrong. That change was reverted; the committed diff touches no dispatch module.
+7. **The dispatch modules cannot easily be instrumented.** `tradition-conformance.test.ts` asserts
+   that `acquire.ts` *"branches only on a hook kind"*, so any probe added there fails a real and
+   correct test. Every diagnostic above was run against a temporary working tree and reverted.
+
+**What should be tried next, in order of cost:** re-run with
+`--pool=forks --poolOptions.forks.singleFork` to remove worker parallelism, which is the last cheap
+discriminator; bisect the four new traditions to find whether one specifically triggers it (the
+`bounded` store kind and the 4096-slot palace are the two most unusual things W28 added); and,
+independently of this bug, look at why `applyAcquire` runs **~33 million times in one suite run** —
+`AcquirePolicy.researchCost` re-enters the whole dispatch per candidate node per mage per tick,
+which is a real hot-path defect whether or not it is this one, and which is exactly the kind of
+call volume that makes a JIT tier-up bug reachable.
+
+**Merge disposition.** Not mergeable as it stands. The content, the measurement and the report are
+complete and are what this workstream was for; the gate is red for a reason that is characterised
+but not explained, and the honest thing is to hand it over in that state rather than to delete a
+test or retry until a run comes up green.
 
 ### The forced next step
 
