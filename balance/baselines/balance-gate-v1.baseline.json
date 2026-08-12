@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "537055e2b974d6dcf4576e42a7bb7c4b3168609676f817b5703dcbeb7842ab0d",
+  "contentHash": "16c27df4b98800e8090fef09d18cc66c7198364bcb7d0022b271a8d464226bde",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.6317000024389237,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.8951000073167705,"unit":"grimoires","value":83.7},
@@ -15,7 +15,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.4396572180548786,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.318971654164636,"unit":"people","value":-14.605}
   ],
   "notes": [
-    "At five and twenty years every metric is unchanged to six significant figures; only contentRevision moved. That is the expected result and worth recording: the founding stock saturates K's provisioning multiplier in both builds, subsistence never goes short, and the knowledge metrics do not touch the economy. A gate that moved here would have meant the change reached further than intended."
+    "At five and twenty years every metric is unchanged or moves under half a standard error; effectively only contentRevision moved. That is the expected result and worth recording: the founding stock saturates K's provisioning multiplier in both builds, subsistence never goes short, and the knowledge metrics do not touch the economy. A gate that moved here would have meant the change reached further than intended. Untuned, and not a balance claim before 0.5.0."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -25,7 +25,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "w29/city-and-supply-chain: the single materials scalar became three kinds (food, stone, vellum), and the wire from knowledge to the economy was connected for the first time. Every baseline in this repository was recorded against a build in which resourceYieldBonuses was a hardcoded empty array and advanceConstruction had no caller outside its own tests, so both economy primitives were unreachable by any path. Content also gained form yieldWeights and territory yieldPerLandUnit, which moves contentRevision and invalidates the provenance of all three files on its own.",
+  "rationale": "w29/city-and-supply-chain: the single materials scalar became three kinds (food, stone, vellum), and the wire from knowledge to the economy was connected for the first time. Every baseline in this repository was recorded against a build in which resourceYieldBonuses was a hardcoded empty array and advanceConstruction had no caller outside its own tests, so both economy primitives were unreachable by any path. Content also gained form yieldWeights and territory yieldPerLandUnit, which moves contentRevision and invalidates the provenance of all three files on its own. These numbers are a measurement of what this build did on this date and NOT a balance claim: release-plan.md forbids one before 0.5.0, every magnitude the change introduced is marked untuned, and nothing here has been tuned against a target.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
@@ -39,7 +39,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.395,"value":129.395},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.605,"value":-14.605}
   ],
-  "supersedes": "f346f68b04942ab8c9556bab1706070661c0cf20efd2113fd211c86517b55317",
+  "supersedes": "537055e2b974d6dcf4576e42a7bb7c4b3168609676f817b5703dcbeb7842ab0d",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }
