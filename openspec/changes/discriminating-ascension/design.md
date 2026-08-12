@@ -132,6 +132,22 @@ is 2, exactly what is authored today; at 174 nodes it is 8, against the 7 that d
 `ascension-loss-max` is retained as the floor so that a small canon is not handed a free loss by the
 fraction rounding to zero, and so the authored constant keeps meaning what it meant.
 
+**Walking the measured boundaries through the proposed predicate.** The `canon` policy's era
+boundaries were probed directly (`eraNodesLost` and `nodesKnown` at the tick before each boundary):
+
+| boundary near tick | nodes known | lost in era | allowance under the proposal | passes? |
+|---|---|---|---|---|
+| 240 | 72 | 0 | 2 | no — 72 < 96 breadth |
+| 480 | 139 | 2 | 6 | yes |
+| 720 | 157 | 7 | 7 | yes |
+| 960 | 162 | 7 | 8 | yes (fails today at 2) |
+| 1200 | 169 | 0 | 8 | yes |
+
+`goodEraRun` would therefore reach 4 at about tick 1200 and Path B would qualify for a god that
+permits, builds and blesses — comfortably inside the 2400-tick horizon — while the passive universe,
+flat at 51 nodes, never passes a boundary at all. That is the shape D1 was careful to preserve for
+Path A: the fix must make the path *harder for the idler*, not closed for everyone.
+
 The two parts must land together. Breadth alone would make Path B unwinnable — the measurement is
 unambiguous that a broad universe loses more than two nodes per era — and the scaled allowance alone
 would leave the passive universe passing every boundary.

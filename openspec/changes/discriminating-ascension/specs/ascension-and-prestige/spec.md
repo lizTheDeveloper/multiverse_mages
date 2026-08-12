@@ -99,7 +99,8 @@ of this knob, and the change that adds one MUST say so explicitly.
 #### Scenario: The small-canon allowance is unchanged
 
 - **WHEN** an era boundary is evaluated in a universe holding 51 nodes
-- **THEN** the allowance is `ASCENSION_LOSS_MAX`, because the fraction of 51 rounds below it
+- **THEN** the allowance is `ASCENSION_LOSS_MAX`, which `floorDiv(51 × fp(51), fp(1024))` floors to
+  exactly, so the authored constant binds at the small end whether the fraction reaches it or not
 
 #### Scenario: The allowance is integer arithmetic
 
