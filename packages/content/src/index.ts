@@ -108,6 +108,14 @@ export {
   checkGodCosts,
 } from './god.js';
 
+export type { AutonomyRoleName } from './autonomy.js';
+export {
+  AUTONOMY_ROLE_IDS,
+  REQUIRED_AUTONOMY_WEIGHTS,
+  checkAutonomyWeights,
+  isRoleAppeal,
+} from './autonomy.js';
+
 export {
   MAX_ENGAGEMENT_TICKS,
   REQUIRED_RAID_CONSTANTS,

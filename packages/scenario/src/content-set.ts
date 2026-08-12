@@ -51,9 +51,10 @@ import {
   storePolicy,
   traditionTableFrom,
 } from '@mm/rules-magic';
-import { territoryExtent } from '@mm/rules-world';
+import type { SpeciesAffinities } from '@mm/rules-world';
+import { readTargetAppeal, resolveSpeciesAffinities, territoryExtent } from '@mm/rules-world';
 import type { WorldStepDeps } from '@mm/coordination';
-import { godEffectHooks, resolveGodContent } from '@mm/coordination';
+import { godEffectHooks, nodeFacetsFrom, resolveGodContent } from '@mm/coordination';
 
 /** The permitted-axis halves of a ruleset (`contracts.md` §1.1). */
 export interface RulesetAxes {
@@ -257,9 +258,11 @@ export function catalogAndCells(registry: ContentRegistry): {
 /**
  * The deps a world simulation is built from, over shipped content.
  *
- * The four primitives are named because `WorldStepDeps` names them: lifespan
- * gates mortality, resource-yield the harvest, scribe-rate the scriptorium, and
- * fertility the births. Everything else the loop needs it reads out of state.
+ * The six primitives are named because `WorldStepDeps` names them: lifespan
+ * gates mortality, resource-yield the harvest, scribe-rate the scriptorium,
+ * fertility the births, and research-rate and teach-rate the accumulator vision
+ * §6a's library contributes into. Everything else the loop needs it reads out of
+ * state.
  */
 export function worldDeps(registry: ContentRegistry, traditionId: ContentId): WorldStepDeps {
   const { catalog, cells } = catalogAndCells(registry);
@@ -274,26 +277,34 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
   // §5 does not grant `scenario` an edge to `@mm/primitives`, and the
   // dependency-graph test is right to refuse one. This file wires; it does not
   // compute.
-  const effects = godEffectHooks({
-    constants: god.constants,
-    primitives: {
-      researchRate: primitiveNamed(registry, 'research-rate'),
-      teachRate: primitiveNamed(registry, 'teach-rate'),
-      lifespan,
-    },
-    cells,
-  });
+  const effects = godEffectHooks({ constants: god.constants, cells });
+
+  // Species affinities are resolved once per species, not once per mage per
+  // tick: six records against potentially thousands of mages, and the answer is
+  // a pure function of the species record and the registry.
+  const affinityCache = new Map<string, SpeciesAffinities>();
 
   return {
     speciesOf,
     catalog,
     cells,
+    facets: nodeFacetsFrom(registry),
+    affinitiesOf: (species) => {
+      const cached = affinityCache.get(species.id);
+      if (cached !== undefined) return cached;
+      const resolved = resolveSpeciesAffinities(species, registry);
+      affinityCache.set(species.id, resolved);
+      return resolved;
+    },
+    appeal: readTargetAppeal(registry),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),
+      researchRate: primitiveNamed(registry, 'research-rate'),
+      teachRate: primitiveNamed(registry, 'teach-rate'),
       scribeRate: primitiveNamed(registry, 'scribe-rate'),
       fertility: primitiveNamed(registry, 'fertility'),
     },

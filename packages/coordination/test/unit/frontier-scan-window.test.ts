@@ -76,13 +76,7 @@ import { compareTargets } from '@mm/rules-world';
 
 import { CoordinatingKnowledgeGateway } from '../../src/index.js';
 
-import {
-  catalogAndCells,
-  registry,
-  shippedAcquirePolicy,
-  shippedStorePolicy,
-  speciesTable,
-} from './world-fixtures.js';
+import { catalogAndCells, nodeFacets, registry, shippedAcquirePolicy, shippedStorePolicy, speciesTable } from './world-fixtures.js';
 
 /**
  * The id the frontier scan used to stop at.
@@ -215,6 +209,7 @@ function universePermitting(
       knowledge: KnowledgeSubsystem.fromState(state, catalog.nodeCount),
       catalog,
       cells,
+      facets: nodeFacets(),
       ruleset: captureRuleset(state, universe),
       ratesOf: () => ({
         learnRate: species.learnRate,

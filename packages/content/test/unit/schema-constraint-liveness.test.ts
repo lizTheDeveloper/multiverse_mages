@@ -125,6 +125,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'god-cost',
     'god-constant',
     'raid-constant',
+    'autonomy-weight',
   ] as const).map(
     (name) => ({
       constraint: `${name}.schema.json#/$defs/contentId minLength`,
@@ -157,6 +158,9 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'god-constant.schema.json#/$defs/godConstant/properties/tuningStatus',
     'raid-constant.schema.json#/$defs/raidConstant/properties/unit',
     'raid-constant.schema.json#/$defs/raidConstant/properties/tuningStatus',
+    'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/unit',
+    'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/role',
+    'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/tuningStatus',
   ].map((pointer) => ({
     constraint: `${pointer} type`,
     why:

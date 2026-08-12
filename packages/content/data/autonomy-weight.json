@@ -1,0 +1,297 @@
+[
+  {
+    "id": "target-effort-divisor",
+    "value": 64,
+    "unit": "raw",
+    "gloss": "Divides a target's remaining mage-months into the effort term, which is subtracted. 64 makes the deepest v1 node (researchCost fp(32768)) spend the whole effort bound and a tier-1 node one sixteenth of it. This is the OLD ordering, demoted from being the whole of target selection to being one term of six.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-affinity-divisor",
+    "value": 2,
+    "unit": "raw",
+    "gloss": "Divides a species affinity's deviation from fp(1) into the affinity term. 2 puts a dwarf's terram 1536 at +256 — about two tiers of effort — so an affinity is worth reaching one step deeper for and never worth reaching four.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-curiosity-divisor",
+    "value": 8,
+    "unit": "raw",
+    "gloss": "Divides a species' curiosity deviation into a per-tier appetite for depth. 8 puts a gnome (1792) at +96 per tier and a human (1152) at +16, which is what makes two species sharing depthCeiling 4 want different halves of the same reachable set.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-ambition-divisor",
+    "value": 4,
+    "unit": "raw",
+    "gloss": "Divides a mage's rolled ambition deviation into a per-tier pull toward the deep node. Ambition reaches for the summit because prestige reads the deepest tier held and never a sum (vision 8a).",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-caution-divisor",
+    "value": 4,
+    "unit": "raw",
+    "gloss": "Divides a mage's rolled caution deviation into a per-tier push away from the deep node. A cautious mage takes the project she can finish; the sign is opposite to ambition's on purpose, so a mage high in both is where she started.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-age-young-per-tier",
+    "value": 64,
+    "unit": "fp",
+    "gloss": "What one tier of depth is worth to a young mage. Positive: she has a life in which to finish it.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-age-prime-per-tier",
+    "value": 0,
+    "unit": "fp",
+    "gloss": "Zero on purpose rather than absent, exactly as the prime row of AGE_TERM is. The middle of a life is the baseline the other two bands are shifts away from, and a row written out is a row a reader can see is not missing.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-age-senescent-per-tier",
+    "value": -64,
+    "unit": "fp",
+    "gloss": "What one tier of depth is worth to a senescent mage. Negative: a deep project she does not live to finish leaves the universe nothing, because a knowledge instance in a mind dies with its holder (vision 5).",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-bound-effort",
+    "value": 512,
+    "unit": "fp",
+    "gloss": "Largest magnitude the effort term may contribute. Conditions the axis before summation; it is not the one clamp, which scoring applies once to the sum.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-bound-affinity",
+    "value": 384,
+    "unit": "fp",
+    "gloss": "Largest magnitude the species-affinity term may contribute. Below the effort bound, so an affinity bends the cost queue and never suspends it.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-bound-species",
+    "value": 384,
+    "unit": "fp",
+    "gloss": "Largest magnitude the species curiosity-per-tier term may contribute.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-bound-age",
+    "value": 256,
+    "unit": "fp",
+    "gloss": "Largest magnitude the age term may contribute. The smallest of the six, matching the age term's bound in goal scoring: age shades a decision and never makes it.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-bound-personality",
+    "value": 256,
+    "unit": "fp",
+    "gloss": "Largest magnitude the personality term may contribute. Personality varies mage to mage within one universe, so this bound is the width of the within-universe disagreement about what to learn next.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-bound-role",
+    "value": 512,
+    "unit": "fp",
+    "gloss": "Largest magnitude the role term may contribute. The loader checks it is STRICTLY BELOW the sum of the other five bounds, so any combination of effort, affinity, species, age and personality can outvote any role. That is vision 7's 'you set the role; they decide everything else' written down as arithmetic instead of as an intention.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-appeal-ceiling",
+    "value": 4096,
+    "unit": "fp",
+    "gloss": "Symmetric clamp on the summed appeal, applied once after summation. The six bounds sum to 2304, so it does not bind today; it is a guard rail that fires only when a bound has been raised without anyone rechecking it, and the score reports whether it fired.",
+    "tuningStatus": "untuned"
+  },
+
+  {
+    "id": "role-appeal-researcher-research-rate",
+    "value": 384,
+    "unit": "fp",
+    "role": "researcher",
+    "primitive": "research-rate",
+    "gloss": "A researcher reaches first for magic that makes research faster. Knowledge as capital (vision 6a) is a compounding loop, and this is the one role that compounds it on purpose.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-researcher-knowledge-steal",
+    "value": 192,
+    "unit": "fp",
+    "role": "researcher",
+    "primitive": "knowledge-steal",
+    "gloss": "Reading it out of somebody else's mind is still learning it. Positive but well under research-rate, so a researcher prefers deriving to taking.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-researcher-lifespan",
+    "value": 128,
+    "unit": "fp",
+    "role": "researcher",
+    "primitive": "lifespan",
+    "gloss": "More years is more research. The most instrumental thing a scholar can want.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-researcher-direct-damage",
+    "value": -128,
+    "unit": "fp",
+    "role": "researcher",
+    "primitive": "direct-damage",
+    "gloss": "Not what she came for. Negative rather than zero so that a universe of researchers is measurably worse armed than a universe of raiders, which is the whole observable difference a standing role is supposed to make.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-warden-ward",
+    "value": 384,
+    "unit": "fp",
+    "role": "warden",
+    "primitive": "ward",
+    "gloss": "The warden's own primitive. A library that survives a raid is the asset the role exists for.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-warden-concealment",
+    "value": 320,
+    "unit": "fp",
+    "role": "warden",
+    "primitive": "concealment",
+    "gloss": "A library nobody finds needs no ward at all. The cheaper half of the same instinct.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-warden-area-denial",
+    "value": 256,
+    "unit": "fp",
+    "role": "warden",
+    "primitive": "area-denial",
+    "gloss": "Holding ground is what warding a place means once somebody is already inside it.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-warden-scribe-rate",
+    "value": 128,
+    "unit": "fp",
+    "role": "warden",
+    "primitive": "scribe-rate",
+    "gloss": "Guarding a library and copying its contents are the same instinct about the same asset — the reasoning ROLE_BIAS already uses to raise scribe for the warden at the goal level, said again one level down.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-warden-portal",
+    "value": -192,
+    "unit": "fp",
+    "role": "warden",
+    "primitive": "portal",
+    "gloss": "A warden distrusts a door. The portal rule (vision 3) makes an open gate a two-way one, and the only role whose job is what comes through it prices it negatively.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-professor-teach-rate",
+    "value": 384,
+    "unit": "fp",
+    "role": "professor",
+    "primitive": "teach-rate",
+    "gloss": "The professor's own primitive. Teaching is mind to mind and dies with both (vision 5), so anything that makes it faster is what the role is for.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-professor-scribe-rate",
+    "value": 256,
+    "unit": "fp",
+    "role": "professor",
+    "primitive": "scribe-rate",
+    "gloss": "The other way a professor outlives herself, and the one that survives her.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-professor-research-rate",
+    "value": 128,
+    "unit": "fp",
+    "role": "professor",
+    "primitive": "research-rate",
+    "gloss": "A professor who has run out of things to teach goes and learns some — ROLE_BIAS's own gloss for raising seek-teaching, pointed at the node graph.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-professor-knowledge-steal",
+    "value": -64,
+    "unit": "fp",
+    "role": "professor",
+    "primitive": "knowledge-steal",
+    "gloss": "Taking it out of a mind is the opposite of putting it into one. Small, because it is a distaste rather than a refusal.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-raider-direct-damage",
+    "value": 384,
+    "unit": "fp",
+    "role": "raider",
+    "primitive": "direct-damage",
+    "gloss": "The raider's own primitive.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-raider-knowledge-steal",
+    "value": 320,
+    "unit": "fp",
+    "role": "raider",
+    "primitive": "knowledge-steal",
+    "gloss": "Reading a node out of a mind mid-raid is the objective a raid is for (vision 5, vision 8), not a side effect of one.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-raider-portal",
+    "value": 256,
+    "unit": "fp",
+    "role": "raider",
+    "primitive": "portal",
+    "gloss": "Without a gate there is no raid. The only role that prices the portal positively is the one that goes through it.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-raider-blink",
+    "value": 256,
+    "unit": "fp",
+    "role": "raider",
+    "primitive": "blink",
+    "gloss": "Getting to the library before the wardens do.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-raider-summon",
+    "value": 256,
+    "unit": "fp",
+    "role": "raider",
+    "primitive": "summon",
+    "gloss": "Bodies you did not have to raise, on a side that is capped at how many it may field.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-raider-area-denial",
+    "value": 192,
+    "unit": "fp",
+    "role": "raider",
+    "primitive": "area-denial",
+    "gloss": "Useful on the way out. Below the warden's own valuation of the same primitive, which is the difference between holding ground and leaving it behind you.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-raider-scribe-rate",
+    "value": -128,
+    "unit": "fp",
+    "role": "raider",
+    "primitive": "scribe-rate",
+    "gloss": "Somebody has to be unwilling to sit still, or the universe has no one to send through a portal. ROLE_BIAS makes the raider the only row that leans negative on scribing; this is the same statement about the node graph.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "role-appeal-raider-teach-rate",
+    "value": -128,
+    "unit": "fp",
+    "role": "raider",
+    "primitive": "teach-rate",
+    "gloss": "Same reason, and the same sign ROLE_BIAS gives teach for this role.",
+    "tuningStatus": "untuned"
+  }
+]

@@ -36,7 +36,7 @@ import {
   termsFor,
 } from '../../src/index.js';
 
-import { outlook, richOutlook, speciesNamed } from './autonomy-fixtures.js';
+import { outlook, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
 
 const scoreOf = (goal: (typeof GOALS_IN_ORDER)[number], state: ReturnType<typeof outlook>): number =>
   scoreGoal(goal, state).score;
@@ -232,11 +232,9 @@ describe('opportunity shapes the score without referring to anywhere', () => {
       termsFor(
         GOAL.researchNode,
         richOutlook({
-          discoveryTargets: Array.from({ length: count }, (_unused, index) => ({
-            nodeId: index + 1,
-            tier: 1,
-            remainingCost: 1024,
-          })),
+          discoveryTargets: Array.from({ length: count }, (_unused, index) =>
+            target(index + 1),
+          ),
         }),
       ).opportunity;
 

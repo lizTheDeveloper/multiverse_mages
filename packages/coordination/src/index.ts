@@ -61,6 +61,9 @@
  *   `@mm/sim-core`'s and is not reimplemented here.
  */
 
+export type { LibraryCapital, LibraryCapitalDeps } from './capital.js';
+export { libraryCapital } from './capital.js';
+
 export type { EffortKey, EffortRow } from './effort-store.js';
 export { EffortLedger, MAX_EFFORTS_PER_MAGE } from './effort-store.js';
 
@@ -80,6 +83,9 @@ export {
   effortKey,
   isHeldAtMind,
 } from './gateway.js';
+
+export type { NodeFacetResolver, NodeFacets } from './node-facets.js';
+export { UNKNOWN_NODE_FACETS, nodeFacetsFrom } from './node-facets.js';
 
 export type { OutlookDeps } from './outlook.js';
 export { buildOutlook, universityPreference } from './outlook.js';
