@@ -63,29 +63,45 @@ and the raid layer beyond what the portal rule forces.
 - [x] 1.5 `hard-magic.md`, `invariants.md`, `probable-strategies.md`,
       `integration-round-2-results.md`, `strategy-dimensionality.md`, `metric-constants.md`,
       `tradition-sweep.md`, `value-sensitive-acquirer.md`
-- [ ] 1.6 Audit of what permitting mechanically does today, and of which primitives are node-driven
+- [x] 1.6 Audit of what permitting mechanically does today, and of which primitives are node-driven
 
 ### 2. `docs/design/magic-projection.md`
 
-- [ ] 2.1 §1 — why permitting is currently a purchase, and what a commitment would be instead
-- [ ] 2.2 §2 — the five techniques, three to four consequences deep each
-- [ ] 2.3 §3 — the eight weight-bearing forms: Corpus, Mentem, Nomen, Limen deep; Terram, Herbam,
+- [x] 2.1 §1 — why permitting is currently a purchase, and what a commitment would be instead
+- [x] 2.2 §2 — the five techniques, three to four consequences deep each
+- [x] 2.3 §3 — the eight weight-bearing forms: Corpus, Mentem, Nomen, Limen deep; Terram, Herbam,
       Animal, Ignem tighter
-- [ ] 2.4 §4 — the emergent pairs, at least six
-- [ ] 2.5 §5 — **the commitment table**, nineteen rows
-- [ ] 2.6 §6 — five mechanics, each with its primitive and its measurement, each stating whether
-      that measurement exists today
-- [ ] 2.7 §7 — contradictions against what is already built, recorded verbatim
-- [ ] 2.8 §8 — what this does not answer
+- [x] 2.4 §4 — the emergent pairs, at least six *(eight)*
+- [x] 2.5 §5 — **the commitment table**, nineteen rows
+- [x] 2.6 §6 — five mechanics, each with its primitive and its measurement, each stating whether
+      that measurement exists today, and each stating whether it fits the shipped v1 subset
+- [x] 2.7 §7 — contradictions against what is already built, recorded verbatim *(seven)*
+- [x] 2.8 §8 — what this does not answer
 
 ### 3. Gate
 
-- [ ] 3.1 Every one of the sixteen primitive IDs appears in a load-bearing position
-- [ ] 3.2 Nineteen commitment rows; no row whose cost is only favor
-- [ ] 3.3 Every new claim carries `[P]`; every cited one carries its section
-- [ ] 3.4 At least one contradiction against the built tree recorded
-- [ ] 3.5 `git diff --stat origin/integration/campaign-round-2 -- packages/` is empty
+- [x] 3.1 Every one of the sixteen primitive IDs appears in a load-bearing position
+- [x] 3.2 Nineteen commitment rows; no row whose cost is only favor
+- [x] 3.3 Every new claim carries `[P]`; every cited one carries its section
+- [x] 3.4 At least one contradiction against the built tree recorded — §7.1 is the headline, and it
+      needs none of the projections accepted to be worth fixing
+- [x] 3.5 `git diff --stat origin/integration/campaign-round-2 -- packages/` is empty
 - [ ] 3.6 Push `w30/magic-projection`
+
+## What the audit changed about the plan
+
+Three findings arrived after the plan was written and reshaped the document:
+
+- **The v1 subset is `{Intellego, Perdo, Rego} × {Mentem, Terram, Limen, Nomen}`** — a strict
+  rectangle of twelve cells holding 51 of the grid's 300 nodes. **Creo, Muto and Corpus are all
+  dark**, which means the brief's own headline case is entirely outside the shipped game. §1.5 was
+  added to say so, and every mechanic in §6 now carries a *Subset* line.
+- **Only one of sixteen primitives is node-driven at runtime, and it is the one that bypasses
+  `permits()`.** `gatherEffects` has no non-test caller; `worship-yield` reaches the simulation by
+  a separate path that never asks whether the cell is permitted. §7.5.
+- **Permitting is exempt from the only two mechanisms that charge an axis flip** — the worship shock
+  and the decay-floor removal — while the content loader enforces that permitting and forbidding
+  cost *identical favor*, citing vision pillar 1's symmetry. §1.2 and §7.1.
 
 **No `npm run verify` gate on this workstream, and no `goldens:regen` under any circumstances** —
 nothing here changes behaviour, and a workstream that touches no code should not be able to move a
