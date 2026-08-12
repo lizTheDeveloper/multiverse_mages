@@ -99,5 +99,17 @@ export { buildOutlook, universityPreference } from './outlook.js';
  */
 export * from './god/index.js';
 
+export type {
+  UniverseEconomyBonuses,
+  UniverseEconomyDeps,
+  UniverseEffectIndex,
+} from './universe-effects.js';
+export {
+  NO_ECONOMY_BONUSES,
+  summedYield,
+  universeEconomyBonuses,
+  universeEffectIndex,
+} from './universe-effects.js';
+
 export type { WorldSimulation, WorldStepDeps, WorldStepReport } from './world-step.js';
 export { defineWorldSimulation, worldSystem } from './world-step.js';

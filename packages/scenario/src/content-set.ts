@@ -52,9 +52,19 @@ import {
   traditionTableFrom,
 } from '@mm/rules-magic';
 import type { SpeciesAffinities } from '@mm/rules-world';
-import { readTargetAppeal, resolveSpeciesAffinities, territoryExtent } from '@mm/rules-world';
+import {
+  readTargetAppeal,
+  resolveSpeciesAffinities,
+  territoryExtent,
+  territoryYieldShares,
+} from '@mm/rules-world';
 import type { WorldStepDeps } from '@mm/coordination';
-import { godEffectHooks, nodeFacetsFrom, resolveGodContent } from '@mm/coordination';
+import {
+  godEffectHooks,
+  nodeFacetsFrom,
+  resolveGodContent,
+  universeEffectIndex,
+} from '@mm/coordination';
 
 /** The permitted-axis halves of a ruleset (`contracts.md` §1.1). */
 export interface RulesetAxes {
@@ -327,9 +337,18 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
+    // The same records the extent is summed from, read for their yield mix
+    // instead of their capacity. Both are fixed for the length of a run.
+    yieldShares: territoryYieldShares(registry.territories.map((entry) => entry.record)),
+    // The wire from knowledge to the economy. Built here, at the composition
+    // root, because it is a pure projection of the content set — see
+    // `universe-effects.ts`, which explains at length what was not connected
+    // before it existed.
+    universeEffects: universeEffectIndex(registry),
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),
+      buildRate: primitiveNamed(registry, 'build-rate'),
       researchRate: primitiveNamed(registry, 'research-rate'),
       teachRate: primitiveNamed(registry, 'teach-rate'),
       scribeRate: primitiveNamed(registry, 'scribe-rate'),

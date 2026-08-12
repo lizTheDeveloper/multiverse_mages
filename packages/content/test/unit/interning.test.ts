@@ -258,7 +258,19 @@ describe('contentRevision', () => {
     // Three branches each recorded a successor to 2512ea02 — W6's ec506311,
     // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
     // other. This is the revision of the tree that holds all three.
-    expect(registry.contentRevision).toBe('a622452a3b55e38fd902a2d3264b44d7');
+    //
+    // a622452a3b55e38fd902a2d3264b44d7 -> 2c67315ae04ee6c74dfa204474af4eb6,
+    // when the single undifferentiated materials stock was split into three
+    // material kinds — `food`, `stone`, `vellum` — routed by form and produced
+    // in differing mixes by territory. Unlike most entries above this one is
+    // not "nothing existing changed a byte": every one of the fourteen
+    // `form.json` records gained `yieldWeights` and `tuningStatus`, and every
+    // one of the five `territory.json` records gained `yieldPerLandUnit`. Both
+    // are in the preimage on purpose — two universes that disagreed about
+    // what a form's magic actually yields, or about what a stretch of land
+    // produces, would be running different economies while their revisions
+    // agreed they were compatible.
+    expect(registry.contentRevision).toBe('2c67315ae04ee6c74dfa204474af4eb6');
   });
 
   it('is stable across loads of identical content', () => {

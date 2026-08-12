@@ -53,11 +53,70 @@ export interface TechniqueRecord {
   readonly bit: number;
 }
 
+/**
+ * A quantity of each material kind, `food`, `stone`, and `vellum` — the three
+ * kinds the single undifferentiated materials stock split into. Which scale
+ * the fields carry depends on the field that holds one: {@link FormRecord}'s
+ * `yieldWeights` is a fixed-point *share* of a magnitude (bounded `0..1024`,
+ * `contracts.md` §0), while {@link TerritoryRecord}'s `yieldPerLandUnit` is a
+ * fixed-point *rate* with no such ceiling. One generic shape rather than two
+ * near-identical ones, because the three kinds are the same three kinds
+ * everywhere a mix of them is authored, and a reader who has seen one has seen
+ * the field names of the other.
+ */
+export interface MaterialKindAmounts<T> {
+  readonly food: T;
+  readonly stone: T;
+  readonly vellum: T;
+}
+
+/**
+ * A fixed-point share, `0..1024`, of a `resource-yield` magnitude routed to
+ * one material kind. `1024` is the whole magnitude; the three components of a
+ * {@link FormRecord.yieldWeights} need not sum to `1024` and frequently do not
+ * — see the doc comment there for why a form is not a partition.
+ */
+export type YieldWeightFp = Fp;
+
 export interface FormRecord {
   readonly id: string;
   readonly name: string;
   readonly gloss: string;
   readonly bit: number;
+  /**
+   * How a `resource-yield` magnitude on a node in one of this form's cells is
+   * routed to `food`, `stone`, and `vellum` — the three material kinds the
+   * economy differentiated a single materials stock into. `sound-design.md`
+   * §4.2, "Forms are materials", is the source of truth for what each form
+   * physically *is* (Terram is "mass, gravel, stone"; Herbam is "fibre,
+   * splinter"), and this field is that gloss made numeric: the weight a kind
+   * carries is the share of the magnitude that becomes that kind of stuff.
+   *
+   * **Forms are deliberately not partitioned across kinds.** A cell's yield is
+   * not required to sum its weights to `fp(1024)`, and several forms name more
+   * than one kind at full or near-full weight: Animal is both meat (`food`)
+   * and hide (`vellum`) at `512` apiece, and Herbam is both timber's fibre
+   * (`food`, as forage and mast) and its parchment stock (`vellum`) the same
+   * way. A form is what its magic touches, not a slot in a single ledger, and
+   * collapsing Animal or Herbam to one kind would be inventing a constraint
+   * §4.2 never states.
+   *
+   * **All-zero weights are not a placeholder; they are the correct value for a
+   * form whose magic is not a material at all.** §4.2 says so by name for
+   * three of these: Mentem "has no reverb… it is not in the world" — mind
+   * magic touches no substance a granary or a shelf could hold. Vim "is the
+   * carrier itself, unfiltered" — the medium magic runs on, not a stuff
+   * conjured or moved. Umbra "is only tail… you never hear the thing, only the
+   * room's response to it" — shadow is what magic does to a space, not
+   * something taken out of one. Corpus, Imaginem, Fatum and Limen are zero for
+   * the same shape of reason: body, image, fate and threshold are things
+   * magic *does*, not things a mage stores on a shelf or eats. A schema that
+   * required a nonzero weight somewhere would be asserting every one of these
+   * forms secretly yields a material, which is false, so the floor here is
+   * `0`, not `1`.
+   */
+  readonly yieldWeights: MaterialKindAmounts<YieldWeightFp>;
+  readonly tuningStatus: TuningStatus;
 }
 
 /** A content-declared starting edict for a cell (`contracts.md` §1.1). */
@@ -186,6 +245,20 @@ export interface TerritoryRecord {
   readonly landUnits: number;
   /** People one land unit of this region carries, `fp`. */
   readonly capacityPerLandUnit: Fp;
+  /**
+   * The mix of `food`, `stone`, and `vellum` one land unit of this territory
+   * produces, `fp` per kind.
+   *
+   * A territory's yield and a form's {@link FormRecord.yieldWeights} answer
+   * different questions and are deliberately not the same field: a form says
+   * what a *technique acting on it* produces — Terram's magic makes stone
+   * because stone is what Terram is — while a territory says what the *land
+   * itself* is like independent of any magic worked on it. The river delta
+   * outproduces the highland waste in every kind at once because it is simply
+   * richer ground, which is a fact about geography, not about which of the
+   * fourteen forms a mage happened to cast.
+   */
+  readonly yieldPerLandUnit: MaterialKindAmounts<Fp>;
   readonly tuningStatus: TuningStatus;
 }
 

@@ -173,6 +173,40 @@ describe('shipped content', () => {
   it('marks every authored magnitude as untuned', () => {
     for (const entry of registry.nodes) expect(entry.record.tuningStatus).toBe('untuned');
     for (const entry of registry.species) expect(entry.record.tuningStatus).toBe('untuned');
+    for (const entry of registry.forms) expect(entry.record.tuningStatus).toBe('untuned');
+    for (const entry of registry.territories) expect(entry.record.tuningStatus).toBe('untuned');
+  });
+
+  /**
+   * The material-kinds content layer: a single undifferentiated materials
+   * stock split into `food`, `stone`, and `vellum`, routed by form
+   * (`sound-design.md` §4.2) and produced in differing mixes by territory.
+   *
+   * The third assertion is the one that guards against a typo silently making
+   * a whole kind unproducible: `yieldWeights` bounds are per-field and a
+   * schema pass does not by itself prove every kind is ever reached, only
+   * that no field is out of range. A content set where every form authored
+   * `vellum: 0` by mistake would still load clean.
+   */
+  it('routes a resource-yield magnitude to food, stone, and vellum without leaving any unreachable', () => {
+    for (const entry of registry.forms) {
+      const weights = entry.record.yieldWeights;
+      for (const kind of ['food', 'stone', 'vellum'] as const) {
+        expect(weights[kind], `${entry.record.id}.yieldWeights.${kind}`).toBeGreaterThanOrEqual(0);
+        expect(weights[kind], `${entry.record.id}.yieldWeights.${kind}`).toBeLessThanOrEqual(1024);
+      }
+    }
+
+    for (const entry of registry.territories) {
+      expect(entry.record.yieldPerLandUnit, `${entry.record.id} carries yieldPerLandUnit`).toBeDefined();
+    }
+
+    for (const kind of ['food', 'stone', 'vellum'] as const) {
+      expect(
+        registry.forms.some((entry) => entry.record.yieldWeights[kind] > 0),
+        `no form routes any weight to "${kind}" — that material kind is unproducible`,
+      ).toBe(true);
+    }
   });
 
   it('authors rediscovery multipliers above the floor so affinity can differentiate', () => {

@@ -85,6 +85,8 @@ import {
   ERA_EVALUATION,
   GOAL_COMMITMENT,
   GOD_STATE,
+  MATERIAL_STOCK,
+  UNIVERSE,
   UPHEAVAL,
 } from './components.js';
 
@@ -97,6 +99,13 @@ import {
  * | 2        | `mages-and-species` | adds `goal-commitment` (`contracts.md` §1.2)  |
  * | 3        | `mages-and-species` | adds `effort-progress` (`contracts.md` §1.2)  |
  * | 4        | `god-agency`        | adds `god-state`, `blessing`, `upheaval`, `era-evaluation` (§1.1) |
+ * | 5        | `city-and-supply-chain` | adds `material-stock`; **removes** `universe.materials` |
+ *
+ * Revision 5 is the first step that does not only append. It splits the one
+ * `materials` scalar into three kinds and takes the old field out of the
+ * `universe` layout, because leaving it would leave a stock nothing spends
+ * beside three stocks everything does. See {@link splitMaterialsByKind} for the
+ * split rule and for why a section rewrite is safe here.
  *
  * Revision 4 adds four components in one step, where the two before it added
  * one each. That is not a loosening of the rule — it is what the rule is for.
@@ -109,7 +118,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 4;
+export const WORLD_SCHEMA_VERSION = 5;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -127,6 +136,12 @@ export const WORLD_SCHEMA_VERSION = 4;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  // Revision 5's marker is the presence of `material-stock`. The *absence* of
+  // `universe.materials` would be an equally true test and a worse one: it asks
+  // a question about a field table rather than about a section, and a save
+  // half-way through an interrupted rewrite would answer it wrongly in the
+  // direction that skips the migration.
+  if (carried.has(MATERIAL_STOCK.name)) return 5;
   // `god-state` is revision 4's marker rather than one of the other three
   // because it is the one every stepped universe necessarily has a *section*
   // for — the section exists from the moment the schema declares it, whether or
@@ -260,11 +275,124 @@ export const addGodAgencyState: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 4 → 5: split the one materials stock into three kinds, and take the
+ * old field out of the universe layout.
+ *
+ * ## The first step that rewrites rather than appends
+ *
+ * Every step before this one adds an empty section and leaves the rest of the
+ * envelope alone. This one cannot: `materials` was a field on `universe`, and a
+ * field that has moved has to be taken out of the layout it moved from or the
+ * component check refuses the restored state — {@link componentOf} compares the
+ * declared field list against the stored one and throws naming both.
+ *
+ * The rewrite is a column drop on a row-major table, which is why it is safe to
+ * do here at all. A `SnapshotComponent` carries its own field table inline, so
+ * the migration reads the position of `materials` out of the envelope rather
+ * than assuming one, and a save written by a build that ordered the fields
+ * differently still migrates correctly.
+ *
+ * ## The split rule, and why it is thirds
+ *
+ * A save written before kinds existed **recorded no information about which
+ * kind it held**. There is no honest way to recover a mix from a number that
+ * never had one, so the split does not pretend to: the stock is divided into
+ * equal thirds and the remainder — at most two `fp` units — goes to `food`,
+ * because subsistence is first in the consumption order and a rounding crumb
+ * should land where it is spent soonest.
+ *
+ * Two alternatives were considered and rejected for the same reason. Splitting
+ * by the *shipped* territory mix would bake this build's content into a
+ * migration, so a content retune would silently change what old saves are
+ * worth. Putting the whole stock in `food` would restore a universe that can
+ * eat forever and cannot write a page, which is a claim about a save nobody
+ * made.
+ *
+ * A universe with no `universe` row — a schema that was declared and never
+ * stepped — gets an empty `material-stock` section, which is the same answer
+ * {@link addGodAgencyState} gives for the same situation.
+ */
+export const splitMaterialsByKind: WorldSchemaMigration = {
+  from: 4,
+  to: 5,
+  migrate(envelope) {
+    const universe = envelope.components.find((component) => component.name === UNIVERSE.name);
+    const stockFields = Object.keys(MATERIAL_STOCK.fields).map((name) => ({
+      name,
+      kind: MATERIAL_STOCK.fields[name as keyof typeof MATERIAL_STOCK.fields],
+    }));
+
+    if (universe === undefined) {
+      // No universe section at all. Nothing to split and nothing to rewrite;
+      // the appended section is empty, as it is for every save that predates a
+      // component it never wrote a row for.
+      return { ...envelope, components: [...envelope.components, emptySection(MATERIAL_STOCK)] };
+    }
+
+    const column = universe.fields.findIndex((field) => field.name === 'materials');
+    if (column < 0) {
+      throw new Error(
+        'a revision-4 snapshot must carry a "materials" field on its universe section, and this ' +
+          `one carries [${universe.fields.map((field) => field.name).join(', ')}]. Refusing to ` +
+          'migrate rather than guessing which column held the economy.',
+      );
+    }
+
+    const width = universe.fields.length;
+    const rows = universe.slots.length;
+    const stockValues = new Uint32Array(rows * stockFields.length);
+    const trimmed = new Uint32Array(rows * (width - 1));
+
+    for (let row = 0; row < rows; row += 1) {
+      // Two's-complement bits back into a signed magnitude: `i32` is how the
+      // field was declared, and reading it unsigned would turn a debt into two
+      // billion materials.
+      const total = (universe.values[row * width + column] as number) | 0;
+      const each = Math.trunc(Math.max(0, total) / 3);
+      const food = Math.max(0, total) - each * 2;
+      stockValues[row * 3] = food;
+      stockValues[row * 3 + 1] = each;
+      stockValues[row * 3 + 2] = each;
+
+      let write = row * (width - 1);
+      for (let field = 0; field < width; field += 1) {
+        if (field === column) continue;
+        trimmed[write] = universe.values[row * width + field] as number;
+        write += 1;
+      }
+    }
+
+    const rewritten: SnapshotComponent = {
+      name: universe.name,
+      fields: universe.fields.filter((_, index) => index !== column),
+      slots: universe.slots,
+      values: trimmed,
+    };
+
+    return {
+      ...envelope,
+      components: [
+        ...envelope.components.map((component) =>
+          component.name === UNIVERSE.name ? rewritten : component,
+        ),
+        {
+          name: MATERIAL_STOCK.name,
+          fields: stockFields,
+          slots: universe.slots,
+          values: stockValues,
+        },
+      ],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
   addEffortProgress,
   addGodAgencyState,
+  splitMaterialsByKind,
 ];
 
 /**
