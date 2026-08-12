@@ -465,3 +465,54 @@ because `contentRevision` changed and the gate refuses cross-build comparison �
 anything moved. That is what makes the 2400-tick movement attributable to the win condition rather
 than to a simulation change, and it is the cleanest baseline justification this campaign has
 produced.
+
+---
+
+## W15: the thesis is refuted, and the mechanism is upstream of everything
+
+*"The v1 subset is not too small — acquisition is too easy"* is **necessary and demonstrably
+insufficient**. Measured over 84 runs, 7 strategies, 51 node columns inside the v1 ruleset:
+
+| measure | value |
+|---|---|
+| first eigenvalue variance share | **0.914** — one component explains 91% |
+| participation ratio | **1.19** |
+| mean cross-strategy containment | **1.000** — strategies **nest**, they do not merely converge |
+| prefix fidelity | **0.943** |
+
+**A single fixed node ordering predicts each run's held set from its count alone** — exactly, on 65
+of 84 runs. Strategies are not choosing different magic; they walk one queue and stop at different
+points. Gnome and human, sharing only `depthCeiling: 4`, reach the **identical 49-node set**; the
+two nodes neither reaches are exactly v1's only two tier-5 nodes, so the ceiling differentiates them
+and nothing else does.
+
+**The mechanism:** `compareTargets` orders candidates by `remainingCost`, then `nodeId`. **The
+acquirer is value-blind.** Harder acquisition moves the stopping point without reordering the queue,
+so compositional value and opportunity cost are *unobservable to the simulation* however well they
+are implemented elsewhere. This sits **upstream of raids, teaching and the economy**.
+
+It also contradicts vision §7 — *"mages act on utility-scored goals shaped by species, age,
+personality, and their assigned standing role"* — so fixing it is implementing the spec, not
+inventing a mechanic. W17 owns it. The falsifiable test is W15's own: **prefix fidelity below 0.7**,
+dimensionality above 1, containment below 1.000, and gnome ≠ human.
+
+## Decisions W6 left for the author — rule versus magnitude
+
+Each is a place where implementing §8a required choosing, and W6 chose the smallest option and said
+so rather than deciding silently.
+
+- [ ] **§8a says "the deepest node of *a* cell" — singular.** W6 read the multiplicity as a
+      magnitude (`ascension-summit-cells`, identity value 1 = §8a read literally). It could not stay
+      at 1 because an idle universe masters all twelve cells. Is multiplicity a magnitude or a rule?
+- [ ] **`ascension-canon-cells` — requiring breadth to span N distinct cells — is arguably a second
+      rule rather than a magnitude.** Identity 0 turns it off.
+- [ ] **The scale-relative loss allowance changes the *form* of "held its knowledge intact."**
+      Traceable to `discriminating-ascension` D2, but it is a rule change.
+
+## A repository hazard worth writing down
+
+**`git add -A` is unsafe in this repo while a tuner is running.** The balance tuner writes
+`packages/content/data/god-constant.json` to evaluate a candidate and restores it on exit; a
+concurrent `git add -A` committed a trial value into a commit (`975e177`), reverted in `41d40be`.
+Stage explicit paths when any sweep or tuner may be running — which, with several agents live, is
+most of the time.
