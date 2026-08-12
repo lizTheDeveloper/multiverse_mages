@@ -477,6 +477,36 @@ median mage dies before she gets there. Whatever raises nodes-per-mage — longe
 cheaper depth, a smaller trunk, a mastery-raising verb — will make the exclusions bite without any
 change to the exclusions themselves. That is a cheaper next move than anything in the graph.
 
+## 6.47 Claim 4: gnome and human now reach different node sets — met
+
+Measured the way the original finding was: two founding-species masks (gnome = 8, human = 16, in
+content order), two strategies, three replicates over both starting corners, on the new content.
+
+| | gnome-only | human-only |
+|---|--:|--:|
+| `passive-control`, mean nodes | **65.7** | **38.8** |
+| `archivist`, mean nodes | **69.0** | 45.5 |
+| Jaccard, gnome ↔ human, same strategy | **0.572** / 0.565 | |
+| mean ticks to termination | **826 / 835** | 2400 / 2400 |
+
+`strategy-dimensionality.md` recorded the defect as *"cross-species containment 1.00 — two ceiling-4
+species reach the **identical** forty-nine"*. They now share about **57%** of their nodes and differ
+by a factor of **1.7 in how many they reach at all**, which is the sharpest single before/after in
+this workstream.
+
+**And the run ends differently, not just differently-sized.** Gnome-only universes terminate around
+tick 830 — they ascend — while human-only universes run the full 2,400 and do not. That is the
+campaign's **D7** (*"varying the founding species mix changes which strategy wins"*) showing a signal
+where it previously had none, and it comes from species affinities that had nothing to read before:
+human declared no affinities at all and gnome's two named forms outside the v1 rectangle, so
+`target-appeal.ts`'s affinity term — one of only two terms orthogonal to tier — was blind to both.
+
+**The caveat, stated because it is load-bearing:** containment stays high (0.90–0.97), because the
+human set is close to a subset of the larger gnome one. The species differ in *how far* they get more
+than in *which way* they go. Combined with §6.4's finding that time-to-tier bands collapsed, the
+honest summary is that species now differ in **reach** rather than in **direction** — which is
+progress on D7 and not yet plurality.
+
 ## 6.5 The negative control: `permit-then-idle` still wins, and that is the headline
 
 **It still wins. 12/12, rate 1.0000.** Measured on the true-naming arm with the same sweep file,
