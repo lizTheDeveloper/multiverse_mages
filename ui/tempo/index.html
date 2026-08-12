@@ -196,6 +196,11 @@
     rate is known</em>, and it is not: the campaign measured roughly 55 copies per node, which puts it near
     never today, while the same campaign is actively trying to make loss bite. Whichever way that lands
     changes which of these three directions is correct.</p>
+    <p><b>One threshold per class, read by both layers.</b> These numbers are the same numbers the audio
+    uses rather than a visual set that happens to look similar. Two layers choosing independently would
+    disagree about the moment a class became weather, and a player would <em>see</em> discrete events while
+    <em>hearing</em> a texture — worse than either layer being wrong alone, because it is the interface
+    contradicting itself. <code>sound-design §0.4</code> now states this as a rule.</p>
     <p><b>Loss does not scale with population, and modelling it that way was my first mistake here.</b>
     More mages means more deaths but also more copies. Every other class in this prototype scales with
     headcount; loss gets its own control, because how often a last copy dies is a property of redundancy
@@ -219,7 +224,14 @@ const WHO = ['Ismene Farrowgate','Bettany Orrel','Corvin Stonecrake','Aldis Ashl
 
 /* Per-class density thresholds: events per tick at or above which the class
    becomes a texture. sound-design §0.4 makes these tuning values, not contracts,
-   and says the rule is structural: no class may be discrete without a stated one. */
+   and says the rule is structural: no class may be discrete without a stated one.
+
+   §0.4 now also requires ONE threshold per class read by both layers. Two layers
+   picking their own numbers would disagree about the moment a class became
+   weather — the player would see discrete events while hearing a texture, which
+   is worse than either layer being wrong alone, because it is the interface
+   contradicting itself. These numbers are therefore the same numbers the audio
+   uses, not a visual set that happens to look similar. */
 const CLASSES = [
   { id:'research', label:'research',  per1000: 42, threshold: 3, tone:'routine' },
   { id:'teach',    label:'teaching',  per1000: 26, threshold: 3, tone:'routine' },
@@ -227,7 +239,14 @@ const CLASSES = [
   { id:'build',    label:'building',  per1000: 3,  threshold: 2, tone:'notable' },
   { id:'death',    label:'mage death',per1000: 5,  threshold: 4, tone:'notable' },
   /* Loss has no threshold it can reach: it is rare by construction, and averaging
-     it into a rate bar would delete the thing vision §5 calls the emotional core. */
+     it into a rate bar would delete the thing vision §5 calls the emotional core.
+
+     That exception and §0.4's "no class discrete without a threshold" are in
+     direct tension, and the tension holds only while loss stays rare. Both
+     sections now say so. If the rate lands high the answer is to change the
+     mechanic, not to raise this threshold: quietly moving it from 1 would
+     aggregate away the one event the design is built around while leaving every
+     sentence about it still standing. */
   /* Loss is deliberately NOT scaled by population. More mages means more deaths
      but also more copies, and the campaign measured ~55 copies per node — so how
      often a last copy actually dies is a balance property, not a headcount. It
