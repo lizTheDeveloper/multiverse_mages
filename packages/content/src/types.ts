@@ -445,16 +445,17 @@ export interface ContentCounts {
   readonly autonomyWeights: number;
   readonly tracks: number;
   /**
-   * Optional, deliberately, unlike every count above it — the same reason
-   * {@link NodeRecord.track} is optional (`catalog.ts`'s note on the field):
-   * a hand-built `ContentRegistry` fixture constructed before rituals existed
-   * (`packages/rules-raid/test/unit/mode-fixture.ts` is, as of `contracts.md`
-   * §2.13, the one such literal in the tree) keeps compiling without it.
-   * `loadContent` always populates it; this is the one place that decides
-   * what its absence means, so a reader never has to guess whether `0` was
-   * loaded or never asked for.
+   * Required, like every count above it.
+   *
+   * It shipped optional for one afternoon, so that the tree's single hand-built
+   * `ContentRegistry` literal (`packages/rules-raid/test/unit/mode-fixture.ts`)
+   * kept compiling while rituals landed in a package its author was not
+   * allowed to edit. That is a scheduling reason, not a design one, and an
+   * optional count is a question a reader has to answer twice — was it `0`
+   * because nothing loaded, or because nobody asked? `tracks` set the
+   * precedent when it landed required and the fixture was updated with it.
    */
-  readonly rituals?: number;
+  readonly rituals: number;
 }
 
 /**
@@ -481,7 +482,7 @@ export interface ContentRegistry {
   readonly raidConstants: readonly Interned<RaidConstantRecord>[];
   readonly autonomyWeights: readonly Interned<AutonomyWeightRecord>[];
   readonly tracks: readonly Interned<TrackRecord>[];
-  /** Optional for the same reason {@link ContentCounts.rituals} is; see its note. */
+  /** Required, like every other content collection. See {@link ContentCounts.rituals}. */
   readonly rituals?: readonly Interned<RitualRecord>[];
 
   /** String id to interned integer, per namespace. */
