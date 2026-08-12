@@ -403,9 +403,19 @@ export function buildReferenceState(input: {
   attachRecord(state, UNIVERSITY, university, {
     libraryId: library,
     capacity: ACADEMY_CAPACITY,
-    // Complete at tick zero. An academy still under construction would carry no
-    // students and no scriptorium, and the construction mechanic that would
-    // finish it is not built.
+    // Complete at tick zero, and still the right call now that construction is
+    // built. The sentence that used to be here — *the construction mechanic that
+    // would finish it is not built* — was true when it was written and is not
+    // any more: laborers raise buildings from the world loop as of W29. What
+    // stands is the other half of the argument. An academy still under
+    // construction would carry no students and no scriptorium, so a universe
+    // founded on one would spend its first years unable to teach or write, and
+    // every knowledge measurement in the reference run would be measuring the
+    // opening delay instead of the mechanism.
+    //
+    // A universe therefore builds nothing at all unless the god funds a site.
+    // That is not a gap: it is what gives `fundUniversity` a marginal value it
+    // did not have when nothing could finish what it founded.
     buildProgress: FP_ONE,
   });
 

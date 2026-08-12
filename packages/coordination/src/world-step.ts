@@ -382,6 +382,15 @@ export interface WorldStepReport {
    * bonus list nobody noticed was empty for three releases.
    */
   readonly economicNodes: number;
+  /**
+   * `build-rate` magnitudes reaching construction this tick.
+   *
+   * Separated from {@link economicNodes} because the two answer different
+   * questions and the first one anybody asks of this change is *did* `build-rate`
+   * *stop being inert*. A run where this is zero for every tick is a run where it
+   * did not, whatever the totals say.
+   */
+  readonly buildRateSources: number;
   /** `buildProgress` added by laborers this tick, `fp`. Excludes the god's funding. */
   readonly buildProgressAdded: Fixed;
   /** Universities finished by that labour this tick. */
@@ -847,6 +856,7 @@ export function worldSystem(
         remainingByKind: closing,
         shortKinds: consumption.shortKinds,
         economicNodes: economy.contributingNodes,
+        buildRateSources: economy.buildRate.length,
         buildProgressAdded: construction.progressAdded,
         universitiesCompleted: construction.completed,
         constructionStoneOwed: construction.stoneOwed,
@@ -952,9 +962,18 @@ function planConstructionLabour(
   cohorts: CohortStore,
 ): { readonly onSites: ReadonlyMap<EntityHandle, number>; readonly total: number } {
   const backlog = constructionBacklog(state);
-  let wanted = floorDiv(backlog * LABORERS_PER_BUILD_UNIT, FP_UNIT);
   const onSites = new Map<EntityHandle, number>();
-  if (wanted <= 0) return { onSites, total: 0 };
+  if (backlog <= 0) return { onSites, total: 0 };
+
+  // Rounded **up**, and this is not a rounding preference. Flooring here is a
+  // Zeno stall with a work crew: `LABORERS_PER_BUILD_UNIT` is forty laborers per
+  // whole university, so a site with 22 `fp` of work left asks for
+  // `floor(22 × 40 / 1024)` = **zero** people and stops forever, two per cent
+  // short, with materials in the barn and laborers idle. Measured: the probe in
+  // `tools/w29` froze every site at 1002 of 1024 and reported no completions in
+  // 200 ticks. Rounding up means any backlog at all summons at least one person,
+  // which is both the arithmetic fix and the sentence a reader would expect.
+  let wanted = Math.ceil((backlog * LABORERS_PER_BUILD_UNIT) / FP_UNIT);
 
   let total = 0;
   const laborers: { handle: EntityHandle; count: number }[] = [];
