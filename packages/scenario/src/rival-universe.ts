@@ -69,9 +69,14 @@ import type { ContentId, ContentRegistry, SpeciesRecord } from '@mm/content';
 import type { RaidParticipant } from '@mm/rules-raid';
 import type { EntityHandle, SimState, WorldSchema } from '@mm/sim-core';
 import {
+  GRIMOIRE,
+  HOLDER_KIND,
+  LIBRARY,
   LOCATION_KIND,
   MAGE,
   MAGE_ROLE,
+  UNIVERSE,
+  attachRecord,
   captureRuleset,
   collectRecords,
   componentOf,
@@ -122,6 +127,19 @@ export function requiredSpeciesOf(registry: ContentRegistry): (speciesId: number
  * governs what the raiders may *cast* once inside, which arbitration enforces
  * against this universe's frozen snapshot exactly as it does for a defender.
  */
+/**
+ * Durability a rival's foreign books are shelved at, `fp`.
+ *
+ * The dwarven end of the species table — `scribeAffinity` runs 384 to 1792 —
+ * because these are an archive's prize copies rather than a working note, and
+ * because a raid on a rival should be the place `grimoire-burn-resist-cap`
+ * actually bites: at `fp(1792)` clamped to the cap, roughly nine books in ten
+ * survive whatever the warband could not carry. Untuned, and it belongs beside
+ * the other rival magnitudes in `raid-constant.json` the moment a sweep wants
+ * to move it.
+ */
+const FOREIGN_BOOK_DURABILITY = 1792;
+
 const RAIDER_PRIMITIVES: readonly string[] = Object.freeze([
   'direct-damage',
   'knowledge-steal',
@@ -142,6 +160,8 @@ export interface RivalConstants {
   readonly inboundChancePerWorldTick: number;
   /** World ticks after any raid during which no inbound raid may open. */
   readonly inboundCooldownWorldTicks: number;
+  /** Books a rival shelves from cells this universe's own ruleset forbids. */
+  readonly foreignBookCount: number;
 }
 
 /** Reads the rival magnitudes once. Every one is `untuned`; see the data file. */
@@ -152,6 +172,7 @@ export function readRivalConstants(registry: ContentRegistry): RivalConstants {
     raiderNodeCount: registry.raidConstant('rival-raider-node-count'),
     inboundChancePerWorldTick: registry.raidConstant('inbound-raid-chance-per-world-tick'),
     inboundCooldownWorldTicks: registry.raidConstant('inbound-raid-cooldown-world-ticks'),
+    foreignBookCount: registry.raidConstant('rival-foreign-book-count'),
   };
 }
 
@@ -253,6 +274,7 @@ export function buildRival(input: {
   // through its own subsystem, so a fresh index would start blind to it.
   const knowledge = KnowledgeSubsystem.fromState(world, content.deps.catalog.nodeCount);
   armRaiders(world, knowledge, content, constants);
+  shelveForeignBooks(world, knowledge, content, constants, input.targetId);
 
   const universe = findUniverse(world);
   const ruleset = captureRuleset(world, universe);
@@ -282,6 +304,90 @@ export function buildRival(input: {
  * and an instance below it is held but never castable — a raider who arrives
  * unable to do anything at all.
  */
+/**
+ * Shelves books the raiding universe's own god could never have permitted.
+ *
+ * **This is the answer to content exhaustion, and it is the reason looting
+ * matters more than burning.** Seventy cells are authored and twelve are
+ * enabled, and those twelve hold 51 of the 300 nodes — so an undisturbed
+ * universe learns all 51 and stops, and the plateau every strategy hits is the
+ * end of the content rather than a balance result. Vision §3 makes a god's
+ * ruleset the thing that decides what *can exist* at home; §8 makes a raid the
+ * thing that reaches what cannot. A book taken from a universe that permitted
+ * other cells is knowledge no amount of domestic research could reach, and
+ * `raid-engagement`'s own task 8.14 already anticipates the end of that
+ * journey: a raider returning with a node her universe forbids *"gains a real
+ * but inert instance"*.
+ *
+ * The rival's permitted axes are widened to everything the registry declares,
+ * which is what makes those cells legal *there*. Arbitration is unaffected and
+ * that is the whole of §3 working: an inbound raider standing in this universe
+ * is masked to this universe's twelve cells however much her home permits, and
+ * a raider of ours standing in the rival's sky may cast whatever the rival
+ * allows and she happens to know.
+ *
+ * The books are drawn in content order from nodes in **non-v1 cells**, rotated
+ * by target id so the three rivals do not shelve the same twelve books, and
+ * shelved at the durability the dwarf's line gives a well-made archive — so a
+ * raid on a rival is also the place `grimoire-burn-resist-cap` bites.
+ */
+function shelveForeignBooks(
+  world: SimState,
+  knowledge: KnowledgeSubsystem,
+  content: ReferenceContent,
+  constants: RivalConstants,
+  targetId: number,
+): void {
+  const library = firstLibrary(world);
+  if (library === 0) return;
+
+  const v1Cells = new Set(
+    content.registry.cells.filter((entry) => entry.record.v1 === true).map((entry) => entry.record.id),
+  );
+  const foreign = content.registry.nodes
+    .filter((entry) => !v1Cells.has(entry.record.cell))
+    .map((entry) => entry.contentId)
+    .sort((a, b) => a - b);
+  if (foreign.length === 0) return;
+
+  // Every technique and every form the registry declares. A rival that
+  // permitted only what this universe permits would have nothing worth the trip.
+  const universe = findUniverse(world);
+  const universes = componentOf(world, UNIVERSE);
+  universes.set(universe, 'permittedTechniques', (1 << content.registry.techniques.length) - 1);
+  universes.set(universe, 'permittedForms', (1 << content.registry.forms.length) - 1);
+
+  for (let index = 0; index < constants.foreignBookCount; index += 1) {
+    const nodeId = foreign[(targetId * constants.foreignBookCount + index) % foreign.length] as ContentId;
+    const grimoire = world.entities.create();
+    attachRecord(world, GRIMOIRE, grimoire, {
+      nodeId,
+      durability: FOREIGN_BOOK_DURABILITY,
+      holderKind: HOLDER_KIND.library,
+      holderId: library,
+    });
+    // §1.5 keeps exactly one instance per written copy, and a shelved book's
+    // instance is at the *library*. The grimoire is named at creation because
+    // the pairing is the invariant, not an association added afterwards.
+    knowledge.createInstance({
+      nodeId,
+      locationKind: LOCATION_KIND.library,
+      locationId: library,
+      acquiredTick: 0,
+      mastery: MASTERY_MAX,
+      grimoire,
+    });
+  }
+}
+
+/** The rival's own library handle, or `0`. `buildReferenceState` founds exactly one. */
+function firstLibrary(world: SimState): EntityHandle {
+  const found = collectRecords(world, LIBRARY)
+    .map(({ handle }) => handle)
+    .sort((a, b) => a - b);
+  return (found[0] ?? 0) as EntityHandle;
+}
+
 function armRaiders(
   world: SimState,
   knowledge: KnowledgeSubsystem,

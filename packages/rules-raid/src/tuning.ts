@@ -96,6 +96,17 @@ export interface RaidTuning {
   readonly universityObjectiveValue: Fixed;
   readonly victoryThresholdFraction: Fixed;
   readonly grimoireBurnResistCap: Fixed;
+  /**
+   * Grimoires a warband carries back through the portal, per library reached.
+   *
+   * A raw count, not `fp`. §8 gives the attacker two verbs — *"destroying or
+   * looting"* — and this is where they divide: the first books off the shelf
+   * are taken, the rest face a fire their durability may survive. A cap high
+   * enough to empty a shelf would make burning unreachable and `durability`
+   * decorative; a cap of zero would leave the nodes outside a universe's own
+   * permitted cells unreachable by any means at all.
+   */
+  readonly lootedGrimoiresPerRaid: number;
 }
 
 /**
@@ -152,5 +163,6 @@ export function readRaidTuning(source: RaidConstantSource): RaidTuning {
     universityObjectiveValue: at('university-objective-value'),
     victoryThresholdFraction: at('victory-threshold-fraction'),
     grimoireBurnResistCap: at('grimoire-burn-resist-cap'),
+    lootedGrimoiresPerRaid: at('looted-grimoires-per-raid'),
   });
 }

@@ -34,7 +34,7 @@ import { describe, expect, it } from 'vitest';
 
 import { rngFromRootSeed, snapshotHash, step } from '@mm/sim-core';
 import { KNOWLEDGE_INSTANCE, collectRecords } from '@mm/state';
-import { referenceContent, referenceScenario } from '@mm/scenario';
+import { executeReferenceRun, referenceContent, referenceScenario } from '@mm/scenario';
 import type { SimState } from '@mm/sim-core';
 
 /**
@@ -52,6 +52,38 @@ const HORIZON = 600;
 const SEEDS: readonly number[] = Object.freeze([0x1234_5678, 0x0bad_c0de, 0x5eed_0001]);
 
 const content = referenceContent();
+
+/**
+ * One scripted run, long enough for a strategy to afford and open a portal.
+ *
+ * Memoized. A run at this horizon is seconds rather than milliseconds and two
+ * tests ask for the same one; recomputing it would double the suite's cost to
+ * re-derive a pure function of its argument.
+ */
+const played = new Map<string, ReturnType<typeof executeReferenceRun>>();
+function runOf(strategy: string): ReturnType<typeof executeReferenceRun> {
+  const cached = played.get(strategy);
+  if (cached !== undefined) return cached;
+  const result = executeReferenceRun(
+    {
+      coordinates: {
+        sweepId: 'raid-engagement-test',
+        rootSeed: 0x1234_5678,
+        cellIndex: 0,
+        replicateIndex: 0,
+      },
+      runSeed: 0x1234_5678,
+      levels: { cohortSize: 12, foundingMages: 2, foundingNodes: 4 },
+      strategies: [strategy],
+      worldTickCap: 1200,
+      metrics: [],
+      ablatedPrimitives: [],
+    },
+    { content },
+  );
+  played.set(strategy, result);
+  return result;
+}
 
 interface Arm {
   readonly state: SimState;
@@ -146,6 +178,32 @@ describe('raids off is the build before this one', () => {
     expect(snapshotHash(play(seed, true).state)).not.toEqual(
       snapshotHash(play(seed, false).state),
     );
+  });
+});
+
+describe('looting reaches what research cannot', () => {
+  it('brings home nodes from cells this universe would never have permitted', { timeout: 180_000 }, () => {
+    // The measurement behind the content-exhaustion finding. Seventy cells are
+    // authored and twelve are enabled, and those twelve hold 51 of the 300
+    // nodes — so an undisturbed universe learns all 51 and stops, whatever it
+    // plays. Vision §3 makes a god's ruleset the thing that decides what can
+    // exist *at home*; §8 makes a raid the thing that reaches what cannot. A
+    // strategy that opens portals must end holding nodes a strategy that does
+    // not could never have derived.
+    //
+    // `portal-rush` and not the passive control, and outbound and not inbound:
+    // an inbound raid makes this universe the host, and the host is the side
+    // that *loses* books.
+    const rushed = runOf('portal-rush');
+    const outbound = rushed.rawRaids.filter((raid) => raid.outbound);
+    expect(outbound.length).toBeGreaterThan(0);
+    expect(outbound.reduce((sum, raid) => sum + raid.nodesGainedLocally, 0)).toBeGreaterThan(0);
+  });
+
+  it('leaves a universe that never opened a portal with nothing it did not derive', { timeout: 180_000 }, () => {
+    const passive = runOf('passive-control');
+    expect(passive.rawRaids.every((raid) => !raid.outbound)).toBe(true);
+    expect(passive.rawRaids.reduce((sum, raid) => sum + raid.nodesGainedLocally, 0)).toBe(0);
   });
 });
 

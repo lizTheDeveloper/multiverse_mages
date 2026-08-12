@@ -294,6 +294,16 @@ export interface ReferenceRunResult {
    * *"raids exist and this run had none"* on exactly that difference.
    */
   readonly raids: readonly RaidObservation[] | undefined;
+  /**
+   * The same raids, unreduced.
+   *
+   * §7's three run-scoped raid collectors read {@link RaidObservation} and no
+   * more, but that shape drops the two numbers this change is most often asked
+   * about — which side of the portal this universe was on, and what crossed it.
+   * Reporting only, never a metric input: a caller that wanted to invent a
+   * thirteenth §7 metric out of these would be inventing a metric.
+   */
+  readonly rawRaids: readonly RaidRecord[];
   /** What this run declares it implements. Feeds every §7 availability check. */
   readonly mechanics: MechanicAvailability;
 }
@@ -356,6 +366,7 @@ export function executeReferenceRun(
     raids: raiding
       ? raids().map((record) => raidObservationOf(record, lastGodReport()))
       : undefined,
+    rawRaids: raiding ? [...raids()] : [],
     outcome: {
       status: episode.status,
       // §1.1's ending, carried through rather than re-derived from the status.

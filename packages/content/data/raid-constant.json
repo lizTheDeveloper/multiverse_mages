@@ -3,7 +3,7 @@
     "id": "portal-stability-initial",
     "value": 3072000,
     "unit": "raw",
-    "gloss": "Stability a portal opens with. A raw integer, not fp — it is a countdown, and the only arithmetic performed on it is subtraction of the decay. fp(3000) as written, which at the decay below is 3000 engagement ticks, five fictional minutes.",
+    "gloss": "Stability a portal opens with. A raw integer, not fp \u2014 it is a countdown, and the only arithmetic performed on it is subtraction of the decay. fp(3000) as written, which at the decay below is 3000 engagement ticks, five fictional minutes.",
     "tuningStatus": "untuned"
   },
   {
@@ -31,7 +31,7 @@
     "id": "max-summons-per-side",
     "value": 16,
     "unit": "count",
-    "gloss": "Summons one side may hold at once. A summon over the cap is a no-op, never a queued request — a queue is an unbounded structure wearing a cap's clothes.",
+    "gloss": "Summons one side may hold at once. A summon over the cap is a no-op, never a queued request \u2014 a queue is an unbounded structure wearing a cap's clothes.",
     "tuningStatus": "untuned"
   },
   {
@@ -66,7 +66,7 @@
     "id": "terrain-blocking-chance",
     "value": 154,
     "unit": "fp",
-    "gloss": "Probability per passable terrain cell of blocking line of sight — woodland, ruins. About 15%. Impassable cells always block as well.",
+    "gloss": "Probability per passable terrain cell of blocking line of sight \u2014 woodland, ruins. About 15%. Impassable cells always block as well.",
     "tuningStatus": "untuned"
   },
   {
@@ -108,7 +108,7 @@
     "id": "cast-range",
     "value": 51200,
     "unit": "fp",
-    "gloss": "Range of a targeted cast, in fp metres. fp(50). A single number rather than a per-node field because contracts.md section 2.3 declares no range on an effect, and inventing one here would be a sixteenth combat statistic outside the primitive registry — the exact move that makes winRateByPrimitive stop meaning anything.",
+    "gloss": "Range of a targeted cast, in fp metres. fp(50). A single number rather than a per-node field because contracts.md section 2.3 declares no range on an effect, and inventing one here would be a sixteenth combat statistic outside the primitive registry \u2014 the exact move that makes winRateByPrimitive stop meaning anything.",
     "tuningStatus": "untuned"
   },
   {
@@ -122,7 +122,7 @@
     "id": "theft-range",
     "value": 16384,
     "unit": "fp",
-    "gloss": "Range at which a knowledge-steal attempt may be made, in fp metres. fp(16) — closer than a cast, because reading a mind is an intimacy.",
+    "gloss": "Range at which a knowledge-steal attempt may be made, in fp metres. fp(16) \u2014 closer than a cast, because reading a mind is an intimacy.",
     "tuningStatus": "untuned"
   },
   {
@@ -178,7 +178,7 @@
     "id": "detachment-max-hp",
     "value": 49152,
     "unit": "fp",
-    "gloss": "Hit points of a soldier detachment. fp(48) — tougher than a summon and softer than a mage, and it stands for a hundred people rather than one.",
+    "gloss": "Hit points of a soldier detachment. fp(48) \u2014 tougher than a summon and softer than a mage, and it stands for a hundred people rather than one.",
     "tuningStatus": "untuned"
   },
   {
@@ -199,7 +199,7 @@
     "id": "detachment-range",
     "value": 8192,
     "unit": "fp",
-    "gloss": "Reach of a soldier detachment, in fp metres. fp(8) — they have to close.",
+    "gloss": "Reach of a soldier detachment, in fp metres. fp(8) \u2014 they have to close.",
     "tuningStatus": "untuned"
   },
   {
@@ -241,14 +241,14 @@
     "id": "grimoire-burn-resist-cap",
     "value": 922,
     "unit": "fp",
-    "gloss": "Ceiling on the probability that a grimoire survives a burning attempt, whatever its durability. fp(922) is 90%, the same ceiling contracts.md section 3 puts on ward — a dwarven book resists fire; it is not fireproof.",
+    "gloss": "Ceiling on the probability that a grimoire survives a burning attempt, whatever its durability. fp(922) is 90%, the same ceiling contracts.md section 3 puts on ward \u2014 a dwarven book resists fire; it is not fireproof.",
     "tuningStatus": "untuned"
   },
   {
     "id": "cast-vigor-base",
     "value": 2048,
     "unit": "fp",
-    "gloss": "Vigor a cast costs before tier. fp(2). contracts.md section 2.3 gives a node a researchCost, a teachCost and a scribeCost and no cast cost, so the price of releasing a spell is derived from its tier here rather than invented as a fourth node field — a field this change has no authority to add and no measurement to author.",
+    "gloss": "Vigor a cast costs before tier. fp(2). contracts.md section 2.3 gives a node a researchCost, a teachCost and a scribeCost and no cast cost, so the price of releasing a spell is derived from its tier here rather than invented as a fourth node field \u2014 a field this change has no authority to add and no measurement to author.",
     "tuningStatus": "untuned"
   },
   {
@@ -297,14 +297,28 @@
     "id": "inbound-raid-chance-per-world-tick",
     "value": 4,
     "unit": "fp",
-    "gloss": "Probability per world tick that a rival opens a portal into this universe, drawn on stream 10 (objective and raid generation). fp(0.0039) — about one inbound raid every 256 world ticks, so roughly nine over the 2400-tick reference horizon. This is the arrival process vision section 8 leaves unspecified and demands be BOUNDED: it is the griefing surface, and inboundRaidTempoLoss exists to measure it. Untuned, and the first number a balance sweep should move.",
+    "gloss": "Probability per world tick that a rival opens a portal into this universe, drawn on stream 10 (objective and raid generation). fp(0.0039) \u2014 about one inbound raid every 256 world ticks, so roughly nine over the 2400-tick reference horizon. This is the arrival process vision section 8 leaves unspecified and demands be BOUNDED: it is the griefing surface, and inboundRaidTempoLoss exists to measure it. Untuned, and the first number a balance sweep should move.",
     "tuningStatus": "untuned"
   },
   {
     "id": "inbound-raid-cooldown-world-ticks",
     "value": 60,
     "unit": "ticks",
-    "gloss": "World ticks after any raid during which no further inbound raid may open. Five world years. Vision section 8 requires inbound raid frequency to be bounded rather than merely improbable — a Bernoulli process alone admits a run of arrivals that strips a universe with no floor under it, which is the live-PvP death sentence that section names. A cooldown is a hard bound the arrival rate cannot defeat.",
+    "gloss": "World ticks after any raid during which no further inbound raid may open. Five world years. Vision section 8 requires inbound raid frequency to be bounded rather than merely improbable \u2014 a Bernoulli process alone admits a run of arrivals that strips a universe with no floor under it, which is the live-PvP death sentence that section names. A cooldown is a hard bound the arrival rate cannot defeat.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "looted-grimoires-per-raid",
+    "value": 4,
+    "unit": "count",
+    "gloss": "Grimoires a warband carries home per library it reaches. Vision section 8 gives the attacker two verbs -- destroying OR looting -- and this is where they divide: the first four books off the shelf are taken, the rest face a fire their durability may survive. Four because it is a fraction of a mature library rather than all of it, so both verbs stay reachable in one raid. This is the number that decides how fast knowledge crosses between universes.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "rival-foreign-book-count",
+    "value": 12,
+    "unit": "count",
+    "gloss": "Books a rival shelves from cells this universe's own ruleset forbids. Not zero, because twelve of seventy cells are enabled and they hold 51 of 300 nodes, so an undisturbed universe learns all 51 and stops: the plateau is content exhaustion, not balance. A god researches only what they permit but may take what another permitted, so this is what makes the other 249 reachable at all. INVENTED with the rest of the rival stand-in.",
     "tuningStatus": "untuned"
   }
 ]

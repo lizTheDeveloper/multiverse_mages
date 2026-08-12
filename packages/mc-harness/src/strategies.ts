@@ -736,6 +736,14 @@ const ARCHIVIST: StrategyDefinition = {
  */
 const PORTAL_RUSH: StrategyDefinition = {
   strategyId: 'portal-rush',
+  // 4: `assignRole` was added second in the preference list. This is the change
+  // the version field was written for: the entry below explains at length that
+  // `permitTechnique` sat unreachable behind a permanently masked `openPortal`,
+  // and the day `openPortal` became reachable — this one — the bot needed a
+  // raider to send through it. A portal-rush that opens portals and fields
+  // nobody is measuring the portal action, not the raid economy, and every
+  // number recorded under version 3 is a number about an empty battlefield.
+  //
   // 3: its one ruleset move, the tempo `permitTechnique`, became a 1-based id.
   //
   // Bumped even though a 96-run seed-matched A/B at 2400 ticks produced
@@ -746,7 +754,7 @@ const PORTAL_RUSH: StrategyDefinition = {
   // is all of them. The version is a claim about the definition, not about
   // whether this build happens to exercise it, and the day `openPortal` becomes
   // reachable this strategy names a different technique than it used to.
-  version: 3,
+  version: 4,
   hypothesis:
     'Whether reaching the portal early is worth the tempo it costs. It is the strategy the raid ' +
     'economy is supposed to reward, so it probes whether the multiverse is a strategic axis or a ' +
@@ -762,9 +770,23 @@ const PORTAL_RUSH: StrategyDefinition = {
       'the reason the whole field exists: it made portal-rush the only strategy that *looked* able ' +
       'to win while being one of the seven that could not.',
   },
-  signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.declareAscension],
+  signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.assignRole, GOD_ACTION.declareAscension],
   preferences: ({ round }) => [
     { action: GOD_ACTION.openPortal, parameter: rotate(GOD_ACTION.openPortal, round) },
+    // Somebody has to go through it. `rules-raid`'s `RAIDING_ROLES` is the
+    // `raider` role alone and `createMage` makes every mage a `researcher`, so
+    // a god who opens portals and never assigns a role sends an empty warband:
+    // the raid resolves on the first tick as a defender victory, nothing is
+    // looted, nothing is burned, and the strategy is passive-control paying
+    // favor for the privilege. Measured before this line existed — 337 raids
+    // across four runs and zero nodes taken from any of them.
+    //
+    // `assignRoleCandidates` lists every living mage against each role it does
+    // not hold, in handle then role order, so a rotating slot index reaches
+    // `raider` about one submission in three. That is the coarsest instrument
+    // the action space offers and it is enough: the point of this bot is that
+    // it raids, not that it fields an optimal warband.
+    { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round) },
     // Tempo while the portal is unreachable: push the deepest cell and permit
     // the technique that would open more of it.
     { action: GOD_ACTION.encourageResearch, parameter: 0 },
