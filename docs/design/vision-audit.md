@@ -50,12 +50,15 @@ which is a measurement someone else ran and committed, not one taken here.
 
 | status | rows |
 |---|---:|
-| **wired** | 90 |
-| **implemented-unreached** | 44 |
+| **wired** | 93 |
+| **implemented-unreached** | 46 |
 | **stubbed** | 6 |
-| **absent** | 4 |
+| **absent** | 5 |
 | **contradicted** | 8 |
-| **total** | **152** |
+| **total** | **158** |
+
+Every row in every section table below carries exactly one of these five statuses and nothing
+else; the counts are a mechanical tally of them.
 
 Read the shape rather than the totals. The `wired` column is dominated by §5's knowledge
 operations, §7's god verbs and §6's demographic layer — the parts that make a universe *run*. The
@@ -115,7 +118,9 @@ the god system actually applied.
 | `portal-rush` | 962 | ascended | encourage 45 (45 / 916) | tier 3 |
 | `worship-maximizer` | 1219 | ascended | bless 124 (124 / 856) | tier 4 |
 
-**Never legal for any strategy at any tick, in 19,200 tick-observations:**
+**Never legal for any strategy at any tick.** The eight runs total **8,583 ticks** (only
+`passive-control` reached the 2,400 cap; the other seven terminated between 508 and 1,219), so
+that is the number of tick-observations behind the following three statements:
 
 - **14 `openPortal`** — no strategy, ever. This is the finding the whole §8 column rests on.
 - **13 `changeTradition`** — no strategy, ever. Priced at 65,536 `fp` against a tier-4 `favorCap`
@@ -189,7 +194,8 @@ caller outside `packages/rules-world/test/`, and `portalTargets` is supplied by 
 | "you bless, you fund, you forbid, you grant founding knowledge" | 1 | wired | All four applied in Proof 2 (`bless` 151 by `archivist`, `fund` 283, `forbid` by `narrow-depth`/`denial-warden`, `grant` legal from tick 11–256). [executed] |
 | P1 "Rules-setting is the core verb" | 2 | wired, but weak as a *verb* | Axis and edict actions are legal and applied — yet across 2,400 ticks the most any bot got applied was `permitForm` ×10 and `interdiction` ×3, against 400–900 refusals each. The verb exists; the god almost never lands it. [executed] |
 | P2 "Knowledge is physical. It occupies minds and books and buildings" | 2 | wired (3 of 4 locations) | Proof 3: 2,784 mind, 1,308 library, 0 grimoire-in-hand, 0 palace. [executed] |
-| P2 "It can be taught, copied, stolen, and lost" | 2 | partly | taught ✔, copied ✔, lost ✔ (rare), **stolen ✘** — theft lives entirely in `packages/rules-raid/src/arbitration.ts:358` and never runs. [executed] |
+| P2 "It can be taught, copied … and lost" | 2 | wired | 3,142 lessons, 1,308 copies, 2 losses in the reference run. [executed] |
+| P2 "It can be … stolen" | 2 | implemented-unreached | Theft lives entirely in `packages/rules-raid/src/arbitration.ts:358` and never runs. [read] |
 | P3 "You are a god, not a general" | 2 | wired | As row 1. [read] |
 | P4 "The numbers come first … balanced by machine play before it is made pretty" | 2 | wired | `npm run verify` runs three balance gates (`package.json:33`); no client package exists. [read] |
 
@@ -294,7 +300,7 @@ caller outside `packages/rules-world/test/`, and `portalTargets` is supplied by 
 | Draconic — "highest depth ceiling, very slow learning, very low fertility" | 6 | wired | depthCeiling 7, learnRate 384, fertility 96 — lowest of six on two of three. [read] |
 | Gnome — "Highest curiosity … poor retention" | 6 | wired | curiosity 1792, retention 512. [read] |
 | Gnome — "**discovery** and *rediscovery* bonuses" | 6 | half stubbed | `rediscoveryAffinity` 1792 is wired (`world-step.ts:980` → `gateway.ts:420,579` → `research.ts:221`, applied as a divisor). There is **no separate discovery-bonus field**; the vision names two bonuses and the content carries one. [read] |
-| Gnome — the rediscovery bonus in practice | 6 | unobservable | **Zero living gnome mages at tick 2400**, deepest tier 0. The species that owns the mechanic is extinct before it can use it. [executed] |
+| Gnome — the rediscovery bonus in practice | 6 | wired, and never exercised by gnomes | The divisor is applied on a reachable path, so the row is `wired` — but there are **zero living gnome mages at tick 2400**, deepest tier 0. The species that owns the mechanic is extinct before it can use it. [executed] |
 | Orc — "Low magical aptitude … high fertility" | 6 | wired | mageAptitude 192 (lowest) → `mages/promotion.ts:97`; fertility 1536 (highest). Zero living orc mages at tick 2400. [executed] |
 | Orc — "high build-rate" | 6 | implemented-unreached | `laborAffinity` 1536 splits in two. The materials half is wired (`world-step.ts:633` → `economy/materials.ts:93`). The construction half is not: `advanceConstruction` multiplies by `laborAffinity` and has no non-test caller, and `world-step.ts:585` hardcodes `construction: 0` in the consumption breakdown. [read] |
 | Orc — "martial capability" | 6 | absent, by recorded decision | `contracts.md:478` states it outright: *"a `martialAffinity` field is the obvious way to encode it. It is not here because soldier effectiveness is only observable inside a raid."* A documented deviation, not an oversight — but §6's table still reads as a present-tense claim. [read] |
@@ -319,7 +325,7 @@ caller outside `packages/rules-world/test/`, and `portalTargets` is supplied by 
 | "*Rego Terram* and its neighbours move this number" | 6a | stubbed | `rego-terram` is v1-enabled content with nodes carrying `resource-yield` (e.g. `rt-quarry-without-hands`, magnitude 384). `materialsProduced` accepts `resourceYieldBonuses` and its one reachable caller passes `[]` (`world-step.ts:637`). No collector gathers node effects into that array. [read] |
 | **Knowledge as capital** — "a university's output scales with the depth of its library" | 6a | implemented-unreached | `packages/rules-world/src/universities/capital.ts` is a complete, CI-tested implementation: `LIBRARY_CONTRIBUTION`, `libraryContribution()`, `contributionFor()`, and `capitalRateMultiplier()` — whose own doc comment calls it *"the one place a library's contribution reaches a rate."* All four have zero non-test callers. `libraryContribution` is called once outside tests, at `scenario/src/long-run.ts:266`, purely to *report* the number. [read] |
 | "A deep library trains better mages, who research faster, who deepen the library" — the loop closes | 6a | implemented-unreached | Half the loop runs: research and scribing genuinely deposit nodes into libraries. The other half does not: `MAGE_MONTHS_PER_TICK` is a hard `FP_ONE` (`world-step.ts:181`) whose doc comment states the absence is deliberate, and `researchMultiplierFor` is fed only by god blessings and cell emphasis (`god/effects.ts:119`). No library-depth term enters any rate. **Measured: capital contribution 32 `fp` (0.03) at tick 2400.** [executed] |
-| "That is a compounding loop, and it is the second one in the design after worship" | 6a | one of two loops closes | The worship loop compounds and is reachable (§7). The capital loop does not. The design's stated runaway risk — *two* compounding loops feeding each other — cannot currently occur, because only one exists. [read] |
+| "That is a compounding loop, and it is the second one in the design after worship" | 6a | implemented-unreached | The worship loop compounds and is reachable (§7); the capital loop does not close. The design's stated runaway risk — *two* compounding loops feeding each other — cannot currently occur, because only one of the two exists in a normal run. [read] |
 | "the balance harness must watch it specifically" | 6a | wired as a metric, ungated | `capitalSnowball` is registered and measured, and gated by no committed baseline. See §9. [read] |
 | "burning a rival's library is not just a loss of stored spells, it is an attack on their rate of future production" | 6a | implemented-unreached, doubly | `settleLibrary` (`rules-raid/src/consequences.ts:181`) implements per-book durability rolls and never fires. And even if it did, the second clause is void in principle: there is no rate of future production for depth to attack. [read] |
 
@@ -345,7 +351,7 @@ set, and does any shipped strategy get it *applied*?
 | 10 "assign a standing role" | 7 | wired | `rolePlan` (`:682`) writes only `MAGE.roleId`; cheapest action (256 `fp`), legal from tick 1; 65 applied. [executed] |
 | 11 "fund a university" | 7 | wired, and it is the *only* way one is ever built | `fundPlan` (`:718`): slot 0 founds at `buildProgress: 0`, otherwise adds a flat `fundProgress`. `archivist` applied 283. [executed] |
 | 12 "encourage a research direction" | 7 | wired | `encouragePlan` (`:776`), magnitude derived from remaining ticks; 45 applied by `portal-rush`. [executed] |
-| 13 "rarely and ruinously — change the universe's tradition" | 7 | implemented-unreached | Never legal in 19,200 tick-observations. [executed] |
+| 13 "rarely and ruinously — change the universe's tradition" | 7 | implemented-unreached | Never legal in any of the 8,583 tick-observations of Proof 2. [executed] |
 | 14 open portal | 7 | implemented-unreached | Never legal. `portalCandidates` returns `input.portalTargets ?? []` (`packages/agent-api/src/candidates.ts:323`) and nothing supplies it. [executed] |
 | 15 declare ascension | 7 | wired | Legal from ~tick 961; taken by five of eight bots. [executed] |
 | "Everything the player does costs **favor**, drawn from a regenerating pool whose regeneration scales with **worship**" | 7 | wired | `favorRegeneration` = base + worship × `favor-per-worship` (`favor.ts:80`); deducted atomically before apply (`interventions.ts:263`), ledger asserted every tick. [read] |
@@ -404,7 +410,12 @@ from `makeReferenceExecutor()`. No raid has ever fired.
 | "**Prestige carries forward.** Ascending closes a universe and opens a new one, seeded with legacy drawn from what the last one achieved." | 8a | implemented-unreached | `legacyGrant`, `carriedPrestige` and `legacyBudget` (`ascension.ts:268–341`) are complete, tested, and have **zero non-test callers**. Nothing composes a next universe from a prior one. `reference-universe.ts:282` always seeds `prestige: 0`. This is an entire cross-run feature behind no call site. [read] |
 | "Prestige must not compound without bound across runs" | 8a | stubbed | The `PRESTIGE_CAP` clamp and the loader-checked identity `cap × (1 − retention) == earn-max` are real; nothing ever exercises them. [read] |
 | "Defeat is not the opposite of ascension … it stagnates, and stagnation is its own ending" | 8a | wired | `stepStagnation` (`ascension.ts:193`) with three independent triggers writes `TERMINAL_REASON.stagnation`. Observed for `narrow-depth` (tick 525) and `denial-warden` (tick 508). [executed] |
-| recorded deviation: a terminated universe's clock still advances | 8a | documented deviation | `frozenWhenTerminal` stops every component write; `step` advances the clock unconditionally, so the hash moves by exactly the clock (`packages/coordination/src/god/system.ts:36–51`). Recorded in-code rather than papered over. [read] |
+**Not a vision claim, recorded because a reader of §8a will meet it:** a terminated universe's
+clock still advances. `frozenWhenTerminal` stops every component write, and `step` advances the
+clock unconditionally because that is `sim-core`'s contract, so a finished run's snapshot hash
+moves by exactly the clock. `packages/coordination/src/god/system.ts:36–51` records this as a
+deliberate deviation from the ascension spec's scenario rather than papering over it, and
+`agent-api`'s session refuses to `submit` to a terminated episode. [read]
 
 ---
 
@@ -477,7 +488,8 @@ than they look, and all three are first-party and measured:
 |---|---|---|---|
 | "TypeScript monorepo" | 10 | wired | `packages/*` workspace. [read] |
 | "A pure, dependency-free simulation core — no I/O, no floats in the rules path, seeded PRNG only" | 10 | wired | `scripts/check-purity.mjs` enforces zero third-party runtime deps and the AGPL header across eight packages, and runs in `verify`. [read] |
-| "consumed identically by the Monte Carlo harness, the Electron client, and the authoritative multiplayer server" | 10 | 1 of 3 | MC harness real. **No `electron-client` package. No `pvp-server` package.** [read] |
+| "consumed identically by the Monte Carlo harness …" | 10 | wired | `mc-harness` reaches the core only through `@mm/agent-api`. [read] |
+| "… the Electron client, and the authoritative multiplayer server" | 10 | absent | **No `electron-client` package. No `pvp-server` package.** Both are `openspec list` rows with no tasks. Until a second consumer exists, "consumed identically" is untested by construction. [read] |
 | "Determinism is enforced by golden-replay tests" | 10 | wired | Golden fixtures and `goldens:regen` exist; deterministic hash reproduced across runs of Proof 1 (`3a00865d721b377c`). [executed] |
 | "Written so the hot loop could be ported to Rust" | 10 | stubbed | An aspiration with no artifact. [read] |
 | "Python RL bridge over JSON-over-stdio, staged for later" | 10 | wired (interface only) | `packages/gym-bridge/python/mm_gym/*` plus the TS side; no training loop, no torch. Matches §12's "the interface ships; the training does not". [read] |

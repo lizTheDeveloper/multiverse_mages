@@ -47,7 +47,7 @@ can select is **not** reachable.
 - [x] 3.1 Synthesise `docs/design/vision-audit.md`: table per section, summary counts, ranked gaps
 - [x] 3.2 For each of the ten ranked gaps: smallest wiring change + owning workstream
 - [x] 3.3 Record vision-internal contradictions and code-contradicts-vision rows separately
-- [ ] 4.1 Commit and push `w12/vision-audit`
+- [x] 4.1 Commit and push `w12/vision-audit`
 
 ## Evidence log
 
