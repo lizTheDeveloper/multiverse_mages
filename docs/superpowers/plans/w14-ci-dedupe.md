@@ -188,5 +188,9 @@ machine was at **load average 260 on 16 cores with 87 node processes** from conc
 the suite ran, and the two longest tests are `reference-long-run` at 308 s and
 `reference-time-to-tier` at 220 s. Nothing in this change touches the simulation, the test suite or
 vitest's configuration — the diff is a `concurrency` block, a Markdown file and one `echo` string.
-Re-run the chained command on an unloaded machine, or read the Actions run for this SHA, which runs
-the identical chain through `npm run verify` on a quiet hosted runner.
+Re-run the chained command on an unloaded machine. The Actions run for this SHA is corroboration but
+not a substitute: that workflow lists every stage as its own step rather than invoking
+`npm run verify`, so a green there proves every stage passes on quiet hardware without exercising
+the chained command itself. The self-hosted runner is the system that literally runs
+`npm run verify` — and it posted no status on these SHAs, because it only acts on a push to `main`
+or a same-repo PR, and this branch is deliberately neither.
