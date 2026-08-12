@@ -1,0 +1,440 @@
+<!doctype html>
+<!--
+  Multiverse Mages — tempo, and what is allowed to interrupt.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  Two of electron-client's open questions turn out to be one question.
+
+  "What wall-clock pacing does a world tick get?" — contracts §0 says real-time
+  pacing is a client concern and never appears in the core, and vision §13
+  leaves the number to tuning. So the client owns a number nobody has chosen.
+
+  "Which events deserve to interrupt?" — vision §5 makes knowledge loss the
+  emotional core and the simulation performs it silently: an old mage dies
+  holding the last instance of a node. Surface every death and it is noise;
+  surface none and the game's central feeling is gone.
+
+  They are one question because speed decides what an event *is*. At 4x a
+  world tick is a fraction of a second, and sound-design §0.4's density rule
+  already answers the audio half: below a per-class threshold events play
+  discretely, at or above it the class becomes a texture whose intensity
+  tracks the rate. A scriptorium of four scribes is four pens; four hundred
+  is weather. This applies the same rule to the eye.
+
+  Three directions:
+
+    A  speeds and a feed    conventional. The player manages their own attention.
+    B  tempo as attention   the world slows itself when something matters.
+    C  the feed is the clock no speed control at all; you advance by reading.
+
+  Serve with `npm run ui`, then open /ui/tempo/.
+
+  KNOWN COST: the event stream is generated here from a seeded PRNG at rates
+  chosen to be plausible, not sampled from a real run — no balance number says
+  how often a last copy dies, and `55 copies per node` from the campaign says
+  it is currently close to never. The thresholds are the guess this prototype
+  exists to replace.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — tempo</title>
+
+<style>
+  :root{
+    --ground:#0A0D0F;--panel:#0F1416;--sunk:#141B1D;--edge:#1E2A2C;
+    --ink:#DDE7E8;--soft:#94A3A5;--faint:#63736F;
+    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
+    --loss:#DE7059;--warn:#C9A034;--ok:#4DBE97;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:84rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
+  h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
+  .lede{color:var(--soft);max-width:68ch;margin:0 0 .45rem}
+  .lede b{color:var(--god-lit);font-weight:500}.lede em{color:var(--ink);font-style:italic}
+  code{font:12.5px var(--mono);color:#AFC0C2}
+
+  .globalbar{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:1.3rem 0 1.4rem;
+    padding:.7rem .85rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
+  .globalbar .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+  .globalbar b{font:12px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+  .globalbar input[type=range]{accent-color:var(--god);vertical-align:middle}
+  .run{font:11.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;padding:.45rem .8rem;border-radius:3px;
+    border:1px solid var(--god);background:color-mix(in srgb,var(--god) 12%,transparent);color:var(--god-lit);cursor:pointer;
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--god) 24%,transparent),0 0 16px -3px color-mix(in srgb,var(--god) 60%,transparent)}
+  .run[aria-pressed="false"]{border-color:#22302F;background:transparent;color:var(--soft);box-shadow:none}
+  .run:focus-visible{outline:2px solid var(--god-lit);outline-offset:2px}
+
+  .dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem;align-items:start}
+  @media (max-width:74rem){.dirs{grid-template-columns:1fr}}
+  .dir{border:1px solid var(--edge);border-radius:5px;background:var(--panel);display:flex;flex-direction:column}
+  .dhead{padding:.75rem .9rem;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:.5rem}
+  .dhead .letter{font:700 13px var(--mono);color:var(--god)}
+  .dhead .name{font:400 1.06rem var(--serif)}
+  .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .dbody{padding:.85rem .9rem;display:flex;flex-direction:column;gap:.7rem}
+  .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
+
+  /* clock */
+  .clock{display:flex;align-items:baseline;gap:.5rem}
+  .clock .tick{font:400 1.5rem var(--serif);font-variant-numeric:tabular-nums}
+  .clock .date{font:10.5px var(--mono);color:var(--faint)}
+  .clock .state{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+  .clock .state[data-halted="true"]{color:var(--warn)}
+  .clock .state[data-halted="false"]{color:var(--ok)}
+
+  /* speed controls */
+  .speeds{display:flex;gap:.3rem}
+  .sp{font:11px var(--mono);padding:.35rem .6rem;border-radius:3px;border:1px solid #22302F;background:transparent;
+    color:var(--soft);cursor:pointer}
+  .sp[aria-pressed="true"]{color:var(--god-lit);border-color:var(--god);
+    box-shadow:0 0 12px -3px color-mix(in srgb,var(--god) 70%,transparent)}
+  .sp:focus-visible{outline:2px solid var(--god-lit);outline-offset:2px}
+  .sp[disabled]{opacity:.45;cursor:not-allowed}
+
+  /* the feed */
+  .feed{height:15rem;overflow-y:auto;display:flex;flex-direction:column-reverse;gap:2px;
+    background:var(--sunk);border:1px solid #1B2426;border-radius:3px;padding:.4rem}
+  .ev{display:grid;grid-template-columns:3.1rem 1fr;gap:.45rem;padding:.18rem .3rem;border-radius:2px;
+    font-size:.83rem;line-height:1.35}
+  .ev .t{font:9.5px var(--mono);color:var(--faint);font-variant-numeric:tabular-nums;padding-top:.15rem}
+  .ev.routine{color:var(--faint)}
+  .ev.notable{color:var(--soft)}
+  .ev.loss{color:var(--loss);background:color-mix(in srgb,var(--loss) 11%,transparent)}
+  .ev.loss b{color:#FFB4A4}
+  .ev.halt{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
+
+  /* density texture — what a class becomes above its threshold */
+  .texture{display:flex;flex-direction:column;gap:.3rem}
+  .tex{display:grid;grid-template-columns:5.6rem 1fr auto;gap:.5rem;align-items:center;font:10px var(--mono)}
+  .tex .n{color:var(--faint);letter-spacing:.06em}
+  .tex .bar{height:12px;background:#101718;border-radius:2px;position:relative;overflow:hidden}
+  .tex .bar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--god-deep),var(--god));
+    opacity:.85;transition:width 260ms ease}
+  .tex .bar.over i{background:linear-gradient(90deg,#2C6E5E,var(--ok))}
+  .tex .r{color:var(--soft);font-variant-numeric:tabular-nums;min-width:4.2rem;text-align:right}
+  .tex .r .st{color:var(--faint)}
+
+  .halted{margin-top:.2rem;padding:.55rem .6rem;border:1px solid var(--warn);border-radius:3px;
+    background:color-mix(in srgb,var(--warn) 9%,transparent);font-size:.86rem;line-height:1.45}
+  .halted b{color:var(--warn)}
+  .halted .resume{margin-top:.45rem;font:11px var(--mono);letter-spacing:.05em;text-transform:uppercase;
+    padding:.35rem .7rem;border-radius:3px;border:1px solid var(--warn);background:transparent;color:var(--warn);cursor:pointer}
+
+  .readmode{display:flex;flex-direction:column;gap:.5rem}
+  .advance{font:12px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:.6rem .8rem;border-radius:3px;
+    border:1px solid var(--god);background:color-mix(in srgb,var(--god) 10%,transparent);color:var(--god-lit);cursor:pointer;
+    box-shadow:0 0 16px -4px color-mix(in srgb,var(--god) 65%,transparent)}
+  .advance:focus-visible{outline:2px solid var(--god-lit);outline-offset:2px}
+  .unread{font:10.5px var(--mono);color:var(--faint)}
+  .unread b{color:var(--warn)}
+
+  .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
+  .note h2{font:400 1.4rem var(--serif);margin:0 0 .5rem}
+  .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
+  .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--god-lit)}
+  footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages · pacing and interruption · contracts §0 · sound-design §0.4</div>
+  <h1>Tempo, and what is allowed to interrupt</h1>
+  <p class="lede">Two of <code>electron-client</code>'s open questions are one question. The client owns a
+  wall-clock pacing that nobody has chosen, and <b>speed decides what an event is</b> — at 4× a world tick
+  is a fraction of a second. <code>sound-design §0.4</code> already answers the audio half: below a
+  per-class threshold events play discretely, at or above it the class becomes a texture whose intensity
+  tracks the rate. <em>Four scribes are four pens; four hundred are weather.</em> This applies the same
+  rule to the eye.</p>
+  <p class="lede">All three run off one simulated stream. Change the population — the routine classes cross
+  their thresholds and turn to texture, while loss stays discrete at any scale.</p>
+
+  <div class="globalbar">
+    <button class="run" id="run" type="button" aria-pressed="true">⏸ Running</button>
+    <span class="k">population</span>
+    <input id="pop" type="range" min="40" max="4000" step="10" value="240">
+    <b id="popv">240</b>
+    <span class="k">mages</span>
+    <span class="k" style="margin-left:1rem">last copies lost / year</span>
+    <input id="loss" type="range" min="0" max="60" step="1" value="4">
+    <b id="lossv">0.4</b>
+    <span style="margin-left:auto" class="k">tick <b id="tickv">0</b> · 1 tick = 1 month</span>
+  </div>
+
+  <div class="dirs" id="dirs"></div>
+
+  <div class="note">
+    <h2>What operating these settles</h2>
+    <p><b class="hot">The density rule transfers, and it is the whole answer to the feed.</b> Research,
+    teaching and scribing all cross their thresholds somewhere between 200 and 600 mages and stop being
+    readable as lines. Turning them into a rate bar is not a compromise — it is <em>more</em> information
+    than a scrolling list, because a bar shows the trend and a list shows only the last five things.
+    Loss never crosses a threshold, because it is rare by construction and must never be averaged.</p>
+    <p><b>A is the honest default and it fails the game's own thesis.</b> Speed controls plus a feed is
+    what every management game ships, and it makes attention the player's problem. Vision §5 says the
+    emotional core is a loss that happens silently. A player at 4× who is looking at the ruleset will miss
+    it, every time, and the interface will have been technically correct.</p>
+    <p><b>B is the one that matches the design and it costs a decision.</b> If the world halts itself
+    when the last copy of a node dies, the game has asserted that this is the most important thing that
+    can happen — which is exactly what vision §5 claims. But an auto-halt is an interruption the player did
+    not ask for, and <code>sound-design §0.3</code>'s salience-parity rule is satisfied by <em>either</em>
+    a halt or a loud visual. Halting is the stronger claim and the more annoying one; that trade is a
+    playtest question, and it is cheap to try because the mechanism is the same either way.</p>
+    <p><b>C is not a joke.</b> Removing speed control entirely and advancing by reading makes the feed the
+    clock, which suits a game with no map and no units to command. It also makes the tempo-lost-to-inbound-
+    raids metric (vision §8) meaningless, because there is no wall clock to lose. Worth knowing before
+    anyone specifies that metric against a client that may not have a clock.</p>
+    <p><b class="hot">The interruption policy is downstream of a balance number, and that is the finding.</b>
+    Drag the loss slider. At well under one last copy a year the halt is the best moment in the game. Past
+    roughly three a year it is a nuisance and direction B collapses into direction A with extra steps —
+    the prototype says so itself once the rate crosses. So <em>the feed cannot be designed until the loss
+    rate is known</em>, and it is not: the campaign measured roughly 55 copies per node, which puts it near
+    never today, while the same campaign is actively trying to make loss bite. Whichever way that lands
+    changes which of these three directions is correct.</p>
+    <p><b>Loss does not scale with population, and modelling it that way was my first mistake here.</b>
+    More mages means more deaths but also more copies. Every other class in this prototype scales with
+    headcount; loss gets its own control, because how often a last copy dies is a property of redundancy
+    rather than of how many people there are.</p>
+  </div>
+
+  <footer>
+    Prototype · not the client. The event stream is generated from a seeded PRNG at plausible rates, not
+    sampled from a real run; contracts §0 keeps real-time pacing out of the core entirely.<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+</div>
+
+<script type="module">
+/* Real node names, packages/content/data/node.json (v1 cells). */
+const NODES = ['Keep the Name Close','The Standing Gate','Open the Locked Room','The Swallowed Hall',
+  'Read the Binding','Derive the True Name','The Shared Mind','Quarry Without Hands','Seal the Way',
+  'Compel by Name','Scatter the Lesson','Pull Down the Arch'];
+const WHO = ['Ismene Farrowgate','Bettany Orrel','Corvin Stonecrake','Aldis Ashlock','Thessaly Quillon',
+  'Maud Vantwig','Perrin Bellwether','Nesta Marchmain','Gethin Underhay','Odile Cardew'];
+
+/* Per-class density thresholds: events per tick at or above which the class
+   becomes a texture. sound-design §0.4 makes these tuning values, not contracts,
+   and says the rule is structural: no class may be discrete without a stated one. */
+const CLASSES = [
+  { id:'research', label:'research',  per1000: 42, threshold: 3, tone:'routine' },
+  { id:'teach',    label:'teaching',  per1000: 26, threshold: 3, tone:'routine' },
+  { id:'scribe',   label:'scribing',  per1000: 14, threshold: 2, tone:'routine' },
+  { id:'build',    label:'building',  per1000: 3,  threshold: 2, tone:'notable' },
+  { id:'death',    label:'mage death',per1000: 5,  threshold: 4, tone:'notable' },
+  /* Loss has no threshold it can reach: it is rare by construction, and averaging
+     it into a rate bar would delete the thing vision §5 calls the emotional core. */
+  /* Loss is deliberately NOT scaled by population. More mages means more deaths
+     but also more copies, and the campaign measured ~55 copies per node — so how
+     often a last copy actually dies is a balance property, not a headcount. It
+     gets its own control below, because that number decides whether an auto-halt
+     is a moment or a nuisance. */
+  { id:'loss',     label:'last copy', perYear: 0.4, threshold: Infinity, tone:'loss' },
+];
+
+let seed = 8675309;
+const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+const pick = (a) => a[Math.floor(rnd() * a.length)];
+
+const state = { running: true, pop: 240, tick: 0, speed: { a: 1, b: 1 }, halted: false, unread: 0, halts: 0 };
+const feeds = { a: [], b: [], c: [] };
+const rates = {};
+
+function eventsThisTick() {
+  const out = [];
+  for (const c of CLASSES) {
+    const lambda = c.perYear !== undefined ? c.perYear / 12 : (c.per1000 * state.pop) / 1000;
+    // Poisson-ish: integer part plus a fractional draw
+    let n = Math.floor(lambda);
+    if (rnd() < lambda - n) n += 1;
+    rates[c.id] = lambda;
+    for (let i = 0; i < n; i += 1) {
+      const node = pick(NODES), who = pick(WHO);
+      out.push({
+        cls: c.id, tone: c.tone, tick: state.tick,
+        text: c.id === 'loss'
+          ? `<b>${node}</b> is gone. ${who} died holding the only copy.`
+          : c.id === 'death' ? `${who} died.`
+          : c.id === 'build' ? `A university completed.`
+          : c.id === 'scribe' ? `${who} finished a grimoire of ${node}.`
+          : c.id === 'teach'  ? `${who} taught ${node}.`
+          : `${who} completed research on ${node}.`,
+      });
+    }
+  }
+  return out;
+}
+
+const fmtDate = (t) => `year ${Math.floor(t / 12)}, month ${(t % 12) + 1}`;
+
+function renderShell() {
+  const host = document.getElementById('dirs');
+  host.innerHTML = `
+    <section class="dir" data-d="a">
+      <div class="dhead"><span class="letter">A</span><span class="name">Speeds and a feed</span>
+        <span class="tag">conventional</span></div>
+      <div class="dbody">
+        <div class="clock"><span class="tick" data-tick>0</span><span class="date" data-date></span>
+          <span class="state" data-state data-halted="false">running</span></div>
+        <div class="speeds" data-speeds></div>
+        <div class="feed" data-feed></div>
+      </div>
+      <div class="dfoot">Attention is the player's problem. Everything that happens is a line, and at 4×
+        the lines outrun reading. This is what every management game ships.</div>
+    </section>
+
+    <section class="dir" data-d="b">
+      <div class="dhead"><span class="letter">B</span><span class="name">Tempo as attention</span>
+        <span class="tag">the world slows itself</span></div>
+      <div class="dbody">
+        <div class="clock"><span class="tick" data-tick>0</span><span class="date" data-date></span>
+          <span class="state" data-state data-halted="false">running</span></div>
+        <div class="speeds" data-speeds></div>
+        <div class="texture" data-texture></div>
+        <div class="feed" data-feed></div>
+        <div data-halt></div>
+      </div>
+      <div class="dfoot">Routine classes become rate bars above their threshold; only what survives the
+        density rule is still a line. A last copy halts the world, because vision §5 says it is the most
+        important thing that can happen.</div>
+    </section>
+
+    <section class="dir" data-d="c">
+      <div class="dhead"><span class="letter">C</span><span class="name">The feed is the clock</span>
+        <span class="tag">no speed control</span></div>
+      <div class="dbody">
+        <div class="clock"><span class="tick" data-tick>0</span><span class="date" data-date></span>
+          <span class="state" data-state data-halted="true">held</span></div>
+        <div class="readmode">
+          <button class="advance" type="button" data-advance>Advance a year</button>
+          <span class="unread" data-unread></span>
+        </div>
+        <div class="feed" data-feed></div>
+      </div>
+      <div class="dfoot">Time moves when you ask it to. Suits a game with no map and nothing to command —
+        and deletes the wall clock that vision §8's tempo-lost-to-raids metric is measured against.</div>
+    </section>`;
+
+  for (const key of ['a', 'b']) {
+    const el = host.querySelector(`[data-d="${key}"] [data-speeds]`);
+    for (const s of [1, 2, 4]) {
+      const b = document.createElement('button');
+      b.className = 'sp'; b.type = 'button'; b.textContent = `${s}×`;
+      b.setAttribute('aria-pressed', String(state.speed[key] === s));
+      b.addEventListener('click', () => {
+        state.speed[key] = s;
+        el.querySelectorAll('.sp').forEach(x => x.setAttribute('aria-pressed', String(x.textContent === `${s}×`)));
+      });
+      el.append(b);
+    }
+  }
+  host.querySelector('[data-advance]').addEventListener('click', () => {
+    for (let i = 0; i < 12; i += 1) step(true);
+    state.unread = 0;
+    paint();
+  });
+}
+
+function push(key, ev) {
+  feeds[key].unshift(ev);
+  if (feeds[key].length > 60) feeds[key].pop();
+}
+
+function step(manual = false) {
+  state.tick += 1;
+  const evs = eventsThisTick();
+
+  for (const ev of evs) {
+    push('a', ev);
+    if (manual || true) push('c', ev);
+    const cls = CLASSES.find(c => c.id === ev.cls);
+    // B only keeps a line for classes under their density threshold
+    if (rates[ev.cls] < cls.threshold) push('b', ev);
+    if (ev.cls === 'loss') {
+      state.halts += 1;
+      state.halted = true;
+      push('b', { ...ev, tone: 'halt', text: `World halted — ${ev.text}` });
+    }
+  }
+  if (!manual) state.unread += evs.length;
+}
+
+function paint() {
+  document.getElementById('tickv').textContent = state.tick;
+  const host = document.getElementById('dirs');
+
+  for (const key of ['a', 'b', 'c']) {
+    const root = host.querySelector(`[data-d="${key}"]`);
+    root.querySelector('[data-tick]').textContent = state.tick;
+    root.querySelector('[data-date]').textContent = fmtDate(state.tick);
+    const st = root.querySelector('[data-state]');
+    if (key === 'c') { st.textContent = 'held'; st.dataset.halted = 'true'; }
+    else if (key === 'b' && state.halted) { st.textContent = 'halted on loss'; st.dataset.halted = 'true'; }
+    else { st.textContent = state.running ? `running ${state.speed[key] ?? 1}×` : 'paused'; st.dataset.halted = String(!state.running); }
+
+    root.querySelector('[data-feed]').innerHTML = feeds[key].map(ev =>
+      `<div class="ev ${ev.tone}"><span class="t">t${ev.tick}</span><span>${ev.text}</span></div>`).join('');
+  }
+
+  // B's texture panel
+  const tex = host.querySelector('[data-texture]');
+  tex.innerHTML = CLASSES.filter(c => c.threshold !== Infinity).map(c => {
+    const r = rates[c.id] ?? 0;
+    const over = r >= c.threshold;
+    const pct = Math.min(100, (r / (c.threshold * 3)) * 100);
+    return `<div class="tex"><span class="n">${c.label}</span>
+      <span class="bar ${over ? 'over' : ''}"><i style="width:${pct}%"></i></span>
+      <span class="r">${r.toFixed(1)}<span class="st">/tick</span></span></div>`;
+  }).join('') + `<div class="tex"><span class="n" style="color:var(--loss)">last copy</span>
+      <span class="bar"><i style="width:0%"></i></span>
+      <span class="r" style="color:var(--loss)">discrete<span class="st"> always</span></span></div>`;
+
+  // B's halt banner
+  const haltHost = host.querySelector('[data-halt]');
+  haltHost.innerHTML = state.halted
+    ? `<div class="halted"><b>The world has stopped.</b> A node left the universe. Nothing else in this
+       design stops the clock — not a death, not a raid landing, not a university completing.
+       <button class="resume" type="button" data-resume>Let time run</button>
+       <div style="margin-top:.45rem;font:10.5px var(--mono);color:var(--faint)">
+         ${state.halts} halt${state.halts === 1 ? '' : 's'} in ${state.tick} months —
+         ${state.tick > 0 && state.halts / (state.tick / 12) > 3
+            ? '<span style="color:var(--loss)">past the point where this is a moment rather than a nuisance</span>'
+            : 'still rare enough to mean something'}
+       </div></div>` : '';
+  const resume = haltHost.querySelector('[data-resume]');
+  if (resume) resume.addEventListener('click', () => { state.halted = false; paint(); });
+
+  host.querySelector('[data-unread]').innerHTML = state.unread
+    ? `<b>${state.unread}</b> things happened while you were not looking` : 'nothing waiting';
+}
+
+document.getElementById('run').addEventListener('click', (e) => {
+  state.running = !state.running;
+  e.target.setAttribute('aria-pressed', String(state.running));
+  e.target.textContent = state.running ? '⏸ Running' : '▶ Paused';
+});
+const lossIn = document.getElementById('loss');
+lossIn.addEventListener('input', () => {
+  const v = Number(lossIn.value) / 10;
+  CLASSES.find(c => c.id === 'loss').perYear = v;
+  document.getElementById('lossv').textContent = v.toFixed(1);
+});
+const pop = document.getElementById('pop');
+pop.addEventListener('input', () => {
+  state.pop = Number(pop.value);
+  document.getElementById('popv').textContent = state.pop;
+});
+
+renderShell();
+paint();
+setInterval(() => {
+  if (!state.running) return;
+  const n = Math.max(state.speed.a, state.speed.b);
+  for (let i = 0; i < n; i += 1) if (!(state.halted && i > 0)) step();
+  paint();
+}, 900);
+</script>
