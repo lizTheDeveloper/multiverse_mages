@@ -89,17 +89,18 @@ Floats are fine: this is analysis, outside the rules path.
 - [x] Read `campaign-plan.md`, `probable-strategies.md`, `hard-magic.md`, `CLAUDE.md`
 - [x] Trace where per-node knowledge lives (`KNOWLEDGE_INSTANCE`, `NodeExistenceIndex`)
 - [x] Read `packages/coordination/src/god/ascension.ts` for the fungibility verdict
-- [ ] Commit and push this plan
-- [ ] Write `tools/w15-dimensionality.mts`: probe, CRN task construction, node-set extraction
-- [ ] Probe-validity check: probed vs unprobed snapshot hash identical
-- [ ] Time one 2400-tick run; size the replicate budget from the measurement
-- [ ] Arm 1 — eight strategies, common seeds, per-era + terminal composition
-- [ ] Eigenvalue spectrum, components for 80% / 95%
-- [ ] Pairwise Jaccard and cosine, between and within strategy
-- [ ] Arm 2 — founding species mix (needs the additive `foundingSpeciesMask` option below)
-- [ ] Direct fungibility verdict from the ascension predicates
-- [ ] Write `docs/design/strategy-dimensionality.md`
-- [ ] `npm run verify` green, reported exactly
+- [x] Commit and push this plan
+- [x] Write `tools/w15-dimensionality.mts`: probe, CRN task construction, node-set extraction
+- [x] Probe-validity check: probed vs unprobed snapshot hash identical
+- [x] Time one 2400-tick run; size the replicate budget from the measurement
+- [x] Arm 1 — eight strategies, common seeds, per-era + terminal composition
+- [x] Eigenvalue spectrum, components for 80% / 95%
+- [x] Pairwise Jaccard and cosine, between and within strategy
+- [x] Arm 2 — founding species mix (the additive `foundingSpeciesMask` option below).
+      150 of 168 runs; the three human-only groups still executing. No claim rests on them.
+- [x] Direct fungibility verdict from the ascension predicates
+- [x] Write `docs/design/strategy-dimensionality.md`
+- [x] `npm run verify` green, reported exactly
 
 ## The one additive production change, and why it is needed
 
@@ -115,4 +116,17 @@ rather than silently dropped.
 
 ## Status
 
-In flight. Findings will land in `docs/design/strategy-dimensionality.md`.
+**Done.** Findings in `docs/design/strategy-dimensionality.md`.
+
+The result refutes the campaign's thesis as stated. Inside the v1 ruleset the strategy space has
+**one** effective dimension: the first principal component carries 91.4% of the variance, containment
+is **1.000** for every cross-strategy pair — the strategies nest rather than diverge — and one fixed
+node ordering predicts every run's set from its size with fidelity **0.943**. Species change how far
+and how fast, not which: gnome and human, which share `depthCeiling: 4` and differ in every other
+trait, reach the **identical** 49-node set. The nodes are differentiated in the win condition and
+fungible in play, because `compareTargets` orders research by remaining cost then node id and reads
+no value at all.
+
+Pre-registration held up on both counts it could be checked against: the 51-node convergence was
+forced by content exhaustion rather than found, and the restricting strategies turned out **not** to
+have a repeatable niche (`narrow-depth` within-Jaccard 0.576, union 14 against a mean of 7.7).

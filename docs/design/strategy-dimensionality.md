@@ -7,7 +7,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 **Build:** `w15/strategy-dimensionality`, branched from `main` at `6e5ecee`, reference-universe-v1.
 **Instrument:** 96 runs, eight strategies × 12 runs, 2,400 world ticks (200 years), under common
-random numbers. Plus 168 runs varying the founding species mix.
+random numbers — arm A, complete. Plus arm B, varying the founding species mix: **150 of 168 planned
+runs**, 25 of 28 `(strategy, mix)` groups. The three groups still executing are
+`permissive-breadth`, `narrow-depth` and `archivist` at the human-only mix, which runs an order of
+magnitude slower than the others because a human-only universe carries the largest population. Every
+comparison this document draws a conclusion from is complete; the missing rows are marked *pending*
+in the arm-B table and no claim rests on them.
 
 Everything below is measured. Where a number is a hypothesis rather than a reading, it says so.
 
@@ -153,8 +158,8 @@ which are a subset of the 51, which are a subset of nothing else. **The strategy
 | **passive-control** | 1.000 | 0.052 | 0.150 | 1.000 | 0.142 | 1.000 | 0.977 | 0.998 |
 | **permissive-breadth** | 0.142 | 0.012 | 0.032 | 0.142 | 0.825 | 0.142 | 0.143 | 0.142 |
 | **portal-rush** | 1.000 | 0.052 | 0.150 | 1.000 | 0.142 | 1.000 | 0.977 | 0.998 |
-| **uniform-random** | 0.054 | 0.054 | 0.155 | 0.977 | 0.143 | 0.977 | 0.962 | 0.979 |
-| **worship-max** | 0.052 | 0.052 | 0.151 | 0.998 | 0.142 | 0.998 | 0.979 | 0.997 |
+| **uniform-random** | 0.977 | 0.054 | 0.155 | 0.977 | 0.143 | 0.977 | 0.962 | 0.979 |
+| **worship-max** | 0.998 | 0.052 | 0.151 | 0.998 | 0.142 | 0.998 | 0.979 | 0.997 |
 
 Note the diagonal. It is the **within-strategy** figure across seeds, and it is the pre-registered
 niche test.
@@ -247,16 +252,21 @@ Content order is draconic, dwarf, elf, gnome, human, orc — masks 1, 2, 4, 8, 1
 | `permissive-breadth` | elf | 6 | 112.7 | 118 | 105 | 655 | 962 | 6 canon |
 | `permissive-breadth` | gnome | 6 | 168.7 | 186 | 153 | 855 | 962 | 6 canon |
 | `permissive-breadth` | orc | 6 | 0.2 | 1 | 0 | 12 | 1835 | 3 cap, 2 canon, 1 stagnation |
+| `permissive-breadth` | human | — | *pending* | — | — | — | — | — |
+| `archivist` | all six | 6 | 51.0 | 51 | 51 | 3357 | 1248 | 3 apotheosis, 3 canon |
 | `archivist` | draconic | 6 | 3.2 | 8 | 1 | 8 | 507 | 6 stagnation |
 | `archivist` | dwarf | 6 | 19.3 | 51 | 2 | 755 | 728 | 2 canon, 4 stagnation |
 | `archivist` | elf | 6 | 50.8 | 51 | 50 | 346 | 1585 | 3 canon, 2 stagnation, 1 cap |
 | `archivist` | gnome | 6 | 49.0 | 49 | 49 | 398 | 859 | 6 stagnation |
 | `archivist` | orc | 6 | 0.0 | 0 | 0 | 0 | 1215 | 2 canon, 3 stagnation, 1 cap |
+| `archivist` | human | — | *pending* | — | — | — | — | — |
+| `narrow-depth` | all six | 6 | 7.2 | 12 | 3 | 1308 | 863 | 3 canon, 3 stagnation |
 | `narrow-depth` | draconic | 6 | 1.5 | 3 | 0 | 2 | 530 | 6 stagnation |
 | `narrow-depth` | dwarf | 6 | 4.2 | 7 | 1 | 402 | 518 | 6 stagnation |
 | `narrow-depth` | elf | 6 | 3.7 | 5 | 3 | 264 | 554 | 6 stagnation |
 | `narrow-depth` | gnome | 6 | 3.0 | 3 | 3 | 203 | 526 | 6 stagnation |
 | `narrow-depth` | orc | 6 | 1.3 | 5 | 0 | 3 | 640 | 1 canon, 5 stagnation |
+| `narrow-depth` | human | — | *pending* | — | — | — | — | — |
 
 Founding mix changes outcomes enormously — an orc-only universe learns essentially nothing and an
 elf-only one reaches 50.2 nodes. That is real signal, and it is the first time it has been measurable.
