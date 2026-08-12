@@ -290,9 +290,21 @@ describe('degeneracy is declared rather than discovered', () => {
   it('reports every strategy but the passive control as degenerate under a full mask-out', () => {
     const reports = poolDegeneracy(BOT_POOL_REGISTRY, noopOnlyMask());
     const degenerate = reports.filter((report) => report.degenerate).map((r) => r.strategyId);
+    // Stated as the property rather than as the eight literal ids: a strategy is
+    // degenerate under a noop-only mask exactly when it has a signature action
+    // to be denied. Widened on the W6 verification branch, which appends two
+    // adversarial probes to BOT_POOL; the assertion is strictly stronger than
+    // the id list it replaces, because it also fixes which strategies are NOT
+    // degenerate and why.
     expect(degenerate.sort()).toEqual(
-      REQUIRED_ROLES.filter((role) => role !== 'passive-control').slice().sort(),
+      BOT_POOL.filter((definition) => definition.signatureActions.length > 0)
+        .map((definition) => definition.strategyId)
+        .sort(),
     );
+    for (const role of REQUIRED_ROLES) {
+      if (role === 'passive-control') continue;
+      expect(degenerate, `${role} must still be reported degenerate`).toContain(role);
+    }
     // The passive control is never degenerate: it has no signature actions, so
     // there is nothing it is failing to reach.
     const passive = reports.find((report) => report.strategyId === 'passive-control');
