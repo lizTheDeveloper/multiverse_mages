@@ -519,10 +519,25 @@ sharpest possible version of §1's *"commitment made under uncertainty"*.
 
 ### What must be true for this to work
 
-- **Never show a raider the host's ruleset**, in the interface or the observation vector. If §4.1's
-  observation block exposes the host's permitted cells to an attacking agent, the entire mechanic is
-  void and no amount of interface discipline recovers it. **This needs checking before anything is
-  built on it.**
+- ~~**Never show a raider the host's ruleset.**~~ **Checked, and it already holds by construction.**
+  `packages/agent-api/src/observation.ts`'s `writeRuleset` reads `findUniverse(state)` — *the
+  observing universe's own* record — and encodes its `permittedTechniques`, `permittedForms` and
+  edicts. §1.1's one-universe-per-instance rule means there is no host record in the state to leak.
+
+  The sharper vector was the **engagement block**, since a legality mask computed under host rules
+  would tell a raider what is permitted without them having to try. It does not: the enemy side
+  carries `combatantCount`, five fixed-point side totals and `preparedSpellCount` — **aggregates, not
+  identities.** A raider can see that the defender is armed and cannot see what with. Nothing in
+  `gate.ts` or `candidates.ts` consults a host ruleset at all.
+
+  So asymmetry is the **default** here rather than something to protect, which is the good case: it
+  cannot be lost by an interface mistake, only by someone deliberately adding a channel. The rule to
+  carry forward is therefore narrow — **do not add one.** Any future block that reports what the host
+  permits, or a mask computed under host rules, voids §11b entirely.
+
+  One residual worth naming: `preparedSpellCount` tells a raider *how many* spells the defence has
+  ready. That is a magnitude and not a constitution, and it is probably the right amount of
+  information — you can see they are armed without learning what they are armed with.
 - **A refused cast must be legible as a refusal** and must not distinguish standing from mid-raid.
   The player should see *"the world said no"*, never *"the world said no, recently"*.
 - **What a scout learns must carry a timestamp**, not a guarantee.
