@@ -193,8 +193,8 @@ use dark magic*. The exclusion is checked against the **mage's** held set, never
 universe can eventually hold everything, spread across many mages, and that is exactly what a
 civilization is for. Every exclusion carries its **reason**, and symmetry follows from the reason
 rather than being asserted alongside it — an exclusion whose reason does not run both ways is not
-yet an exclusion. This is an anti-requisite on the node graph, which today knows only
-prerequisites.
+yet an exclusion. This is an **anti-requisite**: the mirror of a prerequisite, which is the only
+relation the content graph carries today.
 
 **Depth requires a long life.** Reaching the deepest nodes should be *weird* — the province of a
 naturally long-lived species, or of absurd life-extension magic. Extension therefore returns
