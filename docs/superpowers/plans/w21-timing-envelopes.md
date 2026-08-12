@@ -618,8 +618,32 @@ So the leading indicators are the measurement, not the win rate:
 - the D1–D9 table from `scripts/integration-r2-analyse.mjs`, which asserts
   strategy coverage before reporting anything.
 
+### What this instrument structurally cannot see
+
+The r2 sweep collects **final-tick metrics only** — `referenceNodesKnown` and
+the rest, at tick 2,400. So it can answer *did the endpoint move* and it
+**cannot** answer *did the grid open later*. A surcharge that pushes the grid's
+opening from tick 140 to tick 300 leaves more than two thousand idle ticks in
+which to arrive at exactly the same ceiling, and this table would read that as a
+null.
+
+That limitation is named here rather than discovered in the numbers, because a
+null from an instrument that could not have seen the effect is a different
+finding from a null from one that could. **The instrument that could see it is a
+horizon-600 variant of this sweep** — W17 found movement at 600 ticks and none
+at 2,400 on a different mechanic, for exactly this reason — and it has not been
+run.
+
+`balance/sweeps/w21-negative-control.sweep.json` is committed as the
+**confirmatory same-build instrument for that follow-up**: 80 replicates over
+`permit-then-idle` and `permissive-breadth` alone, the two strategies that win,
+so a paired flat-envelope arm can be run against it cheaply. It has not been run
+either, and is committed unrun deliberately and said so here — this repository
+refuses an unread constant on the grounds that a knob nobody turns is a null
+result waiting to be misread, and an unrun sweep deserves the same sentence.
+
 **If neither the win rate nor the indicators move, the timing mechanic is
-decorative against this agent and the report says so plainly.** The honest
+decorative against this agent at this horizon, and the report says so plainly.** The honest
 version of that finding is already legible from the design: the rule prices the
 *constitutional* verbs, and integration round 2's own conclusion was that the
 clerical verbs are *"worth slightly less than nothing"* while the ceiling picks
