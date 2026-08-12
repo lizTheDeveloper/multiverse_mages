@@ -64,12 +64,6 @@ function se(xs) {
   const m = mean(xs);
   return Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / (xs.length - 1) / xs.length);
 }
-function median(xs) {
-  if (xs.length === 0) return NaN;
-  const s = [...xs].sort((a, b) => a - b);
-  const mid = s.length >> 1;
-  return s.length % 2 === 1 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
-}
 const val = (run, id) => run.metrics[id]?.value ?? NaN;
 const f = (x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : 'n/a');
 
