@@ -43,8 +43,10 @@ import {
   storePolicy,
   traditionTableFrom,
 } from '@mm/rules-magic';
-import { territoryExtent } from '@mm/rules-world';
-import type { WorldStepDeps } from '../../src/index.js';
+import type { TargetAppealWeights } from '@mm/rules-world';
+import { readTargetAppeal, resolveSpeciesAffinities, territoryExtent } from '@mm/rules-world';
+import type { NodeFacetResolver, WorldStepDeps } from '../../src/index.js';
+import { nodeFacetsFrom } from '../../src/index.js';
 
 /** The shipped content, loaded once for a whole test file. */
 let cached: ContentRegistry | undefined;
@@ -108,6 +110,16 @@ export function catalogAndCells(): { catalog: NodeCatalog; cells: CellResolver }
   return { catalog: catalogFromRegistry(registry()), cells: grid };
 }
 
+/** The node cell/form/effect index, over shipped content. */
+export function nodeFacets(): NodeFacetResolver {
+  return nodeFacetsFrom(registry());
+}
+
+/** The target-appeal weights, read from shipped `autonomy-weight.json`. */
+export function appealWeights(): TargetAppealWeights {
+  return readTargetAppeal(registry());
+}
+
 /** The deps a world simulation is built from, over shipped content. */
 export function worldDeps(traditionId: number): WorldStepDeps {
   const { catalog, cells } = catalogAndCells();
@@ -116,12 +128,17 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     speciesOf,
     catalog,
     cells,
+    facets: nodeFacets(),
+    affinitiesOf: (species) => resolveSpeciesAffinities(species, registry()),
+    appeal: appealWeights(),
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
     territory: territoryExtent(registry().territories.map((entry) => entry.record)),
     primitives: {
       lifespan: primitiveNamed('lifespan'),
       resourceYield: primitiveNamed('resource-yield'),
+      researchRate: primitiveNamed('research-rate'),
+      teachRate: primitiveNamed('teach-rate'),
       scribeRate: primitiveNamed('scribe-rate'),
       fertility: primitiveNamed('fertility'),
     },

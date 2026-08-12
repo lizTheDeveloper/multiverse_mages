@@ -243,19 +243,54 @@ describe('two hundred world years of the reference universe', () => {
     expect(longest).toBeLessThan(SUSTAINED_ALTERNATION_TICKS);
   });
 
-  it('9.8 — has no capital growth curve to have a non-increasing derivative', () => {
-    // Measured and recorded, not asserted. See the module note.
+  it('9.8 — has a capital curve at last, and it rises, peaks and falls back', () => {
+    // **This box was open, and the tripwire under it has fired.** Task 9.8 read
+    // *"true and vacuous, so not asserted: total effective capital contribution
+    // is `fp(32)` from world year one to world year two hundred, because library
+    // depth reaches two distinct nodes and stops … 1,263 books, two nodes"*, and
+    // it asserted the books-to-depth ratio precisely so that fixing the loop
+    // would fail the suite and bring somebody back here.
+    //
+    // `w7/knowledge-capital` wired vision §6a: the library's depth reaches
+    // `research-rate`, `teach-rate` and `scribe-rate` through the shared
+    // accumulator, upkeep is charged, and the scribable list prefers a node the
+    // shelf does not already hold. So the series is a curve now.
     const distinct = [...new Set(run.ticks.map((tick) => tick.capitalContribution))];
     const depths = [...new Set(run.ticks.map((tick) => tick.libraryDepth))];
     const last = run.ticks[run.ticks.length - 1];
+    const peak = run.ticks.reduce((best, tick) => Math.max(best, tick.capitalContribution), 0);
     console.log(
       `9.8 total effective capital contribution took the values [${distinct.join(', ')}] fp over ` +
         `the whole run, from library depths [${depths.join(', ')}] distinct nodes, against ` +
-        `${String(last?.grimoires ?? 0)} books written.`,
+        `${String(last?.grimoires ?? 0)} books standing at the end.`,
     );
-    // The finding, asserted so that it cannot quietly stop being true: hundreds
-    // of books, a handful of distinct nodes on the shelf.
-    expect(last?.grimoires ?? 0).toBeGreaterThan(100 * (last?.libraryDepth ?? 1));
+
+    // It is a curve rather than a constant. That is the claim the box asked for
+    // and could not make; the *derivative* claim it was written to make is still
+    // not made here, because the series does not merely flatten — it falls, and
+    // asserting "non-increasing growth" over a series that turns negative would
+    // pass for the wrong reason.
+    expect(distinct.length).toBeGreaterThan(2);
+    expect(peak).toBeGreaterThan(0);
+
+    // What replaces the books-to-depth tripwire, and what it is a tripwire for
+    // now: the shelf is no longer hundreds of copies of a handful of nodes. It
+    // is roughly one book per distinct node, because a scribe prefers something
+    // the library lacks and because upkeep charges her for every duplicate she
+    // does write. Two books per node would mean the preference has stopped
+    // biting; ten would mean it is gone.
+    expect(last?.grimoires ?? 0).toBeLessThan(2 * (last?.libraryDepth ?? 1));
+
+    // And the fall is brake 4 doing exactly what `mages-and-species/design.md`
+    // said it would: *"beyond some depth the marginal shelf costs more than it
+    // returns."* The materials stock empties around world year seventy, upkeep
+    // goes unpaid, and the library is shed back to what the economy can keep —
+    // a soft equilibrium set by the materials situation rather than a plateau
+    // every universe reaches. The first non-raid channel in the build by which
+    // a *written* copy leaves a universe.
+    expect(peak).toBeGreaterThan(
+      run.ticks[run.ticks.length - 1]?.capitalContribution ?? Number.POSITIVE_INFINITY,
+    );
   });
 
   it('9.10 — records the mature-universe mage population vision §13 asked for', () => {

@@ -1,50 +1,47 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
-  "contentHash": "8c545e4648e4bd0f03357cb38c064604d0e88ead85fdb5f052d3f999bea99741",
+  "contentHash": "65c888d1875fd09daa85b8d1b6c0494737075a66c0a62e78884b8c86596d3d44",
   "kind": "gate",
   "metrics": [
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":96.3298283289909,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":288.9894849869727,"unit":"grimoires","value":1012.5625},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":32,"standardError":248.45556706542834,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":745.366701196285,"unit":"instances","value":2025.375},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":32,"standardError":0.18712760638513115,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.5613828191553935,"unit":"nodes","value":2.21875},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":32,"standardError":4.32820961108632,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":12.984628833258961,"unit":"mages","value":73.28125},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":32,"standardError":11.132665647527679,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":33.397996942583035,"unit":"nodes","value":56.03125},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":32,"standardError":2.2637538455437873,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":6.791261536631362,"unit":"nodes","value":4.21875},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":32,"standardError":11.132665647527679,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":33.397996942583035,"unit":"nodes","value":58.53125},
-    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":32,"standardError":36.8125,"standardErrorMethod":"jackknife","status":"measured","tolerance":110.4375,"unit":"people","value":19340},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":32,"standardError":1127.4145738692434,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3382.2437216077305,"unit":"people","value":4859.3125},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1127.4145738692434,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3382.2437216077305,"unit":"people","value":4715.3125}
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":35.442857525227446,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":106.32857257568233,"unit":"grimoires","value":110.125},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":32,"standardError":337.63326857900023,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1012.8998057370006,"unit":"instances","value":1942.125},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":32,"standardError":3.3689595415880467,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":10.10687862476414,"unit":"nodes","value":24.9375},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":32,"standardError":4.133260803055069,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":12.399782409165205,"unit":"mages","value":70.40625},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":32,"standardError":13.77904298816296,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":41.33712896448888,"unit":"nodes","value":62.96875},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":32,"standardError":1.147833751650722,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.443501254952166,"unit":"nodes","value":2.0625},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":32,"standardError":13.77904298816296,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":41.33712896448888,"unit":"nodes","value":65.46875},
+    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":32,"standardError":285.78125,"standardErrorMethod":"jackknife","status":"measured","tolerance":857.34375,"unit":"people","value":19603},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":32,"standardError":1351.8896436756424,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4055.6689310269276,"unit":"people","value":6116.84375},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1351.8896436756424,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4055.6689310269276,"unit":"people","value":5972.84375}
   ],
   "notes": [
-    "NOT A BALANCE CLAIM. release-plan.md forbids one before 0.5.0, and 0.5.0 is the release that builds the instrument rather than one that tunes the game. This file records what this build did on 2026-08-11 and nothing more.",
-    "The universe these vital signs describe is still degenerate, and in ways POOL_BUILD_LIMITS in packages/mc-harness/src/strategies.ts enumerates: action 14 is permanently masked in a single-universe run; ascension eligibility opens by passive worship accrual rather than by play; uniform-random-legal submits actions 1-7 with no parameter at all, because those carry no candidate slot list, so seven of its fifteen verbs are refused inside the dispatch and the noise floor is close to a passive control; and the reference scenario starts with zero favor, so every strategy is a passive control until regeneration pays for its cheapest move. The 0-based axis rotation the superseded baseline listed here is fixed, and is why this file moved.",
-    "Tolerances here are wide on purpose and are not comparable to the other two gates'. The standard-error estimator stratifies on cellIndex, and within a cell of this sweep the eight replicates are eight different strategies rather than eight samples of one — so what it calls noise is mostly strategy effect. That is the price of an instrument that can see a win condition.",
-    "Every record now carries terminalReason (contracts.md §1.1), and the summary carries countsByTerminalReason beside countsByStatus, so route share is measured rather than inferred from tick clustering. On the 32 runs behind this file: 12 ascensionApotheosis, 12 ascensionCanon, 3 stagnation, 5 still running at the cap. ascensionRate is 0.75 and remains far above contracts.md §7's declared 0.05-0.20 band — a finding, not a target, and W2 of the ascension-meta campaign is what changes it."
+    "No release before 0.5.0 may claim any of this is balanced: every magnitude in autonomy-weight.json carries tuningStatus untuned and the balance harness owns all of them, so this file is a measurement and not a balance claim. The universe also remains degenerate in known ways and this change closes none of them -- it demonstrates the binding one. These gate sweeps are 100 percent passive-control and submit no god verb. On the 2400-tick eight-strategy sweep, five of seven unrestricted strategies still finish holding ALL 51 reachable v1 nodes (mean 51.0, union 51, intersection 51), so cross-strategy containment stays 1.000 and prefix fidelity falls only 0.943 to 0.909. A set that contains everything is contained in every other set; composition is not yet a decision. What did move is every measure that is not saturated: the effort-weighted shape participation ratio 2.39 to 4.89, early-horizon minimum containment 0.742 to 0.612 at tick 240, and denial-warden against narrow-depth containment 0.771 to 0.643. capitalSnowball is NOT RECOMPUTED HERE and no number in this file is a claim about it: 0.502 is W7's figure for W7's build, and this change raised early referenceLibraryDepth from 7.145 to 10.435, which is exactly the input that metric is a Gini over -- so it must be re-measured before anyone quotes it against the 0.35 guard worshipSnowball is held to. That threshold belongs to god-agency and is not touched. W7's Enduring Canon effect is intact and not restored by this change: narrow-depth ends 0 of 12 in canon on both the w7-only and the w7-plus-w17 arms, against 7 of 12 before W7."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "2512ea02d2a7569d8d0bacc4c5a926ca",
+    "contentHash": "d37624e36be00f59cf21b87ff6eba144",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "The strategy pool's technique and form rotations are 1-based, which is what coordination's axisPlan has always required. No content constant moved and no rule changed. Before this, technique(round) = round % 5 and form(round) = round % 14 emitted 0 — an id axisPlan refuses — so one permitTechnique in five and one permitForm in fourteen was silently refused, and technique 5 and form 14 were never named by any strategy in any measurement ever taken. permissive-breadth, denial-warden and portal-rush therefore play differently and are at version 3; narrow-depth is unchanged, because its exceptFirst rotations already emitted 1..count-1 and had neither half of the defect. agent-api's gate now range-checks the two axis parameters and reports parameter-out-of-range, so the same mistake would be a counted rejection rather than a refusal only the core's own tally sees. This regeneration is NOT a fix for a red gate: the gate PASSED against the superseded baseline first, every metric inside 3 standard errors, largest movement referenceGrimoires at -2.14 SE. It is committed so the baseline describes the build that exists, and so that drift is not left for a later change to inherit.",
+  "rationale": "W17 made target selection a utility score (contracts.md 2.11, docs/design/value-sensitive-acquirer.md), and adding autonomy-weight.json moves contentHash 2512ea02 to d37624e3, so this baseline is invalid by provenance. That is the ONLY reason it is regenerated: every one of the ten metrics in this gate was already inside tolerance against the old numbers -- the largest were referenceNodesGainedFinalQuarter at -1.03 SE and referenceLivingMages at -0.90 SE. This sweep is 32 runs at wide tolerances, so it is the least sensitive of the three and should be read as recording no detectable change rather than as confirming none.",
   "rootSeed": 20260811,
   "runCount": 32,
   "supersededDeltas": [
-    {"delta":-143.9375,"deltaInStandardErrors":-2.1421334716033136,"metricId":"referenceGrimoires","previousValue":1156.5,"value":1012.5625},
-    {"delta":-131.75,"deltaInStandardErrors":-0.5529257883647238,"metricId":"referenceKnowledgeInstances","previousValue":2157.125,"value":2025.375},
-    {"delta":-0.1875,"deltaInStandardErrors":-0.8596527976755033,"metricId":"referenceLibraryDepth","previousValue":2.40625,"value":2.21875},
-    {"delta":0.6875,"deltaInStandardErrors":0.17480541605926506,"metricId":"referenceLivingMages","previousValue":72.59375,"value":73.28125},
-    {"delta":-0.8125,"deltaInStandardErrors":-0.07440063597658726,"metricId":"referenceNodesGained","previousValue":56.84375,"value":56.03125},
-    {"delta":-0.125,"deltaInStandardErrors":-0.05634601269663663,"metricId":"referenceNodesGainedFinalQuarter","previousValue":4.34375,"value":4.21875},
-    {"delta":-0.8125,"deltaInStandardErrors":-0.07440063597658726,"metricId":"referenceNodesKnown","previousValue":59.34375,"value":58.53125},
-    {"delta":38,"deltaInStandardErrors":0.20976367086424014,"metricId":"referencePeakPopulation","previousValue":19302,"value":19340},
-    {"delta":-315.96875,"deltaInStandardErrors":-0.28021610106437334,"metricId":"referencePopulation","previousValue":5175.28125,"value":4859.3125},
-    {"delta":-315.96875,"deltaInStandardErrors":-0.28021610106437334,"metricId":"referencePopulationChange","previousValue":5031.28125,"value":4715.3125}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":110.125,"value":110.125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":1942.125,"value":1942.125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":24.9375,"value":24.9375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":70.40625,"value":70.40625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":62.96875,"value":62.96875},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":2.0625,"value":2.0625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":65.46875,"value":65.46875},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":19603,"value":19603},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":6116.84375,"value":6116.84375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":5972.84375,"value":5972.84375}
   ],
-  "supersedes": "4b30d2be6b3898ffb1f957c858a700bef4ff8facd051c140740b557c0ce26f68",
+  "supersedes": "0af5676720a2e1ce85baa1011401b6693cad5779d9fcdb6dd5fbf35e6b12312a",
   "sweepId": "balance-gate-ascension-v1",
   "toleranceK": 3
 }

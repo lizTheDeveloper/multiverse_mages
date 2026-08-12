@@ -166,6 +166,7 @@ import { compareTargets } from '@mm/rules-world';
 import { NO_INHERITOR } from '@mm/rules-world';
 
 import type { EffortKey, EffortLedger } from './effort-store.js';
+import type { NodeFacetResolver } from './node-facets.js';
 import type { CellNodeIndex } from './frontier-index.js';
 import { cellNodeIndex } from './frontier-index.js';
 
@@ -214,6 +215,16 @@ export interface GatewayDeps {
   readonly knowledge: KnowledgeSubsystem;
   readonly catalog: NodeCatalog;
   readonly cells: CellResolver;
+  /**
+   * A node's cell, form and effect primitives, for the utility score that
+   * decides which target a mage takes.
+   *
+   * Here rather than on `NodeCatalog` because that projection keeps the effects
+   * list out of reach on purpose (`catalog.ts`), and rightly: this index reads
+   * *which* primitives a node declares and never a magnitude, so nothing that
+   * holds it can start applying an effect.
+   */
+  readonly facets: NodeFacetResolver;
   /** The universe's ruleset. Legality gates world-time acquisition (§1.1). */
   readonly ruleset: Ruleset;
   /**
@@ -322,6 +333,17 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   #legalNodes: readonly ContentId[] | undefined;
   /** A mage's shelf, resolved once per mage per phase. See {@link #shelfFor}. */
   readonly #shelves = new Map<MageHandle, Handle>();
+  /**
+   * What each shelf already holds, resolved once per library per phase.
+   *
+   * Memoized for the reason every other index on this class is: the scribable
+   * scan asks per mage per candidate node, and a library scan per question would
+   * make choosing what to write cost `mages × instances`. A gateway is a view of
+   * one phase, so the set cannot go stale inside one — a book finished in the
+   * work phase deepens the shelf for the *next* evaluation, which is also the
+   * rule `capital.ts` states for the depth reading.
+   */
+  readonly #shelfContents = new Map<Handle, ReadonlySet<ContentId>>();
   /** Books in mages' hands, from one pass. See {@link #grimoiresHeldBy}. */
   #grimoiresByHolder: Map<MageHandle, Handle[]> | undefined;
 
@@ -434,7 +456,15 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
         // would inflate the denominator with evaluations nobody paid for.
         clampCounter: createRediscoveryClampCounter(),
       });
-      found.push({ nodeId, tier: node.tier, remainingCost: Math.max(requirement - banked, 0) });
+      const facets = this.#deps.facets(nodeId);
+      found.push({
+        nodeId,
+        tier: node.tier,
+        remainingCost: Math.max(requirement - banked, 0),
+        cellId: facets.cellId,
+        formId: facets.formId,
+        primitives: facets.primitives,
+      });
     }
     found.sort(compareTargets);
     return found.length > limit ? found.slice(0, limit) : found;
@@ -481,7 +511,36 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (node === undefined) return undefined;
     if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return undefined;
     if (!this.knows(mage, nodeId)) return undefined;
-    return { nodeId, tier: node.tier, remainingCost: node.scribeCost };
+    const facets = this.#deps.facets(nodeId);
+    // `libraryHolds`: whether the shelf she would write onto already holds it.
+    // See `candidates.ts`'s `compareTargets` for why the answer changes the
+    // order she considers her options in, and `coordination.ts`'s
+    // `libraryHolds` for the measurement that says it has to.
+    return {
+      nodeId,
+      tier: node.tier,
+      remainingCost: node.scribeCost,
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
+      libraryHolds: this.#shelfHolds(mage, nodeId),
+    };
+  }
+
+  /** Whether the library this mage would shelve into already holds `nodeId`. */
+  #shelfHolds(mage: MageHandle, nodeId: ContentId): boolean {
+    const shelf = this.#shelfFor(mage);
+    if (shelf === 0) return false;
+    let held = this.#shelfContents.get(shelf);
+    if (held === undefined) {
+      held = new Set(
+        this.#deps.knowledge
+          .instancesAt(LOCATION_KIND.library, shelf)
+          .map((instance) => this.#deps.knowledge.read(instance).nodeId),
+      );
+      this.#shelfContents.set(shelf, held);
+    }
+    return held.has(nodeId);
   }
 
   /**
@@ -552,7 +611,12 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * restores the project along with the instances, which is the same
    * no-migration-needed property dormancy has.
    */
-  contributeResearch(mage: MageHandle, nodeId: ContentId, mageMonths: Fixed): void {
+  contributeResearch(
+    mage: MageHandle,
+    nodeId: ContentId,
+    mageMonths: Fixed,
+    researchRate: Fixed = NEUTRAL_RATE,
+  ): void {
     const ledger = this.#ledger('research');
     const rates = this.#ratesOf(mage);
     if (rates === undefined) return;
@@ -570,12 +634,19 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       progress: ledger.progressOf(key),
       effort: mageMonths,
       learnRate: rates.learnRate,
-      // Neutral until the library's `research-rate` contribution is wired to a
-      // staffed university. Stated rather than silently omitted: a stacked
-      // multiplier defaulted to something other than `fp(1)` is a balance change
-      // nobody asked for, and one defaulted to `fp(1)` is a bonus that is simply
-      // not in effect yet.
-      researchRate: NEUTRAL_RATE,
+      // Vision §6a's contribution arrives here, and here rather than folded into
+      // `mageMonths` because `research.ts` is explicit about which side of the
+      // arithmetic a rate belongs on: *"a quick learner needs less progress
+      // rather than earning more per step, which keeps a step's progress a
+      // function of the effort supplied and nothing else — one place for rates
+      // to apply instead of two."* Already stacked and already capped by the
+      // caller, for the same reason: `research.ts` says *"researchRate arrives
+      // already stacked"*, and a second fold is how two `+20%` bonuses come to
+      // mean different things in two packages.
+      //
+      // Defaulted to `fp(1)` so a query-only caller and a world with neither god
+      // nor university take exactly the path they took before.
+      researchRate,
       rediscoveryAffinity: rates.rediscoveryAffinity,
       clampCounter: this.#clampCounter,
       store: this.#deps.store,
@@ -761,6 +832,69 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     this.#deps.knowledge.destroyInstancesHeldBy(mage, this.#deps.state.clock.worldTick);
     this.#settleEstate(mage, inheritor);
     this.#deps.onGrimoiresInherited?.(mage, inheritor);
+  }
+
+  /**
+   * Takes a library's least-loved books away, because it could not be kept.
+   *
+   * The `universities` requirement *Libraries impose upkeep proportional to
+   * depth* ends with the clause this method exists for: *"the shortfall MUST
+   * degrade libraries deterministically rather than driving materials
+   * negative."* `applyLibraryUpkeep` decides **how many** — that is an economy
+   * question and `rules-world` owns it — and says in as many words that
+   * *"which instance is destroyed is the knowledge subsystem's decision"*,
+   * because `contracts.md` §5 rule 3 keeps the two packages out of each other.
+   * This is the port between them.
+   *
+   * **Duplicates first, then ascending instance handle.** A library that must
+   * shed ten books sheds ten it holds twice before it sheds anything it holds
+   * once, which is what a librarian does and what makes the brake a cost on
+   * *hoarding* rather than a randomised loss of the archive. `libraryDependence`
+   * is the metric that would otherwise be moved by a brake meant to charge for
+   * shelf space. Ascending handle is the tie-break, for `applyLibraryUpkeep`'s
+   * own reason: handles are stable identities and iteration order is a function
+   * of the destroy history.
+   *
+   * @returns how many instances were actually destroyed, and how many of them
+   * were the last copy in the universe of their node — which the world loop adds
+   * to `nodesLost`, because a node whose last copy rotted off a shelf has left
+   * the universe exactly as surely as one whose holder died.
+   */
+  degradeLibrary(
+    library: Handle,
+    instances: number,
+    worldTick: number,
+  ): { destroyed: number; nodesLost: number } {
+    if (instances <= 0) return { destroyed: 0, nodesLost: 0 };
+    const knowledge = this.#deps.knowledge;
+
+    const shelved = [...knowledge.instancesAt(LOCATION_KIND.library, library)].sort(
+      (a, b) => a - b,
+    );
+    // A stable partition rather than a sort on a mutating count: the first copy
+    // of each node in ascending handle order is the one kept back, and every
+    // later copy is offered up first.
+    const duplicates: Handle[] = [];
+    const singles: Handle[] = [];
+    const kept = new Set<ContentId>();
+    for (const instance of shelved) {
+      const nodeId = knowledge.read(instance).nodeId;
+      if (kept.has(nodeId)) duplicates.push(instance);
+      else {
+        kept.add(nodeId);
+        singles.push(instance);
+      }
+    }
+
+    let destroyed = 0;
+    let nodesLost = 0;
+    for (const instance of [...duplicates, ...singles]) {
+      if (destroyed >= instances) break;
+      const loss = knowledge.destroyInstance(instance, worldTick);
+      destroyed += 1;
+      if (loss !== undefined) nodesLost += 1;
+    }
+    return { destroyed, nodesLost };
   }
 
   /** Every node this mage holds in mind or palace, ascending by node id. */

@@ -64,6 +64,7 @@ export const CONTENT_FILES = [
   'god-cost.json',
   'god-constant.json',
   'raid-constant.json',
+  'autonomy-weight.json',
 ] as const;
 
 export type ContentFileName = (typeof CONTENT_FILES)[number];

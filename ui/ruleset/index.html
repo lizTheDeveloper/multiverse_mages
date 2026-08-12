@@ -1,0 +1,421 @@
+<!--
+  Multiverse Mages — the ruleset, as the god sees it.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  A prototype of design pillar #1: rules-setting is the core verb. Real
+  content — 5 techniques, 14 forms, 70 cells, 300 authored nodes — and
+  vision §4's legality rule. Audio is synthesised live per sound-design
+  §0.8's synthesised tier; no assets are loaded.
+
+  Serve with `npm run ui`, then open /ui/ruleset/.
+
+  KNOWN COST: this reimplements permits() rather than importing it from
+  packages/state, so the rule exists twice. That is the trade for a static
+  file with no build step, and it is the first thing to fix if this becomes
+  the client — contracts.md §5 puts that rule in exactly one place.
+-->
+<meta charset="utf-8">
+<title>Multiverse Mages — the ruleset</title>
+<style>
+  :root{
+    --ground:#ece7de; --panel:#f5f2eb; --sunk:#e2dcd0; --line:#c8c0b1;
+    --ink:#17191c; --soft:#55595f; --faint:#8a8d93;
+    --brass:#9a6b1f; --brass-lit:#c08a3e; --verdigris:#2f6f60; --ember:#a83a2c;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+    --serif:"Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --ground:#0f1216; --panel:#171b21; --sunk:#1f242c; --line:#2c333d;
+    --ink:#dfe3e8; --soft:#99a1ac; --faint:#6a737f;
+    --brass:#c08a3e; --brass-lit:#e0ab5c; --verdigris:#58a08d; --ember:#d1594a;}}
+  :root[data-theme="dark"]{
+    --ground:#0f1216; --panel:#171b21; --sunk:#1f242c; --line:#2c333d;
+    --ink:#dfe3e8; --soft:#99a1ac; --faint:#6a737f;
+    --brass:#c08a3e; --brass-lit:#e0ab5c; --verdigris:#58a08d; --ember:#d1594a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.5 var(--sans);min-height:100vh}
+  .wrap{max-width:78rem;margin:0 auto;padding:1.75rem 1.25rem 4rem}
+  header{display:flex;flex-direction:column;gap:.3rem;margin-bottom:1.25rem}
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--brass)}
+  h1{font:400 clamp(1.6rem,3vw,2.3rem)/1.1 var(--serif);margin:0;letter-spacing:-.01em}
+  .lede{color:var(--soft);max-width:62ch;margin:.15rem 0 0}
+  .lede em{color:var(--ink);font-style:italic}
+
+  .bar{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;padding:.7rem .9rem;background:var(--panel);border:1px solid var(--line);border-radius:4px;margin-bottom:1rem}
+  .meter{display:flex;align-items:baseline;gap:.4rem}
+  .meter .k{font:10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  .meter .v{font:400 1.15rem var(--serif);font-variant-numeric:tabular-nums}
+  .meter .v[data-low="true"]{color:var(--ember)}
+  .spacer{flex:1}
+  button{font:inherit;color:inherit;background:var(--sunk);border:1px solid var(--line);border-radius:3px;padding:.4rem .75rem;cursor:pointer}
+  button:hover:not(:disabled){border-color:var(--brass)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button:focus-visible,.cell:focus-visible,.axis:focus-visible{outline:2px solid var(--brass-lit);outline-offset:2px}
+  .hint{font:11px var(--mono);color:var(--faint)}
+
+  .grid{display:grid;grid-template-columns:7.5rem repeat(14,minmax(0,1fr));gap:3px;overflow-x:auto;padding-bottom:.4rem}
+  .corner{}
+  .axis{display:flex;align-items:center;justify-content:center;text-align:center;padding:.35rem .2rem;background:var(--panel);border:1px solid var(--line);border-radius:3px;cursor:pointer;font:11px var(--mono);letter-spacing:.04em;line-height:1.15;min-height:2.6rem}
+  .axis.tech{justify-content:flex-start;padding-left:.6rem;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+  .axis[aria-pressed="false"]{background:var(--sunk);color:var(--faint);text-decoration:line-through;text-decoration-color:var(--ember)}
+  .axis[aria-pressed="true"]{border-color:color-mix(in srgb,var(--verdigris) 45%,var(--line))}
+  .axis:hover{border-color:var(--brass)}
+  .cell{aspect-ratio:1;border:1px solid var(--line);border-radius:2px;background:var(--sunk);cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;padding:0}
+  .cell[data-on="true"]{background:color-mix(in srgb,var(--verdigris) 34%,var(--panel));border-color:color-mix(in srgb,var(--verdigris) 55%,var(--line))}
+  .cell[data-on="false"]{background:var(--sunk);opacity:.5}
+  .cell[data-edict="dispensation"]{background:color-mix(in srgb,var(--brass) 42%,var(--panel));border-color:var(--brass)}
+  .cell[data-edict="interdiction"]{background:color-mix(in srgb,var(--ember) 26%,var(--panel));border-color:var(--ember);opacity:1}
+  .cell[data-sel="true"]{outline:2px solid var(--ink);outline-offset:-2px}
+  .cell .mark{font:10px var(--mono);color:var(--ink);opacity:.75}
+  .cell:hover{border-color:var(--brass)}
+
+  .panes{display:grid;grid-template-columns:1fr 20rem;gap:1rem;margin-top:1rem}
+  @media (max-width:60rem){.panes{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:1rem 1.1rem}
+  .card h2{font:11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 .6rem;font-weight:500}
+  .cellname{font:400 1.35rem var(--serif);margin:0}
+  .classical{font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--brass);margin:.1rem 0 .5rem}
+  .verdict{font:12px var(--mono);letter-spacing:.06em;padding:.3rem .55rem;border-radius:3px;display:inline-block;margin-bottom:.7rem}
+  .verdict[data-on="true"]{background:color-mix(in srgb,var(--verdigris) 22%,transparent);color:var(--verdigris)}
+  .verdict[data-on="false"]{background:color-mix(in srgb,var(--ember) 18%,transparent);color:var(--ember)}
+  .nodes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;max-height:15rem;overflow-y:auto}
+  .nodes li{border-left:2px solid var(--line);padding-left:.65rem}
+  .nodes b{font-weight:500}
+  .nodes .t{font:10px var(--mono);color:var(--faint);margin-left:.35rem}
+  .nodes p{margin:.1rem 0 0;font-size:.85rem;color:var(--soft)}
+  .trunk{margin:0 0 .7rem;padding:.5rem .65rem;border-left:3px solid var(--brass);background:color-mix(in srgb,var(--brass) 10%,transparent);font-size:.85rem;color:var(--soft);border-radius:0 3px 3px 0}
+  .trunk b{color:var(--ink)}
+  .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.35rem;max-height:15rem;overflow-y:auto;font-size:.85rem}
+  .log li{color:var(--soft);border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent);padding-bottom:.3rem}
+  .log b{color:var(--ink);font-weight:500}
+  .log .warn{color:var(--ember)}
+  .edicts{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.6rem}
+  footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--line);color:var(--faint);font-size:.8rem}
+  code{font:12px var(--mono);color:var(--soft)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Multiverse Mages · design pillar #1 · vision §4</div>
+    <h1>What magic is possible at all</h1>
+    <p class="lede">Nineteen switches — five techniques, fourteen forms. A cell exists only if <em>both</em> its axes are permitted. Edicts buy single-cell exceptions, and the budget is small on purpose.</p>
+  </header>
+
+  <div class="bar">
+    <div class="meter"><span class="k">Cells live</span><span class="v" id="m-cells">—</span></div>
+    <div class="meter"><span class="k">Nodes reachable</span><span class="v" id="m-nodes" title="Nodes whose prerequisites are all held. A dormant instance cannot satisfy a prerequisite, so this falls faster than the cell count.">—</span></div>
+    <div class="meter"><span class="k">Edicts</span><span class="v" id="m-edicts">—</span></div>
+    <div class="spacer"></div>
+    <button id="sound" aria-pressed="false">♪ Sound off</button>
+    <button id="reset">Reset ruleset</button>
+    <span class="hint">click an axis to permit · click a cell for an edict</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="panes">
+    <div class="card" id="detail"><h2>Cell</h2><p class="hint">Select a cell.</p></div>
+    <div class="card">
+      <h2>Consequences</h2>
+      <ul class="log" id="log"></ul>
+    </div>
+  </div>
+
+  <footer>
+    Real content: <code>technique.json</code>, <code>form.json</code>, <code>cell.json</code>, <code>node.json</code> — 70 cells, 300 authored nodes.
+    Legality is vision §4's rule: a cell is available iff its technique and form are both permitted, after edicts.
+    Audio is synthesised live (sound-design §0.8, synthesised tier); no recorded assets are loaded.
+  </footer>
+</div>
+
+<script type="module">
+const DATA = await (await fetch('./content.json')).json();
+const EDICT_BUDGET_MAX = 8; // packages/state/src/enums.ts
+
+const state = {
+  technique: new Set(DATA.techniques.map(t => t.id)),
+  form: new Set(DATA.forms.map(f => f.id)),
+  edicts: new Map(),            // cellId -> 'dispensation' | 'interdiction'
+  selected: 'rego-limen',
+  sound: false,
+};
+
+// ---- audio: synthesised, nothing loaded ----
+let ctx = null, bus = null;
+function ensure() {
+  if (ctx) return ctx;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  // A master bus with a compressor, as the beat-grid prototype has. Without
+  // one, a handful of quiet sines at 150 Hz are effectively inaudible on
+  // laptop speakers — which is exactly how this read as "no sound at all".
+  bus = ctx.createGain();
+  bus.gain.value = 0.9;
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -18; comp.ratio.value = 4;
+  bus.connect(comp).connect(ctx.destination);
+  return ctx;
+}
+function tone(f, t0, dur, peak, type = 'sine', detune = 0) {
+  const c = ensure(), o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.value = f; o.detune.value = detune;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(peak, t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(bus); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function noise(t0, dur, peak, hz, q = 1) {
+  const c = ensure(), n = Math.ceil(c.sampleRate * dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const s = c.createBufferSource(); s.buffer = b;
+  const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = hz; f.Q.value = q;
+  const g = c.createGain(); g.gain.value = peak;
+  s.connect(f).connect(g).connect(bus); s.start(t0);
+}
+const ROOT = 293.66; // D — an octave above the first pass, which sat too low to hear
+const SCALE = [0, 2, 3, 5, 7, 9, 10]; // dorian
+const deg = (d, oct = 0) => ROOT * Math.pow(2, (SCALE[((d % 7) + 7) % 7] + 12 * (oct + Math.floor(d / 7))) / 12);
+
+function sfx(kind) {
+  if (!state.sound) return;
+  const c = ensure(); const t = c.currentTime + 0.001;
+  if (kind === 'permit') {
+    // §5.2: a chord opening — plus one low partial that resolves neither way,
+    // because permitting arms whoever invades you and happens to know it.
+    [0, 2, 4].forEach((d, i) => tone(deg(d), t + i * 0.06, 1.6, 0.34, 'triangle'));
+    // The partial that resolves neither up nor down. One octave higher than the
+    // first pass so it is actually present on a laptop, and loud enough to be
+    // felt as wrong rather than merely measured as present.
+    tone(deg(0) * 1.0595, t, 3.2, 0.16, 'sine');
+  } else if (kind === 'forbid') {
+    // A notch closing. Narrowing, not destructive — denial is a real play.
+    [4, 2, 0].forEach((d, i) => tone(deg(d), t + i * 0.055, 0.55, 0.26, 'triangle'));
+  } else if (kind === 'dispensation') { tone(deg(4, 1), t, 1.2, 0.30, 'triangle'); noise(t, 0.014, 0.45, 3000, 2); }
+  else if (kind === 'interdiction') { tone(deg(1), t, 0.9, 0.28, 'sine'); noise(t, 0.01, 0.5, 1200, 5); }
+  else if (kind === 'deny') { noise(t, 0.01, 0.7, 1250, 6); }
+  else if (kind === 'tick') { noise(t, 0.006, 0.35, 5200, 3); }
+}
+
+// ---- the rule (vision §4, packages/state permits()) ----
+const axesAllow = (cell) => state.technique.has(cell.technique) && state.form.has(cell.form);
+function permits(cell) {
+  const e = state.edicts.get(cell.id);
+  if (e === 'dispensation') return true;
+  if (e === 'interdiction') return false;
+  return axesAllow(cell);
+}
+
+const log = [];
+function note(html, warn = false) {
+  log.unshift({ html, warn });
+  const ul = document.getElementById('log');
+  ul.replaceChildren(...log.slice(0, 40).map(({ html, warn }) => {
+    const li = document.createElement('li');
+    li.innerHTML = html;
+    if (warn) li.classList.add('warn');
+    return li;
+  }));
+}
+
+// ---- render ----
+const grid = document.getElementById('grid');
+function build() {
+  grid.replaceChildren();
+  grid.append(Object.assign(document.createElement('div'), { className: 'corner' }));
+  for (const f of DATA.forms) {
+    const b = document.createElement('button');
+    b.className = 'axis'; b.type = 'button';
+    b.setAttribute('aria-pressed', String(state.form.has(f.id)));
+    b.title = `${f.name} — ${f.gloss}`;
+    b.textContent = f.name;
+    b.addEventListener('click', () => toggleAxis('form', f));
+    grid.append(b);
+  }
+  for (const t of DATA.techniques) {
+    const b = document.createElement('button');
+    b.className = 'axis tech'; b.type = 'button';
+    b.setAttribute('aria-pressed', String(state.technique.has(t.id)));
+    b.title = `${t.name} — ${t.gloss}`;
+    b.textContent = t.name;
+    b.addEventListener('click', () => toggleAxis('technique', t));
+    grid.append(b);
+    for (const f of DATA.forms) {
+      const cell = DATA.cells.find((c) => c.technique === t.id && c.form === f.id);
+      const el = document.createElement('button');
+      el.className = 'cell'; el.type = 'button';
+      el.dataset.on = String(permits(cell));
+      const e = state.edicts.get(cell.id);
+      if (e) el.dataset.edict = e;
+      el.dataset.sel = String(state.selected === cell.id);
+      el.title = `${t.name} ${f.name}`;
+      if (e) el.innerHTML = `<span class="mark">${e === 'dispensation' ? '✦' : '✕'}</span>`;
+      el.addEventListener('click', () => cycleEdict(cell));
+      el.addEventListener('mouseenter', () => { state.selected = cell.id; renderDetail(); paint(); });
+      grid.append(el);
+    }
+  }
+  meters();
+}
+function paint() {
+  const cells = grid.querySelectorAll('.cell');
+  let i = 0;
+  for (const t of DATA.techniques) for (const f of DATA.forms) {
+    const cell = DATA.cells.find((c) => c.technique === t.id && c.form === f.id);
+    const el = cells[i++];
+    el.dataset.on = String(permits(cell));
+    const e = state.edicts.get(cell.id);
+    if (e) { el.dataset.edict = e; el.innerHTML = `<span class="mark">${e === 'dispensation' ? '✦' : '✕'}</span>`; }
+    else { delete el.dataset.edict; el.replaceChildren(); }
+    el.dataset.sel = String(state.selected === cell.id);
+  }
+  for (const [k, set, list] of [['technique', state.technique, DATA.techniques], ['form', state.form, DATA.forms]]) {
+    void k;
+    for (const item of list) {
+      const b = [...grid.querySelectorAll('.axis')].find((x) => x.textContent === item.name);
+      if (b) b.setAttribute('aria-pressed', String(set.has(item.id)));
+    }
+  }
+  meters();
+}
+/**
+ * Nodes actually reachable, not merely sitting in a live cell.
+ *
+ * A node needs its prerequisites held, and a dormant instance cannot satisfy
+ * one — so forbidding a cell costs every node downstream of it as well. Every
+ * cross-cell prerequisite in the v1 subset originates in an Intellego cell,
+ * which makes the technique switches wildly asymmetric: forbidding Intellego
+ * costs roughly twice what forbidding Perdo or Rego does. Counting nodes in
+ * live cells would hide that and render the five techniques as equivalent
+ * toggles, which is the one thing this prototype exists to test.
+ */
+function reachable() {
+  const liveCells = new Set(DATA.cells.filter(permits).map((c) => c.id));
+  const ok = new Set();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const [cellId, list] of Object.entries(DATA.nodesByCell)) {
+      if (!liveCells.has(cellId)) continue;
+      for (const node of list) {
+        if (ok.has(node.id)) continue;
+        const prereqs = DATA.prereqs[node.id] ?? [];
+        if (prereqs.every((p) => ok.has(p))) { ok.add(node.id); changed = true; }
+      }
+    }
+  }
+  return ok;
+}
+
+function meters() {
+  const live = DATA.cells.filter(permits);
+  const nodes = reachable().size;
+  document.getElementById('m-cells').textContent = `${live.length} / 70`;
+  document.getElementById('m-nodes').textContent = `${nodes} / 300`;
+  const spent = state.edicts.size;
+  const m = document.getElementById('m-edicts');
+  m.textContent = `${EDICT_BUDGET_MAX - spent} / ${EDICT_BUDGET_MAX}`;
+  m.dataset.low = String(spent >= EDICT_BUDGET_MAX);
+}
+
+function toggleAxis(kind, item) {
+  const set = kind === 'technique' ? state.technique : state.form;
+  const cellsBefore = DATA.cells.filter(permits).length;
+  const nodesBefore = reachable().size;
+  const on = set.has(item.id);
+  if (on) set.delete(item.id); else set.add(item.id);
+  const cells = Math.abs(DATA.cells.filter(permits).length - cellsBefore);
+  const nodes = Math.abs(reachable().size - nodesBefore);
+  // The gap between cells and nodes is the prerequisite graph talking. Two
+  // switches that darken the same number of cells can cost very different
+  // amounts of reachable magic, and only the node figure shows it.
+  const downstream = nodes > cells * 5
+    ? ' <span class="warn">Most of that is downstream — other cells depended on it.</span>' : '';
+  sfx(on ? 'forbid' : 'permit');
+  if (on) note(`Forbade <b>${item.name}</b> — ${cells} cells dark, <b>${nodes}</b> nodes out of reach.${downstream}`);
+  else note(`Permitted <b>${item.name}</b> — ${cells} cells open, <b>${nodes}</b> nodes reachable. <span class="warn">Also armed for anyone who raids you and knows them.</span>`);
+  paint(); renderDetail();
+}
+
+function cycleEdict(cell) {
+  const cur = state.edicts.get(cell.id);
+  const allowed = axesAllow(cell);
+  const name = label(cell);
+  if (cur) { state.edicts.delete(cell.id); sfx('tick'); note(`Revoked the edict on <b>${name}</b>.`); }
+  else if (state.edicts.size >= EDICT_BUDGET_MAX) { sfx('deny'); note(`No edicts left. <b>${name}</b> unchanged.`, true); }
+  else if (allowed) { state.edicts.set(cell.id, 'interdiction'); sfx('interdiction'); note(`Interdiction on <b>${name}</b> — permitted by its axes, forbidden by name.`); }
+  else { state.edicts.set(cell.id, 'dispensation'); sfx('dispensation'); note(`Dispensation for <b>${name}</b> — one cell carved out of a forbidden axis.`); }
+  state.selected = cell.id;
+  paint(); renderDetail();
+}
+
+/** How many nodes in other cells name a prerequisite in this one. */
+function dependents(cellId) {
+  let n = 0;
+  for (const [nodeId, prereqs] of Object.entries(DATA.prereqs)) {
+    if (DATA.nodeCell[nodeId] === cellId) continue;
+    if (prereqs.some((p) => DATA.nodeCell[p] === cellId)) n += 1;
+  }
+  return n;
+}
+
+const label = (cell) => {
+  const t = DATA.techniques.find((x) => x.id === cell.technique).name;
+  const f = DATA.forms.find((x) => x.id === cell.form).name;
+  return `${t} ${f}`;
+};
+
+function renderDetail() {
+  const cell = DATA.cells.find((c) => c.id === state.selected);
+  const el = document.getElementById('detail');
+  if (!cell) return;
+  const on = permits(cell);
+  const nodes = DATA.nodesByCell[cell.id] ?? [];
+  const e = state.edicts.get(cell.id);
+  const why = e === 'dispensation' ? 'by dispensation, against its axes'
+    : e === 'interdiction' ? 'by interdiction, against its axes'
+    : on ? 'both axes permitted'
+    : !state.technique.has(cell.technique) && !state.form.has(cell.form) ? 'neither axis permitted'
+    : !state.technique.has(cell.technique) ? 'technique forbidden'
+    : 'form forbidden';
+  el.innerHTML = `
+    <h2>Cell</h2>
+    <p class="cellname">${label(cell)}</p>
+    ${cell.classical.length ? `<p class="classical">${cell.classical.join(' · ')}</p>` : ''}
+    <span class="verdict" data-on="${on}">${on ? 'FUNCTIONS' : 'INERT'} — ${why}</span>
+    ${dependents(cell.id) ? `<p class="trunk">Other cells depend on this one: <b>${dependents(cell.id)}</b> node${dependents(cell.id) === 1 ? '' : 's'} elsewhere name a prerequisite here. Forbidding it costs more than its own contents.</p>` : ''}
+    <ul class="nodes">${nodes.map((n) => `
+      <li><b>${n.name}</b><span class="t">tier ${n.tier}</span><p>${n.gloss}</p></li>`).join('')}</ul>`;
+}
+
+document.getElementById('sound').addEventListener('click', async (ev) => {
+  const btn = ev.currentTarget;
+  state.sound = !state.sound;
+  ensure();
+  // A context created before a gesture starts suspended, and every scheduled
+  // sound is then silently dropped. Await the resume rather than firing and
+  // hoping, and say what actually happened.
+  if (ctx.state === 'suspended') { try { await ctx.resume(); } catch { /* reported below */ } }
+  btn.setAttribute('aria-pressed', String(state.sound));
+  if (!state.sound) { btn.textContent = '♪ Sound off'; return; }
+  if (ctx.state !== 'running') {
+    btn.textContent = '♪ blocked';
+    note('The browser refused to start audio. Click anywhere on the page, then press it again.', true);
+    return;
+  }
+  btn.textContent = '♪ Sound on';
+  sfx('permit'); // an audible confirmation, so "on" is never a claim you cannot check
+});
+document.getElementById('reset').addEventListener('click', () => {
+  state.technique = new Set(DATA.techniques.map((t) => t.id));
+  state.form = new Set(DATA.forms.map((f) => f.id));
+  state.edicts.clear();
+  note('Ruleset reset — everything permitted.');
+  paint(); renderDetail();
+});
+
+build();
+renderDetail();
+note('Every technique and form permitted. 70 cells live, 300 nodes reachable.');
+</script>

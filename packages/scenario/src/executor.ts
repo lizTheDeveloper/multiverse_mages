@@ -56,7 +56,7 @@ import { censusOf } from './census.js';
 import type { RunMeasurement } from './measures.js';
 import { REFERENCE_METRIC_VERSIONS, collectReferenceMetrics } from './measures.js';
 import type { ReferenceContent } from './reference-universe.js';
-import { referenceContent, referenceScenario } from './reference-universe.js';
+import { referenceContent, referenceOptions, referenceScenario } from './reference-universe.js';
 
 /**
  * The build every reference record claims to have run against.
@@ -231,6 +231,17 @@ export function referenceProvenance(content: ReferenceContent = referenceContent
  * and `referenceOptions` refuses one whose *type* is wrong rather than silently
  * substituting a default.
  */
+/** One resolved content set per tradition index, for the length of the process. */
+const contentByTradition = new Map<number, ReferenceContent>();
+
+function contentForTradition(traditionIndex: number): ReferenceContent {
+  const cached = contentByTradition.get(traditionIndex);
+  if (cached !== undefined) return cached;
+  const built = referenceContent(undefined, traditionIndex);
+  contentByTradition.set(traditionIndex, built);
+  return built;
+}
+
 function configFor(task: RunTask): ScenarioConfig {
   const options: Record<string, number | string | boolean> = {};
   for (const [key, level] of Object.entries(task.levels)) {
@@ -272,7 +283,13 @@ export function executeReferenceRun(
   task: RunTask,
   options: ReferenceExecutorOptions = {},
 ): ReferenceRunResult {
-  const content = options.content ?? referenceContent();
+  const config = configFor(task);
+  // The tradition is a *content* fact, so it is resolved before the scenario is
+  // built rather than read out of the options inside it. Cached per index for
+  // the reason `referenceContent` is resolved once per process: a worker runs
+  // thousands of episodes and re-resolving the node graph for each is the
+  // dominant cost of a sweep. See `traditionIndex` on `ReferenceOptions`.
+  const content = options.content ?? contentForTradition(referenceOptions(config).traditionIndex);
   const interval = options.censusIntervalTicks ?? CENSUS_INTERVAL_TICKS;
 
   const { scenario, lastGodReport } = referenceScenario(content);
@@ -293,7 +310,7 @@ export function executeReferenceRun(
   const episode = runEpisode({
     session: recorder.session,
     runSeed: task.runSeed,
-    scenarioConfig: configFor(task),
+    scenarioConfig: config,
     policies: policiesForRun({
       registry: BOT_POOL_REGISTRY,
       strategies: task.strategies,
@@ -374,9 +391,14 @@ function armContributionOf(
  * invariance test is what holds that claim up.
  */
 export function makeReferenceExecutor(options: ReferenceExecutorOptions = {}): RunExecutor {
-  const content = options.content ?? referenceContent();
+  // A caller's explicit content set is honoured and pins the tradition with it;
+  // an *absent* one is resolved per run, because `traditionIndex` is a sweep
+  // factor and a content set closed over here would silently answer every level
+  // of it with the same tradition. The resolve-once property the note above
+  // claims is kept by `contentForTradition`'s process-level cache — three
+  // entries at most, one per shipped tradition, rather than one per run.
   const resolved: ReferenceExecutorOptions = {
-    content,
+    ...(options.content === undefined ? {} : { content: options.content }),
     ...(options.censusIntervalTicks === undefined
       ? {}
       : { censusIntervalTicks: options.censusIntervalTicks }),
