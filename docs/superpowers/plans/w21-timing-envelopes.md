@@ -568,3 +568,61 @@ hesitation and not as flatness — and flat would make Intellego's curve
 **identical to Rego's**, collapsing two of the five shapes §4.1 insists are
 different. That is the argument for `open`; it is stated rather than assumed,
 because picking between two readings of one sentence is the author's call.
+
+
+---
+
+## 12. The negative control: what the rule does to `permit-then-idle`, derived
+
+The measurement is a paired `integration-r2-true-naming` sweep — this branch
+against the **committed** off arm in `balance/results-integration-r2.txt`, which
+was measured on this branch's own base with the same sweep file and the same
+`rootSeed 20260811`. That is a cross-build comparison rather than a same-build
+pair, and it is named as such: if a delta is surprising, the confirmatory
+follow-up is a content-patched flat-envelope arm, not a louder claim.
+
+### What the rule does to it, before measuring
+
+`permit-then-idle` submits `permitTechnique` or `permitForm` on **every tick for
+the first 140**, then an empty preference list for the remaining 2,260. Under
+`agent-api`'s one-action-per-tick rule that is *one constitutional act per bar,
+140 bars running.*
+
+Every one of those acts after the first lands with **seven bars of unease still
+ringing** — `uneaseUntilTick = t + 8`, evaluated at `t + 1`. So its multiplier is
+
+    fp(1024) + 7 × fp(256) = fp(2816) = 2.75×
+
+and a `permitTechnique` that costs `fp(8192)` costs `fp(22528)` instead. **The
+strategy that wins 40/40 is the one this rule prices hardest**, because
+back-to-back law changes are the entire strategy.
+
+Note what does *not* catch it: §1.1's `axisChangeCounters` is hysteresis on
+flipping **one axis** twice, and `permit-then-idle` never flips anything twice —
+nineteen switches, once each, every counter 0 → 1 and stopped. The measured
+per-flip price on the base branch is the base price, every time.
+
+### What would count as a result
+
+**Prediction, stated before the numbers.** The win rate will not move. The
+campaign has five independent confirmations that terminal outcomes at 2,400
+ticks are decided by content exhaustion, and W17's finding was *"much sooner,
+same place."* A surcharge on 140 early ticks changes **when** the grid opens,
+not **whether** it opens — and the strategy has 2,260 idle ticks afterwards in
+which to arrive at the same ceiling.
+
+So the leading indicators are the measurement, not the win rate:
+
+- `referenceNodesKnown` and its SE, against the off arm's **257.9 ± 1.48**;
+- `referenceLibraryDepth` (off arm **43.27**) and `referenceGrimoires` (**87**);
+- the D1–D9 table from `scripts/integration-r2-analyse.mjs`, which asserts
+  strategy coverage before reporting anything.
+
+**If neither the win rate nor the indicators move, the timing mechanic is
+decorative against this agent and the report says so plainly.** The honest
+version of that finding is already legible from the design: the rule prices the
+*constitutional* verbs, and integration round 2's own conclusion was that the
+clerical verbs are *"worth slightly less than nothing"* while the ceiling picks
+the winner. A mechanic that prices the one verb that matters and still does not
+change who wins would be a sixth confirmation that **the ceiling, not the
+pricing, is the thing to fix.**
