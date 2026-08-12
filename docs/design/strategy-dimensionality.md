@@ -7,12 +7,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 **Build:** `w15/strategy-dimensionality`, branched from `main` at `6e5ecee`, reference-universe-v1.
 **Instrument:** 96 runs, eight strategies × 12 runs, 2,400 world ticks (200 years), under common
-random numbers — arm A, complete. Plus arm B, varying the founding species mix: **150 of 168 planned
-runs**, 25 of 28 `(strategy, mix)` groups. The three groups still executing are
-`permissive-breadth`, `narrow-depth` and `archivist` at the human-only mix, which runs an order of
-magnitude slower than the others because a human-only universe carries the largest population. Every
-comparison this document draws a conclusion from is complete; the missing rows are marked *pending*
-in the arm-B table and no claim rests on them.
+random numbers — arm A. Plus arm B, varying the founding species mix: **168 runs**, four strategies
+× seven founding mixes × 6 runs, all 28 `(strategy, mix)` groups complete.
 
 Everything below is measured. Where a number is a hypothesis rather than a reading, it says so.
 
@@ -253,21 +249,21 @@ Content order is draconic, dwarf, elf, gnome, human, orc — masks 1, 2, 4, 8, 1
 | `permissive-breadth` | elf | 6 | 112.7 | 118 | 105 | 655 | 962 | 6 canon |
 | `permissive-breadth` | gnome | 6 | 168.7 | 186 | 153 | 855 | 962 | 6 canon |
 | `permissive-breadth` | orc | 6 | 0.2 | 1 | 0 | 12 | 1835 | 3 cap, 2 canon, 1 stagnation |
-| `permissive-breadth` | human | — | *pending* | — | — | — | — | — |
+| `permissive-breadth` | human | 6 | 96.7 | 159 | 48 | 10708 | 1375 | 6 apotheosis |
 | `archivist` | all six | 6 | 51.0 | 51 | 51 | 3357 | 1248 | 3 apotheosis, 3 canon |
 | `archivist` | draconic | 6 | 3.2 | 8 | 1 | 8 | 507 | 6 stagnation |
 | `archivist` | dwarf | 6 | 19.3 | 51 | 2 | 755 | 728 | 2 canon, 4 stagnation |
 | `archivist` | elf | 6 | 50.8 | 51 | 50 | 346 | 1585 | 3 canon, 2 stagnation, 1 cap |
 | `archivist` | gnome | 6 | 49.0 | 49 | 49 | 398 | 859 | 6 stagnation |
 | `archivist` | orc | 6 | 0.0 | 0 | 0 | 0 | 1215 | 2 canon, 3 stagnation, 1 cap |
-| `archivist` | human | — | *pending* | — | — | — | — | — |
+| `archivist` | human | 6 | 43.8 | **49** | 36 | 4333 | 1254 | 5 apotheosis, 1 canon |
 | `narrow-depth` | all six | 6 | 7.2 | 12 | 3 | 1308 | 863 | 3 canon, 3 stagnation |
 | `narrow-depth` | draconic | 6 | 1.5 | 3 | 0 | 2 | 530 | 6 stagnation |
 | `narrow-depth` | dwarf | 6 | 4.2 | 7 | 1 | 402 | 518 | 6 stagnation |
 | `narrow-depth` | elf | 6 | 3.7 | 5 | 3 | 264 | 554 | 6 stagnation |
 | `narrow-depth` | gnome | 6 | 3.0 | 3 | 3 | 203 | 526 | 6 stagnation |
 | `narrow-depth` | orc | 6 | 1.3 | 5 | 0 | 3 | 640 | 1 canon, 5 stagnation |
-| `narrow-depth` | human | — | *pending* | — | — | — | — | — |
+| `narrow-depth` | human | 6 | 4.0 | 5 | 3 | 402 | 530 | 6 stagnation |
 
 Founding mix changes outcomes enormously — an orc-only universe learns essentially nothing and an
 elf-only one reaches 50.2 nodes. That is real signal, and it is the first time it has been measurable.
@@ -297,6 +293,8 @@ species with the same ceiling would hold *different* sets of the same size. Meas
 - gnome, 6 runs: mean 49.0, union 49, intersection 49 — **the identical 49 nodes every seed**.
 - human, 6 runs: per-run counts 37, 43, 41, 49, 49, 49; **union 49**.
 - gnome ∪ vs human ∪: **identical**, 49 = 49, intersection 49, nothing in either that is not in both.
+- and independently under the `archivist`: gnome union 49, human union 49 — the same ceiling, the
+  same 49, under a different strategy.
 - paired containment gnome ↔ human across all six coordinate pairs: **1.000, 1.000, 1.000, 1.000,
   1.000, 1.000**.
 
