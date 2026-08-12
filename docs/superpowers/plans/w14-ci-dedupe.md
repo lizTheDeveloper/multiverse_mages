@@ -189,4 +189,4 @@ the suite ran, and the two longest tests are `reference-long-run` at 308 s and
 `reference-time-to-tier` at 220 s. Nothing in this change touches the simulation, the test suite or
 vitest's configuration — the diff is a `concurrency` block, a Markdown file and one `echo` string.
 Re-run the chained command on an unloaded machine, or read the Actions run for this SHA, which runs
-the identical chain through `npm run verify` on a quiet four-core runner.
+the identical chain through `npm run verify` on a quiet hosted runner.

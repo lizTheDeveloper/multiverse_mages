@@ -126,10 +126,11 @@ the whole job is 443 s and the three gates are 226 s of it; `npm test` is anothe
 everything that is not a gate or the test suite totals 27 s. There is no cheap fat in this job.
 
 One discrepancy worth not explaining away: the ascension gate takes **125 s on Actions and 117.5 s
-on sixteen idle local cores**. Sixteen cores against Actions' four should be a much larger gap than
-6 %, so whatever dominates that gate is not parallel CPU — but **what it actually is has not been
-measured**, and this file is not going to guess. Anyone optimising CI should measure that before
-assuming the runner is simply slow.
+on sixteen idle local cores** — a 6 % gap across hardware that differs by much more than 6 %. So
+"the hosted runner is just slower" does not account for it, and whatever does account for it is
+**unmeasured**. This file is not going to guess at a cause it has not measured; anyone optimising CI
+should measure it first. (The runner's core count is not printed in the Actions log either, so even
+the comparison's denominator is an assumption — another reason to measure rather than reason.)
 
 Each gate compares every metric against its own committed baseline under `balance/baselines/`. All
 three are build-failing steps in both systems, and all three are wired into each of them the same
