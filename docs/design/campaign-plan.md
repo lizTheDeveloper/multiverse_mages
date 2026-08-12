@@ -1671,3 +1671,38 @@ workstreams.** Six agents each running a gate is 24 workers on 16 cores before a
 starts. Either the harness binaries should nice themselves outside CI, or the campaign needs a stated
 cap on concurrent sweeps. Recorded rather than fixed, because the fix belongs in `mc-harness` and
 touching it while six sweeps are mid-flight would invalidate them.
+
+---
+
+## W19 is the negative control for W20's headline, and neither workstream knew it
+
+W19 swept the **old** content at five horizons, asking whether shortening the run made the species
+reach different magic before exhaustion flattened them:
+
+| horizon | gnome union | human union | nodes unique to either | paired containment |
+|--:|--:|--:|--:|--:|
+| 300 | 49 | 49 | **0** | 0.970 / 0.992 |
+| 450 | 49 | 49 | **0** | 0.990 / 0.996 |
+| 600 | 49 | 49 | **0** | 0.999 / 0.999 |
+| 900–2400 | 49 | 49 | **0** | 1.000 |
+
+At horizon 300 humans hold a mean of **37.7** nodes against gnomes' **45.2** — a 20% gap in count —
+and the union over seeds is the **same 49 nodes, with zero unique to either side**. Shortening the
+horizon does not make species reach different magic; it catches humans earlier on the same queue.
+That is W15's *"speed, not shape"* confirmed at every horizon where content is still unexhausted.
+
+**Put beside W20's result on the new content — Jaccard 0.57, 1.7× reach, gnome ascending where human
+does not — this is a before-and-after with the before measured five ways.** The divergence is
+attributable to the content graph, not to the horizon, not to the measurement, and not to
+exhaustion. W19 was commissioned to test a hypothesis that had already been refuted; it turned out to
+be the control the campaign's best result needed.
+
+**The caveat, stated because the pairing is only as good as its comparability:** these are separate
+sweeps with different arms, so this is a strong suggestive pairing rather than a controlled
+experiment. The clean version is W20's arm structure re-run at W19's horizons. Worth doing —
+it would convert the campaign's headline from *measured* to *attributed*.
+
+W19 adds one more thing worth keeping: the **only** place the two species' node sets differ on old
+content is under `permissive-breadth` — reached by editing the ruleset — and that comparison is
+**confounded by design**, because removing a species changes founding order and therefore every
+downstream draw. Any future species claim resting on `permissive-breadth` inherits that confound.
