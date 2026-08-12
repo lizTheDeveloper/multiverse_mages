@@ -72,44 +72,55 @@ moves and no balance baseline can rot from a re-roll.
       from affinities. **No affinity was authored into `species.json` to make the measurement
       pass** — that would be tuning the instrument.
 
+## What landed that was not in the plan
+
+- **W7 `knowledge-capital` merged into this branch mid-flight** and it had already
+  changed `compareTargets` — a novelty-first tie-break for *scribing*. The two are
+  **composed rather than merged**: `compareNovelty` is factored out and applied first in
+  `compareAppeal`, so novelty partitions the candidate list and the utility score decides
+  inside the partition. Folding a binary into a bounded additive sum is either inert or a
+  lexicographic prefix wearing a magnitude's clothes; the second lies in the ablation report.
+- **W7's `researchCompleted` comparison inverted** under the value-scored acquirer, and the
+  discriminating experiment is committed with it. See task 6.3.
+
 ## Tasks
 
 ### 1. Instrument and baseline
 
 - [x] 1.1 Read W15's measurement, the vision §§5–7, `contracts.md` §2.3, `CLAUDE.md`.
 - [x] 1.2 Establish that v1 `researchCost` is a pure function of tier.
-- [ ] 1.3 Merge `origin/w15/strategy-dimensionality` for `foundingSpeciesMask`, the inert probe and
+- [x] 1.3 Merge `origin/w15/strategy-dimensionality` for `foundingSpeciesMask`, the inert probe and
       `tools/w15/{run-arm,composition,analyse}.mjs`. **Reuse, do not rebuild.**
-- [ ] 1.4 Record the "before" numbers on this branch with this tooling.
+- [x] 1.4 Record the "before" numbers on this branch with this tooling.
 
 ### 2. Content — every weight authored, none hardcoded
 
-- [ ] 2.1 `packages/content/data/autonomy-weight.json`: scalar weights and the role × primitive
+- [x] 2.1 `packages/content/data/autonomy-weight.json`: scalar weights and the role × primitive
       appeal table, each with a `gloss` and `tuningStatus: "untuned"`.
-- [ ] 2.2 Schema + `checkAutonomyWeights`: role must be one of the four, primitive must exist in
+- [x] 2.2 Schema + `checkAutonomyWeights`: role must be one of the four, primitive must exist in
       `primitive.json`, ids unique, the required scalar set present in both directions, and the
       **bound invariant** — the role bound is strictly below the sum of the other five bounds, so a
       role can never outvote everything else. The §7 pillar as arithmetic, checked at load.
-- [ ] 2.3 Register the file, intern it, expose `autonomyWeight(id)` and the role table on the
+- [x] 2.3 Register the file, intern it, expose `autonomyWeight(id)` and the role table on the
       registry.
 
 ### 3. Rules — the score
 
-- [ ] 3.1 `KnowledgeTarget` gains `cellId`, `formId` and the node's effect `primitives`.
-- [ ] 3.2 `MageOutlook` gains the species affinity table resolved to interned ids.
-- [ ] 3.3 `autonomy/target-appeal.ts`: `readTargetAppeal(source)` (the `rules-raid/tuning.ts`
+- [x] 3.1 `KnowledgeTarget` gains `cellId`, `formId` and the node's effect `primitives`.
+- [x] 3.2 `MageOutlook` gains the species affinity table resolved to interned ids.
+- [x] 3.3 `autonomy/target-appeal.ts`: `readTargetAppeal(source)` (the `rules-raid/tuning.ts`
       pattern), the six term functions, `targetAppeal`, per-term bounds, one clamp, ablation.
-- [ ] 3.4 `chooseTarget` becomes an argmax over `targetAppeal` with `compareTargets` as tie-break.
-- [ ] 3.5 Thread the weights through `SelectionInput` / `AutonomyTickInput` / coordination /
+- [x] 3.4 `chooseTarget` becomes an argmax over `targetAppeal` with `compareTargets` as tie-break.
+- [x] 3.5 Thread the weights through `SelectionInput` / `AutonomyTickInput` / coordination /
       scenario.
 
 ### 4. Tests, written first
 
-- [ ] 4.1 Two mages identical but for **role** choose different targets from one candidate list.
-- [ ] 4.2 Two species differing only in **affinity** choose different targets.
-- [ ] 4.3 Gnome and human, same depth ceiling, order the same list differently (curiosity term).
-- [ ] 4.4 **Age** and **personality** each move a choice on their own (ablation).
-- [ ] 4.5 The order is total and deterministic: equal appeal falls to cost then `nodeId`; no RNG
+- [x] 4.1 Two mages identical but for **role** choose different targets from one candidate list.
+- [x] 4.2 Two species differing only in **affinity** choose different targets.
+- [x] 4.3 Gnome and human, same depth ceiling, order the same list differently (curiosity term).
+- [x] 4.4 **Age** and **personality** each move a choice on their own (ablation).
+- [x] 4.5 The order is total and deterministic: equal appeal falls to cost then `nodeId`; no RNG
       draw is taken in target selection.
 - [ ] 4.6 The loader rejects an unknown role, an unknown primitive, and a role bound that would let
       a role dominate.
@@ -124,7 +135,10 @@ moves and no balance baseline can rot from a re-roll.
 - [ ] 5.6 Frontier-length instrumentation, to answer Q2 and to tell "the selector is still flat"
       apart from "the window was already truncated".
 
-### 6. Gate
+### 6. Gate and cross-workstream
+
+- [x] 6.3 W7's capital test: measure the inversion, run the effort-only discriminator, change
+      the metric with the numbers written into the test rather than weakening it silently.
 
 - [ ] 6.1 `npm run verify`. **A failing golden fixture is a STOP-and-report, never a regen.**
 - [ ] 6.2 Balance baselines: they will move. Regenerate only with a written rationale naming what
