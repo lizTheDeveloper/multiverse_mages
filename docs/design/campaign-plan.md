@@ -516,3 +516,66 @@ so rather than deciding silently.
 concurrent `git add -A` committed a trial value into a commit (`975e177`), reverted in `41d40be`.
 Stage explicit paths when any sweep or tuner may be running — which, with several agents live, is
 most of the time.
+
+---
+
+## W13: teaching is not the lever, and one tradition is already in band
+
+### The reference tradition is True Naming, by accident of the alphabet
+
+`scribingTraditionId` returns the first tradition whose `store` hook can scribe, walking traditions
+in **interned** order — and `internSorted` sorts id strings lexicographically:
+`art-of-memory`(1), `true-naming`(2), `vancian-memorization`(3). Art of Memory is skipped because a
+`palace` store cannot scribe, so **True Naming wins the loop and Vancian is never reached.**
+
+That is not a design decision. It is a consequence of spelling, and it means the campaign's entire
+measured record was taken under the one tradition where **teaching works**.
+
+### Teaching under Vancian is not slow — it is dead on schedule
+
+`lessonsTaught` by quarter, passive control, n=8 shared seeds:
+
+| tradition | 1–600 | 601–1200 | 1201–1800 | 1801–2400 |
+|---|---|---|---|---|
+| vancian | 134.1 | **0.0** | **0.0** | **0.0** |
+| true-naming | 976.6 | 268.5 | 154.0 | 113.8 |
+| art-of-memory | 171.6 | **0.0** | **0.0** | **0.0** |
+
+Founding grants are teachable everywhere; they decay below the 512 threshold and nothing climbs
+back. So the C2 mechanism was real — for the **two traditions that never run**.
+
+### And it does not matter — the decisive number
+
+**True Naming's 11.3× teaching buys `0.0 ±0.1` extra nodes known** (+581 instances).
+
+**Teaching multiplies copies and never reaches a new node.** Between Vancian and True Naming the
+five plateau strategies differ by −0.1, 0.0, −0.3, −0.1, +0.1 nodes — every one inside its own
+standard error — and 67 ascensions against 66.
+
+So the 51-node plateau and `ascensionRate` ≈ 0.69 **reproduce under the acquire hook where every
+instance is born at full mastery**. Whatever causes them, it is not the teach threshold. That is an
+independent confirmation of W15: the lever is the **value-blind acquirer**, not knowledge
+propagation.
+
+The one real difference is `permissive-breadth` at **−60.7 ±9.3 nodes** under True Naming, which is
+its 2× `researchCostMultiplier` — the only strategy that researches enough to feel the price of
+research does *worse* under the tradition that propagates better.
+
+### Art of Memory is in band without touching a single ascension constant
+
+| tradition | ascensionRate | grimoires | libDepth | capitalSnowball | nodes |
+|---|---|---|---|---|---|
+| Vancian | 0.6875 | 979 | 1.4 | 0.1818 | 65.8 |
+| True Naming | 0.6979 | 908 | 1.7 | 0.2487 | 58.2 |
+| **Art of Memory** | **0.1250** | **0** | **0.0** | **0.0000** | 17.2 |
+
+Zero grimoires across all 96 runs, exactly as §4a describes, and `permissive-breadth` falls from
+12/12 to 0/12. It is the **only arm with an in-band `ascensionRate`** — reached by the `store` hook,
+not by any balance constant.
+
+**The axis is real but it is two levels, not three, and the split runs between `store` hooks rather
+than `acquire` hooks.** W13 flags that it could not confirm §4a's *"lost when its holder dies"* as
+the mechanism — living mages are equal across arms, so `slotsPerMage: 12` capping holdings is the
+likelier cause. Recorded as an untested hypothesis, not a finding.
+
+`prestigeAdvantage` and `winRateByPrimitive` are **unavailable in all three arms**. Still no raids.
