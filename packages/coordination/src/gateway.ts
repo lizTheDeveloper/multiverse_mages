@@ -882,6 +882,14 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * worst books go first", which is a different mechanic nobody asked for and
    * would hide the hoarding cost behind a quality cull.
    *
+   * For the same reason the walk **stops** at the first book it cannot afford
+   * rather than skipping past it to a cheaper one further down. Skipping is
+   * cheapest-first wearing a disguise: it would take the flimsiest books on a
+   * mixed shelf whatever order the librarian was supposed to use, and a
+   * well-made book at the head of the queue would stop protecting the shelf
+   * behind it. Stopping means one sturdy duplicate can shield a tick's worth of
+   * neglect, which is what a sturdy book *is*.
+   *
    * No RNG is drawn here, so no stream is re-rolled and no committed baseline
    * rots for a draw that moved.
    *
