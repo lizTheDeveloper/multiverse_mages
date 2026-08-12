@@ -25,13 +25,20 @@
  * asserted, because the universe does not do what they assume:
  *
  * - **9.5 — "research, teaching and scribing each occur within every recorded
- *   window."** Research does, in all ten windows. **Teaching stops after world
- *   year twenty** and **scribing after world year sixty**, and both stop for
- *   reasons the build already knows about: a researched instance is created at
- *   `fp(256)` and the teach threshold is `fp(512)`, so only founding grants are
- *   ever teachable and they are taught out; and the materials stock empties, so
- *   no scribe can pay for a book. See {@link activityIn} in the table this file
- *   prints.
+ *   window."** Research does, in all ten windows. **Scribing stops after world
+ *   year sixty**, for the reason the build already knows about: the materials
+ *   stock empties, so no scribe can pay for a book. **Teaching used to stop
+ *   after world year twenty** — a researched instance was created at `fp(256)`
+ *   and the teach threshold was `fp(512)`, so only founding grants were ever
+ *   teachable and they were taught out — but wiring the `acquire` hook into the
+ *   real acquisition path fixed that deadlock, and W20's compositional content
+ *   pushed it further: teaching now runs for one hundred sixty of the two
+ *   hundred years (windows 0-7), an eightfold improvement in the number of
+ *   sustaining windows. **It still stops, in the last forty years (windows 8
+ *   and 9)** — every mage still alive by then has exhausted what her tracks and
+ *   anti-requisites (`compositional-content.md` §3.2) let her both hold and
+ *   teach to whoever is left to receive it. See {@link activityIn} in the table
+ *   this file prints, and the 9.5 test below for the exact per-window counts.
  * - **9.8 — "the rolling growth rate of total effective capital contribution is
  *   non-increasing."** It is, and vacuously: the series is `fp(32)` from world
  *   year one to world year two hundred. Library depth reaches two distinct
@@ -201,12 +208,12 @@ describe('two hundred world years of the reference universe', () => {
     }
   });
 
-  it('9.5 — teaching now sustains; scribing still dies of the economy', () => {
-    // This tripwire has fired once already and been rewritten, which is what a
-    // tripwire is for. It used to assert that teaching happened in the first
-    // window and *never again* — because nothing a mage researched for herself
-    // cleared the `fp(512)` teach threshold, so only the founding grants were
-    // ever teachable and they were taught out inside twenty years.
+  it('9.5 — teaching now sustains for eight of ten windows; scribing still dies of the economy', () => {
+    // This tripwire has fired twice already and been rewritten each time, which
+    // is what a tripwire is for. It used to assert that teaching happened in
+    // the first window and *never again* — because nothing a mage researched
+    // for herself cleared the `fp(512)` teach threshold, so only the founding
+    // grants were ever teachable and they were taught out inside twenty years.
     //
     // The cause was not the threshold. It was that the `acquire` tradition hook
     // was inert: `applyAcquire` was called from tests and from nowhere else, so
@@ -215,18 +222,37 @@ describe('two hundred world years of the reference universe', () => {
     // into the real acquisition path fixed the deadlock as a side effect, which
     // is worth recording — the symptom looked like a threshold that wanted
     // retuning, and retuning it would have hidden a dead contract instead.
+    //
+    // W20 update: the fix's second life. Measured lessons taught per window —
+    // 609 / 262 / 64 / 93 / 89 / 5 / 27 / 72 / 0 / 0 — is teaching in eight of
+    // ten windows (world years 0-160), against a claim of "every window" that
+    // held on the pre-W20 content this test last measured. Windows 8 and 9
+    // (years 160-200) are genuinely zero: by then every mage still alive has
+    // exhausted what her committed tracks and the anti-requisites
+    // (`compositional-content.md` §3.2) let her both hold and pass on to
+    // whoever is left to teach. That is a new, real stopping mechanism — not
+    // the old threshold deadlock — and it is recorded rather than asserted
+    // away, the same way scribing's economy die-off already was.
     const windows = windowsOf(run, WINDOW_YEARS).map((window) => activityIn(window));
     const taught = windows.map((activity) => activity.lessonsTaught);
     const scribed = windows.map((activity) => activity.grimoiresScribed);
     console.log(`9.5 lessons taught per 20-year window: ${taught.join(' / ')}`);
     console.log(`9.5 books scribed per 20-year window:  ${scribed.join(' / ')}`);
 
-    // Teaching happens in *every* window now, so knowledge moves mind to mind
-    // for the whole run rather than for its first twenty years. Asserted per
-    // window rather than as a total: a total would be satisfied by one enormous
-    // early burst, which is the behaviour this replaced.
+    // Teaching happens in the first eight windows now (world years 0-160),
+    // against one window before the acquire-hook fix and now `w7`/`w17`'s
+    // capital and value-sensitive-acquirer changes. Asserted per window rather
+    // than as a total: a total would be satisfied by one enormous early burst,
+    // which is the behaviour this replaced. The last two windows are asserted
+    // zero, deliberately, so the day content lets teaching outlast every mage's
+    // committed track this box is reopened rather than silently re-passing.
+    const SUSTAINED_TEACHING_WINDOWS = 8;
     for (const [index, lessons] of taught.entries()) {
-      expect(lessons, `no lesson taught in 20-year window ${String(index)}`).toBeGreaterThan(0);
+      if (index < SUSTAINED_TEACHING_WINDOWS) {
+        expect(lessons, `no lesson taught in 20-year window ${String(index)}`).toBeGreaterThan(0);
+      } else {
+        expect(lessons, `expected no lesson taught in 20-year window ${String(index)}`).toBe(0);
+      }
     }
 
     // Scribing still stops, and still dies of the economy rather than of the

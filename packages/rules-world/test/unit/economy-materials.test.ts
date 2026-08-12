@@ -24,6 +24,7 @@ import {
   assertMaterialsNonNegative,
   consumeMaterials,
   materialsProduced,
+  primitiveFloor,
   resourceYieldMultiplier,
   subsistenceDemand,
 } from '../../src/index.js';
@@ -83,6 +84,28 @@ describe('materials are produced by laborers', () => {
 
   it('refuses a fractional laborer count', () => {
     expect(() => materialsProduced(production(1.5))).toThrow(/non-negative integer/u);
+  });
+
+  it('holds the primitive floor under a Perdo-heavy stack of remove-mode bonuses', () => {
+    const floor = primitiveFloor(primitiveNamed('resource-yield'));
+    expect(floor).toBeDefined();
+
+    const counters = new ClampCounters();
+    const driven = resourceYieldMultiplier({
+      ...production(1, FP_ONE, [-2000, -2000]),
+      counters,
+    });
+    expect(driven).toBe(floor);
+    expect(driven).toBeGreaterThan(0);
+    expect(counters.count('resource-yield')).toBeGreaterThan(0);
+  });
+
+  it('routes a Rego control clamp: a floor holds the rate up, a ceiling holds it down', () => {
+    const held = resourceYieldMultiplier({ ...production(1), clamp: { floor: 3000 } });
+    expect(held).toBe(3000);
+
+    const capped = resourceYieldMultiplier({ ...production(1, FP_ONE, [4096]), clamp: { ceiling: 1500 } });
+    expect(capped).toBe(1500);
   });
 });
 

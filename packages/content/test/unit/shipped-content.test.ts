@@ -79,6 +79,11 @@ describe('shipped content', () => {
       // §3.1): the open mind, the sealed mind, the quarried world, the hollow
       // ground, the standing gate, the nameless road, the unwritten.
       tracks: 7,
+      // Spells requiring more than one mage to cast, on mutually exclusive
+      // tracks (contracts.md §2.13): "Read the Sealed Shelf" (the-open-mind /
+      // the-sealed-mind) and "Found the Hollow Hall" (the-quarried-world /
+      // the-hollow-ground).
+      rituals: 2,
     });
   });
 
