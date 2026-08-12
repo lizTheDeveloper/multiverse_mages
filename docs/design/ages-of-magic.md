@@ -366,6 +366,70 @@ mechanical, and it is why the author's earlier direction — that depth should r
 extension magic"*, with **logarithmic** returns *"so that the slow dragons are worth it"* — is the
 correct curve: a linear return would let long life simply win.
 
+## 3a. Necromancy is the third road, and Corpus is already written
+
+> *"Oh, also — just bringing up necromancy."*
+
+**It is not a new school. It is Corpus, and all 23 nodes are authored**, in the institutional register
+and darker than anything anyone would have specified on request:
+
+| node | tier | its own gloss |
+|---|--:|---|
+| `creo-corpus` **The Long Tenure** | 3 | *"Twenty more years of working life for everyone who holds it."* |
+| `creo-corpus` **The Unfinished Death** | 5 | *"Hold one scholar at the point where the body has finished and the…"* |
+| `rego-corpus` **The Lengthened Term** | 4 | *"Compel a failing body to keep the arrangement it already has."* |
+| `rego-corpus` **The Unclaimed Body** | 5 | *"Bind a body whose owner has gone, and set it to work that nobody…"* |
+| `muto-corpus` **The Long Body** | 4 | *"Rearrange a body so that it wears at a different rate."* |
+| `perdo-corpus` **The Hand That Wrote It** | 4 | *"**The standard answer to a scholar who is the last surviving instance.**"* |
+
+*The Long Tenure. The Lengthened Term. The Unfinished Death.* The academic joke is already fully
+written, and it is not a joke about magic — it is a joke about **faculty who will not retire**.
+
+### Why this matters structurally rather than as flavour
+
+This document argues there are two roads to the third age: **live long enough** (draconic, elf — one
+mind holds all three ages) or **build the college** (human, orc — reachable only across generations,
+through records and teaching). §2a rules that the college is *"the only way"* for the short-lived.
+
+**Necromancy is the third road, and it is the one that cheats.** It does not extend a life and it
+does not cross a generation. It refuses to let the generation end. A universe that permits Corpus
+deeply does not need libraries the way §3 says it must, because its faculty never leaves — and the
+prerequisite mass that §2a says an unassisted life cannot cross is crossed by a scholar who has been
+working for four hundred years and is, technically, deceased.
+
+That makes Corpus the **direct assault on the game's central premise**. Everything in this project is
+about knowledge being mortal: §5 individuates it, decay marooned 93.4% of it, publish-or-perish names
+the mechanism, and a mage who dies takes with her every node held only in her head. **Necromancy is
+the answer to all of it, and it should be horrifying and expensive precisely because it works.**
+
+### And Corpus is also the weapon against knowledge, which is the elegant part
+
+`perdo-corpus` **The Hand That Wrote It** — *"the standard answer to a scholar who is the last
+surviving instance"* — is targeted, permanent knowledge destruction, described as routine
+professional practice.
+
+So the same form both **preserves knowledge past death and destroys it at the source.** Permitting
+Corpus arms your archivists and arms every assassin who comes through a portal, which is §3's
+*"permitting something arms your defense **and** arms anyone who invades you"* with the sharpest
+possible example. A universe that permits Corpus has made its own scholars killable in a way a
+universe that forbids it has not.
+
+**This is also the exclusivity pair the author asked for**, and it arrives with its reason attached
+rather than needing one invented: a tradition built on *The Long Tenure* and one built on *The Hand
+That Wrote It* are doing incompatible things to the same body, and the same faculty cannot hold both.
+
+### Open
+
+1. **Is a bound scholar a knowledge location?** §5 has mind, grimoire, library shelf and memory
+   palace. *The Unfinished Death* and *The Unclaimed Body* both imply a fifth: **a mind that has
+   stopped and is still being read.** Whether it decays, whether it can still teach, and whether it
+   can be looted are three different rulings and each is a different game.
+2. **Does a bound scholar still publish-or-perish?** If mastery decays in the dead, necromancy buys
+   time and not permanence, which is a better mechanic. If it does not, tenure is genuinely forever
+   and the price has to be somewhere else entirely.
+3. **Corpus is dark in v1** — the enabled rectangle is `{intellego, perdo, rego} × {limen, mentem,
+   nomen, terram}`. None of these 23 nodes is reachable today.
+
 ## 4. It retires three measured problems, which is how I know the framing is right
 
 **Content exhaustion was the first age ending.** The campaign's oldest and most-confirmed finding is
