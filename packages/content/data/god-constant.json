@@ -288,9 +288,9 @@
   },
   {
     "id": "ascension-summit-cells",
-    "value": 18,
+    "value": 13,
     "unit": "count",
-    "gloss": "Permitted cells that must stand at their floor — deepest node held by a living mage — for Path A. §8a's summit is 'the deepest node of a cell'; this is how many at once, and it is the conjunct that reads play. Anchored to the passive baseline, not to a strategy: the v1 rectangle is twelve cells and an unattended universe masters all twelve, so any value at or below 12 is met by doing nothing. 18 is 1.5x it. Set it to 1 to recover the predicate as it shipped.",
+    "gloss": "Permitted cells that must stand at their floor for Path A — deepest node held by a living mage. §8a's summit is 'the deepest node of a cell'; this is how many at once, and it is the conjunct that reads play. Calibrated, not guessed: the v1 rectangle is twelve cells and an unattended universe masters all twelve, so the tuner measures 12 infeasible (exploit −0.542) and 13 feasible (+0.167) — the first value needing an axis the universe did not start with. Set to 1 to recover the shipped rule.",
     "tuningStatus": "untuned"
   },
   {
