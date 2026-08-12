@@ -155,7 +155,7 @@ import {
   teach,
 } from '@mm/rules-magic';
 import type { EffortEnvelope, RediscoveryClampCounter } from '@mm/primitives';
-import { createRediscoveryClampCounter, shapedEffort } from '@mm/primitives';
+import { createRediscoveryClampCounter } from '@mm/primitives';
 
 import type { EnvelopeResolver } from './envelopes.js';
 import type {
@@ -718,19 +718,24 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     // below and the clamp further down cannot come to different conclusions.
     const required = this.#deps.acquire.teachCost(node.teachCost);
     const key = effortKey(EFFORT_KIND.teaching, teacher, nodeId, student);
-    // §4.1's shape, against the total standing at the start of the lesson.
-    // Teaching is the one acquisition where the rate scales the numerator
-    // rather than the requirement, so the curve lands on the same side of the
-    // arithmetic that `teach-rate` already does and the two simply multiply.
-    const progress = ledger.accrue(
-      key,
-      shapedEffort(
-        this.#deps.envelopes?.envelopeOf(nodeId),
-        mageMonths,
-        ledger.progressOf(key),
-        required,
-      ),
-    );
+    // **No envelope here, and the reason is structural.** §4.1's shape is
+    // applied to *research* — a mage deriving a node over months against a
+    // requirement the rates divide, where `progress / required` is a true
+    // position within the acquisition's own duration. Teaching is different
+    // arithmetic: the requirement is flat authored content and the rate scales
+    // the *numerator* (`mageMonths`), so a lesson has no comparable interior for
+    // a curve to be a curve over.
+    //
+    // A measurement agrees, and is stated carefully because the effect is real
+    // and is not the whole cause. On the reference seed's 200-year run, lessons
+    // in the last two 20-year windows went `19 / 0` with the research envelope
+    // alone and `5 / 0` with teaching curved as well — so curving teaching
+    // *deepened* the thinning without being what produced it. §3.1 calls
+    // teaching *"the healthiest process in the game… the thing that keeps
+    // knowledge alive against mortality"*, and a curve that makes an
+    // interrupted lesson bank less is pushing directly against that for no
+    // reason the design gives.
+    const progress = ledger.accrue(key, mageMonths);
     if (progress < required) return;
 
     const outcome = teach({
@@ -794,18 +799,10 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
 
     const key = effortKey(EFFORT_KIND.scribing, mage, nodeId, 0);
     const required = scribeCapacityCost(node.tier);
-    // §4.1's shape. The requirement here is the tier's *time* cost, not the
-    // node's materials cost — the curve shapes months at the desk, and the
-    // parchment is still paid whole on the tick the book is finished.
-    const progress = ledger.accrue(
-      key,
-      shapedEffort(
-        this.#deps.envelopes?.envelopeOf(nodeId),
-        scribeMonths,
-        ledger.progressOf(key),
-        required,
-      ),
-    );
+    // No envelope here either, for the reason `contributeTeaching` gives: the
+    // requirement is a flat function of tier, not a rate-scaled cost, so there
+    // is no acquisition interior for a curve to shape.
+    const progress = ledger.accrue(key, scribeMonths);
     if (progress < required) return;
 
     const shelf = this.#shelfFor(mage);
