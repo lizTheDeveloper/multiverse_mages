@@ -200,6 +200,7 @@ export {
   SWEEP_KIND,
   assignStrategies,
   expandSweep,
+  roundRobinCoverageProblem,
   sweepConfigurationHash,
   validateSweep,
 } from './sweep-spec.js';
@@ -291,6 +292,15 @@ export { reaggregate, runSweep } from './runner.js';
 
 export { buildTasks } from './tasks.js';
 
+export type { ShardResults, ShardSelector } from './shard.js';
+export {
+  decodeShardResults,
+  encodeShardResults,
+  mergeShardResults,
+  selectShard,
+  shardAssignment,
+} from './shard.js';
+
 export type {
   AblationArm,
   AblationPlay,
@@ -373,6 +383,8 @@ export {
   BOT_POOL,
   BOT_POOL_REGISTRY,
   POOL_BUILD_LIMITS,
+  SECT_RULESETS,
+  SECT_STRATEGIES,
   botStrategyRegistry,
   degeneracyOf,
   effectivePreferences,
@@ -409,10 +421,32 @@ export type {
   TuningAxis,
 } from './tuner.js';
 export {
+  CORRELATION_MIN_SUPPORT,
   DOMINANCE_LIMIT,
+  EXPLOIT_MARGIN_MIN,
   EXPLOIT_PROBE,
+  EXPLOIT_PROBES,
   candidatesForAxis,
   correlationOf,
+  coverageProblem,
+  describeScore,
   scoreBalance,
+  spearmanOf,
   varietyOf,
 } from './tuner.js';
+
+export type { BetterWhen, ScoringControl, ScoringTerm, Separation } from './scoring-controls.js';
+export {
+  BETTER_WHEN,
+  CONTROL_POOL,
+  CONTROL_RUNS,
+  MEASURED_NODES,
+  SCORING_TERMS,
+  TERMS_WITHOUT_CONTROLS,
+  constructedPool,
+  controlCorpus,
+  controlPool,
+  falseFriendReading,
+  isAffineRestatement,
+  separationOf,
+} from './scoring-controls.js';

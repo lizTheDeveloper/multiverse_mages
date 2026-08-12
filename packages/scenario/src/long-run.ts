@@ -62,7 +62,6 @@
  */
 
 import type { ContentId } from '@mm/content';
-import { shippedContent } from './content-set.js';
 import type { Fixed, SimState } from '@mm/sim-core';
 import { rngFromRootSeed, snapshotHash, step } from '@mm/sim-core';
 import {
@@ -79,7 +78,7 @@ import type { WorldStepReport } from '@mm/coordination';
 import { defineWorldSimulation } from '@mm/coordination';
 
 import type { ReferenceContent, ReferenceOptions } from './reference-universe.js';
-import { buildReferenceState, defaultTraditionIndex, referenceContent } from './reference-universe.js';
+import { buildReferenceState, referenceContent } from './reference-universe.js';
 
 /** World ticks in a world year (`contracts.md` §0: a tick is a month). */
 export const TICKS_PER_WORLD_YEAR = 12;
@@ -126,10 +125,10 @@ export const LONG_RUN_OPTIONS: ReferenceOptions = Object.freeze({
   // Every species founds the long run, which is what it has always done and what
   // task 9.9's per-species time-to-tier measurement requires.
   foundingSpeciesMask: 0,
-  // The tradition every measurement in this file has ever been taken under.
-  // Named rather than defaulted so that the day the default moves, this run's
-  // two centuries of committed figures do not move with it silently.
-  traditionIndex: defaultTraditionIndex(shippedContent()),
+  // The documented default site, which over the shipped content is
+  // `arable-lowland` and therefore neutral in both siting mechanisms. Pinned at
+  // the default so that the long run keeps measuring what it always measured.
+  academySiteKind: 0,
 });
 
 /** One world tick of the long run, stocks and flows together. */
@@ -296,6 +295,10 @@ function readObservation(state: SimState, content: ReferenceContent): Omit<LongR
  * nothing measurable and lets the worker answer.
  */
 export async function runLongReference(input: LongRunOptions = {}): Promise<LongRunResult> {
+  // No tradition named, so this resolves `scribingTraditionId`'s pick — the
+  // tradition every measurement in this file has ever been taken under. The
+  // tradition is a content fact, not a `ReferenceOptions` field, so pinning it
+  // is done here and not in `LONG_RUN_OPTIONS`.
   const content = input.content ?? referenceContent();
   const ticks = input.ticks ?? LONG_RUN_TICKS;
   const simulation = defineWorldSimulation(content.deps);

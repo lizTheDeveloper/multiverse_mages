@@ -221,15 +221,73 @@ describe('contentRevision', () => {
     // portal holds would fight two different battles while their revisions
     // agreed they were compatible. Nothing existing changed a byte.
     //
-    // 2512ea02d2a7569d8d0bacc4c5a926ca -> d37624e36be00f59cf21b87ff6eba144,
-    // when W17 added `autonomy-weight.json` (§2.11) — every magnitude a mage's
-    // choice of *which node to work on* is made of, including the role x
-    // primitive table that makes vision §7's standing role a number. It is in
-    // the preimage for the reason the other three tables are: two universes
-    // whose mages valued the same node differently would be developing
-    // different magic while their revisions agreed they were compatible.
-    // Nothing existing changed a byte.
-    expect(registry.contentRevision).toBe('d37624e36be00f59cf21b87ff6eba144');
+    // 2512ea02d2a7569d8d0bacc4c5a926ca -> ec506311ed7aadeb1aaf0e14f5750465,
+    // when the ascension predicates were made to read positive achievement and
+    // five constants joined `god-constant.json`: `ascension-summit-cells`,
+    // `ascension-summit-copies`, `ascension-canon-breadth`,
+    // `ascension-canon-cells` and `ascension-loss-fraction`. Unlike every move
+    // above it, this one is *not* "nothing existing changed a byte" in effect —
+    // no existing record changed, but the rules that read these constants decide
+    // when a run ends, so two universes on either side of this revision would
+    // disagree about whether a game was over. That is exactly what the revision
+    // exists to make incompatible, and it is why the digest is checked rather
+    // than the file list.
+    //
+    // ec506311ed7aadeb1aaf0e14f5750465 -> 61f6aa53e091684809765b1f9020ee96, when
+    // `raid-engagement` added the constants that make a raid fire — the arrival
+    // process, the loot count, and the rival stand-in a warband is drawn from.
+    // They are in the preimage for the reason the god tables are: two universes
+    // that disagreed about how long a portal holds, or about how many books come
+    // off a shelf, would fight two different battles while their revisions agreed
+    // they were compatible.
+    //
+    // W6 and W8 each recorded a successor to 2512ea02 on their own branches —
+    // ec506311 and aeedc362 — because neither contained the other. This tree
+    // contains both sets of constants, so it is a third revision, and that it is
+    // neither of theirs is the whole point of a digest over the preimage rather
+    // than a hand-maintained list.
+    //
+    // 61f6aa53e091684809765b1f9020ee96 -> a622452a3b55e38fd902a2d3264b44d7, when W17 added
+    // `autonomy-weight.json` (§2.11) — every magnitude a mage's choice of *which
+    // node to work on* is made of, including the role x primitive table that
+    // makes vision §7's standing role a number. It is in the preimage for the
+    // reason the other three tables are: two universes whose mages valued the
+    // same node differently would be developing different magic while their
+    // revisions agreed they were compatible. Nothing existing changed a byte.
+    //
+    // Three branches each recorded a successor to 2512ea02 — W6's ec506311,
+    // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
+    // other. This is the revision of the tree that holds all three.
+    //
+    // W24 added `libraryUpkeepMultiplier` to every `territory.json` record
+    // (§2.7) — what a library standing in that kind of country pays to stay
+    // standing. It is in the preimage for the reason `capacityPerLandUnit` is:
+    // two universes that disagreed about what the weather does to parchment
+    // would lose different books while their revisions agreed they were
+    // compatible. No existing value changed; five records each gained one field.
+    // On its own branch that took a622452a -> 5be75547.
+    //
+    // W21 gave each technique an `envelope` (§2.1) — `sound-design.md` §4.1's
+    // shape over the duration an acquisition takes — and added §5.2's two unease
+    // constants to `god-constant.json`. The envelope belongs in the preimage
+    // more squarely than most: it is the only thing in the project that makes
+    // the five techniques mechanically different from one another, so two
+    // universes disagreeing about a curve would be researching at different
+    // speeds, on different trajectories, while their revisions agreed they were
+    // compatible. The unease constants belong for the reason the rest of the god
+    // table does — two universes disagreeing about what changing the law costs
+    // are playing different games. On its own branch that took
+    // a622452a -> d89d4eef.
+    //
+    // **Neither of those is the value here, and that is the point of the field.**
+    // W24 and W21 were both cut from the tree at a622452a and neither contained
+    // the other, so each recorded itself as that revision's successor. The tree
+    // that holds both is a fourth value, and it is the fourth time this has
+    // happened in this campaign — W6, W8 and W17 did the same thing to 2512ea02.
+    // A content revision is a claim about *a whole content set*, not a running
+    // tally of who edited last, which is exactly why it is recomputed from the
+    // preimage rather than incremented by hand.
+    expect(registry.contentRevision).toBe('5a2a97df2d263e4a629aa2a5f3037020');
   });
 
   it('is stable across loads of identical content', () => {

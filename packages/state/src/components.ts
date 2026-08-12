@@ -412,6 +412,149 @@ export interface EraEvaluationRecord {
 export const ERA_EVALUATION_FIELDS_MATCH: KeysMatch<EraEvaluationRecord, typeof ERA_EVALUATION> =
   true;
 
+/**
+ * How much of one kind of country this universe holds (`contracts.md` §2.7's
+ * own migration, taken).
+ *
+ * §2.7 wrote this move before anyone needed it: *"`landUnits` is a per-universe
+ * endowment carried in content because a simulation instance holds exactly one
+ * universe (§1.1). When that stops being true — a raid that takes ground —
+ * `landUnits` moves to §1.1 and this record keeps `capacityPerLandUnit`, which
+ * is a property of the kind of country and not of who holds it."* This is that
+ * row. Content keeps the habitability of a *kind*; the universe holds a
+ * **count** of it.
+ *
+ * ## No coordinates, and none needed
+ *
+ * `vision.md` §7a: *"World-scale entities carry no coordinates at all."* A
+ * holding is a count and a kind. There is no position, no extent, no adjacency
+ * and no distance between two holdings — a universe holding delta and waste is
+ * not holding them *next to* anything. {@link assertNoWorldPositions} passes on
+ * this component for the ordinary reason: it declares no `x` and no `y`.
+ *
+ * ## Absent rows mean "not materialized", never "holds nothing"
+ *
+ * A universe that has lost all its ground carries a row with `landUnits: 0`.
+ * The distinction matters because a snapshot written before this component
+ * existed has *no rows at all*, and the first world tick materializes the
+ * content endowment into it — `god-state`'s lazy-creation rule, for the same
+ * reason: *"no row means this universe has not been stepped yet"*. Aliasing the
+ * two would make a conquered universe indistinguishable from an old save, and
+ * colonization needs to tell them apart.
+ */
+export const TERRITORY_HOLDING = {
+  name: 'territory-holding',
+  fields: {
+    kindId: 'u16',
+    landUnits: 'u32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface TerritoryHoldingRecord {
+  /** Interned `territory` content id. Never `0`. */
+  kindId: ContentId;
+  /** Land units of this kind the universe holds. A count, not `fp`. */
+  landUnits: number;
+}
+
+export const TERRITORY_HOLDING_FIELDS_MATCH: KeysMatch<
+  TerritoryHoldingRecord,
+  typeof TERRITORY_HOLDING
+> = true;
+
+/**
+ * Where a university stands — the §1.4 field that makes a university *somewhere*
+ * without making it *somewhere in particular*.
+ *
+ * ## Why this is a relationship and not a position
+ *
+ * `vision.md` §7a splits the game in two: *"At world scale there is no map.
+ * Universities, populations, materials, and knowledge are **counts and
+ * relationships**."* It forbids coordinates and it names relationships as the
+ * thing world scale is made of. *"This university stands in that kind of
+ * country"* is a relationship: it supports **co-location** (two universities
+ * with the same `kindId` stand in the same country, which is what multi-mage
+ * ritual needs from siting) and it supports **terrain**, and it supports neither
+ * distance nor direction, because neither exists at this scale.
+ *
+ * ## Why a component rather than a field on §1.4's row
+ *
+ * The same argument `goal-commitment` and `effort-progress` were added under. A
+ * field exists for every university, so "unsited" would need a sentinel content
+ * id — a reserved entry in a namespace whose whole contract is that its ids are
+ * permanent and mean one kind of country each. An absent row says it with
+ * nothing invented, costs nothing for the universities not using it, and makes
+ * the world-schema step an appended empty section rather than a column-by-column
+ * rewrite of every older save's university section.
+ *
+ * ## Keyed by content id, not by a holding's handle
+ *
+ * The alternative — a handle to a {@link TERRITORY_HOLDING} row — would couple
+ * siting to the order in which holdings are materialized, so a scenario could
+ * not site its founding academy at build time. Every mage row already stores a
+ * `speciesId` this way; this is the same move.
+ */
+export const UNIVERSITY_SITE = {
+  name: 'university-site',
+  fields: {
+    kindId: 'u16',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface UniversitySiteRecord {
+  /** Interned `territory` content id. Never `0` — an unsited university has no row. */
+  kindId: ContentId;
+}
+
+export const UNIVERSITY_SITE_FIELDS_MATCH: KeysMatch<UniversitySiteRecord, typeof UNIVERSITY_SITE> =
+  true;
+
+/**
+ * The bar's law-clock — `sound-design.md` §5.2's eight-bar unease, as state.
+ *
+ * §3.1 makes one world tick one bar. §5.2 says a permit's dissonance *"decays
+ * over about eight bars"*, which is the only duration the design attaches to a
+ * constitutional act, and this row is the one integer needed to know whether it
+ * is still ringing.
+ *
+ * **A component rather than two more fields on `god-state`.** §1.1's own note
+ * on that row explains why: a snapshot section carries its field table inline,
+ * so an added *field* reshapes the section and every older save has to be
+ * rewritten column by column, where an added *component* is an appended empty
+ * section — the migration shape this project has used three times and tested.
+ * Widening `god-state` would have been the obvious move and the expensive one.
+ *
+ * Created lazily on the first constitutional act, so *no row* means *this
+ * universe has never changed its own law*, which is exactly what it means. A
+ * universe that never legislates never pays.
+ *
+ * Deliberately holds only the unease. The other half of the timing rule — which
+ * of §3.1's subdivisions the bar is playing — is read from whether any project
+ * of that subsystem is in flight, and a cached bitmask would be a second record
+ * of a fact the effort rows already carry.
+ */
+export const BAR_PHASE = {
+  name: 'bar-phase',
+  fields: {
+    uneaseUntilTick: 'i32',
+    lastConstitutionalTick: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface BarPhaseRecord {
+  /**
+   * World tick at which the last constitutional act's unease lapses.
+   *
+   * A constitutional act committed strictly before this pays the off-grid
+   * surcharge, scaled by how much of the decay is left.
+   */
+  uneaseUntilTick: Tick;
+  /** The tick the unease started on, so the remaining share is computable. */
+  lastConstitutionalTick: Tick;
+}
+
+export const BAR_PHASE_FIELDS_MATCH: KeysMatch<BarPhaseRecord, typeof BAR_PHASE> = true;
+
 // ---------------------------------------------------------------------------
 // §1.2 Mage. §1.3 Populace cohort.
 // ---------------------------------------------------------------------------
@@ -933,6 +1076,13 @@ export const WORLD_COMPONENTS = [
   BLESSING,
   UPHEAVAL,
   ERA_EVALUATION,
+  // Revision order, which is also snapshot section order: the siting pair is
+  // revision 5 and `bar-phase` is revision 6, so appending them in this order is
+  // what makes a migrated revision-4 envelope byte-identical to one this build
+  // wrote from scratch.
+  TERRITORY_HOLDING,
+  UNIVERSITY_SITE,
+  BAR_PHASE,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

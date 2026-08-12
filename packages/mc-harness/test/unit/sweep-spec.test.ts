@@ -144,6 +144,12 @@ describe('factorial expansion is explicit', () => {
         { id: 'c', levels: [1, 2] },
       ],
       replicates: 25,
+      // Fixed assignment, because 25 is odd and the toy pool holds two
+      // strategies: since W18 a round-robin sweep must have a replicate count
+      // that is a multiple of its pool size, and this test is about the
+      // factorial expansion rather than about who plays. The capability spec's
+      // 4 x 5 x 2 x 25 arithmetic is unchanged.
+      agentPool: { strategies: ['toy-passive'], assignment: 'fixed', slots: 1 },
     });
     const plan = expandSweep(spec, TOY_REGISTRIES);
     expect(plan.cellCount).toBe(40);

@@ -736,6 +736,14 @@ const ARCHIVIST: StrategyDefinition = {
  */
 const PORTAL_RUSH: StrategyDefinition = {
   strategyId: 'portal-rush',
+  // 4: `assignRole` was added second in the preference list. This is the change
+  // the version field was written for: the entry below explains at length that
+  // `permitTechnique` sat unreachable behind a permanently masked `openPortal`,
+  // and the day `openPortal` became reachable — this one — the bot needed a
+  // raider to send through it. A portal-rush that opens portals and fields
+  // nobody is measuring the portal action, not the raid economy, and every
+  // number recorded under version 3 is a number about an empty battlefield.
+  //
   // 3: its one ruleset move, the tempo `permitTechnique`, became a 1-based id.
   //
   // Bumped even though a 96-run seed-matched A/B at 2400 ticks produced
@@ -746,7 +754,7 @@ const PORTAL_RUSH: StrategyDefinition = {
   // is all of them. The version is a claim about the definition, not about
   // whether this build happens to exercise it, and the day `openPortal` becomes
   // reachable this strategy names a different technique than it used to.
-  version: 3,
+  version: 4,
   hypothesis:
     'Whether reaching the portal early is worth the tempo it costs. It is the strategy the raid ' +
     'economy is supposed to reward, so it probes whether the multiverse is a strategic axis or a ' +
@@ -762,9 +770,23 @@ const PORTAL_RUSH: StrategyDefinition = {
       'the reason the whole field exists: it made portal-rush the only strategy that *looked* able ' +
       'to win while being one of the seven that could not.',
   },
-  signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.declareAscension],
+  signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.assignRole, GOD_ACTION.declareAscension],
   preferences: ({ round }) => [
     { action: GOD_ACTION.openPortal, parameter: rotate(GOD_ACTION.openPortal, round) },
+    // Somebody has to go through it. `rules-raid`'s `RAIDING_ROLES` is the
+    // `raider` role alone and `createMage` makes every mage a `researcher`, so
+    // a god who opens portals and never assigns a role sends an empty warband:
+    // the raid resolves on the first tick as a defender victory, nothing is
+    // looted, nothing is burned, and the strategy is passive-control paying
+    // favor for the privilege. Measured before this line existed — 337 raids
+    // across four runs and zero nodes taken from any of them.
+    //
+    // `assignRoleCandidates` lists every living mage against each role it does
+    // not hold, in handle then role order, so a rotating slot index reaches
+    // `raider` about one submission in three. That is the coarsest instrument
+    // the action space offers and it is enough: the point of this bot is that
+    // it raids, not that it fields an optimal warband.
+    { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round) },
     // Tempo while the portal is unreachable: push the deepest cell and permit
     // the technique that would open more of it.
     { action: GOD_ACTION.encourageResearch, parameter: 0 },
@@ -826,6 +848,265 @@ const WORSHIP_MAXIMIZER: StrategyDefinition = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Adversarial probes added by the W6 verification (branch
+// w6-verify/positive-achievement). These exist to falsify two of W6's claims and
+// are not part of the shipped pool's argument.
+// ---------------------------------------------------------------------------
+
+/**
+ * The honest idle-then-declare probe: do nothing, ever, and declare on the first
+ * round the mask permits it.
+ *
+ * W6 measures its exploit margin against `uniform-random-legal`, which is a
+ * *crippled* probe rather than an idle one: it submits actions 1–7 bare, and
+ * `CANDIDATE_SLOTS` covers only 8–14, so those submissions are refused and it
+ * effectively presses buttons 8–15 at random. A margin measured against it can
+ * say "this bot is broken" rather than "playing beats not playing". This one is
+ * the control that separates the two — its preference list is empty, so
+ * `policyFor` submits `DECLARE` when legal and `noop` otherwise, and nothing
+ * else ever.
+ */
+const IDLE_THEN_DECLARE: StrategyDefinition = {
+  strategyId: 'idle-then-declare',
+  version: 1,
+  hypothesis:
+    'The exploit probe W6\'s margin claims to be measured against. It plays nothing and takes the ' +
+    'summit the instant the mask opens it, so its ascension rate is exactly the rate at which the ' +
+    'win condition is reachable without playing. If it wins as often as the pool, the exploit ' +
+    'margin measures uniform-random-legal\'s parameter bug rather than the predicate.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'That is the definition of the probe. "Idle then declare" is one policy, and the declaration ' +
+      'has to be most-preferred or the measurement is of when a random draw happened to reach it.',
+  },
+  signatureActions: [GOD_ACTION.declareAscension],
+  preferences: () => [],
+};
+
+/**
+ * Permit the whole grid for the first stretch of the run, then idle.
+ *
+ * The degenerate-play probe. W6's predicates are anchored above the passive
+ * ceiling on the argument that clearing them requires "the god permitted an axis
+ * the universe did not start with" — which is a statement about the *ruleset*,
+ * not about anything the universe achieved. This bot funds nothing, encourages
+ * nothing, teaches nothing and blesses nobody; it presses two buttons for 140 of
+ * 2400 ticks and then does literally nothing for the remaining 2260.
+ */
+const PERMIT_THEN_IDLE: StrategyDefinition = {
+  strategyId: 'permit-then-idle',
+  version: 1,
+  hypothesis:
+    'Whether W6\'s "positive achievement" is an achievement or a ruleset edit. It opens the grid ' +
+    'with permitTechnique/permitForm alone for 140 rounds and then submits nothing at all for the ' +
+    'remaining 2260 ticks. If it clears the predicates at permissive-breadth\'s rate, then the ' +
+    'conjuncts read what the god permitted, not what the universe did — and the universe learns ' +
+    'the newly-permitted nodes on its own, exactly as it learns the original fifty-one.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'Symmetric with permissive-breadth, which it is the ablation of: same declaration policy, ' +
+      'every non-permit action removed. A difference in stance would be a second variable.',
+  },
+  signatureActions: [GOD_ACTION.permitTechnique, GOD_ACTION.permitForm],
+  preferences: ({ round }) =>
+    round >= 140
+      ? []
+      : [
+          { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
+          { action: GOD_ACTION.permitForm, parameter: form(round) },
+        ],
+};
+
+// ---------------------------------------------------------------------------
+// The sects: a pool whose gods do not all permit the same magic (W18, item E).
+// ---------------------------------------------------------------------------
+
+/**
+ * ## Why a homogeneous pool makes looting unmeasurable
+ *
+ * Every strategy above starts from — and, apart from `permissive-breadth`, stays
+ * inside — the same v1 rectangle: three techniques × four forms, twelve cells,
+ * fifty-one nodes. `contracts.md` §5 calls knowledge *"portable, lootable"*, and
+ * W8's raid work measured looting crossing the fifty-one-node ceiling by roughly
+ * nine nodes a run **from cells the raider's own god forbade**.
+ *
+ * That measurement is only available because the raid victim held something the
+ * raider could not have derived. **In a pool where every god permits the same
+ * twelve cells there is nothing foreign to loot**, so raids can move copies and
+ * can never move knowledge, and every metric about knowledge diversity is a
+ * measurement of the instrument rather than of the game. That is a defect in the
+ * pool, not in the raid engine.
+ *
+ * ## What a sect is
+ *
+ * Three gods who disagree about what magic may exist. Each one:
+ *
+ * - **permits a band of the form axis that the others never touch** — the bands
+ *   are disjoint by construction, and the test asserts it from the emitted
+ *   action stream rather than from this comment;
+ * - **forbids at least one axis the v1 rectangle starts with**, so its ruleset
+ *   differs *downward* as well as upward;
+ * - and every axis a sect forbids is one that another sect holds. That is the
+ *   property that makes a raid able to bring home something the raider's own god
+ *   forbade, and it is the one the pairwise test pins.
+ *
+ * The bands are read off the shipped content rather than invented: the v1
+ * rectangle is `intellego`/`perdo`/`rego` × `mentem`/`terram`/`limen`/`nomen`,
+ * which as 1-based axis ids is techniques {2, 4, 5} and forms {8, 9, 13, 14}.
+ * The ten forms outside it are what the three sects divide.
+ *
+ * ## What this is not
+ *
+ * It is **not** a measurement. Raids are not on this branch, so nothing here has
+ * been observed looting anything; what is delivered is pool composition plus an
+ * executable statement of the property, and the sects are appended to
+ * {@link BOT_POOL} rather than substituted into it, so no committed sweep and no
+ * committed baseline changes. `balance/sweeps/pool-heterogeneous.sweep.json` is
+ * the sweep that runs them, and it is deliberately not wired into any gate.
+ */
+interface SectRuleset {
+  readonly strategyId: string;
+  /** Technique ids, 1-based, this sect permits beyond the v1 rectangle. */
+  readonly permitTechniques: readonly number[];
+  /** Form ids, 1-based, this sect permits. Disjoint across sects. */
+  readonly permitForms: readonly number[];
+  /** Form ids this sect forbids. Each is one another sect holds. */
+  readonly forbidForms: readonly number[];
+  readonly gloss: string;
+}
+
+/**
+ * The three sects, and the axes each one claims.
+ *
+ * Disjointness is a property of these three lists and is asserted by
+ * `ruleset-heterogeneity.test.ts` rather than trusted here: three hand-written
+ * lists that must not overlap are exactly the shape of thing that stops being
+ * true in a later edit.
+ */
+export const SECT_RULESETS: readonly SectRuleset[] = Object.freeze([
+  {
+    strategyId: 'sect-elemental',
+    // Creo, the one technique no other sect claims.
+    permitTechniques: [1],
+    // animal, aquam, auram, corpus.
+    permitForms: [1, 2, 3, 4],
+    // limen — a v1 form, and one both other sects keep.
+    forbidForms: [13],
+    gloss: 'the elements and the body, and a god who will not have thresholds',
+  },
+  {
+    strategyId: 'sect-artifice',
+    // Muto.
+    permitTechniques: [3],
+    // herbam, ignem, imaginem, vim.
+    permitForms: [5, 6, 7, 10],
+    // nomen — a v1 form the other two keep.
+    forbidForms: [14],
+    gloss: 'making and unmaking matter, and a god who will not have true names',
+  },
+  {
+    strategyId: 'sect-umbral',
+    // No extra technique: this sect's difference is entirely on the form axis,
+    // which keeps one arm of the trio free of the technique variable.
+    permitTechniques: [],
+    // umbra, fatum.
+    permitForms: [11, 12],
+    // mentem and terram — two v1 forms both other sects keep.
+    forbidForms: [8, 9],
+    gloss: 'shadow and fate, and a god who will not have minds or earth',
+  },
+]);
+
+/** `values[round % values.length]`, or `undefined` for an empty list. */
+function cycle(values: readonly number[], round: number): number | undefined {
+  return values.length === 0 ? undefined : (values[round % values.length] as number);
+}
+
+/**
+ * One sect, as a strategy definition.
+ *
+ * The preference list rotates **which kind of action is most-preferred** on a
+ * four-round cycle rather than listing all four at once. `policyFor` submits the
+ * first preference the mask permits, and `permitTechnique` is legal in almost
+ * every round, so a single list would starve the forbids and the encouragement
+ * for the whole run — which is the mechanism that made `portal-rush`'s third
+ * preference unreachable for every sweep this project has published.
+ */
+function sectStrategy(sect: SectRuleset): StrategyDefinition {
+  return {
+    strategyId: sect.strategyId,
+    version: 1,
+    hypothesis:
+      `Whether a pool of gods who disagree makes looting measurable. This sect permits ${sect.gloss}, ` +
+      'and every axis it forbids is one another sect holds — so a raid against a rival can bring ' +
+      'home a node from a cell this god forbade, which is the only way §5\'s "portable, lootable" ' +
+      'can show up as knowledge rather than as copies. It probes the instrument as much as the ' +
+      'game: if the three sects still end on the same node set, then the ruleset is not what ' +
+      'binds what a universe knows, and the campaign\'s central claim is wrong.',
+    ascension: {
+      when: ASCENSION_STANCE.whenEligible,
+      because:
+        'Symmetric with permissive-breadth, whose ruleset move this is a partition of. The three ' +
+        'sects are compared against each other, so a difference in stance between them — or ' +
+        'between them and the strategy they partition — would be a second variable in a ' +
+        'comparison that exists to isolate one.',
+    },
+    // `permitTechnique` is listed only by the sects that claim one. A signature
+    // action a strategy never names is a claim `degeneracyOf` would report as
+    // denied when the strategy never wanted it — the pool's own definition of a
+    // signature is "the actions without which this strategy is not
+    // distinguishable from the passive control", and sect-umbral's difference is
+    // entirely on the form axis.
+    signatureActions: [
+      ...(sect.permitTechniques.length > 0 ? [GOD_ACTION.permitTechnique] : []),
+      GOD_ACTION.permitForm,
+      GOD_ACTION.forbidForm,
+      GOD_ACTION.encourageResearch,
+    ],
+    preferences: ({ round }) => {
+      const preferred: ActionSubmission[] = [];
+      switch (round % 4) {
+        case 0: {
+          const parameter = cycle(sect.permitTechniques, round);
+          if (parameter !== undefined) {
+            preferred.push({ action: GOD_ACTION.permitTechnique, parameter });
+          }
+          break;
+        }
+        case 1: {
+          const parameter = cycle(sect.permitForms, round);
+          if (parameter !== undefined) {
+            preferred.push({ action: GOD_ACTION.permitForm, parameter });
+          }
+          break;
+        }
+        case 2: {
+          const parameter = cycle(sect.forbidForms, round);
+          if (parameter !== undefined) {
+            preferred.push({ action: GOD_ACTION.forbidForm, parameter });
+          }
+          break;
+        }
+        default:
+          break;
+      }
+      // Slot 0 is the deepest permitted cell, so this pushes whatever the sect's
+      // own ruleset has made reachable — which is the point of giving the three
+      // of them different rulesets.
+      preferred.push({ action: GOD_ACTION.encourageResearch, parameter: 0 });
+      return preferred;
+    },
+  };
+}
+
+/** The three sects, as strategies. Appended to the pool, never substituted in. */
+export const SECT_STRATEGIES: readonly StrategyDefinition[] = Object.freeze(
+  SECT_RULESETS.map(sectStrategy),
+);
+
 /**
  * The pool, in registration order.
  *
@@ -833,6 +1114,13 @@ const WORSHIP_MAXIMIZER: StrategyDefinition = {
  * the spec lists the roles in, not alphabetical: {@link botStrategyRegistry}
  * sorts the ids it publishes, and this array is what a reader compares against
  * the spec paragraph.
+ *
+ * The two verification probes and the three sects are appended rather than
+ * inserted so that `round-robin` assignment — `strategies[replicateIndex % size]`
+ * over the *sweep file's* list, not this one — is unaffected for any sweep that
+ * does not name them. `balance-gate-ascension.sweep.json` names the original
+ * eight and only the original eight, so its committed baseline is untouched by
+ * anything below `WORSHIP_MAXIMIZER`.
  */
 export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   PASSIVE_CONTROL,
@@ -843,6 +1131,9 @@ export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   ARCHIVIST,
   PORTAL_RUSH,
   WORSHIP_MAXIMIZER,
+  IDLE_THEN_DECLARE,
+  PERMIT_THEN_IDLE,
+  ...SECT_STRATEGIES,
 ]);
 
 // ---------------------------------------------------------------------------
@@ -1063,18 +1354,39 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'the mask clears the action every tick. It is therefore permanently MASKED rather than inert, ' +
     'which makes portal-rush the one strategy whose defining action degeneracyOf reports as ' +
     'unreachable. Raids, and a second universe to point a portal at, land in 0.9.0.',
-  'ascension-is-passive':
-    'declareAscension is now gated: mask.ts clears it unless the god-state row\'s ascensionPath has ' +
-    'left ASCENSION_PATH.none, and the outcome system recomputes that every world tick so it can ' +
-    'lapse. What is *not* yet true is that eligibility measures play. Path A gates on world tick ' +
-    '>= ascension-min-tick (600) and worship tier >= ascension-tier-gate (4), and worship accrues ' +
-    'from mages, universities and populace whether or not the god acts — so the path opens by ' +
-    'passive accumulation around tick 700 in the reference universe, at the same 51 nodes known ' +
-    'that passive-control reaches doing nothing. Measured: at 2400 ticks the pool\'s winners ' +
-    'declare within a few dozen ticks of each other regardless of what they did beforehand. Until ' +
-    'the gate depends on something the god\'s play moves, a strategy\'s ascension timing is ' +
-    'evidence about the clock and not about the strategy. That is what W2 of the ascension-meta ' +
-    'campaign exists to change; delete this entry when it does.',
+  'five-strategies-are-one-universe':
+    'Ascension eligibility now reads play: Path A counts permitted cells standing at their floor ' +
+    'and Path B requires an era boundary to hold a canon of a stated size spread over a stated ' +
+    'number of cells, both anchored above what a universe reaches with no god action at all. The ' +
+    'entry that used to sit here said the opposite and has been deleted rather than edited, ' +
+    'because it told a reader not to run the experiment that found this one. What replaces it is ' +
+    'a limit of the POOL, not of the game. Measured over four factor cells at 2400 ticks, reading ' +
+    'the god tick report at every era boundary: passive-control, uniform-random-legal, archivist, ' +
+    'portal-rush and worship-maximizer all end at exactly (12 mastered cells, 51 nodes known, 12 ' +
+    'cells spanned). They submit different actions and produce the SAME universe. permissive-' +
+    'breadth reaches (15, 262, 70); narrow-depth and denial-warden reach (0, <=9, <=5), strictly ' +
+    'below the passive profile on every axis. So the pool holds three distinct achievement ' +
+    'profiles and its Pareto front is one point. Any predicate that refuses the exploit probe ' +
+    'refuses all five of its profile-mates, and any predicate that admits the two deniers admits ' +
+    'the passive profile too — which is why no setting of any ascension constant can make three ' +
+    'strategies win at materially different rates while the idle probe still loses. That is a ' +
+    'measurement of the strategy pool and of the two loops that would make the other strategies\' ' +
+    'actions matter: universities do not compound into a rate, and nothing is ever the last copy, ' +
+    'so libraryDependence is identically zero and redundancy buys nothing. Delete this entry when ' +
+    'a second strategy can produce a universe distinguishable from the one the god never touched.',
+  'universities-are-founded-and-never-finished':
+    'fundUniversity slot 0 founds a new university and slots 1+ advance existing ones, and ' +
+    'advanceConstruction in rules-world has no caller outside it — so a completed university is ' +
+    'god-attributable by construction, and the reference universe seeds exactly one. That makes ' +
+    'completedUniversities look like the ideal Path A conjunct, and measured it is the opposite. ' +
+    'Every deliberate strategy in this pool ends the run with that one seeded university: ' +
+    'permissive-breadth lists fundUniversity behind permitTechnique, which is legal every round, ' +
+    'so the entry is never reached; archivist takes slot 0 every round while libraryDepth stays ' +
+    'below its threshold, founding hundreds and completing none. Only uniform-random-legal — which ' +
+    'picks slots at random and therefore sometimes advances the same one twice — completes any, ' +
+    'reaching 26. A Path A gate on completedUniversities would hand the summit exclusively to the ' +
+    'bot that presses buttons at random. Recorded because discriminating-ascension names that gate ' +
+    'as Path A\'s successor knob, and the measurement says it is inverted.',
   'noise-floor-submits-axis-actions-bare':
     'uniform-random-legal draws a parameter only when candidateSlotCount says the action has one, ' +
     'and CANDIDATE_SLOTS covers 8–14 alone — actions 1–7 are not §4.4 parameterized actions, so ' +

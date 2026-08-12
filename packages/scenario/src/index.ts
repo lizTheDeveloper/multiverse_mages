@@ -47,6 +47,7 @@ export {
   shippedContent,
   speciesTable,
   storeHookOf,
+  traditionIdNamed,
   v1RulesetAxes,
   worldDeps,
 } from './content-set.js';
@@ -67,12 +68,12 @@ export type { ReferenceContent, ReferenceOptions, ReferenceRun } from './referen
 export {
   REFERENCE_FACTOR_IDS,
   REFERENCE_SCENARIO_ID,
+  TRADITION_FACTOR_ID,
+  academySiteKindOf,
   buildReferenceState,
-  defaultTraditionIndex,
   referenceContent,
   referenceOptions,
   referenceScenario,
-  traditionOrder,
 } from './reference-universe.js';
 
 export type { ReferenceExecutorOptions, ReferenceRunResult } from './executor.js';

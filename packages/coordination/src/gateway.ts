@@ -154,8 +154,10 @@ import {
   shelveGrimoire,
   teach,
 } from '@mm/rules-magic';
-import type { RediscoveryClampCounter } from '@mm/primitives';
+import type { EffortEnvelope, RediscoveryClampCounter } from '@mm/primitives';
 import { createRediscoveryClampCounter } from '@mm/primitives';
+
+import type { EnvelopeResolver } from './envelopes.js';
 import type {
   KnowledgeGateway,
   KnowledgeTarget,
@@ -215,6 +217,16 @@ export interface GatewayDeps {
   readonly knowledge: KnowledgeSubsystem;
   readonly catalog: NodeCatalog;
   readonly cells: CellResolver;
+  /**
+   * A node's technique envelope — `sound-design.md` §4.1's shape over the
+   * duration an acquisition takes.
+   *
+   * Optional, and absent means the flat curve, which is both Rego's shape and
+   * the behaviour every acquisition path had before envelopes existed. That is
+   * what lets a caller with no content registry — a fixture, a probe — drive
+   * this gateway unchanged.
+   */
+  readonly envelopes?: EnvelopeResolver;
   /**
    * A node's cell, form and effect primitives, for the utility score that
    * decides which target a mage takes.
@@ -655,6 +667,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       // at. `initialMastery` is deliberately not passed alongside it — one
       // route, so the two cannot be wired half-way.
       acquire: this.#deps.acquire,
+      // §4.1's shape. `research` applies it to the effort *inside* the call,
+      // because that is where `required` is computed and the curve is indexed on
+      // `progress / required` — resolving it out here would mean pricing the
+      // node twice and betting the two agreed.
+      ...envelopeInput(this.#deps.envelopes, nodeId),
     });
 
     if (outcome.refusal !== undefined) return;
@@ -701,6 +718,23 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     // below and the clamp further down cannot come to different conclusions.
     const required = this.#deps.acquire.teachCost(node.teachCost);
     const key = effortKey(EFFORT_KIND.teaching, teacher, nodeId, student);
+    // **No envelope here, and the reason is structural.** §4.1's shape is
+    // applied to *research* — a mage deriving a node over months against a
+    // requirement the rates divide, where `progress / required` is a true
+    // position within the acquisition's own duration. Teaching is different
+    // arithmetic: the requirement is flat authored content and the rate scales
+    // the *numerator* (`mageMonths`), so a lesson has no comparable interior for
+    // a curve to be a curve over.
+    //
+    // A measurement agrees, and is stated carefully because the effect is real
+    // and is not the whole cause. On the reference seed's 200-year run, lessons
+    // in the last two 20-year windows went `19 / 0` with the research envelope
+    // alone and `5 / 0` with teaching curved as well — so curving teaching
+    // *deepened* the thinning without being what produced it. §3.1 calls
+    // teaching *"the healthiest process in the game… the thing that keeps
+    // knowledge alive against mortality"*, and a curve that makes an
+    // interrupted lesson bank less is pushing directly against that for no
+    // reason the design gives.
     const progress = ledger.accrue(key, mageMonths);
     if (progress < required) return;
 
@@ -765,6 +799,9 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
 
     const key = effortKey(EFFORT_KIND.scribing, mage, nodeId, 0);
     const required = scribeCapacityCost(node.tier);
+    // No envelope here either, for the reason `contributeTeaching` gives: the
+    // requirement is a flat function of tier, not a rate-scaled cost, so there
+    // is no acquisition interior for a curve to shape.
     const progress = ledger.accrue(key, scribeMonths);
     if (progress < required) return;
 
@@ -1175,6 +1212,23 @@ export function effortKey(
  * not because this module knows its name — the four extension points stay the
  * only place a tradition changes anything.
  */
+/**
+ * The `envelope` field for a `research` call, or no field at all.
+ *
+ * Spread rather than passed as `envelope: … | undefined` because
+ * `exactOptionalPropertyTypes` is on: *"no envelope resolved"* and *"an
+ * envelope whose value is undefined"* are the same behaviour and must not be
+ * two spellings, or a caller reading the type would have to decide which one
+ * means the flat curve.
+ */
+function envelopeInput(
+  envelopes: EnvelopeResolver | undefined,
+  nodeId: ContentId,
+): { envelope?: EffortEnvelope } {
+  const envelope = envelopes?.envelopeOf(nodeId);
+  return envelope === undefined ? {} : { envelope };
+}
+
 function storeHookOf(policy: StorePolicy): StoreHook {
   return { kind: policy.kind, keepsWrittenCopies: policy.scribingAvailable };
 }

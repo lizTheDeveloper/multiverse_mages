@@ -54,7 +54,12 @@ import {
 import type { SpeciesAffinities } from '@mm/rules-world';
 import { readTargetAppeal, resolveSpeciesAffinities, territoryExtent } from '@mm/rules-world';
 import type { WorldStepDeps } from '@mm/coordination';
-import { godEffectHooks, nodeFacetsFrom, resolveGodContent } from '@mm/coordination';
+import {
+  envelopeResolver,
+  godEffectHooks,
+  nodeFacetsFrom,
+  resolveGodContent,
+} from '@mm/coordination';
 
 /** The permitted-axis halves of a ruleset (`contracts.md` §1.1). */
 export interface RulesetAxes {
@@ -199,6 +204,33 @@ export function scribingTraditionId(registry: ContentRegistry): ContentId {
   );
 }
 
+/**
+ * The interned id of the tradition a sweep *named*, or a refusal.
+ *
+ * The counterpart to {@link scribingTraditionId}, which picks a tradition by
+ * asking the hooks a question. This one is told which tradition to use, and
+ * exists because `vision.md` §4a makes the tradition an axis of play — *"a
+ * universe has exactly one tradition, chosen by the god"* — and an axis nobody
+ * can select is an axis nobody can measure.
+ *
+ * **Refuses an unknown name rather than falling back.** A sweep arm labelled
+ * `art-of-memory` that quietly ran the default would produce a table of three
+ * columns, two of them the same universe, reported as a comparison of three
+ * traditions. That is the specific failure this whole measurement exists to
+ * avoid, so the error names every tradition the content set actually ships.
+ */
+export function traditionIdNamed(registry: ContentRegistry, name: string): ContentId {
+  for (const entry of registry.traditions) {
+    if (entry.record.id === name) return entry.contentId;
+  }
+  const shipped = registry.traditions.map((entry) => entry.record.id).join(', ');
+  throw new Error(
+    `No shipped tradition has the id ${JSON.stringify(name)}. The content set ships: ${shipped}. ` +
+      'Refusing rather than defaulting: an arm that silently ran another tradition would be ' +
+      'reported as a measurement of the one it names.',
+  );
+}
+
 /** A tradition's resolved `store` hook (`contracts.md` §2.5's four extension points). */
 export function storeHookOf(registry: ContentRegistry, traditionId: ContentId): StorePolicy {
   const table = traditionTableFrom(registry);
@@ -244,6 +276,12 @@ export function contentCatalogue(registry: ContentRegistry): ContentCatalogue {
     byAction: god.costs.byAction,
     foundUniversity: god.costs.foundUniversity,
     hysteresisStep: god.constants.hysteresisStep,
+    // `sound-design.md` §5.2's eight bars. The mask reprices every action
+    // itself, so these travel with the prices — an action the mask calls
+    // affordable and the resolver refuses is not a cost, it is an
+    // illegal-action counter.
+    uneaseBars: god.constants.uneaseBars,
+    uneaseStep: god.constants.uneaseStep,
   });
 }
 
@@ -288,6 +326,11 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
     speciesOf,
     catalog,
     cells,
+    // `sound-design.md` §4.1's shape, per technique. Built here because this is
+    // where a registry is in hand; the arithmetic that reads it is
+    // `@mm/primitives`' and the resolution is `@mm/coordination`'s. This file
+    // wires; it does not compute.
+    envelopes: envelopeResolver(registry, cells),
     facets: nodeFacetsFrom(registry),
     affinitiesOf: (species) => {
       const cached = affinityCache.get(species.id);
@@ -300,6 +343,15 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
+    // The content half of `contracts.md` §2.7's split, in interned order — a
+    // code-unit sort of the ids (`intern.ts`), so the handles the world step
+    // allocates for holdings are a function of content and of nothing else.
+    territoryKinds: registry.territories.map((entry) => ({
+      kindId: entry.contentId,
+      landUnits: entry.record.landUnits,
+      capacityPerLandUnit: entry.record.capacityPerLandUnit,
+      libraryUpkeepMultiplier: entry.record.libraryUpkeepMultiplier,
+    })),
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),

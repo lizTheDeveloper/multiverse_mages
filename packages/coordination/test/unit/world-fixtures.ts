@@ -134,6 +134,12 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
     territory: territoryExtent(registry().territories.map((entry) => entry.record)),
+    territoryKinds: registry().territories.map((entry) => ({
+      kindId: entry.contentId,
+      landUnits: entry.record.landUnits,
+      capacityPerLandUnit: entry.record.capacityPerLandUnit,
+      libraryUpkeepMultiplier: entry.record.libraryUpkeepMultiplier,
+    })),
     primitives: {
       lifespan: primitiveNamed('lifespan'),
       resourceYield: primitiveNamed('resource-yield'),
