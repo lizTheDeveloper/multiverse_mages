@@ -1183,21 +1183,27 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'measurement of the strategy pool and of the two loops that would make the other strategies\' ' +
     'actions matter: universities do not compound into a rate, and nothing is ever the last copy, ' +
     'so libraryDependence is identically zero and redundancy buys nothing. Delete this entry when ' +
-    'a second strategy can produce a universe distinguishable from the one the god never touched.',
+    'a second strategy can produce a universe distinguishable from the one the god never touched. ' +
+    'W29 NOTE, NOT A RE-MEASUREMENT: the condition in that last sentence is now at least partly ' +
+    'met, and every number above was taken against a build where it could not be. Two universes ' +
+    'differing only in which forms they permit now produce economies that differ on every series ' +
+    'measured (tools/w29/two-universes.mjs, 200 ticks, seed 589825): food 321443 vs 468099, vellum ' +
+    '75733 vs 274403, months to raise a university 30 vs 42. The reason the five strategies ' +
+    'converged was that permitting a cell had no economic consequence; it now has one. Re-run the ' +
+    'four factor cells before quoting any figure in this entry.',
   'universities-are-founded-and-never-finished':
-    'fundUniversity slot 0 founds a new university and slots 1+ advance existing ones, and ' +
-    'advanceConstruction in rules-world has no caller outside it — so a completed university is ' +
-    'god-attributable by construction, and the reference universe seeds exactly one. That makes ' +
-    'completedUniversities look like the ideal Path A conjunct, and measured it is the opposite. ' +
-    'Every deliberate strategy in this pool ends the run with that one seeded university: ' +
-    'permissive-breadth lists fundUniversity behind permitTechnique, which is legal every round, ' +
-    'so the entry is never reached; archivist takes slot 0 every round while libraryDepth stays ' +
-    'below its threshold, founding hundreds and completing none. Only uniform-random-legal — which ' +
-    'picks slots at random and therefore sometimes advances the same one twice — completes any, ' +
-    'reaching 26. A Path A gate on completedUniversities would hand the summit exclusively to the ' +
-    'bot that presses buttons at random. Recorded because discriminating-ascension names that gate ' +
-    'as Path A\'s successor knob, and the measurement says it is inverted.',
-  'noise-floor-submits-axis-actions-bare':
+    'SUPERSEDED BY W29, kept because the measurement it records is still the measurement — what ' +
+    'changed underneath it is the mechanism. The clause "advanceConstruction in rules-world has ' +
+    'no caller outside it" was true when this was written and is FALSE now: the world loop grew a ' +
+    'construction phase, laborers raise buildings paid in stone, and build-rate multiplies the ' +
+    'progress. So a completed university is no longer god-attributable by construction. What ' +
+    'survives is the finding that made this entry worth writing: permissive-breadth lists ' +
+    'fundUniversity behind permitTechnique and never reaches it; archivist takes slot 0 every ' +
+    'round and founds hundreds. Those are facts about the strategies, not about construction, and ' +
+    'a Path A gate on completedUniversities is still inverted for that reason. Re-measure before ' +
+    'quoting any number here: every one of them was taken against a build where nothing a laborer ' +
+    'did could finish a site.',
+'noise-floor-submits-axis-actions-bare':
     'uniform-random-legal draws a parameter only when candidateSlotCount says the action has one, ' +
     'and CANDIDATE_SLOTS covers 8–14 alone — actions 1–7 are not §4.4 parameterized actions, so ' +
     'they carry no slot list and the floor submits them with no parameter at all. Every one is ' +

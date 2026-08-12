@@ -973,7 +973,11 @@ function planConstructionLabour(
   // `tools/w29` froze every site at 1002 of 1024 and reported no completions in
   // 200 ticks. Rounding up means any backlog at all summons at least one person,
   // which is both the arithmetic fix and the sentence a reader would expect.
-  let wanted = Math.ceil((backlog * LABORERS_PER_BUILD_UNIT) / FP_UNIT);
+  // Integer ceil-div, not `Math.ceil(a / b)`. Division by 1024 is exact in a
+  // double and that is not the point: `CLAUDE.md` forbids floating-point
+  // arithmetic in the rules path categorically, because the constraint is only
+  // worth anything if nobody has to audit which divisions happen to be safe.
+  let wanted = floorDiv(backlog * LABORERS_PER_BUILD_UNIT + FP_UNIT - 1, FP_UNIT);
 
   let total = 0;
   const laborers: { handle: EntityHandle; count: number }[] = [];
