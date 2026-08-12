@@ -280,6 +280,18 @@ The consequence for the simulation core: only engagement-mode state needs spatia
 only combatants need positions. World-scale entities carry no coordinates at all. This is a large
 saving and it is why the entity store's component model must not assume every entity is placed.
 
+**Where the boundary actually runs, because "no map" gets read too widely.** Forbidden at world
+scale: coordinates, distance, geometric adjacency, and pathfinding. Permitted — and already
+permitted by this section's own *"counts and relationships"* — is a **place with a kind**, and a
+link from a thing to it. `contracts.md` §2.7 carries exactly such a place: a territory, with
+`landUnits` and a `capacityPerLandUnit` that is *"a property of the kind of country and not of
+who holds it"*, and it anticipates ground changing hands by name — *"when that stops being true —
+a raid that takes ground — `landUnits` moves to §1.1."* Siting a university **in** a territory is
+therefore a relationship, not a coordinate, and stays inside the rule. What would break the rule
+is anything that makes *where* a thing sits answer a question about *how far*. (A workstream is
+siting universities in territories; no branch for it exists as of this amendment, so this
+paragraph fixes the rule rather than describing an implementation.)
+
 ## 8. Raids
 
 - **Two clocks, and clocks are per-universe.** World time advances in months/years while you tend
