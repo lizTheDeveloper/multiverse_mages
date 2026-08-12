@@ -31,3 +31,6 @@ __pycache__/
 # W17 measurement output. Same reason .w15/ is ignored: a sweep writes tens of
 # thousands of lines of JSON per arm and none of it is source.
 .w17/
+
+# Generated reports rendered into ui/ — regenerate with scripts/content-graph.mjs
+ui/*.html
