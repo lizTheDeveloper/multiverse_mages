@@ -360,10 +360,68 @@ confirmation of the campaign's own conclusion, and a reason the ceiling is the t
 
 - [x] Recon; F1–F4 established
 - [x] C0 golden exposure cleared
-- [ ] C1 / C2
-- [ ] Curve evaluator + tests
-- [ ] Content + schema + contracts.md
-- [ ] Acquisition threading
-- [ ] Timing rule
+- [x] **C1 and C2 both alive** — the curve is not decorative. See §8.
+- [x] Curve evaluator + tests (`@mm/primitives/envelope.ts`, 17 tests)
+- [x] Content + schema + `contracts.md` §2.1 + loader invariant
+- [x] Acquisition threading (research, teaching, scribing)
+- [x] Timing rule (world-schema revision 5, 15 tests)
 - [ ] Sweeps
 - [ ] `npm run verify`
+
+---
+
+## 8. C1 and C2, answered
+
+Both came back alive, which is the finding that let mechanic 1 ship.
+
+**C1 — rates do move mid-project. Confirmed end to end.** Blessings toggle
+(`godEffectHooks.researchBonusesFor`), `encouragedCells` emphasis decays linearly
+tick by tick (`emphasisAt`, re-derived from remaining ticks and never cached
+across ticks), and a university's library depth grows as books are scribed
+(`capital.depthFor` → `libraryRateMultiplier`). All three are recomputed live on
+every `research()` call. The comment at `gateway.ts:440` says why explicitly:
+freezing a rate at commitment time *"would make the cost stale by
+construction."*
+
+**C2 — banked progress is read, not merely compared.** `researchFrontier`
+computes `remainingCost = max(requirement − banked, 0)` on **every autonomy
+evaluation**, to score whether resuming beats starting something else. Progress
+survives a goal switch by design (*"she has set it down"*), is frozen and not
+lost when a cell is forbidden, and is destroyed with its mage
+(`EffortLedger.clearSubject`).
+
+**So the curve does not merely change arithmetic — it changes what mages choose
+to work on.** A `swell` node banks slowly and looks hopeless for most of its
+life; a `hole` node banks fast and looks nearly finished while it drags. Under
+autonomy scoring those are different decisions. And because progress dies with
+its mage, the shape interacts with species lifespan — the species × technique
+interaction D7 and D9 have looked for and never found.
+
+## 9. What shipped, and what did not
+
+| Piece | State |
+|---|---|
+| Five envelopes as acquisition cost curves | **Shipped**, applied to research, teaching and scribing |
+| Harmonic invariant, enforced by the loader | **Shipped** |
+| §5.2's eight-bar unease on constitutional acts | **Shipped**, priced, mask-mirrored |
+| §3.1's subdivision table and the in-phase predicate | **Shipped as vocabulary**, reported on every phase |
+| §3.2's off-grid surcharge | **Not priced.** See below |
+
+The off-grid surcharge is the one deliberate omission, and two independent
+things pushed the same way:
+
+1. **§3.1 does not assign subdivisions to god interventions.** It assigns them
+   to world subsystems, and §3.2 reserves off-grid for knowledge loss and portal
+   events *"and nothing else"*. `SUBDIVISION_OF_ACTION` is therefore a reading,
+   not a citation — so it is raised (§2.5) rather than priced.
+2. **Pricing it would need `agent-api`'s mask to agree**, because the mask
+   reprices every action itself. A surcharge the mask cannot see is not a cost;
+   it is an illegal-action counter, which is precisely the defect integration
+   round 2 found in `uniform-random-legal` — *"seven of fifteen verbs inert,
+   telemetry clean."* Making the mask agree requires the mapping to be normative
+   first.
+
+`@mm/content`'s loader made the same argument a third time, unprompted: it
+refuses a `god-constant.json` row nothing reads, so `off-grid-surcharge` is
+**absent from content** rather than authored and inert. That rule is right and
+the constant arrives with the answer, not before it.

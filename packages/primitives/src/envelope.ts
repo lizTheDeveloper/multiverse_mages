@@ -27,7 +27,7 @@
  * The game expressed all five as the same thing. Every effect is
  * `{primitive, magnitude, target, durationTicks}`, a flat scalar, and no rule
  * anywhere in the tree branches on technique identity — grepping the five ids
- * across `packages/*​/src` finds one comment. This module is the first
+ * across every package's `src` finds one comment. This module is the first
  * per-technique dispatch point in the project.
  *
  * ## Why the curve is over *acquisition*, not over an effect's duration
