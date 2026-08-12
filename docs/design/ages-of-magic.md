@@ -418,6 +418,51 @@ universe that forbids it has not.
 rather than needing one invented: a tradition built on *The Long Tenure* and one built on *The Hand
 That Wrote It* are doing incompatible things to the same body, and the same faculty cannot hold both.
 
+### Taboo is per species, and that is what lets the schools share a building
+
+> *"Probably some races would have a taboo against it and others wouldn't, and so that would enable
+> schools of necromancy to coexist in the same university as other schools."*
+
+**This replaces the exclusivity reading above, and it is better.** The exclusion is not a rule of
+magic — a tradition built on *The Long Tenure* and one built on *The Hand That Wrote It* are not
+metaphysically incompatible. They are **culturally** incompatible, per species, and a species that
+holds no taboo can study either.
+
+Four consequences, and the third amends §2d:
+
+- **A necromancy school and a healing school can stand in the same university**, taught by different
+  faculty, because the constraint lives in the *person* rather than in the institution or the
+  ruleset. That is the author's own point and it is the interesting one: exclusivity that does not
+  fragment the map.
+- **This is the per-mage exclusivity the design asked for, arriving with a reason.** The original
+  direction was that *"individual mages can't learn all the magic, because the different schools are
+  somehow mutually exclusive"*, with the ruling that the reason must be *"a lore / mechanic / making
+  sense thing"*. A species taboo is exactly that, and it is authored data rather than a rule in code
+  — the same shape as `species.json`'s existing `affinities` map, which is authored and (per W41)
+  read by nothing but the key validator.
+- **It breaks §2d as written.** That section rules *"students take all available classes at the
+  university — that's what the university **is**."* Under a taboo, a class is offered and a given
+  student **cannot take it.** So the curriculum is emergent from the faculty *and* filtered per
+  student by species. That is a small change to the rule and a large one to what a mixed university
+  produces: two students in the same institution graduate having learned different things, without
+  anyone scheduling anything.
+- **It gives mixed universities a reason to exist that is not charity.** §2e made mixed faculty
+  *costly* — a teacher's pace suits her own kind and wastes everyone else's time. Taboo makes them
+  *capable*: only a mixed faculty can offer a curriculum spanning a taboo. Breadth against friction is
+  a real trade, and it is the first argument this design has produced for deliberately founding a
+  mixed institution.
+
+**And it lets the god's ruleset diverge from the people's culture**, which nothing else in the design
+does. You may permit Corpus and find that your dwarves simply will not touch it, so only your orcs
+research it — the constitution says yes and the faculty says no. That is a second, softer denial
+mechanism sitting underneath §4's permit verb, and it is not one the player controls.
+
+Two hazards worth naming now. **A taboo cannot be routed around by alliance** (§2f) — sending a
+taboo-holding student abroad to a realm with no taboo should not work, or the taboo is a formality
+and the whole mechanic evaporates. And a taboo species in a universe whose *only* road to the third
+age is necromancy is simply locked out; whether that is a tragedy worth having or a trap depends on
+there being another road, which §2a and §3 say there is.
+
 ### Open
 
 1. **Is a bound scholar a knowledge location?** §5 has mind, grimoire, library shelf and memory
