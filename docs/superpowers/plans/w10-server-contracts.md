@@ -41,52 +41,54 @@ and `openPortal` is permanently masked, so no raid can fire in this tree).
 
 ### 1. Package skeleton and the boundary
 
-- [ ] 1.1 `packages/server/{package.json,tsconfig.json,tsconfig.test.json}`, AGPL headers, `"license": "AGPL-3.0-or-later"`
-- [ ] 1.2 Root `tsconfig.json` references, `vitest.config.ts` alias
-- [ ] 1.3 Add `server: { value: ['agent-api'], typeOnly: [] }` to `module-boundaries.test.ts` `ALLOWED`
-- [ ] 1.4 `npm install` at the root to regenerate `package-lock.json`; commit it
-- [ ] 1.5 A `package-boundaries.test.ts` asserting zero third-party runtime dependencies
+- [x] 1.1 `packages/server/{package.json,tsconfig.json,tsconfig.test.json}`, AGPL headers, `"license": "AGPL-3.0-or-later"`
+- [x] 1.2 Root `tsconfig.json` references, `vitest.config.ts` alias
+- [x] 1.3 Add `server: { value: ['agent-api'], typeOnly: [] }` to `module-boundaries.test.ts` `ALLOWED`
+- [x] 1.4 `npm install` at the root to regenerate `package-lock.json`; commit it
+- [x] 1.5 A `package-boundaries.test.ts` asserting zero third-party runtime dependencies
 
 ### 2. The wire contract (failing tests first)
 
-- [ ] 2.1 `protocol.ts` — `PROTOCOL_VERSION`, verbs, error codes, rejection codes, frame types
-- [ ] 2.2 `MatchContract` and the structural/advisory split, with `contentRevision` structural
-- [ ] 2.3 `codec.ts` — newline-delimited JSON framing, `LineReader`
-- [ ] 2.4 Tests: handshake ordering, contract mismatch is fatal and names both revisions
+- [x] 2.1 `protocol.ts` — `PROTOCOL_VERSION`, verbs, error codes, rejection codes, frame types
+- [x] 2.2 `MatchContract` and the structural/advisory split, with `contentRevision` structural
+- [x] 2.3 `codec.ts` — newline-delimited JSON framing, `LineReader`
+- [x] 2.4 Tests: handshake ordering, contract mismatch is fatal and names both revisions
 
 ### 3. Ordering, admission and the authoritative tick
 
-- [ ] 3.1 `ordering.ts` — canonical batch from submissions, arrival order excluded by construction
-- [ ] 3.2 `admission.ts` — the §4.2 trust-boundary policy: per-tick action budget, frame rate limit
-- [ ] 3.3 `match.ts` — the pure authoritative tick over N participant sessions
-- [ ] 3.4 Tests: shuffled arrival gives an identical batch and identical hashes; a missing action
+- [x] 3.1 `ordering.ts` — canonical batch from submissions, arrival order excluded by construction
+- [x] 3.2 `admission.ts` — the §4.2 trust-boundary policy: per-tick action budget, frame rate limit
+- [x] 3.3 `match.ts` — the pure authoritative tick over N participant sessions
+- [x] 3.4 Tests: shuffled arrival gives an identical batch and identical hashes; a missing action
       becomes a flagged no-op; ruleset actions refused during engagement
 
 ### 4. Desync
 
-- [ ] 4.1 `desync.ts` — compare reported mirror hashes against authoritative, per slot
-- [ ] 4.2 Test: a tampered participant hash produces a hard report naming tick, slot and both
+- [x] 4.1 `desync.ts` — compare reported mirror hashes against authoritative, per slot
+- [x] 4.2 Test: a tampered participant hash produces a hard report naming tick, slot and both
       hashes, terminates the match, and corrects nothing
 
-### 5. Transport and the multi-process path
+### 5. Transport and the multi-process path (extended mid-task: a real socket, real processes)
 
-- [ ] 5.1 `transport.ts` over `node:net`, zero dependencies, port 0 in tests
-- [ ] 5.2 `bin/serve.mjs` — argv and the dynamic scenario import (the `gym-bridge` split)
-- [ ] 5.3 `bin/agent.mjs` — a reference agent process that mirror-simulates
-- [ ] 5.4 In-process match test (the unit path)
-- [ ] 5.5 E2E: server process + 2 agent processes, match to terminal, all hashes agree
-- [ ] 5.6 Replay the recorded batch log in-process and assert the same final hashes
+- [x] 5.1 `transport.ts` over `node:net`, zero dependencies, port 0 in tests
+- [x] 5.2 `bin/serve.mjs` — argv and the dynamic scenario import (the `gym-bridge` split)
+- [x] 5.3 `bin/agent.mjs` — a reference agent process that mirror-simulates
+- [x] 5.4 In-process match test (the unit path)
+- [x] 5.5 E2E: server process + 2 agent processes, match to terminal, all hashes agree
+- [x] 5.6 Replay the recorded batch log in-process and assert the same final hashes
+- [x] 5.7 Split pacing per layer — the management mini-game and the raid are not one real-time model
+- [x] 5.8 `UniverseRef` and `challengeEligibility`, so clusters are a field and a predicate later
 
 ### 6. OpenSpec and documentation
 
-- [ ] 6.1 `specs/authoritative-lockstep/spec.md`
-- [ ] 6.2 `specs/direct-challenge/spec.md`
-- [ ] 6.3 `specs/universe-persistence/spec.md`
-- [ ] 6.4 `specs/hetzner-deployment/spec.md` — requirements only, no endpoints, no placeholder secrets
-- [ ] 6.5 `tasks.md`, `design.md`; `openspec validate pvp-server --strict` passes
-- [ ] 6.6 Record the roadmap-order decision without reordering the roadmap table
+- [x] 6.1 `specs/authoritative-lockstep/spec.md`
+- [x] 6.2 `specs/direct-challenge/spec.md`
+- [x] 6.3 `specs/universe-persistence/spec.md`
+- [x] 6.4 `specs/hetzner-deployment/spec.md` — requirements only, no endpoints, no placeholder secrets
+- [x] 6.5 `tasks.md`, `design.md`; `openspec validate pvp-server --strict` passes
+- [x] 6.6 Record the roadmap-order decision without reordering the roadmap table
 
 ### 7. Gate
 
-- [ ] 7.1 `npm run verify` green
+- [x] 7.1 `npm run verify` green
 - [ ] 7.2 Push `w10/server-contracts`
