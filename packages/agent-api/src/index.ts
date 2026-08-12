@@ -179,11 +179,16 @@ export type { ExplainProjection, ExplainedDecision } from './explain.js';
  * everybody remembering. `./knowledge-census.ts` argues the placement at length.
  */
 export type {
+  CensusOptions,
   ContainmentReport,
+  InstanceMastery,
   KnowledgeCensus,
   LocationSplit,
   MageRepertoire,
+  MarooningSummary,
+  MasteryModel,
   NodeCensusEntry,
+  NodeMastery,
 } from './knowledge-census.js';
 export {
   CENSUS_LOCATION_KINDS,

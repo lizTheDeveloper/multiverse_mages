@@ -55,6 +55,9 @@ export {
 export type { CensusSample } from './census.js';
 export { censusLine, censusOf } from './census.js';
 
+export type { MasteryModelOptions } from './mastery-model.js';
+export { referenceMasteryModel } from './mastery-model.js';
+
 export type { ReferenceMeasure, RunMeasurement } from './measures.js';
 export {
   FINAL_WINDOW_DENOMINATOR,
