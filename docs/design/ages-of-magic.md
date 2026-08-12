@@ -209,6 +209,57 @@ the only road"* does not simply hand the third age to whoever lives longest.
   badly-matched faculty burns the roster that §2b already has three claims on. If it does not,
   repetition is only the student's problem and the mechanic is half as sharp.
 
+## 2f. Alliances: visiting mages, and sending yours away
+
+> *"Alliances between realms are the way that you get visiting mages and send your mages to learn
+> other places' things."*
+
+The peaceful counterpart to the portal. A raid takes knowledge from a universe that did not consent;
+an alliance moves scholars in both directions with consent, and it is the only channel that does.
+
+The existing transfer channels are research (derive it yourself), teaching (within one universe),
+theft (raid loot, written at `mastery: 0`) and **witnessed** (W37's exposure — the attacker's casts
+teaching the host's academics as a side effect of being attacked). Study abroad is a fifth, and the
+only one that is chosen by both sides.
+
+### It is the answer to §2e's pacing problem, which is what makes it a mechanic and not a menu
+
+Paced teaching means a faculty teaches its own kind well and everyone else badly. **An alliance is
+how a mismatched student gets a matched teacher.** Send your dragon to a realm of dragons and she
+sits one long class instead of repeating a human's brisk one four times. That is a concrete, legible
+reason to want an ally, and it falls out of a mechanic authored for a different purpose.
+
+It also gives a short-lived civilization a second route to the third age. §2a says the college is the
+only road; §3 says a human cannot cross three ages in one life. An alliance does not repeal either —
+but a realm that cannot yet build the college can borrow one.
+
+### What it costs, and the cost is already built
+
+An alliance should not be strictly better than raiding, and it is not, because of §2b: **a mage sent
+abroad is subtracted from a stationed set that already answers three demands.** She is not teaching,
+not researching, and **not on the wall** — and unlike a defender she is on the far side of a portal
+when the raid comes. Exchange is paid in exactly the currency defence is paid in.
+
+The second cost is symmetric: **a visiting mage is a witness.** Exposure already exists as the
+attacker's price for casting in a host's universe; a guest scholar is the same channel opened
+deliberately. **You teach your allies your magic by hosting them**, which is why an alliance is a
+commitment about who your rivals will be rather than a free trade agreement.
+
+### Open, and the first one is sharp
+
+1. **Can a mage bring home what her host permits and her own god forbids?** §3 governs *casting* by
+   the host's ruleset, not *learning*. W30 already found the same hole from the other end — looted
+   grimoires bypass `permits()`, so a universe can hold what it forbids and wake it later. Study
+   abroad makes that a strategy rather than an artifact: **forbid a school at home, learn it abroad,
+   permit it the moment it pays.** That is either the best diplomatic mechanic in the design or a
+   loophole that guts the constitution, and which one depends on a rule nobody has written.
+2. **Does an alliance survive a raid?** In a persistent multiverse the interesting case is the ally
+   who raids you anyway, and whether the scholars you are hosting are guests, hostages, or already
+   gone.
+3. **Is there a bubble-scoped diplomacy layer?** The prestige design has you conquering a bubble
+   before promoting. Alliances imply a non-conquest path through the same bubble, and whether both
+   routes reach promotion is a real design question.
+
 ## 3. The species split falls straight out, and it is the playstyle difference
 
 Lifespans span **25×** — orc 720 months, draconic 18,000:
