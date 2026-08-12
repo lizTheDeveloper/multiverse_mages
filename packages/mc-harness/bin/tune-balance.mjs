@@ -202,19 +202,39 @@ function outcomesOf(ndjsonPath) {
     .sort((left, right) => left.strategyId.localeCompare(right.strategyId));
 }
 
+/**
+ * The sweep id every candidate is evaluated under. **Constant on purpose.**
+ *
+ * `seed.ts` derives a run's seed from `(rootSeed, sweepId, cellIndex,
+ * replicateIndex)` and says so in its opening line. A tuner that gave each
+ * trial its own `sweepId` would therefore evaluate every candidate on a
+ * *different* set of universes, and the difference between two candidates would
+ * carry the difference between two seed sets as well as the change in
+ * constants. That is what the first two searches did, and it is why their
+ * comparisons were noisier than the run counts alone imply.
+ *
+ * Holding it constant is the common-random-numbers trick: every candidate plays
+ * the same universes, so the paired difference is the effect of the constants
+ * and nothing else. Trials are told apart by their output directory instead.
+ */
+const SHARED_SWEEP_ID = 'tune-shared-seeds';
+
 async function evaluate(args, constants, vector, trialDir, trialId) {
   writeVector(constants, vector);
   const sweep = JSON.parse(readFileSync(SWEEP_TEMPLATE, 'utf8'));
-  sweep.sweepId = `tune-${trialId}`;
+  sweep.sweepId = SHARED_SWEEP_ID;
   sweep.replicates = args.replicates;
-  const sweepPath = path.join(trialDir, `${sweep.sweepId}.sweep.json`);
+  const trialOut = path.join(trialDir, `trial-${trialId}`);
+  mkdirSync(trialOut, { recursive: true });
+  const sweepPath = path.join(trialOut, 'candidate.sweep.json');
   writeFileSync(sweepPath, JSON.stringify(sweep, null, 2));
-  await runSweep(args, sweepPath, trialDir);
-  const outcomes = outcomesOf(path.join(trialDir, `${sweep.sweepId}.0.runs.ndjson`));
+  await runSweep(args, sweepPath, trialOut);
+  const outcomes = outcomesOf(path.join(trialOut, `${SHARED_SWEEP_ID}.0.runs.ndjson`));
   return { outcomes, score: scoreBalance(outcomes, WEIGHTS, BAND) };
 }
 
 function report(vector, score) {
+  const flag = score.feasible ? 'FEASIBLE' : 'infeasible';
   const terms =
     `rate ${score.ascensionRate.toFixed(3)}` +
     ` variety ${score.variety.toFixed(3)}` +
@@ -222,7 +242,7 @@ function report(vector, score) {
     ` exploit ${score.exploitMargin.toFixed(3)}` +
     ` top ${score.topShare.toFixed(2)}`;
   const vec = AXES.map((axis) => `${axis.constantId.replace('ascension-', '')}=${vector[axis.constantId]}`).join(' ');
-  return `score ${score.score.toFixed(4)} | ${terms} | ${vec}`;
+  return `${flag} score ${score.score.toFixed(4)} | ${terms} | ${vec}`;
 }
 
 async function main() {
@@ -263,7 +283,11 @@ async function main() {
         for (const candidate of candidatesForAxis(incumbent, axis)) {
           const { score } = await evaluate(args, constants, candidate, trialDir, trialId);
           log.push({ trial: trialId, vector: { ...candidate }, score });
-          const better = score.score > best.score;
+          // Feasibility first: a candidate that satisfies the hard constraints
+          // beats every candidate that does not, whatever their scores. Only
+          // among equals in feasibility does the weighted score decide.
+          const better =
+            score.feasible !== best.feasible ? score.feasible : score.score > best.score;
           process.stdout.write(`p${pass} t${trialId} ${better ? '*' : ' '} ${report(candidate, score)}\n`);
           trialId += 1;
           if (better) {

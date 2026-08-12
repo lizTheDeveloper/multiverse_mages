@@ -23,6 +23,7 @@ import { describe, expect, it } from 'vitest';
 import type { StrategyOutcome } from '../../src/tuner.js';
 import {
   DOMINANCE_LIMIT,
+  EXPLOIT_MARGIN_MIN,
   EXPLOIT_PROBE,
   candidatesForAxis,
   correlationOf,
@@ -267,5 +268,45 @@ describe('the search visits every level and never re-runs the incumbent', () => 
         levels: [5],
       }),
     ).toEqual([]);
+  });
+});
+
+describe('feasibility is a constraint, not a preference', () => {
+  it('marks a varied, in-band ruleset infeasible when the idle probe still wins', () => {
+    // The exact shape of the current build: everybody ascends at the passive
+    // baseline and the bot that plays nothing wins as often as anyone.
+    const outcomes = pool(
+      {
+        'uniform-random-legal': [3, 50],
+        'portal-rush': [2, 50],
+        'worship-maximizer': [2, 50],
+        archivist: [1, 50],
+      },
+      10,
+    );
+    const score = scoreBalance(outcomes, WEIGHTS, BAND);
+    expect(score.inBand).toBe(true);
+    expect(score.variety).toBeGreaterThan(0.4);
+    expect(score.feasible).toBe(false);
+    expect(score.notes.join(' ')).toContain('infeasible');
+  });
+
+  it('is feasible only when the pool beats the probe by the required margin', () => {
+    const outcomes = pool(
+      { 'permissive-breadth': [4, 220], archivist: [4, 180], 'narrow-depth': [3, 120] },
+      10,
+    );
+    const score = scoreBalance(outcomes, WEIGHTS, BAND);
+    expect(score.inBand).toBe(true);
+    expect(score.exploitMargin).toBeGreaterThanOrEqual(EXPLOIT_MARGIN_MIN);
+    expect(score.feasible).toBe(true);
+  });
+
+  it('an out-of-band candidate is never feasible, whatever its exploit margin', () => {
+    const outcomes = pool(
+      Object.fromEntries(POOL.map((id) => [id, [9, 200] as const])) as never,
+      10,
+    );
+    expect(scoreBalance(outcomes, WEIGHTS, BAND).feasible).toBe(false);
   });
 });

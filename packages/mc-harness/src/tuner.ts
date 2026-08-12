@@ -73,6 +73,17 @@ export interface BalanceScore {
   readonly correlation: number;
   /** Positive when the idle-then-declare probe is beaten by the pool mean. */
   readonly exploitMargin: number;
+  /**
+   * Whether every hard constraint holds: winnable, in band, and the idle probe
+   * beaten by at least {@link EXPLOIT_MARGIN_MIN}.
+   *
+   * Separate from `score` because the band and the exploit are **constraints,
+   * not preferences**. A weighted penalty lets a candidate buy its way out of
+   * the band with variety, which is how the first version of this scorer came
+   * to prefer a ruleset nobody could win. Feasibility is checked first and a
+   * feasible candidate beats every infeasible one regardless of score.
+   */
+  readonly feasible: boolean;
   /** Largest single strategy's share of all wins, 0..1. */
   readonly topShare: number;
   readonly score: number;
@@ -105,6 +116,17 @@ const UNWINNABLE_MULTIPLIER = 100;
 
 /** Share of all wins above which one strategy is "dominant". */
 export const DOMINANCE_LIMIT = 0.6;
+
+/**
+ * How far the pool must out-win the idle probe before the summit counts as
+ * something you have to play for.
+ *
+ * Not merely "> 0": a margin indistinguishable from zero is a coin flip
+ * dressed as a constraint, and at the sample sizes a search can afford the
+ * estimate is noisy. Five points is the smallest gap this instrument can
+ * resolve at a few hundred runs.
+ */
+export const EXPLOIT_MARGIN_MIN = 0.05;
 
 function mean(values: readonly number[]): number {
   if (values.length === 0) return 0;
@@ -221,6 +243,7 @@ export function scoreBalance(
       correlation,
       exploitMargin,
       topShare,
+      feasible: false,
       score: -OUT_OF_BAND_PENALTY * UNWINNABLE_MULTIPLIER,
       notes,
     };
@@ -239,6 +262,7 @@ export function scoreBalance(
       correlation,
       exploitMargin,
       topShare,
+      feasible: false,
       score: -OUT_OF_BAND_PENALTY * (1 + distance),
       notes,
     };
@@ -271,7 +295,25 @@ export function scoreBalance(
     weights.exploit * exploitMargin -
     dominancePenalty;
 
-  return { ascensionRate, inBand, variety, correlation, exploitMargin, topShare, score, notes };
+  const feasible = exploitMargin >= EXPLOIT_MARGIN_MIN;
+  if (!feasible) {
+    notes.push(
+      `exploit margin ${exploitMargin.toFixed(3)} is below the required ` +
+        `${EXPLOIT_MARGIN_MIN}: infeasible whatever its variety.`,
+    );
+  }
+
+  return {
+    ascensionRate,
+    inBand,
+    variety,
+    correlation,
+    exploitMargin,
+    topShare,
+    feasible,
+    score,
+    notes,
+  };
 }
 
 /** One axis of the search: a constant, and the values it may take. */
