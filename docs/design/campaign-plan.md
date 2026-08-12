@@ -11,6 +11,16 @@ the demo strategy set has enough variety that a human would enjoy playing it.
 **Positioning, in the author's words:** *School Battle Tycoon With Multiversal Magic Systems* —
 global knowledge management, the preservation of rare skills, and the production of talent.
 
+**The shape of play:** university management is the **mini-game between raids**; raids are the
+**RTS action game**; both live in a **persistent world**. `contracts.md` already encodes the seam —
+`clock.mode` separates the two, and §4.2 masks actions 1-7 and 13 while `clock.mode == engagement`.
+The two layers couple through one sentence: mages train, publish and teach, they go through the
+portal, and **they only come home to teach if they survive**.
+
+**The variety target is per-species plurality, not per-species assignment.** Each species should
+admit **more than one** viable playstyle; the species shifts which is strongest, it does not
+dictate the only one. A race with exactly one line is a race with no decisions in it.
+
 **The rule for every workstream:** each mechanic implemented must be traceable to `vision.md` or
 `contracts.md`. `CLAUDE.md` is explicit that work not traceable to the vision is scope creep.
 Magnitudes the spec leaves open go into validated content data as `tuningStatus: "untuned"`.
@@ -86,6 +96,10 @@ reported with numbers**, on the 2400-tick eight-strategy sweep at n >= 96:
       ticks a second mage takes to derive it independently.)*
 - [ ] **D6** No strategy wins at the passive knowledge baseline
 - [ ] **D7** Varying the founding species mix changes which strategy wins
+- [ ] **D9** **More than one viable playstyle is available to each species.** Not one playstyle
+      per race — a race that admits exactly one line is a race with no decisions in it. Each
+      species should support at least two distinct, viable approaches, and the species should
+      change the *relative* strength of those approaches rather than dictate a single answer.
 - [ ] **D8** `npm run verify` green, with every baseline movement justified in writing and **no golden fixture regenerated**
 
 D5, D6 and D7 are the ones that say the *game* changed rather than the numbers. D7 is the strongest
