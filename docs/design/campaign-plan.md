@@ -890,3 +890,37 @@ makes it a genuinely different function, pinned in **both** directions — faili
 passes, and passing while the band fails — which the old identity made impossible.
 
 `npm run verify` green; all three gates **delta 0.00000**; no golden and no baseline regenerated.
+
+---
+
+## W19: the horizon hypothesis is refuted — the coordinator's own proposal was wrong
+
+The proposal was: *"the game works and the horizon is four times too long for its content; measure
+at a horizon before exhaustion."* Measured at n=400 per horizon across 12 horizons, common random
+numbers verified on **400/400 coordinates**, coverage exactly 10 strategies × 40 runs:
+
+| finding | number |
+|---|---|
+| passive universe at cap **300** | **48.9 of 51 nodes** — the premise assumed roughly a third |
+| permission axis at caps 30/60 | all ten strategies inside a **two-node band** — inert for ~120 ticks |
+| first winnable horizon | **1200**, by canon; 900 measures 0/400 because canon needs tick 960 |
+| `permit-then-idle` at 1200 / 1800 / 2400 | **35/40 · 36/40 · 39/40** |
+| strategies winning anything, anywhere | **2 of 10** |
+| 2400 arm vs integration round 2 | `ascensionRate` **0.1950** — reproduces exactly |
+
+The premise was built on W17's 29.4-nodes-at-600 figure, but W17's own change made acquisition
+roughly twice as fast — *"much sooner, same place"* — so on the integrated tree a passive universe
+is **96% exhausted by tick 300**, an eighth of the run.
+
+**There is no horizon at which the existing content is interesting.** Before ~120 ticks the
+permission lever does nothing; by 300 the set is exhausted; ascension cannot fire until 600 and
+canon not until 960. Undifferentiated, then over, then finally winnable.
+
+**So the flatness is in the content graph, and no scheduling change reaches it.** Twelve parallel
+staircases are twelve parallel staircases at any length. The author's instinct — that the absent
+prerequisite branching was the defect — was right, and the coordinator's horizon proposal was not.
+
+Method note worth copying: W19 **committed its decision rule before reading any composition
+number** — a second dimension counts as real only if cross-strategy containment falls below the
+within-strategy diagonal *and* `betweenShare` stays high among the seven v1-bound strategies. After
+three saturation failures, pre-registration arrived without being asked for.
