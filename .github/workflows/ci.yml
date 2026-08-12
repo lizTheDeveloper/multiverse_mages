@@ -57,6 +57,37 @@ jobs:
       - name: Test (unit + golden replay)
         run: npm test
 
+      - name: Balance regression gate (five world years)
+        # The committed baseline for the gate sweep, compared metric by metric.
+        # Fails the build when a gated metric moves beyond its tolerance, and
+        # equally when the baseline is missing — a gate that passes without one
+        # reports green forever. Listed here by hand because this workflow does;
+        # the self-hosted runner picks it up through `npm run verify`, which the
+        # script is also part of. Both, or the two gates disagree.
+        run: npm run balance:gate
+
+      - name: Balance regression gate (twenty world years)
+        # The same four cells and the same 200 runs, run to world-year twenty
+        # instead of five, against its own baseline. It is a separate step and
+        # not a longer version of the one above because the two answer different
+        # questions: the fast gate is sensitive and cheap, and this one can see a
+        # plateau that has not started yet at year five. Deleting either leaves a
+        # blind spot the other does not cover — balance/README.md has the
+        # measurements, and horizon-gate.test.ts fails if this step goes missing.
+        run: npm run balance:gate:horizon
+
+      - name: Balance regression gate (two hundred world years)
+        # The third instrument, and the only one that can observe the win
+        # condition. Measured: 0 of 400 runs ascended at twenty world years and
+        # 10 of 80 at two hundred, so both gates above are structurally blind to
+        # the ending of the game they gate. This one runs the whole eight-strategy
+        # pool round-robin rather than the passive control, because a summit is
+        # something a strategy reaches. It is not the horizon gate with a bigger
+        # number and must not be merged into it — horizon-gate.test.ts fails if
+        # this step goes missing or if any of the three horizons collapses into
+        # another.
+        run: npm run balance:gate:ascension
+
   next-node:
     # Early warning only: a failure here means the next Node major may change
     # simulation behaviour, which we want to know about before it is pinned.
@@ -99,3 +130,34 @@ jobs:
 
       - name: Test (unit + golden replay)
         run: npm test
+
+      - name: Balance regression gate (five world years)
+        # The committed baseline for the gate sweep, compared metric by metric.
+        # Fails the build when a gated metric moves beyond its tolerance, and
+        # equally when the baseline is missing — a gate that passes without one
+        # reports green forever. Listed here by hand because this workflow does;
+        # the self-hosted runner picks it up through `npm run verify`, which the
+        # script is also part of. Both, or the two gates disagree.
+        run: npm run balance:gate
+
+      - name: Balance regression gate (twenty world years)
+        # The same four cells and the same 200 runs, run to world-year twenty
+        # instead of five, against its own baseline. It is a separate step and
+        # not a longer version of the one above because the two answer different
+        # questions: the fast gate is sensitive and cheap, and this one can see a
+        # plateau that has not started yet at year five. Deleting either leaves a
+        # blind spot the other does not cover — balance/README.md has the
+        # measurements, and horizon-gate.test.ts fails if this step goes missing.
+        run: npm run balance:gate:horizon
+
+      - name: Balance regression gate (two hundred world years)
+        # The third instrument, and the only one that can observe the win
+        # condition. Measured: 0 of 400 runs ascended at twenty world years and
+        # 10 of 80 at two hundred, so both gates above are structurally blind to
+        # the ending of the game they gate. This one runs the whole eight-strategy
+        # pool round-robin rather than the passive control, because a summit is
+        # something a strategy reaches. It is not the horizon gate with a bigger
+        # number and must not be merged into it — horizon-gate.test.ts fails if
+        # this step goes missing or if any of the three horizons collapses into
+        # another.
+        run: npm run balance:gate:ascension

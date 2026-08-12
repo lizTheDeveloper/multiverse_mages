@@ -62,7 +62,9 @@
  *    mastery the mage had when the tick began.
  * 8. **Births.** After the deaths, so newborns are not aged, reallocated or
  *    killed in the tick they arrive, and against a carrying capacity computed
- *    from this tick's stock.
+ *    from this tick's stock *and this tick's subsistence shortfall* — a
+ *    universe that cannot feed the population it has carries fewer people, and
+ *    the share it cannot cover is known here because phase 9 has not run yet.
  * 9. **Consumption, then the non-negative invariant.** Last, because every other
  *    phase is a claimant: subsistence is charged for the population that
  *    survived, and upkeep for the shelves that survived.
@@ -92,7 +94,7 @@
 
 import type { PrimitiveRecord, SpeciesRecord } from '@mm/content';
 import type { EntityHandle, Fixed, SimState, System } from '@mm/sim-core';
-import { TIME_MODE } from '@mm/sim-core';
+import { FP_ONE as FP_UNIT, TIME_MODE, floorDiv, mul } from '@mm/sim-core';
 import type { Handle, MageRecord, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
@@ -109,7 +111,13 @@ import {
   readRecord,
   readRulesetForObservation,
 } from '@mm/state';
-import type { CellResolver, KnowledgeSubsystem, NodeCatalog, StorePolicy } from '@mm/rules-magic';
+import type {
+  AcquirePolicy,
+  CellResolver,
+  KnowledgeSubsystem,
+  NodeCatalog,
+  StorePolicy,
+} from '@mm/rules-magic';
 import { decayHeldKnowledge } from '@mm/rules-magic';
 import type { RediscoveryClampCounter } from '@mm/primitives';
 import { createRediscoveryClampCounter } from '@mm/primitives';
@@ -146,12 +154,15 @@ import {
 } from '@mm/rules-world';
 
 import { EffortLedger } from './effort-store.js';
+import { cellNodeIndex } from './frontier-index.js';
 import { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { MageRates } from './gateway.js';
+import type { GodDeps, GodTickReport } from './god/index.js';
+import { frozenWhenTerminal, godSystems } from './god/index.js';
 import { buildOutlook, universityPreference } from './outlook.js';
 
 /** `fp(1.0)`. `buildProgress` at which a university is complete (`contracts.md` §1.4). */
-const FP_ONE = 1024;
+const FP_ONE = FP_UNIT;
 
 /**
  * What one mage contributes to her committed project in one world tick.
@@ -177,6 +188,15 @@ export interface WorldStepDeps {
   readonly cells: CellResolver;
   /** The universe's resolved `store` hook, from its tradition. */
   readonly store: StorePolicy;
+  /**
+   * The universe's resolved `acquire` hook, from its tradition.
+   *
+   * Beside `store` because it arrives the same way and for the same reason: the
+   * loop may not read a tradition id, so arbitration happens once at the
+   * composition root and what reaches here is a resolved hook. What it governs
+   * is `GatewayDeps.acquire`'s to say.
+   */
+  readonly acquire: AcquirePolicy;
   /**
    * The universe's territory, summed from content by `territoryExtent`.
    *
@@ -205,6 +225,42 @@ export interface WorldStepDeps {
   readonly knowledgeFor: (state: SimState) => KnowledgeSubsystem;
   /** The scale-free mortality hazard. Defaults to the shipped table. */
   readonly hazard?: ScaleFreeHazard | undefined;
+  /**
+   * `god-agency`'s two systems, or `undefined` for a world with no god in it.
+   *
+   * Optional so that every caller written before the god had verbs — the unit
+   * fixtures, the throughput benchmark, anything measuring the loop in
+   * isolation — keeps building exactly the world it built before, with the same
+   * systems in the same order. Supplying it installs {@link godSystems} either
+   * side of this loop and wraps this loop so that a terminated universe stops.
+   *
+   * See `god/system.ts` for why the god is two systems and why they sit where
+   * they do.
+   */
+  readonly god?: GodDeps | undefined;
+  /**
+   * Per-mage multipliers the god's interventions contribute, `fp`.
+   *
+   * The two seams this file already named as `god-agency`'s. `MAGE_MONTHS_PER_TICK`
+   * says every multiplier that should eventually scale a mage's month *"belongs
+   * to a mechanism that is not built"*, and `lifespanMonths` says `lifespan`
+   * effects *"come from blessings and curses, which are `god-agency`'s to
+   * issue"*. These are those mechanisms arriving, as callbacks rather than as
+   * imports, so that this file gains no knowledge of what a blessing is.
+   *
+   * `researchMultiplierFor` returns `fp(1024)` for an unaffected mage, so a
+   * world with no god is a world where every month is a month.
+   */
+  readonly researchMultiplierFor?:
+    | ((state: SimState, worldTick: number, mage: Handle, nodeId: number) => Fixed)
+    | undefined;
+  readonly teachMultiplierFor?:
+    | ((state: SimState, worldTick: number, mage: Handle) => Fixed)
+    | undefined;
+  /** `lifespan` effect magnitudes in force on one mage, for the shared stacking. */
+  readonly lifespanEffectsFor?:
+    | ((state: SimState, worldTick: number, mage: Handle) => readonly Fixed[])
+    | undefined;
 }
 
 /** What one world tick did. Reporting only; never an input to any rule. */
@@ -216,6 +272,30 @@ export interface WorldStepReport {
   readonly mageDeaths: number;
   readonly magesPromoted: number;
   readonly births: number;
+  /**
+   * Populace members lost to the cohort hazard table this tick.
+   *
+   * Reported beside {@link births} because the question `mages-and-species`
+   * task 8.7 asks — *do births and deaths balance at carrying capacity* — was
+   * not answerable from this report at all while only one side of it was
+   * emitted. A caller could see a population that stopped growing and could not
+   * tell a universe in equilibrium from one where nothing happens.
+   *
+   * Cohort deaths only. Mages are counted by {@link mageDeaths} and are not
+   * members of a cohort once promoted, so adding the two would be the right
+   * total for "people who died" and the wrong total for either mechanism.
+   */
+  readonly populaceDeaths: number;
+  /** Members moved into `idle` this tick because they passed retirement age. */
+  readonly populaceRetired: number;
+  /**
+   * The share of this tick's subsistence demand the stock could not cover,
+   * `fp` in `[0, fp(1024)]`, as it was when `K` was computed.
+   *
+   * Emitted because it is the input that makes {@link carryingCapacity} fall,
+   * and a `K` that drops for no visible reason is a `K` nobody can argue with.
+   */
+  readonly subsistenceShortfallShare: Fixed;
   readonly population: number;
   readonly livingMages: number;
   /** Nodes whose last instance was destroyed this tick, by death or by decay. */
@@ -244,6 +324,11 @@ export interface WorldSimulation {
    * it. Reporting only, like every other projection here.
    */
   rediscoveryClamps: () => RediscoveryClampCounter;
+  /**
+   * The last tick's god report, or `undefined` — before the first tick, or for
+   * a world built without `deps.god`.
+   */
+  lastGodReport: () => GodTickReport | undefined;
 }
 
 /**
@@ -264,10 +349,33 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
   const system = worldSystem(deps, (report) => {
     last = report;
   }, clampCounter);
+
+  // ---- god-agency: three systems where there was one --------------------
+  // The god acts before the tick and is paid after it. `frozenWhenTerminal`
+  // stops this loop for a universe that has ascended or stagnated, which is a
+  // wrapper at the composition point rather than a guard inside the loop —
+  // see `god/system.ts`.
+  if (deps.god === undefined) {
+    return {
+      schema: defineWorldStateSchema([system]),
+      lastReport: () => last,
+      rediscoveryClamps: () => ({ ...clampCounter }),
+      lastGodReport: () => undefined,
+    };
+  }
+  // The god's outcome system needs this tick's node losses, and the world loop
+  // has just computed them. Supplied here rather than by the caller because
+  // this function owns the report closure, and a caller wiring its own would be
+  // a second place the two could disagree about which tick a count belongs to.
+  const god = godSystems({
+    ...deps.god,
+    nodesLostThisTick: (worldTick) => (last?.worldTick === worldTick ? last.nodesLost : 0),
+  });
   return {
-    schema: defineWorldStateSchema([system]),
+    schema: defineWorldStateSchema([god.intervention, frozenWhenTerminal(system), god.outcome]),
     lastReport: () => last,
     rediscoveryClamps: () => ({ ...clampCounter }),
+    lastGodReport: god.lastReport,
   };
 }
 
@@ -285,6 +393,11 @@ export function worldSystem(
   clampCounter: RediscoveryClampCounter = createRediscoveryClampCounter(),
 ): System {
   const hazard: ScaleFreeHazard = deps.hazard ?? hazardAt;
+  // `cellOf` inverted, once for the whole system rather than once per gateway.
+  // It is a function of the content set alone — see `frontier-index.ts` — and
+  // `deps` is fixed at install time, so a per-phase rebuild would be an
+  // `O(catalog)` pass three times a tick to compute the same answer.
+  const nodesByCell = cellNodeIndex(deps.catalog, deps.cells);
 
   return {
     name: 'world-tick',
@@ -339,9 +452,11 @@ export function worldSystem(
           knowledge,
           catalog: deps.catalog,
           cells: deps.cells,
+          nodesByCell,
           ruleset,
           ratesOf: (mage) => ratesOf(state, mage, deps),
           store: deps.store,
+          acquire: deps.acquire,
           effort: efforts,
           rng,
           materials: materialsAccess,
@@ -375,7 +490,7 @@ export function worldSystem(
       const promoted = promoteMaturedStudents(state, cohorts, { rng, worldTick, deps });
 
       // ---- 5. Work -----------------------------------------------------------
-      const work = spendTheMonth(state, gatewayFor());
+      const work = spendTheMonth(state, gatewayFor(), deps, worldTick);
 
       // ---- 6. Autonomy -------------------------------------------------------
       const stockAtDecisionTime = materials;
@@ -422,10 +537,35 @@ export function worldSystem(
       });
 
       // ---- 8. Births ----------------------------------------------------------
+      // A universe that cannot feed itself carries fewer people, and until this
+      // tick the loop never said so. `carrying-capacity.ts` has taken a
+      // `subsistenceShortfallShare` since task 8.5 and no caller ever passed
+      // one, so the shipped `K` was the well-fed `K` for the length of any run
+      // — which the 200-year reference run makes visible: the stock empties
+      // around world-year seventy and nothing changes.
+      //
+      // The share is computed **here** rather than read back out of phase 9,
+      // because phase 9 runs after births. Reading it back would mean either
+      // storing last tick's share in state — a world-schema revision for a
+      // number no rule outside this line reads — or reordering consumption
+      // ahead of birth, which would charge subsistence for a population and
+      // then let that population grow inside the same tick.
+      const subsistenceThisTick = subsistenceDemand(cohorts.totalCount());
+      const subsistenceShortfallShare =
+        subsistenceThisTick <= 0
+          ? 0
+          : Math.min(
+              FP_UNIT,
+              floorDiv(
+                Math.max(0, subsistenceThisTick - Math.max(0, materials)) * FP_UNIT,
+                subsistenceThisTick,
+              ),
+            );
       const capacity = carryingCapacity({
         territory: deps.territory,
         materials,
         completedCapacity: completedCapacity(state),
+        subsistenceShortfallShare,
       });
       const births = deliverBirths(cohorts, {
         rng,
@@ -456,6 +596,9 @@ export function worldSystem(
         mageDeaths: mortality.deaths,
         magesPromoted: promoted,
         births,
+        populaceDeaths: populace.mortality.deaths,
+        populaceRetired: populace.retired,
+        subsistenceShortfallShare,
         population: populace.population,
         livingMages: countLivingMages(state),
         nodesLost: mortality.nodesLost + decayed.length,
@@ -606,13 +749,26 @@ interface WorkPhaseOutcome {
  * means. Neither goal requires the other to exist: a teacher with a willing
  * student advances the lesson alone, at half speed.
  */
-function spendTheMonth(state: SimState, gateway: CoordinatingKnowledgeGateway): WorkPhaseOutcome {
-  for (const { handle, row } of collectRecords(state, MAGE)) {
-    if (row.alive === 0) continue;
+function spendTheMonth(
+  state: SimState,
+  gateway: CoordinatingKnowledgeGateway,
+  deps: WorldStepDeps,
+  worldTick: number,
+): WorkPhaseOutcome {
+  // The `alive` column and the handle, rather than a `MageRecord` per mage: the
+  // two fields below are all this phase reads, and `collectRecords` builds an
+  // object carrying every field of §1.2 to supply one of them. Same component,
+  // same ascending slot order — `collectRecords` gets its order from this very
+  // `forEach` — and this phase adds and removes no mage, so the walk cannot be
+  // disturbed by what it does.
+  const mages = componentOf(state, MAGE);
+  const alive = mages.field('alive');
+  mages.forEach((row, handle) => {
+    if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
-    if (commitment === undefined) continue;
-    workOne(handle, commitment, gateway);
-  }
+    if (commitment === undefined) return;
+    workOne(state, handle, commitment, gateway, deps, worldTick);
+  });
 
   const completedBy = new Set<Handle>();
   let researchCompleted = 0;
@@ -639,12 +795,24 @@ function spendTheMonth(state: SimState, gateway: CoordinatingKnowledgeGateway): 
  * nothing; the feasibility mask moves her on at her next evaluation.
  */
 function workOne(
+  state: SimState,
   mage: Handle,
   commitment: MageGoalCommitment,
   gateway: CoordinatingKnowledgeGateway,
+  deps: WorldStepDeps,
+  worldTick: number,
 ): void {
   const nodeId = commitment.targetNodeId;
   if (nodeId === 0) return;
+
+  // The god's contribution to this month, through the shared `research-rate`
+  // and `teach-rate` channels and their caps. `fp(1024)` — a month is a month —
+  // for a world with no god, so nothing below changes for a caller that did not
+  // ask for one.
+  const researched = mul(
+    MAGE_MONTHS_PER_TICK,
+    deps.researchMultiplierFor?.(state, worldTick, mage, nodeId) ?? FP_ONE,
+  );
 
   switch (commitment.goalId) {
     case GOAL.researchNode:
@@ -652,19 +820,34 @@ function workOne(
       // One accrual for both, because they are one operation: `rules-magic`'s
       // `research` decides for itself whether a node is a rediscovery, from the
       // ever-known record, and a second code path here could disagree with it.
-      gateway.contributeResearch(mage, nodeId, MAGE_MONTHS_PER_TICK);
+      gateway.contributeResearch(mage, nodeId, researched);
       return;
     case GOAL.teach: {
       const student = gateway.studentFor(mage, nodeId);
       if (student !== undefined) {
-        gateway.contributeTeaching(mage, student, nodeId, MAGE_MONTHS_PER_TICK);
+        // The *teacher's* multiplier, on the teacher's half of the pair. §2.3
+        // prices a lesson as the pair's cost and both push the same row, so a
+        // blessed teacher advances it faster and a blessed student advances her
+        // own half faster — which is what "one project with two people pushing
+        // it" means when the two are not equally favoured.
+        gateway.contributeTeaching(
+          mage,
+          student,
+          nodeId,
+          mul(MAGE_MONTHS_PER_TICK, deps.teachMultiplierFor?.(state, worldTick, mage) ?? FP_ONE),
+        );
       }
       return;
     }
     case GOAL.seekTeaching: {
       const teacher = gateway.teacherFor(mage, nodeId);
       if (teacher !== undefined) {
-        gateway.contributeTeaching(teacher, mage, nodeId, MAGE_MONTHS_PER_TICK);
+        gateway.contributeTeaching(
+          teacher,
+          mage,
+          nodeId,
+          mul(MAGE_MONTHS_PER_TICK, deps.teachMultiplierFor?.(state, worldTick, mage) ?? FP_ONE),
+        );
       }
       return;
     }
@@ -787,8 +970,10 @@ function deliverBirths(cohorts: CohortStore, phase: BirthPhase): number {
 // ---------------------------------------------------------------------------
 
 function ratesOf(state: SimState, mage: Handle, deps: WorldStepDeps): MageRates | undefined {
-  const row = mageRowOf(state, mage);
-  const species = row === undefined ? undefined : deps.speciesOf(row.speciesId);
+  const store = componentOf(state, MAGE);
+  const species = store.has(mage as EntityHandle)
+    ? deps.speciesOf(store.get(mage as EntityHandle, 'speciesId'))
+    : undefined;
   if (species === undefined) return undefined;
   return {
     learnRate: species.learnRate,
@@ -818,16 +1003,25 @@ function lifespanMonths(
     birthTick: row.birthTick,
     rootSeed: state.rootSeed,
     lifespanPrimitive: deps.primitives.lifespan,
-    // Empty is the ordinary case: `lifespan` effects come from blessings and
-    // curses, which are `god-agency`'s to issue.
-    effectMagnitudes: [],
+    // `god-agency` issues these now — a blessing contributes to `lifespan`
+    // through the shared stacking arithmetic — but only when a god was
+    // installed. Empty stays the ordinary case for a world without one.
+    effectMagnitudes: deps.lifespanEffectsFor?.(state, state.clock.worldTick, mage) ?? [],
   }).months;
 }
 
+/**
+ * This holder's species retention, or `0` for a handle that is not a mage.
+ *
+ * Reads the one field it needs rather than the whole `MAGE` row. The decay
+ * phase asks this once per held instance, which is tens of thousands of times a
+ * tick in a mature universe, and `readRecord` builds an object carrying every
+ * field of §1.2 to answer a question about one of them.
+ */
 function retentionOf(state: SimState, holder: Handle, deps: WorldStepDeps): number {
-  const row = mageRowOf(state, holder);
-  if (row === undefined) return 0;
-  return deps.speciesOf(row.speciesId)?.retention ?? 0;
+  const store = componentOf(state, MAGE);
+  if (!store.has(holder as EntityHandle)) return 0;
+  return deps.speciesOf(store.get(holder as EntityHandle, 'speciesId'))?.retention ?? 0;
 }
 
 function mageRowOf(state: SimState, mage: Handle): MageRecord | undefined {

@@ -42,6 +42,7 @@ export {
 
 export type { ValidationResult } from './load.js';
 export {
+  MAX_CONTENT_NODES,
   REQUIRED_V1_CELL,
   V1_CELL_COUNT,
   V1_FORM_COUNT,
@@ -99,5 +100,19 @@ export type { SelectionCoverage, SelectionPass, Selections } from './audio-selec
 export { assetIdOf, mergeSelections, selectionCoverage } from './audio-selection-merge.js';
 
 export { runAudioValidation } from './audio-cli.js';
+
+export {
+  GOD_ACTION_ID_MAX,
+  REQUIRED_GOD_CONSTANTS,
+  checkGodConstants,
+  checkGodCosts,
+} from './god.js';
+
+export {
+  MAX_ENGAGEMENT_TICKS,
+  REQUIRED_RAID_CONSTANTS,
+  checkRaidConstants,
+  engagementTickBound,
+} from './raid.js';
 
 export * from './types.js';

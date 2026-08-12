@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the bridge's tests. Never emits into dist/. The tests build a minimal universe with @mm/sim-core so that at least one of them drives a real agent-api session rather than only a fake one — contracts.md §5 grants both to this package as test-only edges, and src may not touch either — see the testOnly note in sim-core/test/unit/module-boundaries.test.ts.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./test",
+    "types": ["node"],
+    "emitDeclarationOnly": true,
+    "outDir": "../../.tsbuild/gym-bridge-test",
+    "tsBuildInfoFile": "../../.tsbuild/gym-bridge-test.tsbuildinfo"
+  },
+  "include": ["test/**/*.ts"],
+  "references": [
+    { "path": "./tsconfig.json" },
+    { "path": "../sim-core" },
+    { "path": "../state" }
+  ]
+}

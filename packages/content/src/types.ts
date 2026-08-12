@@ -31,7 +31,7 @@ export type ContentId = number;
 /** The reserved null content id. Never assigned to a record. */
 export const NULL_CONTENT_ID = 0;
 
-/** Which of the eight content namespaces an interned id belongs to. */
+/** Which content namespace an interned id belongs to. */
 export type ContentNamespace =
   | 'technique'
   | 'form'
@@ -40,7 +40,10 @@ export type ContentNamespace =
   | 'species'
   | 'tradition'
   | 'primitive'
-  | 'territory';
+  | 'territory'
+  | 'god-cost'
+  | 'god-constant'
+  | 'raid-constant';
 
 export interface TechniqueRecord {
   readonly id: string;
@@ -185,6 +188,63 @@ export interface TerritoryRecord {
   readonly tuningStatus: TuningStatus;
 }
 
+/**
+ * What one action in `contracts.md` §4.2 costs the god, as data.
+ *
+ * The cost table ships as content alongside nodes and species so that retuning
+ * a price is a content change the balance harness can sweep rather than a code
+ * change. `actionId` is the §4.2 id and is the key every consumer looks the
+ * record up by; `id` is the kebab-case name the diagnostics use, because a
+ * failure that says only "action 13" makes the reader count rows.
+ */
+export interface GodCostRecord {
+  readonly id: string;
+  /** `contracts.md` §4.2's action id, `0..15`. Permanent, like the action itself. */
+  readonly actionId: number;
+  /** Base favor price, `fp`. Hysteresis and node tier scale it at resolution. */
+  readonly favorCost: Fp;
+  readonly gloss: string;
+  readonly tuningStatus: TuningStatus;
+}
+
+/**
+ * One named magnitude of the worship loop, the favor economy, the
+ * interventions, ascension, stagnation, or prestige.
+ *
+ * The *set* of ids is structural — the rules read each by name and the loader
+ * refuses a set that is missing one or carries an unknown one — while the
+ * *values* are untuned placeholders. That split is the point: a sweep may move
+ * every value in this file and may not invent a constant the rules do not read,
+ * which is what stops a tuning pass from quietly adding a mechanic.
+ */
+export interface GodConstantRecord {
+  readonly id: string;
+  readonly value: number;
+  /** What the number is: `fp`, world `ticks`, a `count`, `months`, or a worship `tier`. */
+  readonly unit: 'fp' | 'ticks' | 'count' | 'months' | 'tier';
+  readonly gloss: string;
+  readonly tuningStatus: TuningStatus;
+}
+
+/**
+ * One named magnitude an engagement is made of.
+ *
+ * The same shape as {@link GodConstantRecord}, and deliberately a separate
+ * table rather than more rows in that one. `god-constant.json`'s loader rejects
+ * any id its own required set does not name — correctly, because an unread
+ * constant there is a knob that does nothing — so a raid magnitude added to it
+ * would have to be added to `god-agency`'s contract as well, and the worship
+ * loop would acquire an opinion about how long a portal holds.
+ */
+export interface RaidConstantRecord {
+  readonly id: string;
+  readonly value: number;
+  /** What the number is: `fp`, a `raw` countdown integer, a `count`, or `ticks`. */
+  readonly unit: 'fp' | 'raw' | 'count' | 'ticks';
+  readonly gloss: string;
+  readonly tuningStatus: TuningStatus;
+}
+
 /** A record plus the integer it was interned to. */
 export interface Interned<T> {
   readonly contentId: ContentId;
@@ -202,6 +262,9 @@ export interface ContentCounts {
   readonly traditions: number;
   readonly primitives: number;
   readonly territories: number;
+  readonly godCosts: number;
+  readonly godConstants: number;
+  readonly raidConstants: number;
 }
 
 /**
@@ -223,6 +286,9 @@ export interface ContentRegistry {
   readonly traditions: readonly Interned<TraditionRecord>[];
   readonly primitives: readonly Interned<PrimitiveRecord>[];
   readonly territories: readonly Interned<TerritoryRecord>[];
+  readonly godCosts: readonly Interned<GodCostRecord>[];
+  readonly godConstants: readonly Interned<GodConstantRecord>[];
+  readonly raidConstants: readonly Interned<RaidConstantRecord>[];
 
   /** String id to interned integer, per namespace. */
   intern(namespace: ContentNamespace, id: string): ContentId;
@@ -235,4 +301,24 @@ export interface ContentRegistry {
   cell(contentId: ContentId): CellRecord | undefined;
   /** The record behind an interned node id. */
   node(contentId: ContentId): NodeRecord | undefined;
+  /** What §4.2's action id costs the god, or `undefined` for an id the table lacks. */
+  godCost(actionId: number): GodCostRecord | undefined;
+  /**
+   * A named `god-agency` magnitude.
+   *
+   * @throws Error for an id the table does not declare. The loader has already
+   * checked the required set is present, so a miss here means a caller invented
+   * a constant name — and a silent `0` would be a worship formula whose lag was
+   * zero, which is a plausible-looking answer to a question nobody asked.
+   */
+  godConstant(id: string): number;
+  /**
+   * A named `raid-engagement` magnitude.
+   *
+   * @throws Error for an id the table does not declare, for the reason
+   * {@link ContentRegistry.godConstant} does: the loader has already checked
+   * the required set, so a miss means a caller invented a name, and a silent
+   * `0` would be a cast range of zero or a portal that never decays.
+   */
+  raidConstant(id: string): number;
 }

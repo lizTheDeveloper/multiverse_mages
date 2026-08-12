@@ -28,11 +28,37 @@
  * cannot reach `sim-core`'s single shared `floorDiv`), and duplicating it into
  * each rules package is the exact failure §3 exists to prevent.
  *
+ * `ablation.ts` is here for a third reason, and it is the sharpest of them. A
+ * balance sweep measures a primitive's contribution by neutralizing it and
+ * comparing paired runs, and neutralization has to happen somewhere every
+ * consumer already goes through — otherwise fifteen call sites each grow their
+ * own "…unless ablated" branch, which is the failure this package exists to
+ * prevent, in a new place. `stackMagnitudes` is that somewhere. `probability.ts`
+ * is the other half: a probability check that spends its draw whether or not
+ * the primitive was neutralized, so a control run and its ablation arm stay on
+ * the same position in the same stream.
+ *
  * `rediscovery.ts` is here for the same reason stated the other way round: the
  * effective rediscovery multiplier is a number `rules-magic` and `rules-world`
  * must agree on, §5 rule 3 forbids either importing the other, and they had in
  * fact drifted into computing opposite things. See that module's note.
  */
+
+export type { AblationMask } from './ablation.js';
+export {
+  NEUTRALIZED_MAGNITUDE,
+  NO_ABLATION,
+  ablationMaskFor,
+  neutralizedMagnitude,
+  neutralizing,
+} from './ablation.js';
+
+export type {
+  AblationConformanceProblem,
+  AblationConformanceReport,
+  AblationConformanceRow,
+} from './conformance.js';
+export { ablationConformance } from './conformance.js';
 
 export type { CapContext, CapOutcome } from './caps.js';
 export { ClampCounters, applyCap, capLimit } from './caps.js';
@@ -48,6 +74,9 @@ export {
 
 export type { StackOptions, StackOutcome } from './stack.js';
 export { stackMagnitudes } from './stack.js';
+
+export type { ProbabilityRoll } from './probability.js';
+export { rollStackedProbability } from './probability.js';
 
 export type { RediscoveryClampCounter } from './rediscovery.js';
 export {

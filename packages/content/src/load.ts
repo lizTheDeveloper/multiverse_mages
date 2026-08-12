@@ -32,6 +32,8 @@
 
 import type { ContentDiagnostic, ContentDiagnosticCode } from './diagnostics.js';
 import { ContentValidationError, pointerAppend, sortDiagnostics } from './diagnostics.js';
+import { checkGodConstants, checkGodCosts } from './god.js';
+import { checkRaidConstants } from './raid.js';
 import { HOOK_KINDS, HOOK_POINTS, checkHookParams, hookPointOwning, permittedKinds } from './hooks.js';
 import {
   CELL_COUNT,
@@ -53,6 +55,9 @@ import type {
   ContentNamespace,
   ContentRegistry,
   FormRecord,
+  GodConstantRecord,
+  RaidConstantRecord,
+  GodCostRecord,
   Interned,
   NodeRecord,
   PrimitiveRecord,
@@ -76,6 +81,34 @@ export const V1_TECHNIQUE_COUNT = 3;
 
 /** Forms in the v1 rectangle. */
 export const V1_FORM_COUNT = 4;
+
+/**
+ * The most nodes a content set may declare, because every one of them is
+ * potentially on a mage's research frontier.
+ *
+ * `@mm/coordination`'s `researchFrontier` walks the nodes of the cells the
+ * ruleset permits, once per mage per tick. A god may permit all seventy cells,
+ * so the worst case over all rulesets is *the whole catalog*, and the node count
+ * is therefore a per-tick cost that content controls and the AI layer cannot.
+ *
+ * That scan used to be bounded instead by a constant over interned node id —
+ * walk `1..min(nodeCount, 256)` and stop — and the shipped catalog has held 300
+ * nodes since the grid was authored, so 44 of them were silently unreachable:
+ * the whole `rego` technique, four of the twelve v1 cells, a third of the
+ * playable content. Nothing failed. Nothing warned. The universe simply had less
+ * magic in it than the content said, for the life of every run, and it took a
+ * plateau in a fifty-year sweep to notice.
+ *
+ * So the bound moved here, where crossing it is **loud**. This is a content
+ * decision that fails `npm run verify` with a message, not a runtime truncation
+ * that deletes whatever sorts last. One thousand and twenty-four is an arbitrary
+ * budget — a little over three times what v1 authors — chosen to be roomy enough
+ * that ordinary content growth never meets it and small enough that meeting it
+ * is a conversation. **The response to hitting it is to measure the frontier
+ * scan and raise this number on purpose, or to author fewer nodes. It is never
+ * to cap the scan again.**
+ */
+export const MAX_CONTENT_NODES = 1024;
 
 /**
  * Authoring floor for `rediscoveryMultiplier` in v1 content.
@@ -167,6 +200,9 @@ interface ParsedDocuments {
   readonly tradition: readonly TraditionRecord[];
   readonly primitive: readonly PrimitiveRecord[];
   readonly territory: readonly TerritoryRecord[];
+  readonly godCost: readonly GodCostRecord[];
+  readonly godConstant: readonly GodConstantRecord[];
+  readonly raidConstant: readonly RaidConstantRecord[];
 }
 
 let cachedSchemas: ReadonlyMap<ContentFileName, CompiledSchema> | undefined;
@@ -249,6 +285,9 @@ export function validateContent(source: ContentSource): ValidationResult {
     tradition: raw.get('tradition.json') as readonly TraditionRecord[],
     primitive: raw.get('primitive.json') as readonly PrimitiveRecord[],
     territory: raw.get('territory.json') as readonly TerritoryRecord[],
+    godCost: raw.get('god-cost.json') as readonly GodCostRecord[],
+    godConstant: raw.get('god-constant.json') as readonly GodConstantRecord[],
+    raidConstant: raw.get('raid-constant.json') as readonly RaidConstantRecord[],
   };
 
   // ---- Phase 3: graph integrity. ----
@@ -315,6 +354,9 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   indexById(documents.tradition, 'tradition.json', out);
   const primitiveById = indexById(documents.primitive, 'primitive.json', out);
   indexById(documents.territory, 'territory.json', out);
+  indexById(documents.godCost, 'god-cost.json', out);
+  indexById(documents.godConstant, 'god-constant.json', out);
+  indexById(documents.raidConstant, 'raid-constant.json', out);
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
@@ -323,6 +365,13 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   checkNodes(documents.node, cellById, nodeById, primitiveById, out);
   checkSpecies(documents.species, formById, cellById, out);
   checkTraditions(documents.tradition, out);
+  // `god-agency`'s two tables. Their coverings and identities are checks a JSON
+  // Schema cannot express — see `god.ts`.
+  out.push(...checkGodCosts(documents.godCost));
+  out.push(...checkGodConstants(documents.godConstant));
+  // `raid-engagement`'s table. Two of its checks are not tuning hygiene but the
+  // termination proof — see `raid.ts`.
+  out.push(...checkRaidConstants(documents.raidConstant));
 
   return out;
 }
@@ -625,6 +674,22 @@ function checkNodes(
   out: ContentDiagnostic[],
 ): void {
   const file = 'node.json';
+
+  if (nodes.length > MAX_CONTENT_NODES) {
+    out.push(
+      diagnostic(
+        file,
+        '',
+        'content-invariant',
+        `node.json declares ${String(nodes.length)} nodes, above the frontier-scan budget of ` +
+          `${String(MAX_CONTENT_NODES)}. A god may permit all seventy cells, so every declared node ` +
+          "is potentially on every mage's research frontier every tick, and the node count is a " +
+          'per-tick cost content controls. Raise the budget deliberately, having measured the ' +
+          'scan, or author fewer nodes — do not bound the scan by node id again, which is what ' +
+          'made a third of the v1 content unreachable for the life of every run',
+      ),
+    );
+  }
 
   for (let position = 0; position < nodes.length; position += 1) {
     const node = nodes[position];
@@ -965,6 +1030,9 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const traditions = internNamespace(documents.tradition);
   const primitives = internNamespace(documents.primitive);
   const territories = internNamespace(documents.territory);
+  const godCosts = internNamespace(documents.godCost);
+  const godConstants = internNamespace(documents.godConstant);
+  const raidConstants = internNamespace(documents.raidConstant);
 
   const tables = new Map<ContentNamespace, ReadonlyMap<string, ContentId>>([
     ['technique', tableOf(techniques)],
@@ -975,6 +1043,9 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     ['tradition', tableOf(traditions)],
     ['primitive', tableOf(primitives)],
     ['territory', tableOf(territories)],
+    ['god-cost', tableOf(godCosts)],
+    ['god-constant', tableOf(godConstants)],
+    ['raid-constant', tableOf(raidConstants)],
   ]);
   const reverse = new Map<ContentNamespace, ReadonlyMap<ContentId, string>>();
   for (const [namespace, table] of tables) {
@@ -983,6 +1054,14 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
 
   const cellByContentId = new Map(cells.map((entry) => [entry.contentId, entry.record]));
   const nodeByContentId = new Map(nodes.map((entry) => [entry.contentId, entry.record]));
+  // Keyed on the §4.2 action id and the constant name rather than on the
+  // interned id: both tables are looked up by what they mean, never by the
+  // integer interning happened to assign them.
+  const godCostByAction = new Map(godCosts.map((entry) => [entry.record.actionId, entry.record]));
+  const godConstantById = new Map(godConstants.map((entry) => [entry.record.id, entry.record.value]));
+  const raidConstantById = new Map(
+    raidConstants.map((entry) => [entry.record.id, entry.record.value]),
+  );
 
   const revisionEntries: RevisionEntry[] = [];
   const append = (namespace: ContentNamespace, entries: readonly Interned<unknown>[]): void => {
@@ -998,6 +1077,9 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   append('tradition', traditions);
   append('primitive', primitives);
   append('territory', territories);
+  append('god-cost', godCosts);
+  append('god-constant', godConstants);
+  append('raid-constant', raidConstants);
 
   const counts: ContentCounts = {
     techniques: techniques.length,
@@ -1009,6 +1091,9 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     traditions: traditions.length,
     primitives: primitives.length,
     territories: territories.length,
+    godCosts: godCosts.length,
+    godConstants: godConstants.length,
+    raidConstants: raidConstants.length,
   };
 
   return {
@@ -1022,6 +1107,9 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     traditions,
     primitives,
     territories,
+    godCosts,
+    godConstants,
+    raidConstants,
     intern(namespace, id) {
       return tables.get(namespace)?.get(id) ?? 0;
     },
@@ -1038,6 +1126,31 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     },
     node(contentId) {
       return nodeByContentId.get(contentId);
+    },
+    godCost(actionId) {
+      return godCostByAction.get(actionId);
+    },
+    godConstant(id) {
+      const found = godConstantById.get(id);
+      if (found === undefined) {
+        throw new Error(
+          `No god-agency constant named "${id}" is declared in god-constant.json. The loader ` +
+            'checks the required set on every load, so this is a caller inventing a name — and ' +
+            'returning 0 would put a silently wrong magnitude in the middle of a balance formula.',
+        );
+      }
+      return found;
+    },
+    raidConstant(id) {
+      const found = raidConstantById.get(id);
+      if (found === undefined) {
+        throw new Error(
+          `No raid constant named "${id}" is declared in raid-constant.json. The loader checks ` +
+            'the required set on every load, so this is a caller inventing a name — and returning ' +
+            '0 would be a cast that reaches nowhere or a portal that never decays.',
+        );
+      }
+      return found;
     },
   };
 }

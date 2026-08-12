@@ -13,17 +13,37 @@
  */
 
 /**
- * The birth-and-death equilibrium test at the bottom of this file is the
+ * The birth-and-death equilibrium tests at the bottom of this file are the
  * `economy` spec's *"Deaths balance births at equilibrium"* scenario, run at
  * cohort granularity rather than through a whole world tick. That is honest
  * about its scope: it demonstrates that the logistic brake and the shared
- * hazard table settle against each other, and it does **not** demonstrate that
- * the reference scenario does — which is task group 9's, and is not written.
+ * hazard table settle against each other. Whether the **reference scenario**
+ * does is a different question, and the answer measured for `mages-and-species`
+ * task 8.7 is *not within the horizon that change commits to*:
+ *
+ * ```text
+ *  world year   population   K        P/K     births/deaths over the 25y window
+ *      200        18,713     29,831   0.627   1.106
+ *      300        22,507     29,831   0.754   1.201
+ *      400        25,760     29,608   0.870   1.127
+ *      500        25,952     29,887   0.868   0.999
+ * ```
+ *
+ * So the reference universe *does* settle — at roughly world year 475, more
+ * than twice the two-hundred-year horizon task 9.2 fixes. At year two hundred
+ * births still exceed deaths by eleven per cent and the population is at five
+ * eighths of `K`. Task 8.7's box is therefore left unticked: what is asserted
+ * below is that the mechanism balances, and what
+ * `packages/scenario/test/unit/reference-long-run.test.ts` asserts is that the
+ * reference run *approaches* the balance. Neither is "the reference scenario at
+ * carrying capacity", and neither is written as though it were.
  */
 
 import { describe, expect, it } from 'vitest';
 
 import { FP_ONE, RNG_STREAM } from '@mm/sim-core';
+
+import { OCCUPATION } from '@mm/state';
 
 import {
   BIRTHS_PER_MEMBER,
@@ -35,6 +55,7 @@ import {
   NO_TERRITORY,
   OCCUPATION_COUNT,
   SEATS_PROVISION_CAP,
+  applyCohortMortality,
   carryingCapacity,
   cohortBirths,
   createCohortStore,
@@ -48,6 +69,12 @@ import type { BirthInput } from '../../src/index.js';
 
 import { primitiveNamed, shippedRegistry, speciesNamed } from './universities-fixtures.js';
 import { recordingRng, stepRng } from './mage-fixtures.js';
+import {
+  LONG_LIVED_ID,
+  SHORT_LIVED_ID,
+  fixtureSpecies,
+  placeholderHazard,
+} from './populace-fixtures.js';
 
 /** The shipped territory, which is what a universe's `K` is actually derived from. */
 const TERRITORY = territoryExtent(shippedRegistry().territories.map((entry) => entry.record));
@@ -300,5 +327,94 @@ describe('births and deaths settle against each other', () => {
 
   it('adds nobody at all once the population is at capacity', () => {
     expect(expectedBirths(births({ count: 2000, brake: fertilityBrake(2000, 2000) }))).toBe(0);
+  });
+
+  it('settles births against deaths within a documented tolerance, once it settles', () => {
+    // **The half of task 8.7 that the test above deliberately held out.** That
+    // one runs the brake with deaths absent, so that a failure is unambiguously
+    // the brake's; this one puts the shared hazard table back in and asks the
+    // question the `economy` spec actually states — *"deaths balance births at
+    // equilibrium"*.
+    //
+    // The composed loop, in the world tick's order: mortality, then births
+    // against a brake computed from the post-mortality headcount. `K` is fixed
+    // rather than derived, because a `K` that moves with the materials stock
+    // makes "at equilibrium" a moving target and the failure would be ambiguous
+    // between the population and the bound. What `K` is for the *reference
+    // scenario*, and when it gets there, is in the module note.
+    const capacity = 4000;
+    const store = createCohortStore();
+    // One long-lived cohort and one short-lived, born a maturity ago, so the
+    // hazard table is entered at two different normalized ages from tick one.
+    store.add(
+      { speciesId: SHORT_LIVED_ID, occupation: OCCUPATION.laborer, birthTickBucket: -240 },
+      500,
+    );
+    store.add(
+      { speciesId: LONG_LIVED_ID, occupation: OCCUPATION.laborer, birthTickBucket: -1200 },
+      500,
+    );
+
+    const populations: number[] = [];
+    const perTick: { born: number; died: number }[] = [];
+    for (let tick = 0; tick < 6000; tick += 1) {
+      const rng = stepRng(0x0008_0007, tick);
+      const died = applyCohortMortality(store, {
+        hazard: placeholderHazard,
+        species: fixtureSpecies,
+        rng,
+        worldTick: tick,
+      }).deaths;
+
+      const brake = fertilityBrake(store.totalCount(), capacity);
+      // Collected before insertion, for the reason `deliverBirths` collects:
+      // a walk that saw its own newborns would breed them in the tick they
+      // were born.
+      const fertile: { handle: number; speciesId: number; count: number }[] = [];
+      store.forEach((handle, key, count) => {
+        if (count > 0) fertile.push({ handle, speciesId: key.speciesId, count });
+      });
+      let born = 0;
+      for (const cohort of fertile) {
+        const count = cohortBirths(rng, cohort.handle, births({ count: cohort.count, brake }));
+        if (count > 0) {
+          insertNewborns(store, cohort.speciesId, count, tick);
+          born += count;
+        }
+      }
+      populations.push(store.totalCount());
+      perTick.push({ born, died });
+    }
+
+    // It grew, it stopped short of `K`, and it never passed it. Stopping short
+    // is the whole point: the equilibrium of a logistic brake against a
+    // mortality table is *below* the capacity, because the brake is exactly
+    // zero at `K` and deaths are not.
+    const settled = populations[populations.length - 1] ?? 0;
+    expect(settled).toBeGreaterThan(1000);
+    expect(Math.max(...populations)).toBeLessThanOrEqual(capacity);
+    expect(settled).toBeLessThan(capacity);
+
+    // **The documented tolerance: five per cent over the final quarter.** A
+    // per-tick equality is not available and not the claim — births arrive
+    // through one fractional draw per cohort, so a single tick is a Bernoulli
+    // outcome and "balance" is a statement about a window. A quarter of the run
+    // is 1,500 ticks, which is a hundred and twenty-five world years.
+    const tail = perTick.slice(perTick.length * 0.75);
+    const bornInTail = tail.reduce((sum, entry) => sum + entry.born, 0);
+    const diedInTail = tail.reduce((sum, entry) => sum + entry.died, 0);
+    const imbalance = Math.abs(bornInTail - diedInTail) / Math.max(1, diedInTail);
+    console.log(
+      `8.7 cohort-level equilibrium: population ${String(settled)} against K ${String(capacity)}, ` +
+        `${String(bornInTail)} born and ${String(diedInTail)} died over the final quarter ` +
+        `(imbalance ${(imbalance * 100).toFixed(2)}%).`,
+    );
+    expect(imbalance).toBeLessThan(0.05);
+
+    // And the population is flat over that window rather than balanced on
+    // average while drifting — the failure a ratio alone cannot see.
+    const quarter = Math.floor(populations.length * 0.75);
+    const atQuarter = populations[quarter] ?? 0;
+    expect(Math.abs(settled - atQuarter) / Math.max(1, atQuarter)).toBeLessThan(0.05);
   });
 });

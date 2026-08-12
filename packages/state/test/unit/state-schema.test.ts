@@ -158,6 +158,13 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // written from, and each migration has only to append.
       'goal-commitment',
       'effort-progress',
+      // Appended by `god-agency`, together, as world-schema revision 4. They
+      // arrive as a group because no build has ever carried a proper subset of
+      // them, so there is no snapshot a finer-grained walk could describe.
+      'god-state',
+      'blessing',
+      'upheaval',
+      'era-evaluation',
     ]);
   });
 

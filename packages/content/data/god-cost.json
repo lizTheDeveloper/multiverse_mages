@@ -1,0 +1,114 @@
+[
+  {
+    "id": "no-op",
+    "actionId": 0,
+    "favorCost": 0,
+    "gloss": "Doing nothing is free. It is also the action an illegal submission is replaced by, so a price here would charge an agent for its own mistakes.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "permit-technique",
+    "actionId": 1,
+    "favorCost": 8192,
+    "gloss": "Arms every cell on a technique's row at once, which is why it costs twice what a form does.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "forbid-technique",
+    "actionId": 2,
+    "favorCost": 8192,
+    "gloss": "Exactly what permitting costs. Vision pillar 1 rests on the permit/forbid decision being symmetric; any price difference turns denial from a peer strategy into a penalty.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "permit-form",
+    "actionId": 3,
+    "favorCost": 4096,
+    "gloss": "A form's column is five cells against a technique's fourteen, and the price follows.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "forbid-form",
+    "actionId": 4,
+    "favorCost": 4096,
+    "gloss": "Symmetric with permitting a form, for the reason forbidding a technique is symmetric with permitting one.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "issue-dispensation",
+    "actionId": 5,
+    "favorCost": 6144,
+    "gloss": "One cell prised open against the ruleset, and one of a very small number of edict slots spent holding it there.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "issue-interdiction",
+    "actionId": 6,
+    "favorCost": 6144,
+    "gloss": "The same price as a dispensation, so that the surgical open and the surgical close are the same kind of decision.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "revoke-edict",
+    "actionId": 7,
+    "favorCost": 2048,
+    "gloss": "Cheap, because the slot it frees is the scarce thing rather than the favor.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "grant-founding-knowledge",
+    "actionId": 8,
+    "favorCost": 12288,
+    "gloss": "Per node tier — the resolved cost is this times the node's tier. Grants are restricted to prerequisite-free roots, so in v1 content the multiplier is almost always one; the scaling exists so that content with deeper roots does not make the summit cheap.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "bless-mage",
+    "actionId": 9,
+    "favorCost": 2048,
+    "gloss": "A hundred and twenty months of raised research, teaching, and life. Priced to be a repeated decision rather than a once-a-run one.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "assign-role",
+    "actionId": 10,
+    "favorCost": 256,
+    "gloss": "Strictly the cheapest non-zero action, and deliberately so: it is the verb the god performs constantly, and a priced one would make most of the action space unaffordable no-ops, inflating illegalActionRate into noise.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "fund-university",
+    "actionId": 11,
+    "favorCost": 3072,
+    "gloss": "Advancing an existing build. Founding a new one costs the separate `found-university-cost` constant, because §4.2 gives the two one action id and they are not the same purchase.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "encourage-research",
+    "actionId": 12,
+    "favorCost": 1024,
+    "gloss": "Per cell, and it decays. The cheapest way to point a civilization at something, and the least durable.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "change-tradition",
+    "actionId": 13,
+    "favorCost": 65536,
+    "gloss": "Exceeds the favor cap at every worship tier below the highest, so the ruinous action is structurally unavailable to a young universe rather than merely expensive. It also zeroes whatever is left in the pool.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "open-portal",
+    "actionId": 14,
+    "favorCost": 16384,
+    "gloss": "A raid is a tempo decision before it is a favor decision; the price is here so that it is also the second thing.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "declare-ascension",
+    "actionId": 15,
+    "favorCost": 0,
+    "gloss": "Free, and gated. Charging for the ending would make a god who spent well unable to stop.",
+    "tuningStatus": "untuned"
+  }
+]

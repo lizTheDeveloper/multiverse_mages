@@ -433,6 +433,13 @@ describe('ruleset legality is computed in exactly one place', () => {
     expect([...new Set(cleared)]).toEqual([
       'packages/agent-api/src/mask.ts',
       'packages/agent-api/src/observation.ts',
+      // `v1RulesetAxes` runs the arithmetic in the other direction: it *builds*
+      // a starting ruleset by OR-ing the axes of the cells content flags `v1`,
+      // rather than asking whether a ruleset permits a cell. Nothing there
+      // decides legality — the universe it produces is arbitrated by the same
+      // `permits()` as every other, which `reference-universe.test.ts` asserts
+      // over all seventy cells.
+      'packages/scenario/src/content-set.ts',
     ]);
   });
 });

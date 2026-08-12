@@ -150,6 +150,33 @@ export class KnowledgeSubsystem {
   #instanceOfGrimoire = new Map<Handle, Handle>();
 
   /**
+   * Who holds what, in mind or memory palace: holder, to node id, to how many
+   * instances of that node the holder carries.
+   *
+   * **A second derived index, and it is here for the reason the first one is.**
+   * *"Does this mage hold this node?"* is what the prerequisite check asks, and
+   * `research` asks it once per prerequisite per mage per world tick. Answered
+   * by walking {@link instancesHeldBy} it costs a pass over every instance in
+   * the universe, an array, and a record object per row — so a universe with a
+   * thousand mages and ten thousand instances paid millions of reads a tick for
+   * a question whose answer is one bit. It was the single largest cost in a
+   * profiled two-hundred-year run: forty-eight per cent of it.
+   *
+   * A **count**, not a set. A mage can hold two instances of one node — raid
+   * theft puts one there, and {@link instancesHeldBy} says as much already — and
+   * a set would forget the node when the first of the two was destroyed, which
+   * is a prerequisite vanishing from under a project that is still perfectly
+   * legal, with nothing thrown and nothing logged.
+   *
+   * Nothing iterates it, so no rule can come to depend on the order a hash map
+   * happens to hold its keys in. It answers membership and nothing else, and
+   * {@link rebuild} discards and re-derives it exactly as it does the existence
+   * index — so a snapshot loaded into a fresh process is indexed from what state
+   * says rather than from what some earlier process remembered.
+   */
+  #heldByHolder = new Map<Handle, Map<ContentId, number>>();
+
+  /**
    * @param state - The world state. Must carry `@mm/state`'s §1 components.
    * @param nodeCount - Node ids the loaded content declares, `1..nodeCount`.
    */
@@ -220,16 +247,23 @@ export class KnowledgeSubsystem {
     return 0;
   }
 
-  /** A knowledge instance's fields. Throws on a handle carrying no instance. */
+  /**
+   * A knowledge instance's fields. Throws on a handle carrying no instance.
+   *
+   * The row is resolved once and the five columns indexed directly, rather than
+   * five `get` calls each re-resolving the same handle through the sparse map.
+   * The decay sweep calls this once per instance per world tick, so the four
+   * saved lookups are four per instance per tick for the length of a run.
+   */
   read(instance: Handle): KnowledgeInstanceRecord {
     const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
-    const handle = instance as EntityHandle;
+    const row = store.rowOf(instance as EntityHandle);
     return {
-      nodeId: store.get(handle, 'nodeId'),
-      locationKind: store.get(handle, 'locationKind'),
-      locationId: store.get(handle, 'locationId'),
-      acquiredTick: store.get(handle, 'acquiredTick'),
-      mastery: store.get(handle, 'mastery'),
+      nodeId: store.field('nodeId')[row] as number,
+      locationKind: store.field('locationKind')[row] as number,
+      locationId: store.field('locationId')[row] as number,
+      acquiredTick: store.field('acquiredTick')[row] as number,
+      mastery: store.field('mastery')[row] as number,
     };
   }
 
@@ -252,8 +286,22 @@ export class KnowledgeSubsystem {
    */
   setLocation(instance: Handle, locationKind: number, locationId: Handle): void {
     const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
-    store.set(instance as EntityHandle, 'locationKind', locationKind);
-    store.set(instance as EntityHandle, 'locationId', locationId);
+    const handle = instance as EntityHandle;
+    // Read before the write. An instance moving out of a mind — or into one,
+    // which is the direction a study loop will eventually want — has to leave
+    // the held index it was in before it joins the one it is going to. Here
+    // rather than at the call sites, for the reason create and destroy are here:
+    // a mover that forgot would leave a mage reading a prerequisite she no
+    // longer holds, or unable to read one she does.
+    const previousKind = store.get(handle, 'locationKind');
+    if (isHeldLocation(previousKind)) {
+      this.#unholdNode(store.get(handle, 'locationId'), store.get(handle, 'nodeId'));
+    }
+    store.set(handle, 'locationKind', locationKind);
+    store.set(handle, 'locationId', locationId);
+    if (isHeldLocation(locationKind)) {
+      this.#holdNode(locationId, store.get(handle, 'nodeId'));
+    }
   }
 
   /**
@@ -300,6 +348,7 @@ export class KnowledgeSubsystem {
 
     this.#existence.add(spec.nodeId);
     this.#markEverKnown(spec.nodeId);
+    if (isHeldLocation(spec.locationKind)) this.#holdNode(spec.locationId, spec.nodeId);
     if (spec.grimoire !== undefined) this.#instanceOfGrimoire.set(spec.grimoire, handle);
     return handle;
   }
@@ -329,6 +378,7 @@ export class KnowledgeSubsystem {
   destroyInstance(instance: Handle, worldTick: Tick): KnowledgeLossEvent | undefined {
     const view = this.read(instance);
     this.#existence.remove(view.nodeId);
+    if (isHeldLocation(view.locationKind)) this.#unholdNode(view.locationId, view.nodeId);
 
     for (const [grimoire, held] of this.#instanceOfGrimoire) {
       if (held === instance) {
@@ -344,14 +394,41 @@ export class KnowledgeSubsystem {
     return { nodeId: view.nodeId, worldTick, location: view.locationKind };
   }
 
-  /** Every live instance in the universe, in ascending slot order. */
+  /**
+   * Every live instance in the universe, in ascending slot order.
+   *
+   * Not `#collect(() => true)`: that builds a five-field view of every row to
+   * hand to a predicate that ignores it. The decay sweep asks for this list
+   * every world tick and reads each row itself, so the views were an object per
+   * instance per tick that nothing ever looked at.
+   */
   instances(): Handle[] {
-    return this.#collect(() => true);
+    const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
+    const found: Handle[] = [];
+    store.forEach((_row, handle) => {
+      found.push(handle);
+    });
+    return found;
   }
 
   /** Every live instance of a node, in ascending slot order. */
   instancesOf(nodeId: ContentId): Handle[] {
     return this.#collect((view) => view.nodeId === nodeId);
+  }
+
+  /**
+   * Whether a holder carries a node in mind or memory palace.
+   *
+   * Exactly {@link instancesHeldBy} filtered to one node and asked whether
+   * anything came back — the question `holdsUsable` asks — answered from
+   * {@link #heldByHolder} in constant time instead of by the pass that made
+   * that check the most expensive thing in a world tick. It reports membership
+   * and nothing else: mastery, dormancy, and which of two copies is the better
+   * one are separate questions, and none of them can be answered without
+   * reading rows.
+   */
+  holdsHeldNode(holder: Handle, nodeId: ContentId): boolean {
+    return (this.#heldByHolder.get(holder)?.get(nodeId) ?? 0) > 0;
   }
 
   /**
@@ -430,11 +507,16 @@ export class KnowledgeSubsystem {
     });
 
     this.#instanceOfGrimoire = new Map();
+    this.#heldByHolder = new Map();
     const locationKinds = store.field('locationKind');
     const locationIds = store.field('locationId');
     store.forEach((row, handle) => {
-      if ((locationKinds[row] as number) === LOCATION_KIND.grimoire) {
+      const locationKind = locationKinds[row] as number;
+      if (locationKind === LOCATION_KIND.grimoire) {
         this.#instanceOfGrimoire.set(locationIds[row] as number, handle);
+      }
+      if (isHeldLocation(locationKind)) {
+        this.#holdNode(locationIds[row] as number, nodeIds[row] as number);
       }
     });
     this.#relinkShelvedGrimoires();
@@ -460,8 +542,41 @@ export class KnowledgeSubsystem {
     this.#instanceOfGrimoire.set(grimoire, instance);
   }
 
+  /**
+   * Pairs shelved books with shelved instances: one pass over each side.
+   *
+   * The matching rule is the one the {@link rebuild} note states — for each
+   * shelved grimoire in ascending slot order, the first unclaimed instance of
+   * the same node in the same library, also in ascending slot order — and it is
+   * unchanged. What changed is the cost. Asking `instancesAt` per grimoire
+   * re-scanned every instance in the universe once per book, so a load was
+   * `shelvedGrimoires × instances`: invisible for as long as nothing was ever
+   * shelved, and quadratic from the tick something was. The world loop rebuilds
+   * a subsystem *every tick*, so that was not a load-time cost.
+   *
+   * So the candidates are bucketed once by `(library, node)`, each bucket in
+   * ascending slot order, and a match takes the next one in its bucket. The
+   * cursor is what makes a bucket its own `claimed` set; instances the direct
+   * `(2, grimoireId)` pass already claimed are at a grimoire location and so are
+   * never bucketed at all. A cursor rather than `shift`, because one library
+   * holding four hundred copies of one node is the ordinary case this loop meets
+   * and repeatedly shifting that array is the same quadratic in a smaller hat.
+   */
   #relinkShelvedGrimoires(): void {
-    const claimed = new Set<Handle>(this.#instanceOfGrimoire.values());
+    const store = componentOf(this.#state, KNOWLEDGE_INSTANCE);
+    const locationKinds = store.field('locationKind');
+    const locationIds = store.field('locationId');
+    const instanceNodes = store.field('nodeId');
+
+    const unclaimed = new Map<string, { items: Handle[]; next: number }>();
+    store.forEach((row, handle) => {
+      if ((locationKinds[row] as number) !== LOCATION_KIND.library) return;
+      const key = shelfKey(locationIds[row] as number, instanceNodes[row] as number);
+      const bucket = unclaimed.get(key);
+      if (bucket === undefined) unclaimed.set(key, { items: [handle as Handle], next: 0 });
+      else bucket.items.push(handle as Handle);
+    });
+
     const grimoires = componentOf(this.#state, GRIMOIRE);
     const grimoireNodes = grimoires.field('nodeId');
     const holderKinds = grimoires.field('holderKind');
@@ -470,15 +585,12 @@ export class KnowledgeSubsystem {
     grimoires.forEach((row, grimoire) => {
       if ((holderKinds[row] as number) !== HOLDER_KIND.library) return;
       if (this.#instanceOfGrimoire.has(grimoire)) return;
-      const library = holderIds[row] as number;
-      const nodeId = grimoireNodes[row] as number;
-      for (const candidate of this.instancesAt(LOCATION_KIND.library, library)) {
-        if (claimed.has(candidate)) continue;
-        if (this.read(candidate).nodeId !== nodeId) continue;
-        this.#instanceOfGrimoire.set(grimoire, candidate);
-        claimed.add(candidate);
-        return;
-      }
+      const bucket = unclaimed.get(
+        shelfKey(holderIds[row] as number, grimoireNodes[row] as number),
+      );
+      if (bucket === undefined || bucket.next >= bucket.items.length) return;
+      this.#instanceOfGrimoire.set(grimoire, bucket.items[bucket.next] as Handle);
+      bucket.next += 1;
     });
   }
 
@@ -577,10 +689,47 @@ export class KnowledgeSubsystem {
     return found;
   }
 
+  #holdNode(holder: Handle, nodeId: ContentId): void {
+    let held = this.#heldByHolder.get(holder);
+    if (held === undefined) {
+      held = new Map<ContentId, number>();
+      this.#heldByHolder.set(holder, held);
+    }
+    held.set(nodeId, (held.get(nodeId) ?? 0) + 1);
+  }
+
+  /**
+   * Drops one instance from the held index, and the holder with her last one.
+   *
+   * The empty map is deleted rather than left behind: a universe that runs for
+   * two centuries kills every mage in it several times over, and a residue of
+   * empty maps keyed on the dead grows with the length of the run — which is the
+   * one axis a balance sweep pushes hardest.
+   */
+  #unholdNode(holder: Handle, nodeId: ContentId): void {
+    const held = this.#heldByHolder.get(holder);
+    if (held === undefined) return;
+    const remaining = (held.get(nodeId) ?? 0) - 1;
+    if (remaining > 0) held.set(nodeId, remaining);
+    else held.delete(nodeId);
+    if (held.size === 0) this.#heldByHolder.delete(holder);
+  }
+
   #markEverKnown(nodeId: ContentId): void {
     if (this.#everKnown.has(nodeId)) return;
     this.#everKnown.add(nodeId);
     const handle = this.#state.entities.create();
     attachRecord(this.#state, EVER_KNOWN, handle, { nodeId });
   }
+}
+
+/**
+ * The bucket a shelved copy belongs to: its library and its node.
+ *
+ * A string rather than a nested map because the two parts are handles and a
+ * numeric pairing would need a bound on either one that nothing here has. It is
+ * built and discarded inside one rebuild, never stored and never hashed.
+ */
+function shelfKey(library: Handle, nodeId: ContentId): string {
+  return `${String(library)}:${String(nodeId)}`;
 }

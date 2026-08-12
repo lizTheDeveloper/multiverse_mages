@@ -74,7 +74,7 @@ export function observe(input: ObserveInput): AgentView {
   return {
     raw,
     normalized: normalizedObservation(raw),
-    mask: legalityMask({ state: input.state, candidates }),
+    mask: legalityMask({ state: input.state, candidates, catalogue: input.catalogue }),
     candidates,
     outcome: outcomeOf({
       state: input.state,

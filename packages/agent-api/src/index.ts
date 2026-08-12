@@ -58,7 +58,7 @@
  * and the signature it satisfies is the contract.
  */
 
-export type { CatalogueNode, ContentCatalogue } from './catalogue.js';
+export type { ActionCostTable, CatalogueNode, ContentCatalogue } from './catalogue.js';
 export { EMPTY_CATALOGUE, buildCatalogue } from './catalogue.js';
 
 export type { GodActionId } from './actions.js';
@@ -149,6 +149,20 @@ export type {
   RewardFunction,
 } from './outcome.js';
 export { outcomeOf, sparseTerminalReward } from './outcome.js';
+
+/**
+ * §1.1's five endings, re-exported so a caller can name the number
+ * {@link OutcomeRecord.terminalReason} carries.
+ *
+ * It is defined in `@mm/state` and belongs there; this is a pass-through, not a
+ * second definition. The reason it is worth the line: §5 gives `mc-harness` one
+ * edge into the simulation and it is this package, so without the re-export the
+ * harness would have to transcribe the numbering to report which ascension
+ * route a run took — and a transcribed enum is a copy that can drift silently
+ * from the one the dispatch writes.
+ */
+export type { TerminalReasonValue } from '@mm/state';
+export { TERMINAL_REASON } from '@mm/state';
 
 export type { AgentView, ObserveInput } from './view.js';
 export { observe } from './view.js';

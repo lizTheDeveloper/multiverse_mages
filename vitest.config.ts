@@ -31,7 +31,25 @@ export default defineConfig({
       '@mm/state': packageSrc('state'),
       '@mm/rules-magic': packageSrc('rules-magic'),
       '@mm/rules-world': packageSrc('rules-world'),
+      // The reference scenario needs both halves of contracts.md §5's boundary:
+      // `coordination` for the world loop and `agent-api` for the session it is
+      // observed through. `coordination` gets an alias for the first time here —
+      // its own tests reach into `../../src/`, which a cross-package importer
+      // may not do without escaping its rootDir.
+      '@mm/coordination': packageSrc('coordination'),
       '@mm/agent-api': packageSrc('agent-api'),
+      // The harness's own tests import it by name. Its worker fixture cannot —
+      // a bare Node worker knows nothing of this alias — so that one file
+      // reaches into src/ with explicit .ts extensions and says why.
+      '@mm/mc-harness': packageSrc('mc-harness'),
+      // Same shape, same exception: the scenario's own worker fixture resolves
+      // `@mm/*` for itself, because a bare Node worker knows nothing of this
+      // table. See `packages/scenario/test/fixtures/source-resolution.mjs`.
+      '@mm/scenario': packageSrc('scenario'),
+      // The RL bridge's own tests import it by name. Its Python client does not
+      // go through this table at all — it speaks the wire to a spawned process,
+      // which is the boundary the package exists to be.
+      '@mm/gym-bridge': packageSrc('gym-bridge'),
     },
   },
   test: {

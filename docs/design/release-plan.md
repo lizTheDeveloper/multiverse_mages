@@ -192,6 +192,15 @@ and through no other path.
 
 ### 0.4.0 — `mages-and-species`
 
+**Contract break, named rather than absorbed: `contracts.md` §2.4.** The species record gains
+`maturityMonths`, `mageAptitude` and `laborAffinity`, and `rediscoveryAffinity` gains a stated
+direction — higher is better, applied as a **divisor**, with an `fp(3072)` floor on the effective
+multiplier so that species affinity can never drive rediscovery below the 3× penalty 0.3.0 claims.
+Any species file written against the old §2.4 fails to load. Three further breaks are recorded in
+`contracts.md` itself and not repeated here: the `goal-commitment` and `effort-progress`
+components, both against §1.2's promise that `state-schema` would be *"consumed unchanged"*, and
+the `coordination` and `scenario` packages against §5's dependency diagram.
+
 **Claim:** A universe seeded with all six species and receiving zero player input runs 200 world-
 years without population collapse to zero or unbounded growth.
 
@@ -206,6 +215,89 @@ noise on identical seeds.
   seeds.
 - *Collected:* **yes**, as a deterministic test. Whether the differences are *interesting* is a
   0.5.0 question.
+
+**Claim:** A 200-world-year run is deterministic end to end: two independent executions of the same
+build, seed and starting position produce a byte-identical final snapshot hash.
+
+- *Disproved by:* two executions of `runLongReference` disagreeing on `finalSnapshotHash`.
+- *Collected:* **yes**. Added at closeout rather than planned, because 0.1.0's determinism claim is
+  about `sim-core`'s substrate replaying an action log, and this is the different question the
+  world loop can fail on its own: the loop keeps per-run mutable state — a report closure and a
+  rediscovery clamp counter — that a shared instance would leak between runs, and 2,400 ticks of
+  eight phases is where that would show.
+
+**Measured at 0.4.0:**
+
+- **The first claim holds, and the second is disproved.** Both are stated below with the numbers,
+  because a claim recorded and then quietly not checked is worse than one never made.
+- **No species is lost.** Over 2,400 ticks the per-species population floor is 26 / 27 / 27 / 27 /
+  28 / 32 against 36 founded. Asserted at every tick rather than at checkpoints.
+- **The population is bounded, and the bound is no longer vacuous.** Peak 18,722 against a
+  documented bound of 109,800 — `maxCarryingCapacity` of the shipped `territory.json`, a function
+  of content and of nothing that happens during a run. The tighter statement is asserted too: the
+  population never exceeds `K` at any tick, and `K` *falls* through this run, from 57,205 at world
+  year twenty to 29,831 at year two hundred, because the subsistence shortfall now reaches
+  `carryingCapacity`. The gap between the two closes from a factor of 264 to a factor of 1.6, so
+  the assertion is being asked a real question by the end of the run. It was not before: the
+  `economy` spec's *"population never exceeds K"* passed vacuously for as long as `K` was derived
+  from the materials the population produced.
+- **The run is reproducible.** Two full 2,400-tick executions agree on the final snapshot hash
+  (`c69e009ec85fd2a8` for the committed seed and starting position), and a different seed produces
+  a different hash — the control, without which the equality would also hold for a run that ignored
+  its seed.
+- **The occupation mix does not oscillate.** The longest run of two-tick alternation over 2,400
+  ticks is **2 ticks**, against a threshold of one world year.
+
+**Disproved at 0.4.0 — species differentiation:** the claim's own disproof condition is met.
+Time to a tier-2 mage, in world ticks, over eight seeds of a sixty-year run:
+
+| Species | Observed interval | Censored |
+|---|---|---|
+| dwarf | `[17, 17]` | 0 |
+| gnome | `[16, 17]` | 0 |
+| human | `[17, 17]` | 0 |
+| elf | `[20, 49]` | 0 |
+| draconic | `[63, 548]` | 3 of 8 |
+| orc | one seed at 316 | 7 of 8 |
+
+Dwarf, gnome and human are **one band**, separated by at most one tick — which is exactly *"two
+species reaching the same tier within a negligible tick difference across seeds"*. Three species
+are cleanly separated (one of the tied trio, then elf, then draconic: in every seed the faster
+arrives strictly earlier), and `mages-and-species` task 9.9 asks for four. Orc cannot be counted as
+a fourth: it is censored in seven seeds of eight, and in the eighth it arrives at tick 316, inside
+draconic's interval — so whether it separates depends on the horizon, and the horizon long enough
+to decide is the one in which it overlaps.
+
+The honest reading is that **species differentiate along the axis this instrument reads, but not
+into six distinguishable species**, and the fix is either a censoring convention — which
+`contracts.md` §7's `timeToTierBySpecies` owns and `agent-interface` pins, not this change — or
+content that separates dwarf, gnome and human, which is tuning and is forbidden before 0.5.0.
+
+**Three degeneracies, recorded because a release that hides them is worth less than one that does
+not:**
+
+- **Teaching stops after world year twenty.** A researched instance is created at `fp(256)` and the
+  teach threshold is `fp(512)`, so nothing a mage works out for herself is ever teachable.
+  Knowledge spreads only from founding grants, and those are taught out inside the first window.
+- **Scribing stops after world year sixty**, and dies of the economy rather than of the threshold:
+  books cost materials, and the stock is empty from roughly year seventy onward. The universe then
+  runs two-thirds of the run in permanent famine, which is now visible as a falling `K` and was
+  previously invisible entirely.
+- **Library depth is two nodes against 1,263 books.** The scribable list is ordered by cost, so
+  every scribe copies the same cheap node. The total effective knowledge capital is `fp(32)` from
+  world year one to world year two hundred — which means `mages-and-species` task 9.8, *"the
+  rolling growth rate of capital is non-increasing"*, is true and vacuous, and its box is left
+  unticked for that reason rather than ticked for the wrong one.
+
+**Not claimed, and specifically:** that the reference universe reaches carrying capacity within the
+200-year horizon. It does not — at year two hundred the population is at 63% of `K` and births
+still exceed deaths by 11%. It settles at roughly world year 475 (`b/d` 0.999 at year 500), which
+is outside the horizon this release commits to, so `mages-and-species` task 8.7 is left unticked
+and the birth-and-death equilibrium is demonstrated at cohort granularity instead, at a documented
+tolerance of five per cent.
+
+**Explicitly not claimed:** that any of this is *balanced*. Parity carries no meaning below 0.5.0
+and every magnitude in the shipped content is marked `untuned`.
 
 ### 0.5.0 — `agent-interface` — the pivot
 

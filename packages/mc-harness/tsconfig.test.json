@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the mc-harness tests. Never emits into dist/. Tests may see Node's ambient types: they spawn real worker threads and write result files to a temporary directory, which is the machinery under test.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./test",
+    "types": ["node"],
+    "emitDeclarationOnly": true,
+    "outDir": "../../.tsbuild/mc-harness-test",
+    "tsBuildInfoFile": "../../.tsbuild/mc-harness-test.tsbuildinfo"
+  },
+  "include": ["test/**/*.ts"],
+  "references": [{ "path": "./tsconfig.json" }]
+}

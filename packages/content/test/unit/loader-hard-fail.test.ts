@@ -26,6 +26,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ContentValidationError,
+  MAX_CONTENT_NODES,
   V1_REDISCOVERY_AUTHORING_FLOOR,
   WORST_REDISCOVERY_AFFINITY,
   loadContent,
@@ -267,6 +268,69 @@ describe('invalid content is a hard load failure', () => {
     expect(
       validateContent(pastBoundary).diagnostics.filter((d) => d.code === 'content-invariant'),
     ).toHaveLength(1);
+  });
+
+  // The frontier-scan budget. `@mm/coordination`'s `researchFrontier` walks the
+  // nodes of the permitted cells once per mage per tick, and a god may permit
+  // all seventy, so the node count is a per-tick cost that content controls.
+  // That cost used to be "bounded" by a scan window over interned node id, which
+  // did not bound work at all — it deleted the 44 nodes past 256, a third of the
+  // playable content, silently, for the life of every run. The bound belongs
+  // where crossing it fails a build with a message.
+  it('rejects a content set with more nodes than the frontier scan budgets for', () => {
+    let authored = 0;
+    const diagnostics = expectHardFail(
+      brokenSource((documents) => {
+        const nodes = recordsOf(documents, 'node.json');
+        const template = recordById(documents, 'node.json', 'rl-open-the-portal');
+        let index = 0;
+        // Spread across cells: a cell's `nodes` list is capped at 256 by schema,
+        // so a budget above that cannot be exceeded from one cell alone.
+        for (const cell of recordsOf(documents, 'cell.json')) {
+          const listed = cell['nodes'] as string[];
+          while (nodes.length <= MAX_CONTENT_NODES && listed.length < 256) {
+            const id = `filler-${String(index)}`;
+            index += 1;
+            nodes.push({ ...template, id, cell: cell['id'], prerequisites: [] });
+            listed.push(id);
+          }
+          if (nodes.length > MAX_CONTENT_NODES) break;
+        }
+        authored = nodes.length;
+      }),
+    );
+
+    const invariant = diagnostics.filter((d) => d.code === 'content-invariant');
+    expect(invariant).toHaveLength(1);
+    expect(invariant[0]?.file).toBe('node.json');
+    expect(invariant[0]?.pointer).toBe('');
+    expect(invariant[0]?.message).toContain(String(authored));
+    expect(invariant[0]?.message).toContain(String(MAX_CONTENT_NODES));
+    // The message has to say what to do, because the tempting fix is the one
+    // that caused the original defect.
+    expect(invariant[0]?.message).toContain('do not bound the scan by node id');
+  });
+
+  it('accepts a content set exactly at the budget', () => {
+    // The passing control, so the rejection above is about the boundary rather
+    // than about the node list having been touched at all.
+    const atBudget = brokenSource((documents) => {
+      const nodes = recordsOf(documents, 'node.json');
+      const template = recordById(documents, 'node.json', 'rl-open-the-portal');
+      let index = 0;
+      for (const cell of recordsOf(documents, 'cell.json')) {
+        const listed = cell['nodes'] as string[];
+        while (nodes.length < MAX_CONTENT_NODES && listed.length < 256) {
+          const id = `filler-${String(index)}`;
+          index += 1;
+          nodes.push({ ...template, id, cell: cell['id'], prerequisites: [] });
+          listed.push(id);
+        }
+        if (nodes.length >= MAX_CONTENT_NODES) break;
+      }
+      expect(nodes).toHaveLength(MAX_CONTENT_NODES);
+    });
+    expect(validateContent(atBudget).diagnostics).toEqual([]);
   });
 
   it('rejects removing rego-limen from the v1 subset', () => {

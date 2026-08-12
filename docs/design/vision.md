@@ -372,7 +372,7 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 | 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | not started |
 | 0.7.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | not started |
 | 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | not started |
-| 0.11.0 | `gym-bridge` | `rl-bridge` | proposal only |
+| 0.11.0 | `gym-bridge` | `rl-bridge` | in progress |
 | 0.13.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only |
 | 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | proposal only |
 | — | `metis-knowledge` | `metis-knowledge` | proposal only |
@@ -418,7 +418,30 @@ Tracked for resolution during the changes that need them, not blocking:
 
 - ~~How many mages does a mature universe hold?~~ **Answered empirically in 0.1.0** — see
   "Measured simulation throughput" below. The population question was never really about mages; it
-  was about whether the Monte Carlo harness could afford them. It can.
+  was about whether the Monte Carlo harness could afford them. It can. **Re-answered from the game
+  rather than the substrate in 0.4.0, and the number is much smaller than the substrate allows:**
+  the 200-year reference run ends with **88 living mages against a populace of 18,713** — one mage
+  per two hundred people — peaking at 91 over the whole run. What bounds it is not magic and not
+  mortality; it is student seats. The founding academy has 64 of them, the occupation controller
+  fills them to exactly 64 from world year thirty onward, and no second university is ever founded
+  because founding one is a god action and the reference run receives zero player input. So a
+  "mature universe" at this build is a universe whose mage roster is capped by an institution the
+  player never built. The figure to re-measure is mages-per-seat, not mages.
+- ~~Do universities declare a specialization?~~ **Resolved in 0.4.0: no — generic capacity, with
+  specialization emergent.** §6 argued this from the observation layout, and the implementation
+  holds to it: `contracts.md` §1.4's university record carries `capacity`, `buildProgress`, a
+  library and staff, and a conformance check in `packages/rules-world` rejects any specialization,
+  focus or preferred-cell field outright. What a university is good at is derived on demand from
+  what its library holds and what its resident mages know, and is never cached in state — so
+  burning a library changes what the institution *is*, rather than leaving a declared discipline
+  attached to an empty building. The `institutions` observation block is still exactly four slots,
+  which is the constraint that made the decision mechanical rather than aesthetic.
+
+  **What the resolution does not yet buy.** Emergent specialization needs libraries that differ,
+  and in the reference run they do not: one university, and its shelf holds **two distinct nodes
+  against 1,263 books**, because the scribable list is ordered by cost and every scribe copies the
+  cheapest thing available. The decision is right and the mechanism that would make it visible is
+  not there yet. Recorded here so that nobody reads "resolved" as "demonstrated".
 - How long is a world year in real seconds, and how long should a raid run? Pacing is a tuning
   output of the balance harness, not an up-front decision; the contracts fix the *units*, not the
   values.

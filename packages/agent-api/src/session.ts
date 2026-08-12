@@ -260,10 +260,36 @@ export function createSession(options: SessionOptions): AgentSession {
     return state;
   };
 
-  /** The view of the current state, built once per tick and reused. */
+  /**
+   * Whether the caller's step limit has been reached.
+   *
+   * The `cap` comparison, on its own and not routed through {@link statusOf}: a
+   * run that ascended on the tick it hit the cap is `'ascended'` for status
+   * purposes, and §4.3's two flags are independent, so that run is terminal
+   * *and* truncated and the record should say both.
+   */
+  const atCap = (current: SimState): boolean => current.clock.worldTick >= cap;
+
+  /**
+   * The view of the current state, built once per tick and reused.
+   *
+   * `truncated` is passed here because this is the caller §4.3 means. The
+   * session is the party holding `worldTickCap`, so it is the only party that
+   * can answer, and `observe` leaves the parameter optional precisely so that a
+   * caller with no limit can decline to. Omitting it left `outcome().truncated`
+   * `false` at every tick of every episode — including the tick `status()`
+   * reported `'truncated'` on — which is §4.3's *"conflating them is a silent
+   * training bug"* reproduced exactly: every `RewardFunction` takes an
+   * `OutcomeRecord` and nothing else, so a consumer written to §4.3 cannot see
+   * `status()` and would bootstrap through the cap as if nothing had happened.
+   */
   const currentView = (): AgentView => {
     const current = live();
-    view ??= observe({ state: current, catalogue: scenario.catalogue });
+    view ??= observe({
+      state: current,
+      catalogue: scenario.catalogue,
+      truncated: atCap(current),
+    });
     return view;
   };
 
@@ -285,7 +311,7 @@ export function createSession(options: SessionOptions): AgentSession {
     }
     // The cap is the caller's, and it is checked after the state's own reasons:
     // a run that ascended on the tick it hit the cap ascended.
-    return current.clock.worldTick >= cap ? 'truncated' : 'running';
+    return atCap(current) ? 'truncated' : 'running';
   };
 
   const noteRejection = (kind: number): void => {

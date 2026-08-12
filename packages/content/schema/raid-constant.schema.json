@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/raid-constant.schema.json",
+  "title": "raid-constant.json",
+  "description": "Every magnitude an engagement is made of — the portal's stability and its decay, the battlefield and its terrain, the per-side caps, the derived combatant statistics, the objective values and the victory threshold. As data rather than as literals in the rules path, for the reason god-constant.json is: a retune is a content change a sweep can turn, and it sits inside contentRevision, so two universes cannot disagree about how long a portal holds while agreeing they may fight. The *set* of ids is structural — the rules read each by name and the loader rejects a set missing one or carrying an unknown one. Every *value* is an untuned placeholder awaiting the balance harness.",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/raidConstant" },
+  "$defs": {
+    "raidConstant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "value", "unit", "gloss", "tuningStatus"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "value": { "type": "integer", "minimum": 0, "maximum": 1073741823 },
+        "unit": { "type": "string", "enum": ["fp", "raw", "count", "ticks"] },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
+      }
+    },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}

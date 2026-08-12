@@ -51,6 +51,8 @@
  * - {@link CoordinatingKnowledgeGateway} — `rules-world`'s knowledge port,
  *   implemented over `rules-magic`. The only file in the repository that names
  *   both packages.
+ * - {@link cellNodeIndex} — `cellOf` inverted, so the frontier scan is bounded
+ *   by what the ruleset permits rather than by a range of interned ids.
  * - {@link EffortLedger} — where partial research, teaching and scribing live
  *   between two ticks, so that progress outlives a goal switch.
  * - {@link buildOutlook} — one mage's situation, assembled from both halves.
@@ -62,6 +64,9 @@
 export type { EffortKey, EffortRow } from './effort-store.js';
 export { EffortLedger, MAX_EFFORTS_PER_MAGE } from './effort-store.js';
 
+export type { CellNodeIndex } from './frontier-index.js';
+export { cellNodeIndex } from './frontier-index.js';
+
 export type {
   CompletedEffort,
   GatewayDeps,
@@ -71,7 +76,6 @@ export type {
 } from './gateway.js';
 export {
   CoordinatingKnowledgeGateway,
-  MAX_FRONTIER_SCAN,
   MAX_TEACHING_COUNTERPARTIES,
   effortKey,
   isHeldAtMind,
@@ -79,6 +83,15 @@ export {
 
 export type { OutlookDeps } from './outlook.js';
 export { buildOutlook, universityPreference } from './outlook.js';
+
+/**
+ * `god-agency` — the player's verbs, and the loop that pays for them.
+ *
+ * Re-exported wholesale, because `god/index.ts` is already an explicit list
+ * rather than a star and carries the argument for why the capability lives in
+ * this package rather than in `rules-world`.
+ */
+export * from './god/index.js';
 
 export type { WorldSimulation, WorldStepDeps, WorldStepReport } from './world-step.js';
 export { defineWorldSimulation, worldSystem } from './world-step.js';

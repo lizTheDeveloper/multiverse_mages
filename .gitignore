@@ -23,3 +23,7 @@ assets/candidates/
 # Superseded takes from a voice recast. Kept on disk so a swap is reversible
 # with one `mv`, but they are regenerable audio and do not belong in history.
 assets/retired/
+
+# Python bytecode, from packages/gym-bridge/python.
+__pycache__/
+*.py[cod]

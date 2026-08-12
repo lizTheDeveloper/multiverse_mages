@@ -203,7 +203,24 @@ describe('contentRevision', () => {
     // carrying capacity could be derived from a fixed resource instead of from
     // the materials stock, which by construction only grows. Five new records
     // and a new namespace in the preimage; nothing existing changed a byte.
-    expect(registry.contentRevision).toBe('f813d90d3ddadb345c0a9d55505de432');
+    //
+    // f813d90d3ddadb345c0a9d55505de432 -> 0e63987b2823f4d991ea1c7a40944055,
+    // when `god-agency` added `god-cost.json` and `god-constant.json` — the
+    // price of every §4.2 action, and every magnitude of the worship loop, the
+    // favor economy, ascension, stagnation and prestige. They are in the
+    // preimage deliberately: two universes that disagreed about what forbidding
+    // a technique costs, or about the worship saturation constants, would be
+    // playing different games while their revisions agreed they were
+    // compatible. Nothing existing changed a byte.
+    //
+    // 0e63987b2823f4d991ea1c7a40944055 -> f66b312c914c5c1159d12626bcf40ff8,
+    // when `raid-engagement` added `raid-constant.json` (§2.10) — every
+    // magnitude an engagement is made of, and with them the two authored
+    // integers the termination proof rests on. They are in the preimage for the
+    // reason the god tables are: two universes that disagreed about how long a
+    // portal holds would fight two different battles while their revisions
+    // agreed they were compatible. Nothing existing changed a byte.
+    expect(registry.contentRevision).toBe('2512ea02d2a7569d8d0bacc4c5a926ca');
   });
 
   it('is stable across loads of identical content', () => {

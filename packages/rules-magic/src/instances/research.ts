@@ -47,6 +47,14 @@
  * (see above), so a caller that wants to model it can, and nothing here has to
  * decide what a reserved slot means.
  *
+ * ## The `acquire` hook prices the node, and nothing else here does
+ *
+ * `researchCost` arrives from content and is the tradition's to scale
+ * (`vision.md` §4a). It is scaled in exactly one place — {@link
+ * researchRequirement}, from {@link ResearchInputs.acquire} — so that the cost a
+ * mage is quoted while choosing and the cost she is charged while working are
+ * the same number by construction rather than by two call sites agreeing.
+ *
  * ## The rediscovery multiplier is not computed here
  *
  * This file used to carry its own `effectiveRediscoveryMultiplier`, reading
@@ -72,6 +80,7 @@ import type { RediscoveryClampCounter } from '@mm/primitives';
 import { effectiveRediscoveryMultiplier } from '@mm/primitives';
 import { FP_ONE, RNG_STREAM, div, mul, nextBounded } from '@mm/sim-core';
 
+import type { AcquirePolicy } from '../traditions/acquire.js';
 import type { PersonalStore } from '../traditions/store.js';
 import { UNBOUNDED_SLOTS, admitToStore } from '../traditions/store.js';
 
@@ -80,7 +89,6 @@ import { requireNode } from './catalog.js';
 import { DEFAULT_INITIAL_MASTERY, RESEARCH_JITTER_SPAN } from './constants.js';
 import type { KnowledgeRefusal } from './outcomes.js';
 import type { KnowledgeSubsystem } from './subsystem.js';
-import { isHeldLocation } from './subsystem.js';
 
 /** What research needs. Every world-side rate arrives as a parameter. */
 export interface ResearchInputs {
@@ -119,8 +127,28 @@ export interface ResearchInputs {
    * trait, and produces output identical to one that never binds.
    */
   readonly clampCounter: RediscoveryClampCounter;
-  /** Mastery a completed instance is created at. Defaults to the placeholder. */
+  /**
+   * Mastery a completed instance is created at.
+   *
+   * Overrides {@link ResearchInputs.acquire}'s answer where both are supplied,
+   * so a caller with no tradition resolved — a fixture seeding a known mastery,
+   * a probe — can still say what it means. Absent both, the placeholder.
+   */
   readonly initialMastery?: Fp;
+  /**
+   * The active `acquire` hook: what this node costs here, and what mastery a
+   * derived instance arrives at.
+   *
+   * **The two travel together on purpose.** They are one hook's two answers
+   * about the same acquisition, and a caller that could supply the cost without
+   * the mastery would be able to price True Naming's research correctly while
+   * creating its instances half-learned — a tradition half in effect, which
+   * reads in a run as an unremarkable number rather than as a bug.
+   *
+   * Omitted means the caller's tradition has no say, which is what
+   * `acquire: standard` resolves to: the authored cost, the placeholder mastery.
+   */
+  readonly acquire?: AcquirePolicy;
   /**
    * The active `store` hook: where a completed instance lands, and how many the
    * subject may hold there.
@@ -160,6 +188,15 @@ export interface RequirementInputs {
   readonly researchRate: Fp;
   /** Counts floor clamps. See {@link ResearchInputs.clampCounter}. */
   readonly clampCounter: RediscoveryClampCounter;
+  /**
+   * The active `acquire` hook. See {@link ResearchInputs.acquire}.
+   *
+   * Spelled `| undefined` rather than merely optional because
+   * `exactOptionalPropertyTypes` is on and {@link research} forwards its own
+   * optional field straight through: "the caller resolved no tradition" has to
+   * survive one hop without the hop having to test for it.
+   */
+  readonly acquire?: AcquirePolicy | undefined;
 }
 
 /**
@@ -185,7 +222,13 @@ export function researchRequirement(node: KnowledgeNode, inputs: RequirementInpu
         inputs.clampCounter,
       )
     : FP_ONE;
-  const base = mul(node.researchCost, multiplier);
+  // The `acquire` hook prices the node before anything else touches it: what a
+  // node costs under this tradition is a fact about the node, which rediscovery
+  // then multiplies and the subject's rates then divide. The three are
+  // multiplicative and commute up to rounding, so the order is chosen to be the
+  // one a reader can check against content rather than against this line.
+  const authored = inputs.acquire?.researchCost(node.researchCost) ?? node.researchCost;
+  const base = mul(authored, multiplier);
   const rate = mul(inputs.learnRate, inputs.researchRate);
   // A zero rate would be a mage who cannot learn at all rather than one who
   // learns instantly, and div() by zero is not a question the rules path asks.
@@ -226,6 +269,7 @@ export function research(inputs: ResearchInputs): ResearchOutcome {
     learnRate: inputs.learnRate,
     researchRate: inputs.researchRate,
     clampCounter: inputs.clampCounter,
+    acquire: inputs.acquire,
   });
 
   const refusal = refuseResearch(inputs, node);
@@ -253,7 +297,7 @@ export function research(inputs: ResearchInputs): ResearchOutcome {
     locationKind: personalLocationKind(inputs.store),
     locationId: inputs.subject,
     acquiredTick: inputs.worldTick,
-    mastery: inputs.initialMastery ?? DEFAULT_INITIAL_MASTERY,
+    mastery: inputs.initialMastery ?? inputs.acquire?.initialMastery ?? DEFAULT_INITIAL_MASTERY,
   });
   return { progress, required, rediscovery, completed: true, instance };
 }
@@ -355,7 +399,20 @@ export function unsatisfiedPrerequisite(
   return undefined;
 }
 
-/** Whether a subject holds a non-dormant instance of a node in mind or palace. */
+/**
+ * Whether a subject holds a non-dormant instance of a node in mind or palace.
+ *
+ * The membership half is {@link KnowledgeSubsystem.holdsHeldNode} rather than a
+ * walk of {@link KnowledgeSubsystem.instancesHeldBy}. It is the same predicate —
+ * a held location, this holder, this node — read off an index instead of
+ * recovered by a pass over every instance in the universe.
+ *
+ * The legality half stays here. It is a fact about the ruleset and the grid
+ * rather than about what anybody holds, and an index that folded it in would
+ * have to be rebuilt on every edict — at which point a stale one would make a
+ * forbidden node satisfy a prerequisite, which is precisely the *"research
+ * through your own interdiction"* hole this function exists to close.
+ */
 export function holdsUsable(
   knowledge: KnowledgeSubsystem,
   cells: CellResolver,
@@ -364,9 +421,5 @@ export function holdsUsable(
   nodeId: ContentId,
 ): boolean {
   if (!permits(ruleset, cells.cellOf(nodeId))) return false;
-  for (const instance of knowledge.instancesHeldBy(subject)) {
-    const view = knowledge.read(instance);
-    if (view.nodeId === nodeId && isHeldLocation(view.locationKind)) return true;
-  }
-  return false;
+  return knowledge.holdsHeldNode(subject, nodeId);
 }

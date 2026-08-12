@@ -53,6 +53,18 @@
  * - **The action space.** §4.2's table is a separate contract with a separate
  *   permanence rule, and a policy's output layer is not its input layer.
  *
+ * That list is meant to be exhaustive, and for a while it was not. A fourth gap
+ * existed and went unstated: `-0 !== 0` is `false`, so a descriptor declaring a
+ * floor of negative zero passed {@link layoutProblems}, and `String(-0)` is
+ * `"0"`, so it hashed identically to a `+0` table — while `clamp` returns the
+ * floor by identity, so the two tables exported different `Float64Array`
+ * contents. Two validated layouts, one digest, different vectors, against a
+ * capability scenario that names *"no negative zero"* in as many words. Both
+ * halves are closed below — validation rejects a floor that is not `+0`, and the
+ * encoding renders the sign of a zero rather than dropping it — and the gap is
+ * recorded here rather than deleted, because a list of stated gaps is only worth
+ * anything if somebody has tried to find an unstated one.
+ *
  * ## Why FNV-1a, and why `sim-core`'s
  *
  * `hashBytes` is already the project's specified content hash: 64-bit FNV-1a,
@@ -131,6 +143,23 @@ export const OBSERVATION_SLOTS: readonly ObservationSlot[] = buildSlots();
 const RULE_SET: ReadonlySet<string> = new Set<string>(NORMALIZATION_RULES);
 const BLOCK_SET: ReadonlySet<string> = new Set<string>(OBSERVATION_BLOCK_NAMES);
 
+/** Where each §4.1 block starts, for checking a slot's position within it. */
+const BLOCK_OFFSET: ReadonlyMap<string, number> = new Map(
+  OBSERVATION_BLOCKS.map((block) => [block.name as string, block.offset]),
+);
+
+/**
+ * Whether a field is an own data property — a value, not an accessor.
+ *
+ * `Object.freeze` seals a getter without making it constant, so this is what
+ * separates a descriptor that *holds* a saturation constant from one that
+ * *computes* one on each read.
+ */
+function isDataProperty(subject: object, field: string): boolean {
+  const descriptor = Object.getOwnPropertyDescriptor(subject, field);
+  return descriptor !== undefined && 'value' in descriptor;
+}
+
 /**
  * Every way a descriptor table fails the `agent-api` capability, as readable
  * lines naming the offending slot.
@@ -157,11 +186,37 @@ const BLOCK_SET: ReadonlySet<string> = new Set<string>(OBSERVATION_BLOCK_NAMES);
  *   forbidden design has, whether or not anyone has written to it yet.
  * - Its **clamp is not `[0, 1]`**, which would let a channel export outside the
  *   pinned range whatever its constant said.
+ * - Its numeric fields are **not own data properties**. `Object.freeze` makes an
+ *   accessor non-configurable; it does not make it constant. A frozen descriptor
+ *   whose `divisor` is a getter returning `1024` the first time and `4`
+ *   thereafter passes the frozen check, publishes one constant to the digest,
+ *   and divides by another in the exporter — within one process, with nothing
+ *   able to notice. That is a sharper version of the caveat below and not the
+ *   same thing as it, so it is checked rather than caveated.
  *
- * This is a tripwire rather than a proof, in the same sense the inline-stacking
- * lint is one, and it is labelled as such: a determined author can freeze an
- * object built from a measurement. What it buys is that the obvious way to write
- * the mistake fails at import.
+ * This is still a tripwire rather than a proof, in the same sense the
+ * inline-stacking lint is one: a determined author can freeze a data property
+ * whose value came from a measurement, and no runtime inspection can see where a
+ * number came from. What it buys is that every obvious way to write the mistake
+ * — and the one non-obvious way somebody actually found — fails at import.
+ *
+ * ## `blockIndex` is checked against the block it names
+ *
+ * Nothing validated it, while the digest hashes it. A table could therefore
+ * declare every slot's `blockIndex` as `0`, validate with no problems, and
+ * publish a digest describing a layout that does not exist. That matters
+ * concretely rather than theoretically: this module's own argument for FNV-1a is
+ * that a second implementation must be able to reproduce the encoding *"from the
+ * document rather than from the source"*, and a Python bridge deriving
+ * `blockIndex` the documented way — position within the block — would compute a
+ * different digest for the same table and refuse a comparison that should have
+ * been allowed.
+ *
+ * No contract sentence pins the column's derivation, so this is a judgement:
+ * `ObservationSlot.blockIndex` is documented as *"Position within that block"*,
+ * that is a derivation and not a free field, and a validator that already
+ * anchors the table to `OBSERVATION_SIZE` and to §4.1's block names is not
+ * overreaching by anchoring it to their offsets too.
  */
 export function layoutProblems(slots: readonly ObservationSlot[]): string[] {
   if (slots.length !== OBSERVATION_SIZE) {
@@ -200,6 +255,19 @@ export function layoutProblems(slots: readonly ObservationSlot[]): string[] {
     }
     if (!Number.isSafeInteger(slot.blockIndex) || slot.blockIndex < 0) {
       say(slot, position, `declares a block index of ${String(slot.blockIndex)}.`);
+    } else {
+      const offset = BLOCK_OFFSET.get(slot.block);
+      if (offset !== undefined && slot.blockIndex !== position - offset) {
+        say(
+          slot,
+          position,
+          `declares block index ${String(slot.blockIndex)} while sitting ${String(
+            position - offset,
+          )} channels into ${slot.block}. The column is a derivation, not a free field, and the ` +
+            'digest hashes it — a table that disagrees with itself here validates clean and ' +
+            'publishes a digest describing a layout that does not exist.',
+        );
+      }
     }
 
     const descriptor = slot.descriptor as NormalizationDescriptor | undefined;
@@ -214,6 +282,18 @@ export function layoutProblems(slots: readonly ObservationSlot[]): string[] {
         'has a descriptor that is not frozen. A run-relative denominator has to be stored ' +
           'somewhere, and a mutable descriptor is the only place it fits — so a descriptor that ' +
           'can be written to is the shape contracts.md §4.1 forbids, written or not.',
+      );
+    }
+    const accessors = ['divisor', 'min', 'max'].filter(
+      (field) => !isDataProperty(descriptor, field),
+    );
+    if (accessors.length > 0) {
+      say(
+        slot,
+        position,
+        `computes ${accessors.join(', ')} rather than holding it. Object.freeze seals an accessor ` +
+          'without making it constant, so such a descriptor can publish one saturation constant ' +
+          'to the digest and divide by another in the exporter, inside one process.',
       );
     }
     if (!RULE_SET.has(descriptor.rule)) {
@@ -234,12 +314,17 @@ export function layoutProblems(slots: readonly ObservationSlot[]): string[] {
           'things in two different runs.',
       );
     }
-    if (descriptor.min !== 0 || descriptor.max !== 1) {
+    // `Object.is` and not `!==` on the floor. `-0 !== 0` is `false`, so a
+    // negative-zero floor passed this check, hashed as `"0"`, and exported `-0`
+    // — the capability spec names negative zero as a thing the export must not
+    // contain, so that was a difference the contract cares about slipping
+    // through the one function whose job is to notice.
+    if (!Object.is(descriptor.min, 0) || descriptor.max !== 1) {
       say(
         slot,
         position,
-        `clamps to [${String(descriptor.min)}, ${String(descriptor.max)}] rather than [0, 1], ` +
-          'which §4.1 pins for the exported vector.',
+        `clamps to [${numberText(descriptor.min)}, ${numberText(descriptor.max)}] rather than ` +
+          '[0, 1], which §4.1 pins for the exported vector.',
       );
     }
 
@@ -307,6 +392,23 @@ export function assertLayoutValid(slots: readonly ObservationSlot[]): void {
 const DIGEST_FORMAT = 'mm-observation-layout/1';
 
 /**
+ * A number as the encoding writes it, with the sign of a zero kept.
+ *
+ * `String(-0)` is `"0"`, which is the JavaScript-specific behaviour that let a
+ * `-0` floor hash as a `+0` floor. A canonical encoding a second implementation
+ * reproduces *from the document* must not depend on one language's opinion about
+ * which zero prints as which text, so the sign is written out.
+ *
+ * The format version does not move for this. {@link layoutProblems} now rejects
+ * a floor that is not `+0`, so no table this module will validate can contain a
+ * negative zero, and the encoding of every valid layout — including every layout
+ * that ever shipped — is byte-identical to what it was before.
+ */
+function numberText(value: number): string {
+  return Object.is(value, -0) ? '-0' : String(value);
+}
+
+/**
  * The canonical text a layout hashes as.
  *
  * Exported because a digest whose input cannot be inspected is a digest nobody
@@ -315,7 +417,8 @@ const DIGEST_FORMAT = 'mm-observation-layout/1';
  *
  * One header line, then one line per slot, `\n`-separated, ASCII only. Fields
  * are tab-separated because no field can contain a tab — block names and rule
- * names come from closed sets and everything else is a decimal integer.
+ * names come from closed sets and everything else is a decimal integer, written
+ * through {@link numberText} so that the sign of a zero survives.
  */
 export function layoutEncoding(slots: readonly ObservationSlot[]): string {
   const lines: string[] = [`${DIGEST_FORMAT}\tslots=${String(slots.length)}`];
@@ -327,9 +430,9 @@ export function layoutEncoding(slots: readonly ObservationSlot[]): string {
         slot.block,
         String(slot.blockIndex),
         descriptor.rule,
-        String(descriptor.divisor),
-        String(descriptor.min),
-        String(descriptor.max),
+        numberText(descriptor.divisor),
+        numberText(descriptor.min),
+        numberText(descriptor.max),
         descriptor.edges === undefined ? '-' : descriptor.edges.join(','),
       ].join('\t'),
     );

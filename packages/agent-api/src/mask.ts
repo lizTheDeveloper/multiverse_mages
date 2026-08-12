@@ -37,32 +37,49 @@
  * not depend on this package (§5) and a mask it cannot see would protect
  * nothing. The two are belt and braces on purpose.
  *
- * ## What "legal" means at world scale, and what it does not
+ * ## What "legal" means at world scale
  *
- * Structural validity only: is there a bit left to flip, is there an edict to
- * revoke, does the candidate list have anything in it. **Affordability is not
- * checked here** — the favor price of an action, and the hysteresis §1.1's
- * `axisChangeCounters` feeds, are `god-agency`'s (§8), and pricing them in this
- * package would be a second copy of a formula that does not exist yet. The
- * `observation-action-space` spec asks only that these entries *"reflect
- * ordinary affordability and validity rather than being unconditionally
- * false"*, and a structurally-valid-only mask satisfies that while leaving the
- * affordability term to the layer that owns it.
+ * Two things, in this order. **Structural validity**: is there a bit left to
+ * flip, is there an edict to revoke, does the candidate list have anything in
+ * it. Then **affordability**, which the favor-economy spec makes a mask
+ * condition rather than a failure — *"an action whose cost exceeds the current
+ * favor pool MUST have its legality mask entry set false"*.
+ *
+ * Affordability used to be absent here, on the argument that pricing an action
+ * in this package would be a second copy of a formula `god-agency` had not
+ * written. It has now, and the argument inverts: a mask that says yes where the
+ * rules say no is the mask lying, and §7 calls a rejection reason that dominates
+ * a run *"a spec-clarity smell"* for exactly that case. What this module does
+ * **not** do is *decide* a price. The table arrives as data on the catalogue,
+ * projected out of `god-cost.json`, and the only arithmetic here is picking the
+ * cheapest way an action could resolve — because a flat mask entry over an
+ * action with many parameters can only honestly mean *"there is some parameter
+ * this god can afford"*.
+ *
+ * A catalogue carrying no cost table gets structural legality alone. That is an
+ * honest answer rather than a wrong one: it says the action is well formed, and
+ * stays silent on a price it was not told.
  */
 
 import type { SimState } from '@mm/sim-core';
+import { FP_ONE, mul } from '@mm/sim-core';
 import {
+  ASCENSION_PATH,
+  AXIS_KIND,
+  axisChangeCount,
   GRID_FORM_COUNT,
   GRID_TECHNIQUE_COUNT,
   TERMINAL_REASON,
   canIssueEdict,
   findUniverse,
+  godStateOrEmpty,
   inEngagement,
   readEdicts,
   readUniverse,
 } from '@mm/state';
 
 import { ACTION_SPACE_SIZE, GOD_ACTION, PARAMETERIZED_ACTIONS } from './actions.js';
+import type { ActionCostTable, ContentCatalogue } from './catalogue.js';
 import type { CandidateLists } from './candidates.js';
 
 /** What {@link legalityMask} needs. */
@@ -70,6 +87,11 @@ export interface MaskInput {
   readonly state: SimState;
   /** The lists from `buildCandidates`, which decide 8–14. */
   readonly candidates: CandidateLists;
+  /**
+   * The catalogue, for its cost table. Optional, and absent means the mask
+   * reports structural legality only — see the module note.
+   */
+  readonly catalogue?: ContentCatalogue | undefined;
 }
 
 /**
@@ -102,6 +124,22 @@ export function legalityMask(input: MaskInput): Uint8Array {
   }
 
   const record = readUniverse(state, universe);
+
+  // A run that has ended has nothing legal but the no-op. §4.3 makes the
+  // episode over, and `god-agency`'s resolver refuses every submission against
+  // a terminated universe — so a mask that kept reporting `assignRole` legal
+  // would be handing an agent an action the rules will silently turn away. That
+  // disagreement between the mask and the rules is exactly what
+  // `illegalActionRate`'s *"spec-clarity smell"* note is about, and it is
+  // cheaper to close here than to explain later.
+  //
+  // Written as an early return for the same reason the engagement branch above
+  // is: an action added to §4.2 later is masked after termination *by default*,
+  // rather than by somebody remembering to add it to a list.
+  if (record.ascended !== 0 || record.terminalReason !== TERMINAL_REASON.none) {
+    return mask;
+  }
+
   const techniqueMask = (1 << GRID_TECHNIQUE_COUNT) - 1;
   const formMask = (1 << GRID_FORM_COUNT) - 1;
 
@@ -122,13 +160,113 @@ export function legalityMask(input: MaskInput): Uint8Array {
     mask[action] = (candidates.get(action)?.length ?? 0) > 0 ? 1 : 0;
   }
 
-  // §1.1's terminal flags. A run that has already ended cannot declare
-  // ascension again — the *eligibility* for ascension is `god-agency`'s
-  // (vision §8a), but "this run is over" is state, and it is checkable here.
+  // §1.1's terminal flags are handled above, by the early return: a run that
+  // has already ended cannot declare ascension again, and cannot do anything
+  // else either. What remains here is the *eligibility*, which is
+  // `god-agency`'s (vision §8a) and lives on the god-state row — the outcome
+  // system recomputes it every world tick precisely so that it can lapse, and
+  // reading it rather than re-deriving it is what makes the mask follow it down.
   mask[GOD_ACTION.declareAscension] =
-    record.ascended === 0 && record.terminalReason === TERMINAL_REASON.none ? 1 : 0;
+    godStateOrEmpty(state, universe).ascensionPath === ASCENSION_PATH.none ? 0 : 1;
+
+  applyAffordability(mask, state, candidates, input.catalogue?.costs, record.favor);
 
   return mask;
+}
+
+/**
+ * Clears the entry of every action this god cannot pay for.
+ *
+ * Runs after structural legality rather than instead of it, so an action that
+ * is both malformed and unaffordable stays masked for the structural reason —
+ * which is the one that does not change when the pool refills.
+ *
+ * The price of an action with parameters is the **cheapest** way it could
+ * resolve. A flat mask entry cannot say "affordable for these four cells and
+ * not those three", so the only honest reading of a set entry is *"there is a
+ * parameter this god can afford"*, and the candidate list is what says which
+ * parameters exist.
+ */
+function applyAffordability(
+  mask: Uint8Array,
+  state: SimState,
+  candidates: CandidateLists,
+  costs: ActionCostTable | undefined,
+  favor: number,
+): void {
+  if (costs === undefined) return;
+
+  for (let action = 1; action < ACTION_SPACE_SIZE; action += 1) {
+    if (mask[action] !== 1) continue;
+    if (cheapestPrice(action, state, candidates, costs) > favor) mask[action] = 0;
+  }
+}
+
+/** The lowest favor price at which an action could resolve, given its parameters. */
+function cheapestPrice(
+  action: number,
+  state: SimState,
+  candidates: CandidateLists,
+  costs: ActionCostTable,
+): number {
+  const base = costs.byAction[action] ?? 0;
+  if (base === 0 && action !== GOD_ACTION.fundUniversity) return 0;
+
+  switch (action) {
+    case GOD_ACTION.permitTechnique:
+    case GOD_ACTION.forbidTechnique:
+      return mul(base, cheapestAxisMultiplier(state, AXIS_KIND.technique, GRID_TECHNIQUE_COUNT, costs));
+    case GOD_ACTION.permitForm:
+    case GOD_ACTION.forbidForm:
+      return mul(base, cheapestAxisMultiplier(state, AXIS_KIND.form, GRID_FORM_COUNT, costs));
+    case GOD_ACTION.grantFoundingKnowledge: {
+      // §4.2 prices a grant at `base × node tier`, so the cheapest grant is the
+      // shallowest node in the list. `candidates` carries `[mageId, nodeId]`
+      // pairs and the tier is the catalogue's, but the list is already
+      // restricted to prerequisite-free roots — every one of which is tier 1 in
+      // any content set where a root is a root. Priced at the base for that
+      // reason, and stated rather than assumed.
+      return base;
+    }
+    case GOD_ACTION.fundUniversity: {
+      // Slot 0 founds and every other slot funds; §4.2 gives them one id, so the
+      // entry is legal while *either* is affordable.
+      const list = candidates.get(action) ?? [];
+      const canFund = list.some((candidate) => candidate.params[0] !== 0);
+      return canFund ? Math.min(base, costs.foundUniversity) : costs.foundUniversity;
+    }
+    default:
+      return base;
+  }
+}
+
+/**
+ * The smallest hysteresis multiplier across an axis family, in `fp`.
+ *
+ * A god who has flipped one technique twice may still flip a different one at
+ * the base price, so the cheapest flip available is the least-recently-churned
+ * axis.
+ *
+ * Returned in `fp` and applied through the same `mul` `god-agency`'s
+ * `interventionCost` uses, rather than divided out here into a whole-number
+ * factor. Dividing first is correct only while `hysteresisStep` happens to be
+ * `fp(1024)`; the moment a retune makes it anything else, the mask would price
+ * an action a unit under what the rules charge, and the symptom would be one
+ * action in a thousand admitted by the mask and refused by the resolver.
+ */
+function cheapestAxisMultiplier(
+  state: SimState,
+  axisKind: number,
+  axisCount: number,
+  costs: ActionCostTable,
+): number {
+  let lowest = FP_ONE;
+  for (let bit = 0; bit < axisCount; bit += 1) {
+    const count = axisChangeCount(state, axisKind, bit);
+    const multiplier = FP_ONE + count * costs.hysteresisStep;
+    if (bit === 0 || multiplier < lowest) lowest = multiplier;
+  }
+  return lowest;
 }
 
 /** Whether an action's mask entry is set. Out-of-range ids read as illegal. */

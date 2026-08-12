@@ -83,9 +83,53 @@ state would have no mechanism preventing mid-raid rule changes at all.
 | `prestigeEarned` | `fp` | written once at run end; the input to the next run's `prestige` |
 | `terminalReason` | `uint8` | none \| ascension-apotheosis \| ascension-canon \| stagnation \| truncated |
 | `favorCap` | `fp` | rises with worship tier; overflow is discarded and counted as `favorWasted` |
-| `encouragedCells` | array of `{cellId, expiryTick}` | action 12 had nowhere to persist |
+| `encouragedCells` | array of `{cellId, expiryTick}` | action 12 had nowhere to persist. Magnitude is derived from the remaining ticks, not stored: a stored magnitude and a stored expiry are two records of one linear decay, and they can disagree |
 | `axisChangeCounters` | array per technique/form | hysteresis; repeated flips of one axis escalate in cost |
+| `blessings` | array of `{mageId, expiryTick}` | one row per blessed mage, which is what makes "re-blessing refreshes rather than stacks" structural: there is no representation in which a mage holds two |
+| `upheavals` | array of `{factor, expiryTick}` | worship shocks in force. An entity per shock, because two forbiddings can overlap and the combined factor is the shared multiplicative-on-remainder arithmetic over both |
+| `eraEvaluations` | array of `{era, libraryDependence, nodesLost, passed}` | what each era boundary found. `libraryDependence` at era 2 is not recoverable from state at era 4, so the Enduring Canon ascension path cannot be decided without retaining these |
+| `godState` | singleton, below | counters, high-water marks, and cached derivations that one tick of state cannot see |
 | `ascended` | `bool` | terminal flag |
+
+**`godState` — one row beside the universe, not fifteen more universe fields.** Widening the
+universe row would have been the obvious move and is the expensive one: a snapshot section carries
+its field table inline, so an added field reshapes the universe section and every older save has to
+be rewritten column by column, where an added *component* is an appended empty section — the
+migration shape this project has used three times and tested. The row is created lazily on the
+first god tick, so "no row" means "this universe has not been stepped yet", which is exactly what a
+pre-`god-agency` save describes.
+
+| Field | Type | Notes |
+|---|---|---|
+| `favorWasted` | `fp` | regeneration discarded at the pool cap, summed over the run. §7's early snowball signal — it moves long before a Gini coefficient does |
+| `magelessTicks` | `int32` | consecutive world ticks with no living mage |
+| `lowWorshipTicks` | `int32` | consecutive world ticks below the stagnation worship floor |
+| `stasisTicks` | `int32` | consecutive world ticks with no node newly entering the universe |
+| `lastEverKnown` / `lastExisting` | `uint16` | last tick's ever-known and existing node counts, so "a node entered" is decidable without storing a set |
+| `ascensionFirstMetTick` | `int32` | world tick a path was **first** satisfied, `0` for never. The gap to the declaring tick is what says whether the terminal reward is mispriced against continued play |
+| `ascensionPath` | `uint8` | none \| apotheosis \| canon. Recomputed every world tick, so the condition can lapse |
+| `peakWorshipTier`, `deepestTier` | `uint8` | high-water marks; inputs to `prestigeEarned` |
+| `lastEraRecorded` | `uint16` | so each era boundary is evaluated exactly once |
+| `eraNodesLost` | `uint16` | nodes lost so far in the current era |
+| `goodEraRun` | `uint16` | consecutive passing era boundaries |
+| `overBudgetEdicts` | `uint8` | edicts in force beyond the current budget. **Reported, never auto-revoked** |
+| `terminalTick` | `int32` | world tick the run ended on, `0` while running |
+
+**A terminated universe is frozen in its component rows, and not in its clock.** `god-agency`'s
+ascension spec asks that *"no world tick may further alter the universe's state"* and that a
+stepped, ascended universe's *snapshot hash is unchanged*. The first is implemented and tested: a
+universe carrying a `terminalReason` runs no world phase and no god phase, so no component row
+moves and every submitted action is refused and counted. The second is **not**, and the difference
+is deliberate rather than an oversight — `step` advances the clock unconditionally, and that is
+`sim-core`'s contract rather than any capability's to override. So the hash of a terminated
+universe moves by exactly the clock, every tick, forever.
+
+The layer that stops advancing a finished run is `agent-api`'s session, which already refuses to
+`submit` to a terminated episode. Making the hash literally constant instead would mean either a
+rules layer suppressing a core clock advance — the inversion §5 rule 4 exists to prevent, wearing
+a different hat — or a second `step` that sometimes does not advance, which is the duplication the
+one-step-contract rule forbids. Recorded here because a reader comparing the spec's sentence
+against the code will otherwise think one of them is wrong.
 
 **Ruleset legality — the single arbitration function.** Every consumer must call this rather than
 reimplementing it:
@@ -514,7 +558,119 @@ exactly one universe (§1.1). When that stops being true — a raid that takes g
 seeds a smaller world — `landUnits` moves to §1.1 and this record keeps `capacityPerLandUnit`, which
 is a property of the *kind* of country and not of who holds it.
 
+**A universe that cannot feed itself carries fewer people, and the world loop is what says so.**
+`carryingCapacity` has taken a `subsistenceShortfallShare` since `mages-and-species` task 8.5 and
+nothing passed one until the change's closeout, so `K` was the well-fed `K` for the length of any
+run. The 200-year reference run is what made that visible: the materials stock empties around world
+year seventy and `K` did not move. The share is now computed inside the births phase — this tick's
+subsistence demand against the stock as it stands, before consumption runs — because consumption is
+phase 9 and births are phase 8, and the alternatives were storing last tick's share in state (a
+world-schema revision for a number one line reads) or charging subsistence for a population and
+then letting it grow inside the same tick. With it wired, the reference run's `K` falls from 57,205
+to 29,831 across two centuries while the population rises to 18,722, so *"population never exceeds
+`K`"* is finally a question with a narrow answer rather than a bound running away ahead of the thing
+it bounds.
+
 **Every magnitude here is untuned** and carries `tuningStatus` saying so.
+
+### 2.8 `god-cost.json`
+
+```jsonc
+{
+  "id": "forbid-technique",
+  "actionId": 2,                 // the §4.2 action id. Permanent, like the action
+  "favorCost": 8192,             // fp. Base price, before hysteresis and node-tier scaling
+  "gloss": "Exactly what permitting costs.",
+  "tuningStatus": "untuned"
+}
+```
+
+What each action in §4.2 costs the god in favor, as data rather than as literals in the rules
+path — so that retuning a price is a content change a sweep can turn rather than a code change,
+and so that the price is inside `contentRevision`. Two universes that disagreed about the cost of
+forbidding a technique while agreeing they were compatible would be playing different games.
+
+The loader enforces three things a JSON Schema cannot: **exactly one record per action id 0–15**
+(a missing entry is a free action); **permitting costs exactly what forbidding costs** on both
+axes, because vision pillar 1 rests on the decision being symmetric and any asymmetry makes denial
+a penalty rather than a peer strategy; and **assigning a role is strictly the cheapest non-zero
+action**, because it is the verb the god performs constantly and a priced one turns most of the
+action space into unaffordable no-ops, inflating `illegalActionRate` into noise.
+
+Founding a university has no id of its own — §4.2 gives funding and founding one action — so its
+price is the `found-university-cost` constant in §2.9 rather than a second row here.
+
+### 2.9 `god-constant.json`
+
+```jsonc
+{
+  "id": "worship-lag-fall",
+  "value": 154,                  // ~15% of the gap to the target closed per world tick
+  "unit": "fp",                  // fp | ticks | count | months | tier
+  "gloss": "Strictly greater than the rise rate; the asymmetry is the loop's damping.",
+  "tuningStatus": "untuned"
+}
+```
+
+Every magnitude of the worship loop, the favor economy, the interventions, ascension, stagnation
+and prestige. **The set of ids is structural and the values are not.** The rules read each constant
+by name, so the loader fails a set that omits one — an absent constant arrives in a formula as `0`,
+and a worship lag of zero is a plausible-looking answer to a question nobody asked — and equally
+fails a set that declares one nothing reads, because an unread constant is a tuning knob that does
+nothing and the sweep that turned it would report the null result as a finding about the game.
+
+Three identities among these constants are checked at load, because each is one a retune can break
+silently:
+
+- `worship-max` equals the three saturation caps summed. The ceiling is a property of the formula,
+  not a clamp applied afterwards, and lowering a cap without lowering the stated ceiling turns that
+  sentence into a comment.
+- `prestige-cap × (fp(1024) − prestige-retention) == prestige-earn-max × fp(1024)`. `PRESTIGE_CAP`
+  is the analytic limit of the carry-over recurrence at maximum earning, which is what makes the
+  meta-game's bound arithmetic rather than a clamp.
+- `worship-lag-fall > worship-lag-rise`. The asymmetry *is* the damping.
+
+**Every value here is untuned** and carries `tuningStatus` saying so.
+
+### 2.10 `raid-constant.json`
+
+```jsonc
+{
+  "id": "stability-decay-per-tick",
+  "value": 1024,                 // raw integer. NOT fp, and never derived
+  "unit": "raw",                 // fp | raw | count | ticks
+  "gloss": "Subtracted from portal stability every engagement tick, unconditionally.",
+  "tuningStatus": "untuned"
+}
+```
+
+Every magnitude an engagement is made of: the portal's opening stability and its decay, the
+battlefield and its terrain, the per-side caps, the derived combatant statistics, the objective
+values, and the victory threshold. Added by `raid-engagement`, and a deliberate extension of this
+section for the same reason §2.8 and §2.9 are — a number a balance sweep turns belongs in content,
+and inside `contentRevision`, or two universes could disagree about how long a portal holds while
+agreeing they may fight.
+
+**The set of ids is structural and the values are not**, exactly as in §2.9: the loader fails a set
+that omits a constant the rules read, and equally one that declares a constant nothing reads.
+
+Three checks here are not tuning hygiene — they are the **termination proof**, and they are the
+reason this file exists rather than a `const` block in `rules-raid`:
+
+- `stability-decay-per-tick` must be an **authored raw integer of at least 1**. §1.6 states why: a
+  decay derived by fixed-point division silently becomes `0` whenever the divisor exceeds the
+  numerator, and a decay of zero is a raid that runs forever with no error and no symptom.
+- `ceil((portal-stability-initial + portal-stability-jitter) / stability-decay-per-tick)` must not
+  exceed `MAX_ENGAGEMENT_TICKS`, the compile-time ceiling in `packages/content/src/raid.ts`. The
+  jitter is inside the numerator because a bound that holds on average is not a bound. The ceiling
+  is deliberately **not** a content value: it is what the engine trips over when the decrement
+  guarantee has been broken, and a ceiling a sweep can raise is one that gets raised the first time
+  a run reaches it.
+- No radius may exceed `max-interaction-radius`, which is the spatial index's cell size. The index
+  promises a radius query inspects at most nine cells; past that it silently stops finding
+  combatants at the edge of an effect, which reads as balance rather than as a bug.
+
+**Every value here is untuned** and carries `tuningStatus` saying so.
 
 ---
 
@@ -704,6 +860,7 @@ packages/
   coordination    the world step loop, and the rules-world → rules-magic port. → sim-core, content, state, primitives, rules-magic, rules-world
   agent-api       observation/action space, legality masks.               → sim-core, content, state, primitives, rules-*, coordination
   mc-harness      worker pool, sweeps, balance metrics.                   → agent-api
+  scenario        the reference universe at tick zero, and the run executor. → everything above; a leaf
   client-electron renderer. Reads snapshots. Computes no rules.           → agent-api (read path only)
   server          authoritative lockstep, Hetzner deployment.             → agent-api
   gym-bridge      JSON-over-stdio RL wrapper.                             → agent-api
@@ -760,6 +917,39 @@ from `rules-raid` because a raid's consequences land in world state through it. 
 `PURE_PACKAGES`: it is rules-path code, loaded by the client, the server and the Monte Carlo
 workers alike.
 
+**`scenario` is the fourth deviation, added when the Monte Carlo harness was first pointed at a
+real universe. It is the composition root this list never named.** §5 gives `mc-harness` one edge,
+to `agent-api`, and `agent-api` builds no worlds — its session takes a caller-supplied `Scenario`
+and states outright that *"a session does not know how to build a world"*. So something has to load
+content, install `coordination`'s world loop, seed a starting position, and hand the result to a
+session the harness drives. Every package already on this list fails that job for a different
+reason:
+
+- **`agent-api`** is granted `content` and `coordination` by this diagram, but its manifest refuses
+  `content` deliberately: that package's public surface re-exports a filesystem loader, and §5 puts
+  `client-electron` and `gym-bridge` downstream of the observation layer, which therefore has to
+  run in a browser. A world builder there drags `node:fs` into the renderer.
+- **`mc-harness`** may not, and the single edge is the point rather than an oversight: the harness
+  and a trained policy must observe the same universe through the same interface, so a harness that
+  could construct a `SimState` could measure one without going through §4.
+- **`coordination`** holds the loop and is in `PURE_PACKAGES` — rules-path code the client and the
+  server load. It may not hold a loader.
+- **`rules-*`** may not import `agent-api` at all (rule 4), and a scenario is defined by the
+  session interface it satisfies.
+
+So the starting position gets a package above every rules package and above both consumers of §4.
+It is a **leaf**: nothing in this repository imports it, which is what makes an edge to both halves
+of the boundary safe, and the dependency-graph test asserts the leaf property by name. It is
+deliberately *not* in `PURE_PACKAGES` — it reads the filesystem and names a worker entry point by
+URL, exactly as `mc-harness` does — but it declares no third-party runtime dependency and its own
+boundary test holds that line.
+
+The `mm-run-sweep` CLI already assumed such a thing existed: it takes `--scenario <module>` and
+expects `{executor, registries, provenance, workerUrl}`. This package is where that module's code
+lives, so that the most consequential code in a balance run — *what a universe is at tick zero* —
+is typechecked, linted, boundary-checked and tested, rather than living in a loose `.mjs` outside
+the workspace.
+
 **Enforced rules:**
 
 1. `sim-core` depends on nothing and imports no Node built-ins.
@@ -808,6 +998,12 @@ asserts the implemented registry's keys equal this list exactly.
 census intervals, censoring rules, denominators, whether a rate is instantaneous or cumulative. A
 metric whose definition drifts silently makes every committed baseline meaningless while still
 appearing green, so the definition is versioned alongside the numbers it produces.
+
+**Every constant that pinning invented is listed in
+[`metric-constants.md`](./metric-constants.md), with the ambiguity it resolves.** That note is
+checked against the implemented registry in both directions — a constant in the code and not in the
+note fails, and so does a row in the note for a constant the code does not declare — so it cannot go
+stale without the suite going red.
 
 **Ownership splits two ways.** `agent-interface` owns each metric's *definition and collection*;
 the capability that owns the mechanic owns its *threshold value* — `worshipSnowball`,
