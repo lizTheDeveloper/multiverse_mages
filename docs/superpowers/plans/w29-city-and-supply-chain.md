@@ -119,9 +119,24 @@ no adjacency is needed.
 
 ### 2.4 The relieving mechanism
 
-A new aggregator collects `target: "universe"` effects from nodes **known in the universe**, gated
-by `permits()` at application time, and routes each magnitude to the kind(s) its cell's *form* maps
-to. `resource-yield` on a `creo-herbam` node raises food; on a `rego-terram` node it raises stone.
+`packages/coordination/src/universe-effects.ts` calls **`gatherEffects`** — the shipped
+knowledge-to-effect pipeline, which until now had no production caller at all — and filters its
+result to `target: "universe"`. Each surviving magnitude is routed to the kind(s) its cell's *form*
+maps to: `resource-yield` on a `creo-herbam` node raises food; on a `rego-terram` node it raises
+stone.
+
+**Calling the pipeline rather than re-walking the instance store is the load-bearing choice, and an
+earlier draft got it wrong.** That draft gated on *presence* — an instance exists anywhere — which
+would have made a grimoire on a shelf raise the harvest, violating `magic-primitives`' requirement
+that written instances contribute nothing and that a library's influence appear solely through
+library depth. It would also have had no mastery term, so a node discovered last tick delivered full
+yield and decay reduced nothing — making retention, teaching fidelity and marooning economically
+inert on the one path that had just been connected. Going through `gatherEffects` inherits the
+location, mastery and dormancy gates instead of restating them, and there is one implementation
+rather than two.
+
+The consequence is a design fact worth stating: **the economy now depends on living, practising
+mages.** Kill them and the harvest falls even though every book survives.
 
 This is what makes the two-universe test non-vacuous: without routing by form, permitting
 `creo-herbam` and permitting `rego-terram` are interchangeable and the comparison fails by
