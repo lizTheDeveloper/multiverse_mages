@@ -361,8 +361,20 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     return this.#deps.knowledge.instanceCount(nodeId);
   }
 
-  everKnown(nodeId: ContentId): boolean {
-    return this.#deps.knowledge.wasEverKnown(nodeId);
+  /**
+   * `isRediscovery`, not `wasEverKnown` — the same correction {@link
+   * researchFrontier} makes below, for the same reason, one call further out.
+   *
+   * This port used to answer `wasEverKnown`, and `gatherFrontier` used the
+   * answer to decide whether a target was a `research-node` or a
+   * `rediscover-node` goal. The mark is never cleared, so every node the
+   * universe currently holds was filed as a rediscovery, and goal selection
+   * scored, ranked and committed against a category the pricing path had
+   * already stopped believing in. Delegating to `rules-magic`'s own predicate
+   * is what keeps the two from drifting apart a second time.
+   */
+  rediscovery(nodeId: ContentId): boolean {
+    return isRediscovery(this.#deps.knowledge, nodeId);
   }
 
   knows(mage: MageHandle, nodeId: ContentId): boolean {

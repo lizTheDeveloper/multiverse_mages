@@ -122,7 +122,7 @@ function gatewayOver(all: readonly KnowledgeTarget[]): KnowledgeGateway {
   const byCost = [...all].sort((a, b) => a.remainingCost - b.remainingCost || a.nodeId - b.nodeId);
   return {
     instanceCount: () => 1,
-    everKnown: () => false,
+    rediscovery: () => false,
     knows: () => false,
     researchFrontier: (_mage, limit) => byCost.slice(0, limit),
     canTeach: () => false,
