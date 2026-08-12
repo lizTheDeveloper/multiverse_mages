@@ -260,7 +260,7 @@
   },
   {
     "id": "ascension-tier-gate",
-    "value": 5,
+    "value": 4,
     "unit": "tier",
     "gloss": "Worship tier Path A requires. The first knob turned when ascensionRate leaves its 5–20% band.",
     "tuningStatus": "untuned"
