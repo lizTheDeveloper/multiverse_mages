@@ -175,8 +175,36 @@ knowledge-location and ruleset mechanics differently, creating mutually exclusiv
 which storage locations serve them, which rulesets favour them — rather than differing in how
 quickly they walk one path.
 
-This is a **design decision for the author**, not an agent's to invent. It is logged in the open
-questions below.
+### …and where both reviewers are wrong, checked against the code
+
+They reasoned from my brief, which listed the species traits as rates. The code says otherwise:
+**structural species differentiation already exists, is fully implemented, and is consumed by
+nothing.**
+
+- `scribing.ts`: *"Its durability comes from the scribe's species affinity."* `scribeAffinity`
+  spans **384 (orc) to 1792 (dwarf)** — a 4.7× spread in how long a written book survives. That is
+  §6's *"dwarven grimoires resist destruction"*, built.
+- The tradition `store` hook routes an instance to **mind, grimoire, library or palace**, and the
+  memory palace exists only under Art of Memory. That is a structural difference in *where
+  knowledge lives*, not a rate.
+
+And the reason neither bites, in one sentence from `decay.ts`:
+
+> **"Only minds decay.** `locationKind` mind and palace; a grimoire and a shelved library book do
+> not. A book's fragility is `durability`, not forgetting."
+
+So `durability` is written at scribing and **read by nothing that runs**: decay deliberately
+excludes books, and the raid code that would consume it has never executed. The one authored,
+implemented, structural axis of species differentiation is **one wire away from live**, and that
+wire is W8's destruction path.
+
+That materially improves the outlook for **D9**. The correct statement is not *"species differ only
+by rates"* — it is *"species differ structurally in exactly one respect, and that respect is inert
+because nothing destroys books."*
+
+The open question below stands, but it is narrower than the reviewers thought: whether **one**
+structural axis plus six rate axes is enough for per-species plurality, or whether more structural
+differentiation is needed. Measure after W8 lands rather than deciding now.
 
 ## A second premise of mine, refuted
 
