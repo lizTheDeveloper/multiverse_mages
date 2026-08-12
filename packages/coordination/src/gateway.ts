@@ -154,8 +154,10 @@ import {
   shelveGrimoire,
   teach,
 } from '@mm/rules-magic';
-import type { RediscoveryClampCounter } from '@mm/primitives';
-import { createRediscoveryClampCounter } from '@mm/primitives';
+import type { EffortEnvelope, RediscoveryClampCounter } from '@mm/primitives';
+import { createRediscoveryClampCounter, shapedEffort } from '@mm/primitives';
+
+import type { EnvelopeResolver } from './envelopes.js';
 import type {
   KnowledgeGateway,
   KnowledgeTarget,
@@ -215,6 +217,16 @@ export interface GatewayDeps {
   readonly knowledge: KnowledgeSubsystem;
   readonly catalog: NodeCatalog;
   readonly cells: CellResolver;
+  /**
+   * A node's technique envelope — `sound-design.md` §4.1's shape over the
+   * duration an acquisition takes.
+   *
+   * Optional, and absent means the flat curve, which is both Rego's shape and
+   * the behaviour every acquisition path had before envelopes existed. That is
+   * what lets a caller with no content registry — a fixture, a probe — drive
+   * this gateway unchanged.
+   */
+  readonly envelopes?: EnvelopeResolver;
   /**
    * A node's cell, form and effect primitives, for the utility score that
    * decides which target a mage takes.
@@ -655,6 +667,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       // at. `initialMastery` is deliberately not passed alongside it — one
       // route, so the two cannot be wired half-way.
       acquire: this.#deps.acquire,
+      // §4.1's shape. `research` applies it to the effort *inside* the call,
+      // because that is where `required` is computed and the curve is indexed on
+      // `progress / required` — resolving it out here would mean pricing the
+      // node twice and betting the two agreed.
+      ...envelopeInput(this.#deps.envelopes, nodeId),
     });
 
     if (outcome.refusal !== undefined) return;
@@ -701,7 +718,19 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     // below and the clamp further down cannot come to different conclusions.
     const required = this.#deps.acquire.teachCost(node.teachCost);
     const key = effortKey(EFFORT_KIND.teaching, teacher, nodeId, student);
-    const progress = ledger.accrue(key, mageMonths);
+    // §4.1's shape, against the total standing at the start of the lesson.
+    // Teaching is the one acquisition where the rate scales the numerator
+    // rather than the requirement, so the curve lands on the same side of the
+    // arithmetic that `teach-rate` already does and the two simply multiply.
+    const progress = ledger.accrue(
+      key,
+      shapedEffort(
+        this.#deps.envelopes?.envelopeOf(nodeId),
+        mageMonths,
+        ledger.progressOf(key),
+        required,
+      ),
+    );
     if (progress < required) return;
 
     const outcome = teach({
@@ -765,7 +794,18 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
 
     const key = effortKey(EFFORT_KIND.scribing, mage, nodeId, 0);
     const required = scribeCapacityCost(node.tier);
-    const progress = ledger.accrue(key, scribeMonths);
+    // §4.1's shape. The requirement here is the tier's *time* cost, not the
+    // node's materials cost — the curve shapes months at the desk, and the
+    // parchment is still paid whole on the tick the book is finished.
+    const progress = ledger.accrue(
+      key,
+      shapedEffort(
+        this.#deps.envelopes?.envelopeOf(nodeId),
+        scribeMonths,
+        ledger.progressOf(key),
+        required,
+      ),
+    );
     if (progress < required) return;
 
     const shelf = this.#shelfFor(mage);
@@ -1175,6 +1215,23 @@ export function effortKey(
  * not because this module knows its name — the four extension points stay the
  * only place a tradition changes anything.
  */
+/**
+ * The `envelope` field for a `research` call, or no field at all.
+ *
+ * Spread rather than passed as `envelope: … | undefined` because
+ * `exactOptionalPropertyTypes` is on: *"no envelope resolved"* and *"an
+ * envelope whose value is undefined"* are the same behaviour and must not be
+ * two spellings, or a caller reading the type would have to decide which one
+ * means the flat curve.
+ */
+function envelopeInput(
+  envelopes: EnvelopeResolver | undefined,
+  nodeId: ContentId,
+): { envelope?: EffortEnvelope } {
+  const envelope = envelopes?.envelopeOf(nodeId);
+  return envelope === undefined ? {} : { envelope };
+}
+
 function storeHookOf(policy: StorePolicy): StoreHook {
   return { kind: policy.kind, keepsWrittenCopies: policy.scribingAvailable };
 }

@@ -258,7 +258,16 @@ describe('contentRevision', () => {
     // Three branches each recorded a successor to 2512ea02 — W6's ec506311,
     // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
     // other. This is the revision of the tree that holds all three.
-    expect(registry.contentRevision).toBe('a622452a3b55e38fd902a2d3264b44d7');
+    //
+    // a622452a3b55e38fd902a2d3264b44d7 -> b7799a710ee0e3b68baa1653b2ae45c8, when W21 gave
+    // each technique an `envelope` (§2.1) — `sound-design.md` §4.1's shape over
+    // the duration an acquisition takes. It belongs in the preimage more
+    // squarely than most: the envelope is the only thing in the project that
+    // makes the five techniques mechanically different from one another, so two
+    // universes disagreeing about a curve would be researching at different
+    // speeds, on different trajectories, while their revisions agreed they were
+    // compatible. Only `technique.json` changed; no other file moved a byte.
+    expect(registry.contentRevision).toBe('b7799a710ee0e3b68baa1653b2ae45c8');
   });
 
   it('is stable across loads of identical content', () => {

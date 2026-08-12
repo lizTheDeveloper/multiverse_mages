@@ -369,12 +369,38 @@ A silently-ignored malformed node is a balance bug that takes weeks to find.
 ### 2.1 `technique.json` / `form.json`
 
 ```jsonc
-{ "id": "rego", "name": "Rego", "gloss": "control, bind, compel", "bit": 4 }
+{
+  "id": "rego", "name": "Rego", "gloss": "control, bind, compel", "bit": 4,
+  "envelope": {                       // sound-design.md §4.1: techniques ARE envelopes
+    "id": "rigid",
+    "gloss": "§4.1, Rego: 'Zero attack, gated release, rhythmically rigid.'",
+    "slots": [1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024],
+    "tuningStatus": "untuned"         // as §2.3: every magnitude is a placeholder
+  }
+}
 { "id": "corpus", "name": "Corpus", "gloss": "body", "bit": 3 }
 ```
 
 Exactly 5 techniques and 14 forms. `bit` values are dense, stable, and never reordered — they are
 serialized into snapshots.
+
+**`envelope` is the technique's shape over an acquisition's own duration**, and it is required.
+`sound-design.md` §4.1 gives the five techniques five different shapes over time — Creo *"the only
+technique whose energy increases across its duration"*, Perdo *"subtractive… Perdo's signature is a
+hole"*, Rego *"zero attack… rhythmically rigid"* — and before this field nothing in the tree
+branched on technique identity at all, so the five were mechanically the same thing.
+
+`slots` are eight `fp` multipliers on the effort a mage spends, indexed on `progress / required`.
+The curve is over **acquisition**, not over an effect's `durationTicks`, because 369 of the 407
+shipped effects have `durationTicks: 0` and the rest are raid-only `area-denial` fields: a curve
+there would be inert for 91% of content. The arithmetic is `@mm/primitives`' `envelopeMultiplier`.
+
+**A curve redistributes work and never discounts it.** The loader refuses any envelope whose slot
+reciprocals do not sum to the flat curve's — `Σ floor(1024²/mᵢ) = 8192` — because a slot with
+multiplier `m` is crossed at rate `m` and so consumes months proportional to `1/m`. Holding that
+sum fixed is what makes "same cost, different shape" true rather than aspirational, and it is why
+the shipped slots are not round numbers. It is also why no slot may be zero: `1/0` diverges, so a
+zero attack would not be a technique that starts slowly but one that never finishes.
 
 ### 2.2 `cell.json`
 

@@ -54,7 +54,12 @@ import {
 import type { SpeciesAffinities } from '@mm/rules-world';
 import { readTargetAppeal, resolveSpeciesAffinities, territoryExtent } from '@mm/rules-world';
 import type { WorldStepDeps } from '@mm/coordination';
-import { godEffectHooks, nodeFacetsFrom, resolveGodContent } from '@mm/coordination';
+import {
+  envelopeResolver,
+  godEffectHooks,
+  nodeFacetsFrom,
+  resolveGodContent,
+} from '@mm/coordination';
 
 /** The permitted-axis halves of a ruleset (`contracts.md` §1.1). */
 export interface RulesetAxes {
@@ -315,6 +320,11 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
     speciesOf,
     catalog,
     cells,
+    // `sound-design.md` §4.1's shape, per technique. Built here because this is
+    // where a registry is in hand; the arithmetic that reads it is
+    // `@mm/primitives`' and the resolution is `@mm/coordination`'s. This file
+    // wires; it does not compute.
+    envelopes: envelopeResolver(registry, cells),
     facets: nodeFacetsFrom(registry),
     affinitiesOf: (species) => {
       const cached = affinityCache.get(species.id);

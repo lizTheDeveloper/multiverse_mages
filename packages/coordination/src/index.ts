@@ -84,6 +84,9 @@ export {
   isHeldAtMind,
 } from './gateway.js';
 
+export type { EnvelopeResolver } from './envelopes.js';
+export { envelopeResolver } from './envelopes.js';
+
 export type { NodeFacetResolver, NodeFacets } from './node-facets.js';
 export { UNKNOWN_NODE_FACETS, nodeFacetsFrom } from './node-facets.js';
 
