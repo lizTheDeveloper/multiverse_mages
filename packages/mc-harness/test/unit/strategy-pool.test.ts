@@ -254,7 +254,13 @@ describe('a blocked preference falls through (task 5.6)', () => {
       submissions.push(chosen.action);
     }
     expect(submissions).not.toContain(GOD_ACTION.openPortal);
-    expect(new Set(submissions)).toEqual(new Set([GOD_ACTION.encourageResearch]));
+    // `assignRole` and not `encourageResearch`, since portal-rush v4: a god who
+    // opens portals and assigns nobody sends an empty warband, because
+    // `RAIDING_ROLES` is the `raider` role alone and every mage is born a
+    // `researcher`. The fall-through is what is under test here and it is
+    // unchanged — the bot still declines to resubmit a masked action — but the
+    // action it falls through *to* is now the one it needs most.
+    expect(new Set(submissions)).toEqual(new Set([GOD_ACTION.assignRole]));
 
     // The control: with the portal open it does prefer it, so the fall-through
     // above is a fall-through and not a strategy that never wanted a portal.
@@ -269,8 +275,13 @@ describe('a blocked preference falls through (task 5.6)', () => {
 
 describe('degeneracy is declared rather than discovered', () => {
   it('names portal-rush\'s unreachable defining action without calling it degenerate', () => {
-    // The build the pool is specified against: everything legal except action
-    // 14, which has no candidates in a single-universe run.
+    // The build the pool *used* to be specified against: everything legal
+    // except action 14, which had no candidates because nothing supplied
+    // `portalTargets`. That is no longer this build — the reference scenario
+    // now names a roster of rivals and action 14 is reachable — but the mask is
+    // still the right instrument for the property under test, which is that
+    // `degeneracyOf` reports an unreachable signature action *without* calling
+    // the strategy degenerate when another signature action survives.
     const mask = fullMask();
     mask[GOD_ACTION.openPortal] = 0;
 
@@ -279,12 +290,13 @@ describe('degeneracy is declared rather than discovered', () => {
       .map((report) => report.strategyId);
     expect(degenerate).toEqual([]);
 
-    // Portal-rush is not fully degenerate only because `declareAscension` is
-    // also a signature action and is legal. Its *defining* action is not
-    // reachable, and the report says so channel by channel.
+    // Portal-rush is not fully degenerate because `assignRole` and
+    // `declareAscension` are also signature actions and both are legal. Its
+    // *defining* action is masked here, and the report says so channel by
+    // channel.
     const portal = degeneracyOf(BOT_POOL_REGISTRY.get('portal-rush') as StrategyDefinition, mask);
     expect(portal.unreachable).toEqual([GOD_ACTION.openPortal]);
-    expect(portal.reachable).toEqual([GOD_ACTION.declareAscension]);
+    expect(portal.reachable).toEqual([GOD_ACTION.assignRole, GOD_ACTION.declareAscension]);
   });
 
   it('reports every strategy but the passive control as degenerate under a full mask-out', () => {
@@ -482,7 +494,13 @@ describe('three strategies diverge observably on the same run seed (task 5.10)',
     expect(observationDivergence(passive.final, archivist.final).blockNames).toContain(
       'institutions',
     );
-    expect(observationDivergence(passive.final, portal.final).blockNames).toContain('knowledge');
+    // `mages`, not `knowledge`. portal-rush v4 spends its rounds assigning
+    // roles and opening portals; what separates it from the passive control is
+    // who its mages *are* and what happened to them, and at this horizon the
+    // knowledge block has not moved apart yet. The 2400-tick sweep is where the
+    // knowledge difference shows up — nodes taken rather than derived — and a
+    // short divergence probe is the wrong instrument for it.
+    expect(observationDivergence(passive.final, portal.final).blockNames).toContain('mages');
   });
 
   it('reports identical observations as identical rather than as a small difference', () => {

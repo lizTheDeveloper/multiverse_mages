@@ -156,6 +156,19 @@ export interface RaidSystemDeps {
   readonly schema: Parameters<typeof buildRival>[0]['schema'];
   /** Called once per resolved raid, in resolution order. */
   readonly onRaid: (record: RaidRecord) => void;
+  /**
+   * The raids this episode has resolved so far, in resolution order.
+   *
+   * The system's two pieces of memory — how many raids have happened, and when
+   * the last one was — are read from here rather than kept in this closure, and
+   * that is not a stylistic choice. A `Scenario.create` must be *"a pure
+   * function of its two arguments"*; the system is built once per scenario and
+   * a scenario may be reset more than once, so counters living here would carry
+   * the previous episode's raid numbering and its cooldown into the next one.
+   * The caller owns the log and clears it on reset, so deriving both from the
+   * log makes one reset enough.
+   */
+  readonly raidsSoFar: () => readonly RaidRecord[];
 }
 
 /**
@@ -173,9 +186,6 @@ export function raidSystem(deps: RaidSystemDeps): System {
   const traditions = traditionTableFrom(content.registry);
   const targets = portalTargetIds(constants);
   const portalCost = content.deps.god?.content.costs.byAction[OPEN_PORTAL_ACTION] ?? 0;
-
-  let raidCount = 0;
-  let lastRaidWorldTick = Number.NEGATIVE_INFINITY;
 
   return {
     name: 'raids',
@@ -211,7 +221,7 @@ export function raidSystem(deps: RaidSystemDeps): System {
       if (outboundTarget !== 0) {
         targetId = outboundTarget;
         outbound = true;
-      } else if (worldTick - lastRaidWorldTick >= constants.inboundCooldownWorldTicks) {
+      } else if (worldTick - lastRaidWorldTick(deps) >= constants.inboundCooldownWorldTicks) {
         // The arrival process. One draw, always taken, whether or not it fires:
         // a draw taken conditionally would make the stream's position depend on
         // the cooldown, and two runs differing only in when they were last
@@ -263,8 +273,6 @@ export function raidSystem(deps: RaidSystemDeps): System {
         constants,
       });
 
-      raidCount += 1;
-      lastRaidWorldTick = worldTick;
       resolveOneRaid({
         deps,
         local,
@@ -272,7 +280,7 @@ export function raidSystem(deps: RaidSystemDeps): System {
         outbound,
         raidSeed,
         worldTick,
-        raidId: raidCount,
+        raidId: deps.raidsSoFar().length + 1,
         attackerFavorCost: outbound ? portalCost : 0,
       });
     },
@@ -301,6 +309,15 @@ export function raidSystem(deps: RaidSystemDeps): System {
       speciesOf,
     };
   }
+}
+
+/**
+ * The world tick of the last raid this episode resolved, or a tick far enough
+ * below zero that the cooldown cannot bite on the first one.
+ */
+function lastRaidWorldTick(deps: RaidSystemDeps): number {
+  const raids = deps.raidsSoFar();
+  return raids.length === 0 ? Number.NEGATIVE_INFINITY : (raids[raids.length - 1] as RaidRecord).worldTick;
 }
 
 /** The target id of an admitted action 14, or `0`. */

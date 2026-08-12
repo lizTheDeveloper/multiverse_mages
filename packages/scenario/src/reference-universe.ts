@@ -505,6 +505,7 @@ export function referenceScenario(
       // step it, which is a second, unowned arrival process.
       schema: simulation.schema,
       onRaid: (record) => records.push(record),
+      raidsSoFar: () => records,
     }),
   ]);
 

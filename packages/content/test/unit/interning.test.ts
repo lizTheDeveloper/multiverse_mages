@@ -220,7 +220,7 @@ describe('contentRevision', () => {
     // reason the god tables are: two universes that disagreed about how long a
     // portal holds would fight two different battles while their revisions
     // agreed they were compatible. Nothing existing changed a byte.
-    expect(registry.contentRevision).toBe('2512ea02d2a7569d8d0bacc4c5a926ca');
+    expect(registry.contentRevision).toBe('aeedc36269843fb0c46bc6330ec70b2b');
   });
 
   it('is stable across loads of identical content', () => {
