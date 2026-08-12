@@ -90,6 +90,13 @@ is a claim about the *outcome ordering* as much as the set ordering, and the for
 | `inert` | `inert(X)` | neutralising X moves no registered measure outside its interval | `ablation`, which `packages/mc-harness/src/ablation.ts` already implements |
 | `commits` | `commits(O)` | there exists a reachable world state in which taking option O scores strictly worse than not taking it | `counterexample-search` — one state suffices |
 
+**On `degenerate` and the reactivity reading.** The definition above is about *options*: one is at
+least as good everywhere. There is a second reading of the same form, and it is the one Jaffe et
+al.'s reactivity restriction measures — **if the best option is the same at every state, the state
+carries no information, and the decision is degenerate whether or not any single option dominates.**
+Both readings are in scope for this form; a claim distinguishes them through its `statistic`, which
+is why that field is required. The blind-god claim in §6 uses the second.
+
 **On `dominates` and which dominance is meant.** Strict, unless the claim's `statistic` says
 otherwise. The distinction matters because iterated elimination of *weakly* dominated actions is
 order-dependent and can delete equilibria (Osborne & Rubinstein §4.3), so a claim that silently means
@@ -203,7 +210,7 @@ committed in `integration-round-2-results.md` and shows the notation doing work 
 {
   "claimId": "fund-bless-encourage-inert",
   "form": "inert",
-  "subjects": ["fundUniversity", "blessMage", "encourageResearch"],
+  "subjects": ["blessMage", "fundUniversity", "encourageResearch"],
   "hypothesis": "Removing funding, blessing and research encouragement from permissive-breadth moves no registered measure outside its interval, which would mean the god's three economic verbs buy nothing the win condition can see.",
   "procedure": {
     "design": "restricted-play",
@@ -215,7 +222,8 @@ committed in `integration-round-2-results.md` and shows the notation doing work 
     "refutedBy": "the restricted arm scoring below the unrestricted arm by more than the margin, with non-overlapping intervals"
   },
   "pinnedConstants": {
-    "restriction": "never submit actions 10, 12 or 13",
+    "restriction": "never submit action 9 (blessMage), 11 (fundUniversity) or 12 (encourageResearch)",
+    "actionIdProvenance": "GOD_ACTION in packages/agent-api/src/actions.ts, cross-checked against actionId in packages/content/data/god-cost.json",
     "marginAbsolute": 0.05,
     "wilsonZ": "95%"
   },
@@ -238,6 +246,15 @@ damning whatever the interval. But *"worth less than nothing"* is a stronger sen
 measurement supports, and it is the kind of sentence that gets quoted into a design decision three
 workstreams later. **The language's whole value is that it made the gap visible without anyone
 running anything.**
+
+**A second, smaller thing the notation forced.** The prose bundles *"funding, dispensations and
+research encouragement"*; the claim restricts `blessMage` (9), `fundUniversity` (11) and
+`encourageResearch` (12) and leaves `issueDispensation` (5) out, because a dispensation edits the
+ruleset and belongs with the permission lever rather than with the economic verbs. Writing the
+restriction down as action ids made a category error in the prose visible that reading it never
+would. *(Ids read from `GOD_ACTION` in `packages/agent-api/src/actions.ts` and cross-checked against
+`actionId` in `packages/content/data/god-cost.json` — an earlier draft of this very claim named the
+wrong three, which is the third time in this workstream that checking beat recalling.)*
 
 The first record, by contrast, comes out clean: 40/40 against a field of eight strategies at exactly
 0.0000 needs no interval to be decisive, and `solved-open-loop at horizon 2400` is now a phrase the

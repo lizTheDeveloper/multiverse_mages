@@ -119,7 +119,40 @@ check is worse than no notation.**
 - [x] Write `docs/design/depth-and-skill.md`
 - [x] Write `docs/design/design-language.md`
 - [x] State one worked example end to end, from numbers already committed, in the new notation
-- [x] `npm run verify` → exit 0, no golden fixture regenerated, no baseline regenerated
+- [x] `npm run verify` — **decomposed honestly below rather than claimed as one exit code**
+- [x] No golden fixture regenerated. No balance baseline regenerated.
 - [x] Report: the vocabulary, which of our measures already have names, what produces depth and
       which levers we lack, the DSL's shape, what could not be verified, and what in the literature
       **contradicts** a decision this campaign has already made
+
+## What `npm run verify` actually said
+
+Stated as a decomposition rather than as an exit code, because **an unwitnessed exit code is not
+evidence** and this workstream's own synthesis spends a section on that distinction.
+
+| stage | result |
+|---|---|
+| `typecheck`, `lint`, `check:purity`, `check:content`, `check:audio`, `check:coverage` | green, both runs |
+| `test` — first run | **276 files, 3,883 tests, 0 failures** |
+| `test` — second run | 1 failure: `packages/coordination/test/unit/work-phase.test.ts` timed out at 30 s |
+| that test, re-run in isolation | **passes in 24.96 s** against a 30 s budget |
+| `balance:gate`, `balance:gate:horizon`, `balance:gate:ascension` | **all three PASS**, run separately because the gates come after `test` in the script and the flake stopped the chain |
+
+**The flake is load, not this branch.** The test is a real 2,400-tick simulation that consumes 83%
+of its budget on an idle machine; several agents were running against this checkout concurrently.
+This workstream changed three files — two documents, one schema — plus one new test that executes
+in 7 ms and touches no simulation. **Every balance-gate metric reports `delta 0.00000`**, which is
+the strongest available statement that nothing measured moved.
+
+Recorded rather than papered over: the honest claim is *"tests green on the clean run, gates green
+separately, one unrelated load-sensitive test flaked once"*, not *"verify exit 0"*.
+
+## The one thing checking caught that recalling would not have
+
+The `fund-bless-encourage-inert` claim originally pinned *"never submit actions 10, 12 or 13"*. The
+real ids are **9 (`blessMage`), 11 (`fundUniversity`), 12 (`encourageResearch`)** — 10 is
+`assignRole` and 13 is `changeTradition`, which would have restricted a completely different bundle
+and made the claim mean something nobody intended. Read from `GOD_ACTION` in
+`packages/agent-api/src/actions.ts`, cross-checked against `actionId` in
+`packages/content/data/god-cost.json`. It is the third instance in this workstream of the same
+failure mode the synthesis documents in its §9, and the first one that was the author's own.
