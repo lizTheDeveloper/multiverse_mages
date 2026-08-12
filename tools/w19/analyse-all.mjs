@@ -18,17 +18,27 @@
  * reason to take them one at a time. Results are cached as
  * `.w19/analysis/h<H>-{all,v1}.json` and `summarise.mjs` reads them.
  *
- * **`v1` excludes the three strategies that leave the v1 subset by permitting
- * cells.** Two are deliberate — `permissive-breadth` and `permit-then-idle` —
- * and the third is not: `uniform-random-legal` submits random *legal* actions,
- * which includes `permitTechnique` and `permitForm`, and on this integrated tree
- * it reaches **62.1 nodes at 2400** against a v1 ceiling of 51. On W15's tree it
- * read 49.8 and stayed inside; that is a difference between the trees, not a
- * difference of opinion, and leaving it in would put a ruleset editor inside a
- * comparison labelled "inside the v1 ruleset".
+ * **`v1` excludes the strategies that leave the v1 subset by permitting cells.**
+ * Measured on this arm rather than assumed: taking the union of held nodes over
+ * every seed and counting the ids outside the fifty-one, at a 1800-tick cap —
  *
- * Excluding all three leaves **seven** strategies, which is also the size of the
- * pool W15 reported its v1 numbers over — so the two measurements compare.
+ *     permissive-breadth   union 294   244 outside v1
+ *     permit-then-idle     union 296   245 outside v1
+ *     uniform-random-legal union  51     0 outside v1
+ *     portal-rush          union  51     0 outside v1
+ *     archivist            union  51     0 outside v1
+ *     passive-control      union  51     0 outside v1
+ *
+ * So the exclusion is the two deliberate ruleset editors, and `uniform-random`
+ * stays in. That is worth stating because it is **not** what the production arm
+ * does: there the same bot reaches 62.1 nodes and does leave v1. The two arms
+ * start from different cohort sizes and founding grants — this one uses W15's
+ * two corner cells, the production sweep the reference defaults — and whether a
+ * bot pressing random legal buttons ever opens a cell evidently depends on that.
+ * Recorded as an observation, not chased.
+ *
+ * Excluding the two leaves **eight** strategies inside v1, against the seven W15
+ * reported over; the extra one is `idle-then-declare`, which did not exist then.
  */
 
 import { spawn } from 'node:child_process';
@@ -37,7 +47,7 @@ import { join } from 'node:path';
 
 import { HORIZONS } from './horizons.mjs';
 
-const RULESET_EDITORS = 'permissive-breadth,permit-then-idle,uniform-random-legal';
+const RULESET_EDITORS = 'permissive-breadth,permit-then-idle';
 
 function runOne(dir, outFile, exclude) {
   return new Promise((resolve, reject) => {
