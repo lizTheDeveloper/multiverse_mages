@@ -54,13 +54,13 @@ idle-then-declare probe winning 100% of runs in **every** cell.
 
 ### 4. Calibration
 - [x] 4.1 Extend the tuner's `AXES` with every constant added.
-- [x] 4.2 Run `tune-balance.mjs` under common random numbers.
-- [x] 4.3 Record what was measured for each constant, not a guess.
+- [ ] 4.2 Run `tune-balance.mjs` under common random numbers.
+- [ ] 4.3 Record what was measured for each constant, not a guess.
 
 ### 5. The claim
-- [x] 5.1 2400-tick eight-strategy sweep at n >= 96, four parts reported with numbers.
-- [x] 5.2 Regenerate only the baselines that moved, with a written rationale.
-- [x] 5.3 `npm run verify` green.
+- [ ] 5.1 2400-tick eight-strategy sweep at n >= 96, four parts reported with numbers.
+- [ ] 5.2 Regenerate only the baselines that moved, with a written rationale.
+- [ ] 5.3 `npm run verify` green.
 
 ## Measurements
 
