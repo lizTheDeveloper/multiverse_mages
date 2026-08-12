@@ -77,7 +77,7 @@ import type {
   SimState,
   WorldSchema,
 } from '@mm/sim-core';
-import { decodeSnapshot, envelopeToState } from '@mm/sim-core';
+import { decodeSnapshot, envelopeToState, floorDiv } from '@mm/sim-core';
 
 import {
   BLESSING,
@@ -348,9 +348,13 @@ export const splitMaterialsByKind: WorldSchemaMigration = {
       // Two's-complement bits back into a signed magnitude: `i32` is how the
       // field was declared, and reading it unsigned would turn a debt into two
       // billion materials.
-      const total = (universe.values[row * width + column] as number) | 0;
-      const each = Math.trunc(Math.max(0, total) / 3);
-      const food = Math.max(0, total) - each * 2;
+      const total = Math.max(0, (universe.values[row * width + column] as number) | 0);
+      // Integer division. `Math.trunc(total / 3)` is float arithmetic, and this
+      // repository bans it in the rules path without exception — a migration is
+      // the last place to make one, because it runs once per player and its
+      // output is the save.
+      const each = floorDiv(total, 3);
+      const food = total - each * 2;
       stockValues[row * 3] = food;
       stockValues[row * 3 + 1] = each;
       stockValues[row * 3 + 2] = each;

@@ -140,6 +140,57 @@ construction.
 - **Goldens** live in `packages/sim-core/test/golden/fixtures` and exercise the core `step`
   contract, not the world loop. They are run and not regenerated.
 
-## 4. Open questions for the author
+## 4. What was measured
 
-Recorded rather than answered — see the final report.
+`tools/w29/two-universes.mjs`, 200 ticks, seed 589825. Three arms, identical in seed, species,
+founding position and content. Two differ only in which **forms** they permit; the third is the
+granary with the knowledge-to-economy wire pulled out, which is exactly the shipped behaviour
+before this change.
+
+| | quarry (Terram/Ignem/Auram) | granary (Herbam/Aquam/Animal) | inert (no wire) |
+|---|---|---|---|
+| food produced | 321,443 | **468,099** | 118,853 |
+| stone produced | **239,727** | 185,950 | 59,184 |
+| vellum produced | 75,733 | **274,403** | 73,914 |
+| months to raise a university | **30** | 42 | 98 |
+| stone per building | **1,552** | 2,116 | 3,104 |
+| `build-rate` sources reaching construction | 27 | 27 | **0** |
+
+**The ruleset test.** Five of five economic series differ between the two rulesets. The quarry
+raises a university in 30 months and the granary takes 42; the granary makes 45% more food and
+3.6× the vellum. Same magic, pointed at different materials.
+
+**The inertness test.** `resource-yield` moves production by **+214% to +294%**; `build-rate` cuts
+time-to-build by **57%** and stone per building by **32%**. Both were previously unreachable by any
+path in the program.
+
+### Two defects the probe found
+
+- **A Zeno stall in the crew size.** `LABORERS_PER_BUILD_UNIT` is forty people per whole
+  university, so a site with 22 `fp` of work left asked for `floor(22 × 40 / 1024)` = **zero**
+  people and froze there forever. Every site in the first probe run stopped at 1002 of 1024.
+  Rounded up.
+- **Labour that could not be paid.** The crew was sized from the backlog alone, so a god who
+  founded more sites than it had stone for would send its whole workforce to stand in a yard —
+  producing neither buildings nor food. Bounded by affordable stone.
+
+### The over-founding cliff, left alone
+
+`tools/w29/over-founding.mjs`: founding a hundred sites at once takes food production to **exactly
+zero** and finishes 84 of them in 150 months. That is a real decision with a real cost. Capping the
+divertible share would be `world-step.ts` deciding how much rope a player gets, so it is raised as
+a question rather than tuned.
+
+## 5. Open questions for the author
+
+1. **Is "no fourth resource" about inputs or about stocks?** `ECONOMIC_INPUTS` is still three and
+   materials is now a vector. If the intent was three *stocks*, this change violates the
+   requirement and it needs rewording rather than annotating.
+2. **May a god divert the entire workforce onto building sites?** Measured above. No cap is
+   imposed.
+3. **The observation block cannot see the kinds.** Slot 3 carries the sum, because vision §6 says
+   a resize invalidates every trained agent. An agent therefore cannot tell a food shortage from a
+   vellum one. Widening it is a decision with a training cost attached.
+4. **Should a form's yield weights be able to exceed `fp(1024)` in total?** They are capped at
+   1024 per kind and nothing stops a form summing to 2048 across the three. Herbam and Animal each
+   sum to 1024; nothing enforces it.
