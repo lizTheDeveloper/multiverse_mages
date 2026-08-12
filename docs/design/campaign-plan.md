@@ -1808,3 +1808,87 @@ W19 also reported an incident against itself: its validator hardcoded the first 
 and deleted 50 valid files from the second. The tool now takes the grid as a parameter and does not
 delete unless asked. Recorded because a workstream that reports its own destroyed data is worth more
 than one that quietly regenerates it.
+
+---
+
+## Vision audit: three implications that gut things designed the same night
+
+A systematic scan is running separately. These three came from reading §13's own text, and each was
+verified in the code before being claimed. All three are **implications**, not omissions: the vision
+records the fact, and nobody followed it through to what it means.
+
+### 1. Every library holds the same two nodes, so the raid has nothing to steal
+
+§13 records it against itself, inside a question it declares **resolved**:
+
+> *"Emergent specialization needs libraries that differ, and in the reference run they do not: one
+> university, and its shelf holds **two distinct nodes against 1,263 books**, because the scribable
+> list is ordered by cost and every scribe copies the cheapest thing available."*
+
+Verified — `packages/rules-world/src/autonomy/feasibility.ts:112`:
+
+    const target = cheapest(outlook.scribableTargets);
+
+One line, and it is the whole mechanism.
+
+**What nobody drew out.** Tonight's raid design makes libraries the objective: a university's library
+building contains exactly the grimoire rows whose location is that library, and the raider physically
+carries out the books. **If every library holds the same two nodes, there is nothing in any library
+that the raider does not already have.** The most evocative mechanic in the design is stealing a
+sorted list of the cheapest thing everyone already knows.
+
+It also means §13's *"resolved: specialization is emergent"* is resolved in principle and
+**unfalsifiable in practice** — §13 says as much, in a sentence added so nobody would read *resolved*
+as *demonstrated*, and then the raid design was written against the resolved version anyway.
+
+The fix is small and it is not a balance number: scribe selection needs a reason to copy something
+other than the cheapest — rarity, the last copy, what the library lacks, what a mage was asked for.
+Any of those makes libraries differ, and libraries differing is the precondition for four separate
+mechanics.
+
+### 2. Nothing ever founds a second university, so the roster has nothing to allocate
+
+§13 again, on what bounds a mature universe:
+
+> *"No second university is ever founded because founding one is a god action and the reference run
+> receives zero player input. So a 'mature universe' at this build is a universe whose mage roster is
+> capped by an institution the player never built."*
+
+88 living mages against a populace of 18,713, held at exactly the founding academy's **64 student
+seats** from world year thirty onward. And `advanceConstruction` — the function that would advance a
+new university's build — has **zero production callers**; it is defined, exported, mentioned in one
+comment, and invoked nowhere outside its own tests.
+
+**What nobody drew out**, and it lands on two things built this week:
+
+- Tonight's **stationed set** — teaching, researching and defending are one roster — is stated as the
+  tightest coupling in the design. With **one** university there is no siting decision, no
+  concentration risk, and no question of which campus to defend. The tension is real and currently
+  has nowhere to happen.
+- **W24 measured a genuine tradeoff between a river-delta and a highland-waste academy** — 818
+  population and library depth 22 against 1,002 and 19, histories separating at tick 157. W24 flagged
+  that siting is a *scenario* decision rather than a *play* decision. This is worse than that: a
+  player cannot exercise it **even in principle**, because exercising it requires founding a second
+  university and nothing in the tree completes one.
+
+### 3. Pillar 1 promises symmetry the implementation does not keep
+
+The first design pillar:
+
+> *"Rules-setting is the core verb. The most interesting decision in the game is which magic exists in
+> your universe — because that choice is **symmetric** and permanent-feeling."*
+
+`packages/content/src/god.ts:191–206` enforces the symmetry it can see: content fails to load if
+permitting and forbidding cost different favor, citing this pillar. But W30 found the *total* price
+asymmetric by construction — `interventions.ts:390–393` exempts permitting from the worship shock
+outright, and `decay.ts:74–77` charges only forbidding with irreversible mastery loss, in a comment
+calling itself *"the whole mechanism by which forbidding a cell actually costs a civilization
+something."*
+
+**So the favor price is symmetric by enforced invariant and everything else is asymmetric against
+denial.** The pillar is not merely unmet; there is a loader invariant standing guard over the one
+axis where it holds, which is the most convincing possible way to not notice the others.
+
+That matters more after tonight than before it: the raid design leans hard on denial being a peer
+strategy — forbid Perdo to save the library, forbid Fatum and swear off your own escape — and every
+one of those plays is charged twice under the current implementation.
