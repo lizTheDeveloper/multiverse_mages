@@ -61,6 +61,36 @@ Two smaller readings from the same table, both new:
 - **`portal-rush` dips and recovers** — 47.2 at 300, 42.2 at 600, 51.7 at 2400 — the only
   non-monotone row in the table.
 
+### The second pass, and the two findings in it
+
+The same ten strategies, the same seeds, five shorter caps. n = 400 per horizon, production
+executor. Mean `referenceNodesKnown`:
+
+| strategy | 30 | 60 | 120 | 180 | 240 | 300 |
+|---|--:|--:|--:|--:|--:|--:|
+| `passive-control` | 14.7 | 28.1 | 39.4 | 45.8 | 47.7 | 48.9 |
+| `archivist` | 15.9 | 27.5 | 38.6 | 45.2 | 47.8 | 49.2 |
+| `worship-maximizer` | 15.2 | 28.9 | 39.9 | 46.1 | 47.8 | 48.9 |
+| `idle-then-declare` | 14.6 | 27.3 | 39.5 | 46.0 | 47.5 | 48.8 |
+| `portal-rush` | 15.9 | 27.6 | 38.4 | 45.6 | 46.5 | 47.2 |
+| `uniform-random-legal` | 15.4 | 27.8 | 38.7 | 46.9 | 51.1 | 54.7 |
+| `narrow-depth` | 8.2 | 10.2 | 9.2 | 8.9 | 6.4 | 6.3 |
+| `denial-warden` | 13.6 | 13.7 | 13.6 | **12.8** | **4.1** | 3.9 |
+| `permissive-breadth` | 14.0 | 28.0 | 58.1 | 91.0 | 123.0 | 154.9 |
+| `permit-then-idle` *(probe)* | 13.5 | 29.4 | 59.3 | 92.1 | 126.3 | 155.8 |
+
+**1. The one lever the campaign found live is inert for its first ~120 ticks.** At caps of 30 and
+60, `permit-then-idle` (13.5, 29.4) and `permissive-breadth` (14.0, 28.0) are indistinguishable from
+`passive-control` (14.7, 28.1) and from every other unrestricted strategy — **all ten sit inside a
+two-node band**. Permitting a cell does not produce a node for roughly 120 ticks. So the window in
+which universes hold a fraction of the reachable set *and* any strategy differs from any other in
+count is, on this evidence, **empty**.
+
+**2. `denial-warden` falls off a cliff between caps 180 and 240** — 12.8 to 4.1, and under common
+random numbers these are the same universes, so roughly nine nodes leave in sixty ticks. That is a
+discontinuity, not a drift. 240 is exactly one `ERA_TICKS`; that coincidence is recorded as a
+hypothesis and was not chased further, because nothing in this measurement turns on it.
+
 ## The production arm — n = 400 per horizon, the real executor
 
 Seven sweep files differing in `termination.worldTickCap` and in nothing else, run on Modal through
@@ -116,6 +146,38 @@ for is met at 1200, 1800 and 2400 — and is *unreachable by construction* below
 `permitTechnique` and `permitForm` for 140 ticks and then submits an empty preference list forever —
 wins at least as often as `permissive-breadth` at every horizon, and eight of ten strategies win
 nothing at any horizon. The integration round's headline survives the horizon sweep intact.
+
+## The decision rule, written down before the composition numbers were read
+
+Counts are not composition, and the question is about composition. The composition arms are still
+running as this is written, so the rule that will decide the verdict is fixed here first — that is
+the only thing that makes the eventual claim immune to *"you picked the reading that flattered the
+noise"*, in either direction.
+
+**Containment below 1.000 at a short horizon is expected and is not the finding.** W15 already
+measured min pairwise containment at 0.202 / 0.437 / 0.620 / 1.000 at ticks 240 / 480 / 960 / 1440.
+Mid-acquisition scatter produces sub-unity containment on its own, and at 30–240 ticks
+within-strategy seed noise is at its maximum: small sets, still moving.
+
+**A second dimension is real at horizon H only if both hold:**
+
+1. **cross-strategy containment is below the within-strategy diagonal** — strategies differ from
+   each other by more than each differs from *itself* across seeds; and
+2. **`betweenShare` stays high** (W15 measured 0.946 at 2400) among the **seven** v1-bound
+   strategies — the strategy label still explains the variance, rather than noise explaining it.
+
+If cross ≈ within, the verdict is the negative one and it will be stated plainly: **one dimension at
+every horizon where the content is unexhausted; the count spread from tick 120 onward is the
+permission axis and nothing else; the flatness is in the content graph.**
+
+The rank cap is stated too: ten strategies bound strategy-level structure at nine components, seven
+bound it at six, no matter what the nodes do.
+
+**One limit of the cross-check, so nobody assumes it covers more than it does.** The prefix
+cross-check — *"the 2400 arm's composition sample at tick H equals the H-capped arm's terminal"* —
+applies only to the first pass, whose sampling grid is 150. None of 30, 60, 120, 180 or 240 is a
+multiple of 150, and the second pass has no 2400-tick run of its own. **The short horizons are
+validated by being explicit capped runs, which is the authoritative method in either case.**
 
 ## Status
 
