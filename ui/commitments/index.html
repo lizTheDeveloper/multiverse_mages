@@ -1,0 +1,308 @@
+<!doctype html>
+<!--
+  Multiverse Mages — the verbs whose consequence is not now.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  Four actions in contracts §4.2 are unlike bless and assign-role. Funding a
+  university, encouraging research, changing tradition and opening a portal all
+  pay out somewhere other than the tick you spend on — and two of them cannot be
+  undone at all.
+
+    fund-university   3072, and fund-progress is 256, so four fundings complete
+                      one. With found-university-cost 10240 that is 22,528 favor
+                      for a building that contributes nothing to worship or
+                      capacity until buildProgress reaches fp(1024).
+    encourage-research 1024 for an emphasis of 256 decaying 4 per tick — 64 ticks
+                      to nothing, at most 3 cells at once.
+    change-tradition  65536, which exceeds the favor cap at every worship tier
+                      below the highest. Structurally unavailable to a young
+                      universe rather than merely expensive. Zeroes the pool.
+    open-portal       16384, and it stops world time for both universes while
+                      everybody else keeps running.
+
+  THE QUESTION: how do you present a purchase whose effect is not now, when the
+  interface's other verbs all resolve on the tick you press them?
+
+    A  the price list    the cost table, honestly, against what you hold.
+    B  the horizon       when each one starts paying and when it stops.
+    C  reach             what your worship tier lets you even consider.
+
+  Serve with `npm run ui`, then open /ui/commitments/.
+
+  KNOWN COST: no rule is evaluated and no simulation runs. Every number is read
+  from packages/content/data/god-cost.json and god-constant.json and is marked
+  untuned there; the favor cap is favor-cap-base + tier x favor-cap-per-tier.
+  Arithmetic over those constants is done here rather than by the core, which is
+  fine for a prototype and would not be fine in the client.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — commitments</title>
+
+<style>
+  :root{
+    --ground:#090C0D;--panel:#0E1315;--sunk:#131A1C;--edge:#1D2729;
+    --ink:#DDE7E8;--soft:#94A3A5;--faint:#61716F;
+    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
+    --loss:#DE7059;--warn:#C9A034;--ok:#4DBE97;--ruin:#B15FD6;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:86rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
+  h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
+  .lede{color:var(--soft);max-width:68ch;margin:0 0 .45rem}
+  .lede b{color:var(--god-lit);font-weight:500}.lede em{color:var(--ink);font-style:italic}
+  code{font:12.5px var(--mono);color:#AFC0C2}
+
+  .bar{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;margin:1.3rem 0 1.4rem;
+    padding:.7rem .85rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
+  .bar .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+  .bar b{font:12px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+  .bar input[type=range]{accent-color:var(--god);vertical-align:middle;width:9rem}
+  .favorbar{flex:1;min-width:10rem;height:7px;background:#101718;border-radius:4px;position:relative;overflow:hidden}
+  .favorbar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--god-deep),var(--god));
+    box-shadow:0 0 12px -2px color-mix(in srgb,var(--god) 80%,transparent)}
+
+  .dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem;align-items:start}
+  @media (max-width:78rem){.dirs{grid-template-columns:1fr}}
+  .dir{border:1px solid var(--edge);border-radius:5px;background:var(--panel);display:flex;flex-direction:column}
+  .dhead{padding:.75rem .9rem;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:.5rem}
+  .dhead .letter{font:700 13px var(--mono);color:var(--god)}
+  .dhead .name{font:400 1.06rem var(--serif)}
+  .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .dbody{padding:.75rem .8rem;display:flex;flex-direction:column;gap:.45rem;min-height:24rem}
+  .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
+
+  /* A: price list */
+  .prow{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:baseline;padding:.4rem .5rem;
+    border-radius:3px;background:var(--sunk);border-left:2px solid transparent}
+  .prow .nm{font-size:.88rem}
+  .prow .aid{font:9px var(--mono);color:var(--faint);margin-left:.35rem}
+  .prow .gl{font:9.5px var(--mono);color:var(--faint);display:block;margin-top:.15rem;line-height:1.45}
+  .prow .c{font:11.5px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .prow[data-aff="yes"]{border-left-color:var(--god)}
+  .prow[data-aff="yes"] .c{color:var(--god-lit)}
+  .prow[data-aff="soon"]{border-left-color:#2A3538}
+  .prow[data-aff="soon"] .c{color:var(--soft)}
+  .prow[data-aff="never"]{border-left-color:var(--ruin);background:color-mix(in srgb,var(--ruin) 9%,var(--sunk))}
+  .prow[data-aff="never"] .c{color:var(--ruin)}
+
+  /* B: horizon */
+  .hrow{padding:.45rem .5rem;border-radius:3px;background:var(--sunk)}
+  .hrow .top{display:flex;align-items:baseline;gap:.4rem;margin-bottom:.3rem}
+  .hrow .nm{font-size:.88rem}
+  .hrow .c{margin-left:auto;font:10.5px var(--mono);color:var(--soft);font-variant-numeric:tabular-nums}
+  .track{position:relative;height:16px;background:#101718;border-radius:2px;overflow:hidden}
+  .track .seg{position:absolute;top:0;bottom:0}
+  .track .pay{background:linear-gradient(90deg,color-mix(in srgb,var(--ok) 55%,transparent),color-mix(in srgb,var(--ok) 22%,transparent));
+    border-left:2px solid var(--ok)}
+  .track .dead{background:repeating-linear-gradient(45deg,#161D1F 0 4px,transparent 4px 8px)}
+  .track .shock{background:color-mix(in srgb,var(--loss) 26%,transparent);border-left:2px solid var(--loss)}
+  .track .forever{background:linear-gradient(90deg,color-mix(in srgb,var(--ruin) 45%,transparent),color-mix(in srgb,var(--ruin) 18%,transparent));
+    border-left:2px solid var(--ruin)}
+  .hrow .legend{font:9.5px var(--mono);color:var(--faint);margin-top:.25rem;line-height:1.45}
+  .axis{display:flex;justify-content:space-between;font:9px var(--mono);color:var(--faint);margin-top:.15rem}
+
+  /* C: reach */
+  .tier{display:grid;grid-template-columns:3.4rem 1fr auto;gap:.5rem;align-items:center;padding:.35rem .45rem;
+    border-radius:3px;background:var(--sunk)}
+  .tier .t{font:10px var(--mono);color:var(--faint);letter-spacing:.06em}
+  .tier .cap{font:10.5px var(--mono);color:var(--soft);font-variant-numeric:tabular-nums;text-align:right}
+  .tier .marks{display:flex;gap:2px;flex-wrap:wrap}
+  .tier .mk{font:8.5px var(--mono);padding:1px 4px;border-radius:2px;border:1px solid;letter-spacing:.04em}
+  .tier .mk.on{color:var(--god-lit);border-color:var(--god-deep);background:color-mix(in srgb,var(--god) 12%,transparent)}
+  .tier .mk.off{color:#3E4B4D;border-color:#1E2729}
+  .tier[data-now="true"]{outline:1px solid var(--god);outline-offset:-1px}
+  .ruinnote{margin-top:.4rem;padding:.5rem .55rem;border:1px solid var(--ruin);border-radius:3px;
+    font:10.5px var(--mono);line-height:1.6;color:#E3B9F5;background:color-mix(in srgb,var(--ruin) 8%,transparent)}
+  .ruinnote b{color:var(--ruin)}
+
+  .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
+  .note h2{font:400 1.4rem var(--serif);margin:0 0 .5rem}
+  .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
+  .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--god-lit)}
+  footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages · actions 11–14 · god-cost.json · interventions</div>
+  <h1>The verbs whose consequence is not now</h1>
+  <p class="lede">Bless and assign-role resolve on the tick you press them. These four do not.
+  <b>A university costs 22,528 favor across five payments and contributes nothing until the last one.</b>
+  An encouragement decays to nothing in 64 months. Changing tradition zeroes your pool. Opening a portal
+  stops world time for both universes while everyone else keeps running.</p>
+  <p class="lede"><em>Every other verb the interface has is a purchase; these are commitments.</em> Move the
+  worship tier — the reach direction is where they stop being a price question.</p>
+
+  <div class="bar">
+    <span class="k">worship tier</span>
+    <input id="tier" type="range" min="0" max="5" step="1" value="2">
+    <b id="tierv">2</b>
+    <span class="k">favor</span>
+    <span class="favorbar"><i id="ffill" style="width:62%"></i></span>
+    <b id="favv">—</b>
+    <span class="k">of cap <b id="capv">—</b></span>
+  </div>
+
+  <div class="dirs" id="dirs"></div>
+
+  <div class="note">
+    <h2>What operating these settles</h2>
+    <p><b class="hot">One of these actions is not expensive — it is out of reach, and only the third
+    direction can say so.</b> <code>change-tradition</code> costs 65,536 against a cap of
+    <code>20,480 + tier × 10,240</code>, so it exceeds what a universe can hold at every tier below the
+    highest. A price list renders that as a big number the player might save toward, and they cannot: the
+    pool physically cannot get there. That is the difference between "expensive" and "not yet a verb you
+    have", and the cost table's own gloss says it was priced that way deliberately.</p>
+    <p><b>The horizon is the only direction that shows the dead interval.</b> A university returns
+    <em>nothing</em> — not reduced worship, not partial capacity — until <code>buildProgress</code> reaches
+    <code>fp(1024)</code>, which is four fundings after the founding. Four of the five payments buy no
+    observable change whatever, and a player who cannot see that will read the first three as broken. The
+    same shape appears inverted on encouragement, which pays immediately and is gone in 64 months.</p>
+    <p><b>Cost per tick of effect is the comparison nobody can make, and every direction here should
+    probably show it.</b> Bless is 2,048 for 120 ticks — about 17 favor a tick. Encourage is 1,024 for an
+    emphasis that decays over 64 — about 16 a tick, and pointed at a cell rather than a person. Those two
+    are near-identical purchases at very different face prices, and no interface that shows only the face
+    price will ever let a player notice.</p>
+    <p><b>What is missing from all three.</b> <code>open-portal</code>'s real price is tempo, not favor —
+    vision §8 makes the world-time pause the reason raiding is never free, and 16,384 is explicitly the
+    <em>second</em> thing about it per the cost gloss. None of these directions can show tempo cost,
+    because that is a number about the universes you are not looking at. It belongs with the raid
+    prototype's finding: the tempo cost has no home in the interface yet.</p>
+  </div>
+
+  <footer>
+    Prototype · not the client. Every number is read from <code>god-cost.json</code> and
+    <code>god-constant.json</code> and is marked <code>untuned</code> there. Arithmetic over those
+    constants is done here rather than by the core — fine for a prototype, not fine in the client.<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+</div>
+
+<script type="module">
+/* Real, from packages/content/data/god-cost.json and god-constant.json. All untuned. */
+const FAVOR_CAP_BASE = 20480, FAVOR_CAP_PER_TIER = 10240, TIER_COUNT = 5;
+const FUND_PROGRESS = 256, MASTERY_FULL = 1024;
+const FUND = 3072, FOUND = 10240, ENCOURAGE = 1024, TRADITION = 65536, PORTAL = 16384;
+const BLESS = 2048, BLESS_TICKS = 120;
+const ENC_MAG = 256, ENC_DECAY = 4, ENC_MAX_CELLS = 3;
+const SHOCK_TICKS = 120;
+const FUNDINGS = MASTERY_FULL / FUND_PROGRESS;              // 4
+const UNIVERSITY_TOTAL = FOUND + FUNDINGS * FUND;           // 22,528
+
+const ACTIONS = [
+  { id:11, name:'Found a university', cost:FOUND,
+    gloss:'A new build at zero progress. Contributes nothing to worship or capacity yet.' },
+  { id:11, name:'Fund a university', cost:FUND,
+    gloss:`Advances buildProgress by ${FUND_PROGRESS}. Four of these complete one.` },
+  { id:12, name:'Encourage research', cost:ENCOURAGE,
+    gloss:`Emphasis ${ENC_MAG}, decaying ${ENC_DECAY} a tick. At most ${ENC_MAX_CELLS} cells at once.` },
+  { id:14, name:'Open a portal', cost:PORTAL,
+    gloss:'Stops world time for both universes. The favor price is the second thing about it.' },
+  { id:13, name:'Change tradition', cost:TRADITION,
+    gloss:'Exceeds the favor cap below the highest tier, and zeroes whatever is left in the pool.' },
+];
+
+const HORIZON = [
+  { name:'Found + fund a university', cost:UNIVERSITY_TOTAL,
+    segs:[{ k:'dead', from:0, to:48 }, { k:'pay', from:48, to:100 }],
+    legend:`nothing at all for ${FUNDINGS} fundings after founding, then worship and capacity, permanently` },
+  { name:'Encourage research', cost:ENCOURAGE,
+    segs:[{ k:'pay', from:0, to:64 }, { k:'dead', from:64, to:100 }],
+    legend:`pays at once, decays ${ENC_DECAY}/tick, gone in ${ENC_MAG / ENC_DECAY} months` },
+  { name:'Bless a mage', cost:BLESS,
+    segs:[{ k:'pay', from:0, to:60 }, { k:'dead', from:60, to:100 }],
+    legend:`${BLESS_TICKS} months of raised research, teaching and life — shown for comparison` },
+  { name:'Change tradition', cost:TRADITION,
+    segs:[{ k:'shock', from:0, to:60 }, { k:'forever', from:60, to:100 }],
+    legend:`upheaval shock for ${SHOCK_TICKS} months, then a different game, permanently` },
+  { name:'Open a portal', cost:PORTAL,
+    segs:[{ k:'shock', from:0, to:22 }, { k:'forever', from:22, to:100 }],
+    legend:'a raid, then permanent consequences — casualties and burned books do not come back' },
+];
+
+const capAt = (t) => FAVOR_CAP_BASE + t * FAVOR_CAP_PER_TIER;
+let tier = 2, favor = 0;
+
+function render() {
+  const cap = capAt(tier);
+  favor = Math.round(cap * 0.62);
+  document.getElementById('tierv').textContent = tier;
+  document.getElementById('favv').textContent = favor.toLocaleString();
+  document.getElementById('capv').textContent = cap.toLocaleString();
+  document.getElementById('ffill').style.width = '62%';
+
+  const aff = (c) => (c <= favor ? 'yes' : c <= cap ? 'soon' : 'never');
+  const affLabel = { yes:'affordable now', soon:'reachable at this tier', never:'above the cap' };
+
+  document.getElementById('dirs').innerHTML = `
+    <section class="dir">
+      <div class="dhead"><span class="letter">A</span><span class="name">The price list</span>
+        <span class="tag">the cost table, honestly</span></div>
+      <div class="dbody">
+        ${ACTIONS.slice().sort((a, b) => a.cost - b.cost).map(a => `
+          <div class="prow" data-aff="${aff(a.cost)}">
+            <span><span class="nm">${a.name}</span><span class="aid">act ${a.id}</span>
+              <span class="gl">${a.gloss}</span></span>
+            <span class="c">${a.cost.toLocaleString()}</span>
+          </div>`).join('')}
+      </div>
+      <div class="dfoot">What the cost table says, sorted, against what you hold. Renders the ruinous action
+        as a big number the player might save toward — and they cannot.</div>
+    </section>
+
+    <section class="dir">
+      <div class="dhead"><span class="letter">B</span><span class="name">The horizon</span>
+        <span class="tag">when it starts paying</span></div>
+      <div class="dbody">
+        ${HORIZON.map(h => `
+          <div class="hrow">
+            <div class="top"><span class="nm">${h.name}</span>
+              <span class="c">${h.cost.toLocaleString()}</span></div>
+            <div class="track">
+              ${h.segs.map(s => `<span class="seg ${s.k}" style="left:${s.from}%;width:${s.to - s.from}%"></span>`).join('')}
+            </div>
+            <div class="axis"><span>now</span><span>10 years</span></div>
+            <div class="legend">${h.legend}</div>
+          </div>`).join('')}
+      </div>
+      <div class="dfoot">The only direction that shows the dead interval. Four of a university's five
+        payments buy no observable change whatever, and a player who cannot see that reads the first three
+        as broken.</div>
+    </section>
+
+    <section class="dir">
+      <div class="dhead"><span class="letter">C</span><span class="name">Reach</span>
+        <span class="tag">what the tier permits at all</span></div>
+      <div class="dbody">
+        ${Array.from({ length: TIER_COUNT + 1 }, (_, t) => {
+          const c = capAt(t);
+          return `<div class="tier" data-now="${t === tier}">
+            <span class="t">tier ${t}</span>
+            <span class="marks">${ACTIONS.map(a => `
+              <span class="mk ${a.cost <= c ? 'on' : 'off'}">${a.name.split(' ')[0].toLowerCase()}</span>`).join('')}
+            </span>
+            <span class="cap">${c.toLocaleString()}</span>
+          </div>`;
+        }).join('')}
+        <div class="ruinnote"><b>change-tradition needs tier ${
+          Array.from({ length: TIER_COUNT + 1 }, (_, t) => t).find(t => TRADITION <= capAt(t)) ?? '—'
+        }.</b> At 65,536 against a cap of 20,480 + tier × 10,240 it is not expensive, it is
+        <em>structurally unavailable</em> — the pool physically cannot hold enough below the highest tier.
+        A price list cannot express that difference.</div>
+      </div>
+      <div class="dfoot">Answers a question the other two cannot: not "can I afford this" but "is this a
+        verb I have yet". Worship tier is the gate, and the god raises it by growing, not by saving.</div>
+    </section>`;
+}
+
+const t = document.getElementById('tier');
+t.addEventListener('input', () => { tier = Number(t.value); render(); });
+render();
+</script>

@@ -1,0 +1,303 @@
+<!doctype html>
+<!--
+  Multiverse Mages — eight exceptions.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  Actions 5, 6 and 7 — issue a dispensation, issue an interdiction, revoke an
+  edict — are the last control surface with only one direction, and they are not
+  a smaller version of the axis toggles. An axis is a policy. An edict is an
+  *exception to your own policy*, it occupies one of a very small number of
+  slots, and the slot is the scarce thing rather than the favor: revoke costs
+  2048 against 6144 to issue, because freeing the slot is the point.
+
+  The rules that shape the interface:
+    - A dispensation MUST name a cell whose technique or form is otherwise
+      forbidden; an interdiction MUST name a cell whose axes are both permitted.
+      An edict that would change nothing is masked, not merely wasteful.
+    - Interdiction beats dispensation, and content declaring both for one cell
+      is rejected at load rather than resolved.
+    - Revoking frees the slot in the same world tick.
+    - EDICT_BUDGET_MAX is 8.
+
+  Three directions:
+    A  slots        eight physical holders. Scarcity is the object.
+    B  sentences    exceptions read as rules about rules.
+    C  on the grid  marks in place, where the cell is — what ui/ruleset/ does.
+
+  Serve with `npm run ui`, then open /ui/edicts/.
+
+  KNOWN COST: permits() and the edict precedence rule are reimplemented here
+  rather than imported, exactly as in ui/ruleset/. Cells and axes are real,
+  from the shared bundle.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — eight exceptions</title>
+
+<style>
+  :root{
+    --ground:#090C0D;--panel:#0E1315;--sunk:#131A1C;--edge:#1D2729;
+    --ink:#DDE7E8;--soft:#94A3A5;--faint:#61716F;
+    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
+    --disp:#4DBE97;--inter:#DE7059;--empty:#263436;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:86rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
+  h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
+  .lede{color:var(--soft);max-width:70ch;margin:0 0 .45rem}
+  .lede b{color:var(--god-lit);font-weight:500}.lede em{color:var(--ink);font-style:italic}
+  code{font:12.5px var(--mono);color:#AFC0C2}
+
+  .bar{display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;margin:1.2rem 0 1.3rem;
+    padding:.7rem .8rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
+  .bar .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+  .pick{font:10.5px var(--mono);text-transform:uppercase;letter-spacing:.04em;padding:.34rem .55rem;border-radius:3px;
+    border:1px solid #22302F;background:transparent;color:var(--soft);cursor:pointer}
+  .pick[aria-pressed="true"]{color:var(--god-lit);border-color:var(--god);
+    background:color-mix(in srgb,var(--god) 10%,transparent)}
+  .pick:focus-visible{outline:2px solid var(--god-lit);outline-offset:2px}
+  .bar .used{margin-left:auto;font:11px var(--mono);color:var(--soft)}
+  .bar .used b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+  .dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem;align-items:start}
+  @media (max-width:76rem){.dirs{grid-template-columns:1fr}}
+  .dir{border:1px solid var(--edge);border-radius:5px;background:var(--panel);display:flex;flex-direction:column}
+  .dhead{padding:.75rem .9rem;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:.5rem}
+  .dhead .letter{font:700 13px var(--mono);color:var(--god)}
+  .dhead .name{font:400 1.06rem var(--serif)}
+  .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .dbody{padding:.8rem .85rem;display:flex;flex-direction:column;gap:.5rem;min-height:20rem}
+  .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
+
+  /* A: slots */
+  .slots{display:grid;grid-template-columns:repeat(2,1fr);gap:.4rem}
+  .slot{border:1px dashed var(--empty);border-radius:3px;padding:.5rem .55rem;min-height:3.6rem;
+    display:flex;flex-direction:column;justify-content:center;gap:.15rem}
+  .slot .ix{font:9px var(--mono);color:var(--faint);letter-spacing:.1em}
+  .slot .cell{font:11.5px var(--mono)}
+  .slot .kind{font:9px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+  .slot.filled{border-style:solid}
+  .slot.disp{border-color:var(--disp)}.slot.disp .kind{color:var(--disp)}
+  .slot.inter{border-color:var(--inter)}.slot.inter .kind{color:var(--inter)}
+  .slot.filled{cursor:pointer}
+  .slot .rev{font:9px var(--mono);color:var(--faint);margin-top:.1rem}
+  .slot.empty .cell{color:var(--faint);font-style:italic}
+
+  /* B: sentences */
+  .sent{padding:.5rem .55rem;border-left:2px solid var(--empty);background:var(--sunk);border-radius:0 3px 3px 0}
+  .sent p{margin:0;font:400 .95rem/1.5 var(--serif)}
+  .sent .m{font:9.5px var(--mono);color:var(--faint);margin-top:.2rem;display:block}
+  .sent.disp{border-left-color:var(--disp)}
+  .sent.inter{border-left-color:var(--inter)}
+  .sent em{font-style:italic;color:var(--god-lit)}
+  .none{font:10.5px var(--mono);color:var(--faint);line-height:1.6}
+
+  /* C: on the grid */
+  .grid{display:grid;grid-template-columns:4.6rem repeat(4,1fr);gap:2px}
+  .gh{font:8.5px var(--mono);color:var(--faint);letter-spacing:.08em;text-transform:uppercase;
+    display:flex;align-items:center;justify-content:center;text-align:center;padding:.2rem 0}
+  .gh.row{justify-content:flex-start;padding-left:.2rem}
+  .gc{aspect-ratio:1.5;border:1px solid #1E2729;border-radius:2px;display:flex;align-items:center;
+    justify-content:center;font:9px var(--mono);position:relative;background:var(--sunk);cursor:pointer}
+  .gc[data-on="true"]{background:color-mix(in srgb,var(--god) 16%,var(--sunk));border-color:var(--god-deep);color:var(--god-lit)}
+  .gc[data-on="false"]{opacity:.5;color:var(--faint)}
+  .gc[data-e="dispensation"]{border-color:var(--disp);background:color-mix(in srgb,var(--disp) 22%,var(--sunk));color:#CFF6E6}
+  .gc[data-e="interdiction"]{border-color:var(--inter);background:color-mix(in srgb,var(--inter) 22%,var(--sunk));color:#FFD2C8;opacity:1}
+  .gc .b{position:absolute;top:1px;right:2px;font:8px var(--mono)}
+
+  .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
+  .note h2{font:400 1.4rem var(--serif);margin:0 0 .5rem}
+  .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
+  .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--god-lit)}
+  footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages · actions 5–7 · interventions · EDICT_BUDGET_MAX 8</div>
+  <h1>Eight exceptions</h1>
+  <p class="lede">An axis toggle is a policy. An edict is <b>an exception to your own policy</b>, and it
+  occupies one of eight slots. <em>The slot is the scarce thing, not the favor</em> — revoking costs 2,048
+  against 6,144 to issue, because freeing the slot is the entire point of the action.</p>
+  <p class="lede">The rules do most of the interface's work: a dispensation must name a cell whose axis is
+  otherwise forbidden and an interdiction one whose axes are both permitted, so <b>an edict that would
+  change nothing is masked rather than merely wasteful</b>. Click a cell in direction C to issue or revoke.</p>
+
+  <div class="bar">
+    <span class="k">technique</span>
+    <button class="pick" type="button" data-ax="intellego" aria-pressed="true">intellego</button>
+    <button class="pick" type="button" data-ax="perdo" aria-pressed="false">perdo</button>
+    <button class="pick" type="button" data-ax="rego" aria-pressed="true">rego</button>
+    <span class="k" style="margin-left:.6rem">form</span>
+    <button class="pick" type="button" data-ax="limen" aria-pressed="true">limen</button>
+    <button class="pick" type="button" data-ax="mentem" aria-pressed="true">mentem</button>
+    <button class="pick" type="button" data-ax="nomen" aria-pressed="false">nomen</button>
+    <button class="pick" type="button" data-ax="terram" aria-pressed="true">terram</button>
+    <span class="used">slots <b id="usedv">—</b> of 8</span>
+  </div>
+
+  <div class="dirs" id="dirs"></div>
+
+  <div class="note">
+    <h2>What operating these settles</h2>
+    <p><b class="hot">Only the slots direction makes the scarcity the object, and the scarcity is the
+    mechanic.</b> Eight is a small number chosen on purpose, and the cost table prices revocation cheaply
+    precisely so that the slot — not the favor — is what a player is managing. A grid shows edicts as
+    decoration on cells and never shows that you have two left; a list of sentences shows what they say and
+    not what they cost. Eight visible holders, most of them empty, is the only version where the budget is
+    a thing you feel before you spend it.</p>
+    <p><b>Sentences are the only direction that survives being read aloud.</b> "Perdo is forbidden, except
+    Perdo Mentem" is a rule about a rule, and that is genuinely what an edict is. It is also the only
+    direction that can express the precedence rule — interdiction beats dispensation — as language rather
+    than as a colour a player has to learn. Content declaring both for one cell is rejected at load, so the
+    interface never has to render the conflict; it only has to make the ordering understandable.</p>
+    <p><b>On the grid is the most legible and the most misleading.</b> Marks in place answer "is this cell
+    live" instantly, which is the question a player asks most. But it flattens an edict into a cell state,
+    and an edict is not a cell state — it is a scarce, revocable commitment that happens to affect a cell.
+    A player who learns edicts from the grid will be surprised by the budget.</p>
+    <p><b>The argument for shipping two of these.</b> The grid answers the frequent question and the slots
+    answer the expensive one, and they do not compete for the same screen space. That is the same
+    conclusion <code>ui/ruleset-symmetry/</code> reached about pillar #1 — for the ruleset family
+    specifically, "pick one direction" appears to be the wrong frame.</p>
+  </div>
+
+  <footer>
+    Prototype · not the client. Cells and axes are real, from the shared bundle.
+    <code>permits()</code> and the edict precedence rule are reimplemented here rather than imported, as in
+    <code>ui/ruleset/</code>.<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+</div>
+
+<script type="module">
+const DATA = await (await fetch('../ruleset/content.json')).json();
+const BUDGET = 8;
+const T = ['intellego', 'perdo', 'rego'];
+const F = ['limen', 'mentem', 'nomen', 'terram'];
+
+const state = {
+  technique: new Set(['intellego', 'rego']),      // perdo forbidden
+  form: new Set(['limen', 'mentem', 'terram']),   // nomen forbidden
+  edicts: new Map([                               // cellId -> kind
+    ['perdo-mentem', 'dispensation'],
+    ['rego-nomen', 'dispensation'],
+    ['rego-limen', 'interdiction'],
+  ]),
+};
+
+const axesPermit = (cell) => state.technique.has(cell.split('-')[0]) && state.form.has(cell.split('-')[1]);
+/* Interdiction beats dispensation. Content declaring both is rejected at load,
+   so this only has to order them, never resolve a conflict. */
+const permits = (cell) => {
+  const e = state.edicts.get(cell);
+  if (e === 'interdiction') return false;
+  if (e === 'dispensation') return true;
+  return axesPermit(cell);
+};
+/* An edict that changes nothing is masked, not merely wasteful. */
+const legalEdict = (cell) => (axesPermit(cell) ? 'interdiction' : 'dispensation');
+
+function render() {
+  document.getElementById('usedv').textContent = state.edicts.size;
+  const entries = [...state.edicts.entries()];
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  const pretty = (c) => c.split('-').map(cap).join(' ');
+
+  document.getElementById('dirs').innerHTML = `
+    <section class="dir">
+      <div class="dhead"><span class="letter">A</span><span class="name">Slots</span>
+        <span class="tag">scarcity is the object</span></div>
+      <div class="dbody">
+        <div class="slots">
+          ${Array.from({ length: BUDGET }, (_, i) => {
+            const e = entries[i];
+            if (!e) return `<div class="slot empty"><span class="ix">slot ${i}</span>
+              <span class="cell">unspent</span></div>`;
+            const [cell, kind] = e;
+            return `<div class="slot filled ${kind === 'dispensation' ? 'disp' : 'inter'}" data-revoke="${cell}">
+              <span class="ix">slot ${i}</span>
+              <span class="cell">${pretty(cell)}</span>
+              <span class="kind">${kind}</span>
+              <span class="rev">click to revoke · 2,048</span></div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="dfoot">Eight holders, most of them empty. The only direction where the budget is
+        something you feel before you spend it — and the cost table prices revocation cheaply precisely
+        because the slot, not the favor, is what you are managing.</div>
+    </section>
+
+    <section class="dir">
+      <div class="dhead"><span class="letter">B</span><span class="name">Sentences</span>
+        <span class="tag">rules about rules</span></div>
+      <div class="dbody">
+        ${entries.length ? entries.map(([cell, kind]) => {
+          const [t, f] = cell.split('-');
+          return `<div class="sent ${kind === 'dispensation' ? 'disp' : 'inter'}">
+            <p>${kind === 'dispensation'
+              ? `${cap(state.technique.has(t) ? f : t)} is forbidden, <em>except ${pretty(cell)}</em>.`
+              : `${cap(t)} and ${cap(f)} are both permitted, <em>except ${pretty(cell)}</em>.`}</p>
+            <span class="m">${kind} · slot spent · revoke frees it the same tick</span>
+          </div>`;
+        }).join('') : '<div class="none">No exceptions in force. The ruleset is exactly its nineteen switches.</div>'}
+        <div class="none" style="margin-top:.3rem">An interdiction always beats a dispensation. Content
+          declaring both for one cell is rejected at load, so this never has to render a conflict — only
+          make the ordering readable.</div>
+      </div>
+      <div class="dfoot">The only direction that survives being read aloud, and the only one that can state
+        the precedence rule as language rather than as a colour to be learned.</div>
+    </section>
+
+    <section class="dir">
+      <div class="dhead"><span class="letter">C</span><span class="name">On the grid</span>
+        <span class="tag">marks in place</span></div>
+      <div class="dbody">
+        <div class="grid">
+          <span class="gh"></span>${F.map(f => `<span class="gh">${f.slice(0, 4)}</span>`).join('')}
+          ${T.map(t => `<span class="gh row">${t}</span>` + F.map(f => {
+            const cell = `${t}-${f}`;
+            const e = state.edicts.get(cell);
+            const on = permits(cell);
+            return `<button class="gc" type="button" data-cell="${cell}"
+              data-on="${on}" ${e ? `data-e="${e}"` : ''}
+              title="${e ? `${e} — click to revoke` : `click to issue a ${legalEdict(cell)}`}">
+              ${on ? '●' : '·'}${e ? `<span class="b">${e === 'dispensation' ? '+' : '−'}</span>` : ''}
+            </button>`;
+          }).join('')).join('')}
+        </div>
+        <div class="none">${state.edicts.size >= BUDGET
+          ? 'Budget full — issuing is masked until a slot is freed.'
+          : `${BUDGET - state.edicts.size} slots free. Nothing on this grid says so.`}</div>
+      </div>
+      <div class="dfoot">Answers the question a player asks most — is this cell live — and flattens an
+        edict into a cell state, which it is not. Someone who learns edicts here will be surprised by the
+        budget.</div>
+    </section>`;
+
+  document.querySelectorAll('[data-revoke]').forEach(el => el.addEventListener('click', () => {
+    state.edicts.delete(el.dataset.revoke); render();
+  }));
+  document.querySelectorAll('.gc').forEach(el => el.addEventListener('click', () => {
+    const cell = el.dataset.cell;
+    if (state.edicts.has(cell)) state.edicts.delete(cell);
+    else if (state.edicts.size < BUDGET) state.edicts.set(cell, legalEdict(cell));
+    render();
+  }));
+}
+
+document.querySelectorAll('.pick').forEach(b => b.addEventListener('click', () => {
+  const id = b.dataset.ax;
+  const kind = T.includes(id) ? 'technique' : 'form';
+  if (state[kind].has(id)) state[kind].delete(id); else state[kind].add(id);
+  b.setAttribute('aria-pressed', String(state[kind].has(id)));
+  render();
+}));
+
+render();
+</script>
