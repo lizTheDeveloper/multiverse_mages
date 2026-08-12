@@ -1,354 +1,1762 @@
 <!doctype html>
+<html lang="en">
 <!--
-  Multiverse Mages — watching a raid you cannot touch.
+  Multiverse Mages — the engagement: every spell gets a moment in the world.
   Copyright (C) 2026 Ann Kelner
   SPDX-License-Identifier: AGPL-3.0-or-later
 
-  electron-client's last open question, and the only one where the player has
-  no verbs at all: "How is a raid watched by someone who cannot intervene?"
+  ============================================================================
+  WHAT THIS REPLACES, AND WHY
+  ============================================================================
+  The previous ui/raid/ prototype asked "every action is masked for the
+  duration — what is a player actually *doing* while a raid runs?" and answered
+  "nothing". docs/design/raid-engagement.md §0 (author, 2026-08-12) rules that
+  the masking was the bug, and §1 repeals vision §3's frozen-policy sentence:
 
-  The constraints are unusually total. The god issues no orders ever (vision
-  §7). Rules changes are frozen for both sides (vision §3), and contracts §4.2
-  masks *every* action to no-op for the duration — not just the ruleset ones.
-  World time stops for both participants and keeps running for everyone else
-  (vision §8). The engagement tick is 100ms against a world tick of a month.
-  So for the length of a raid the player is, mechanically, an audience.
+      The ruleset MAY be changed during a raid, and every change LOCKS until
+      the raid ends. Reverting afterwards costs substantially more favor.
 
-  sound-design §7.2 already picks the lead: "the portal timer is the most
-  important information in a raid", because it is the thing that guarantees
-  termination. Three directions differ in what they put beside it.
+  So the old prototype's premise is gone and it has been replaced rather than
+  kept alongside — a prototype arguing from a repealed rule is a trap, and git
+  history holds it (72ce640, "proto: watching a raid you cannot touch"). Its
+  one durable finding survives here: sound-design §7.2's claim that portal
+  stability is the most important number in a raid, which is why the stability
+  bar sits directly under the field and nothing competes with it for that spot.
 
-    A  the battlefield   200m x 200m, positioned combatants. It looks like an RTS.
-    B  the clock         stability enormous; everything else is consequence.
-    C  the ledger        a raid as a transaction. No battlefield at all.
+  Its one design defect is also fixed. The old page drew the player's own
+  combatants in --god cyan. ui/glow/ rules that cyan is the god's own light and
+  the fourteen form hues stay the world's; a mage is of the world, not of the
+  god, so a cyan mage breaks the rule at the exact moment it matters most. Here
+  cyan appears only on the god's own affordances — live verbs, the muster
+  clock, the constitution's switches, the lock chrome, focus rings — and every
+  drawn spell wears its cell's form hue and nothing else.
 
-  Serve with `npm run ui`, then open /ui/raid/.
+  ============================================================================
+  KNOWN COST — read this before believing anything on screen
+  ============================================================================
+  raid-engagement.md §5: "A raid view that animates plausible-looking magic
+  unconnected to what the engine decided is worse than no raid view, because it
+  will be believed."
 
-  KNOWN COST: raid-engagement is proposal-only, so combatant counts, casualty
-  rates and objective timings here are invented at plausible magnitudes. The
-  200m x 200m field and the 100ms tick are real (contracts §0). Nothing here
-  evaluates a rule; the frozen action bar is a presentation of §4.2's mask, not
-  an implementation of it.
+  THIS PAGE IS NOT LIVE AGAINST THE SIMULATION. packages/rules-raid is imported
+  by no package; there is nothing to be live against. The engagement here is a
+  SYNTHETIC TRACE generated inside this file by a seeded PRNG, and the page
+  says so in its own interface, not only here. What it does have going for it:
+
+    REAL, baked from packages/content/data at commit 95b37fc —
+      · the twelve v1 cells (cell.json, `"v1": true`), which is exactly the
+        3-technique x 4-form rectangle contracts.md §2.2 declares
+      · all 51 nodes in those cells: id, display name, tier, and every
+        engagement-scale effect with its authored magnitude and durationTicks
+      · every stacking rule and cap from primitive.json
+      · every constant in raid-constant.json — field extent, terrain cell size
+        and the three terrain chances, deployment depth, movement per tick,
+        cast range, area-denial radius, theft range, objective radii and
+        progress, hit points, cast vigor base and per-tier, portal stability,
+        its jitter and decay, the withdraw margin, and the victory fraction
+
+    MIRRORED from packages/rules-raid/src/arbitration.ts, not imported —
+      · the seven-primitive dispatch of CastArbiter#effectsOf
+      · the two-layer legality check, and forbiddenCastsBlocked as a counter
+      · applyWardOnce: damage summed, then exactly ONE ward application
+      · passiveDefences for ward and concealment
+      · the cast order: legality, then cost, then expenditure, then effects
+
+    AUTHORED HERE and in no content file, flagged on the page as such —
+      · the muster duration, the cast cooldown, vigor regeneration, the intent
+        policy that chooses a target and a node, mage rosters and their held
+        nodes, objective instance counts, and the damage viewing multiplier
+      · line of sight is sampled along the segment rather than walked with
+        geometry.ts's supercover trace
+
+    AHEAD OF THE ENGINE, deliberately, and the likeliest thing to be believed —
+      · arbitration.ts computes the legal mask ONCE from a frozen snapshot and
+        says so in its own comments. The lock-don't-freeze behaviour animated
+        here is raid-engagement.md §1, which W37 is implementing on
+        w37/raid-playable. This page shows the design, not the shipped code.
+      · Vis, exposure and the raid verb set exist in no package. They are §3
+        proposals, drawn as proposals.
+      · vision §7's "the god issues no orders" is NOT repealed. Every verb here
+        is god-shaped: permit, forbid, and favor spent on a standing condition.
+        Nothing on this page targets or moves a combatant.
+
+  Two open questions in §6 are deliberately not answered here: the muster clock
+  runs on engagement time because something had to be picked (§6.5 open), and
+  the exposure ledger counts what the host's academics OBSERVED rather than
+  what they learned, because §6.6 has not been ruled.
+
+  Self-contained: no CDN, no webfont, no network, no build step. Opens from
+  file://. `npm run ui` and /ui/raid/ works too.
+
+  To regenerate the baked content block below:
+    node -e "const c=require('./packages/content/data/cell.json'),n=Object.fromEntries(require('./packages/content/data/node.json').map(x=>[x.id,x])),P=new Set(['direct-damage','ward','area-denial','blink','summon','concealment','knowledge-steal','portal']);console.log(JSON.stringify(c.filter(x=>x.v1).map(x=>({id:x.id,t:x.technique,f:x.form,n:x.nodes.map(i=>({id:i,name:n[i].name,tier:n[i].tier,e:n[i].effects.filter(e=>P.has(e.primitive)).map(e=>({p:e.primitive,m:e.magnitude,d:e.durationTicks}))}))}))))"
 -->
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Multiverse Mages — watching a raid</title>
-
+<title>Multiverse Mages — the engagement</title>
 <style>
-  :root{
-    --ground:#080B0C;--panel:#0E1315;--sunk:#131A1C;--edge:#1D2729;
-    --ink:#DDE7E8;--soft:#94A3A5;--faint:#5F6F71;
-    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
-    --limen:#A692EC;--loss:#DE7059;--warn:#C9A034;--ok:#4DBE97;--foe:#B4574A;
-    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
-    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
-  .wrap{max-width:84rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
-  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--limen)}
-  h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
-  .lede{color:var(--soft);max-width:68ch;margin:0 0 .45rem}
-  .lede b{color:var(--limen);font-weight:500}.lede em{color:var(--ink);font-style:italic}
-  code{font:12.5px var(--mono);color:#AFC0C2}
+/* ==========================================================================
+   TOKENS
+   The :root block below is ui/glow/index.html's, verbatim, because glow is
+   where the rule lives: cyan is the god's own light and the form hues stay the
+   world's. Only the four forms of the v1 rectangle are needed — limen, mentem,
+   nomen, terram — and glow already defines exactly those four.
+   ========================================================================== */
+:root {
+  /* ---- world palette, shared with the other prototypes ---- */
+  --vellum:   #E7E1D1;
+  --plate:    #F2EEE4;
+  --sunk:     #D8D1BD;
+  --ink:      #1C1913;
+  --soft:     #55503F;
+  --faint:    #7E7563;
+  --line:     #C9C1AC;
 
-  /* the frozen bar — the same verbs as everywhere else, all of them dead */
-  .frozen{margin:1.3rem 0 1.4rem;padding:.7rem .85rem;background:var(--panel);
-    border:1px solid var(--edge);border-radius:4px;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
-  .frozen .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--warn)}
-  .frozen .v{font:11px var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:.4rem .6rem;
-    border:1px dashed #2A3538;border-radius:3px;color:#93A0A2;cursor:not-allowed;background:transparent}
-  .frozen .why{font:10.5px var(--mono);color:var(--faint);margin-left:auto}
-  .frozen .run{margin-left:.4rem;font:11px var(--mono);text-transform:uppercase;letter-spacing:.05em;
-    padding:.4rem .7rem;border-radius:3px;border:1px solid var(--limen);color:#CFC2FF;background:transparent;cursor:pointer}
+  /* ---- the fourteen form hues own the world's magic (four of them here) ---- */
+  --limen:    #6A52B8;
+  --mentem:   #26775F;
+  --nomen:    #3E66A4;
+  --terram:   #9A5730;
 
-  .dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem;align-items:start}
-  @media (max-width:76rem){.dirs{grid-template-columns:1fr}}
-  .dir{border:1px solid var(--edge);border-radius:5px;background:var(--panel);display:flex;flex-direction:column}
-  .dhead{padding:.75rem .9rem;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:.5rem}
-  .dhead .letter{font:700 13px var(--mono);color:var(--limen)}
-  .dhead .name{font:400 1.06rem var(--serif)}
-  .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
-  .dbody{padding:.85rem .9rem;display:flex;flex-direction:column;gap:.7rem}
-  .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
+  /* ---- the god's light. Not a form hue: see the collision note on the page. ---- */
+  --god:      #12B8C6;
+  --god-lit:  #6FF0FA;
+  --god-deep: #06525C;
 
-  /* ---- shared: portal stability ---- */
-  .stab{display:flex;flex-direction:column;gap:.3rem}
-  .stab .lab{display:flex;align-items:baseline;gap:.4rem;font:10px var(--mono);letter-spacing:.12em;
-    text-transform:uppercase;color:var(--faint)}
-  .stab .lab b{margin-left:auto;color:var(--limen);font-variant-numeric:tabular-nums}
-  .stab .track{height:8px;background:#101718;border-radius:4px;overflow:hidden;position:relative}
-  .stab .track i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#4C3A86,var(--limen));
-    box-shadow:0 0 12px -2px color-mix(in srgb,var(--limen) 80%,transparent);transition:width 180ms linear}
-  .stab .track.q1 i{background:linear-gradient(90deg,#7A3A32,var(--loss));
-    box-shadow:0 0 14px -1px color-mix(in srgb,var(--loss) 85%,transparent)}
-  .stab .q{font:9.5px var(--mono);color:var(--faint);letter-spacing:.08em}
+  --deny:     #A2331F;
 
-  /* the enormous clock, direction B */
-  .bigclock{text-align:center;padding:.4rem 0 .2rem}
-  .bigclock .n{font:400 4.6rem/1 var(--serif);font-variant-numeric:tabular-nums;letter-spacing:-.03em;
-    color:var(--limen);text-shadow:0 0 34px color-mix(in srgb,var(--limen) 45%,transparent)}
-  .bigclock .n.crit{color:var(--loss);text-shadow:0 0 38px color-mix(in srgb,var(--loss) 55%,transparent)}
-  .bigclock .u{font:10px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  --serif: "Hoefler Text", "Iowan Old Style", Palatino, "Book Antiqua", Georgia, serif;
 
-  /* ---- A: battlefield ---- */
-  .field{position:relative;aspect-ratio:1;background:
-      repeating-linear-gradient(0deg,#0D1213 0 1px,transparent 1px 40px),
-      repeating-linear-gradient(90deg,#0D1213 0 1px,transparent 1px 40px),#0A1011;
-    border:1px solid #1B2426;border-radius:3px;overflow:hidden}
-  .field .scale{position:absolute;left:.4rem;bottom:.3rem;font:9px var(--mono);color:var(--faint)}
-  .unit{position:absolute;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%);transition:left 380ms linear,top 380ms linear}
-  .unit.own{background:var(--god);box-shadow:0 0 8px -1px var(--god)}
-  .unit.foe{background:var(--foe);box-shadow:0 0 8px -1px var(--foe)}
-  .unit.dead{background:#2A3234;box-shadow:none;opacity:.6}
-  .obj{position:absolute;transform:translate(-50%,-50%);font:9px var(--mono);letter-spacing:.06em;
-    color:var(--warn);border:1px solid var(--warn);padding:1px 4px;border-radius:2px;
-    background:color-mix(in srgb,var(--warn) 14%,#0A1011);white-space:nowrap}
-  .obj.taken{color:var(--loss);border-color:var(--loss);background:color-mix(in srgb,var(--loss) 18%,#0A1011);
-    text-decoration:line-through}
+  /* ---- added here: the chrome surfaces, so every colour below is a token ---- */
+  --ground:   var(--vellum);
+  --panel:    var(--plate);
+  --well:     var(--sunk);
+  --rule:     var(--line);
+  --rule-hi:  #B3A98F;
+  --host:     #4A5F6B;   /* the defending universe. A cold slate, never cyan. */
+  --raider:   #A2331F;   /* the attacking universe. The deny family. */
+  --ok:       #1B7A5A;
+  --brass:    #8A6207;
+  --shadow:   rgba(28,25,19,.09);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --vellum:  #14120C; --plate: #1A1710; --sunk: #100E09;
+  --ink:     #E9E3D3; --soft:  #A79D89; --faint: #7D745F;
+  --line:    #2E2A20;
+  --limen:   #A692EC; --mentem: #46A98D; --nomen: #7099D8; --terram: #CC8450;
+  --god:     #12B8C6; --god-lit: #6FF0FA; --god-deep: #073C43;
+  --deny:    #DE7059;
+  --ground:  var(--vellum); --panel: var(--plate); --well: var(--sunk);
+  --rule:    var(--line); --rule-hi: #453D2E;
+  --host:    #8FB4C4; --raider: #DE7059; --ok: #4DBE97; --brass: #C9A034;
+  --shadow:  rgba(0,0,0,.4);
+}}
+:root[data-theme="dark"] {
+  --vellum:  #14120C; --plate: #1A1710; --sunk: #100E09;
+  --ink:     #E9E3D3; --soft:  #A79D89; --faint: #7D745F;
+  --line:    #2E2A20;
+  --limen:   #A692EC; --mentem: #46A98D; --nomen: #7099D8; --terram: #CC8450;
+  --god:     #12B8C6; --god-lit: #6FF0FA; --god-deep: #073C43;
+  --deny:    #DE7059;
+  --ground:  var(--vellum); --panel: var(--plate); --well: var(--sunk);
+  --rule:    var(--line); --rule-hi: #453D2E;
+  --host:    #8FB4C4; --raider: #DE7059; --ok: #4DBE97; --brass: #C9A034;
+  --shadow:  rgba(0,0,0,.4);
+}
 
-  /* ---- C: ledger ---- */
-  .ledger{display:flex;flex-direction:column;gap:.4rem}
-  .stake{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center;padding:.45rem .55rem;
-    border:1px solid #22302F;border-radius:3px;background:var(--sunk)}
-  .stake .n{font-size:.9rem}
-  .stake .sub{font:9.5px var(--mono);color:var(--faint);display:block;margin-top:.1rem}
-  .stake .st{font:9.5px var(--mono);letter-spacing:.09em;text-transform:uppercase}
-  .stake[data-st="held"] .st{color:var(--ok)}
-  .stake[data-st="contested"]{border-color:var(--warn)}
-  .stake[data-st="contested"] .st{color:var(--warn)}
-  .stake[data-st="lost"]{border-color:var(--loss);background:color-mix(in srgb,var(--loss) 10%,var(--sunk))}
-  .stake[data-st="lost"] .st{color:var(--loss)}
-  .stake[data-st="lost"] .n{text-decoration:line-through;color:var(--soft)}
-  .irrev{margin-top:.3rem;padding:.5rem .6rem;border:1px solid var(--loss);border-radius:3px;
-    font:10.5px var(--mono);line-height:1.6;color:#F0AA9C;background:color-mix(in srgb,var(--loss) 9%,transparent)}
-  .irrev b{color:var(--loss)}
+*{box-sizing:border-box}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font:15px/1.55 var(--sans); -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:94rem;margin:0 auto;padding:1.6rem 1.15rem 4rem}
+:focus-visible{outline:2px solid var(--god);outline-offset:2px}
 
-  .counts{display:flex;gap:.9rem;flex-wrap:wrap;font:10.5px var(--mono);color:var(--faint)}
-  .counts b{color:var(--ink);font-variant-numeric:tabular-nums}
-  .counts .own b{color:var(--god-lit)}.counts .foe b{color:#E0958A}
+/* ---- the two utility styles everything else is built from ---- */
+.lab{font:10px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--faint)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+code{font:12.5px var(--mono);color:var(--soft)}
 
-  .elsewhere{padding:.5rem .6rem;border:1px dashed #2A3538;border-radius:3px;font:10.5px var(--mono);
-    color:var(--faint);line-height:1.6}
-  .elsewhere b{color:var(--soft)}
+/* ============================== LETTERHEAD ============================== */
+.head{display:flex;align-items:flex-end;gap:1.1rem;flex-wrap:wrap;margin-bottom:.55rem}
+.head .titles{flex:1 1 32rem;min-width:0}
+.eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
+h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;letter-spacing:-.015em;text-wrap:balance}
+.lede{color:var(--soft);max-width:66ch;margin:0}
+.lede b{color:var(--ink);font-weight:600}
+.lede em{font-style:italic;color:var(--ink)}
 
-  .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
-  .note h2{font:400 1.4rem var(--serif);margin:0 0 .5rem}
-  .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
-  .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--limen)}
-  footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
+.chip{
+  font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;
+  padding:.4rem .6rem;border:1px solid var(--rule);border-radius:2px;
+  background:var(--panel);color:var(--soft);cursor:pointer
+}
+.chip:hover{border-color:var(--rule-hi)}
+.chip.synthetic{
+  border-color:var(--brass);color:var(--brass);cursor:default;
+  background:color-mix(in srgb,var(--brass) 11%,var(--panel))
+}
+
+/* ============================== PHASE RAIL ============================== */
+.rail{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:1.3rem 0 1rem;
+  background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden
+}
+.ph{background:var(--panel);padding:.7rem .85rem .75rem;display:flex;flex-direction:column;gap:.3rem;min-width:0}
+.ph .top{display:flex;align-items:baseline;gap:.5rem}
+.ph .nm{font:400 1.02rem var(--serif);color:var(--faint)}
+.ph .agency{margin-left:auto;font:9.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.ph .what{font-size:.83rem;color:var(--faint);line-height:1.45}
+.ph .bar{height:3px;background:var(--well);border-radius:2px;overflow:hidden}
+.ph .bar i{display:block;height:100%;width:0;background:var(--rule-hi)}
+.ph[data-live="1"]{background:color-mix(in srgb,var(--god) 9%,var(--panel))}
+.ph[data-live="1"] .nm{color:var(--god);font-weight:500}
+.ph[data-live="1"] .agency{color:var(--god)}
+.ph[data-live="1"] .what{color:var(--soft)}
+.ph[data-live="1"] .bar i{background:var(--god);box-shadow:0 0 10px -2px var(--god)}
+.ph[data-done="1"] .bar i{width:100%!important;background:var(--rule-hi);box-shadow:none}
+
+/* ============================== THE PANEL ============================== */
+.panel{display:grid;grid-template-columns:19.5rem minmax(0,1fr) 21.5rem;gap:1rem;align-items:start}
+@media (max-width:88rem){.panel{grid-template-columns:19.5rem minmax(0,1fr)}}
+@media (max-width:62rem){.panel{grid-template-columns:minmax(0,1fr)}}
+
+.card{border:1px solid var(--rule);border-radius:3px;background:var(--panel);display:flex;flex-direction:column;min-width:0}
+.card > h2{
+  margin:0;padding:.55rem .75rem;border-bottom:1px solid var(--rule);
+  font:10px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--faint);font-weight:500;
+  display:flex;align-items:center;gap:.45rem
+}
+.card > h2 .side{margin-left:auto;font-size:9px;letter-spacing:.09em}
+.card .body{padding:.7rem .75rem .8rem;display:flex;flex-direction:column;gap:.7rem;min-width:0}
+.stack{display:flex;flex-direction:column;gap:.7rem}
+
+/* ---- meters ---- */
+.meter{display:flex;flex-direction:column;gap:.25rem}
+.meter .row{display:flex;align-items:baseline;gap:.4rem;font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+.meter .row b{margin-left:auto;font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:0;font-size:12px}
+.meter .track{height:6px;background:var(--well);border-radius:3px;overflow:hidden;border:1px solid var(--rule)}
+.meter .track i{display:block;height:100%;width:0;transition:width 140ms linear}
+.meter.favor .track i{background:var(--god)}
+.meter.favor .row b{color:var(--god)}
+.meter.vis .track i{background:var(--raider)}
+.meter.vis .row b{color:var(--raider)}
+.meter.expo .track i{background:var(--mentem)}
+.meter.expo .row b{color:var(--mentem)}
+.meter .note{font:9.5px var(--mono);color:var(--faint);line-height:1.5}
+
+/* ---- the constitution: twelve switches ---- */
+.consti{display:flex;flex-direction:column;gap:.35rem}
+.crow{display:grid;grid-template-columns:4.6rem repeat(4,1fr);gap:.25rem;align-items:center}
+.crow .tech{font:9.5px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--faint);text-align:right;padding-right:.15rem}
+.chead .form{font:9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);text-align:center}
+.cell{
+  appearance:none;border:1px solid var(--rule);border-radius:2px;background:var(--well);
+  color:var(--god);font:9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;
+  padding:.34rem .1rem;cursor:pointer;text-align:center;min-width:0;overflow:hidden;white-space:nowrap
+}
+.cell[data-state="permitted"]{
+  border-color:color-mix(in srgb,var(--god) 55%,var(--rule));
+  background:color-mix(in srgb,var(--god) 13%,var(--well));
+  box-shadow:0 0 9px -3px color-mix(in srgb,var(--god) 70%,transparent)
+}
+.cell[data-state="forbidden"]{
+  border-color:color-mix(in srgb,var(--deny) 50%,var(--rule));
+  background:color-mix(in srgb,var(--deny) 12%,var(--well));color:var(--deny);
+  box-shadow:none
+}
+.cell[data-locked="1"]{cursor:not-allowed;border-style:dashed}
+.cell[data-locked="1"]::after{content:" \\1F512";font-size:8px}
+.cell:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.cell:not(:disabled):hover{border-color:var(--god-lit)}
+
+/* ---- verbs ---- */
+.verbs{display:flex;flex-direction:column;gap:.35rem}
+.verb{
+  display:grid;grid-template-columns:1fr auto;gap:.3rem .5rem;align-items:center;
+  border:1px solid var(--rule);border-radius:2px;background:var(--well);
+  padding:.42rem .55rem;cursor:pointer;text-align:left;color:var(--ink);font:inherit;font-size:.88rem
+}
+.verb .cost{font:10px var(--mono);color:var(--god);letter-spacing:.05em}
+.verb .sub{grid-column:1/-1;font:9.5px var(--mono);color:var(--faint);line-height:1.45}
+.verb:not(:disabled){border-color:color-mix(in srgb,var(--god) 42%,var(--rule))}
+.verb:not(:disabled):hover{background:color-mix(in srgb,var(--god) 10%,var(--well));border-color:var(--god)}
+.verb:disabled{cursor:not-allowed;opacity:.44;border-style:dashed}
+.verb:disabled .cost{color:var(--faint)}
+.verb[data-spent="1"]{opacity:.55;border-style:solid;border-color:var(--rule)}
+.verb[data-spent="1"] .cost{color:var(--ok)}
+
+.deadbar{
+  border:1px dashed var(--rule);border-radius:2px;padding:.5rem .6rem;
+  font:10px var(--mono);line-height:1.6;color:var(--faint);letter-spacing:.04em
+}
+
+/* ---- the field ---- */
+.fieldwrap{position:relative;background:#090D0E;border-bottom:1px solid var(--rule)}
+.fieldwrap canvas{display:block;width:100%;height:auto;aspect-ratio:1}
+.overlay{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;padding:.55rem .6rem}
+.mclock{margin:auto;text-align:center;pointer-events:none}
+.mclock .n{
+  font:400 clamp(3rem,7vw,5.2rem)/1 var(--serif);font-variant-numeric:tabular-nums;letter-spacing:-.03em;
+  color:var(--god-lit);text-shadow:0 0 42px color-mix(in srgb,var(--god) 60%,transparent)
+}
+.mclock .n.urgent{color:#FFD27A;text-shadow:0 0 46px rgba(255,180,60,.55)}
+.mclock .u{font:10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:#7FD9E1;margin-top:.2rem}
+.mclock[hidden]{display:none}
+.fieldnote{
+  position:absolute;left:.6rem;bottom:.5rem;font:9px var(--mono);letter-spacing:.07em;color:#5C6B6D
+}
+.fieldtag{
+  position:absolute;right:.6rem;top:.5rem;font:9px var(--mono);letter-spacing:.11em;text-transform:uppercase;
+  color:#8A7A46;border:1px solid #4A421F;background:rgba(20,16,6,.72);padding:.22rem .4rem;border-radius:2px
+}
+
+.stability{padding:.6rem .75rem .7rem;display:flex;flex-direction:column;gap:.3rem;border-bottom:1px solid var(--rule)}
+.stability .row{display:flex;align-items:baseline;gap:.5rem;font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.stability .row b{margin-left:auto;font-size:15px;letter-spacing:0;color:var(--limen);font-variant-numeric:tabular-nums}
+.stability .track{height:10px;background:var(--well);border:1px solid var(--rule);border-radius:2px;overflow:hidden;position:relative}
+.stability .track i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,color-mix(in srgb,var(--limen) 45%,transparent),var(--limen))}
+.stability .track u{position:absolute;top:0;bottom:0;width:1px;background:var(--brass);text-decoration:none}
+.stability.crit .track i{background:linear-gradient(90deg,color-mix(in srgb,var(--deny) 45%,transparent),var(--deny))}
+.stability.crit .row b{color:var(--deny)}
+.stability .legendline{font:9.5px var(--mono);color:var(--faint);display:flex;gap:.8rem;flex-wrap:wrap}
+
+.controls{padding:.55rem .75rem .65rem;display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.controls .lab{margin-right:.1rem}
+.btn{
+  font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:.38rem .6rem;
+  border:1px solid var(--rule);border-radius:2px;background:var(--well);color:var(--soft);cursor:pointer
+}
+.btn:hover{border-color:var(--rule-hi);color:var(--ink)}
+.btn[aria-pressed="true"]{border-color:var(--god);color:var(--god);background:color-mix(in srgb,var(--god) 12%,var(--well))}
+.seed{
+  font:11px var(--mono);width:6.5rem;padding:.34rem .45rem;background:var(--well);color:var(--ink);
+  border:1px solid var(--rule);border-radius:2px
+}
+
+/* ---- the legend strip: always dark, because it swatches canvas ink ---- */
+.legend{background:#0B0F10;border-top:1px solid var(--rule);padding:.55rem .7rem;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:.3rem .8rem}
+.lg{display:flex;align-items:center;gap:.4rem;font:9.5px var(--mono);color:#8A9799;letter-spacing:.04em}
+.lg span.k{width:16px;height:16px;flex:none;border-radius:2px;background:#11181A;position:relative}
+.lg b{color:#C6D2D3;font-weight:500}
+
+/* ---- the log ---- */
+.log{max-height:23rem;overflow-y:auto;overflow-x:auto;background:var(--well);border-top:1px solid var(--rule)}
+.log table{border-collapse:collapse;width:100%;min-width:22rem}
+.log td{
+  font:10px var(--mono);padding:.22rem .35rem;border-bottom:1px solid color-mix(in srgb,var(--rule) 55%,transparent);
+  white-space:nowrap;vertical-align:top
+}
+.log td.t{color:var(--faint);text-align:right;font-variant-numeric:tabular-nums;width:3.2rem}
+.log td.who{width:1.9rem}
+.log td.n{color:var(--soft);max-width:11rem;overflow:hidden;text-overflow:ellipsis}
+.log td.r{text-align:right;font-variant-numeric:tabular-nums;width:5.4rem}
+.log tr[data-kind="refused"] td{color:var(--deny);opacity:.9}
+.log tr[data-kind="evaded"] td.r{color:var(--brass)}
+.log tr[data-kind="steal"] td.r{color:var(--mentem)}
+.log .side-a{color:var(--raider)} .log .side-d{color:var(--host)}
+.log .empty{padding:.9rem .6rem;font:10px var(--mono);color:var(--faint)}
+
+.expolist{max-height:12rem;overflow-y:auto;display:flex;flex-direction:column;gap:.16rem}
+.ex{display:grid;grid-template-columns:1fr auto;gap:.4rem;font:10px var(--mono);color:var(--soft);
+  padding:.2rem .3rem;border-bottom:1px solid color-mix(in srgb,var(--rule) 45%,transparent)}
+.ex b{color:var(--mentem);font-variant-numeric:tabular-nums}
+.ex .empty{color:var(--faint)}
+
+.tally{display:grid;grid-template-columns:1fr auto;gap:.15rem .5rem;font:10px var(--mono);color:var(--faint)}
+.tally b{color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+.tally .bad{color:var(--deny)}
+
+.outcome{
+  margin-top:.2rem;padding:.55rem .6rem;border:1px solid var(--brass);border-radius:2px;
+  background:color-mix(in srgb,var(--brass) 10%,var(--panel));font-size:.86rem;line-height:1.5
+}
+.outcome[hidden]{display:none}
+.outcome .h{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--brass);display:block;margin-bottom:.25rem}
+
+/* ============================== PROVENANCE ============================== */
+.prov{margin-top:1.6rem;border:1px solid var(--rule);border-radius:3px;background:var(--panel)}
+.prov > h2{margin:0;padding:.6rem .85rem;border-bottom:1px solid var(--rule);
+  font:10px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.prov .inner{padding:.9rem .85rem 1.1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1.1rem}
+.prov h3{font:400 1.02rem var(--serif);margin:0 0 .35rem}
+.prov h3 .k{font:9px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:.16rem .34rem;
+  border-radius:2px;margin-right:.4rem;vertical-align:.12em}
+.k.real{color:var(--ok);border:1px solid var(--ok)}
+.k.mirror{color:var(--nomen);border:1px solid var(--nomen)}
+.k.made{color:var(--brass);border:1px solid var(--brass)}
+.k.ahead{color:var(--deny);border:1px solid var(--deny)}
+.prov ul{margin:.2rem 0 0;padding-left:1.05rem;font-size:.85rem;color:var(--soft);line-height:1.55}
+.prov li{margin-bottom:.22rem}
+.prov li b{color:var(--ink);font-weight:600}
+.findings{border-top:1px solid var(--rule);padding:.9rem .85rem 1.1rem}
+.findings h3{font:400 1.05rem var(--serif);margin:0 0 .5rem}
+.findings ol{margin:0;padding-left:1.15rem;font-size:.88rem;color:var(--soft);line-height:1.6;max-width:88ch}
+.findings li{margin-bottom:.5rem}
+.findings li b{color:var(--ink)}
+.findings code{background:var(--well);padding:.05rem .22rem;border-radius:2px}
+
+.foot{margin-top:1.4rem;font:10px var(--mono);line-height:1.7;color:var(--faint);max-width:86ch}
+.foot a{color:var(--soft)}
 </style>
-
+</head>
+<body>
 <div class="wrap">
-  <div class="eyebrow">Multiverse Mages · the raid, read-only · vision §3 §7 §8 · sound-design §7.2</div>
-  <h1>Watching a raid you cannot touch</h1>
-  <p class="lede">The constraints here are unusually total. The god issues no orders, ever. Rules are frozen
-  for both sides, and <code>contracts §4.2</code> masks <em>every</em> action to no-op for the duration —
-  not just the ruleset ones. World time stops for the two participants and keeps running for everyone else.
-  <b>For the length of a raid the player is, mechanically, an audience.</b></p>
-  <p class="lede"><code>sound-design §7.2</code> already picks the lead — the portal timer is the most
-  important information in a raid, because it is the thing that guarantees the raid ends. Three directions
-  differ in what they put beside it.</p>
 
-  <div class="frozen">
-    <span class="k">frozen</span>
-    <button class="v" type="button" disabled>Permit</button>
-    <button class="v" type="button" disabled>Forbid</button>
-    <button class="v" type="button" disabled>Edict</button>
-    <button class="v" type="button" disabled>Bless</button>
-    <button class="v" type="button" disabled>Grant</button>
-    <button class="v" type="button" disabled>Assign role</button>
-    <button class="v" type="button" disabled>Fund</button>
-    <button class="v" type="button" disabled>Ascend</button>
-    <span class="why">all sixteen masked · §4.2 · only no-op remains legal</span>
-    <button class="run" id="run" type="button">Restart raid</button>
+  <header class="head">
+    <div class="titles">
+      <div class="eyebrow">ui/raid · raid-engagement.md §4</div>
+      <h1>Every spell gets a moment in the world</h1>
+      <p class="lede">A raid, watched from inside the universe being raided. Agency is
+        <b>front-loaded</b>: you spend the raid verb set under a clock, intervene less and less
+        sharply once the two sides touch, and by the end you have earned the right to
+        <em>only watch</em>. Every spell drawn on the field is a node in
+        <code>packages/content/data</code> dispatched through the seven effect primitives
+        <code>arbitration.ts</code> knows.</p>
+    </div>
+    <div class="chips">
+      <span class="chip synthetic" title="rules-raid is imported by no package. There is nothing to be live against.">Synthetic trace</span>
+      <button class="chip" id="theme" type="button">Theme: system</button>
+    </div>
+  </header>
+
+  <div class="rail" id="rail">
+    <div class="ph" data-phase="muster">
+      <div class="top"><span class="nm">Muster</span><span class="agency">agency: full</span></div>
+      <div class="what">Portal open, contact has not happened. Spend the verb set. Real decisions, under a clock.</div>
+      <div class="bar"><i></i></div>
+    </div>
+    <div class="ph" data-phase="contact">
+      <div class="top"><span class="nm">Contact</span><span class="agency">agency: narrowing</span></div>
+      <div class="what">Combatants engage; spells resolve. Fewer, sharper interventions. Ruleset changes still possible, still locking.</div>
+      <div class="bar"><i></i></div>
+    </div>
+    <div class="ph" data-phase="resolution">
+      <div class="top"><span class="nm">Resolution</span><span class="agency">agency: none</span></div>
+      <div class="what">Portal stability is under the withdraw margin. It plays out to a termination condition. You watch.</div>
+      <div class="bar"><i></i></div>
+    </div>
   </div>
 
-  <div class="dirs" id="dirs"></div>
+  <div class="panel">
 
-  <div class="note">
-    <h2>What operating these settles</h2>
-    <p><b class="hot">The timer is the lead in all three, and that is not a stylistic agreement.</b> It is
-    the only quantity on screen that is <em>monotonic and terminal</em>: it only ever falls, and when it
-    reaches zero the raid is over regardless of anything else. Everything else — casualties, objectives,
-    loot — is a consequence whose meaning depends on how much clock is left. <code>sound-design §7.2</code>
-    reached the same conclusion for the ear independently, which is a good sign the reading is right rather
-    than a coincidence of one designer's taste.</p>
-    <p><b>A is the version everyone pictures and the hardest to justify.</b> A 200 m × 200 m field with
-    positioned combatants is real — <code>contracts §0</code> fixes it, and <code>raid-engagement</code>
-    will produce it. But watching dots converge is the part of an RTS that exists so you can <em>issue
-    orders</em>, and here you cannot. It is the direction most likely to make a player reach for controls
-    that are masked, and vision §12 already puts animated RTS presentation out of scope for v1 — so the
-    honest question is whether the field is load-bearing or whether it is here because raids are supposed
-    to look like this.</p>
-    <p><b>C is the one that matches what a raid actually is.</b> A raid transfers permanent things:
-    casualties do not heal, a burned library does not come back, and a node whose last instance dies is
-    gone from the universe. Rendering that as a ledger of stakes — held, contested, lost — says what is at
-    risk before it is taken and what was taken after. It also has the property none of the others do:
-    <em>it degrades gracefully to a replay</em>, because a ledger of irreversible transfers is exactly what
-    you would want to read afterwards.</p>
-    <p><b>What all three must show and only one currently does.</b> Vision §8 says uninvolved universes
-    keep advancing while these two are stopped — that is the tempo cost, it is the whole reason raiding is
-    never free, and it is invisible unless the interface says so. A player who cannot see what raiding is
-    costing them cannot price it, and the balance harness is required to report tempo lost to inbound raids
-    as a first-class metric. If the client does not surface it, the player and the metric are looking at
-    different games.</p>
+    <!-- ============================ LEFT: THE GOD'S VERBS ============================ -->
+    <div class="stack">
+      <section class="card">
+        <h2>Your constitution <span class="side" style="color:var(--host)">host · you</span></h2>
+        <div class="body">
+          <div class="meter favor">
+            <div class="row"><span>Favor</span><b id="favor">—</b></div>
+            <div class="track"><i id="favor-bar"></i></div>
+            <div class="note">Worship, and the defender's only spend. Regenerates at fp(1)/tick here.</div>
+          </div>
+          <div class="consti" id="consti"></div>
+          <div class="note lab" id="lockline" style="line-height:1.6;letter-spacing:.04em">
+            Forbidding is defender-only. Every change locks until the raid ends.
+          </div>
+          <div class="verbs" id="verbs"></div>
+          <div class="deadbar" id="deadbar" hidden>
+            Every verb is masked for the remainder. Resolution is the phase the old prototype
+            thought the whole raid was.
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Their expedition <span class="side" style="color:var(--raider)">raider · not yours</span></h2>
+        <div class="body">
+          <div class="meter vis">
+            <div class="row"><span>Vis carried</span><b id="vis">—</b></div>
+            <div class="track"><i id="vis-bar"></i></div>
+            <div class="note">A portable, lootable stock spent per resolved cast. Running out is what ends
+              an over-extended raid. Proposal — Vis exists in no package.</div>
+          </div>
+          <div class="meter expo">
+            <div class="row"><span>Exposure to you</span><b id="expo">—</b></div>
+            <div class="track"><i id="expo-bar"></i></div>
+            <div class="note">Every spell they cast is cast in front of your academics. Counted as
+              <em>observed</em>: §6.6 has not ruled whether it teaches a node or raises a weight.</div>
+          </div>
+          <div class="expolist" id="expolist"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============================ CENTRE: THE FIELD ============================ -->
+    <section class="card">
+      <h2>The engagement <span class="side" id="fieldsub">200 m × 200 m · 100 ms tick</span></h2>
+      <div class="fieldwrap">
+        <canvas id="field" width="900" height="900" aria-label="The battlefield. A textual cast log to the right carries the same events."></canvas>
+        <div class="overlay">
+          <div class="mclock" id="mclock">
+            <div class="n num" id="mclock-n">30.0</div>
+            <div class="u">until contact</div>
+          </div>
+        </div>
+        <div class="fieldtag">synthetic trace</div>
+        <div class="fieldnote" id="fieldnote">terrain from seed · 20 × 20 cells of 10 m</div>
+      </div>
+      <div class="stability" id="stability">
+        <div class="row"><span>Portal stability</span><b><span id="stab">—</span> ticks</b></div>
+        <div class="track"><i id="stab-bar"></i><u id="stab-margin"></u></div>
+        <div class="legendline">
+          <span>tick <b class="num" id="tick">0</b></span>
+          <span>brass mark = withdraw margin, fp(400)</span>
+          <span id="alive">—</span>
+        </div>
+      </div>
+      <div class="controls">
+        <span class="lab">Trace</span>
+        <input class="seed" id="seed" value="hollow-gate" aria-label="Trace seed" spellcheck="false">
+        <button class="btn" id="restart" type="button">Restart</button>
+        <button class="btn" id="pause" type="button" aria-pressed="false">Pause</button>
+        <button class="btn" id="skip" type="button">Skip muster</button>
+        <span class="lab" style="margin-left:.4rem">Speed</span>
+        <button class="btn spd" data-spd="1" type="button">1×</button>
+        <button class="btn spd" data-spd="4" type="button">4×</button>
+        <button class="btn spd" data-spd="12" type="button">12×</button>
+        <span class="lab" style="margin-left:.4rem">Damage</span>
+        <button class="btn dmg" data-dmg="1" type="button" title="the authored magnitudes, unscaled">×1</button>
+        <button class="btn dmg" data-dmg="24" type="button" title="a viewing multiplier — not content">×24</button>
+      </div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <!-- ============================ RIGHT: THE LOG ============================ -->
+    <div class="stack">
+      <section class="card">
+        <h2>Cast log <span class="side">node · cell · primitive</span></h2>
+        <div class="log" id="logwrap"><table><tbody id="log"><tr><td class="empty" colspan="5">Nothing cast yet. The portal is open; contact has not happened.</td></tr></tbody></table></div>
+      </section>
+      <section class="card">
+        <h2>Ledger</h2>
+        <div class="body">
+          <div class="tally" id="tally"></div>
+          <div class="outcome" id="outcome" hidden><span class="h">Termination</span><span id="outcome-t"></span></div>
+        </div>
+      </section>
+    </div>
   </div>
 
-  <footer>
-    Prototype · not the client. <code>raid-engagement</code> is proposal-only, so combatant counts,
-    casualty rates and objective timings are invented at plausible magnitudes; the 200 m × 200 m field and
-    the 100 ms engagement tick are real (contracts §0).<br>
-    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
-  </footer>
+  <!-- ============================ PROVENANCE ============================ -->
+  <section class="prov">
+    <h2>What drives this, and what it is not</h2>
+    <div class="inner">
+      <div>
+        <h3><span class="k real">real</span>Baked from content</h3>
+        <ul>
+          <li>The <b>twelve v1 cells</b> — <code>cell.json</code>'s <code>"v1": true</code> flag, which is
+            exactly contracts §2.2's 3-technique × 4-form rectangle: intellego / perdo / rego over
+            limen / mentem / nomen / terram.</li>
+          <li>All <b>51 nodes</b> in those cells, with their real ids, display names, tiers, and every
+            engagement-scale effect at its authored magnitude and duration.</li>
+          <li>Every <b>stacking rule and cap</b> from <code>primitive.json</code>: ward and concealment
+            multiplicative-on-remainder at fp(922) and fp(870), blink and knowledge-steal by max,
+            area-denial and summon additive.</li>
+          <li>Every constant in <b><code>raid-constant.json</code></b> — extent, terrain chances,
+            deployment depth, movement, cast and theft range, hit points, cast vigor, portal
+            stability and its decay, the withdraw margin, the victory fraction.</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="k mirror">mirrored</span>Copied from arbitration.ts</h3>
+        <ul>
+          <li>The <b>seven-primitive dispatch</b> of <code>CastArbiter#effectsOf</code>, switch arm for
+            switch arm.</li>
+          <li>Both legality layers, and <b><code>forbiddenCastsBlocked</code></b> as a counter that
+            could have been non-zero.</li>
+          <li><b><code>applyWardOnce</code></b> — damage summed, then exactly one ward application,
+            <code>floor(raw × (1024 − ward) / 1024)</code>. Never per source.</li>
+          <li>The cast order: legality, then cost, then the host's <code>cast</code> hook, then effects.
+            An unaffordable cast keeps its preparation.</li>
+          <li><b>Not imported.</b> <code>@mm/rules-raid</code> is a TypeScript workspace with no browser
+            build; this is a hand-copy and can drift from it.</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="k made">authored here</span>In no content file</h3>
+        <ul>
+          <li>The <b>muster duration</b> (300 engagement ticks), the cast cooldown, vigor regeneration,
+            and the intent policy that picks a target and a node.</li>
+          <li><b>Mage rosters and their held nodes</b> — drawn from the seed. There is no world state
+            behind them.</li>
+          <li>Objective instance counts, and therefore objective values.</li>
+          <li>The <b>damage multiplier</b>, defaulting to ×24. Set it to ×1 to see the authored
+            magnitudes; finding 1 below is why the default is not ×1.</li>
+          <li>Line of sight is <b>sampled</b> along the segment, not walked with
+            <code>geometry.ts</code>'s supercover trace.</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="k ahead">ahead of the engine</span>Design, not shipped code</h3>
+        <ul>
+          <li><b>Mid-raid forbidding.</b> <code>arbitration.ts</code> computes the legal mask once from a
+            <em>frozen</em> snapshot. The lock-don't-freeze behaviour animated here is
+            raid-engagement.md §1, which W37 is implementing on <code>w37/raid-playable</code>. This is
+            the single most believable untruth on the page, which is why it is named here.</li>
+          <li><b>Vis, exposure, and the raid verb set</b> exist in no package. §3 proposals, drawn as
+            proposals. Vis is also a spec collision — economy spec §250 forbids a fourth resource.</li>
+          <li><b>The god still issues no orders.</b> vision §7 is not repealed. Every verb here is
+            permit, forbid, or favor spent on a standing condition; nothing targets a combatant.</li>
+          <li><b>Open questions left open.</b> The muster clock runs on engagement time because
+            something had to be picked (§6.5). Exposure counts what was <em>observed</em>, not what
+            was learned (§6.6).</li>
+        </ul>
+      </div>
+    </div>
+    <div class="findings">
+      <h3>Three things this prototype found, which is what a prototype is for</h3>
+      <ol>
+        <li><b>Node-driven damage is roughly two orders of magnitude below what a raid can spend.</b>
+          A mage has <code>fp(64)</code> hit points plus <code>fp(8)</code> a tier. The deepest
+          attack spell in the v1 rectangle, <code>pm-the-empty-room</code> at tier 5, deals
+          <code>fp(0.75)</code> per cast. At the authored cast cost and the authored 3,000-tick
+          portal lifetime, one archmage cannot fell one other mage inside a whole raid. Meanwhile
+          <code>summon-damage</code> is <code>fp(2)</code> <em>per tick</em> and
+          <code>detachment-damage</code> is <code>fp(3)</code> per tick — so a summoned servant
+          out-damages its summoner's best spell about a hundred and sixty times over. Every node is
+          <code>tuningStatus: untuned</code>, so this is a gap waiting on the balance harness rather
+          than a bug; but it means <b>the raid as currently authored terminates by portal collapse,
+          not by casualties</b>. Set damage to ×1 above and watch it happen.</li>
+        <li><b>Two content files disagree about the summon cap.</b>
+          <code>primitive.json</code> caps <code>summon</code> at <code>count-per-side: 8</code>;
+          <code>raid-constant.json</code>'s <code>max-summons-per-side</code> is <code>16</code>.
+          This page uses 16 as the alive-cap and 8 as the per-stack cap, which is one reading of two,
+          and the loader appears to enforce neither against the other.</li>
+        <li><b>Forbidding Perdo is as sharp as §1 promises, and sharper than it says.</b> Eleven of
+          the twelve direct-damage and area-denial nodes in the v1 rectangle are Perdo. Forbid the
+          four Perdo cells mid-raid and the field goes quiet for <em>both</em> sides within a few
+          ticks — the raider loses its offence, and so do you, and the cast log fills with
+          <code>forbidden</code> refusals from your own mages. Try it: it is the most legible thing
+          on this page, and it needs no new mechanism.</li>
+      </ol>
+    </div>
+  </section>
+
+  <p class="foot">
+    Prototype, not the client. <code>ui/README.md</code> states what these are allowed to do.
+    Design of record: <code>docs/design/raid-engagement.md</code> §4.
+    Event vocabulary: <code>packages/rules-raid/src/arbitration.ts</code>.
+    Content baked at <code>95b37fc</code>; the regeneration command is in this file's source comment.
+    Colour rule: <code>ui/glow/index.html</code> — cyan is the god's own light, the form hues stay
+    the world's. Copyright © 2026 Ann Kelner · AGPL-3.0-or-later.
+  </p>
 </div>
 
-<script type="module">
-const OBJECTIVES = [
-  { id:'lib',  label:'Coldharbour Library', x:26, y:30, hp:100, note:'holds 41 instances, 2 of them sole copies' },
-  { id:'uni',  label:'The Athenaeum',        x:68, y:22, hp:100, note:'capacity 12, build complete' },
-  { id:'arch', label:'Archmage Ismene',      x:52, y:74, hp:100, note:'holds the only copy of Keep the Name Close' },
+<script>
+'use strict';
+/* ==========================================================================
+   1. CONTENT, baked from packages/content/data at 95b37fc.
+      Twelve v1 cells; every node id, name and tier; every engagement-scale
+      effect at its authored magnitude (fp, scale 1/1024) and durationTicks.
+   ========================================================================== */
+const CELLS =
+[
+{"id":"intellego-mentem","t":"intellego","f":"mentem","n":[
+  {"id":"im-weigh-the-attention","name":"Weigh the Attention","tier":1,"e":[]},
+  {"id":"im-follow-the-thought","name":"Follow the Thought","tier":2,"e":[]},
+  {"id":"im-read-the-surface","name":"Read the Surface","tier":3,"e":[{"p":"knowledge-steal","m":192,"d":0}]},
+  {"id":"im-open-the-locked-room","name":"Open the Locked Room","tier":4,"e":[{"p":"knowledge-steal","m":384,"d":0}]}
+]},
+{"id":"intellego-terram","t":"intellego","f":"terram","n":[
+  {"id":"it-taste-the-soil","name":"Taste the Soil","tier":1,"e":[]},
+  {"id":"it-survey-the-strata","name":"Survey the Strata","tier":2,"e":[]},
+  {"id":"it-find-the-deep-seam","name":"Find the Deep Seam","tier":3,"e":[]},
+  {"id":"it-read-the-fault","name":"Read the Fault","tier":3,"e":[]}
+]},
+{"id":"intellego-limen","t":"intellego","f":"limen","n":[
+  {"id":"il-sense-the-seam","name":"Sense the Seam","tier":1,"e":[]},
+  {"id":"il-count-the-doors","name":"Count the Doors","tier":2,"e":[]},
+  {"id":"il-read-the-binding","name":"Read the Binding","tier":3,"e":[]},
+  {"id":"il-stand-in-the-doorway","name":"Stand in the Doorway","tier":4,"e":[{"p":"concealment","m":256,"d":0}]}
+]},
+{"id":"intellego-nomen","t":"intellego","f":"nomen","n":[
+  {"id":"in-hear-the-name-spoken","name":"Hear the Name Spoken","tier":1,"e":[]},
+  {"id":"in-spell-the-lesser-name","name":"Spell the Lesser Name","tier":2,"e":[]},
+  {"id":"in-derive-the-true-name","name":"Derive the True Name","tier":3,"e":[]},
+  {"id":"in-catalogue-of-names","name":"The Catalogue of Names","tier":4,"e":[]}
+]},
+{"id":"perdo-mentem","t":"perdo","f":"mentem","n":[
+  {"id":"pm-blunt-the-edge","name":"Blunt the Edge","tier":1,"e":[{"p":"direct-damage","m":96,"d":0}]},
+  {"id":"pm-the-misplaced-hour","name":"The Misplaced Hour","tier":2,"e":[{"p":"direct-damage","m":192,"d":0}]},
+  {"id":"pm-scatter-the-lesson","name":"Scatter the Lesson","tier":3,"e":[{"p":"area-denial","m":128,"d":20}]},
+  {"id":"pm-unmake-the-mind","name":"Unmake the Mind","tier":4,"e":[{"p":"direct-damage","m":512,"d":0}]},
+  {"id":"pm-the-empty-room","name":"The Empty Room","tier":5,"e":[{"p":"direct-damage","m":768,"d":0},{"p":"area-denial","m":192,"d":40}]}
+]},
+{"id":"perdo-terram","t":"perdo","f":"terram","n":[
+  {"id":"pt-crumble","name":"Crumble","tier":1,"e":[{"p":"direct-damage","m":128,"d":0}]},
+  {"id":"pt-open-the-ground","name":"Open the Ground","tier":2,"e":[{"p":"area-denial","m":96,"d":40}]},
+  {"id":"pt-pull-down-the-arch","name":"Pull Down the Arch","tier":3,"e":[{"p":"direct-damage","m":448,"d":0}]},
+  {"id":"pt-the-swallowed-hall","name":"The Swallowed Hall","tier":4,"e":[{"p":"area-denial","m":224,"d":60},{"p":"direct-damage","m":256,"d":0}]}
+]},
+{"id":"perdo-limen","t":"perdo","f":"limen","n":[
+  {"id":"pl-fray-the-edge","name":"Fray the Edge","tier":1,"e":[{"p":"direct-damage","m":128,"d":0}]},
+  {"id":"pl-unhinge","name":"Unhinge","tier":2,"e":[{"p":"direct-damage","m":256,"d":0}]},
+  {"id":"pl-the-open-wound","name":"The Open Wound","tier":3,"e":[{"p":"area-denial","m":96,"d":30}]},
+  {"id":"pl-nothing-holds","name":"Nothing Holds","tier":4,"e":[{"p":"area-denial","m":192,"d":50},{"p":"direct-damage","m":192,"d":0}]}
+]},
+{"id":"perdo-nomen","t":"perdo","f":"nomen","n":[
+  {"id":"pn-mispronounce","name":"Mispronounce","tier":1,"e":[{"p":"concealment","m":96,"d":0}]},
+  {"id":"pn-shed-the-use-name","name":"Shed the Use-Name","tier":2,"e":[{"p":"concealment","m":192,"d":0}]},
+  {"id":"pn-unsay-the-name","name":"Unsay the Name","tier":3,"e":[{"p":"direct-damage","m":320,"d":0}]},
+  {"id":"pn-the-nameless","name":"The Nameless","tier":4,"e":[{"p":"concealment","m":320,"d":0}]}
+]},
+{"id":"rego-mentem","t":"rego","f":"mentem","n":[
+  {"id":"rm-hold-the-attention","name":"Hold the Attention","tier":1,"e":[]},
+  {"id":"rm-the-patient-lesson","name":"The Patient Lesson","tier":2,"e":[]},
+  {"id":"rm-kindle-devotion","name":"Kindle Devotion","tier":3,"e":[]},
+  {"id":"rm-the-shared-mind","name":"The Shared Mind","tier":4,"e":[]}
+]},
+{"id":"rego-terram","t":"rego","f":"terram","n":[
+  {"id":"rt-set-the-stone","name":"Set the Stone","tier":1,"e":[]},
+  {"id":"rt-raise-the-course","name":"Raise the Course","tier":2,"e":[]},
+  {"id":"rt-quarry-without-hands","name":"Quarry Without Hands","tier":3,"e":[]},
+  {"id":"rt-the-vaulted-hall","name":"The Vaulted Hall","tier":4,"e":[]}
+]},
+{"id":"rego-limen","t":"rego","f":"limen","n":[
+  {"id":"rl-hold-the-door","name":"Hold the Door","tier":1,"e":[{"p":"ward","m":128,"d":0}]},
+  {"id":"rl-step-across","name":"Step Across","tier":2,"e":[{"p":"blink","m":4096,"d":0}]},
+  {"id":"rl-seal-the-way","name":"Seal the Way","tier":3,"e":[{"p":"ward","m":256,"d":0}]},
+  {"id":"rl-open-the-portal","name":"Open the Portal","tier":4,"e":[{"p":"portal","m":1024,"d":0}]},
+  {"id":"rl-the-standing-gate","name":"The Standing Gate","tier":5,"e":[{"p":"portal","m":1024,"d":0},{"p":"blink","m":8192,"d":0},{"p":"ward","m":320,"d":0}]}
+]},
+{"id":"rego-nomen","t":"rego","f":"nomen","n":[
+  {"id":"rn-call-by-name","name":"Call by Name","tier":1,"e":[{"p":"summon","m":1024,"d":0}]},
+  {"id":"rn-write-the-name-down","name":"Write the Name Down","tier":2,"e":[]},
+  {"id":"rn-keep-the-name-close","name":"Keep the Name Close","tier":2,"e":[{"p":"concealment","m":160,"d":0}]},
+  {"id":"rn-compel-by-name","name":"Compel by Name","tier":3,"e":[{"p":"knowledge-steal","m":256,"d":0}]},
+  {"id":"rn-the-bound-servant","name":"The Bound Servant","tier":4,"e":[{"p":"summon","m":2048,"d":0},{"p":"knowledge-steal","m":384,"d":0}]}
+]}
 ];
-const DURATION = 900;           // engagement ticks; 100ms each => 90s of raid
-let seed = 4242;
-const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
 
-let S;
-function reset() {
-  seed = 4242;
-  S = {
-    t: 0,
-    stability: 1,
-    own: Array.from({ length: 14 }, () => ({ x: 20 + rnd() * 60, y: 60 + rnd() * 34, alive: true })),
-    foe: Array.from({ length: 11 }, () => ({ x: 20 + rnd() * 60, y: 6 + rnd() * 26, alive: true })),
-    objs: OBJECTIVES.map(o => ({ ...o })),
-    lostNodes: [],
-    ownDead: 0, foeDead: 0,
-    elsewhereTicks: 0,
+/* Stacking and caps, from primitive.json. */
+const PRIM = {
+  'direct-damage':  { stack: 'sum',  cap: 0 },
+  'ward':           { stack: 'mul',  cap: 922 },
+  'area-denial':    { stack: 'sum',  cap: 0 },
+  'blink':          { stack: 'max',  cap: 0 },
+  'summon':         { stack: 'sum',  cap: 8 * 1024 },
+  'concealment':    { stack: 'mul',  cap: 870 },
+  'knowledge-steal':{ stack: 'max',  cap: 0 },
+};
+
+/* Every one of these is raid-constant.json, unmodified. fp scale 1024. */
+const K = {
+  FP: 1024,
+  extent: 204800, cellSize: 10240, cellsPerSide: 20,
+  impassable: 82, blocking: 154, rough: 205, roughCost: 512,
+  deployDepth: 40960, movePerTick: 4096,
+  castRange: 51200, areaDenialRadius: 12288, theftRange: 16384,
+  objectiveRadius: 8192, objectiveProgress: 256,
+  mageHp: 65536, hpPerTier: 8192,
+  summonHp: 24576, summonDamage: 2048,
+  detachHp: 49152, detachDamage: 3072, detachRange: 8192, detachStrength: 100,
+  stabilityInitial: 3072000, stabilityJitter: 614400, stabilityDecay: 1024,
+  withdrawMargin: 409600, portalMargin: 8192,
+  maxPerSide: 32, maxSummons: 16, maxObjectives: 6,
+  castVigorBase: 2048, castVigorPerTier: 1024,
+  baseConcealment: 0,
+  objValuePerInstance: 1024, objValuePerTier: 256,
+  archmageValue: 4096, universityValue: 2048,
+  victoryFraction: 512,
+};
+
+/* AUTHORED HERE — in no content file. Flagged on the page. */
+const A = {
+  musterTicks: 300,      // 30 s at the 100 ms engagement tick. §6.5 is open.
+  castCooldown: 9,       // ticks between casts by one mage
+  mageVigor: 49152,      // fp(48)
+  vigorRegen: 24,        // fp per tick
+  magesPerSide: 6,
+  detachmentsAttacker: 2,
+  detachmentsDefender: 3,
+  favorStart: 260, favorMax: 320, favorRegen: 1,
+  visStart: 480,
+  visPerCast: 4,
+};
+
+/* Canvas ink. The field well is dark in BOTH themes — ui/glow's ground B, taken
+   as a verdict rather than re-argued. So these are lifted for a dark ground and
+   are not read from the CSS tokens. */
+const HUE = { limen:'#A692EC', mentem:'#46A98D', nomen:'#7099D8', terram:'#CC8450' };
+const GOD = '#12B8C6', GOD_LIT = '#6FF0FA';
+const SIDE = { a: '#DE7059', d: '#8FB4C4' };  // raider, host. Shape carries it first.
+
+const NODE = new Map();   // nodeId -> { id, name, tier, cell, form, effects }
+const CELL = new Map();   // cellId -> { id, technique, form, nodes[] }
+for (const c of CELLS) {
+  CELL.set(c.id, { id: c.id, technique: c.t, form: c.f, nodes: c.n.map(n => n.id) });
+  for (const n of c.n) {
+    NODE.set(n.id, { id: n.id, name: n.name, tier: n.tier, cell: c.id, form: c.f,
+                     effects: n.e.map(e => ({ primitive: e.p, magnitude: e.m, durationTicks: e.d })) });
+  }
+}
+const TECHS = ['intellego', 'perdo', 'rego'];
+const FORMS = ['limen', 'mentem', 'nomen', 'terram'];
+const CELL_IDS = CELLS.map(c => c.id);
+
+/* ==========================================================================
+   2. Fixed-point helpers and the PRNG.
+      floorDiv rounds toward negative infinity, as sim-core's does.
+   ========================================================================== */
+const floorDiv = (a, b) => Math.floor(a / b);
+
+/* stackMagnitudes, mirroring @mm/primitives' three classes and the caps. */
+function stack(primitiveId, mags) {
+  const p = PRIM[primitiveId];
+  if (!p || mags.length === 0) return 0;
+  let v;
+  if (p.stack === 'sum') v = mags.reduce((s, m) => s + m, 0);
+  else if (p.stack === 'max') v = mags.reduce((s, m) => Math.max(s, m), 0);
+  else { let rem = K.FP; for (const m of mags) rem = floorDiv(rem * (K.FP - m), K.FP); v = K.FP - rem; }
+  if (p.cap > 0 && v > p.cap) { clamps[primitiveId] = (clamps[primitiveId] || 0) + 1; v = p.cap; }
+  return v;
+}
+let clamps = {};
+
+/* A seeded stream. Not sim-core's splittable PRNG — this is a prototype, and
+   the honest claim is only that the same seed gives the same trace. */
+function streamOf(seedText, salt) {
+  let h = 2166136261 >>> 0;
+  const s = String(seedText) + '/' + salt;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ (t >>> 15), t | 1);
+                 t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const below = (rng, n) => Math.floor(rng() * n);
+const pick = (rng, arr) => arr[below(rng, arr.length)];
+
+/* ==========================================================================
+   3. The world: terrain, roster, objectives.
+   ========================================================================== */
+function makeTerrain(seedText) {
+  const n = K.cellsPerSide, cells = new Array(n * n);
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    const rng = streamOf(seedText, 'terrain/' + (r * n + c));
+    const impassable = below(rng, K.FP) < K.impassable;
+    const blocks = impassable || below(rng, K.FP) < K.blocking;
+    const rough = !impassable && below(rng, K.FP) < K.rough;
+    cells[r * n + c] = { passable: !impassable, blocks, moveCost: rough ? K.roughCost : K.FP, rough };
+  }
+  return {
+    at(col, row) {
+      if (col < 0 || row < 0 || col >= n || row >= n) return { passable: false, blocks: true, moveCost: K.FP, rough: false };
+      return cells[row * n + col];
+    },
+    atPoint(x, y) { return this.at(Math.min(n - 1, Math.max(0, floorDiv(x, K.cellSize))),
+                                  Math.min(n - 1, Math.max(0, floorDiv(y, K.cellSize)))); },
+    cells,
   };
 }
-reset();
 
-function step() {
-  if (S.t >= DURATION) return;
-  S.t += 1;
-  S.stability = Math.max(0, 1 - S.t / DURATION);
-  // uninvolved universes keep advancing: one world tick per 30 engagement ticks
-  S.elsewhereTicks = Math.floor(S.t / 30);
-
-  for (const u of S.foe) {
-    if (!u.alive) continue;
-    const tgt = S.objs.find(o => o.hp > 0) ?? S.objs[0];
-    u.x += (tgt.x - u.x) * 0.012 + (rnd() - 0.5) * 0.8;
-    u.y += (tgt.y - u.y) * 0.012 + (rnd() - 0.5) * 0.8;
+/* Sampled line of sight. geometry.ts walks a supercover; this samples. */
+function hasLineOfSight(terrain, a, b) {
+  const steps = 24;
+  for (let i = 1; i < steps; i++) {
+    const x = a.x + floorDiv((b.x - a.x) * i, steps), y = a.y + floorDiv((b.y - a.y) * i, steps);
+    if (terrain.atPoint(x, y).blocks) return false;
   }
-  for (const u of S.own) {
-    if (!u.alive) continue;
-    const tgt = S.foe.find(f => f.alive);
-    if (tgt) {
-      u.x += (tgt.x - u.x) * 0.010 + (rnd() - 0.5) * 0.8;
-      u.y += (tgt.y - u.y) * 0.010 + (rnd() - 0.5) * 0.8;
+  return true;
+}
+
+const sqDist = (a, b) => (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+const inRange = (a, b, r) => sqDist(a, b) <= r * r;
+
+/* Nodes usable by a combatant: held, in mind, at mastery, and permitted by the
+   HOST's ruleset. arbitration.ts computes this once because the ruleset is
+   frozen. It is recomputed here on every ruleset change, which is exactly the
+   §1 amendment and exactly where this page runs ahead of the engine. */
+function legalNodes(held, permitted) {
+  return held.filter(id => permitted.has(NODE.get(id).cell));
+}
+
+function buildRaid(seedText, damageMultiplier) {
+  clamps = {};
+  const terrain = makeTerrain(seedText);
+  const rng = streamOf(seedText, 'roster');
+  const combatants = [];
+  let key = 0;
+
+  const deploy = (side, ordinal) => {
+    const band = K.deployDepth;
+    const along = floorDiv(K.extent * (ordinal * 2 + 1), 2 * 12);
+    const depth = floorDiv(band * (1 + (ordinal % 3)), 5);
+    return side === 'a' ? { x: along, y: depth } : { x: along, y: K.extent - depth };
+  };
+
+  const makeMage = (side, ordinal) => {
+    const r = streamOf(seedText, 'mage/' + side + '/' + ordinal);
+    // A raider leans on what it brought to break things with; a host holds its
+    // whole rectangle. Both are authored here — there is no world behind them.
+    const pool = side === 'a'
+      ? [...NODE.keys()].filter(id => r() < (NODE.get(id).cell.startsWith('perdo') ? 0.72 : 0.34))
+      : [...NODE.keys()].filter(() => r() < 0.46);
+    const held = pool.length ? pool : [pick(r, [...NODE.keys()])];
+    const deepest = held.reduce((t, id) => Math.max(t, NODE.get(id).tier), 1);
+    const pos = deploy(side, ordinal);
+    return {
+      key: key++, kind: 'mage', side, pos: { ...pos }, prev: { ...pos },
+      hp: K.mageHp + K.hpPerTier * deepest, maxHp: K.mageHp + K.hpPerTier * deepest,
+      vigor: A.mageVigor, maxVigor: A.mageVigor, held, deepest,
+      cooldown: below(r, A.castCooldown), ward: 0, concealment: 0, blessing: 0,
+      alive: true, withdrawn: false, stolen: [], name: (side === 'a' ? 'R' : 'H') + (ordinal + 1),
+    };
+  };
+  const makeUnit = (side, ordinal, kind) => {
+    const pos = deploy(side, ordinal);
+    const hp = kind === 'detachment' ? K.detachHp : K.summonHp;
+    return {
+      key: key++, kind, side, pos: { ...pos }, prev: { ...pos }, hp, maxHp: hp,
+      vigor: 0, maxVigor: 0, held: [], deepest: 0, cooldown: 0, ward: 0, concealment: 0, blessing: 0,
+      alive: true, withdrawn: false, stolen: [],
+      damage: kind === 'detachment' ? K.detachDamage : K.summonDamage,
+      range: kind === 'detachment' ? K.detachRange : K.castRange,
+      name: (side === 'a' ? 'r' : 'h') + (kind === 'detachment' ? 'd' : 's') + ordinal,
+    };
+  };
+
+  for (let i = 0; i < A.magesPerSide; i++) combatants.push(makeMage('a', i));
+  for (let i = 0; i < A.magesPerSide; i++) combatants.push(makeMage('d', i));
+  for (let i = 0; i < A.detachmentsAttacker; i++) combatants.push(makeUnit('a', A.magesPerSide + i, 'detachment'));
+  for (let i = 0; i < A.detachmentsDefender; i++) combatants.push(makeUnit('d', A.magesPerSide + i, 'detachment'));
+
+  /* Six objectives in the host's half. Values by objectives.ts's formulae. */
+  const objRng = streamOf(seedText, 'objectives');
+  const objectives = [];
+  const specs = [
+    { kind: 'library', label: 'Library' }, { kind: 'university', label: 'University' },
+    { kind: 'library', label: 'Library' }, { kind: 'university', label: 'University' },
+    { kind: 'library', label: 'Library' }, { kind: 'archmage', label: 'Archmage' },
+  ];
+  for (let i = 0; i < specs.length; i++) {
+    const instances = 4 + below(objRng, 9), tierSum = instances * (1 + below(objRng, 4));
+    const value = specs[i].kind === 'library' ? instances * K.objValuePerInstance + tierSum * K.objValuePerTier
+                : specs[i].kind === 'university' ? K.universityValue : K.archmageValue;
+    let x, y, guard = 0;
+    do { x = floorDiv(K.extent * (1 + below(objRng, 8)), 10);
+         y = floorDiv(K.extent * (11 + below(objRng, 7)), 20); guard++; }
+    while (!terrain.atPoint(x, y).passable && guard < 40);
+    objectives.push({ ...specs[i], pos: { x, y }, value, instances, progress: 0, taken: false, key: i });
+  }
+
+  const jitterRng = streamOf(seedText, 'portal');
+  const stability = K.stabilityInitial - K.stabilityJitter + below(jitterRng, 2 * K.stabilityJitter);
+  const portal = { x: floorDiv(K.extent, 2), y: floorDiv(K.deployDepth, 3) };
+
+  return {
+    seed: seedText, terrain, combatants, objectives, portal,
+    permitted: new Set(CELL_IDS), locked: new Set(),
+    stability, maxTicks: floorDiv(stability, K.stabilityDecay),
+    tick: 0, phase: 'muster', damage: damageMultiplier,
+    favor: A.favorStart, vis: A.visStart, exposure: new Map(),
+    forbiddenCastsBlocked: 0, casts: 0, refusals: 0, evades: 0, thefts: 0,
+    fx: [], fields: [], log: [], summonsAlive: { a: 0, d: 0 },
+    ended: null, spent: new Set(), takenValue: 0,
+    totalValue: objectives.reduce((s, o) => s + o.value, 0),
+    rngs: { combat: streamOf(seedText, 'combat'), theft: streamOf(seedText, 'theft'), move: streamOf(seedText, 'move') },
+  };
+}
+
+/* ==========================================================================
+   4. THE STEP. Mirrors arbitration.ts's dispatch; nothing else.
+   ========================================================================== */
+function passiveDefences(c, permitted) {
+  const wards = [], conceals = K.baseConcealment > 0 ? [K.baseConcealment] : [];
+  for (const id of legalNodes(c.held, permitted)) {
+    for (const e of NODE.get(id).effects) {
+      if (e.primitive === 'ward') wards.push(e.magnitude);
+      else if (e.primitive === 'concealment') conceals.push(e.magnitude);
     }
   }
-  if (S.t % 22 === 0) {
-    const a = S.own.find(u => u.alive); const b = S.foe.find(u => u.alive);
-    if (a && rnd() < 0.55) { a.alive = false; S.ownDead += 1; }
-    if (b && rnd() < 0.45) { b.alive = false; S.foeDead += 1; }
-  }
-  const target = S.objs.find(o => o.hp > 0);
-  if (target && S.t > 120) {
-    const pressure = S.foe.filter(u => u.alive && Math.hypot(u.x - target.x, u.y - target.y) < 18).length;
-    target.hp = Math.max(0, target.hp - pressure * 0.42);
-    if (target.hp === 0 && target.id === 'arch') S.lostNodes.push('Keep the Name Close');
-    if (target.hp === 0 && target.id === 'lib') S.lostNodes.push('Read the Binding', 'Seal the Way');
-  }
+  if (c.blessing) wards.push(c.blessing);
+  return { ward: stack('ward', wards), concealment: stack('concealment', conceals) };
 }
 
-const q = () => Math.max(1, Math.ceil(S.stability * 4));
-const stabBlock = () => `
-  <div class="stab">
-    <div class="lab">portal stability <b>${Math.round(S.stability * 100)}%</b></div>
-    <div class="track ${q() === 1 ? 'q1' : ''}"><i style="width:${S.stability * 100}%"></i></div>
-    <div class="q">quartile ${q()} of 4 · collapse ends the raid whatever else is true</div>
-  </div>`;
+/* CastArbiter#effectsOf, switch arm for switch arm. */
+function effectsOf(nodeId) {
+  const out = { directDamage: [], areaDenial: [], blink: [], summon: [], knowledgeSteal: [] };
+  for (const e of NODE.get(nodeId).effects) {
+    switch (e.primitive) {
+      case 'direct-damage':   out.directDamage.push(e.magnitude); break;
+      case 'area-denial':     out.areaDenial.push({ magnitude: e.magnitude, durationTicks: e.durationTicks }); break;
+      case 'blink':           out.blink.push(e.magnitude); break;
+      case 'summon':          out.summon.push(e.magnitude); break;
+      case 'knowledge-steal': out.knowledgeSteal.push(e.magnitude); break;
+      default: break;   // ward and concealment are passive; world primitives do nothing here
+    }
+  }
+  return out;
+}
+const castPrice = (tier) => K.castVigorBase + K.castVigorPerTier * tier;
+const applyWardOnce = (raw, ward) => floorDiv(raw * (K.FP - ward), K.FP);
 
-const elsewhereBlock = () => `
-  <div class="elsewhere">Uninvolved universes have advanced <b>${S.elsewhereTicks} world
-    ${S.elsewhereTicks === 1 ? 'month' : 'months'}</b> while these two are stopped. That is what the raid
-    costs both sides, and it is invisible unless the interface says it.</div>`;
-
-function render() {
-  const host = document.getElementById('dirs');
-  const ownAlive = S.own.filter(u => u.alive).length;
-  const foeAlive = S.foe.filter(u => u.alive).length;
-
-  host.innerHTML = `
-    <section class="dir">
-      <div class="dhead"><span class="letter">A</span><span class="name">The battlefield</span>
-        <span class="tag">200 m × 200 m</span></div>
-      <div class="dbody">
-        ${stabBlock()}
-        <div class="field">
-          ${S.objs.map(o => `<span class="obj ${o.hp === 0 ? 'taken' : ''}" style="left:${o.x}%;top:${o.y}%">${o.label}</span>`).join('')}
-          ${S.own.map(u => `<span class="unit own ${u.alive ? '' : 'dead'}" style="left:${u.x}%;top:${u.y}%"></span>`).join('')}
-          ${S.foe.map(u => `<span class="unit foe ${u.alive ? '' : 'dead'}" style="left:${u.x}%;top:${u.y}%"></span>`).join('')}
-          <span class="scale">200 m · grid 20 m · engagement tick 100 ms</span>
-        </div>
-        <div class="counts"><span class="own">defenders <b>${ownAlive}</b></span>
-          <span class="foe">raiders <b>${foeAlive}</b></span>
-          <span>tick <b>${S.t}</b></span></div>
-      </div>
-      <div class="dfoot">What everyone pictures. Positioned combatants are real and raid-engagement will
-        produce them — but watching dots converge is the part of an RTS that exists so you can give orders,
-        and you cannot.</div>
-    </section>
-
-    <section class="dir">
-      <div class="dhead"><span class="letter">B</span><span class="name">The clock</span>
-        <span class="tag">§7.2's lead, taken literally</span></div>
-      <div class="dbody">
-        <div class="bigclock">
-          <div class="n ${q() === 1 ? 'crit' : ''}">${Math.round(S.stability * 100)}</div>
-          <div class="u">percent portal stability</div>
-        </div>
-        ${stabBlock()}
-        <div class="counts"><span class="own">defenders <b>${ownAlive}</b> · lost <b>${S.ownDead}</b></span>
-          <span class="foe">raiders <b>${foeAlive}</b></span></div>
-        ${elsewhereBlock()}
-      </div>
-      <div class="dfoot">The one monotonic, terminal quantity on screen, at the size of its importance.
-        Everything else is a consequence whose meaning depends on how much clock is left.</div>
-    </section>
-
-    <section class="dir">
-      <div class="dhead"><span class="letter">C</span><span class="name">The ledger</span>
-        <span class="tag">a raid is a transaction</span></div>
-      <div class="dbody">
-        ${stabBlock()}
-        <div class="ledger">
-          ${S.objs.map(o => {
-            const st = o.hp === 0 ? 'lost' : o.hp < 100 ? 'contested' : 'held';
-            return `<div class="stake" data-st="${st}">
-              <span><span class="n">${o.label}</span><span class="sub">${o.note}</span></span>
-              <span class="st">${st}${st === 'contested' ? ` ${Math.round(o.hp)}%` : ''}</span></div>`;
-          }).join('')}
-        </div>
-        ${S.lostNodes.length ? `<div class="irrev"><b>gone from the universe:</b><br>
-          ${S.lostNodes.map(n => `· ${n}`).join('<br>')}<br>
-          rediscovery costs at least three times research, and only if someone tries.</div>` : ''}
-        <div class="counts"><span>casualties are permanent · <span class="own">yours <b>${S.ownDead}</b></span>
-          · <span class="foe">theirs <b>${S.foeDead}</b></span></span></div>
-        ${elsewhereBlock()}
-      </div>
-      <div class="dfoot">Says what is at risk before it is taken and what was taken after. The only
-        direction that degrades gracefully into a replay, because a ledger of irreversible transfers is
-        what you would want to read afterwards.</div>
-    </section>`;
+function logRow(S, kind, actor, nodeId, detail, right) {
+  S.log.push({ tick: S.tick, kind, side: actor ? actor.side : 'd', who: actor ? actor.name : '—',
+               nodeId, detail, right });
+  if (S.log.length > 600) S.log.shift();
 }
 
-document.getElementById('run').addEventListener('click', () => { reset(); render(); });
-render();
-setInterval(() => { step(); render(); }, 380);
+function step(S) {
+  if (S.ended) return;
+  S.tick++;
+  S.favor = Math.min(A.favorMax, S.favor + A.favorRegen);
+
+  if (S.phase === 'muster') {
+    if (S.tick >= A.musterTicks) S.phase = 'contact';
+    for (const c of S.combatants) { c.prev = { ...c.pos }; }
+    return;   // portal open, contact has not happened
+  }
+
+  S.stability -= K.stabilityDecay;
+  if (S.phase === 'contact' && S.stability <= K.withdrawMargin) S.phase = 'resolution';
+
+  const living = S.combatants.filter(c => c.alive && !c.withdrawn);
+  for (const c of living) { c.prev = { ...c.pos }; const d = passiveDefences(c, S.permitted); c.ward = d.ward; c.concealment = d.concealment; }
+
+  /* ---- persistent area-denial fields, contracts §3: hp per tick within radius ---- */
+  for (const f of S.fields) {
+    f.remaining--;
+    for (const t of living) {
+      if (t.side === f.side) continue;
+      if (!inRange(t.pos, f.pos, K.areaDenialRadius)) continue;
+      const applied = applyWardOnce(f.magnitude * S.damage, t.ward);
+      t.hp -= applied;
+      if (t.hp <= 0) kill(S, t, f.owner);
+    }
+  }
+  S.fields = S.fields.filter(f => f.remaining > 0);
+
+  /* ---- combatants, in key order ---- */
+  for (const c of living) {
+    if (!c.alive) continue;
+    const foes = S.combatants.filter(t => t.alive && !t.withdrawn && t.side !== c.side);
+
+    /* the stranded-raider rule: below the withdraw margin a raider runs */
+    const withdrawing = c.side === 'a' && S.stability <= K.withdrawMargin;
+    if (withdrawing) {
+      moveToward(S, c, S.portal);
+      if (inRange(c.pos, S.portal, K.portalMargin)) { c.withdrawn = true; logRow(S, 'note', c, null, 'withdrew through the portal', ''); }
+      continue;
+    }
+
+    let target = null, best = Infinity;
+    for (const t of foes) { const d = sqDist(c.pos, t.pos); if (d < best) { best = d; target = t; } }
+
+    if (c.kind !== 'mage') {
+      if (target && inRange(c.pos, target.pos, c.range) && hasLineOfSight(S.terrain, c.pos, target.pos)) {
+        const applied = applyWardOnce(c.damage, target.ward);
+        target.hp -= applied;
+        S.fx.push({ kind: 'intrinsic', t0: S.tick, life: 2, from: { ...c.pos }, to: { ...target.pos }, side: c.side });
+        if (target.hp <= 0) kill(S, target, c);
+      } else if (target) moveToward(S, c, target.pos);
+      continue;
+    }
+
+    /* mages: objectives if a raider stands on one, otherwise the nearest foe */
+    c.vigor = Math.min(c.maxVigor, c.vigor + A.vigorRegen);
+    if (c.cooldown > 0) c.cooldown--;
+
+    if (c.side === 'a') {
+      const obj = nearestObjective(S, c);
+      if (obj && inRange(c.pos, obj.pos, K.objectiveRadius)) {
+        obj.progress += K.objectiveProgress;
+        if (obj.progress >= K.FP && !obj.taken) {
+          obj.taken = true; S.takenValue += obj.value;
+          logRow(S, 'note', c, null, obj.label.toLowerCase() + ' taken', '+' + (obj.value / K.FP).toFixed(1) + ' val');
+        }
+      } else if (obj && (!target || best > K.castRange * K.castRange)) moveToward(S, c, obj.pos);
+      else if (target && best > K.castRange * K.castRange) moveToward(S, c, target.pos);
+    } else if (target && best > K.castRange * K.castRange) {
+      moveToward(S, c, target.pos);
+    }
+
+    /* ---- knowledge-steal, stream 9, at fp(16): closer than a cast ---- */
+    const victim = foes.find(t => t.kind === 'mage' && inRange(c.pos, t.pos, K.theftRange));
+    if (victim && c.cooldown === 0) {
+      const thiefNode = legalNodes(c.held, S.permitted)
+        .find(id => NODE.get(id).effects.some(e => e.primitive === 'knowledge-steal'));
+      if (thiefNode) {
+        const mags = NODE.get(thiefNode).effects.filter(e => e.primitive === 'knowledge-steal').map(e => e.magnitude);
+        const p = stack('knowledge-steal', mags);
+        const hit = below(S.rngs.theft, K.FP) < p;
+        const prize = victim.held.length ? victim.held[below(S.rngs.theft, victim.held.length)] : null;
+        S.fx.push({ kind: 'steal', t0: S.tick, life: 9, from: { ...c.pos }, to: { ...victim.pos },
+                    form: NODE.get(thiefNode).form, hit });
+        c.cooldown = A.castCooldown;
+        if (hit && prize) { c.stolen.push(prize); S.thefts++; }
+        recordExposure(S, c, thiefNode);
+        logRow(S, hit ? 'steal' : 'refused', c, thiefNode,
+               'knowledge-steal p=' + (p / K.FP * 100).toFixed(0) + '% → ' + victim.name,
+               hit ? 'took ' + (prize || '—') : 'failed');
+        continue;
+      }
+    }
+
+    if (!target || c.cooldown > 0) continue;
+    if (!inRange(c.pos, target.pos, K.castRange)) continue;
+    if (!hasLineOfSight(S.terrain, c.pos, target.pos)) continue;
+
+    /* ---- choose a node. Deepest affordable that does something here. ---- */
+    const candidates = legalNodes(c.held, S.permitted)
+      .filter(id => NODE.get(id).effects.some(e => ['direct-damage','area-denial','blink','summon'].includes(e.primitive)))
+      .sort((x, y) => NODE.get(y).tier - NODE.get(x).tier);
+
+    /* Layer 1 is the mask above. Layer 2 below is redundant BY CONSTRUCTION —
+       that is arbitration.ts's whole argument, and the counter is why the
+       claim of zero is worth anything. Once every few hundred ticks a mage
+       reaches for something the ruleset no longer permits, which is what a
+       mid-raid forbid does to your own side. */
+    const reached = candidates.length ? candidates[0]
+      : c.held.filter(id => NODE.get(id).effects.some(e => e.primitive === 'direct-damage'))[0];
+    if (!reached) continue;
+
+    if (!S.permitted.has(NODE.get(reached).cell)) {
+      S.forbiddenCastsBlocked++; S.refusals++;
+      c.cooldown = A.castCooldown;
+      logRow(S, 'refused', c, reached, 'forbidden — ' + NODE.get(reached).cell, 'blocked');
+      continue;
+    }
+    const price = castPrice(NODE.get(reached).tier);
+    if (price > c.vigor) {
+      S.refusals++; c.cooldown = 3;
+      logRow(S, 'refused', c, reached, 'unaffordable — needs ' + (price / K.FP).toFixed(0) + ' vigor', 'refused');
+      continue;
+    }
+    if (c.side === 'a' && S.vis < A.visPerCast) {
+      S.refusals++; c.cooldown = 6;
+      logRow(S, 'refused', c, reached, 'no Vis left in the expedition', 'refused');
+      continue;
+    }
+
+    c.vigor -= price; c.cooldown = A.castCooldown; S.casts++;
+    if (c.side === 'a') { S.vis = Math.max(0, S.vis - A.visPerCast); recordExposure(S, c, reached); }
+    applyCast(S, c, target, reached);
+  }
+
+  /* ---- objectives resolved, or a side gone, or the portal shut ---- */
+  const liveA = S.combatants.filter(c => c.alive && !c.withdrawn && c.side === 'a').length;
+  const liveD = S.combatants.filter(c => c.alive && c.side === 'd').length;
+  if (S.stability <= 0) end(S, 'portal collapsed');
+  else if (liveA === 0) end(S, 'attacking side eliminated or withdrawn');
+  else if (liveD === 0) end(S, 'defending side eliminated');
+  else if (S.objectives.every(o => o.taken)) end(S, 'objectives resolved');
+  else if (S.tick >= S.maxTicks + A.musterTicks) end(S, 'engagement ceiling reached');
+}
+
+function recordExposure(S, caster, nodeId) {
+  if (caster.side !== 'a') return;   // exposure runs backwards along the attack
+  S.exposure.set(nodeId, (S.exposure.get(nodeId) || 0) + 1);
+  S.fx.push({ kind: 'mote', t0: S.tick, life: 26, from: { ...caster.pos }, form: NODE.get(nodeId).form });
+}
+
+function applyCast(S, caster, target, nodeId) {
+  const node = NODE.get(nodeId), form = node.form, e = effectsOf(nodeId);
+  const parts = [];
+
+  /* --- blink: stacked by max; the caster displaces --- */
+  if (e.blink.length) {
+    const d = stack('blink', e.blink);
+    const from = { ...caster.pos };
+    const dx = target.pos.x - caster.pos.x, dy = target.pos.y - caster.pos.y;
+    const norm = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
+    const nx = clampField(caster.pos.x + floorDiv(dx * d, norm)), ny = clampField(caster.pos.y + floorDiv(dy * d, norm));
+    if (S.terrain.atPoint(nx, ny).passable) { caster.pos = { x: nx, y: ny }; }
+    S.fx.push({ kind: 'blink', t0: S.tick, life: 10, from, to: { ...caster.pos }, form });
+    parts.push('blink ' + (d / K.FP).toFixed(0) + ' m');
+  }
+
+  /* --- summon: floor(magnitude / 1024) combatants from a template --- */
+  if (e.summon.length) {
+    const total = stack('summon', e.summon);
+    let n = Math.max(0, floorDiv(total, K.FP));
+    const room = Math.min(K.maxSummons - S.summonsAlive[caster.side],
+                          K.maxPerSide - S.combatants.filter(c => c.alive && c.side === caster.side).length);
+    n = Math.max(0, Math.min(n, room));
+    for (let i = 0; i < n; i++) {
+      const ang = (i / Math.max(1, n)) * Math.PI * 2;
+      const p = { x: clampField(caster.pos.x + Math.round(Math.cos(ang) * 5120)),
+                  y: clampField(caster.pos.y + Math.round(Math.sin(ang) * 5120)) };
+      S.combatants.push({
+        key: 10000 + S.combatants.length, kind: 'summon', side: caster.side, pos: p, prev: { ...caster.pos },
+        hp: K.summonHp, maxHp: K.summonHp, vigor: 0, maxVigor: 0, held: [], deepest: 0, cooldown: 0,
+        ward: 0, concealment: 0, blessing: 0, alive: true, withdrawn: false, stolen: [],
+        damage: K.summonDamage, range: K.castRange, name: (caster.side === 'a' ? 'r' : 'h') + 's',
+      });
+      S.summonsAlive[caster.side]++;
+      S.fx.push({ kind: 'summon', t0: S.tick, life: 12, at: p, form });
+    }
+    parts.push('summon ×' + n);
+  }
+
+  /* --- area-denial: a field of fp(12) radius, additive, for its own ticks --- */
+  if (e.areaDenial.length) {
+    const magnitude = stack('area-denial', e.areaDenial.map(a => a.magnitude));
+    const dur = e.areaDenial.reduce((m, a) => Math.max(m, a.durationTicks), 0);
+    S.fields.push({ pos: { ...target.pos }, magnitude, remaining: dur, total: dur, side: caster.side, form, owner: caster });
+    S.fx.push({ kind: 'field-open', t0: S.tick, life: 8, at: { ...target.pos }, form });
+    parts.push('area-denial ' + (magnitude / K.FP).toFixed(2) + '/tick × ' + dur);
+  }
+
+  /* --- direct-damage: summed, ONE ward application, after one evasion roll --- */
+  if (e.directDamage.length) {
+    const raw = stack('direct-damage', e.directDamage) * S.damage;
+    const evaded = target.concealment > 0 && below(S.rngs.combat, K.FP) < target.concealment;
+    S.fx.push({ kind: 'bolt', t0: S.tick, life: 7, from: { ...caster.pos }, to: { ...target.pos },
+                form, evaded, ward: target.ward });
+    if (evaded) {
+      S.evades++;
+      logRow(S, 'evaded', caster, nodeId, 'direct-damage → ' + target.name + ' evaded, conceal ' +
+             (target.concealment / K.FP * 100).toFixed(0) + '%', 'evaded');
+      return;
+    }
+    const applied = applyWardOnce(raw, target.ward);
+    target.hp -= applied;
+    parts.push('damage ' + (raw / K.FP).toFixed(2) + ' × (1−' + (target.ward / K.FP).toFixed(2) + ') = ' + (applied / K.FP).toFixed(2));
+    if (target.hp <= 0) kill(S, target, caster);
+  }
+
+  if (parts.length) logRow(S, 'cast', caster, nodeId, parts.join(' · '), '−' + (castPrice(node.tier) / K.FP).toFixed(0) + ' vig');
+}
+
+const clampField = (v) => Math.max(0, Math.min(K.extent, v));
+
+function moveToward(S, c, to) {
+  const dx = to.x - c.pos.x, dy = to.y - c.pos.y;
+  const dist = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
+  const cost = S.terrain.atPoint(c.pos.x, c.pos.y).moveCost;
+  const allowance = floorDiv(K.movePerTick * cost, K.FP);
+  const stepLen = Math.min(allowance, dist);
+  let nx = clampField(c.pos.x + floorDiv(dx * stepLen, dist)), ny = clampField(c.pos.y + floorDiv(dy * stepLen, dist));
+  if (!S.terrain.atPoint(nx, ny).passable) {
+    // slide along whichever axis stays passable, rather than stopping dead
+    if (S.terrain.atPoint(nx, c.pos.y).passable) ny = c.pos.y;
+    else if (S.terrain.atPoint(c.pos.x, ny).passable) nx = c.pos.x;
+    else { nx = c.pos.x; ny = c.pos.y; }
+  }
+  c.pos = { x: nx, y: ny };
+}
+
+function nearestObjective(S, c) {
+  let best = null, bd = Infinity;
+  for (const o of S.objectives) { if (o.taken) continue; const d = sqDist(c.pos, o.pos); if (d < bd) { bd = d; best = o; } }
+  return best;
+}
+
+function kill(S, victim, by) {
+  if (!victim.alive) return;
+  victim.alive = false; victim.hp = 0;
+  if (victim.kind === 'summon') S.summonsAlive[victim.side]--;
+  S.fx.push({ kind: 'fell', t0: S.tick, life: 14, at: { ...victim.pos }, side: victim.side });
+  logRow(S, 'note', by, null, victim.name + ' felled', victim.kind);
+}
+
+function end(S, reason) {
+  const won = S.takenValue * K.FP >= S.totalValue * K.victoryFraction;
+  S.ended = { reason, victor: won ? 'raider' : 'host', tick: S.tick };
+}
+
+/* ==========================================================================
+   5. THE CANVAS. Seven primitives, seven treatments.
+   ========================================================================== */
+const canvas = document.getElementById('field');
+const ctx = canvas.getContext('2d');
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let PX = 900;
+
+function sizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  PX = Math.max(360, Math.round(rect.width));
+  canvas.width = Math.round(PX * dpr); canvas.height = Math.round(PX * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+const toPx = (v) => (v / K.extent) * PX;
+
+function draw(S, alpha) {
+  const a = REDUCED ? 1 : alpha;
+  ctx.clearRect(0, 0, PX, PX);
+  ctx.fillStyle = '#090D0E'; ctx.fillRect(0, 0, PX, PX);
+
+  /* --- terrain: impassable filled, sight-blocking hatched, rough stippled --- */
+  const cs = PX / K.cellsPerSide;
+  for (let r = 0; r < K.cellsPerSide; r++) for (let c = 0; c < K.cellsPerSide; c++) {
+    const t = S.terrain.at(c, r), x = c * cs, y = r * cs;
+    if (!t.passable) { ctx.fillStyle = '#151D1F'; ctx.fillRect(x, y, cs, cs);
+      ctx.strokeStyle = '#1E282A'; ctx.lineWidth = 1; ctx.strokeRect(x + .5, y + .5, cs - 1, cs - 1); }
+    else if (t.blocks) { ctx.strokeStyle = 'rgba(60,84,88,.55)'; ctx.lineWidth = 1; ctx.beginPath();
+      for (let i = -cs; i < cs; i += 5) { ctx.moveTo(x + i, y + cs); ctx.lineTo(x + i + cs, y); }
+      ctx.save(); ctx.rect(x, y, cs, cs); ctx.clip(); ctx.stroke(); ctx.restore(); }
+    else if (t.rough) { ctx.fillStyle = 'rgba(52,72,76,.42)';
+      for (let i = 0; i < 4; i++) ctx.fillRect(x + 4 + (i % 2) * 11, y + 5 + Math.floor(i / 2) * 11, 2, 2); }
+  }
+  ctx.strokeStyle = 'rgba(38,54,57,.5)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i <= K.cellsPerSide; i++) { const p = Math.round(i * cs) + .5;
+    ctx.moveTo(p, 0); ctx.lineTo(p, PX); ctx.moveTo(0, p); ctx.lineTo(PX, p); }
+  ctx.stroke();
+
+  /* --- deployment bands, for the muster read --- */
+  ctx.fillStyle = 'rgba(222,112,89,.05)'; ctx.fillRect(0, 0, PX, toPx(K.deployDepth));
+  ctx.fillStyle = 'rgba(143,180,196,.05)'; ctx.fillRect(0, PX - toPx(K.deployDepth), PX, toPx(K.deployDepth));
+
+  /* --- objectives --- */
+  for (const o of S.objectives) {
+    const x = toPx(o.pos.x), y = toPx(o.pos.y), rr = toPx(K.objectiveRadius);
+    ctx.strokeStyle = o.taken ? 'rgba(222,112,89,.75)' : 'rgba(201,160,52,.5)';
+    ctx.setLineDash(o.taken ? [] : [3, 3]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = o.taken ? '#DE7059' : '#C9A034';
+    ctx.beginPath();
+    if (o.kind === 'archmage') { ctx.moveTo(x, y - 6); ctx.lineTo(x + 6, y); ctx.lineTo(x, y + 6); ctx.lineTo(x - 6, y); }
+    else if (o.kind === 'university') ctx.rect(x - 5, y - 5, 10, 10);
+    else ctx.rect(x - 6, y - 4, 12, 8);
+    ctx.fill();
+    if (!o.taken && o.progress > 0) {
+      ctx.strokeStyle = '#C9A034'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, rr + 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, o.progress / K.FP)); ctx.stroke();
+    }
+  }
+
+  /* --- the portal --- */
+  const px = toPx(S.portal.x), py = toPx(S.portal.y);
+  const stabFrac = Math.max(0, S.stability / (K.stabilityInitial + K.stabilityJitter));
+  ctx.strokeStyle = 'rgba(166,146,236,' + (0.3 + 0.5 * stabFrac) + ')'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(px, py, 13, 18, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(166,146,236,.25)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.ellipse(px, py, 13 * stabFrac + 3, 18 * stabFrac + 3, 0, 0, Math.PI * 2); ctx.stroke();
+
+  /* --- 3. AREA-DENIAL: a persistent disc with a depleting arc --- */
+  for (const f of S.fields) {
+    const x = toPx(f.pos.x), y = toPx(f.pos.y), rr = toPx(K.areaDenialRadius);
+    const hue = HUE[f.form];
+    const g = ctx.createRadialGradient(x, y, 0, x, y, rr);
+    g.addColorStop(0, hexA(hue, .26)); g.addColorStop(.7, hexA(hue, .13)); g.addColorStop(1, hexA(hue, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = hexA(hue, .5); ctx.setLineDash([2, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = hexA(hue, .95); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, rr - 2, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (f.remaining / Math.max(1, f.total))); ctx.stroke();
+  }
+
+  /* --- combatants --- */
+  for (const c of S.combatants) {
+    if (!c.alive || c.withdrawn) continue;
+    const ix = REDUCED ? c.pos.x : c.prev.x + (c.pos.x - c.prev.x) * a;
+    const iy = REDUCED ? c.pos.y : c.prev.y + (c.pos.y - c.prev.y) * a;
+    const x = toPx(ix), y = toPx(iy);
+    const col = SIDE[c.side];
+    const size = c.kind === 'mage' ? 6 : c.kind === 'detachment' ? 6 : 4;
+
+    /* 2. WARD: a shell arc, opacity by effective ward against the fp(922) cap */
+    if (c.ward > 0) {
+      ctx.strokeStyle = hexA(HUE.limen, .28 + .6 * (c.ward / 922));
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(x, y, size + 5, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = hexA(HUE.limen, .14 + .3 * (c.ward / 922));
+      ctx.beginPath(); ctx.arc(x, y, size + 8, -0.8, 2.1); ctx.stroke();
+    }
+    /* 6. CONCEALMENT: the outline goes dashed and the fill drops out */
+    const concealed = c.concealment > 0;
+    ctx.beginPath();
+    if (c.side === 'a') { ctx.moveTo(x, y - size); ctx.lineTo(x + size, y); ctx.lineTo(x, y + size); ctx.lineTo(x - size, y); ctx.closePath(); }
+    else if (c.kind === 'detachment') { ctx.rect(x - size, y - size * .7, size * 2, size * 1.4); }
+    else ctx.arc(x, y, size, 0, Math.PI * 2);
+    if (concealed) {
+      ctx.fillStyle = hexA(col, .16); ctx.fill();
+      ctx.setLineDash([2.5, 2.5]); ctx.strokeStyle = hexA(col, .5 + .4 * (c.concealment / 870));
+      ctx.lineWidth = 1.4; ctx.stroke(); ctx.setLineDash([]);
+    } else { ctx.fillStyle = col; ctx.fill(); }
+    /* health, as a thinning of the mark rather than a bar over everything */
+    if (c.hp < c.maxHp) {
+      ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x - size, y + size + 3.5); ctx.lineTo(x - size + 2 * size * (c.hp / c.maxHp), y + size + 3.5); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.16)';
+      ctx.beginPath(); ctx.moveTo(x - size + 2 * size * (c.hp / c.maxHp), y + size + 3.5); ctx.lineTo(x + size, y + size + 3.5); ctx.stroke();
+    }
+  }
+
+  /* --- effects, newest last --- */
+  for (const f of S.fx) {
+    const age = (S.tick - f.t0 + (REDUCED ? 0 : a)) / f.life;
+    if (age < 0 || age > 1) continue;
+    const hue = f.form ? HUE[f.form] : SIDE[f.side] || '#8FB4C4';
+    if (f.kind === 'bolt') {
+      /* 1. DIRECT-DAMAGE: a tapering bolt, then an impact ring */
+      const x1 = toPx(f.from.x), y1 = toPx(f.from.y), x2 = toPx(f.to.x), y2 = toPx(f.to.y);
+      const head = Math.min(1, age * 2.6);
+      ctx.strokeStyle = hexA(hue, (1 - age) * .95); ctx.lineWidth = 3.2 * (1 - age * .6);
+      ctx.beginPath(); ctx.moveTo(x1, y1);
+      ctx.lineTo(x1 + (x2 - x1) * head, y1 + (y2 - y1) * head); ctx.stroke();
+      ctx.strokeStyle = hexA('#FFFFFF', (1 - age) * .35); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 + (x2 - x1) * head, y1 + (y2 - y1) * head); ctx.stroke();
+      if (age > .38) {
+        const k = (age - .38) / .62;
+        if (f.evaded) {   /* concealment: the bolt passes through and is struck out */
+          ctx.strokeStyle = hexA('#C9A034', (1 - k) * .9); ctx.lineWidth = 1.6;
+          ctx.beginPath(); ctx.moveTo(x2 - 7, y2 - 7); ctx.lineTo(x2 + 7, y2 + 7); ctx.stroke();
+        } else {
+          ctx.strokeStyle = hexA(hue, (1 - k) * .8); ctx.lineWidth = 2 * (1 - k) + .5;
+          ctx.beginPath(); ctx.arc(x2, y2, 3 + k * 13, 0, Math.PI * 2); ctx.stroke();
+          if (f.ward > 0) {   /* 2. WARD flares white where it absorbed */
+            ctx.strokeStyle = hexA('#FFFFFF', (1 - k) * .5 * (f.ward / 922)); ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(x2, y2, 9, 0, Math.PI * 2); ctx.stroke();
+          }
+        }
+      }
+    } else if (f.kind === 'blink') {
+      /* 4. BLINK: dashed after-images along the displacement */
+      const x1 = toPx(f.from.x), y1 = toPx(f.from.y), x2 = toPx(f.to.x), y2 = toPx(f.to.y);
+      for (let i = 0; i <= 6; i++) {
+        const t = i / 6, x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t;
+        ctx.strokeStyle = hexA(hue, (1 - age) * (0.15 + 0.8 * t));
+        ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.arc(x, y, 5.5 - t * 2, 0, Math.PI * 2); ctx.stroke();
+      }
+    } else if (f.kind === 'summon') {
+      /* 5. SUMMON: a burst that settles into a mark */
+      const x = toPx(f.at.x), y = toPx(f.at.y);
+      ctx.strokeStyle = hexA(hue, 1 - age); ctx.lineWidth = 1.6;
+      for (let i = 0; i < 3; i++) {
+        const r = 3 + age * (11 + i * 5);
+        ctx.beginPath();
+        for (let k = 0; k < 3; k++) { const A2 = -Math.PI / 2 + k * 2.094 + i;
+          const px2 = x + Math.cos(A2) * r, py2 = y + Math.sin(A2) * r;
+          k === 0 ? ctx.moveTo(px2, py2) : ctx.lineTo(px2, py2); }
+        ctx.closePath(); ctx.stroke();
+      }
+    } else if (f.kind === 'steal') {
+      /* 7. KNOWLEDGE-STEAL: a beaded filament, and a glyph that comes back */
+      const x1 = toPx(f.from.x), y1 = toPx(f.from.y), x2 = toPx(f.to.x), y2 = toPx(f.to.y);
+      ctx.strokeStyle = hexA(hue, (1 - age) * .7); ctx.lineWidth = 1;
+      ctx.setLineDash([1.5, 3]); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+      if (f.hit) {
+        const t = 1 - age, x = x2 + (x1 - x2) * (1 - t), y = y2 + (y1 - y2) * (1 - t);
+        ctx.fillStyle = hexA(hue, Math.min(1, t * 1.6)); ctx.fillRect(x - 2.5, y - 2.5, 5, 5);
+      } else {
+        ctx.strokeStyle = hexA('#7E7563', (1 - age) * .8); ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(x2 - 5, y2); ctx.lineTo(x2 + 5, y2); ctx.stroke();
+      }
+    } else if (f.kind === 'field-open') {
+      const x = toPx(f.at.x), y = toPx(f.at.y);
+      ctx.strokeStyle = hexA(hue, 1 - age); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, toPx(K.areaDenialRadius) * age, 0, Math.PI * 2); ctx.stroke();
+    } else if (f.kind === 'intrinsic') {
+      const x1 = toPx(f.from.x), y1 = toPx(f.from.y), x2 = toPx(f.to.x), y2 = toPx(f.to.y);
+      ctx.strokeStyle = hexA(SIDE[f.side], (1 - age) * .5); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    } else if (f.kind === 'fell') {
+      const x = toPx(f.at.x), y = toPx(f.at.y);
+      ctx.strokeStyle = hexA(SIDE[f.side], (1 - age) * .7); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(x, y, 4 + age * 10, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y + 5); ctx.moveTo(x + 5, y - 5); ctx.lineTo(x - 5, y + 5); ctx.stroke();
+    } else if (f.kind === 'mote') {
+      /* EXPOSURE: a spark of the attacker's own magic drifting to the host's edge */
+      const x = toPx(f.from.x), y = toPx(f.from.y) + (PX - toPx(f.from.y)) * age;
+      ctx.fillStyle = hexA(hue, (1 - age) * .55);
+      ctx.beginPath(); ctx.arc(x, y, 1.6, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  S.fx = S.fx.filter(f => S.tick - f.t0 <= f.life);
+}
+
+function hexA(hex, alpha) {
+  const n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + Math.max(0, Math.min(1, alpha)).toFixed(3) + ')';
+}
+
+/* ==========================================================================
+   6. THE INTERFACE.
+   ========================================================================== */
+const el = (id) => document.getElementById(id);
+let S = null, running = true, speed = 4, damage = 24, acc = 0, last = 0, logDrawn = 0;
+
+/* --- the constitution: twelve switches, forbidding is defender-only --- */
+function buildConstitution() {
+  const host = el('consti');
+  host.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'crow chead';
+  head.innerHTML = '<span class="tech"></span>' + FORMS.map(f => '<span class="form">' + f.slice(0, 4) + '</span>').join('');
+  host.append(head);
+  for (const t of TECHS) {
+    const row = document.createElement('div');
+    row.className = 'crow';
+    row.innerHTML = '<span class="tech">' + t + '</span>';
+    for (const f of FORMS) {
+      const id = t + '-' + f;
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'cell'; b.dataset.cell = id;
+      b.textContent = f.slice(0, 3);
+      b.addEventListener('click', () => toggleCell(id));
+      row.append(b);
+    }
+    host.append(row);
+  }
+}
+function toggleCell(id) {
+  if (!S || S.locked.has(id) || S.phase === 'resolution' || S.ended) return;
+  if (S.permitted.has(id)) { S.permitted.delete(id); logRow(S, 'note', null, null, 'FORBADE ' + id + ' — locked for the raid', 'constitution'); }
+  else { S.permitted.add(id); logRow(S, 'note', null, null, 'PERMITTED ' + id + ' — locked for the raid', 'constitution'); }
+  S.locked.add(id);
+  paintConstitution();
+}
+function paintConstitution() {
+  for (const b of document.querySelectorAll('.cell')) {
+    const id = b.dataset.cell;
+    b.dataset.state = S.permitted.has(id) ? 'permitted' : 'forbidden';
+    b.dataset.locked = S.locked.has(id) ? '1' : '0';
+    b.disabled = S.locked.has(id) || S.phase === 'resolution' || !!S.ended;
+    b.title = S.locked.has(id)
+      ? id + ' — locked until the raid ends. Reverting afterwards costs substantially more favor.'
+      : id + ' — ' + (S.permitted.has(id) ? 'permitted; forbid it and nobody inside your universe may use it, including you'
+                                          : 'forbidden; permit it and the raider may use it too');
+  }
+  el('lockline').textContent = S.locked.size === 0
+    ? 'Forbidding is defender-only. Every change locks until the raid ends.'
+    : S.locked.size + ' cell' + (S.locked.size === 1 ? '' : 's') + ' locked for the duration. Reverting afterwards costs substantially more favor than the change did.';
+}
+
+/* --- the verbs. Muster has four; contact has one; resolution has none. --- */
+const VERBS = [
+  { id: 'bless',  phase: 'muster',  cost: 90, name: 'Bless the standing',
+    sub: 'fp(0.25) ward on every defender for the raid — a favor spend that resolves in seconds and visibly saves a library.' },
+  { id: 'levy',   phase: 'muster',  cost: 70, name: 'Call the levy',
+    sub: 'One more soldier detachment on the field, at detachment-max-hp.' },
+  { id: 'veil',   phase: 'muster',  cost: 60, name: 'Veil the halls',
+    sub: 'fp(0.20) concealment on every defender. Concealment is an evasion roll, not a damage reduction.' },
+  { id: 'wind',   phase: 'contact', cost: 110, name: 'Second wind',
+    sub: 'Vigor restored to every living defender. The one intervention left once the sides have touched.' },
+];
+function buildVerbs() {
+  const host = el('verbs'); host.innerHTML = '';
+  for (const v of VERBS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'verb'; b.dataset.verb = v.id;
+    b.innerHTML = '<span>' + v.name + '</span><span class="cost">' + v.cost + ' favor</span><span class="sub">' + v.sub + '</span>';
+    b.addEventListener('click', () => spendVerb(v));
+    host.append(b);
+  }
+}
+function spendVerb(v) {
+  if (!S || S.ended || S.spent.has(v.id) || S.favor < v.cost) return;
+  if (v.phase === 'muster' && S.phase !== 'muster') return;
+  if (v.phase === 'contact' && S.phase === 'resolution') return;
+  S.favor -= v.cost; S.spent.add(v.id);
+  const defenders = S.combatants.filter(c => c.side === 'd' && c.alive);
+  if (v.id === 'bless') for (const c of defenders) c.blessing = 256;
+  if (v.id === 'veil') for (const c of defenders) c.held = c.held.concat(['pn-shed-the-use-name']);
+  if (v.id === 'wind') for (const c of defenders) c.vigor = c.maxVigor;
+  if (v.id === 'levy') {
+    const p = { x: floorDiv(K.extent, 2), y: K.extent - floorDiv(K.deployDepth, 2) };
+    S.combatants.push({ key: 20000 + S.combatants.length, kind: 'detachment', side: 'd', pos: p, prev: { ...p },
+      hp: K.detachHp, maxHp: K.detachHp, vigor: 0, maxVigor: 0, held: [], deepest: 0, cooldown: 0,
+      ward: 0, concealment: 0, blessing: 0, alive: true, withdrawn: false, stolen: [],
+      damage: K.detachDamage, range: K.detachRange, name: 'hd+' });
+  }
+  logRow(S, 'note', null, null, v.name + ' — ' + v.cost + ' favor', 'spent');
+  paintVerbs();
+}
+function paintVerbs() {
+  for (const v of VERBS) {
+    const b = document.querySelector('[data-verb="' + v.id + '"]');
+    const liveNow = !S.ended && S.phase !== 'resolution' &&
+      (v.phase === 'muster' ? S.phase === 'muster' : S.phase === 'contact');
+    b.disabled = !liveNow || S.spent.has(v.id) || S.favor < v.cost;
+    b.dataset.spent = S.spent.has(v.id) ? '1' : '0';
+    b.querySelector('.cost').textContent = S.spent.has(v.id) ? 'spent' : v.cost + ' favor';
+  }
+  el('deadbar').hidden = !(S.phase === 'resolution' || S.ended);
+}
+
+/* --- the log --- */
+function paintLog() {
+  const body = el('log');
+  if (S.log.length === 0) return;
+  if (logDrawn === 0) body.innerHTML = '';
+  for (let i = logDrawn; i < S.log.length; i++) {
+    const r = S.log[i], tr = document.createElement('tr');
+    tr.dataset.kind = r.kind;
+    const node = r.nodeId ? NODE.get(r.nodeId) : null;
+    tr.innerHTML =
+      '<td class="t">' + r.tick + '</td>' +
+      '<td class="who ' + (r.side === 'a' ? 'side-a' : 'side-d') + '">' + r.who + '</td>' +
+      '<td class="n" title="' + (node ? node.name + ' · tier ' + node.tier + ' · ' + node.cell : '') + '">' +
+        (r.nodeId || '—') + '</td>' +
+      '<td>' + r.detail + '</td>' +
+      '<td class="r">' + r.right + '</td>';
+    body.append(tr);
+  }
+  logDrawn = S.log.length;
+  while (body.children.length > 400) body.removeChild(body.firstChild);
+  const w = el('logwrap');
+  if (w.scrollTop + w.clientHeight > w.scrollHeight - 120) w.scrollTop = w.scrollHeight;
+}
+
+/* --- meters, rail, tallies --- */
+function paintChrome() {
+  const musterLeft = Math.max(0, A.musterTicks - S.tick);
+  el('mclock').hidden = S.phase !== 'muster';
+  if (S.phase === 'muster') {
+    const n = el('mclock-n');
+    n.textContent = (musterLeft / 10).toFixed(1);
+    n.classList.toggle('urgent', musterLeft <= 60);
+  }
+  for (const p of document.querySelectorAll('.ph')) {
+    const ph = p.dataset.phase;
+    const live = ph === S.phase && !S.ended;
+    p.dataset.live = live ? '1' : '0';
+    const order = ['muster', 'contact', 'resolution'];
+    p.dataset.done = (order.indexOf(ph) < order.indexOf(S.phase) || S.ended) ? '1' : '0';
+    let frac = 0;
+    if (ph === 'muster') frac = Math.min(1, S.tick / A.musterTicks);
+    else if (ph === 'contact') frac = S.phase === 'muster' ? 0 : Math.min(1,
+      (K.stabilityInitial + K.stabilityJitter - S.stability) / Math.max(1, K.stabilityInitial + K.stabilityJitter - K.withdrawMargin));
+    else frac = S.phase === 'resolution' ? Math.min(1, 1 - S.stability / K.withdrawMargin) : 0;
+    p.querySelector('.bar i').style.width = (frac * 100).toFixed(1) + '%';
+  }
+
+  el('favor').textContent = S.favor;
+  el('favor-bar').style.width = (100 * S.favor / A.favorMax) + '%';
+  el('vis').textContent = S.vis;
+  el('vis-bar').style.width = (100 * S.vis / A.visStart) + '%';
+  const expoTotal = [...S.exposure.values()].reduce((a, b) => a + b, 0);
+  el('expo').textContent = S.exposure.size + ' node' + (S.exposure.size === 1 ? '' : 's') + ' · ' + expoTotal + ' castings';
+  el('expo-bar').style.width = Math.min(100, 100 * S.exposure.size / Math.max(1, NODE.size * 0.4)) + '%';
+
+  const ex = el('expolist');
+  if (S.exposure.size === 0) ex.innerHTML = '<div class="ex"><span class="empty">Nothing observed yet. They have taught you nothing.</span></div>';
+  else {
+    const rows = [...S.exposure.entries()].sort((a, b) => b[1] - a[1]).slice(0, 14);
+    ex.innerHTML = rows.map(([id, n]) =>
+      '<div class="ex"><span title="' + NODE.get(id).name + ' · ' + NODE.get(id).cell + '">' + id + '</span><b>' + n + '</b></div>').join('');
+  }
+
+  const ticksLeft = Math.max(0, floorDiv(S.stability, K.stabilityDecay));
+  el('stab').textContent = ticksLeft;
+  el('stab-bar').style.width = (100 * Math.max(0, S.stability) / (K.stabilityInitial + K.stabilityJitter)) + '%';
+  el('stab-margin').style.left = (100 * K.withdrawMargin / (K.stabilityInitial + K.stabilityJitter)) + '%';
+  el('stability').classList.toggle('crit', S.stability <= K.withdrawMargin);
+  el('tick').textContent = S.tick;
+  const la = S.combatants.filter(c => c.alive && !c.withdrawn && c.side === 'a').length;
+  const ld = S.combatants.filter(c => c.alive && c.side === 'd').length;
+  el('alive').innerHTML = 'raiders <b class="num">' + la + '</b> · host <b class="num">' + ld + '</b>';
+
+  const clampRows = Object.entries(clamps).map(([k, v]) => ['cap clamped · ' + k, v]);
+  el('tally').innerHTML = [
+    ['casts resolved', S.casts],
+    ['casts refused', S.refusals],
+    ['forbiddenCastsBlocked', S.forbiddenCastsBlocked],
+    ['evaded by concealment', S.evades],
+    ['instances stolen', S.thefts],
+    ['area-denial fields live', S.fields.length],
+    ['objective value taken', (S.takenValue / K.FP).toFixed(1) + ' / ' + (S.totalValue / K.FP).toFixed(1)],
+    ...clampRows,
+  ].map(([k, v]) => '<span' + (k === 'forbiddenCastsBlocked' && v > 0 ? ' class="bad"' : '') + '>' + k + '</span><b' +
+      (k === 'forbiddenCastsBlocked' && v > 0 ? ' class="bad"' : '') + '>' + v + '</b>').join('');
+
+  if (S.ended) {
+    el('outcome').hidden = false;
+    el('outcome-t').innerHTML = 'Tick <b class="num">' + S.ended.tick + '</b> — ' + S.ended.reason +
+      '. The <b>' + S.ended.victor + '</b> takes it: ' + (S.takenValue / K.FP).toFixed(1) + ' of ' +
+      (S.totalValue / K.FP).toFixed(1) + ' objective value against a victory threshold of half. ' +
+      (S.locked.size ? S.locked.size + ' locked ruleset change' + (S.locked.size === 1 ? '' : 's') +
+        ' now cost substantially more favor to revert than they cost to make.' : 'The constitution came through unchanged.');
+  } else el('outcome').hidden = true;
+
+  paintVerbs();
+  paintConstitution();
+}
+
+/* --- legend, once --- */
+function buildLegend() {
+  const items = [
+    ['direct-damage', 'a bolt in the node’s form hue, then an impact ring'],
+    ['ward', 'a shell that flares white where it absorbed'],
+    ['area-denial', 'a fp(12) disc with a depleting duration arc'],
+    ['blink', 'dashed after-images along the displacement'],
+    ['summon', 'a burst that settles into small marks'],
+    ['concealment', 'dashed outline; an evaded bolt is struck out'],
+    ['knowledge-steal', 'a beaded filament; a glyph returns on success'],
+    ['exposure', 'a mote of their magic drifting to your edge'],
+  ];
+  el('legend').innerHTML = items.map(([k, d]) =>
+    '<span class="lg"><span class="k"></span><span><b>' + k + '</b><br>' + d + '</span></span>').join('') +
+    '<span class="lg"><span class="k"></span><span><b>hue = form, never side</b><br>' +
+    'the host’s ruleset governs both sides, so you cannot tell whose spell it is by its colour</span></span>';
+}
+
+/* --- the loop --- */
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (!S) return;
+  if (!last) last = now;
+  let dt = Math.min(250, now - last); last = now;
+  /* Muster always runs at 1x — the clock IS the pressure, and the agency curve
+     is encoded in the pacing rather than only stated in the rail. */
+  const perTick = S.phase === 'muster' ? 100 : 100 / speed;
+  if (running && !S.ended) {
+    acc += dt;
+    let guard = 0;
+    while (acc >= perTick && guard++ < 40) { acc -= perTick; step(S); }
+  }
+  draw(S, Math.min(1, acc / perTick));
+  paintChrome();
+  paintLog();
+}
+
+function restart() {
+  S = buildRaid(el('seed').value.trim() || 'hollow-gate', damage);
+  logDrawn = 0;
+  el('log').innerHTML = '<tr><td class="empty" colspan="5">Nothing cast yet. The portal is open; contact has not happened.</td></tr>';
+  acc = 0; last = 0; running = true;
+  el('pause').setAttribute('aria-pressed', 'false'); el('pause').textContent = 'Pause';
+  el('fieldnote').textContent = 'seed “' + S.seed + '” · 20 × 20 terrain cells of 10 m · ' +
+    S.combatants.length + ' combatants · ' + S.objectives.length + ' objectives';
+  sizeCanvas(); paintChrome();
+}
+
+/* --- wiring --- */
+buildConstitution(); buildVerbs(); buildLegend();
+el('restart').addEventListener('click', restart);
+el('seed').addEventListener('change', restart);
+el('pause').addEventListener('click', () => {
+  running = !running;
+  el('pause').setAttribute('aria-pressed', String(!running));
+  el('pause').textContent = running ? 'Pause' : 'Resume';
+});
+el('skip').addEventListener('click', () => { if (S && S.phase === 'muster') { S.tick = A.musterTicks - 1; } });
+for (const b of document.querySelectorAll('.spd')) b.addEventListener('click', () => {
+  speed = Number(b.dataset.spd);
+  for (const o of document.querySelectorAll('.spd')) o.setAttribute('aria-pressed', String(Number(o.dataset.spd) === speed));
+});
+for (const b of document.querySelectorAll('.dmg')) b.addEventListener('click', () => {
+  damage = Number(b.dataset.dmg);
+  for (const o of document.querySelectorAll('.dmg')) o.setAttribute('aria-pressed', String(Number(o.dataset.dmg) === damage));
+  if (S) S.damage = damage;
+});
+document.querySelector('.spd[data-spd="4"]').setAttribute('aria-pressed', 'true');
+document.querySelector('.dmg[data-dmg="24"]').setAttribute('aria-pressed', 'true');
+
+/* three-state theme, per the artifact rule: system, then explicit either way */
+const THEMES = ['system', 'light', 'dark'];
+let themeIx = 0;
+el('theme').addEventListener('click', () => {
+  themeIx = (themeIx + 1) % 3;
+  const t = THEMES[themeIx];
+  if (t === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', t);
+  el('theme').textContent = 'Theme: ' + t;
+});
+
+window.addEventListener('resize', sizeCanvas);
+restart();
+requestAnimationFrame(frame);
 </script>
+</body>
+</html>
