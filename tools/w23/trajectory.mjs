@@ -56,6 +56,7 @@ function parseArgs(argv) {
     cohortSize: 4,
     foundingNodes: 4,
     mask: 0,
+    foundingMages: 2,
   };
   for (let i = 0; i < argv.length; i += 2) {
     const key = argv[i];
@@ -67,6 +68,7 @@ function parseArgs(argv) {
     else if (key === '--cohort-size') out.cohortSize = Number(value);
     else if (key === '--founding-nodes') out.foundingNodes = Number(value);
     else if (key === '--mask') out.mask = Number(value);
+    else if (key === '--founding-mages') out.foundingMages = Number(value);
     else if (key !== undefined) throw new Error(`Unknown argument ${String(key)}`);
   }
   return out;
@@ -133,6 +135,7 @@ function main() {
     cohortSize: args.cohortSize,
     foundingNodes: args.foundingNodes,
     foundingSpeciesMask: args.mask,
+    foundingMages: args.foundingMages,
   };
 
   let state = run.scenario.create(args.seed, {

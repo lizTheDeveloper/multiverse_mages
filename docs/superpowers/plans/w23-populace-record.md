@@ -207,4 +207,200 @@ being added here.
 
 ## 5. Results
 
-Filled in at §6 below once measured, against the §1 control.
+All measured with `node tools/w23/trajectory.mjs`, seed `0x00090001`, 2,400 ticks, zero god input,
+against the §1 negative control on the identical coordinates.
+
+### 5.1 The four-way location split
+
+| location | before | after | before ‰ | after ‰ |
+|---|--:|--:|--:|--:|
+| `mind:` | 2,172 | 2,181 | **1000** | **474** |
+| `grimoire:` | 0 | 0 | 0 | 0 |
+| `library:` | 0 | 2,414 | 0 | **525** |
+| `palace:` | 0 | 0 | 0 | 0 |
+| total | 2,172 | 4,595 | | |
+
+**Two of the four locations are still structurally empty, and neither is W23's doing.**
+
+- `grimoire:` is zero at *every* tick of *every* run, before and after. A finished book is shelved
+  in its scriptorium's library from its first tick — `contributeScribing` picks
+  `HOLDER_KIND.library` at creation — so `grimoire:` only ever holds a book written by an
+  unaffiliated mage, and the reference universe has none. Not a defect so much as an unexercised
+  branch, but §5 lists it as one of four locations and it has never held anything.
+- `palace:` requires an Art of Memory universe and the reference universe runs Vancian. Structural.
+
+So the honest claim is narrower than the acceptance criterion's wording: knowledge now lives in
+**two** of §5's four locations rather than one, roughly evenly split.
+
+### 5.2 The library curve — the thing the endpoint could not show
+
+Sampled every 25 ticks (`--ticks 1000 --every 25`), library instances:
+
+| tick | 100 | 300 | 500 | **525** | 575 | 600 | 625 | **750** | 800 | 900 | 1000 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| before | 85 | 283 | 519 | 572 | 424 | 129 | 154 | 94 | 101 | 132 | 172 |
+| after | 85 | 283 | 519 | **572** | 424 | 256 | 154 | **94** | 105 | 132 | 172 |
+
+and then, every 100 ticks, where the two runs part company for good:
+
+| tick | 1200 | 1400 | 1600 | 1800 | **2000** | 2200 | 2400 |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| before | 15 | 2 | 2 | 2 | **0** | 0 | **0** |
+| after | 305 | 344 | 731 | 1,196 | 1,414 | 1,914 | **2,414** |
+
+The shape is the point. Both runs peak at **572 around tick 525** and both crash through the same
+trough — **94 instances at tick 750**. The founding materials stock runs out either way, and the
+first drawdown is identical. What changed is what happens next: before, the shelf keeps eroding to
+zero and stays there for the last four hundred ticks; after, it bottoms out and climbs. The
+mechanism is not that destruction was turned off — it is that the populace is now asked for the
+laborers who pay the upkeep, so the shortfall closes instead of compounding.
+
+**Destruction is still live, and this is measured rather than asserted.** Over the committed
+200-year run, the loop's own emissions report **5,552,640 fp of upkeep owed, 5,524,570 paid, and 703
+library instances destroyed off unpaid shelves**. Half a percent of the bill goes unmet, and the
+brake takes books for it.
+
+### 5.3 Does `durability` finally matter?
+
+**Yes, and the attribution is clean.** `packages/coordination/test/unit/library-degradation.test.ts`
+holds one shelf, one shortfall budget, and varies nothing but the `durability` field:
+
+| scribe | durability | shortfall to destroy one book | books lost to 640 of shortfall |
+|---|--:|--:|--:|
+| orc | 384 | 12 | **40 of 40 — the shelf is emptied** |
+| human / elf (reference) | 1,024 | **32** | 20 |
+| dwarf | 1,792 | 56 | **11** |
+
+The reference price is **exactly 32**, which is the flat number every book used to pay. So this is
+a differentiation around the old calibration, not a discount.
+
+The 2,400-tick integration arm agrees and is reported as **confounded evidence, not proof** — orc
+fertility is 1536 against a dwarf's 768 and `laborAffinity` 1536 against 1280, so the universes
+differ wholesale. Dwarf+human (`--mask 18`) against orc+human (`--mask 48`), cohort 12, 3 founding
+mages:
+
+| | dwarf+human | orc+human |
+|---|--:|--:|
+| library instances at 2400 | **300** | 162 |
+| library share ‰ | **141** | 33 |
+| peak, and when | 300 at tick 2400, still rising | 256 at tick 1200, **then falls** |
+| nodes known | 51 | 49 |
+| nodes still unwritten at 2400 | **0** | **26** |
+| materials at 2400 | 692,633 | 5,250,152 |
+
+The orcish universe ends with **seven times the materials** and half the written record, and its
+library peaked at the halfway mark and declined. Note the last row is a *second* species effect and
+not this one: 26 of 49 nodes never written at all is `scribeAffinity` limiting throughput, which was
+always wired.
+
+Single-species arms (`--mask 2` / `--mask 32`) were run first and **discarded as degenerate**: the
+orc-only universe goes extinct before tick 400 with zero mages and zero nodes, and retains nothing
+for reasons that have nothing to do with how it writes.
+
+### 5.4 Per-mage containment
+
+**0.201 → 0.289** incomparable pairs at 2,400 ticks (413 of 1,431, 54 holders), against W22's
+measured 0.201 (309 of 1,540, 56 holders). It rises.
+
+Measured, not engineered — the plan said in advance that a flat number would be reported as a
+finding. The plausible mechanism is that scribing competes for mage-months, so repertoires converge
+more slowly. Two intermediate readings are consistent with that and worth recording: at 1,200 ticks
+the ablated tree reads 0.347 and the long-run configuration reads 0.301 at 2,400.
+
+### 5.5 What moved in the gates
+
+| gate | horizon | result |
+|---|--:|---|
+| `balance-gate-v1` | 60 ticks | **PASS, every metric byte-identical** |
+| `balance-gate-horizon-v1` | 240 ticks | PASS, largest move 0.44 SE |
+| `balance-gate-ascension-v1` | 2,400 ticks | **FAIL → regenerated once** |
+
+The first two are worth stating plainly: **neither could have caught this defect and neither can
+confirm it fixed.** Both cap far below the tick at which the library even peaks, and at tick 60
+supply still exceeds demand for every occupation, so the change is literally invisible to them.
+
+The ascension gate moved exactly where the claim says it should:
+
+| metric | baseline | current | SE |
+|---|--:|--:|--:|
+| `referenceGrimoires` | 220.4 | **785.1** | 5.81 |
+| `referenceLibraryDepth` | 9.94 | **31.56** | 6.64 |
+| `referencePopulation` | 19,621 | 31,331 | 5.04 |
+| `referencePeakPopulation` | 50,080 | 50,310 | 1.75 |
+| `referenceNodesKnown` | 67.34 | 67.53 | 0.01 |
+
+`referenceNodesKnown` unmoved is the most important row: **W23 changed where knowledge lives, not
+how much of it there is.** And peak population flat while sustained population rises by 60% says K
+did not move — the universe simply stopped starving below it.
+
+This is also the direct inverse of a finding the previous regeneration recorded: that note observed
+library depth *falling* 24.94 → 9.94 over the longer horizon, because W7's upkeep kept destroying
+shelves the economy could not pay for. This change is why it can now pay.
+
+**No golden fixture changed.** All three live in `packages/sim-core/test/golden/fixtures/` and drive
+toy systems, as predicted in the blast-radius section.
+
+### 5.6 Two fired tripwires, rewritten with rationale
+
+Both were authored to fail when someone fixed the loop, and both said so.
+
+- **9.8** read `grimoires < 2 * libraryDepth` and now reads 3,350 books against 51 nodes. Its stated
+  reason does not survive the measurement: ablating the coverage term gives **15 books standing and
+  a depth that stops at 36 of 51 nodes**, so the old bound was satisfied by *a library that had
+  stopped existing* — the same trap the campaign's D5 was rewritten to escape. Replaced with the
+  claim it was reaching for: the shelf holds **every node the universe knows**, compared against the
+  run's own `nodesKnown` rather than a literal. Destruction is now asserted off
+  `libraryInstancesDegraded` rather than off a dip in `libraryDepth`, because degradation sheds
+  duplicates before last copies — so depth is the *last* thing to move and would report a healthy
+  shelf right up until the archive was gone.
+- **9.5** asserted `scribed[last] === 0`, which is the defect W23 exists to remove written down as an
+  expectation. Scribing was dead for **140 consecutive years** and is now alive in every window.
+
+### 5.7 The teaching regression, handed on rather than papered over
+
+Ablation isolates it: with the coverage term removed the run is byte-identical on scribe demand
+alone, so this is the coverage term's doing.
+
+| 20-year window | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| lessons, before | 826 | 358 | 176 | 119 | 44 | 5 | 61 | 76 | 212 | 486 |
+| lessons, after | 826 | 358 | 166 | 2 | 8 | 7 | 354 | 460 | 51 | **0** |
+| books, before | 679 | 168 | 15 | 0 | 0 | 0 | 0 | 0 | 0 | **0** |
+| books, after | 679 | 168 | 40 | 127 | 272 | 492 | 800 | 515 | 480 | **480** |
+
+9.5's per-window teaching guarantee was **a property of the famine, not of the pedagogy**:
+`feasibility.ts` refuses `GOAL.scribe` below the node's `scribeCost`, so with the stock empty from
+world year seventy, teaching was the only feasible goal left standing. Funding the economy gives the
+scribe goal its feasibility back and mages compete for it.
+
+That the *terminal* window teaches nothing is real and is **not** explained by anything W23 changed
+on purpose. The suspect is named in the test: `terms.ts:302` scores the scribe goal at
+`scribeThroughput / 4`, and `scribeThroughputFor` is documented as taking the *whole universe's*
+scribe population for every university — *"wrong in the direction of over-supply"*. W23 made that
+population real, which amplified an error that was already there. **Owner: whoever owns autonomy
+goal competition (W20/W21 territory), not this workstream.** Deliberately not fixed here: adjusting
+autonomy weights is exactly the file those workstreams are editing.
+
+### 5.8 Known residuals, stated rather than spun
+
+1. **Scribing equilibrates; it does not persist at scale.** Unwritten nodes reach 0 by tick 1,700
+   and scribe demand goes with them — the cohort drains from a peak of 42 back to 7. Predicted in
+   §4 before measuring. W22 reached the same conclusion independently.
+2. **Duplicates accumulate.** 2,414 library instances of 51 nodes is ~47 copies each. This is
+   *survival*, not a new appetite — the scribing rate is comparable to before; the books simply
+   stop being destroyed. But it means the documented "a duplicate costs upkeep forever and
+   contributes nothing to depth" asymmetry bites less than it did.
+3. **Brake 4 now binds against carrying capacity.** Because the obligation the laborer term covers
+   *includes* library upkeep, the economy commissions its own shelf-keeping: a deeper library asks
+   for the laborers that pay for it. A universe near K can therefore afford a much larger shelf. A
+   deliberate trade — a record that cannot persist makes §5 meaningless — and a magnitude question
+   for 0.5.0, recorded in the spec amendment and in the baseline.
+4. **The coverage term is blind to `laborAffinity`.** Over-staffs an orcish universe by half,
+   under-staffs a draconic one. Deliberate: reading affinity would make the demand signal a function
+   of which species happen to be idle this tick, and the mix changes under the controller as it acts.
+5. **`advanceConstruction` still has no caller**, and was left alone as the brief directed. One
+   pathology to hand on: laborers exist today *only because construction never finishes*, so
+   `constructionBacklog` never shrinks and its term is a constant. The moment someone wires
+   construction, that term goes to zero on completion — and without §3.2's coverage term the
+   laborer force would go with it.
+6. **Soldiers remain at zero headcount**, scoped out in §3.4 with the reason.
