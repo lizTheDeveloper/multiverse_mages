@@ -1283,3 +1283,65 @@ Two facts for whoever decides, both from the material-kinds report and worth kee
 tuple `rules-world` already has, with the schema and tests deriving from it. It adds no kind, changes
 no behaviour, and makes both futures cheaper — adding Vis, or collapsing back to one pool. It is the
 one move that does not preempt the decision.
+
+---
+
+## The process question: what allowed this, and the gate that was already in CI
+
+The campaign rule after a defect is to ask what in the process permitted it, not who missed it. The
+answer here is unusually clean, and unusually embarrassing: **the gate existed, ran on every commit,
+and said the opposite of the truth.**
+
+`npm run verify` includes `check:coverage` → `scripts/check-primitive-coverage.mjs`. Run today, on
+`main`, against the shipped content:
+
+    Primitive coverage over 51 v1 nodes (14 primitives exercised):
+      research-rate      7 node(s)
+      resource-yield     5 node(s)
+      build-rate         5 node(s)
+      ...
+    Declared exclusions: fertility, lifespan
+    Primitive coverage check PASSED.
+
+Fourteen primitives reported **exercised**. `research-rate` reported as exercised by seven nodes —
+while nothing in production reads a research-rate magnitude derived from any node, because
+`gatherEffects` has no production caller. The check loads the **content registry** and asks *is every
+primitive carried by at least one authored node?* That is an authorship question. The word
+`exercised`, and the name `coverage`, both read as a runtime claim, and a reviewer comparing this
+output against a content diff — which the script's own header says is its purpose — is given no
+signal that the authored effects reach nothing.
+
+This is the fourth instance in this campaign of a metric that cannot fail reading as a healthy
+constant: `libraryDependence` pinned at 0, `capitalSnowball`'s byte-identical checkpoints,
+`referenceLibraryDepth` at 1.00, and now the coverage gate. W31's research names the pattern and the
+antidote: **every metric states the observation that would prove it is not measuring what it
+claims.** `invariants.md` already has that column. The metrics and the CI gates do not.
+
+The script is admirably self-aware about a *different* failure — its header argues that "a check
+nobody has watched fail is not a check", and provides a directory argument so the failing path can be
+exercised by hand. It was watched failing on the case it models. It models the wrong case.
+
+### The missing gate, specified
+
+A **consumption** check to sit beside the coverage check, in `verify`, failing loudly:
+
+- For each primitive in the registry, assert that a production source **outside** `packages/content`
+  and `rules-magic/src/effects` consumes a magnitude that originated at a node.
+- Reachability is the honest framing, and it is static: it is the question *"is there a path from an
+  authored effect to a rate the simulation applies?"* — answerable without running a sweep, which is
+  what makes it a CI gate rather than a metric. W31 cites Nelson (2011) for the general form:
+  properties of the artifact analysable without a playtest.
+- **Naive grep is not sufficient and must not be used.** Searching production sources for primitive
+  ids returns 78 files for `ward` (matching *toward*, *forward*) and 44 for `portal` (the whole
+  portal subsystem). A string match over-counts so badly it would manufacture a second passing check
+  that means nothing — which is the exact failure being fixed. The check must trace the call graph
+  from `gatherEffects`/`stackContributions` to their consumers, or assert on an explicit registered
+  consumer table that the effect pipeline exports.
+- It must distinguish **node-driven** from **god-driven**. Several primitives are consumed today via
+  god interventions (`god/interventions.ts`, `god/favor.ts`) without any node contributing to them.
+  A check that counts those as coverage reproduces the defect one layer up: the question is not
+  *"does anything read this primitive"* but *"can what the academics know change it."*
+
+Getting this wrong in the lenient direction gives a green check and no information, which is worse
+than no check. The output should print the consumer for each primitive on success, for the same
+reason the coverage check prints node counts — so a reviewer watches the number shrink.
