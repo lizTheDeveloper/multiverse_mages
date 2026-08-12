@@ -297,7 +297,7 @@ export {
   encodeShardResults,
   mergeShardResults,
   selectShard,
-  shardOfTask,
+  shardAssignment,
 } from './shard.js';
 
 export type {

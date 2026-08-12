@@ -31,18 +31,41 @@
  * the same `buildTasks` a local sweep calls. A container therefore cannot
  * express an opinion about what its runs are; it can only execute them.
  *
- * ## Stride, not block
+ * ## Neither block nor stride: a fixed shuffle, dealt evenly
  *
- * `taskId % shardCount === shardIndex`. Consecutive task ids are consecutive
- * *replicates of one cell*, so a block partition would hand one container a
- * whole parameter cell. Cells differ in cost — a cell with more founding nodes
- * carries more population per tick — and the sweep's wall clock is the slowest
- * container's. Striding mixes cells into every shard, which is the cheapest
- * available approximation to equal cost without measuring anything.
- *
- * The partition is not part of the experiment: the head sorts canonically
+ * The partition is not part of the experiment — the head sorts canonically
  * before anything is folded, so nothing downstream can tell which shard ran
- * which run. Stride is chosen for wall clock alone.
+ * which run. It is chosen for wall clock alone, and the sweep's wall clock is
+ * the *slowest container's*, so what matters is that no shard draws a
+ * systematically expensive subset.
+ *
+ * Two obvious partitions both do exactly that:
+ *
+ * - **Block** — `taskId` divided into contiguous runs — hands one container a
+ *   whole parameter cell, and cells differ in cost by construction.
+ * - **Stride** — `taskId % shardCount` — looks like the fix and is worse,
+ *   because it *aliases*. `assignStrategies` gives run
+ *   `strategies[replicateIndex % poolSize]`, and `taskId = cellIndex *
+ *   replicates + replicateIndex`, so whenever `shardCount` is a multiple of
+ *   `poolSize` and `replicates` is a multiple of `shardCount`, every task in a
+ *   shard has the same `replicateIndex % poolSize` — one strategy per
+ *   container. Measured, on 384 runs of the 2400-tick sweep across 48
+ *   containers: every shard drew exactly one of the eight strategies, shard
+ *   times ran from a few seconds to 143, and 2160 seconds of work took 186
+ *   seconds of wall clock on 96 cores. A strategy that ascends at tick 700
+ *   costs a third of one that runs to the cap, so the partition had quietly
+ *   sorted the runs by cost.
+ *
+ * So: order the task ids by `fnv1a32` of their decimal text, break ties on the
+ * id itself, and deal that order round-robin. The deal keeps shard sizes within
+ * one of each other; the hash keeps the order transverse to *any* periodic
+ * structure in the task id, which is what a stride cannot promise. Both halves
+ * are pure functions of the task-id set and the shard count, so every process
+ * computes the same partition without being told it.
+ *
+ * It does not make shards equal — eight runs drawn without replacement still
+ * vary — but it removes the systematic part, which is the part that does not
+ * shrink as the sweep grows.
  *
  * ## The wire, and the one thing it must not do
  *
@@ -58,6 +81,7 @@ import type { JsonValue } from './canonical.js';
 import { canonicalJson } from './canonical.js';
 import type { PoolResult } from './pool.js';
 import type { RunOutcome, RunTask } from './protocol.js';
+import { fnv1a32 } from './seed.js';
 
 /** Which shard, of how many. */
 export interface ShardSelector {
@@ -86,15 +110,36 @@ function assertSelector(selector: ShardSelector): void {
   }
 }
 
-/** Which shard a task id belongs to. The whole partition, in one line. */
-export function shardOfTask(taskId: number, shardCount: number): number {
+/**
+ * The whole partition: which shard each task id belongs to.
+ *
+ * The one construction site. `selectShard` and `mergeShardResults` both call
+ * it, because a second opinion about which shard owns a task is a sweep that
+ * runs some coordinates twice and others never.
+ *
+ * Independent of the order `taskIds` arrives in — the sort key ends in the id
+ * itself, so it is a total order — which is what lets a container and the head
+ * agree without exchanging anything but the sweep specification.
+ */
+export function shardAssignment(
+  taskIds: Iterable<number>,
+  shardCount: number,
+): Map<number, number> {
   if (!Number.isInteger(shardCount) || shardCount < 1) {
     throw new RangeError(`shardCount must be a positive integer, received ${String(shardCount)}.`);
   }
-  if (!Number.isInteger(taskId) || taskId < 0) {
-    throw new RangeError(`taskId must be a non-negative integer, received ${String(taskId)}.`);
+  const ids: number[] = [];
+  for (const taskId of taskIds) {
+    if (!Number.isInteger(taskId) || taskId < 0) {
+      throw new RangeError(`taskId must be a non-negative integer, received ${String(taskId)}.`);
+    }
+    ids.push(taskId);
   }
-  return taskId % shardCount;
+  const keyed = ids.map((taskId) => ({ taskId, key: fnv1a32(String(taskId)) }));
+  keyed.sort((a, b) => (a.key === b.key ? a.taskId - b.taskId : a.key - b.key));
+  const assignment = new Map<number, number>();
+  keyed.forEach((entry, rank) => assignment.set(entry.taskId, rank % shardCount));
+  return assignment;
 }
 
 /**
@@ -110,9 +155,10 @@ export function selectShard(
   selector: ShardSelector,
 ): Map<number, RunTask> {
   assertSelector(selector);
+  const assignment = shardAssignment(tasks.keys(), selector.shardCount);
   const mine = new Map<number, RunTask>();
   for (const [taskId, task] of tasks) {
-    if (shardOfTask(taskId, selector.shardCount) === selector.shardIndex) mine.set(taskId, task);
+    if (assignment.get(taskId) === selector.shardIndex) mine.set(taskId, task);
   }
   return mine;
 }
@@ -226,6 +272,7 @@ export function mergeShardResults(
     }
   }
 
+  const assignment = shardAssignment(tasks.keys(), shardCount);
   const merged = new Map<number, PoolResult>();
   for (const shard of shards) {
     for (const [taskId, result] of shard.results) {
@@ -235,10 +282,10 @@ export function mergeShardResults(
             'never declared.',
         );
       }
-      if (shardOfTask(taskId, shardCount) !== shard.shardIndex) {
+      if (assignment.get(taskId) !== shard.shardIndex) {
         throw new Error(
           `Task ${String(taskId)} belongs to shard ` +
-            `${String(shardOfTask(taskId, shardCount))} but shard ${String(shard.shardIndex)} ` +
+            `${String(assignment.get(taskId))} but shard ${String(shard.shardIndex)} ` +
             'answered it. Two shards ran the same coordinates.',
         );
       }

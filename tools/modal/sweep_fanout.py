@@ -66,6 +66,7 @@ import json
 import pathlib
 import subprocess
 import sys
+import time
 
 import modal
 
@@ -149,7 +150,7 @@ def build_app(name: str, cpu: float, image: modal.Image, timeout: int):
         # write anything if a shard is still missing after this.
         retries=modal.Retries(max_retries=1, initial_delay=1.0),
     )
-    def run_shard(job: str, shard_index: int) -> str:
+    def run_shard(job: str, shard_index: int) -> tuple[str, float]:
         """Runs one shard and returns exactly what ``run-shard.mjs`` printed.
 
         The answer crosses the wire as the string the harness encoded, never as
@@ -157,7 +158,13 @@ def build_app(name: str, cpu: float, image: modal.Image, timeout: int):
         number without an opinion about floats, and the one thing the head must
         be able to trust is that the bytes it merges are the bytes the shard
         produced.
+
+        The second element is how long the shard's simulation actually took, in
+        seconds. It is measurement, not result — it exists so the cost of a
+        sweep is a number somebody measured rather than one they inferred from
+        wall clock, which on a fan-out also contains image pull and boot.
         """
+        started = time.monotonic()
         pathlib.Path(REMOTE_JOB).write_text(job, encoding="utf8")
         completed = subprocess.run(
             [
@@ -179,7 +186,7 @@ def build_app(name: str, cpu: float, image: modal.Image, timeout: int):
             raise RuntimeError(
                 f"shard {shard_index} exited {completed.returncode}\n{completed.stderr}"
             )
-        return completed.stdout
+        return completed.stdout, time.monotonic() - started
 
     return app, run_shard
 
@@ -219,6 +226,8 @@ def main(argv: list[str]) -> int:
     app, run_shard = build_app(args.app, args.cpu, build_image(), args.timeout)
 
     written = 0
+    busy_seconds = 0.0
+    started = time.monotonic()
     with app.run():
         # `.starmap` with `order_outputs=False` — the head sorts canonically and
         # every answer names its own shard, so completion order carries no
@@ -227,12 +236,27 @@ def main(argv: list[str]) -> int:
             ((job_text, index) for index in range(args.shards)),
             order_outputs=False,
         )
-        for answer in answers:
+        for answer, elapsed in answers:
             shard_index = json.loads(answer)["shardIndex"]
             target = results_dir / f"shard-{shard_index}.json"
             target.write_text(answer, encoding="utf8")
             written += 1
-            print(f"shard {shard_index} home ({written}/{args.shards})", file=sys.stderr)
+            busy_seconds += elapsed
+            print(
+                f"shard {shard_index} home in {elapsed:.1f}s ({written}/{args.shards})",
+                file=sys.stderr,
+            )
+
+    wall = time.monotonic() - started
+    # Two figures, because they answer different questions. `busy` is what the
+    # simulation cost; `wall x containers x cpu` is the upper bound on what
+    # Modal bills, since a container is billed while it exists — including the
+    # image pull and the Node boot that `busy` deliberately excludes.
+    print(
+        f"fan-out: {wall:.1f}s wall, {busy_seconds:.1f}s of shard time across "
+        f"{args.shards} containers, <= {wall * args.shards * args.cpu:.0f} billed core-seconds",
+        file=sys.stderr,
+    )
 
     if written != args.shards:
         raise SystemExit(
