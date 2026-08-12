@@ -169,6 +169,19 @@ const ALLOWED: Readonly<Record<string, PackageEdges>> =
     // claim is measured against needs both to exist at all, and the bridge's
     // source needs neither — see the note on {@link PackageEdges.testOnly}.
     'gym-bridge': { value: ['agent-api'], typeOnly: [], testOnly: ['sim-core', 'state'] },
+    // §5: `server  authoritative lockstep, Hetzner deployment. → agent-api`.
+    // The same single edge `mc-harness` has, and taken literally: the server
+    // drives an `AgentSession` — `reset`, `submit`, `snapshotHash` — and never
+    // reaches past it. That is deliberate rather than incidental. A direct
+    // `sim-core` edge would have been a fifth deviation from §5 as drawn, and
+    // it buys nothing: the one thing the server needs from the core is the
+    // snapshot hash, and the session already publishes it. Reaching for
+    // `serializeState` here would also have put a second serialization one
+    // import away, which is exactly what `pvp-server`'s proposal forbids.
+    // `sim-core` and `state` are `testOnly` for gym-bridge's reason: the
+    // fixture universe a match is measured against needs both to exist at all,
+    // and the server's source needs neither.
+    server: { value: ['agent-api'], typeOnly: [], testOnly: ['sim-core', 'state'] },
     scenario: {
       value: [
         'sim-core',
