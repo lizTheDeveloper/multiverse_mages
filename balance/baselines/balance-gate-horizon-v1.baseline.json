@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "dc51d7a11b68cd2a465676c1a6e43b874addd0802a64c5991f5b99224b2216c1",
+  "contentHash": "4d792ee3d9b4b387494f532e6f8a6dc4ca0d948208553d7835de35a9d7337773",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":8.815668391204008,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":26.447005173612027,"unit":"grimoires","value":358.37},
@@ -16,7 +16,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.2253296099667323,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.675988829900197,"unit":"people","value":68.05}
   ],
   "notes": [
-    "Regenerated ONCE, in one sequence with the other two gates, after both mechanics and after the reference pins were re-settled. No golden fixture changed at any point in this branch."
+    "Regenerated ONCE, in one sequence with the other two gates, after both mechanics and after two reference pins were re-settled. No golden fixture changed at any point in this branch; packages/sim-core has zero diff from the base. Nothing here claims any degenerate strategy has been closed; 0.5.0 owns that."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -26,7 +26,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "W21: sound-design.md §4.1's technique envelope, and §5.2's eight-bar unease. Same regeneration as balance-gate-v1, same reasons, at the twenty-year horizon. The contentRevision moved a622452a -> d89d4eef, so this gate reports baseline-invalid on provenance regardless of behaviour. This gate's pool is passive-control, so every delta is the acquisition cost curve and none of it is the unease. The curves are harmonic-mean normalised -- no technique got cheaper -- and every slot is untuned.",
+  "rationale": "W21: sound-design.md §4.1's technique envelope, and §5.2's eight-bar unease, at the twenty-year horizon. Same regeneration as balance-gate-v1, same reasons; contentRevision moved a622452a -> d89d4eef so this gate reports baseline-invalid on provenance regardless of behaviour. This gate's pool is passive-control, so every delta is the research acquisition cost curve and none of it is the unease. THIS IS A MEASUREMENT AND NOT A BALANCE CLAIM: release-plan.md forbids any balance claim before 0.5.0, every curve slot and both unease constants carry tuningStatus untuned, and nothing here asserts the universe is non-degenerate. The curves are harmonic-mean normalised so no technique got cheaper, which is a statement about arithmetic and not about play.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [

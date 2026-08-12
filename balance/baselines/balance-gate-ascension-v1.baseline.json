@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
-  "contentHash": "7f1528fde9a1f909cdcab6a65795a26134fe1bea6c89d8183666c11b95feac11",
+  "contentHash": "0ef5c76ae574c38920a64e9f093013f57a5599d6681c51e74e6a604800ab66b3",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":106.56018142638929,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":319.68054427916786,"unit":"grimoires","value":264.0625},
@@ -16,7 +16,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":2268.208021862379,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":6804.624065587137,"unit":"people","value":20001.71875}
   ],
   "notes": [
-    "Regenerated ONCE, last of the three, after both mechanics and after the two reference pins were re-settled -- never mid-sequence. No golden fixture changed at any point in this branch, checked on every full run. The flat-curve ablation is committed as evidence that the envelope and not a defect moved these numbers."
+    "Regenerated ONCE, last of the three, after both mechanics and after two reference pins were re-settled -- never mid-sequence. No golden fixture changed at any point in this branch; packages/sim-core has zero diff from the base and the RNG stream registry is untouched, so there is no stream 12. The flat-curve ablation is the evidence that the envelope and not a defect moved these numbers: setting all five envelopes to rigid restores the previous reference-run figures exactly."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -26,7 +26,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "W21: sound-design.md §4.1's technique envelope, and §5.2's eight-bar unease. The contentRevision moved a622452a -> d89d4eef, so this gate reports baseline-invalid on provenance regardless of behaviour. Unlike the other two gates, this one runs all eight strategies at 2400 ticks, so BOTH mechanics reach it: the acquisition cost curve reshapes when research banks progress and therefore what mages choose to resume, and the eight-bar unease surcharges any constitutional act committed inside the previous one's phrase -- which every axis-opening strategy in the pool does on consecutive ticks. The curves are harmonic-mean normalised, so no technique got cheaper; the unease is a pure surcharge and is mirrored in agent-api's affordability mask, so nothing here is an action the mask admitted and the resolver refused. Every slot and both unease constants are untuned.",
+  "rationale": "W21: sound-design.md §4.1's technique envelope, and §5.2's eight-bar unease. contentRevision moved a622452a -> d89d4eef so this gate reports baseline-invalid on provenance regardless of behaviour. Unlike the other two gates this one runs all eight strategies at 2400 ticks, so BOTH mechanics reach it: the acquisition cost curve reshapes when research banks progress and therefore what mages resume, and the unease surcharges any constitutional act committed inside the previous one's phrase -- which every axis-opening strategy does on consecutive ticks. The unease is mirrored in agent-api's affordability mask and a scenario test sweeps every bar of the phrase asserting the two verdicts agree, so nothing here is an action the mask admitted and the resolver refused. THIS IS A MEASUREMENT AND NOT A BALANCE CLAIM: release-plan.md forbids any balance claim before 0.5.0, every curve slot and both unease constants carry tuningStatus untuned, and this branch closes no degenerate strategy -- permit-then-idle is measured, not defeated, and that measurement is reported rather than tuned away.",
   "rootSeed": 20260811,
   "runCount": 32,
   "supersededDeltas": [

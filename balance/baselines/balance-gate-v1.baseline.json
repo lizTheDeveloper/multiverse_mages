@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "c06a01da7193725e0755f985a088214323936b901ede2aa2c384dee386fb4fe1",
+  "contentHash": "299e543212bd74b3675385366cf45433b5254e9fc8ecd964adf6c27d36025070",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.6488389545250268,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.946516863575081,"unit":"grimoires","value":84.145},
@@ -15,7 +15,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.4325617804170302,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.2976853412510905,"unit":"people","value":-14.575}
   ],
   "notes": [
-    "Regenerated ONCE, after both mechanics and after the two reference pins were re-settled -- never mid-sequence. No golden fixture changed at any point in this branch, checked on every full run. The flat-curve ablation is committed as evidence: setting all five envelopes to rigid and changing nothing else restores the previous reference-run numbers exactly."
+    "Regenerated ONCE, after both mechanics and after two reference pins were re-settled -- never mid-sequence. No golden fixture changed at any point in this branch; packages/sim-core has zero diff from the base. Nothing here claims the balance is good or that any degenerate strategy has been closed; 0.5.0 owns that."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -25,7 +25,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "W21: sound-design.md §4.1's technique envelope, and §5.2's eight-bar unease. Two mechanics, one regeneration, and the contentRevision moved a622452a -> d89d4eef so all three gates report baseline-invalid on provenance regardless of what behaviour did. (1) Every technique now carries an acquisition cost curve, applied to research, so a mage's banked progress accrues on a shape rather than linearly -- and researchFrontier scores whether to resume a project from (requirement - banked), so the curve changes what mages choose to work on and not only the arithmetic. This gate's pool is passive-control, which submits nothing, so every delta here is the curve and none of it is the unease. (2) The unease surcharges a constitutional act committed inside the previous one's eight bars; it cannot reach this gate's pool but is in the preimage of the content hash. The curves are harmonic-mean normalised, so no technique got cheaper -- under constant effort months-to-completion is unchanged and only the interior moved. Every slot is untuned.",
+  "rationale": "W21: sound-design.md §4.1's technique envelope, and §5.2's eight-bar unease. Two mechanics, one regeneration; contentRevision moved a622452a -> d89d4eef so all three gates report baseline-invalid on provenance regardless of what behaviour did. (1) Every technique now carries an acquisition cost curve applied to research, so banked progress accrues on a shape rather than linearly -- and researchFrontier scores whether to resume a project from (requirement - banked), so the curve changes what mages choose to work on and not only the arithmetic. This gate's pool is passive-control, which submits nothing, so every delta here is the curve and none of it is the unease. (2) The unease surcharges a constitutional act committed inside the previous one's eight bars; it cannot reach this pool but is in the preimage of the content hash. THIS IS A MEASUREMENT AND NOT A BALANCE CLAIM: release-plan.md forbids any balance claim before 0.5.0, every curve slot and both unease constants carry tuningStatus untuned, and nothing here asserts the resulting universe is non-degenerate -- the curves are harmonic-mean normalised so no technique got cheaper, which is a statement about arithmetic and not about play.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
