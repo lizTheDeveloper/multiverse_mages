@@ -239,6 +239,9 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 }
 
 .card{border:1px solid var(--rule);border-radius:3px;background:var(--panel);display:flex;flex-direction:column;min-width:0}
+/* a class-level display beats [hidden]'s UA display:none. Every hideable
+   element on this page needs its own rule, and the dossier is a .card. */
+.card[hidden]{display:none}
 .card > h2{
   margin:0;padding:.55rem .75rem;border-bottom:1px solid var(--rule);
   font:10px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--faint);font-weight:500;
@@ -264,6 +267,10 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 
 /* ---- the constitution: twelve switches ---- */
 .consti{display:flex;flex-direction:column;gap:.35rem}
+/* display: on a class beats [hidden]'s UA display:none, so every element the
+   collapse hides needs its own rule or it stays on screen and grows the card */
+.consti[hidden]{display:none}
+.crow[hidden]{display:none}
 .crow{display:grid;grid-template-columns:4.6rem repeat(4,1fr);gap:.25rem;align-items:center}
 .crow .tech{font:9.5px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--faint);text-align:right;padding-right:.15rem}
 .chead .form{font:9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);text-align:center}
@@ -287,6 +294,30 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .cell:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
 .cell:not(:disabled):hover{border-color:var(--god-lit)}
 
+/* ---- a section that can no longer be used gets out of the field's way, but
+       it does NOT vanish: a change you made under pressure and cannot take
+       back must not read as though it never happened ---- */
+.csum{
+  display:flex;align-items:baseline;gap:.3rem;flex-wrap:wrap;
+  font:9.5px var(--mono);letter-spacing:.05em;color:var(--faint);
+  padding:.1rem .1rem;border-bottom:1px dashed color-mix(in srgb,var(--rule) 75%,transparent)
+}
+.csum[hidden]{display:none}
+.csum .tk{color:var(--soft);text-transform:uppercase;letter-spacing:.1em}
+.csum .lk{color:var(--god)}
+.csum .shut{color:var(--deny)}
+.csum .open{color:var(--god)}
+.cclosed{
+  font:9.5px var(--mono);line-height:1.7;letter-spacing:.04em;color:var(--soft);
+  border:1px dashed color-mix(in srgb,var(--god) 40%,var(--rule));border-radius:2px;
+  padding:.45rem .55rem;background:color-mix(in srgb,var(--god) 6%,var(--well))
+}
+.cclosed[hidden]{display:none}
+.cclosed b{color:var(--god);font-weight:600}
+.cclosed .shut{color:var(--deny)}
+.cmini{align-self:flex-start;font-size:9px;padding:.24rem .45rem}
+.cmini[hidden]{display:none}
+
 /* ---- verbs ---- */
 .verbs{display:flex;flex-direction:column;gap:.35rem}
 .verb{
@@ -302,6 +333,8 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .verb:disabled .cost{color:var(--faint)}
 .verb[data-spent="1"]{opacity:.55;border-style:solid;border-color:var(--rule)}
 .verb[data-spent="1"] .cost{color:var(--ok)}
+.verb[data-dead="1"] .sub{display:none}
+.verb[data-dead="1"]{padding:.3rem .55rem;opacity:.5}
 
 .deadbar{
   border:1px dashed var(--rule);border-radius:2px;padding:.5rem .6rem;
@@ -403,9 +436,9 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 /* a definite height, not a max: the log must not resize under the reader as
    rows arrive, and a sticky column that grows is a column that jumps */
 .recinner{position:sticky;top:.6rem;display:flex;flex-direction:column;gap:.9rem;height:calc(100vh - 1.2rem)}
-.recinner .ledger{flex:0 1 auto;max-height:30rem;overflow:hidden}
-.recinner .ledger .body{overflow-y:auto;gap:.55rem}
-.recinner .logcard{flex:1 1 auto;min-height:11rem;overflow:hidden}
+.recinner .ledger{flex:0 0 auto;max-height:27rem;overflow:hidden}   /* never shrunk to nothing */
+.recinner .ledger .body{overflow-y:auto;gap:.55rem;min-height:0}
+.recinner .logcard{flex:1 1 0;min-height:8rem;overflow:hidden}     /* takes exactly what is left */
 .recinner .log{flex:1 1 auto;max-height:none}
 /* only once the record stops being a column beside the field does it stop
    being sticky — at every width where it sits next to the canvas it is pinned */
@@ -569,6 +602,8 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
             <div class="note">Worship, and the defender's only spend. Regenerates at fp(1)/tick here.</div>
           </div>
           <div class="consti" id="consti"></div>
+          <div class="cclosed" id="cclosed" hidden></div>
+          <button class="btn cmini" id="consti-toggle" type="button" hidden>Show all twelve</button>
           <div class="note lab" id="lockline" style="line-height:1.6;letter-spacing:.04em">
             Forbidding is defender-only. Every change locks until the raid ends.
           </div>
@@ -1899,6 +1934,8 @@ function buildConstitution() {
   head.innerHTML = '<span class="tech"></span>' + FORMS.map(f => '<span class="form">' + f.slice(0, 4) + '</span>').join('');
   host.append(head);
   for (const t of TECHS) {
+    const sec = document.createElement('div');
+    sec.className = 'csec'; sec.dataset.tech = t;
     const row = document.createElement('div');
     row.className = 'crow';
     row.innerHTML = '<span class="tech">' + t + '</span>';
@@ -1909,17 +1946,42 @@ function buildConstitution() {
       b.addEventListener('click', () => toggleCell(id));
       row.append(b);
     }
-    host.append(row);
+    const sum = document.createElement('div');
+    sum.className = 'csum'; sum.hidden = true;
+    sec.append(row, sum);
+    host.append(sec);
   }
 }
+const SHORT = (f) => f.slice(0, 4);
 function toggleCell(id) {
   if (!S || S.locked.has(id) || S.phase === 'resolution' || S.ended) return;
   if (S.permitted.has(id)) { S.permitted.delete(id); logRow(S, 'note', null, null, 'FORBADE ' + id + ' — locked for the raid', 'constitution'); }
   else { S.permitted.add(id); logRow(S, 'note', null, null, 'PERMITTED ' + id + ' — locked for the raid', 'constitution'); }
   S.locked.add(id);
+  constiSig = '';
   paintConstitution();
 }
+/**
+ * Author: "once there's no ability to use that section, it should disappear so
+ * that we have... more real estate to work with."
+ *
+ * Two collapses, and neither is a disappearance. A technique row every one of
+ * whose four cells is locked becomes one line; and once the phase has moved
+ * past the constitution entirely — resolution, or the raid over — the whole
+ * grid becomes a short statement of what you changed. A locked switch is the
+ * whole design of the mid-raid amendment: it is a decision you made under
+ * pressure and cannot take back, and it must still read as locked and as
+ * yours. So the summary names the cells, keeps the lock glyph and the cyan,
+ * and there is always a way back to all twelve.
+ */
+let constiSig = '', constiExpanded = false;
 function paintConstitution() {
+  const dead = S.phase === 'resolution' || !!S.ended;
+  const sig = CELL_IDS.map(id => (S.permitted.has(id) ? 'p' : 'f') + (S.locked.has(id) ? 'l' : ''))
+    .join('') + '|' + dead + '|' + constiExpanded;
+  if (sig === constiSig) return;
+  constiSig = sig;
+
   for (const b of document.querySelectorAll('.cell')) {
     const id = b.dataset.cell, open = S.permitted.has(id);
     b.dataset.state = open ? 'permitted' : 'forbidden';
@@ -1935,6 +1997,52 @@ function paintConstitution() {
       : id + ' — ' + (S.permitted.has(id) ? 'permitted; forbid it and nobody inside your universe may use it, including you'
                                           : 'forbidden; permit it and the raider may use it too');
   }
+  /* ---- collapse what can no longer be used ---- */
+  const changed = [...S.locked].sort();
+  let sectionsCollapsed = 0;
+  for (const sec of document.querySelectorAll('.csec')) {
+    const t = sec.dataset.tech, ids = FORMS.map(f => t + '-' + f);
+    const allLocked = ids.every(id => S.locked.has(id));
+    const collapse = !constiExpanded && !dead && allLocked;
+    sec.querySelector('.crow').hidden = collapse;
+    const sum = sec.querySelector('.csum');
+    sum.hidden = !collapse;
+    if (collapse) {
+      sectionsCollapsed++;
+      const shut = ids.filter(id => !S.permitted.has(id)), open = ids.filter(id => S.permitted.has(id));
+      /* terse on purpose: the four switches are already dense, and a summary
+         that wraps to two lines costs more room than the row it replaced */
+      sum.innerHTML = '<span class="tk">' + t + '</span><span class="lk">• locked</span>' +
+        (shut.length ? '<span class="shut">' + shut.length + ' shut</span>' : '') +
+        (open.length ? '<span class="open">' + open.length + ' open</span>' : '');
+      sum.title = t + ' — every cell in this row is locked for the raid, so there is nothing left to decide here. ' +
+        (shut.length ? 'Shut: ' + shut.join(', ') + '. ' : '') + (open.length ? 'Open: ' + open.join(', ') + '. ' : '') +
+        'Reverting afterwards costs substantially more favor than the change did.';
+    }
+  }
+  /* the column heads label switches; with every switch collapsed they label nothing */
+  document.querySelector('.chead').hidden = sectionsCollapsed === 3 || (dead && !constiExpanded);
+
+  const wholeCollapsed = dead && !constiExpanded;
+  el('consti').hidden = wholeCollapsed;
+  el('cclosed').hidden = !wholeCollapsed;
+  if (wholeCollapsed) {
+    el('cclosed').innerHTML = changed.length
+      ? 'Constitution closed for the raid. <b>' + changed.length + ' change' + (changed.length === 1 ? '' : 's') +
+        '</b>, locked, and yours:<br>' + changed.map(id =>
+          '<span class="' + (S.permitted.has(id) ? 'open' : 'shut') + '">' + id.replace('-', ' · ') + ' ' +
+          (S.permitted.has(id) ? 'opened' : 'shut') + '</span>').join(', ') +
+        '.<br>Reverting afterwards costs substantially more favor than the changes did.'
+      : 'Constitution closed for the raid. The twelve cells stand exactly as you left them — <b>you changed nothing</b> while it ran.';
+  }
+  const toggle = el('consti-toggle');
+  toggle.hidden = !(wholeCollapsed || sectionsCollapsed > 0 || constiExpanded);
+  toggle.textContent = constiExpanded ? 'Collapse what is spent' : 'Show all twelve';
+  toggle.title = constiExpanded
+    ? 'Fold the rows that can no longer be used back down, and give the field the room.'
+    : 'Every switch, including the ones locked for the duration.';
+
+  el('lockline').hidden = wholeCollapsed;
   el('lockline').textContent = S.locked.size === 0
     ? 'Forbidding is defender-only. Every change locks until the raid ends.'
     : S.locked.size + ' cell' + (S.locked.size === 1 ? '' : 's') + ' locked for the duration. Reverting afterwards costs substantially more favor than the change did.';
@@ -1988,7 +2096,13 @@ function paintVerbs() {
       (v.phase === 'muster' ? S.phase === 'muster' : S.phase === 'contact');
     b.disabled = !liveNow || S.spent.has(v.id) || S.favor < v.cost;
     b.dataset.spent = S.spent.has(v.id) ? '1' : '0';
-    b.querySelector('.cost').textContent = S.spent.has(v.id) ? 'spent' : v.cost + ' favor';
+    /* the same rule as the constitution's: a verb whose phase has passed keeps
+       its line and loses its paragraph. It still says what it was and whether
+       you spent it — a verb you paid for must not read as one you never had */
+    b.dataset.dead = (!liveNow || S.spent.has(v.id)) && !constiExpanded ? '1' : '0';
+    b.querySelector('.cost').textContent = S.spent.has(v.id) ? 'spent'
+      : liveNow ? v.cost + ' favor'
+      : v.phase === 'muster' ? 'muster only — gone' : 'gone';
   }
   el('deadbar').hidden = !(S.phase === 'resolution' || S.ended);
 }
@@ -2402,7 +2516,7 @@ function frame(now) {
 
 function restart() {
   S = buildRaid(el('seed').value.trim() || 'hollow-gate', damage);
-  logDrawn = 0; ledgerSig = ''; dossierSig = '';
+  logDrawn = 0; ledgerSig = ''; dossierSig = ''; constiSig = ''; constiExpanded = false;
   el('dossier').hidden = true; el('holdbar').hidden = true;
   el('log').innerHTML = '<tr><td class="empty" colspan="3">Nothing cast yet. The portal is open; contact has not happened.</td></tr>';
   acc = 0; last = 0; running = true;
@@ -2420,6 +2534,10 @@ el('dsr-hold-btn').addEventListener('click', () => {
   if (S.hold) releaseHold();
   else { const c = S.combatants.find(x => x.key === S.inspect); if (c) takeHold(c); }
   paintDossier();
+});
+el('consti-toggle').addEventListener('click', () => {
+  constiExpanded = !constiExpanded; constiSig = '';
+  paintConstitution(); paintVerbs();
 });
 el('restart').addEventListener('click', restart);
 el('seed').addEventListener('change', restart);
