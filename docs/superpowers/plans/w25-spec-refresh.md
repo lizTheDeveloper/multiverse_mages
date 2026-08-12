@@ -43,13 +43,25 @@ gap, the gap is listed as a question for the author rather than filled.
       naming recommendation — cross-reference, do not duplicate
 - [x] 6. Check `origin/w21/timing-and-envelopes` for what the timing mechanic actually is
 - [x] 7. Check for a W24 branch before writing anything about universities sited in territories
-- [ ] 8. Amendment A — §11
-- [ ] 9. Amendment B — §8 and §8a
-- [ ] 10. Amendment C — §7a
-- [ ] 11. Amendment D — §12, §4, §13
-- [ ] 12. Amendment E — the five unrecorded mechanics
+- [x] 8. Amendment A — §11
+- [x] 9. Amendment B — §8, §8a, and a new §8b
+- [x] 10. Amendment C — §7a
+- [x] 11. Amendment D — §4, §12, §13
+- [x] 12. Amendment E — a new §4b (exclusivity, depth, rituals), §7 (timing), §8b (colonization), §13
 - [ ] 13. `npm run verify` green
 - [ ] 14. Push. No PR.
+
+## What the gate turned out to be
+
+Nothing in the repository parses `docs/design/vision.md` — every one of the ~40 `vision.md` hits in
+the tree is a prose citation in a comment. `contracts.md` by contrast has **ten** runtime parsers,
+including three independent readers of its §7 metric table, so an edit there would have been a very
+different job. `horizon-gate.test.ts` reads `package.json`, `scripts/ci-check.sh` and
+`.github/workflows/ci.yml` — not a design document, despite its `describe` title naming one.
+
+The one soft risk, and it is why this amendment **adds** §4b and §8b rather than renumbering
+anything: section numbers are cited by hand in roughly forty code comments (`vision.md §4a`,
+`§6a`, `§7`, `§13`…). Nothing would fail; the citations would silently go stale.
 
 ## The verification method for §11, stated before running it
 

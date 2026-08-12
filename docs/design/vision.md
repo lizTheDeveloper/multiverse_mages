@@ -413,8 +413,10 @@ become is a *better* opening than a normal one, which is what `prestigeAdvantage
 
 A universe does not float in an unbounded multiverse. It lives in a **bubble**: a bounded
 neighbourhood of universes that may portal to one another. That is the answer to the question §8
-never asks — *who, exactly, can raid me?* — and it is also the missing supply of portal targets
-that is why no raid fired at all for three releases.
+never asks — *who, exactly, can raid me?* — and the question is not academic: no raid fired at all
+for three releases because nothing supplied a portal target, and what fires them today is a single
+rival the headless scenario builds as a stand-in. A bubble is the general answer that a stand-in
+is standing in for.
 
 Inside a bubble the loop is §8 carried to its end. Raid a rival; loot their books; and if you
 extinguish their mages, that universe ends and its populace, materials and worship pass to you.
@@ -499,9 +501,9 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 
 **The Status column is task progress, and task progress is not a release.** Reconciled on
 2026-08-12 against `openspec list` and this tree. Three rows had read *"not started"* while the
-code they name was between two-thirds and entirely built, and two of the three execute on every
-run — `god-agency`'s worship and favor systems every world tick, and `raid-engagement`'s engine
-now that something supplies it a portal target. Anyone reading the old column would have
+code they name was between two-thirds and entirely built, and two of the three now execute —
+`god-agency`'s worship and favor systems on every world tick, and `raid-engagement`'s engine on
+every run in which a portal opens, which is no longer never. Anyone reading the old column would have
 materially underestimated how far the project has gone, which is the failure mode this table
 exists to prevent.
 
