@@ -429,8 +429,22 @@ serialized into snapshots.
                                     // affinity 1792) turns 4096 into 4096*1024/1792 = 2340, BELOW the
                                     // floor, so the trait clamps flat and does nothing. Break-even is
                                     // 3072 * 1792 / 1024 = 5376
+  "track": "the-standing-gate",     // optional; the named route through the grid this node belongs
+                                    // to (compositional-content.md §3.1). A node with no track
+                                    // belongs to the shared body of magic every mage can reach.
+  "antirequisites": ["rc-let-the-limb-answer"],  // optional; nodes this one may never be held
+                                    // alongside in one mind (§3.2). Declared on one side, enforced
+                                    // on both -- see load.ts's normaliseAntirequisites.
   "effects": [
-    { "primitive": "direct-damage", "magnitude": 512, "target": "single", "durationTicks": 0 }
+    { "primitive": "direct-damage", "magnitude": 512, "target": "single", "durationTicks": 0,
+      "mode": "control",            // required; the technique's envelope made mechanical
+                                    // (sound-design.md §4.1, §3.1 below). rego -> control.
+      "gloss": "The puppet's own reflexes still fire; this only sets how far they may swing.",
+                                    // optional; how the fold reads this effect in prose
+      "control": { "ceiling": 768 } // required by mode "control", and forbidden by every other
+                                    // mode. A floor is reliability bought, a ceiling is upside
+                                    // sold (§3.1 below)
+    }
   ],
   "tuningStatus": "untuned"         // "untuned" | "tuned". Same meaning as in §2.4: every magnitude
                                     // above is a placeholder awaiting the balance harness
@@ -439,6 +453,12 @@ serialized into snapshots.
 
 Prerequisites may cross cells. The loader rejects prerequisite cycles and any node whose
 prerequisite has a higher `tier`.
+
+**`mode` is the technique's envelope, not the node's** (`compositional-content.md` §3.3): `creo` ->
+`create`, `intellego` -> `reveal`, `muto` -> `transform`, `perdo` -> `remove`, `rego` -> `control`.
+`reveal` requires `reveals` and forbids `control`/`transformTo`; `control` requires `control` and
+forbids `reveals`/`transformTo`; `transform` requires `transformTo` and forbids `reveals`/`control`;
+`create` and `remove` take no payload at all. §3.1 states how each mode folds into a magnitude.
 
 ### 2.4 `species.json`
 
@@ -460,7 +480,17 @@ prerequisite has a higher `tier`.
   "maturityMonths": 600,            // before which a mage cannot be promoted from a student cohort
   "mageAptitude": 448,              // fp; share of matured students who become mages at all
   "laborAffinity": 1280,            // fp multiplier on non-magical labour productivity
-  "affinities": { "terram": 1536, "ignem": 1152 },  // by form or by cell id
+  "affinities": { "terram": 1536, "ignem": 1152, "nomen": 1280, "limen": 960 },
+                                    // by form or by cell id. Every species now declares a value for
+                                    // at least two forms **inside the v1 rectangle**, and that is a
+                                    // requirement rather than flavour: `target-appeal.ts`'s affinity
+                                    // term is one of only two terms orthogonal to tier, and it is
+                                    // the one that can make two species want different halves of
+                                    // one reachable set. Before W20, human declared no affinities
+                                    // at all and gnome's two named forms outside v1 — so the term
+                                    // had nothing to read for either, and
+                                    // `strategy-dimensionality.md` measured the two reaching the
+                                    // identical forty-nine nodes
   "personality": { "curiosity": 512, "ambition": 1024, "caution": 1024 },  // optional; means, each
                                     // defaults to fp(1024)
   "tuningStatus": "untuned"         // "untuned" | "tuned". Every magnitude above is a placeholder
@@ -719,6 +749,70 @@ own bounds quietly stops discriminating at the top.
 
 **Every value here is untuned** and carries `tuningStatus` saying so.
 
+### 2.12 `track.json`
+
+```jsonc
+{
+  "id": "the-open-mind",
+  "name": "The Open Mind",
+  "gloss": "Minds read, minds taught, minds joined. The scholar's route: it makes a university faster than any other line in the grid, and it makes every thought in that university legible to anyone who walks it.",
+  "excludes": [
+    {
+      "track": "the-sealed-mind",
+      "threshold": 2,               // how many nodes of "the-sealed-mind" one mind may hold
+                                    // before "the-open-mind" closes to it. 1 shuts the door on
+                                    // first contact; a higher value lets a mage sample first
+      "symmetric": true,            // whether the exclusion runs both ways -- see the ruling below
+      "gloss": "Opening a mind and shutting one are the same act run backwards. Intellego Mentem is a filter opening onto a reverbless tone; Perdo Mentem is a hole taken out of that same tone. Opposed in kind, so the exclusion runs both ways."
+    }
+  ],
+  "tuningStatus": "untuned"
+}
+```
+
+A **track** is a named path through the grid, not a region of it (`compositional-content.md` §3.1):
+its nodes cross cells freely, which is what turns twelve parallel staircases into one web. A node
+names its track with the optional `track` field of §2.3; a node with no track belongs to the shared
+body of magic every mage can reach. `track.json` is a deliberate extension of this section for the
+reason §2.8-§2.11 are — which tracks exist and what they exclude is a balance question a sweep
+turns, not a code change, and it belongs inside `contentRevision` for the same reason a raid
+constant does.
+
+**Exclusion binds one mind, never the universe.** A universe may hold every school it can reach,
+accumulated across many mages over many lifetimes; an individual mage may not. That asymmetry is the
+design — the dragon is powerful because it lives long enough to reach the *bottom* of the schools it
+chose, not because it knows everything — and it is why `threshold` counts what one mind holds rather
+than what exists anywhere in the universe.
+
+**Whether an exclusion runs both ways is derived from its reason, and it is never a free choice.**
+The author's ruling, verbatim: *"It depends on why. It should be a lore / mechanic / making-sense
+thing. E.g. if you use light magic you can't also use dark magic."* Two things opposed **in kind** —
+light and dark, making and unmaking — exclude each other mutually, because holding either one is a
+statement about what the other cannot also be true of you; a **one-way** reason gives a **one-way**
+lock, where the excluded track never itself becomes a door that closes anything. `symmetric` is that
+derivation made data rather than prose, and `gloss` is required beside it for the same reason: an
+exclusion whose justification cannot be stated in one sentence does not belong in the content, and an
+exclusion whose stated reason is plainly symmetric while `symmetric` says otherwise is a content bug
+a reader can catch by eye. `load.ts`'s `normaliseTrackExclusions` is the one place this is
+normalised into a closure, and it honours exactly what the data declares — a `symmetric: true` entry
+adds both directed edges, a `symmetric: false` entry adds only the authored one.
+
+All five exclusions in the shipped v1 track set are `symmetric: true`, because every opposition
+authored there is motivated straight out of `sound-design.md` §4.1/§4.2's technique and form
+semantics — Intellego Mentem's filter against Perdo Mentem's hole in the same tone, Creo Terram's
+raised stone against Perdo Terram's collapsed seam, and so on. Nothing shipped needed the one-way
+case yet; the schema exists so that a future track whose opposition is asymmetric in its own right —
+superseding an earlier line without that earlier line closing its own door back — has a place to say
+so honestly instead of being forced into a symmetry its reason does not support.
+
+The loader refuses unsatisfiable content: `track-exclusion-unsatisfiable` for a node whose
+prerequisite lies on a track the exclusion closure puts on the other side of its own track,
+`track-excluded-by-trunk` for a track excluding one that carries tier-1 or tier-2 content — the
+shared trunk nearly every mage acquires early, so a track excluded by it is unreachable in
+practice — and `track-unreachable-from-trunk` for a track none of whose nodes has a prerequisite
+path avoiding every track that excludes it. All three are load failures, not warnings
+(`compositional-content.md` §5).
+
 ---
 
 ## 3. Effect Primitive Semantics
@@ -727,29 +821,59 @@ Every primitive: its unit, where it applies, and how multiple sources combine. *
 the field most likely to be silently assumed differently by two implementers**, so it is stated for
 all of them.
 
-| Primitive | Unit | Scale | Stacking |
-|---|---|---|---|
-| `direct-damage` | HP per application | engagement | summed per target per tick, then **one** ward factor applied to the sum — so ten small hits equal one large hit rather than differing by rounding artefact |
-| `ward` | fraction of damage prevented | engagement | **multiplicative on the remainder**, hard cap `fp(922)` = 90% |
-| `area-denial` | HP per engagement tick, within radius (fp metres) | engagement | additive |
-| `blink` | fp metres of instantaneous displacement | engagement | max, not sum |
-| `summon` | count of combatants from a template | engagement | additive, capped per side |
-| `build-rate` | multiplier on construction progress | world | additive into `(1 + Σbonus)`, cap `fp(4096)` |
-| `resource-yield` | multiplier on materials per world tick | world | additive into `(1 + Σ)`, cap `fp(4096)` |
-| `research-rate` | multiplier on research progress | world | additive into `(1 + Σ)`, cap `fp(4096)` |
-| `teach-rate` | multiplier on teaching throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` |
-| `scribe-rate` | multiplier on scribing throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` |
-| `lifespan` | additive months | world | additive, cap `+50%` of species base. **Recomputed from active effects at each hazard evaluation, never accumulated into a stored field** — which is also why mortality is a per-tick hazard rather than a death date rolled at birth |
-| `fertility` | multiplier on cohort birth rate | world | additive into `(1 + Σ)`, cap `fp(3072)` |
-| `worship-yield` | multiplier on favor regeneration | world | additive into `(1 + Σ)`, cap `fp(2048)` |
-| `concealment` | fp probability of evading targeting/detection | both | multiplicative on the remainder, cap `fp(870)` = 85% |
-| `knowledge-steal` | fp probability per attempt of copying an instance | engagement | max, not sum |
-| `portal` | boolean gate; enables raid initiation | world | n/a — presence only |
+| Primitive | Unit | Scale | Stacking | Floor |
+|---|---|---|---|---|
+| `direct-damage` | HP per application | engagement | summed per target per tick, then **one** ward factor applied to the sum — so ten small hits equal one large hit rather than differing by rounding artefact | — |
+| `ward` | fraction of damage prevented | engagement | **multiplicative on the remainder**, hard cap `fp(922)` = 90% | — |
+| `area-denial` | HP per engagement tick, within radius (fp metres) | engagement | additive | — |
+| `blink` | fp metres of instantaneous displacement | engagement | max, not sum | — |
+| `summon` | count of combatants from a template | engagement | additive, capped per side | — |
+| `build-rate` | multiplier on construction progress | world | additive into `(1 + Σbonus)`, cap `fp(4096)` | `fp(256)` = 0.25×, untuned |
+| `resource-yield` | multiplier on materials per world tick | world | additive into `(1 + Σ)`, cap `fp(4096)` | `fp(256)` = 0.25×, untuned |
+| `research-rate` | multiplier on research progress | world | additive into `(1 + Σ)`, cap `fp(4096)` | `fp(256)` = 0.25×, untuned |
+| `teach-rate` | multiplier on teaching throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` | `fp(256)` = 0.25×, untuned |
+| `scribe-rate` | multiplier on scribing throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` | `fp(256)` = 0.25×, untuned |
+| `lifespan` | additive months | world | **diminishing returns**, cap `+50%` of species base. **Recomputed from active effects at each hazard evaluation, never accumulated into a stored field** — which is also why mortality is a per-tick hazard rather than a death date rolled at birth | — |
+| `fertility` | multiplier on cohort birth rate | world | additive into `(1 + Σ)`, cap `fp(3072)` | `fp(256)` = 0.25×, untuned |
+| `worship-yield` | multiplier on favor regeneration | world | additive into `(1 + Σ)`, cap `fp(2048)` | `fp(256)` = 0.25×, untuned |
+| `concealment` | fp probability of evading targeting/detection | both | multiplicative on the remainder, cap `fp(870)` = 85% | — |
+| `knowledge-steal` | fp probability per attempt of copying an instance | engagement | max, not sum | — |
+| `portal` | boolean gate; enables raid initiation | world | n/a — presence only | — |
 
 **Why the caps exist:** every uncapped multiplicative rate in a game with two compounding loops
 (worship §7, knowledge-as-capital §6a) is a runaway waiting to happen. The caps are deliberately
 placed to be *reachable*, so the balance harness measures behaviour at the cap rather than
 discovering it in live play.
+
+**Why the floors exist.** W20 gives Perdo (`remove`) and Muto (`transform`, draining side) a
+signed magnitude into the same `additive-into-multiplier` fold the caps above bound from above.
+Nothing before this change ever produced a negative source for `build-rate`, `resource-yield`,
+`research-rate`, `teach-rate`, `scribe-rate`, `fertility` or `worship-yield`, so the fold's lower
+end was never load-bearing; a cap alone stops a rate from running away upward and does nothing to
+stop a large enough Perdo stack from driving it to zero or negative. A zero or negative *rate*
+multiplier is a division hazard downstream (progress-per-tick math assumes a positive divisor) and
+an unrecoverable state for whoever holds it — there is no symmetric "un-unmake" to climb back out
+with. So each of these seven carries a `floor`, applied right after the fold — before Rego's
+control clamp and before the cap above, both of which stay exactly where they were. `fp(256)` =
+0.25× is **untuned** — a value chosen only to keep the arithmetic in a representable, invertible
+range until the balance harness sets it for real.
+
+**Why `lifespan` stacks by diminishing returns instead of `additive`.** The knowledge tree is deep
+and, per `compositional-content.md` §3.2, its schools are mutually exclusive per mage — so reaching
+the deepest nodes means either being born long-lived or bootstrapping: surviving long enough to
+learn life extension before it can extend anyone. Summed linearly, enough stacked extensions would
+let a short-lived species buy its way to a draconic lifespan node by node, which would make
+`depthCeiling` — already the game's one purely structural species trait — a number a long enough
+life could simply outspend. **A naturally long-lived species has to stay worth having.** The cap
+above is unchanged and is not doing this job: it already scales the *total* with what a mage
+already is (an orc's +50% and a dragon's +50% are each half of a very different base), which is a
+statement about the ceiling, not about how fast repeated extensions approach it. `diminishing`
+supplies that: sources sorted descending, then summed as `magnitude_i / 2^i` — the largest
+extension in full, the second at half, the third at a quarter. Fixed point forbids floats, so this
+is an integer series rather than a real logarithm, using the same shared, sign-uniform `floorDiv`
+every other division in this document requires. The halving is **untuned** — the cheapest exact
+integer decay, not a measured curve; a gentler `floor(i / 2)` shift or a small authored per-tier
+table are both named alternatives should the harness prefer either.
 
 **Rounding.** All `fp` division rounds toward negative infinity via the single shared helper. No
 exceptions — uniform rounding is what makes replays reproducible.
@@ -759,6 +883,49 @@ lifespan of 18,000 months divided at `fp` scale floors to **zero hazard**, and d
 silently immortal — a defect that would survive thousands of Monte Carlo runs looking like a
 species that is merely very long-lived. Any rate of the form `X / lifespanMonths` computes at
 extended scale before narrowing, and a test must assert a non-zero draconic hazard specifically.
+
+### 3.1 How modes fold
+
+`compositional-content.md` §3.3 gives every effect a required `mode` — the technique's envelope,
+made mechanical. This states the deterministic order a primitive's held effects fold into one
+outcome, in terms of the stacking rule this table already declares for that primitive. It does not
+change the table above: `primitive.json` still owns each primitive's stacking rule and cap, and
+this section only says in what order and with what sign a mode contributes to it.
+
+1. **`create` and `remove` contribute a signed magnitude into the primitive's own §3 stacking rule.**
+   `create` enters as `+magnitude`; `remove` enters as `−magnitude` — one verb at two scales
+   (`compositional-content.md` §3.3): at engagement scale Perdo subtracts hit points, at world
+   scale it subtracts from a rate, and both are the same hole. The primitive's stacking rule (sum,
+   max, diminishing returns, …) is applied to the signed set exactly as it is applied to an
+   all-positive one; a `remove` does not get a rule of its own.
+2. **`transform` moves magnitude between two primitives.** It subtracts `magnitude` from its own
+   `primitive` (as `remove` would) and adds `magnitude` to `transformTo` (as `create` would) — "it
+   begins as one material and ends as another" (`sound-design.md` §4.1), priced and folded as the
+   two operations it actually is.
+3. **`reveal` and `control` contribute no magnitude of their own.** `reveal` instead activates
+   every latent effect whose `when: { kind: "revealed" }` names a matching `reveals` descriptor
+   (`compositional-content.md` §3.4); those activated effects fold by their own mode, at this same
+   step. `control` instead contributes a `{ floor, ceiling }` clamp, applied at step 5.
+4. **The primitive's own floor, if it declares one, is applied to the folded magnitude.** This is
+   the floor the table above and the paragraph under it describe — `fp(256)` on the seven rate
+   primitives a negative source can now reach. It runs before any `control` clamp, so a floor
+   authored into the primitive is a property of the primitive and not something a Rego effect could
+   ever relax.
+5. **The tightest `control` clamp is applied next**, across every currently-contributing `control`
+   effect: the floor is the **maximum** of every held floor, the ceiling is the **minimum** of every
+   held ceiling — the tightest bound of each kind wins, never the most recent. **If the resulting
+   floor exceeds the resulting ceiling, the ceiling wins** and the value clamps to it; a ceiling is
+   upside sold, and it is sold all the way down if that is what stacking floors and ceilings from
+   several sources produces.
+6. **The primitive's §3 cap is applied last.** `control` may narrow a value, including below what
+   the cap alone would have allowed, but it may never widen one past the cap — the cap in the table
+   above stays the outermost bound whatever a Rego effect stacks against it.
+
+**`presence` is special.** It is not a magnitude at all (§3's `n/a — presence only`), so steps 1, 2,
+4 and 5 do not apply to it: there is nothing to sum, subtract, floor or clamp. Instead, **any `remove`
+effect on a `presence` primitive suppresses it to `false` outright** — `perdo`'s signature is a hole,
+and for a boolean gate the hole is total. A `create` effect on a `presence` primitive sets it `true`
+in the ordinary way; nothing about `presence` changes what §3's `portal` row already means.
 
 ---
 
