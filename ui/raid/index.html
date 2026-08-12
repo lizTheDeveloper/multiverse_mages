@@ -657,7 +657,8 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
     <section class="card">
       <h2>The engagement <span class="side" id="fieldsub">200 m × 200 m · 100 ms engagement tick</span></h2>
       <div class="fieldwrap">
-        <canvas id="field" width="900" height="900" aria-label="The battlefield. Click any combatant to inspect her; once the sides have touched that also holds the clock, for favor. A textual cast log to the right carries the same events."></canvas>
+        <canvas id="field" width="900" height="900" tabindex="0"
+          aria-label="The battlefield. Click any combatant to inspect her; once the sides have touched that also holds the clock, for favor, and the expedition can spend Vis to start it again. With the keyboard: left and right arrows step through the combatants, Enter holds or releases the moment, Escape closes. A textual cast log to the right carries the same events."></canvas>
         <div class="overlay">
           <div class="holdbar" id="holdbar" hidden></div>
           <div class="mclock" id="mclock">
@@ -2575,6 +2576,24 @@ function restart() {
 /* --- wiring --- */
 buildConstitution(); buildVerbs(); buildLegend();
 canvas.addEventListener('click', onFieldClick);
+/* A control that only works with a mouse is a defect, not an omission: the
+   arrows step through the living, Enter buys or releases the moment. */
+canvas.addEventListener('keydown', (ev) => {
+  const live = S.combatants.filter(c => c.alive && !c.withdrawn);
+  if (!live.length) return;
+  if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
+    const at = live.findIndex(c => c.key === S.inspect);
+    const next = live[(at + (ev.key === 'ArrowRight' ? 1 : live.length - 1) + live.length) % live.length];
+    S.inspect = next.key;
+    if (S.phase !== 'muster' && !S.ended && !S.hold) takeHold(next);
+  } else if (ev.key === 'Enter' || ev.key === ' ') {
+    if (S.hold) releaseHold();
+    else { const c = live.find(x => x.key === S.inspect); if (c) takeHold(c); }
+  } else if (ev.key === 'Escape') { releaseHold(); S.inspect = null; }
+  else return;
+  ev.preventDefault();
+  paintDossier();
+});
 el('dsr-close').addEventListener('click', () => { releaseHold(); S.inspect = null; paintDossier(); });
 el('dsr-hold-btn').addEventListener('click', () => {
   if (S.hold) releaseHold();
