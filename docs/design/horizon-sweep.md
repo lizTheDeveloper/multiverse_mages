@@ -134,8 +134,15 @@ Seven sweep files differing in `termination.worldTickCap` and in nothing else, r
    era boundary, and `ERA_TICKS` is **240**. Four consecutive passes cannot land before tick **960**.
    So **horizon 900 admits apotheosis only** — and measures **zero of 400**.
 
-**The first horizon at which any universe wins is 1200, and it wins by canon.** Apotheosis appears
-at 1800 (1 run) and 2400 (6 runs); at every shorter horizon it is zero. The 0.05–0.20 band §7 asks
+**On this arm the first horizon at which any universe wins is 1200, and it wins by canon.**
+Apotheosis appears at 1800 (1 run) and 2400 (6 runs); at every shorter horizon it is zero.
+
+**That is a fact about the starting position, not only about the constants** — and the composition
+arm, which starts from W15's two corner cells rather than the reference defaults, disagrees: there
+apotheosis is live from tick **670**, ten runs win at horizon **900**, and by 2400 it is 40 canon
+against 40 apotheosis. **Which ascension path is reachable depends on the founding cohort and
+grant.** Recorded for the author; both arms agree that nothing wins before 900 and that only the two
+ruleset editors ever win. The 0.05–0.20 band §7 asks
 for is met at 1200, 1800 and 2400 — and is *unreachable by construction* below 1200.
 
 ### Who wins, at every horizon where winning is possible
@@ -148,8 +155,11 @@ for is met at 1200, 1800 and 2400 — and is *unreachable by construction* below
 
 **A shorter horizon does not make the god's other verbs matter.** `permit-then-idle` — which presses
 `permitTechnique` and `permitForm` for 140 ticks and then submits an empty preference list forever —
-wins at least as often as `permissive-breadth` at every horizon, and eight of ten strategies win
-nothing at any horizon. The integration round's headline survives the horizon sweep intact.
+wins at least as often as `permissive-breadth` at every horizon **on this arm**, and eight of ten
+strategies win nothing at any horizon. On the composition arm the two are a statistical tie
+throughout (39/40 vs 38/40 at 1200, 4/40 vs 6/40 at 900 — inside each other's error at that n), which
+is the same answer: **doing nothing after the first 140 ticks costs nothing at any horizon.** The
+integration round's headline survives the horizon sweep intact.
 
 ## The decision rule, written down before the composition numbers were read
 
@@ -417,8 +427,10 @@ The evidence, in the order it should be read:
 3. **The apparent dimensionality gain at short horizons is the noise floor.** Participation ratio
    rises 1.21 → 4.00 exactly as `betweenShare` collapses 0.931 → 0.140. At tick 30, **86% of
    compositional variance is within-strategy.**
-4. **One fixed node ordering still predicts a run's held set from its count alone**: prefix fidelity
-   **0.9214 at tick 120**, against 0.9318 at 2400, and never below 0.83.
+4. **One fixed node ordering still predicts a run's held set from its count alone**: inside v1,
+   prefix fidelity is **0.9214 at tick 120** against 0.9318 at 2400, and never falls below **0.8329**.
+   *(Over the full ten-strategy pool it dips to 0.7616 at tick 30, where the permission axis and the
+   noise floor mix — still above the **0.7** W15 pre-registered as falsifying.)*
 5. **Species do not diverge before exhaustion.** Gnome and human hold identical unions from tick 240
    up, and below that differ by no more than one species differs from itself across seeds.
 
