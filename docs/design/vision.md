@@ -437,11 +437,25 @@ Tracked for resolution during the changes that need them, not blocking:
   attached to an empty building. The `institutions` observation block is still exactly four slots,
   which is the constraint that made the decision mechanical rather than aesthetic.
 
-  **What the resolution does not yet buy.** Emergent specialization needs libraries that differ,
-  and in the reference run they do not: one university, and its shelf holds **two distinct nodes
-  against 1,263 books**, because the scribable list is ordered by cost and every scribe copies the
-  cheapest thing available. The decision is right and the mechanism that would make it visible is
-  not there yet. Recorded here so that nobody reads "resolved" as "demonstrated".
+  **What the resolution now buys, measured.** This paragraph used to say the resolution bought
+  nothing: emergent specialization needs libraries that differ, and in the reference run they did
+  not — one university, and its shelf held **two distinct nodes against 1,263 books**, because the
+  scribable list was ordered by cost and every scribe copied the cheapest thing available.
+
+  That is fixed, and the fix is `w7/knowledge-capital`'s, not a new mechanism: `compareTargets`
+  orders scribing candidates **novel first** (`libraryHolds`, set only by the scribing scan, so
+  research and teaching order is unchanged), and library upkeep charges per *instance* while the
+  capital table pays per *distinct node*, so a duplicate costs and returns nothing. The same
+  200-world-year reference run now ends with **15 books over a library depth that reaches 36
+  distinct nodes**, and total effective capital contribution is a curve — `0 → 336` fp — where it
+  was pinned at `fp(32)` for 199 years. `reference-long-run.test.ts` 9.8 prints both series and
+  asserts `grimoires < 2 × libraryDepth`, which is the tripwire for the preference silently
+  ceasing to bite.
+
+  Still not demonstrated: **several** libraries that differ from each other. The reference universe
+  holds one university, so what is shown is a library that specializes, not two that specialize
+  differently. That is the measurement the raid design needs, since a library is the raid objective
+  and a raider learns nothing from a shelf that matches her own.
 - How long is a world year in real seconds, and how long should a raid run? Pacing is a tuning
   output of the balance harness, not an up-front decision; the contracts fix the *units*, not the
   values.

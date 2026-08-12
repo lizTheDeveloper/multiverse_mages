@@ -41,13 +41,22 @@ import { loadContent, shippedContentSource } from '@mm/content';
 import type { SimState } from '@mm/sim-core';
 import type { CatalogueNode, ContentCatalogue } from '@mm/agent-api';
 import { buildCatalogue } from '@mm/agent-api';
-import type { AcquirePolicy, CellResolver, NodeCatalog, StorePolicy } from '@mm/rules-magic';
+import type {
+  AcquirePolicy,
+  CellResolver,
+  ConsumptionRecorder,
+  NodeCatalog,
+  StorePolicy,
+} from '@mm/rules-magic';
 import {
   KnowledgeSubsystem,
   MagicGrid,
   acquirePolicy,
   catalogFromRegistry,
+  createConsumptionRecorder,
   hookFor,
+  nodeEffectMagnitudes,
+  registerNonNodeConsumer,
   storePolicy,
   traditionTableFrom,
 } from '@mm/rules-magic';
@@ -300,8 +309,31 @@ export function catalogAndCells(registry: ContentRegistry): {
  * fertility the births, and research-rate and teach-rate the accumulator vision
  * §6a's library contributes into. Everything else the loop needs it reads out of
  * state.
+ *
+ * ## The recorder, and why this function is the place it is threaded
+ *
+ * `recorder` collects which primitives this wiring actually pulled node effects
+ * for. `scripts/check-primitive-consumption.mjs` builds a universe with a fresh
+ * one and asserts every primitive has a node-driven consumer — the *consumption*
+ * question, as against `check:coverage`'s *authorship* question. See
+ * `packages/rules-magic/src/effects/consumption.ts` for the argument.
+ *
+ * It is threaded here rather than anywhere else because this is the function
+ * that decides what a running universe is made of. A read in a package nothing
+ * assembles registers nothing, which is the correct answer and not a limitation:
+ * `@mm/rules-raid` consumes seven primitives off `node.effects` and no package
+ * depends on it, so those seven are not reachable by knowledge in any
+ * simulation that exists today.
+ *
+ * Defaulted so every existing caller keeps working and discards the recording.
+ * Nothing is conditional on it — the same data is fetched either way — so a
+ * caller that ignores it cannot get different behaviour, only less information.
  */
-export function worldDeps(registry: ContentRegistry, traditionId: ContentId): WorldStepDeps {
+export function worldDeps(
+  registry: ContentRegistry,
+  traditionId: ContentId,
+  recorder: ConsumptionRecorder = createConsumptionRecorder(),
+): WorldStepDeps {
   const { catalog, cells } = catalogAndCells(registry);
   const { speciesOf } = speciesTable(registry);
   const knowledgeFor = (state: SimState): KnowledgeSubsystem =>
@@ -320,6 +352,42 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
   // tick: six records against potentially thousands of mages, and the answer is
   // a pure function of the species record and the registry.
   const affinityCache = new Map<string, SpeciesAffinities>();
+
+  // The god hooks stack blessing and encouragement *constants*, never a node's
+  // authored magnitude — a blessed mage researches faster because the god blessed
+  // her, not because anyone discovered anything. Recorded so the consumption
+  // report can say "consumed, but never from node effects" about these three
+  // rather than leaving a reader to wonder how `research-rate` can be in use and
+  // unconsumed at the same time. A non-node registration never counts toward
+  // consumption; it only explains.
+  registerNonNodeConsumer(
+    recorder,
+    'research-rate',
+    'coordination/god/effects.researchMultiplierFor (blessing + encouragement constants)',
+  );
+  registerNonNodeConsumer(
+    recorder,
+    'teach-rate',
+    'coordination/god/effects.teachMultiplierFor (blessing constants)',
+  );
+  registerNonNodeConsumer(
+    recorder,
+    'lifespan',
+    'coordination/god/effects.lifespanEffectsFor (blessing + curse constants)',
+  );
+  // Species content, not node content: `carrying-capacity` scales births by the
+  // species record's own `fertility`, which no amount of research changes.
+  registerNonNodeConsumer(
+    recorder,
+    'fertility',
+    'rules-world/economy/carrying-capacity (species.fertility)',
+  );
+  // `resource-yield` and `scribe-rate` are deliberately *not* registered. Their
+  // primitive records are handed to the loop, but `world-step.ts` passes
+  // `resourceYieldBonuses: []` and `scribeRateBonuses: []` — literal empty source
+  // lists — so both stack to the identity every tick and nothing, node or god,
+  // can move them. Registering them as consumers of anything would be a claim
+  // this file cannot support; they belong in the failure list, and they are there.
 
   return {
     speciesOf,
@@ -361,8 +429,26 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
       cells,
       knowledgeFor,
       worshipYield: primitiveNamed(registry, 'worship-yield'),
-      worshipYieldNodes: nodesCarrying(registry, 'worship-yield'),
-      portalNodes: new Set(nodesCarrying(registry, 'portal').keys()),
+      // Both of these go through `nodeEffectMagnitudes` rather than a local
+      // helper so the fetch is recorded. These are the two places in the whole
+      // assembled simulation where a node's authored magnitudes become
+      // something the loop reads: `yieldSources` gates each node's worship
+      // magnitudes on `knowledge.instanceCount(nodeId) > 0`, and `portalPlan`
+      // gates the raid entry point on a living mage holding a portal node.
+      worshipYieldNodes: nodeEffectMagnitudes(
+        registry,
+        'worship-yield',
+        'coordination/god/system.yieldSources',
+        recorder,
+      ),
+      portalNodes: new Set(
+        nodeEffectMagnitudes(
+          registry,
+          'portal',
+          'coordination/god/interventions.portalPlan',
+          recorder,
+        ).keys(),
+      ),
       // `nodesLostThisTick` is deliberately absent: `defineWorldSimulation`
       // supplies it from the world loop's own report closure, because that is
       // the one place that knows which tick a loss count belongs to.
@@ -371,26 +457,13 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
   };
 }
 
-/**
- * Interned node ids that carry a primitive, and each node's magnitudes.
- *
- * The magnitudes are handed over as a **list per node, unstacked**. Summing
- * them here would be inline stacking by another spelling — the lint rule says
- * so in as many words — and it would also be the wrong arithmetic: how several
- * sources of one primitive combine is the registry's declared `stacking` rule,
- * and `stackMagnitudes` is the only thing permitted to apply it. Callers that
- * want one number ask that function for it.
- */
-function nodesCarrying(
-  registry: ContentRegistry,
-  primitiveId: string,
-): Map<number, readonly number[]> {
-  const found = new Map<number, readonly number[]>();
-  for (const entry of registry.nodes) {
-    const magnitudes = entry.record.effects
-      .filter((effect) => effect.primitive === primitiveId)
-      .map((effect) => effect.magnitude);
-    if (magnitudes.length > 0) found.set(entry.contentId, Object.freeze(magnitudes));
-  }
-  return found;
-}
+// `nodesCarrying` used to live here — a local helper that filtered
+// `registry.nodes` by primitive. It moved to `@mm/rules-magic` as
+// `nodeEffectMagnitudes`, unchanged except that it now takes a recorder and
+// registers the fetch. The move is the mechanism, not tidying: a local helper
+// can be copied into a second file and the consumption check would never know,
+// whereas the shared accessor cannot hand over node magnitudes without saying
+// who asked. Its note about returning magnitudes **unstacked** — summing them
+// here would be inline stacking by another spelling, and the registry's
+// declared `stacking` rule is `stackMagnitudes`'s alone to apply — travelled
+// with it.

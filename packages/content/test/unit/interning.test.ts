@@ -277,7 +277,26 @@ describe('contentRevision', () => {
     // smaller preimage, and this tree's preimage strictly contains it. The
     // digest moving from d37624e3 to 2c67315a across this merge is therefore
     // the union arriving, not a disagreement being settled.
-    expect(registry.contentRevision).toBe('2c67315ae04ee6c74dfa204474af4eb6');
+    //
+    // 2c67315ae04ee6c74dfa204474af4eb6 -> ba7be8d68b582e2985e0360bbc7e11b0, when this branch
+    // merged `main` and took `main`'s `max-summons-per-side`. On `main` that
+    // edit reads `d37624e36be00f59cf21b87ff6eba144 ->
+    // 6b18886a4b3a2803c0b1b92eb8f8fae8`: the cap came down from 16 to 8 to
+    // agree with `primitive.json`'s `summon` cap, which is the same ceiling
+    // authored twice and had disagreed with it since both files existed. It is
+    // a *value* edit rather than a new file — the first one in this list that
+    // is — which is the point of a revision over the values: two universes
+    // that disagreed about how many summons a side may hold would fight two
+    // different battles, and the digest says so instead of calling them
+    // compatible.
+    //
+    // So neither 2c67315a nor 6b18886a survives the merge, and that is
+    // correct rather than a lost claim. Each was a digest over a preimage the
+    // other did not contain — this branch's material split, `main`'s summon
+    // cap — and this tree is the first one holding both. A fourth value is
+    // what a digest over the union is supposed to produce; a merge that kept
+    // either side's literal would be asserting a revision no tree has.
+    expect(registry.contentRevision).toBe('ba7be8d68b582e2985e0360bbc7e11b0');
   });
 
   it('is stable across loads of identical content', () => {

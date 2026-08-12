@@ -49,9 +49,9 @@ import { speciesNamed, target } from './autonomy-fixtures.js';
  */
 function gatewayOver(
   frontier: readonly KnowledgeTarget[],
-  everKnownIds: readonly ContentId[] = [],
+  lostIds: readonly ContentId[] = [],
 ): KnowledgeGateway & { asked: number[] } {
-  const known = new Set(everKnownIds);
+  const lost = new Set(lostIds);
   const asked: number[] = [];
   const refuse = (name: string): never => {
     throw new Error(`gatherFrontier called ${name}, which it has no business calling`);
@@ -62,7 +62,7 @@ function gatewayOver(
       asked.push(limit);
       return frontier;
     },
-    everKnown: (nodeId: ContentId) => known.has(nodeId),
+    rediscovery: (nodeId: ContentId) => lost.has(nodeId),
     instanceCount: () => refuse('instanceCount'),
     knows: () => refuse('knows'),
     canTeach: () => refuse('canTeach'),
@@ -136,8 +136,16 @@ describe('scanning is bounded by a documented constant', () => {
   });
 });
 
-describe('discovery and rediscovery are separated by the persisted record', () => {
-  it('routes a node this universe has known before into rediscovery', () => {
+describe('discovery and rediscovery are separated by what the universe has lost', () => {
+  /**
+   * The stub answers `rediscovery`, not `everKnown`, and the difference is the
+   * point rather than a rename. `gatherFrontier` used to bucket on the raw
+   * ever-known mark, which is never cleared, so a node still standing in
+   * somebody's head was filed as a lost art to be rediscovered. Only nodes
+   * *known once and now gone* belong in the second list, which is the same
+   * predicate `research()` prices at three times.
+   */
+  it('routes a node this universe has lost into rediscovery', () => {
     const gateway = gatewayOver([target(1), target(2), target(3)], [2]);
     const frontier = gatherFrontier(gateway, 1, speciesNamed('human'));
     expect(frontier.discovery.map((entry) => entry.nodeId)).toEqual([1, 3]);
@@ -146,8 +154,8 @@ describe('discovery and rediscovery are separated by the persisted record', () =
 
   it('bounds the two lists independently', () => {
     const many = Array.from({ length: 100 }, (_unused, index) => target(index + 1, 1, index + 1));
-    const everKnown = many.filter((_unused, index) => index % 2 === 0).map((entry) => entry.nodeId);
-    const frontier = gatherFrontier(gatewayOver(many, everKnown), 1, speciesNamed('human'));
+    const lost = many.filter((_unused, index) => index % 2 === 0).map((entry) => entry.nodeId);
+    const frontier = gatherFrontier(gatewayOver(many, lost), 1, speciesNamed('human'));
     expect(frontier.discovery.length).toBeLessThanOrEqual(MAX_CANDIDATE_TARGETS);
     expect(frontier.rediscovery.length).toBeLessThanOrEqual(MAX_CANDIDATE_TARGETS);
   });

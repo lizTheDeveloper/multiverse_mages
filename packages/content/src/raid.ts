@@ -52,7 +52,7 @@
  */
 
 import type { ContentDiagnostic } from './diagnostics.js';
-import type { RaidConstantRecord } from './types.js';
+import type { PrimitiveRecord, RaidConstantRecord } from './types.js';
 
 /**
  * The hard ceiling on engagement ticks, as a compile-time constant.
@@ -181,9 +181,19 @@ function problem(pointer: string, message: string): ContentDiagnostic {
  *   radius query inspects at most nine cells; a radius beyond the cell size
  *   silently breaks that promise and the query starts missing combatants at the
  *   edge of the effect — which reads as a balance result, not as a bug.
+ * - **A summon ceiling that disagrees with `primitive.json`.** The same number
+ *   is authored in two files — this table bounds the roster, the primitive cap
+ *   clamps the stacked magnitude — and until 0.4.0 they said 16 and 8 with
+ *   nothing comparing them.
+ *
+ * `primitives` is required rather than optional for that last check's sake. A
+ * defaulted empty list would let a caller drop the cross-file invariant by
+ * forgetting an argument, and an invariant that can be skipped silently is the
+ * shape of the defect it was written to catch.
  */
 export function checkRaidConstants(
   records: readonly RaidConstantRecord[],
+  primitives: readonly PrimitiveRecord[],
 ): readonly ContentDiagnostic[] {
   const out: ContentDiagnostic[] = [];
   const byId = new Map<string, RaidConstantRecord>();
@@ -321,6 +331,45 @@ export function checkRaidConstants(
           'it, it is the side cap doing the work and the summon cap is decorative.',
       ),
     );
+  }
+
+  // The same ceiling is written down twice, in two files, and nothing used to
+  // compare them. `raid-constant.json`'s `max-summons-per-side` is what
+  // `rules-raid` enforces on a roster; `primitive.json`'s `summon` cap is what
+  // `@mm/primitives` clamps a stacked magnitude to. They said 16 and 8 for long
+  // enough that neither could be called the typo, and the disagreement was
+  // invisible because `summon` currently has no node-driven consumer at all —
+  // so the primitive cap was inert and the raid constant was doing the work
+  // alone. That is exactly the state in which two numbers drift apart without
+  // symptom, and exactly the state this check ends.
+  //
+  // Symmetric on purpose: neither file is declared authoritative. Whichever one
+  // an author edits, the loader names the other.
+  const summonPrimitive = primitives.find((record) => record.id === 'summon');
+  const primitiveCap = summonPrimitive?.cap;
+  if (summons !== undefined && primitiveCap !== undefined && primitiveCap.kind !== 'none') {
+    if (primitiveCap.kind !== 'count-per-side') {
+      out.push(
+        problem(
+          '',
+          `primitive.json caps "summon" with kind "${primitiveCap.kind}". The summon cap is a ` +
+            'whole count of combatants, and any other kind is read as a fixed-point value — a ' +
+            'cap of 8 read as fp is eight one-thousand-and-twenty-fourths of a combatant, which ' +
+            'is a ban on summoning wearing a cap\'s clothes.',
+        ),
+      );
+    } else if (primitiveCap.value !== summons) {
+      out.push(
+        problem(
+          '',
+          `primitive.json caps "summon" at ${String(primitiveCap.value)} per side and ` +
+            `raid-constant.json's max-summons-per-side is ${String(summons)}. They are the same ` +
+            'ceiling written down twice: the primitive cap clamps the stacked magnitude and the ' +
+            'raid constant bounds the roster, so a universe that disagrees with itself lets a ' +
+            'summon through one gate and refuses it at the other. Change both, or delete one.',
+        ),
+      );
+    }
   }
 
   const threshold = value('victory-threshold-fraction');

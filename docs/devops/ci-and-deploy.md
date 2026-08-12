@@ -105,6 +105,28 @@ concurrency key cut on Actions. It is not done here because it needs production 
 `cto-tycoon-hel1` and the receiver is **shared with `themultiverse.school`**, so a change there
 affects another repository and wants owner sign-off.
 
+## The third Actions job: primitive consumption, non-blocking
+
+`npm run check:consumption` assembles a real universe through `@mm/scenario`'s composition root and
+asks, per primitive, whether an authored node effect reaches anything the simulation applies. It is
+the missing half of `check:coverage`, which only asks whether content *authors* the primitive.
+
+It runs as its own Actions job — `Primitive consumption (non-blocking)`, `continue-on-error: true`
+— and is **not** in `npm run verify`, so `scripts/ci-check.sh` does not run it either and the two
+gates stay equivalent.
+
+The reason is that **red is the correct current answer.** When the job was split out, 2 of 14
+primitives were reachable from authored nodes, 2 were declared exclusions, and 12 had no
+node-driven consumer at all. Holding that inside `verify` meant the pull request carrying the check
+could not merge until the separate pull request carrying the fix did — a gate nobody can see is not
+a gate. This is the same reasoning, and the same mechanism, as `Next Node major (non-blocking)`.
+
+**The condition for making it blocking again** is written at the flip point in `ci.yml` and repeated
+here so it is not only in a workflow comment: *every primitive has a node-driven consumer, or the
+remaining ones are declared exclusions.* Declared exclusions are `fertility` and `lifespan`, in
+`packages/rules-magic/src/effects/consumption.ts`. Lengthening that list to go green is the exact
+failure the check exists to catch; the number in the FAIL line going down is the progress.
+
 ## The balance regression gates
 
 There are **three**, and none of them is redundant. This section said "two" until the 2400-tick

@@ -244,6 +244,30 @@ describe('the two-hundred-year gate is a third instrument, not a longer second o
   });
 });
 
+/**
+ * The workflow's jobs, by name, as raw text.
+ *
+ * Parsed by indentation rather than with a YAML library because the assertions
+ * below are about *steps named by hand*, and a parsed step list would silently
+ * accept a gate moved into a composite action or a matrix — which is exactly the
+ * drift the checks exist to catch. `@mm/scenario` also carries no YAML
+ * dependency, and adding one for a regex's worth of work is not a trade this
+ * repository makes.
+ */
+function actionsJobs(): ReadonlyMap<string, string> {
+  const workflow = readRepoFile('.github/workflows/ci.yml');
+  const jobsBlock = workflow.slice(workflow.indexOf('\njobs:\n'));
+  expect(jobsBlock).not.toBe('');
+  // `split` with one capture group interleaves [preamble, name, body, name, …].
+  const parts = jobsBlock.split(/^ {2}([\w-]+):$/m).slice(1);
+  const jobs = new Map<string, string>();
+  for (let index = 0; index + 1 < parts.length; index += 2) {
+    jobs.set(parts[index] as string, parts[index + 1] as string);
+  }
+  expect(jobs.size).toBeGreaterThan(0);
+  return jobs;
+}
+
 describe('every gate is wired into both CI systems (docs/devops/ci-and-deploy.md)', () => {
   const gateScripts = ['balance:gate', 'balance:gate:horizon', 'balance:gate:ascension'] as const;
 
@@ -264,19 +288,30 @@ describe('every gate is wired into both CI systems (docs/devops/ci-and-deploy.md
     expect(script).not.toContain('balance-gate.mjs');
   });
 
-  it.each(gateScripts)('every GitHub Actions job runs %s by name', (name) => {
+  it.each(gateScripts)('every full-suite GitHub Actions job runs %s by name', (name) => {
     // The workflow lists its steps by hand, so a gate added only to verify would
     // run on the self-hosted runner and be absent from Actions — which is the
     // exact drift docs/devops/ci-and-deploy.md warns about, in the form where
     // the two systems disagree about a commit and nobody knows why.
-    const workflow = readRepoFile('.github/workflows/ci.yml');
-    const jobsBlock = workflow.slice(workflow.indexOf('\njobs:\n'));
-    expect(jobsBlock).not.toBe('');
-    const jobs = jobsBlock.split(/^ {2}[\w-]+:$/m).slice(1);
-    // Both of them: the pinned-Node gate and the next-major early warning.
-    expect(jobs.length).toBe(2);
-    for (const job of jobs) {
-      expect(job).toContain(`npm run ${name}`);
+    //
+    // The filter is *"runs the test suite"* rather than *"is a job"*, and that
+    // distinction is load-bearing. This used to assert `jobs.length === 2` and
+    // walk all of them, which made adding any narrow single-purpose job — the
+    // non-blocking `consumption` job below is the first — fail three balance
+    // assertions with a message about balance. The property the check is
+    // actually for is that a job claiming to check a commit checks it *fully*;
+    // a job that does not run the suite is not making that claim.
+    const jobs = actionsJobs();
+    const fullSuite = [...jobs].filter(([, body]) => body.includes('npm test'));
+    // Both of them: the pinned-Node gate and the next-major early warning. A
+    // floor rather than an equality, so a third full-suite job is allowed — but
+    // a filter that quietly matched nothing would pass this loop vacuously, and
+    // that is what this line prevents.
+    expect(fullSuite.length).toBeGreaterThanOrEqual(2);
+    for (const [jobName, body] of fullSuite) {
+      expect(body, `Actions job "${jobName}" runs the suite without ${name}`).toContain(
+        `npm run ${name}`,
+      );
     }
   });
 });
