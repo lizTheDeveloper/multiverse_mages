@@ -1850,7 +1850,9 @@ wrong in the useful direction: `mentem`, `nomen` and `terram` all are.
 **The consequence is precise and nobody had stated it.** Gnome and human are exactly the pair W15
 measured, W19 re-measured five ways, and W20's headline is quoted on — and they are exactly the two
 species for which the affinity term is arithmetically zero. Whatever produced W20's *Jaccard 0.57*,
-it was not this term.
+it was not this term acting on either of those two species **directly** — an arm with a mixed
+founding population could still carry an indirect effect, since another species' affinity-driven
+choices move the shared library and the pool of teachable nodes.
 
 ### The measurement: a content ablation, not a species comparison
 
