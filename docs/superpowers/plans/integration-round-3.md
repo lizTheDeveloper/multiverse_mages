@@ -201,7 +201,7 @@ Report order, fixed in advance:
 - [x] Merge 2 — `w22/knowledge-observability`, verify, record, push
 - [x] Merge 3 — `w19/horizon-sweep`, verify, record, push
 - [x] Merge 4 — `w24/university-siting`, verify, record, push
-- [ ] Merge 5 — `w21/timing-and-envelopes`, verify, record, push
+- [x] Merge 5 — `w21/timing-and-envelopes`, verify, record, push
 - [ ] Merge 6 — `w25/spec-refresh`, verify, record, push
 - [ ] Golden fixtures: checked at every merge
 - [ ] Baselines regenerated once, with the single rationale
@@ -381,3 +381,76 @@ both `fp(1024)`.
 The one figure that did *not* fit: `referencePeakPopulation` on the horizon gate, **353 → 365 at
 3.02 SE against a tolerance of 3.00** — a hair over, on a max statistic, in the same direction as
 the noise everywhere else. Recorded rather than absorbed.
+
+### Merge 5 — `w21/timing-and-envelopes` (`faa9b3d`, `6d59587`)
+
+**Ten conflicts.** The one that mattered was semantic rather than textual.
+
+**Two revision 5s cannot both exist.** W21 and W24 were both cut from a revision-4 tree, neither
+contained the other, and each appended its own `from: 4, to: 5` migration — `addBarPhase` and
+`addTerritorySiting`. Merging them literally would have produced two different definitions of one
+revision, and the revision number is precisely what a migration step is keyed on. **W21's step was
+renumbered to 5 → 6 and `WORLD_SCHEMA_VERSION` taken to 6.** That is a renumbering *before* either
+shipped, which is the only moment it is safe: no snapshot in existence carries `bar-phase`, so no
+save can be keyed to the revision it used to claim.
+
+`worldSchemaVersionOf` needed the same care and git got it wrong: the auto-merge placed the
+`BAR_PHASE` test *after* `TERRITORY_HOLDING` and returning **5**, which would have read every
+current snapshot as one revision behind and run a migration over saves already up to date. Newest
+marker first, returning 6.
+
+`WORLD_COMPONENTS` orders the siting pair before `bar-phase`, in revision order, so a migrated
+revision-4 envelope is byte-identical to one this build writes from scratch.
+
+**`SNAPSHOT_VERSION` stays 1**, and the three golden fixtures are byte-identical. The pin that
+asserts the two are different numbers now reads 1 and 6 — six world-schema revisions have shipped
+and the container format has never moved.
+
+**`contentRevision` is a fourth value: `5a2a97df2d263e4a629aa2a5f3037020`** — neither W24's
+`5be75547…` nor W21's `d89d4eef…`, for exactly the reason W6, W8 and W17 each recorded a different
+successor to `2512ea02`. Both narratives are kept in `interning.test.ts`.
+
+**`packages/sim-core` zero diff against round 2 is sustained** — W21's branch claim survives the
+merge.
+
+#### The W21 × W24 interaction, which is the thing neither branch could see
+
+**`reference-time-to-tier` 9.9 fired, and it fired *upward*.** W21 lost orc's separation from elf
+to its research envelopes, recorded that as a loss, and pinned `orc.high >= elf.low` *"in the form
+that will reopen this box the day it separates again"*. It separated again on the merge:
+
+| species | w17 (flat) | W21 alone | **W21 + W24** |
+|---|---|---|---|
+| gnome | [19, 20] | [19, 20] | **[20, 20]** |
+| dwarf | [21, 25] | [21, 27] | **[21, 27]** |
+| orc | [21, 27] | **[21, 37]** | **[21, 29]** |
+| human | [26, 37] | [26, 39] | **[27, 35]** |
+| elf | [35, 58] | [37, 60] | **[36, 58]** |
+| draconic | [26, 380] | [26, 298] | **[24, 282]** |
+
+Orc's slowest seed goes **37 → 29** against an elf floor of 36, so the whole fast trio clears elf
+and the three-band separation is back. The mechanism is W24's, and it is the same one that moved
+its gate baselines: five `territory-holding` entities on the first world tick shift every later
+handle, and `deriveActorStream` keys on the handle (§6).
+
+**This is a fact about the instrument, not good news about the game.** Nothing made a species better
+at magic. A six-seed interval moved because the RNG was re-keyed and happened to move the way task
+9.9 wants. **Orc's separation from elf is inside the noise of an entity-allocation change** — a
+weaker claim than either branch made alone, and the reason the combined tree is the only place
+either could be checked.
+
+The other composed conflict: `reference-long-run`'s 9.5 teaching pin had been relaxed by **both**
+branches, each for its own mechanism and each reporting the pin was already a knife edge. W21's
+form is kept because it is strictly stronger — *"first eight windows without exception, nine of ten
+alive"* implies W24's *"at most one silent"* and adds where the hole may be.
+
+**The gates now refuse on provenance**, which is the expected regime change and not a metric
+movement: `contentHash` is `5a2a97df…` and the baselines were recorded at `5be75547…`. Underneath
+the refusal **every metric is inside tolerance** — at 600 ticks `referenceNodesKnown` +0.22
+(2.09 SE) is the largest single move, and on the ascension gate `referenceNodesKnown` and
+`referenceNodesGained` are both delta `0.00000`. W21 on top of W24 is a small effect on the
+reference universe.
+
+Verify: **285 test files / 4,036 tests**, with three of the four named failures being the usual 30 s
+load timeouts and the fourth being 9.9 above; all four pass on re-run (4 files / 31 tests, EXIT=0).
+**No golden changed.**
