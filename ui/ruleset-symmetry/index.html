@@ -40,18 +40,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multiverse Mages — the ruleset as a symmetry</title>
 
+<link rel="stylesheet" href="../shared/theme.css">
 <style>
-  :root{
-    --ground:#090C0D;--panel:#0E1315;--sunk:#131A1C;--edge:#1D2729;
-    --ink:#DDE7E8;--soft:#94A3A5;--faint:#61716F;
-    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
-    --mine:#4DBE97;--theirs:#DE7059;--gift:#C9A034;--ruin:#B15FD6;
-    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
-    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
   .wrap{max-width:86rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
   .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
   h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
@@ -59,19 +49,19 @@
   .lede b{color:var(--god-lit);font-weight:500}.lede em{color:var(--ink);font-style:italic}
   .quote{border-left:2px solid var(--god-deep);padding:.15rem 0 .15rem .8rem;margin:.7rem 0;
     color:var(--ink);font:400 1.02rem/1.5 var(--serif);max-width:62ch}
-  code{font:12.5px var(--mono);color:#AFC0C2}
+  code{font:12.5px var(--mono);color:var(--soft)}
 
   .axes{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;margin:1.2rem 0 1.3rem;
     padding:.7rem .8rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
   .axes .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-right:.2rem}
   .ax{font:10.5px var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:.34rem .5rem;border-radius:3px;
-    border:1px solid #22302F;background:transparent;color:var(--soft);cursor:pointer}
+    border:1px solid var(--edge);background:transparent;color:var(--soft);cursor:pointer}
   .ax[aria-pressed="true"]{color:var(--god-lit);border-color:var(--god);
     background:color-mix(in srgb,var(--god) 10%,transparent);
     box-shadow:0 0 12px -3px color-mix(in srgb,var(--god) 70%,transparent)}
   .ax[data-staged="true"]{border-style:dashed;border-color:var(--gift);color:var(--gift);box-shadow:none}
   .ax:focus-visible{outline:2px solid var(--god-lit);outline-offset:2px}
-  .axes .sep{width:1px;height:1.1rem;background:#22302F;margin:0 .35rem}
+  .axes .sep{width:1px;height:1.1rem;background:var(--edge);margin:0 .35rem}
 
   .dirs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.1rem;align-items:start}
   @media (max-width:70rem){.dirs{grid-template-columns:1fr}}
@@ -85,7 +75,7 @@
 
   /* B: two ledgers */
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
-  .col{border:1px solid #22302F;border-radius:3px;background:var(--sunk);padding:.5rem .55rem}
+  .col{border:1px solid var(--edge);border-radius:3px;background:var(--sunk);padding:.5rem .55rem}
   .col .h{font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;margin-bottom:.4rem;
     display:flex;align-items:baseline;gap:.35rem}
   .col .h b{margin-left:auto;font-variant-numeric:tabular-nums}
@@ -113,15 +103,15 @@
   .drow[data-d="up"]{border-left-color:var(--mine)}   .drow[data-d="up"] .v{color:var(--mine)}
   .drow[data-d="down"]{border-left-color:var(--theirs)} .drow[data-d="down"] .v{color:var(--theirs)}
   .drow[data-d="warn"]{border-left-color:var(--gift)}  .drow[data-d="warn"] .v{color:var(--gift)}
-  .drow[data-d="flat"]{border-left-color:#243032}      .drow[data-d="flat"] .v{color:var(--faint)}
+  .drow[data-d="flat"]{border-left-color:var(--edge)}      .drow[data-d="flat"] .v{color:var(--faint)}
   .commit{display:flex;gap:.5rem;margin-top:.2rem}
   .commit button{flex:1;font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:.55rem .7rem;
     border-radius:3px;cursor:pointer}
-  .commit .go{border:1px solid var(--god);color:#07171A;
+  .commit .go{border:1px solid var(--god);color:var(--ctl-charged-fg);
     background:linear-gradient(180deg,var(--god-lit),var(--god));
     box-shadow:0 0 22px -5px color-mix(in srgb,var(--god) 80%,transparent)}
-  .commit .go[disabled]{background:transparent;color:#4E6062;border-color:#22302F;box-shadow:none;cursor:not-allowed}
-  .commit .undo{border:1px solid #22302F;background:transparent;color:var(--soft)}
+  .commit .go[disabled]{background:transparent;color:var(--faint);border-color:var(--edge);box-shadow:none;cursor:not-allowed}
+  .commit .undo{border:1px solid var(--edge);background:transparent;color:var(--soft)}
   .commit button:focus-visible{outline:2px solid var(--god-lit);outline-offset:2px}
   .nostage{font:10.5px var(--mono);color:var(--faint);line-height:1.6;padding:.3rem 0}
 
@@ -130,7 +120,6 @@
   .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
   .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--god-lit)}
   footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <div class="wrap">
@@ -367,4 +356,9 @@ function render() {
 }
 
 render();
+</script>
+
+<script type="module">
+  import { floatThemeControl } from '../shared/theme.js';
+  floatThemeControl();
 </script>

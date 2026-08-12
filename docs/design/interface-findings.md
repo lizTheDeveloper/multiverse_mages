@@ -297,6 +297,22 @@ same shape one dimension over, and the fourteen forms plus the god are the entir
 documents cross-reference each other deliberately: an allocation that is merely conventional gets
 spent, and by the time the fifteenth thing wants a colour the convention is not there to refuse it.
 
+### 6.1a Three grounds were two themes — **resolved**
+
+`ui/glow/` originally compared three grounds as competing directions: vellum with bloom, vellum with
+dark aether insets, and full dark. Two of those are light mode and dark mode, and the hybrid was
+answering a question nobody asked. Collapsed to **vellum for light, ink for dark**, with the hybrid
+dropped.
+
+What survived is the finding underneath. The two themes are not two skins: on ink a charged control
+*emits* light, and on vellum it cannot, so charge blooms *downward* there — ink drawn to the control
+rather than light coming off it. That divergence lives in `ui/shared/theme.css` and nowhere else, so
+a prototype writes `box-shadow: var(--glow-charged)` and gets a ring on paper and a glow on ink
+without knowing which theme it is in. If component CSS ever has to ask, the theme layer has failed.
+
+All eleven prototypes now share that file and carry a light / system / dark control. Measured across
+both themes, no text sits below WCAG 4.5:1; worst case 4.72.
+
 ### 6.2 Measurement beats the eye, twice — **resolved**
 
 Recorded because both were wrong by eye and fine by instrument, and the same mistake is easy to repeat:

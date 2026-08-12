@@ -35,30 +35,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multiverse Mages — eight exceptions</title>
 
+<link rel="stylesheet" href="../shared/theme.css">
 <style>
-  :root{
-    --ground:#090C0D;--panel:#0E1315;--sunk:#131A1C;--edge:#1D2729;
-    --ink:#DDE7E8;--soft:#94A3A5;--faint:#61716F;
-    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
-    --disp:#4DBE97;--inter:#DE7059;--empty:#263436;
-    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
-    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
   .wrap{max-width:86rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
   .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
   h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
   .lede{color:var(--soft);max-width:70ch;margin:0 0 .45rem}
   .lede b{color:var(--god-lit);font-weight:500}.lede em{color:var(--ink);font-style:italic}
-  code{font:12.5px var(--mono);color:#AFC0C2}
+  code{font:12.5px var(--mono);color:var(--soft)}
 
   .bar{display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;margin:1.2rem 0 1.3rem;
     padding:.7rem .8rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
   .bar .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
   .pick{font:10.5px var(--mono);text-transform:uppercase;letter-spacing:.04em;padding:.34rem .55rem;border-radius:3px;
-    border:1px solid #22302F;background:transparent;color:var(--soft);cursor:pointer}
+    border:1px solid var(--edge);background:transparent;color:var(--soft);cursor:pointer}
   .pick[aria-pressed="true"]{color:var(--god-lit);border-color:var(--god);
     background:color-mix(in srgb,var(--god) 10%,transparent)}
   .pick:focus-visible{outline:2px solid var(--god-lit);outline-offset:2px}
@@ -103,12 +93,12 @@
   .gh{font:8.5px var(--mono);color:var(--faint);letter-spacing:.08em;text-transform:uppercase;
     display:flex;align-items:center;justify-content:center;text-align:center;padding:.2rem 0}
   .gh.row{justify-content:flex-start;padding-left:.2rem}
-  .gc{aspect-ratio:1.5;border:1px solid #1E2729;border-radius:2px;display:flex;align-items:center;
+  .gc{aspect-ratio:1.5;border:1px solid var(--edge);border-radius:2px;display:flex;align-items:center;
     justify-content:center;font:9px var(--mono);position:relative;background:var(--sunk);cursor:pointer}
   .gc[data-on="true"]{background:color-mix(in srgb,var(--god) 16%,var(--sunk));border-color:var(--god-deep);color:var(--god-lit)}
   .gc[data-on="false"]{opacity:.5;color:var(--faint)}
-  .gc[data-e="dispensation"]{border-color:var(--disp);background:color-mix(in srgb,var(--disp) 22%,var(--sunk));color:#CFF6E6}
-  .gc[data-e="interdiction"]{border-color:var(--inter);background:color-mix(in srgb,var(--inter) 22%,var(--sunk));color:#FFD2C8;opacity:1}
+  .gc[data-e="dispensation"]{border-color:var(--disp);background:color-mix(in srgb,var(--disp) 22%,var(--sunk));color:color-mix(in srgb, var(--ok) 55%, var(--ink))}
+  .gc[data-e="interdiction"]{border-color:var(--inter);background:color-mix(in srgb,var(--inter) 22%,var(--sunk));color:color-mix(in srgb, var(--loss) 45%, var(--ink));opacity:1}
   .gc .b{position:absolute;top:1px;right:2px;font:8px var(--mono)}
 
   .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
@@ -116,7 +106,6 @@
   .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
   .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--god-lit)}
   footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <div class="wrap">
@@ -300,4 +289,9 @@ document.querySelectorAll('.pick').forEach(b => b.addEventListener('click', () =
 }));
 
 render();
+</script>
+
+<script type="module">
+  import { floatThemeControl } from '../shared/theme.js';
+  floatThemeControl();
 </script>
