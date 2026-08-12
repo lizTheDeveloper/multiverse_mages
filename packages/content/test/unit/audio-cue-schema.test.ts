@@ -101,7 +101,7 @@ describe('the audio validation gate', () => {
 
 function validCue() {
   return {
-    id: 'click-test', kind: 'click', band: 'presence', grid: 'unquantized',
+    id: 'click-test', kind: 'click', production: 'synthesised', band: 'presence', grid: 'unquantized',
     durationMs: 4, levelDbTenths: -300, variants: 5, pitchJitterCents: 15,
     prompt: 'a test prompt', post: '', subject: 'hover', source: '2',
     densityThreshold: 0,

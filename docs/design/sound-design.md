@@ -197,6 +197,22 @@ bank feel larger than it is; and rely on the escalation tiers (§8.1), which mak
 most memorable lines rare by construction. If barks still wear out in playtest, the answer is more
 lines — not a synthesiser.
 
+**Confirmed by ear, which is the only way this could have been confirmed.** After the first full
+generation pass, 252 assets were auditioned and 22 had no usable take — and they were not randomly
+distributed. Seven of the nine unusable *cues* were synthesised-tier: the research motif, teaching,
+theft, discovery, rediscovery, the death mark, the grimoire-complete knock. Every one of them is a
+**phrase** rather than a sound — three bars ascending and stopping short of home, two voices
+arriving an eighth apart and settling into unison, a strike landing on the note the previous phrase
+was reaching for. A text-to-audio model cannot render any of that, because resolution depends on the
+universe's key, the current tempo, and what was played immediately before. Nothing in the prompt can
+supply those.
+
+That is not a prompt-quality problem and rewriting the prompts does not fix it. It is the tier
+boundary asserting itself: the cues that failed to render are precisely the ones this section says
+should not be rendered. Their prompts are now written as **grain material** — an object being
+struck, described physically, with the musical intent moved into the `post` note where it belongs
+as instruction to the client rather than to a generator.
+
 **What this costs, stated plainly:** `electron-client` needs a synthesis and granular layer, not a
 sample player. That is a materially larger piece of work than triggering files, and §10 carries it
 as a requirement rather than leaving it to be discovered.
@@ -1445,6 +1461,22 @@ it is the entire music budget for the game.
 
 One voice per species, plus the four populace roles. Direction, not accent — per §0.6, no species
 voice may read as a real people's accent.
+
+**Two notes from casting in practice.**
+
+*Verify a voice before spending on it, and verify it the right way.* Looking an id up in the
+account's own collection is not sufficient — a voice from the shared library is absent there and
+still works perfectly for synthesis, so that check produces false negatives. Probe the
+text-to-speech endpoint itself with one short line. The same habit caught a genuine mismatch: an id
+that resolved to a cartoon-monster character voice, which was in fact deliberate, and one that did
+not exist at all, which was not. One request is cheaper than a hundred and twelve.
+
+*The human bank's voice is accent-tagged, which sits against §0.6.* §0.6 forbids a species voice
+reading as a real people's accent, and the shipped human voice carries an accent label. This is a
+recorded, deliberate exception made by the copyright holder on hearing the alternatives — not an
+oversight, and not a loosening of §0.6, which continues to govern the other nine banks. If the
+performance reads as a specific real-world people rather than as a person, that is the signal to
+revisit it.
 
 **The cast lives in content, not in the environment.** Each bank in `voice-line.json` carries a
 `voiceId` alongside its `voicePrompt`, because ten banks with ten directions cannot be expressed by
