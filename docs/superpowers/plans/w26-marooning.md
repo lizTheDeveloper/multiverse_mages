@@ -58,6 +58,12 @@ knowledge in a wave that closes behind itself. That is a candidate explanation f
 teaching busy under True Naming (976 lessons in the first quarter) while buying 0.0 ±0.1 extra
 nodes known.
 
+> **Read the Results before acting on this section.** The measurement confirms the mechanism at the
+> **instance** level — 93.4% of held instances are marooned at tick 2,400 — and **falsifies the
+> "guaranteed to die with its holder" reading at the node level for 27 of the 28 affected nodes**.
+> Research keeps re-deriving nodes back into teachability, at full price, so untransmittability is
+> churn rather than a ratchet. The durable loss is real but narrow, and it concentrates at tier 5.
+
 ### What the finding is *not*
 
 Stated up front so the report cannot be read as more alarming than the evidence supports:
@@ -141,10 +147,13 @@ seed `0x00090001`, 2400 ticks. Reads only; writes no baseline and no golden.
 Four measurements:
 
 1. **Marooned instances as a share of all instances**, and of held instances.
-2. **Nodes with every copy marooned** — the important one. Such a node cannot be taught, cannot be
-   read out of a book, and dies with its last holder, and *no committed metric can see it*:
-   `knowledgeHalfLife` counts it alive, `libraryDependence` counts it held, W22's `fragileNodeIds`
-   and `unwrittenNodeIds` both call it healthy.
+2. **Nodes with every copy marooned** — the important one. Such a node cannot be taught and cannot
+   be read out of a book, and *no committed metric can see it*: `knowledgeHalfLife` counts it
+   alive, `libraryDependence` counts it held, W22's `fragileNodeIds` and `unwrittenNodeIds` both
+   call it healthy. Whether it also *dies* is the question the measurement has to answer rather
+   than assume — the answer turned out to be "usually not", and the measurement has to be able to
+   say so, which is why it tracks how long each node has gone without a teachable copy rather than
+   only counting them at the end.
 3. **Time-to-maroon by species**, measured by watching the crossing (`prev ≥ threshold`,
    `now < threshold`) at `censusEvery = 1`, not derived from the table. Instances **born below the
    threshold** are counted separately: `transmittedMastery` from a teacher near 512 lands well
@@ -194,8 +203,45 @@ list implies practice belongs or implies it was deliberately excluded.
 - [ ] Agreement test in `@mm/scenario`: predicted first-unteachable tick vs the tick `teach()`
       actually flips on a real run — the one-implementation guard for the injected functions
 - [x] `tools/w26/marooning-report.mjs`, and run it at 2400 ticks
-- [ ] `npm run verify`, per stage; report the exact result
+- [x] `npm run verify`, per stage; report the exact result
 - [x] Record the four measurements and the fully-marooned node count here
+
+---
+
+## `npm run verify`, per stage
+
+Run as one chain first, then stage by stage. Every stage green.
+
+| stage | result |
+|---|---|
+| `typecheck` | pass |
+| `lint` | pass |
+| `check:purity` | pass — the eight zero-dependency packages unchanged |
+| `check:content` | pass — `contentRevision a622452a3b55e38fd902a2d3264b44d7` |
+| `check:audio` | pass — 54 cues, 10 voice-line banks |
+| `check:coverage` | pass |
+| `test` | **279 files, 3,925 tests, all passing** |
+| `balance:gate` | **PASS**, every metric delta `0.00000` |
+| `balance:gate:horizon` | **PASS**, every metric delta `0.00000` |
+| `balance:gate:ascension` | **PASS**, every metric delta `0.00000` |
+
+**No golden regenerated and no baseline regenerated.** `git status` is clean of `balance/` and
+`packages/sim-core/test/golden/`, and all thirty gate metrics across the three gates report delta
+`0.00000` — which is what an observation-only change must do and is the check that would have
+caught it if this branch had touched a rule.
+
+Two things worth recording rather than smoothing over:
+
+- **The chained run failed once, legitimately.** `packages/state/test/unit/schema-duplication.test.ts`
+  rejected `InstanceMastery` and `HeldRow` as supersets of `@mm/state`'s `KnowledgeInstanceRecord`.
+  The rule is right and the fix is the one the checker sanctions — `extends` counts as consuming
+  the shared type, restating its fields does not. Fixed in `60ad238`; the 2,400-tick report is
+  byte-identical after it, both arms still on `cb1c0efafbd7f66a`.
+- **The known `Timeout calling "onTaskUpdate"` artifact appeared**, as `CLAUDE.md`'s campaign notes
+  describe: three to five unhandled RPC-timeout errors after the tests themselves finish, from
+  `reference-long-run.test.ts` blocking a worker past vitest's budget. On one loaded run it took
+  three test *files* down with it. Re-run unloaded, the same suite is 279/279 and 3,925/3,925.
+  **No timeout was raised to make anything green.**
 
 ---
 
