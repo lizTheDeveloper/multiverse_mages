@@ -1002,3 +1002,96 @@ fifty-eight are reached by permitting?**
 These are different games, and the second is the one section 4's permit verb already describes:
 `enabled` in `cell.json` governs which cells carry active content; `permits()` governs the god's
 ruleset. They are separate gates, and conflating them was implicit in the go-wide instruction.
+
+---
+
+## The root cause, found twice independently and verified directly
+
+Two workstreams that were not talking to each other — W30 (hard-SF projection of the magic rules)
+and W29 (city and supply chain) — arrived at the same finding from opposite ends. I verified all
+three legs of it myself against the tree rather than taking either agent's word:
+
+    $ grep -rn "gatherEffects" --include="*.ts" packages/
+    -> 25 hits. Every one is in test/ or dist/. ZERO production callers.
+
+    $ grep -rn "stackContributions|EffectContribution" --include="*.ts" packages/*/src
+    -> nothing outside rules-magic/src/effects itself.
+
+**The effect pipeline is not wired to the world.** `gatherEffects` turns "a mage knows a node" into
+"a rate changes", `stackContributions` applies section 3's stacking law to the result, and nothing in
+production calls either. The pipeline is authored, tested, adversarially tested, and disconnected.
+
+The one runtime path from knowledge to the simulation is `yieldSources`
+(`packages/coordination/src/god/system.ts:613`), which feeds worship favor. Its entire gate is:
+
+    if (knowledge.instanceCount(nodeId) > 0) found.push(...magnitudes);
+
+**Exactly one of sixteen primitives is node-driven at runtime — `worship-yield` — and it is the one
+whose accounting never calls `permits()`.** A forbidden node keeps paying. A node held only in a
+grimoire in a civilization with no living mages keeps paying.
+
+### This explains every negative result in the campaign, and retires several open questions
+
+The campaign established five separate ways that the binding constraint was "content exhaustion",
+and then built six mechanics — raids and looting, the knowledge-capital loop, the value-sensitive
+acquirer, a deeper graph, cost curves and timing, and a shorter horizon. **Every one worked on its
+own terms. None moved the negative control.** That is not six unlucky results. It is one result,
+observed six times, and the diagnosis was wrong:
+
+- Content exhaustion was never the constraint, because **content does nothing**. Learning all 51
+  nodes by tick 300 costs nothing and buys nothing, so the plateau was never a ceiling — it was a
+  measurement of an inert quantity.
+- The archivist producing 4,096 grimoires against passive's 1,156 and ending on the same 51 nodes is
+  not a redundancy problem. Grimoires feed instance counts, instance counts feed a `> 0` test.
+- Every species trait is inert for the same reason. Retention, scribe affinity and rediscovery all
+  move mastery and instance counts, and nothing reads either except a presence test.
+- `permit-then-idle` wins, and **beats** the bot that funds and blesses, because permitting is the
+  only verb that touches the single live path at all — and it does not even have to stay permitted,
+  since `yieldSources` never re-checks the ruleset.
+
+The earlier diagnosis in this document — that the ceiling is the god's economy — was closer than
+"content exhaustion" but still downstream of this. Both are hereby superseded. **The ceiling is that
+the god's ruleset and the academics' knowledge are, at runtime, connected to the simulation by one
+unconditional favor trickle.**
+
+### Correction to a figure recorded above
+
+This document has said permitting all nineteen switches costs 98,304 favor, or 1.51% of a run's
+income. That is right for nineteen switches and wrong for the game as shipped. The v1 subset is a
+strict rectangle — `{Intellego, Perdo, Rego}` x `{Mentem, Terram, Limen, Nomen}` — so all twelve
+enabled cells open on **seven** switches for **40,960 favor, 0.63% of income**. The permit economy is
+less than half as binding as recorded. Creo, Muto and Corpus are all dark, which is a content-side
+restatement of the measured one-component result: **nothing in the shipped grid makes or transforms
+anything.**
+
+### Status: being fixed, and the fix needs a decision
+
+W29 is building `packages/coordination/src/universe-effects.ts` — 46 of the 70 cells carry a
+`resource-yield` or `build-rate` effect at `target: "universe"`, waiting on exactly this wire. Its
+treatment is better than what would have been specified for it: it gates on `permits()` **at
+application time**, so an interdiction switches the economy off without destroying what anyone knows;
+it contributes a node's magnitude once however many copies exist, so copying a book stays a hedge
+rather than a harvest; and it passes magnitude arrays to section 3's `stackMagnitudes` rather than
+summing them.
+
+One open divergence has been raised with W29 and is not yet resolved. `gatherEffects` enforces a
+mastery activation threshold and location dormancy, and has an adversarial test pinning the latter.
+`universe-effects.ts` re-walks the instance store and gates on **presence**. Under presence-gating a
+node discovered one tick ago, at `DEFAULT_INITIAL_MASTERY = 256`, delivers full economic yield, and
+decay toward the floor never reduces it — which would make retention, decay, teaching thresholds and
+the whole marooning mechanic inert *on the new path*, reintroducing the campaign's central failure
+class inside the fix for it. There is a real argument for presence (a shelved grimoire has no
+mastery), so this is a design fork to settle and record, not an obvious bug.
+
+The architectural question behind it: **two implementations of knowledge-to-effect will diverge, and
+the one carrying the adversarial test will not be the one the economy uses.**
+
+### What this does to the definition of done
+
+D5, D6 and D7 were chosen as the tests that say the *game* changed rather than the numbers. They are
+still the right tests, and they were unreachable for a reason no amount of tuning would have found:
+D7 in particular — *varying the founding species mix changes which strategy wins* — cannot come out
+positive while the only quantity species traits influence is an instance count read by a `> 0` test.
+**No baseline collected before this wire lands measures the game.** They measure a favor trickle.
+Balance work resumes after it, not before, and the tuner's calibrated constants should be treated as
+provisional.
