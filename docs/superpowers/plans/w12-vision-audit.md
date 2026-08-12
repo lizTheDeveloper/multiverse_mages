@@ -44,12 +44,33 @@ can select is **not** reachable.
 - [x] 2.2 Execution proof: run the reference long-run / census and record observed facts centrally
 - [x] 2.3 Execution proof: enumerate which god actions are ever legal, and which fire
 - [x] 2.4 Execution proof: metric registry keys vs `contracts.md` §7's twelve
-- [ ] 3.1 Synthesise `docs/design/vision-audit.md`: table per section, summary counts, ranked gaps
-- [ ] 3.2 For each of the ten ranked gaps: smallest wiring change + owning workstream
-- [ ] 3.3 Record vision-internal contradictions and code-contradicts-vision rows separately
+- [x] 3.1 Synthesise `docs/design/vision-audit.md`: table per section, summary counts, ranked gaps
+- [x] 3.2 For each of the ten ranked gaps: smallest wiring change + owning workstream
+- [x] 3.3 Record vision-internal contradictions and code-contradicts-vision rows separately
 - [ ] 4.1 Commit and push `w12/vision-audit`
 
 ## Evidence log
 
-Execution proofs are recorded in `docs/design/vision-audit.md` under "Proved by execution"; every
-other row is marked read-proved.
+Three execution proofs were run, read-only, against the built `dist/` of the audited commit, and
+are transcribed in full in `docs/design/vision-audit.md` under "The three execution proofs":
+
+1. `runLongReference({})` — the 200-year zero-input reference run, seed `0x00090001`, final
+   snapshot hash `3a00865d721b377c`.
+2. All eight scripted strategies driven for 2,400 ticks each, recording every mask bit ever set,
+   every action submitted and every intervention applied.
+3. A direct census of the `knowledge-instance` component at tick 2400, by location kind, node and
+   mastery.
+
+Every table row in the audit is marked `[executed]`, `[read]`, or `[baseline]` (a committed
+measurement read out of `balance/baselines/`, not one taken here).
+
+## What the audit found that changed the brief
+
+Two of the four calibration examples this workstream was briefed with do not survive execution and
+are corrected in the audit rather than repeated:
+
+- **Teaching is wired, not contradicted.** The reference tradition is True Naming, whose `acquire`
+  hook creates instances at `MASTERY_MAX`. Measured: 3,142 lessons in 2,400 ticks. The 256-vs-512
+  problem is real and confined to the `standard` acquire hook, which no reachable run uses.
+- **Loss fires, twice.** `nodesLost` totals 2 over 200 years. The *destruction* path (burning,
+  looting) remains unreached, and that is a different claim.
