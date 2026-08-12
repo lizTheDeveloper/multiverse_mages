@@ -47,7 +47,8 @@ instance count per node. Everything else is the production path verbatim: `build
 `createSession`, `runEpisode`, `BOT_POOL_REGISTRY`, `policiesForRun`.
 
 **The probe's inertness is measured, not assumed.** A probed and an unprobed run at the same
-coordinates agree on snapshot hash, terminal reason and tick count:
+coordinates agree on snapshot hash, terminal reason and tick count. Taken at a 1,200-tick cap to keep
+the check cheap, which is why `passive-control` reads 1200 here and 2400 in the tables below:
 
 | strategy | snapshot hash | terminal reason | ticks |
 |---|---|--:|--:|
@@ -299,9 +300,15 @@ species with the same ceiling would hold *different* sets of the same size. Meas
 - paired containment gnome ↔ human across all six coordinate pairs: **1.000, 1.000, 1.000, 1.000,
   1.000, 1.000**.
 
-And the two v1 nodes neither can reach are `221` and `278` — checked against the catalog, **the only
-two tier-5 nodes in the v1 set** (`pm-the-empty-room` and `rl-the-standing-gate`). The depth ceiling
-is not a hypothesis about why the sets differ; it is the whole of the difference, exactly.
+And the two v1 nodes neither can reach are `221` and `278` — checked against the catalog,
+`pm-the-empty-room` and `rl-the-standing-gate`, both tier 5, and **the only two tier-5 nodes in the
+v1 set**. The v1 tier histogram is 12 / 13 / 13 / 11 / 2 across tiers 1–5. The depth ceiling is not a
+hypothesis about why the sets differ; it is the whole of the difference, exactly.
+
+Both of those are also **summit nodes** — the deepest node of `perdo-mentem` and of `rego-limen`. So a
+gnome or human universe can reach only 10 of the 12 Apotheosis keys instead of 12, and that costs it
+nothing whatsoever, because the predicate is an OR and any one key suffices. That is the fungibility
+finding of §6 arriving from the species side.
 
 **D7's instrument now exists. The answer it gives is the critique's: species change how far and how
 fast, not which.** The species table cannot produce compositional variety on its own, because the
