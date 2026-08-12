@@ -1,0 +1,27 @@
+{
+  "sweepId": "w27-decision-space-v1",
+  "kind": "full",
+  "rootSeed": 20260811,
+  "factors": [{ "id": "tradition", "levels": ["true-naming"] }],
+  "replicates": 400,
+  "agentPool": {
+    "strategies": ["allocate-concentrate"],
+    "assignment": "fixed",
+    "slots": 1
+  },
+  "termination": { "worldTickCap": 2400, "perRunTimeoutMs": 600000 },
+  "metrics": [
+    "referenceGrimoires",
+    "referenceKnowledgeInstances",
+    "referenceLibraryDepth",
+    "referenceLivingMages",
+    "referenceNodesGained",
+    "referenceNodesGainedFinalQuarter",
+    "referenceNodesKnown",
+    "referencePeakPopulation",
+    "referencePopulation",
+    "referencePopulationChange"
+  ],
+  "ablation": { "mode": "none", "primitives": [] },
+  "failureThreshold": 0
+}

@@ -235,6 +235,7 @@ export { TERMINAL_REASON } from '@mm/agent-api';
 
 export type {
   ArmContribution,
+  CensusTracePoint,
   FailureClass,
   Provenance,
   RunExecutor,
