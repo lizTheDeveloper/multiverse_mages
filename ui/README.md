@@ -60,6 +60,11 @@ Surfaces that are not actions, and still need directions:
 the read path cannot answer, and it found five things, which is a different job from comparing layouts.
 Anyone picking a mage-panel design should treat it as one candidate, not as a decision.
 
+**Start at [`index.html`](index.html)** — it lists all eleven with the question each answers. A test
+asserts that index links only to prototypes that exist and links to every one of them, in both
+directions, because a front door pointing at a missing page is worse than no front door and an
+unlinked prototype is invisible.
+
 ## Running them
 
     npm run ui        # serves the repository root on :8200
