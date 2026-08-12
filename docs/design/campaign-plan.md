@@ -2122,3 +2122,77 @@ on sites do not farm.
 
 Also raised the ascension sweep's `perRunTimeoutMs` from 600s to 1800s: one archivist run now takes
 **305s measured**, against a cap sized for a build whose universities never completed.
+
+---
+
+## Correction: affinities were already wired, and this document is what said otherwise
+
+W41's audit reported that `species.json`'s affinities are read only by `load.ts:938`, the key
+validator. **That is false on `main`.** W20 already shipped the mechanism: `affinities` is one of
+`packages/rules-world/src/autonomy/target-appeal.ts`'s six target-selection terms, wired end to end
+through `scenario/content-set.ts` → `coordination/outlook.ts` → `affinityTerm` → `chooseTarget`, with
+its divisor and `fp(384)` bound authored in `autonomy-weight.json`.
+
+**The artefact that misled the audit is this file.** Its enumeration of species traits omits
+`affinities`, and two external reviewers independently prescribed a mechanism that had already
+landed, because they were reading the enumeration rather than the code. That omission is corrected
+here rather than silently repaired, because the failure mode — *a summary of the code being trusted
+over the code* — is one this campaign has now committed at least three times.
+
+The placement W20 chose is also better than the one I recommended. Affinity applies to **target
+appeal**, whose divisor is orthogonal to tier — which is exactly the property that lets it **reorder**
+`compareTargets`' queue rather than move a species faster along it. Research cost, which I suggested,
+would have reached the same content through a second channel and double-applied it.
+
+### The measurement nobody had taken
+
+72 runs, same species and same seeds, affinities authored against every table emptied:
+
+- **It moves sets, not counts.** Dwarf run 0/1 ends at **29 nodes with affinity on and 37 with it
+  off** — Jaccard 0.610, with **4 nodes unique to the affine arm and 12 unique to the ablated one.**
+  That is the *opposite* of the "speed, not shape" signature: the ablated arm is larger, and the
+  affine arm holds nodes the larger one lacks.
+- **It almost never survives to terminal**, for the reason this campaign already knows: any universe
+  that lives exhausts all 51 v1 nodes, and reordering a fully-walked queue cannot change its union.
+  Draconic, dwarf and elf all reach 51/51 on both sides. **Orc is the only exception, at Jaccard
+  0.720 — and only because orc universes collapse before exhausting.**
+- Negative control passes exactly: gnome and human are identical on both sides at every horizon in
+  all twelve run pairs.
+
+### The finding that reframes five sweeps
+
+**7 of 11 authored affinity entries name forms no enabled cell uses** — `ignem` ×2, `vim` ×2,
+`herbam`, `imaginem`, `corpus`. And:
+
+> **Gnome and human are the two species with zero live entries.**
+
+They are also exactly the pair W15, W19 and W20 are all measured on.
+
+So W15's *"identical 49 nodes"*, W19's *"no divergence at any horizon"* and every species claim
+resting on that pair were measured on **the one pair of species whose differentiating trait the v1
+grid cannot read.** The result was true and the framing was not: it is evidence that gnome and human
+do not differ *under v1's enabled rectangle*, not that species do not differ.
+
+(The brief I wrote claimed *no* affinity form is enabled. That is wrong in the useful direction —
+`mentem`, `nomen` and `terram` are all live. The problem is narrower and worse: it is live for the
+species nobody measures.)
+
+### Magnitudes, read for the first time
+
+- The only authored value reaching the `fp(384)` bound is draconic's `ignem` **1792** — a **dark**
+  form. Live entries use at most two-thirds of the available axis.
+- Elf `mentem`, draconic `nomen` and orc `terram` are all **1280** — three species sharing an
+  identical magnitude and differing only in which column it sits in.
+- §6 promises *"technique/form affinities"* and `load.ts` accepts only form and cell keys, so
+  `{"rego": 1536}` cannot be authored. **Whole technique rows are unexpressible**, and half the
+  promise has never been buildable.
+
+### Two harness bugs found in passing, both of which have bitten before
+
+**Species intern alphabetically, not in `species.json` order** — so `foundingSpeciesMask` bit 0 is
+**draconic**, not human. That cost one wrong arm before it was caught, and any earlier work that
+assumed file order was measuring a different species than it reported.
+
+**`contentRevision` sits inside the hashed header**, so snapshot-hash comparison is useless as an
+inertness check across a content ablation — the hash moves because the content moved, whatever the
+behaviour did.
