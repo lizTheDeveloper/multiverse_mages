@@ -72,10 +72,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
   DEFAULT_OUTPUT_MODE,
-  buildTasks,
   canonicalJson,
   decodeShardResults,
-  expandSweep,
   mergeShardResults,
   runSweep,
   validateSweep,
