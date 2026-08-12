@@ -45,17 +45,12 @@ import {
   componentOf,
   defineWorldStateSchema,
   readMidRaidMarks,
+  revertSurcharge,
 } from '@mm/state';
 import { KnowledgeSubsystem } from '@mm/rules-magic';
 
 import type { InterventionDeps } from '../../src/index.js';
-import {
-  ACTION,
-  hysteresisMultiplier,
-  interventionCost,
-  resolveInterventions,
-  revertSurcharge,
-} from '../../src/index.js';
+import { ACTION, hysteresisMultiplier, interventionCost, resolveInterventions } from '../../src/index.js';
 
 import { catalogAndCells } from './world-fixtures.js';
 import { constants, costs, godWorld, nodesCarrying } from './god-fixtures.js';

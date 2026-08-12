@@ -91,6 +91,7 @@ import {
   componentOf,
   findMidRaidMark,
   isCellId,
+  revertSurcharge,
   permits,
   readEdicts,
   readRulesetForObservation,
@@ -98,13 +99,7 @@ import {
 } from '@mm/state';
 
 import type { GodContent } from './constants.js';
-import {
-  hysteresisMultiplier,
-  inertFraction,
-  interventionCost,
-  revertSurcharge,
-  upheavalShock,
-} from './favor.js';
+import { hysteresisMultiplier, inertFraction, interventionCost, upheavalShock } from './favor.js';
 import { edictBudgetFor, favorCapFor } from './worship.js';
 import { godState, writeGodState } from './god-state.js';
 

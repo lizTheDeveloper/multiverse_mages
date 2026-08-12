@@ -150,10 +150,25 @@ export function addMage(
 
 /** Adds a soldier cohort. */
 export function addSoldiers(world: SimState, count: number): EntityHandle {
+  return addCohort(world, OCCUPATION.soldier, count);
+}
+
+/**
+ * Adds a cohort of people who do something other than fight.
+ *
+ * What the levy verb draws from: the opening deployment commits every soldier
+ * detachment a cohort can field, so a universe with nothing but soldiers has
+ * nobody left to levy.
+ */
+export function addLaborers(world: SimState, count: number): EntityHandle {
+  return addCohort(world, OCCUPATION.laborer, count);
+}
+
+function addCohort(world: SimState, occupation: number, count: number): EntityHandle {
   const handle = world.entities.create();
   attachRecord(world, POPULACE_COHORT, handle, {
     speciesId: speciesId('human'),
-    occupation: OCCUPATION.soldier,
+    occupation,
     count,
     birthTickBucket: 0,
   });
@@ -304,6 +319,8 @@ export interface BuildRaidOptions {
   readonly extraWardens?: number;
   /** Give the host world a universe row, so constitutional writes are visible. */
   readonly withHostUniverse?: boolean;
+  /** Give the host a non-fighting cohort, which is what the levy verb draws from. */
+  readonly withLaborers?: boolean;
   readonly tuningOverride?: Partial<RaidTuning>;
 }
 
@@ -338,6 +355,7 @@ export function buildRaid(options: BuildRaidOptions = {}): BuiltRaid {
     addSoldiers(hostWorld, 300);
     addSoldiers(attackerWorld, 300);
   }
+  if (options.withLaborers === true) addLaborers(hostWorld, 400);
 
   const raid = openPortal({
     attacker: participant(

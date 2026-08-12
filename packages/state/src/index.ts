@@ -95,6 +95,7 @@ export { assertNoEdictConflict, findEdictConflict, permits } from './permits.js'
 export type { RuleChange } from './rule-change.js';
 export {
   changesLegality,
+  revertSurcharge,
   ruleTargetInRange,
   rulesetWith,
   writeRuleChange,

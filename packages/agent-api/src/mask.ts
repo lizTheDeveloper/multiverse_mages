@@ -67,15 +67,22 @@ import {
   ASCENSION_PATH,
   AXIS_KIND,
   axisChangeCount,
+  EDICT,
+  EDICT_KIND,
   GRID_FORM_COUNT,
   GRID_TECHNIQUE_COUNT,
+  RULE_CHANGE_KIND,
+  RULE_SCOPE,
   TERMINAL_REASON,
   canIssueEdict,
+  collectRecords,
   findUniverse,
   godStateOrEmpty,
   inEngagement,
   readEdicts,
+  readMidRaidMarks,
   readUniverse,
+  revertSurcharge,
 } from '@mm/state';
 
 import { ACTION_SPACE_SIZE, GOD_ACTION, PARAMETERIZED_ACTIONS } from './actions.js';
@@ -228,6 +235,8 @@ function cheapestPrice(
       // reason, and stated rather than assumed.
       return base;
     }
+    case GOD_ACTION.revokeEdict:
+      return cheapestRevoke(state, costs, base);
     case GOD_ACTION.fundUniversity: {
       // Slot 0 founds and every other slot funds; §4.2 gives them one id, so the
       // entry is legal while *either* is affordable.
@@ -267,6 +276,42 @@ function cheapestAxisMultiplier(
     if (bit === 0 || multiplier < lowest) lowest = multiplier;
   }
   return lowest;
+}
+
+/**
+ * The cheapest edict this god could revoke.
+ *
+ * Ordinary while any *unmarked* edict stands, because the mask's contract is
+ * "there is a parameter this god can afford" rather than "every parameter is
+ * affordable" — the same reading `cheapestAxisMultiplier` takes one case up.
+ * When every standing edict is one a raid left, the cheapest revoke really is a
+ * surcharged one, and reporting the base there would admit an action the
+ * resolver refuses.
+ *
+ * Priced through `@mm/state`'s `revertSurcharge`, which is where that
+ * arithmetic lives precisely so that this file and `coordination`'s resolver
+ * cannot disagree: `agent-api` may not import a rules package and `coordination`
+ * may not import `agent-api`, so a second copy here would be a player told they
+ * can afford something the server refuses.
+ */
+function cheapestRevoke(state: SimState, costs: ActionCostTable, base: number): number {
+  const marks = readMidRaidMarks(state);
+  if (marks.length === 0) return base;
+
+  const multiplier = costs.midRaidRevertMultiplier ?? FP_ONE;
+  let cheapest = Number.POSITIVE_INFINITY;
+  for (const { row } of collectRecords(state, EDICT)) {
+    const mark = marks.find(
+      (candidate) =>
+        candidate.scope === RULE_SCOPE.cell &&
+        candidate.targetId === row.cellId &&
+        candidate.changeKind ===
+          (row.kind === EDICT_KIND.interdiction ? RULE_CHANGE_KIND.forbid : RULE_CHANGE_KIND.permit),
+    );
+    const price = mark === undefined ? base : revertSurcharge(base, mark.paidCost, multiplier);
+    if (price < cheapest) cheapest = price;
+  }
+  return cheapest === Number.POSITIVE_INFINITY ? base : cheapest;
 }
 
 /** Whether an action's mask entry is set. Out-of-range ids read as illegal. */

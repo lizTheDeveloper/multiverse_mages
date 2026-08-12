@@ -78,6 +78,34 @@ export type {
 } from './arbitration.js';
 export { COMBAT_PRIMITIVES, CastArbiter, summonCount } from './arbitration.js';
 
+export type { ExposureRecord } from './exposure.js';
+export {
+  EXPOSURE_LOCATION_KIND,
+  ExposureRegister,
+  exposedNodes,
+  exposureMovements,
+} from './exposure.js';
+
+export type {
+  Directive,
+  RaidPlan,
+  RaidPurse,
+  RaidVerbValue,
+  VerbRefusal,
+  VerbResult,
+} from './verbs.js';
+export {
+  RAID_VERB,
+  applyDirective,
+  legalVerbs,
+  openPurse,
+  purseOf,
+  runPlanFor,
+  verbCost,
+  verbLegalIn,
+  verbSide,
+} from './verbs.js';
+
 export type {
   LockRefusal,
   LockedChange,

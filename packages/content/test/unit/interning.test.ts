@@ -230,17 +230,20 @@ describe('contentRevision', () => {
     // different magic while their revisions agreed they were compatible.
     // Nothing existing changed a byte.
     //
-    // d37624e36be00f59cf21b87ff6eba144 -> 08aaf8406abdd600e18d398f8e594a54,
-    // when W37 made the raid something a player plays. Three magnitudes, all
-    // untuned: `muster-ceiling-ticks` and `resolution-stability-margin` decide
-    // where `raid-engagement.md` §2's phase boundaries fall, and
-    // `mid-raid-revert-multiplier` prices §1's walk-back. They are in the
-    // preimage for the reason every other raid and god magnitude is: two
-    // universes that disagreed about when the defender stops having verbs, or
-    // about what unmaking a wartime edict costs, would be playing two different
-    // games while their revisions agreed they were compatible. Nothing existing
-    // changed a byte.
-    expect(registry.contentRevision).toBe('08aaf8406abdd600e18d398f8e594a54');
+    // d37624e36be00f59cf21b87ff6eba144 -> 74e73627b404a1d2ac9249c6b33103d0,
+    // when W37 made the raid something a player plays (`raid-engagement.md`).
+    // Fourteen magnitudes, every one untuned: eleven in `raid-constant.json` —
+    // where §2's two phase boundaries fall, what each of §3's six raid verbs
+    // costs and does, the concealment ceiling, and the Vis a raiding party
+    // carries — plus `mid-raid-revert-multiplier` in `god-constant.json`, which
+    // prices §1's walk-back. They are in the preimage for the reason every other
+    // raid and god magnitude is: two universes that disagreed about when the
+    // defender stops having verbs, or about what unmaking a wartime edict costs,
+    // would be playing two different games while their revisions agreed they
+    // were compatible. Nothing existing changed a byte, and the balance gate
+    // measured every metric identical to five decimal places across the whole
+    // series — the content revision moved and the game did not.
+    expect(registry.contentRevision).toBe('74e73627b404a1d2ac9249c6b33103d0');
   });
 
   it('is stable across loads of identical content', () => {

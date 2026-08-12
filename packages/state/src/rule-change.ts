@@ -49,7 +49,7 @@ import type { Edict, RulesetSnapshot } from './permits.js';
 import { permits } from './permits.js';
 import { attachRecord, collectRecords } from './records.js';
 import type { EntityHandle, SimState } from '@mm/sim-core';
-import { NULL_ENTITY } from '@mm/sim-core';
+import { NULL_ENTITY, mul } from '@mm/sim-core';
 
 /**
  * A change to a ruleset, at one of the three scopes `contracts.md` §4.2 has
@@ -186,4 +186,35 @@ export function writeRuleChange(
   const bit = 1 << change.targetId;
   const mask = store.get(universe, field);
   store.set(universe, field, forbidding ? mask & ~bit : mask | bit);
+}
+
+/**
+ * What unmaking a mid-raid ruleset change costs.
+ *
+ * `raid-engagement.md` §1: *"after the raid, reverting a mid-raid change costs
+ * substantially more favor than the change did."* Two readings of "than the
+ * change did" are available and this takes both — the base is the larger of the
+ * ordinary price of the reverting action and what the change actually cost
+ * inside the engagement, and the multiplier applies to that.
+ *
+ * Taking the maximum rather than only the paid cost matters because a change
+ * made with a verb the balance harness later prices at zero would otherwise be
+ * free to unmake, which would quietly delete the mechanic. Taking the maximum
+ * rather than only the base matters because a god who spent heavily under fire
+ * should not find the walk-back cheap.
+ *
+ * **In `@mm/state` rather than beside the resolver that charges it**, for
+ * §1.1's reason: `agent-api` computes the affordability mask, `coordination`
+ * resolves the action, and the two may not import each other. A price with two
+ * implementations is a player told they can afford something the server
+ * refuses — the same failure the single `permits()` exists to prevent, wearing
+ * money instead of legality.
+ *
+ * Deliberately **not** folded into `interventionCost`. That prices an action;
+ * this prices a *history*, and they multiply at the call site so that a
+ * reverting action is priced by both its own hysteresis and the raid that made
+ * it necessary.
+ */
+export function revertSurcharge(base: number, paidCost: number, multiplier: number): number {
+  return mul(Math.max(base, Math.max(paidCost, 0)), multiplier);
 }

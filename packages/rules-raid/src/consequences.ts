@@ -62,6 +62,7 @@ import {
   OBJECTIVE_STATUS,
   POPULACE_COHORT,
   RAID_SIDE,
+  UNIVERSE,
   attachRecord,
   collectRecords,
   componentOf,
@@ -69,6 +70,7 @@ import {
   writeRuleChange,
 } from '@mm/state';
 
+import { EXPOSURE_LOCATION_KIND } from './exposure.js';
 import { OBJECTIVE_KIND } from './objectives.js';
 import type { Raid } from './raid.js';
 import { existingNodes, isAlive } from './raid.js';
@@ -146,7 +148,40 @@ export function applyRaidOutcome(raid: Raid, outcome: RaidOutcome): AppliedConse
     gained.push(movement.nodeId);
   }
 
-  // ---- 4b. What a mid-raid rule change left on the host's constitution. ----
+  // ---- 4a. Exposure: what the host learned by watching (§3). ----
+  //
+  // After casualties, and the recipient was chosen at resolution against the
+  // living set as it stood then. At `mastery: 0`, where theft writes too: she
+  // saw the shape of it and not the practice, so she cannot teach it onward
+  // without further study. It counts toward existence (§1.5) immediately, and
+  // that is the part that bites a repeat raider.
+  for (const exposure of outcome.exposures) {
+    if (!componentOf(raid.host.world, MAGE).has(exposure.learnedBy)) continue;
+    if (componentOf(raid.host.world, MAGE).get(exposure.learnedBy, 'alive') !== 1) continue;
+    raid.host.knowledge.createInstance({
+      nodeId: exposure.nodeId,
+      locationKind: EXPOSURE_LOCATION_KIND,
+      locationId: exposure.learnedBy,
+      acquiredTick: worldTick,
+      mastery: 0,
+    });
+  }
+
+  // ---- 4b. What the raid verbs cost the defending god. ----
+  //
+  // One debit, here, from a purse that was checked against the universe's own
+  // favor at portal open. Never below zero: the purse cannot overdraw, and a
+  // negative pool would be favor created by being attacked.
+  if (outcome.favorSpentByDefender > 0) {
+    const universe = findUniverse(raid.host.world);
+    if (universe !== 0) {
+      const store = componentOf(raid.host.world, UNIVERSE);
+      const remaining = store.get(universe, 'favor') - outcome.favorSpentByDefender;
+      store.set(universe, 'favor', remaining > 0 ? remaining : 0);
+    }
+  }
+
+  // ---- 4c. What a mid-raid rule change left on the host's constitution. ----
   if (outcome.constitutionalMarks.length > 0) {
     applyConstitutionalMarks(raid, outcome.constitutionalMarks, worldTick);
   }
