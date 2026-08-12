@@ -108,6 +108,44 @@ The edict budget is small and grows with worship tier, so exceptions stay precio
 keeps the ruleset expressive without turning it into seventy independent switches, which would
 bloat both the interface and the reinforcement-learning action space.
 
+### Perception is the trunk: how the grid is wired
+
+The cells are not independent of each other, and the way they are joined is a rule rather than an
+accident of authoring. In the v1 subset, **all eleven cross-cell prerequisite edges originate in an
+*Intellego* cell** — nine into the same form (*Intellego Terram* → *Perdo Terram* and → *Rego
+Terram*, and so on for Mentem, Nomen and Limen), and two between *Intellego* cells themselves. One
+sentence encodes them: **you must perceive a thing before you can unmake or command it.**
+
+That is not new design; it is an unstated consequence of design already written. §4.1 of
+`docs/design/sound-design.md` gives *Intellego* the one technique with no impact at all — *"a
+reveal, not an event… nothing is struck"* — and perception preceding action follows from it. Five
+independent content branches converged on the same wiring, which is what makes it deliberate.
+
+**What it gates, and what it does not.** Every *Perdo* and *Rego* cell still carries its own tier-1
+root, so shallow work in them needs no perception at all. The *Intellego* edge attaches partway up —
+tier 2 to 4 — and everything above it in that cell sits behind it. Strip every *Intellego* node out
+of the v1 subset and **18 of 51 nodes remain reachable**: perception does not gate entry to the
+grid, it gates **depth** in it. The sharpest case is the portal itself. §8 says entry requires *Rego
+Limen*; in the content, `rl-open-the-portal` also requires *Intellego Limen*'s `il-read-the-binding`.
+You cannot open a door you have not read.
+
+**Two consequences.** First, and it is a hard constraint on §4b: ***Intellego* cannot be a member of
+a mutually exclusive pair.** Excluding it would cost a mage two-thirds of the grid rather than a
+school, which is not what an exclusion is for. Second, the rule is violable by accident and nothing
+tests it — any later node giving *Perdo* or *Rego* depth without a perception prerequisite breaks it
+silently. A loader assertion over cross-cell edges is the obvious guard; recorded here as a
+recommendation, not built.
+
+**Whether the other fifty-eight cells are wired this way is open.** Across all seventy cells there
+are 36 cross-cell edges and **29** of them originate in *Intellego* — dominant, not universal, with
+five from *Perdo* and two from *Rego*. Whether the *Muto* and *Creo* columns should acquire the same
+trunk is a live authoring decision and is not settled here.
+
+**And the v1 grid is a lattice, not twelve parallel ladders.** That characterisation has been
+repeated in campaign notes and it is wrong: eleven cross-links join the twelve cells into four
+form-columns trunked on perception, plus two links between the trunks, with a longest chain six
+nodes deep.
+
 ### Balance still runs on primitives
 
 Nodes are expressed as compositions of ~15 tunable **effect primitives**, and balance assertions
@@ -189,7 +227,9 @@ and together they are why the deepest magic has to be collective.
 
 **Schools are mutually exclusive, and the test is per mage.** An individual mage cannot learn all
 the magic, because some bodies of magic exclude others — *if you use light magic you can't also
-use dark magic*. The exclusion is checked against the **mage's** held set, never the universe's: a
+use dark magic*. Not every school is eligible: §4 shows *Intellego* is the grid's perception trunk,
+so excluding it costs a mage two-thirds of the grid rather than a school, and it is therefore not a
+candidate. The exclusion is checked against the **mage's** held set, never the universe's: a
 universe can eventually hold everything, spread across many mages, and that is exactly what a
 civilization is for. Every exclusion carries its **reason**, and symmetry follows from the reason
 rather than being asserted alongside it — an exclusion whose reason does not run both ways is not
@@ -600,6 +640,9 @@ Tracked for resolution during the changes that need them, not blocking:
   The content shape is also open: an anti-requisite is the mirror of a prerequisite and
   `node.json` has only the latter, so whether exclusion is authored on nodes, on cells, or on a
   named school region is undecided.
+- **Do the *Muto* and *Creo* columns get the same perception trunk?** §4 records the rule the v1
+  subset already obeys — all eleven of its cross-cell edges originate in *Intellego* — and does not
+  extend it. Across the full grid 29 of 36 cross-cell edges do; the other seven are the question.
 - **How many casters does a ritual need, and what happens when one dies mid-ritual?** §4b decides
   that the deepest magic is collective; nothing else about co-casting is decided. Whether a ritual
   is a raid-scale act, a world-scale one, or both is the first thing to settle, because it decides

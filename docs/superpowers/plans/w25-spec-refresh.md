@@ -29,6 +29,7 @@ gap, the gap is listed as a question for the author rather than filled.
 | C | §7a | silent on whether a *place* is allowed at world scale | boundary made explicit: no coordinates, no distance, no pathfinding; a place with a kind and a link to it is permitted |
 | D | §12 + §4 + §13 | scopes v1 to 3 techniques × 4 forms; the author has decided to go wide | records the widening and the reason, in all three places that state the subset |
 | E | new | five decided mechanics that appear in no section | given homes, recorded at the size they were decided |
+| F | §4 | a structural rule the content already obeys and no document states | perception is the trunk — all eleven v1 cross-cell edges originate in *Intellego* |
 | — | §8a / §8b | *prestige* is a noun in the codebase and a verb in the author's phrasing | the vision uses **promotion** for the verb; the noun stays §8a's carried score |
 
 ## Checkable steps
@@ -48,8 +49,24 @@ gap, the gap is listed as a question for the author rather than filled.
 - [x] 10. Amendment C — §7a
 - [x] 11. Amendment D — §4, §12, §13
 - [x] 12. Amendment E — a new §4b (exclusivity, depth, rituals), §7 (timing), §8b (colonization), §13
-- [ ] 13. `npm run verify` green
-- [ ] 14. Push. No PR.
+- [x] 13. Amendment F — §4's perception trunk, re-measured off `node.json` rather than taken on report
+- [ ] 14. `npm run verify` green
+- [ ] 15. Push. No PR.
+
+## Amendment F, and where the brief it arrived with was stronger than the data
+
+The rule was reported as *"the v1 grid is four form-columns, each with Intellego as its trunk and
+Perdo/Rego branching off."* Re-measured off `packages/content/data/node.json`, the load-bearing half
+holds exactly — **11 of 11** cross-cell prerequisite edges in the v1 subset originate in an
+*Intellego* cell — and the framing does not: **every** *Perdo* and *Rego* cell carries its own
+tier-1 root with no prerequisite at all. The perception edge attaches at tier 2–4, so what it gates
+is depth, not entry. Measured: strip every *Intellego* node from the v1 subset and **18 of 51**
+nodes are still reachable.
+
+§4 records the measured version. It also records the two numbers that keep the rule from being
+over-read: across all seventy cells, **29 of 36** cross-cell edges originate in *Intellego* — five
+come from *Perdo* and two from *Rego* — so the pattern is dominant and not universal, and whether
+the *Muto* and *Creo* columns should acquire it is left open in §13.
 
 ## What the gate turned out to be
 
