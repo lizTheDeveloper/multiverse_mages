@@ -37,13 +37,17 @@ import {
   EDICT_KIND,
   EMPTY_GOD_STATE,
   GOD_STATE,
+  MID_RAID_CHANGE,
+  RULE_CHANGE_KIND,
+  RULE_SCOPE,
   TERMINAL_REASON,
   UNIVERSE,
   attachRecord,
   cellIdAt,
+  collectRecords,
   readUniverse,
 } from '@mm/state';
-import type { ContentCatalogue } from '@mm/agent-api';
+import type { ActionCostTable, ContentCatalogue } from '@mm/agent-api';
 import {
   ACTION_SPACE_SIZE,
   ALL_GOD_ACTIONS,
@@ -308,6 +312,51 @@ describe('affordability is a mask condition, not a failure', () => {
     const free = pricedCatalogue(0);
     const mask = pricedMask(world, free);
     expect(isLegal(mask, GOD_ACTION.declareAscension)).toBe(false);
+  });
+
+  it('prices a revoke at the surcharge when the only edict is one a raid left', () => {
+    // `raid-engagement.md` §1's revert surcharge, at the *mask*. The resolver
+    // charging it is proved in `coordination`; this is the other half, and the
+    // reason `revertSurcharge` lives in `@mm/state` rather than beside either of
+    // them: agent-api may not import a rules package and coordination may not
+    // import agent-api, so a second copy of the price would be a player told
+    // they can afford something the server refuses.
+    const world = firstUniverse();
+    const favor = readUniverse(world.state, world.universe).favor;
+    // Priced so the ordinary revoke is affordable and the surcharged one is not.
+    const catalogue = pricedCatalogue(favor);
+    const marked = buildCatalogue(FIXTURE_CATALOGUE.nodes, [...FIXTURE_CATALOGUE.traditionIds], {
+      ...(catalogue.costs as ActionCostTable),
+      midRaidRevertMultiplier: 2048,
+    });
+
+    // Every edict this universe already carries, so that the mark below leaves
+    // no unmarked one to price the entry at the base.
+    const standing = collectRecords(world.state, EDICT);
+    expect(standing.length).toBeGreaterThan(0);
+    expect(isLegal(pricedMask(world, marked), GOD_ACTION.revokeEdict)).toBe(true);
+
+    // Now say a raid put every one of them there. The only revoke available is
+    // a surcharged one, and it is out of reach.
+    for (const { row } of standing) {
+      const mark = world.state.entities.create();
+      attachRecord(world.state, MID_RAID_CHANGE, mark, {
+        scope: RULE_SCOPE.cell,
+        targetId: row.cellId,
+        changeKind:
+          row.kind === EDICT_KIND.interdiction ? RULE_CHANGE_KIND.forbid : RULE_CHANGE_KIND.permit,
+        paidCost: 0,
+        markedTick: 0,
+      });
+    }
+    expect(isLegal(pricedMask(world, marked), GOD_ACTION.revokeEdict)).toBe(false);
+
+    // A second, unmarked edict reopens the entry: a mask over an action with
+    // many parameters can only honestly mean "there is a parameter this god can
+    // afford", and now there is one.
+    const ordinary = world.state.entities.create();
+    attachRecord(world.state, EDICT, ordinary, { cellId: 70, kind: EDICT_KIND.interdiction });
+    expect(isLegal(pricedMask(world, marked), GOD_ACTION.revokeEdict)).toBe(true);
   });
 
   it('prices a flip at the cheapest axis, not at the most recently churned one', () => {
