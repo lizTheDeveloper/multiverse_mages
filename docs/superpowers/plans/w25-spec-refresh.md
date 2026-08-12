@@ -50,37 +50,45 @@ gap, the gap is listed as a question for the author rather than filled.
 - [x] 11. Amendment D — §4, §12, §13
 - [x] 12. Amendment E — a new §4b (exclusivity, depth, rituals), §7 (timing), §8b (colonization), §13
 - [x] 13. Amendment F — §4's perception trunk, re-measured off `node.json` rather than taken on report
-- [x] 14. `npm run verify` — run, and reported honestly rather than as "green". See below.
+- [x] 14. `npm run verify` — **exit 0**, whole chain. See below, including the two runs that failed
+      first and why they are worth writing down.
 - [x] 15. Push. No PR.
 
-## What `npm run verify` actually did, stated as measured
+## What `npm run verify` did, stated as measured
 
-`npm run verify` **exited 1**, twice, and not for a reason this branch can have caused. Recorded in
-full because this repository's own rule is that an engineered success is worth less than an honest
-failure.
+**Final result: `npm run verify` exits 0** — every step, on this branch:
 
-- **Steps 1–6** — `typecheck`, `lint`, `check:purity`, `check:content`, `check:audio`,
-  `check:coverage` — passed on both runs; the chain reached the test step each time.
-- **The test step exits 1 under load and 0 idle, with every test passing either way.** Both chain
-  runs ended `Errors 1 error` — one *unhandled* `Error: [vitest-worker]: Timeout calling
-  "onTaskUpdate"`, a worker RPC timeout rather than an assertion, with **zero failing tests**. Run
-  standalone on an otherwise idle machine the same step reports **3,872 passed (3,872)** across
-  **275 passed (275)** files, no unhandled error, **exit 0**. So the flake is contention-dependent,
-  and the likeliest cause is `reference-long-run.test.ts` — one determinism case takes 47–93 s
+    Test Files  275 passed (275)
+    Tests       3872 passed (3872)
+    Balance gate for balance-gate-v1:           PASS (tolerance k = 3 standard errors)
+    Balance gate for balance-gate-horizon-v1:   PASS
+    Balance gate for balance-gate-ascension-v1: PASS
+
+All three gates report **delta 0.00000 (0.00 SE) on every metric**, which is the signature a
+docs-only change should produce and the reason to believe the run rather than merely accept it.
+No golden fixture and no balance baseline was regenerated at any point.
+
+**It took three attempts, and the two failures are a finding rather than noise.** Recorded because
+this repository's rule is that an engineered success is worth less than an honest failure.
+
+- The first two chain runs **exited 1 with zero failing tests**. Both ended `Errors 1 error` — a
+  single *unhandled* `Error: [vitest-worker]: Timeout calling "onTaskUpdate"`, a worker RPC timeout
+  rather than an assertion. `&&` then stopped the chain, so the three balance gates never ran.
+- Both failures happened while other work was live on the machine. Standalone on an idle machine the
+  test step passes cleanly, and so does the whole chain. **The flake is contention-dependent**, and
+  the likeliest cause is `reference-long-run.test.ts`, whose determinism case takes 47–93 s
   depending on load and starves the worker's status channel.
-- **A collection discrepancy worth someone's attention.** The two erroring runs disagreed with each
-  other: **3,872 tests in 275 files** and **3,912 in 279**, on an unchanged tree with a clean
-  `git status`. The clean idle run reproduces 3,872/275, which is also what `campaign-plan.md`
-  records for the integration round-2 close-out — so 3,912/279 is the outlier, and a suite whose
-  own size moves under load is worth a look. Named, not diagnosed.
-- **The three balance gates never ran inside the chain** — `&&` stops at the failing step — so they
-  were run standalone. All three **PASS**, with **delta 0.00000 (0.00 SE) on every metric in every
-  gate**: `balance-gate-v1` (200 runs), `balance-gate-horizon-v1` (200 runs),
-  `balance-gate-ascension-v1` (32 runs). A docs-only change is exactly what produces that.
-- **Causation is ruled out by construction, not by hope.** Nothing in the repository parses
-  `vision.md`, this branch touches only two files under `docs/`, and the diffstat is docs-only.
-- **For whoever opens the PR:** `scripts/ci-check.sh` must stay equivalent to `npm run verify`, so
-  the self-hosted runner will meet the same exit 1. It predates this branch.
+- **A collection discrepancy that only appeared under load.** The two erroring runs disagreed with
+  each other — **3,872 tests in 275 files** versus **3,912 in 279** — on an unchanged tree with a
+  clean `git status`. Both clean runs give 3,872/275, which is also what `campaign-plan.md` records
+  for the integration round-2 close-out, so 3,912/279 is the outlier. A suite whose own size moves
+  under contention is worth someone's attention. Named, not diagnosed.
+- **First measured beside the pipe that hid it.** The very first run was invoked as
+  `npm run verify | tail -30`, and a pipeline reports the exit status of `tail`. It read as exit 0
+  while `verify` had exited 1. Worth knowing before anyone reports a green run from a piped command.
+- **This matters to CI, not just to a laptop.** `scripts/ci-check.sh` must stay equivalent to
+  `npm run verify`, and the self-hosted runner shares a box with other processes — so the same
+  timeout can fail a commit that is fine. It predates this branch.
 
 ## Amendment F, and where the brief it arrived with was stronger than the data
 
@@ -176,9 +184,10 @@ Kept here so they survive the branch.
   `unavailable`. Verified directly against
   `balance/baselines/balance-gate-ascension-v1.baseline.json` on this branch.
 - **`npm run verify` fails under machine contention, for a reason no branch causes** — a vitest
-  worker RPC timeout with zero failing tests, which disappears on an idle machine. Detailed above.
-  It is a `verify` defect and therefore a CI defect, since `scripts/ci-check.sh` must stay
-  equivalent to it and the self-hosted runner shares a box with other work.
+  worker RPC timeout with zero failing tests, which disappears on an idle machine, plus a suite size
+  that moves with it. Detailed above. It is a `verify` defect and therefore a CI defect, since
+  `scripts/ci-check.sh` must stay equivalent to it and the self-hosted runner shares a box with
+  other work.
 - **`campaign-plan.md:920` on `origin/pm/campaign-plan` calls the v1 grid *"twelve parallel
   staircases"*.** It is a lattice — eleven cross-cell edges, longest chain six nodes deep. §4 now
   says so; that line is on the coordinator's own branch and is theirs to correct.
