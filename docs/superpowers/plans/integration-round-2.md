@@ -147,6 +147,42 @@ inversion rather than a regression is that the deep library still yields more di
 **This is verified here rather than accepted**, because a workstream rewriting another workstream's
 assertion is exactly the move that hides a regression.
 
+**Verdict: accepted, with one real loss named.** Read against the tree:
+
+- The new discriminating assertion, `scholarly.grimoiresScribed > unaided.grimoiresScribed`, is a
+  genuine comparison that can fail, on a bigger margin (40%) than the one it replaced (0.27%).
+  Not cherry-picked: under the *pre-W17* acquirer the two measures agree, and they diverge only
+  once the utility score ships.
+- The loop is still pinned independently, in the same file, by a **capital-zeroed control** the
+  rewrite did not touch — `'adds nothing to any rate while the shelves are bare'` asserts
+  `first.capital.every((entry) => entry.effectiveContribution === 0)` directly off the capital
+  report. So the mechanism would still fail loudly if it were disabled.
+- **The loss:** `researchCompleted` went from a strict cross-arm comparison to a per-arm
+  `> 0` liveness check. That is discriminating power genuinely given up. It is documented in the
+  test's own docblock with all twelve numbers rather than dropped quietly, which is the right way
+  to do it — but it is a loss, and it should be recorded as one rather than as a neutral swap.
+
+### 7. `uniform-random-legal` is a crippled probe, and D2 has been measured against it
+
+Checked because `idle-then-declare`'s docstring asserts it. **The claim is verified, and the
+mechanism is worse than the docstring says.**
+
+- `CANDIDATE_SLOTS` covers exactly actions **8–14**. `candidateSlotCount` returns 0 for actions
+  1–7, so `uniform-random-legal` submits those **bare, with no parameter at all**.
+- The gate *admits* them — `outOfAxisRange` returns `false` for `undefined` on purpose. They are
+  refused one layer down, by `axisPlan`, `edictPlan` and `revokePlan` in
+  `coordination/src/god/interventions.ts`, each returning `undefined`, which the dispatcher counts
+  via `state.noteIllegalAction()`.
+- **And that refusal is invisible to the metric that exists to catch it.** §7's `illegalActionRate`
+  is collected from the *session's* `accounting()` counters, and the bare submissions were admitted
+  at the gate, so they never appear there. `state.illegalActionCount` and `illegalActionRate` read
+  different counters.
+
+So the noise floor this campaign has measured every exploit margin against has **7 of its 15 verbs
+structurally inert**, and its own telemetry reads clean. **D2 is therefore reported twice** — against
+`uniform-random-legal`, which is the criterion as written, and against `idle-then-declare`, which is
+the honest control.
+
 ## Defects found while reading, before merging
 
 - **`packages/content/src/autonomy.ts` on W17 contains a raw NUL byte at offset 7617**, inside the
@@ -315,6 +351,33 @@ Two instrument facts already established by reading the tree, before any number 
       `god-constant.json` after W7's baseline was taken. **Every metric under it reads delta
       0.00000**, including `referenceLibraryDepth` at W7's own 7.14500 against `main`'s 1.47000 —
       so W7's mechanism reproduces exactly on the merged tree and the refusal is provenance alone.
+      Same at 240 ticks: every metric 0.00000, `referenceLibraryDepth` at W7's **24.3450** against
+      `main`'s 1.49500.
+
+      **The 2400-tick gate is where the first real interaction shows up, and it is the point of
+      this workstream.** Against W7's own baseline — i.e. W6's contribution measured on a W7
+      world — four metrics move well outside tolerance:
+
+      | metric | W7 alone | W6+W7 | delta |
+      |---|---|---|---|
+      | `referencePeakPopulation` | 19506.0 | **50038.0** | +30532 (**162.46 SE**) |
+      | `referencePopulation` | 6750.56 | **20374.2** | +13624 (9.84 SE) |
+      | `referenceLivingMages` | 74.000 | **115.406** | +41.4 (10.39 SE) |
+      | `referenceGrimoires` | 157.563 | 305.406 | +147.8 (2.64 SE) |
+      | `referenceKnowledgeInstances` | 1894.72 | 2700.81 | +806 (2.64 SE) |
+      | `referenceLibraryDepth` | 25.4688 | **16.7500** | **−8.72 (−2.31 SE)** |
+
+      The first five are one mechanism and it is not a surprise: W6 made ascension hard, runs stop
+      ending early, and a universe that runs longer has more of everything. W6 alone on `main`
+      moved peak population 19340 → 50049; here it moves 19506 → 50038. **W6 and W7 are very
+      nearly additive on the population channel — they do not interact destructively.**
+
+      **`referenceLibraryDepth` is the exception, and it is a genuine interaction.** W6 alone moved
+      it not at all (2.21875, identical to `main`). W7 alone took it to 25.4688. Together it is
+      **16.7500** — W7's gain cut by roughly a third. Nothing subtracted the loop; the horizon
+      lengthened, and over a longer horizon W7's own library upkeep keeps destroying single-copy
+      shelves. That is `narrow-depth`'s 12/12 → 0/12 effect showing up as a continuous quantity,
+      which is evidence the mechanism is real rather than a threshold artefact.
 - [ ] 6. `w8/raid-engagement-live`
 - [ ] 7. `w17/value-sensitive-acquirer` (+ the NUL fix)
 - [ ] 8. `w10/server-contracts`
