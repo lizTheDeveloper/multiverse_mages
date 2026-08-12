@@ -303,6 +303,24 @@ Everything follows from that one line:
 - It is the mechanical form of the thing academia actually does: you know your rivals' work better
   than anyone, because you trained with them.
 
+### Making the tragedy perceivable, which is the whole point of having it
+
+A modifier the player never notices is not a tragic mechanic, it is arithmetic. Three places where
+familiarity should surface, cheapest first:
+
+- **A bark on recognising a former classmate.** The voice banks are already a de-facto specification —
+  *"This one's dwarven. It'll outlive us both."* — and a line spoken by a mage who trained with the
+  people she is now casting at is the single cheapest way to land this. It costs one bank and it is
+  the moment the mechanic becomes a story.
+- **The mage panel** (`ui/mage/`) already answers *"why did this mage choose what she chose."* Where
+  she studied, and who she is consequently good at fighting, belongs in that same answer.
+- **The raid view**, when the defender is an ally or former ally: the resistance and advantage terms
+  are already being applied, and showing *why* the numbers are what they are turns a shrug into a
+  wince.
+
+The line the design is reaching for, and it should be findable in the game and not only in this file:
+**you know your rivals' work better than anyone, because you trained with them.**
+
 ### Two things to get right in the build
 
 **1.15 is not representable in this project's fixed point.** At scale 1/1024, `1.15 × 1024 = 1177.6`.
