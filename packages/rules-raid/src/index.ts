@@ -78,6 +78,43 @@ export type {
 } from './arbitration.js';
 export { COMBAT_PRIMITIVES, CastArbiter, summonCount } from './arbitration.js';
 
+export type { ExposureRecord } from './exposure.js';
+export {
+  EXPOSURE_LOCATION_KIND,
+  ExposureRegister,
+  exposedNodes,
+  exposureMovements,
+} from './exposure.js';
+
+export type {
+  Directive,
+  RaidPlan,
+  RaidPurse,
+  RaidVerbValue,
+  VerbRefusal,
+  VerbResult,
+} from './verbs.js';
+export {
+  RAID_VERB,
+  applyDirective,
+  legalVerbs,
+  openPurse,
+  purseOf,
+  runPlanFor,
+  verbCost,
+  verbLegalIn,
+  verbSide,
+} from './verbs.js';
+
+export type {
+  LockRefusal,
+  LockedChange,
+  MaskSubject,
+  RuleChangeContext,
+  RuleChangeResult,
+} from './lock.js';
+export { RaidLock, applyRuleChange } from './lock.js';
+
 export type { CombatantBrief, EligibleCohort, EligibleMage, SideRoster } from './combatants.js';
 export {
   ATTACKER,
@@ -120,6 +157,7 @@ export {
 export type {
   CasualtyRecord,
   CohortLossRecord,
+  ConstitutionalMark,
   KnowledgeMovement,
   ObjectiveOutcome,
   PrimitiveApplication,
@@ -127,10 +165,20 @@ export type {
 } from './outcome.js';
 export { OutcomeLedger } from './outcome.js';
 
+export type { EngagementPhaseValue, PhaseInputs } from './phases.js';
+export {
+  ENGAGEMENT_PHASE,
+  ENGAGEMENT_PHASE_NAMES,
+  phaseAdmitsAction,
+  phaseOf,
+} from './phases.js';
+
 export type { OpenPortalOptions, Raid, RaidFaults, RaidParticipant } from './raid.js';
 export {
   CASTABLE_MASTERY,
+  changeRuleMidRaid,
   closePortal,
+  currentPhase,
   deploymentPosition,
   engagementTickOf,
   existingNodes,

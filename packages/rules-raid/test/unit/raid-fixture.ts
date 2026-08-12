@@ -36,6 +36,7 @@ import {
   UNIVERSITY,
   LIBRARY,
   attachRecord,
+  createUniverse,
   defineWorldStateSchema,
 } from '@mm/state';
 import type { PortalHooks } from '@mm/rules-magic';
@@ -47,7 +48,7 @@ import {
   traditionTable,
 } from '@mm/rules-magic';
 import type { RaidParticipant, RaidTuning } from '@mm/rules-raid';
-import { readRaidTuning } from '@mm/rules-raid';
+import { deployRaid, openPortal, readRaidTuning } from '@mm/rules-raid';
 
 export const registry: ContentRegistry = loadContent(shippedContentSource());
 export const grid: MagicGrid = MagicGrid.from(registry);
@@ -149,10 +150,25 @@ export function addMage(
 
 /** Adds a soldier cohort. */
 export function addSoldiers(world: SimState, count: number): EntityHandle {
+  return addCohort(world, OCCUPATION.soldier, count);
+}
+
+/**
+ * Adds a cohort of people who do something other than fight.
+ *
+ * What the levy verb draws from: the opening deployment commits every soldier
+ * detachment a cohort can field, so a universe with nothing but soldiers has
+ * nobody left to levy.
+ */
+export function addLaborers(world: SimState, count: number): EntityHandle {
+  return addCohort(world, OCCUPATION.laborer, count);
+}
+
+function addCohort(world: SimState, occupation: number, count: number): EntityHandle {
   const handle = world.entities.create();
   attachRecord(world, POPULACE_COHORT, handle, {
     speciesId: speciesId('human'),
-    occupation: OCCUPATION.soldier,
+    occupation,
     count,
     birthTickBucket: 0,
   });
@@ -240,3 +256,121 @@ export function cellNameOf(node: string): string {
 
 /** Handle type alias so fixtures read the same as the rules do. */
 export type FixtureHandle = Handle;
+
+/**
+ * Two universes and a portal between them, deployed and ready to step.
+ *
+ * Hoisted out of `raid-engine.test.ts`'s local `build` so that the phase, lock
+ * and verb suites fight over the same battlefield rather than three subtly
+ * different ones. The host is deliberately the richer side: a raid against a
+ * universe with nothing to take is a legitimate case, but a bad default,
+ * because every objective assertion would then pass vacuously.
+ */
+export interface BuiltRaid {
+  readonly raid: RaidHandle;
+  readonly attackerWorld: SimState;
+  readonly hostWorld: SimState;
+  readonly attackerKnowledge: KnowledgeSubsystem;
+  readonly hostKnowledge: KnowledgeSubsystem;
+  readonly raider: EntityHandle;
+  readonly warden: EntityHandle;
+}
+
+/** Structural alias so this module does not have to name `Raid`'s whole shape. */
+type RaidHandle = ReturnType<typeof openPortal>;
+
+/**
+ * A universe row on a fixture world, so that a test can watch a rule change
+ * land on the constitution rather than only on the raid.
+ *
+ * `emptyWorld` deliberately has no universe: most raid tests do not need one and
+ * `findUniverse` returns the null handle, which every reader treats as absence.
+ * A test about `raid-engagement.md` §1's mark is one of the few that does.
+ */
+export function addUniverse(
+  world: SimState,
+  options: { readonly permittedTechniques?: number; readonly permittedForms?: number } = {},
+): EntityHandle {
+  return createUniverse(world, {
+    permittedTechniques: options.permittedTechniques ?? ALL_TECHNIQUES,
+    permittedForms: options.permittedForms ?? ALL_FORMS,
+    edictBudget: 4,
+    traditionId: traditionId('vancian-memorization'),
+    favor: 64 * FP_ONE,
+    worship: FP_ONE,
+    worshipTier: 1,
+    materials: 0,
+    prestige: 0,
+    prestigeEarned: 0,
+    terminalReason: 0,
+    favorCap: 1024 * FP_ONE,
+    ascended: 0,
+  });
+}
+
+export interface BuildRaidOptions {
+  readonly hostRuleset?: RulesetSnapshot;
+  readonly raiderRuleset?: RulesetSnapshot;
+  readonly raiderNodes?: readonly string[];
+  readonly hostNodes?: readonly string[];
+  readonly seed?: number;
+  readonly hostTradition?: string;
+  readonly withSoldiers?: boolean;
+  readonly extraWardens?: number;
+  /** Give the host world a universe row, so constitutional writes are visible. */
+  readonly withHostUniverse?: boolean;
+  /** Give the host a non-fighting cohort, which is what the levy verb draws from. */
+  readonly withLaborers?: boolean;
+  readonly tuningOverride?: Partial<RaidTuning>;
+}
+
+export function buildRaid(options: BuildRaidOptions = {}): BuiltRaid {
+  const attackerWorld = emptyWorld();
+  const hostWorld = emptyWorld();
+  const attackerKnowledge = knowledgeFor(attackerWorld);
+  const hostKnowledge = knowledgeFor(hostWorld);
+
+  const hostSnapshot =
+    options.hostRuleset ??
+    ruleset({ traditionId: traditionId(options.hostTradition ?? 'vancian-memorization') });
+  const raiderSnapshot = options.raiderRuleset ?? ruleset({});
+
+  const raider = addMage(attackerWorld, attackerKnowledge, {
+    role: MAGE_ROLE.raider,
+    nodes: options.raiderNodes ?? ['cig-the-uncontained-hour', 'im-read-the-surface'],
+  });
+  const warden = addMage(hostWorld, hostKnowledge, {
+    role: MAGE_ROLE.warden,
+    nodes: options.hostNodes ?? ['cig-the-uncontained-hour'],
+  });
+  for (let extra = 0; extra < (options.extraWardens ?? 0); extra += 1) {
+    addMage(hostWorld, hostKnowledge, {
+      role: MAGE_ROLE.warden,
+      nodes: options.hostNodes ?? ['cig-the-uncontained-hour'],
+    });
+  }
+  if (options.withHostUniverse === true) addUniverse(hostWorld);
+  addUniversity(hostWorld, hostKnowledge, ['rl-open-the-portal', 'cig-the-uncontained-hour']);
+  if (options.withSoldiers === true) {
+    addSoldiers(hostWorld, 300);
+    addSoldiers(attackerWorld, 300);
+  }
+  if (options.withLaborers === true) addLaborers(hostWorld, 400);
+
+  const raid = openPortal({
+    attacker: participant(
+      attackerWorld,
+      attackerKnowledge,
+      raiderSnapshot,
+      hostSnapshot.traditionId,
+    ),
+    host: participant(hostWorld, hostKnowledge, hostSnapshot, hostSnapshot.traditionId),
+    registry,
+    grid,
+    tuning: { ...tuning, ...options.tuningOverride },
+    raidSeed: options.seed ?? 0x5eed_1234,
+  });
+  deployRaid(raid);
+
+  return { raid, attackerWorld, hostWorld, attackerKnowledge, hostKnowledge, raider, warden };
+}

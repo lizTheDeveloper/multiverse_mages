@@ -85,6 +85,7 @@ import {
   ERA_EVALUATION,
   GOAL_COMMITMENT,
   GOD_STATE,
+  MID_RAID_CHANGE,
   UPHEAVAL,
 } from './components.js';
 
@@ -97,6 +98,7 @@ import {
  * | 2        | `mages-and-species` | adds `goal-commitment` (`contracts.md` §1.2)  |
  * | 3        | `mages-and-species` | adds `effort-progress` (`contracts.md` §1.2)  |
  * | 4        | `god-agency`        | adds `god-state`, `blessing`, `upheaval`, `era-evaluation` (§1.1) |
+ * | 5        | `raid-engagement`   | adds `mid-raid-change` (`raid-engagement.md` §1) |
  *
  * Revision 4 adds four components in one step, where the two before it added
  * one each. That is not a loosening of the rule — it is what the rule is for.
@@ -109,7 +111,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 4;
+export const WORLD_SCHEMA_VERSION = 5;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -133,6 +135,7 @@ export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   // not any row was written — and because it is the first of the four in
   // `WORLD_COMPONENTS`, so a partially-appended envelope reads as the older
   // revision and is completed rather than being read as current and left short.
+  if (carried.has(MID_RAID_CHANGE.name)) return 5;
   if (carried.has(GOD_STATE.name)) return 4;
   if (carried.has(EFFORT_PROGRESS.name)) return 3;
   if (carried.has(GOAL_COMMITMENT.name)) return 2;
@@ -228,6 +231,27 @@ export const addEffortProgress: WorldSchemaMigration = {
 };
 
 /**
+ * Revision 4 → 5: append an empty `mid-raid-change` section.
+ *
+ * Empty is the correct repair and not merely the convenient one. A mark records
+ * a ruleset change made **during a raid**, and no build before this one could
+ * make one — the rule it descends from said a raid in progress was frozen
+ * policy. So there is no save in existence holding a change this section should
+ * describe, and synthesising rows would invent constitutional history: every
+ * restored universe would owe a surcharge on edicts it issued in peacetime.
+ */
+export const addMidRaidChange: WorldSchemaMigration = {
+  from: 4,
+  to: 5,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(MID_RAID_CHANGE)],
+    };
+  },
+};
+
+/**
  * Revision 3 → 4: append `god-agency`'s four world-scale sections.
  *
  * Empty, like both steps before it, and for a sharper reason here. A god-state
@@ -265,6 +289,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
   addEffortProgress,
   addGodAgencyState,
+  addMidRaidChange,
 ];
 
 /**

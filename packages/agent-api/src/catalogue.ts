@@ -72,6 +72,15 @@ export interface ActionCostTable {
   readonly foundUniversity: number;
   /** What one recent flip of an axis adds to its multiplier, `fp`. */
   readonly hysteresisStep: number;
+  /**
+   * `raid-engagement.md` §1's revert surcharge, `fp`. Absent reads as `fp(1)`.
+   *
+   * Optional for the reason the whole table is: a catalogue built for a test or
+   * a renderer should not have to carry every price to produce a mask. Absent
+   * means "no surcharge", which prices a revert exactly as builds before the
+   * mark existed did.
+   */
+  readonly midRaidRevertMultiplier?: number;
 }
 
 /** Everything the observation needs from content, indexed for lookup. */

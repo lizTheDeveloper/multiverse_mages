@@ -446,5 +446,12 @@
     "unit": "count",
     "gloss": "Placeholder for the median unaided universe's headcount at the reference tick — the reference scenario's founding population, which the first sweep replaces with a measured median.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "mid-raid-revert-multiplier",
+    "value": 4096,
+    "unit": "fp",
+    "gloss": "Cost of unmaking a ruleset change made during a raid, as a multiple of the larger of the ordinary action price and what the change cost inside the engagement. fp(4) -- 'substantially more', four rather than two because the decision should sometimes stand unwanted: a doubling is an inconvenience, a quadrupling is a reason to keep a constitution you regret. The first favor drain attached to a decision rather than to existing.",
+    "tuningStatus": "untuned"
   }
 ]
