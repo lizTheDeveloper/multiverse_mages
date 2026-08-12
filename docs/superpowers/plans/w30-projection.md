@@ -86,7 +86,13 @@ and the raid layer beyond what the portal rule forces.
 - [x] 3.4 At least one contradiction against the built tree recorded — §7.1 is the headline, and it
       needs none of the projections accepted to be worth fixing
 - [x] 3.5 `git diff --stat origin/integration/campaign-round-2 -- packages/` is empty
-- [ ] 3.6 Push `w30/magic-projection`
+- [x] 3.6 Push `w30/magic-projection`
+- [x] 3.7 The three claims the document leans hardest on, re-verified directly rather than taken
+      from an audit: `cell.json` carries `v1: true` on exactly twelve cells and they are the
+      `{intellego, perdo, rego} × {mentem, terram, limen, nomen}` rectangle; `gatherEffects` is
+      exported from `packages/rules-magic/src/effects/index.ts` and called from nowhere outside
+      tests; and `yieldSources` (`packages/coordination/src/god/system.ts:649`) gates on
+      `instanceCount(nodeId) > 0` with no `permits()` call.
 
 ## What the audit changed about the plan
 
