@@ -156,6 +156,79 @@ ARM: r3-gnome   (400 runs)
    {"stagnated":312,"truncated":62,"ascended":26}
 
 ==============================================================================
+ARM: r3-human   (400 runs)
+==============================================================================
+
+-- strategy coverage (asserted before anything else is reported) --
+   archivist                  40
+   denial-warden              40
+   idle-then-declare          40
+   narrow-depth               40
+   passive-control            40
+   permissive-breadth         40
+   permit-then-idle           40
+   portal-rush                40
+   uniform-random-legal       40
+   worship-maximizer          40
+   => 10 strategies, 400 runs, 40 each: COVERAGE OK
+   adversarial probes present: both (permit-then-idle, idle-then-declare)
+
+-- THE NEGATIVE CONTROL, reported first --
+   permit-then-idle             0/40  rate 0.0000  nodes 103.2
+   idle-then-declare            0/40  rate 0.0000  nodes 45.6
+
+-- per strategy --
+   strategy                     asc/n    rate     nodes     ±SE  libDepth     books
+   archivist                     0/40  0.0000      41.3    2.61      0.90         1
+   denial-warden                 0/40  0.0000       0.7    0.25      0.65         3
+   idle-then-declare             0/40  0.0000      45.6    1.45      0.28         0 [probe]
+   narrow-depth                  0/40  0.0000       5.5    0.25      3.63        51
+   passive-control               0/40  0.0000      38.7    2.90      0.00         0
+   permissive-breadth            0/40  0.0000     113.1    6.96      0.00         0
+   permit-then-idle              0/40  0.0000     103.2    8.35      0.00         0 [probe]
+   portal-rush                   0/40  0.0000      36.0    4.10      0.03       165
+   uniform-random-legal          0/40  0.0000      52.0    3.32      1.30        46 [probe]
+   worship-maximizer             0/40  0.0000      41.3    2.78      0.00         0
+
+-- D1  ascensionRate inside 0.05-0.20 --
+   whole pool (10 strategies):  0.0000   **OUT OF BAND**   [scoreBalance]
+   deliberate only (7):     0.0000   **out of band**
+   The gap between those two lines is how much of the band is pool composition rather than ruleset.
+
+-- D2  exploit margin (W18: deliberate mean - WORST probe, floor 0.10) --
+   deliberate mean 0.0000   worst probe 0.0000   margin +0.0000   FAIL against EXPLOIT_MARGIN_MIN 0.1
+   the worst probe is idle-then-declare at 0.0000
+
+-- D3  >=3 strategies winning, none above 60% of wins --
+   strategies with >0 ascensions: 0 of 10
+   no ascensions at all in this arm
+
+-- D4  correlation between ascension rate and nodes known > 0 --
+   Pearson  0.0000
+   Spearman 0.0000
+   strategies at a non-zero rate: 0 of 10 (support gate: 3)
+   **UNSUPPORTED — contributes 0 to the score.** Both coefficients are statements about 0 leveraged point(s).
+
+-- D5  knowledgeHalfLife falls, and nodes counted leaving the universe --
+   knowledgeHalfLife: INSTRUMENT ABSENT
+   nodes gained 46.74   nodes known 47.74   difference -1.00 (offset by the founding grant, so not a loss count)
+
+-- D6  no strategy wins at the passive knowledge baseline --
+   passive-control nodes known: 38.70 ± 2.90  (3-SE ceiling 47.40)
+   winners at or below that baseline: none
+   spread of mean nodes across the 7 deliberate strategies: 0.7 .. 113.1 (sd 36.75)
+
+-- arm metrics (capitalSnowball guard: its sibling worshipSnowball is held to <= 0.35) --
+   ascensionRate        0
+   capitalSnowball      0.9590183811048063
+   worshipSnowball      0.10270334444002183
+   knowledgeHalfLife    (not in summary)
+   libraryDependence    (not in summary)
+
+-- terminal status counts --
+   {"stagnated":139,"truncated":261}
+
+==============================================================================
 ARM: r3-orc   (400 runs)
 ==============================================================================
 
@@ -236,6 +309,7 @@ CROSS-ARM: D7 and D9
    arm                                   rate  winners  top winner
    r3-vancian                          0.1850        2  permit-then-idle (38 wins)
    r3-gnome                            0.0650        2  permissive-breadth (15 wins)
+   r3-human                            0.0000        0  (nobody ascends)
    r3-orc                              0.0000        0  (nobody ascends)
    distinct top-winner identities across arms: 2 — permit-then-idle, permissive-breadth
    => the winner identity MOVES with the arm.
@@ -245,4 +319,5 @@ CROSS-ARM: D7 and D9
    win a material share within that arm.
    r3-vancian                         2 strategies at >=10% of the arm's wins: permit-then-idle, permissive-breadth
    r3-gnome                           2 strategies at >=10% of the arm's wins: permissive-breadth, permit-then-idle
+   r3-human                           0 strategies at >=10% of the arm's wins
    r3-orc                             0 strategies at >=10% of the arm's wins

@@ -127,3 +127,115 @@ the game separates play.
 **0.35** its sibling `worshipSnowball` is held to, and `worshipSnowball` sits at 0.1208. In the gnome
 arm `capitalSnowball` reads **0.9895**. §6a's *"two compounding loops that feed each other… produces
 runaway leaders"* warning, one of them running hot and getting hotter. Not tuned away.
+
+---
+
+## D7 and D9 — the species arms
+
+Three arms at **n = 400 each**, varying `foundingSpeciesMask` and nothing else, all at the same
+default tradition so the comparison is clean:
+
+| arm | rate | strategies winning anything | top winner |
+|---|---|---|---|
+| gnome | **0.0650** | 2 of 10 | `permissive-breadth`, 15 wins |
+| human | **0.0000** | **0 of 10** | nobody ascends |
+| orc | **0.0000** | **0 of 10** | nobody ascends |
+
+### D7 — failed, and saturated
+
+**Distinct top-winner identities across the three arms: one.** The rate moves 0.0650 → 0.0000 →
+0.0000; **who wins does not.** This reproduces round 2's result exactly — *"rate moves
+1.000→0.350→0.000, winner identity invariant"* — under a different scorer and different mechanics.
+
+It is **failed and saturated at once**, and the two words are doing different work:
+
+- **failed**, because the criterion asks whether the species mix changes which strategy wins, and in
+  the one arm where anything wins, the winner is the same strategy that wins everywhere else.
+- **saturated**, because **two of the three arms have no winner at all**, so there is no identity in
+  them to compare. A criterion about *which* strategy wins cannot be evaluated against an arm where
+  none does. Two thirds of this measurement is not a finding about species; it is a finding that a
+  single-species universe of humans or orcs does not reach the win condition in 2,400 ticks.
+
+### D9 — failed
+
+| arm | strategies at ≥10% of the arm's wins |
+|---|---|
+| gnome | 2 — `permissive-breadth`, `permit-then-idle` |
+| human | **0** |
+| orc | **0** |
+
+Gnome's "two" is one deliberate strategy and **one adversarial probe**. Read honestly, **no species
+has more than one viable playstyle, and two of three have none.**
+
+### The orc and human arms are a finding in their own right
+
+Orc universes collapse: every strategy ends between **0.0 and 8.8 nodes known**, and 245 of 400 runs
+**stagnate**. Human universes survive — `permissive-breadth` reaches 113.1 nodes — but **nobody
+ascends in 400 runs**, and 139 stagnate.
+
+Neither is a balance magnitude problem that a constant fixes. A universe founded from one short-lived,
+low-aptitude species does not accumulate enough knowledge to reach any summit, and the ascension
+predicates are anchored to a **passive baseline measured on the full species mix**. **The win
+condition is calibrated against a universe that these arms are not.**
+
+---
+
+## Every figure from round 2 that does not survive
+
+| figure | round 2 | round 3 | why it moved |
+|---|---|---|---|
+| **exploit margin** | **+0.2167 PASS** | **−0.8214 FAIL** | **the scorer**, not the game — the old margin was `ascensionRate − probeRate` |
+| D4 verdict | "passed, weakly" | **saturated, contributes 0** | support gate at ≥3 winners; 2 non-zero both rounds |
+| `ascensionRate` (10-pool) | 0.1950 | 0.1850 | small, and inside entity-re-keying noise |
+| `capitalSnowball` | 0.4571 | 0.4327 ref; **0.9358–0.9895** species arms | worse, and much worse per species |
+| `permit-then-idle` | 40/40 | **38/40** | two runs; **not an improvement** |
+
+**Anything measured on another branch with the old scorer should be re-read before it is quoted.**
+The exploit margin is the clearest case — it changed sign — but the general point is that D2 and D4
+were both reporting numbers that could not fail, and every figure derived from them inherits that.
+
+---
+
+## What will need re-measuring when W20 and W23 land
+
+Both are **on the remote and were not merged this round** (see the plan file for why). Everything
+above is a measurement of a tree without them, and these are the parts that will not survive:
+
+- **W20 changes the content graph itself** — tracks, anti-requisites, and per-mage exclusion. **Every
+  number in this document is conditioned on the 51-node v1 ceiling**, and W20 exists to move it. D3,
+  D6, D7 and D9 are all saturated *against that ceiling*; they must be re-measured, and their
+  saturation verdicts specifically re-tested, because a criterion that is saturated is not a
+  criterion that has failed.
+- `contentRevision` will move again, so **all three baselines will need a second single
+  regeneration** with its own rationale.
+- **W23 was built on top of W22** and its diff already contains `tools/w22/census-report.mjs`; take
+  W22's copy at that merge.
+- **D5 may become measurable.** W22's census is the missing instrument; wiring it into the sweep's
+  metric registry is the small step that turns D5 from *"not measurable"* into a number.
+
+## The one interaction that only the combined tree could show
+
+**W21 × W24 on species separation.** W21 lost orc's separation from elf to its research envelopes,
+recorded it as a loss, and pinned it in a form that would reopen *"the day it separates again"*. It
+separated on the merge — orc's slowest seed **37 → 29** against an elf floor of 36 — because W24
+materializes five `territory-holding` entities on the first world tick and `deriveActorStream` keys
+on the entity handle (§6).
+
+**This is a fact about the instrument, not about the game.** Nothing made a species better at magic.
+A six-seed interval moved because entity allocation changed, and it happened to move the way task 9.9
+wants. The durable lesson is the one this campaign has already adopted: **orc's separation from elf
+sits inside the noise of an entity-allocation change**, which is a weaker claim than either branch
+made alone, and the combined tree is the only place either could be checked.
+
+## The verdict
+
+**The combined tree is not worse than its parts.** No golden changed, `packages/sim-core` is
+byte-identical to round 2, every gate is at delta `0.00000` after one regeneration, and 4,038 tests
+pass.
+
+**It is also not better in any way a player would feel.** The negative control still wins the
+reference arm, no species has more than one playstyle, two species cannot win at all, and the single
+largest change in the whole round is that a scoring term stopped lying.
+
+**That last part is the round's actual product.** Round 3's contribution is not a mechanic — it is
+that the campaign can now tell the difference between a game that works and a scorer that says so.
