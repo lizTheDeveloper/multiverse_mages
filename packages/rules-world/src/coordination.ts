@@ -82,6 +82,26 @@ export interface KnowledgeTarget {
    * and lost.
    */
   readonly remainingCost: Fixed;
+  /**
+   * Whether this mage's library already holds a copy of the node.
+   *
+   * **Set by the scribing candidate scan and by nothing else.** Research and
+   * teaching targets leave it absent, which reads as `false`, so their ordering
+   * is untouched by the tie-break {@link compareTargets} applies to it.
+   *
+   * It exists because `vision.md` §6a scales a university's output with *depth*
+   * — distinct nodes — while `library.ts` charges upkeep on *instances*, and the
+   * cost-ordered candidate list could see neither. The measured consequence,
+   * recorded in vision §13, `mages-and-species` task 9.8, and the rationale on
+   * the committed balance baseline alike: **1,263 books and two distinct
+   * nodes**, because the cheapest scribable node is the cheapest for everybody
+   * forever. A loop whose input cannot move is not a compounding loop.
+   *
+   * Not a ban on a second copy, deliberately. Redundancy is what §5's loss
+   * channel is defeated by and it is the archivist's whole thesis; what this
+   * makes it is *second choice* rather than free.
+   */
+  readonly libraryHolds?: boolean;
 }
 
 /**

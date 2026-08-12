@@ -77,8 +77,12 @@
  * after the fact could be charged against a stock that phase 9 had already
  * emptied. So the work phase deducts a finished book's `scribeCost` at the
  * moment it is written, and only ever offers a scribe what is left **after this
- * tick's subsistence is set aside** — which is how the priority order is
- * honoured by a claimant that is paid out of order.
+ * tick's subsistence and this tick's library upkeep are set aside** — which is
+ * how the priority order is honoured by a claimant that is paid out of order.
+ * Upkeep joined that reserve when vision §6a's brake 4 was wired: it outranks
+ * scribing in `CONSUMPTION_ORDER`, and a reserve that covered only subsistence
+ * would have let a scribe spend the shelves' keep and then let phase 9 charge
+ * it again.
  *
  * ## What this loop deliberately does not do
  *
@@ -120,8 +124,9 @@ import type {
 } from '@mm/rules-magic';
 import { decayHeldKnowledge } from '@mm/rules-magic';
 import type { RediscoveryClampCounter } from '@mm/primitives';
-import { createRediscoveryClampCounter } from '@mm/primitives';
+import { ClampCounters, createRediscoveryClampCounter } from '@mm/primitives';
 import type {
+  CapitalEmission,
   CohortDemography,
   MageGoalCommitment,
   ScaleFreeHazard,
@@ -131,6 +136,7 @@ import type {
 import {
   CohortStore,
   GOAL,
+  applyLibraryUpkeep,
   assertMaterialsNonNegative,
   carryingCapacity,
   clearCommitment,
@@ -143,6 +149,8 @@ import {
   hazardAt,
   insertNewborns,
   killMage,
+  libraryRateMultiplier,
+  libraryUpkeep,
   materialsProduced,
   promoteStudentCohort,
   readCommitment,
@@ -153,6 +161,8 @@ import {
   subsistenceDemand,
 } from '@mm/rules-world';
 
+import type { LibraryCapital } from './capital.js';
+import { libraryCapital } from './capital.js';
 import { EffortLedger } from './effort-store.js';
 import { cellNodeIndex } from './frontier-index.js';
 import { CoordinatingKnowledgeGateway } from './gateway.js';
@@ -172,11 +182,12 @@ const FP_ONE = FP_UNIT;
  * authors `researchCost` and `teachCost` in mage-months. A mage who worked at
  * some other rate would be a mage whose month was not a month.
  *
- * What *is* untuned, and deliberately absent, is every multiplier that should
- * eventually scale it: a library's `research-rate` contribution, a mage's
- * `vigor`, a professor's teaching load. Each belongs to a mechanism that is not
- * built, and a placeholder factor here would be a balance number nobody authored
- * sitting in the middle of the one loop every later measurement runs through.
+ * What scales it is every source of `research-rate`, `teach-rate` and
+ * `scribe-rate` there is, stacked once into `(1 + Σ)` and clamped once at
+ * `fp(4096)` — a blessing, an encouragement, and, since this change, the depth
+ * of the library the mage works in (vision §6a). A mage's `vigor` and a
+ * professor's teaching load are still absent, and still belong to mechanisms
+ * that are not built.
  */
 const MAGE_MONTHS_PER_TICK: Fixed = FP_ONE;
 
@@ -206,10 +217,22 @@ export interface WorldStepDeps {
    * loop below produces.
    */
   readonly territory: TerritoryExtent;
-  /** Primitive records, for the stacking rules and caps their magnitudes obey. */
+  /**
+   * Primitive records, for the stacking rules and caps their magnitudes obey.
+   *
+   * `researchRate` and `teachRate` join the list with vision §6a's loop: the
+   * library's contribution is a bonus into the *same* `(1 + Σ)` accumulator as
+   * every node-sourced and god-sourced bonus, so this file has to hold the
+   * registry records that declare how that accumulator stacks and where it caps.
+   * Before the loop, the two were held only by `god/effects.ts`, which stacked
+   * its own sources and handed back a finished multiplier — and a finished
+   * multiplier is exactly what cannot be added to.
+   */
   readonly primitives: {
     readonly lifespan: PrimitiveRecord;
     readonly resourceYield: PrimitiveRecord;
+    readonly researchRate: PrimitiveRecord;
+    readonly teachRate: PrimitiveRecord;
     readonly scribeRate: PrimitiveRecord;
     readonly fertility: PrimitiveRecord;
   };
@@ -239,23 +262,31 @@ export interface WorldStepDeps {
    */
   readonly god?: GodDeps | undefined;
   /**
-   * Per-mage multipliers the god's interventions contribute, `fp`.
+   * Per-mage `research-rate` and `teach-rate` **magnitudes** the god's
+   * interventions contribute, `fp`, unstacked.
    *
-   * The two seams this file already named as `god-agency`'s. `MAGE_MONTHS_PER_TICK`
-   * says every multiplier that should eventually scale a mage's month *"belongs
-   * to a mechanism that is not built"*, and `lifespanMonths` says `lifespan`
-   * effects *"come from blessings and curses, which are `god-agency`'s to
-   * issue"*. These are those mechanisms arriving, as callbacks rather than as
-   * imports, so that this file gains no knowledge of what a blessing is.
+   * The two seams this file already named as `god-agency`'s, and they changed
+   * shape when the §6a loop arrived. They used to hand back a *stacked
+   * multiplier*, which was correct while the god was the only source: one
+   * accumulator, one cap, one answer.
    *
-   * `researchMultiplierFor` returns `fp(1024)` for an unaffected mage, so a
-   * world with no god is a world where every month is a month.
+   * A library is a second source of the same primitives. Multiplying a stacked
+   * god multiplier by a stacked library multiplier would be two `(1 + Σ)`
+   * channels and two `fp(4096)` caps on one quantity, which
+   * `mages-and-species/design.md` rejects by name: *"two caps on the same
+   * quantity is how a rate ends up at 4.0 × 2.0 without anyone deciding it
+   * should be 8.0."* So the god hands over its magnitudes, the library's
+   * contribution joins them in one array, and `libraryRateMultiplier` stacks and
+   * clamps the lot exactly once.
+   *
+   * An empty array is an unaffected mage, so a world with no god is a world
+   * where every month is a month.
    */
-  readonly researchMultiplierFor?:
-    | ((state: SimState, worldTick: number, mage: Handle, nodeId: number) => Fixed)
+  readonly researchBonusesFor?:
+    | ((state: SimState, worldTick: number, mage: Handle, nodeId: number) => readonly Fixed[])
     | undefined;
-  readonly teachMultiplierFor?:
-    | ((state: SimState, worldTick: number, mage: Handle) => Fixed)
+  readonly teachBonusesFor?:
+    | ((state: SimState, worldTick: number, mage: Handle) => readonly Fixed[])
     | undefined;
   /** `lifespan` effect magnitudes in force on one mage, for the shared stacking. */
   readonly lifespanEffectsFor?:
@@ -311,6 +342,35 @@ export interface WorldStepReport {
   readonly materialsScribed: Fixed;
   /** Projects with progress banked at the end of the tick, finished or not. */
   readonly effortsInFlight: number;
+  /**
+   * Materials every library's shelves asked for this tick, `fp`. Brake 4.
+   *
+   * Reported beside {@link libraryUpkeepPaid} because the pair is the whole of
+   * the brake: benefit is concave in distinct nodes and cost is linear in
+   * instances, so a universe that hoards duplicates pays for every one of them
+   * and is paid for none.
+   */
+  readonly libraryUpkeepOwed: Fixed;
+  readonly libraryUpkeepPaid: Fixed;
+  /**
+   * Shelved instances lost this tick because their library could not be kept.
+   *
+   * The first channel in the build by which a *written* copy leaves a universe
+   * without a raid. Everything else that removes knowledge removes it from a
+   * mind: decay only visits held locations, and a mage's death takes her mind
+   * and her memory palace and leaves her books standing.
+   */
+  readonly libraryInstancesDegraded: number;
+  /**
+   * `contracts.md` §7's `capitalSnowball` inputs, per university, this tick.
+   *
+   * The `universities` spec requires the metric be computable *"with no
+   * additional instrumentation added to the simulation"*, which is why the
+   * per-tier array travels rather than only the total: a Gini coefficient over
+   * library depth is taken across universes at a fixed tick, and a later
+   * question about which tiers carried it cannot be answered from a scalar.
+   */
+  readonly capital: readonly CapitalEmission[];
 }
 
 /** A world schema with the coordinating loop installed, and its last report. */
@@ -426,15 +486,38 @@ export function worldSystem(
       const produced = produceMaterials(cohorts, deps);
       let materials = readRecord(state, UNIVERSE, universe).materials + produced;
 
+      // Every library's shelves, read once for the whole tick. Vision §6a's
+      // capital is a function of what is *already* written down, so a book
+      // finished in the work phase deepens the library for the next month and
+      // not for the one that produced it — and every mage in a tick studies the
+      // same shelves whatever order the roster is walked in.
+      const capital = libraryCapital(state, {
+        catalog: deps.catalog,
+        cells: deps.cells,
+        ruleset,
+      });
+      // One counter per tick, for the §7 emission. `contracts.md` §3's cap is
+      // the only bound on the capital loop, so how often it binds is the
+      // measurement that says whether the brakes are doing anything.
+      const rateClamps = new ClampCounters();
+
       // Scribing is paid at the desk rather than in phase 9 — see the module
       // note — so what a scribe may spend is the stock less this tick's
-      // subsistence, which outranks her in `CONSUMPTION_ORDER`. Read once,
-      // before the populace phase changes the headcount, so that every scribe in
-      // a tick is offered the same stock.
+      // subsistence *and* this tick's library upkeep, both of which outrank her
+      // in `CONSUMPTION_ORDER`. Read once, before the populace phase changes the
+      // headcount, so that every scribe in a tick is offered the same stock.
       const subsistenceReserve = subsistenceDemand(cohorts.totalCount());
+      // Brake 4, owed on the shelves as they stand at the top of the tick. Owed
+      // on *instances*, so a second copy of a node the library already holds
+      // costs upkeep forever and contributes nothing to depth — which is the
+      // asymmetry that makes "hoard everything" a losing line.
+      const upkeepOwed = capital.libraries.reduce(
+        (total, entry) => total + libraryUpkeep(entry.depth),
+        0,
+      );
       let materialsScribed = 0;
       const materialsAccess = {
-        available: () => Math.max(materials - subsistenceReserve, 0),
+        available: () => Math.max(materials - subsistenceReserve - upkeepOwed, 0),
         consume: (amount: Fixed) => {
           materials -= amount;
           materialsScribed += amount;
@@ -490,7 +573,7 @@ export function worldSystem(
       const promoted = promoteMaturedStudents(state, cohorts, { rng, worldTick, deps });
 
       // ---- 5. Work -----------------------------------------------------------
-      const work = spendTheMonth(state, gatewayFor(), deps, worldTick);
+      const work = spendTheMonth(state, gatewayFor(), deps, worldTick, capital, rateClamps);
 
       // ---- 6. Autonomy -------------------------------------------------------
       const stockAtDecisionTime = materials;
@@ -577,7 +660,10 @@ export function worldSystem(
       // ---- 9. Consumption, then the invariant ---------------------------------
       const consumption = consumeMaterials(materials, {
         subsistence: subsistenceDemand(cohorts.totalCount()),
-        libraryUpkeep: 0,
+        // Brake 4, charged once. The same figure the work phase reserved out of
+        // the scribes' stock at the top of the tick, so the priority order is
+        // honoured by a claimant paid out of order and by one paid in it.
+        libraryUpkeep: upkeepOwed,
         // Zero because scribing has already been paid, at the desk, in phase 5.
         // Charging it twice is the obvious mistake here; the tick's spend is
         // reported as `materialsScribed` rather than hidden.
@@ -587,6 +673,17 @@ export function worldSystem(
       materials = consumption.materialsRemaining;
       assertMaterialsNonNegative(materials);
       componentOf(state, UNIVERSE).set(universe, 'materials', materials);
+
+      // The shortfall, apportioned per library and settled in ascending handle
+      // order — `applyLibraryUpkeep`'s documented order, and the reason it is
+      // handed the stock rather than the total. The universe's stock is already
+      // spent by `consumeMaterials` above; what this second call decides is
+      // *which* library went short, which is a question about a shared stock
+      // that the four-claimant order cannot answer on its own.
+      const degraded = degradeUnkeptLibraries(capital, consumption.spent.libraryUpkeep, {
+        gateway: gatewayFor(),
+        worldTick,
+      });
 
       onReport?.({
         worldTick,
@@ -601,13 +698,24 @@ export function worldSystem(
         subsistenceShortfallShare,
         population: populace.population,
         livingMages: countLivingMages(state),
-        nodesLost: mortality.nodesLost + decayed.length,
+        nodesLost: mortality.nodesLost + decayed.length + degraded.nodesLost,
         goalSwitches: autonomy.histogram.goalSwitches,
         researchCompleted: work.researchCompleted,
         lessonsTaught: work.lessonsTaught,
         grimoiresScribed: work.grimoiresScribed,
         materialsScribed,
         effortsInFlight: efforts.size,
+        libraryUpkeepOwed: upkeepOwed,
+        libraryUpkeepPaid: consumption.spent.libraryUpkeep,
+        libraryInstancesDegraded: degraded.instances,
+        // One depth ceiling for the reported contribution, and the per-tier
+        // array beside it so the others are recoverable. `emitCapital` says why:
+        // *"a universe with several species has several answers; the emission
+        // reports one and the per-tier array carries enough to recompute the
+        // others."* `TIER_COUNT` is that one — the deepest ceiling any species
+        // can hold — so the reported figure is the loop's ceiling rather than an
+        // average over a population the metric does not know about.
+        capital: capital.emissions(CAPITAL_REPORT_CEILING, rateClamps.total()),
       });
     },
   };
@@ -754,6 +862,8 @@ function spendTheMonth(
   gateway: CoordinatingKnowledgeGateway,
   deps: WorldStepDeps,
   worldTick: number,
+  capital: LibraryCapital,
+  rateClamps: ClampCounters,
 ): WorkPhaseOutcome {
   // The `alive` column and the handle, rather than a `MageRecord` per mage: the
   // two fields below are all this phase reads, and `collectRecords` builds an
@@ -767,7 +877,7 @@ function spendTheMonth(
     if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
     if (commitment === undefined) return;
-    workOne(state, handle, commitment, gateway, deps, worldTick);
+    workOne(state, handle, commitment, gateway, deps, worldTick, capital, rateClamps);
   });
 
   const completedBy = new Set<Handle>();
@@ -801,18 +911,37 @@ function workOne(
   gateway: CoordinatingKnowledgeGateway,
   deps: WorldStepDeps,
   worldTick: number,
+  capital: LibraryCapital,
+  rateClamps: ClampCounters,
 ): void {
   const nodeId = commitment.targetNodeId;
   if (nodeId === 0) return;
 
-  // The god's contribution to this month, through the shared `research-rate`
-  // and `teach-rate` channels and their caps. `fp(1024)` — a month is a month —
-  // for a world with no god, so nothing below changes for a caller that did not
-  // ask for one.
-  const researched = mul(
-    MAGE_MONTHS_PER_TICK,
-    deps.researchMultiplierFor?.(state, worldTick, mage, nodeId) ?? FP_ONE,
-  );
+  // Vision §6a, arriving as arithmetic: *"a university's output scales with the
+  // depth of its library."* The mage's own shelves and her own species ceiling —
+  // brake 2, *"a draconic-deep library accelerates nothing for orcs"* — and
+  // `undefined` for a mage who works alone, which is most of a young universe.
+  const store = componentOf(state, MAGE);
+  const row = store.has(mage as EntityHandle)
+    ? {
+        universityId: store.get(mage as EntityHandle, 'universityId'),
+        species: deps.speciesOf(store.get(mage as EntityHandle, 'speciesId')),
+      }
+    : undefined;
+  const shelves = row === undefined ? undefined : capital.depthFor(row.universityId);
+  const ceiling = row?.species?.depthCeiling ?? 0;
+
+  /**
+   * The stacked, capped multiplier for one primitive on this mage this month.
+   *
+   * The god's magnitudes and the library's contribution go into one array and
+   * through `stackMagnitudes` once, so `contracts.md` §3's `(1 + Σ)` rule and
+   * its `fp(4096)` cap apply to their sum. That is the whole of the bound on
+   * the §6a loop, and it is a contract already committed rather than a second
+   * cap invented for the occasion.
+   */
+  const rate = (primitive: PrimitiveRecord, bonuses: readonly Fixed[]): Fixed =>
+    libraryRateMultiplier(primitive, bonuses, shelves, ceiling, rateClamps).multiplier;
 
   switch (commitment.goalId) {
     case GOAL.researchNode:
@@ -820,21 +949,41 @@ function workOne(
       // One accrual for both, because they are one operation: `rules-magic`'s
       // `research` decides for itself whether a node is a rediscovery, from the
       // ever-known record, and a second code path here could disagree with it.
-      gateway.contributeResearch(mage, nodeId, researched);
+      //
+      // The month is a month and the *rate* travels separately, because
+      // `research.ts` scales the requirement rather than the progress. Teaching
+      // and scribing below have no such seam in `rules-magic` — their accruals
+      // are compared against an authored cost directly — so there the rate
+      // scales the months, which is what the god's own multiplier already did.
+      gateway.contributeResearch(
+        mage,
+        nodeId,
+        MAGE_MONTHS_PER_TICK,
+        rate(
+          deps.primitives.researchRate,
+          deps.researchBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
+        ),
+      );
       return;
     case GOAL.teach: {
       const student = gateway.studentFor(mage, nodeId);
       if (student !== undefined) {
-        // The *teacher's* multiplier, on the teacher's half of the pair. §2.3
-        // prices a lesson as the pair's cost and both push the same row, so a
-        // blessed teacher advances it faster and a blessed student advances her
+        // The *teacher's* rate, on the teacher's half of the pair. §2.3 prices a
+        // lesson as the pair's cost and both push the same row, so a teacher at
+        // a deep library advances it faster and a student at one advances her
         // own half faster — which is what "one project with two people pushing
-        // it" means when the two are not equally favoured.
+        // it" means when the two do not study in the same place.
         gateway.contributeTeaching(
           mage,
           student,
           nodeId,
-          mul(MAGE_MONTHS_PER_TICK, deps.teachMultiplierFor?.(state, worldTick, mage) ?? FP_ONE),
+          mul(
+            MAGE_MONTHS_PER_TICK,
+            rate(
+              deps.primitives.teachRate,
+              deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+            ),
+          ),
         );
       }
       return;
@@ -846,17 +995,83 @@ function workOne(
           teacher,
           mage,
           nodeId,
-          mul(MAGE_MONTHS_PER_TICK, deps.teachMultiplierFor?.(state, worldTick, mage) ?? FP_ONE),
+          mul(
+            MAGE_MONTHS_PER_TICK,
+            rate(
+              deps.primitives.teachRate,
+              deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+            ),
+          ),
         );
       }
       return;
     }
     case GOAL.scribe:
-      gateway.contributeScribing(mage, nodeId, MAGE_MONTHS_PER_TICK);
+      // The `universities` requirement names three rates and this is the third.
+      // The ceiling gating it is the **author's**, not the reader's: the mage at
+      // the desk is the one the library is helping, and she cannot copy out of a
+      // book she could not read.
+      gateway.contributeScribing(
+        mage,
+        nodeId,
+        mul(MAGE_MONTHS_PER_TICK, rate(deps.primitives.scribeRate, NO_BONUSES)),
+      );
       return;
     default:
       return;
   }
+}
+
+/** No source of a rate applies. Shared so the empty case allocates nothing. */
+const NO_BONUSES: readonly Fixed[] = Object.freeze([]);
+
+/**
+ * The depth ceiling the per-tick capital emission is reported at.
+ *
+ * `TIER_COUNT` — the deepest any species reaches — so the reported contribution
+ * is the loop's own ceiling. A population average would be a number about the
+ * species mix rather than about the library, and `capitalSnowball` is a Gini
+ * coefficient *over libraries*.
+ */
+const CAPITAL_REPORT_CEILING = 7;
+
+/**
+ * Settles which library went short of upkeep, and takes what it could not keep.
+ *
+ * Two things happen here that `consumeMaterials` cannot do on its own. It pays a
+ * *total* down a priority order and knows nothing about who the total was for;
+ * `applyLibraryUpkeep` apportions that total across libraries in ascending
+ * handle order and says how many instances each one must give up. Splitting them
+ * is what keeps the four-claimant order and the per-library order in one place
+ * each.
+ *
+ * **Which instance is destroyed is the knowledge side's decision** —
+ * `contracts.md` §5 rule 3 keeps `rules-world` out of `rules-magic`, and
+ * `capital.ts` says so where it returns a count rather than a list of handles.
+ * So this function asks the gateway, and the gateway takes them in ascending
+ * instance handle, which is a total order over stable identities.
+ */
+function degradeUnkeptLibraries(
+  capital: LibraryCapital,
+  paid: Fixed,
+  phase: { gateway: CoordinatingKnowledgeGateway; worldTick: number },
+): { instances: number; nodesLost: number } {
+  if (capital.libraries.length === 0) return { instances: 0, nodesLost: 0 };
+  const { outcomes } = applyLibraryUpkeep(capital.libraries, paid);
+
+  let instances = 0;
+  let nodesLost = 0;
+  for (const outcome of outcomes) {
+    if (outcome.degradedInstances <= 0) continue;
+    const lost = phase.gateway.degradeLibrary(
+      outcome.library,
+      outcome.degradedInstances,
+      phase.worldTick,
+    );
+    instances += lost.destroyed;
+    nodesLost += lost.nodesLost;
+  }
+  return { instances, nodesLost };
 }
 
 interface PromotionPhase {

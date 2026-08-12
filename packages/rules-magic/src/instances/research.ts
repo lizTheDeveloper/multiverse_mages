@@ -86,9 +86,18 @@ import { UNBOUNDED_SLOTS, admitToStore } from '../traditions/store.js';
 
 import type { CellResolver, KnowledgeNode, KnowledgeRng, NodeCatalog } from './catalog.js';
 import { requireNode } from './catalog.js';
-import { DEFAULT_INITIAL_MASTERY, RESEARCH_JITTER_SPAN } from './constants.js';
+import {
+  DEFAULT_INITIAL_MASTERY,
+  DEFAULT_TEACH_THRESHOLD,
+  RESEARCH_JITTER_SPAN,
+} from './constants.js';
+import type { PracticeOutcome } from './practice.js';
+import { practise } from './practice.js';
 import type { KnowledgeRefusal } from './outcomes.js';
 import type { KnowledgeSubsystem } from './subsystem.js';
+
+/** No prerequisite was exercised, because no step was taken. */
+const NO_PRACTICE: PracticeOutcome = Object.freeze({ deepened: 0, crossed: 0 });
 
 /** What research needs. Every world-side rate arrives as a parameter. */
 export interface ResearchInputs {
@@ -112,6 +121,15 @@ export interface ResearchInputs {
   readonly learnRate: Fp;
   /** The **already stacked** `research-rate` multiplier. See the note below. */
   readonly researchRate: Fp;
+  /**
+   * The mastery at which a held node becomes teachable, for reporting only.
+   *
+   * Defaults to {@link DEFAULT_TEACH_THRESHOLD}. It changes no outcome — it
+   * decides only what {@link PracticeOutcome.crossed} counts — and it is an
+   * input rather than a constant read so that a caller measuring a universe
+   * with a different threshold measures its own.
+   */
+  readonly teachThreshold?: Fp;
   /**
    * Species `rediscoveryAffinity` (`contracts.md` §2.4). Used only when the
    * node was lost. A **divisor**: higher is better, so a gnome at `fp(1792)`
@@ -177,6 +195,15 @@ export interface ResearchOutcome {
   readonly completed: boolean;
   /** The created instance, or `0`. */
   readonly instance: Handle;
+  /**
+   * What this step's work did to the prerequisites the subject already holds.
+   *
+   * Every accepted step deepens them — see `practice.ts` for why that is the
+   * mechanism, and why it is the one that makes vision §5's teaching reachable
+   * in normal play at all. Reported so a caller can count how many mages became
+   * able to teach something this tick; nothing in the rules path reads it.
+   */
+  readonly practice: PracticeOutcome;
 }
 
 /** The rates a requirement is computed against. */
@@ -281,6 +308,7 @@ export function research(inputs: ResearchInputs): ResearchOutcome {
       rediscovery,
       completed: false,
       instance: 0,
+      practice: NO_PRACTICE,
     };
   }
 
@@ -288,8 +316,20 @@ export function research(inputs: ResearchInputs): ResearchOutcome {
   const jitter = nextBounded(stream, RESEARCH_JITTER_SPAN * 2 + 1) - RESEARCH_JITTER_SPAN;
   const progress = inputs.progress + mul(inputs.effort, FP_ONE + jitter);
 
+  // A month at the frontier is a month spent exercising everything under it.
+  // After the refusals, so a step nobody took deepens nothing; after the draw,
+  // so it cannot move a stream ordinal; and before the completion branch, so
+  // the tick a project finishes is a tick of practice like any other.
+  const practice = practise(
+    inputs.knowledge,
+    inputs.subject,
+    node.prerequisites,
+    inputs.learnRate,
+    inputs.teachThreshold ?? DEFAULT_TEACH_THRESHOLD,
+  );
+
   if (progress < required) {
-    return { progress, required, rediscovery, completed: false, instance: 0 };
+    return { progress, required, rediscovery, completed: false, instance: 0, practice };
   }
 
   const instance = inputs.knowledge.createInstance({
@@ -299,7 +339,7 @@ export function research(inputs: ResearchInputs): ResearchOutcome {
     acquiredTick: inputs.worldTick,
     mastery: inputs.initialMastery ?? inputs.acquire?.initialMastery ?? DEFAULT_INITIAL_MASTERY,
   });
-  return { progress, required, rediscovery, completed: true, instance };
+  return { progress, required, rediscovery, completed: true, instance, practice };
 }
 
 function refuseResearch(inputs: ResearchInputs, node: KnowledgeNode): KnowledgeRefusal | undefined {

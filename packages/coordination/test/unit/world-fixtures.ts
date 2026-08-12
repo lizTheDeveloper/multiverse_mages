@@ -122,6 +122,8 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     primitives: {
       lifespan: primitiveNamed('lifespan'),
       resourceYield: primitiveNamed('resource-yield'),
+      researchRate: primitiveNamed('research-rate'),
+      teachRate: primitiveNamed('teach-rate'),
       scribeRate: primitiveNamed('scribe-rate'),
       fertility: primitiveNamed('fertility'),
     },
