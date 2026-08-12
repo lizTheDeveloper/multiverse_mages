@@ -291,6 +291,15 @@ export { reaggregate, runSweep } from './runner.js';
 
 export { buildTasks } from './tasks.js';
 
+export type { ShardResults, ShardSelector } from './shard.js';
+export {
+  decodeShardResults,
+  encodeShardResults,
+  mergeShardResults,
+  selectShard,
+  shardOfTask,
+} from './shard.js';
+
 export type {
   AblationArm,
   AblationPlay,
