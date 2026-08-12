@@ -60,8 +60,9 @@ different job. `horizon-gate.test.ts` reads `package.json`, `scripts/ci-check.sh
 `.github/workflows/ci.yml` — not a design document, despite its `describe` title naming one.
 
 The one soft risk, and it is why this amendment **adds** §4b and §8b rather than renumbering
-anything: section numbers are cited by hand in roughly forty code comments (`vision.md §4a`,
-`§6a`, `§7`, `§13`…). Nothing would fail; the citations would silently go stale.
+anything: `vision.md` is referenced 145 times across `packages/`, `docs/` and `openspec/`, and a
+number of those references name a section by number (`vision.md §4a`, `§6a`, `§7`, `§13`…).
+Renumbering would fail nothing and silently invalidate all of them.
 
 ## The verification method for §11, stated before running it
 
@@ -101,6 +102,23 @@ Kept here so they survive the branch.
   martial capability as deferred per `contracts.md` §2.4; §4's *"~15 tunable effect primitives"* is
   16 in `primitive.json`; §13's mage-population figure was re-measured at 72/18,417 against the
   88/18,713 the section states. D6–D7 are stale first-party code comments.
+- **0.3.0 shipped without a tag.** Root `package.json` is `0.3.0`, `knowledge-model` is archived,
+  `CLAUDE.md` says "released through 0.3.0", and `git tag` stops at `v0.2.0`.
+  `release-plan.md` says *"every release gets a tag; an untagged release is not a rollback
+  target."* Stated in §11's new paragraph; fixing it is a release action, not a docs one.
+- **§12 still puts audio out of scope, and audio is in `npm run verify`.** Five audio source files
+  in `packages/content/src`, `data/audio/{audio-cue,voice-line}.json`, a schema directory,
+  `tools/audition/`, and `check:audio` as a step of `verify`. W12's audit flagged this in its
+  reverse-check of §12; it is not on this brief, so it is reported rather than amended — the
+  question it raises is whether audio was rescoped or whether it is the largest piece of
+  untraceable work in the tree.
+- **§9's balance-gate sentence is still contradicted.** *"A change that moves a primitive's
+  measured contribution beyond tolerance fails CI"* — three gates run in `verify`, and the
+  ascension baseline (the widest) gates exactly ten metric ids, all of them `reference*` scenario
+  vital signs. **None of `contracts.md` §7's twelve metrics is gated by anything**, and
+  `winRateByPrimitive` — the primitive-contribution metric that sentence is about — reports
+  `unavailable`. Verified directly against
+  `balance/baselines/balance-gate-ascension-v1.baseline.json` on this branch.
 - **The plan doc on `origin/w21/timing-and-envelopes` overstates its own branch.** Its §7/§9 status
   tables say the envelope is *"applied to research, teaching and scribing"*; a later commit on the
   same branch reverted teaching and scribing with a measured justification, and only `research()`
