@@ -261,44 +261,95 @@ fields have been arguing about for decades, and the arguments are the valuable p
 
 ### 3.1 Prefix fidelity 0.943 is a coefficient of reproducibility
 
-*(This subsection is completed in §3.4 with the verified citations; the naming itself is stated
-here because the mechanism is ours to state.)*
-
 **What we measured**: rank the nodes by how many runs hold them; for a run holding *k* nodes,
 predict "the top *k*". Mean overlap 0.943; exactly right on 65 of 84 runs.
 
 **What that is**: a claim that a set of binary items forms a **cumulative unidimensional scale** —
-that holding item *i* implies holding every item ranked above it, so the whole response pattern is
-recoverable from the score alone. That is **Guttman scaling**, and the fraction of item-by-case cells
-correctly reproduced from the score is the **coefficient of reproducibility**.
+holding item *i* implies holding every item ranked above it, so the whole response pattern is
+recoverable from the score alone. That is **Guttman scalogram analysis** (Guttman, L., "A Basis for
+Scaling Qualitative Data", *American Sociological Review* 9(2):139–150, 1944, DOI 10.2307/2086306)
+**[citation verified via Crossref]**, and the fraction of cells correctly reproduced from the score
+is the **coefficient of reproducibility**, `CR = 1 − errors/entries`. **Our prefix fidelity is a
+coefficient of reproducibility under a different name**, and 0.943 clears the customary CR ≥ 0.90
+threshold for calling a set of items scalable.
 
-**The caveat our version does not carry, and it is the important one.** A high coefficient of
-reproducibility is *inflated by extreme item marginals*: if almost every run holds almost every node,
-"predict the top k" is nearly right by arithmetic and says nothing about structure. Our own data has
-exactly that pathology — **three strategies hold the identical fifty-one nodes in all twelve runs**,
-because 51 is the entire reachable set. W15 pre-registered that as forced by the content boundary
-and said so, which is to its credit, but the *number* 0.943 does not know it.
+**The caveat our version does not carry, and it is the important one.** CR is *inflated by extreme
+item marginals*: if almost every run holds almost every node, "predict the top k" is nearly right by
+arithmetic and reports structure that is not there. Our data has exactly that pathology — **three
+strategies hold the identical fifty-one nodes in all twelve runs**, because 51 is the entire
+reachable set. W15 pre-registered that as forced by the content boundary, to its credit, but the
+number 0.943 does not know it.
 
-The established corrections are **minimal marginal reproducibility** — what the coefficient would be
-if you simply predicted each item's modal response — and the **coefficient of scalability**, which
-reports how far reproducibility exceeds that floor. **We should be reporting the gap, not the raw
-number.**
+The established corrections, all verified to exist:
 
-### 3.2 Cross-strategy containment 1.000 is nestedness
+- **Minimal marginal reproducibility (MMR)** — what CR would be from predicting each item's modal
+  response alone. The floor CR must be judged against. *(Standard in applied use; no originating
+  citation could be pinned — flagged as unverified provenance.)*
+- **Coefficient of scalability** — how far CR exceeds MMR. Menzel, H., "A New Coefficient for
+  Scalogram Analysis", *Public Opinion Quarterly* 17(2):268, 1953, DOI 10.1086/266460 **[verified]**.
+- **Loevinger's H** — Loevinger, J., *Psychological Bulletin* 45(6):507–529, 1948, DOI
+  10.1037/h0055827 **[verified]**.
+
+**We should be reporting the gap, not the raw number.** And if the project ever wants a probabilistic
+rather than deterministic claim, the modern successor is **Mokken scale analysis** (Mokken, R.J., *A
+Theory and Procedure of Scale Analysis*, De Gruyter Mouton 1971, DOI 10.1515/9783110813203; Sijtsma
+& Molenaar, *Introduction to Nonparametric Item Response Theory*, Sage 2002, DOI
+10.4135/9781412984676; van Schuur, "Mokken Scale Analysis: Between the Guttman Scale and Parametric
+Item Response Theory", *Political Analysis* 11(2):139–163, 2003, DOI 10.1093/pan/mpg002) **[all
+verified]** — which replaces Guttman's deterministic "must" with "more likely", and has a maintained
+implementation in the `mokken` R package.
+
+*(A tempting claim was checked and does not hold as usually stated: "a Guttman scale is the limiting
+case of a Rasch model as discrimination → ∞". The strict Rasch model has **no free discrimination
+parameter** to send to infinity. It is true of the 2PL logistic model, as a fact about the logistic
+function rather than a result anyone states. Do not write it with "Rasch" in it.)*
+
+### 3.2 Cross-strategy containment 1.000 is nestedness — and it is not a second finding
 
 **What we measured**: `|A∩B| / min(|A|,|B|)` = 1.000 for every cross-strategy pair inside v1.
 
 **What that is**: perfect **nestedness** of a presence/absence matrix — runs as sites, nodes as
 species. Ecology has measured exactly this for thirty years and has two things we do not: named
-metrics (**NODF**; nestedness **temperature**) and, more importantly, **a null-model requirement**.
+metrics, and a null-model requirement.
 
-**The requirement is the point.** Nested-looking matrices arise *by chance* from marginal totals
-alone. An ecologist reporting nestedness without a null model would be sent back; we reported 1.000
-without one. In our case the substantive conclusion survives — W15 independently identified the
-mechanism (`compareTargets` orders by `remainingCost` then `nodeId`, and nothing reads value), and a
-mechanism beats a statistic. But **"we found the mechanism" is a defence available exactly once**,
-and the next containment number should arrive with a null model: shuffle held-sets preserving each
-run's node count and each node's frequency, and report where 1.000 sits in that distribution.
+- Atmar, W. & Patterson, B.D., "The Measure of Order and Disorder in the Distribution of Species in
+  Fragmented Habitat", *Oecologia* 96(3):373–382, 1993, DOI 10.1007/BF00317508 **[verified]** —
+  nestedness *temperature*.
+- Almeida-Neto, Guimarães, Guimarães Jr., Loyola & Ulrich, "A consistent metric for nestedness
+  analysis in ecological systems: reconciling concept and measurement", *Oikos* 117(8):1227–1239,
+  2008, DOI 10.1111/j.0030-1299.2008.16644.x **[verified]** — the **NODF** metric. Its abstract
+  states the problem directly: widely-used nestedness metrics *"inappropriately detect patterns in
+  randomly-structured matrices and are prone to Type I errors."*
+- Gotelli, N.J., "Null Model Analysis of Species Co-occurrence Patterns", *Ecology*
+  81(9):2606–2621, 2000 **[verified]**; Ulrich, W. & Gotelli, N.J., "Null Model Analysis of Species
+  Nestedness Patterns", *Ecology* 88(7):1824–1831, 2007, DOI 10.1890/06-1208.1 **[verified]**;
+  Ulrich, Almeida-Neto & Gotelli, "A consumer's guide to nestedness analysis", *Oikos* 118(1):3–17,
+  2009, DOI 10.1111/j.1600-0706.2008.17053.x **[verified]**.
+
+**The null-model requirement is the point.** Nested-looking matrices arise by chance from marginal
+totals alone. An ecologist reporting nestedness without one would be sent back; we reported 1.000
+without one.
+
+**And there is a sharper problem, found by asking the question properly.** Prefix fidelity and
+containment are not two independent confirmations of the same conclusion. **One entails the other.**
+If every run's held set is a prefix of one fixed node ordering, then for any two runs with
+|A| ≤ |B| we have A ⊆ B by construction, so `|A∩B| / min(|A|,|B|)` is exactly 1.000 — *arithmetic,
+not evidence*. Perfect containment is a **corollary** of a perfect Guttman scale.
+
+So the campaign's five independent confirmations of content exhaustion are at most four. This does
+not overturn the conclusion — W15 independently identified the mechanism (`compareTargets` orders by
+`remainingCost` then `nodeId`, and nothing reads value), and a mechanism beats a statistic. But
+**counting a corollary as corroboration is how a wrong conclusion would have survived too**, and the
+next containment figure should arrive with a null model: shuffle held sets preserving each run's node
+count and each node's frequency, and report where 1.000 sits in that distribution.
+
+**The order-theoretic statement is the crisp one.** A family of sets in which every pair is
+comparable under inclusion is a **chain**; the poset of our strategies under inclusion has **width
+1**. Dilworth's theorem — the maximum antichain size equals the minimum number of chains covering a
+finite poset, and that common value is its width (Dilworth, R.P., "A Decomposition Theorem for
+Partially Ordered Sets", *Annals of Mathematics* 51(1):161–166, 1950, DOI 10.2307/1969503)
+**[verified]** — gives the design target a number: **we want measured width > 1.** That is the single
+most compact statement of what this game needs, and `design-language.md` makes it a checkable claim.
 
 ### 3.3 Participation ratio 1.19 is ours, and should be labelled as such
 
@@ -366,21 +417,268 @@ Assembled from the sources above and sorted by whether this build can pull it.
 | **Non-transitive matchups** — cyclic component of the payoff decomposition | Balduzzi 2018/2019, Czarnecki 2020 **[read]** | **No.** Containment 1.000; the game is purely transitive. This is the largest single gap |
 | **A semi-ordered space** — neither pure search nor one memorised trick; depth peaks between the two | Lantz et al. 2017 **[read]**, framed via entropy and Kolmogorov complexity, *speculative and untested* | **No.** One memorised trick, executable open-loop |
 | **Opportunity cost in construction** — effort on A is effort not on B | our own §5 case study; MTG's mana curve | **Almost none.** `permissive-breadth` is the sole measured instance (containment 0.644) and it arrives from editing the ruleset, not from playing |
+| **A commitment with a losing state** — an opening that is a bet, not a freebie | StarCraft's cheese/greed structure (§5.1) **[read]** | **No.** No world state exists in which permitting everything is worse than not. 96 favor against a 2,400+ budget |
 | **Imperfect information** | Czarnecki 2020's n-bit communicativity; Jaffe's obliviousness restriction | **Not exercised.** A god's observation is complete for the purpose every measured strategy uses it for — which is none |
 | **A ladder of distinguishable strength levels** | RAPP, Liu 2017, Browne 2022, Goodman 2024 | **No.** 8 of 10 strategies at exactly 0.0000 |
 | **Composition — parts combining into qualitatively new things** | Vampire Survivors (§5.3) | **No.** 201 of 300 nodes carry exactly one effect; two effects on a node are two independent scalars stacking by their primitive's declared rule. There is no composition operator in the schema |
 | **Between-run structure (metagame)** | §5.2 | **Latent.** `carriedPrestige`, `legacyGrant` and raids exist; nothing yet makes yesterday's best ruleset lose |
 | **Execution** | StarCraft | **Structurally unavailable, permanently.** See §5.1 |
 
-**The honest summary of §4: of eight levers the literature and the case studies name, this build has
-zero, has one in vestigial form, and has one it is structurally forbidden from ever having.** That is
-a harsher reading than "six mechanics landed and none moved the number", and it is the same finding.
+**The honest summary of §4: of nine levers the literature and the case studies name, this build has
+none outright, has one in vestigial form, has one latent, and has one it is structurally forbidden
+from ever having.** That is a harsher reading than "six mechanics landed and none moved the number",
+and it is the same finding.
+
+**If only one is to be pursued, it is opportunity cost, and the reason is that it is the cheapest.**
+Composition (Vampire Survivors) needs a schema change and a content pass; non-transitivity needs a
+pairwise outcome matrix that does not yet exist; a metagame needs the raid loop to bite. But a
+constrained construction budget is *arithmetic*, and §5.2 shows it is one number away: an MTG deck
+cannot hold every card, and our ruleset can. Nothing else on this list can be tried as cheaply, and
+nothing else is as directly implicated by `permit-then-idle`.
 
 ---
 
 ## 5. Three case studies, sorted by whether they survive the loss of execution
 
-**Placeholder — completed below.**
+Three games were named as reference points: StarCraft, Magic: The Gathering, Vampire Survivors. They
+were chosen well, because each produces depth by a different mechanism and only some of those
+mechanisms survive a player who cannot act.
+
+**Two premises attached to the choice did not survive checking, and both are stated first, because
+each was going to become a design argument.**
+
+### 5.0 The two premises that failed
+
+**"StarCraft's matchups are famously non-transitive."** No measured evidence for this could be
+found. Aligulac's balance report could not be retrieved; the essays that do engage with Aligulac's
+data argue the opposite direction — that aggregate race win rates are *confounded by dominant
+individual players and matchup specialists* rather than showing a cycle
+(<https://www.illiteracyhasdownsides.com/p/how-much-do-dominant-players-affect>) **[read]**. No
+academic paper measuring race-matchup intransitivity in StarCraft was found. Day[9] reportedly
+**argues against** the rock-paper-scissors reading, on the grounds that skilled players read triggers
+and are not surprised by an opening **[recall — search summary only]**.
+
+**Verdict: "SC races are RPS" is community folklore, unconfirmed in either direction.** Win rates
+cluster near 50% and move with patches, which is equally consistent with a tight transitive hierarchy.
+
+**"The aggro/control/combo triangle is the canonical non-transitive structure."** Same result. The
+folklore is easy to find and states itself confidently; the same enthusiast sources immediately
+caveat that "the real metagame is far messier". **No win-rate matrix — 17lands, MTGGoldfish or
+otherwise — establishing the cycle empirically was found.**
+
+**Verdict: folklore, unconfirmed.** This matters more than it looks. The campaign's stated design
+target is "get the rock-paper-scissors structure MTG has". If MTG's triangle is not demonstrably
+cyclic, then **the target is being copied from a game that may not have it**, and the honest target
+is the weaker, checkable one that Dilworth gives us: *a strategy poset of width greater than 1*.
+Incomparability is achievable and measurable. A cycle is a stronger claim and we have no verified
+example of one in a commercial game to copy — the only verified measurement of non-transitivity in a
+real game found this workstream is **chess** (Sanjaya et al. 2022, §2.6), which nobody thinks of as
+rock-paper-scissors.
+
+### 5.1 StarCraft — mostly unavailable, and the surviving part is the interesting part
+
+**Where its depth lives.** Execution (micro, macro, APM, multitasking), information (scouting and the
+read), and commitment (the opening).
+
+**What survives losing execution: commitment and information. Nothing mechanical.**
+
+The build order is the transferable idea, and Liquipedia states its structure precisely
+**[read**, <https://liquipedia.net/starcraft/index.php?title=Cheese&action=raw>**]**: cheese is
+*"hard to beat if not scouted but easy to defeat if it is"*, requires *"a great sacrifice of
+economy"*, and leaves a failed player *"far behind in the game"*. Liquipedia's build-order page adds
+the read-and-counter-read layer: players scout to identify openings, and deliberately build
+misleading structures to bait a false read
+**[read**, <https://liquipedia.net/starcraft/index.php?title=Build_order&action=raw>**]**.
+
+**Strip the execution and that structure is intact.** It is a resource-allocation decision made
+before the window opens, with an upside conditional on the opponent's unknown choice and a downside
+if read. Our god makes exactly that kind of decision and could make it under exactly those terms.
+
+**What we measurably do not have is the downside.** Permitting the entire grid costs 5 techniques ×
+8 favor + 14 forms × 4 favor = **96 favor**, against a floor income of 1 favor per world tick with no
+worship at all *(computed from `packages/content/data/god-cost.json` and `god-constant.json`;
+`favor-regen-base` is 1024 at fp scale 1024)*. Ninety-six ticks of the cheapest income the game
+offers, out of 2,400. `permit-then-idle` does it in 140 and then stops playing.
+
+**There is no world state in which permitting everything is worse than not permitting it.** That is
+the precise, checkable sense in which our opening is not a build order: **a build order is a
+commitment, and a commitment has a state where it loses.** `design-language.md` makes that a claim
+form, because it is the one StarCraft idea that transfers whole and the one this game most obviously
+fails.
+
+The information half also survives in principle and is currently vacuous: our god's observation is
+complete for the purpose every measured strategy uses it for, which is none.
+
+**What does not transfer, and would mislead if borrowed:** anything whose mechanism is timing,
+precision, multitasking, reaction, or the physical act of scouting. STARDATA frames fog-of-war
+recovery as a core open problem and notes professional humans are *"very efficient in handling
+partial observations"* **[read**, arXiv:1708.02139**]** — that efficiency is a skill of the player's
+hands and attention, and we have neither.
+
+### 5.2 Magic: The Gathering — the closest analogue, and the sharpest contrast
+
+**Where its depth lives.** Combinatorial construction before play; a metagame between games; and
+piloting during play.
+
+**The structural analogy is real and worth stating exactly.** A god's permitted ruleset *is* a deck:
+chosen before play, then executed by something other than the player. Both are construction problems
+under a resource constraint whose output is handed to a process the constructor does not command.
+
+**What makes construction hard in MTG is a resource curve, and the mathematics is public.** Frank
+Karsten's land-count work derives counts from the hypergeometric probability of hitting land drops
+on curve: roughly **19–22 lands for a 0.5–2.1 mean-mana-value deck, 23–26 for 2.1–3.3, 27 for 3.3+**
+**[secondary** — the figures are corroborated by an independent source citing and quoting the
+article, <https://gist.github.com/teryror/881d60e08480a56043895d3bbb83c374>; Karsten's own text could
+not be parsed**]**.
+
+**Read that against our god's currency.** Our whole grid costs 96 favor and a run supplies at least
+2,400. **There is no curve.** An MTG deck cannot contain every card because sixty slots and a mana
+curve forbid it; our ruleset can contain every cell because nothing forbids it. The single most
+transferable MTG idea is not the archetype triangle — which §5.0 found unverified — it is that
+**construction must be constrained enough that including one thing excludes another**. Our
+construction is unconstrained, and that is one arithmetic fact away from being the whole finding.
+
+**Rosewater on degeneracy is worth quoting because it names the failure mode as a design problem
+rather than a balance number** **[read**,
+<https://magic.wizards.com/en/news/making-magic/banned-run-2003-02-17>**]**:
+
+> We ban and restrict cards because we believe there is something worse than not allowing players to
+> use a particular card, and that is having a play environment become so degenerate that the game is
+> no longer fun.
+
+That is precisely our situation with `permit-then-idle`, and the response Rosewater describes — ban
+it — is not available to us, because `permit-then-idle` is not a card. It is the shape of the whole
+decision.
+
+**The complexity result is a gift to §2.1 and should be read carefully.** Churchill, Biderman &
+Herrick, "Magic: The Gathering is Turing Complete", arXiv:1904.09828, also FUN 2021 **[read]**, show
+that determining the outcome of optimal play is equivalent to the halting problem, using
+standard-size tournament-legal decks and no randomness or hidden information. **But the construction
+requires that all moves of both players are forced.** Undecidability is achieved with *zero
+meaningful choice*. Relatedly, Chatterjee & Ibsen-Jensen, "The Complexity of Deciding Legality of a
+Single Step of Magic: The Gathering", ECAI 2016 **[read]**, show single-step legality is
+**coNP-complete**, dropping to **P** if either of two small card sets is excluded.
+
+**That is the depth-is-not-complexity distinction in its most vivid available form**: the most
+computationally intractable known result about MTG lives in a position where nobody has a decision to
+make. Anyone arguing that our 70-cell grid and 300 nodes constitute depth should read that sentence
+twice.
+
+**What survives losing execution:** construction, metagame positioning, and the designer-side
+intervention against degeneracy. **What does not:** piloting — sequencing, mulligans, combat math,
+bluffing, tempo. That split is well recognised in the community; **no source quantifying it was
+found**, including at 17lands, whose "Using Win Rate Data" post acknowledges skill-testing cards
+qualitatively and gives no variance decomposition **[read]**.
+
+**The metagame question.** MTG's depth lives substantially *between* games: the field shifts,
+yesterday's best deck loses. This project can have that — `carriedPrestige`, `legacyGrant` and raids
+across universes are all built. **But no formal treatment of MTG archetype cycling was found** — no
+replicator-dynamics or evolutionary-game-theory paper on it. So the between-run lever is real,
+promising, and **supported by no literature this workstream could verify**. Design it if it is
+wanted; do not claim research backing for it.
+
+The one mechanism that would give it teeth is already in `vision.md`: raids are arbitrated by the
+**host universe's ruleset**. That makes a ruleset a thing another player must beat, which is the only
+route found in this whole synthesis by which our game acquires a genuine pairwise outcome matrix —
+and therefore the only route to computing a cyclic component at all (§6.2).
+
+### 5.3 Vampire Survivors — the existence proof, and the one to copy
+
+**Structurally the closest to our loop despite looking nothing like it.** The player sets things up
+and watches autonomous action resolve. It is the existence proof that compositional discovery can
+carry a game whose player barely acts.
+
+**The evolution mechanic, precisely.** A weapon evolves when it is levelled to maximum (usually 8)
+while the player holds the required passive item — usually also maxed, with named exceptions
+(Infinite Corridor, Crimson Shroud, Sole Solution, Ashes of Muspell, and all Moonspell-DLC
+evolutions) — and then **opens a treasure chest dropped by a boss at or after the 10-minute mark**.
+A separate **Union** merges two maxed weapons rather than a weapon and a passive, on the same chest
+trigger. **[read**, <https://vampire.survivors.wiki/w/Evolution>**]**
+
+**How many.** Version-dependent, and both figures found are reported rather than one being chosen:
+the base game has **21 weapon evolutions and unions**, with **+7** from Legacy of the Moonspell and
+**+7** from Tides of the Foscari **[read**, choostgames.com**]**; a source dated to v1.13 headlines
+**74+ across the base game and seven DLCs** **[read**, rogueranker.com**]**. The game has shipped
+continuous content, so any single number is a snapshot.
+
+**Why an evolution reads as a discovery rather than a tier-up.** Four properties, and every one is a
+schema property rather than a tuning value:
+
+1. **It is a conjunction of two different kinds of thing.** Weapon *and* passive — not "this weapon,
+   more". The recipe is not derivable from either ingredient's own progression.
+2. **The result is qualitatively different**, not the same effect with a bigger scalar.
+3. **It is gated on a third, timed event** — the boss chest at 10:00 — so it arrives as an occasion
+   rather than a threshold silently crossing.
+4. **It is not announced.** Neither wiki page fetched mentions an in-game hint system for pairings
+   *(an absence of mention, not a confirmed absence — flagged as weaker evidence)*. The recipe is
+   knowledge the player brings, which is exactly Koster's frame: the fun is in learning the pattern.
+
+**What stops the set collapsing to one best build.** The verified answer is a slot economy plus a
+rule-modifier layer:
+
+- **Six weapon slots**, with a documented exception for stage-specific pickups **[read**,
+  <https://vampire.survivors.wiki/w/Weapons>**]**. Six of the available weapons, and taking one means
+  not taking another — **opportunity cost, enforced structurally.** *(The commonly repeated "six
+  passive slots" could not be verified — the wiki returned 402. Treat as unverified.)*
+- **Arcanas: 22 regular plus 12 "Darkanas", of which up to 3 are active in a run**, one chosen at run
+  start and further ones offered at the **11:00** and **21:00** marks, with the choice pool widening
+  to six options once 23+ are unlocked **[read**,
+  <https://vampire.survivors.wiki/w/Arcana>**]**. Arcanas change rules categorically — Gemini gives
+  listed weapons a paired counterpart — which reshapes **which evolutions are reachable at all** in a
+  given run.
+
+**That is the mechanism we lack, stated as a comparison rather than an aspiration:**
+
+| | Vampire Survivors | Multiverse Mages, measured |
+|---|---|---|
+| composition | weapon + passive → a **different kind** of weapon | **none.** 201 of 300 nodes carry exactly one effect; 91 carry two; two effects are two independent scalars stacking by their primitive's declared rule |
+| opportunity cost | 6 weapon slots out of many | **none inside a ruleset.** The whole grid costs 96 favor of a 2,400+ budget |
+| rule modifiers per run | up to 3 Arcanas from 34, reshaping what is reachable | the god's permission set — but it is monotone and free, so every run reaches the same place |
+| discovery | the recipe is unannounced knowledge | the acquisition order is a value-blind cost queue and the same every run |
+
+**Two honest counterweights, because a case study that only flatters is not a case study.** Peter
+Howell (University of Portsmouth) argues in *The Conversation* that Vampire Survivors' retention owes
+substantially to a **near-miss effect** drawn from Galante's prior work in the gambling industry —
+a run failing short of the 30-minute mark producing the same psychology as two of three slot symbols
+**[read**,
+<https://theconversation.com/vampire-survivors-how-developers-used-gambling-psychology-to-create-a-bafta-winning-game-203613>**]**.
+And Galante's own account of development is *"mercenary"* and *"fire-and-forget"* — grabbing
+sprite-pack assets, coding attack patterns on the spot, *"didn't have a vision"* **[read**, Bryant
+Francis, *Game Developer*, 14 Aug 2024**]**. Whatever depth the evolution system has was **emergent,
+not engineered**, and some of what looks like depth from outside may be a retention loop.
+
+**Copy the mechanic. Do not copy the claim that it is what makes the game work.**
+
+**What survives losing execution:** everything above. The only execution-dependent skill in Vampire
+Survivors is real-time positioning and kiting — one verb, and the one we do not have. **This is why
+Vampire Survivors is the right model and StarCraft is not.**
+
+### 5.4 The summary table
+
+Sources of depth across the three, sorted by the discriminating question.
+
+| game | source of depth | survives no execution? |
+|---|---|---|
+| StarCraft | opening as a commitment with a losing state | **yes** — and we lack the losing state |
+| StarCraft | information: when to commit, hedge or change plan | **yes** — currently vacuous for us |
+| StarCraft | race/tech asymmetry | **yes** in principle; its non-transitivity is unverified |
+| StarCraft | physically scouting | no |
+| StarCraft | micro, APM, multitasking, build execution | no |
+| MTG | construction under a resource curve | **yes** — and we have no curve |
+| MTG | metagame positioning between games | **yes** — latent; no literature found |
+| MTG | designer intervention against a degenerate environment | **yes** (designer-side) |
+| MTG | piloting: sequencing, mulligans, combat math, bluffing | no |
+| MTG | computational hardness of optimal play | orthogonal — and its own literature shows it coexisting with zero choice |
+| Vampire Survivors | evolution: two kinds of thing composing into a third | **yes** — the direct model for a compositional content graph |
+| Vampire Survivors | six-slot opportunity cost | **yes** |
+| Vampire Survivors | Arcanas as per-run rule modifiers reshaping reachability | **yes** |
+| Vampire Survivors | real-time positioning and kiting | no |
+| Vampire Survivors | near-miss retry loop | yes (meta-loop) — and it is a retention mechanism, not depth |
+
+**The pattern is consistent across all three genres**: what transfers is construction, allocation,
+commitment under uncertainty, and content asymmetry; what does not is exactly what each community
+already calls execution. That consistency is this workstream's own synthesis rather than a cited
+result, and it is offered as such.
 
 ---
 
@@ -464,6 +762,21 @@ Collected deliberately, because a synthesis that only confirms is not worth comm
    those.
 5. **`participation ratio` is not from this field.** Recorded in §3.3.
 6. **Containment 1.000 was reported without a null model.** Recorded in §3.2.
+7. **Prefix fidelity and containment are not two findings.** Perfect containment is a *corollary* of
+   a perfect prefix structure — arithmetic, not corroboration. The campaign's "five independent
+   confirmations that the binding constraint is content exhaustion" is at most four. Recorded in
+   §3.2, and it does not change the conclusion; it changes how much the conclusion is entitled to
+   lean on that pair of numbers.
+8. **The rock-paper-scissors target is copied from games not shown to have it.** Neither StarCraft's
+   race matchups nor MTG's aggro/control/combo triangle could be verified as non-transitive by any
+   measurement found; both are confidently-stated folklore. The only verified measurement of
+   non-transitivity in a commercial game found this workstream is **chess**. Recorded in §5.0. The
+   defensible target is not a cycle but **a strategy poset of width > 1** — incomparability, which
+   is weaker, achievable, and checkable.
+9. **Vampire Survivors' depth was not engineered.** Its designer describes the process as
+   "fire-and-forget" with "no vision", and a published analysis attributes much of its retention to
+   a gambling near-miss effect rather than to strategy. Copy the evolution mechanic; do not import
+   the theory of why it works. Recorded in §5.3.
 
 ---
 
@@ -505,10 +818,18 @@ perfectly well in a finished document.
 3. **"*Characteristics of Games* defines skill chain and depth as its length."** This was the
    brief's premise. The sourcing puts the coinage with **Robertie 1992**, treats the book as
    expounding rather than originating, and shows the two papers citing it disagreeing about the
-   threshold. The book's own text could not be read this workstream, so **every claim about it here
-   is [secondary]**.
+   threshold (60% vs 75%). The book's own text could not be read this workstream, so **every claim
+   about it here is [secondary]**.
+4. **"StarCraft's matchups are famously non-transitive"** and **"MTG's aggro/control/combo triangle
+   is the canonical non-transitive structure."** Both were supplied as established. No measurement
+   supporting either could be found; what was found for StarCraft argues the aggregate data is
+   confounded rather than cyclic. See §5.0.
+5. **"A Guttman scale is the limiting case of a Rasch model as discrimination → ∞."** Checked, and
+   it is wrong as stated: the strict Rasch model has no free discrimination parameter. See §3.1.
 
-The third is the most instructive, because it was the most confidently held.
+Numbers 3, 4 and 5 are the instructive ones, because all three were held confidently and all three
+were about to become design arguments. Two of them came from this workstream's own briefing. The
+mechanism that caught them was the same every time — read the source, not a summary of it.
 
 ---
 
@@ -535,3 +856,25 @@ The third is the most instructive, because it was the most confidently held.
 | Robertie, "Letters to the Editor", *Inside Backgammon* 2(1):2–4, 1992 | **[secondary]** |
 | Koster, *A Theory of Fun for Game Design*, 2004 | **[recall]** |
 | Roy & Vetterli, "The Effective Rank", EUSIPCO 2007 | **[recall]** |
+| Guttman, "A Basis for Scaling Qualitative Data", *ASR* 9(2):139–150, 1944 | **[citation verified]** DOI 10.2307/2086306 |
+| Menzel, "A New Coefficient for Scalogram Analysis", *POQ* 17(2):268, 1953 | **[citation verified]** DOI 10.1086/266460 |
+| Loevinger, *Psychological Bulletin* 45(6):507–529, 1948 | **[citation verified]** DOI 10.1037/h0055827 |
+| Mokken, *A Theory and Procedure of Scale Analysis*, 1971 | **[citation verified]** DOI 10.1515/9783110813203 |
+| Sijtsma & Molenaar, *Introduction to Nonparametric IRT*, Sage 2002 | **[citation verified]** DOI 10.4135/9781412984676 |
+| van Schuur, "Mokken Scale Analysis", *Political Analysis* 11(2):139–163, 2003 | **[read]** DOI 10.1093/pan/mpg002 |
+| Atmar & Patterson, *Oecologia* 96(3):373–382, 1993 | **[citation verified]** DOI 10.1007/BF00317508 |
+| Almeida-Neto et al., NODF, *Oikos* 117(8):1227–1239, 2008 | **[citation verified]** DOI 10.1111/j.0030-1299.2008.16644.x |
+| Gotelli, *Ecology* 81(9):2606–2621, 2000; Ulrich & Gotelli, *Ecology* 88(7):1824–1831, 2007 | **[citation verified]** |
+| Ulrich, Almeida-Neto & Gotelli, "A consumer's guide to nestedness analysis", *Oikos* 118(1):3–17, 2009 | **[citation verified]** DOI 10.1111/j.1600-0706.2008.17053.x |
+| Dilworth, "A Decomposition Theorem for Partially Ordered Sets", *Ann. Math.* 51(1):161–166, 1950 | **[citation verified]** DOI 10.2307/1969503 |
+| Churchill, Biderman & Herrick, "Magic: The Gathering is Turing Complete", 2019 / FUN 2021 | **[read]** arXiv:1904.09828 |
+| Chatterjee & Ibsen-Jensen, "Complexity of Deciding Legality of a Single Step of MTG", ECAI 2016 | **[read]** |
+| Rosewater, "Banned on the Run", Wizards of the Coast, 2003 | **[read]** |
+| Karsten, "How Many Lands Do You Need…", ChannelFireball, 2017 | **[secondary]** figures corroborated, original not parsed |
+| Liquipedia, "Cheese" and "Build order" | **[read]** raw wikitext |
+| Lin, Gehring, Khalidov & Synnaeve, "STARDATA", 2017 | **[read]** arXiv:1708.02139 |
+| Vampire Survivors wiki: Evolution, Weapons, Arcana | **[read]** |
+| Howell, "Vampire Survivors: how developers used gambling psychology…", *The Conversation*, 2023 | **[read]** |
+| Francis, *Game Developer*, "Vampire Survivors development sounds like…", 2024 | **[read]** |
+| Churchill & Buro, "Build Order Optimization in StarCraft", AIIDE 2011 | **[metadata verified only]** |
+| Synnaeve & Bessière, "A Bayesian Model for Opening Prediction in RTS Games", CIG 2011 | **[metadata verified only]** |
