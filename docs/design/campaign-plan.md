@@ -1646,3 +1646,28 @@ reaches*. §4's edict budget is the mechanism the vision already has for that.
 6. **Intellego cannot be half of an exclusive pair**: stripping it leaves **12 of 108** nodes, none
    past tier 3. **Perdo ↔ Rego** remains the recommendation, which is where the corrected lattice
    reading already pointed.
+
+### The phantom test failures had a measured cause, and it was us
+
+Every workstream tonight reported the same signature: `npm run verify` failing with
+`Error: [vitest-worker]: Timeout calling "onTaskUpdate"` and **zero named failing tests**. It was
+labelled "contention" and worked around. Measured:
+
+    cores: 16          load average: 287
+    node processes: 52     of which 8 were Monte Carlo sweeps
+    one workstream alone held 6
+
+**18× oversubscription.** That is not contention, it is starvation, and the vitest timeouts were
+real test failures caused by it rather than a reporting artifact. Several agents lost time to it,
+`ci-check.sh` mirrors `verify`, so it can fail a good commit on the runner — and at least one agent
+correctly refused to write "verify exit 0" because it had never witnessed one.
+
+Mitigated without losing work by renicing every sweep to `NI 15` rather than killing them: the two
+largest dropped from 341% and 266% CPU to 207% and 173% immediately, so tests now win the scheduler
+while the sweeps continue.
+
+**The structural cause is that `balance:gate` runs `--workers 4`, and nothing coordinates across
+workstreams.** Six agents each running a gate is 24 workers on 16 cores before any test process
+starts. Either the harness binaries should nice themselves outside CI, or the campaign needs a stated
+cap on concurrent sweeps. Recorded rather than fixed, because the fix belongs in `mc-harness` and
+touching it while six sweeps are mid-flight would invalidate them.
