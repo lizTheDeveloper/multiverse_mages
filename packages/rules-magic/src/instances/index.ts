@@ -78,9 +78,6 @@ export {
   withdrawGrimoire,
 } from './location.js';
 
-export type { PracticeOutcome } from './practice.js';
-export { MASTERY_GAIN_PER_TICK, practise } from './practice.js';
-
 export type { DecayInputs } from './decay.js';
 export { decayHeldKnowledge, decayedMastery, masteryDecayPerTick, masteryFloor } from './decay.js';
 

@@ -62,6 +62,7 @@
  */
 
 import type { ContentId } from '@mm/content';
+import { shippedContent } from './content-set.js';
 import type { Fixed, SimState } from '@mm/sim-core';
 import { rngFromRootSeed, snapshotHash, step } from '@mm/sim-core';
 import {
@@ -78,7 +79,7 @@ import type { WorldStepReport } from '@mm/coordination';
 import { defineWorldSimulation } from '@mm/coordination';
 
 import type { ReferenceContent, ReferenceOptions } from './reference-universe.js';
-import { buildReferenceState, referenceContent } from './reference-universe.js';
+import { buildReferenceState, defaultTraditionIndex, referenceContent } from './reference-universe.js';
 
 /** World ticks in a world year (`contracts.md` §0: a tick is a month). */
 export const TICKS_PER_WORLD_YEAR = 12;
@@ -122,6 +123,10 @@ export const LONG_RUN_OPTIONS: ReferenceOptions = Object.freeze({
   cohortSize: 12,
   foundingMages: 1,
   foundingNodes: 6,
+  // The tradition every measurement in this file has ever been taken under.
+  // Named rather than defaulted so that the day the default moves, this run's
+  // two centuries of committed figures do not move with it silently.
+  traditionIndex: defaultTraditionIndex(shippedContent()),
 });
 
 /** One world tick of the long run, stocks and flows together. */
