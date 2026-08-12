@@ -27,7 +27,7 @@ import type { RunTask, SweepSpec } from '@mm/mc-harness';
 import { buildTasks, expandSweep, selectShard, shardAssignment } from '@mm/mc-harness';
 import { describe, expect, it } from 'vitest';
 
-import { TOY_REGISTRIES, toySweep } from './fixtures.js';
+import { TOY_FIXED_POOL, TOY_REGISTRIES, toySweep } from './fixtures.js';
 
 function allTasks(overrides: Partial<SweepSpec> = {}): Map<number, RunTask> {
   const spec = toySweep(overrides);
@@ -150,7 +150,15 @@ describe('selectShard partitions the task space', () => {
   });
 
   it('gives an empty shard rather than throwing when there are fewer tasks than shards', () => {
-    const tasks = allTasks({ factors: [{ id: 'growth', levels: [0] }], replicates: 1 });
+    // One task, four shards. The replicate count of 1 is the point of the case,
+    // so the pool is the fixed one: since W18 a round-robin sweep must have a
+    // replicate count that is a multiple of its pool size, and this test's
+    // subject is the partition rather than the pool.
+    const tasks = allTasks({
+      factors: [{ id: 'growth', levels: [0] }],
+      replicates: 1,
+      agentPool: TOY_FIXED_POOL,
+    });
     expect(tasks.size).toBe(1);
     const sizes = Array.from(
       { length: 4 },
