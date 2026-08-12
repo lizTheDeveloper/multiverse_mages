@@ -124,6 +124,21 @@ Thresholds are per-class and are tuning values, not contracts. Starting points i
 itself is structural: **no event class may be discrete without a stated threshold**, because the
 one that lacks it is the one that turns a mature universe into noise.
 
+**The eye and the ear must share the numbers.** A parallel prototype applied this same rule
+visually and found the same cliff — research, teaching and scribing all stop being readable as
+discrete lines somewhere between 200 and 600 mages. If the visual layer and the audio layer each
+pick their own thresholds, they will disagree about the moment a class became weather, and a player
+will see individual events while hearing a texture. There is one threshold per class, and both
+layers read it.
+
+**One class resists this rule, and the tension is not resolved.** §6.5 requires that last-instance
+loss is *never* aggregated away — its threshold is pinned at 1, the lowest legal value, because a
+node leaving the universe is the emotional core of the design. That is a direct exception to the
+rule above, and it holds only while loss is **rare**. Loss is a property of *redundancy*, not of
+population: more mages means more deaths but also more copies, so the rate does not scale with the
+roster the way mortality does. If tuning ever makes loss frequent, §6.5's off-grid moment becomes a
+texture whether or not this document permits it, and the two rules collide. See §6.5.
+
 ### 0.5 Licensing
 
 `CLAUDE.md`: assets are licensed separately from code, and the AGPL is not assumed to cover
@@ -297,6 +312,14 @@ them.
 Voice and clicks share 800 Hz–3 kHz and must not fight: clicks are ≤80 ms and barks duck the click
 bus by 3 dB for their duration. The player's own action always wins over a bark.
 
+**The same argument governs colour, one dimension over.** A parallel proposal allocates hue the way
+this section allocates frequency: the fourteen forms plus the god are the whole budget, cyan is
+reserved for the god's own light, and nothing glows that the god cannot currently do — so absence
+of light is the legality mask, exactly as §2.2's deny click is the absence of a resolving sound.
+Both rules exist for the same reason and fail the same way: an allocation that is merely
+conventional gets spent, and by the time the fifteenth thing wants a colour or a band, the
+convention is not there to refuse it.
+
 ### 1.4 Loudness and mix bus
 
 - Integrated programme target **−16 LUFS**; true peak ceiling **−1.5 dBTP**.
@@ -358,6 +381,26 @@ off. It is not a buzzer and it is not a negative-sounding sound; it is an incomp
 player learns the shape of legality by feel within a few minutes, and no one is scolded.
 
 Deny is also the correct sound for insufficient favor, with the addition described in §5.6.
+
+**Deny needs one more distinction, because illegality has two causes that feel different.** A
+parallel prototype split the cost of forbidding *Intellego* across the full grid — 102 nodes lost —
+and found it is not one kind of loss: **58 go dark with their cell, and 44 are stranded downstream**,
+in cells that are still live but whose prerequisite went dark. A player experiences those very
+differently. The first is *that whole area went away*, which the grid shows plainly. The second is
+*things I could reach yesterday are unreachable for reasons that are not on screen* — and that one
+is genuinely confusing, because nothing visibly changed where the player is looking.
+
+So deny takes two shapes — **without becoming a seventh click.** The six are a closed set and adding
+to it should require an argument; this is not one. The ordinary deny plays in both cases. For a
+stranded node it is *layered* with a faint pre-echo of the missing prerequisite cell's material
+(§4.2) — the sound of the thing it needed, arriving where the resolution should have been. It says
+*the reason is elsewhere* without a tooltip, and it points at where.
+
+The distinction between layering and replacing is the whole of it. A seventh click would mean
+learning a new sound; a layer means the deny you already know, with something underneath it.
+
+Per §0.3 this is salience, not payload: the interface must still name the missing prerequisite. The
+sound makes you ask; the panel answers.
 
 ### 2.3 Anti-fatigue rules
 
@@ -478,11 +521,39 @@ listening to someone else's tonic.
 If the two universes' keys are a semitone or a tritone apart, the raid is uncomfortable in a way
 neither player can quite name. That is a feature. Do not smooth it.
 
-### 3.5 Uninvolved universes keep running
+### 3.5 Uninvolved universes keep running, and that is the price of the raid
 
-Vision §8: uninvolved universes keep advancing. In a future spectator or multiplayer-lobby context
-this means several arrangements at several tempos, and mixing that is a real problem deferred here.
-Noted so that whoever builds it knows this document did not solve it.
+Vision §8: entering a raid pauses world time for the two participants and **not for anyone else**.
+That is why raiding is never free and why a third party profits from every war — and the vision
+makes tempo lost to inbound raids a first-class balance metric, `inboundRaidTempoLoss`, with a
+threshold it must stay under.
+
+An earlier draft of this section noticed only that several universes at several tempos is hard to
+mix, and deferred it. That missed the point. **The mixing problem is incidental; the tempo cost is
+the mechanic**, and if neither the eye nor the ear carries it, a player cannot price a raid while
+the harness is scoring them on precisely that.
+
+**The channel is the arrangement's absence, made continuous rather than instantaneous.** §3.3 strips
+the layers on the way in and rebuilds them on the way out, which sounds like *going somewhere*. What
+it does not convey is duration — that the world you left has been running the entire time.
+
+So: during a raid, **a single quiet pulse continues at world tempo**, underneath the unquantized
+combat mix. Not the arrangement, which is gone; one bar marker, at the tempo the world was running
+when you left it. It is the only thing in raid time that is still on a grid, and it accumulates.
+Four bars in, it is barely noticed. Forty bars in, it is the sound of months passing somewhere you
+are not.
+
+This costs one asset and it makes the two clocks audible *simultaneously*, which is the thing §3.1
+and §3.4 can only do in sequence. It also gives the defender's win in §7.4 its full meaning: the
+sky is yours again, and you can hear how much of the year it cost to keep it.
+
+**Per §0.3, the number is on screen too.** Salience parity means the pulse makes you feel the cost
+and the interface tells you it was eleven months. A parallel prototype states it in months elapsed,
+and the two layers should agree on the figure rather than each inventing a rendering of it.
+
+**Still deferred, and honestly:** mixing several *audible* universes at several tempos, for a
+spectator or lobby context. That remains unsolved here. What is no longer deferred is the
+participant's own experience of time passing without them.
 
 ---
 
@@ -593,6 +664,21 @@ player who founds a university every few ticks from being deafened by ceremony.
 | **3 — constitutional** | 1–7: permit/forbid technique or form, dispensation, interdiction, revoke | The ruleset. These change what is *possible*, and must feel like law. |
 | **4 — terminal** | 13 change tradition, 15 declare ascension | **Seal.** The only two. |
 
+**Edicts sit uneasily in tier 3, and the economy says why.** `god-cost.json` prices issuing an edict
+at 6,144 against 8,192 for permitting a technique — comparable — but revocation at only **2,048**.
+That asymmetry means the scarce resource is not the favor, it is the **slot**: there are eight, and
+`EDICT_BUDGET_MAX` is a structural constant. An edict is therefore not a scaled-down axis toggle. It
+is closer to **spending a charge from a small, visible reserve**, and it is cheap to take back.
+
+That is a different sound. Permitting a technique should feel like law — slow, harmonic, the world
+re-tuning. Issuing an edict should feel like *committing one of eight*: a smaller, more mechanical
+act, with the reserve audible in it. §5.2's single-note treatment is right for the wrong reason —
+the note should read as one of a countable few rather than as a small chord. Revoking, at a third
+the price, should sound like taking the charge back rather than like undoing law.
+
+This is the second place where a cost table has corrected a sound brief, after §5.4. Both suggest
+reading `god-cost.json` before writing about how an action should feel.
+
 ### 5.2 Tier 3 is the game
 
 Rules-setting is design pillar #1 — the most interesting decision in the game, symmetric and
@@ -636,6 +722,15 @@ interrupting something. The favor cost will limit this anyway; the sound reinfor
 
 Vision §4a: a tradition is an identity decision, possible in world time only, at enormous cost,
 throwing the civilization into upheaval.
+
+**The brief here needs correcting: it is not merely frightening, it is unreachable.** Its cost in
+`god-cost.json` is 65,536 favor, and the content's own gloss says that exceeds the favor cap at every
+worship tier below the highest — *"structurally unavailable to a young universe rather than merely
+expensive."* So this sound is heard rarely and **late**, by a player who has spent hours building
+toward it, and possibly once in a run. That is a different design problem from frightening: a sound
+you have earned over hours must feel like arrival as much as alarm, and a purely ominous treatment
+would read as the game punishing an achievement. Frightening *and* momentous, in that order of
+discovery — the seal first, then the upheaval.
 
 Seal click. Then **the arrangement re-voices**: every layer rebuilds with the new tradition's cast
 and cost colouring, over about six bars, and it does not sound comfortable while it is happening.
@@ -759,6 +854,33 @@ never does.*
 4. **The cell's material leaves the ambient bed** and does not return until rediscovery. The world
    is quieter afterward, permanently, in a specific place in the frequency spectrum.
 
+**The exposure now has a curve, not just a worry.** A parallel prototype swept redundancy directly:
+as mean copies per node goes 1 → 4 → 12 → 30 → 55, the count of nodes surviving on exactly one
+instance goes **51 → 7 → 1 → 0 → 0**. At the campaign's measured ~55 copies per node it is *empty* —
+nothing is ever on a single copy, so last-instance loss never fires, §8.2's last-copy bark never
+plays, and the most carefully specified sound in this document has nothing to sound. The collapse
+is not gradual either: almost all of it happens between 1 and 12.
+
+That cuts both ways and both ways are live. Today the sound is unreachable; the campaign is
+actively trying to make loss bite, which moves the same dial toward the frequency problem below.
+**The design's most important audio moment sits on a parameter that is currently at neither end of
+its usable range**, and no amount of care in this section changes that. It is a mechanic question,
+not a sound question, and it belongs to whoever tunes redundancy.
+
+**This sound is exposed to a balance number nobody has fixed yet.** Everything above assumes loss
+is rare enough that an arrhythmic, untuned, un-aggregated event can carry it. That assumption is
+not free: it is a bet on a tuning value the harness has not produced. Below roughly one
+last-instance loss per year it is the best moment in the game; past roughly three a year it is a
+nuisance, and past §0.4's threshold it is weather that this section forbids treating as weather.
+The current reference run is nowhere near that — measured at about fifty-five copies per node,
+loss is close to never — while the design is simultaneously trying to make loss *bite*. Both
+directions are live.
+
+If the rate lands high, the honest response is to change the mechanic rather than the sound: loss
+that happens weekly is not a tragedy the audio can rescue. What must not happen is quietly raising
+the threshold, which would aggregate away the one event this entire document is built around while
+leaving every sentence about it still standing.
+
 **Instance loss** — a copy destroyed while others survive — is none of that. It is a quiet, on-grid
 subtraction, barely a sound. The difference between these two must be instantly, unmistakably
 audible, because it is the difference the entire game is about: knowledge that is merely damaged
@@ -772,6 +894,14 @@ by the noise. So:
   Density threshold 4 per tick, then a mortality texture. A plague sounds like weather.
 - **A mage dies holding the last instance of a node:** ordinary death mark, and then — off-grid,
   after it — loss. The pause between the two is the sound of finding out.
+
+**The four vessels fail in four different ways, and the sound distinguishes them.** This is not
+decoration: a mind simply stops; a palace dies *unburnable and unlootable*, which is a different
+kind of gone; a grimoire burns or is carried off by someone who now has it; a library takes
+everything shelved in it at once. A parallel prototype found the same four-way split arguing for a
+by-vessel view over a by-node one. Where both layers make the *same* distinction they reinforce;
+where they make two different ones the player has to hold both, which is how an interface starts
+feeling arbitrary.
 
 **Tradition-specific variants:**
 
@@ -794,6 +924,13 @@ Research's motif (§6.1), resolving **in a different octave.** It is the same kn
 not sound quite like the original, because it was rebuilt by someone who never heard the first one.
 The cell's material returns to the ambient bed, and the world is whole again in a slightly different
 way than it was.
+
+**This sound asserts a fact the interface may not carry, which inverts §0.3.** A node once held and
+lost is not a node never known — rediscovery costs at least 3× research, and the difference lives in
+a persisted ever-known record. The motif's changed octave *tells* you which of the two you are
+hearing. If no view distinguishes them, the audio is carrying payload rather than salience, which is
+precisely the failure §0.3 forbids in the other direction. Either the interface marks a node as
+once-lost, or this octave shift is a fact only listeners get — and the second is not acceptable.
 
 Gnomish rediscovery runs the motif at a manic tempo — the same phrase, impatient. Vision §6 calls
 gnomes erratic geniuses, and the difference between "erratic" and "fast" is that a gnomish motif
@@ -839,6 +976,14 @@ left without either of them looking away from the fight.
 The rises are the only pitched events in raid time that are not tied to a caster, which is what
 makes them read as environmental rather than as someone's spell.
 
+**Independently reached from the other side.** A parallel prototype explored three unrelated
+directions for watching a raid, and the portal timer led in all three — not because three designers
+agreed, but because it is the only quantity on screen that is **monotonic and terminal**. It only
+falls, and at zero the raid ends regardless of anything else; every other number is a consequence
+whose meaning depends on how much clock is left. Two layers arriving at the same anchor from
+different directions is the strongest form that claim could take, and it is the argument for
+spending the design's scarcest resource — the only environmental pitch in raid time — on it.
+
 ### 7.3 Objectives sound like futures, not objects
 
 Vision §6a: a university's output scales with the depth of its library, so knowledge is an input to
@@ -850,7 +995,14 @@ arrangement layers it fed being destroyed** — §6.5's subtraction, several lay
 inside a raid where there is no arrangement playing. The attacker hears what they are taking away.
 The defender hears their own §3.3 re-entry being written in advance.
 
-An archmage killed as an objective is §6.5's death-plus-loss, with as many losses as she held.
+An archmage killed as an objective is §6.5's death-plus-loss, with as many losses as they held.
+
+**The visual layer should be future-tense too, and for a reason beyond agreement.** A parallel
+prototype renders objectives as *stakes* — held, contested, lost — rather than as places, and notes
+that this is the only framing that degrades gracefully into a replay: a ledger of irreversible
+transfers is what anyone would want to read afterwards. That matches what this section asks of the
+audio, and the two reinforce at no cost. A raid whose sound is about consequence and whose picture
+is about geography would be two games playing at once.
 
 ### 7.4 The same collapse, two mixes
 

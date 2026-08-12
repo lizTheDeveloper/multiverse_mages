@@ -1,0 +1,370 @@
+<!doctype html>
+<!--
+  Multiverse Mages — the ruleset, read as a symmetry.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  Two more directions on the question ui/ruleset/ opens, so design pillar #1
+  has three rather than one. The proposal calls this the central interface
+  problem of the game, and it is the only control surface that had a single
+  attempt at it.
+
+  The grid in ui/ruleset/ answers "which cells are live". Neither of these
+  does. They answer the question vision §3 actually poses:
+
+    > The host universe's ruleset governs all magic cast inside it, for both
+    > attacker and defender.
+
+  So permitting a cell arms your mages *and* anyone who invades you. The
+  strategic content of the whole game is in that sentence, and a grid of
+  toggles shows it nowhere — a permitted cell looks the same whether your
+  civilization has spent two hundred years in it or has never held a single
+  node there.
+
+    B  two ledgers   what is permitted, split by who can actually use it.
+                     A cell you permit and know nothing about is a pure gift.
+    C  stage a change  toggle freely, see the delta — cells, reachable nodes,
+                     nodes orphaned downstream, and the gift — then commit.
+
+  Serve with `npm run ui`, then open /ui/ruleset-symmetry/.
+
+  KNOWN COST: like ui/ruleset/ this reimplements permits() rather than
+  importing it from packages/state, so the rule exists twice; that is the trade
+  for a static file with no build step and it is the first thing to fix if this
+  becomes the client. The prerequisite closure is real, walked over the 230
+  prereq entries in the shared bundle. What this universe *knows* is invented —
+  there is no running simulation behind a static page — and it is the one input
+  doing strategic work here, so it is marked on screen wherever it is used.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — the ruleset as a symmetry</title>
+
+<style>
+  :root{
+    --ground:#090C0D;--panel:#0E1315;--sunk:#131A1C;--edge:#1D2729;
+    --ink:#DDE7E8;--soft:#94A3A5;--faint:#61716F;
+    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
+    --mine:#4DBE97;--theirs:#DE7059;--gift:#C9A034;--ruin:#B15FD6;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:86rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
+  h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
+  .lede{color:var(--soft);max-width:70ch;margin:0 0 .45rem}
+  .lede b{color:var(--god-lit);font-weight:500}.lede em{color:var(--ink);font-style:italic}
+  .quote{border-left:2px solid var(--god-deep);padding:.15rem 0 .15rem .8rem;margin:.7rem 0;
+    color:var(--ink);font:400 1.02rem/1.5 var(--serif);max-width:62ch}
+  code{font:12.5px var(--mono);color:#AFC0C2}
+
+  .axes{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;margin:1.2rem 0 1.3rem;
+    padding:.7rem .8rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
+  .axes .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-right:.2rem}
+  .ax{font:10.5px var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:.34rem .5rem;border-radius:3px;
+    border:1px solid #22302F;background:transparent;color:var(--soft);cursor:pointer}
+  .ax[aria-pressed="true"]{color:var(--god-lit);border-color:var(--god);
+    background:color-mix(in srgb,var(--god) 10%,transparent);
+    box-shadow:0 0 12px -3px color-mix(in srgb,var(--god) 70%,transparent)}
+  .ax[data-staged="true"]{border-style:dashed;border-color:var(--gift);color:var(--gift);box-shadow:none}
+  .ax:focus-visible{outline:2px solid var(--god-lit);outline-offset:2px}
+  .axes .sep{width:1px;height:1.1rem;background:#22302F;margin:0 .35rem}
+
+  .dirs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.1rem;align-items:start}
+  @media (max-width:70rem){.dirs{grid-template-columns:1fr}}
+  .dir{border:1px solid var(--edge);border-radius:5px;background:var(--panel);display:flex;flex-direction:column}
+  .dhead{padding:.75rem .9rem;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:.5rem}
+  .dhead .letter{font:700 13px var(--mono);color:var(--god)}
+  .dhead .name{font:400 1.06rem var(--serif)}
+  .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .dbody{padding:.8rem .85rem;display:flex;flex-direction:column;gap:.6rem}
+  .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
+
+  /* B: two ledgers */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  .col{border:1px solid #22302F;border-radius:3px;background:var(--sunk);padding:.5rem .55rem}
+  .col .h{font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;margin-bottom:.4rem;
+    display:flex;align-items:baseline;gap:.35rem}
+  .col .h b{margin-left:auto;font-variant-numeric:tabular-nums}
+  .col.mine .h{color:var(--mine)}.col.theirs .h{color:var(--theirs)}
+  .chips{display:flex;flex-wrap:wrap;gap:3px}
+  .chip{font:9px var(--mono);letter-spacing:.05em;text-transform:uppercase;padding:2px 5px;border-radius:2px;
+    border:1px solid currentColor}
+  .chip.mine{color:var(--mine)}
+  .chip.theirs{color:var(--theirs)}
+  .chip.gift{color:var(--gift);background:color-mix(in srgb,var(--gift) 14%,transparent)}
+  .giftbox{border:1px solid var(--gift);border-radius:3px;padding:.55rem .6rem;
+    background:color-mix(in srgb,var(--gift) 8%,transparent)}
+  .giftbox .h{font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--gift);margin-bottom:.3rem}
+  .giftbox p{margin:0;font-size:.86rem;line-height:1.5;color:var(--soft)}
+  .giftbox b{color:var(--gift)}
+  .invented{font:9.5px var(--mono);color:var(--faint);letter-spacing:.04em;margin-top:.15rem}
+
+  /* C: stage a change */
+  .delta{display:flex;flex-direction:column;gap:.35rem}
+  .drow{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:baseline;padding:.35rem .5rem;
+    border-radius:3px;background:var(--sunk);border-left:2px solid transparent}
+  .drow .l{font-size:.87rem}
+  .drow .s{font:9.5px var(--mono);color:var(--faint);display:block;margin-top:.12rem;line-height:1.45}
+  .drow .v{font:11.5px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .drow[data-d="up"]{border-left-color:var(--mine)}   .drow[data-d="up"] .v{color:var(--mine)}
+  .drow[data-d="down"]{border-left-color:var(--theirs)} .drow[data-d="down"] .v{color:var(--theirs)}
+  .drow[data-d="warn"]{border-left-color:var(--gift)}  .drow[data-d="warn"] .v{color:var(--gift)}
+  .drow[data-d="flat"]{border-left-color:#243032}      .drow[data-d="flat"] .v{color:var(--faint)}
+  .commit{display:flex;gap:.5rem;margin-top:.2rem}
+  .commit button{flex:1;font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:.55rem .7rem;
+    border-radius:3px;cursor:pointer}
+  .commit .go{border:1px solid var(--god);color:#07171A;
+    background:linear-gradient(180deg,var(--god-lit),var(--god));
+    box-shadow:0 0 22px -5px color-mix(in srgb,var(--god) 80%,transparent)}
+  .commit .go[disabled]{background:transparent;color:#4E6062;border-color:#22302F;box-shadow:none;cursor:not-allowed}
+  .commit .undo{border:1px solid #22302F;background:transparent;color:var(--soft)}
+  .commit button:focus-visible{outline:2px solid var(--god-lit);outline-offset:2px}
+  .nostage{font:10.5px var(--mono);color:var(--faint);line-height:1.6;padding:.3rem 0}
+
+  .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
+  .note h2{font:400 1.4rem var(--serif);margin:0 0 .5rem}
+  .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
+  .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--god-lit)}
+  footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages · design pillar #1 · vision §3 · two more directions</div>
+  <h1>The ruleset, read as a symmetry</h1>
+  <p class="lede"><code>ui/ruleset/</code> answers <em>which cells are live</em>. Neither of these does.
+  They answer the question vision §3 actually poses:</p>
+  <div class="quote">The host universe's ruleset governs all magic cast inside it, for both attacker and
+  defender.</div>
+  <p class="lede">So permitting a cell arms your mages <b>and anyone who invades you</b>. The strategic
+  content of the entire game is in that sentence, and a grid of toggles shows it nowhere — a permitted
+  cell looks identical whether your civilization has spent two centuries in it or has never held a single
+  node there. <em>The second kind is a pure gift to an attacker, and nothing currently says so.</em></p>
+
+  <div class="axes" id="axes"></div>
+  <div class="dirs" id="dirs"></div>
+
+  <div class="note">
+    <h2>What operating these settles</h2>
+    <p><b class="hot">The denial play is invisible in a grid and obvious in a ledger.</b> Vision §3 says
+    prohibiting is a real strategic option rather than a penalty, and the reason is that a cell you permit
+    but hold no knowledge in can only ever be used against you. Direction B makes that a standing count on
+    screen. Forbid a technique your civilization never entered and the number goes down with no cost to
+    you at all — which is the denial play, stated as arithmetic rather than as a paragraph in a design
+    document.</p>
+    <p><b>Staging is the only way to show a toggle's real cost.</b> Permitting Perdo lights fourteen cells
+    at once. Forbidding Intellego strands everything downstream of it, because a dormant instance cannot
+    satisfy a prerequisite — direction C walks the real prerequisite graph and reports orphaned nodes
+    separately from cells lost, which are very different numbers. A live toggle cannot do this: by the
+    time you see the consequence you have already paid 8,192 favor for it.</p>
+    <p><b>What neither direction can do honestly, and it is the same gap.</b> The right-hand ledger asks
+    what an <em>invader</em> would know, and the answer depends on a universe you have never seen. In live
+    PvP that is genuinely unknown; in Monte Carlo it is knowable and would be cheating to show. Both
+    directions here fall back on <em>what any universe could know</em> — the reachable set under this
+    ruleset — which is an upper bound rather than a prediction. That is the honest version, and it is
+    weaker than the interface appears to promise. Worth deciding deliberately rather than by whichever
+    approximation ships.</p>
+    <p><b>Three directions now exist for pillar #1 and they are not interchangeable.</b> The grid is for
+    understanding structure, the ledger for deciding policy, the staging view for pricing a specific
+    change. That is an argument for shipping more than one of them rather than picking a winner — which is
+    the opposite of what the other control surfaces concluded.</p>
+  </div>
+
+  <footer>
+    Prototype · not the client. Content is the shared bundle from <code>ui/ruleset/content.json</code> —
+    real techniques, forms, cells and 230 prerequisite entries. <code>permits()</code> is reimplemented
+    here rather than imported, as in <code>ui/ruleset/</code>. What this universe knows is invented and is
+    marked wherever it is used.<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+</div>
+
+<script type="module">
+const DATA = await (await fetch('../ruleset/content.json')).json();
+const CELLS = DATA.cells;
+const PRE = DATA.prereqs;          // nodeId -> [prerequisite nodeIds]
+const NODE_CELL = DATA.nodeCell;   // nodeId -> cellId
+
+/* The v1 rectangle this release enables. */
+const V1_T = ['intellego', 'perdo', 'rego'];
+const V1_F = ['limen', 'mentem', 'nomen', 'terram'];
+const v1Cells = new Set(V1_T.flatMap(t => V1_F.map(f => `${t}-${f}`)));
+
+/* INVENTED: what this universe actually holds. There is no simulation behind a
+   static page, and this is the one input doing strategic work, so it is marked
+   on screen everywhere it is used. Chosen to be lopsided on purpose — a
+   civilization deep in Rego and Intellego that never entered Perdo. */
+const KNOWN_CELLS = new Set([
+  'rego-limen', 'rego-nomen', 'rego-terram',
+  'intellego-limen', 'intellego-mentem', 'intellego-nomen',
+]);
+
+const state = {
+  technique: new Set(DATA.techniques.map(t => t.id)),
+  form: new Set(DATA.forms.map(f => f.id)),
+  staged: { technique: new Set(), form: new Set() },   // ids toggled but not committed
+};
+
+const effective = (kind, id) =>
+  state.staged[kind].has(id) ? !state[kind].has(id) : state[kind].has(id);
+
+/* permits(), reimplemented — see KNOWN COST in the header. Edicts are out of
+   scope for this prototype; ui/ruleset/ owns the edict interface. */
+function permitted(cellId, useStaged) {
+  const c = CELLS.find(x => x.id === cellId);
+  if (!c) return false;
+  const t = useStaged ? effective('technique', c.technique) : state.technique.has(c.technique);
+  const f = useStaged ? effective('form', c.form) : state.form.has(c.form);
+  return t && f;
+}
+
+/* Nodes acquirable under a set of permitted cells: a real closure over the
+   prerequisite graph, because a dormant instance cannot satisfy a prerequisite. */
+function reachable(useStaged) {
+  const live = new Set(CELLS.filter(c => permitted(c.id, useStaged)).map(c => c.id));
+  const pool = Object.keys(NODE_CELL).filter(n => live.has(NODE_CELL[n]));
+  const ok = new Set();
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const n of pool) {
+      if (ok.has(n)) continue;
+      const ps = PRE[n] ?? [];
+      if (ps.every(p => ok.has(p) || NODE_CELL[p] === undefined)) { ok.add(n); changed = true; }
+    }
+  }
+  return { live, nodes: ok };
+}
+
+/* Cells permitted where this universe holds nothing: usable only by an invader. */
+const giftCells = (useStaged) =>
+  CELLS.filter(c => permitted(c.id, useStaged) && !KNOWN_CELLS.has(c.id) && v1Cells.has(c.id));
+
+function renderAxes() {
+  const host = document.getElementById('axes');
+  const mk = (kind, id, label) => {
+    const on = state[kind].has(id);
+    const staged = state.staged[kind].has(id);
+    return `<button class="ax" type="button" data-kind="${kind}" data-id="${id}"
+      aria-pressed="${effective(kind, id)}" data-staged="${staged}"
+      title="${staged ? 'staged, not committed' : on ? 'permitted' : 'forbidden'}">${label}</button>`;
+  };
+  host.innerHTML =
+    `<span class="k">techniques</span>` +
+    DATA.techniques.map(t => mk('technique', t.id, t.name)).join('') +
+    `<span class="sep"></span><span class="k">forms</span>` +
+    DATA.forms.map(f => mk('form', f.id, f.name.slice(0, 4))).join('');
+
+  host.querySelectorAll('.ax').forEach(b => b.addEventListener('click', () => {
+    const { kind, id } = b.dataset;
+    if (state.staged[kind].has(id)) state.staged[kind].delete(id);
+    else state.staged[kind].add(id);
+    render();
+  }));
+}
+
+function render() {
+  renderAxes();
+  const now = reachable(false);
+  const next = reachable(true);
+  const giftNow = giftCells(false);
+  const giftNext = giftCells(true);
+  const hasStaged = state.staged.technique.size + state.staged.form.size > 0;
+
+  const knownLive = CELLS.filter(c => permitted(c.id, true) && KNOWN_CELLS.has(c.id));
+  const chip = (c, cls) => `<span class="chip ${cls}">${c.id.replace('-', ' ')}</span>`;
+
+  /* nodes orphaned: reachable now, not reachable after, and NOT because their own
+     cell went dark — those are the downstream casualties worth naming separately. */
+  const orphaned = [...now.nodes].filter(n => !next.nodes.has(n) && next.live.has(NODE_CELL[n]));
+  const cellLost = [...now.nodes].filter(n => !next.nodes.has(n) && !next.live.has(NODE_CELL[n]));
+
+  const d = (label, sub, val, dir) =>
+    `<div class="drow" data-d="${dir}"><span><span class="l">${label}</span>
+      <span class="s">${sub}</span></span><span class="v">${val}</span></div>`;
+
+  document.getElementById('dirs').innerHTML = `
+    <section class="dir">
+      <div class="dhead"><span class="letter">B</span><span class="name">Two ledgers</span>
+        <span class="tag">who can actually use it</span></div>
+      <div class="dbody">
+        <div class="cols">
+          <div class="col mine">
+            <div class="h">yours to cast<b>${knownLive.length}</b></div>
+            <div class="chips">${knownLive.map(c => chip(c, 'mine')).join('') || '<span class="invented">nothing</span>'}</div>
+            <div class="invented">cells permitted here that your mages hold knowledge in · invented</div>
+          </div>
+          <div class="col theirs">
+            <div class="h">theirs to cast<b>${CELLS.filter(c => permitted(c.id, true) && v1Cells.has(c.id)).length}</b></div>
+            <div class="chips">${CELLS.filter(c => permitted(c.id, true) && v1Cells.has(c.id))
+              .map(c => chip(c, KNOWN_CELLS.has(c.id) ? 'theirs' : 'gift')).join('')}</div>
+            <div class="invented">every permitted cell — the host ruleset governs an invader too</div>
+          </div>
+        </div>
+        <div class="giftbox">
+          <div class="h">pure gift</div>
+          <p><b>${giftNext.length} of the ${CELLS.filter(c => permitted(c.id, true) && v1Cells.has(c.id)).length}
+          cells you permit</b> hold no knowledge of yours. They arm an invader and nobody else. Forbidding
+          them costs your civilization nothing it is currently using — which is what vision §3 means by
+          calling prohibition a real strategic option rather than a penalty.</p>
+        </div>
+      </div>
+      <div class="dfoot">The portal rule made arithmetic. A cell you permit and know nothing about can only
+        ever be used against you, and no grid of toggles shows that.</div>
+    </section>
+
+    <section class="dir">
+      <div class="dhead"><span class="letter">C</span><span class="name">Stage a change</span>
+        <span class="tag">price it before you pay</span></div>
+      <div class="dbody">
+        ${hasStaged ? `
+          <div class="delta">
+            ${d('Cells live', 'permitted after edicts', `${now.live.size} → ${next.live.size}`,
+                next.live.size === now.live.size ? 'flat' : next.live.size > now.live.size ? 'up' : 'down')}
+            ${d('Nodes reachable', 'closure over the real prerequisite graph',
+                `${now.nodes.size} → ${next.nodes.size}`,
+                next.nodes.size === now.nodes.size ? 'flat' : next.nodes.size > now.nodes.size ? 'up' : 'down')}
+            ${d('Nodes orphaned downstream',
+                'their own cell stays live — the prerequisite went dark',
+                orphaned.length ? `−${orphaned.length}` : '0',
+                orphaned.length ? 'down' : 'flat')}
+            ${d('Nodes lost with their cell', 'the cell itself went dark',
+                cellLost.length ? `−${cellLost.length}` : '0', cellLost.length ? 'down' : 'flat')}
+            ${d('Pure gift to an invader', 'permitted cells you hold no knowledge in · invented',
+                `${giftNow.length} → ${giftNext.length}`,
+                giftNext.length === giftNow.length ? 'flat' : giftNext.length > giftNow.length ? 'warn' : 'up')}
+          </div>
+          <div class="commit">
+            <button class="go" type="button" id="commit">Commit</button>
+            <button class="undo" type="button" id="undo">Discard</button>
+          </div>`
+        : `<div class="nostage">Toggle a technique or a form above. Nothing is committed until you say so,
+            and until then this reports what the change would cost — including the nodes it strands
+            downstream, which is the number a live toggle can never show you in time.</div>`}
+      </div>
+      <div class="dfoot">Permitting a technique lights fourteen cells at once and forbidding Intellego
+        strands everything under it. A live toggle shows you that after you have paid 8,192 favor for
+        it.</div>
+    </section>`;
+
+  const c = document.getElementById('commit');
+  if (c) c.addEventListener('click', () => {
+    for (const kind of ['technique', 'form']) {
+      for (const id of state.staged[kind]) {
+        if (state[kind].has(id)) state[kind].delete(id); else state[kind].add(id);
+      }
+      state.staged[kind].clear();
+    }
+    render();
+  });
+  const u = document.getElementById('undo');
+  if (u) u.addEventListener('click', () => {
+    state.staged.technique.clear(); state.staged.form.clear(); render();
+  });
+}
+
+render();
+</script>
