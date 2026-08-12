@@ -490,7 +490,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 
     <!-- ============================ CENTRE: THE FIELD ============================ -->
     <section class="card">
-      <h2>The engagement <span class="side" id="fieldsub">200 m × 200 m · 100 ms tick</span></h2>
+      <h2>The engagement <span class="side" id="fieldsub">200 m × 200 m · 100 ms engagement tick</span></h2>
       <div class="fieldwrap">
         <canvas id="field" width="900" height="900" aria-label="The battlefield. A textual cast log to the right carries the same events."></canvas>
         <div class="overlay">
@@ -518,9 +518,10 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
         <button class="btn" id="pause" type="button" aria-pressed="false">Pause</button>
         <button class="btn" id="skip" type="button">Skip muster</button>
         <span class="lab" style="margin-left:.4rem">Speed</span>
-        <button class="btn spd" data-spd="1" type="button">1×</button>
-        <button class="btn spd" data-spd="4" type="button">4×</button>
-        <button class="btn spd" data-spd="12" type="button">12×</button>
+        <button class="btn spd" data-spd="1" type="button" title="2.5 ticks a second — a quarter of engagement time, and the default. Muster is never slowed.">1×</button>
+        <button class="btn spd" data-spd="4" type="button" title="10 ticks a second — 1:1 with the 100 ms engagement tick, which is the rate this page used to run at.">4×</button>
+        <button class="btn spd" data-spd="16" type="button" title="40 ticks a second — four times engagement time, for skipping ahead.">16×</button>
+        <span class="lab num" id="pace" title="Playback only. It changes nothing the trace decides.">2.5 t/s · ¼ speed</span>
         <span class="lab" style="margin-left:.4rem">Damage</span>
         <button class="btn dmg" data-dmg="1" type="button" title="the authored magnitudes, unscaled — the default">×1 authored</button>
         <button class="btn dmg" data-dmg="24" type="button" title="a viewing multiplier on node-driven damage — not content">×24</button>
@@ -798,6 +799,22 @@ const K = {
   archmageValue: 4096, universityValue: 2048,
   victoryFraction: 512,
 };
+
+/* PLAYBACK, which is a viewing rate and not a rule. The engagement tick is
+   100 ms in the design, so a trace played at 100 ms a tick runs at 1:1 with the
+   world. Contact and resolution are played at 400 ms a tick — 2.5 ticks a
+   second, a QUARTER of engagement time — because at 1:1 a cast is over before
+   it can be read, and this page's whole claim is that every spell gets a moment
+   in the world (author, after watching: "it needs to be slowed down to like 25%
+   of its current speed, so that you can really watch, once the raid actually
+   starts").
+
+   MUSTER IS NOT SLOWED, deliberately. Its clock is the pressure — you have a
+   few minutes to decide what to forbid and you were not ready — and stretching
+   it four-fold would spend the one thing about the pacing that already worked.
+   The speed control is rebased on the new pace: 1× is the watching default,
+   4× is exactly the rate this page used to run at, 16× is for skipping ahead. */
+const PACE = { musterMs: 100, engagementMs: 400, tickMs: 100 };
 
 /* AUTHORED HERE — in no content file. Flagged on the page. */
 const A = {
@@ -1891,9 +1908,10 @@ function frame(now) {
   if (!S) return;
   if (!last) last = now;
   let dt = Math.min(250, now - last); last = now;
-  /* Muster always runs at 1x — the clock IS the pressure, and the agency curve
-     is encoded in the pacing rather than only stated in the rail. */
-  const perTick = S.phase === 'muster' ? 100 : 100 / speed;
+  /* Muster always runs at 1:1 with engagement time — the clock IS the pressure,
+     and the agency curve is encoded in the pacing rather than only stated in
+     the rail. Contact and resolution are played at a quarter of it. */
+  const perTick = S.phase === 'muster' ? PACE.musterMs : PACE.engagementMs / speed;
   if (running && !S.ended) {
     acc += dt;
     let guard = 0;
@@ -1925,9 +1943,16 @@ el('pause').addEventListener('click', () => {
   el('pause').textContent = running ? 'Pause' : 'Resume';
 });
 el('skip').addEventListener('click', () => { if (S && S.phase === 'muster') { S.tick = A.musterTicks - 1; } });
+function paintPace() {
+  const perSecond = 1000 / (PACE.engagementMs / speed);
+  const ofReal = perSecond * PACE.tickMs / 1000;
+  el('pace').textContent = (perSecond % 1 ? perSecond.toFixed(1) : perSecond) + ' t/s · ' +
+    (ofReal < 1 ? '¼ speed' : ofReal === 1 ? '1:1 with engagement time' : ofReal + '× engagement time');
+}
 for (const b of document.querySelectorAll('.spd')) b.addEventListener('click', () => {
   speed = Number(b.dataset.spd);
   for (const o of document.querySelectorAll('.spd')) o.setAttribute('aria-pressed', String(Number(o.dataset.spd) === speed));
+  paintPace();
 });
 for (const b of document.querySelectorAll('.dmg')) b.addEventListener('click', () => {
   damage = Number(b.dataset.dmg);
@@ -1936,6 +1961,7 @@ for (const b of document.querySelectorAll('.dmg')) b.addEventListener('click', (
 });
 document.querySelector('.spd[data-spd="1"]').setAttribute('aria-pressed', 'true');
 document.querySelector('.dmg[data-dmg="1"]').setAttribute('aria-pressed', 'true');
+paintPace();
 
 /* three-state theme, per the artifact rule: system, then explicit either way */
 const THEMES = ['system', 'light', 'dark'];
