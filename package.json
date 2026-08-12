@@ -20,6 +20,8 @@
     "check:content": "node packages/content/bin/validate-content.mjs",
     "check:audio": "node packages/content/bin/validate-audio.mjs",
     "check:coverage": "node scripts/check-primitive-coverage.mjs",
+    "content:map": "node scripts/content-graph.mjs --format map",
+    "content:graph": "node scripts/content-graph.mjs --format html",
     "audio:generate": "node scripts/generate-audio.mjs",
     "audio:manifest": "node scripts/audition-manifest.mjs",
     "audition": "node scripts/audition-server.mjs",
