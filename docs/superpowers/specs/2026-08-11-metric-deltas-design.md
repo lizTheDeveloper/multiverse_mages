@@ -78,6 +78,30 @@ A reward built from these can express the three playstyles the strategy pool cla
 loss channel, and `Δdeepest_tier_held` is depth. That is not a coincidence — those are the axes §7
 was written to measure.
 
+### Who computes them — the dependency edge runs the wrong way for the obvious answer
+
+The table above cites `metrics-telemetry.ts`, which lives in `mc-harness`. **`outcomeOf` cannot
+call it.** `mc-harness` depends on `@mm/agent-api`; `agent-api` depends only on `@mm/sim-core` and
+`@mm/state`. An import in the other direction would invert a §5 module boundary, and the purity
+scanner would refuse it — correctly.
+
+So the ownership splits, and the split is the anti-drift mechanism rather than a workaround:
+
+- **`BALANCE_METRIC_REGISTRY` (mc-harness) owns the *definition*.** It already does: the prose
+  formula, the `pinnedConstants`, the `definitionVersion`, the conformance test against
+  `contracts.md`. Nothing moves.
+- **`agent-api` owns the *per-step computation*.** It reads the quantities off `SimState` directly
+  — `existingNodes` is §1.5's "instance count ≥ 1", which `agent-api` can already see, and the
+  observation layout proves it: the institutions block carries `libraryDepth` today. It invents no
+  definition; it implements one that is authored elsewhere.
+- **A conformance test asserts the two agree.** Run a scenario, collect the census through
+  `mc-harness` and the per-step deltas through the bridge, and assert that the deltas sum to the
+  census difference over the same interval. That test is the whole safety property: it fails on the
+  commit where either side drifts, which is exactly the failure §7 says is otherwise invisible.
+
+Without that third piece this proposal would be two implementations of one definition, which is
+the thing `mc-harness`'s own `metrics-gini.ts` note says there must be exactly one of.
+
 ### What is deliberately excluded, and why
 
 **Worship and favor regeneration.** They are per-tick, readily available in `armContribution`, and
