@@ -165,6 +165,7 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       'blessing',
       'upheaval',
       'era-evaluation',
+      'mid-raid-change',
     ]);
   });
 

@@ -59,7 +59,7 @@
  */
 
 import type { Action, EntityHandle, SimState } from '@mm/sim-core';
-import type { AxisChangeCounterRecord } from '@mm/state';
+import type { AxisChangeCounterRecord, MidRaidMark } from '@mm/state';
 import { FP_ONE, TIME_MODE } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
@@ -78,6 +78,8 @@ import {
   LOCATION_KIND,
   MAGE,
   MAGE_ROLE,
+  RULE_CHANGE_KIND,
+  RULE_SCOPE,
   TERMINAL_REASON,
   UNIVERSE,
   UNIVERSITY,
@@ -87,6 +89,7 @@ import {
   attachRecord,
   collectRecords,
   componentOf,
+  findMidRaidMark,
   isCellId,
   permits,
   readEdicts,
@@ -95,7 +98,13 @@ import {
 } from '@mm/state';
 
 import type { GodContent } from './constants.js';
-import { hysteresisMultiplier, inertFraction, interventionCost, upheavalShock } from './favor.js';
+import {
+  hysteresisMultiplier,
+  inertFraction,
+  interventionCost,
+  revertSurcharge,
+  upheavalShock,
+} from './favor.js';
 import { edictBudgetFor, favorCapFor } from './worship.js';
 import { godState, writeGodState } from './god-state.js';
 
@@ -382,9 +391,18 @@ function axisPlan(
   if (isSet === permitting) return undefined;
 
   const counter = counterFor(state, axisKind, bit);
-  const cost = interventionCost(actionId, deps.god.costs, {
+  const ordinary = interventionCost(actionId, deps.god.costs, {
     hysteresis: hysteresisMultiplier(counter.record.changeCount, deps.god.constants),
   });
+
+  // `raid-engagement.md` §1's revert surcharge. A change made under fire is
+  // marked; walking it back afterwards is priced against what it cost then.
+  const scope = technique ? RULE_SCOPE.technique : RULE_SCOPE.form;
+  const mark = reverts(state, scope, bit, permitting);
+  const cost =
+    mark === undefined
+      ? ordinary
+      : revertSurcharge(ordinary, mark.paidCost, deps.god.constants.midRaidRevertMultiplier);
 
   // Computed before the write, because the fraction is "how much of what the
   // universe knows is about to go inert" and after the flip it is zero.
@@ -397,6 +415,10 @@ function axisPlan(
     apply: () => {
       store.set(universe, field, permitting ? mask | (1 << bit) : mask & ~(1 << bit));
       bumpCounter(state, counter);
+      // The mark is discharged by being paid for, not by expiring. A surcharge
+      // that could be paid twice for one raid would price a second, ordinary
+      // change at the raid's rate months later.
+      if (mark !== undefined) state.entities.destroy(mark.handle);
       if (!permitting && stranded.inert > 0) {
         applyShock(
           state,
@@ -461,6 +483,28 @@ function strandedByAxis(
 interface AxisCounter {
   readonly handle: EntityHandle;
   readonly record: AxisChangeCounterRecord;
+}
+
+/**
+ * The mid-raid mark this axis toggle would walk back, or `undefined`.
+ *
+ * A toggle reverts a mark when it moves legality the *opposite* way: permitting
+ * discharges a mid-raid forbid, forbidding discharges a mid-raid permit. A
+ * toggle in the same direction as the mark cannot happen — the axis is already
+ * in that state and `axisPlan` has refused it as a no-op before reaching here —
+ * so the check is a direction comparison rather than a search.
+ */
+function reverts(
+  state: SimState,
+  scope: number,
+  bit: number,
+  permitting: boolean,
+): MidRaidMark | undefined {
+  const mark = findMidRaidMark(state, scope, bit);
+  if (mark === undefined) return undefined;
+  const undoes =
+    mark.changeKind === (permitting ? RULE_CHANGE_KIND.forbid : RULE_CHANGE_KIND.permit);
+  return undoes ? mark : undefined;
 }
 
 function counterFor(state: SimState, axisKind: number, axisBit: number): AxisCounter {
@@ -551,10 +595,30 @@ function revokePlan(
   const rows = collectRecords(state, EDICT).sort((a, b) => a.handle - b.handle);
   const target = rows[index];
   if (target === undefined) return undefined;
+
+  const ordinary = interventionCost(ACTION.revokeEdict, deps.god.costs);
+  // Revoking is the *only* route back from a cell-scoped mid-raid change:
+  // `edictPlan` refuses a second edict on a cell that already carries one, so
+  // the opposite edict cannot be issued over the top. The surcharge therefore
+  // belongs here and nowhere else for the cell scope.
+  //
+  // "Reverts" means the standing edict is the one the raid left. Its direction
+  // is read from the edict rather than from the mark, so revoking a *peacetime*
+  // edict that happens to sit on a marked cell is priced ordinarily.
+  const wasForbid = target.row.kind === EDICT_KIND.interdiction;
+  const mark = findMidRaidMark(state, RULE_SCOPE.cell, target.row.cellId);
+  const discharges =
+    mark !== undefined &&
+    mark.changeKind === (wasForbid ? RULE_CHANGE_KIND.forbid : RULE_CHANGE_KIND.permit);
+
   return {
-    cost: interventionCost(ACTION.revokeEdict, deps.god.costs),
+    cost:
+      discharges && mark !== undefined
+        ? revertSurcharge(ordinary, mark.paidCost, deps.god.constants.midRaidRevertMultiplier)
+        : ordinary,
     apply: () => {
       state.entities.destroy(target.handle);
+      if (discharges && mark !== undefined) state.entities.destroy(mark.handle);
     },
   };
 }

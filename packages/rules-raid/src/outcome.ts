@@ -86,6 +86,29 @@ export interface KnowledgeMovement {
   readonly forfeited: boolean;
 }
 
+/**
+ * One ruleset change made during the raid, and therefore locked for it.
+ *
+ * `raid-engagement.md` §1's second half. The lock itself is in-memory and dies
+ * with the engagement; this is what the raid leaves on the constitution, and it
+ * is what makes the post-raid revert cost payable seasons later. `paidCost` is
+ * carried rather than recomputed for the reason the component that stores it
+ * carries it: the surcharge is defined against what the change cost *when it
+ * was made*.
+ */
+export interface ConstitutionalMark {
+  /** `RULE_SCOPE`: technique, form, or cell. */
+  readonly scope: number;
+  /** Technique bit, form bit, or cell id, by `scope`. */
+  readonly targetId: number;
+  /** `RULE_CHANGE_KIND`: which way legality moved. */
+  readonly changeKind: number;
+  /** What the player paid inside the raid. */
+  readonly paidCost: Fixed;
+  /** The engagement tick it was decided on. */
+  readonly atTick: number;
+}
+
 /** Everything one raid did. Frozen; the write-back reads it and never edits it. */
 export interface RaidOutcome {
   readonly victor: RaidSideValue;
@@ -130,6 +153,14 @@ export interface RaidOutcome {
 
   /** Peak simultaneous combatants per side, for the cap's own bound test. */
   readonly peakCombatants: readonly [number, number];
+
+  /**
+   * Ruleset changes made under the lock, ascending by scope then target.
+   *
+   * Empty for every raid nobody intervened in, which is every raid the engine
+   * ran before `raid-engagement.md` §1 existed.
+   */
+  readonly constitutionalMarks: readonly ConstitutionalMark[];
 }
 
 /** How much of one primitive one raid saw, by side. */

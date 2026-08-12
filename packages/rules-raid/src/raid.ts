@@ -97,6 +97,10 @@ import {
   takenObjectiveValue,
   totalObjectiveValue,
 } from './objectives.js';
+import type { RuleChange } from '@mm/state';
+
+import type { MaskSubject, RuleChangeResult } from './lock.js';
+import { RaidLock, applyRuleChange } from './lock.js';
 import type { EngagementPhaseValue } from './phases.js';
 import { phaseOf } from './phases.js';
 import { buildSpatialIndex } from './spatial.js';
@@ -152,6 +156,16 @@ export interface Raid {
   readonly fields: DenialField[];
   readonly ledger: OutcomeLedger;
   readonly counters: ClampCounters;
+  /**
+   * Which ruleset knobs this raid has already turned.
+   *
+   * `raid-engagement.md` §1's lock, and it lives here rather than in world state
+   * for a reason that is a fact rather than a preference: a raid runs inside a
+   * single world tick, so it can never be serialized mid-engagement and a lock
+   * has nothing to survive. What *does* outlive the raid is the mark the lock
+   * leaves — see `MID_RAID_CHANGE` in `@mm/state`.
+   */
+  readonly lock: RaidLock;
   /** Where the attacker came in, and the only way out. */
   readonly portal: Point;
   /** Computable before the first tick, from `RaidState` alone. */
@@ -268,6 +282,7 @@ export function openPortal(options: OpenPortalOptions): Raid {
     fields: [],
     ledger: new OutcomeLedger(),
     counters,
+    lock: new RaidLock(),
     portal: { x: floorDiv(tuning.battlefieldExtent, 2), y: 0 },
     maxTicks: maxEngagementTicks(engagement.raid),
     contactTick: -1,
@@ -1027,6 +1042,14 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
     capClamps: raid.counters.entries(),
     primitiveApplication: raid.ledger.primitiveApplication(),
     peakCombatants: raid.ledger.peakCombatants,
+    // §1's second half: the lock dies with the raid, the mark does not.
+    constitutionalMarks: raid.lock.changes().map((locked) => ({
+      scope: locked.scope,
+      targetId: locked.targetId,
+      changeKind: locked.kind,
+      paidCost: locked.paidCost,
+      atTick: locked.atTick,
+    })),
   };
 
   raid.outcome = outcome;
@@ -1059,6 +1082,45 @@ export function engagementTickOf(raid: Raid): number {
  * player's verbs and nothing in the tick loop reads it, which is what lets the
  * whole phase structure be added to a finished engine without moving a number.
  */
+/**
+ * Changes the ruleset this raid is fought under, under the lock.
+ *
+ * The thin wrapper `lock.ts` deliberately does not have: everything below is
+ * reading a `Raid` apart, and the module that owns the rule is written against
+ * the four things it actually needs so that it can be tested without one.
+ *
+ * Only mage combatants are subjects. A detachment and a summon hold no
+ * knowledge, so their masks are empty and recomputing one is a no-op with a
+ * component write in it.
+ */
+export function changeRuleMidRaid(
+  raid: Raid,
+  change: RuleChange,
+  paidCost: Fixed,
+): RuleChangeResult {
+  const subjects: MaskSubject[] = [];
+  for (const roster of raid.rosters) {
+    for (const brief of roster.briefs) {
+      if (brief.sourceKind !== COMBATANT_SOURCE_KIND.mage) continue;
+      const participant = brief.side === RAID_SIDE.attacker ? raid.attacker : raid.host;
+      subjects.push({ brief, held: heldInstancesOf(participant, brief.sourceId) });
+    }
+  }
+
+  return applyRuleChange({
+    arbiter: raid.arbiter,
+    lock: raid.lock,
+    change,
+    paidCost,
+    atTick: engagementTickOf(raid),
+    subjects,
+    baseConcealment: raid.tuning.combatantBaseConcealment,
+    setConcealment: (brief, value) => {
+      componentOf(raid.engagement.entities, COMBATANT).set(brief.handle, 'concealment', value);
+    },
+  });
+}
+
 export function currentPhase(raid: Raid): EngagementPhaseValue {
   return phaseOf({
     engagementTick: engagementTickOf(raid),

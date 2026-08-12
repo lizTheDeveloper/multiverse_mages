@@ -78,6 +78,7 @@ export {
   inertFraction,
   interventionCost,
   ledgerBalances,
+  revertSurcharge,
   upheavalShock,
   worshipShareOfRegeneration,
 } from './favor.js';

@@ -81,6 +81,7 @@ export const REQUIRED_GOD_CONSTANTS: readonly string[] = Object.freeze([
   'grant-mastery',
   'hysteresis-decay-ticks',
   'hysteresis-step',
+  'mid-raid-revert-multiplier',
   'legacy-archive-max-tier',
   'legacy-archive-nodes',
   'legacy-baseline-favor',

@@ -58,17 +58,21 @@ import {
   HOLDER_KIND,
   LOCATION_KIND,
   MAGE,
+  MID_RAID_CHANGE,
   OBJECTIVE_STATUS,
   POPULACE_COHORT,
   RAID_SIDE,
+  attachRecord,
   collectRecords,
   componentOf,
+  findUniverse,
+  writeRuleChange,
 } from '@mm/state';
 
 import { OBJECTIVE_KIND } from './objectives.js';
 import type { Raid } from './raid.js';
 import { existingNodes, isAlive } from './raid.js';
-import type { KnowledgeMovement, RaidOutcome } from './outcome.js';
+import type { ConstitutionalMark, KnowledgeMovement, RaidOutcome } from './outcome.js';
 
 /** What the write-back changed, over and above the outcome record it applied. */
 export interface AppliedConsequences {
@@ -142,6 +146,11 @@ export function applyRaidOutcome(raid: Raid, outcome: RaidOutcome): AppliedConse
     gained.push(movement.nodeId);
   }
 
+  // ---- 4b. What a mid-raid rule change left on the host's constitution. ----
+  if (outcome.constitutionalMarks.length > 0) {
+    applyConstitutionalMarks(raid, outcome.constitutionalMarks, worldTick);
+  }
+
   // ---- 5. Existence, recomputed and never cached (§1.5). ----
   const hostAfter = existingNodes(raid.host);
   const raiderAfter = existingNodes(raid.attacker);
@@ -159,6 +168,59 @@ export function applyRaidOutcome(raid: Raid, outcome: RaidOutcome): AppliedConse
   void gained;
 
   return { nodesLostByHost, nodesGainedByRaider };
+}
+
+/**
+ * Writes a raid's ruleset changes, and their marks, into the host universe.
+ *
+ * **Both halves, and the first is the one that is easy to forget.** A mid-raid
+ * change is made against the raid's arbitration snapshot, which is discarded at
+ * resolution. If only the mark were written back, the god would owe a surcharge
+ * for unmaking a change the world never actually carried — and the design's
+ * whole sentence, *"a raid leaves a mark on your constitution"*, would be
+ * describing a bill for nothing. So the ruleset is moved for real here, and the
+ * mark is what records that a raid was the reason.
+ *
+ * The host's world and only the host's. `raid-engagement.md` §2 makes forbidding
+ * defender-only, and §3's host arbitration is why: an attacker changing her own
+ * ruleset would change nothing inside the universe she is standing in.
+ *
+ * **One known tension, recorded rather than resolved.** A cell-scoped change
+ * writes an edict, and §1.1 caps edicts at a universe's `edictBudget`. A raid
+ * can therefore leave a universe holding one more edict than it could have
+ * issued in peacetime. That is deliberate and it matches §1.1's existing rule
+ * for the same situation — *existing edicts stay in force if the budget later
+ * falls* — but it means `canIssueEdict` is the only gate, and it is a gate on
+ * issuing rather than on holding. A raid is not a peacetime issuance.
+ */
+function applyConstitutionalMarks(
+  raid: Raid,
+  marks: readonly ConstitutionalMark[],
+  worldTick: number,
+): void {
+  const world = raid.host.world;
+  const universe = findUniverse(world);
+
+  for (const mark of marks) {
+    // Through `@mm/state`, which owns the axis bitmasks and edict precedence
+    // together with `permits()`. A raid writing those fields itself would be a
+    // second implementation of §1.1 living in the one place — the constitution
+    // changing under fire — where a divergence would be hardest to notice.
+    writeRuleChange(world, universe, {
+      scope: mark.scope,
+      targetId: mark.targetId,
+      kind: mark.changeKind,
+    });
+
+    const handle = world.entities.create();
+    attachRecord(world, MID_RAID_CHANGE, handle, {
+      scope: mark.scope,
+      targetId: mark.targetId,
+      changeKind: mark.changeKind,
+      paidCost: mark.paidCost,
+      markedTick: worldTick,
+    });
+  }
 }
 
 /**

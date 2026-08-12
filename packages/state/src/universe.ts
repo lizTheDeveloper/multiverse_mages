@@ -24,7 +24,7 @@
 import type { EntityHandle, SimState } from '@mm/sim-core';
 import { NULL_ENTITY, eraOf } from '@mm/sim-core';
 
-import { EDICT, UNIVERSE } from './components.js';
+import { EDICT, MID_RAID_CHANGE, UNIVERSE } from './components.js';
 import type { UniverseRecord } from './components.js';
 import { EDICT_BUDGET_MAX } from './enums.js';
 import type { Edict, RulesetSnapshot } from './permits.js';
@@ -118,6 +118,61 @@ export function readUniverse(state: SimState, universe: EntityHandle): UniverseR
  */
 export function readEdicts(state: SimState): Edict[] {
   return collectRecords(state, EDICT).map(({ row }) => ({ cellId: row.cellId, kind: row.kind }));
+}
+
+/**
+ * One durable mark left by a ruleset change made during a raid.
+ *
+ * A projection of the {@link MID_RAID_CHANGE} row with its handle, because the
+ * handle is what a caller needs in order to clear a mark once it has been paid
+ * for. Ascending by handle: the marks are read while pricing an action, and a
+ * price whose order two peers disagree about is a desync.
+ */
+export interface MidRaidMark {
+  readonly handle: EntityHandle;
+  /** {@link RULE_SCOPE}. */
+  readonly scope: number;
+  /** Technique bit, form bit, or cell id, by `scope`. */
+  readonly targetId: number;
+  /** {@link RULE_CHANGE_KIND}. */
+  readonly changeKind: number;
+  /** Favor paid inside the raid. The surcharge's base. */
+  readonly paidCost: number;
+  readonly markedTick: number;
+}
+
+/** Every mid-raid ruleset change still unreverted, ascending by handle. */
+export function readMidRaidMarks(state: SimState): MidRaidMark[] {
+  return collectRecords(state, MID_RAID_CHANGE)
+    .map(({ handle, row }) => ({
+      handle,
+      scope: row.scope,
+      targetId: row.targetId,
+      changeKind: row.changeKind,
+      paidCost: row.paidCost,
+      markedTick: row.markedTick,
+    }))
+    .sort((a, b) => a.handle - b.handle);
+}
+
+/**
+ * The mark a scope and target carries, or `undefined`.
+ *
+ * The lookup the god-action pricing path makes, kept here rather than at the
+ * call site so that "which change is still marked" has one answer. Ties cannot
+ * happen — a scope and target carry at most one mark, because clearing is part
+ * of paying the surcharge — but the first by handle is returned regardless, so
+ * a state that somehow held two would still price deterministically rather than
+ * by iteration order.
+ */
+export function findMidRaidMark(
+  state: SimState,
+  scope: number,
+  targetId: number,
+): MidRaidMark | undefined {
+  return readMidRaidMarks(state).find(
+    (mark) => mark.scope === scope && mark.targetId === targetId,
+  );
 }
 
 /**

@@ -65,7 +65,7 @@ describe('shipped content', () => {
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.
       godCosts: 16,
-      godConstants: 64,
+      godConstants: 65,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are.
       raidConstants: 41,

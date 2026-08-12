@@ -167,6 +167,30 @@ export function interventionCost(
 }
 
 /**
+ * What unmaking a mid-raid ruleset change costs.
+ *
+ * `raid-engagement.md` §1: *"after the raid, reverting a mid-raid change costs
+ * substantially more favor than the change did."* Two readings of "than the
+ * change did" are available and this takes both — the base is the larger of the
+ * ordinary price of the reverting action and what the change actually cost
+ * inside the engagement, and the multiplier is applied to that.
+ *
+ * Taking the maximum rather than only the paid cost matters because a change
+ * made with a verb the balance harness later prices at zero would otherwise be
+ * free to unmake, which would quietly delete the mechanic. Taking the maximum
+ * rather than only the base matters because a god who spent heavily under fire
+ * should not find the walk-back cheap.
+ *
+ * This is deliberately **not** folded into {@link interventionCost}. That
+ * function prices an action; this prices a *history*, and the two multiply
+ * together at the call site so that a reverting action is priced by both its own
+ * hysteresis and the raid that made it necessary.
+ */
+export function revertSurcharge(base: Fixed, paidCost: Fixed, multiplier: Fixed): Fixed {
+  return mul(Math.max(base, Math.max(paidCost, 0)), multiplier);
+}
+
+/**
  * The share of a tick's regeneration attributable to worship alone.
  *
  * Exposed for the harness rather than for the rules: §7's `worshipSnowball` is

@@ -78,6 +78,15 @@ export type {
 } from './arbitration.js';
 export { COMBAT_PRIMITIVES, CastArbiter, summonCount } from './arbitration.js';
 
+export type {
+  LockRefusal,
+  LockedChange,
+  MaskSubject,
+  RuleChangeContext,
+  RuleChangeResult,
+} from './lock.js';
+export { RaidLock, applyRuleChange } from './lock.js';
+
 export type { CombatantBrief, EligibleCohort, EligibleMage, SideRoster } from './combatants.js';
 export {
   ATTACKER,
@@ -120,6 +129,7 @@ export {
 export type {
   CasualtyRecord,
   CohortLossRecord,
+  ConstitutionalMark,
   KnowledgeMovement,
   ObjectiveOutcome,
   PrimitiveApplication,
@@ -138,6 +148,7 @@ export {
 export type { OpenPortalOptions, Raid, RaidFaults, RaidParticipant } from './raid.js';
 export {
   CASTABLE_MASTERY,
+  changeRuleMidRaid,
   closePortal,
   currentPhase,
   deploymentPosition,
