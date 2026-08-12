@@ -58,7 +58,7 @@ describe('shipped content', () => {
       v1Cells: 12,
       nodes: 300,
       species: 6,
-      traditions: 3,
+      traditions: 7,
       territories: 5,
       primitives: 16,
       // One per action id in contracts.md §4.2, and one per magnitude the
@@ -308,15 +308,84 @@ describe('shipped content', () => {
     );
   });
 
-  it('ships the three v1 traditions, each declaring exactly four hooks', () => {
+  it('ships the three v1 traditions and W28’s four regimes, each declaring exactly four hooks', () => {
     expect(registry.traditions.map((entry) => entry.record.id).sort()).toEqual([
       'art-of-memory',
+      'chorale',
+      'flesh-codex',
+      'shared-mind',
       'true-naming',
       'vancian-memorization',
+      'witch-bond',
     ]);
     for (const entry of registry.traditions) {
       expect(Object.keys(entry.record.hooks).sort()).toEqual(['acquire', 'cast', 'cost', 'store']);
     }
+  });
+
+  /**
+   * The four W28 regimes occupy four *structural corners* of the world-time
+   * store/acquire space, and the corner is the design — not the magnitudes.
+   *
+   * Only five hook fields reach the world loop at all: the two acquire cost
+   * multipliers, `instanceMastery`, `slotsPerMage`, and `scribingAvailable`.
+   * Two of those are effectively switches — scribing on or off, and whether
+   * `instanceMastery` clears the 512 teach threshold — so the regime space is a
+   * small grid of corners, and a "new tradition" that lands on an occupied
+   * corner is a re-skin. This pins each regime to the corner it was authored
+   * for, so that becoming a re-skin is a test failure rather than a discovery
+   * made during the next sweep.
+   */
+  it('places each W28 regime on a structural corner no other tradition occupies', () => {
+    // Restated here rather than imported: `@mm/content` may not depend on
+    // `@mm/rules-magic`, and these two numbers are the reason the corners are
+    // corners. `DEFAULT_INITIAL_MASTERY` is what an instance is born at when a
+    // tradition says nothing, and 512 is the mastery a held instance must reach
+    // before it can be taught — which `setMastery`'s only rules-path caller
+    // lowers toward, never raises. An instance born below it never teaches.
+    const DEFAULT_MASTERY = 256;
+    const TEACH_THRESHOLD = 512;
+
+    const cornerOf = (id: string): string => {
+      const record = registry.traditions.find((entry) => entry.record.id === id)?.record;
+      if (record === undefined) throw new Error(`missing tradition ${id}`);
+      const store = record.hooks.store;
+      const acquire = record.hooks.acquire;
+      const mastery = Number(acquire.params?.['instanceMastery'] ?? DEFAULT_MASTERY);
+      const scribes = store.kind !== 'palace';
+      const bounded = store.kind === 'palace' || store.kind === 'bounded';
+      return [
+        scribes ? 'writes' : 'unwritten',
+        bounded ? 'bounded' : 'unbounded',
+        mastery >= TEACH_THRESHOLD ? 'teaches' : 'no-teaching',
+      ].join('/');
+    };
+
+    const corners = new Map(
+      ['vancian-memorization', 'true-naming', 'art-of-memory', 'chorale', 'flesh-codex', 'shared-mind', 'witch-bond'].map(
+        (id) => [id, cornerOf(id)] as const,
+      ),
+    );
+
+    expect(corners.get('chorale')).toBe('unwritten/bounded/teaches');
+    expect(corners.get('flesh-codex')).toBe('unwritten/bounded/no-teaching');
+    expect(corners.get('shared-mind')).toBe('unwritten/bounded/teaches');
+    expect(corners.get('witch-bond')).toBe('writes/bounded/no-teaching');
+
+    // Every regime that shares a corner must differ on the magnitude that
+    // defines it. Chorale and Shared Mind sit on the same corner deliberately —
+    // one unbounded in practice at 4096 slots, one held to twelve — and that
+    // difference is the whole of what separates them.
+    const slotsOf = (id: string): number =>
+      Number(
+        registry.traditions.find((entry) => entry.record.id === id)?.record.hooks.store.params?.[
+          'slotsPerMage'
+        ] ?? 0,
+      );
+    expect(slotsOf('chorale')).toBe(4096);
+    expect(slotsOf('shared-mind')).toBe(12);
+    expect(slotsOf('flesh-codex')).toBe(3);
+    expect(slotsOf('witch-bond')).toBe(5);
   });
 
   it('gives each tradition the hook kinds knowledge-model specified', () => {

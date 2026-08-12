@@ -132,12 +132,31 @@ export interface HookRecord {
 export interface TraditionRecord {
   readonly id: string;
   readonly name: string;
+  /**
+   * One sentence saying what performing magic *is* under this tradition.
+   *
+   * Required, like every other content record's gloss, and for the reason W28
+   * measured: a tradition's identity is four hook params, and four integers
+   * cannot say whether a universe sings its magic or cuts it into itself. The
+   * gloss is where the regime is stated in words a reader can check the params
+   * against.
+   */
+  readonly gloss: string;
   readonly hooks: {
     readonly acquire: HookRecord;
     readonly store: HookRecord;
     readonly cast: HookRecord;
     readonly cost: HookRecord;
   };
+  /**
+   * Whether the hook params below have been through the balance harness.
+   *
+   * `untuned` for every shipped tradition, and honestly so: the harness does not
+   * exist until 0.5.0, and a tradition's params are among the most
+   * consequential magnitudes in the game — Art of Memory's `slotsPerMage: 12`
+   * moves ascension rate by a factor of five.
+   */
+  readonly tuningStatus: TuningStatus;
 }
 
 export type PrimitiveScale = 'world' | 'engagement' | 'both';

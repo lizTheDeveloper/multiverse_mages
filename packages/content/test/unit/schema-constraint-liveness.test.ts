@@ -150,6 +150,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'node.schema.json#/$defs/effect/properties/target',
     'species.schema.json#/$defs/species/properties/tuningStatus',
     'territory.schema.json#/$defs/territory/properties/tuningStatus',
+    'tradition.schema.json#/$defs/tradition/properties/tuningStatus',
     'primitive.schema.json#/$defs/primitive/properties/scale',
     'primitive.schema.json#/$defs/primitive/properties/stacking',
     'primitive.schema.json#/$defs/cap/properties/kind',

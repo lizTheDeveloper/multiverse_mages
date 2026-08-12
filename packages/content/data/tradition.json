@@ -2,6 +2,8 @@
   {
     "id": "vancian-memorization",
     "name": "Vancian Memorization",
+    "gloss": "A mage holds a small number of prepared spells and casting expends the preparation, not the knowledge. The whole tradition lives at cast and cost, which is why it is the one tradition a world-time measurement cannot see.",
+    "tuningStatus": "untuned",
     "hooks": {
       "acquire": { "kind": "standard" },
       "store": { "kind": "standard" },
@@ -12,6 +14,8 @@
   {
     "id": "true-naming",
     "name": "True Naming",
+    "gloss": "The knowledge instance is a name, and a name is either known or not. Discovery is dear, speaking it to a student is cheap, and every instance arrives whole — which is the one thing that makes teaching possible at all, since an instance born below the teach threshold can never rise to it.",
+    "tuningStatus": "untuned",
     "hooks": {
       "acquire": {
         "kind": "true-name",
@@ -29,6 +33,8 @@
   {
     "id": "art-of-memory",
     "name": "The Art of Memory",
+    "gloss": "Knowledge is walked through in a mental palace rather than shelved in a book. Nothing is written, a mage holds twelve rooms and no more, and all of it dies with her — the tradition that measures as a different game.",
+    "tuningStatus": "untuned",
     "hooks": {
       "acquire": { "kind": "standard" },
       "store": {
@@ -39,6 +45,109 @@
           "burnable": false,
           "libraryDepthCoefficient": 768
         }
+      },
+      "cast": { "kind": "standard" },
+      "cost": { "kind": "standard" }
+    }
+  },
+  {
+    "id": "chorale",
+    "name": "The Chorale",
+    "gloss": "Magic as music. Nothing is written down and nothing is owned; a singer carries as many songs as she can hold, composing a new one is long labour, and being sung to is the fastest way anyone learns anything. The tradition of unbounded, unwritten, living transmission.",
+    "tuningStatus": "untuned",
+    "hooks": {
+      "acquire": {
+        "kind": "true-name",
+        "params": {
+          "researchCostMultiplier": 3072,
+          "teachCostMultiplier": 256,
+          "instanceMastery": 1024
+        }
+      },
+      "store": {
+        "kind": "palace",
+        "params": {
+          "slotsPerMage": 4096,
+          "lootable": false,
+          "burnable": false,
+          "libraryDepthCoefficient": 0
+        }
+      },
+      "cast": { "kind": "standard" },
+      "cost": { "kind": "standard" }
+    }
+  },
+  {
+    "id": "flesh-codex",
+    "name": "The Flesh Codex",
+    "gloss": "Magic cut into the body. Inscribing a working on yourself is quick and nobody can teach you your own scars, so every mage carves her own; there is only so much skin, and none of it is on any shelf when she dies. The tradition of cheap discovery and total loss.",
+    "tuningStatus": "untuned",
+    "hooks": {
+      "acquire": {
+        "kind": "true-name",
+        "params": {
+          "researchCostMultiplier": 256,
+          "teachCostMultiplier": 4096,
+          "instanceMastery": 256
+        }
+      },
+      "store": {
+        "kind": "palace",
+        "params": {
+          "slotsPerMage": 3,
+          "lootable": true,
+          "burnable": true,
+          "libraryDepthCoefficient": 0
+        }
+      },
+      "cast": { "kind": "standard" },
+      "cost": { "kind": "standard" }
+    }
+  },
+  {
+    "id": "shared-mind",
+    "name": "The Shared Mind",
+    "gloss": "Magic as telepathy. Deriving a working alone is near hopeless and thought passes between minds almost freely, but a mind holds only twelve of the shared thing at once and none of it can be written. Authored as the Art of Memory with transmission switched on, so that the teach-threshold cliff can be measured against a controlled arm.",
+    "tuningStatus": "untuned",
+    "hooks": {
+      "acquire": {
+        "kind": "true-name",
+        "params": {
+          "researchCostMultiplier": 4096,
+          "teachCostMultiplier": 128,
+          "instanceMastery": 1024
+        }
+      },
+      "store": {
+        "kind": "palace",
+        "params": {
+          "slotsPerMage": 12,
+          "lootable": false,
+          "burnable": false,
+          "libraryDepthCoefficient": 0
+        }
+      },
+      "cast": { "kind": "standard" },
+      "cost": { "kind": "standard" }
+    }
+  },
+  {
+    "id": "witch-bond",
+    "name": "The Witch's Bond",
+    "gloss": "Deals struck with something that already knows the answer. The bargain is quick and it is struck alone, so nothing is ever taught; but the terms are written and the books outlast everyone who signed them, and a witch may hold only five bonds before she has nothing left to offer.",
+    "tuningStatus": "untuned",
+    "hooks": {
+      "acquire": {
+        "kind": "true-name",
+        "params": {
+          "researchCostMultiplier": 192,
+          "teachCostMultiplier": 4096,
+          "instanceMastery": 256
+        }
+      },
+      "store": {
+        "kind": "bounded",
+        "params": { "slotsPerMage": 5 }
       },
       "cast": { "kind": "standard" },
       "cost": { "kind": "standard" }

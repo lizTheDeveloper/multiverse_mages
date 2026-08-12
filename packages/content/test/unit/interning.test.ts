@@ -258,7 +258,18 @@ describe('contentRevision', () => {
     // Three branches each recorded a successor to 2512ea02 — W6's ec506311,
     // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
     // other. This is the revision of the tree that holds all three.
-    expect(registry.contentRevision).toBe('a622452a3b55e38fd902a2d3264b44d7');
+    //
+    // a622452a3b55e38fd902a2d3264b44d7 -> 1f471d16ed93d75ade4284e72596803b, when
+    // W28 authored four new traditions — `chorale`, `flesh-codex`, `shared-mind`
+    // and `witch-bond` — and gave every tradition the `gloss` and `tuningStatus`
+    // every other content record already carried. Unlike most moves above it,
+    // this one *does* change existing records: the three v1 traditions each
+    // gained two fields, and every tradition's interned id moved, because four
+    // ids sorted into the middle of a three-id namespace (`true-naming` 2 -> 5).
+    // Two universes on either side of this revision would disagree about which
+    // integer names which tradition, which is exactly the incompatibility the
+    // revision exists to refuse.
+    expect(registry.contentRevision).toBe('1f471d16ed93d75ade4284e72596803b');
   });
 
   it('is stable across loads of identical content', () => {

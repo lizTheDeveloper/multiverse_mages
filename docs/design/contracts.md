@@ -488,6 +488,8 @@ If `raid-engagement` wants it, that change amends this section with a use for it
 {
   "id": "art-of-memory",
   "name": "The Art of Memory",
+  "gloss": "Knowledge is walked through in a mental palace rather than shelved in a book.",
+  "tuningStatus": "untuned",
   "hooks": {
     "acquire": { "kind": "standard" },
     "store":   { "kind": "palace",
@@ -512,7 +514,7 @@ honoured by writing nothing.
 | Hook | Kinds |
 |---|---|
 | `acquire` | `standard`, `true-name` |
-| `store` | `standard`, `palace` |
+| `store` | `standard`, `bounded`, `palace` |
 | `cast` | `standard`, `prepared` |
 | `cost` | `standard`, `prepaid` |
 

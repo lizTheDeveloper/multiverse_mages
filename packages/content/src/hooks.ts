@@ -62,6 +62,16 @@ export const HOOK_KINDS: Readonly<Record<HookPoint, Readonly<Record<string, Hook
   },
   store: {
     standard: { params: {} },
+    // `standard` hardcodes unbounded capacity and `palace` cannot keep a written
+    // copy, so "books exist AND a mage's memory is finite" was inexpressible in
+    // the v1 vocabulary. That is the one corner of the store space W28 could not
+    // author without a kind, and this is the kind: `standard` in every respect
+    // except that a mage's personal store has a declared ceiling.
+    bounded: {
+      params: {
+        slotsPerMage: { type: 'integer', minimum: 1, maximum: 4096, required: true },
+      },
+    },
     palace: {
       params: {
         slotsPerMage: { type: 'integer', minimum: 1, maximum: 4096, required: true },
