@@ -304,7 +304,17 @@ Two instrument facts already established by reading the tree, before any number 
         `referencePopulation` **4859.31 → 19769.0**, `referenceKnowledgeInstances`
         **2025.38 → 2746.66**, `referenceGrimoires` **1012.56 → 1230.41**, `referenceLivingMages`
         **73.28 → 111.63**, `referenceNodesKnown` **58.53 → 60.84**.
-- [ ] 5. `w7/knowledge-capital`
+- [x] 5. `w7/knowledge-capital` — **conflicts**: three baselines (took W7's, provisional) and
+      `executor.ts` + `reference-universe.ts`, which were collision 5 in full. Resolved to one
+      tradition selector, W13's; `traditionIndex`, `defaultTraditionIndex`, `traditionOrder`,
+      `contentForTradition` and the `contentByTradition` cache deleted. Typecheck clean.
+      **Tests: 3721 in 265 files, all pass. No golden fixture changed.**
+      Gates: **refused, not failed** — `baseline-invalid: provenance.contentHash is
+      "ec506311ed7aadeb1aaf0e14f5750465" and the baseline was recorded at
+      "2512ea02d2a7569d8d0bacc4c5a926ca"`, because W6 added ascension constants to
+      `god-constant.json` after W7's baseline was taken. **Every metric under it reads delta
+      0.00000**, including `referenceLibraryDepth` at W7's own 7.14500 against `main`'s 1.47000 —
+      so W7's mechanism reproduces exactly on the merged tree and the refusal is provenance alone.
 - [ ] 6. `w8/raid-engagement-live`
 - [ ] 7. `w17/value-sensitive-acquirer` (+ the NUL fix)
 - [ ] 8. `w10/server-contracts`
