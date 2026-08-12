@@ -88,13 +88,22 @@ imports it — and that is what makes its unusually wide edge list safe. Two fur
 as §2.7 said it would) and the `university-site` component (a university stands in a *kind of
 country* — a relationship, which vision §7a permits, and not a coordinate, which it forbids).
 
-Each addition cost a world-schema revision — `WORLD_SCHEMA_VERSION` is now **5**: revision 2
-`goal-commitment`, 3 `effort-progress`, 4 `god-agency`'s four rows, 5 the siting pair — and **none
-of them moved `sim-core`'s `SNAPSHOT_VERSION`**, which is inside the hashed header and would break
-every golden fixture with a version error instead of a behaviour diff. A world-schema step appends
-empty sections and nothing else; `packages/state/src/migrations.ts` carries the argument for each
-one, including why revision 5 must *not* synthesize the territory rows it would be so convenient to
-synthesize.
+Each addition cost a world-schema revision — `WORLD_SCHEMA_VERSION` is now **6**: revision 2
+`goal-commitment`, 3 `effort-progress`, 4 `god-agency`'s four rows, 5 the siting pair, 6
+`bar-phase` (`sound-design.md` §5.2's eight-bar unease, from `timing-and-envelopes`) — and **none
+of them moved `sim-core`'s `SNAPSHOT_VERSION`**, which is still **1**, is inside the hashed header,
+and would break every golden fixture with a version error instead of a behaviour diff. A
+world-schema step appends empty sections and nothing else; `packages/state/src/migrations.ts`
+carries the argument for each one, including why revision 5 must *not* synthesize the territory rows
+it would be so convenient to synthesize.
+
+**Revision 6 is also the one worked example of when renumbering is allowed.** `university-siting`
+and `timing-and-envelopes` were both cut from a revision-4 tree, neither contained the other, and
+each authored its own `from: 4, to: 5` migration. Two different revision 5s cannot both exist — the
+number is what a migration step is keyed on — so integration renumbered `addBarPhase` to 5 → 6.
+That is safe **only because neither had shipped**: no snapshot in existence carried `bar-phase`, so
+no save could be keyed to the revision it used to claim. The rule in `migrations.ts` still reads
+*"append; never renumber"*, and this is the exception that proves where its edge is.
 
 Two commands worth knowing before touching the core:
 

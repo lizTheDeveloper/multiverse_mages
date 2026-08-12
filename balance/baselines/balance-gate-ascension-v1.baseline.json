@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
-  "contentHash": "e0e6876b71f9a57f4334695f1102f7b676868bda38e1eb5af138e49f937064af",
+  "contentHash": "c5fe811250fa6957d48d3191278d48f8f69994cee86ac571add78f78562b8d80",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":103.29621136501605,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":309.88863409504813,"unit":"grimoires","value":262.03125},
@@ -15,7 +15,9 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":32,"standardError":2364.315578996817,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":7092.9467369904505,"unit":"people","value":19716.6875},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":2364.315578996817,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":7092.9467369904505,"unit":"people","value":19572.6875}
   ],
-  "notes": [],
+  "notes": [
+    "The universe remains degenerate in known ways and integration round 3 closes none of them; it measures them together under a repaired scorer. Five of the seven deliberate strategies still finish holding all 51 reachable v1 nodes, so cross-strategy containment stays 1.000 and D3, D6, D7 and D9 are saturated against the content ceiling rather than failed against the game. Measured at n=400 on the ten-strategy pool with both adversarial probes: permit-then-idle wins 38 of 40 while funding no university, blessing no mage and encouraging no research, and it holds the pool's highest node count at 269.9. In the single-species arms nobody ascends at all for human or orc across 400 runs each, because the ascension predicates are anchored to a passive baseline measured on the full species mix. capitalSnowball reads 0.4327 here and 0.9358 to 0.9895 in the species arms, against the 0.35 its sibling worshipSnowball is held to; not tuned away. These three gate sweeps are 100 percent passive-control and submit no god verb, and capitalSnowball is NOT asserted by this file."
+  ],
   "provenance": {
     "buildVersion": "0.3.0",
     "contentHash": "5a2a97df2d263e4a629aa2a5f3037020",
@@ -28,18 +30,18 @@
   "rootSeed": 20260811,
   "runCount": 32,
   "supersededDeltas": [
-    {"delta":-1.78125,"deltaInStandardErrors":-0.016697961382632152,"metricId":"referenceGrimoires","previousValue":263.8125,"value":262.03125},
-    {"delta":-115.0625,"deltaInStandardErrors":-0.2674224839465273,"metricId":"referenceKnowledgeInstances","previousValue":2631,"value":2515.9375},
-    {"delta":-1.59375,"deltaInStandardErrors":-0.38247763254248324,"metricId":"referenceLibraryDepth","previousValue":12.84375,"value":11.25},
-    {"delta":-5.0625,"deltaInStandardErrors":-0.2518205314577552,"metricId":"referenceLivingMages","previousValue":106.1875,"value":101.125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":262.03125,"value":262.03125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":2515.9375,"value":2515.9375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":11.25,"value":11.25},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":101.125,"value":101.125},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":64.375,"value":64.375},
-    {"delta":-0.46875,"deltaInStandardErrors":-0.36489361426819367,"metricId":"referenceNodesGainedFinalQuarter","previousValue":3.03125,"value":2.5625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":2.5625,"value":2.5625},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":66.875,"value":66.875},
-    {"delta":-191,"deltaInStandardErrors":-0.30239461705917275,"metricId":"referencePeakPopulation","previousValue":50230,"value":50039},
-    {"delta":632.28125,"deltaInStandardErrors":0.2610363537774458,"metricId":"referencePopulation","previousValue":19084.40625,"value":19716.6875},
-    {"delta":632.28125,"deltaInStandardErrors":0.2610363537774458,"metricId":"referencePopulationChange","previousValue":18940.40625,"value":19572.6875}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":50039,"value":50039},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":19716.6875,"value":19716.6875},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":19572.6875,"value":19572.6875}
   ],
-  "supersedes": "d95ca9433e98d4889173f374d67691660dc5512624537fc74d6f928609e3a1f7",
+  "supersedes": "e0e6876b71f9a57f4334695f1102f7b676868bda38e1eb5af138e49f937064af",
   "sweepId": "balance-gate-ascension-v1",
   "toleranceK": 3
 }
