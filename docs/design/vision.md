@@ -289,11 +289,17 @@ saving and it is why the entity store's component model must not assume every en
   researching, teaching, and building. An attacker pays that price as surely as a defender, which
   means raiding is never free and a third party profits from every war. This is the intended
   shape.
-- **It also creates a griefing surface, which must be measured, not assumed away.** A player who
-  is raided repeatedly loses world time others are spending. `raid-engagement` and `god-agency`
-  must between them bound inbound raid frequency, and the balance harness must report tempo lost
-  to inbound raids as a first-class metric. An unbounded version of this rule is a live-PvP
-  death sentence dressed as a strategic cost.
+- **It also creates a griefing surface, which must be measured, not assumed away** — but what
+  bounds it is not a cap on raid frequency. **Elimination is intended.** A player raided to
+  ruin loses a *universe*, and rejoins: a fresh universe in a different bubble, carrying prestige
+  (§8a, §8b). A losing player quits — that is the game — and you can always rejoin. So the
+  quantity to hold down is the **cost of re-entry**, not the number of doors someone may knock on.
+  The balance harness still reports tempo lost to inbound raids as a first-class metric, and it
+  should be read for what it is: W8 measured `inboundRaidTempoLoss` at **0.0** and named why —
+  §8's tempo cost is defined against *uninvolved* universes, and `contracts.md` §1.1 puts exactly
+  one universe in a simulation instance, so there is no third party for it to be relative to. The
+  metric cannot bite until a bubble exists to hold the third party. That is a fact about the
+  measurement, not a finding about the game.
 - **Entry** requires *Rego Limen* — the portal cell — and favor.
 - **Arbitration:** host ruleset governs (§3). Casting and cost follow the host's tradition; what
   a raider knows and how she carries it follow her own (§4a).
@@ -327,6 +333,51 @@ Design constraints this creates, to be honoured in `god-agency` and the balance 
   ascend, it is not a summit; if almost none do, the meta-game never starts.
 - Defeat is not the opposite of ascension. A universe that is raided to ruin does not "lose" —
   it stagnates, and stagnation is its own ending.
+
+**Defeat is a re-entry, and it is already priced.** A universe ends; a player does not. Losing
+returns you to a fresh universe in a new bubble (§8b) rather than to a menu, and the legacy you
+carry is not zero: `prestige-base-stagnated` is **128**, and the constant's own gloss in
+`god-constant.json` says why it is not zero — *"a zero floor makes losing streaks spiral, which is
+runaway leaders wearing the opposite sign."* Both ends of the prestige range are therefore bounded
+on purpose: a cap so winning does not compound, a floor so losing does not. What re-entry must not
+become is a *better* opening than a normal one, which is what `prestigeAdvantage` is for.
+
+## 8b. Bubbles, Colonization, and Where You Land Next
+
+A universe does not float in an unbounded multiverse. It lives in a **bubble**: a bounded
+neighbourhood of universes that may portal to one another. That is the answer to the question §8
+never asks — *who, exactly, can raid me?* — and it is also the missing supply of portal targets
+that is why no raid fired at all for three releases.
+
+Inside a bubble the loop is §8 carried to its end. Raid a rival; loot their books; and if you
+extinguish their mages, that universe ends and its populace, materials and worship pass to you.
+Clear your bubble and you are **promoted** to a tier populated by others who cleared theirs. Lose
+your universe and you rejoin a fresh bubble, carrying prestige. Only universes end.
+
+Three things anchor this to the design as it already stands rather than bolting a second game onto
+it. A mageless universe is *already* terminal — `stagnation-mageless-ticks` is 60 — so
+"extinguish their mages" is a new **consequence** of an existing ending, not a new ending. §7's
+worship loop is already the transfer channel, since favor regeneration scales with worship drawn
+from mages, universities *and populace*, and a populace revering a new god is a quantity the model
+already holds. And §7a survives intact: populace, materials and worship are counts and
+relationships, which is all a colony is.
+
+**Where the balance risk moves is onto the conqueror**, and §6a already warned about exactly this
+shape. Tribute feeding an already-compounding worship→favor loop is the second compounding loop
+feeding the first. The number to watch is named: integration round 2 measured `capitalSnowball` at
+**0.4571** against the **0.35** its sibling is held to, from a population carrying *zero* prestige.
+Colonization would push on a loop that is already over its guard.
+
+**Specified, not scheduled.** `openspec/changes/colonization` holds the design, and its own verdict
+is that colonization does not earn a place in v1 beside looting: its effect is measurably near-zero
+at this build, and it does not address the constraint the campaign measured as binding. The piece
+that *is* urgent is the bubble as a bounded neighbourhood, because nothing else supplies
+`portalTargets`. The tier ladder is a ranked progression whatever it is called, and §12 puts one
+out of v1. This section records the mechanic so it is traceable; the change decides when.
+
+**One word, one meaning.** *Prestige* is a **noun**: §8a's carried-forward score, with authored
+constants and a loader-asserted identity behind it. Advancing a tier is **promotion**. This
+document does not use *prestige* as a verb, and neither should the code.
 
 ## 9. Balance Methodology
 
