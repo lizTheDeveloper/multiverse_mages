@@ -1,6 +1,7 @@
 # Multiverse Mages — Design Vision
 
-*Status: approved 2026-08-10. This document is the vision of record. Every OpenSpec change
+*Status: approved 2026-08-10; amended 2026-08-12 during campaign round 2 — §4, §4b, §7, §7a, §8,
+§8a, §8b, §11, §12 and §13. This document is the vision of record. Every OpenSpec change
 should trace to a section here; anything built that isn't described here is scope creep, and
 anything described here that never ships is an unmet promise.*
 
@@ -367,16 +368,32 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 |---|---|---|---|
 | 0.1.0 | `sim-core-foundation` | `simulation-core`, `world-persistence`, `deterministic-replay` | released |
 | 0.2.0 | `core-contracts` | `state-schema`, `content-schemas`, `primitive-semantics`, `observation-action-space`, `module-boundaries` | released |
-| 0.3.0 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | released |
-| 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | in progress |
-| 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | not started |
-| 0.7.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | not started |
-| 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | not started |
-| 0.11.0 | `gym-bridge` | `rl-bridge` | in progress |
-| 0.13.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only |
-| 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | proposal only |
-| — | `metis-knowledge` | `metis-knowledge` | proposal only |
+| 0.3.0 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | released; archived |
+| 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | 102/107 |
+| 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | 91/91 — tasks complete, unreleased |
+| 0.7.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | 59/75, and it runs every world tick |
+| 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | 67/92, and raids now fire |
+| 0.11.0 | `gym-bridge` | `rl-bridge` | 76/76 — tasks complete, unreleased |
+| 0.13.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only — no tasks, no package |
+| 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | 33/41; `packages/server` exists |
+| — | `metis-knowledge` | `metis-knowledge` | proposal only — 1/51 |
 | 1.0.0 | — | contracts freeze; public release | — |
+
+**The Status column is task progress, and task progress is not a release.** Reconciled on
+2026-08-12 against `openspec list` and this tree. Three rows had read *"not started"* while the
+code they name was between two-thirds and entirely built, and two of the three execute on every
+run — `god-agency`'s worship and favor systems every world tick, and `raid-engagement`'s engine
+now that something supplies it a portal target. Anyone reading the old column would have
+materially underestimated how far the project has gone, which is the failure mode this table
+exists to prevent.
+
+The distinction the old column lost is the one worth keeping: **a finished task list is not a
+shipped version.** `agent-interface` and `gym-bridge` are complete and unreleased, which under the
+parity rule below is precisely what *in flight* means — they land on an odd MINOR and are promoted
+once the baselines are green. Root `package.json` is `0.3.0` and the newest tag is `v0.2.0`, so
+0.3.0 shipped its change without the tag `docs/design/release-plan.md` requires; recorded here
+rather than fixed by this amendment. Re-run `openspec list` before trusting any cell — writing the
+counts down is what makes them falsifiable, not what makes them permanent.
 
 Versions skip because **MINOR parity encodes balance validation from 0.5.0 onward** — odd means
 in flight, even means the Monte Carlo baselines are committed and green. Every capability therefore
