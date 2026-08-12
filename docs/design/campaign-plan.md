@@ -93,6 +93,43 @@ single test that the species table has become load-bearing.
 
 ---
 
+## The finding that reframes all the others — verified
+
+**The 51-node "passive baseline" is content exhaustion, not a baseline.**
+
+    70 cells authored, 12 enabled (3 techniques x 4 forms, the v1 subset per vision §12)
+    those 12 cells contain exactly 51 of the 300 authored nodes
+    an idle universe learns all 51
+
+So every strategy plateaus at 51 because **51 is everything available**. `permissive-breadth`
+reaches 217 for one reason only: permitting cells unlocks the other 249 pre-authored nodes. The
+"one axis of play" this campaign kept measuring is not a balance failure — it is the only lever
+that adds content to a set the world exhausts on its own.
+
+This reframes every earlier finding rather than replacing them:
+
+- **~55 copies per node** is 2900 instances spread over an *exhausted* 51-node set. Redundancy is
+  worthless partly because there is nothing left to lose that cannot be re-derived from a set the
+  universe has already completely learned.
+- **The archivist's 4096 grimoires** are copies of a completed set.
+- **Five identical achievement vectors** — 12 mastered cells, 51 nodes, 12 cells — are five
+  strategies all reaching the same ceiling, because the ceiling is content, not skill.
+
+**The v1 subset is not too small. Acquisition is too easy.** Vision §12 deliberately scopes v1 to
+3x4 cells, and twelve cells of contested, hard-won magic would be plenty to fight over. They are
+not contested because C2 (teaching dead), C3 (no destruction path) and the absent raids mean
+nothing impedes a universe from learning everything it can reach and never losing any of it.
+
+That is the campaign's thesis, and D1-D8 are how it gets tested.
+
+## A second premise of mine, refuted
+
+**`completedUniversities` is inverted as a Path A gate.** Both `discriminating-ascension` and my
+own brief to W6 named it the successor knob. Measured: only the *random probe* ever completes a
+university — 26 of them — while every deliberate strategy ends with the single seeded one. Gating
+Path A on it would have handed the win condition to the exploit probe. Recorded so nobody proposes
+it again.
+
 ## What the campaign has since found — verified in the tree
 
 Three defects that explain the flat strategy space better than the raid finding alone.
