@@ -924,3 +924,48 @@ Method note worth copying: W19 **committed its decision rule before reading any 
 number** — a second dimension counts as real only if cross-strategy containment falls below the
 within-strategy diagonal *and* `betweenShare` stays high among the seven v1-bound strategies. After
 three saturation failures, pre-registration arrived without being asked for.
+
+---
+
+## The authorship call: the ceiling is the god's economy, not the knowledge graph
+
+Six workstreams built mechanics that worked and none moved the negative control. The cause is
+upstream of all of them, and it is arithmetic.
+
+    favor regen, passive, at tick 240        2,721 / tick
+    income over a 2400-tick run              6,531,264
+    cost of all 19 primary switches             98,304    (5 x 8192 + 14 x 4096)
+                                              = 1.51%
+
+**§4's design is fully implemented and carefully priced.** A technique row is fourteen cells and
+costs 8192; a form column is five and costs 4096. The edict budget genuinely grows as
+`1 + worshipTier`, capped at `EDICT_BUDGET_MAX`, and the mask enforces it. Someone thought hard
+about every part of it.
+
+**None of it binds.** `permit-then-idle` buys the entire grid inside its first 140 ticks with a 4×
+margin, and W9 separately measured **9.1–12.4M favor discarded per run** — the pool caps and
+overflows.
+
+So every verb is priced, no price binds, permit-everything dominates, and every mechanic built
+inside that ceiling is a decision the winner never has to make. That is why the compositional graph,
+the cost curves, the rituals and the timing rule each measured a null against `permit-then-idle`.
+
+And the reason favor does not bind is upstream of favor again: **worship accrues passively.** W16
+measured the populace term at **94.8% of its cap** at the reference populace — absorbing an entire
+rival civilization adds **+0.76%**. Income is effectively fixed, enormous, and independent of play.
+
+### Two levers, both already `untuned` content constants
+
+1. **Make the prices bite** — the ratio of favor income to the cost of the nineteen switches.
+2. **Make worship depend on play** rather than on existing.
+
+This is far smaller than anything built this session, and it is what six confirmations point at. It
+is also precisely what the balance tuner exists for — and the tuner is now repaired, with
+control-gated scoring, an exploit margin that no longer restates the ascension rate, and a refusal
+to calibrate on a partial pool.
+
+### What this does NOT mean
+
+It does not mean the content graph, the cost curves or the rituals were wasted. It means they were
+**unmeasurable** while one act bought the whole ceiling. Their value is untested, not disproved —
+and it becomes testable the moment permitting is a decision.
