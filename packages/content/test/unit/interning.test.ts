@@ -274,7 +274,19 @@ describe('contentRevision', () => {
     // what caster roles they demand, would be developing different magic while
     // their revisions agreed they were compatible — the same argument every prior
     // entry in this history makes, for the same reason.
-    expect(registry.contentRevision).toBe('2fc8c278bee8b8c7e62e645d5c7ebe83');
+    //
+    // 2fc8c278bee8b8c7e62e645d5c7ebe83 -> e3d4613284f6d261cac90fe13e80c1a6, when a
+    // gloss audit against `docs/design/content/spell-glosses.md` rewrote twenty
+    // gloss strings across twelve v1 nodes. **Provenance only: no rule reads a
+    // `gloss`, so no metric can move.** The revision changes anyway, and should —
+    // §0 makes this a compatibility gate over the whole content set rather than
+    // over the mechanical subset of it, precisely so that nobody has to maintain a
+    // second opinion about which fields count. The audit's substance was that
+    // eight `reveal`-mode Intellego nodes were glossed with the destruction verbs
+    // of the nodes they merely unlock, claiming a steal or an erasure at a node
+    // that contributes zero magnitude — content asserting a mechanic it does not
+    // have, invisible to every test, because a gloss is a string.
+    expect(registry.contentRevision).toBe('e3d4613284f6d261cac90fe13e80c1a6');
   });
 
   it('is stable across loads of identical content', () => {

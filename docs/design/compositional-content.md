@@ -659,6 +659,59 @@ Creo Vim — so adopting them also means deciding the enablement question in §7
 blocked on the same wiring gap, which is worth reading as a signal: **the cheapest next move is not
 more content, it is connecting the content that exists.**
 
+## 6d. Two technique-semantics questions, put up together
+
+### 6d.1 Perdo on `concealment` is inverted, and which way to fix it is a design decision
+
+A gloss audit found ~9–10 Perdo nodes carrying `{primitive: "concealment", target: "self", mode:
+"remove"}`, every one glossed as the caster becoming **more** hidden — *"the caster is a little
+harder to call"*. The mechanic does the opposite: `remove` contributes `−magnitude`, `concealment` is
+*"fp probability of evading targeting or detection"*, so those nodes **lower their own caster's
+concealment**.
+
+This is not a gloss overstating a mechanic. It is an **inversion**, and rewriting the prose would
+silently pick a side in a real ambiguity:
+
+> **Perdo is subtraction. On concealment, does it destroy the *shadow* — revealing you — or destroy
+> the *observation* — hiding you?**
+
+§4.1 says *"Perdo's signature is a hole"* without saying a hole in what. §4.2 pulls the other way:
+Umbra is *"the negative — everything in the reverb tail, nothing in the dry signal"*, which makes
+concealment a **presence** that Perdo would remove. The authored intent is clearly the second reading
+— Perdo Nomen unmakes your name and so you cannot be found — but the primitive is framed as a benefit
+*you hold*, so subtracting it subtracts your safety.
+
+**The deeper cause is the strict `mode` ↔ technique rule this workstream introduced**, and this is
+the first place it bites. `remove` reads cleanly on a primitive that measures *harm done to a target*
+(`direct-damage`, `area-denial`) and incoherently on one that measures *a good the holder has*
+(`concealment`, `ward`). The rule needs a refinement or the content needs re-homing, and the choice
+changes what Perdo means across all fourteen forms. **Raised, not decided.** Nothing was rewritten;
+the glosses and the mechanic still disagree, visibly, in the data.
+
+### 6d.2 Intellego's cost curve — settled, and there is no conflict
+
+W21 (`w21/timing-and-envelopes`) objects that calling Intellego's curve *"flat"* would make it
+identical to Rego's *"zero attack, gated release, rhythmically rigid"* and collapse two of §4.1's five
+shapes. **The objection is right about the word and wrong about the collision, and both curves should
+ship.**
+
+They act on different axes. W21's curves are a function of **progress within one acquisition** — the
+envelope over a node's research duration. The curves in §3.5 are a function of **tier** — what a node
+costs at all. On the tier axis these two are not close:
+
+| technique | tier-on-tier cost growth |
+|---|---|
+| intellego | 1.75, 1.71, 1.67, 1.60, 1.75, 1.71 |
+| rego | **2.00, 2.50, 2.00, 2.40, 2.00, 2.00** |
+
+Intellego grows at about 1.7× a tier; Rego at 2.0–2.5× in a three-value ladder. **"Flat" was a bad
+label for a curve that is not constant but merely the shallowest** — the intent was *flattest
+growth*, and §3.5 says so now. On W21's axis, *late-opening* is plainly the better reading of *"no
+impact at all; a filter opens"*, and nothing here contradicts it.
+
+Also confirmed: `technique.json` is byte-identical to base across this branch's whole history, so
+there is no content collision between the two workstreams.
+
 ## 7. The open question, raised rather than answered
 
 The author's instruction says *"author a complex web of nodes **per tradition**"*. Tracks as

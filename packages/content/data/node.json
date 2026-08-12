@@ -2758,7 +2758,7 @@
     "id": "il-erase-two-doors",
     "cell": "intellego-limen",
     "name": "Erase Two Doors",
-    "gloss": "Erase two thresholds' worth of memory from the wall in one working, so the ground has forgotten there was ever a door.",
+    "gloss": "Find exactly where two thresholds' worth of memory could be erased from the wall — precisely enough that erasing them becomes simple bookkeeping for whoever is equipped to do it.",
     "tier": 4,
     "prerequisites": [
       "il-read-the-unmarked-door",
@@ -2775,7 +2775,7 @@
         "target": "area",
         "durationTicks": 0,
         "mode": "reveal",
-        "gloss": "Erase two thresholds' worth of memory from the wall in one working. Wherever a sapper wants a hole, the ground has already forgotten there was ever a door.",
+        "gloss": "Locate two thresholds' worth of memory in the wall precisely enough that erasing them becomes simple bookkeeping for whoever a sapper hands the working to.",
         "reveals": {
           "cell": "perdo-limen"
         }
@@ -2804,7 +2804,7 @@
     "id": "il-stand-in-the-doorway",
     "cell": "intellego-limen",
     "name": "Stand in the Doorway",
-    "gloss": "Hold the seam itself. A mage who is neither inside nor out is difficult to look at directly, and harder still to remember having seen.",
+    "gloss": "Hold the seam itself, neither inside nor out — a stance from which exactly how strong the warding on either side is finally becomes legible.",
     "tier": 4,
     "prerequisites": [
       "il-read-the-binding",
@@ -2821,7 +2821,7 @@
         "target": "self",
         "durationTicks": 0,
         "mode": "reveal",
-        "gloss": "Hold the seam itself, neither inside nor out. A mage difficult to look at directly is, by the same standing, positioned to feel exactly how strong the warding around her is.",
+        "gloss": "Hold the seam itself, neither inside nor out. From that standing alone, exactly how strong the warding on either side is finally becomes legible.",
         "reveals": {
           "primitive": "ward"
         }
@@ -2882,7 +2882,7 @@
     "id": "il-erase-the-standing-gate",
     "cell": "intellego-limen",
     "name": "Erase the Standing Gate",
-    "gloss": "Erase a standing gate and mark exactly how far a step through it would once have carried, in the same working.",
+    "gloss": "Locate exactly where a standing gate could be erased, and mark exactly how far a step through it would once have carried, in the same working.",
     "tier": 6,
     "prerequisites": [
       "il-erase-two-doors",
@@ -2900,7 +2900,7 @@
         "target": "area",
         "durationTicks": 0,
         "mode": "reveal",
-        "gloss": "Erase a standing gate and mark exactly how far a step through it would once have carried. Nothing else in the grid removes a threshold this completely while still measuring what it used to do.",
+        "gloss": "Locate exactly where a standing gate could be erased, and measure exactly how far a step through it would once have carried. Nothing else in the grid maps a threshold's removal this precisely before it happens.",
         "reveals": {
           "cell": "perdo-limen",
           "primitive": "blink"
@@ -2912,7 +2912,7 @@
         "target": "self",
         "durationTicks": 0,
         "mode": "reveal",
-        "gloss": "What the ward used to protect becomes visible again, once — the last thing a sealed gate reveals before this working removes even the memory of standing there.",
+        "gloss": "What the ward used to protect becomes visible again, once — the last thing a sealed gate reveals before whatever comes next removes even the memory of standing there.",
         "when": {
           "kind": "revealed"
         },
@@ -3043,7 +3043,7 @@
     "id": "im-read-the-surface",
     "cell": "intellego-mentem",
     "name": "Read the Surface",
-    "gloss": "Take what is already at the front of a mind. Nothing is broken and nothing is missed, which is what makes it so hard to prosecute.",
+    "gloss": "Watch what is already at the front of a mind, without taking any of it. Nothing is broken and nothing is missed — which is what makes the watching itself so hard to prosecute.",
     "tier": 3,
     "prerequisites": [
       "im-follow-the-thought",
@@ -3060,7 +3060,7 @@
         "target": "single",
         "durationTicks": 0,
         "mode": "reveal",
-        "gloss": "Take what is already at the front of a mind. Nothing is broken, nothing is missed, and the taking itself is now visible to anyone who knows to look.",
+        "gloss": "Watch what is already at the front of a mind, without taking any of it. Nothing is broken, nothing missed — and the watching makes a deeper reach visible to anything built for one.",
         "reveals": {
           "primitive": "knowledge-steal"
         }
@@ -3073,7 +3073,7 @@
     "id": "im-hush-the-witness",
     "cell": "intellego-mentem",
     "name": "Hush the Witness",
-    "gloss": "Learn a mind's avoidances well enough to make it answer anyway. The second theft vector, and the one that leaves nothing intact.",
+    "gloss": "Learn a mind's avoidances well enough that forcing an answer out of it stops requiring its cooperation. The second theft vector, and the one that leaves nothing intact.",
     "tier": 4,
     "prerequisites": [
       "im-mark-the-avoidance",
@@ -3432,7 +3432,7 @@
     "id": "in-erase-the-ledger",
     "cell": "intellego-nomen",
     "name": "Erase the Ledger",
-    "gloss": "Strike an entry from the ledger cleanly enough that its absence does not itself read as a gap.",
+    "gloss": "Find exactly where an entry could be struck from the ledger cleanly enough that its absence would never read as a gap.",
     "tier": 4,
     "prerequisites": [
       "in-forget-the-lesser-name",
@@ -3449,7 +3449,7 @@
         "target": "self",
         "durationTicks": 0,
         "mode": "reveal",
-        "gloss": "Strike an entry from the ledger cleanly enough that its absence doesn't itself read as a gap. What's left unmarked can't be found by anyone checking the shelf.",
+        "gloss": "Mark exactly where an entry could be struck from the ledger without its absence ever reading as a gap — the striking itself is a different working.",
         "reveals": {
           "cell": "perdo-nomen"
         }
@@ -3512,7 +3512,7 @@
     "id": "in-unwrite-the-name",
     "cell": "intellego-nomen",
     "name": "Unwrite the Name",
-    "gloss": "Take a name and its erasure in the same working — copied and removed from memory in one motion.",
+    "gloss": "Mark a name for both copying and erasure in the same working — though the taking and the removing each still belong to workings of their own.",
     "tier": 7,
     "prerequisites": [
       "in-erase-the-ledger",
@@ -3530,7 +3530,7 @@
         "target": "single",
         "durationTicks": 0,
         "mode": "reveal",
-        "gloss": "Take a name and its erasure in the same working. Nothing else in the grid removes a thing from memory this completely while copying it in the same breath.",
+        "gloss": "Mark a name for both copying and erasure in the same working. Nothing else in the grid locates a removal this precisely while marking the copy in the same breath.",
         "reveals": {
           "cell": "perdo-nomen",
           "primitive": "knowledge-steal"
@@ -3542,7 +3542,7 @@
         "target": "self",
         "durationTicks": 0,
         "mode": "reveal",
-        "gloss": "What has been unwritten also stops flinching from being looked at directly — concealment, as the reward for having already removed the thing being concealed.",
+        "gloss": "Once a name is unwritten, exactly how well anything built to conceal it will work finally becomes legible — the concealment itself is an older, separate working.",
         "when": {
           "kind": "revealed"
         },
@@ -3747,7 +3747,7 @@
     "id": "it-strip-the-hollow",
     "cell": "intellego-terram",
     "name": "Strip the Hollow",
-    "gloss": "Strip a hollow down to what is structurally still there, so a sapper's crew knows exactly what is left to finish.",
+    "gloss": "Read a hollow down to what is structurally still there, so a sapper's crew knows exactly what is left to finish.",
     "tier": 4,
     "prerequisites": [
       "it-read-the-fault",
@@ -3764,7 +3764,7 @@
         "target": "universe",
         "durationTicks": 0,
         "mode": "reveal",
-        "gloss": "Strip a hollow down to what is structurally still there. What is left standing after that is exactly what a sapper's crew can be told to finish.",
+        "gloss": "Read a hollow down to what is structurally still there. What is left standing after that is exactly what a sapper's crew can be told to finish.",
         "reveals": {
           "cell": "perdo-terram"
         }
@@ -7501,7 +7501,7 @@
     "id": "pt-take-more-than-is-set",
     "cell": "perdo-terram",
     "name": "Take More Than Is Set",
-    "gloss": "Quarry past the line a mason would stop at. The first working on the road to unmaking what quarrying itself makes possible — it costs the discipline that built it.",
+    "gloss": "Quarry past the line a mason would stop at. Cheap as a single theft, but a civilization fluent enough in Perdo Terram to know what it's doing finds its own construction pays for the habit too.",
     "tier": 3,
     "prerequisites": [
       "pt-strip-the-vein",
@@ -8972,7 +8972,7 @@
     "id": "rl-the-drowned-threshold",
     "cell": "rego-limen",
     "name": "The Drowned Threshold",
-    "gloss": "A hollow ground and a held door are two separate workings until a mage understands what the seam between them is doing. Worth nothing until then.",
+    "gloss": "A hollow ground and a held door are two separate workings until a mage understands the seam between them — and only then does opening one guarantee how much ground stays unusable, at a hard ceiling on her own defenses while it does.",
     "tier": 4,
     "prerequisites": [
       "rl-open-the-hollow",
@@ -9235,7 +9235,7 @@
     "id": "rm-veil-the-thought",
     "cell": "rego-mentem",
     "name": "Veil the Thought",
-    "gloss": "Teach a mind to seal itself the moment it starts to open, so that nothing said aloud carries what was actually thought.",
+    "gloss": "Teach a mind to seal itself the moment it starts to open, so that nothing said aloud carries what was actually thought — at the cost of a hard ceiling on how fast that same mind can afterward be taught.",
     "tier": 3,
     "prerequisites": [
       "rm-still-your-own-mind",
