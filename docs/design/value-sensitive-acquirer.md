@@ -270,8 +270,37 @@ the frontier much sooner and stops in exactly the same place, because the place 
 ruleset's reachable set rather than a decision. `referenceNodesGainedFinalQuarter` halving is the same
 fact from the other end.
 
-`capitalSnowball` is not recomputed here and remains W7's **0.502**, above the 0.35 guard
-`worshipSnowball` is held to. That threshold belongs to `god-agency` and is untouched.
+**`capitalSnowball` was not recomputed and no number here is a claim about it.** 0.502 is W7's
+figure for W7's build. It is a Gini over per-university library node counts at pinned checkpoints,
+and this change raised early `referenceLibraryDepth` from 7.145 to 10.435 — which is exactly that
+metric's input — so it must be re-measured before anyone quotes it against the 0.35 guard
+`worshipSnowball` is held to. Re-measuring it needs a checkpointed library-depth probe the W15
+tooling does not carry, so it is left as a named gap rather than guessed at. The threshold itself
+belongs to `god-agency` and is untouched.
+
+## W7's Enduring Canon effect is intact, checked rather than argued
+
+W7 flipped `narrow-depth` from 12/12 Canon endings to 0/12 — novelty-first scribing means the shelf
+holds single copies of distinct nodes, and upkeep degradation can destroy them, which partially
+breaks *"doing nothing is perfect custodianship."* That is a feature, and a change restoring
+duplicate-heavy shelves would restore the defect. Terminal-reason histograms, twelve runs per
+strategy per arm:
+
+| strategy | before (`main`) | w7 only | after (w7+w17) |
+|---|---|---|---|
+| `narrow-depth` | canon 7, stagnation 5 | **canon 0**, cap 7, stagnation 5 | **canon 0**, cap 8, stagnation 4 |
+| `denial-warden` | canon 6, stagnation 5, cap 1 | canon 3, stagnation 5, cap 4 | canon 1, stagnation 6, cap 5 |
+| `archivist` | canon 6, apotheosis 6 | canon 6, apotheosis 6 | canon 7, apotheosis 5 |
+| `portal-rush` | canon 12 | canon 11, apotheosis 1 | canon 9, **apotheosis 3** |
+| `permissive-breadth` | canon 7, apotheosis 5 | canon 5, apotheosis 7 | canon 4, **apotheosis 8** |
+| `worship-maximizer` | canon 10, apotheosis 2 | canon 8, apotheosis 4 | canon 9, apotheosis 3 |
+| `passive-control` | cap 12 | cap 12 | cap 12 |
+| `uniform-random-legal` | apotheosis 12 | apotheosis 12 | apotheosis 12 |
+
+**`narrow-depth` stays at 0/12 Canon.** W17 does not restore duplicate-heavy shelves; it pushes
+further in the same direction, and `denial-warden` falls from 3/12 to 1/12 as well. The other visible
+shift is Apotheosis: `portal-rush` 0 → 1 → 3 and `permissive-breadth` 5 → 7 → 8, which is universes
+reaching a summit node sooner because they now walk toward the one their species and role value.
 
 ## The species finding, which was not on the claim list
 

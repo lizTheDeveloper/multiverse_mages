@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
-  "contentHash": "0af5676720a2e1ce85baa1011401b6693cad5779d9fcdb6dd5fbf35e6b12312a",
+  "contentHash": "65c888d1875fd09daa85b8d1b6c0494737075a66c0a62e78884b8c86596d3d44",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":35.442857525227446,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":106.32857257568233,"unit":"grimoires","value":110.125},
@@ -16,7 +16,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1351.8896436756424,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4055.6689310269276,"unit":"people","value":5972.84375}
   ],
   "notes": [
-    "No release before 0.5.0 may claim any of this is balanced: every magnitude in autonomy-weight.json carries tuningStatus untuned and the balance harness owns all of them, so this file is a measurement and not a balance claim. The universe also remains degenerate in known ways and this change closes none of them -- it demonstrates the binding one. These gate sweeps are 100 percent passive-control and submit no god verb. On the 2400-tick eight-strategy sweep, five of seven unrestricted strategies still finish holding ALL 51 reachable v1 nodes (mean 51.0, union 51, intersection 51), so cross-strategy containment stays 1.000 and prefix fidelity falls only 0.943 to 0.909. A set that contains everything is contained in every other set; composition is not yet a decision. What did move is every measure that is not saturated: the effort-weighted shape participation ratio 2.39 to 4.89, early-horizon minimum containment 0.742 to 0.612 at tick 240, and denial-warden against narrow-depth containment 0.771 to 0.643. capitalSnowball is not recomputed here and remains W7's 0.502, above the 0.35 guard worshipSnowball is held to; that threshold belongs to god-agency and is not touched."
+    "No release before 0.5.0 may claim any of this is balanced: every magnitude in autonomy-weight.json carries tuningStatus untuned and the balance harness owns all of them, so this file is a measurement and not a balance claim. The universe also remains degenerate in known ways and this change closes none of them -- it demonstrates the binding one. These gate sweeps are 100 percent passive-control and submit no god verb. On the 2400-tick eight-strategy sweep, five of seven unrestricted strategies still finish holding ALL 51 reachable v1 nodes (mean 51.0, union 51, intersection 51), so cross-strategy containment stays 1.000 and prefix fidelity falls only 0.943 to 0.909. A set that contains everything is contained in every other set; composition is not yet a decision. What did move is every measure that is not saturated: the effort-weighted shape participation ratio 2.39 to 4.89, early-horizon minimum containment 0.742 to 0.612 at tick 240, and denial-warden against narrow-depth containment 0.771 to 0.643. capitalSnowball is NOT RECOMPUTED HERE and no number in this file is a claim about it: 0.502 is W7's figure for W7's build, and this change raised early referenceLibraryDepth from 7.145 to 10.435, which is exactly the input that metric is a Gini over -- so it must be re-measured before anyone quotes it against the 0.35 guard worshipSnowball is held to. That threshold belongs to god-agency and is not touched. W7's Enduring Canon effect is intact and not restored by this change: narrow-depth ends 0 of 12 in canon on both the w7-only and the w7-plus-w17 arms, against 7 of 12 before W7."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -41,7 +41,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":6116.84375,"value":6116.84375},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":5972.84375,"value":5972.84375}
   ],
-  "supersedes": "ce67e9ce4b9cfab4a8e76420e765328dc9ec6c12fd3c1c6cb97546a00953ae0e",
+  "supersedes": "0af5676720a2e1ce85baa1011401b6693cad5779d9fcdb6dd5fbf35e6b12312a",
   "sweepId": "balance-gate-ascension-v1",
   "toleranceK": 3
 }
