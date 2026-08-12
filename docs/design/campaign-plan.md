@@ -1772,3 +1772,39 @@ same pool, each attached to a **different visible capability**, and the right an
 species or ruleset**. The failure signature to watch for: outcome metrics move while **policy
 sensitivity does not** — same total favor, different allocation, identical result. That is a distinct
 measurement from any level metric and nothing currently collects it.
+
+### W19's final numbers answer Codex's attribution question — and the answer is "graph topology, and that is real"
+
+W19 committed its decision rule before seeing the data, then measured the **old** content at every
+horizon from 300 to 2400:
+
+- **one** component carries 80% of the variance, at every horizon;
+- **cross-strategy containment sits *above* the within-strategy diagonal** by +0.019 to +0.022 — two
+  different strategies' node sets overlap each other *more* than two seeds of the same strategy do.
+  That is the most compact statement of "the strategies are not different" this campaign has
+  produced;
+- prefix fidelity is flat: **0.9244 at horizon 300, 0.9318 at 2400**;
+- and with magnitude removed, the shape-only participation ratio is **3.31 at horizon 300 against
+  3.30 at 2400**. The apparent rise in the raw ratio (1.74 → 1.94) is *"breadth wearing composition's
+  clothes"* — at a short horizon strategies differ in how far along **one queue** they have got, not
+  in which magic they hold.
+
+Even at horizon 300, where only 1% of runs hold the full set, the v1-bound strategies already hold
+**48.5 of 51**. The unexhausted window is the gap between 95% of the set and all of it.
+
+**Put together with W20 this resolves the attribution question, though not in the flattering
+direction.** Effects were disconnected in *both* measurements. Old content: one dimension, flat at
+every horizon. New content: three dimensions in v1, five wide, with species reaching different magic.
+The difference therefore **is** graph topology, exactly as the external review suspected — and that
+is a real result rather than a deflating one. Restructuring what depends on what is what made species
+matter. What it is not is evidence that the magic *system* works, because no spell effect reached
+anything in either arm.
+
+So the honest statement of the campaign's best result: **the content graph now produces distinct
+playstyles; the effect pipeline has still never run.** Those are two different claims and only the
+first is measured.
+
+W19 also reported an incident against itself: its validator hardcoded the first pass's sampling grid
+and deleted 50 valid files from the second. The tool now takes the grid as a parameter and does not
+delete unless asked. Recorded because a workstream that reports its own destroyed data is worth more
+than one that quietly regenerates it.
