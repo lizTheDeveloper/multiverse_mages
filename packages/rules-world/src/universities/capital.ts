@@ -13,7 +13,7 @@
  */
 
 import type { EntityHandle, Fixed } from '@mm/sim-core';
-import { floorDiv } from '@mm/sim-core';
+import { FP_ONE, floorDiv } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
 import type { ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
@@ -290,21 +290,25 @@ export const DEGRADATION_PER_SHORTFALL: Fixed = 32;
  * libraries happen to appear in an iteration would make which library goes
  * short depend on the history that reached the state rather than on the state.
  *
+ * `siteMultiplier` is the country the owning university stands in, `fp`
+ * (`universities/siting.ts`). Optional, and neutral when omitted: a library
+ * whose university is unsited pays what it always paid.
+ *
  * @returns One outcome per library, in the same ascending order, and the
  * materials left. The stock is returned rather than mutated for the reason
  * `advanceConstruction` gives: the materials stock has four claimants and one
  * of them must not be able to write it behind the others' backs.
  */
 export function applyLibraryUpkeep(
-  libraries: readonly { handle: EntityHandle; depth: LibraryDepth }[],
+  libraries: readonly { handle: EntityHandle; depth: LibraryDepth; siteMultiplier?: Fixed }[],
   materials: Fixed,
 ): { outcomes: readonly UpkeepOutcome[]; materialsRemaining: Fixed } {
   const ordered = [...libraries].sort((a, b) => a.handle - b.handle);
   let remaining = Math.max(0, materials);
   const outcomes: UpkeepOutcome[] = [];
 
-  for (const { handle, depth } of ordered) {
-    const owed = libraryUpkeep(depth);
+  for (const { handle, depth, siteMultiplier } of ordered) {
+    const owed = libraryUpkeep(depth, siteMultiplier ?? FP_ONE);
     const paid = Math.min(owed, remaining);
     remaining -= paid;
     const shortfall = owed - paid;

@@ -327,6 +327,15 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
+    // The content half of `contracts.md` §2.7's split, in interned order — a
+    // code-unit sort of the ids (`intern.ts`), so the handles the world step
+    // allocates for holdings are a function of content and of nothing else.
+    territoryKinds: registry.territories.map((entry) => ({
+      kindId: entry.contentId,
+      landUnits: entry.record.landUnits,
+      capacityPerLandUnit: entry.record.capacityPerLandUnit,
+      libraryUpkeepMultiplier: entry.record.libraryUpkeepMultiplier,
+    })),
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),

@@ -76,9 +76,18 @@ world loop, seeds a starting position and hands it to `agent-api`'s session as a
 the Monte Carlo harness can run a real universe instead of a toy one. It is a **leaf** — nothing here
 imports it — and that is what makes its unusually wide edge list safe. Two further deviations, both from **§1.2**, are recorded in that section: the
 `goal-commitment` component and the `effort-progress` component, neither of which
-`mages-and-species` expected to need. Each cost a world-schema revision — `WORLD_SCHEMA_VERSION` is
-now 3 — and neither moved `sim-core`'s `SNAPSHOT_VERSION`, which is inside the hashed header and
-would break every golden fixture with a version error instead of a behaviour diff.
+`mages-and-species` expected to need. Two more, from **§1.1 and §1.4**, arrived with
+`university-siting`: the `territory-holding` component (`landUnits` moving out of content, exactly
+as §2.7 said it would) and the `university-site` component (a university stands in a *kind of
+country* — a relationship, which vision §7a permits, and not a coordinate, which it forbids).
+
+Each addition cost a world-schema revision — `WORLD_SCHEMA_VERSION` is now **5**: revision 2
+`goal-commitment`, 3 `effort-progress`, 4 `god-agency`'s four rows, 5 the siting pair — and **none
+of them moved `sim-core`'s `SNAPSHOT_VERSION`**, which is inside the hashed header and would break
+every golden fixture with a version error instead of a behaviour diff. A world-schema step appends
+empty sections and nothing else; `packages/state/src/migrations.ts` carries the argument for each
+one, including why revision 5 must *not* synthesize the territory rows it would be so convenient to
+synthesize.
 
 Two commands worth knowing before touching the core:
 
