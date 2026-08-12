@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "faad5908e25b1c03eda19af15388d258dd6da67c5b2124e33e81f15bcedf8723",
+  "contentHash": "b8140c2450112610659c4f835a0fb6eff2e9d6cf55a429a101c4d1bf67fa3303",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":8.46551256931466,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":25.396537707943978,"unit":"grimoires","value":410.93},
@@ -16,7 +16,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.2707714995551453,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.812314498665436,"unit":"people","value":68.3}
   ],
   "notes": [
-    "Regenerated once, at the end of W20, on an otherwise idle machine. No golden\nreplay fixture was regenerated. The default scenario still permits only the v1\nrectangle (fullGridAtFounding defaults to 0), so these baselines describe the\ntwelve-cell universe, not the full grid."
+    "Regenerated once, at the end of W20, on an otherwise idle machine. No golden\nreplay fixture was regenerated. The default scenario still permits only the v1\nrectangle (fullGridAtFounding defaults to 0), so these baselines describe the\ntwelve-cell universe, not the full grid. No release before 0.5.0 may claim any of\nthese numbers is balanced.\n\nThe universe remains degenerate in ways this workstream measured and did not\nclose, and these numbers should be read against that. permit-then-idle -- a bot\nthat permits every technique and form for 140 of 2400 ticks and then submits\nnothing at all -- still wins 12/12 on the true-naming arm, tying the strategy\nthat funds, blesses and encourages, because permit is still the only god verb\nwhose payoff is not dominated. Only 2 of 10 strategies ascend at all, so D3\n(three strategies winning at materially different rates) still fails. In the wide\nconfiguration content exhaustion returns at 318 of 347 nodes rather than being\nremoved. And most authored world-scale content is still inert: eleven\nuniverse-target resource-yield effects are the whole of what reaches the world\nstack, because the per-mage effect channel does not exist. These three gate\nsweeps are 100 percent passive-control and submit no god verb."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -41,7 +41,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":212.3,"value":212.3},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":68.3,"value":68.3}
   ],
-  "supersedes": "8c650d5ee07c06e8dabecee362d2eb2a909860100ecea0cd29ec16e3b96b20c8",
+  "supersedes": "faad5908e25b1c03eda19af15388d258dd6da67c5b2124e33e81f15bcedf8723",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }
