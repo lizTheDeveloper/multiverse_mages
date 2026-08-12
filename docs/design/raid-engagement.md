@@ -99,29 +99,43 @@ Favor already exists, already regenerates from worship, and already has nothing 
 defensive spend that resolves inside seconds and visibly saves a library is the first sink in this
 game with a legible payoff.
 
-### The attacker: an open question with a strong candidate
+### The attacker: Vis and exposure, both — ruled by the author
 
-**Proposed, not decided: Vis** — a portable, physical, lootable stock of magical fuel carried through
-the portal with the raiding party.
+**Vis is the spend.** A portable, physical, lootable stock of magical fuel carried through the portal
+with the raiding party. It is spent to help the attack, it can be captured, and running out of it is
+what ends an over-extended raid.
 
-Reasons it fits rather than merely being available:
+**Exposure is the side effect, and it is the more interesting half.** Every spell cast inside the
+host's universe is cast *in front of the host's academics*, and casting teaches them. An attacker who
+wins by throwing everything they know has handed the defender a curriculum.
 
-- **Three of four independently-commissioned economy specs proposed exactly this stock** (GLM's Vis,
-  Qwen's Aether, Codex's Vis) and the shipped `food`/`stone`/`vellum` has no analogue. It is the one
-  live gap in the resource model.
-- Codex's spec made Vis **lootable** on its own reasoning, before any of this was discussed. A
-  raiding party that carries fuel and a defender who can capture it is a complete loop.
-- It explains why raiding is *expensive*: you burn reagents you cannot replace on the far side.
-- It gives Vim and the ritual layer an economy to sit in, which they currently lack.
+Three consequences follow, and they are why exposure earns its place over being flavour:
 
-**The competing answer** — and the reason this is flagged rather than settled — is that the attacker
-could instead spend **exposure**: every spell cast in the host's universe is cast in front of the
-host's academics, and casting teaches them. That makes attacking a knowledge *transfer* and ties the
-raid layer directly to the game's actual subject. It costs no new resource and it is thematically
-stronger; it is weaker as a moment-to-moment currency because it is hard to read at speed.
+- **The attacker's power leaks to the defender through use.** Raiding the same universe repeatedly
+  gets progressively worse, because you have been teaching them your entire repertoire. That is a
+  self-limiting mechanic on the dominant strategy in a persistent multiverse, and it arrives without
+  a rule that says "you may not raid too often."
+- **It is the only knowledge-transfer channel that costs the source nothing to give and everything to
+  have given.** Teaching at home requires a living teacher above the mastery threshold; theft writes
+  at `mastery: 0`. Exposure is a third path, and it runs backwards along the attack.
+- **It makes a restrained raid a real strategy.** Winning with your cheapest spells preserves your
+  edge. Winning with your deepest ones spends it. That is a decision inside the fight rather than
+  before it.
 
-These are not exclusive. Vis as the spend, exposure as a side effect, is probably the right answer,
-but the author should rule.
+The two compose cleanly: **Vis is what you spend, exposure is what you pay.** One is a stock you can
+watch drain; the other is a debt you notice next season.
+
+### The spec collision this creates, stated rather than hidden
+
+`openspec/changes/mages-and-species/specs/economy/spec.md:250` is a shipped, validated requirement:
+*"The economy SHALL track exactly three inputs — populace, materials, and knowledge-as-capital — and
+MUST NOT introduce a fourth resource."*
+
+Vis carried through a portal has to be produced and stored somewhere first, which makes it a fourth
+input at world scale. **Choosing Vis is therefore a spec amendment, not just a raid feature**, and it
+should be made deliberately in that file rather than discovered later by whoever trips the loader
+invariant. It also settles the open `food`/`stone`/`vellum` question in the same direction: the
+economy is being told it may name its resources.
 
 ## 4. Every spell gets a moment in the world
 
@@ -168,12 +182,18 @@ the measurement that would disprove it:
 
 ## 6. Open for the author
 
-1. **Attacker's resource** — Vis, exposure, or both (§3).
-2. **The revert multiplier.** "Costs a lot" needs a number, and it should be authored as untuned
+1. ~~**Attacker's resource**~~ — **ruled: both.** Vis is the spend, exposure is the side effect (§3).
+2. ~~**Can the attacker forbid?**~~ — **ruled: forbidding is defender-only.** Under §3 the host's
+   ruleset governs, so an attacker forbidding their own cells would change nothing inside the host
+   universe; making it defender-only turns that from a dead verb into a deliberate asymmetry. The
+   attacker holds initiative and chooses the engagement; the defender holds the constitution and can
+   close a door on both of them. Those are different kinds of power, which is what makes the
+   matchup a matchup.
+3. **The revert multiplier.** "Costs a lot" needs a number, and it should be authored as untuned
    content rather than picked here.
-3. **Does the muster clock run in world time or engagement time?** The dual-scale clock exists; which
+5. **Does the muster clock run in world time or engagement time?** The dual-scale clock exists; which
    scale the muster phase uses decides whether a raid is a pause in the world or a thing the world
    keeps running through.
-4. **Can the attacker forbid too?** Under §3 the *host's* ruleset governs — so an attacker forbidding
-   their own cells changes nothing inside the host universe. Either attackers get a different lever,
-   or forbidding is a defender-only verb and that asymmetry is deliberate.
+6. **Does exposure teach a node outright, or raise a discovery weight?** Teaching it outright is
+   legible and brutal; weighting it is subtler and harder to see. The campaign's own evidence favours
+   legible, since a mechanic nobody can observe has repeatedly turned out to be doing nothing.
