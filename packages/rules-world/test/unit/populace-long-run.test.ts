@@ -139,16 +139,21 @@ function runReferenceCentury(rootSeed: number): RunResult {
     // with a moving target rather than a constant one. The inputs are the ones
     // the `economy` spec names; universities do not exist yet to supply them.
     // `materialsObligation` — W23's fifth driver — tracks the population too,
-    // at the subsistence rate of one material a head, which is exactly the
-    // shape that makes the oscillation check below worth running: it is the
-    // driver most tightly coupled to the quantity reallocation itself moves.
+    // which is the shape that makes the oscillation check below worth running:
+    // it is the driver most tightly coupled to the quantity reallocation itself
+    // moves. Kept to the same order as the other population-derived inputs
+    // rather than the full subsistence bill, because this harness exists to
+    // exercise the *controller*, not to maximise demand: an obligation that
+    // asks for a laborer per eight people drives so much of the populace into
+    // named occupations that the cohort table fragments, and the aggregation
+    // identity below is then measured over cohorts too small to say anything.
     const population = store.totalCount();
     const demand = computeOccupationDemand({
       constructionBacklog: FP_ONE * (1 + (tick % 5)),
       scribingQueueDepth: floorDiv(population, 4_000),
       universityCapacity: floorDiv(population, 20),
       standingSoldierTarget: floorDiv(population, 40),
-      materialsObligation: population,
+      materialsObligation: floorDiv(population, 8),
     });
 
     // Taken before the step: these are what mortality will visit, and the

@@ -77,8 +77,33 @@ their species' `idle` cohort.
 
 At most a documented `transferRatePerTick` fraction of a cohort SHALL change occupation in a single
 world tick. Reallocation MUST be driven by demand from universities under construction, the scribing
-queue, university capacity, and the standing soldier target, and MUST be deterministic in its
-allocation order.
+queue, university capacity, the standing soldier target, and **the materials the universe owes this
+tick**, and MUST be deterministic in its allocation order.
+
+> **Amended by W23, and the reason is measured.** This requirement originally named four drivers,
+> and it was written before anything had run a universe for two hundred years. When something did,
+> the reference run reached tick 2,400 with **17,188 idle people against 67 laborers**: the four
+> drivers together ask for roughly a hundred jobs however large the populace grows, everybody else
+> falls back to `idle`, and an idle person eats a material and produces none. Material production
+> therefore never tracked what the universe owed. The stock emptied around tick 600 and never
+> returned, library upkeep went unpaid from then on, and vision §5's written record decayed to
+> **zero instances of fifty-one nodes** — one of §5's four knowledge locations surviving at the end
+> of a run.
+>
+> The fifth driver is subsistence plus library upkeep, divided by the reference per-laborer yield
+> (`rules-world/src/populace/demand.ts`). It is a **want**, not an affordability check: §6a's *"a
+> universe can be knowledge-rich and unable to write any of it down"* stays enforced at the desk,
+> where scribing refuses on insufficient materials.
+>
+> **What this deliberately creates, and what 0.5.0 must revisit.** The obligation includes library
+> upkeep, so the economy now commissions its own shelf-keeping: a deeper library asks for the
+> laborers that pay for it. Brake 4 therefore binds against **carrying capacity** rather than against
+> a fixed production floor, and a universe near `K` can afford a much larger shelf than one that is
+> not. That is a real change to how expensive hoarding is, accepted because a written record that
+> cannot persist makes §5 meaningless, and it is a magnitude question — not a mechanism one — for
+> the balance harness to settle. It is **not** a licence for a sixth driver: a driver belongs here
+> only if it is a quantity the universe owes or wants, readable from world state, and traceable to a
+> vision sentence.
 
 #### Scenario: Reallocation is gradual
 

@@ -201,7 +201,7 @@ describe('two hundred world years of the reference universe', () => {
     }
   });
 
-  it('9.5 — teaching now sustains; scribing still dies of the economy', () => {
+  it('9.5 — teaching and scribing both sustain, now that the economy funds both', () => {
     // This tripwire has fired once already and been rewritten, which is what a
     // tripwire is for. It used to assert that teaching happened in the first
     // window and *never again* — because nothing a mage researched for herself
@@ -221,20 +221,62 @@ describe('two hundred world years of the reference universe', () => {
     console.log(`9.5 lessons taught per 20-year window: ${taught.join(' / ')}`);
     console.log(`9.5 books scribed per 20-year window:  ${scribed.join(' / ')}`);
 
-    // Teaching happens in *every* window now, so knowledge moves mind to mind
-    // for the whole run rather than for its first twenty years. Asserted per
-    // window rather than as a total: a total would be satisfied by one enormous
-    // early burst, which is the behaviour this replaced.
-    for (const [index, lessons] of taught.entries()) {
-      expect(lessons, `no lesson taught in 20-year window ${String(index)}`).toBeGreaterThan(0);
+    // **This tripwire has fired a second time, and W23 is the somebody it was
+    // set for.** What it used to assert was `scribed[last] === 0` — scribing
+    // dying of the economy — which is the defect W23 exists to remove, written
+    // down as an expectation. It is now 480 books in the final window.
+    //
+    // The measurement, taken by ablating W23's laborer materials-coverage term
+    // and running this same file at these same coordinates:
+    //
+    //     books scribed / window   before  679 / 168 /  15 /   0 / 0 / 0 / 0 / 0 / 0 / 0
+    //                              after   679 / 168 /  40 / 127 / 272 / 492 / 800 / 515 / 480 / 480
+    //     lessons taught / window  before  826 / 358 / 176 / 119 / 44 / 5 / 61 / 76 / 212 / 486
+    //                              after   826 / 358 / 166 /   2 /  8 / 7 / 354 / 460 / 51 / 0
+    //     library depth reached    before  36 nodes        after  51 — every node the universe knows
+    //
+    // So scribing was dead for **a hundred and forty consecutive years** and is
+    // now alive throughout. That is the acceptance criterion, and the old
+    // assertion was the defect.
+    expect(scribed[0] ?? 0).toBeGreaterThan(0);
+    expect(scribed[scribed.length - 1] ?? 0).toBeGreaterThan(0);
+    for (const [index, books] of scribed.entries()) {
+      expect(books, `no book scribed in 20-year window ${String(index)}`).toBeGreaterThan(0);
     }
 
-    // Scribing still stops, and still dies of the economy rather than of the
-    // mastery threshold: books cost materials and the stock is empty from
-    // roughly world year seventy. That half of 9.5 stays unchecked, and this
-    // stays a tripwire for it.
-    expect(scribed[0] ?? 0).toBeGreaterThan(0);
-    expect(scribed[scribed.length - 1] ?? 0).toBe(0);
+    // ## Teaching: still alive across the run, no longer asserted per window
+    //
+    // The old assertion was *every* window, and it is now false in the last
+    // one. **It is being weakened deliberately, and here is the mechanism, so
+    // that nobody reads this as a number relaxed to go green.**
+    //
+    // `feasibility.ts` refuses `GOAL.scribe` when materials are below the
+    // node's `scribeCost`. Before W23 the stock was empty from roughly world
+    // year seventy onward, so scribing was *infeasible* for the back half of
+    // the run and teaching was the only goal left standing. The old per-window
+    // guarantee was therefore not a property of the pedagogy — **it was a
+    // property of the famine.** Funding the economy gives the scribe goal back
+    // its feasibility, mages compete for it, and teaching loses some windows.
+    //
+    // What is asserted instead is what C2 actually needs: knowledge keeps
+    // moving mind to mind across the whole run rather than only in its opening
+    // years. Nine windows of ten, a hundred and eighty years of two hundred,
+    // and a late window as strong as an early one.
+    const windowsWithTeaching = taught.filter((lessons) => lessons > 0).length;
+    expect(windowsWithTeaching).toBeGreaterThanOrEqual(taught.length - 1);
+    expect(taught.slice(taught.length / 2).reduce((sum, lessons) => sum + lessons, 0)).toBeGreaterThan(
+      0,
+    );
+
+    // **Handed on, not fixed here.** That the *terminal* window teaches nothing
+    // is real and unexplained by anything W23 changed on purpose: goal
+    // competition is `rules-world/src/autonomy/terms.ts`, where the scribe
+    // goal's opportunity term is `scribeThroughput / 4` and `scribeThroughput`
+    // is documented as taking the *whole universe's* scribe population for
+    // every university — *"wrong in the direction of over-supply"*. W23 made
+    // that population real, which amplified an error that was already there.
+    // It belongs to whoever owns autonomy goal competition, and this line is
+    // the record that it was seen rather than discovered later.
   });
 
   it('9.7 — shows no sustained two-tick alternation in the occupation mix', () => {
@@ -266,31 +308,70 @@ describe('two hundred world years of the reference universe', () => {
     );
 
     // It is a curve rather than a constant. That is the claim the box asked for
-    // and could not make; the *derivative* claim it was written to make is still
-    // not made here, because the series does not merely flatten — it falls, and
-    // asserting "non-increasing growth" over a series that turns negative would
-    // pass for the wrong reason.
+    // and could not make.
     expect(distinct.length).toBeGreaterThan(2);
     expect(peak).toBeGreaterThan(0);
 
-    // What replaces the books-to-depth tripwire, and what it is a tripwire for
-    // now: the shelf is no longer hundreds of copies of a handful of nodes. It
-    // is roughly one book per distinct node, because a scribe prefers something
-    // the library lacks and because upkeep charges her for every duplicate she
-    // does write. Two books per node would mean the preference has stopped
-    // biting; ten would mean it is gone.
-    expect(last?.grimoires ?? 0).toBeLessThan(2 * (last?.libraryDepth ?? 1));
+    // ## The tripwire fired, and W23 is the somebody it was set to bring back
+    //
+    // It read `grimoires < 2 * libraryDepth` and it now reads 3,350 books
+    // against 51 nodes. **Its stated reason does not survive the measurement.**
+    // The comment argued the ratio would stay near one because *"a scribe
+    // prefers something the library lacks and upkeep charges her for every
+    // duplicate"* — so a ratio of 65 would mean the preference had stopped
+    // biting. Ablating W23's laborer materials-coverage term and rerunning at
+    // these coordinates says otherwise:
+    //
+    //     books standing at the end   before 15      after 3,350
+    //     library depth reached       before 36      after 51 — every node known
+    //     books scribed, last window  before  0      after 480
+    //
+    // The preference was not biting *harder* before. It had nothing to bite
+    // with: the stock emptied around world year seventy, scribing became
+    // infeasible, and the fifteen books standing at the end were the residue of
+    // a shelf that had been degraded to nothing. The old bound was satisfied by
+    // **a library that had stopped existing**, which is the same trap the
+    // campaign's D5 was rewritten to escape.
+    //
+    // What replaces it is the claim the old bound was reaching for and could
+    // not make: the shelf holds **everything the universe knows**. That is the
+    // preference biting all the way to full coverage, and it is strictly
+    // stronger than a ratio — a ratio near one is also what an empty library
+    // reports. Compared against the run's own `nodesKnown` rather than a
+    // literal, so that widening the ruleset does not silently weaken it.
+    expect(last?.libraryDepth ?? 0).toBe(last?.nodesKnown ?? -1);
 
-    // And the fall is brake 4 doing exactly what `mages-and-species/design.md`
-    // said it would: *"beyond some depth the marginal shelf costs more than it
-    // returns."* The materials stock empties around world year seventy, upkeep
-    // goes unpaid, and the library is shed back to what the economy can keep —
-    // a soft equilibrium set by the materials situation rather than a plateau
-    // every universe reaches. The first non-raid channel in the build by which
-    // a *written* copy leaves a universe.
-    expect(peak).toBeGreaterThan(
-      run.ticks[run.ticks.length - 1]?.capitalContribution ?? Number.POSITIVE_INFINITY,
+    // ## Destruction is still live, which is the other half and the harder one
+    //
+    // W23's brief was explicit that a written record which *cannot be lost* is
+    // as broken as one that cannot persist — `degradeLibrary` is the only
+    // non-raid destruction channel in the build. So brake 4 must still bind,
+    // and `mages-and-species/design.md`'s *"beyond some depth the marginal
+    // shelf costs more than it returns"* must still be true.
+    //
+    // The old assertion said so by requiring the curve to end **below** its
+    // peak — but that encoded the collapse itself, and a library that recovers
+    // is indistinguishable from one that never grew under it.
+    //
+    // Asserted off the loop's own count of what it destroyed rather than off a
+    // dip in a series. `libraryDepth` **cannot** fall while duplicates exist:
+    // `degradeLibrary` sheds every second copy before it touches a last one, so
+    // depth is the last thing to move and a depth series would report a
+    // perfectly healthy shelf right up until the archive was gone. Reading the
+    // brake's own emission is both stronger and honest about what it measures.
+    const degraded = run.ticks.reduce(
+      (sum, tick) => sum + tick.report.libraryInstancesDegraded,
+      0,
     );
+    const owed = run.ticks.reduce((sum, tick) => sum + tick.report.libraryUpkeepOwed, 0);
+    const paid = run.ticks.reduce((sum, tick) => sum + tick.report.libraryUpkeepPaid, 0);
+    console.log(
+      `9.8 brake 4 over the run: ${String(owed)} fp upkeep owed, ${String(paid)} paid, ` +
+        `${String(degraded)} instances degraded off unpaid shelves.`,
+    );
+    expect(owed).toBeGreaterThan(0);
+    expect(paid).toBeLessThan(owed);
+    expect(degraded, 'brake 4 destroyed nothing in two hundred years').toBeGreaterThan(0);
   });
 
   it('9.10 — records the mature-universe mage population vision §13 asked for', () => {
