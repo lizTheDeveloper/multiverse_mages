@@ -13,6 +13,7 @@ whether knowledge loss lands off the beat before 520 assets were generated again
 | [`targets/`](targets/) | Six actions carry an entity handle. How does a person pick one mage out of thousands, and does §4.4's top-*k* candidate list serve a human as well as a policy network? |
 | [`tempo/`](tempo/) | What wall-clock pacing does a world tick get, and which events are allowed to interrupt? One question, because speed decides what an event is. |
 | [`raid/`](raid/) | Every action is masked for the duration. What is a player actually *doing* while a raid runs, and what belongs beside the portal timer? |
+| [`ascension/`](ascension/) | Action 15 appears, may be refused, and can be taken away while you hesitate. How is an ending you have to choose presented — and what happens at the moment it lapses? |
 
 ## Running them
 
