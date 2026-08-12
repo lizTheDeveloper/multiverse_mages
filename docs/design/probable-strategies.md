@@ -113,6 +113,27 @@ sufficient. A ruleset where everybody ascends is perfectly varied and is not a g
 tuner's score gates on the band first and only then optimises spread — and why it also scores
 whether winners know more magic than losers, which is the thing an aggregate cannot see.
 
+## The evidence that this is a rule problem, not a tuning problem
+
+A 2-D scan over `ascension-era-count` (4–9) × `ascension-loss-max` (0–3) — **24 cells, 32 runs
+each, common random numbers so every cell plays the same universes**:
+
+| | result |
+|---|---|
+| cells where the idle probe won **less** than 100% of its runs | **0 of 24** |
+| cells with `ascensionRate` inside the 0.05–0.20 band | **0 of 24** |
+| cells where the pool out-won the idle probe | **0 of 24** |
+| range of `ascensionRate` across all 24 cells | 0.625 – 0.781 |
+
+The probe wins every run at every setting because **it wins by Path A**, and those two constants
+gate Path B. Raising Path A's own knob to its ceiling — `ascension-tier-gate` 5, the value of
+`worship-tier-count` — reached only 0.542, and the probe still won.
+
+That is the whole case in one table. The knobs cannot reach the defect, because the defect is that
+**both predicates are satisfied by a universe whose god never acted**: worship accrues on its own,
+and a passive universe loses no knowledge and holds no single-copy nodes, so inaction *is* perfect
+custodianship. A predicate that rewards the absence of bad things is maximised by doing nothing.
+
 ## The falsifiable statement this document makes
 
 After the win condition is made discriminating, the measured pool should show: `ascensionRate`
