@@ -500,3 +500,71 @@ the telemetry stayed clean.
 favor set **between** the base and surcharged prices — with plenty of favor it
 would pass whether or not the mask knew the rule — swept across every bar of the
 phrase, asserting the mask's verdict and the resolver's are the same verdict.
+
+
+---
+
+## 11. Reconciliation with W20, from W20's actual tree
+
+`w20/compositional-content` **is not on the remote** — two fetches found no such
+ref — but the branch exists locally at `5e289ac`, and it was read rather than
+guessed at.
+
+### There is no collision, by construction
+
+W20 owns `node.json`'s **effect** structure and does not touch
+`technique.json` at all: `git diff` over W20's entire history shows
+`technique.json` and `technique.schema.json` byte-identical to the pre-W20 base.
+This work's `envelope` field is a `technique.json` field consumed on the research
+acquisition path. The two do not meet.
+
+### W20 built the semantics this plan offered as vocabulary
+
+§1.6 above offered three halves of §4.1 that a scalar envelope cannot express —
+Intellego as a read, Muto as a conversion pair, Perdo as a residual — as
+proposed vocabulary for W20's schema rather than implementing them here. **W20
+implemented exactly that**, as a required `mode` on each effect:
+
+    mode: 'create' | 'reveal' | 'transform' | 'remove' | 'control'
+
+one per technique, with `reveals`, `transformTo` and `control: {floor, ceiling}`
+hanging off the modes that need them, plus a `when` condition. Its `types.ts`
+calls `mode` *"the technique's envelope, made mechanical."*
+
+**So the split is the one this plan proposed, and both halves now exist:**
+W20 owns *what a technique does to state*; this owns *what a technique costs
+across the duration of learning it*. Neither shadows the other, and a node's
+`mode` and its technique's `envelope` are read on different paths.
+
+### One genuine divergence, for the author rather than for either workstream
+
+`docs/design/compositional-content.md` §3.5 — W20's own design note, written and
+not implemented — reads §4.1 a second time and proposes cost curves too:
+
+> *"The author's instruction is that **techniques' envelopes should become real
+> cost curves**, so §4.1's five shapes are read a second time, as functions of
+> tier"*
+
+**That is a different axis from this one.** W20 §3.5 proposes cost as a function
+of a node's **tier** — a shape across the tree. This implements cost as a
+function of **progress within one node's own acquisition** — a shape across the
+months. Both are defensible readings of *"the envelope is a cost curve"* and
+they compose without conflict, but they are not the same mechanism and only one
+of them is built.
+
+The shape names differ, and on four of five so do only the words:
+
+| technique | W20 §3.5 (proposed, f(tier)) | W21 (built, f(progress)) | agree? |
+|---|---|---|---|
+| Creo | back-loaded | `swell` — rising | yes |
+| Perdo | front-loaded | `hole` — falling | yes |
+| Muto | bridged | `bend` — mid-peaked | yes |
+| Rego | quantized | `rigid` — flat | close; `rigid` is not quantized |
+| **Intellego** | **flat** | **`open` — near-silent attack, then fast** | **no** |
+
+Intellego is the one real disagreement, and it is not resolved here. §4.1 says
+*"no impact at all; a filter opens… nothing is struck"*, which reads as a
+hesitation and not as flatness — and flat would make Intellego's curve
+**identical to Rego's**, collapsing two of the five shapes §4.1 insists are
+different. That is the argument for `open`; it is stated rather than assumed,
+because picking between two readings of one sentence is the author's call.
