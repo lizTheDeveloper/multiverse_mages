@@ -364,9 +364,10 @@ from its size alone. That target was not met and is reported as not met.
 |---|--:|--:|---|
 | effective dimensionality, 80% | 23 | **5** | fewer components… |
 | **between-strategy variance share** | **0.512** | **0.759** | **…but far more of it is strategy** |
-| prefix fidelity | 0.7866 | **0.8110** | comparable |
-| runs predicted exactly from size | 1 / 96 | **0 / 84** | none |
-| mean nodes, `archivist` | 199.2 | 303.4 | — |
+| prefix fidelity | 0.7866 | 0.8292 | comparable |
+| runs predicted exactly from size | 1 / 96 | **0 / 96** | none |
+| cross-strategy containment, large sets | **0.836 – 0.892** | **0.94 – 0.98** | **worse** |
+| mean nodes, `passive-control` | 190.5 | **318.0 of 347** | **worse** |
 
 This is the comparison the workstream turns on, and it does **not** read the way the raw
 dimensionality count does. Arm B's 23 components are mostly noise: barely half its variance is
@@ -378,6 +379,25 @@ principal components on its own never says.
 The plain statement: **enablement produced variety, shaping produced structure, and the two are not
 substitutes.** A campaign that had only run arm B would have recorded dimensionality 23 and declared
 the problem solved, at 0.512 between-strategy share.
+
+**But two of arm D's numbers are worse than arm B's, and they are the ones about exhaustion.**
+Containment rose to 0.94–0.98 and `passive-control` reached **318 of the 347 nodes anyone reached at
+all**. Both mechanisms combined make acquisition *faster*, not slower: richer content raises what a
+mage wants, the wired effects raise the rates she does it at, and enablement raises what there is to
+get. The campaign's original diagnosis — *"the 51-node passive baseline is content exhaustion"* —
+**returns at 318 instead of 51**, and an idle universe that learns 92% of the reachable grid is the
+same defect at six times the scale.
+
+This is the clearest single thing this workstream measured, and it was not what it set out to test:
+
+> **Content exhaustion is not a content-quantity problem.** Six times the content, better shaped,
+> with real exclusions, still exhausts — because nothing in the world *removes* knowledge or makes
+> holding it cost anything. The exclusions bind one mage; the universe simply spends more mages.
+
+Arm C is the only arm where a strategy does not approach the ceiling — 65 of 108, union 95 — and the
+difference is that its content ceiling is small enough that per-mage exclusion and mortality still
+bite before the universe covers it. That is a hint about ratios rather than about totals: what
+matters is the reachable set per living mage, not the reachable set.
 
 ### 6.4 Two behavioural changes large enough to be findings
 
