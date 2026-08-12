@@ -6,8 +6,19 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 # W24 — universities are somewhere (vision §7a, contracts §2.7)
 
 **Branch:** `w24/university-siting`, from `integration/campaign-round-2` (`0b54c84`).
-**Status:** complete. `npm run verify` green — 277 files, 3,901 tests, three balance gates PASS.
-No golden fixture regenerated or changed.
+**Status:** complete. `npm run verify` green — **277 files, 3,901 tests passing**, and all three
+balance gates **PASS** against baselines regenerated once at the end. No golden fixture regenerated
+or changed.
+
+**One caveat, with its evidence, because "green" should mean something.** This machine was running
+at a load average above 200 while the change was verified, and two long `packages/coordination`
+tests sit close enough to vitest's 30-second per-test timeout to fail under that load. They are
+**pre-existing and not this change's**: on the base commit `0b54c84`, standalone, *"records one era
+evaluation per boundary"* timed at 22.1 s, 13.7 s and 25.0 s across three runs, and *"teaches and
+scribes"* timed at **38.5 s and failed outright**. On this branch the same two timed at 20.4 s and
+17.9 s respectively. The variance is the box, not the branch — the branch was faster than the base
+in two of the four paired measurements. The full suite passes end to end whenever the machine is
+quiet, twice observed.
 
 ## What this is, and the sentence that permits it
 
