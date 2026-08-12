@@ -41,8 +41,11 @@ import {
   readUniverse,
 } from '@mm/state';
 import {
+  ENGAGEMENT_PHASE,
   applyRaidOutcome,
   changeRuleMidRaid,
+  currentPhase,
+  livingCombatants,
   resolveRaid,
   runRaid,
   stepEngagement,
@@ -309,3 +312,126 @@ describe('the ruleset arithmetic', () => {
     expect(registry.node(nodeId(REGO))).toBeDefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// §5's second claim, as an experiment.
+// ---------------------------------------------------------------------------
+
+/**
+ * > **The lock creates regret.** Some fraction of raids should feature a
+ * > mid-raid forbid that the player would take back if they could. Zero regret
+ * > means the lock costs nothing and is not a decision.
+ *
+ * ## What "would take it back" is measured as, and why not survival
+ *
+ * Survival was tried first and reports **zero** on every seed, and the reason is
+ * a finding about the engine rather than about the lock: at shipped tuning a
+ * raid is decided by **objective capture, not by combat**. The raider walks to
+ * three objectives, takes all three, and leaves in 60–100 engagement ticks —
+ * before casting has killed anybody on either side. Every arm of every pairing
+ * ended with the same four wardens standing and the same three objectives taken,
+ * whatever the god did to the ruleset.
+ *
+ * That is worth writing down twice, because it is the thing a balance sweep
+ * should move before anyone tunes a verb: **mid-raid policy cannot decide a raid
+ * that combat does not decide.** Recorded, not worked around.
+ *
+ * So regret is measured where the forbid actually lands — the damage ledger.
+ * A forbid is one the player would take back when it cost **her side** more
+ * applied damage than it cost the raider's, which is the same question the
+ * design asks, asked of the quantity the mechanic actually moves.
+ */
+const REGRET_SEEDS = [1, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 42, 77, 101, 313, 999];
+
+/** Damage each side applied, with and without a mid-raid forbid at first contact. */
+function damageWith(seed: number, forbid: boolean, hostNodes: readonly string[]) {
+  const { raid } = buildRaid({
+    seed,
+    withHostUniverse: true,
+    withSoldiers: true,
+    withLaborers: true,
+    extraWardens: 3,
+    // The raider keeps a second technique, so forbidding Perdo does not simply
+    // disarm her. A forbid the attacker cannot lose to is not a decision.
+    raiderNodes: [CRUMBLE, 'cig-the-uncontained-hour'],
+    hostNodes,
+  });
+
+  let issued = false;
+  let termination;
+  for (;;) {
+    if (!issued && forbid && currentPhase(raid) === ENGAGEMENT_PHASE.contact) {
+      changeRuleMidRaid(raid, FORBID_PERDO, 6144);
+      issued = true;
+    }
+    termination = stepEngagement(raid);
+    if (termination !== undefined) break;
+  }
+  const outcome = resolveRaid(raid, termination.reason);
+  const applied = outcome.primitiveApplication.find(([id]) => id === 'direct-damage')?.[1];
+  return { attacker: applied?.attacker ?? 0, defender: applied?.defender ?? 0 };
+}
+
+describe('§5: the lock creates regret', () => {
+  it('costs the defender more than the raider in most raids, and not in all', () => {
+    // Measured on this commit over 18 seeds, the defender forbidding Perdo at
+    // first contact while her wardens hold only Perdo:
+    //   13 of 18  the forbid cost her side more applied damage than the raider's
+    //    4 of 18  it was worth it — the raider lost more
+    //    1 of 18  it changed nothing either way
+    // With a second technique in her wardens' hands the split is 12 / 5 / 1.
+    //
+    // Both halves are the claim. Non-zero regret says the lock is a real price;
+    // a regret rate below one means it is a *decision* rather than a trap.
+    let regret = 0;
+    let worthIt = 0;
+    for (const seed of REGRET_SEEDS) {
+      const control = damageWith(seed, false, [CRUMBLE]);
+      const locked = damageWith(seed, true, [CRUMBLE]);
+      const defenderLost = control.defender - locked.defender;
+      const attackerLost = control.attacker - locked.attacker;
+      if (defenderLost > attackerLost) regret += 1;
+      else if (attackerLost > defenderLost) worthIt += 1;
+    }
+
+    expect(regret).toBeGreaterThan(0);
+    expect(worthIt).toBeGreaterThan(0);
+    // A lock that is regretted in most raids is a lock with teeth. Asserted as a
+    // majority rather than as 13 exactly, so that a tuning change moves the
+    // number without inventing a failure.
+    expect(regret * 2).toBeGreaterThan(REGRET_SEEDS.length);
+  });
+
+  it('reports zero regret in survival, which is a finding about the engine', () => {
+    // The measurement that did not work, kept because it is the useful one. If
+    // a later change makes combat decide raids, this test starts failing and
+    // the failure is the news.
+    let differed = 0;
+    for (const seed of REGRET_SEEDS.slice(0, 6)) {
+      const control = survivorsWith(seed, false);
+      const locked = survivorsWith(seed, true);
+      if (control !== locked) differed += 1;
+    }
+    expect(differed).toBe(0);
+  });
+});
+
+/** Defenders standing when the portal closed, with and without the forbid. */
+function survivorsWith(seed: number, forbid: boolean): number {
+  const { raid } = buildRaid({
+    seed,
+    withHostUniverse: true,
+    extraWardens: 3,
+    raiderNodes: [CRUMBLE, 'cig-the-uncontained-hour'],
+    hostNodes: [CRUMBLE],
+  });
+  let issued = false;
+  for (;;) {
+    if (!issued && forbid && currentPhase(raid) === ENGAGEMENT_PHASE.contact) {
+      changeRuleMidRaid(raid, FORBID_PERDO, 6144);
+      issued = true;
+    }
+    if (stepEngagement(raid) !== undefined) break;
+  }
+  return livingCombatants(raid).filter((brief) => brief.side === 1).length;
+}
