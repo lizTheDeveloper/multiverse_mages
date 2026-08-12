@@ -344,3 +344,44 @@ the mage — is the direction most aligned with being a god rather than a genera
 cannot be built today.** It needs the mastery trajectory from 2.1 and the loss data from 4.2. That it
 is both the best fit for the design and the most blocked is the clearest single argument for settling
 §1's findings in `agent-interface` rather than at 0.13.0.
+
+---
+
+## 8. What caught the mistakes
+
+Four defects surfaced during this work. None was found by the person responsible for the area, and
+none was found by anyone suspecting anything. Recorded because the mechanism generalises better than
+any of the individual fixes.
+
+| What broke | What caught it |
+|---|---|
+| A stranded-deny modelled as a seventh click | A test asserting §2's six-click closed set |
+| A cue note that over-explained | The 300-character `post` cap in the audio schema — three times, each producing a shorter and better sentence |
+| A denied state dimmed by eye | A contrast measurement, twice: "about four percent of luminance" was one percent, and an opacity dim measured 2.4:1 |
+| A front door committed without its page | `readFileSync` throwing `ENOENT`, in a link test written for an entirely different purpose |
+
+**The common property is that each ran without being asked.** None required a person to suspect the
+specific failure — which matters here more than usual, because this work ran across two sessions that
+could not see each other's disks. Suspicion does not survive that boundary. A schema cap does.
+
+**The most transferable lesson is the last one, and it needed a correction to become useful.** The
+first telling was "reaching for the filesystem was the load-bearing choice," which implies foresight
+that was not there — the filesystem was simply the obvious way to read the links. The honest version:
+
+> **A test that consults the artifact rather than a model of the artifact gets failure modes for
+> free.**
+
+That requires no foresight at all. The link test was written to catch a dead link and an unlinked
+prototype. It also caught *a page that existed on one machine and not in the repository* — a case
+nobody had considered — solely because it opened the file instead of reasoning about a list of files.
+A test built on a model of the tree would have passed vacuously over an empty link set and shipped the
+defect.
+
+**Where this applies next:** the same temptation exists in the client's snapshot-parity check, which
+must compare against the snapshot and not against a model of the snapshot. Also in
+`audio-isolation.test.ts`, which already gets this right for the same reason — it trips a real loader
+read rather than asserting a value the loader would have returned.
+
+**One thing this does not license.** Cheap automatic checks are not a substitute for review; they
+caught four things that review had already passed. The argument is only that they cost almost nothing
+and fire on cases nobody modelled, which is exactly the class of defect that review is worst at.
