@@ -917,7 +917,7 @@ permission lever does nothing; by 300 the set is exhausted; ascension cannot fir
 canon not until 960. Undifferentiated, then over, then finally winnable.
 
 **So the flatness is in the content graph, and no scheduling change reaches it.** Twelve parallel
-staircases are twelve parallel staircases at any length. The author's instinct — that the absent
+ladders are twelve ladders at any length. The author's instinct — that the absent
 prerequisite branching was the defect — was right, and the coordinator's horizon proposal was not.
 
 Method note worth copying: W19 **committed its decision rule before reading any composition
@@ -969,3 +969,36 @@ to calibrate on a partial pool.
 It does not mean the content graph, the cost curves or the rituals were wasted. It means they were
 **unmeasurable** while one act bought the whole ceiling. Their value is untested, not disproved —
 and it becomes testable the moment permitting is a decision.
+
+
+---
+
+## Correction: the graph is a lattice, and perception gates depth rather than entry
+
+Two claims of the coordinator's, corrected by measurement.
+
+**"Twelve parallel staircases" was wrong.** The v1 grid is a **lattice**: four form-columns with
+Intellego as the trunk in each and Perdo/Rego branching off, plus two links at the trunk layer.
+Longest chain 6 deep. That characterisation was repeated to several agents before it was checked.
+
+**"Intellego is a chokepoint for the entire grid" was overstated.** The load-bearing half holds --
+**11 of 11** cross-cell prerequisite edges in v1 originate in Intellego. But **every Perdo and Rego
+cell keeps its own tier-1 root**, and the perception edge attaches at tiers 2-4. Strip every
+Intellego node and **18 of 51** v1 nodes remain reachable.
+
+**Perception gates depth, not entry.** Grid-wide the rule is strong but not universal: **29 of 36**
+cross-cell edges originate in Intellego, not 36 of 36.
+
+The consequence for the exclusivity design survives with a weaker argument: excluding Intellego
+costs a mage roughly two thirds of the v1 set and all of its depth, which is still disqualifying for
+an exclusive pair -- but it is a severe cost, not a total one, and the design should be argued on
+the real number.
+
+## The open question this raises, and it is the author's
+
+**Does "go wide" mean every cell ships enabled, or that the twelve-cell start stands and the other
+fifty-eight are reached by permitting?**
+
+These are different games, and the second is the one section 4's permit verb already describes:
+`enabled` in `cell.json` governs which cells carry active content; `permits()` governs the god's
+ruleset. They are separate gates, and conflating them was implicit in the go-wide instruction.
