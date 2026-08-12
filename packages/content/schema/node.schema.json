@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://multiverse-mages.invalid/schema/node.schema.json",
   "title": "node.json",
-  "description": "Knowledge nodes (contracts.md §2.3). Every cost is fixed-point at scale 1024. `rediscoveryMultiplier` carries a content invariant of >= fp(3072); v1 authors at >= fp(5376) so species rediscoveryAffinity has room to differentiate above the floor. fp(4096) is explicitly not enough — the best v1 affinity drives it under the floor and clamps the trait flat. The authoring floor is a graph-phase check in load.ts, not a schema minimum, because it is a function of species affinity rather than of the field alone. load.ts also rejects a researchCost whose rediscovery requirement overflows fixed point at the worst species affinity, which these maxima alone permit.",
+  "description": "Knowledge nodes (contracts.md §2.3). Every cost is fixed-point at scale 1024. `rediscoveryMultiplier` carries a content invariant of >= fp(3072); v1 authors at >= fp(5376) so species rediscoveryAffinity has room to differentiate above the floor. fp(4096) is explicitly not enough — the best v1 affinity drives it under the floor and clamps the trait flat. The authoring floor is a graph-phase check in load.ts, not a schema minimum, because it is a function of species affinity rather than of the field alone. load.ts also rejects a researchCost whose rediscovery requirement overflows fixed point at the worst species affinity, which these maxima alone permit. An effect's `mode` is the technique's envelope made mechanical (sound-design.md §4.1) and the coherence rule binding it to the cell's technique is a graph-phase check, because the schema cannot see which cell a node names. `exclusivity` is likewise graph-phase: a group is only well-formed relative to its other members.",
   "type": "array",
   "minItems": 1,
   "items": { "$ref": "#/$defs/node" },
@@ -46,18 +46,76 @@
           "maxItems": 8,
           "items": { "$ref": "#/$defs/effect" }
         },
-        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
+        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] },
+        "track": { "$ref": "#/$defs/contentId" },
+        "antirequisites": {
+          "description": "Nodes this one may never be held alongside, **in one mind**. The inverse of `prerequisites`, and the first irreversible choice in the game: a prerequisite graph is a partial order, so a long enough life climbs all of it, while an exclusion makes two repertoires mutually unreachable and two mages genuinely incomparable. Declared on one side and enforced on both — load.ts normalises the relation, so holding either member blocks the other whichever arrived first. Scoped to the mage rather than the universe because vision.md §5 puts a knowledge instance in exactly one mind: a universe may still hold both lines, at the price of spending two different mages on them.",
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/contentId" }
+        }
       }
     },
     "effect": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["primitive", "magnitude", "target", "durationTicks"],
+      "required": ["primitive", "magnitude", "target", "durationTicks", "mode"],
       "properties": {
         "primitive": { "$ref": "#/$defs/contentId" },
         "magnitude": { "type": "integer", "minimum": 1, "maximum": 1073741823 },
         "target": { "type": "string", "enum": ["self", "single", "area", "side", "universe"] },
-        "durationTicks": { "type": "integer", "minimum": 0, "maximum": 1073741823 }
+        "durationTicks": { "type": "integer", "minimum": 0, "maximum": 1073741823 },
+        "mode": { "type": "string", "enum": ["create", "reveal", "transform", "remove", "control"] },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "when": { "$ref": "#/$defs/condition" },
+        "reveals": { "$ref": "#/$defs/revealTarget" },
+        "control": { "$ref": "#/$defs/control" },
+        "transformTo": { "$ref": "#/$defs/contentId" }
+      }
+    },
+    "condition": {
+      "description": "When an effect contributes at all. Absent means `always`. `revealed` is the latent half of sound-design.md §4.1's Intellego — 'something becomes audible that was always present' — and contributes only while a held reveal names it. `holds-cell` is the plain form of 'a node is worth more because of what else you hold'.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "oneOf": [
+        {
+          "properties": { "kind": { "const": "always" } },
+          "required": ["kind"]
+        },
+        {
+          "properties": { "kind": { "const": "revealed" } },
+          "required": ["kind"]
+        },
+        {
+          "properties": {
+            "kind": { "const": "holds-cell" },
+            "cell": { "$ref": "#/$defs/contentId" },
+            "minNodes": { "type": "integer", "minimum": 1, "maximum": 64 }
+          },
+          "required": ["kind", "cell", "minNodes"]
+        }
+      ]
+    },
+    "revealTarget": {
+      "description": "What a `reveal` effect makes audible. At least one of the two; both means the conjunction — a latent effect matches only when its cell and its primitive both match.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "cell": { "$ref": "#/$defs/contentId" },
+        "primitive": { "$ref": "#/$defs/contentId" }
+      }
+    },
+    "control": {
+      "description": "Rego's gate (sound-design.md §4.1: 'Snap, lock, gate'). A floor is reliability bought; a ceiling is upside sold. At least one. Both are fp bounds on the primitive's stacked outcome, applied after the fold and before the primitive's own cap, so control may never lift a value past contracts.md §3's cap.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "floor": { "type": "integer", "minimum": 0, "maximum": 1073741823 },
+        "ceiling": { "type": "integer", "minimum": 0, "maximum": 1073741823 }
       }
     },
     "contentId": {

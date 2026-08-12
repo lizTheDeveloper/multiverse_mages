@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/track.schema.json",
+  "title": "track.json",
+  "description": "A named path through the grid (contracts.md §2.12). A track is a *route*, not a region: its nodes cross cells freely, which is what makes the knowledge graph a web rather than twelve parallel staircases. Tracks exist so that exclusion can be declared once at the scale a player reasons about — 'I am a warden, not a thief' — instead of node by node. Exclusion is symmetric and load.ts normalises it, so declaring it on one side is enough and declaring it on both is not an error. `threshold` is how much of the excluded track a mage may dabble in before the door shuts: 1 is an immediate commitment, higher values let a mage sample before choosing. A track is a property of the knowledge graph and NOT of a tradition — vision.md §4a caps a tradition at four hooks (acquire, store, cast, cost) and gating content on tradition would be a fifth. See contracts.md §2.12 for the open question this leaves.",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/track" },
+  "$defs": {
+    "track": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "gloss", "excludes", "tuningStatus"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "excludes": {
+          "description": "Tracks a mage on this one may not also walk. Empty is the common case: most of the graph is shared, and a track that excludes nothing is simply a route with a name.",
+          "type": "array",
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/exclusion" }
+        },
+        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
+      }
+    },
+    "exclusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["track", "threshold", "gloss"],
+      "properties": {
+        "track": { "$ref": "#/$defs/contentId" },
+        "threshold": {
+          "description": "How many nodes of the excluded track a mage may hold before this track closes to her. 1 shuts the door on first contact.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 240 }
+      }
+    },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}
