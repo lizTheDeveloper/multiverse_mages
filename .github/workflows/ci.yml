@@ -88,18 +88,10 @@ jobs:
         # another.
         run: npm run balance:gate:ascension
 
-      # The other half of the question. `check:coverage` asks whether content
-      # *authors* each primitive; this asks whether an authored node effect
-      # reaches anything the assembled simulation applies. Both steps are
-      # enumerated here rather than run through `npm run verify`, so a new
-      # `verify` step that is not added here does not run on fork PRs — which
-      # this job is the only gate that safely sees.
-      #
-      # Runs LAST, matching `verify`. It is expected to be red until the effect
-      # pipeline is wired, and an expected-red gate placed early would suppress
-      # the test and balance signal that everyone else depends on.
-      - name: Primitive consumption (can knowledge move each primitive?)
-        run: npm run check:consumption
+      # `check:consumption` is deliberately NOT here. It is expected to be red
+      # until the effect pipeline is wired, so it runs in its own non-blocking
+      # job at the bottom of this file. See that job for the condition under
+      # which it moves back into this one.
 
   next-node:
     # Early warning only: a failure here means the next Node major may change
@@ -175,15 +167,63 @@ jobs:
         # another.
         run: npm run balance:gate:ascension
 
-      # The other half of the question. `check:coverage` asks whether content
-      # *authors* each primitive; this asks whether an authored node effect
-      # reaches anything the assembled simulation applies. Both steps are
-      # enumerated here rather than run through `npm run verify`, so a new
-      # `verify` step that is not added here does not run on fork PRs — which
-      # this job is the only gate that safely sees.
-      #
-      # Runs LAST, matching `verify`. It is expected to be red until the effect
-      # pipeline is wired, and an expected-red gate placed early would suppress
-      # the test and balance signal that everyone else depends on.
+      # `check:consumption` is deliberately NOT here. It is expected to be red
+      # until the effect pipeline is wired, so it runs in its own non-blocking
+      # job at the bottom of this file. See that job for the condition under
+      # which it moves back into this one.
+
+  consumption:
+    # The measurement that says how much of the authored magic reaches the
+    # simulation, reported on every commit and blocking nothing.
+    #
+    # `check:coverage` asks whether content *authors* each primitive; this asks
+    # whether an authored node effect reaches anything the assembled simulation
+    # applies. It is expected to be RED — at the time this job was split out,
+    # 2 of 14 primitives were reachable from authored nodes, 2 were declared
+    # exclusions, and 12 had no node-driven consumer at all. That is the finding
+    # the check exists to publish, not a regression to be silenced.
+    #
+    # It is non-blocking because the wire that would turn it green (`w29`'s
+    # `universe-effects.ts`, PR #42) is a different pull request. A gate held in
+    # `npm run verify` while the thing it measures is unfixed cannot merge, and
+    # the check that cannot merge is the check nobody sees.
+    #
+    # ## When to make this blocking again
+    #
+    # Move this step back into the two jobs above — and back into `verify` and
+    # `verify:nosweeps` in package.json, so `scripts/ci-check.sh` picks it up
+    # through the same gate — when, and only when:
+    #
+    #   every primitive has a node-driven consumer, or the remaining ones are
+    #   declared exclusions
+    #
+    # "Declared exclusions" means the list in `packages/rules-magic/src/effects/
+    # consumption.ts`, which is `fertility` and `lifespan` and has a reason:
+    # both sit on 22 non-v1 nodes and are moved by species traits and blessing
+    # constants rather than by anything a mage can learn. **Adding a primitive
+    # to that list to make this job green is the exact failure the check exists
+    # to catch.** The number in the FAIL line going down is the progress; the
+    # list getting longer is not.
+    name: Primitive consumption (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # The check imports the built `dist/` of `content`, `rules-magic` and
+      # `scenario`, because it assembles a real universe rather than grepping
+      # sources. `typecheck` is `tsc --build`, so this is the build step.
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Primitive consumption (can knowledge move each primitive?)
         run: npm run check:consumption
