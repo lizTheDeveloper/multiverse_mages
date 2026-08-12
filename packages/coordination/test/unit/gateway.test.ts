@@ -192,3 +192,101 @@ function buildGatewayOver(
     acquire: shippedAcquirePolicy(traditionId),
   });
 }
+
+describe('what the frontier quotes is what research charges', () => {
+  /**
+   * `researchFrontier` used to price rediscovery on `wasEverKnown` alone.
+   *
+   * That flag is set by `createInstance` and never cleared, so it is true of
+   * every node anybody in the universe has *ever* learned — the ones still on
+   * the shelf included. `research()` prices the same work with `isRediscovery`,
+   * which is `wasEverKnown && !exists`. The two therefore disagreed on exactly
+   * the set of nodes the universe currently holds, and disagreed in the
+   * direction that hurts: the quote said "at least three times", the charge said
+   * "ordinary", and a mage ranking her options priced held nodes off the list.
+   *
+   * The setup below is the minimum that reproduces it — two mages, one of whom
+   * holds the node the other is considering.
+   */
+  function twoMages(): ReturnType<typeof buildWorld> & { readonly second: number } {
+    const world = buildWorld();
+    const { speciesOf, ids } = speciesTable();
+    const species = speciesOf(ids[0] as number);
+    if (species === undefined) throw new Error('the shipped registry declares no species');
+
+    const second = world.state.entities.create();
+    attachRecord(world.state, MAGE, second, {
+      speciesId: ids[0] as number,
+      birthTick: 0,
+      roleId: MAGE_ROLE.researcher,
+      universityId: 0,
+      curiosity: species.curiosity,
+      ambition: 1024,
+      caution: 1024,
+      vigor: 1024,
+      maxVigor: 1024,
+      alive: 1,
+    });
+    return { ...world, second };
+  }
+
+  function quoteFor(
+    gateway: CoordinatingKnowledgeGateway,
+    mage: number,
+    nodeId: number,
+  ): number | undefined {
+    return gateway.researchFrontier(mage, 512).find((target) => target.nodeId === nodeId)
+      ?.remainingCost;
+  }
+
+  it('quotes a node a colleague still holds at the ordinary price, not the rediscovery one', () => {
+    const { state, knowledge, gateway, mage, second } = twoMages();
+    const target = gateway.researchFrontier(second, 1)[0];
+    expect(target).toBeDefined();
+    const nodeId = target?.nodeId ?? 0;
+    const before = quoteFor(gateway, second, nodeId);
+    expect(before).toBeGreaterThan(0);
+
+    // The first mage learns it, through the subsystem rather than by attaching a
+    // record: `createInstance` is what sets the persisted ever-known mark, and
+    // that mark is the whole subject of this test.
+    knowledge.createInstance({
+      nodeId,
+      locationKind: LOCATION_KIND.mind,
+      locationId: mage,
+      acquiredTick: 0,
+      mastery: 1024,
+    });
+
+    const after = buildGatewayOver(state, knowledge, gateway);
+    expect(after.everKnown(nodeId)).toBe(true);
+    expect(after.instanceCount(nodeId)).toBe(1);
+    // Unchanged: somebody else holding it is not the second mage rediscovering
+    // a lost art, and `research()` would charge her exactly what it charged
+    // before.
+    expect(quoteFor(after, second, nodeId)).toBe(before);
+  });
+
+  it('still quotes the rediscovery price once the last copy is gone', () => {
+    const { state, knowledge, gateway, mage, second } = twoMages();
+    const nodeId = gateway.researchFrontier(second, 1)[0]?.nodeId ?? 0;
+    const ordinary = quoteFor(gateway, second, nodeId);
+    expect(ordinary).toBeGreaterThan(0);
+
+    const instance = knowledge.createInstance({
+      nodeId,
+      locationKind: LOCATION_KIND.mind,
+      locationId: mage,
+      acquiredTick: 0,
+      mastery: 1024,
+    });
+    knowledge.destroyInstance(instance, 1);
+
+    const after = buildGatewayOver(state, knowledge, gateway);
+    expect(after.everKnown(nodeId)).toBe(true);
+    expect(after.instanceCount(nodeId)).toBe(0);
+    // Known once, now gone: the gap `contracts.md` prices at three times, and
+    // the half of the old behaviour that was right.
+    expect(quoteFor(after, second, nodeId)).toBeGreaterThan(ordinary as number);
+  });
+});
