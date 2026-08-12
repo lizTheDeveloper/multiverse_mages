@@ -376,6 +376,19 @@ obvious gap.
   every instance is born at full mastery. Whatever is causing them, it is not the teach threshold.
 - Nothing here is a balance change and nothing here should be read as a recommendation to make one.
 
+## `npm run verify`
+
+**Green, exit code 0**, with all three balance gates passing at `delta 0.00000` on **every** metric:
+
+    Balance gate for balance-gate-v1:           PASS (tolerance k = 3 standard errors)
+    Balance gate for balance-gate-horizon-v1:   PASS (tolerance k = 3 standard errors)
+    Balance gate for balance-gate-ascension-v1: PASS (tolerance k = 3 standard errors)
+
+Every one of the thirty metric comparisons reads `delta 0.00000 (0.00 SE)`. That is the evidence for
+the claim made above — that a sweep which does not name a tradition behaves *byte-identically* to
+the tree before this change, because the absent key still takes `scribingTraditionId`'s pick. No
+golden fixture was regenerated. No balance baseline was regenerated.
+
 ## One anomaly, unexplained
 
 `uniform-random-legal` under Art of Memory reports **1237** mean knowledge instances against

@@ -103,5 +103,5 @@ Making `tradition` a multi-level factor **would break CRN**, because each level 
       `probable-strategies.md` were taken at `4ea0fcf` with the axis off-by-one live, which W5 has
       since fixed. Qualitative agreement is the check; exact agreement is not expected.
 - [x] 5.5 Write `docs/design/tradition-sweep.md` with the full tables.
-- [ ] 5.6 `npm run verify`, exact result reported, since code was touched.
+- [x] 5.6 `npm run verify`, exact result reported, since code was touched.
 - [x] 5.7 Report a negative result plainly if that is what the numbers say.
