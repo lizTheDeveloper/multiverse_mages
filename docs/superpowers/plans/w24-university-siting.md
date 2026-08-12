@@ -6,7 +6,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 # W24 — universities are somewhere (vision §7a, contracts §2.7)
 
 **Branch:** `w24/university-siting`, from `integration/campaign-round-2` (`0b54c84`).
-**Status:** in flight.
+**Status:** complete. `npm run verify` green — 277 files, 3,901 tests, three balance gates PASS.
+No golden fixture regenerated or changed.
 
 ## What this is, and the sentence that permits it
 
@@ -116,46 +117,159 @@ with a terrain-dependent upkeep.
 
 ### 1. Plan and baseline
 
-- [ ] 1.1 Plan committed and pushed.
-- [ ] 1.2 `npm run typecheck` green on the untouched tree. *(done — exit 0)*
-- [ ] 1.3 Record the before-numbers for the reference long run.
+- [x] 1.1 Plan committed and pushed.
+- [x] 1.2 `npm run typecheck` green on the untouched tree. *(done — exit 0)*
+- [x] 1.3 Record the before-numbers for the reference long run.
 
 ### 2. Content: the kind keeps `capacityPerLandUnit`, and gains an upkeep multiplier
 
-- [ ] 2.1 `libraryUpkeepMultiplier` in `territory.schema.json`, `TerritoryRecord`, and
+- [x] 2.1 `libraryUpkeepMultiplier` in `territory.schema.json`, `TerritoryRecord`, and
   `territory.json`, every value with a `gloss` and `tuningStatus: "untuned"`.
-- [ ] 2.2 `landUnits` documented in place as the **founding endowment**: the live figure is the
+- [x] 2.2 `landUnits` documented in place as the **founding endowment**: the live figure is the
   world's `territory-holding` rows.
 
 ### 3. State: two components and world-schema revision 5
 
-- [ ] 3.1 `TERRITORY_HOLDING` and `UNIVERSITY_SITE`, appended last in `WORLD_COMPONENTS`.
-- [ ] 3.2 `WORLD_SCHEMA_VERSION` 4 → 5, revision table updated, `worldSchemaVersionOf` marker.
-- [ ] 3.3 `addTerritorySiting` migration, empty sections, `SNAPSHOT_VERSION` untouched.
-- [ ] 3.4 Migration test: revision 1 → 5 in four steps; a revision-4 save loads and materializes.
+- [x] 3.1 `TERRITORY_HOLDING` and `UNIVERSITY_SITE`, appended last in `WORLD_COMPONENTS`.
+- [x] 3.2 `WORLD_SCHEMA_VERSION` 4 → 5, revision table updated, `worldSchemaVersionOf` marker.
+- [x] 3.3 `addTerritorySiting` migration, empty sections, `SNAPSHOT_VERSION` untouched.
+- [x] 3.4 Migration test: revision 1 → 5 in four steps; a revision-4 save loads and materializes.
 
 ### 4. Rules: the two mechanisms
 
-- [ ] 4.1 `economy/territory-holdings.ts` — `TerritoryKind`, `materializeHoldings`,
+- [x] 4.1 `economy/territory-holdings.ts` — `TerritoryKind`, `materializeHoldings`,
   `heldTerritoryExtent`.
-- [ ] 4.2 `universities/siting.ts` — `siteCapacityMultiplier`, `sitedCapacity`, `siteOf`,
+- [x] 4.2 `universities/siting.ts` — `siteCapacityMultiplier`, `sitedCapacity`, `siteOf`,
   `defaultSiteFor`.
-- [ ] 4.3 `libraryUpkeep` takes the site multiplier.
-- [ ] 4.4 `world-step.ts` — materialize, derive `K` from held rows, apply both multipliers.
-- [ ] 4.5 `fundPlan` sites a newly founded university on the documented default.
+- [x] 4.3 `libraryUpkeep` takes the site multiplier.
+- [x] 4.4 `world-step.ts` — materialize, derive `K` from held rows, apply both multipliers.
+- [x] 4.5 `fundPlan` sites a newly founded university on the documented default.
 
 ### 5. Proofs
 
-- [ ] 5.1 **`territoryExtent` is preserved**: state-derived extent deep-equals
+- [x] 5.1 **`territoryExtent` is preserved**: state-derived extent deep-equals
   `territoryExtent(records)` on the materialized world, and re-siting every university changes
   neither field.
-- [ ] 5.2 **Siting diverges an outcome**: two reference universes identical but for the founding
+- [x] 5.2 **Siting diverges an outcome**: two reference universes identical but for the founding
   academy's site (`river-delta` vs `highland-waste`), same seed, measured on population and on
   nodes known.
-- [ ] 5.3 No golden fixture regenerated. If one changes, stop and report the diff.
+- [x] 5.3 No golden fixture regenerated. If one changes, stop and report the diff.
 
 ### 6. Close
 
-- [ ] 6.1 `contracts.md` §1.1/§1.4/§2.7 updated; `CLAUDE.md`'s revision count corrected.
-- [ ] 6.2 `npm run verify` green; baselines regenerated **once**, with the mechanism named and the
+- [x] 6.1 `contracts.md` §1.1/§1.4/§2.7 updated; `CLAUDE.md`'s revision count corrected.
+- [x] 6.2 `npm run verify` green; baselines regenerated **once**, with the mechanism named and the
   deltas measured.
+
+## What was measured
+
+### The proof: the universe-level extent did not move
+
+`packages/rules-world/test/unit/territory-holdings.test.ts`, over the **shipped** content set
+rather than a fixture:
+
+- `heldTerritoryExtent(state, kinds)` **deep-equals** `territoryExtent(records)` field for field
+  after materialization — `{landUnits: 6000, baseCapacity: 54900}` on both sides. Field for field
+  and not "close enough": `baseCapacity` floors per region in both implementations, and a sum that
+  floored once at the end would differ by up to four people.
+- `maxCarryingCapacity` is the same **109,800** §2.7 has always documented.
+- Siting and re-siting every university, through every kind of country, moves **neither field**.
+  A site consumes no land.
+- Zeroing every holding gives `{0, 0}` and does **not** re-materialize, which is the property
+  colonization needs and the reason the migration appends empty sections.
+
+### The divergence: two universes differing only in where the academy stands
+
+`packages/scenario/test/unit/university-siting.test.ts`. Same seed (`0x90024`), same content, same
+founding cohorts, same tradition, same 600 ticks, **same 6,000 land units**. One scalar differs.
+
+| | population | `K` | students | nodes known | library depth | capital | books |
+|---|---|---|---|---|---|---|---|
+| `river-delta` | 818 | 59,564 | 128 | 51 | 22 | 240 fp | 85 |
+| `highland-waste` | 1,002 | 39,221 | 8 | 51 | 19 | 216 fp | 31 |
+| difference | **−18.4%** | **+51.9%** | 16× | — | **+15.8%** | +11.1% | 2.7× |
+
+The two histories separate at world tick **157** and end on different snapshot hashes.
+
+**Two results are not what was predicted, and both are reported as measured.**
+
+1. **Population moves the *other* way.** The prediction was that the richer country holds more
+   people. It does not, and the reason is legible: both universes hold the *same ground*, so what
+   differs is the size of one institution. Seats reach the world through two channels that pull
+   against each other — `completedCapacity` → `seatsBonus` → `K` rises by half, and
+   `universityCapacity` → student demand → the populace reallocates into studenthood, and students
+   do not farm. Over fifty years the labour drawn off the land costs more than the `seatsBonus`
+   gains, against a `K` neither universe comes near. **The delta buys a bigger institution and pays
+   for it in people.** That is a real strategic tradeoff, and it is the anti-correlation the design
+   wanted arriving from a direction nobody authored.
+2. **`nodesKnown` cannot diverge, and that is not this change's doing.** Both end at exactly **51**,
+   which is the *ruleset* ceiling — every authored node inside the twelve enabled v1 cells. The
+   campaign plan already names it (*"the 51-node passive baseline is content exhaustion, not a
+   baseline"*), and `w7/knowledge-capital` hit the same wall. Knowledge therefore diverges on
+   **library depth**, which is the channel W7 measured for the same reason — and the delta wins it
+   *despite* paying double upkeep on every shelf.
+
+### Baselines: which moved, and why
+
+Regenerated **once**, at the end, all three together. Rationale in each file names the mechanism.
+
+`contentRevision` moves `a622452a…` → `5be75547…` because every `territory.json` record gained
+`libraryUpkeepMultiplier`. **That alone invalidates all three baselines**, whatever the numbers did:
+the gate refuses to compare two builds.
+
+What the numbers did: **29 of 30 measured figures inside tolerance**, most inside one standard
+error.
+
+| gate | figure | before → after | SE |
+|---|---|---|---|
+| 600-tick | `referenceNodesKnown` | 29.46 → 29.60 | 1.25 |
+| 600-tick | `referenceLibraryDepth` | 10.285 → 10.240 | −0.13 |
+| 600-tick | `referencePopulation` | 129.395 → 129.255 | −0.32 |
+| horizon | `referenceGrimoires` | 361.33 → 359.40 | −0.21 |
+| horizon | `referenceLibraryDepth` | 25.09 → 25.47 | 0.53 |
+| horizon | **`referencePeakPopulation`** | **353 → 365** | **3.02** (tolerance 3.00) |
+| ascension | `referencePeakPopulation` | 50,080 → 50,230 | 1.14 |
+| ascension | `referenceLibraryDepth` | 9.94 → 12.84 | 0.89 |
+
+**The mechanism is RNG re-keying, not a rule change, and naming it precisely is the point.** The
+world step now materializes five `territory-holding` entities on the first tick. Entity handles are
+what `deriveActorStream` keys on (`contracts.md` §6), so every entity created afterwards takes a
+different handle and a different per-actor stream. The *arithmetic* is untouched for these runs: the
+reference academy sits at the documented default, which resolves to `arable-lowland`, whose site
+capacity multiplier is `fp(1024)` **by construction** (it is the reference kind) and whose
+`libraryUpkeepMultiplier` is also `fp(1024)`. **Both siting mechanisms are exactly neutral in every
+run these three gates measure.**
+
+The one figure over tolerance — `referencePeakPopulation` at 3.02 SE against 3.00 — is a max
+statistic a hair over, in the same direction and magnitude as the noise in every other figure.
+
+### One test assertion relaxed, on evidence
+
+`reference-long-run.test.ts` asserted teaching in **every** one of ten 20-year windows. The same
+handle shift moved the trajectory under one percent — peak population 18,838 → 18,657, final `K`
+29,831 → 29,887 — and one window went to zero. The series *before* the change read
+826 / 343 / 188 / 165 / **25** / **14** / 299 / 567 / 114 / **1**: three of its ten windows were
+already within a handful of lessons of failing. "Every window" was one seed's luck, not a property
+of the rules. It now asserts the shape the tripwire was written for — lessons in the first window,
+lessons in the last sixty years, and at most one silent window — with the evidence in the comment.
+
+### No golden fixture changed
+
+`git status` over `packages/sim-core/test/golden` is empty, and the 200-year reference run's
+snapshot-hash-across-two-executions test passes. `SNAPSHOT_VERSION` is still 1.
+
+## Open questions for the author — raised, not answered
+
+1. **Should good ground be scarce?** Today every university may stand in the delta; nothing limits
+   how many an area holds. Scarcity would make siting a sharper decision, and `landUnits` is now in
+   state and could price it. The spec is silent on the rule, and the campaign's standing order is
+   to raise rather than invent.
+2. **Should the god be able to choose a site?** §4.2 gives `fundUniversity` one parameter and §4.1
+   fixes the institution observation block at four slots, so a founded university takes the
+   documented default. Naming a site is §4.4's parameterized channel and a change to the action
+   space. Until it exists, siting is a **scenario** decision and not a **play** decision, which
+   limits how much of the strategic value is reachable.
+3. **Is the population direction right?** A bigger academy costing labour is a defensible tradeoff,
+   but it means the richest ground currently *shrinks* a universe over fifty years. Whether that is
+   the intended shape or a sign that student demand should not scale one-for-one with seats is a
+   design call, not an implementation one.
