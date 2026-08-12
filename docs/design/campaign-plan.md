@@ -362,3 +362,68 @@ invent, and these are the ones already known:
 - Content in validated data files, never hardcoded.
 - Every claim reported with its number, and a negative result reported plainly. An engineered
   success is worth less than an honest failure.
+
+---
+
+## The meta-game, as the author specified it this session
+
+None of this is in `vision.md` yet. It is recorded here verbatim in substance so it survives, and
+W16 is writing it up as an OpenSpec proposal. **It is not yet decided for v1.**
+
+### The loop
+
+    within a bubble:   raid rivals -> loot their books -> extinguish their mages
+    extinguished:      that universe's populace, materials and labour pay the conqueror
+    clear the bubble:  promote to the next tier, populated by others who cleared theirs
+    lose your universe: REJOIN a fresh bubble, carrying prestige
+    the player never leaves the game; only universes end
+
+### What it lands on that already exists
+
+- **`stagnation-mageless-ticks` is 60.** A mageless universe is already a terminal state, so
+  "extinguish their magic users" is a new *consequence* of an existing ending, not a new ending.
+- **§8a already says** a ruined universe *"does not lose — it stagnates, and stagnation is its own
+  ending"*, and that the world is *"persistent across runs, not within one infinite run"*.
+- **`prestige-base-stagnated` is 128**, non-zero *"deliberately: a zero floor makes losing streaks
+  spiral"*. Defeat was already priced.
+- **§7's worship loop is the transfer channel** — favor regeneration scales with worship from
+  *"mages, universities, and populace"*, so a populace revering a new god is an existing quantity.
+- **§7a's "no map" survives**: worship, populace and materials are counts and relationships.
+- **`contracts.md` anticipated ground changing hands by name** — *"when that stops being true — a
+  raid that takes ground — `landUnits` moves to §1.1"*.
+
+### The three collisions W16 must resolve, not smooth over
+
+1. **"Prestige" is overloaded.** The author uses it as a verb for tier promotion. The codebase uses
+   it as a noun for §8a's carried-forward score, with six authored constants and a loader-asserted
+   identity. These need different names, decided now.
+2. **Conquest competes with ascension as a win condition.** §8a's ascension closes a universe
+   gloriously; clearing a bubble promotes you. Which does a player want, and what happens to bubble
+   progress when you ascend? W6 has just spent a workstream making ascension discriminating —
+   measured at rate 0.167, exploit margin +0.167, correlation +0.97 — and this changes what those
+   numbers are for.
+3. **§12 puts a ranked ladder out of v1 scope.** Bubbles-as-skill-tiers is a ranked progression
+   system whatever it is called. *"Right structure, post-v1"* is a legitimate conclusion.
+
+### Where the balance risk moved
+
+Off the victim and onto the **conqueror**. A colony paying tribute into an already-compounding
+worship→favor loop is precisely §6a's *"two compounding loops that feed each other… produces
+runaway leaders"* and §8a's *"prestige must not compound without bound, or the meta-game decides
+matches before they begin."* `capitalSnowball` already reads **0.3498 against a 0.35 threshold**
+from a zero-prestige population. That is the number to watch.
+
+### Open, and the author's to settle
+
+- [ ] Which tier do you rejoin at — same, or demoted?
+- [ ] Bubble size, and the trade-off: small clears fast and churns tiers; large makes raids frequent
+      and promotion rare.
+- [ ] What "conquered all universes in your bubble" means when rivals are eliminating each other
+      too — is clearing it "last one standing"?
+- [ ] The "special circumstances" allowing an unbounded bubble.
+- [ ] Whether durability should resist **looting** as well as burning. The spec says only that
+      dwarven grimoires resist destruction.
+- [ ] **`vision.md` §8 now contradicts the author's intent.** It calls an unbounded griefing surface
+      *"a live-PvP death sentence dressed as a strategic cost"*. Elimination is intended, and
+      rejoin-into-a-new-bubble is the bound. Until §8 is updated it will keep generating this
+      objection from every reader and every agent.
