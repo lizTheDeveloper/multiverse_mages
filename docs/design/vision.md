@@ -182,6 +182,34 @@ and destruction cycles, forbidden texts that teach themselves and damage the rea
 **Sourcing note:** content draws on historical, literary, and folkloric material and deliberately
 avoids living practiced religions.
 
+## 4b. What One Mage Can Hold
+
+The grid says what a universe may contain. Three further decisions constrain the **individual**,
+and together they are why the deepest magic has to be collective.
+
+**Schools are mutually exclusive, and the test is per mage.** An individual mage cannot learn all
+the magic, because some bodies of magic exclude others — *if you use light magic you can't also
+use dark magic*. The exclusion is checked against the **mage's** held set, never the universe's: a
+universe can eventually hold everything, spread across many mages, and that is exactly what a
+civilization is for. Every exclusion carries its **reason**, and symmetry follows from the reason
+rather than being asserted alongside it — an exclusion whose reason does not run both ways is not
+yet an exclusion. This is an anti-requisite on the node graph, which today knows only
+prerequisites.
+
+**Depth requires a long life.** Reaching the deepest nodes should be *weird* — the province of a
+naturally long-lived species, or of absurd life-extension magic. Extension therefore returns
+**logarithmically**, so that buying more life never makes a species' own lifespan irrelevant; the
+draconic 1,500 years must stay worth having next to a human who has bought her way upward. The
+`lifespan` primitive already caps at `fraction-of-species-base 512` — half a species' base again,
+and no further — which is the same instinct written as a ceiling rather than as a curve.
+
+**The deepest magic is cast by more than one mage.** Rituals requiring several casters, ideally
+casters from mutually exclusive schools, so that the summit of the grid is *structurally*
+collective: a single archmage cannot be a whole civilization, and losing one mage from a ritual
+group is a real loss rather than a slower schedule. Nothing in any spec today mentions rituals or
+co-casting — this section is where that decision now lives, and the questions it leaves open are
+in §13.
+
 ## 5. Knowledge Has a Location
 
 A **knowledge instance** is one copy of a node, existing at exactly one of:
@@ -271,6 +299,23 @@ encourage a research direction, and — rarely and ruinously — change the univ
 **Mage autonomy:** mages act on utility-scored goals shaped by species, age, personality, and
 their assigned standing **role** (researcher, warden, professor, raider). You set the role; they
 decide everything else. You never issue direct orders — including in raids.
+
+**When an intervention lands is part of what it costs.** §3.1 of `docs/design/sound-design.md`
+makes one world tick one **bar**, and gives each subsystem a subdivision of it: economy on beats 1
+and 3, teaching on the backbeat, research on 8ths, scribing on 16ths, and knowledge loss and
+portal events off-grid, because off-grid means wrong. That arrangement is a claim about the
+simulation and not only about the music, and the god's acts are meant to answer to it — *when* an
+intervention lands should matter, and §4.1's technique envelopes should become real **cost curves**
+rather than a description of a sound.
+
+Part of this is built, on `w21/timing-and-envelopes`. The five techniques carry authored envelopes
+— Creo swells, Perdo hollows out, Intellego opens, Muto bends, Rego is rigid — and the curve now
+shapes the effort a mage spends on **research**, the one acquisition path with an interior for a
+curve to be a curve over. And a **constitutional act** — permitting, forbidding, an edict —
+committed within eight ticks of the last one pays a surcharge, so churning the ruleset is priced
+rather than free. What is deliberately computed and *not* charged is the off-grid surcharge
+itself, because §3.1 assigns subdivisions to world subsystems and never to god interventions.
+Which subdivision each intervention belongs to is an open question, and it is in §13.
 
 ## 7a. Space and Scale
 
@@ -548,6 +593,25 @@ Tracked for resolution during the changes that need them, not blocking:
 - How large is the edict budget, and how does it scale with worship tier? Deferred to
   `god-agency` and expected to be retuned repeatedly by the balance harness.
 - What is the exact worship formula? Deferred to `god-agency`, same caveat.
+- **Which schools exclude which, and what reason does each exclusion carry?** §4b fixes the rule
+  and the test — per mage, reason-bearing, symmetric because the reason is — and names no pairs.
+  The content shape is also open: an anti-requisite is the mirror of a prerequisite and
+  `node.json` has only the latter, so whether exclusion is authored on nodes, on cells, or on a
+  named school region is undecided.
+- **How many casters does a ritual need, and what happens when one dies mid-ritual?** §4b decides
+  that the deepest magic is collective; nothing else about co-casting is decided. Whether a ritual
+  is a raid-scale act, a world-scale one, or both is the first thing to settle, because it decides
+  which clock it runs on.
+- **Which subdivision of the bar does each god intervention belong to?** `sound-design.md` §3.1
+  assigns subdivisions to world subsystems, not to interventions, and W21 declined to charge an
+  off-grid surcharge it could not derive. Answering this turns a computed number into a price.
+- **Bubble size, rejoin tier, and what "cleared" means** when rivals are eliminating each other
+  too. Raised by `openspec/changes/colonization` and unresolved; bubble size is the sharp one,
+  since small clears fast and churns tiers while large makes raids frequent and promotion rare.
+- **Confirm or replace the names.** §8b uses *bubble*, *promotion*, and *prestige* strictly as a
+  noun. `openspec/changes/colonization` proposes `bubbleTier` for the index and offers *echelon*,
+  *sphere* and *rank* as alternatives. The point is only that two mechanics may not share one
+  word; which words is the author's.
 - How much of the grid is **mētis** — knowledge that cannot be written down at all? Proposed in
   `metis-knowledge` and deliberately held at proposal depth until the balance harness exists: it
   adds a decay pressure that runs on a demographic clock rather than an adversarial one, and how
