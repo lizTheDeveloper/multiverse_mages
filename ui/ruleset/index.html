@@ -17,28 +17,11 @@
 -->
 <meta charset="utf-8">
 <title>Multiverse Mages — the ruleset</title>
+<link rel="stylesheet" href="../shared/theme.css">
 <style>
-  :root{
-    --ground:#ece7de; --panel:#f5f2eb; --sunk:#e2dcd0; --line:#c8c0b1;
-    --ink:#17191c; --soft:#55595f; --faint:#8a8d93;
-    --brass:#9a6b1f; --brass-lit:#c08a3e; --verdigris:#2f6f60; --ember:#a83a2c;
-    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
-    --serif:"Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
-  }
-  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-    --ground:#0f1216; --panel:#171b21; --sunk:#1f242c; --line:#2c333d;
-    --ink:#dfe3e8; --soft:#99a1ac; --faint:#6a737f;
-    --brass:#c08a3e; --brass-lit:#e0ab5c; --verdigris:#58a08d; --ember:#d1594a;}}
-  :root[data-theme="dark"]{
-    --ground:#0f1216; --panel:#171b21; --sunk:#1f242c; --line:#2c333d;
-    --ink:#dfe3e8; --soft:#99a1ac; --faint:#6a737f;
-    --brass:#c08a3e; --brass-lit:#e0ab5c; --verdigris:#58a08d; --ember:#d1594a;}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.5 var(--sans);min-height:100vh}
   .wrap{max-width:78rem;margin:0 auto;padding:1.75rem 1.25rem 4rem}
   header{display:flex;flex-direction:column;gap:.3rem;margin-bottom:1.25rem}
-  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--brass)}
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--warn)}
   h1{font:400 clamp(1.6rem,3vw,2.3rem)/1.1 var(--serif);margin:0;letter-spacing:-.01em}
   .lede{color:var(--soft);max-width:62ch;margin:.15rem 0 0}
   .lede em{color:var(--ink);font-style:italic}
@@ -47,50 +30,50 @@
   .meter{display:flex;align-items:baseline;gap:.4rem}
   .meter .k{font:10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
   .meter .v{font:400 1.15rem var(--serif);font-variant-numeric:tabular-nums}
-  .meter .v[data-low="true"]{color:var(--ember)}
+  .meter .v[data-low="true"]{color:var(--loss)}
   .spacer{flex:1}
   button{font:inherit;color:inherit;background:var(--sunk);border:1px solid var(--line);border-radius:3px;padding:.4rem .75rem;cursor:pointer}
-  button:hover:not(:disabled){border-color:var(--brass)}
+  button:hover:not(:disabled){border-color:var(--warn)}
   button:disabled{opacity:.4;cursor:not-allowed}
-  button:focus-visible,.cell:focus-visible,.axis:focus-visible{outline:2px solid var(--brass-lit);outline-offset:2px}
+  button:focus-visible,.cell:focus-visible,.axis:focus-visible{outline:2px solid var(--summit-lit);outline-offset:2px}
   .hint{font:11px var(--mono);color:var(--faint)}
 
   .grid{display:grid;grid-template-columns:7.5rem repeat(14,minmax(0,1fr));gap:3px;overflow-x:auto;padding-bottom:.4rem}
   .corner{}
   .axis{display:flex;align-items:center;justify-content:center;text-align:center;padding:.35rem .2rem;background:var(--panel);border:1px solid var(--line);border-radius:3px;cursor:pointer;font:11px var(--mono);letter-spacing:.04em;line-height:1.15;min-height:2.6rem}
   .axis.tech{justify-content:flex-start;padding-left:.6rem;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
-  .axis[aria-pressed="false"]{background:var(--sunk);color:var(--faint);text-decoration:line-through;text-decoration-color:var(--ember)}
-  .axis[aria-pressed="true"]{border-color:color-mix(in srgb,var(--verdigris) 45%,var(--line))}
-  .axis:hover{border-color:var(--brass)}
+  .axis[aria-pressed="false"]{background:var(--sunk);color:var(--faint);text-decoration:line-through;text-decoration-color:var(--loss)}
+  .axis[aria-pressed="true"]{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+  .axis:hover{border-color:var(--warn)}
   .cell{aspect-ratio:1;border:1px solid var(--line);border-radius:2px;background:var(--sunk);cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;padding:0}
-  .cell[data-on="true"]{background:color-mix(in srgb,var(--verdigris) 34%,var(--panel));border-color:color-mix(in srgb,var(--verdigris) 55%,var(--line))}
+  .cell[data-on="true"]{background:color-mix(in srgb,var(--ok) 34%,var(--panel));border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}
   .cell[data-on="false"]{background:var(--sunk);opacity:.5}
-  .cell[data-edict="dispensation"]{background:color-mix(in srgb,var(--brass) 42%,var(--panel));border-color:var(--brass)}
-  .cell[data-edict="interdiction"]{background:color-mix(in srgb,var(--ember) 26%,var(--panel));border-color:var(--ember);opacity:1}
+  .cell[data-edict="dispensation"]{background:color-mix(in srgb,var(--warn) 42%,var(--panel));border-color:var(--warn)}
+  .cell[data-edict="interdiction"]{background:color-mix(in srgb,var(--loss) 26%,var(--panel));border-color:var(--loss);opacity:1}
   .cell[data-sel="true"]{outline:2px solid var(--ink);outline-offset:-2px}
   .cell .mark{font:10px var(--mono);color:var(--ink);opacity:.75}
-  .cell:hover{border-color:var(--brass)}
+  .cell:hover{border-color:var(--warn)}
 
   .panes{display:grid;grid-template-columns:1fr 20rem;gap:1rem;margin-top:1rem}
   @media (max-width:60rem){.panes{grid-template-columns:1fr}}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:1rem 1.1rem}
   .card h2{font:11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 .6rem;font-weight:500}
   .cellname{font:400 1.35rem var(--serif);margin:0}
-  .classical{font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--brass);margin:.1rem 0 .5rem}
+  .classical{font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--warn);margin:.1rem 0 .5rem}
   .verdict{font:12px var(--mono);letter-spacing:.06em;padding:.3rem .55rem;border-radius:3px;display:inline-block;margin-bottom:.7rem}
-  .verdict[data-on="true"]{background:color-mix(in srgb,var(--verdigris) 22%,transparent);color:var(--verdigris)}
-  .verdict[data-on="false"]{background:color-mix(in srgb,var(--ember) 18%,transparent);color:var(--ember)}
+  .verdict[data-on="true"]{background:color-mix(in srgb,var(--ok) 22%,transparent);color:var(--ok)}
+  .verdict[data-on="false"]{background:color-mix(in srgb,var(--loss) 18%,transparent);color:var(--loss)}
   .nodes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;max-height:15rem;overflow-y:auto}
   .nodes li{border-left:2px solid var(--line);padding-left:.65rem}
   .nodes b{font-weight:500}
   .nodes .t{font:10px var(--mono);color:var(--faint);margin-left:.35rem}
   .nodes p{margin:.1rem 0 0;font-size:.85rem;color:var(--soft)}
-  .trunk{margin:0 0 .7rem;padding:.5rem .65rem;border-left:3px solid var(--brass);background:color-mix(in srgb,var(--brass) 10%,transparent);font-size:.85rem;color:var(--soft);border-radius:0 3px 3px 0}
+  .trunk{margin:0 0 .7rem;padding:.5rem .65rem;border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);font-size:.85rem;color:var(--soft);border-radius:0 3px 3px 0}
   .trunk b{color:var(--ink)}
   .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.35rem;max-height:15rem;overflow-y:auto;font-size:.85rem}
   .log li{color:var(--soft);border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent);padding-bottom:.3rem}
   .log b{color:var(--ink);font-weight:500}
-  .log .warn{color:var(--ember)}
+  .log .warn{color:var(--loss)}
   .edicts{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.6rem}
   footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--line);color:var(--faint);font-size:.8rem}
   code{font:12px var(--mono);color:var(--soft)}
@@ -418,4 +401,9 @@ document.getElementById('reset').addEventListener('click', () => {
 build();
 renderDetail();
 note('Every technique and form permitted. 70 cells live, 300 nodes reachable.');
+</script>
+
+<script type="module">
+  import { floatThemeControl } from '../shared/theme.js';
+  floatThemeControl();
 </script>

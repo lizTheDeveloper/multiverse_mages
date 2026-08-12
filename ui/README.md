@@ -72,6 +72,21 @@ unlinked prototype is invisible.
 Then open `http://localhost:8200/ui/ruleset/`. They are static files, so any static server works;
 the script exists so nobody has to remember the flags.
 
+## Light and dark
+
+Every prototype carries a theme control — **light / system / dark** — and the choice is remembered
+per browser rather than per prototype. All colour lives in [`shared/theme.css`](shared/theme.css);
+no prototype declares one.
+
+The two themes are not two skins. On ink, a charged control **emits** light. On vellum it cannot: a
+cyan fill bright enough to read measures 1.01:1 against the latent state, a hue difference with no
+luminance at all. So on paper charge **blooms downward** — ink drawn to the control rather than light
+coming off it. Both resolve from the same `--ctl-charged-*` and `--glow-charged` tokens, so a
+prototype writes one rule and gets the right treatment in either theme.
+
+Measured across all eleven prototypes in both themes: **no text below WCAG 4.5:1**, worst case 4.72.
+`packages/content/test/unit/ui-theme.test.ts` guards the three ways this breaks silently.
+
 ## What they are allowed to do
 
 - **Load real content.** `ruleset/content.json` is generated from `packages/content/data`, so a
