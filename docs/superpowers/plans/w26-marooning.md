@@ -237,11 +237,14 @@ Two things worth recording rather than smoothing over:
   The rule is right and the fix is the one the checker sanctions — `extends` counts as consuming
   the shared type, restating its fields does not. Fixed in `60ad238`; the 2,400-tick report is
   byte-identical after it, both arms still on `cb1c0efafbd7f66a`.
-- **The known `Timeout calling "onTaskUpdate"` artifact appeared**, as `CLAUDE.md`'s campaign notes
-  describe: three to five unhandled RPC-timeout errors after the tests themselves finish, from
+- **The known `Timeout calling "onTaskUpdate"` artifact appeared**, as the campaign notes describe:
+  three to five unhandled RPC-timeout errors *after* the tests themselves finish, from
   `reference-long-run.test.ts` blocking a worker past vitest's budget. On one loaded run it took
-  three test *files* down with it. Re-run unloaded, the same suite is 279/279 and 3,925/3,925.
-  **No timeout was raised to make anything green.**
+  three test *files* with it. The suite was then run **three more times**, each reporting
+  **279/279 files and 3,925/3,925 tests passing** — with 3, 3 and 4 of the same RPC errors — so the
+  three failures are the artifact and not a defect in this change. **No timeout was raised to make
+  anything green**, and the artifact is reported rather than worked around because a chained
+  `npm run verify` can still exit non-zero on it under load.
 
 ---
 
