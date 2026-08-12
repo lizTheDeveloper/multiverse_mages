@@ -38,7 +38,7 @@ fi
 echo "=== install (npm ci) ==="
 npm ci
 
-echo "=== verify (typecheck, lint, purity, content, audio, primitive coverage + consumption, tests, both balance gates) ==="
+echo "=== verify (typecheck, lint, purity, content, audio, primitive coverage, tests, balance gates, primitive consumption) ==="
 npm run verify
 
 echo "=== ci-check passed ==="

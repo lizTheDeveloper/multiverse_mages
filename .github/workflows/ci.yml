@@ -54,15 +54,6 @@ jobs:
       - name: Primitive coverage over v1 content
         run: npm run check:coverage
 
-      # The other half of the question. `check:coverage` asks whether content
-      # *authors* each primitive; this asks whether an authored node effect
-      # reaches anything the assembled simulation applies. Both steps are
-      # enumerated here rather than run through `npm run verify`, so a new
-      # `verify` step that is not added here does not run on fork PRs — which
-      # this job is the only gate that safely sees.
-      - name: Primitive consumption (can knowledge move each primitive?)
-        run: npm run check:consumption
-
       - name: Test (unit + golden replay)
         run: npm test
 
@@ -96,6 +87,19 @@ jobs:
         # this step goes missing or if any of the three horizons collapses into
         # another.
         run: npm run balance:gate:ascension
+
+      # The other half of the question. `check:coverage` asks whether content
+      # *authors* each primitive; this asks whether an authored node effect
+      # reaches anything the assembled simulation applies. Both steps are
+      # enumerated here rather than run through `npm run verify`, so a new
+      # `verify` step that is not added here does not run on fork PRs — which
+      # this job is the only gate that safely sees.
+      #
+      # Runs LAST, matching `verify`. It is expected to be red until the effect
+      # pipeline is wired, and an expected-red gate placed early would suppress
+      # the test and balance signal that everyone else depends on.
+      - name: Primitive consumption (can knowledge move each primitive?)
+        run: npm run check:consumption
 
   next-node:
     # Early warning only: a failure here means the next Node major may change
@@ -137,15 +141,6 @@ jobs:
       - name: Primitive coverage over v1 content
         run: npm run check:coverage
 
-      # The other half of the question. `check:coverage` asks whether content
-      # *authors* each primitive; this asks whether an authored node effect
-      # reaches anything the assembled simulation applies. Both steps are
-      # enumerated here rather than run through `npm run verify`, so a new
-      # `verify` step that is not added here does not run on fork PRs — which
-      # this job is the only gate that safely sees.
-      - name: Primitive consumption (can knowledge move each primitive?)
-        run: npm run check:consumption
-
       - name: Test (unit + golden replay)
         run: npm test
 
@@ -179,3 +174,16 @@ jobs:
         # this step goes missing or if any of the three horizons collapses into
         # another.
         run: npm run balance:gate:ascension
+
+      # The other half of the question. `check:coverage` asks whether content
+      # *authors* each primitive; this asks whether an authored node effect
+      # reaches anything the assembled simulation applies. Both steps are
+      # enumerated here rather than run through `npm run verify`, so a new
+      # `verify` step that is not added here does not run on fork PRs — which
+      # this job is the only gate that safely sees.
+      #
+      # Runs LAST, matching `verify`. It is expected to be red until the effect
+      # pipeline is wired, and an expected-red gate placed early would suppress
+      # the test and balance signal that everyone else depends on.
+      - name: Primitive consumption (can knowledge move each primitive?)
+        run: npm run check:consumption
