@@ -136,6 +136,29 @@ operation, or a side effect of research and teaching. Making it a side effect is
 working scholar is automatically a maintained one. Making it separate creates a fourth demand on a
 roster that already has three, which is either the best tension in the game or one too many.
 
+## 2d. A university's curriculum is whatever its faculty can still teach
+
+> *"For now, students take all available classes at the university. That's what the university **is**."*
+
+Ruled as a v1 simplification, and it is a good one. There is **no course selection and no student
+scheduling.** A student takes everything on offer. The university offers whatever its stationed mages
+can teach — which, under §2c, means whatever they hold *above the teach threshold*.
+
+So a curriculum is not authored and not chosen. It is **emergent from the roster**, and that has one
+consequence worth stating plainly because it is the sharpest thing in this document:
+
+> **A university's curriculum is not what it knows. It is what its faculty can still teach.**
+
+The library can be deep and the curriculum thin. Under W26's measured 93.4%, that is the ordinary
+case rather than the pathological one — a university holding fifty-one nodes may be able to offer
+three. **Publish-or-perish decides the curriculum**, and the library only decides what could be
+recovered if someone went back and did the work.
+
+This also removes a whole class of interface the game does not need. The player never schedules a
+class. The levers stay what they already are: who is stationed where, what they are set to do, and
+what the constitution permits. The curriculum follows from those, which is exactly the "you shape
+who they are, then find out what they do" contract §4 is built on.
+
 ## 3. The species split falls straight out, and it is the playstyle difference
 
 Lifespans span **25×** — orc 720 months, draconic 18,000:
