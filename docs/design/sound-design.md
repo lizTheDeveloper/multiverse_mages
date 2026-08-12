@@ -478,6 +478,45 @@ listening to someone else's tonic.
 If the two universes' keys are a semitone or a tritone apart, the raid is uncomfortable in a way
 neither player can quite name. That is a feature. Do not smooth it.
 
+### 3.4a Familiarity: when you cannot tell whose spell it was by ear
+
+Training with another species accrues **familiarity** — affinity, damage resistance and damage
+advantage against it, capped at 1.15 (`ages-of-magic.md` §2g). It is a mētis quantity in the exact
+sense of §0.3: a thing that is true *of* the relationship between two civilizations, felt long before
+anyone could read it off a panel. So it belongs here rather than in a readout.
+
+**Do not move the keys.** §1.1 derives each universe's root and mode from `rootSeed` and §3.4 gives
+the raid the *host's* tonic; both are load-bearing and neither should bend. What familiarity changes
+is **how the raider's casts sit inside that tonic.**
+
+- **Against a species you have never met**, their magic is *out of key*. It fights the portal drone,
+  it does not resolve, and it is unplaceable in the way a stranger's voice in your house is
+  unplaceable.
+- **Against a species you have trained with for a century**, their magic **resolves inside your own
+  key.** Their casts land on your scale degrees. They sound like your own faculty working.
+
+That is the tragedy made audible, and it is the opposite of a comfort: at high familiarity **you
+cannot tell whose spell it was by ear.** The horror is not dissonance. It is recognition.
+
+This deliberately mirrors what the raid view does visually — every spell wears its cell's form hue
+and sides are carried by *shape*, so colour never tells you whose it was. Sound arrives at the same
+place by a different road, and for a different reason: the picture is impartial because the host's
+ruleset governs both sides, the *sound* is intimate because you taught them.
+
+§3.4's warning still stands and is not softened by this. A semitone or tritone gap between two
+universes' keys should stay uncomfortable. Familiarity does not resolve that discomfort — it changes
+**whose discomfort it is**, by making an enemy's casts consonant with the ground they are standing on.
+
+**The anticipation term.** §4.1 gives each technique an envelope. Familiarity may bring a familiar
+technique's attack *earlier and cleaner* — you hear it coming because your mages have heard it a
+thousand times in a lecture hall. That is the resistance term made audible rather than merely
+applied, and it is the cheapest possible way to let a player feel a number they never read.
+
+**Three constraints, all from §0, none optional.** Familiarity is accumulated state and not a draw,
+so §0.2 is satisfied — no simulation RNG is touched. §0.1 holds: audio *projects* the familiarity
+value and computes nothing. And **audio may not lie**: the consonance must be a real function of the
+real familiarity term, so a raid that sounds like family is one where the number actually says so.
+
 ### 3.5 Uninvolved universes keep running
 
 Vision §8: uninvolved universes keep advancing. In a future spectator or multiplayer-lobby context
