@@ -220,7 +220,19 @@ describe('contentRevision', () => {
     // reason the god tables are: two universes that disagreed about how long a
     // portal holds would fight two different battles while their revisions
     // agreed they were compatible. Nothing existing changed a byte.
-    expect(registry.contentRevision).toBe('2512ea02d2a7569d8d0bacc4c5a926ca');
+    //
+    // 2512ea02d2a7569d8d0bacc4c5a926ca -> ec506311ed7aadeb1aaf0e14f5750465,
+    // when the ascension predicates were made to read positive achievement and
+    // five constants joined `god-constant.json`: `ascension-summit-cells`,
+    // `ascension-summit-copies`, `ascension-canon-breadth`,
+    // `ascension-canon-cells` and `ascension-loss-fraction`. Unlike every move
+    // above it, this one is *not* "nothing existing changed a byte" in effect —
+    // no existing record changed, but the rules that read these constants decide
+    // when a run ends, so two universes on either side of this revision would
+    // disagree about whether a game was over. That is exactly what the revision
+    // exists to make incompatible, and it is why the digest is checked rather
+    // than the file list.
+    expect(registry.contentRevision).toBe('ec506311ed7aadeb1aaf0e14f5750465');
   });
 
   it('is stable across loads of identical content', () => {

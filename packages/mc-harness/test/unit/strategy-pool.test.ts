@@ -290,9 +290,21 @@ describe('degeneracy is declared rather than discovered', () => {
   it('reports every strategy but the passive control as degenerate under a full mask-out', () => {
     const reports = poolDegeneracy(BOT_POOL_REGISTRY, noopOnlyMask());
     const degenerate = reports.filter((report) => report.degenerate).map((r) => r.strategyId);
+    // Stated as the property rather than as the eight literal ids: a strategy is
+    // degenerate under a noop-only mask exactly when it has a signature action
+    // to be denied. Widened on the W6 verification branch, which appends two
+    // adversarial probes to BOT_POOL; the assertion is strictly stronger than
+    // the id list it replaces, because it also fixes which strategies are NOT
+    // degenerate and why.
     expect(degenerate.sort()).toEqual(
-      REQUIRED_ROLES.filter((role) => role !== 'passive-control').slice().sort(),
+      BOT_POOL.filter((definition) => definition.signatureActions.length > 0)
+        .map((definition) => definition.strategyId)
+        .sort(),
     );
+    for (const role of REQUIRED_ROLES) {
+      if (role === 'passive-control') continue;
+      expect(degenerate, `${role} must still be reported degenerate`).toContain(role);
+    }
     // The passive control is never degenerate: it has no signature actions, so
     // there is nothing it is failing to reach.
     const passive = reports.find((report) => report.strategyId === 'passive-control');
@@ -314,11 +326,18 @@ describe('degeneracy is declared rather than discovered', () => {
     // silent refusal found while fixing that one — the noise floor submits
     // actions 1–7 with no parameter at all — and it is recorded rather than
     // fixed, for the reason the entry gives.
+    // `ascension-is-passive` has expired: both paths now gate on a quantity the
+    // god's play produces, and the entry described a defect this build does not
+    // have. What replaced it is not the same claim rewritten -- it is a limit of
+    // the POOL rather than of the game, found by fixing the first one. Five of
+    // the eight strategies produce identical achievement vectors, so the pool's
+    // Pareto front is one point and no win condition can separate them.
     expect(Object.keys(POOL_BUILD_LIMITS).sort()).toEqual([
-      'ascension-is-passive',
+      'five-strategies-are-one-universe',
       'noise-floor-submits-axis-actions-bare',
       'open-portal',
       'starting-position-is-broke',
+      'universities-are-founded-and-never-finished',
     ]);
     for (const [key, text] of Object.entries(POOL_BUILD_LIMITS)) {
       expect(text.length, `${key} needs a reason, not a label`).toBeGreaterThan(80);
