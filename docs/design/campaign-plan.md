@@ -1095,3 +1095,145 @@ positive while the only quantity species traits influence is an instance count r
 **No baseline collected before this wire lands measures the game.** They measure a favor trickle.
 Balance work resumes after it, not before, and the tuner's calibrated constants should be treated as
 provisional.
+
+---
+
+## Pre-registered: what the wire will and will not fix
+
+Written **before** the first post-wire sweep, so the result cannot be read backwards into whichever
+story it happens to fit. Six mechanics have already been built and measured; each time the
+prediction was formed after the number arrived, and each time the campaign learned less than it
+should have.
+
+**The wire is necessary and not sufficient.** Specifically:
+
+*Expected to move.* Species traits become economically legible for the first time, so `archivist`
+should separate from `passive-control` on output rather than on grimoire count; interdiction should
+acquire a price, since `universe-effects` re-checks `permits()` every tick; and **D7** — varying the
+founding species mix changes which strategy wins — becomes reachable at all. D7 was never a hard
+test. It was an impossible one: the only quantity species traits influenced was an instance count
+read by a `> 0` test.
+
+*Expected NOT to move.* **D2** (exploit margin) and **D6** (no strategy wins at the passive
+baseline). `permit-then-idle` opens all seven switches for 0.63% of income, its academics learn the
+subset by tick 300 whether or not the god does anything else, and `universe-effects` will then pay it
+in full. Idling never suppressed knowledge acquisition — it only skipped verbs. Wiring effects makes
+knowledge *worth* something without making the idle bot's knowledge worth *less*.
+
+The complement is permit opportunity cost, and it is the other half of the fix, not a follow-up.
+Codex's spec puts the target at a focused opening portfolio costing **15–30% of plausible early-run
+favor**; against the measured 0.63% that is a 24-to-48-fold increase. The measurement that says this
+is required rather than fastidious is already in hand: `permit-then-idle` does not merely match the
+active bot, it **beats** it. Qwen's reading of that number is the sharp one and it is recorded here
+because it constrains the fix — *"you've built a more expensive door to the same empty room"*: making
+favor scarce while the god's post-permit verbs remain worthless takes resources from the only bot
+that spends them. **Verb value must land before or with permit cost, never after.**
+
+So: if the post-wire sweep shows D5/D7 movement and D2/D6 flat, the wire worked and the cost half is
+missing. If D5 and D7 are also flat, the diagnosis is wrong a third time and the next step is
+measurement, not another mechanic.
+
+## Resource model: four specs in hand, and one collision with a shipped requirement
+
+Four independent economy specs were commissioned and all four arrived. (An earlier note in this
+campaign that Qwen returned nothing was wrong — `qwen-economy-spec.md` is 19,008 bytes and
+`qwen-economy.md` a further 8,589.) Where they agree is worth as much as where they differ:
+
+| | resources | shape |
+|---|---|---|
+| GLM | 3 | Sustenance / Materia / **Vis** |
+| Qwen | 3 | Sustenance / Stock / **Aether** |
+| Codex | 4 | Provisions / Works / Script / **Vis**, and Vis is *lootable* |
+| shipped (W29) | 3 | food / stone / vellum — **no magical stock** |
+
+**Unanimous across all four external specs, and none of it is in the build:** occupation demand must
+be *derived* from population and installed capacity rather than constant (the measured defect is
+demand pinned near 104 regardless of populace); territory must scale *productivity* rather than dump
+carrying capacity into one universe-wide number; magic must relieve a *named bottleneck* rather than
+mint generic output; and permits must carry real opportunity cost. Three of four independently
+propose a **magical fuel stock** that the shipped `food/stone/vellum` does not have — which is the one
+live design delta, and the one that decides whether Vim and the ritual layer have an economy to sit
+in.
+
+Also unanimous, and a useful brake: **no intermediate goods, no crafting chains, no markets or
+dynamic pricing.** Raw resource to consumer. Every spec says a conversion chain without coordinates
+is bookkeeping, not decisions.
+
+### The collision — for the author, not for an agent
+
+`openspec/changes/mages-and-species/specs/economy/spec.md:250` is a shipped, validated requirement:
+
+> **The economy SHALL track exactly three inputs — populace, materials, and knowledge-as-capital —
+> and MUST NOT introduce a fourth resource.**
+> *Scenario: WHEN the economy's tracked resources are enumerated THEN exactly populace, materials,
+> and knowledge-as-capital appear.*
+
+`MaterialAmounts` is `Readonly<Record<'food' | 'stone' | 'vellum', Fixed>>` — three independent
+stocks, with `territoryYieldShares` giving them separate supply and `routeYieldByForm` giving them
+separate demand. Two honest readings, and they are not close:
+
+- **One input, differentiated.** "Materials" remains a single tracked input whose internal
+  composition varies. The requirement is about the *count of inputs the economy reasons over*, and
+  three kinds of one input is not a fourth input.
+- **Three resources wearing one label.** Independent stocks with independent scarcity and
+  independent claimants are three resources whatever the type is called. This is the reading the
+  scenario's word *enumerated* most naturally supports.
+
+W31's research offers a third path that satisfies the requirement as literally written: keep
+`materials` as **one pool**, and express the fourteen forms as **converters and activators on the
+flow** rather than as pools — a form gates whether a conversion may fire, or changes its yield. No
+new stock, and *Rego Terram* still moves the number exactly as §6a promises.
+
+**This is a spec change either way and therefore the author's call.** It is not blocking: W29 and the
+material-kinds workstream continue on the differentiated reading, which is the reversible one, and
+this is recorded rather than resolved. What must not happen is the requirement being quietly deleted
+to match the code — the requirement is the only reason anyone noticed.
+
+### One thing the spec already requires, which the root cause was violating
+
+Same file, third scenario: *"WHEN a universe's library depth increases with all other inputs held
+constant THEN its research, teaching, and scribing throughput increase."* That is the missing wire,
+written as an acceptance criterion, in a change that shipped. The effect-pipeline fix is not scope
+creep and is not new design — **it is an already-agreed requirement that was never satisfied**, and
+nothing was testing whether it had been.
+
+## W31's research, in one line each — the parts that are directly actionable
+
+Full synthesis at `docs/design/economy-flow-models.md`; these are the load-bearing ones.
+
+- **`shortage` has a formal definition** (Dormans 2012 §4.3): a pool gone negative absorbs all inflow
+  before anything downstream can pull. **Recommendation adopted: unmet upkeep should lapse into
+  decay, never bank as debt.** A drain that cannot be paid should destroy capability, not create an
+  obligation stock.
+- **A converter engine deadlocks, and the named remedy is a weak static engine.** The knowledge-capital
+  loop *is* a converter engine; it needs an unconditional production floor the debt cannot capture.
+- **Source/sink power matching** (Cook): the diagnostic for economic health is **unspent pools**,
+  never aggregate production. Favor regeneration scales with worship against a spend menu that does
+  not — a structural mismatch, not a tuning error. The ledger already records 9.1–12.4M discarded
+  favor per run **into nothing**; routing that discard into feedback is the fix.
+- **Occupation demand pinned near 104 is a boundary-adequacy failure**, not an oscillation: there is
+  no connector from populace back into demand, so the loop is absent rather than delayed. Do not
+  reach for the supply-line fix here — reach for it in the *reallocation* rule, which has a real
+  `transferRatePerTick` delay and reads only the current gap.
+- **Every current metric is a level metric.** A run that oscillates and one that settles report the
+  same median. Classify each run as equilibrium / oscillation / collapse and report the mode
+  distribution — this is also the concrete definition INV-29 currently lacks. And the period-2
+  alternation check cannot see a 1,400-tick cycle; use autocorrelation over the 12-tick census grid.
+- **Extend `invariants.md`'s "Disproved by" column to the metrics registry.** Every metric states the
+  observation that would prove it is not measuring what it claims. `libraryDependence` sitting at 0 —
+  a metric structurally incapable of moving, reading as a healthy constant — is the fourth instance
+  of this failure in this campaign and the cheapest one to have caught.
+- **Adopt the notation, not the tool.** machinations.io is proprietary SaaS metered per node
+  activation, which is hostile to Monte Carlo and awkward against AGPL. The vocabulary, the
+  seven-field feedback-profile schema and the thirteen-pattern catalogue are free and citable. The
+  one thing worth stealing is the **reverse trigger** — a starvation signal as a first-class
+  primitive, which is exactly the per-claimant unmet-demand counter that would have caught the
+  1,400-tick zero on the first sweep.
+- **Correction to a term used earlier in this campaign:** *arms race*, *worker placement* and *slow
+  cycle* are **not** Dormans patterns and appear nowhere in the thesis or the glossary. Do not spec
+  against them.
+- **Chain depth has no published rule of thumb.** Shipped deep-chain economies run 48–183 goods, but
+  they manufacture decisions from build orders and spatial routing, both of which this game has
+  constitutionally excluded — so those counts are an upper bound generated by mechanisms we do not
+  have. The defensible rule is Cook's: **a resource earns its slot when it has its own sink and its
+  own scarcity regime.** Fourteen materials sharing one sink is one resource with fourteen labels.
