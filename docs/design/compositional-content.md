@@ -408,6 +408,57 @@ the strategy that funds, blesses and encourages.
 
 ---
 
+## 6.5 The negative control: `permit-then-idle` still wins, and that is the headline
+
+**It still wins. 12/12, rate 1.0000.** Measured on the true-naming arm with the same sweep file,
+same `sweepId`, same `rootSeed` and the same reporter the committed
+`balance/results-integration-r2.txt` was produced with — reduced to 120 runs because the machine was
+shared, and since a run seed is a pure function of `(rootSeed, sweepId, cellIndex, replicateIndex)`
+under round-robin assignment, **these 120 runs are exactly the first 120 of the committed 400, seed
+for seed.**
+
+| strategy | before (40 runs) | after (12 runs) | nodes known, after |
+|---|--:|--:|--:|
+| `permit-then-idle` *(probe)* | **40/40 = 1.0000** | **12/12 = 1.0000** | 299.6 |
+| `permissive-breadth` | 38/40 = 0.9500 | 12/12 = 1.0000 | 297.9 |
+| every other strategy | 0/40 | **0/12** | 57–68 |
+
+The brief said that if this bot does not lose, no decision has been created. Taken literally, no
+decision has been created **at the god layer**, and that is the honest answer. But the numbers say
+something sharper than "nothing changed", and it is worth stating exactly.
+
+**`permit-then-idle` is not idle in the way that matters.** It permits every technique and every form
+across its first 140 ticks and then submits nothing. So it is not a do-nothing bot — it is a bot that
+plays the game's **one consequential verb** and then stops. Look at what it buys: 299.6 nodes known,
+against 60.2 for `passive-control` and 60.2 for `idle-then-declare`, which is the honest idle control
+and ascends 0/12. The gap between 300 nodes and 60 is entirely the permit.
+
+So the finding is not *"acting is worthless"*. It is:
+
+> **The god has exactly one lever that matters, and it is `permit`. Everything W20 built is a
+> decision *inside* the knowledge graph — which nodes a mage takes, which school she commits to,
+> which key she cuts — and none of it is a decision *between god strategies*, because the god has no
+> verb that reaches it.**
+
+That is a different and more actionable defect than the one the campaign started with, and it is
+consistent with everything else measured here: arm B showed enablement doing most of the work, and
+`permit` is the enablement verb. A god who permits the grid and walks away gets 300 nodes; one who
+funds, blesses and encourages gets 300 nodes too.
+
+**What did move, and it is not nothing:**
+
+- **`ascensionRate` is back inside `contracts.md` §7's band.** 0.1250 excluding probes, 0.2000
+  including them, against the campaign's measured **0.79**. D1 passes.
+- **D6 passes**: no strategy ascends at or below the passive knowledge baseline. Before, an idle
+  universe learned everything there was.
+- **D3 still fails**: only 2 of 10 strategies ascend at all, at 50% each. Three strategies winning at
+  materially different rates remains unmet, and it will stay unmet while `permit` is the only verb.
+
+**The next change this points at is not more content and not a better graph.** It is giving the god
+a second verb whose payoff is not dominated by permitting — or making permitting cost something. The
+edict budget (§4's dispensations and interdictions) is the mechanism the vision already has for that,
+and it is currently free to ignore.
+
 ## 6a. What the build found on the way, recorded rather than smoothed over
 
 Six things surfaced while implementing this that are worth more than the code that fixed them.
@@ -546,6 +597,47 @@ the right instrument for it: it is a claim about what is *possible*, not about w
 a sweep can only ever fail to observe something. A test that builds two mages on mutually exclusive
 tracks in one university, asserts the ritual is available, kills one, and asserts it is not, settles
 the claim exactly.
+
+## 6c. Three proposed mechanics, judged and costed rather than adopted
+
+`docs/design/content/spell-glosses.md` (on `pm/campaign-plan`) carries 25 gloss drafts, and three of
+them propose **mechanics** rather than prose. Each is good. **None is adopted here**, and the reason
+is the same for all three: the graph is the deliverable, the prose attaches to it, and this repo
+treats a gloss that promises what the code does not do as a defect. Placing any of these without
+implementing it would put a lie in the content. What each would cost is recorded so the decision is
+cheap next time.
+
+**1. The Indexed Ash** *(Perdo Herbam)* — *"reduces the physical text to clean soot while leaving its
+indexing data perfectly intact."* **Destruction that leaves rediscovery cheaper.** This is a genuinely
+new shape: the game has only ever had *destroyed* and *intact*, and vision §5's rediscovery is priced
+purely from content (`rediscoveryMultiplier` × species affinity, floored). It rhymes with the dwarf
+bark — *"cross-referenced twice; the second one is for after the first one burns."*
+**Cost:** new state. Rediscovery cost is currently a pure function of the node record, so
+"this node was lost *while indexed*" is a per-node, per-universe fact nothing stores. That is a
+world-schema revision, which is `WORLD_SCHEMA_VERSION` and a golden-fixture conversation. **Highest
+value of the three and the most expensive.**
+
+**2. The Duplicate Hand** *(Rego Herbam)* — halves scribe labour, *"but the master copy must be
+intact, which is rarely the case."* **Scribe rate gated on redundancy** — a spell that helps only if
+you already kept a spare, which is a real decision and points straight at the concentration problem.
+**Cost:** small — one new `when` kind, `holds-instances`, alongside the existing `revealed` and
+`holds-cell`. **But it would be inert.** `scribe-rate` has **zero** universe-target effects in
+shipped content and the real per-tick scribing accrual is hardcoded `NO_BONUSES` (§6a). Implement
+the scribe channel first, or this is a gloss describing a spell that does nothing.
+
+**3. The Endowed Chair** *(Creo Vim)* — *"tethers a tenured mage's failing breath to the ambient
+magical reservoir, effectively outsourcing their heartbeat to the endowment."* **Life extension with
+a running economic cost** rather than a flat grant, which is the shape the author asked for when they
+said returns should be logarithmic so slow dragons stay worth having.
+**Cost:** an upkeep mechanism, which does not exist — every effect in the game is either instantaneous
+or a standing modifier, and nothing pays per tick to keep a modifier alive. Also blocked by the same
+gap as the authored ladder: `lifespan` effects target `self` and the per-mage effect channel does not
+exist (§6a).
+
+**A note on where they sit.** All three are outside the v1 rectangle — Perdo Herbam, Rego Herbam,
+Creo Vim — so adopting them also means deciding the enablement question in §7a. Two of the three are
+blocked on the same wiring gap, which is worth reading as a signal: **the cheapest next move is not
+more content, it is connecting the content that exists.**
 
 ## 7. The open question, raised rather than answered
 

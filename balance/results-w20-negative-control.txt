@@ -1,0 +1,80 @@
+Sweep integration-r2-v1 (full): 1 cells, 120 runs, configuration f7d0bc3cbee79764.
+Wrote 120 records to .w20/probe/r2-tn/integration-r2-v1.0.runs.ndjson.
+  ascended: 24
+  stagnated: 23
+  truncated: 73
+  by terminal reason:
+    ascensionApotheosis: 22
+    ascensionCanon: 2
+    none: 73
+    stagnation: 23
+  throughput: 0.17 runs/s, 293 world ticks/s on 6 workers
+
+==============================================================================
+ARM: .w20/probe/r2-tn   (120 runs)
+==============================================================================
+
+-- strategy coverage (asserted before anything else is reported) --
+   archivist                  12
+   denial-warden              12
+   idle-then-declare          12
+   narrow-depth               12
+   passive-control            12
+   permissive-breadth         12
+   permit-then-idle           12
+   portal-rush                12
+   uniform-random-legal       12
+   worship-maximizer          12
+   => 10 strategies, BALANCED
+
+-- per strategy --
+   strategy                     asc/n    rate     nodes     ±SE  libDepth     books
+   permissive-breadth           12/12  1.0000     297.9    3.37    121.58       395
+   permit-then-idle             12/12  1.0000     299.6    2.36     83.33       241 [probe]
+   archivist                     0/12  0.0000      67.8    2.50     37.42      1087
+   denial-warden                 0/12  0.0000       3.3    0.74      3.25        11
+   idle-then-declare             0/12  0.0000      60.2    3.36      1.50         2 [probe]
+   narrow-depth                  0/12  0.0000       2.8    0.56      2.50        13
+   passive-control               0/12  0.0000      60.2    2.22      0.42         0
+   portal-rush                   0/12  0.0000      57.5    4.74      3.58        17
+   uniform-random-legal          0/12  0.0000      61.8    1.92      2.25         4
+   worship-maximizer             0/12  0.0000      60.8    2.44      1.67         2
+
+-- D1  ascensionRate inside 0.05-0.20 --
+   with probes (pool of 10):    0.2000   IN BAND
+   without probes (pool of 8): 0.1250   IN BAND
+
+-- D2  exploit margin >= 0.05 --
+   vs uniform-random-legal   probe 0.0000  pool 0.2222  margin +0.2222  PASS   (the criterion as written)
+   vs idle-then-declare      probe 0.0000  pool 0.2222  margin +0.2222  PASS   (the honest idle control)
+   NOTE: while the probe loses, exploitMargin is identically ascensionRate - probeRate,
+         so D2 adds no information to D1. Reported, not counted twice.
+
+-- D3  >=3 strategies winning at materially different rates, none above 60% of wins --
+   strategies with >0 ascensions: 2 of 10
+     permissive-breadth       50.0% of wins
+     permit-then-idle         50.0% of wins
+   top share 50.0%  => FAIL
+
+-- D4  correlation between ascension rate and nodes known > 0 --
+   Pearson  0.9755
+   Spearman 0.6984
+   strategies at a non-zero rate: 2 of 10  <- a correlation over this many ties is arithmetic, not evidence
+
+-- D5  knowledgeHalfLife falls, and nodes counted leaving the universe --
+   knowledgeHalfLife: INSTRUMENT ABSENT — per-run metric, and a sweep may name only the ten reference* measures;
+     underneath that, CensusSample carries nodesKnown as an aggregate count and no node-id
+     list, so the Kaplan-Meier estimator over node cohorts has no input.
+   nodes gained 96.17  nodes known 97.17  => net leaving 1.50 (gained-known offset by the founding grant)
+
+-- D6  no strategy wins at the passive knowledge baseline --
+   passive-control nodes known: 60.17 ± 2.22
+   strategies that ascend while at/below that baseline: none — PASS
+
+-- capitalSnowball (guard: its sibling worshipSnowball is held to <= 0.35) --
+   capitalSnowball    0.3897708831030069
+   worshipSnowball    0.20073662009693916
+   ascensionRate      0.2
+
+-- terminal status counts --
+   {"truncated":73,"ascended":24,"stagnated":23}
