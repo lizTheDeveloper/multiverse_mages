@@ -942,10 +942,22 @@ Monte Carlo sweeps concurrently. The three balance gates were therefore executed
 same tree, and all three returned exit 0 — which is the part of `verify` the combined run never
 reached, since `&&` stops at the first non-zero.
 
+**The diagnosis is proven rather than inferred.** The same suite, same tree, same load, run as
+`npx vitest run --maxWorkers=2`:
+
+    LOWWORKERS_EXIT=0
+    Test Files  283 passed (283)
+         Tests  4134 passed (4134)
+
+**Exit 0, zero errors.** Halving the worker count is not a change to any test — it changes only how
+many workers compete for a machine that already has none to spare. So the combined run's exit 1 is
+contention, and the suite is green.
+
 **This is reported rather than worked around.** Two things are true at once and both belong in the
 record: nothing in this branch fails, and W20 did make the loop heavy enough that two tests crossed
 vitest's 30s default and had their bounds raised with the measurement written beside them (§6a). A
-re-run on an idle machine is the check that would close it, and it is owed before this merges.
+plain `npm run verify` on an idle machine is the check that would close it, and it is owed before
+this merges.
 
 ## 7. The open question, raised rather than answered
 
