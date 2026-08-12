@@ -163,15 +163,21 @@ within-strategy seed noise is at its maximum: small sets, still moving.
 
 1. **cross-strategy containment is below the within-strategy diagonal** — strategies differ from
    each other by more than each differs from *itself* across seeds; and
-2. **`betweenShare` stays high** (W15 measured 0.946 at 2400) among the **seven** v1-bound
+2. **`betweenShare` stays high** (W15 measured 0.946 at 2400) among the **eight** v1-bound
    strategies — the strategy label still explains the variance, rather than noise explaining it.
+
+   *(Eight, not the seven this rule first said. The v1 pool is defined by measuring which strategies
+   hold nodes outside the fifty-one, and on this arm only `permissive-breadth` and `permit-then-idle`
+   do — `uniform-random-legal` holds union 51 with **zero** nodes outside. The correction was made
+   and committed at `0edc71e`, before any composition analysis output existed; the timestamps are the
+   check on that.)*
 
 If cross ≈ within, the verdict is the negative one and it will be stated plainly: **one dimension at
 every horizon where the content is unexhausted; the count spread from tick 120 onward is the
 permission axis and nothing else; the flatness is in the content graph.**
 
-The rank cap is stated too: ten strategies bound strategy-level structure at nine components, seven
-bound it at six, no matter what the nodes do.
+The rank cap is stated too: ten strategies bound strategy-level structure at nine components, eight
+bound it at seven, no matter what the nodes do.
 
 **One limit of the cross-check, so nobody assumes it covers more than it does.** The prefix
 cross-check — *"the 2400 arm's composition sample at tick H equals the H-capped arm's terminal"* —

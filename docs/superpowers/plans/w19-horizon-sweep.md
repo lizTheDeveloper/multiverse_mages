@@ -162,11 +162,17 @@ Both are recorded here rather than folded in quietly.
    300-tick universe holds about a third of the reachable set. Measured at n = 400 on the production
    executor, `passive-control` holds **48.9 of 51 at a cap of 300** — 96%. The sweep's shortest
    horizon was already past exhaustion and could not have seen the space open up even if it does.
-2. **The "inside v1" pool excludes three strategies, not two.** `uniform-random-legal` reaches
-   **62.1 nodes** on this tree — it submits random *legal* actions, which include `permitTechnique`
-   and `permitForm` — where on W15's tree it read 49.8 and stayed inside. Leaving it in would put a
-   ruleset editor inside a comparison labelled "inside the v1 ruleset". Excluding all three leaves
-   **seven** strategies, which is also the size of the pool W15 reported its v1 numbers over.
+2. **The "inside v1" pool is defined by measurement, and it excludes two strategies.** The first
+   attempt excluded three, on the strength of `uniform-random-legal` reaching **62.1 nodes** on the
+   production arm. Checked against the composition arm instead — union of held nodes over every seed,
+   counting ids outside the fifty-one, at a 1800-tick cap — it holds **union 51, zero outside**, and
+   `permissive-breadth` (244 outside) and `permit-then-idle` (245 outside) are the only two that
+   leave. So the exclusion is those two and the v1 pool is **eight**.
+
+   The two arms disagree because they start differently: this one uses W15's two corner cells, the
+   production sweep the reference defaults. **Whether a bot pressing random legal buttons ever opens
+   a cell depends on the starting cohort — and every exploit margin this campaign has published was
+   measured against that bot.** Flagged for the author; observation, not mechanism.
 
 ## A defect in this workstream's own tooling, found in flight
 
