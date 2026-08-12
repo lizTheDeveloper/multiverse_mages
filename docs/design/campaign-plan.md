@@ -1489,3 +1489,24 @@ Three research leads died on contact with sources, and **one of them was a fabri
 originated in the brief I wrote** — a "Deep Hanabi" experiment that does not exist. An agent
 inheriting a confident false premise will spend real time on it. Briefs get citations checked before
 they are sent, or they manufacture work.
+
+### Decided: `state` reuses `content`'s material type, not the reverse
+
+`schema-duplication.test.ts` flags that `content`'s `MaterialKindAmounts<T>` and `state`'s
+`MaterialStockRecord` are the same three fields. The peer session that hit it refused to resolve it
+and flagged it, which was right — it is a §5 boundary call, not a style choice. Settled by the table
+in `packages/sim-core/test/unit/module-boundaries.test.ts`:
+
+    content: { value: [], typeOnly: ['sim-core'] }
+    state:   { value: ['sim-core'], typeOnly: ['content'] }
+
+`content` is the root of the tree — its `value` list is **empty**, and there is no `@mm/state` import
+anywhere in `packages/content/src`. `state` **already** has a type-only edge to `content`. So `state`
+deriving `MaterialStockRecord` from `content`'s `MaterialKindAmounts<T>` needs no new edge and no
+boundary-table change; the reverse would give the root package a downstream dependency and require a
+written §5 deviation.
+
+One caveat to check rather than assume: `state`'s component records declare i32 column layouts. If
+the column declaration cannot be expressed in terms of the shared type, derive the *type* and keep
+the declaration separate. **Do not weaken `schema-duplication.test.ts`** — it caught real production
+drift across a package boundary, which is exactly its job.
