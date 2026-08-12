@@ -15,6 +15,7 @@ whether knowledge loss lands off the beat before 520 assets were generated again
 | [`raid/`](raid/) | Every action is masked for the duration. What is a player actually *doing* while a raid runs, and what belongs beside the portal timer? |
 | [`ascension/`](ascension/) | Action 15 appears, may be refused, and can be taken away while you hesitate. How is an ending you have to choose presented — and what happens at the moment it lapses? |
 | [`knowledge/`](knowledge/) | Knowledge lives in minds, palaces, grimoires and libraries, each with a different way of being lost. Which organising principle makes that legible — node, vessel, or risk? |
+| [`commitments/`](commitments/) | Four verbs pay out somewhere other than the tick you spend on. How do you show a purchase whose consequence is not now — and one that is out of reach rather than expensive? |
 
 ## Running them
 
