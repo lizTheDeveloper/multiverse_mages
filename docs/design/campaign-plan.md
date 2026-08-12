@@ -579,3 +579,74 @@ the mechanism — living mages are equal across arms, so `slotsPerMage: 12` capp
 likelier cause. Recorded as an untested hypothesis, not a finding.
 
 `prestigeAdvantage` and `winRateByPrimitive` are **unavailable in all three arms**. Still no raids.
+
+---
+
+## W8: raids fire, looting answers content exhaustion, and every v3 portal-rush number was fiction
+
+### §1.1 never blocked a raid
+
+`rules-raid` calls `permits()` against a **frozen `RulesetSnapshot`** at exactly one site, proven by
+its own conformance scan. The stepping instance still holds one universe; a raid is a pure
+computation *above* the step loop over two participants. §1.1 forbids a legality decision against a
+live second universe, and nothing does that. **`contracts.md` needed no change.** What was missing
+was only the party that *supplies* the second participant.
+
+### The four §7 raid metrics now report
+
+| metric | status | value |
+|---|---|---|
+| `raidLengthDistribution` | **measured** | p50 74, p95 125, max 2822, 1181 raids, overflow bin empty |
+| `inboundRaidTempoLoss` | **measured** | **0.0** |
+| `raidInitiationCost` | **measured** | 4.18 world ticks outbound |
+| `winRateByPrimitive` | `no-observations` | needs ablation arms with mirrored pairs |
+
+**`inboundRaidTempoLoss = 0` is structural, not missing.** §8's tempo cost is relative to
+*uninvolved* universes, and §1.1 puts one universe in an instance — there is no third party for it
+to be relative to. **§8's griefing guard cannot bite in a single-universe Monte Carlo.**
+
+### Looting works, and it is the answer to content exhaustion
+
+`portal-rush` separates from `passive-control` on **five** metrics against a brief asking for one:
+nodes **+4.3 SE**, instances **−5.1 SE**, raids **+12.4 SE**, nodes looted **+17.2 SE**, grimoires
+**+8.3 SE**.
+
+The spread widened — `portal-rush` 50.9 → **57.0** nodes, `uniform-random-legal` 49.8 → **59.5** —
+and **both gains are looted, not derived**: roughly 9 nodes per run **from cells their own gods
+forbid**. That is the 51-node ceiling being crossed by conquest, exactly as §5's *"portable,
+lootable"* implies.
+
+### Every `portal-rush` number recorded before this is a number about an empty battlefield
+
+`RAIDING_ROLES` is `raider` alone and **every mage is born a `researcher`**, so v3 opened portals
+and sent an empty warband — measured at **337 raids across four runs with zero nodes taken**.
+`portal-rush` is now v4 and assigns roles.
+
+### Two real defects found inside `settleLibrary`
+
+The durability roll chose between a `moved` verb and a `destroyed` verb, and **nothing in the
+write-back inserted an instance for `moved`** — so a looted book was destroyed at the host and
+**arrived nowhere**, and a dwarven library lost exactly as much as an orcish one.
+
+Fixed: the first four books are genuinely looted (real row plus instance in the raider's world), the
+rest face fire, and **durability decides survival — orcish ~40%, dwarven ~90%**, capped so a dwarven
+book is not fireproof. **That is the structural species axis going live**, and it is the first time
+`scribeAffinity` has ever changed an outcome.
+
+`settleLibrary` is authoritative and now routes its destroy through `destroyGrimoire`. One
+mechanism, reached by its published name, no third path.
+
+### What raids did NOT fix
+
+- **`ascensionRate` 0.875 → 0.854**, against a band of 0.05–0.20. *"Waiting is still nearly free,
+  because loss is still nearly free."*
+- **`nodesLost` is 0.00 for six of eight strategies.** Grimoires fell 1232 → 354 for
+  `passive-control` while instances held flat: raids burned real books and removed nothing, because
+  at 50–80 copies per node a whole library is held fifty other places. **Concentration, not the
+  absence of a mechanism, is the remaining problem.** Not tuned away.
+- `knowledgeHalfLife` could not be computed — its §7 collector needs a census carrying node-id
+  lists and the reference executor's carries aggregate counts. Named, not papered over.
+
+**Note the measurement gap:** W8's 0.854 was measured **without** W6's positive-achievement
+predicates, which independently reached **0.125**. The two have never been measured together.
+Integration is now the critical path.
