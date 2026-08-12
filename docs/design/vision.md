@@ -129,8 +129,8 @@ grid, it gates **depth** in it. The sharpest case is the portal itself. §8 says
 Limen*; in the content, `rl-open-the-portal` also requires *Intellego Limen*'s `il-read-the-binding`.
 You cannot open a door you have not read.
 
-**Two consequences.** First, and it is a hard constraint on §4b: ***Intellego* cannot be a member of
-a mutually exclusive pair.** Excluding it would cost a mage two-thirds of the grid rather than a
+**Two consequences.** **First, and it is a hard constraint on §4b: *Intellego* cannot be a member
+of a mutually exclusive pair.** Excluding it would cost a mage two-thirds of the grid rather than a
 school, which is not what an exclusion is for. Second, the rule is violable by accident and nothing
 tests it — any later node giving *Perdo* or *Rego* depth without a perception prerequisite breaks it
 silently. A loader assertion over cross-cell edges is the obvious guard; recorded here as a
