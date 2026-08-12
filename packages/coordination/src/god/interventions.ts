@@ -757,7 +757,16 @@ function fundPlan(
         // where should not get a random answer, and should not get *no* answer
         // either: an unsited university is neutral ground, which would make
         // founding the one way to escape terrain entirely.
-        const site = defaultSiteKind(territoryHoldings(state), deps.territoryKinds ?? []);
+        // Holdings first, endowment second. The god's intervention system runs
+        // *before* the world system, so a university founded on the very first
+        // tick of a fresh universe is founded before the holdings materialize —
+        // and `defaultSiteKind` given an empty list answers 0, which would leave
+        // that one university unsited and neutral forever while every later one
+        // stood somewhere. The endowment says the same thing about the same
+        // country, which is why the function takes rows rather than a state.
+        const holdings = territoryHoldings(state);
+        const kinds = deps.territoryKinds ?? [];
+        const site = defaultSiteKind(holdings.length > 0 ? holdings : kinds, kinds);
         if (site !== 0) siteUniversity(state, university, site);
       },
     };
