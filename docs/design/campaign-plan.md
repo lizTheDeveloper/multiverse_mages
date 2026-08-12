@@ -2051,3 +2051,74 @@ optimised away.
 **Methodological note worth keeping:** every passing configuration in the tier matrix also runs 3–4×
 slower, which is the same perturbation class as the instrumentation that hid the bug. That is why the
 **Node 24 CI run** is the load-bearing evidence — it is full-speed and fully optimised, and it passes.
+
+---
+
+## THE WIRE IS CONNECTED, AND IT IS CAUSALLY PROVEN
+
+W29 landed `packages/coordination/src/universe-effects.ts` with `npm run verify` green — 278 files,
+3,934 tests, all three balance gates, no golden touched.
+
+### The proof, which is the deliverable and not the wire
+
+The external review's demand was five links under fixed seeds, with **step five the one that makes it
+proof rather than a demo**. `packages/scenario/test/unit/causal-chain-build-rate.test.ts`, 8 tests:
+
+| | Terram permitted | Terram forbidden | **`build-rate` ablated** |
+|---|--:|--:|--:|
+| months to open a university | **40** | 98 | 98 |
+| stone spent | 1,912 | 3,104 | 3,104 |
+| contributions reaching construction | 38 | 0 | **38** |
+| Terram instances held | 178 | 0 | **178** |
+
+**The ablated arm is the whole argument.** Same ruleset, same 178 instances held, all 38
+contributions still gathered — and the buildings go up at the unaided rate anyway. Forbidding a cell
+removes three things at once; ablating the primitive removes exactly one. That isolates *the effect*
+from *the permission*, which no measurement in this campaign had done before.
+
+### What it moved
+
+Two universes identical but for permitted forms, 200 ticks, seed 589825: **5 of 5 economic series
+differ.** The granary universe makes 468,099 food to the quarry's 321,443, and 274,403 vellum to
+75,733; the quarry raises a university in **30 months against the granary's 42**.
+
+Against the same universe with the wire pulled out: `resource-yield` **+214% to +294%**, and
+`build-rate` cuts time-to-build **57%** and stone-per-building **32%**.
+
+### It took the review note, and the consequence is the design working
+
+An earlier draft gated on **presence** — an instance exists. I flagged that it diverged from
+`gatherEffects`'s mastery threshold and would make retention, decay and marooning inert *on the new
+path*. It rewrote to call `gatherEffects` and inherit the shipped location, mastery and dormancy
+gates, citing `magic-primitives`: *"a shelf full of `research-rate` grimoires that nobody has read is
+exactly as magical as a shelf."*
+
+> **The economy now depends on living casters. Kill the mages and the harvest falls though every book
+> survives.**
+
+That is §5's individuated, mortal knowledge reaching the economy for the first time.
+
+### Against the pre-registration
+
+The prediction, written before any of this: **D5/D7-class results should move; D2 and D6 should not,
+until permit opportunity cost lands.** W29 did not run the eight-strategy sweep, so **D2 and D6 remain
+untested** — the prediction is not yet confirmed or refuted and must not be reported as either. What
+is confirmed is the mechanism the prediction depended on.
+
+### Three defects found by building it
+
+A **Zeno stall** — crew size floored to zero as the backlog shrank and every site froze at 1002/1024
+forever. A **stale-handle crash** — construction held cohort handles across the populace phase, and
+the entity store's generation check turned a silent misattribution into a loud refusal. And
+**unpayable labour** — crews sized from backlog alone, now bounded by affordable stone.
+
+### The baseline movement to look at
+
+One regeneration with a rationale. At 5 and 20 years **no metric moved**. At 200 years
+`referenceLivingMages` 105 → 461 and `referenceLibraryDepth` 9.9 → 31.1 (construction working), and
+**`referencePeakPopulation` 50,080 → 29,489, −156 SE** — flagged by W29 itself as the number most
+worth an author's eye. Two documented, untuned decisions cause it: `K` reads food alone, and laborers
+on sites do not farm.
+
+Also raised the ascension sweep's `perRunTimeoutMs` from 600s to 1800s: one archivist run now takes
+**305s measured**, against a cap sized for a build whose universities never completed.
