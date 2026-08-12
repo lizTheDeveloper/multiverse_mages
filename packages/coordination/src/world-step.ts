@@ -123,7 +123,7 @@ import type {
   StorePolicy,
 } from '@mm/rules-magic';
 import { decayHeldKnowledge } from '@mm/rules-magic';
-import type { RediscoveryClampCounter } from '@mm/primitives';
+import type { AblationMask, RediscoveryClampCounter } from '@mm/primitives';
 import { ClampCounters, createRediscoveryClampCounter } from '@mm/primitives';
 import type {
   CapitalEmission,
@@ -275,6 +275,19 @@ export interface WorldStepDeps {
    */
   readonly universeEffects?: UniverseEffectIndex | undefined;
   /**
+   * §9's ablation mask, neutralizing at most one primitive across the world loop.
+   *
+   * Absent is the control arm and is what every ordinary run uses.
+   *
+   * It exists because a causal claim needs a counterfactual that isolates **one**
+   * cause. Forbidding *Terram* removes that form's `build-rate` **and** its
+   * `resource-yield` **and** stops mages researching in it at all, so an outcome
+   * that moves when the cell is forbidden has three candidate explanations.
+   * Neutralizing `build-rate` with the ruleset untouched leaves exactly one: the
+   * magic is researched, taught, paid for, and does nothing.
+   */
+  readonly ablation?: AblationMask | undefined;
+  /**
    * Primitive records, for the stacking rules and caps their magnitudes obey.
    *
    * `researchRate` and `teachRate` join the list with vision §6a's loop: the
@@ -392,6 +405,16 @@ export interface WorldStepReport {
    * did not, whatever the totals say.
    */
   readonly buildRateSources: number;
+  /**
+   * The `build-rate` magnitudes themselves, so a caller can check **attribution**
+   * rather than presence.
+   *
+   * A count says a number arrived. The magnitudes say *which authored node* it
+   * came from, because every one of them must be a magnitude some node in the
+   * content set declares — and a wire that invented its own numbers would pass
+   * a count and fail this. The list this tick, not cumulative.
+   */
+  readonly buildRateMagnitudes: readonly Fixed[];
   /** `buildProgress` added by laborers this tick, `fp`. Excludes the god's funding. */
   readonly buildProgressAdded: Fixed;
   /** Universities finished by that labour this tick. */
@@ -865,6 +888,7 @@ export function worldSystem(
         shortKinds: consumption.shortKinds,
         economicNodes: economy.contributingNodes,
         buildRateSources: economy.buildRate.length,
+        buildRateMagnitudes: economy.buildRate,
         buildProgressAdded: construction.progressAdded,
         universitiesCompleted: construction.completed,
         constructionStoneOwed: construction.stoneOwed,
@@ -934,6 +958,7 @@ function produceMaterials(
       shares: deps.yieldShares,
       resourceYield: deps.primitives.resourceYield,
       resourceYieldBonuses: economy.resourceYield,
+      ...(deps.ablation === undefined ? {} : { ablation: deps.ablation }),
     });
     for (const kind of MATERIAL_KINDS) produced[kind] += share[kind];
   });
@@ -1127,6 +1152,7 @@ function advanceUniversities(state: SimState, input: ConstructionInputs): Constr
         buildRate: input.deps.primitives.buildRate,
         buildRateBonuses: input.buildRateBonuses,
         counters: input.counters,
+        ...(input.deps.ablation === undefined ? {} : { ablation: input.deps.ablation }),
       });
       progressAdded += outcome.progressAdded;
       stoneOwed += outcome.materialsSpent;

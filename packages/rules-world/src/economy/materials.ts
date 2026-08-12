@@ -15,7 +15,7 @@
 import type { Fixed } from '@mm/sim-core';
 import { FP_ONE, floorDiv, mul } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
-import type { ClampCounters } from '@mm/primitives';
+import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
 import type { MaterialAmounts, MaterialKind } from './kinds.js';
@@ -112,6 +112,16 @@ export interface ProductionInput {
    */
   readonly resourceYieldBonuses: Readonly<Record<MaterialKind, readonly Fixed[]>>;
   readonly counters?: ClampCounters | undefined;
+  /**
+   * §9's ablation mask, for the arm that neutralizes `resource-yield`.
+   *
+   * Threaded rather than simulated by emptying the bonus lists, and the
+   * difference is the whole point of `ablation.ts`: an empty list is a universe
+   * that never learned the magic, while a neutralized primitive is one that
+   * researched it, taught it, paid for it and got nothing. Only the second
+   * isolates the primitive from everything else permitting a cell changes.
+   */
+  readonly ablation?: AblationMask | undefined;
 }
 
 /** No bonuses of any kind — the neutral input, and the shape a caller starts from. */
@@ -134,6 +144,7 @@ export const NO_YIELD_BONUSES: Readonly<Record<MaterialKind, readonly Fixed[]>> 
 export function resourceYieldMultiplier(input: ProductionInput, kind: MaterialKind): Fixed {
   return stackMagnitudes(input.resourceYield, input.resourceYieldBonuses[kind], {
     ...(input.counters === undefined ? {} : { counters: input.counters }),
+    ...(input.ablation === undefined ? {} : { ablation: input.ablation }),
   }).value;
 }
 
