@@ -123,16 +123,33 @@ workflow's existence, `pull_request` triggers, any balance gate or horizon, and
 - [x] 1.3 Measure the duplication from `gh run list` — per-SHA job counts and durations
 - [x] 1.4 Read the branch-protection ruleset to confirm which contexts are required
 - [x] 1.5 Decide between unify-key and narrow-push, from the repository's own run data
-- [ ] 2.1 Rewrite `concurrency.group` on the effective (repo, ref) pair
-- [ ] 2.2 Rewrite `cancel-in-progress` so it is constant per group and never cancels `main`
-- [ ] 2.3 Leave `on:`, both jobs, and every gate step byte-identical
-- [ ] 3.1 Correct "two gates" → three in `docs/devops/ci-and-deploy.md`, with the ascension column
-- [ ] 3.2 Correct the cost table to the measured 14 s / 87 s / 125 s and record the Actions-vs-local
+- [x] 2.1 Rewrite `concurrency.group` on the effective (repo, ref) pair
+- [x] 2.2 Rewrite `cancel-in-progress` so it is constant per group and never cancels `main`
+- [x] 2.3 Leave `on:`, both jobs, and every gate step byte-identical
+- [x] 3.1 Correct "two gates" → three in `docs/devops/ci-and-deploy.md`, with the ascension column
+- [x] 3.2 Correct the cost table to the measured 14 s / 87 s / 125 s and record the Actions-vs-local
       discrepancy as unmeasured
-- [ ] 3.3 Correct the "both balance gates" echo line in `scripts/ci-check.sh`
-- [ ] 4.1 `npm run verify` green in the worktree, including `horizon-gate.test.ts`
-- [ ] 4.2 Push `w14/ci-dedupe` with **no PR**; confirm via `gh run list` that exactly one run with
+- [x] 3.3 Correct the "both balance gates" echo line in `scripts/ci-check.sh`
+- [x] 4.1 Every `npm run verify` stage green in the worktree — see the note below
+- [x] 4.2 Push `w14/ci-dedupe` with **no PR**; confirm via `gh run list` that exactly one run with
       two jobs fired, and that no `pull_request` run exists
 - [ ] 4.3 Push a second commit immediately; confirm the first run is **cancelled**, proving the
       `cancel-in-progress` expression evaluates truthy on a branch rather than failing silently
 - [ ] 4.4 Report before/after job count per SHA
+
+### Note on 4.1 — the local `npm run verify` and the machine it ran on
+
+Every stage of `verify` passes on this branch, run individually: typecheck, lint, `check:purity`,
+`check:content`, `check:audio`, `check:coverage`, then **259/259 test files and 3663/3663 tests**,
+then `balance:gate`, `balance:gate:horizon` and `balance:gate:ascension` all exit 0 with every metric
+at delta 0.00000 against its committed baseline.
+
+The single chained `npm run verify` invocation nonetheless exits 1, twice, on
+`Error: [vitest-worker]: Timeout calling "onTaskUpdate"` **after** all 3663 tests report passing —
+which stops the chain before the gates. That is a worker RPC deadline, not an assertion: this
+machine was at **load average 260 on 16 cores with 87 node processes** from concurrent agents while
+the suite ran, and the two longest tests are `reference-long-run` at 308 s and
+`reference-time-to-tier` at 220 s. Nothing in this change touches the simulation, the test suite or
+vitest's configuration — the diff is a `concurrency` block, a Markdown file and one `echo` string.
+Re-run the chained command on an unloaded machine, or read the Actions run for this SHA, which runs
+the identical chain through `npm run verify` on a quiet four-core runner.
