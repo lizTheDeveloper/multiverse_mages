@@ -68,17 +68,68 @@ Two granularities, one meaning: *knowledge you hold can close a door.*
   nodes of the named track may not learn anything on this one. `threshold: 1` shuts the door on
   first contact; a higher value lets a mage sample before committing.
 
-**Both are enforced per mage, not per universe.** Vision §5 puts a knowledge instance in exactly
-one place, and `mind:<mageId>` is one of them. A universe may still hold both lines — at the price
-of spending two different mages on them, and mages are mortal, slow and scarce. That is the
-opportunity cost, and it is paid in the resource the game is actually about.
+### 3.2.1 The level the exclusion binds, which is the whole design
 
-**The relation is symmetric, declared once.** `load.ts` normalises it, so holding either member
-blocks the other whichever arrived first. Declaring it on both sides is not an error.
+**Both are enforced per mage. Neither is ever enforced per universe.** The author's two sentences
+have to be read together:
 
-**The loader refuses unsatisfiable content.** A track whose own prerequisites lie inside a track
-that excludes it is dead content — nobody can ever enter it — and that is a load failure, not a
-warning. The check is stated in §5.
+> *"Enough time means you should be able to eventually reach all the spells — which is what makes
+> the dragon so powerful."*
+>
+> *"Make sure that individual mages can't learn all the magic, because the different schools are
+> somehow mutually exclusive."*
+
+They are not in tension; they operate at two levels, and the gap between them is the mechanic:
+
+- **The universe** may eventually hold every school, accumulated across many mages over many
+  lifetimes. Nothing here caps a civilization.
+- **An individual mage may not.** Her reachable set is bounded by what she committed to, and she
+  cannot unlearn.
+- **The dragon is powerful because it lives long enough to reach the *bottom* of the schools it
+  chose** — depth, not breadth. A 1,500-year draconic mage and a 60-year orc are then different
+  pieces rather than the same piece at different speeds, and `depthCeiling` becomes the load-bearing
+  species trait it was always drawn as.
+
+A universe holding a school must therefore **never** block a different mage from learning the school
+that excludes it. That is an explicit anti-requirement with a test against it.
+
+### 3.2.2 What this finally makes load-bearing
+
+Vision §5 — *"Knowledge Has a Location"* — is decorative while every node exists in eighty places
+(the measured figure is ~55 copies each). Bound each mage to a fraction of the tree and three things
+become true at once:
+
+- **A mage's death destroys a school's worth of depth**, not one of eighty interchangeable copies.
+- **Which mage goes through the portal matters**, because they cannot all cast the same things —
+  which is what gives §7's `raider` role and the looting path something to be about.
+- **Teaching is constrained.** A teacher can only pass on what the *student's* own commitments
+  permit her to receive. That is a second exclusion check, at the teaching seam rather than the
+  research seam, and it runs against the student's held set.
+
+### 3.2.3 Two hazards, handled
+
+1. **A mage must not be able to soft-lock into uselessness.** Tiers 1 and 2 of every v1 cell are the
+   **untracked shared trunk**: no node there belongs to a track, so nothing a mage learns in her
+   first decades commits her to anything. Commitment begins at tier 3, by which point she has a
+   frontier to choose from. The loader enforces the general form of this — see
+   `track-excluded-by-trunk` and `track-unreachable-from-trunk` in §5.
+2. **`grantFoundingKnowledge` cannot silently commit a mage.** Founding grants land tier-1 nodes,
+   which are trunk, which are untracked. If a later change lets the god grant a tracked node, that
+   grant *does* commit the recipient — which would be a real consequence for a verb currently
+   measured to be worth nothing, and should be adopted deliberately rather than discovered.
+
+### 3.2.4 The relation is symmetric — and that is an open question
+
+`load.ts` normalises the relation so that holding either member blocks the other, whichever arrived
+first. Declaring it on both sides is not an error.
+
+**This is a choice, and it is being escalated rather than settled.** The author's phrasing is
+one-directional — *"you can only know track 3 if you don't know 1 and 2"* — which says nothing about
+whether a mage who reached track 3 first may afterwards learn track 1. Symmetry is implemented
+because it is the only reading under which the stated invariant survives every acquisition order: if
+the rule is one-directional, a mage can hold 3 and then hold 1, and *"you can only know 3 if you
+don't know 1"* becomes false of a legal state. It is isolated behind a single named predicate so the
+one-directional answer is a one-line change if that is what was meant.
 
 ### 3.3 Effect modes — sound-design §4.1's envelopes, made mechanical
 
@@ -170,6 +221,8 @@ rule that invalid content is never a warning.
 | `track-unknown` | a `track` or `excludes.track` naming no track record |
 | `track-exclusion-unsatisfiable` | a track with a prerequisite inside a track that excludes it — dead content nobody can enter |
 | `track-exclusion-self` | a track excluding itself |
+| `track-excluded-by-trunk` | a track excluded by a track holding any tier-1 or tier-2 node. Tiers 1-2 are the shared trunk every mage learns, so a school excluded by trunk knowledge is a school nobody can ever enter |
+| `track-unreachable-from-trunk` | a track no node of which has all its prerequisites outside the tracks that exclude it — the same dead end by a different route: an entrance nobody can walk through |
 | `research-cost-is-tier-alone` | a v1 tier whose nodes all share one `researchCost` |
 | `effect-gloss-missing` | an effect in a v1 cell with no `gloss` |
 
@@ -179,14 +232,23 @@ rule that invalid content is never a warning.
 
 Measured on the eight-strategy 2,400-tick sweep, with W15's instrument reused unchanged:
 
-| # | claim | before |
+The **primary** measure is the per-mage one, and it is listed first deliberately: cross-strategy
+containment 1.000 was the campaign's central symptom, and per-mage containment is the same
+measurement one level down — where the fix has to show up first, and where it is caused rather than
+merely correlated.
+
+| # | claim | before, re-measured on this branch |
 |---|---|---|
-| 1 | effective dimensionality ≥ 3 for 80% of variance | 1 |
-| 2 | prefix fidelity < 0.5 | 0.943 |
-| 3 | cross-strategy containment < 0.9 | 1.000 |
-| 4 | gnome and human reach different node sets | identical 49 |
-| 5 | no strategy holds the entire reachable set | every one did |
-| 6 | two mages in one universe hold **incomparable** sets | *not previously measured* |
+| **0** | **two mages in one universe hold incomparable sets** — neither a subset of the other, by construction | *never measured* |
+| 1 | effective dimensionality ≥ 3 for 80% of variance | **2** (binary spectrum; participation ratio 1.95) |
+| 2 | prefix fidelity < 0.5 | **0.9088**, exact on 60/96 runs |
+| 3 | cross-strategy containment < 0.9 | **1.000** for every pair but `permissive-breadth` (0.840) |
+| 4 | gnome and human reach different node sets | identical |
+| 5 | no strategy holds the entire reachable set | five of eight sit at exactly 51.0 of 51 |
+
+The "before" column is this branch measured with W15's instrument unchanged, not the figures in
+`strategy-dimensionality.md` — those predate W17's value-sensitive acquirer, which moved
+dimensionality from 1 to 2 and prefix fidelity from 0.943 to 0.9088 and moved nothing else.
 
 And the negative control, which is the one that says a decision exists rather than that a number
 moved: **`permit-then-idle` — a bot that permits the grid for 140 of 2,400 ticks and then submits

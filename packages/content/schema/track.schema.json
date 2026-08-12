@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://multiverse-mages.invalid/schema/track.schema.json",
   "title": "track.json",
-  "description": "A named path through the grid (contracts.md §2.12). A track is a *route*, not a region: its nodes cross cells freely, which is what makes the knowledge graph a web rather than twelve parallel staircases. Tracks exist so that exclusion can be declared once at the scale a player reasons about — 'I am a warden, not a thief' — instead of node by node. Exclusion is symmetric and load.ts normalises it, so declaring it on one side is enough and declaring it on both is not an error. `threshold` is how much of the excluded track a mage may dabble in before the door shuts: 1 is an immediate commitment, higher values let a mage sample before choosing. A track is a property of the knowledge graph and NOT of a tradition — vision.md §4a caps a tradition at four hooks (acquire, store, cast, cost) and gating content on tradition would be a fifth. See contracts.md §2.12 for the open question this leaves.",
+  "description": "A named path through the grid (contracts.md §2.12). A track is a *route*, not a region: its nodes cross cells freely, which is what makes the knowledge graph a web rather than twelve parallel staircases. Tracks exist so that exclusion can be declared once at the scale a player reasons about — 'I am a warden, not a thief' — instead of node by node. **Exclusion binds one mind, never the universe.** A universe may hold every school it can reach, accumulated across many mages over many lifetimes; an individual mage may not, and that asymmetry is the design: the dragon is powerful because it lives long enough to reach the *bottom* of the schools it chose, not because it knows everything. A universe holding a school must never block a different mage from learning the school that excludes it. Exclusion is symmetric and load.ts normalises it, so declaring it on one side is enough and declaring it on both is not an error — but see contracts.md §2.12, symmetry is an open question and not a settled one. `threshold` is how much of the excluded track one mind may dabble in before the door shuts. A track is a property of the knowledge graph and NOT of a tradition — vision.md §4a caps a tradition at four hooks (acquire, store, cast, cost) and gating content on tradition would be a fifth.",
   "type": "array",
   "minItems": 1,
   "items": { "$ref": "#/$defs/track" },
@@ -31,7 +31,7 @@
       "properties": {
         "track": { "$ref": "#/$defs/contentId" },
         "threshold": {
-          "description": "How many nodes of the excluded track a mage may hold before this track closes to her. 1 shuts the door on first contact.",
+          "description": "How many nodes of the excluded track one mind may hold before this track closes to it. 1 shuts the door on first contact.",
           "type": "integer",
           "minimum": 1,
           "maximum": 64
