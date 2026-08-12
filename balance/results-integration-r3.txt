@@ -1,0 +1,83 @@
+
+==============================================================================
+ARM: r3-vancian   (400 runs)
+==============================================================================
+
+-- strategy coverage (asserted before anything else is reported) --
+   archivist                  40
+   denial-warden              40
+   idle-then-declare          40
+   narrow-depth               40
+   passive-control            40
+   permissive-breadth         40
+   permit-then-idle           40
+   portal-rush                40
+   uniform-random-legal       40
+   worship-maximizer          40
+   => 10 strategies, 400 runs, 40 each: COVERAGE OK
+   adversarial probes present: both (permit-then-idle, idle-then-declare)
+
+-- THE NEGATIVE CONTROL, reported first --
+   permit-then-idle            38/40  rate 0.9500  nodes 269.9
+   idle-then-declare            0/40  rate 0.0000  nodes 51.0
+
+-- per strategy --
+   strategy                     asc/n    rate     nodes     ±SE  libDepth     books
+   permit-then-idle             38/40  0.9500     269.9    1.50      4.42         6 [probe]
+   permissive-breadth           36/40  0.9000     264.8    2.31      3.95         9
+   archivist                     0/40  0.0000      50.9    0.07     14.40       526
+   denial-warden                 0/40  0.0000       3.8    0.61      3.77        76
+   idle-then-declare             0/40  0.0000      51.0    0.00      0.60         1 [probe]
+   narrow-depth                  0/40  0.0000       6.0    0.18      4.42        33
+   passive-control               0/40  0.0000      51.0    0.02      0.80         1
+   portal-rush                   0/40  0.0000      50.9    0.04      2.23         3
+   uniform-random-legal          0/40  0.0000      50.9    0.05      3.00         3 [probe]
+   worship-maximizer             0/40  0.0000      51.0    0.02      1.20         1
+
+-- D1  ascensionRate inside 0.05-0.20 --
+   whole pool (10 strategies):  0.1850   IN BAND   [scoreBalance]
+   deliberate only (7):     0.1286   in band
+   The gap between those two lines is how much of the band is pool composition rather than ruleset.
+
+-- D2  exploit margin (W18: deliberate mean - WORST probe, floor 0.10) --
+   deliberate mean 0.1286   worst probe 0.9500   margin -0.8214   FAIL against EXPLOIT_MARGIN_MIN 0.1
+   the worst probe is permit-then-idle at 0.9500
+   **D2 CARRIES NO INFORMATION WHILE A PROBE WINS.** A margin computed against a probe that
+     is winning measures how far the deliberate strategies are behind an exploit, not whether
+     the game rewards play. Read D2 only once the probe rate is 0.
+
+-- D3  >=3 strategies winning, none above 60% of wins --
+   strategies with >0 ascensions: 2 of 10
+     permit-then-idle         51.4% of wins
+     permissive-breadth       48.6% of wins
+   top share 51.4%  variety 0.3009  => FAIL
+
+-- D4  correlation between ascension rate and nodes known > 0 --
+   Pearson  0.9812
+   Spearman 0.7049
+   strategies at a non-zero rate: 2 of 10 (support gate: 3)
+   **UNSUPPORTED — contributes 0 to the score.** Both coefficients are statements about 2 leveraged point(s).
+
+-- D5  knowledgeHalfLife falls, and nodes counted leaving the universe --
+   knowledgeHalfLife: INSTRUMENT ABSENT
+   nodes gained 84.01   nodes known 85.01   difference -1.00 (offset by the founding grant, so not a loss count)
+
+-- D6  no strategy wins at the passive knowledge baseline --
+   passive-control nodes known: 50.98 ± 0.02  (3-SE ceiling 51.05)
+   winners at or below that baseline: none
+   spread of mean nodes across the 7 deliberate strategies: 3.8 .. 264.8 (sd 89.33)
+
+-- arm metrics (capitalSnowball guard: its sibling worshipSnowball is held to <= 0.35) --
+   ascensionRate        0.185
+   capitalSnowball      0.43267045802703485
+   worshipSnowball      0.12085972450278404
+   knowledgeHalfLife    (not in summary)
+   libraryDependence    (not in summary)
+
+-- terminal status counts --
+   {"truncated":279,"ascended":74,"stagnated":47}
+
+==============================================================================
+CROSS-ARM: D7 and D9
+==============================================================================
+   only one arm supplied; D7 and D9 need several.
