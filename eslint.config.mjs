@@ -353,6 +353,16 @@ export default tseslint.config(
   },
 
   {
+    // ---- ui/ prototypes: browser code, and part of no build. ----
+    // These run in a page, so `document`, `window` and `localStorage` are the
+    // ambient globals rather than node's. Nothing here is imported by a package
+    // and nothing is in a tsconfig; the tests that check these files read them
+    // as text. This block therefore supplies globals and relaxes no rule.
+    files: ['ui/**/*.js'],
+    languageOptions: { globals: globals.browser, sourceType: 'module' },
+  },
+
+  {
     // ---- Simulation core: purity is enforced here, not asked for politely. ----
     files: [...CORE_SRC, ...RULES_SRC],
     rules: {

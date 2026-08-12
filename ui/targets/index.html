@@ -32,32 +32,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multiverse Mages — choosing who</title>
 
+<link rel="stylesheet" href="../shared/theme.css">
 <style>
-  :root {
-    --ground:#0A0D0F; --panel:#0F1416; --sunk:#141B1D; --edge:#1E2A2C;
-    --ink:#DDE7E8; --soft:#94A3A5; --faint:#63736F;
-    --god:#12B8C6; --god-lit:#6FF0FA; --god-deep:#06525C;
-    --limen:#A692EC; --mentem:#46A98D; --nomen:#7099D8; --terram:#CC8450;
-    --deny:#DE7059; --warn:#C9A034;
-    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
-    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
   .wrap{max-width:84rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
   .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
   h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
   .lede{color:var(--soft);max-width:66ch;margin:0 0 .45rem}
   .lede b{color:var(--god-lit);font-weight:500}
   .lede em{color:var(--ink);font-style:italic}
-  code{font:12.5px var(--mono);color:#AFC0C2}
+  code{font:12.5px var(--mono);color:var(--soft)}
 
   .verbbar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:1.3rem 0 1.5rem;
     padding:.7rem .8rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
   .verbbar .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-right:.3rem}
   .verb{font:11.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;padding:.45rem .7rem;
-    border-radius:3px;border:1px solid #22302F;background:transparent;color:var(--soft);cursor:pointer;
+    border-radius:3px;border:1px solid var(--edge);background:transparent;color:var(--soft);cursor:pointer;
     transition:box-shadow 150ms ease,border-color 150ms ease,color 150ms ease,background 150ms ease}
   .verb[aria-pressed="true"]{color:var(--god-lit);border-color:var(--god);background:color-mix(in srgb,var(--god) 10%,transparent);
     box-shadow:0 0 0 1px color-mix(in srgb,var(--god) 26%,transparent),0 0 16px -3px color-mix(in srgb,var(--god) 60%,transparent)}
@@ -76,14 +65,14 @@
   .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
   .dbody{padding:.85rem .9rem;flex:1;display:flex;flex-direction:column;gap:.55rem;overflow:hidden}
   .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
-  .dfoot .verdict{display:block;margin-top:.4rem;padding-top:.4rem;border-top:1px dotted #22302F}
-  .dfoot .ok{color:#4DBE97}.dfoot .no{color:var(--deny)}
+  .dfoot .verdict{display:block;margin-top:.4rem;padding-top:.4rem;border-top:1px dotted var(--edge)}
+  .dfoot .ok{color:var(--ok)}.dfoot .no{color:var(--deny)}
 
   /* ---- A: roster ---- */
   .roster{overflow-y:auto;max-height:22rem;display:flex;flex-direction:column;gap:2px}
   .rrow{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center;padding:.4rem .5rem;
     border:1px solid transparent;border-radius:3px;cursor:pointer;background:var(--sunk)}
-  .rrow:hover{border-color:#2C3C3E}
+  .rrow:hover{border-color:var(--rule-hi)}
   .rrow[aria-selected="true"]{border-color:var(--god);background:color-mix(in srgb,var(--god) 9%,var(--sunk));
     box-shadow:0 0 14px -4px color-mix(in srgb,var(--god) 70%,transparent)}
   .rrow .nm{font-size:.92rem}
@@ -94,8 +83,8 @@
   /* ---- B: salience slots ---- */
   .slots{display:flex;flex-direction:column;gap:.35rem}
   .slot{display:grid;grid-template-columns:1.6rem 1fr auto;gap:.55rem;align-items:center;
-    padding:.45rem .55rem;border:1px solid #22302F;border-radius:3px;background:var(--sunk);cursor:pointer}
-  .slot:hover{border-color:#33474A}
+    padding:.45rem .55rem;border:1px solid var(--edge);border-radius:3px;background:var(--sunk);cursor:pointer}
+  .slot:hover{border-color:var(--rule-hi)}
   .slot[aria-selected="true"]{border-color:var(--god);box-shadow:0 0 14px -4px color-mix(in srgb,var(--god) 70%,transparent)}
   .slot .ix{font:10px var(--mono);color:var(--god);text-align:right}
   .slot .nm{font-size:.92rem}
@@ -108,14 +97,14 @@
   .cutline::before,.cutline::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--warn) 40%,transparent)}
   .below{font:10.5px var(--mono);color:var(--faint);line-height:1.5}
   .saturated{margin-top:.5rem;padding:.5rem .55rem;border:1px solid var(--warn);border-radius:3px;
-    font:10.5px var(--mono);line-height:1.6;color:#E0C778}
+    font:10.5px var(--mono);line-height:1.6;color:color-mix(in srgb, var(--warn) 55%, var(--ink))}
   .saturated b{color:var(--warn)}
 
   /* ---- C: consequence-first ---- */
   .outcomes{display:flex;flex-direction:column;gap:.4rem}
-  .outcome{text-align:left;padding:.6rem .65rem;border:1px solid #22302F;border-radius:3px;background:var(--sunk);
+  .outcome{text-align:left;padding:.6rem .65rem;border:1px solid var(--edge);border-radius:3px;background:var(--sunk);
     cursor:pointer;color:inherit;font:inherit}
-  .outcome:hover{border-color:#33474A}
+  .outcome:hover{border-color:var(--rule-hi)}
   .outcome[aria-pressed="true"]{border-color:var(--god);background:color-mix(in srgb,var(--god) 9%,var(--sunk));
     box-shadow:0 0 14px -4px color-mix(in srgb,var(--god) 70%,transparent)}
   .outcome .want{font-size:.93rem;display:block}
@@ -133,7 +122,6 @@
   .note b{color:var(--ink);font-weight:600}
   .note .hot{color:var(--god-lit)}
   footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <div class="wrap">
@@ -416,4 +404,9 @@ pop.addEventListener('input', () => {
 });
 
 render();
+</script>
+
+<script type="module">
+  import { floatThemeControl } from '../shared/theme.js';
+  floatThemeControl();
 </script>

@@ -40,24 +40,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multiverse Mages — tempo</title>
 
+<link rel="stylesheet" href="../shared/theme.css">
 <style>
-  :root{
-    --ground:#0A0D0F;--panel:#0F1416;--sunk:#141B1D;--edge:#1E2A2C;
-    --ink:#DDE7E8;--soft:#94A3A5;--faint:#63736F;
-    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
-    --loss:#DE7059;--warn:#C9A034;--ok:#4DBE97;
-    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
-    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
   .wrap{max-width:84rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
   .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
   h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
   .lede{color:var(--soft);max-width:68ch;margin:0 0 .45rem}
   .lede b{color:var(--god-lit);font-weight:500}.lede em{color:var(--ink);font-style:italic}
-  code{font:12.5px var(--mono);color:#AFC0C2}
+  code{font:12.5px var(--mono);color:var(--soft)}
 
   .globalbar{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:1.3rem 0 1.4rem;
     padding:.7rem .85rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
@@ -67,7 +57,7 @@
   .run{font:11.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;padding:.45rem .8rem;border-radius:3px;
     border:1px solid var(--god);background:color-mix(in srgb,var(--god) 12%,transparent);color:var(--god-lit);cursor:pointer;
     box-shadow:0 0 0 1px color-mix(in srgb,var(--god) 24%,transparent),0 0 16px -3px color-mix(in srgb,var(--god) 60%,transparent)}
-  .run[aria-pressed="false"]{border-color:#22302F;background:transparent;color:var(--soft);box-shadow:none}
+  .run[aria-pressed="false"]{border-color:var(--edge);background:transparent;color:var(--soft);box-shadow:none}
   .run:focus-visible{outline:2px solid var(--god-lit);outline-offset:2px}
 
   .dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem;align-items:start}
@@ -90,7 +80,7 @@
 
   /* speed controls */
   .speeds{display:flex;gap:.3rem}
-  .sp{font:11px var(--mono);padding:.35rem .6rem;border-radius:3px;border:1px solid #22302F;background:transparent;
+  .sp{font:11px var(--mono);padding:.35rem .6rem;border-radius:3px;border:1px solid var(--edge);background:transparent;
     color:var(--soft);cursor:pointer}
   .sp[aria-pressed="true"]{color:var(--god-lit);border-color:var(--god);
     box-shadow:0 0 12px -3px color-mix(in srgb,var(--god) 70%,transparent)}
@@ -99,24 +89,24 @@
 
   /* the feed */
   .feed{height:15rem;overflow-y:auto;display:flex;flex-direction:column-reverse;gap:2px;
-    background:var(--sunk);border:1px solid #1B2426;border-radius:3px;padding:.4rem}
+    background:var(--sunk);border:1px solid var(--edge);border-radius:3px;padding:.4rem}
   .ev{display:grid;grid-template-columns:3.1rem 1fr;gap:.45rem;padding:.18rem .3rem;border-radius:2px;
     font-size:.83rem;line-height:1.35}
   .ev .t{font:9.5px var(--mono);color:var(--faint);font-variant-numeric:tabular-nums;padding-top:.15rem}
   .ev.routine{color:var(--faint)}
   .ev.notable{color:var(--soft)}
   .ev.loss{color:var(--loss);background:color-mix(in srgb,var(--loss) 11%,transparent)}
-  .ev.loss b{color:#FFB4A4}
+  .ev.loss b{color:color-mix(in srgb, var(--loss) 45%, var(--ink))}
   .ev.halt{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
 
   /* density texture — what a class becomes above its threshold */
   .texture{display:flex;flex-direction:column;gap:.3rem}
   .tex{display:grid;grid-template-columns:5.6rem 1fr auto;gap:.5rem;align-items:center;font:10px var(--mono)}
   .tex .n{color:var(--faint);letter-spacing:.06em}
-  .tex .bar{height:12px;background:#101718;border-radius:2px;position:relative;overflow:hidden}
+  .tex .bar{height:12px;background:var(--sunk);border-radius:2px;position:relative;overflow:hidden}
   .tex .bar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--god-deep),var(--god));
     opacity:.85;transition:width 260ms ease}
-  .tex .bar.over i{background:linear-gradient(90deg,#2C6E5E,var(--ok))}
+  .tex .bar.over i{background:linear-gradient(90deg,var(--ok),var(--ok))}
   .tex .r{color:var(--soft);font-variant-numeric:tabular-nums;min-width:4.2rem;text-align:right}
   .tex .r .st{color:var(--faint)}
 
@@ -139,7 +129,6 @@
   .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
   .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--god-lit)}
   footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <div class="wrap">
@@ -456,4 +445,9 @@ setInterval(() => {
   for (let i = 0; i < n; i += 1) if (!(state.halted && i > 0)) step();
   paint();
 }, 900);
+</script>
+
+<script type="module">
+  import { floatThemeControl } from '../shared/theme.js';
+  floatThemeControl();
 </script>

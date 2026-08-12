@@ -40,31 +40,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multiverse Mages — commitments</title>
 
+<link rel="stylesheet" href="../shared/theme.css">
 <style>
-  :root{
-    --ground:#090C0D;--panel:#0E1315;--sunk:#131A1C;--edge:#1D2729;
-    --ink:#DDE7E8;--soft:#94A3A5;--faint:#61716F;
-    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
-    --loss:#DE7059;--warn:#C9A034;--ok:#4DBE97;--ruin:#B15FD6;
-    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
-    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
   .wrap{max-width:86rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
   .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
   h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
   .lede{color:var(--soft);max-width:68ch;margin:0 0 .45rem}
   .lede b{color:var(--god-lit);font-weight:500}.lede em{color:var(--ink);font-style:italic}
-  code{font:12.5px var(--mono);color:#AFC0C2}
+  code{font:12.5px var(--mono);color:var(--soft)}
 
   .bar{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;margin:1.3rem 0 1.4rem;
     padding:.7rem .85rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
   .bar .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
   .bar b{font:12px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
   .bar input[type=range]{accent-color:var(--god);vertical-align:middle;width:9rem}
-  .favorbar{flex:1;min-width:10rem;height:7px;background:#101718;border-radius:4px;position:relative;overflow:hidden}
+  .favorbar{flex:1;min-width:10rem;height:7px;background:var(--sunk);border-radius:4px;position:relative;overflow:hidden}
   .favorbar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--god-deep),var(--god));
     box-shadow:0 0 12px -2px color-mix(in srgb,var(--god) 80%,transparent)}
 
@@ -87,7 +77,7 @@
   .prow .c{font:11.5px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
   .prow[data-aff="yes"]{border-left-color:var(--god)}
   .prow[data-aff="yes"] .c{color:var(--god-lit)}
-  .prow[data-aff="soon"]{border-left-color:#2A3538}
+  .prow[data-aff="soon"]{border-left-color:var(--rule-hi)}
   .prow[data-aff="soon"] .c{color:var(--soft)}
   .prow[data-aff="never"]{border-left-color:var(--ruin);background:color-mix(in srgb,var(--ruin) 9%,var(--sunk))}
   .prow[data-aff="never"] .c{color:var(--ruin)}
@@ -97,11 +87,11 @@
   .hrow .top{display:flex;align-items:baseline;gap:.4rem;margin-bottom:.3rem}
   .hrow .nm{font-size:.88rem}
   .hrow .c{margin-left:auto;font:10.5px var(--mono);color:var(--soft);font-variant-numeric:tabular-nums}
-  .track{position:relative;height:16px;background:#101718;border-radius:2px;overflow:hidden}
+  .track{position:relative;height:16px;background:var(--sunk);border-radius:2px;overflow:hidden}
   .track .seg{position:absolute;top:0;bottom:0}
   .track .pay{background:linear-gradient(90deg,color-mix(in srgb,var(--ok) 55%,transparent),color-mix(in srgb,var(--ok) 22%,transparent));
     border-left:2px solid var(--ok)}
-  .track .dead{background:repeating-linear-gradient(45deg,#161D1F 0 4px,transparent 4px 8px)}
+  .track .dead{background:repeating-linear-gradient(45deg,var(--sunk) 0 4px,transparent 4px 8px)}
   .track .shock{background:color-mix(in srgb,var(--loss) 26%,transparent);border-left:2px solid var(--loss)}
   .track .forever{background:linear-gradient(90deg,color-mix(in srgb,var(--ruin) 45%,transparent),color-mix(in srgb,var(--ruin) 18%,transparent));
     border-left:2px solid var(--ruin)}
@@ -116,10 +106,10 @@
   .tier .marks{display:flex;gap:2px;flex-wrap:wrap}
   .tier .mk{font:8.5px var(--mono);padding:1px 4px;border-radius:2px;border:1px solid;letter-spacing:.04em}
   .tier .mk.on{color:var(--god-lit);border-color:var(--god-deep);background:color-mix(in srgb,var(--god) 12%,transparent)}
-  .tier .mk.off{color:#3E4B4D;border-color:#1E2729}
+  .tier .mk.off{color:var(--faint);border-color:var(--edge)}
   .tier[data-now="true"]{outline:1px solid var(--god);outline-offset:-1px}
   .ruinnote{margin-top:.4rem;padding:.5rem .55rem;border:1px solid var(--ruin);border-radius:3px;
-    font:10.5px var(--mono);line-height:1.6;color:#E3B9F5;background:color-mix(in srgb,var(--ruin) 8%,transparent)}
+    font:10.5px var(--mono);line-height:1.6;color:color-mix(in srgb, var(--ruin) 55%, var(--ink));background:color-mix(in srgb,var(--ruin) 8%,transparent)}
   .ruinnote b{color:var(--ruin)}
 
   .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
@@ -127,7 +117,6 @@
   .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
   .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--god-lit)}
   footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <div class="wrap">
@@ -305,4 +294,9 @@ function render() {
 const t = document.getElementById('tier');
 t.addEventListener('input', () => { tier = Number(t.value); render(); });
 render();
+</script>
+
+<script type="module">
+  import { floatThemeControl } from '../shared/theme.js';
+  floatThemeControl();
 </script>

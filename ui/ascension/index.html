@@ -43,31 +43,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multiverse Mages — ascension</title>
 
+<link rel="stylesheet" href="../shared/theme.css">
 <style>
-  :root{
-    --ground:#090C0D;--panel:#0E1315;--sunk:#131A1C;--edge:#1D2729;
-    --ink:#DDE7E8;--soft:#94A3A5;--faint:#61716F;
-    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
-    --summit:#D7B45A;--summit-lit:#FFE29B;
-    --loss:#DE7059;--warn:#C9A034;--ok:#4DBE97;
-    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
-    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
   .wrap{max-width:84rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
   .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--summit)}
   h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
   .lede{color:var(--soft);max-width:68ch;margin:0 0 .45rem}
   .lede b{color:var(--summit-lit);font-weight:500}.lede em{color:var(--ink);font-style:italic}
-  code{font:12.5px var(--mono);color:#AFC0C2}
+  code{font:12.5px var(--mono);color:var(--soft)}
 
   .timeline{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:1.3rem 0 1.4rem;
     padding:.7rem .85rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
   .timeline .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
   .stage{font:11px var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:.4rem .65rem;border-radius:3px;
-    border:1px solid #22302F;background:transparent;color:var(--soft);cursor:pointer}
+    border:1px solid var(--edge);background:transparent;color:var(--soft);cursor:pointer}
   .stage[aria-pressed="true"]{color:var(--summit-lit);border-color:var(--summit);
     background:color-mix(in srgb,var(--summit) 12%,transparent);
     box-shadow:0 0 0 1px color-mix(in srgb,var(--summit) 26%,transparent),
@@ -90,8 +79,8 @@
   .declare{font:12px var(--mono);letter-spacing:.07em;text-transform:uppercase;padding:.75rem 1rem;
     border-radius:3px;width:100%;cursor:pointer;transition:box-shadow 180ms ease,background 180ms ease,
     border-color 180ms ease,color 180ms ease}
-  .declare[data-s="masked"]{border:1px dashed #2A3538;background:transparent;color:#93A0A2;cursor:not-allowed}
-  .declare[data-s="open"]{border:1px solid var(--summit);color:#08110F;
+  .declare[data-s="masked"]{border:1px dashed var(--rule-hi);background:transparent;color:var(--ctl-denied-fg);cursor:not-allowed}
+  .declare[data-s="open"]{border:1px solid var(--summit);color:var(--ctl-charged-fg);
     background:linear-gradient(180deg,var(--summit-lit),var(--summit));
     box-shadow:0 0 0 1px color-mix(in srgb,var(--summit) 40%,transparent),
                0 0 34px -4px color-mix(in srgb,var(--summit) 85%,transparent)}
@@ -103,7 +92,7 @@
   .why .no{color:var(--loss)}
 
   /* two ladders */
-  .path{border:1px solid #22302F;border-radius:3px;padding:.6rem .65rem;background:var(--sunk)}
+  .path{border:1px solid var(--edge);border-radius:3px;padding:.6rem .65rem;background:var(--sunk)}
   .path.met{border-color:var(--summit);box-shadow:0 0 16px -6px color-mix(in srgb,var(--summit) 75%,transparent)}
   .path .nm{font:400 1rem var(--serif);display:flex;align-items:baseline;gap:.4rem}
   .path .nm .st{margin-left:auto;font:9.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
@@ -120,14 +109,14 @@
 
   /* the reckoning */
   .reck{display:flex;flex-direction:column;gap:.5rem}
-  .reck .grp{border:1px solid #22302F;border-radius:3px;padding:.55rem .6rem;background:var(--sunk)}
+  .reck .grp{border:1px solid var(--edge);border-radius:3px;padding:.55rem .6rem;background:var(--sunk)}
   .reck .grp .h{font:9.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:.3rem}
   .reck .line{display:flex;justify-content:space-between;gap:.5rem;font-size:.87rem;padding:.1rem 0}
   .reck .line b{font:11px var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
   .reck .keep{border-color:var(--summit)}
   .reck .keep .h{color:var(--summit)}
   .reck .keep b{color:var(--summit-lit)}
-  .reck .lose{border-color:#3A2A28}
+  .reck .lose{border-color:var(--edge)}
   .reck .lose .h{color:var(--loss)}
   .reck .lose .line{color:var(--soft)}
   .reck .never{font:10.5px var(--mono);color:var(--faint);line-height:1.6;padding-top:.15rem}
@@ -138,7 +127,6 @@
   .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
   .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--summit-lit)}
   footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <div class="wrap">
@@ -371,4 +359,9 @@ document.querySelectorAll('.stage').forEach((b) => {
   });
 });
 render();
+</script>
+
+<script type="module">
+  import { floatThemeControl } from '../shared/theme.js';
+  floatThemeControl();
 </script>

@@ -34,34 +34,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multiverse Mages — watching a raid</title>
 
+<link rel="stylesheet" href="../shared/theme.css">
 <style>
-  :root{
-    --ground:#080B0C;--panel:#0E1315;--sunk:#131A1C;--edge:#1D2729;
-    --ink:#DDE7E8;--soft:#94A3A5;--faint:#5F6F71;
-    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
-    --limen:#A692EC;--loss:#DE7059;--warn:#C9A034;--ok:#4DBE97;--foe:#B4574A;
-    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
-    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
   .wrap{max-width:84rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
   .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--limen)}
   h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
   .lede{color:var(--soft);max-width:68ch;margin:0 0 .45rem}
   .lede b{color:var(--limen);font-weight:500}.lede em{color:var(--ink);font-style:italic}
-  code{font:12.5px var(--mono);color:#AFC0C2}
+  code{font:12.5px var(--mono);color:var(--soft)}
 
   /* the frozen bar — the same verbs as everywhere else, all of them dead */
   .frozen{margin:1.3rem 0 1.4rem;padding:.7rem .85rem;background:var(--panel);
     border:1px solid var(--edge);border-radius:4px;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
   .frozen .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--warn)}
   .frozen .v{font:11px var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:.4rem .6rem;
-    border:1px dashed #2A3538;border-radius:3px;color:#93A0A2;cursor:not-allowed;background:transparent}
+    border:1px dashed var(--rule-hi);border-radius:3px;color:var(--ctl-denied-fg);cursor:not-allowed;background:transparent}
   .frozen .why{font:10.5px var(--mono);color:var(--faint);margin-left:auto}
   .frozen .run{margin-left:.4rem;font:11px var(--mono);text-transform:uppercase;letter-spacing:.05em;
-    padding:.4rem .7rem;border-radius:3px;border:1px solid var(--limen);color:#CFC2FF;background:transparent;cursor:pointer}
+    padding:.4rem .7rem;border-radius:3px;border:1px solid var(--limen);color:color-mix(in srgb, var(--limen) 50%, var(--ink));background:transparent;cursor:pointer}
 
   .dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem;align-items:start}
   @media (max-width:76rem){.dirs{grid-template-columns:1fr}}
@@ -78,10 +68,10 @@
   .stab .lab{display:flex;align-items:baseline;gap:.4rem;font:10px var(--mono);letter-spacing:.12em;
     text-transform:uppercase;color:var(--faint)}
   .stab .lab b{margin-left:auto;color:var(--limen);font-variant-numeric:tabular-nums}
-  .stab .track{height:8px;background:#101718;border-radius:4px;overflow:hidden;position:relative}
-  .stab .track i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#4C3A86,var(--limen));
+  .stab .track{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden;position:relative}
+  .stab .track i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--limen),var(--limen));
     box-shadow:0 0 12px -2px color-mix(in srgb,var(--limen) 80%,transparent);transition:width 180ms linear}
-  .stab .track.q1 i{background:linear-gradient(90deg,#7A3A32,var(--loss));
+  .stab .track.q1 i{background:linear-gradient(90deg,var(--loss),var(--loss));
     box-shadow:0 0 14px -1px color-mix(in srgb,var(--loss) 85%,transparent)}
   .stab .q{font:9.5px var(--mono);color:var(--faint);letter-spacing:.08em}
 
@@ -94,24 +84,24 @@
 
   /* ---- A: battlefield ---- */
   .field{position:relative;aspect-ratio:1;background:
-      repeating-linear-gradient(0deg,#0D1213 0 1px,transparent 1px 40px),
-      repeating-linear-gradient(90deg,#0D1213 0 1px,transparent 1px 40px),#0A1011;
-    border:1px solid #1B2426;border-radius:3px;overflow:hidden}
+      repeating-linear-gradient(0deg,var(--edge) 0 1px,transparent 1px 40px),
+      repeating-linear-gradient(90deg,var(--edge) 0 1px,transparent 1px 40px),var(--plate);
+    border:1px solid var(--edge);border-radius:3px;overflow:hidden}
   .field .scale{position:absolute;left:.4rem;bottom:.3rem;font:9px var(--mono);color:var(--faint)}
   .unit{position:absolute;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%);transition:left 380ms linear,top 380ms linear}
   .unit.own{background:var(--god);box-shadow:0 0 8px -1px var(--god)}
   .unit.foe{background:var(--foe);box-shadow:0 0 8px -1px var(--foe)}
-  .unit.dead{background:#2A3234;box-shadow:none;opacity:.6}
+  .unit.dead{background:var(--rule-hi);box-shadow:none;opacity:.6}
   .obj{position:absolute;transform:translate(-50%,-50%);font:9px var(--mono);letter-spacing:.06em;
     color:var(--warn);border:1px solid var(--warn);padding:1px 4px;border-radius:2px;
-    background:color-mix(in srgb,var(--warn) 14%,#0A1011);white-space:nowrap}
-  .obj.taken{color:var(--loss);border-color:var(--loss);background:color-mix(in srgb,var(--loss) 18%,#0A1011);
+    background:color-mix(in srgb,var(--warn) 14%,var(--plate));white-space:nowrap}
+  .obj.taken{color:var(--loss);border-color:var(--loss);background:color-mix(in srgb,var(--loss) 18%,var(--plate));
     text-decoration:line-through}
 
   /* ---- C: ledger ---- */
   .ledger{display:flex;flex-direction:column;gap:.4rem}
   .stake{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center;padding:.45rem .55rem;
-    border:1px solid #22302F;border-radius:3px;background:var(--sunk)}
+    border:1px solid var(--edge);border-radius:3px;background:var(--sunk)}
   .stake .n{font-size:.9rem}
   .stake .sub{font:9.5px var(--mono);color:var(--faint);display:block;margin-top:.1rem}
   .stake .st{font:9.5px var(--mono);letter-spacing:.09em;text-transform:uppercase}
@@ -122,14 +112,14 @@
   .stake[data-st="lost"] .st{color:var(--loss)}
   .stake[data-st="lost"] .n{text-decoration:line-through;color:var(--soft)}
   .irrev{margin-top:.3rem;padding:.5rem .6rem;border:1px solid var(--loss);border-radius:3px;
-    font:10.5px var(--mono);line-height:1.6;color:#F0AA9C;background:color-mix(in srgb,var(--loss) 9%,transparent)}
+    font:10.5px var(--mono);line-height:1.6;color:color-mix(in srgb, var(--loss) 45%, var(--ink));background:color-mix(in srgb,var(--loss) 9%,transparent)}
   .irrev b{color:var(--loss)}
 
   .counts{display:flex;gap:.9rem;flex-wrap:wrap;font:10.5px var(--mono);color:var(--faint)}
   .counts b{color:var(--ink);font-variant-numeric:tabular-nums}
-  .counts .own b{color:var(--god-lit)}.counts .foe b{color:#E0958A}
+  .counts .own b{color:var(--god-lit)}.counts .foe b{color:color-mix(in srgb, var(--foe) 50%, var(--ink))}
 
-  .elsewhere{padding:.5rem .6rem;border:1px dashed #2A3538;border-radius:3px;font:10.5px var(--mono);
+  .elsewhere{padding:.5rem .6rem;border:1px dashed var(--rule-hi);border-radius:3px;font:10.5px var(--mono);
     color:var(--faint);line-height:1.6}
   .elsewhere b{color:var(--soft)}
 
@@ -138,7 +128,6 @@
   .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
   .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--limen)}
   footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <div class="wrap">
@@ -351,4 +340,9 @@ function render() {
 document.getElementById('run').addEventListener('click', () => { reset(); render(); });
 render();
 setInterval(() => { step(); render(); }, 380);
+</script>
+
+<script type="module">
+  import { floatThemeControl } from '../shared/theme.js';
+  floatThemeControl();
 </script>

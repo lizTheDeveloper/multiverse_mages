@@ -32,8 +32,19 @@ const UI = new URL('../../../../ui/', import.meta.url).pathname;
 const links = (): readonly string[] =>
   [...readFileSync(`${UI}index.html`, 'utf8').matchAll(/href="([^"]+)"/gu)].map((m) => m[1] ?? '');
 
+/**
+ * `ui/shared/` holds the theme stylesheet and its control, not a prototype, so
+ * it is neither linked from the index nor expected to be. Excluded by name
+ * rather than by a convention like a leading underscore, so that adding a
+ * second support directory is a deliberate edit here rather than a silent
+ * exemption from both assertions below.
+ */
+const NOT_A_PROTOTYPE = new Set(['shared']);
+
 const prototypes = (): readonly string[] =>
-  readdirSync(UI).filter((entry) => statSync(`${UI}${entry}`).isDirectory());
+  readdirSync(UI).filter(
+    (entry) => !NOT_A_PROTOTYPE.has(entry) && statSync(`${UI}${entry}`).isDirectory(),
+  );
 
 describe('the prototype index', () => {
   it('links only to prototypes that exist', () => {
