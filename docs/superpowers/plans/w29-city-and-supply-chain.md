@@ -196,6 +196,38 @@ zero** and finishes 84 of them in 150 months. That is a real decision with a rea
 divertible share would be `world-step.ts` deciding how much rope a player gets, so it is raised as
 a question rather than tuned.
 
+### The causal chain, proved rather than assumed
+
+Every other test here asserts a *link*. `packages/scenario/test/unit/causal-chain-build-rate.test.ts`
+asserts the **chain**, because a chain of individually correct links is exactly what has failed this
+project before: six mechanics built inside a loop whose middle was never connected.
+
+`tools/w29/causal-chain.mjs`, 180 months, seed 589825:
+
+| | Terram permitted | Terram forbidden | `build-rate` ablated |
+|---|---|---|---|
+| months to open the academy | **40** | 98 | 98 |
+| stone spent building it | **1,912** | 3,104 | 3,104 |
+| `build-rate` sources reaching construction | 38 | 0 | **38** |
+| Terram instances held | 178 | 0 | **178** |
+
+1. **Legalizing the cell increases its use** — 178 Terram instances held against 0.
+2. **Use produces attributable contributions** — magnitudes 128, 192, 256 and 384 reach
+   construction, and every one is a magnitude a shipped node declares. Attribution, not presence: a
+   wire inventing its own numbers would pass a count and fail this.
+3. **They mutate state** — the same 1,024 `fp` of university costs 1,912 stone instead of 3,104.
+4. **A visible outcome moves** — the academy opens in 40 months, not 98.
+5. **Removing the cause removes the outcome, twice.** Forbidding the cell is the god's actual verb.
+   Neutralizing `build-rate` with the ruleset *untouched* is the sharper counterfactual: the mages
+   still hold all 178 instances and all 38 contributions are still gathered, and the buildings still
+   go up at the unaided rate. Forbidding a form removes the primitive **and** that form's
+   `resource-yield` **and** the research itself — three explanations. Ablation leaves one.
+
+Making 5b possible meant threading `@mm/primitives`' ablation mask through `ProductionInput`,
+`ConstructionInput` and `WorldStepDeps`. It was reachable only from `stackMagnitudes` before, so no
+**world-scale** primitive could be ablated at all — which is why §9's ablation methodology had never
+been applied to one.
+
 ## 5. Open questions for the author
 
 1. **Is "no fourth resource" about inputs or about stocks?** `ECONOMIC_INPUTS` is still three and
@@ -209,3 +241,14 @@ a question rather than tuned.
 4. **Should a form's yield weights be able to exceed `fp(1024)` in total?** They are capped at
    1024 per kind and nothing stops a form summing to 2048 across the three. Herbam and Animal each
    sum to 1024; nothing enforces it.
+5. **Peak population nearly halved at the 200-year horizon** — 50,080 to 29,489, −156 SE. Two
+   documented decisions cause it: `K`'s provisioning multiplier reads the **food** stock alone
+   rather than every material summed, and a laborer on a building site produces nothing that month.
+   Both are deliberate and neither is tuned. If the intended world is one where a god cannot halve
+   its own peak population by over-founding, the lever is a cap on the divertible labour share —
+   question 2 — and this branch did not invent one.
+6. **The economy now depends on living casters.** Because the aggregator goes through
+   `gatherEffects`, only knowledge held at a mind or a palace above the mastery threshold feeds
+   production. Kill the mages and the harvest falls even though every book survives. §6a's
+   compounding loop still runs through the library — a deep shelf trains the mages who cast — but
+   the library is not itself a factory. That is a design fact, not a bug, and it should be seen.
