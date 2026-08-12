@@ -72,7 +72,7 @@ const USAGE = `mm-agent — a reference participant that mirror-simulates.
   --revision <hex>      Override the declared contentRevision. For refusal tests.
   --policy <lowest|highest>  Which legal action to take. Default lowest.
   --universe <id>       Persisted universe id. Defaults to one derived from --name.
-  --bubble <id>        Group of multiverses this universe is in. Default bubble-0.
+  --bubble <id>         The bubble this universe is in. Default bubble-0.
 
 Writes one JSON summary line to stdout at the end. Everything else is stderr.`;
 

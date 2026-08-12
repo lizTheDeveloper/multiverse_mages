@@ -411,7 +411,7 @@ export const INELIGIBILITY = {
   /** §0: their content revisions differ. No negotiation, no partial compatibility. */
   contentRevision: 'content-revision',
   /**
-   * They are in different groups of multiverses.
+   * They are not in one bubble — the opponent is not reachable.
    *
    * Not a queue and not matchmaking — vision §12 keeps both out of v1. This is
    * an *eligibility predicate on a direct challenge*: the challenge names its
