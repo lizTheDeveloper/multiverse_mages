@@ -18,7 +18,9 @@ whether knowledge loss lands off the beat before 520 assets were generated again
 
     npm run ui        # serves the repository root on :8200
 
-Then open `http://localhost:8200/ui/ruleset/`. They are static files, so any static server works;
+Then open `http://localhost:8200/ui/` — [`index.html`](index.html) is the front door: it says what
+the game is and links every prototype with the question it answers. Or go straight to one, e.g.
+`http://localhost:8200/ui/ruleset/`. They are static files, so any static server works;
 the script exists so nobody has to remember the flags.
 
 ## What they are allowed to do
