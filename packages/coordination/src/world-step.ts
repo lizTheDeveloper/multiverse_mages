@@ -1162,8 +1162,10 @@ function advanceUniversities(state: SimState, input: ConstructionInputs): Constr
       // next site rather than burned, which is what makes a surplus of laborers
       // finish two universities in a tick instead of one and a half.
       assignment.months = outcome.labourStalled + outcome.labourSurplus;
-      if (outcome.completed) completed += 1;
-      if (outcome.completed) break;
+      if (outcome.completed) {
+        completed += 1;
+        break;
+      }
     }
     store.set(site.handle, 'buildProgress', site.row.buildProgress);
   }
