@@ -11,7 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 ## The mechanic, as the author specified it
 
-Four statements, taken in order, and this plan is written against all four:
+Five statements, taken in order, and this plan is written against all five:
 
 1. *"Extinguish their magic users so there are no more — **that** is what colonizes them. And then
    they pay whatever they paid to their old god: their taxes and materials and labour go to the new

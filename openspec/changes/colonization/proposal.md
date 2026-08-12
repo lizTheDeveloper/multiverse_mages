@@ -134,10 +134,12 @@ by implication.
   a far heavier ask.
 - **Balance:** this change adds a third input to §7's worship loop, which already compounds, while
   §6a's knowledge-capital loop compounds beside it — the exact *"two compounding loops that feed each
-  other"* shape vision §6a warns produces runaway leaders. `capitalSnowball` already reads 0.3498
-  against a 0.35 threshold from a population holding no colonies and no prestige. **The balance risk
-  in this proposal is entirely on the conqueror's side**, not the victim's, and the measurements that
-  would show it failing are named in `design.md`.
+  other"* shape vision §6a warns produces runaway leaders. The metric that bounds this is
+  **`worshipSnowball`, which carries the explicit `≤ 0.35` bound**; `capitalSnowball` is measured with
+  **no numeric threshold assigned in code** (`thresholdOwner: 'god-agency'`), which is a gap worth
+  closing before this change is judged against it. **The balance risk in this proposal is entirely on
+  the conqueror's side**, not the victim's, and the measurements that would show it failing are named
+  in `design.md`.
 - **Scope verdict, stated plainly because the author asked for it:** the bounded neighbourhood
   belongs in v1 and is urgent, because nothing else answers `portalTargets`. Extinction-with-
   attribution is authorable now and implementable once the harness can price it. Colonial tribute
@@ -145,7 +147,14 @@ by implication.
   content exhaustion — 51 of 300 nodes, learned by an idle universe. The bubble tier ladder is
   post-v1 under §12. The full argument, including why looting and colonization are not
   interchangeable, is in `design.md`.
-- **Risk accepted:** every magnitude here is an untuned placeholder, and one of them — the number of
-  raids required to extinguish a universe — is not merely untuned but unmeasured, and could make the
-  whole mechanic unreachable. That is stated as the change's first acceptance test rather than
-  discovered after implementation.
+- **Risk accepted, and one of the two is already measured.** Every magnitude here is an untuned
+  placeholder, and two carry the change rather than decorate it. **The transfer appears to be nearly
+  inert at this build:** worship saturates per channel, and the populace term already sits at **94.8%
+  of `worship-populace-cap`** at the reference run's populace of 18,713, so absorbing an equivalent
+  civilization adds roughly **52 fp of worship against a total of ~4,831** — about a **0.76% increase
+  in favor regeneration**. The other half, materials, is unsaturated but its only live claimants are
+  subsistence and scribing, so colonial materials fund more copies of an already-exhausted 51-node
+  set. **And the mechanic may be unreachable:** nobody has measured how many raids it takes to hold a
+  universe mageless for sixty consecutive ticks. Both are stated as acceptance tests in `design.md`,
+  the first of which can be run on the existing harness today, rather than discovered after
+  implementation.
