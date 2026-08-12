@@ -27,3 +27,8 @@ __pycache__/
 # W17 measurement output. Same reason .w15/ is ignored: a sweep writes tens of
 # thousands of lines of JSON per arm and none of it is source.
 .w17/
+
+# W20 measurement output. Same reason .w15/ and .w17/ are ignored: a sweep
+# writes tens of thousands of lines of JSON per arm and none of it is source.
+.w20/
+.w20-run-arm.sh
