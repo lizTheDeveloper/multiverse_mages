@@ -36,8 +36,9 @@
  * policy is never handed differently-shaped numbers. A per-node channel for 300
  * nodes is not affordable at that width, and a fixed-width fragility digest,
  * which would be, is not worth spending width on **today**: the reference
- * universe holds zero single-instance nodes at a mean of 80.2 copies per node,
- * so the channel would export a column of constants. `docs/superpowers/plans/
+ * universe holds zero single-instance nodes at tick 2400, at a minimum
+ * redundancy of 4 and a mean of 42.6 copies per node, so the channel would
+ * export a column that is zero almost everywhere. `docs/superpowers/plans/
  * w22-observability.md` prices the widening exactly — four slots, one digest
  * bump, every trained policy invalidated — so that deferring it stays a decision
  * somebody made rather than a thing that quietly never happened.
@@ -467,7 +468,9 @@ export function mageContainment(
   const sizes = sets.map((s) => s.length);
   return {
     holders,
-    pairs: (holders * (holders - 1)) / 2,
+    // `floorDiv`, not `/`: this package's float-boundary test bans division
+    // outside `normalize.ts`, and the product is always even so nothing is lost.
+    pairs: floorDiv(holders * (holders - 1), 2),
     incomparablePairs: incomparable,
     strictContainmentPairs: strict,
     identicalPairs: identical,

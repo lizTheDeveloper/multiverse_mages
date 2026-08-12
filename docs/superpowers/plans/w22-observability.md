@@ -42,8 +42,9 @@ A read-only, per-node, location-aware **knowledge census**, with four outputs:
    `LOCATION_KIND` (mind 1 / grimoire 2 / library 3 / palace 4). §1.5 defines existence as instance
    count ≥ 1; this is that number, disaggregated.
 2. **Fragility** — the set of nodes standing at exactly one instance, plus the minimum redundancy
-   over held nodes. Currently **zero singletons at 80.2 mean copies per node** (audit Proof 3), so
-   the number is boring today. It is reported anyway, because it is the number that becomes
+   over held nodes, plus the two sharper questions a raw count cannot ask: which nodes have **no
+   written copy at all**, and which nodes have every copy in **one place**. Singletons are boring
+   today — zero at tick 2400 — so It is reported anyway, because it is the number that becomes
    interesting the moment copies get scarce, and W20 and W8 are both pushing on that.
 3. **Per-mage repertoire** — the node set a named mage holds, and the pairwise **containment**
    relation over mages: whether two mages in one universe can hold *incomparable* knowledge sets,
@@ -65,9 +66,10 @@ channel for 300 nodes is not obviously affordable and must not be added by accid
 digest; accept that every trained policy is invalidated. **Rejected, with the counter-argument
 answered rather than ignored.** The honest argument *for* it is that there are no trained policies
 today, so now is the cheap moment and the cost is zero. That argument is real. It loses on a
-different ground: **the channel would be a constant.** Fragility on the reference universe is
-identically zero singletons across every strategy in the shipped pool, and mean redundancy is 80.2.
-A fragility input today feeds an RL agent a column of zeros — it teaches nothing, and it commits the
+different ground: **the channel would be very nearly a constant.** Measured with the instrument
+this change ships: **zero single-instance nodes at tick 2400**, minimum redundancy 4, mean 42.6
+copies per node, and one singleton at tick 240 that is gone by tick 500. A fragility input today
+feeds an RL agent a column that is zero almost everywhere — it teaches nothing, and it commits the
 layout to a shape chosen before anyone has seen a non-degenerate distribution to shape it around.
 The cheap moment is not lost by waiting, because it is only cheap while there are no policies, and
 there will be none until fragility is non-trivial. What waiting *does* risk is that the widening
@@ -135,17 +137,99 @@ void. This is a committed test, not a one-off script.
 
 ## Tasks
 
-- [ ] Read vision §5 / §7a, contracts §1.5 / §4.1 / §4.4, `campaign-plan.md`, `vision-audit.md`, `CLAUDE.md`
-- [ ] Trace `KNOWLEDGE_INSTANCE`, `LOCATION_KIND`, `MAGE`, the observation layout digest, `explain.ts`
-- [ ] Commit and push this plan
-- [ ] `packages/agent-api/src/knowledge-census.ts` — the projection, pure, one pass
-- [ ] Unit tests: per-node counts, location split, singleton detection, per-mage repertoire, containment
-- [ ] Inertness test: snapshot-hash and terminal-reason identity, censused vs uncensused
-- [ ] Digest-stability test: `OBSERVATION_LAYOUT_DIGEST` unchanged by this branch
-- [ ] Reference-universe numbers via a `tools/w22` reporter, cross-checked against audit Proof 3
-- [ ] `npm run verify` green, reported exactly, with per-gate deltas
-- [ ] Report `illegalActionRate` (audit C7) and `metricDeltas` findings; fix neither unless trivial
+- [x] Read vision §5 / §7a, contracts §1.5 / §4.1 / §4.4, `campaign-plan.md`, `vision-audit.md`, `CLAUDE.md`
+- [x] Trace `KNOWLEDGE_INSTANCE`, `LOCATION_KIND`, `MAGE`, the observation layout digest, `explain.ts`
+- [x] Commit and push this plan
+- [x] `packages/agent-api/src/knowledge-census.ts` — the projection, pure, one pass
+- [x] Unit tests: per-node counts, location split, singleton detection, per-mage repertoire, containment
+- [x] Inertness test: snapshot-hash and terminal-reason identity, censused vs uncensused
+- [x] Digest-stability test: `OBSERVATION_LAYOUT_DIGEST` unchanged by this branch
+- [x] Reference-universe numbers via a `tools/w22` reporter, cross-checked against audit Proof 3
+- [x] `npm run verify` green, reported exactly, with per-gate deltas
+- [x] Report `illegalActionRate` (audit C7) and `metricDeltas` findings; fix neither
+
+## What the census found on the first run
+
+The instrument's first use turned up a defect no committed measurement can see.
+Coordinates: reference universe, seed `0x00090001`, zero god input, `cohortSize 4`,
+`foundingNodes 4`. The audit's Proof 3 used **six** founding grants against these four, so
+these numbers sit *beside* Proof 3 rather than superseding it.
+
+### The written record collapses, and the universe ends up holding nothing in writing
+
+| tick | mind | grimoire | library | nodes held |
+|--:|--:|--:|--:|--:|
+| 101 | 315 | 0 | 86 | 35 |
+| 501 | 499 | 0 | **521** | 51 |
+| 601 | 591 | 0 | 125 | 51 |
+| 1201 | 2252 | 0 | 15 | 51 |
+| 2001 | 1451 | 0 | **0** | 51 |
+| 2400 | 2172 | 0 | **0** | 51 |
+
+At tick 2400 the universe holds 2,172 instances of 51 nodes and **not one of them is written
+down**: 1000‰ mind, 0‰ grimoire, 0‰ library, 0‰ palace. Every node is on the unwritten list.
+
+**It is not raids.** With `raids: false` the same collapse runs on the same schedule
+(663 → 226 across ticks 561–588) and ends at 15 library instances rather than 0; the six raids
+add discrete drops at ticks 88, 546, 744, 1227 on top. **It is not decay** — `decay.ts:198`
+skips anything that is not `isHeldLocation`, and its header says so: *"Only minds decay… A
+book's fragility is `durability`, not forgetting."*
+
+Two additive mechanisms, both traced to code:
+
+1. **`scribingQueueDepth` is hardcoded to `0`** at `packages/coordination/src/world-step.ts:581`,
+   so `computeOccupationDemand`'s scribe demand (`rules-world/src/populace/demand.ts:112`) is
+   permanently zero. `reallocateOccupations` therefore treats the entire founding scribe cohort
+   as exportable surplus and drains it, with no backfill. Measured: **24 scribes at tick 0,
+   14 by tick 500, 8 by tick 1800, 5 at tick 2400.** The field's own name says it should track
+   queued scribing work; nothing computes that count.
+2. **Library upkeep shortfall destroys shelved copies** — `degradeLibrary`
+   (`coordination/src/gateway.ts:863`), fed by `applyLibraryUpkeep`
+   (`rules-world/src/universities/capital.ts:298`), destroys
+   `floorDiv(shortfall, DEGRADATION_PER_SHORTFALL)` instances a tick. Upkeep is charged per
+   instance and paid after subsistence, so a library that grows past what materials support
+   erodes geometrically — which is exactly the 561–588 shape.
+
+**No committed metric would have caught this.** `capitalSnowball` is a Gini over library node
+counts and reports `0` for "perfectly equal" and for "everything is gone" alike;
+`libraryDependence` counts single-instance nodes without regard to *where*; `knowledgeHalfLife`
+sees 51 nodes alive throughout. And the balance gates cap at `worldTickCap: 60`, four hundred
+ticks before the collapse begins. `libraryDepth` **is** an observation channel and does fall to
+zero — but nothing runs long enough to look, and no committed record carries node identity, so
+*which* nodes lost their written form is visible nowhere but here.
+
+This is reported, not fixed. It is `rules-world`/`coordination` territory and two workstreams
+deep.
+
+### Per-mage containment — the W20/W21 instrument's first reading
+
+| coordinates | living holders | pairs | incomparable | strict containment | identical | intersection |
+|---|--:|--:|--:|--:|--:|--:|
+| tick 240 | 18 | 153 | **91 (0.595)** | 60 | 2 | 6 |
+| tick 2400 | 56 | 1540 | **309 (0.201)** | 1081 | 150 | 0 |
+
+Two mages in one universe **can** hold incomparable knowledge, and today most young pairs do.
+The interesting part is the trajectory: idiosyncratic coverage is high early and **converges**
+as everyone eventually learns everything, from 0.595 down to 0.201, with repertoires spanning
+2–51 nodes against a 51-node ceiling. W15 measured cross-*strategy* containment at 1.000 —
+strategies nest. Per-*mage* containment does not, and that is a different and more hopeful
+answer. It is also the number W20's anti-requisites and W21's cost curves should move: if they
+work, the terminal figure rises instead of falling.
+
+## Two adjacent findings, reported and not fixed
+
+- **`illegalActionRate` under-reports (audit C7).** Three call sites increment the state
+  counter — `agent-api/src/gate.ts:190`, `coordination/src/god/interventions.ts:240`, and
+  `sim-core/src/step.ts:158` — but `collectIllegalActionRate`
+  (`mc-harness/src/metrics-collectors.ts:959`) reads `telemetry.accounting`, which only the
+  first of the three ever touches. The audit measured 494 dispatch refusals against 76 reported.
+  Nothing in this change goes near those counters, so it stays a report.
+- **`metricDeltas` is always `{}`** — `agent-api/src/outcome.ts:114` and `:127`, both
+  `Object.freeze({})`, honestly so: §7 puts the metric registry in the `agent-interface`
+  capability and the file says populating it here would invent definitions that capability owns.
+  `campaign-plan.md` line 56 records this as W4's.
 
 ## Status
 
-In progress.
+**Done.** Instrument at `packages/agent-api/src/knowledge-census.ts`, reporter at
+`tools/w22/census-report.mjs`.
