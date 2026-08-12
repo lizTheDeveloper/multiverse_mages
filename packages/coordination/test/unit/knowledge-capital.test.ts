@@ -215,6 +215,14 @@ function universe(options: WorldOptions): World {
 /** Five world years, as the other loop tests use. Group 9 owns the long run. */
 const TICKS = 60;
 
+/**
+ * Two five-year universes is two real universes, and the suite runs files in
+ * parallel. Raised from vitest's 5s default for the same reason
+ * `reference-time-to-tier.test.ts` raises its own: a timeout under load is a
+ * scheduling fact reported as a behaviour failure.
+ */
+const TIMEOUT_MS = 120_000;
+
 describe('a deep library makes the mages who work in it faster (vision §6a)', () => {
   it('finishes strictly more research over five years than the same universe with a bare shelf', () => {
     const scholarly = universe({ affiliation: 'scholarly' });
@@ -228,7 +236,7 @@ describe('a deep library makes the mages who work in it faster (vision §6a)', (
     expect(scholarly.totals().researchCompleted).toBeGreaterThan(
       unaided.totals().researchCompleted,
     );
-  });
+  }, TIMEOUT_MS);
 
   it('adds nothing to any rate while the shelves are bare', () => {
     // The other control, and the one that matters for every committed baseline
@@ -247,7 +255,7 @@ describe('a deep library makes the mages who work in it faster (vision §6a)', (
     expect(first.capital).not.toHaveLength(0);
     expect(first.capital.every((entry) => entry.effectiveContribution === 0)).toBe(true);
     expect(first.libraryUpkeepOwed).toBe(0);
-  });
+  }, TIMEOUT_MS);
 
   it('closes the loop: a universe that started with nothing shelved is contributing by year five', () => {
     // The other half of §6a, and the half that makes it a *loop* rather than a
@@ -260,7 +268,7 @@ describe('a deep library makes the mages who work in it faster (vision §6a)', (
       .capital.reduce((sum, entry) => sum + entry.effectiveContribution, 0);
     expect(world.totals().grimoiresScribed).toBeGreaterThan(0);
     expect(total).toBeGreaterThan(0);
-  });
+  }, TIMEOUT_MS);
 });
 
 describe('libraries cost materials to keep (brake 4)', () => {

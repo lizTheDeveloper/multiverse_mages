@@ -68,9 +68,11 @@ export {
   REFERENCE_FACTOR_IDS,
   REFERENCE_SCENARIO_ID,
   buildReferenceState,
+  defaultTraditionIndex,
   referenceContent,
   referenceOptions,
   referenceScenario,
+  traditionOrder,
 } from './reference-universe.js';
 
 export type { ReferenceExecutorOptions, ReferenceRunResult } from './executor.js';

@@ -37,16 +37,16 @@
  *
  * ## Re-measured again after vision §6a's capital loop, and it got worse
  *
- * `w7/knowledge-capital` wired the library's contribution into `research-rate`
- * and gave mastery a way up (`rules-magic`'s `practice.ts`). Both are *shared*
- * accelerations — every mage at a university reads the same shelves, and every
- * mage who works past a node deepens it — so the spread **compressed**.
+ * `w7/knowledge-capital` wired the library's contribution into `research-rate`,
+ * `teach-rate` and `scribe-rate`. It is a *shared* acceleration — every mage at
+ * a university reads the same shelves — so the spread **compressed** rather than
+ * widening.
  *
  * Time to a mage of tier 3, in world ticks, six seeds of a sixty-year run:
  *
  * ```text
- *  gnome     [39,  53]        dwarf  [41,  60]         orc  [42,  63]
- *  human     [44,  57]          elf  [54, 110]    draconic  [72, 280]
+ *  gnome     [39,  53]        dwarf  [41,  54]         orc  [42,  63]
+ *  human     [44,  57]          elf  [54, 110]    draconic  [68, 245]
  * ```
  *
  * Orc left the slow band outright — it was `[61, 76]` — and elf now overlaps
@@ -205,13 +205,12 @@ describe('time to tier, by species', () => {
     // previous version recorded a two-band split of three and three, taken after
     // the `acquire` hook was wired into the real acquisition path.
     // `w7/knowledge-capital` then wired vision §6a's library contribution into
-    // `research-rate` and gave mastery a way up (`rules-magic`'s `practice.ts`),
-    // and both are *shared* accelerations — every mage at a university reads the
-    // same shelves, and every mage who works past a node deepens it. So the
+    // `research-rate`, `teach-rate` and `scribe-rate`. It is a *shared*
+    // acceleration — every mage at a university reads the same shelves — so the
     // spread compressed rather than widening.
     //
-    // Measured, tier 3, in ticks: gnome [39, 53], dwarf [41, 60], orc [42, 63],
-    // human [44, 57], elf [54, 110], draconic [72, 280]. Orc left the slow band
+    // Measured, tier 3, in ticks: gnome [39, 53], dwarf [41, 54], orc [42, 63],
+    // human [44, 57], elf [54, 110], draconic [68, 245]. Orc left the slow band
     // outright — it was [61, 76] — and elf now overlaps *both* the ordinary four
     // and draconic, so the six do not partition into ordered bands at all.
     //
