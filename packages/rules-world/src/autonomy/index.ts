@@ -60,6 +60,7 @@ export type { SplitFrontier } from './candidates.js';
 export {
   MAX_CANDIDATE_TARGETS,
   boundCandidates,
+  compareNovelty,
   compareTargets,
   gatherFrontier,
   withinDepthCeiling,

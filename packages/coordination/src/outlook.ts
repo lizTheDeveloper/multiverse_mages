@@ -180,7 +180,33 @@ function teachableByMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
   return [...found.values()];
 }
 
-/** Nodes this mage holds that her tradition would let her commit to a book. */
+/**
+ * Nodes this mage holds that her tradition would let her commit to a book, and
+ * that the universe can pay the parchment for.
+ *
+ * ## The affordability filter is here, not at the goal's mask
+ *
+ * `isFeasible` masks `scribe` when the stock is below *"the cost of the cheapest
+ * available scribing"*, which is the right question for *may she scribe at all*
+ * and the wrong one for *what should she scribe*. The two were the same question
+ * only while the list was ordered by cost alone, because then the cheapest
+ * target was also the chosen one.
+ *
+ * `candidates.ts` now orders novel-before-cheap, for the reason recorded there,
+ * and that separates them: a mage could pass a mask on a cheap duplicate and
+ * then commit to a novel treatise she cannot afford, spending months against a
+ * requirement no tick can meet. Filtering here keeps the mask's promise and the
+ * choice the same promise — and it is also what vision §6a describes, in the
+ * clause materials exist for: *"a universe can be knowledge-rich and unable to
+ * write any of it down."* A book beyond the stock is not a cheaper option, it is
+ * not an option.
+ *
+ * The stock read is this tick's, before the work phase spends any of it, so two
+ * mages deciding in the same tick are quoted the same number. What one of them
+ * then takes is `contributeScribing`'s business, and a book that becomes
+ * unaffordable between the decision and the desk waits at its requirement rather
+ * than failing — which is the state the clause above is describing.
+ */
 function scribableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
   const found: KnowledgeTarget[] = [];
   const seen = new Set<number>();
@@ -188,7 +214,7 @@ function scribableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
     if (seen.has(nodeId)) continue;
     seen.add(nodeId);
     const target = deps.gateway.scribableBy(mage, nodeId);
-    if (target !== undefined) found.push(target);
+    if (target !== undefined && target.remainingCost <= deps.materials) found.push(target);
   }
   return found;
 }

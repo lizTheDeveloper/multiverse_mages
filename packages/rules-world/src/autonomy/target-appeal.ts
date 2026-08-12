@@ -97,7 +97,7 @@ import { MAGE_ROLE } from '@mm/state';
 import type { KnowledgeTarget } from '../coordination.js';
 import type { AgeBandValue } from './age-bands.js';
 import { AGE_BAND, ageBandOf } from './age-bands.js';
-import { compareTargets } from './candidates.js';
+import { compareNovelty, compareTargets } from './candidates.js';
 import type { MageOutlook } from './outlook.js';
 
 /** Mirrors `@mm/content`'s `TuningStatus` without importing a type for a constant. */
@@ -457,7 +457,16 @@ export function targetAppeal(
 }
 
 /**
- * Orders two scored candidates: higher appeal first, then {@link compareTargets}.
+ * Orders two scored candidates: **novel first**, then higher appeal, then
+ * {@link compareTargets}.
+ *
+ * Novelty is ahead of appeal rather than inside it, and `candidates.ts`'
+ * {@link compareNovelty} carries the argument for why. In one line: a shelf that
+ * already holds a node gains nothing from a second copy that the capital loop
+ * can read, and that is a fact about the shelf rather than a preference of the
+ * mage's — it partitions the list, and the utility score decides inside the
+ * partition. It is inert for every research and teaching candidate, where
+ * `libraryHolds` is absent.
  *
  * **`nodeId` is still the final tie-break.** Appeal is an integer and ties are
  * ordinary, so the fallback is not decoration — it is what keeps the order
@@ -468,6 +477,8 @@ export function compareAppeal(
   a: { readonly score: TargetScore; readonly target: KnowledgeTarget },
   b: { readonly score: TargetScore; readonly target: KnowledgeTarget },
 ): number {
+  const novelty = compareNovelty(a.target, b.target);
+  if (novelty !== 0) return novelty;
   if (a.score.appeal !== b.score.appeal) return b.score.appeal - a.score.appeal;
   return compareTargets(a.target, b.target);
 }

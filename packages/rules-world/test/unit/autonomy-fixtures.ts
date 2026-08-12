@@ -48,8 +48,10 @@ import { shippedRegistry } from './mage-fixtures.js';
  * that one test into three seconds of JSON schema validation, which is time
  * spent proving something no autonomy test is about.
  */
+const registry = shippedRegistry();
+
 const speciesById = new Map<string, SpeciesRecord>(
-  shippedRegistry().species.map((entry) => [entry.record.id, entry.record]),
+  registry.species.map((entry) => [entry.record.id, entry.record]),
 );
 
 /** One shipped species record, by id. */
@@ -66,11 +68,26 @@ export function speciesNamed(id: string): SpeciesRecord {
  * weight table would prove the score responds to its inputs and nothing about
  * whether the shipped content differentiates anything.
  */
-export const appealWeights: TargetAppealWeights = readTargetAppeal(shippedRegistry());
+export const appealWeights: TargetAppealWeights = readTargetAppeal(registry);
 
-/** One species' resolved affinity table, by species id. */
+const affinityCache = new Map<string, SpeciesAffinities>();
+
+/**
+ * One species' resolved affinity table, by species id.
+ *
+ * Memoized for the reason {@link speciesNamed} is: `shippedRegistry()` parses
+ * and validates every content file on **every call**, and the stampede test
+ * builds one outlook per mage per tick for two hundred ticks. Resolving
+ * affinities uncached turned that test from milliseconds into a timeout —
+ * scoring is a pure function of a table that never changes, and paying for the
+ * table per mage is paying for it in the wrong place.
+ */
 export function affinitiesOf(id: string): SpeciesAffinities {
-  return resolveSpeciesAffinities(speciesNamed(id), shippedRegistry());
+  const cached = affinityCache.get(id);
+  if (cached !== undefined) return cached;
+  const resolved = resolveSpeciesAffinities(speciesNamed(id), registry);
+  affinityCache.set(id, resolved);
+  return resolved;
 }
 
 /**

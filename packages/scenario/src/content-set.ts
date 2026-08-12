@@ -258,9 +258,11 @@ export function catalogAndCells(registry: ContentRegistry): {
 /**
  * The deps a world simulation is built from, over shipped content.
  *
- * The four primitives are named because `WorldStepDeps` names them: lifespan
- * gates mortality, resource-yield the harvest, scribe-rate the scriptorium, and
- * fertility the births. Everything else the loop needs it reads out of state.
+ * The six primitives are named because `WorldStepDeps` names them: lifespan
+ * gates mortality, resource-yield the harvest, scribe-rate the scriptorium,
+ * fertility the births, and research-rate and teach-rate the accumulator vision
+ * §6a's library contributes into. Everything else the loop needs it reads out of
+ * state.
  */
 export function worldDeps(registry: ContentRegistry, traditionId: ContentId): WorldStepDeps {
   const { catalog, cells } = catalogAndCells(registry);
@@ -275,15 +277,7 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
   // §5 does not grant `scenario` an edge to `@mm/primitives`, and the
   // dependency-graph test is right to refuse one. This file wires; it does not
   // compute.
-  const effects = godEffectHooks({
-    constants: god.constants,
-    primitives: {
-      researchRate: primitiveNamed(registry, 'research-rate'),
-      teachRate: primitiveNamed(registry, 'teach-rate'),
-      lifespan,
-    },
-    cells,
-  });
+  const effects = godEffectHooks({ constants: god.constants, cells });
 
   // Species affinities are resolved once per species, not once per mage per
   // tick: six records against potentially thousands of mages, and the answer is
@@ -309,6 +303,8 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),
+      researchRate: primitiveNamed(registry, 'research-rate'),
+      teachRate: primitiveNamed(registry, 'teach-rate'),
       scribeRate: primitiveNamed(registry, 'scribe-rate'),
       fertility: primitiveNamed(registry, 'fertility'),
     },
