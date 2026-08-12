@@ -15,6 +15,7 @@
     { "path": "../state" },
     { "path": "../rules-magic" },
     { "path": "../rules-world" },
+    { "path": "../rules-raid" },
     { "path": "../coordination" },
     { "path": "../agent-api" },
     { "path": "../mc-harness" }
