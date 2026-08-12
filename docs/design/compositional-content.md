@@ -528,6 +528,41 @@ a second verb whose payoff is not dominated by permitting — or making permitti
 edict budget (§4's dispensations and interdictions) is the mechanism the vision already has for that,
 and it is currently free to ignore.
 
+## 6.6 The balance baselines, regenerated once, and what moved
+
+Regenerated at the end of the workstream with a written rationale naming all five mechanisms — the
+51 → 108 v1 graph, `researchCost` ceasing to be a function of tier, `knowledgeEffectHooks` making
+held knowledge live, `lifespan` moving from `additive` to `diminishing` stacking, and per-mage
+exclusions refusing acquisitions that were previously legal. **No golden replay fixture was
+regenerated**, and none needed to be: the goldens are pure `sim-core` scenarios with zero content
+dependency, which is worth knowing the next time a content change looks like it should move them.
+
+The horizon gate (240 ticks) carries the two numbers worth reading:
+
+| metric | before | after | delta |
+|---|--:|--:|--:|
+| `referenceNodesKnown` | 46.91 | **66.855** | **+19.9** |
+| **`referenceNodesGainedFinalQuarter`** | **2.055** | **5.345** | **+3.29** |
+| `referenceGrimoires` | 361.33 | 410.93 | +49.6 |
+| `referenceKnowledgeInstances` | 1015.77 | 1049.225 | +33.5 |
+| `referenceLibraryDepth` | 25.09 | **22.765** | **−2.33** |
+| `referenceLivingMages` | 37.785 | 37.87 | +0.09 |
+| `referencePopulation` | 211.685 | 212.3 | +0.62 |
+
+**`referenceNodesGainedFinalQuarter` is the one to read.** It more than doubled. That metric exists
+to detect a plateau — a universe that has stopped learning because it has run out of things to learn
+— and the campaign's diagnosis was that it sits near zero because 51 nodes exhaust in about a quarter
+of a run. A universe still gaining five nodes in its final quarter has not finished, which is the
+first direct evidence that the exhaustion plateau moved rather than merely shifted upward. Set beside
+§6.3's finding that the *wide* configuration exhausts at 318, it says the same thing twice: the v1
+rectangle's new size is roughly right, and enablement overshoots it.
+
+**Population is unmoved** (+0.62, 0.47 SE) and **living mages are unmoved** (+0.09), which is the
+control this set of changes needed: nothing here was supposed to touch the demographic loop, and it
+did not. `referenceLibraryDepth` fell by 2.33, which is the one movement pointing the wrong way and
+is consistent with §6a's scribing gap — the real per-tick scribing accrual is still hardcoded
+`NO_BONUSES`, so more nodes to write about did not buy more writing.
+
 ## 6a. What the build found on the way, recorded rather than smoothed over
 
 Six things surfaced while implementing this that are worth more than the code that fixed them.
