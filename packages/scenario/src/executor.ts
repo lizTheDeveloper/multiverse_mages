@@ -56,7 +56,7 @@ import { censusOf } from './census.js';
 import type { RunMeasurement } from './measures.js';
 import { REFERENCE_METRIC_VERSIONS, collectReferenceMetrics } from './measures.js';
 import type { ReferenceContent } from './reference-universe.js';
-import { referenceContent, referenceScenario } from './reference-universe.js';
+import { TRADITION_FACTOR_ID, referenceContent, referenceScenario } from './reference-universe.js';
 
 /**
  * The build every reference record claims to have run against.
@@ -254,6 +254,60 @@ export interface ReferenceExecutorOptions {
   readonly censusIntervalTicks?: number;
 }
 
+/**
+ * Content resolved per tradition, memoized for the life of the process.
+ *
+ * The tradition cannot ride in {@link ReferenceExecutorOptions.content} the way
+ * everything else does, because it is chosen by a *sweep level* and the content
+ * is resolved before any task is seen. Memoizing keeps the promise
+ * `makeReferenceExecutor` makes — that a worker pays for the three hundred
+ * nodes, the seventy-cell grid and the territory once rather than once per run —
+ * while letting a worker serve more than one tradition. Nothing in a
+ * `ReferenceContent` is written to, so sharing one across runs is the same claim
+ * the executor already makes.
+ */
+const CONTENT_BY_TRADITION = new Map<string, ReferenceContent>();
+
+/**
+ * The tradition level a task names, validated.
+ *
+ * Refuses a non-string for the reason `referenceOptions` refuses a mistyped
+ * count: a level the scenario cannot read would run the default and be recorded
+ * as the level that was asked for.
+ */
+function traditionOf(task: RunTask): string | undefined {
+  const level = task.levels[TRADITION_FACTOR_ID];
+  if (level === undefined) return undefined;
+  if (typeof level !== 'string') {
+    throw new Error(
+      `Factor ${TRADITION_FACTOR_ID} has level ${JSON.stringify(level)}, which is not a string. ` +
+        "A tradition is named by its `tradition.json` id — 'vancian-memorization', " +
+        "'true-naming', 'art-of-memory' — never by its interned number, which is assigned by " +
+        'sorting the ids and would move the day a tradition is added.',
+    );
+  }
+  return level;
+}
+
+/**
+ * The content one task runs against: the explicitly supplied set unless the task
+ * names a tradition, in which case the tradition wins.
+ *
+ * The precedence matters. `makeReferenceExecutor` pre-resolves content and hands
+ * it to every run, so a sweep declaring a `tradition` factor against a
+ * pre-resolved executor would otherwise have its levels silently ignored and
+ * every arm would measure the default tradition.
+ */
+function contentForTask(task: RunTask, options: ReferenceExecutorOptions): ReferenceContent {
+  const named = traditionOf(task);
+  if (named === undefined) return options.content ?? referenceContent();
+  const memoized = CONTENT_BY_TRADITION.get(named);
+  if (memoized !== undefined) return memoized;
+  const resolved = referenceContent(options.content?.registry, named);
+  CONTENT_BY_TRADITION.set(named, resolved);
+  return resolved;
+}
+
 /** One completed run, before it becomes a record. */
 export interface ReferenceRunResult {
   readonly outcome: RunOutcome;
@@ -272,7 +326,7 @@ export function executeReferenceRun(
   task: RunTask,
   options: ReferenceExecutorOptions = {},
 ): ReferenceRunResult {
-  const content = options.content ?? referenceContent();
+  const content = contentForTask(task, options);
   const interval = options.censusIntervalTicks ?? CENSUS_INTERVAL_TICKS;
 
   const { scenario, lastGodReport } = referenceScenario(content);

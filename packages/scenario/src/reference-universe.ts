@@ -85,6 +85,7 @@ import {
   scribingTraditionId,
   shippedContent,
   speciesTable,
+  traditionIdNamed,
   v1RulesetAxes,
   worldDeps,
 } from './content-set.js';
@@ -169,7 +170,27 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'cohortSize',
   'foundingMages',
   'foundingNodes',
+  'tradition',
 ]);
+
+/**
+ * The factor naming the universe's tradition (`vision.md` §4a).
+ *
+ * Unlike the other three it is not a {@link ReferenceOptions} field, because it
+ * is not read when the tick-zero state is built: the tradition's `store` and
+ * `acquire` hooks are baked into `WorldStepDeps` before `Scenario.create` is
+ * called at all. The executor therefore reads this level while resolving
+ * content, not while building state. See `executor.ts`.
+ *
+ * **A warning for whoever sweeps it next.** A run's seed is a function of its
+ * `cellIndex` (`mc-harness/src/seed.ts`), and each level of a factor takes its
+ * own cell. Declaring `tradition` with three levels in one sweep file therefore
+ * compares three traditions *and* three different sets of universes, and the
+ * tradition effect cannot be separated from the seed effect. To hold common
+ * random numbers, give this factor **one** level and write one file per
+ * tradition, all sharing a `sweepId` and `rootSeed`.
+ */
+export const TRADITION_FACTOR_ID = 'tradition';
 
 /**
  * Reads one option out of a scenario config, or refuses.
@@ -228,9 +249,25 @@ export interface ReferenceContent {
   readonly prestigeCap: number;
 }
 
-/** Resolves everything a reference universe needs out of a content registry. */
-export function referenceContent(registry: ContentRegistry = shippedContent()): ReferenceContent {
-  const traditionId = scribingTraditionId(registry);
+/**
+ * Resolves everything a reference universe needs out of a content registry.
+ *
+ * @param traditionName - The `tradition.json` id the universe should hold, or
+ * `undefined` for {@link scribingTraditionId}'s pick. Named rather than interned
+ * because the interned ids are assigned by sorting the id strings, so the number
+ * that means "True Naming" is a fact about the alphabet and would move the day a
+ * tradition is added — a sweep file that named `2` would then silently be an arm
+ * for something else. Absent means byte-identical to the behaviour before this
+ * parameter existed, which is what keeps the committed baselines meaningful.
+ */
+export function referenceContent(
+  registry: ContentRegistry = shippedContent(),
+  traditionName?: string,
+): ReferenceContent {
+  const traditionId =
+    traditionName === undefined
+      ? scribingTraditionId(registry)
+      : traditionIdNamed(registry, traditionName);
   return {
     registry,
     traditionId,
