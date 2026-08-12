@@ -61,16 +61,18 @@ failure.
 
 - **Steps 1–6** — `typecheck`, `lint`, `check:purity`, `check:content`, `check:audio`,
   `check:coverage` — passed on both runs; the chain reached the test step each time.
-- **The test step: every test passes and the step still exits 1.** Run 2 reports
-  **3,912 passed (3,912)** across **279 passed (279)** files, **zero failures**, and one
-  *unhandled* error: `Error: [vitest-worker]: Timeout calling "onTaskUpdate"`. That is a worker RPC
-  timeout, not an assertion; the likeliest cause is `reference-long-run.test.ts`, whose single
-  determinism case takes ~93 s and starves the worker's status channel. Reproduced 2 of 2 runs.
-- **A collection discrepancy worth someone's attention.** Run 1 reported **3,872 tests in 275
-  files**, run 2 **3,912 in 279**, on an unchanged tree with a clean `git status`. Run 1's numbers
-  are exactly the ones `campaign-plan.md` records for the integration round-2 close-out. Four files'
-  results going missing is consistent with the same RPC timeout dropping them, which would mean the
-  flake can silently *reduce* the reported suite. Named, not diagnosed.
+- **The test step exits 1 under load and 0 idle, with every test passing either way.** Both chain
+  runs ended `Errors 1 error` — one *unhandled* `Error: [vitest-worker]: Timeout calling
+  "onTaskUpdate"`, a worker RPC timeout rather than an assertion, with **zero failing tests**. Run
+  standalone on an otherwise idle machine the same step reports **3,872 passed (3,872)** across
+  **275 passed (275)** files, no unhandled error, **exit 0**. So the flake is contention-dependent,
+  and the likeliest cause is `reference-long-run.test.ts` — one determinism case takes 47–93 s
+  depending on load and starves the worker's status channel.
+- **A collection discrepancy worth someone's attention.** The two erroring runs disagreed with each
+  other: **3,872 tests in 275 files** and **3,912 in 279**, on an unchanged tree with a clean
+  `git status`. The clean idle run reproduces 3,872/275, which is also what `campaign-plan.md`
+  records for the integration round-2 close-out — so 3,912/279 is the outlier, and a suite whose
+  own size moves under load is worth a look. Named, not diagnosed.
 - **The three balance gates never ran inside the chain** — `&&` stops at the failing step — so they
   were run standalone. All three **PASS**, with **delta 0.00000 (0.00 SE) on every metric in every
   gate**: `balance-gate-v1` (200 runs), `balance-gate-horizon-v1` (200 runs),
@@ -173,9 +175,10 @@ Kept here so they survive the branch.
   `winRateByPrimitive` — the primitive-contribution metric that sentence is about — reports
   `unavailable`. Verified directly against
   `balance/baselines/balance-gate-ascension-v1.baseline.json` on this branch.
-- **`npm run verify` exits 1 on this branch for a reason no branch caused** — a vitest worker RPC
-  timeout with zero failing tests. Detailed above. It is a `verify` defect and therefore a CI
-  defect, since `scripts/ci-check.sh` must stay equivalent to it.
+- **`npm run verify` fails under machine contention, for a reason no branch causes** — a vitest
+  worker RPC timeout with zero failing tests, which disappears on an idle machine. Detailed above.
+  It is a `verify` defect and therefore a CI defect, since `scripts/ci-check.sh` must stay
+  equivalent to it and the self-hosted runner shares a box with other work.
 - **`campaign-plan.md:920` on `origin/pm/campaign-plan` calls the v1 grid *"twelve parallel
   staircases"*.** It is a lattice — eleven cross-cell edges, longest chain six nodes deep. §4 now
   says so; that line is on the coordinator's own branch and is theirs to correct.
