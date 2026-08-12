@@ -2307,8 +2307,8 @@ function paintDossier() {
     note.innerHTML = 'The raid is over. Nothing left to hold.';
   } else if (S.holds.a > 0 && S.favor < price) {
     note.dataset.who = 'a';
-    note.innerHTML = 'The expedition has the clock. Taking it back costs <b>' + price +
-      ' favor</b> and you have ' + S.favor + '.';
+    note.innerHTML = 'They took the clock back and the action is running. Stopping it again costs <b>' +
+      price + ' favor</b>, and you have ' + S.favor + '.';
   } else {
     note.dataset.who = S.favor >= price ? 'none' : 'a';
     note.innerHTML = 'The action is running. Holding it costs <b>' + price + ' favor</b>' +
