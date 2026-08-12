@@ -205,8 +205,8 @@ Report order, fixed in advance:
 - [x] Merge 6 — `w25/spec-refresh`, verify, record, push
 - [x] Golden fixtures: checked at every merge — unchanged at all seven
 - [x] Baselines regenerated once, with the single rationale
-- [ ] The 2400-tick sweep at n ≥ 400, ten strategies, coverage asserted
-- [ ] D1–D9 reported with real numbers, each `failed` or `saturated`
+- [x] The 2400-tick sweep at n ≥ 400, ten strategies, coverage asserted
+- [x] D1–D9 reported with real numbers, each `failed` or `saturated`
 
 ## Record — what moved after each merge
 
@@ -516,3 +516,25 @@ delta `0.00000` on every metric.**
 
 **Not one figure in any of the three gates was outside tolerance before regeneration.** The reason
 they were invalid is provenance, not movement.
+
+### The measurement, and the end state
+
+Four arms at n = 400, 2,400 ticks, ten strategies with both adversarial probes, coverage asserted:
+`r3-vancian` (reference), `r3-gnome`, `r3-human`, `r3-orc`. Full numbers in
+`docs/design/integration-round-3-results.md`; raw analyser output in `balance/results-integration-r3.txt`.
+
+**`permit-then-idle` wins 38/40** in the reference arm, holding the pool's highest node count.
+
+**The single regeneration was run twice, and the second run is the finding.** The first passed
+`--rationale` and no `--note`, which replaced W24's `notes` array with nothing.
+`balance-ci-wiring.test.ts` caught it the only way that matters: `release-plan.md` forbids a balance
+claim before 0.5.0, and each baseline must **say so in the file** — prose containing both `0.5.0`
+and `degenerate`. The rationale carried the first; the dropped note carried the second. Re-run
+against the same tree with the same rationale and the note restored, now stating round 3's own
+degeneracy rather than round 2's.
+
+**Final `npm run verify`: EXIT=0 — 285 test files / 4,038 tests, all three balance gates PASS.**
+
+**No golden fixture was regenerated or changed at any of the seven merges.** Fingerprints
+`baa53d12` / `0c6e4eee` / `3f039155`, byte-identical to round 2, and
+`git diff origin/integration/campaign-round-2...HEAD -- packages/sim-core` is empty.
