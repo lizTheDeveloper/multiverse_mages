@@ -650,3 +650,60 @@ mechanism, reached by its published name, no third path.
 **Note the measurement gap:** W8's 0.854 was measured **without** W6's positive-achievement
 predicates, which independently reached **0.125**. The two have never been measured together.
 Integration is now the critical path.
+
+---
+
+## Round 2 close-out: the instruments were wrong, and the ceiling is the answer
+
+### Three defects in the campaign's own instruments, found by adversarial verification
+
+1. **The tuner ran a six-strategy pool.** `assignStrategies` under round-robin is
+   `strategies[replicateIndex % poolSize]` — **`cellIndex` never enters** — and `tune-balance.mjs`
+   defaults to `--replicates 6` against an eight-strategy sweep. `portal-rush` and
+   `worship-maximizer` were never assigned. **`ascension-summit-cells = 13` was chosen by a scan
+   missing a quarter of the pool.** Pinned in `round-robin-coverage.test.ts`.
+2. **D2 is D1 restated.** `scoreBalance` computes `poolMean` *including* the probe, so
+   `exploitMargin ≡ ascensionRate − probeRate`, and `EXPLOIT_MARGIN_MIN` equals `band.min`.
+   Measured 0.1250 and 0.1250 — the same number twice.
+3. **D4's correlation is one point against a cluster.** +0.955 over eight points, seven at rate 0;
+   drop the winner and Pearson is undefined. **Spearman is 0.615.**
+
+### The win condition reads the ruleset, not play
+
+`permit-then-idle` — permit actions for **140 of 2400 ticks**, then an empty preference list for the
+remaining 2260 — scores **12/12, 231.0 nodes, apotheosis 6 / canon 6**: `permissive-breadth`'s exact
+profile on different seeds. Funding, dispensations and research encouragement contribute **nothing**.
+Adding the probe pushes `ascensionRate` to **0.2500, out of band** — so the band was a property of
+pool composition, not of the ruleset.
+
+We replaced *"idle, then press the button"* with *"permit everything, then idle."* Same defect, one
+level up.
+
+**What survived:** the identity property, confirmed twice — a differential test over **40,000
+randomised fact sets** with zero disagreements, plus an end-to-end run reproducing the pre-change
+table cell for cell.
+
+### W17: the acquirer is fixed; the metrics were saturated
+
+All four thresholds failed, for a reason that is not the selector: **five of seven unrestricted
+strategies still hold all 51 reachable v1 nodes.** A set containing everything is contained in every
+other set, so containment 1.000 and prefix fidelity are arithmetic about the ceiling.
+
+Everything unsaturated moved: effort-shape participation ratio **2.39 → 4.89**, human's cross-seed
+intersection **37 → 0**, every species ~2× faster to tier 3 with the spread reopened into three
+bands. And the summary in two rows: at 600 ticks `nodesKnown` **22.1 → 29.4 (+48.6 SE)**; at 2400
+ticks **unchanged**. **Much sooner, same place.**
+
+It also established what made the original defect total: **v1 `researchCost` is a pure function of
+tier**, with zero within-tier variation — so the old ordering was literally "tier, then node id",
+one queue for every mage in every universe.
+
+### Four independent confirmations, one conclusion
+
+W15 (prefix fidelity), W13 (teaching buys 0.0 nodes), W7 (the loop moves rate not ceiling), W17
+(saturation) all say the same thing. **A universe must not be able to exhaust the reachable set.**
+W8's looting is the only mechanism yet measured that crosses the ceiling — ~9 nodes per run from
+cells the god forbids.
+
+**Report every acceptance criterion as `failed` or `saturated` from here on.** They are different
+findings and only one of them is about the game.
