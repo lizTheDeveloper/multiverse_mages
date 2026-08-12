@@ -204,8 +204,9 @@ tally is present — never an endpoint. Any such smoke run is disclosed in the r
 
 ### Validity gate (checked first; failing it invalidates the comparison, it does not make it "shaped")
 
-- **G1 — spend parity.** Total favor actually spent by Bot A and Bot B differ by **≤ 5%** of the
-  larger. Measured and reported by action id, never assumed.
+- **G1 — spend parity.** Applied favor **per tick run** — total spend divided by `ticksRun` — differs
+  between Bot A and Bot B by **≤ 5%** of the larger. Measured and reported by action id, never
+  assumed. See the amendment below for why this is a rate and not a total.
 - **G2 — identical rulesets.** Both arms permit the same axes at the same ticks. Asserted from the
   bot definitions and confirmed by the permitted-cell count at the tick-600 checkpoint.
 - **G3 — CRN.** Pairwise run-seed mismatches across arms = **0**.
@@ -213,6 +214,45 @@ tally is present — never an endpoint. Any such smoke run is disclosed in the r
 
 If G1 fails, the result is reported as **invalid**, with the spend gap named. It is not reported as
 a divergence.
+
+#### Amendment to G1, made while the sweeps were in flight and before any endpoint was read
+
+G1 was written as a comparison of **total** favor spent. That is wrong, and wrong in the specific
+direction that would have destroyed the experiment's most interesting outcome.
+
+Both arms declare `whenEligible`, so `ticksRun` **ends at first ascension** — and ascension timing is
+an *outcome*, not a controlled input. If one arm ascends earlier than the other on the same seeds, it
+mechanically runs fewer allocation rounds and mechanically spends less. **The more shaped the result,
+the larger the total-spend gap, and the more likely the original G1 would have declared the run
+invalid.** A gate that fails precisely when the finding is real is not a gate.
+
+The same failure has a second route. If allocation changes worship, it changes the favor cap and the
+worship tier, which changes what is affordable, which changes applied spend. That is **economy
+divergence produced by allocation** — it is shape, not contamination — and the original G1 could not
+tell it from the design artifact it was actually built to catch, which is Bot B rotating into an
+out-of-range slot and silently buying less.
+
+So the gate becomes a **rate**: applied favor per tick run. And when the raw totals differ by more
+than the tolerance, the difference is **decomposed** rather than ruled on:
+
+1. **Horizon.** The portion explained by the `ticksRun` difference at the scheduled spend rate. This
+   is an outcome and is reported as one; it does not invalidate.
+2. **Design artifact.** The portion appearing as gate rejections in `accounting.byActionId` — an
+   invalid slot index, which is Bot B's specific risk. **This invalidates**, and it is the thing G1
+   was always for.
+3. **Residual.** What is left is affordability divergence on rounds where both arms named a valid
+   slot. Reported as a **finding** — it means allocation moved the economy.
+
+Every input to that decomposition is already in the records.
+
+#### What the plumbing smoke run read, disclosed
+
+Before this rule was operationalized, a two-run smoke sweep at a **300-tick cap** was executed to
+confirm the new fields exist. What was read from it: `runSeed` and `coordinates`, the strategy id,
+the *keys and values* of `godSpendByAction`, the list of `censusTrace` tick numbers, `accounting`, and
+`ticksRun`. **No census values and no node counts were read**, and a 300-tick cap cannot produce the
+tick-600 endpoint at all. The 300-tick spend figures informed the amendment's arithmetic and nothing
+else.
 
 ### Primary endpoints
 
