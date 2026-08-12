@@ -77,6 +77,10 @@ export interface GodConstants {
   readonly hysteresisDecayTicks: number;
   readonly hysteresisStep: Fp;
 
+  // The timing rule. `sound-design.md` §5.2's eight bars — see `timing.ts`.
+  readonly uneaseBars: number;
+  readonly uneaseStep: Fp;
+
   // Upheaval.
   readonly upheavalTicks: number;
   readonly upheavalShockFloor: Fp;
@@ -175,6 +179,9 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     favorCapPerTier: value('favor-cap-per-tier'),
     hysteresisDecayTicks: value('hysteresis-decay-ticks'),
     hysteresisStep: value('hysteresis-step'),
+
+    uneaseBars: value('unease-bars'),
+    uneaseStep: value('unease-step'),
 
     upheavalTicks: value('upheaval-ticks'),
     upheavalShockFloor: value('upheaval-shock-floor'),

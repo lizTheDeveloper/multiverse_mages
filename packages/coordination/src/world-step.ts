@@ -170,6 +170,7 @@ import {
   subsistenceDemand,
 } from '@mm/rules-world';
 
+import type { EnvelopeResolver } from './envelopes.js';
 import type { LibraryCapital } from './capital.js';
 import { libraryCapital } from './capital.js';
 import { EffortLedger } from './effort-store.js';
@@ -207,6 +208,16 @@ export interface WorldStepDeps {
   readonly speciesOf: (speciesId: number) => SpeciesRecord | undefined;
   readonly catalog: NodeCatalog;
   readonly cells: CellResolver;
+  /**
+   * A node's technique envelope — `sound-design.md` §4.1's shape over the
+   * duration an acquisition takes.
+   *
+   * Optional for the same reason `agent-api`'s hooks are: a loop built over a
+   * synthetic content set has no technique records to read one from, and the
+   * flat curve it falls back to is both Rego's shape and exactly what this loop
+   * did before envelopes existed.
+   */
+  readonly envelopes?: EnvelopeResolver;
   /**
    * A node's cell, form and effect primitives, and a species' resolved
    * affinities.
@@ -603,6 +614,7 @@ export function worldSystem(
           knowledge,
           catalog: deps.catalog,
           cells: deps.cells,
+          ...(deps.envelopes === undefined ? {} : { envelopes: deps.envelopes }),
           facets: deps.facets,
           nodesByCell,
           ruleset,

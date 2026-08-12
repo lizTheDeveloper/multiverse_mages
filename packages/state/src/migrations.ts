@@ -80,6 +80,7 @@ import type {
 import { decodeSnapshot, envelopeToState } from '@mm/sim-core';
 
 import {
+  BAR_PHASE,
   BLESSING,
   EFFORT_PROGRESS,
   ERA_EVALUATION,
@@ -100,6 +101,7 @@ import {
  * | 3        | `mages-and-species` | adds `effort-progress` (`contracts.md` §1.2)  |
  * | 4        | `god-agency`        | adds `god-state`, `blessing`, `upheaval`, `era-evaluation` (§1.1) |
  * | 5        | `university-siting` | adds `territory-holding` (§1.1) and `university-site` (§1.4) |
+ * | 6        | W21 timing          | adds `bar-phase` — sound-design §5.2's eight-bar unease |
  *
  * Revision 4 adds four components in one step, where the two before it added
  * one each. That is not a loosening of the rule — it is what the rule is for.
@@ -113,10 +115,20 @@ import {
  * without a holding to stand in, and no build has ever shipped one without the
  * other.
  *
+ * Revision 6 adds `bar-phase` alone. It arrived on `w21/timing-and-envelopes`
+ * numbered 5, because that branch and `university-siting` were both cut from a
+ * tree whose newest revision was 4 and neither could see the other. **Two
+ * different revision 5s cannot both exist** — the number is what a step is keyed
+ * on — so integration renumbered this one to 6 rather than merging two
+ * incompatible definitions of the same revision. That is a renumbering *before*
+ * either shipped, which the rule below permits and is the only moment it is
+ * safe: no snapshot in existence carries `bar-phase`, so no save can be keyed to
+ * the revision it used to claim.
+ *
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 5;
+export const WORLD_SCHEMA_VERSION = 6;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -134,6 +146,12 @@ export const WORLD_SCHEMA_VERSION = 5;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  // Newest marker first, which is what makes this readable top-down and is why
+  // `bar-phase` sits above `territory-holding` rather than where the merge put
+  // it: a revision-6 envelope carries both, so testing for revision 5's marker
+  // first would report every current snapshot as one revision behind and run a
+  // migration over a save that is already up to date.
+  if (carried.has(BAR_PHASE.name)) return 6;
   // `territory-holding` is revision 5's marker on the same grounds `god-state`
   // is revision 4's: it is the first of the pair in `WORLD_COMPONENTS`, so an
   // envelope that somehow carried only the second reads as the older revision
@@ -320,12 +338,46 @@ export const addTerritorySiting: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 5 → 6: append an empty `bar-phase` section.
+ *
+ * `sound-design.md` §5.2's eight-bar unease needs one integer per universe, and
+ * §1.1's note on `god-state` says plainly which shape to give it: an added
+ * component is an appended empty section, an added *field* reshapes a section
+ * and rewrites every older save column by column.
+ *
+ * Empty, for the reason the four steps before it were. No row means the
+ * universe has never changed its own law, which is true of every save written
+ * before the rule existed — and a synthesised row would hand a restored
+ * universe a decaying unease over an act nobody ever committed, which is the
+ * cost surcharge equivalent of inventing a `favorWasted` nobody wasted.
+ *
+ * **This step was authored as 4 → 5** on `w21/timing-and-envelopes`, which was
+ * cut from the same revision-4 tree as `university-siting` and could not see it.
+ * Integration renumbered it rather than collapsing two unrelated component sets
+ * into one revision, which would have made a revision-5 save ambiguous about
+ * what it carried. A revision-4 envelope now walks 4 → 5 → 6 and gains all three
+ * sections; the two steps stay independently exercisable, which is the property
+ * that made splitting them worth the renumber.
+ */
+export const addBarPhase: WorldSchemaMigration = {
+  from: 5,
+  to: 6,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(BAR_PHASE)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
   addEffortProgress,
   addGodAgencyState,
   addTerritorySiting,
+  addBarPhase,
 ];
 
 /**

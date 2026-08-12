@@ -76,8 +76,8 @@
 import type { ContentId, Fp } from '@mm/content';
 import type { Handle, Ruleset, Tick } from '@mm/state';
 import { LOCATION_KIND, permits } from '@mm/state';
-import type { RediscoveryClampCounter } from '@mm/primitives';
-import { effectiveRediscoveryMultiplier } from '@mm/primitives';
+import type { EffortEnvelope, RediscoveryClampCounter } from '@mm/primitives';
+import { effectiveRediscoveryMultiplier, shapedEffort } from '@mm/primitives';
 import { FP_ONE, RNG_STREAM, div, mul, nextBounded } from '@mm/sim-core';
 
 import type { AcquirePolicy } from '../traditions/acquire.js';
@@ -163,6 +163,24 @@ export interface ResearchInputs {
    * is what `store: standard` resolves to.
    */
   readonly store?: PersonalStore;
+  /**
+   * The technique's envelope — `sound-design.md` §4.1's shape over this
+   * acquisition's own duration.
+   *
+   * Optional, and **omitting it is exactly the behaviour this file had before
+   * envelopes existed**: `shapedEffort` returns the effort unchanged, which is
+   * also what Rego's flat curve returns. That is what makes threading a
+   * per-technique shape through the acquisition path safe to do incrementally —
+   * a caller that has not resolved a technique is not silently given someone
+   * else's curve.
+   *
+   * It is deliberately *not* a fifth tradition hook. Vision §4a fixes the hooks
+   * at four and sound-design §4.4 says a tradition recolours cast and cost; the
+   * curve is technique content, and it composes with {@link
+   * ResearchInputs.acquire} multiplicatively — `acquire` prices the node, the
+   * curve redistributes effort across that price.
+   */
+  readonly envelope?: EffortEnvelope;
 }
 
 export interface ResearchOutcome {
@@ -286,7 +304,17 @@ export function research(inputs: ResearchInputs): ResearchOutcome {
 
   const stream = inputs.rng.actorStream(RNG_STREAM.research, inputs.subject);
   const jitter = nextBounded(stream, RESEARCH_JITTER_SPAN * 2 + 1) - RESEARCH_JITTER_SPAN;
-  const progress = inputs.progress + mul(inputs.effort, FP_ONE + jitter);
+  // The envelope shapes the effort *before* the jitter, so a curve moves the
+  // month's work and the stream-3 draw stays a property of the mage and the
+  // tick. Shaping after the jitter would have been arithmetically similar and
+  // would have made a technique's curve able to change how much randomness a
+  // month carries, which is a different claim than the one §4.1 makes.
+  //
+  // Shaped against the progress standing at the *start* of the step, because
+  // that is the position the month is worked from. Using the post-step figure
+  // would make a slot boundary depend on the size of the step that crossed it.
+  const effort = shapedEffort(inputs.envelope, inputs.effort, inputs.progress, required);
+  const progress = inputs.progress + mul(effort, FP_ONE + jitter);
 
   if (progress < required) {
     return { progress, required, rediscovery, completed: false, instance: 0 };

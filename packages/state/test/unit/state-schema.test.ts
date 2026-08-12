@@ -171,6 +171,16 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // without the other.
       'territory-holding',
       'university-site',
+      // Appended as world-schema revision **6**: sound-design.md §5.2's eight-bar
+      // unease, which is the one duration the design attaches to a
+      // constitutional act. A component rather than two more fields on
+      // `god-state`, because a section carries its field table inline — see
+      // §1.1's own note on why widening a row is the expensive shape.
+      //
+      // Authored as revision 5 on its own branch, which was cut from the same
+      // revision-4 tree as `university-siting`. Renumbered at integration, before
+      // either shipped, because two different revision 5s cannot both exist.
+      'bar-phase',
     ]);
   });
 

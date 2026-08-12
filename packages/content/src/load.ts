@@ -365,6 +365,7 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
+  checkEnvelopes(documents.technique, out);
 
   checkCells(documents.cell, techniqueById, formById, nodeById, out);
   checkNodes(documents.node, cellById, nodeById, primitiveById, out);
@@ -449,6 +450,72 @@ function checkBits(
           '',
           'bit-assignment',
           `bit ${String(bit)} is unassigned — bit assignments must be dense over 0..${String(count - 1)}`,
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * Fixed-point scale, restated here because this package may not reach `sim-core`.
+ *
+ * `@mm/content` is dependency-free by mechanical check (`check:purity`), so the
+ * one shared `FP_ONE` in `sim-core/fixed-point` is out of reach. The value is
+ * `contracts.md` §0's and is not a choice this file gets to make.
+ */
+const ENVELOPE_FP = 1024;
+
+/** `@mm/primitives`' `ENVELOPE_SLOTS`, restated for the same reason. */
+const ENVELOPE_SLOT_COUNT = 8;
+
+/**
+ * Asserts each technique's envelope redistributes work rather than discounting it.
+ *
+ * `sound-design.md` §4.1 makes each technique a *shape* over an acquisition's
+ * own duration, and a shape that made a technique cheaper would be a balance
+ * change wearing a design change's clothes. The invariant is that the slot
+ * reciprocals sum to the flat curve's — a slot with multiplier `m` is crossed
+ * at rate `m` and so consumes months proportional to `1/m`, which makes
+ * `Σ 1/mᵢ` the total cost and holding it fixed the definition of *same cost,
+ * different shape*.
+ *
+ * **This is the second implementation of that sum and it is deliberate.**
+ * `@mm/primitives`' `envelopeHarmonicSum` is the arithmetic of record; the
+ * loader cannot call it, because `primitives` depends on this package and the
+ * edge may not run the other way. The two are bound instead by a conformance
+ * test in `rules-magic`, which can see both — the same remedy, for the same
+ * reason, as the rediscovery multiplier's. `Math.floor` over non-negative
+ * integers is `floorDiv` exactly, which is what makes the two agree rather than
+ * merely resemble each other.
+ *
+ * A schema-invalid `slots` array is left alone here: phase 2 has already
+ * reported it, and a second diagnostic about the same field would make one
+ * mistake look like two.
+ */
+function checkEnvelopes(
+  techniques: readonly TechniqueRecord[],
+  out: ContentDiagnostic[],
+): void {
+  const file = 'technique.json';
+  for (let position = 0; position < techniques.length; position += 1) {
+    const technique = techniques[position];
+    const slots = technique?.envelope?.slots;
+    if (slots === undefined || slots.length !== ENVELOPE_SLOT_COUNT) continue;
+    if (slots.some((slot) => !Number.isInteger(slot) || slot <= 0)) continue;
+
+    let harmonic = 0;
+    for (const slot of slots) harmonic += Math.floor((ENVELOPE_FP * ENVELOPE_FP) / slot);
+    const target = ENVELOPE_SLOT_COUNT * ENVELOPE_FP;
+    if (harmonic !== target) {
+      out.push(
+        diagnostic(
+          file,
+          `${pointerAppend('', position)}/envelope/slots`,
+          'envelope-imbalance',
+          `technique "${technique?.id ?? '?'}" carries envelope "${technique?.envelope?.id ?? '?'}" ` +
+            `whose slot reciprocals sum to ${String(harmonic)}, not ${String(target)} — an envelope ` +
+            'redistributes an acquisition\'s work across its duration and may not discount it, so a ' +
+            'curve costs exactly what the flat curve costs',
         ),
       );
     }

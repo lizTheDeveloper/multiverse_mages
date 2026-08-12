@@ -38,6 +38,7 @@ import type {
   TechniqueRecord,
 } from '@mm/content';
 
+import { RIGID_ENVELOPE } from '@mm/primitives';
 import type { GridContent } from '@mm/rules-magic';
 
 /** The five techniques and their §2.1 bit positions, in authored order. */
@@ -114,7 +115,10 @@ export function gridContentFixture(options: FixtureOptions = {}): GridContent {
 
   const techniques: Interned<TechniqueRecord>[] = FIXTURE_TECHNIQUES.map(([id, bit]) => ({
     contentId: internFromBit(bit),
-    record: { id, name: id, gloss: `${id} (fixture)`, bit },
+    // The flat envelope, which is `RIGID_ENVELOPE` and is also the answer a
+    // caller supplying none gets — so a fixture grid behaves exactly as it did
+    // before techniques carried a shape at all.
+    record: { id, name: id, gloss: `${id} (fixture)`, bit, envelope: RIGID_ENVELOPE },
   }));
 
   const forms: Interned<FormRecord>[] = FIXTURE_FORMS.map(([id, bit]) => ({

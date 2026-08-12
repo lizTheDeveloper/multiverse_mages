@@ -259,14 +259,35 @@ describe('contentRevision', () => {
     // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
     // other. This is the revision of the tree that holds all three.
     //
-    // a622452a3b55e38fd902a2d3264b44d7 -> 5be755471cd46620625b01b77d2888a7, when
-    // W24 added `libraryUpkeepMultiplier` to every `territory.json` record (§2.7)
-    // — what a library standing in that kind of country pays to stay standing.
-    // It is in the preimage for the reason `capacityPerLandUnit` is: two
-    // universes that disagreed about what the weather does to parchment would
-    // lose different books while their revisions agreed they were compatible.
-    // No existing value changed; five records each gained one field.
-    expect(registry.contentRevision).toBe('5be755471cd46620625b01b77d2888a7');
+    // W24 added `libraryUpkeepMultiplier` to every `territory.json` record
+    // (§2.7) — what a library standing in that kind of country pays to stay
+    // standing. It is in the preimage for the reason `capacityPerLandUnit` is:
+    // two universes that disagreed about what the weather does to parchment
+    // would lose different books while their revisions agreed they were
+    // compatible. No existing value changed; five records each gained one field.
+    // On its own branch that took a622452a -> 5be75547.
+    //
+    // W21 gave each technique an `envelope` (§2.1) — `sound-design.md` §4.1's
+    // shape over the duration an acquisition takes — and added §5.2's two unease
+    // constants to `god-constant.json`. The envelope belongs in the preimage
+    // more squarely than most: it is the only thing in the project that makes
+    // the five techniques mechanically different from one another, so two
+    // universes disagreeing about a curve would be researching at different
+    // speeds, on different trajectories, while their revisions agreed they were
+    // compatible. The unease constants belong for the reason the rest of the god
+    // table does — two universes disagreeing about what changing the law costs
+    // are playing different games. On its own branch that took
+    // a622452a -> d89d4eef.
+    //
+    // **Neither of those is the value here, and that is the point of the field.**
+    // W24 and W21 were both cut from the tree at a622452a and neither contained
+    // the other, so each recorded itself as that revision's successor. The tree
+    // that holds both is a fourth value, and it is the fourth time this has
+    // happened in this campaign — W6, W8 and W17 did the same thing to 2512ea02.
+    // A content revision is a claim about *a whole content set*, not a running
+    // tally of who edited last, which is exactly why it is recomputed from the
+    // preimage rather than incremented by hand.
+    expect(registry.contentRevision).toBe('5a2a97df2d263e4a629aa2a5f3037020');
   });
 
   it('is stable across loads of identical content', () => {

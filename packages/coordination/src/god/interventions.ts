@@ -96,30 +96,14 @@ import {
 import type { TerritoryKind } from '@mm/rules-world';
 import { defaultSiteKind, siteUniversity, territoryHoldings } from '@mm/rules-world';
 
+import { ACTION } from './actions.js';
 import type { GodContent } from './constants.js';
 import { hysteresisMultiplier, inertFraction, interventionCost, upheavalShock } from './favor.js';
 import { edictBudgetFor, favorCapFor } from './worship.js';
+import { interventionPhase, isConstitutional, markConstitutionalAct, timedCost } from './timing.js';
 import { godState, writeGodState } from './god-state.js';
 
-/** `contracts.md` §4.2's action ids, as this dispatch names them. */
-export const ACTION = {
-  noop: 0,
-  permitTechnique: 1,
-  forbidTechnique: 2,
-  permitForm: 3,
-  forbidForm: 4,
-  issueDispensation: 5,
-  issueInterdiction: 6,
-  revokeEdict: 7,
-  grantFoundingKnowledge: 8,
-  blessMage: 9,
-  assignRole: 10,
-  fundUniversity: 11,
-  encourageResearch: 12,
-  changeTradition: 13,
-  openPortal: 14,
-  declareAscension: 15,
-} as const;
+export { ACTION } from './actions.js';
 
 /** Everything the dispatch needs that is content or a subsystem rather than state. */
 export interface InterventionDeps {
@@ -277,9 +261,17 @@ function resolveOne(
     return;
   }
 
+  // `sound-design.md` §5.2's eight-bar unease, applied to the plan's price
+  // before affordability is judged, so the surcharge is a *cost* rather than a
+  // refusal after the fact. One place, every action, no call site to forget:
+  // threading a `timing` option through ten `*Plan` functions would have put the
+  // rule in ten places and left the eleventh silently free of it.
+  const phase = interventionPhase(state, universe, action.kind, worldTick, deps.god.constants);
+  const cost = timedCost(plan.cost, phase);
+
   const universeStore = componentOf(state, UNIVERSE);
   const opening = universeStore.get(universe, 'favor');
-  if (plan.cost > opening) {
+  if (cost > opening) {
     // Affordability is a mask condition, not a failure — but a caller driving
     // `step` directly, or a mask that priced an action before a same-tick spend
     // emptied the pool, both land here. The remedy is §4.2's: a no-op and a
@@ -288,9 +280,15 @@ function resolveOne(
     return;
   }
 
-  universeStore.set(universe, 'favor', opening - plan.cost);
+  universeStore.set(universe, 'favor', opening - cost);
   try {
     plan.apply();
+    // §5.2's eight bars start ringing only once the law has actually changed.
+    // An act refused for want of favor changed nothing, and charging the *next*
+    // one for it would make an unaffordable action cost something after all.
+    if (isConstitutional(action.kind)) {
+      markConstitutionalAct(state, universe, worldTick, deps.god.constants);
+    }
   } catch {
     // The rollback the favor-economy spec asks for. Every apply below is a
     // small number of component writes and none of them is expected to throw;
@@ -304,7 +302,7 @@ function resolveOne(
     return;
   }
 
-  tally.spentByAction[action.kind] = (tally.spentByAction[action.kind] ?? 0) + plan.cost;
+  tally.spentByAction[action.kind] = (tally.spentByAction[action.kind] ?? 0) + cost;
   tally.applied += 1;
 }
 

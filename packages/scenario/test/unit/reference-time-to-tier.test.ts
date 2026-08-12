@@ -253,29 +253,74 @@ describe('time to tier, by species', () => {
     const human = interval('human');
     const elf = interval('elf');
     const draconic = interval('draconic');
+    // Kept for the overlap assertions below. The trio is still a trio by
+    // internal overlap; what it has lost is its separation from elf.
     const fastTrio = [gnome, dwarf, orc];
+    void fastTrio;
 
-    // What separates strictly, in every seed: the fast trio arrives before elf,
-    // and gnome arrives before human. Both are real statements about
-    // `curiosity` — gnome 1792, human 1152, elf 896 — now that curiosity is an
-    // input to *which* node a mage reaches for and not only to how fast she
-    // works on whichever one was cheapest.
-    for (const entry of fastTrio) expect(entry.high).toBeLessThan(elf.low);
+    // **Rewritten a fourth time, and this one is a loss rather than a gain.**
+    // W21's research envelope (`sound-design.md` §4.1, technique as a cost curve
+    // over an acquisition's duration) narrowed the fast trio's separation from
+    // elf, and orc lost it outright:
+    //
+    // | species | w17 (flat) | W21 (curved) |
+    // |---|---|---|
+    // | gnome    | [19, 20]  | [19, 20]  |
+    // | dwarf    | [21, 25]  | [21, 27]  |
+    // | orc      | [21, 27]  | **[21, 37]** |
+    // | human    | [26, 37]  | [26, 39]  |
+    // | elf      | [35, 58]  | [37, 60]  |
+    // | draconic | [26, 380] | [26, 298] |
+    //
+    // Orc's slowest seed moved 27 → 37 and now *ties* elf's fastest at 37, so
+    // `orc.high < elf.low` is false by one tick. Flattening all five curves and
+    // changing nothing else restores it, so this is the mechanic. The mechanism
+    // is legible: under Intellego's `open` and Perdo's `hole` a mage whose
+    // utility score walks her into a slow-attack cell banks progress on a
+    // different schedule, and orc — the lowest magical aptitude of the six — is
+    // where a schedule change shows first.
+    //
+    // Recorded rather than repaired, for the reason the paragraphs above give
+    // twice: every species magnitude and every curve slot carries
+    // `tuningStatus: "untuned"`, and moving one to restore a separation this
+    // test exists to *measure* is the failure mode `release-plan.md`'s
+    // measurement pivot was written against. **Task 9.9 is further away than it
+    // was**, and that is the finding.
+    for (const entry of [gnome, dwarf]) expect(entry.high).toBeLessThan(elf.low);
+    // Orc is now indistinguishable from elf at the boundary, asserted in the
+    // form that will reopen this box the day it separates again.
+    expect(orc.high).toBeGreaterThanOrEqual(elf.low);
+    expect(orc.low).toBeLessThan(elf.low);
     expect(gnome.high).toBeLessThan(human.low);
 
-    // Draconic is the bridge now, and elf is not. It starts before human and
-    // ends long after elf, which is one species spanning the whole range rather
-    // than a slow band — asserted so that the day content gives it a band, this
-    // box is reopened.
-    expect(draconic.low).toBeLessThan(human.low);
+    // Draconic is still the bridge, and elf is still not: one species spanning
+    // the whole range rather than a slow band. Asserted so that the day content
+    // gives draconic a band, this box is reopened.
+    //
+    // The lower bound is now `<=` rather than `<`, and the reason is the same
+    // curve: draconic's fastest seed and human's fastest seed both land on tick
+    // 26 exactly, where under flat curves draconic came first. The claim the
+    // assertion carries — draconic *starts among the fast species and ends far
+    // beyond the slow one* — is unchanged and is what the `>` on the upper bound
+    // does the work of; tightening the lower bound back to `<` would be asking
+    // content for a tick it has no reason to supply.
+    expect(draconic.low).toBeLessThanOrEqual(human.low);
     expect(draconic.high).toBeGreaterThan(elf.high);
 
-    // Inside the fast trio nothing separates, which is why 9.9 stays unchecked:
-    // three groups is not four species.
+    // **The trio has split, and this is the one thing W21's curve gave back.**
+    // Gnome was `[20, 21]` under flat curves and overlapped dwarf at 21; it is
+    // `[19, 20]` now and separates strictly from both dwarf and orc. So gnome is
+    // the first species in this project's history to be distinguishable from
+    // every other one at tier 3 by more than the cross-seed spread.
+    //
+    // Dwarf and orc still overlap, so **9.9 still wants four species and still
+    // gets fewer**. The ledger for this build is: one species gained a clean
+    // separation, one (orc) lost its separation from elf. Both are recorded
+    // because a test that only wrote down the improvement would be advocacy.
     const overlaps = (a: { low: number; high: number }, b: { low: number; high: number }): boolean =>
       a.low <= b.high && b.low <= a.high;
-    expect(overlaps(gnome, dwarf)).toBe(true);
+    expect(overlaps(gnome, dwarf)).toBe(false);
+    expect(overlaps(gnome, orc)).toBe(false);
     expect(overlaps(dwarf, orc)).toBe(true);
-    expect(overlaps(gnome, orc)).toBe(true);
   });
 });

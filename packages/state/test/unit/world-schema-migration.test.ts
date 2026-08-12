@@ -40,6 +40,7 @@ import {
 import {
   BLESSING,
   EFFORT_PROGRESS,
+  BAR_PHASE,
   ERA_EVALUATION,
   GOAL_COMMITMENT,
   GOD_STATE,
@@ -86,22 +87,33 @@ function revisionOneEnvelope(): SnapshotEnvelope {
     EFFORT_PROGRESS.name,
     ...GOD_SECTIONS,
     ...SITING_SECTIONS,
+    BAR_PHASE.name,
   );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(EFFORT_PROGRESS.name, ...GOD_SECTIONS, ...SITING_SECTIONS);
+  return envelopeWithout(
+    EFFORT_PROGRESS.name,
+    ...GOD_SECTIONS,
+    ...SITING_SECTIONS,
+    BAR_PHASE.name,
+  );
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(...GOD_SECTIONS, ...SITING_SECTIONS);
+  return envelopeWithout(...GOD_SECTIONS, ...SITING_SECTIONS, BAR_PHASE.name);
 }
 
 /** The world as the last build in which a university stood nowhere saw it. */
 function revisionFourEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(...SITING_SECTIONS);
+  return envelopeWithout(...SITING_SECTIONS, BAR_PHASE.name);
+}
+
+/** The world as the last build before the god's law had a clock saw it. */
+function revisionFiveEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(BAR_PHASE.name);
 }
 
 describe('the world-schema revision is read off the snapshot itself', () => {
@@ -121,8 +133,12 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // header, so bumping it for a component addition rewrites every recorded
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
+    // The two have now diverged by five, which is the clearest possible
+    // statement of the distinction: six world-schema revisions have shipped and
+    // the container format has never moved. Integration round 3 added the sixth,
+    // `bar-phase`, and the golden fixtures are byte-identical across it.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(5);
+    expect(WORLD_SCHEMA_VERSION).toBe(6);
   });
 });
 
@@ -155,8 +171,8 @@ describe('migrating a revision-1 world snapshot forward', () => {
   });
 
   it('walks a revision-1 envelope to the current revision, one step at a time', () => {
-    // Four steps, not a shortcut: a revision-1 save has to pass through
-    // revisions 2, 3 and 4 to reach 5, and the loop is what makes that true
+    // Five steps, not a shortcut: a revision-1 save has to pass through
+    // revisions 2, 3, 4 and 5 to reach 6, and the loop is what makes that true
     // without an extra code path only the oldest saves would ever exercise.
     const walked = migrateWorldEnvelope(revisionOneEnvelope());
     const carried = walked.components.map((component) => component.name);
@@ -165,6 +181,7 @@ describe('migrating a revision-1 world snapshot forward', () => {
     expect(carried).toContain(EFFORT_PROGRESS.name);
     for (const name of GOD_SECTIONS) expect(carried).toContain(name);
     for (const name of SITING_SECTIONS) expect(carried).toContain(name);
+    expect(carried).toContain(BAR_PHASE.name);
   });
 
   it('returns an already-current envelope untouched, as the same object', () => {
@@ -352,6 +369,7 @@ describe('an older save loads into a current world', () => {
       ERA_EVALUATION,
       TERRITORY_HOLDING,
       UNIVERSITY_SITE,
+      BAR_PHASE,
     ];
     for (const spec of godSpecs) {
       const store = componentOf(state, spec);
@@ -391,6 +409,7 @@ describe('an older save loads into a current world', () => {
       [encodeSnapshot(revisionTwoEnvelope()), /effort-progress/],
       [encodeSnapshot(revisionThreeEnvelope()), /god-state/],
       [encodeSnapshot(revisionFourEnvelope()), /territory-holding/],
+      [encodeSnapshot(revisionFiveEnvelope()), /bar-phase/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(

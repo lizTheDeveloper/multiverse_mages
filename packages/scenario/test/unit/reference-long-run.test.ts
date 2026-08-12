@@ -221,31 +221,57 @@ describe('two hundred world years of the reference universe', () => {
     console.log(`9.5 lessons taught per 20-year window: ${taught.join(' / ')}`);
     console.log(`9.5 books scribed per 20-year window:  ${scribed.join(' / ')}`);
 
-    // Teaching now runs the *length* of the two centuries rather than dying in
-    // the first twenty years, and that is what is asserted: lessons in the first
-    // window, lessons in the last sixty years, and lessons in all but at most
-    // one of the ten. A total would be satisfied by one enormous early burst,
-    // which is exactly the behaviour this replaced, so the shape is checked
-    // rather than the sum.
+    // Teaching runs for the whole civilization's life rather than for its first
+    // twenty years. Asserted per window rather than as a total: a total would be
+    // satisfied by one enormous early burst, which is the behaviour this
+    // replaced, and the defect this tripwire was written to catch — teaching
+    // dead from window 1 onward — still fails this form outright.
     //
-    // **This said "every window" and has been relaxed once, on evidence.**
-    // `w24/university-siting` allocates five `territory-holding` entities on the
-    // first world tick, which shifts every later handle and therefore re-keys
-    // every per-actor stream (`contracts.md` §6). The trajectory moved within
-    // noise -- peak population 18,838 -> 18,657 and final `K` 29,831 -> 29,887,
-    // both under one percent -- and one window went to zero. It was already a
-    // knife edge: the series before that change read 826 / 343 / 188 / 165 /
-    // **25** / **14** / 299 / 567 / 114 / **1**, so three of its ten windows sat
-    // within a handful of lessons of failing. "Every window" was one seed's
-    // luck rather than a property of the rules, and asserting luck is how a
-    // suite comes to fail for reasons nobody can act on.
-    const silent = taught.filter((lessons) => lessons === 0).length;
-    expect(taught[0] ?? 0, 'no lesson taught in the first twenty years').toBeGreaterThan(0);
-    expect(silent, `${String(silent)} of ten 20-year windows taught nothing`).toBeLessThanOrEqual(
-      1,
-    );
-    const lateWindows = taught.slice(7).reduce((total, lessons) => total + lessons, 0);
-    expect(lateWindows, 'no lesson taught in the last sixty years').toBeGreaterThan(0);
+    // **This assertion has now been relaxed twice, by two workstreams that could
+    // not see each other, and this is the reconciliation.** It originally said
+    // *every* window, and held by exactly one lesson — window 9 measured `1`.
+    // Both branches then hit it independently, and both diagnosed the same
+    // underlying fact: the pin was luck, not a property of the rules.
+    //
+    //     original        826 / 343 / 188 / 165 /  25 / 14 / 299 / 567 / 114 / 1
+    //     W21 curves      835 / 579 /  53 / 180 /  79 / 17 / 205 / 221 /  19 / 0
+    //
+    // - **W24** allocates five `territory-holding` entities on the first world
+    //   tick, which shifts every later handle and re-keys every per-actor stream
+    //   (`contracts.md` §6). The trajectory moved within noise — peak population
+    //   18,838 -> 18,657, final `K` 29,831 -> 29,887, both under one percent —
+    //   and one window went to zero.
+    // - **W21**'s research envelope (`sound-design.md` §4.1, technique as a cost
+    //   curve over an acquisition's duration) moves window 9 from `1` to `0`.
+    //   Its ablation is unambiguous: flattening all five curves to `rigid` and
+    //   changing nothing else restores the `1`, so this is the mechanic rather
+    //   than a defect in it.
+    //
+    // **W21's form is kept, because it is the stronger of the two.** "The first
+    // eight windows without exception, and nine of ten alive" implies W24's "at
+    // most one silent window" and adds a claim W24's form does not make — that
+    // the silence, when it comes, comes at the *end*. A relaxation that says
+    // where the hole is allowed to be is worth more than one that only counts
+    // holes, and neither branch's evidence argues for the weaker form.
+    //
+    // **The open question, which is the author's.** If *"a lesson in every
+    // window"* is a design invariant rather than a measured trajectory, then the
+    // curve ratio is the knob: every `slots` value carries
+    // `tuningStatus: "untuned"`, the 8:1 spread was chosen because §4.1 gives a
+    // direction and no magnitude, and a gentler spread would keep the tenth
+    // window alive. Choosing that ratio by what makes this line green would have
+    // been tuning to the test, so it is raised here instead — and it is raised
+    // more sharply now that two independent mechanisms have each cost this
+    // series a window.
+    const HEAD_WINDOWS = 8;
+    for (const [index, lessons] of taught.slice(0, HEAD_WINDOWS).entries()) {
+      expect(lessons, `no lesson taught in 20-year window ${String(index)}`).toBeGreaterThan(0);
+    }
+    const alive = taught.filter((lessons) => lessons > 0).length;
+    expect(
+      alive,
+      `only ${String(alive)} of ${String(taught.length)} windows taught`,
+    ).toBeGreaterThanOrEqual(taught.length - 1);
 
     // Scribing still stops, and still dies of the economy rather than of the
     // mastery threshold: books cost materials and the stock is empty from
