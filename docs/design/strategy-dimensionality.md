@@ -142,8 +142,10 @@ information at all** — only a size difference. So containment is reported besi
 | **worship-max** | 1.000 | 1.000 | 1.000 | 1.000 | 0.645 | 1.000 | 1.000 | 1.000 |
 
 Every entry that does not involve `permissive-breadth` is **1.000** or, for the two smallest sets
-compared with each other, 0.771. `denial-warden`'s 2.7 nodes are a subset of `narrow-depth`'s 7.7,
-which are a subset of the 51, which are a subset of nothing else. **The strategy space is a chain.**
+compared with each other, 0.771. `denial-warden`'s 2.7 nodes sit inside `narrow-depth`'s 7.7 three
+times in four, and both sit **entirely** inside the fifty-one that every unrestricted strategy
+reaches. Inside the v1 ruleset, **the strategy space is a chain**: strategies are ordered by how much
+they hold, and the ordering determines the set.
 
 ### Mean pairwise Jaccard, for completeness
 
