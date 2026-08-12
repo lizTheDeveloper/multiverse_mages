@@ -650,3 +650,85 @@ clerical verbs are *"worth slightly less than nothing"* while the ceiling picks
 the winner. A mechanic that prices the one verb that matters and still does not
 change who wins would be a sixth confirmation that **the ceiling, not the
 pricing, is the thing to fix.**
+
+
+---
+
+## 13. The measurement, and what it says
+
+`integration-r2-true-naming.sweep.json`, 400 runs, `rootSeed 20260811`,
+round-robin over the ten-strategy pool — 40 runs per strategy, coverage asserted
+by `scripts/integration-r2-analyse.mjs` before anything is reported.
+
+**Off arm:** the committed table in `balance/results-integration-r2.txt`,
+measured on this branch's own base with the same sweep file and the same seed.
+Cross-build, not same-build paired — see the caveat below.
+
+### Per strategy
+
+| strategy | asc/n off → on | nodes off → on | Δ (SE) | libDepth off → on | books off → on |
+|---|---|---|---|---|---|
+| **`permit-then-idle`** | **40/40 → 40/40** | 257.9 ±1.48 → 258.8 ±1.69 | +0.9 (**0.4 SE**) | 43.27 → 41.83 | 87 → 101 |
+| `permissive-breadth` | 38/40 → **39/40** | 258.8 ±1.62 → 257.4 ±1.58 | −1.4 (0.6 SE) | 37.08 → **47.17** | 64 → **118** |
+| `denial-warden` | 0/40 → 0/40 | 3.0 ±0.39 → **7.5 ±1.49** | **+4.5 (+2.9 SE)** | 3.05 → 7.55 | 9 → 33 |
+| `narrow-depth` | 0/40 → 0/40 | 5.1 ±0.26 → **6.1 ±0.33** | **+1.0 (+2.4 SE)** | 4.25 → 5.15 | 18 → 24 |
+| `portal-rush` | 0/40 → 0/40 | 52.0 ±2.09 → 55.0 ±1.42 | +3.0 (1.2 SE) | 5.13 → 4.53 | 151 → 177 |
+| `archivist` | 0/40 → 0/40 | 50.9 → 50.9 | 0.0 | 38.75 → 35.30 | 970 → 899 |
+| `uniform-random-legal` | 0/40 → 0/40 | 62.1 → 62.1 | 0.0 | 12.00 → 10.70 | 92 → 91 |
+| `passive-control` | 0/40 → 0/40 | 51.0 → 51.0 | 0.0 | 0.95 → 1.07 | 1 → 1 |
+| `idle-then-declare` | 0/40 → 0/40 | 51.0 → 51.0 | 0.0 | 0.78 → 0.97 | 1 → 1 |
+| `worship-maximizer` | 0/40 → 0/40 | 51.0 → 51.0 | 0.0 | 1.02 → 1.23 | 1 → 1 |
+
+D1 `ascensionRate` 0.1950 → **0.1975** (in band both times). D3 top share
+51.3% → **50.6%**, still 2 of 10 winners, still **FAIL**. `capitalSnowball`
+0.4571 → **0.4324**, still breaching its sibling's 0.35 guard. Terminal counts
+`{truncated 253, ascended 78, stagnated 69}` → `{272, 79, 49}`.
+
+### The finding, stated plainly
+
+**`permit-then-idle` still wins 40/40.** The prediction in §12 was recorded
+before the numbers and it held: nodes moved +0.9 against a combined SE of 2.25,
+which is **0.4 SE — a null.** An agent that ignores timing entirely does **not**
+do measurably worse at 2,400 ticks.
+
+**That is not the same as "the mechanic is decorative", and the difference is
+the whole result.** The rule prices `permit-then-idle` harder than it prices
+anything else in the pool — one constitutional act per bar for 140 bars, every
+one of them at 2.75× (§12) — and the win rate did not move by a run. What that
+says is not *the tax is too small*; it is that **2,260 idle ticks are enough to
+arrive at the same ceiling however late you set out.** This is the sixth
+independent confirmation of the campaign's own conclusion: **the ceiling, not
+the pricing, picks the winner.**
+
+And it is what §12 warned the instrument could not see. Final-tick metrics
+cannot distinguish *"the grid opened later"* from *"nothing happened"*. The
+horizon-600 measurement that could is named there and was not run.
+
+### What did move, at more than the noise
+
+Two strategies gained knowledge at better than 2 SE, and both are strategies
+that *suppress*:
+
+- **`denial-warden` 3.0 → 7.5 nodes, +2.9 SE** — it more than doubled, from a
+  floor so low that any movement is structural.
+- **`narrow-depth` 5.1 → 6.1 nodes, +2.4 SE.**
+
+And the two winners' *institutions* diverged where their node counts did not:
+`permissive-breadth` library depth **37.08 → 47.17** and books **64 → 118**,
+while `permit-then-idle` went the other way on depth (43.27 → 41.83) and up on
+books (87 → 101). The two strategies that were *"permissive-breadth's exact
+profile on different seeds"* in round 2 are now visibly different universes with
+the same score.
+
+None of this is a balance claim and none of it is tuned. Every curve slot and
+both unease constants are `untuned`, and `release-plan.md` forbids a balance
+claim before 0.5.0.
+
+### The caveat, named rather than buried
+
+The off arm is the **committed** round-2 table: same sweep file, same
+`rootSeed`, measured on this branch's base — but a different build, not a
+same-build paired arm. Deltas at 2–3 SE over 40 runs per cell should be read as
+*worth confirming*, not as settled. The confirmatory instrument is
+`balance/sweeps/w21-negative-control.sweep.json` against a flat-envelope content
+patch, and it has not been run.
