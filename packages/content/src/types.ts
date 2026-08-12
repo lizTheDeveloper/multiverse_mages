@@ -54,29 +54,28 @@ export interface TechniqueRecord {
 }
 
 /**
- * A quantity of each material kind, `food`, `stone`, and `vellum` — the three
- * kinds the single undifferentiated materials stock split into. Which scale
- * the fields carry depends on the field that holds one: {@link FormRecord}'s
- * `yieldWeights` is a fixed-point *share* of a magnitude (bounded `0..1024`,
- * `contracts.md` §0), while {@link TerritoryRecord}'s `yieldPerLandUnit` is a
- * fixed-point *rate* with no such ceiling. One generic shape rather than two
- * near-identical ones, because the three kinds are the same three kinds
- * everywhere a mix of them is authored, and a reader who has seen one has seen
- * the field names of the other.
+ * ## There is deliberately no named `{ food, stone, vellum }` type in this file
+ *
+ * Both `yieldWeights` and `yieldPerLandUnit` below are written out inline, which
+ * looks like a missed abstraction and is not. A named triple here would be a
+ * second declaration of `@mm/state`'s `MaterialStockRecord`, and
+ * `schema-duplication.test.ts` refuses one by name: *"two declarations of one §1
+ * entity drift, and the field the copy adds is one the component layout never
+ * serializes."* Sharing the state type instead is not available either —
+ * `contracts.md` §5 makes `content` a leaf, and an edge from here to `state`
+ * would invert the dependency graph.
+ *
+ * The refusal is also right on the merits. These are not the same quantity
+ * wearing two hats. A **stock** is state and is spent; a **weight** is content
+ * and is read. They share three field names because they are about the same
+ * three kinds, which is exactly the coincidence a shared type would harden into
+ * a claim that they are one thing.
+ *
+ * The two here are not even the same *scale*: {@link FormRecord.yieldWeights} is
+ * a fixed-point share of a magnitude, bounded `0..1024`, while
+ * {@link TerritoryRecord.yieldPerLandUnit} is a fixed-point rate with no such
+ * ceiling. The schema enforces each bound separately.
  */
-export interface MaterialKindAmounts<T> {
-  readonly food: T;
-  readonly stone: T;
-  readonly vellum: T;
-}
-
-/**
- * A fixed-point share, `0..1024`, of a `resource-yield` magnitude routed to
- * one material kind. `1024` is the whole magnitude; the three components of a
- * {@link FormRecord.yieldWeights} need not sum to `1024` and frequently do not
- * — see the doc comment there for why a form is not a partition.
- */
-export type YieldWeightFp = Fp;
 
 export interface FormRecord {
   readonly id: string;
@@ -115,7 +114,7 @@ export interface FormRecord {
    * forms secretly yields a material, which is false, so the floor here is
    * `0`, not `1`.
    */
-  readonly yieldWeights: MaterialKindAmounts<YieldWeightFp>;
+  readonly yieldWeights: { readonly food: Fp; readonly stone: Fp; readonly vellum: Fp };
   readonly tuningStatus: TuningStatus;
 }
 
@@ -258,7 +257,7 @@ export interface TerritoryRecord {
    * richer ground, which is a fact about geography, not about which of the
    * fourteen forms a mage happened to cast.
    */
-  readonly yieldPerLandUnit: MaterialKindAmounts<Fp>;
+  readonly yieldPerLandUnit: { readonly food: Fp; readonly stone: Fp; readonly vellum: Fp };
   readonly tuningStatus: TuningStatus;
 }
 

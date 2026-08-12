@@ -602,7 +602,12 @@ export function worldSystem(
       // The opening stone is read before production because a crew is hired at
       // the start of the month out of what is already in the yard, not out of
       // what the quarry will deliver by the end of it.
-      const labour = planConstructionLabour(state, cohorts, readMaterialStock(state, universe).stone);
+      const labour = planConstructionLabour(
+        state,
+        cohorts,
+        readMaterialStock(state, universe).stone,
+        deps,
+      );
       const produced = produceMaterials(cohorts, deps, economy, labour.onSites);
       const opening = readMaterialStock(state, universe);
       const stock = zeroAmounts();
@@ -814,9 +819,8 @@ export function worldSystem(
       // multiplied by whatever `build-rate` magic the universe knows.
       const construction = advanceUniversities(state, {
         stone: stock.stone,
-        cohorts,
         deps,
-        onSites: labour.onSites,
+        crew: labour.crew,
         buildRateBonuses: economy.buildRate,
         counters: rateClamps,
       });
@@ -958,17 +962,40 @@ function produceMaterials(
  * universe whose orcs do the building really does build faster than one whose
  * elves do.
  *
- * @returns Person-months per laborer cohort handle. Cohorts not in the map sent
- * nobody.
+ * ## The crew carries its own affinity, and a stale handle is why
+ *
+ * The plan is made in phase 1 and spent in phase 8a, and the **populace phase
+ * runs in between**: cohorts lose members, empty ones are destroyed, and their
+ * slots go back on the free list. A plan that stored only handles and looked the
+ * species up later therefore read a handle whose generation had moved, and the
+ * entity store refused it — `StaleHandleError` inside `CohortStore.keyOf`, on
+ * the archivist strategy, five runs out of thirty-two in the ascension sweep,
+ * every one of them at tick zero of its own accounting.
+ *
+ * That is a good failure and a lucky one: the store's generation check turned a
+ * would-be silent misattribution — one species' laborers building at another
+ * species' affinity — into a loud refusal. The fix is to resolve everything the
+ * construction phase needs **while the handles are still valid**, so the crew
+ * that leaves phase 1 is a list of person-months and affinities and holds no
+ * reference to a cohort at all.
+ *
+ * @returns `onSites` for the production phase, which runs immediately and may
+ * still key on handles, and `crew` for the construction phase, which may not.
  */
 function planConstructionLabour(
   state: SimState,
   cohorts: CohortStore,
   stone: Fixed,
-): { readonly onSites: ReadonlyMap<EntityHandle, number>; readonly total: number } {
+  deps: WorldStepDeps,
+): {
+  readonly onSites: ReadonlyMap<EntityHandle, number>;
+  readonly crew: readonly { readonly affinity: Fixed; months: number }[];
+  readonly total: number;
+} {
   const backlog = constructionBacklog(state);
   const onSites = new Map<EntityHandle, number>();
-  if (backlog <= 0) return { onSites, total: 0 };
+  const crew: { readonly affinity: Fixed; months: number }[] = [];
+  if (backlog <= 0) return { onSites, crew, total: 0 };
 
   // Rounded **up**, and this is not a rounding preference. Flooring here is a
   // Zeno stall with a work crew: `LABORERS_PER_BUILD_UNIT` is forty laborers per
@@ -1003,23 +1030,29 @@ function planConstructionLabour(
     floorDiv(backlog * LABORERS_PER_BUILD_UNIT + FP_UNIT - 1, FP_UNIT),
     floorDiv(Math.max(0, stone), MATERIALS_PER_LABOR_MONTH),
   );
-  if (wanted <= 0) return { onSites, total: 0 };
+  if (wanted <= 0) return { onSites, crew, total: 0 };
 
   let total = 0;
-  const laborers: { handle: EntityHandle; count: number }[] = [];
+  const laborers: { handle: EntityHandle; count: number; affinity: Fixed }[] = [];
   cohorts.forEach((handle, key, count) => {
-    if (key.occupation === OCCUPATION.laborer && count > 0) laborers.push({ handle, count });
+    if (key.occupation !== OCCUPATION.laborer || count <= 0) return;
+    const species = deps.speciesOf(key.speciesId);
+    if (species === undefined) return;
+    laborers.push({ handle, count, affinity: species.laborAffinity });
   });
+  // Ascending handle: a total order over stable identities, rather than over
+  // whatever sequence a scan happened to produce.
   laborers.sort((a, b) => a.handle - b.handle);
 
   for (const cohort of laborers) {
     if (wanted <= 0) break;
     const taken = Math.min(cohort.count, wanted);
     onSites.set(cohort.handle, taken);
+    crew.push({ affinity: cohort.affinity, months: taken });
     wanted -= taken;
     total += taken;
   }
-  return { onSites, total };
+  return { onSites, crew, total };
 }
 
 /** What one tick of building did, across every unfinished site. */
@@ -1036,9 +1069,15 @@ interface ConstructionPhase {
 
 interface ConstructionInputs {
   readonly stone: Fixed;
-  readonly cohorts: CohortStore;
   readonly deps: WorldStepDeps;
-  readonly onSites: ReadonlyMap<EntityHandle, number>;
+  /**
+   * Person-months and the affinity they work at, resolved in phase 1.
+   *
+   * Deliberately not cohort handles. See {@link planConstructionLabour}: the
+   * populace phase runs between the plan and this, so a handle held across it
+   * may name a destroyed cohort.
+   */
+  readonly crew: readonly { readonly affinity: Fixed; months: number }[];
   readonly buildRateBonuses: readonly Fixed[];
   readonly counters: ClampCounters;
 }
@@ -1066,15 +1105,12 @@ function advanceUniversities(state: SimState, input: ConstructionInputs): Constr
   let labourStalled = 0;
   let budget = Math.max(0, input.stone);
 
-  const assignments: { handle: EntityHandle; affinity: Fixed; months: number }[] = [];
-  for (const [handle, months] of input.onSites) {
-    const key = input.cohorts.keyOf(handle);
-    const species = input.deps.speciesOf(key.speciesId);
-    if (species === undefined) continue;
-    assignments.push({ handle, affinity: species.laborAffinity, months });
+  // A working copy: the phase spends `months` down, and the plan it was handed
+  // belongs to the caller.
+  const assignments = input.crew.map((entry) => ({ affinity: entry.affinity, months: entry.months }));
+  if (assignments.length === 0) {
+    return { progressAdded: 0, completed: 0, stoneOwed: 0, labourStalled: 0 };
   }
-  if (assignments.length === 0) return { progressAdded: 0, completed: 0, stoneOwed: 0, labourStalled: 0 };
-  assignments.sort((a, b) => a.handle - b.handle);
 
   const sites = [...collectRecords(state, UNIVERSITY)]
     .filter(({ row }) => row.buildProgress < FP_UNIT)
