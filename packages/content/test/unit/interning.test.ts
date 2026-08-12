@@ -220,7 +220,16 @@ describe('contentRevision', () => {
     // reason the god tables are: two universes that disagreed about how long a
     // portal holds would fight two different battles while their revisions
     // agreed they were compatible. Nothing existing changed a byte.
-    expect(registry.contentRevision).toBe('2512ea02d2a7569d8d0bacc4c5a926ca');
+    //
+    // 2512ea02d2a7569d8d0bacc4c5a926ca -> d37624e36be00f59cf21b87ff6eba144,
+    // when W17 added `autonomy-weight.json` (§2.11) — every magnitude a mage's
+    // choice of *which node to work on* is made of, including the role x
+    // primitive table that makes vision §7's standing role a number. It is in
+    // the preimage for the reason the other three tables are: two universes
+    // whose mages valued the same node differently would be developing
+    // different magic while their revisions agreed they were compatible.
+    // Nothing existing changed a byte.
+    expect(registry.contentRevision).toBe('d37624e36be00f59cf21b87ff6eba144');
   });
 
   it('is stable across loads of identical content', () => {

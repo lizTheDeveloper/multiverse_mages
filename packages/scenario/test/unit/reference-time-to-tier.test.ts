@@ -200,27 +200,45 @@ describe('time to tier, by species', () => {
     }
   });
 
-  it('separates one species from the other five, and 9.9 stays unchecked', () => {
-    // **Rewritten twice now, and the second time the direction reversed.** The
-    // previous version recorded a two-band split of three and three, taken after
-    // the `acquire` hook was wired into the real acquisition path.
-    // `w7/knowledge-capital` then wired vision §6a's library contribution into
-    // `research-rate`, `teach-rate` and `scribe-rate`. It is a *shared*
-    // acceleration — every mage at a university reads the same shelves — so the
-    // spread compressed rather than widening.
+  it('separates three bands of six, and 9.9 is closer than it has ever been', () => {
+    // **Rewritten three times, and this time the direction reversed back.** The
+    // previous version recorded a single separation — draconic strictly after
+    // four ordinary species, with elf bridging — taken after
+    // `w7/knowledge-capital` wired vision §6a's library contribution into the
+    // three rates and compressed the spread.
     //
-    // Measured, tier 3, in ticks: gnome [39, 53], dwarf [41, 54], orc [42, 63],
-    // human [44, 57], elf [54, 110], draconic [68, 245]. Orc left the slow band
-    // outright — it was [61, 76] — and elf now overlaps *both* the ordinary four
-    // and draconic, so the six do not partition into ordered bands at all.
+    // `w17/value-sensitive-acquirer` then made target selection a utility score
+    // shaped by species, age, personality and standing role
+    // (`docs/design/value-sensitive-acquirer.md`). Every species got roughly
+    // twice as fast to tier 3 *and the spread reopened*, because a species now
+    // walks toward the tier-3 nodes its own `curiosity` and `affinities` favour
+    // rather than down one queue shared by everybody.
     //
-    // **This is a species-differentiation regression, and it is recorded rather
-    // than repaired.** Task 9.9 wants four species separated by more than the
-    // cross-seed spread; this build separates one. The lever is content — every
-    // species magnitude carries `tuningStatus: "untuned"` and no release before
-    // 0.5.0 may claim any of them is balanced — and inventing a species number
-    // to make a test go green is exactly what `release-plan.md`'s measurement
-    // pivot exists to prevent.
+    // Measured, tier 3, in ticks, this build against the previous one:
+    //
+    // | species | w7 | w17 |
+    // |---|---|---|
+    // | gnome    | [39, 53]  | **[20, 21]** |
+    // | dwarf    | [41, 54]  | **[21, 25]** |
+    // | orc      | [42, 63]  | **[21, 27]** |
+    // | human    | [44, 57]  | **[28, 37]** |
+    // | elf      | [54, 110] | **[35, 58]** |
+    // | draconic | [68, 245] | **[26, 380]** |
+    //
+    // Three bands now, where there was one separation: a fast trio
+    // (gnome, dwarf, orc) that overlaps internally, human strictly after all
+    // three, and elf strictly after all three again. Draconic has stopped being
+    // a band at all — it spans from inside the fast trio to five times elf's
+    // slowest seed, which is `depthCeiling: 7` and `curiosity: 512` pulling
+    // against each other under the new score.
+    //
+    // **Task 9.9 wants four species separated by more than the cross-seed
+    // spread. This build separates three groups and not four species**, because
+    // gnome, dwarf and orc still overlap. Recorded rather than repaired: every
+    // species magnitude carries `tuningStatus: "untuned"`, no release before
+    // 0.5.0 may claim any of them is balanced, and inventing a species number to
+    // make a test go green is what `release-plan.md`'s measurement pivot exists
+    // to prevent.
     const interval = (name: string): { low: number; high: number } => {
       const column = tierThree.find((entry) => entry.name === name);
       if (column === undefined || column.observed.length === 0) {
@@ -229,33 +247,35 @@ describe('time to tier, by species', () => {
       return { low: Math.min(...column.observed), high: Math.max(...column.observed) };
     };
 
-    const ordinary = ['gnome', 'dwarf', 'human', 'orc'].map(interval);
+    const gnome = interval('gnome');
+    const dwarf = interval('dwarf');
+    const orc = interval('orc');
+    const human = interval('human');
     const elf = interval('elf');
     const draconic = interval('draconic');
+    const fastTrio = [gnome, dwarf, orc];
 
-    // What still separates, in every seed: draconic arrives strictly after all
-    // four ordinary species. That is a real statement about `curiosity` and
-    // `learnRate` and it is the only strict separation the intervals support.
-    expect(Math.max(...ordinary.map((entry) => entry.high))).toBeLessThan(draconic.low);
+    // What separates strictly, in every seed: the fast trio arrives before elf,
+    // and gnome arrives before human. Both are real statements about
+    // `curiosity` — gnome 1792, human 1152, elf 896 — now that curiosity is an
+    // input to *which* node a mage reaches for and not only to how fast she
+    // works on whichever one was cheapest.
+    for (const entry of fastTrio) expect(entry.high).toBeLessThan(elf.low);
+    expect(gnome.high).toBeLessThan(human.low);
 
-    // Elf is a bridge rather than a band: [54, 110] overlaps every ordinary
-    // species below it *and* draconic above it, so there is no partition of the
-    // six into ordered bands at all. Asserted so the day content separates it,
-    // this box is reopened.
-    expect(elf.low).toBeLessThanOrEqual(Math.max(...ordinary.map((entry) => entry.high)));
-    expect(elf.high).toBeGreaterThanOrEqual(draconic.low);
+    // Draconic is the bridge now, and elf is not. It starts before human and
+    // ends long after elf, which is one species spanning the whole range rather
+    // than a slow band — asserted so that the day content gives it a band, this
+    // box is reopened.
+    expect(draconic.low).toBeLessThan(human.low);
+    expect(draconic.high).toBeGreaterThan(elf.high);
 
-    // Inside the ordinary band nothing separates, which is why 9.9 stays
-    // unchecked — four species wearing one trait, and a fifth spanning them.
+    // Inside the fast trio nothing separates, which is why 9.9 stays unchecked:
+    // three groups is not four species.
     const overlaps = (a: { low: number; high: number }, b: { low: number; high: number }): boolean =>
       a.low <= b.high && b.low <= a.high;
-    for (let index = 1; index < ordinary.length; index += 1) {
-      const previous = ordinary[index - 1];
-      const current = ordinary[index];
-      if (previous === undefined || current === undefined) {
-        throw new Error('an ordinary-band species was censored in every seed');
-      }
-      expect(overlaps(previous, current)).toBe(true);
-    }
+    expect(overlaps(gnome, dwarf)).toBe(true);
+    expect(overlaps(dwarf, orc)).toBe(true);
+    expect(overlaps(gnome, orc)).toBe(true);
   });
 });
