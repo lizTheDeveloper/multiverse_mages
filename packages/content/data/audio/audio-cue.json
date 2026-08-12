@@ -410,7 +410,7 @@
     "variants": 3,
     "pitchJitterCents": 0,
     "prompt": "A single sustained tone slightly out of tune with everything around it, held steady, then stopping without decay",
-    "post": "Hold exactly one bar. Detune 40 cents from the universe root. No impact transient. densityThreshold stays at 1, the lowest legal value, deliberately not raised to an aggregation point: §6.5 says last-instance loss must never be aggregated away.",
+    "post": "Hold exactly one bar. Detune 40 cents from the root. No impact transient. densityThreshold stays at 1 deliberately: §6.5 forbids aggregating last-instance loss away. That pin bets loss stays rare — if it becomes frequent, change the mechanic, not this number.",
     "subject": "knowledge-loss",
     "source": "6.5",
     "densityThreshold": 1
@@ -862,5 +862,21 @@
     "subject": "summon",
     "source": "7.1",
     "densityThreshold": 6
+  },
+  {
+    "id": "raid-world-pulse",
+    "kind": "raid-primitive",
+    "production": "synthesised",
+    "band": "low",
+    "grid": "downbeat",
+    "durationMs": 260,
+    "levelDbTenths": -260,
+    "variants": 1,
+    "pitchJitterCents": 0,
+    "prompt": "",
+    "post": "§3.5: the only quantized thing in raid time. One quiet bar marker at the world tempo the participants left, continuing under the unquantized combat mix, so the tempo cost of raiding is audible while it accrues. Synthesised — it must track the world clock, not a file.",
+    "subject": "world-tempo",
+    "source": "3.5",
+    "densityThreshold": 1
   }
 ]
