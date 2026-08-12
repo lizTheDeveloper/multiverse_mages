@@ -125,6 +125,10 @@ export const LONG_RUN_OPTIONS: ReferenceOptions = Object.freeze({
   // Every species founds the long run, which is what it has always done and what
   // task 9.9's per-species time-to-tier measurement requires.
   foundingSpeciesMask: 0,
+  // The documented default site, which over the shipped content is
+  // `arable-lowland` and therefore neutral in both siting mechanisms. Pinned at
+  // the default so that the long run keeps measuring what it always measured.
+  academySiteKind: 0,
 });
 
 /** One world tick of the long run, stocks and flows together. */

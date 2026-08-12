@@ -258,7 +258,15 @@ describe('contentRevision', () => {
     // Three branches each recorded a successor to 2512ea02 — W6's ec506311,
     // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
     // other. This is the revision of the tree that holds all three.
-    expect(registry.contentRevision).toBe('a622452a3b55e38fd902a2d3264b44d7');
+    //
+    // a622452a3b55e38fd902a2d3264b44d7 -> 5be755471cd46620625b01b77d2888a7, when
+    // W24 added `libraryUpkeepMultiplier` to every `territory.json` record (§2.7)
+    // — what a library standing in that kind of country pays to stay standing.
+    // It is in the preimage for the reason `capacityPerLandUnit` is: two
+    // universes that disagreed about what the weather does to parchment would
+    // lose different books while their revisions agreed they were compatible.
+    // No existing value changed; five records each gained one field.
+    expect(registry.contentRevision).toBe('5be755471cd46620625b01b77d2888a7');
   });
 
   it('is stable across loads of identical content', () => {

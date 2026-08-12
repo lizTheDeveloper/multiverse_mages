@@ -44,11 +44,14 @@ import {
   GOAL_COMMITMENT,
   GOD_STATE,
   MAGE,
+  TERRITORY_HOLDING,
+  UNIVERSITY_SITE,
   UPHEAVAL,
   WORLD_SCHEMA_VERSION,
   addEffortProgress,
   addGoalCommitment,
   addGodAgencyState,
+  addTerritorySiting,
   collectRecords,
   componentOf,
   defineWorldStateSchema,
@@ -73,19 +76,32 @@ function envelopeWithout(...names: readonly string[]): SnapshotEnvelope {
 /** The four sections `god-agency` appended, named once. */
 const GOD_SECTIONS = [GOD_STATE.name, BLESSING.name, UPHEAVAL.name, ERA_EVALUATION.name];
 
+/** The two sections `university-siting` appended, named once. */
+const SITING_SECTIONS = [TERRITORY_HOLDING.name, UNIVERSITY_SITE.name];
+
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, ...GOD_SECTIONS);
+  return envelopeWithout(
+    GOAL_COMMITMENT.name,
+    EFFORT_PROGRESS.name,
+    ...GOD_SECTIONS,
+    ...SITING_SECTIONS,
+  );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(EFFORT_PROGRESS.name, ...GOD_SECTIONS);
+  return envelopeWithout(EFFORT_PROGRESS.name, ...GOD_SECTIONS, ...SITING_SECTIONS);
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(...GOD_SECTIONS);
+  return envelopeWithout(...GOD_SECTIONS, ...SITING_SECTIONS);
+}
+
+/** The world as the last build in which a university stood nowhere saw it. */
+function revisionFourEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(...SITING_SECTIONS);
 }
 
 describe('the world-schema revision is read off the snapshot itself', () => {
@@ -93,6 +109,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     expect(worldSchemaVersionOf(revisionOneEnvelope())).toBe(1);
     expect(worldSchemaVersionOf(revisionTwoEnvelope())).toBe(2);
     expect(worldSchemaVersionOf(revisionThreeEnvelope())).toBe(3);
+    expect(worldSchemaVersionOf(revisionFourEnvelope())).toBe(4);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -105,7 +122,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(4);
+    expect(WORLD_SCHEMA_VERSION).toBe(5);
   });
 });
 
@@ -138,8 +155,8 @@ describe('migrating a revision-1 world snapshot forward', () => {
   });
 
   it('walks a revision-1 envelope to the current revision, one step at a time', () => {
-    // Three steps, not a shortcut: a revision-1 save has to pass through
-    // revisions 2 and 3 to reach 4, and the loop is what makes that true
+    // Four steps, not a shortcut: a revision-1 save has to pass through
+    // revisions 2, 3 and 4 to reach 5, and the loop is what makes that true
     // without an extra code path only the oldest saves would ever exercise.
     const walked = migrateWorldEnvelope(revisionOneEnvelope());
     const carried = walked.components.map((component) => component.name);
@@ -147,6 +164,7 @@ describe('migrating a revision-1 world snapshot forward', () => {
     expect(carried).toContain(GOAL_COMMITMENT.name);
     expect(carried).toContain(EFFORT_PROGRESS.name);
     for (const name of GOD_SECTIONS) expect(carried).toContain(name);
+    for (const name of SITING_SECTIONS) expect(carried).toContain(name);
   });
 
   it('returns an already-current envelope untouched, as the same object', () => {
@@ -243,6 +261,63 @@ describe('migrating a revision-3 world snapshot forward', () => {
   });
 });
 
+describe('migrating a revision-4 world snapshot forward', () => {
+  it("appends university-siting's two sections, in WORLD_COMPONENTS order, both empty", () => {
+    const before = revisionFourEnvelope();
+    const after = addTerritorySiting.migrate(before);
+    const appended = after.components.slice(before.components.length);
+
+    expect(appended.map((component) => component.name)).toEqual(SITING_SECTIONS);
+    for (const component of appended) {
+      expect(component.slots.length).toBe(0);
+      expect(component.values.length).toBe(0);
+    }
+    expect(appended[0]?.fields.map((field) => field.name)).toEqual(
+      Object.keys(TERRITORY_HOLDING.fields),
+    );
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionFourEnvelope();
+    expect(addTerritorySiting.migrate(before).version).toBe(before.version);
+    expect(addTerritorySiting.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionFourEnvelope();
+    const componentCount = before.components.length;
+    addTerritorySiting.migrate(before);
+    expect(before.components).toHaveLength(componentCount);
+  });
+
+  it('restores a pre-siting save holding no ground and standing nowhere', () => {
+    // Empty sections, and for `territory-holding` that is the *load-bearing*
+    // choice rather than the obvious one. A revision-4 save's `K` came from
+    // `territory.json`, so "no holding rows" would starve it if it were read as
+    // "holds nothing" -- and the repair is deliberately not to synthesise the
+    // shipped rows here, because this package takes only types from `content`
+    // and a frozen table could not describe a save written against a different
+    // content set. Absent rows mean "not yet materialized", the world step
+    // materializes the endowment on the first tick that finds none, and a
+    // universe that has genuinely lost its ground carries rows saying zero.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionFourEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, TERRITORY_HOLDING).size).toBe(0);
+    expect(componentOf(migrated, UNIVERSITY_SITE).size).toBe(0);
+  });
+
+  it('keeps the god state a revision-4 save did record', () => {
+    const { universe } = populatedWorld();
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionFourEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, GOD_STATE).has(universe)).toBe(true);
+  });
+});
+
 describe('an older save loads into a current world', () => {
   it('loads, and nobody in it is committed to anything or part-way through anything', () => {
     const bytes = encodeSnapshot(revisionOneEnvelope());
@@ -275,6 +350,8 @@ describe('an older save loads into a current world', () => {
       BLESSING,
       UPHEAVAL,
       ERA_EVALUATION,
+      TERRITORY_HOLDING,
+      UNIVERSITY_SITE,
     ];
     for (const spec of godSpecs) {
       const store = componentOf(state, spec);
@@ -313,6 +390,7 @@ describe('an older save loads into a current world', () => {
       [encodeSnapshot(revisionOneEnvelope()), /goal-commitment/],
       [encodeSnapshot(revisionTwoEnvelope()), /effort-progress/],
       [encodeSnapshot(revisionThreeEnvelope()), /god-state/],
+      [encodeSnapshot(revisionFourEnvelope()), /territory-holding/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(

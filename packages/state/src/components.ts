@@ -412,6 +412,103 @@ export interface EraEvaluationRecord {
 export const ERA_EVALUATION_FIELDS_MATCH: KeysMatch<EraEvaluationRecord, typeof ERA_EVALUATION> =
   true;
 
+/**
+ * How much of one kind of country this universe holds (`contracts.md` §2.7's
+ * own migration, taken).
+ *
+ * §2.7 wrote this move before anyone needed it: *"`landUnits` is a per-universe
+ * endowment carried in content because a simulation instance holds exactly one
+ * universe (§1.1). When that stops being true — a raid that takes ground —
+ * `landUnits` moves to §1.1 and this record keeps `capacityPerLandUnit`, which
+ * is a property of the kind of country and not of who holds it."* This is that
+ * row. Content keeps the habitability of a *kind*; the universe holds a
+ * **count** of it.
+ *
+ * ## No coordinates, and none needed
+ *
+ * `vision.md` §7a: *"World-scale entities carry no coordinates at all."* A
+ * holding is a count and a kind. There is no position, no extent, no adjacency
+ * and no distance between two holdings — a universe holding delta and waste is
+ * not holding them *next to* anything. {@link assertNoWorldPositions} passes on
+ * this component for the ordinary reason: it declares no `x` and no `y`.
+ *
+ * ## Absent rows mean "not materialized", never "holds nothing"
+ *
+ * A universe that has lost all its ground carries a row with `landUnits: 0`.
+ * The distinction matters because a snapshot written before this component
+ * existed has *no rows at all*, and the first world tick materializes the
+ * content endowment into it — `god-state`'s lazy-creation rule, for the same
+ * reason: *"no row means this universe has not been stepped yet"*. Aliasing the
+ * two would make a conquered universe indistinguishable from an old save, and
+ * colonization needs to tell them apart.
+ */
+export const TERRITORY_HOLDING = {
+  name: 'territory-holding',
+  fields: {
+    kindId: 'u16',
+    landUnits: 'u32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface TerritoryHoldingRecord {
+  /** Interned `territory` content id. Never `0`. */
+  kindId: ContentId;
+  /** Land units of this kind the universe holds. A count, not `fp`. */
+  landUnits: number;
+}
+
+export const TERRITORY_HOLDING_FIELDS_MATCH: KeysMatch<
+  TerritoryHoldingRecord,
+  typeof TERRITORY_HOLDING
+> = true;
+
+/**
+ * Where a university stands — the §1.4 field that makes a university *somewhere*
+ * without making it *somewhere in particular*.
+ *
+ * ## Why this is a relationship and not a position
+ *
+ * `vision.md` §7a splits the game in two: *"At world scale there is no map.
+ * Universities, populations, materials, and knowledge are **counts and
+ * relationships**."* It forbids coordinates and it names relationships as the
+ * thing world scale is made of. *"This university stands in that kind of
+ * country"* is a relationship: it supports **co-location** (two universities
+ * with the same `kindId` stand in the same country, which is what multi-mage
+ * ritual needs from siting) and it supports **terrain**, and it supports neither
+ * distance nor direction, because neither exists at this scale.
+ *
+ * ## Why a component rather than a field on §1.4's row
+ *
+ * The same argument `goal-commitment` and `effort-progress` were added under. A
+ * field exists for every university, so "unsited" would need a sentinel content
+ * id — a reserved entry in a namespace whose whole contract is that its ids are
+ * permanent and mean one kind of country each. An absent row says it with
+ * nothing invented, costs nothing for the universities not using it, and makes
+ * the world-schema step an appended empty section rather than a column-by-column
+ * rewrite of every older save's university section.
+ *
+ * ## Keyed by content id, not by a holding's handle
+ *
+ * The alternative — a handle to a {@link TERRITORY_HOLDING} row — would couple
+ * siting to the order in which holdings are materialized, so a scenario could
+ * not site its founding academy at build time. Every mage row already stores a
+ * `speciesId` this way; this is the same move.
+ */
+export const UNIVERSITY_SITE = {
+  name: 'university-site',
+  fields: {
+    kindId: 'u16',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface UniversitySiteRecord {
+  /** Interned `territory` content id. Never `0` — an unsited university has no row. */
+  kindId: ContentId;
+}
+
+export const UNIVERSITY_SITE_FIELDS_MATCH: KeysMatch<UniversitySiteRecord, typeof UNIVERSITY_SITE> =
+  true;
+
 // ---------------------------------------------------------------------------
 // §1.2 Mage. §1.3 Populace cohort.
 // ---------------------------------------------------------------------------
@@ -933,6 +1030,8 @@ export const WORLD_COMPONENTS = [
   BLESSING,
   UPHEAVAL,
   ERA_EVALUATION,
+  TERRITORY_HOLDING,
+  UNIVERSITY_SITE,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

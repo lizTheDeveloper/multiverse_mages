@@ -165,6 +165,12 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       'blessing',
       'upheaval',
       'era-evaluation',
+      // Appended by `university-siting`, together, as world-schema revision 5.
+      // The pair for the same reason the four above are a group: a site is
+      // meaningless without ground to stand in, and no build has shipped one
+      // without the other.
+      'territory-holding',
+      'university-site',
     ]);
   });
 

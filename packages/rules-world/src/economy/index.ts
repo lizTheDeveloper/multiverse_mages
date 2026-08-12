@@ -54,6 +54,15 @@ export {
   territoryExtent,
 } from './carrying-capacity.js';
 
+export type { TerritoryKind } from './territory-holdings.js';
+export {
+  defaultSiteKind,
+  hasTerritoryHoldings,
+  heldTerritoryExtent,
+  materializeTerritoryHoldings,
+  territoryHoldings,
+} from './territory-holdings.js';
+
 export type { EconomicInput, WorshipInputs } from './counts.js';
 export { ECONOMIC_INPUTS, worshipInputs } from './counts.js';
 

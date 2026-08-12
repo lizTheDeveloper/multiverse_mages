@@ -93,6 +93,8 @@ import {
   readRulesetForObservation,
   readUniverse,
 } from '@mm/state';
+import type { TerritoryKind } from '@mm/rules-world';
+import { defaultSiteKind, siteUniversity, territoryHoldings } from '@mm/rules-world';
 
 import type { GodContent } from './constants.js';
 import { hysteresisMultiplier, inertFraction, interventionCost, upheavalShock } from './favor.js';
@@ -139,6 +141,21 @@ export interface InterventionDeps {
   readonly portalNodes: ReadonlySet<number>;
   /** Asks the clock to enter engagement. Supplied by the step context. */
   readonly requestEngagement: () => void;
+  /**
+   * What each kind of country is like, and what it endows (`contracts.md` §2.7).
+   *
+   * Read for one thing here: **where a newly founded university stands.** §4.2
+   * gives `fundUniversity` a single parameter — the university handle — and §4.1
+   * fixes the institution observation block at four slots, so there is nowhere
+   * in the current action space for the god to *name* a site. Adding one is
+   * §4.4's parameterized channel and a reshape of the action space, which this
+   * capability does not make. Until it is made, founding uses the documented
+   * deterministic default in `defaultSiteKind`.
+   *
+   * Optional, and empty means the god founds unsited universities — neutral
+   * ground, and the only honest answer for a world that declares no country.
+   */
+  readonly territoryKinds?: readonly TerritoryKind[] | undefined;
 }
 
 /** What one tick's interventions did. Reporting only; never an input to a rule. */
@@ -735,6 +752,13 @@ function fundPlan(
           capacity: deps.god.constants.foundUniversityCapacity,
           buildProgress: 0,
         });
+        // Where the most people already are, ties to the lower content id —
+        // `defaultSiteKind`'s documented order. A god who has no way to say
+        // where should not get a random answer, and should not get *no* answer
+        // either: an unsited university is neutral ground, which would make
+        // founding the one way to escape terrain entirely.
+        const site = defaultSiteKind(territoryHoldings(state), deps.territoryKinds ?? []);
+        if (site !== 0) siteUniversity(state, university, site);
       },
     };
   }

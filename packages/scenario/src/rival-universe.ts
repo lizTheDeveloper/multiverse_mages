@@ -272,7 +272,16 @@ export function buildRival(input: {
     // would confound "which species founded my universe" with "which species I am
     // fighting". Zero is also what this builder did before the field existed, so
     // no raid measured before it moves.
-    options: { cohortSize: 64, foundingMages: 2, foundingNodes: 6, foundingSpeciesMask: 0 },
+    options: {
+      cohortSize: 64,
+      foundingMages: 2,
+      foundingNodes: 6,
+      foundingSpeciesMask: 0,
+      // Pinned to the documented default for the reason `foundingSpeciesMask` is:
+      // a rival whose academy stood somewhere the host's did not would confound
+      // "where my university is" with "who I am fighting".
+      academySiteKind: 0,
+    },
     content,
     schema: input.schema,
   });

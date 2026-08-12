@@ -12,6 +12,7 @@
  */
 
 import type { EntityHandle, Fixed, SimState } from '@mm/sim-core';
+import { FP_ONE, mul } from '@mm/sim-core';
 import type { ContentId } from '@mm/content';
 import { HOLDER_KIND, LOCATION_KIND, collectRecords } from '@mm/state';
 import { GRIMOIRE, KNOWLEDGE_INSTANCE } from '@mm/state';
@@ -287,7 +288,21 @@ export function relevantDepth(depth: LibraryDepth, depthCeiling: number): number
  */
 export const LIBRARY_UPKEEP_PER_INSTANCE: Fixed = 2;
 
-/** A library's per-tick materials upkeep, `fp`. **Untuned coefficient.** */
-export function libraryUpkeep(depth: LibraryDepth): Fixed {
-  return depth.instanceCount * LIBRARY_UPKEEP_PER_INSTANCE;
+/**
+ * A library's per-tick materials upkeep, `fp`. **Untuned coefficient.**
+ *
+ * `siteMultiplier` is the `libraryUpkeepMultiplier` of the country the owning
+ * university stands in (`contracts.md` §2.7, `universities/siting.ts`), `fp`,
+ * defaulting to neutral. A library that stands nowhere — an unsited university,
+ * or a world-schema revision-4 save restored into this build — pays exactly what
+ * it paid before sites existed.
+ *
+ * The multiplier is applied to the **whole** owed figure rather than to the
+ * per-instance constant, because flooring per instance would round a 512 site
+ * multiplier down to a flat halving that stops being a halving below two
+ * instances, and the first books a library ever holds are the ones a
+ * preservation term is supposed to be about.
+ */
+export function libraryUpkeep(depth: LibraryDepth, siteMultiplier: Fixed = FP_ONE): Fixed {
+  return mul(depth.instanceCount * LIBRARY_UPKEEP_PER_INSTANCE, Math.max(0, siteMultiplier));
 }

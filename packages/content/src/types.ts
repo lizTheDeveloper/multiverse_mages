@@ -172,20 +172,42 @@ export interface PrimitiveRecord {
  * process can grow it, which is not true of the materials stock that used to
  * carry that job alone.
  *
- * The two numbers answer different questions and are deliberately not folded
- * into one: `capacityPerLandUnit` is what this *kind* of country is like, and
- * `landUnits` is how much of it this universe holds. When universes stop being
- * singletons — a raid that takes ground, a scenario that seeds a smaller world —
- * `landUnits` becomes state and this record keeps the habitability.
+ * The numbers answer different questions and are deliberately not folded into
+ * one: `capacityPerLandUnit` and `libraryUpkeepMultiplier` are what this *kind*
+ * of country is like, and `landUnits` is how much of it this universe holds.
+ *
+ * **`landUnits` is now the founding endowment, not the live figure.** §2.7 said
+ * this would happen — *"when universes stop being singletons […] `landUnits`
+ * becomes state and this record keeps the habitability"* — and
+ * `university-siting` is where it happened. The universe's actual holding lives
+ * in the `territory-holding` component (`contracts.md` §1.1); this field is what
+ * the first world tick materializes those rows from, and what a scenario that
+ * seeds no rows of its own starts with.
+ *
+ * `libraryUpkeepMultiplier` is the second habitability number and it is authored
+ * **against** the first on purpose. A country that feeds many people is not a
+ * country that keeps parchment: the delta floods, the forest is damp, and the
+ * highland waste is cold, dry and empty. Without an anti-correlated term, siting
+ * a university would be a ranking rather than a decision, and the richest kind
+ * would strictly dominate.
  */
 export interface TerritoryRecord {
   readonly id: string;
   readonly name: string;
   readonly gloss: string;
-  /** How much of this region the universe holds. A count, not `fp`. */
+  /**
+   * How much of this kind of country the universe is **founded** holding. A
+   * count, not `fp`. The live figure is the `territory-holding` component.
+   */
   readonly landUnits: number;
   /** People one land unit of this region carries, `fp`. */
   readonly capacityPerLandUnit: Fp;
+  /**
+   * What a library standing in this kind of country pays to stay standing, `fp`
+   * as a multiplier on the per-instance upkeep. `fp(1024)` is neutral; above it
+   * the country eats books, below it the country keeps them.
+   */
+  readonly libraryUpkeepMultiplier: Fp;
   readonly tuningStatus: TuningStatus;
 }
 

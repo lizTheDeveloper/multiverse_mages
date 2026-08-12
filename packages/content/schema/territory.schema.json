@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://multiverse-mages.invalid/schema/territory.schema.json",
   "title": "territory.json",
-  "description": "The regions a universe is made of (contracts.md §2.7). Their summed `landUnits × capacityPerLandUnit` is the fixed resource carrying capacity is derived from, and is the only term in `K` that no in-run process can grow.",
+  "description": "The regions a universe is made of (contracts.md §2.7). Their summed `landUnits × capacityPerLandUnit` is the founding endowment carrying capacity is derived from, and is the only term in `K` that no in-run process can grow. `libraryUpkeepMultiplier` prices what it costs to keep a written record standing in this kind of country.",
   "type": "array",
   "minItems": 1,
   "items": { "$ref": "#/$defs/territory" },
@@ -10,13 +10,22 @@
     "territory": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "gloss", "landUnits", "capacityPerLandUnit", "tuningStatus"],
+      "required": [
+        "id",
+        "name",
+        "gloss",
+        "landUnits",
+        "capacityPerLandUnit",
+        "libraryUpkeepMultiplier",
+        "tuningStatus"
+      ],
       "properties": {
         "id": { "$ref": "#/$defs/contentId" },
         "name": { "type": "string", "minLength": 1, "maxLength": 64 },
         "gloss": { "type": "string", "minLength": 1, "maxLength": 400 },
         "landUnits": { "type": "integer", "minimum": 1, "maximum": 1000000 },
         "capacityPerLandUnit": { "$ref": "#/$defs/fp" },
+        "libraryUpkeepMultiplier": { "$ref": "#/$defs/fp" },
         "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
       }
     },

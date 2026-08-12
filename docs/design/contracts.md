@@ -88,6 +88,7 @@ state would have no mechanism preventing mid-raid rule changes at all.
 | `blessings` | array of `{mageId, expiryTick}` | one row per blessed mage, which is what makes "re-blessing refreshes rather than stacks" structural: there is no representation in which a mage holds two |
 | `upheavals` | array of `{factor, expiryTick}` | worship shocks in force. An entity per shock, because two forbiddings can overlap and the combined factor is the shared multiplicative-on-remainder arithmetic over both |
 | `eraEvaluations` | array of `{era, libraryDependence, nodesLost, passed}` | what each era boundary found. `libraryDependence` at era 2 is not recoverable from state at era 4, so the Enduring Canon ascension path cannot be decided without retaining these |
+| `territoryHoldings` | separate `territory-holding` component, one row per kind: `{kindId: uint16, landUnits: uint32}` | how much of each kind of country this universe holds (§2.7). **No rows means "not yet materialized", never "holds nothing"** — a universe that has lost all its ground carries rows saying `landUnits: 0` |
 | `godState` | singleton, below | counters, high-water marks, and cached derivations that one tick of state cannot see |
 | `ascended` | `bool` | terminal flag |
 
@@ -254,6 +255,26 @@ The reasoning, in the order it forced the decision:
   revision 3 appends an empty `effort-progress` section, and `sim-core`'s `SNAPSHOT_VERSION` again
   does not move. A revision-1 save reaches revision 3 by running both steps in turn.
 
+**Revision 5 — `territory-holding` and `university-site` — is the fourth world-schema step and the
+one whose empty sections needed the most argument.** `god-agency` took revision 4 for four
+components; `university-siting` takes revision 5 for two, and the pair arrive together because a
+site is meaningless without ground to stand in. `SNAPSHOT_VERSION` does not move, for the third
+time and the same reason.
+
+The step appends **empty** sections, like the three before it, and for `university-site` that needs
+no argument at all: an unsited university is neutral in every rate, so a restored save's
+universities stand exactly where they did before the concept existed. For `territory-holding` it
+does, because the obvious repair is wrong in a way nobody would notice. A revision-4 save's `K` came
+from `territory.json`, so restoring it with no holding rows would give it a `K` of zero and starve
+it — and yet the migration must **not** synthesize the shipped five rows. `packages/state` takes only
+*types* from `content` (§5), and a table of literals frozen at revision 5 could only describe the
+*shipped* territory; a revision-4 save written against a scenario's own content set meant *its*
+endowment, and no constant in a migration can say so. So absent rows keep the meaning `god-state`
+gave them — *"this universe has not been stepped by a build that knows about this"* — and the world
+step materializes the endowment on the first tick that finds none. The consequence is a rule
+colonization depends on: **a universe that holds no ground carries rows saying `landUnits: 0`, not
+no rows.**
+
 ### 1.3 Populace cohort (aggregate entity)
 
 | Field | Type | Notes |
@@ -273,9 +294,40 @@ this document first.
 | Field | Type | Notes |
 |---|---|---|
 | `libraryId` | `uint32` | handle |
-| `capacity` | `uint16` | students supportable |
+| `capacity` | `uint16` | students supportable — the **designed** seat count |
 | `staffCohorts` | array of handles | |
 | `buildProgress` | `fp` | `fp(1024)` = complete |
+| `site` | separate `university-site` component, `{kindId: uint16}` | the kind of country the university stands in (§2.7). **Absent = unsited**, which is neutral in every rate |
+
+**A site is a relationship, and that is what makes it legal here.** `vision.md` §7a: *"At world
+scale there is no map. Universities, populations, materials, and knowledge are **counts and
+relationships**. […] **World-scale entities carry no coordinates at all.**"* What §7a forbids is
+coordinates, distance and spatial indexing; what it names as the substance of world scale is counts
+and relationships. *"This university stands in that kind of country"* is one: it makes **co-location**
+expressible — two universities with the same `kindId` stand in the same country, which is what a
+multi-mage ritual needs from siting — and it makes **terrain** expressible, and it makes neither
+distance nor direction expressible, because at this scale neither exists. `assertNoWorldPositions`
+passes on the component unchanged, for the ordinary reason: it declares no `x` and no `y`.
+
+**A component rather than a field, for the third time and the same reason.** A field exists for every
+university, so "unsited" would need a sentinel content id — a reserved entry in a namespace whose
+whole contract is that its ids are permanent and each mean one kind of country. An absent row says it
+with nothing invented, and makes the world-schema step an appended empty section rather than a
+column-by-column rewrite of every older save's university section.
+
+**What the site changes, and what it deliberately does not.** Two mechanisms, in
+`rules-world`'s `universities/siting.ts`:
+
+1. **Seats.** `capacity` is the *designed* count; how many students the surrounding country can keep
+   at those desks is `capacityPerLandUnit` read against the ordinary country, bounded to
+   `[fp(128), fp(2048)]`. That one figure reaches `seatsBonus` in `K` (and so population) and student
+   demand (and so, through promotion, mages and knowledge).
+2. **Library upkeep.** `libraryUpkeepMultiplier` on the per-instance upkeep the owning university's
+   library owes.
+
+Not build cost (`advanceConstruction` has no caller in the tree), not materials yield (production is
+a populace quantity, not a university relationship), and **not worship** — §7 pays for what an
+institution *is*, and `worshipInputs` keeps reading the designed `capacity`.
 
 ### 1.5 Knowledge
 
@@ -534,8 +586,9 @@ normative and this file must match it.
   "id": "arable-lowland",
   "name": "The Arable Lowland",
   "gloss": "The ordinary country most people live in, and the reason there are most people.",
-  "landUnits": 1600,             // how much of this region the universe holds. A count, not fp
+  "landUnits": 1600,             // the FOUNDING endowment of this kind. A count, not fp
   "capacityPerLandUnit": 20480,  // fp; people one land unit carries. 20480 = 20 people
+  "libraryUpkeepMultiplier": 1024, // fp; what a library standing here pays. 1024 = neutral
   "tuningStatus": "untuned"
 }
 ```
@@ -553,10 +606,22 @@ people than a bare one — but only as a **bounded multiplier** on the territory
 addend that can grow without limit. `packages/rules-world/src/economy/carrying-capacity.ts` states
 the shape and the ceiling it implies.
 
-`landUnits` is a per-universe endowment carried in content because a simulation instance holds
-exactly one universe (§1.1). When that stops being true — a raid that takes ground, a scenario that
-seeds a smaller world — `landUnits` moves to §1.1 and this record keeps `capacityPerLandUnit`, which
-is a property of the *kind* of country and not of who holds it.
+`landUnits` **was** a per-universe endowment carried in content because a simulation instance holds
+exactly one universe (§1.1). When that stopped being true — a raid that takes ground, a scenario that
+seeds a smaller world — `landUnits` was to move to §1.1 and this record was to keep
+`capacityPerLandUnit`, which is a property of the *kind* of country and not of who holds it.
+
+**`university-siting` made that move, ahead of the raid that needed it.** The universe's holding is
+now the `territory-holding` component in §1.1, one row per kind, and `K` is derived from those rows
+rather than from this file. What stays here is what a *kind* of country is like: `capacityPerLandUnit`
+and, new with the same change, `libraryUpkeepMultiplier`. `landUnits` stays too, demoted to what it
+now is — the **founding endowment**, the value the first world tick materializes a holding row from,
+and the value a scenario seeds a starting position with. Nothing reads it after tick zero.
+
+`libraryUpkeepMultiplier` is authored **anti-correlated with `capacityPerLandUnit`** on purpose: the
+delta feeds three harvests a year and floods the archive; the highland waste feeds nobody and is cold
+and dry. Without an opposing term, siting a university would be a *ranking* rather than a decision
+and the richest kind would strictly dominate every choice a god ever makes about where to build.
 
 **A universe that cannot feed itself carries fewer people, and the world loop is what says so.**
 `carryingCapacity` has taken a `subsistenceShortfallShare` since `mages-and-species` task 8.5 and
