@@ -12,7 +12,7 @@ whether knowledge loss lands off the beat before 520 assets were generated again
 | [`glow/`](glow/) | Cyan is the god's own light and the form hues stay the world's. Does that rule survive a vellum ground, or does light force the client dark? |
 | [`targets/`](targets/) | Six actions carry an entity handle. How does a person pick one mage out of thousands, and does §4.4's top-*k* candidate list serve a human as well as a policy network? |
 | [`tempo/`](tempo/) | What wall-clock pacing does a world tick get, and which events are allowed to interrupt? One question, because speed decides what an event is. |
-| [`raid/`](raid/) | The masking was the bug — `raid-engagement.md` §1 repeals it. Given verbs whose agency decays across three phases, can a player watch seven effect primitives resolve *and* still tell what the engine decided from what the page invented? And can pause-to-inspect survive live PvP if stopping the clock is priced and the other side can outbid it? |
+| [`raid/`](raid/) | The masking was the bug — `raid-engagement.md` §1 repeals it. Given verbs whose agency decays across three phases, can a player watch seven effect primitives resolve *and* still tell what the engine decided from what the page invented? And — §11, which supersedes the priced-pause answer this row used to ask about — can *rewind to view, never to act* be made unambiguous, so that a directive issued while looking back visibly lands on the tick the engagement has actually reached? |
 
 ## Running them
 

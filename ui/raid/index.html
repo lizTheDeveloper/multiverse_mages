@@ -32,6 +32,36 @@
   drawn spell wears its cell's form hue and nothing else.
 
   ============================================================================
+  THE BID IS GONE — raid-engagement.md §11 supersedes it
+  ============================================================================
+  Until now, clicking a mage STOPPED THE ACTION and charged for it: 25 favor on
+  a rising ladder, a 20-Vis raider counter-bid on its own, a 40-Vis floor, 2.6 s
+  of deliberation. The author (2026-08-12): "Never mind about pause at any
+  point. I think you should just be able to re-look — rewind to view, but not to
+  act. Like at the end, you should be able to replay it."
+
+  A currency, an escalation ladder, a floor, a deliberation window and an
+  opponent model, deleted rather than retuned; git holds them (w39/raid-polish).
+  One rule replaces all of it:
+
+      YOU CANNOT STOP THE CLOCK. YOU CAN ALWAYS LOOK AT WHAT ALREADY HAPPENED.
+
+  The scaffolding "Pause trace" button went with the bid — a page claiming the
+  clock cannot be stopped must not ship a button that stops it. The load-bearing
+  half is §11's: "Any directive issued while looking back applies to *now* ... or
+  it is refused. If that is ever ambiguous in the interface, the interface is
+  wrong." So a directive issued from the record lands on the LIVE tick, snaps
+  the view back to it, and logs both ticks — you cannot be looking at the past
+  at the moment a change of yours lands.
+
+  And it is NEARLY FREE, which is the point worth taking away. sim-core already
+  ships deterministic replay, versioned snapshots and golden replay fixtures,
+  and step(state, actions, rng) -> state is pure. A raid replay is therefore A
+  CAPABILITY TO EXPOSE, NOT A FEATURE TO BUILD: seed plus action log re-runs an
+  engagement identically, which is what the goldens assert on every commit. §4b
+  below is the miniature of exactly that, built the same way rather than faked.
+
+  ============================================================================
   KNOWN COST — read this before believing anything on screen
   ============================================================================
   raid-engagement.md §5: "A raid view that animates plausible-looking magic
@@ -73,8 +103,6 @@
         a tick, a quarter of engagement time, so that a cast can be read.
         Muster is played 1:1 and is deliberately not slowed — its clock is the
         pressure, and the author praised exactly that.
-      · the prices on the clock: 25 favor a hold rising by 25, 20 Vis a
-        buy-back rising by 20, a 40-Vis floor, 2.6 s of deliberation
 
     AHEAD OF THE ENGINE, deliberately, and the likeliest thing to be believed —
       · arbitration.ts computes the legal mask ONCE from a frozen snapshot and
@@ -86,15 +114,16 @@
       · the raid verb set DOES now exist, on w37/raid-playable, as six verb-*
         costs in raid-constant.json — forbid, permit, levy, ward, mend,
         conceal. None of them is in this tree, and the four drawn here are an
-        older, different set; even "levy" means something else there. Said in
-        full in the provenance panel.
-      · holding the moment — pause as a purchased, contestable bid — is a verb
-        in no package at all, on any branch. It is new design, and it is here
-        because a pause nobody can outbid cannot ship in live PvP.
+        older, different set. THIS PAGE'S "levy" HAS BEEN RENAMED to "call up
+        the reserve" rather than left to collide: w37's levy is a detachment
+        that does not fight, this one's is a detachment that does, and one word
+        over two mechanics is how a merge silently picks the wrong one. The gap
+        is named in the provenance panel rather than resolved — w37 is unmerged
+        and guessing at its semantics would be worse than the collision.
       · vision §7's "the god issues no orders" is NOT repealed. Every verb here
-        is god-shaped: permit, forbid, favor spent on a standing condition, and
-        favor spent to stop the clock. Nothing on this page targets or moves a
-        combatant — inspecting one is not commanding her.
+        is god-shaped: permit, forbid, and favor spent on a standing condition.
+        Nothing on this page targets or moves a combatant — inspecting one is
+        not commanding her, and looking at the record of one is not either.
 
   Two open questions in §6 are deliberately not answered here: the muster clock
   runs on engagement time because something had to be picked (§6.5 open), and
@@ -334,6 +363,18 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .cmini{align-self:flex-start;font-size:9px;padding:.24rem .45rem}
 .cmini[hidden]{display:none}
 
+/* ---- the one rule that must not be fudged, said in the place you would act ----
+   While you are looking at the record, every switch and every verb in this card
+   still lands at the tick the engagement has actually reached. So the card says
+   so, in brass, immediately above the switches. ---- */
+.nowbar{
+  font:9.5px var(--mono);line-height:1.6;letter-spacing:.04em;padding:.42rem .5rem;border-radius:2px;
+  border:1px solid color-mix(in srgb,var(--brass) 55%,var(--rule));color:var(--brass);
+  background:color-mix(in srgb,var(--brass) 10%,var(--well))
+}
+.nowbar[hidden]{display:none}
+.nowbar b{font-weight:600;color:var(--brass)}
+
 /* ---- verbs ---- */
 .verbs{display:flex;flex-direction:column;gap:.35rem}
 .verb{
@@ -377,23 +418,23 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
   color:#8A7A46;border:1px solid #4A421F;background:rgba(20,16,6,.72);padding:.22rem .4rem;border-radius:2px
 }
 
-/* ---- the dossier, and the clock two sides bid over ----
-   Cyan throughout, and that is the rule rather than an exception to it: the
-   selection ring is a focus ring and holding the moment is the god's own
-   affordance. The raider's buy-back is raider-coloured, never cyan. ---- */
+/* ---- the dossier ----
+   Cyan on the card head and on the selection ring, and that is the rule rather
+   than an exception to it: a focus ring is the god's own light. Inspecting a
+   mage stops nothing and costs nothing, in every phase. When the dossier is
+   reading the record rather than the present it wears brass, which is this
+   page's colour for "authored, or not now". ---- */
 .dossier > h2{color:var(--god)}
 .dossier .body{gap:.5rem}
 .say{margin:0;font-size:.85rem;line-height:1.5;color:var(--soft)}
 .say b{color:var(--ink)}
-.holdnote{
+.asof{
   font:9.5px var(--mono);line-height:1.55;letter-spacing:.04em;padding:.4rem .5rem;border-radius:2px;
-  border:1px solid color-mix(in srgb,var(--god) 45%,var(--rule));color:var(--god);
-  background:color-mix(in srgb,var(--god) 10%,var(--well))
+  border:1px solid var(--rule);color:var(--faint);background:var(--well)
 }
-.holdnote[data-who="a"]{border-color:color-mix(in srgb,var(--raider) 50%,var(--rule));color:var(--raider);
-  background:color-mix(in srgb,var(--raider) 10%,var(--well))}
-.holdnote[data-who="none"]{border-color:var(--rule);color:var(--faint);background:var(--well)}
-.holdnote b{font-weight:600}
+.asof b{font-weight:600}
+.asof[data-rec="1"]{border-color:color-mix(in srgb,var(--brass) 55%,var(--rule));color:var(--brass);
+  background:color-mix(in srgb,var(--brass) 10%,var(--well))}
 .dsrows{display:grid;grid-template-columns:1fr auto;gap:.1rem .5rem;font:10px var(--mono);color:var(--faint)}
 .dsrows b{color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
 .dsnodes{display:flex;flex-wrap:wrap;gap:.22rem}
@@ -406,16 +447,22 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .dsract{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.1rem}
 .dsract .btn[data-live="1"]{border-color:var(--god);color:var(--god)}
 
-.holdbar{
-  align-self:center;text-align:center;font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;
-  color:#7FD9E1;border:1px solid #1B6A72;background:rgba(6,32,36,.82);padding:.3rem .55rem;border-radius:2px;
-  line-height:1.7;max-width:92%
+/* ---- the record ribbon. Brass, never cyan: you are not acting, and the god's
+       light means the god can do something here. It sits ACROSS THE TOP of the
+       field rather than over the middle of it, because the whole point of
+       looking back is to look at the field. ---- */
+.recbar{
+  align-self:stretch;text-align:center;font:10px var(--mono);letter-spacing:.09em;text-transform:uppercase;
+  color:#E7C063;border:1px solid #7A5C13;background:rgba(38,28,4,.9);padding:.32rem .55rem;border-radius:2px;
+  line-height:1.75;max-width:100%;
+  /* clears the synthetic-trace tag rather than running under it: that tag is
+     the page's other standing warning and must not be crowded by this one */
+  margin-top:1.45rem
 }
-.holdbar[hidden]{display:none}
-.holdbar b{color:#BFF6FB;font-weight:600}
-.holdbar .them{color:#F0A08C;text-transform:none;letter-spacing:.03em}
-.holdbar .bid{display:block;height:2px;margin-top:.3rem;background:#1B6A72;border-radius:1px;overflow:hidden}
-.holdbar .bid i{display:block;height:100%;background:#DE7059;width:0}
+.recbar[hidden]{display:none}
+.recbar b{color:#FFE9A8;font-weight:600}
+.recbar .live{display:block;color:#9FC2CB;text-transform:none;letter-spacing:.03em}
+.recbar .live b{color:#DBEFF3}
 
 .stability{padding:.6rem .75rem .7rem;display:flex;flex-direction:column;gap:.3rem;border-bottom:1px solid var(--rule)}
 .stability .row{display:flex;align-items:baseline;gap:.5rem;font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
@@ -427,6 +474,29 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .stability.crit .row b{color:var(--deny)}
 .stability .legendline{font:9.5px var(--mono);color:var(--faint);display:flex;gap:.8rem;flex-wrap:wrap}
 
+/* ---- the record strip: the one new control on the page ----
+   Directly under the stability bar and above the viewing controls, because it
+   belongs to the field it scrubs and not to the playback rate. It is built out
+   of .btn, .lab and .num like everything else here; the only new element is the
+   range input, and the only new colour is brass, which the page already uses
+   for "authored, or not now". ---- */
+.rec{
+  padding:.5rem .75rem .55rem;display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;
+  border-bottom:1px solid var(--rule)
+}
+.rec .scrub{flex:1 1 9rem;min-width:7rem;accent-color:var(--faint);height:1.1rem}
+.rec[data-rec="1"] .scrub{accent-color:var(--brass)}
+.rec .read{white-space:nowrap}
+.rec[data-rec="1"]{background:color-mix(in srgb,var(--brass) 9%,var(--panel))}
+.rec[data-rec="1"] .lab{color:var(--brass)}
+.rec .btn[data-live="1"]{border-color:var(--brass);color:var(--brass);
+  background:color-mix(in srgb,var(--brass) 14%,var(--well))}
+/* the record chrome is scoped to what is showing the past — the field and the
+   number under it. The viewing controls below stay ordinary, because playback
+   rate is a live setting whichever tick you are looking at. */
+.card[data-rec="1"] .fieldwrap{box-shadow:inset 0 0 0 2px var(--brass)}
+.card[data-rec="1"] .stability{background:color-mix(in srgb,var(--brass) 9%,var(--panel))}
+
 .controls{padding:.55rem .75rem .65rem;display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
 .controls .lab{margin-right:.1rem}
 .btn{
@@ -434,6 +504,8 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
   border:1px solid var(--rule);border-radius:2px;background:var(--well);color:var(--soft);cursor:pointer
 }
 .btn:hover{border-color:var(--rule-hi);color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:disabled:hover{border-color:var(--rule);color:var(--soft)}
 .btn[aria-pressed="true"]{border-color:var(--god);color:var(--god);background:color-mix(in srgb,var(--god) 12%,var(--well))}
 .seed{
   font:11px var(--mono);width:6.5rem;padding:.34rem .45rem;background:var(--well);color:var(--ink);
@@ -493,6 +565,15 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .log tr[data-god="1"] td.who{color:var(--god)}
 .log .side-a{color:var(--raider)} .log .side-d{color:var(--host)}
 .log .empty{padding:.9rem .6rem;font:10px var(--mono);color:var(--faint);line-height:1.6}
+/* rows the moment you are looking at has not reached yet. They are not hidden —
+   it is all record, and a log that hides what you already own would be a lie —
+   but they read as ahead of you, and a brass line marks where you are. */
+.log tr.after td{opacity:.3}
+.log tr.nowline td{
+  padding:.2rem .35rem;font:9px var(--mono);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--brass);border-top:1px solid var(--brass);border-bottom:0;background:color-mix(in srgb,var(--brass) 10%,transparent)
+}
+.log tr.nowline[hidden]{display:none}
 
 .ledblk{display:flex;flex-direction:column;gap:.28rem}
 .expolist{max-height:7rem;overflow-y:auto;display:flex;flex-direction:column;gap:.16rem}
@@ -558,11 +639,11 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
       <p class="lede">A raid, watched from inside the universe being raided. Agency is
         <b>front-loaded</b>: you spend the raid verb set under a clock, intervene less and less
         sharply once the two sides touch, and by the end you have earned the right to
-        <em>only watch</em>. Even that right is bought — <b>click any mage to stop the action and
-        look at her</b>, and once the sides have touched it costs favor, and they can spend Vis to
-        start it again. Every spell drawn on the field is a node in
-        <code>packages/content/data</code> dispatched through the seven effect primitives
-        <code>arbitration.ts</code> knows.</p>
+        <em>only watch</em>. <b>You cannot stop the clock — you can always look at what already
+        happened.</b> Click any mage to inspect her; scrub the record back to any tick and the
+        engagement keeps running underneath, because <em>rewind is to view, never to act</em>.
+        Every spell drawn on the field is a node in <code>packages/content/data</code> dispatched
+        through the seven effect primitives <code>arbitration.ts</code> knows.</p>
     </div>
     <div class="chips">
       <span class="chip synthetic" title="rules-raid is imported by no package. There is nothing to be live against.">Synthetic trace</span>
@@ -591,22 +672,25 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
   <div class="panel">
 
     <!-- ============================ LEFT: THE GOD'S VERBS ============================
-      The dossier sits directly above the constitution on purpose. Stopping the
-      action to look at a mage and then forbidding the cell she was reaching for
-      is one motion, and it is the motion the whole verb set is for.
+      The dossier sits directly above the constitution on purpose. Looking at a
+      mage and then forbidding the cell she was reaching for is one motion, and
+      it is the motion the whole verb set is for.
+
+      Everything in this column is LIVE, always, whatever tick the field is
+      showing. That is the §11 rule made structural: the record is over there,
+      the verbs are over here, and a directive lands at the live tick.
     ============================================================================ -->
     <div class="stack">
       <section class="card dossier" id="dossier" hidden>
         <h2><span id="dsr-who">—</span><span class="side" id="dsr-side"></span></h2>
         <div class="body">
-          <div class="holdnote" id="dsr-hold"></div>
-          <span class="lab">What she is doing</span>
+          <div class="asof" id="dsr-when"></div>
+          <span class="lab" id="dsr-doing-lab">What she is doing</span>
           <p class="say" id="dsr-why">—</p>
           <div class="dsrows" id="dsr-rows"></div>
           <span class="lab">What she can reach for</span>
           <div class="dsnodes" id="dsr-nodes"></div>
           <div class="dsract">
-            <button class="btn" id="dsr-hold-btn" type="button">Hold the moment</button>
             <button class="btn" id="dsr-close" type="button">Close</button>
           </div>
         </div>
@@ -619,6 +703,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
             <div class="track"><i id="favor-bar"></i></div>
             <div class="note">Worship, and the defender's only spend. Regenerates at fp(1)/tick here.</div>
           </div>
+          <div class="nowbar" id="nowbar" hidden></div>
           <div class="consti" id="consti"></div>
           <div class="cclosed" id="cclosed" hidden></div>
           <button class="btn cmini" id="consti-toggle" type="button" hidden>Show all twelve</button>
@@ -654,13 +739,13 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
     </div>
 
     <!-- ============================ CENTRE: THE FIELD ============================ -->
-    <section class="card">
+    <section class="card" id="fieldcard">
       <h2>The engagement <span class="side" id="fieldsub">200 m × 200 m · 100 ms engagement tick</span></h2>
       <div class="fieldwrap">
         <canvas id="field" width="900" height="900" tabindex="0"
-          aria-label="The battlefield. Click any combatant to inspect her; once the sides have touched that also holds the clock, for favor, and the expedition can spend Vis to start it again. With the keyboard: left and right arrows step through the combatants, Enter holds or releases the moment, Escape closes. A textual cast log to the right carries the same events."></canvas>
+          aria-label="The battlefield. Click any combatant to inspect her; inspecting stops nothing and costs nothing, in every phase. With the keyboard: left and right arrows step through the combatants, Escape closes the dossier, comma and full stop scrub the record ten ticks back and forward, and L returns to the live tick. Rewind shows the record and never takes a directive: anything you do lands at the live tick. A textual cast log to the right carries the same events."></canvas>
         <div class="overlay">
-          <div class="holdbar" id="holdbar" hidden></div>
+          <div class="recbar" id="recbar" hidden></div>
           <div class="mclock" id="mclock">
             <div class="n num" id="mclock-n">30.0</div>
             <div class="u">until contact</div>
@@ -678,12 +763,22 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
           <span id="alive">—</span>
         </div>
       </div>
+      <div class="rec" id="rec" data-rec="0">
+        <span class="lab" id="rec-lab">Record</span>
+        <button class="btn" id="rec-back" type="button"
+          title="Look ten ticks back. The engagement does not stop — it never does.">⟲ 10 t</button>
+        <input class="scrub" id="scrub" type="range" min="0" max="0" value="0" step="1"
+          aria-label="Scrub the record. Moving it shows an earlier tick of this engagement; the engagement keeps running, and any directive you issue still lands at the live tick.">
+        <button class="btn" id="rec-play" type="button" aria-pressed="false"
+          title="Freeze the record you are reading. This never freezes the engagement — nothing on this page does.">Hold the record</button>
+        <button class="btn" id="rec-live" type="button"
+          title="Jump the view back to the tick the engagement has actually reached.">Live ▸</button>
+        <span class="lab num read" id="rec-read">live</span>
+      </div>
       <div class="controls">
         <span class="lab">Trace</span>
         <input class="seed" id="seed" value="hollow-gate" aria-label="Trace seed" spellcheck="false">
         <button class="btn" id="restart" type="button">Restart</button>
-        <button class="btn" id="pause" type="button" aria-pressed="false"
-          title="Scaffolding, like the seed and the damage multiplier: it stops the trace and costs nothing, and no such control exists in the game. The in-fiction way to stop the action is to hold a mage, which costs favor and which the expedition can outbid.">Pause trace</button>
         <button class="btn" id="skip" type="button">Skip muster</button>
         <span class="lab" style="margin-left:.4rem">Speed</span>
         <button class="btn spd" data-spd="1" type="button" title="2.5 ticks a second — a quarter of engagement time, and the default. Muster is never slowed.">1×</button>
@@ -709,7 +804,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
     <div class="stack record">
       <div class="recinner">
         <section class="card ledger">
-          <h2>Ledger <span class="side">what it has cost, both ways</span></h2>
+          <h2>Ledger <span class="side" id="ledger-side">what it has cost, both ways</span></h2>
           <div class="body">
             <div class="tally" id="tally"></div>
             <div class="ledblk">
@@ -777,10 +872,6 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
             that a cast can be read. <b>Muster is not slowed</b>, because its clock is the pressure.
             The speed control is rebased on the slow pace: 1× is the default, 4× is 1:1, 16× is for
             skipping ahead. Nothing about it changes what the trace decides.</li>
-          <li>The <b>prices on the clock</b>: 25 favor for your first hold and 25 more each time,
-            20 Vis for their first buy-back and 20 more each time, a 40-Vis floor below which the
-            expedition will not bid, and 2.6 seconds for it to decide. Every one of those numbers is
-            invented here, and the ladders are the load-bearing part — see the next column.</li>
           <li><b>Mage rosters and their held nodes</b> — drawn from the seed. There is no world state
             behind them.</li>
           <li>Objective instance counts, and therefore objective values.</li>
@@ -801,26 +892,44 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
             <em>frozen</em> snapshot. The lock-don't-freeze behaviour animated here is
             raid-engagement.md §1, which W37 is implementing on <code>w37/raid-playable</code>. This is
             the single most believable untruth on the page, which is why it is named here.</li>
-          <li><b>Holding the moment is not a verb anywhere.</b> Click a mage and the action stops for
-            favor; the expedition spends Vis to start it again, and both ladders rise. It is drawn
-            because it answers the objection that makes pause-to-inspect unshippable in live PvP —
-            one player freezing the world at will is intolerable, so most designs forbid it outright,
-            and a price the other side can outbid makes it a decision instead. <b>Muster is exempt:
-            looking is free there and the clock does not stop</b>, because buying more time to decide
-            what to forbid is exactly the thing that must not become possible.</li>
+          <li><b>Rewind is not a verb anywhere either — but it is the one thing here that is nearly
+            free.</b> <code>packages/sim-core</code> already ships deterministic replay, versioned
+            snapshots and golden replay fixtures, and <code>step(state, actions, rng) → state</code>
+            is pure: no wall-clock reads, no <code>Math.random</code>, no floating point in the rules
+            path. <b>A raid replay is a capability to expose, not a feature to build</b> — seed plus
+            action log re-runs an engagement identically, which is exactly the property the golden
+            fixtures assert on every commit. This page generates its engagement from a seed, so it
+            already holds the record. Rewinding here keeps <b>no snapshots at all</b>: it re-runs the
+            engagement into a copy from the seed and an append-only log of every directive and the tick
+            it landed on. A whole raid re-runs in about <b>7 ms</b>, half a frame, which is why that is
+            affordable. The live state is never touched, so looking back <b>cannot desync
+            anything</b>. It is one of the
+            few places where this prototype's honest limitation and the engine's actual capability
+            point the same way — and in the real game, seed plus action log is also small enough to
+            hand to someone else, which makes a raid a shareable artifact for disputes and study.</li>
+          <li><b>What was here before, and is now deleted.</b> Until this pass, clicking a mage
+            <em>stopped the action</em> and charged for it — 25 favor on a rising ladder, a raider
+            counter-bid of 20 Vis on its own ladder, a 40-Vis floor and 2.6 s of deliberation.
+            raid-engagement.md §11 supersedes that outright, and the replacement needs <b>no currency,
+            no escalation rule and no opponent model</b>. The scaffolding pause button went with it: a
+            page claiming the clock cannot be stopped must not ship a button that stops it. You can
+            freeze the <em>record</em> you are reading; you can never freeze the engagement.</li>
           <li><b>Vis and exposure</b> exist in no package. §3 proposals, drawn as proposals. Vis is also
-            a spec collision — economy spec §250 forbids a fourth resource.</li>
+            a spec collision — economy spec §250 forbids a fourth resource. With the bid gone, Vis is
+            spent on casting and nothing else.</li>
           <li><b>The raid verb set no longer "exists in no package" — and this page's four are not
             it.</b> <code>w37/raid-playable</code>'s <code>raid-constant.json</code> now carries six
             verb costs: <code>verb-forbid</code>, <code>verb-permit</code>, <code>verb-levy</code>,
             <code>verb-ward</code>, <code>verb-mend</code> and <code>verb-conceal</code> — four for the
             defender and two for the attacker. None of them is in <em>this</em> tree, and the four
-            drawn here (bless, levy, veil, second wind) are an older, different set. <b>Even the shared
-            name diverges</b>: w37's levy is one detachment out of a cohort that does <em>not</em>
-            fight, and its own gloss says a second soldier detachment "could never fire" because the
-            opening deployment already commits every one a soldier cohort can field — which is
-            precisely what this page's levy does. Read the verbs here as a sketch that has been
-            overtaken, not as the shipped set.</li>
+            drawn here are an older, different set. <b>One word covered two mechanics, so this page
+            renamed its own rather than collide</b>: w37's <code>levy</code> is one detachment out of a
+            cohort that does <em>not</em> fight — its gloss says a second soldier detachment "could
+            never fire", because the opening deployment already commits every one a soldier cohort can
+            field — and this page's was a detachment that walks up and fights. It is now <b>call up the
+            reserve</b>. The gap is named, not resolved: <code>w37/raid-playable</code> is unmerged, and
+            guessing at its semantics would be worse than the collision was. Read the verbs here as a
+            sketch that has been overtaken, not as the shipped set.</li>
           <li><b>The god still issues no orders.</b> vision §7 is not repealed. Every verb here is
             permit, forbid, or favor spent on a standing condition; nothing targets a combatant.</li>
           <li><b>Open questions left open.</b> The muster clock runs on engagement time because
@@ -982,7 +1091,9 @@ const CELLS =
 ]}
 ];
 
-/* Stacking and caps, from primitive.json. */
+/* Stacking and caps, from primitive.json.
+   `clamps` below is a counter, not a rule — it rides on the state rather than
+   on the module so that a re-run counts into the copy and not the live ledger. */
 const PRIM = {
   'direct-damage':  { stack: 'sum',  cap: 0 },
   'ward':           { stack: 'mul',  cap: 922 },
@@ -1044,30 +1155,7 @@ const A = {
   favorStart: 260, favorMax: 320, favorRegen: 1,
   visStart: 480,
   visPerCast: 4,
-
-  /* ---- holding the moment: pause as a purchased, contestable bid ----
-     Author: "you should be able to click on any mage and pause the action at
-     any point. But the opponent should be able to unpause. And during a raid
-     that costs favor or vis."
-
-     One player freezing the world at will is intolerable in live PvP, which is
-     why most games simply forbid pause-to-inspect. Charging for it, and
-     letting the other side buy it back, turns it from an exploit into a
-     decision — and the two sides bid in DIFFERENT currencies, so whoever has
-     slack in their own economy holds the clock longer.
-
-     The price rises with each hold by that side. A flat price is the failure
-     mode: the richer side buys the clock once and keeps it. Rising, the clock
-     changes hands at an increasing cost until one side cannot pay, which is a
-     resource decision rather than a reflex one. The raider also keeps a floor
-     — an expedition will not bid away the Vis it needs to get home. */
-  holdBase: 25,        // favor. Defender pays 25, then 50, then 75...
-  buybackBase: 20,     // Vis. Raider pays 20, then 40, then 60...
-  visFloor: 40,        // ten casts. Below this the expedition will not bid.
-  bidDelayMs: 2600,    // how long the expedition takes to count its Vis
 };
-const holdPrice = (S) => A.holdBase * (S.holds.d + 1);
-const buybackPrice = (S) => A.buybackBase * (S.holds.a + 1);
 
 /* Canvas ink. The field well is dark in BOTH themes — ui/glow's ground B, taken
    as a verdict rather than re-argued. So these are lifted for a dark ground and
@@ -1106,10 +1194,13 @@ function stack(primitiveId, mags) {
   if (p.cap > 0 && v > p.cap) { clamps[primitiveId] = (clamps[primitiveId] || 0) + 1; v = p.cap; }
   return v;
 }
+/* Where cap clamps are counted. Pointed at whichever state is being stepped —
+   the live one, or the copy a rewind is re-running. */
 let clamps = {};
 
 /* A seeded stream. Not sim-core's splittable PRNG — this is a prototype, and
-   the honest claim is only that the same seed gives the same trace. */
+   the honest claim is only that the same seed gives the same trace — which is
+   the whole of what the record needs. */
 function streamOf(seedText, salt) {
   let h = 2166136261 >>> 0;
   const s = String(seedText) + '/' + salt;
@@ -1176,7 +1267,6 @@ function legalNodes(held, permitted) {
 }
 
 function buildRaid(seedText, damageMultiplier) {
-  clamps = {};
   const terrain = makeTerrain(seedText);
   const rng = streamOf(seedText, 'roster');
   const combatants = [];
@@ -1255,10 +1345,12 @@ function buildRaid(seedText, damageMultiplier) {
     /* termination.ts computes the ceiling from initial PLUS jitter, so jitter
        can never make a raid outlast its declared ceiling. */
     stability, maxTicks: floorDiv(K.stabilityInitial + K.stabilityJitter, K.stabilityDecay),
-    tick: 0, phase: 'muster', damage: damageMultiplier,
+    tick: 0, phase: 'muster', damage: damageMultiplier, damage0: damageMultiplier,
     favor: A.favorStart, favorSpent: 0, vis: A.visStart, exposure: new Map(),
-    /* the clock, as a thing two sides bid over */
-    inspect: null, hold: null, holds: { a: 0, d: 0 }, favorOnClock: 0, visOnClock: 0,
+    clamps: {},
+    /* how many entries of the directive log this state has consumed. The live
+       state always has them all; a re-run applies from here. */
+    acts: 0,
     forbiddenCastsBlocked: 0, casts: 0, refusals: 0, evades: 0, thefts: 0,
     fx: [], fields: [], log: [], summonsAlive: { a: 0, d: 0 }, flow: new Map(),
     ended: null, spent: new Set(), takenValue: 0,
@@ -1320,6 +1412,9 @@ function logRow(S, kind, actor, nodeId, detail, right, expo) {
 
 function step(S) {
   if (S.ended) return;
+  /* every cap clamp counted below lands on THIS state, which is what makes a
+     rewind a read: re-stepping a copy cannot move the live ledger */
+  clamps = S.clamps;
   S.tick++;
   S.favor = Math.min(A.favorMax, S.favor + A.favorRegen);
 
@@ -1730,6 +1825,85 @@ function end(S, reason) {
 }
 
 /* ==========================================================================
+   4b. THE RECORD — rewind to view, never to act. raid-engagement.md §11.
+
+   Seed plus action log, which is how sim-core already replays. Two pieces:
+     · ACTIONS — every god directive, with the tick it landed on. Append-only.
+     · viewAt  — re-run the engagement INTO A COPY, up to the tick you asked for.
+
+   The live state is never touched by any of this, which is what makes looking
+   back safe in live PvP: it cannot desync anything, because it re-runs a record
+   instead of mutating the engagement.
+   ========================================================================== */
+let ACTIONS = [];      // [{ tick, k, ..., seen }] — the record, with the seed
+
+/**
+ * Apply a recorded directive to a state. UNCONDITIONAL, deliberately: whether
+ * you could afford it, whether the phase allowed it, whether the cell was
+ * already locked — all of that is decided ONCE, when you act, and is never
+ * re-decided. A replay that re-ran the rules would not be a replay, and the
+ * first thing it would get wrong is a verb you could afford then and cannot
+ * afford now.
+ */
+function applyAction(S, act) {
+  const where = act.seen === null ? '' : ' — issued while looking back at tick ' + act.seen;
+  if (act.k === 'cell') {
+    if (S.permitted.has(act.id)) { S.permitted.delete(act.id); logRow(S, 'note', null, null, 'FORBADE ' + act.id + ' — locked for the raid' + where, 'constitution'); }
+    else { S.permitted.add(act.id); logRow(S, 'note', null, null, 'PERMITTED ' + act.id + ' — locked for the raid' + where, 'constitution'); }
+    S.locked.add(act.id);
+  } else if (act.k === 'verb') {
+    const v = VERBS.find(x => x.id === act.id);
+    S.favor -= v.cost; S.favorSpent += v.cost; S.spent.add(v.id);
+    const defenders = S.combatants.filter(c => c.side === 'd' && c.alive);
+    if (v.id === 'bless') for (const c of defenders) c.blessing = 256;
+    if (v.id === 'veil') for (const c of defenders) c.held = c.held.concat(['pn-shed-the-use-name']);
+    if (v.id === 'wind') for (const c of defenders) c.vigor = c.maxVigor;
+    if (v.id === 'reserve') {
+      const p = { x: floorDiv(K.extent, 2), y: K.extent - floorDiv(K.deployDepth, 2) };
+      S.combatants.push({ key: 20000 + S.combatants.length, kind: 'detachment', side: 'd', pos: p, prev: { ...p },
+        hp: K.detachHp, maxHp: K.detachHp, vigor: 0, maxVigor: 0, held: [], deepest: 0, cooldown: 0,
+        ward: 0, concealment: 0, blessing: 0, alive: true, withdrawn: false, stolen: [],
+        why: 'called up out of a cohort that does not fight', reaching: null, lastCast: null,
+        damage: K.detachDamage, range: K.detachRange, name: 'hd+' });
+    }
+    logRow(S, 'note', null, null, v.name + ' — ' + v.cost + ' favor' + where, 'spent');
+  } else if (act.k === 'damage') {
+    S.damage = act.n;
+  }
+}
+
+/** Directives issued at tick t belong to the state at tick t, not to t + 1. */
+function catchUpActions(V) {
+  while (V.acts < ACTIONS.length && ACTIONS[V.acts].tick <= V.tick) applyAction(V, ACTIONS[V.acts++]);
+}
+
+/**
+ * The state at tick `t`, re-derived rather than remembered.
+ *
+ * There is no snapshot store here and there does not need to be one: a whole
+ * raid re-runs in about seven milliseconds, half a frame, because the seed
+ * fixes the terrain, the rosters and every stream, and ACTIONS fixes everything
+ * the god did. That is the sim-core claim taken literally — SEED PLUS ACTION
+ * LOG, and nothing else kept. It also means there is no second copy of the
+ * state shape to rot when someone adds a field to it.
+ *
+ * The one thing carried across is the memoised flow fields, which are a pure
+ * function of terrain, which is a pure function of the seed. Stepping FORWARD
+ * reuses the copy, so playing the record costs one step a tick.
+ */
+let viewCache = null;
+function viewAt(live, t) {
+  let V = viewCache;
+  if (!V || V.tick > t) { V = buildRaid(live.seed, live.damage0); V.flow = live.flow; }
+  let guard = 0;
+  while (V.tick < t && !V.ended && guard++ < 5000) { catchUpActions(V); step(V); }
+  catchUpActions(V);
+  clamps = live.clamps;   /* hand the counter back: the live ledger reads it every frame */
+  viewCache = V;
+  return V;
+}
+
+/* ==========================================================================
    5. THE CANVAS. Seven primitives, seven treatments.
    ========================================================================== */
 const canvas = document.getElementById('field');
@@ -1932,14 +2106,14 @@ function draw(S, alpha) {
   }
   S.fx = S.fx.filter(f => S.tick - f.t0 <= f.life);
 
-  /* --- the held moment. It DIMS AND HOLDS; it never covers. The praise this
-     page is being polished against was for watching it, so an inspection that
-     puts a sheet over the field defeats its own purpose. The ring is cyan
-     because a focus ring is the god's own light, the same as the muster clock
-     and the constitution's switches — not because the mage is hers. --- */
-  if (S.hold) { ctx.fillStyle = 'rgba(4,11,12,.3)'; ctx.fillRect(0, 0, PX, PX); }
-  if (S.inspect !== null) {
-    const sel = S.combatants.find(x => x.key === S.inspect);
+  /* --- inspection. A ring and a name, and nothing else: the 30% dim that used
+     to come with it was the HELD-MOMENT treatment, and with nothing held there
+     is nothing to dim for. Dimming a field that is still moving fights the one
+     thing this page is for. The ring is cyan because a focus ring is the god's
+     own light, the same as the muster clock and the constitution's switches —
+     not because the mage is hers. --- */
+  if (INSPECT !== null) {
+    const sel = S.combatants.find(x => x.key === INSPECT);
     if (sel && sel.alive && !sel.withdrawn) {
       const x = toPx(REDUCED ? sel.pos.x : sel.prev.x + (sel.pos.x - sel.prev.x) * a);
       const y = toPx(REDUCED ? sel.pos.y : sel.prev.y + (sel.pos.y - sel.prev.y) * a);
@@ -1970,7 +2144,15 @@ function hexA(hex, alpha) {
    6. THE INTERFACE.
    ========================================================================== */
 const el = (id) => document.getElementById(id);
-let S = null, running = true, speed = 1, damage = 1, acc = 0, last = 0, logDrawn = 0;
+/* S is the LIVE engagement and nothing else ever writes to it. V is what the
+   page is currently DRAWING — the same object when you are watching live, a
+   re-stepped copy when you are looking back. Every read below is deliberate
+   about which of the two it wants, and the rule is simple enough to state:
+   the field and the dossier follow V, everything you can act with follows S. */
+let S = null, V = null, speed = 1, damage = 1, acc = 0, last = 0, logDrawn = 0;
+let INSPECT = null;          // combatant key, or null. Not part of any state.
+let CURSOR = null;           // tick being looked at, or null for live
+let recPlaying = true, recAcc = 0;
 
 /* --- the constitution: twelve switches, forbidding is defender-only --- */
 function buildConstitution() {
@@ -2000,11 +2182,27 @@ function buildConstitution() {
   }
 }
 const SHORT = (f) => f.slice(0, 4);
+
+/**
+ * THE ONE RULE THAT MUST NOT BE FUDGED (§11): a directive issued while looking
+ * back applies to NOW. So every directive goes through here, which stamps the
+ * LIVE tick on it, records which tick you were looking at, and RETURNS THE VIEW
+ * TO LIVE — you cannot end up looking at the past at the moment a change of
+ * yours lands, because acting moves you to the present. The log row names both
+ * ticks, so it is unambiguous afterwards too.
+ */
+function issue(act) {
+  act.tick = S.tick;
+  act.seen = CURSOR === null ? null : CURSOR;
+  ACTIONS.push(act);
+  applyAction(S, act);
+  S.acts = ACTIONS.length;
+  goLive();
+}
 function toggleCell(id) {
+  /* eligibility is decided HERE, once, and never re-decided on replay */
   if (!S || S.locked.has(id) || S.phase === 'resolution' || S.ended) return;
-  if (S.permitted.has(id)) { S.permitted.delete(id); logRow(S, 'note', null, null, 'FORBADE ' + id + ' — locked for the raid', 'constitution'); }
-  else { S.permitted.add(id); logRow(S, 'note', null, null, 'PERMITTED ' + id + ' — locked for the raid', 'constitution'); }
-  S.locked.add(id);
+  issue({ k: 'cell', id });
   constiSig = '';
   paintConstitution();
 }
@@ -2099,8 +2297,13 @@ function paintConstitution() {
 const VERBS = [
   { id: 'bless',  phase: 'muster',  cost: 90, name: 'Bless the standing',
     sub: 'fp(0.25) ward on every defender for the raid — a favor spend that resolves in seconds and visibly saves a library.' },
-  { id: 'levy',   phase: 'muster',  cost: 70, name: 'Call the levy',
-    sub: 'One more soldier detachment on the field, at detachment-max-hp.' },
+  /* RENAMED from "call the levy". w37/raid-playable's raid-constant.json has a
+     verb-levy that means something else — a detachment that does not fight —
+     and one word over two mechanics is how a merge picks the wrong one
+     silently. Named in the provenance panel rather than resolved: that branch
+     is unmerged, and guessing at its semantics would be worse. */
+  { id: 'reserve', phase: 'muster', cost: 70, name: 'Call up the reserve',
+    sub: 'One more soldier detachment on the field, at detachment-max-hp. Not w37’s levy — see provenance.' },
   { id: 'veil',   phase: 'muster',  cost: 60, name: 'Veil the halls',
     sub: 'fp(0.20) concealment on every defender. Concealment is an evasion roll, not a damage reduction.' },
   { id: 'wind',   phase: 'contact', cost: 110, name: 'Second wind',
@@ -2117,23 +2320,12 @@ function buildVerbs() {
   }
 }
 function spendVerb(v) {
+  /* Eligibility against the LIVE state, whatever tick you happen to be looking
+     at — a verb you could afford at tick 200 is not a verb you can afford now. */
   if (!S || S.ended || S.spent.has(v.id) || S.favor < v.cost) return;
   if (v.phase === 'muster' && S.phase !== 'muster') return;
   if (v.phase === 'contact' && S.phase === 'resolution') return;
-  S.favor -= v.cost; S.favorSpent += v.cost; S.spent.add(v.id);
-  const defenders = S.combatants.filter(c => c.side === 'd' && c.alive);
-  if (v.id === 'bless') for (const c of defenders) c.blessing = 256;
-  if (v.id === 'veil') for (const c of defenders) c.held = c.held.concat(['pn-shed-the-use-name']);
-  if (v.id === 'wind') for (const c of defenders) c.vigor = c.maxVigor;
-  if (v.id === 'levy') {
-    const p = { x: floorDiv(K.extent, 2), y: K.extent - floorDiv(K.deployDepth, 2) };
-    S.combatants.push({ key: 20000 + S.combatants.length, kind: 'detachment', side: 'd', pos: p, prev: { ...p },
-      hp: K.detachHp, maxHp: K.detachHp, vigor: 0, maxVigor: 0, held: [], deepest: 0, cooldown: 0,
-      ward: 0, concealment: 0, blessing: 0, alive: true, withdrawn: false, stolen: [],
-      why: 'levied out of a cohort that does not fight', reaching: null, lastCast: null,
-      damage: K.detachDamage, range: K.detachRange, name: 'hd+' });
-  }
-  logRow(S, 'note', null, null, v.name + ' — ' + v.cost + ' favor', 'spent');
+  issue({ k: 'verb', id: v.id });
   paintVerbs();
 }
 function paintVerbs() {
@@ -2161,13 +2353,22 @@ function paintVerbs() {
    thing. Exposure gets its own badge, with the tier in it: a raider who wins on
    tier-1 workings has told you nothing, and one who wins on The Empty Room has
    handed you a tier 5. --- */
+let logRows = [];          // [{ tick, el }], in step with the tbody's children
+let logBoundary = -1;      // how many rows the moment you are looking at has reached
+const nowline = document.createElement('tr');
+nowline.className = 'nowline';
+nowline.innerHTML = '<td colspan="3">▲ the tick you are looking at · below is what happened after</td>';
+
 function paintLog() {
   const body = el('log');
   if (S.log.length === 0) return;
-  if (logDrawn === 0) body.innerHTML = '';
+  if (logDrawn === 0) { body.innerHTML = ''; logRows = []; }
   for (let i = logDrawn; i < S.log.length; i++) {
     const r = S.log[i], tr = document.createElement('tr');
     tr.dataset.kind = r.kind;
+    /* a row that arrives while you are looking back is, by definition, after
+       the moment you are looking at */
+    if (CURSOR !== null) tr.classList.add('after');
     if (r.god) tr.dataset.god = '1';
     const node = r.nodeId ? NODE.get(r.nodeId) : null;
     const title = node ? node.id + ' · tier ' + node.tier + ' · ' + node.cell : '';
@@ -2185,39 +2386,60 @@ function paintLog() {
       '<td class="who ' + (r.side === 'a' ? 'side-a' : 'side-d') + '">' + r.who + '</td>' +
       '<td class="e">' + right + head + '<span class="dt">' + r.detail + '</span>' + obs + '</td>';
     body.append(tr);
+    logRows.push({ tick: r.tick, el: tr });
   }
   logDrawn = S.log.length;
-  while (body.children.length > 400) body.removeChild(body.firstChild);
+  while (logRows.length > 400) { const g = logRows.shift(); g.el.remove(); if (logBoundary > 0) logBoundary--; }
   const w = el('logwrap');
-  if (w.scrollTop + w.clientHeight > w.scrollHeight - 120) w.scrollTop = w.scrollHeight;
+  /* only follow the tail while you are watching the present. Yanking the log to
+     the bottom under a reader who deliberately went back would undo the one
+     thing they asked for. */
+  if (CURSOR === null && w.scrollTop + w.clientHeight > w.scrollHeight - 120) w.scrollTop = w.scrollHeight;
+}
+
+/**
+ * Mark where in the log the moment you are looking at falls. Nothing is hidden
+ * — it is all record, and hiding rows you already own would be a different lie
+ * from the one this is fixing — but everything after the cursor reads as ahead
+ * of you, with a brass line at the boundary.
+ */
+function paintLogCursor(cur, scrollTo) {
+  let want = logRows.length;
+  if (cur !== null) { want = 0; while (want < logRows.length && logRows[want].tick <= cur) want++; }
+  if (want === logBoundary) return;
+  const from = logBoundary === -1 ? logRows.length : logBoundary;
+  if (want < from) for (let i = want; i < from; i++) logRows[i].el.classList.add('after');
+  else for (let i = from; i < want; i++) logRows[i].el.classList.remove('after');
+  logBoundary = want;
+  if (cur === null || want >= logRows.length) nowline.remove();
+  else {
+    el('log').insertBefore(nowline, logRows[want].el);
+    /* scrolled by hand rather than with scrollIntoView, which would also scroll
+       the page and throw the field out of view — the opposite of the ask */
+    if (scrollTo) {
+      const w = el('logwrap');
+      w.scrollTop += nowline.getBoundingClientRect().top - w.getBoundingClientRect().top - w.clientHeight / 2;
+    }
+  }
 }
 
 /* ==========================================================================
-   6b. HOLDING THE MOMENT — pause as a purchased, contestable bid.
+   6b. LOOKING — at a mage, and at a tick that has already gone past.
 
-   Click any combatant to inspect her. Once the sides have touched, that also
-   stops the action, and stopping it costs favor; the expedition can spend Vis
-   to start it again. Two sides bidding for the clock in two different
-   currencies, each ladder rising with use.
-
-   AHEAD OF THE ENGINE. There is no pause verb in packages/rules-raid — the six
-   raid verbs that now exist as content constants on w37/raid-playable are
-   forbid, permit, levy, ward, mend and conceal, and none of them is this. It is
-   drawn here because it answers the objection that makes pause-to-inspect
-   unshippable in live PvP: one player freezing the world at will is
-   intolerable, so most designs forbid it outright. A price the other side can
-   outbid makes it a decision instead.
+   Inspecting costs nothing and STOPS NOTHING, in every phase: muster already
+   worked that way, deliberately, and this is that behaviour extended rather
+   than a second mechanism beside it. The record cursor works identically while
+   the raid runs and once it has ended, so there is no separate replay mode.
    ========================================================================== */
-const ordinal = (n) => n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd'
-                          : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
-
 function pickCombatant(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
   const fx = (clientX - rect.left) / rect.width * K.extent;
   const fy = (clientY - rect.top) / rect.height * K.extent;
   const tol = K.extent * 15 / rect.width;   // 15 css px, whatever the canvas scale
   let best = null, bd = tol * tol;
-  for (const c of S.combatants) {
+  /* picked out of what is DRAWN, which while you are looking back is the record
+     — you click the mark you can see, not the one that has since moved */
+  for (const c of V.combatants) {
     if (!c.alive || c.withdrawn) continue;
     const d = (c.pos.x - fx) * (c.pos.x - fx) + (c.pos.y - fy) * (c.pos.y - fy);
     if (d <= bd) { bd = d; best = c; }
@@ -2225,66 +2447,88 @@ function pickCombatant(clientX, clientY) {
   return best;
 }
 
-function takeHold(c) {
-  const price = holdPrice(S);
-  if (S.favor < price || S.hold || S.ended || S.phase === 'muster') return false;
-  S.favor -= price; S.favorOnClock += price; S.holds.d++;
-  S.hold = { at: performance.now(), price, blocked: null };
-  logRow(S, 'note', null, null, 'HELD THE MOMENT to look at ' + c.name + ' — your ' + ordinal(S.holds.d) +
-         ' hold, and the next costs ' + holdPrice(S), '−' + price + ' favor');
-  return true;
+/* ---- the cursor. null means live; any other value is a tick you are reading. ---- */
+function goLive() {
+  if (CURSOR === null) return;
+  CURSOR = null; recPlaying = true; recAcc = 0;
+  viewCache = null;
+  paintRecord(true);
 }
-function releaseHold() {
-  if (!S.hold) return;
-  S.hold = null;
-  logRow(S, 'note', null, null, 'released the moment — letting go costs nothing', 'free');
+function seek(tick, keepPlaying) {
+  const t = Math.max(0, Math.min(S.tick, Math.round(tick)));
+  if (t >= S.tick) { goLive(); return; }
+  CURSOR = t;
+  if (keepPlaying === false) recPlaying = false;
+  recAcc = 0;
+  paintRecord(true);
 }
 
-/**
- * The expedition's counter-bid. Scripted, because there is nobody on the other
- * side of this page — but the money is real and the refusal is real: it will
- * not bid below the Vis it needs to get home, so a raider you have already
- * bled cannot take the clock back, and the clock is worth more to you late.
- */
-function raiderBid(now) {
-  const price = buybackPrice(S);
-  if (S.vis - price < A.visFloor) {
-    S.hold.blocked = 'The expedition cannot afford it: ' + price + ' Vis against ' + S.vis +
-      ' left, and it will not bid below the ' + A.visFloor + ' it needs to get home. The moment is yours until you let go.';
-    return;
+/** The strip, the ribbon, and the line in the god's column.
+    Runs inside the rAF loop, so it is signature-guarded like the ledger: an
+    innerHTML every frame is a layout thrash in exchange for nothing. */
+let recSig = '';
+function paintRecord(scrollLog) {
+  const rewound = CURSOR !== null;
+  const sig = [rewound, CURSOR, S.tick, recPlaying, !!S.ended, V ? V.phase : '', S.stability].join('|');
+  if (sig === recSig && !scrollLog) return;
+  recSig = sig;
+  const scrub = el('scrub'), bar = el('recbar'), strip = el('rec');
+  scrub.max = String(Math.max(0, S.tick));
+  if (document.activeElement !== scrub) scrub.value = String(rewound ? CURSOR : S.tick);
+  strip.dataset.rec = rewound ? '1' : '0';
+  el('fieldcard').dataset.rec = rewound ? '1' : '0';
+  el('rec-play').dataset.live = rewound && !recPlaying ? '1' : '0';
+  el('rec-play').setAttribute('aria-pressed', String(rewound && !recPlaying));
+  el('rec-play').textContent = rewound && !recPlaying ? 'Play the record' : 'Hold the record';
+  el('rec-live').disabled = !rewound;
+  el('rec-live').dataset.live = rewound ? '1' : '0';
+  el('rec-lab').textContent = S.ended ? 'Replay' : 'Record';
+
+  const ticksLeft = Math.max(0, floorDiv(S.stability, K.stabilityDecay));
+  el('rec-read').textContent = rewound
+    ? 'tick ' + CURSOR + ' of ' + S.tick
+    : (S.ended ? 'the whole engagement, scrubbable' : 'live · tick ' + S.tick);
+  el('rec-read').style.color = rewound ? 'var(--brass)' : '';
+
+  bar.hidden = !rewound;
+  if (rewound) {
+    bar.innerHTML = 'You are looking at the record — <b>tick ' + CURSOR + '</b>, ' + V.phase +
+      (recPlaying ? '' : ' · held') +
+      (S.ended
+        ? '<span class="live">The raid is over at tick <b>' + S.ended.tick + '</b>. Nothing here can be changed; this is a reading.</span>'
+        : '<span class="live">The engagement has not stopped: it is at tick <b>' + S.tick +
+          '</b>, portal <b>' + ticksLeft + '</b> ticks. Anything you do lands there.</span>');
   }
-  S.hold.blocked = null;
-  if (now - S.hold.at < A.bidDelayMs) return;
-  S.vis -= price; S.visOnClock += price; S.holds.a++;
-  S.hold = null;
-  logRow(S, 'note', { side: 'a', name: 'exp' }, null,
-         'THE EXPEDITION BOUGHT THE CLOCK BACK — their ' + ordinal(S.holds.a) +
-         ', and the next costs them ' + buybackPrice(S), '−' + price + ' Vis');
+  const nb = el('nowbar');
+  nb.hidden = !rewound || !!S.ended;
+  if (!nb.hidden) {
+    nb.innerHTML = 'You are looking at tick <b>' + CURSOR + '</b>. The engagement is at tick <b>' + S.tick +
+      '</b> — <b>every switch and every verb below lands at ' + S.tick + '</b>, and using one brings you back to it.';
+  }
+  el('ledger-side').textContent = rewound ? 'the live account, not the record' : 'what it has cost, both ways';
+  el('ledger-side').style.color = rewound ? 'var(--brass)' : '';
+  paintLogCursor(CURSOR, !!scrollLog);
 }
 
 function onFieldClick(ev) {
   if (!S) return;
   const c = pickCombatant(ev.clientX, ev.clientY);
-  if (!c) return;                    // empty ground is not a purchase
-  S.inspect = c.key;
-  /* Muster is free and does not stop. Its clock IS the pressure — a few
-     minutes to decide what to forbid, and you were not ready — and letting a
-     player buy more of it is exactly the thing that must not become possible.
-     Once the sides touch, looking still costs nothing; stopping them costs. */
-  if (S.phase !== 'muster' && !S.ended && !S.hold) takeHold(c);
+  if (!c) return;
+  /* Looking. It costs nothing, it stops nothing, and it is the same in every
+     phase — which is what muster already did, extended rather than replaced. */
+  INSPECT = c.key;
   paintDossier();
 }
 
 let dossierSig = '';
 function paintDossier() {
   const card = el('dossier');
-  const c = S.inspect === null ? null : S.combatants.find(x => x.key === S.inspect);
+  const c = INSPECT === null ? null : V.combatants.find(x => x.key === INSPECT);
   if (!c) { card.hidden = true; dossierSig = ''; return; }
   card.hidden = false;
-  const price = holdPrice(S);
+  const rewound = CURSOR !== null;
   const sig = [c.key, c.hp, c.vigor, c.cooldown, c.why, c.alive, c.stolen.length,
-               !!S.hold, S.hold ? S.hold.blocked : '', S.favor >= price, price, S.phase, !!S.ended,
-               S.locked.size].join('|');
+               V.phase, !!V.ended, V.locked.size, rewound, V.tick, S.tick].join('|');
   if (sig === dossierSig) return;
   dossierSig = sig;
 
@@ -2294,29 +2538,21 @@ function paintDossier() {
   side.textContent = mine ? 'host · yours' : 'raider · not yours';
   side.style.color = mine ? 'var(--host)' : 'var(--raider)';
 
-  const note = el('dsr-hold');
-  if (S.hold) {
-    note.dataset.who = 'd';
-    note.innerHTML = 'You are <b>holding the moment</b> — ' + S.hold.price + ' favor, your ' +
-      ordinal(S.holds.d) + '. ' + (S.hold.blocked || 'The expedition is counting its Vis.');
-  } else if (S.phase === 'muster') {
-    note.dataset.who = 'none';
-    note.innerHTML = 'Muster. Looking costs nothing and the clock does not stop — <b>the muster clock is the pressure</b>, and it is not for sale.';
-  } else if (S.ended) {
-    note.dataset.who = 'none';
-    note.innerHTML = 'The raid is over. Nothing left to hold.';
-  } else if (S.holds.a > 0 && S.favor < price) {
-    note.dataset.who = 'a';
-    note.innerHTML = 'They took the clock back and the action is running. Stopping it again costs <b>' +
-      price + ' favor</b>, and you have ' + S.favor + '.';
-  } else {
-    note.dataset.who = S.favor >= price ? 'none' : 'a';
-    note.innerHTML = 'The action is running. Holding it costs <b>' + price + ' favor</b>' +
-      (S.favor >= price ? ' — the price rises each time you do.' : ', and you have ' + S.favor + '.');
-  }
+  /* The dossier follows the FIELD, so while you are looking back it is a report
+     on a tick that has gone, and it says so and changes tense. A panel that read
+     the present next to a field showing the past is the exact ambiguity §11
+     calls an interface bug. */
+  const when = el('dsr-when');
+  when.dataset.rec = rewound ? '1' : '0';
+  when.innerHTML = rewound
+    ? 'As she was at <b>tick ' + V.tick + '</b>. This is a record: it is now tick <b>' + S.tick +
+      '</b>, and nothing here can be acted on.'
+    : 'Live, at <b>tick ' + V.tick + '</b>. Looking at her costs nothing and stops nothing.';
+  el('dsr-doing-lab').textContent = rewound ? 'What she was doing' : 'What she is doing';
 
-  el('dsr-why').innerHTML = c.alive ? c.why.charAt(0).toUpperCase() + c.why.slice(1) + '.'
-                                    : '<b>Felled.</b> Nothing more from her this raid.';
+  el('dsr-why').innerHTML = c.alive
+    ? c.why.charAt(0).toUpperCase() + c.why.slice(1) + '.'
+    : '<b>Felled.</b> Nothing more from her this raid.';
 
   const rows = [
     ['hit points', (c.hp / K.FP).toFixed(1) + ' / ' + (c.maxHp / K.FP).toFixed(1)],
@@ -2337,33 +2573,15 @@ function paintDossier() {
   else {
     const held = c.held.slice().sort((x, y) => NODE.get(y).tier - NODE.get(x).tier).slice(0, 12);
     nodes.innerHTML = held.map(id => {
-      const n = NODE.get(id), legal = S.permitted.has(n.cell);
+      /* legality as it stood at the tick being shown — a cell you forbade at
+         tick 300 was not forbidden at tick 200, and the record must not
+         backdate your own decisions */
+      const n = NODE.get(id), legal = V.permitted.has(n.cell);
       return '<span class="nd" data-legal="' + (legal ? 1 : 0) + '" data-reaching="' + (c.reaching === id ? 1 : 0) +
         '" title="' + id + ' · ' + n.cell + ' · tier ' + n.tier + (legal ? '' : ' · FORBIDDEN by your constitution') + '">' +
         n.name + ' <span style="color:' + HUE[n.form] + '">t' + n.tier + '</span></span>';
     }).join('') + (c.held.length > 12 ? '<span class="nd">+' + (c.held.length - 12) + ' more</span>' : '');
   }
-
-  const hb = el('dsr-hold-btn');
-  hb.textContent = S.hold ? 'Release the moment — free' : 'Hold the moment — ' + price + ' favor';
-  hb.disabled = !S.hold && (S.phase === 'muster' || !!S.ended || S.favor < price);
-  hb.dataset.live = S.hold ? '1' : '0';
-}
-
-/** The strip over the field. Cheap enough to update every frame, so it does. */
-function paintHoldbar(now) {
-  const bar = el('holdbar');
-  if (S.ended) S.hold = null;   // a raid cannot end mid-hold, but a stuck clock would be unforgivable
-  if (!S.hold) { bar.hidden = true; return; }
-  bar.hidden = false;
-  const left = Math.max(0, A.bidDelayMs - (now - S.hold.at));
-  const frac = S.hold.blocked ? 0 : 1 - left / A.bidDelayMs;
-  bar.innerHTML = 'Held — you paid <b>' + S.hold.price + ' favor</b>' +
-    (S.hold.blocked
-      ? '<span class="them"><br>The expedition cannot afford to take it back.</span>'
-      : '<span class="them"><br>the expedition is counting its Vis — ' + (left / 1000).toFixed(1) + ' s, ' +
-        buybackPrice(S) + ' Vis</span>') +
-    '<span class="bid"><i style="width:' + (frac * 100).toFixed(1) + '%"></i></span>';
 }
 
 /* --- the ledger.
@@ -2385,8 +2603,7 @@ function paintLedger() {
   const takenObjs = S.objectives.filter(o => o.taken);
   const sig = [S.casts, S.refusals, S.forbiddenCastsBlocked, S.evades, S.thefts, S.fields.length,
                S.takenValue, S.favor, S.favorSpent, S.vis, S.exposure.size, expoTotal,
-               Object.keys(clamps).length, takenObjs.length,
-               S.favorOnClock, S.visOnClock, S.holds.d, S.holds.a, !!S.hold].join('|');
+               Object.keys(S.clamps).length, takenObjs.length].join('|');
   if (sig === ledgerSig) return;
   ledgerSig = sig;
 
@@ -2394,20 +2611,16 @@ function paintLedger() {
     ['sec', 'Your favor'],
     ['in hand', S.favor],
     ['spent on verbs', S.favorSpent],
-    ['spent holding the clock', S.favorOnClock, S.favorOnClock ? 'good' : ''],
-    ['times you held it', S.holds.d + (S.hold ? ' · holding' : ''), S.hold ? 'good' : ''],
     ['sec', 'Their Vis'],
     ['left in the expedition', S.vis],
-    ['spent — ' + A.visPerCast + ' a cast', A.visStart - S.vis - S.visOnClock],
-    ['spent buying the clock back', S.visOnClock, S.visOnClock ? 'brass' : ''],
-    ['times they took it back', S.holds.a],
+    ['spent — ' + A.visPerCast + ' a cast', A.visStart - S.vis],
     ['sec', 'Casts'],
     ['resolved', S.casts],
     ['refused', S.refusals],
     ['forbiddenCastsBlocked', S.forbiddenCastsBlocked, S.forbiddenCastsBlocked > 0 ? 'bad' : ''],
     ['evaded by concealment', S.evades],
     ['area-denial fields live', S.fields.length],
-    ...Object.entries(clamps).map(([k, v]) => ['cap clamped · ' + k, v, 'brass']),
+    ...Object.entries(S.clamps).map(([k, v]) => ['cap clamped · ' + k, v, 'brass']),
     ['sec', 'Exposure accrued to you'],
     ['nodes seen', S.exposure.size, 'expo'],
     ['castings watched', expoTotal, 'expo'],
@@ -2444,11 +2657,18 @@ function paintLedger() {
     : '<div class="ex"><span class="empty">Nothing has gone back through the portal.</span></div>';
 }
 
-/* --- meters, rail, tallies --- */
+/* --- meters, rail, tallies.
+   The split is the whole design, so it is written out rather than implied:
+     V — the field, the muster clock, the portal bar, the tick, the head count,
+         the dossier. What you are LOOKING at.
+     S — the phase rail, favor, the constitution, the verbs, the ledger, the
+         outcome. What you can ACT on, and what it has cost.
+   The rail is deliberately on the S side: it says which phase your verbs are
+   in, not which phase the mark under your cursor was in. --- */
 function paintChrome() {
-  const musterLeft = Math.max(0, A.musterTicks - S.tick);
-  el('mclock').hidden = S.phase !== 'muster';
-  if (S.phase === 'muster') {
+  const musterLeft = Math.max(0, A.musterTicks - V.tick);
+  el('mclock').hidden = V.phase !== 'muster';
+  if (V.phase === 'muster') {
     const n = el('mclock-n');
     n.textContent = (musterLeft / 10).toFixed(1);
     n.classList.toggle('urgent', musterLeft <= 60);
@@ -2475,14 +2695,17 @@ function paintChrome() {
   el('expo').textContent = S.exposure.size + ' node' + (S.exposure.size === 1 ? '' : 's') + ' · ' + expoTotal + ' castings';
   el('expo-bar').style.width = Math.min(100, 100 * S.exposure.size / Math.max(1, NODE.size * 0.4)) + '%';
 
-  const ticksLeft = Math.max(0, floorDiv(S.stability, K.stabilityDecay));
+  /* the portal bar follows the field, because a bar that disagreed with the
+     marks above it would be worse than either number alone. The LIVE portal
+     number is carried in the record ribbon, so the present is never lost. */
+  const ticksLeft = Math.max(0, floorDiv(V.stability, K.stabilityDecay));
   el('stab').textContent = ticksLeft;
-  el('stab-bar').style.width = (100 * Math.max(0, S.stability) / (K.stabilityInitial + K.stabilityJitter)) + '%';
+  el('stab-bar').style.width = (100 * Math.max(0, V.stability) / (K.stabilityInitial + K.stabilityJitter)) + '%';
   el('stab-margin').style.left = (100 * K.withdrawMargin / (K.stabilityInitial + K.stabilityJitter)) + '%';
-  el('stability').classList.toggle('crit', S.stability <= K.withdrawMargin);
-  el('tick').textContent = S.tick;
-  const la = S.combatants.filter(c => c.alive && !c.withdrawn && c.side === 'a').length;
-  const ld = S.combatants.filter(c => c.alive && c.side === 'd').length;
+  el('stability').classList.toggle('crit', V.stability <= K.withdrawMargin);
+  el('tick').textContent = V.tick;
+  const la = V.combatants.filter(c => c.alive && !c.withdrawn && c.side === 'a').length;
+  const ld = V.combatants.filter(c => c.alive && c.side === 'd').length;
   el('alive').innerHTML = 'raiders <b class="num">' + la + '</b> · host <b class="num">' + ld + '</b>';
 
   paintLedger();
@@ -2534,43 +2757,68 @@ function buildLegend() {
     'the host’s ruleset governs both sides, so you cannot tell whose spell it is by its colour</span></span>';
 }
 
-/* --- the loop --- */
+/* --- the loop.
+   THE LIVE ENGAGEMENT STEPS EVERY FRAME, unconditionally, whatever the record
+   cursor is doing. There is no branch here that can stop it, by design. The
+   record plays at the same viewing rate the engagement advances at, so while
+   the raid runs a rewound view never catches up on its own — only "Live" does,
+   which is why that button is always there. Once the raid has ended the live
+   tick stands still, the record catches up, and the end-of-raid replay simply
+   finishes and hands you back. --- */
 function frame(now) {
   requestAnimationFrame(frame);
   if (!S) return;
   if (!last) last = now;
-  let dt = Math.min(250, now - last); last = now;
+  const dt = Math.min(250, now - last); last = now;
+
   /* Muster always runs at 1:1 with engagement time — the clock IS the pressure,
      and the agency curve is encoded in the pacing rather than only stated in
      the rail. Contact and resolution are played at a quarter of it. */
   const perTick = S.phase === 'muster' ? PACE.musterMs : PACE.engagementMs / speed;
-  /* The trace scaffold's own Pause freezes the deliberation too — otherwise the
-     expedition buys back a clock that was not running in the first place. */
-  if (!running && S.hold) S.hold.at += dt;
-  if (running && !S.ended) {
-    if (S.hold) raiderBid(now);
-    else {
-      acc += dt;
-      let guard = 0;
-      while (acc >= perTick && guard++ < 40) { acc -= perTick; step(S); }
-    }
+  if (!S.ended) {
+    acc += dt;
+    let guard = 0;
+    while (acc >= perTick && guard++ < 40) { acc -= perTick; step(S); }
   }
-  draw(S, Math.min(1, acc / perTick));
-  paintHoldbar(now);
+
+  let alpha = Math.min(1, acc / perTick);
+  if (CURSOR !== null) {
+    const recTick = PACE.engagementMs / speed;
+    if (recPlaying) {
+      recAcc += dt;
+      let guard = 0;
+      while (recAcc >= recTick && guard++ < 40 && CURSOR < S.tick) { recAcc -= recTick; CURSOR++; }
+    }
+    alpha = recPlaying ? Math.min(1, recAcc / recTick) : 1;
+    if (CURSOR >= S.tick) goLive();
+  }
+  V = CURSOR === null ? S : viewAt(S, CURSOR);
+  /* The cursor follows the record rather than the other way round. It can only
+     disagree if a tick was asked for that the engagement never occupied, and
+     the honest answer to that is to show the nearest one that it did — never to
+     let the readout claim a tick the field is not drawing. */
+  if (CURSOR !== null && V.tick !== CURSOR) CURSOR = V.tick;
+
+  draw(V, alpha);
   paintChrome();
   paintLog();
+  paintRecord(false);
 }
 
 function restart() {
   S = buildRaid(el('seed').value.trim() || 'hollow-gate', damage);
-  logDrawn = 0; ledgerSig = ''; dossierSig = ''; constiSig = ''; constiExpanded = false;
-  el('dossier').hidden = true; el('holdbar').hidden = true;
+  V = S;
+  ACTIONS = [];
+  viewCache = null; CURSOR = null; recPlaying = true; recAcc = 0;
+  INSPECT = null;
+  logDrawn = 0; ledgerSig = ''; dossierSig = ''; constiSig = ''; recSig = ''; constiExpanded = false;
+  logRows = []; logBoundary = 0; nowline.remove();
+  el('dossier').hidden = true; el('recbar').hidden = true;
   el('log').innerHTML = '<tr><td class="empty" colspan="3">Nothing cast yet. The portal is open; contact has not happened.</td></tr>';
-  acc = 0; last = 0; running = true;
-  el('pause').setAttribute('aria-pressed', 'false'); el('pause').textContent = 'Pause trace';
+  acc = 0; last = 0;
   el('fieldnote').textContent = 'seed “' + S.seed + '” · 20 × 20 terrain cells of 10 m · ' +
     S.combatants.length + ' combatants · ' + S.objectives.length + ' objectives';
-  sizeCanvas(); paintChrome();
+  sizeCanvas(); paintChrome(); paintRecord(false);
 }
 
 /* --- wiring --- */
@@ -2579,39 +2827,50 @@ canvas.addEventListener('click', onFieldClick);
 /* A control that only works with a mouse is a defect, not an omission: the
    arrows step through the living, Enter buys or releases the moment. */
 canvas.addEventListener('keydown', (ev) => {
-  const live = S.combatants.filter(c => c.alive && !c.withdrawn);
-  if (!live.length) return;
+  const shown = V.combatants.filter(c => c.alive && !c.withdrawn);
   if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
-    const at = live.findIndex(c => c.key === S.inspect);
-    const next = live[(at + (ev.key === 'ArrowRight' ? 1 : live.length - 1) + live.length) % live.length];
-    S.inspect = next.key;
-    if (S.phase !== 'muster' && !S.ended && !S.hold) takeHold(next);
-  } else if (ev.key === 'Enter' || ev.key === ' ') {
-    if (S.hold) releaseHold();
-    else { const c = live.find(x => x.key === S.inspect); if (c) takeHold(c); }
-  } else if (ev.key === 'Escape') { releaseHold(); S.inspect = null; }
+    if (!shown.length) return;
+    const at = shown.findIndex(c => c.key === INSPECT);
+    INSPECT = shown[(at + (ev.key === 'ArrowRight' ? 1 : shown.length - 1) + shown.length) % shown.length].key;
+  } else if (ev.key === 'Escape') { INSPECT = null; }
+  /* the record, from the keyboard: comma and full stop step it, L returns to
+     the live tick. A control that only works with a mouse is a defect. */
+  else if (ev.key === ',' || ev.key === '<') seek((CURSOR === null ? S.tick : CURSOR) - 10, false);
+  else if (ev.key === '.' || ev.key === '>') seek((CURSOR === null ? S.tick : CURSOR) + 10, false);
+  else if (ev.key === 'l' || ev.key === 'L') goLive();
   else return;
   ev.preventDefault();
   paintDossier();
 });
-el('dsr-close').addEventListener('click', () => { releaseHold(); S.inspect = null; paintDossier(); });
-el('dsr-hold-btn').addEventListener('click', () => {
-  if (S.hold) releaseHold();
-  else { const c = S.combatants.find(x => x.key === S.inspect); if (c) takeHold(c); }
-  paintDossier();
-});
+el('dsr-close').addEventListener('click', () => { INSPECT = null; paintDossier(); });
 el('consti-toggle').addEventListener('click', () => {
   constiExpanded = !constiExpanded; constiSig = '';
   paintConstitution(); paintVerbs();
 });
 el('restart').addEventListener('click', restart);
 el('seed').addEventListener('change', restart);
-el('pause').addEventListener('click', () => {
-  running = !running;
-  el('pause').setAttribute('aria-pressed', String(!running));
-  el('pause').textContent = running ? 'Pause trace' : 'Resume trace';
+/* Skipping muster RUNS the ticks rather than setting the counter past them.
+   The old version assigned S.tick and the record inherited a hole: three
+   hundred ticks the scrubber offered and the engagement had never occupied.
+   Stepping them for real costs nothing — a muster tick returns early — and it
+   keeps the one promise the record makes, which is that every tick on the
+   scrubber is a tick that happened. */
+el('skip').addEventListener('click', () => {
+  if (!S || S.phase !== 'muster' || S.ended) return;
+  let guard = 0;
+  while (S.phase === 'muster' && !S.ended && guard++ <= A.musterTicks) step(S);
+  acc = 0; goLive();
 });
-el('skip').addEventListener('click', () => { if (S && S.phase === 'muster') { S.tick = A.musterTicks - 1; } });
+
+/* ---- the record's controls ---- */
+el('scrub').addEventListener('input', () => seek(Number(el('scrub').value), false));
+el('rec-back').addEventListener('click', () => seek((CURSOR === null ? S.tick : CURSOR) - 10, true));
+el('rec-live').addEventListener('click', goLive);
+el('rec-play').addEventListener('click', () => {
+  if (CURSOR === null) { seek(S.tick - 10, false); return; }   // nothing to hold at the live edge
+  recPlaying = !recPlaying; recAcc = 0;
+  paintRecord(false);
+});
 function paintPace() {
   const perSecond = 1000 / (PACE.engagementMs / speed);
   const ofReal = perSecond * PACE.tickMs / 1000;
@@ -2626,7 +2885,10 @@ for (const b of document.querySelectorAll('.spd')) b.addEventListener('click', (
 for (const b of document.querySelectorAll('.dmg')) b.addEventListener('click', () => {
   damage = Number(b.dataset.dmg);
   for (const o of document.querySelectorAll('.dmg')) o.setAttribute('aria-pressed', String(Number(o.dataset.dmg) === damage));
-  if (S) S.damage = damage;
+  /* the viewing multiplier changes what the trace decides from here on, so it
+     is logged with its tick — otherwise the record would replay a raid fought
+     at a damage the player had already changed */
+  if (S && !S.ended) issue({ k: 'damage', n: damage });
 });
 document.querySelector('.spd[data-spd="1"]').setAttribute('aria-pressed', 'true');
 document.querySelector('.dmg[data-dmg="1"]').setAttribute('aria-pressed', 'true');
