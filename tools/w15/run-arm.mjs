@@ -72,6 +72,10 @@ function main() {
   const replicates = Number(args.replicates ?? 6);
   const worldTickCap = Number(args.ticks ?? 2400);
   const masks = (args.masks ?? '').split(',').filter(Boolean).map(Number);
+  // W20's isolating arm: permit the whole 5x14 grid at founding and change
+  // nothing else, so "more content" can be told apart from "better-shaped
+  // content". Default 0 reproduces every arm recorded before it existed.
+  const fullGrid = Number(args['full-grid'] ?? 0);
   const out = args.out ?? '.w15/out';
   const tag = args.tag ?? 'arm';
 
@@ -86,8 +90,11 @@ function main() {
       const started = Date.now();
       for (const cell of CELLS) {
         for (let replicateIndex = 0; replicateIndex < replicates; replicateIndex += 1) {
-          const options =
-            mask === undefined ? { ...cell.options } : { ...cell.options, foundingSpeciesMask: mask };
+          const options = {
+            ...cell.options,
+            ...(mask === undefined ? {} : { foundingSpeciesMask: mask }),
+            ...(fullGrid === 0 ? {} : { fullGridAtFounding: fullGrid }),
+          };
           const run = runOne({
             content: resolved,
             strategyId,
@@ -120,6 +127,7 @@ function main() {
             rootSeed: ROOT_SEED,
             strategyId,
             foundingSpeciesMask: mask ?? null,
+            fullGridAtFounding: fullGrid,
             worldTickCap,
             replicates,
             cells: CELLS,

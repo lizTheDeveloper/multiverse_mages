@@ -84,6 +84,7 @@ import type { RulesetAxes } from './content-set.js';
 import {
   contentCatalogue,
   foundingCandidates,
+  fullGridRulesetAxes,
   scribingTraditionId,
   shippedContent,
   speciesTable,
@@ -145,6 +146,14 @@ const DEFAULT_FOUNDING_NODES = 1;
 const DEFAULT_FOUNDING_SPECIES_MASK = 0;
 
 /**
+ * Zero: the twelve `v1`-flagged cells, which is what every recorded run before
+ * this option used. Deliberately not `1` — a default that widened the grid would
+ * move all three committed balance baselines as a side effect of adding an
+ * instrument, which is the failure `foundingSpeciesMask` was careful to avoid.
+ */
+const DEFAULT_FULL_GRID_AT_FOUNDING = 0;
+
+/**
  * The occupations a founding population is seeded into.
  *
  * Laborers produce the materials, students are what a mage is promoted from, and
@@ -199,6 +208,24 @@ export interface ReferenceOptions {
    * empty universe — see {@link buildReferenceState}.
    */
   readonly foundingSpeciesMask: number;
+  /**
+   * `1` starts the universe permitting the whole 5 × 14 grid; `0` (the default)
+   * permits the twelve `v1`-flagged cells, exactly as before this field existed.
+   *
+   * An **instrument**, like `foundingSpeciesMask`: it turns no constant and
+   * changes no rule, and its default reproduces the previous behaviour
+   * byte-for-byte so no committed baseline moves because it exists.
+   *
+   * It is here because *"the v1 subset is not too small, acquisition is too
+   * easy"* is the campaign's thesis and the measurement that would separate it
+   * from its rival — *"51 nodes is simply content exhaustion"* — is a sweep that
+   * varies enablement **and nothing else**. Without a knob there is no such
+   * sweep, only two branches of a repository that also differ in other ways.
+   *
+   * A scalar rather than a boolean because `ScenarioConfig.options` is
+   * restricted to scalars, for the reason `foundingSpeciesMask` records.
+   */
+  readonly fullGridAtFounding: number;
 }
 
 /**
@@ -213,6 +240,7 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'foundingMages',
   'foundingNodes',
   'foundingSpeciesMask',
+  'fullGridAtFounding',
   'tradition',
 ]);
 
@@ -264,6 +292,7 @@ export function referenceOptions(config: ScenarioConfig): ReferenceOptions {
     foundingMages: readCount(config, 'foundingMages', DEFAULT_FOUNDING_MAGES),
     foundingNodes: readCount(config, 'foundingNodes', DEFAULT_FOUNDING_NODES),
     foundingSpeciesMask: readCount(config, 'foundingSpeciesMask', DEFAULT_FOUNDING_SPECIES_MASK),
+    fullGridAtFounding: readCount(config, 'fullGridAtFounding', DEFAULT_FULL_GRID_AT_FOUNDING),
   };
 }
 
@@ -279,6 +308,8 @@ export interface ReferenceContent {
   /** The tradition the universe holds. See `content-set.ts` for why this one. */
   readonly traditionId: ContentId;
   readonly axes: RulesetAxes;
+  /** Every axis the content declares. Selected by `fullGridAtFounding`. */
+  readonly fullAxes: RulesetAxes;
   /** Interned node ids a founding grant may name, ascending. */
   readonly foundingNodeIds: readonly ContentId[];
   readonly catalogue: ReturnType<typeof contentCatalogue>;
@@ -323,6 +354,7 @@ export function referenceContent(
     registry,
     traditionId,
     axes: v1RulesetAxes(registry),
+    fullAxes: fullGridRulesetAxes(registry),
     foundingNodeIds: foundingCandidates(registry),
     catalogue: contentCatalogue(registry),
     deps: worldDeps(registry, traditionId),
@@ -362,9 +394,13 @@ export function buildReferenceState(input: {
       source.actorStream(subsystemId, FOUNDING_TICK, actorKey),
   };
 
+  // The whole grid, or the twelve-cell rectangle. Zero is the default and
+  // reproduces every recorded run that predates this option.
+  const axes = options.fullGridAtFounding === 0 ? content.axes : content.fullAxes;
+
   createUniverse(state, {
-    permittedTechniques: content.axes.permittedTechniques,
-    permittedForms: content.axes.permittedForms,
+    permittedTechniques: axes.permittedTechniques,
+    permittedForms: axes.permittedForms,
     edictBudget: STARTING_EDICT_BUDGET,
     traditionId: content.traditionId,
     // Zero player input: favor, worship and prestige are `god-agency`'s to move,

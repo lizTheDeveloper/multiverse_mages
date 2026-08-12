@@ -156,6 +156,45 @@ export function v1RulesetAxes(registry: ContentRegistry): RulesetAxes {
 }
 
 /**
+ * Every axis the content declares — the whole 5 × 14 grid permitted at founding.
+ *
+ * ## Why this is separate from the `v1` flag rather than replacing it
+ *
+ * `v1: true` means *"inside the twelve-cell authoring rectangle"* and drives the
+ * loader's authoring standards — mode/technique coherence, effect glosses, the
+ * refusal of a tier whose `researchCost` is a single value. **Enablement is a
+ * different question from authoring standard**, and conflating them would mean
+ * that permitting a cell silently demanded its 249 nodes be re-authored, or
+ * else that relaxing the authoring check was the price of permitting anything.
+ *
+ * So the flag keeps its meaning and this function answers the other question.
+ * `checkV1Subset` still enforces exactly twelve flagged cells including
+ * `rego-limen`; what changes is that a scenario may now start a universe that
+ * permits more than those twelve.
+ *
+ * ## What it is for
+ *
+ * `docs/design/campaign-plan.md` records the campaign's confirmed root cause:
+ * *"The 51-node passive baseline is content exhaustion, not a baseline"* — the
+ * twelve enabled cells hold 51 of the authored nodes and an idle universe learns
+ * all of them, in roughly a quarter of a 2,400-tick run. The other 249 nodes
+ * exist, validate, and have never been executed. Permitting them is the only
+ * lever that attacks the binding constraint directly rather than through a
+ * mechanic.
+ *
+ * **The 249 have never been run.** `check:content` validates them; nothing has
+ * stepped them. Expect the first wide sweep to surface authoring defects, and
+ * expect that to be the point of running it.
+ */
+export function fullGridRulesetAxes(registry: ContentRegistry): RulesetAxes {
+  let permittedTechniques = 0;
+  let permittedForms = 0;
+  for (const { record } of registry.techniques) permittedTechniques |= 1 << record.bit;
+  for (const { record } of registry.forms) permittedForms |= 1 << record.bit;
+  return { permittedTechniques, permittedForms };
+}
+
+/**
  * Interned node ids inside the v1 rectangle that have no prerequisites,
  * ascending.
  *
