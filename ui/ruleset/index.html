@@ -4,9 +4,16 @@
   SPDX-License-Identifier: AGPL-3.0-or-later
 
   A prototype of design pillar #1: rules-setting is the core verb. Real
-  content — 5 techniques, 14 forms, 70 cells, 300 authored nodes — and the
-  real permits() rule from packages/state. Audio is synthesised live per
-  sound-design §0.8's synthesised tier; no assets are loaded.
+  content — 5 techniques, 14 forms, 70 cells, 300 authored nodes — and
+  vision §4's legality rule. Audio is synthesised live per sound-design
+  §0.8's synthesised tier; no assets are loaded.
+
+  Serve with `npm run ui`, then open /ui/ruleset/.
+
+  KNOWN COST: this reimplements permits() rather than importing it from
+  packages/state, so the rule exists twice. That is the trade for a static
+  file with no build step, and it is the first thing to fix if this becomes
+  the client — contracts.md §5 puts that rule in exactly one place.
 -->
 <meta charset="utf-8">
 <title>Multiverse Mages — the ruleset</title>

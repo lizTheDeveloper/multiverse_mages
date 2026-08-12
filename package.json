@@ -2,7 +2,7 @@
   "name": "multiverse-mages",
   "version": "0.3.0",
   "private": true,
-  "description": "Multiverse Mages \u2014 a real-time strategy game in which the player is the god of magic for a universe.",
+  "description": "Multiverse Mages — a real-time strategy game in which the player is the god of magic for a universe.",
   "license": "AGPL-3.0-or-later",
   "author": "Ann Kelner",
   "type": "module",
@@ -30,7 +30,8 @@
     "prebalance:gate:ascension": "npm run typecheck",
     "test:watch": "vitest",
     "bench": "tsc -p packages/sim-core/bench/tsconfig.run.json && node scripts/bench.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test && npm run balance:gate && npm run balance:gate:horizon && npm run balance:gate:ascension"
+    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test && npm run balance:gate && npm run balance:gate:horizon && npm run balance:gate:ascension",
+    "ui": "npx --yes http-server . -p 8200 --no-dotfiles -c-1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
