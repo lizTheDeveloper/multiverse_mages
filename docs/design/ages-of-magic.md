@@ -100,6 +100,42 @@ not the knowledge of its parts, which survives in whoever else holds those cells
 arrangement that could actually cast it. That is marooning with an edge: the parts live, the whole
 does not, and rebuilding it means growing three careers.
 
+## 2c. Knowledge decay is publish-or-perish — and we shipped the perish half
+
+> *"Publish or perish, baby — which is what knowledge decay is. We already have it, but that's what
+> it's called."*
+
+The mechanic exists: mastery falls every tick, and below `DEFAULT_TEACH_THRESHOLD` a mage can no
+longer pass on what she knows. The name is the design. It is not forgetting in the ordinary sense —
+it is **a scholar losing the standing to supervise a subject she has stopped working in.**
+
+W26 measured the consequence: **93.4% of held instances sit below the threshold**, and 28 of 51 nodes
+have no teachable copy anywhere, at an instant when every redundancy metric reports the library
+healthy.
+
+**And there is no publish.** `decay.ts` says so in its own prose, about itself:
+
+> *"Nothing in this subsystem restores mastery; **practice does, and practice is an operation
+> somebody has to perform.**"*
+
+W26 confirmed it from the other side: §5 lists six operations on knowledge and practice is not one of
+them. Research re-derives a node at full ordinary price, which is the only path back to teachability
+that exists — an expensive accident standing in for the mechanic.
+
+So the game has **perish without publish**, and 93.4% is what that number looks like. It is not a
+balance problem and it will not be tuned away; the counterweight was never built.
+
+This closes the college loop. A college is where novices are moved through the known **and** where
+established mages keep their standing by working — the same building, the same stationed set, the
+same hours competing. That makes the allocation in §2b sharper still: a mage set to teach is not
+researching, not on the wall, **and not maintaining her own frontier**. Publish or perish is what the
+clock is doing to her while she does any of the other three.
+
+**Open, and it is the first thing to build from this document:** whether *publish* is its own
+operation, or a side effect of research and teaching. Making it a side effect is cheaper and means a
+working scholar is automatically a maintained one. Making it separate creates a fourth demand on a
+roster that already has three, which is either the best tension in the game or one too many.
+
 ## 3. The species split falls straight out, and it is the playstyle difference
 
 Lifespans span **25×** — orc 720 months, draconic 18,000:
