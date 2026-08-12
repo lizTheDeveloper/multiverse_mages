@@ -323,8 +323,10 @@ scheduled and unreached.
   contracts §1.1 puts one universe in one simulation instance. The mask therefore clears the action
   every tick. `packages/mc-harness/src/strategies.ts:1057-1065` states this in the source itself:
   *"Action 14 is implemented and unreachable, which are different things and both are true."*
-- Four §7 raid metrics report `mechanic-absent` unconditionally
-  (`packages/mc-harness/src/metrics-collectors.ts:731, 764, 789, 1093`).
+- Four §7 raid metrics report `mechanic-absent` unconditionally —
+  `collectRaidLengthDistribution`, `collectInboundRaidTempoLoss`, `collectRaidInitiationCost` and
+  `collectWinRateByPrimitive`, declared at `packages/mc-harness/src/metrics-collectors.ts:730, 763,
+  788, 1092`.
 
 The arbitration the vision describes is not merely planned, it is written: `CastArbiter`
 (`packages/rules-raid/src/arbitration.ts:14-59`) holds an immutable `RulesetSnapshot` captured at
@@ -642,11 +644,23 @@ no sweep varies it).
 multi-agent evaluation line. Reported honestly, including the parts that do not help:
 
 - **Spinning-top geometry** (Czarnecki, Gidel, Tracey, Tuyls, Omidshafiei, Balduzzi, Jaderberg,
-  *Real World Games Look Like Spinning Tops*, NeurIPS 2020) finds non-transitivity concentrated at
-  mediocre skill and narrowing toward the top, over nine games plus AlphaStar populations. It has one
-  strong independent-ish replication on 1B+ human chess games (Sanjaya, Wang, Yang, arXiv:2110.11737,
-  2021) and no located falsification. **But it is scoped, in its own text, to symmetric zero-sum
-  two-player games.** This game is none of the three.
+  *Real World Games Look Like Spinning Tops*, arXiv:2004.09468, 2020) proposes a geometry in which
+  *"the upright axis represent[s] transitive strength, and the radial axis, which corresponds to the
+  number of cycles that exist at a particular transitive strength, represent[s] the non-transitive
+  dimension"*, over **"nine real world two-player zero-sum symmetric games"** plus AlphaStar
+  populations. No falsification was located. **But the scope quoted there is the paper's own, and
+  this game is not two-player, not zero-sum, and not symmetric** — which is the whole reason Option A
+  below is recommended over Option B.
+
+  *A related-work caution, corrected during review.* Sanjaya, Wang and Yang (*Measuring the
+  Non-Transitivity in Chess*, arXiv:2110.11737, 2021) is frequently cited as replicating the
+  spinning-top's "cyclicity peaks at mediocre skill" claim. Its abstract supports the measurement —
+  *"over one billion match data from Lichess and FICS"* — but states the finding differently: *"high
+  degrees of non-transitivity tend to prevent human players from making progress on their Elo rating,
+  whereas progressions are easier to make at the level of ratings where the degree of non-transitivity
+  is lower."* That is a claim about non-transitivity impeding progression, not about where cyclicity
+  peaks. **Treat the spinning-top geometry as unreplicated until someone reads that paper's full
+  text**; this document does not rest any recommendation on it.
 - **PSRO / rectified-Nash gamescapes** (Lanctot et al. NeurIPS 2017; Balduzzi et al. ICML 2019) — the
   ICML paper's title states the symmetric zero-sum scope. Useful negative result worth knowing:
   McAleer et al.'s P2SRO (NeurIPS 2020) reports that rectified PSRO and DCH **fail to converge even
@@ -791,9 +805,12 @@ arm; or the cap-versus-median arm exceeding the cap-versus-fresh arm's *distance
 than sampling noise, which would say the advantage is compounding rather than saturating; or
 `capitalSnowball` crossing **0.35** in a prestige-seeded population when it does not in a fresh one.
 
-**A caution from the literature, honestly labelled.** Sawyer & Frey (arXiv:2009.09990, 2020) analyse
-60,000+ games across four professional basketball leagues over a century and find rich-get-richer
-dynamics persisting **even where an empowered regulator actively tries to prevent them**. That is
+**A caution from the literature, honestly labelled.** Sawyer & Frey (*Super-teams or fair leagues?
+Parity policies by powerful regulators don't prevent capture*, arXiv:2009.09990, 2020) analyse
+*"outcomes of over 60,000 games from four professional basketball leagues"* spanning more than a
+century, computing *"the evolving rate of transitivity violations (A>B, B>C, but C>A) to measure the
+ability of leagues to maintain parity between teams"*, and find the sport has become **less**
+competitive over time despite regulation. That is
 sports-league governance, not video-game progression, and it is a caution rather than a result about
 this design — but the shape of the caution is exactly right: a bound written into the rules is not the
 same as a bound on outcomes. Beyond that, the survey found **no on-point rigorous literature** on
