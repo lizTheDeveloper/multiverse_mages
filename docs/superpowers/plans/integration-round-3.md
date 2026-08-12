@@ -202,9 +202,9 @@ Report order, fixed in advance:
 - [x] Merge 3 — `w19/horizon-sweep`, verify, record, push
 - [x] Merge 4 — `w24/university-siting`, verify, record, push
 - [x] Merge 5 — `w21/timing-and-envelopes`, verify, record, push
-- [ ] Merge 6 — `w25/spec-refresh`, verify, record, push
-- [ ] Golden fixtures: checked at every merge
-- [ ] Baselines regenerated once, with the single rationale
+- [x] Merge 6 — `w25/spec-refresh`, verify, record, push
+- [x] Golden fixtures: checked at every merge — unchanged at all seven
+- [x] Baselines regenerated once, with the single rationale
 - [ ] The 2400-tick sweep at n ≥ 400, ten strategies, coverage asserted
 - [ ] D1–D9 reported with real numbers, each `failed` or `saturated`
 
@@ -454,3 +454,65 @@ reference universe.
 Verify: **285 test files / 4,036 tests**, with three of the four named failures being the usual 30 s
 load timeouts and the fourth being 9.9 above; all four pass on re-run (4 files / 31 tests, EXIT=0).
 **No golden changed.**
+
+### Merge 6 — `w25/spec-refresh` (`5306852`)
+
+Merged clean, **no conflicts**. Documentation only: `vision.md` §11 reconciled with `openspec list`,
+§8/§8a/§8b reframed around elimination being intended rather than a griefing surface, §7a's
+place-as-relationship boundary drawn where W24 put it, and the §4 perception-trunk finding recorded.
+
+**The check the brief asked for.** `vision.md` has **zero runtime parsers**, so nothing there can
+break by construction. Ten tests parse `contracts.md`, and W21, W24 and this round's own §5 edit all
+touched that document, so they were run explicitly rather than trusted: **10 files / 150 tests, all
+pass** — `schema-doc-agreement`, `primitive-contract`, `tradition-hooks`, `god-conformance`,
+`metrics-registry`, `pinned-constants-doc`, `ablation-conformance`, `pre-0-5-0-claim-check`,
+`species-contract-conformance`, `rng-registry-append-only`.
+
+### Merge 7 — `origin/main` (`6ef64c2`)
+
+**Fifteen conflicts, and they are content-equivalence checks rather than choices** — except in three
+places where `main` is behind this branch.
+
+`main` merged `w17/value-sensitive-acquirer` as real commits while this round was in flight. Round 2
+had **squash-merged** the same work (`4f70acd`) to keep ~60k lines of `.w17/` sweep JSON out of a
+public repository, and a squash leaves no ancestry, so git reports 21 missing commits and conflicts
+on every file W17 touched while the content is already here. `main` carries **zero** files under
+`.w17/`, so the exclusion held on both sides.
+
+**`autonomy.ts` is a defect in `main`, and it is the sharpest finding of this merge.** The two sides
+differ in exactly one line. The runtime key is identical — both join role and primitive with U+0000,
+which is load-bearing, since without it `role:"ab",primitive:"c"` would collide with
+`role:"a",primitive:"bc"`. Ours spells the separator as the escape; **`main` embeds the literal
+control character**, so git classifies the file as binary and it cannot be diffed or reviewed. Byte
+counts settle it: ours 11,432 with **zero** NULs, main's 11,427 with **exactly one**. Round 2 fixed
+this and `main` reintroduced it. Taking ours is behaviour-preserving and is the fix.
+
+Other resolutions: `reference-universe.ts` and `long-run.ts` keep **W13's `tradition` content id** and
+drop `main`'s ordinal `traditionIndex`, which is round 2's decision reaffirmed — an ordinal *"would
+move the day a tradition is added"*, and this campaign's most-cited defect is that the reference
+tradition was True Naming by accident of the alphabet. `shipped-content.test.ts` keeps 46 raid
+constants against main's 39. `types.ts`, `index.ts`, `gateway.ts`, `world-step.ts` and
+`content-set.ts` are ours-only W21 additions main has never seen; `content-set.ts` was verified
+**byte-identical to `:2:`** after resolution, because a stray marker had to be removed by hand.
+
+`contentRevision` **unmoved** at `5a2a97df…` — main brought no content-data change. Goldens
+byte-identical. `npm install` kept `@mm/rules-raid` in the lock.
+
+**A note on authorship of this commit.** The orchestrator committed the staged tree while this agent
+was believed terminated, recording that no resolution decision was made there. That is accurate —
+every resolution above is this agent's, verified after the fact: `autonomy.ts` NUL-free at 11,432
+bytes, no `traditionIndex` in `packages/scenario/src`, `raidConstants: 46`,
+`WORLD_SCHEMA_VERSION` 6, `SNAPSHOT_VERSION` 1.
+
+### The single baseline regeneration (`d1d3140`)
+
+Once, after all seven merges, never mid-sequence, one rationale written into all three files.
+
+**`npm run verify` on the final tree: 285 test files / 4,038 tests, ALL PASS** — no timeouts at all
+on this run, which is itself evidence that every earlier timeout was contention. The three gates then
+refused on provenance (`contentHash` `5a2a97df…` against baselines recorded at `5be75547…`), which is
+precisely what the single regeneration exists to clear. After regenerating: **all three gates PASS at
+delta `0.00000` on every metric.**
+
+**Not one figure in any of the three gates was outside tolerance before regeneration.** The reason
+they were invalid is provenance, not movement.
