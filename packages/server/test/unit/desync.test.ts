@@ -27,6 +27,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  ERROR_CODE,
   MATCH_END,
   MatchHost,
   NOTICE,
@@ -172,7 +173,14 @@ describe('a desync ends the match and corrects nothing', () => {
     // **Never corrected.** The authoritative state is byte-identical to what it
     // was before the false report arrived: nothing rolled back, nothing was
     // pushed to the liar, nothing re-derived.
-    expect(before).toEqual(host.matchOf(matchId)?.hashes() ?? before);
+    //
+    // The match is looked up without a fallback on purpose. An earlier version
+    // read `?? before`, and since `matchOf` did not then consult the settled
+    // map, it resolved to `expect(before).toEqual(before)` — an assertion that
+    // would have passed against a server that rewrote every hash it held.
+    const after = host.matchOf(matchId);
+    expect(after).toBeDefined();
+    expect(after!.hashes()).toEqual(before);
   });
 
   it('accepts a truthful checkpoint without comment', () => {
@@ -200,5 +208,114 @@ describe('a desync ends the match and corrects nothing', () => {
     for (const forbidden of ['resync', 'correct', 'pushSnapshot', 'rollback', 'reconcile']) {
       expect(surface).not.toContain(forbidden);
     }
+  });
+});
+
+describe('a checkpoint is checked against the seat, not against the frame', () => {
+  it('refuses a stranger who names someone else\u2019s live match', () => {
+    const { host, alice, matchId, log } = startedMatch();
+    // A third connection, handshaken but holding no seat.
+    const stranger = recordingConnection('s');
+    host.connect(stranger);
+    host.receive(
+      's',
+      encodeFrame({ type: 'hello', participant: 'mallory', contract: probeContract() }).trim(),
+    );
+
+    host.receive(
+      's',
+      encodeFrame({
+        type: 'checkpoint',
+        matchId,
+        tick: 0,
+        slot: 0,
+        hash: 'ffffffffffffffff',
+      }).trim(),
+    );
+
+    // One frame must not be able to end a match its sender is not in. \u00a74.2 puts
+    // this defence at the boundary, and a frame the boundary trusts to name its
+    // own subject is not defended.
+    expect(stranger.ofType('error')[0]?.code).toBe(ERROR_CODE.noMatch);
+    expect(alice.ofType('desync')).toHaveLength(0);
+    expect(alice.ofType('match-end')).toHaveLength(0);
+    expect(host.matchOf(matchId)?.running).toBe(true);
+    expect(log.some((line) => line.startsWith('desync '))).toBe(false);
+  });
+
+  it('refuses a participant that names a match other than its own', () => {
+    const { host, alice, matchId } = startedMatch();
+    host.receive(
+      'a',
+      encodeFrame({
+        type: 'checkpoint',
+        matchId: 'match-99',
+        tick: 0,
+        slot: 0,
+        hash: 'ffffffffffffffff',
+      }).trim(),
+    );
+    expect(alice.ofType('error')[0]?.code).toBe(ERROR_CODE.unknownMatch);
+    expect(host.matchOf(matchId)?.running).toBe(true);
+  });
+
+  it('refuses a participant that vouches for its opponent\u2019s slot', () => {
+    const { host, alice, bob, clock, matchId } = startedMatch();
+    clock.advance(1_000);
+    host.pump();
+
+    // Alice reports a lie about bob's universe. Allowing it would be objective
+    // denial by a frame: one participant ending the match on the other's slot.
+    host.receive(
+      'a',
+      encodeFrame({
+        type: 'checkpoint',
+        matchId,
+        tick: 0,
+        slot: 1,
+        hash: 'ffffffffffffffff',
+      }).trim(),
+    );
+
+    expect(alice.ofType('error')[0]?.code).toBe(ERROR_CODE.badRequest);
+    expect(bob.ofType('desync')).toHaveLength(0);
+    expect(host.matchOf(matchId)?.running).toBe(true);
+  });
+});
+
+describe('a challenge may only be declined by the party it was sent to', () => {
+  it('ignores a decline from a connection the challenge was not sent to', () => {
+    const host = new MatchHost({
+      contract: probeContract(),
+      createSession: probeSession,
+      clock: manualClock(0),
+    });
+    const alice = recordingConnection('a');
+    const bob = recordingConnection('b');
+    const mallory = recordingConnection('m');
+    for (const [conn, name] of [
+      [alice, 'alice'],
+      [bob, 'bob'],
+      [mallory, 'mallory'],
+    ] as const) {
+      host.connect(conn);
+      host.receive(
+        conn.id,
+        encodeFrame({ type: 'hello', participant: name, contract: probeContract() }).trim(),
+      );
+    }
+    host.receive(
+      'a',
+      encodeFrame({ type: 'challenge', opponent: 'bob', runSeed: 1, stepLimit: 4 }).trim(),
+    );
+    const challengeId = bob.ofType('challenged')[0]!.challengeId;
+
+    // Ids come from a counter and are guessable, so an unchecked decline is a
+    // denial of service made of one frame and an integer.
+    host.receive('m', encodeFrame({ type: 'decline', challengeId }).trim());
+
+    // The challenge survives, and bob can still accept it.
+    host.receive('b', encodeFrame({ type: 'accept', challengeId }).trim());
+    expect(alice.ofType('match-start')).toHaveLength(1);
   });
 });

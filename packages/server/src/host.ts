@@ -78,7 +78,10 @@ import {
  * client whose sequence-3 frame arrived after its sequence-5 frame would get a
  * different action depending on how long the server happened to wait — arrival
  * order deciding the simulation, wearing a disguise. The rule is checked in
- * {@link MatchHost.receive} and a violation is a `duplicate` rejection.
+ * {@link MatchHost.receive}, and a submission whose sequence does not increase
+ * is **dropped without reaching the tick** — it cannot win on sequence anyway,
+ * and admitting it only to reject it would let a stale retransmission mark the
+ * slot as answered and close the tick early.
  */
 
 /**
@@ -305,7 +308,7 @@ export class MatchHost {
         this.onAccept(peer, frame);
         return;
       case VERB.decline:
-        this.onDecline(frame);
+        this.onDecline(peer, frame);
         return;
       case VERB.action:
         this.onAction(peer, frame);
@@ -344,7 +347,10 @@ export class MatchHost {
 
   /** A match by id, for assertions. */
   matchOf(matchId: string): Match | undefined {
-    return this.matches.get(matchId)?.match;
+    // Settled matches too: a test asserting that a desync corrected nothing has
+    // to read the hashes *after* the match ended, and a lookup that returned
+    // `undefined` there would make that assertion compare a value with itself.
+    return (this.matches.get(matchId) ?? this.settled.get(matchId))?.match;
   }
 
   // -------------------------------------------------------------------------
@@ -486,9 +492,16 @@ export class MatchHost {
     this.start(challenge);
   }
 
-  private onDecline(frame: Record<string, unknown>): void {
+  private onDecline(peer: Peer, frame: Record<string, unknown>): void {
     const challengeId = frame['challengeId'];
-    if (typeof challengeId === 'string') this.challenges.delete(challengeId);
+    if (typeof challengeId !== 'string') return;
+    const challenge = this.challenges.get(challengeId);
+    // Only the challenged party may decline. Ids come from a counter and are
+    // therefore guessable, so an unchecked decline would let any handshaken
+    // connection cancel challenges between two other participants — a denial
+    // of service made of one frame and an integer.
+    if (challenge === undefined || challenge.to !== peer.participant) return;
+    this.challenges.delete(challengeId);
   }
 
   private onAction(peer: Peer, frame: Record<string, unknown>): void {
@@ -548,22 +561,46 @@ export class MatchHost {
 
   private onCheckpoint(peer: Peer, frame: Record<string, unknown>): void {
     // Checkpoints are the one verb an ended match still answers — see
-    // {@link MatchHost.settled}. A checkpoint for a match this connection was
-    // never in is still refused.
-    const matchId = peer.matchId ?? (typeof frame['matchId'] === 'string' ? frame['matchId'] : undefined);
-    const live =
-      matchId === undefined
-        ? undefined
-        : (this.matches.get(matchId) ?? this.settled.get(matchId));
+    // {@link MatchHost.settled}.
+    //
+    // **Membership, not existence.** A checkpoint is the only frame that can
+    // end somebody else's match, so what it is checked against is the seat this
+    // connection actually holds, never the match id in the frame. Resolving the
+    // match from the frame would let any handshaken stranger name a live match
+    // and report a hash for it — one frame to terminate a match they are not
+    // in, or to evict a settled one and suppress the final-hash comparison the
+    // release claim is about. §4.2 puts this defence at the boundary, and a
+    // frame the boundary trusts to name its own subject is not defended.
+    const seat = peer.matchId;
+    const slot = frame['slot'];
+    const tick = frame['tick'];
+    const hash = frame['hash'];
+    if (seat === undefined || peer.slot === undefined) {
+      this.fail(peer, ERROR_CODE.noMatch, 'This connection holds no seat in any match.');
+      return;
+    }
+    if (typeof frame['matchId'] === 'string' && frame['matchId'] !== seat) {
+      this.fail(peer, ERROR_CODE.unknownMatch, 'That is not the match this connection is in.');
+      return;
+    }
+    const live = this.matches.get(seat) ?? this.settled.get(seat);
     if (live === undefined) {
       this.fail(peer, ERROR_CODE.noMatch, 'No match, running or just ended, by that name.');
       return;
     }
-    const tick = frame['tick'];
-    const slot = frame['slot'];
-    const hash = frame['hash'];
     if (!Number.isInteger(tick) || !Number.isInteger(slot) || typeof hash !== 'string') {
       this.fail(peer, ERROR_CODE.badRequest, '`checkpoint` needs `tick`, `slot` and `hash`.');
+      return;
+    }
+    // A participant may vouch only for the universe it mirrors, which in v1 is
+    // its own. Without this, one participant could report a lie about its
+    // *opponent's* slot and end the match — objective denial by a frame, which
+    // is exactly the grief surface the proposal warns a disconnect rule must
+    // not open. When both sides mirror both universes — which a raid will need —
+    // this widens to "any slot this participant mirrors", and it should widen
+    // deliberately rather than by having never been checked.
+    if (slot !== peer.slot) {
+      this.fail(peer, ERROR_CODE.badRequest, 'A participant may only checkpoint its own slot.');
       return;
     }
     // Only the tick whose hashes are authoritative right now can be compared.
