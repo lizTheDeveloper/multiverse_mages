@@ -423,3 +423,19 @@ export {
   spearmanOf,
   varietyOf,
 } from './tuner.js';
+
+export type { BetterWhen, ScoringControl, ScoringTerm, Separation } from './scoring-controls.js';
+export {
+  BETTER_WHEN,
+  CONTROL_POOL,
+  CONTROL_RUNS,
+  MEASURED_NODES,
+  SCORING_TERMS,
+  TERMS_WITHOUT_CONTROLS,
+  constructedPool,
+  controlCorpus,
+  controlPool,
+  falseFriendReading,
+  isAffineRestatement,
+  separationOf,
+} from './scoring-controls.js';
