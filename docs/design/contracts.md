@@ -632,7 +632,7 @@ subsistence demand against the stock as it stands, before consumption runs — b
 phase 9 and births are phase 8, and the alternatives were storing last tick's share in state (a
 world-schema revision for a number one line reads) or charging subsistence for a population and
 then letting it grow inside the same tick. With it wired, the reference run's `K` falls from 57,205
-to 29,831 across two centuries while the population rises to 18,722, so *"population never exceeds
+to 29,887 across two centuries while the population peaks at 18,657, so *"population never exceeds
 `K`"* is finally a question with a narrow answer rather than a bound running away ahead of the thing
 it bounds.
 

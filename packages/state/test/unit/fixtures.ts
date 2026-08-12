@@ -81,6 +81,8 @@ export interface PopulatedWorld {
   readonly library: EntityHandle;
   readonly grimoire: EntityHandle;
   readonly effort: EntityHandle;
+  /** The one `territory-holding` row. The site hangs on `university` instead. */
+  readonly holding: EntityHandle;
 }
 
 /**
