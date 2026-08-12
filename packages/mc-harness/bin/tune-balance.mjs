@@ -88,9 +88,18 @@ const AXES = [
   // Path A's gate. `worship-tier-count` is 5, so 5 is the ceiling and this knob
   // is spent after one step — worth knowing before the search reports success.
   { constantId: 'ascension-tier-gate', levels: [3, 4, 5] },
-  // Path B's length. ERA_TICKS is 240, so 4 eras is tick 960 — which is where
-  // the measured wins cluster. This is the knob that actually moves them.
-  { constantId: 'ascension-era-count', levels: [4, 5, 6, 8, 10] },
+  // Path B's length, and the knob that actually moves the measured wins:
+  // ERA_TICKS is 240, so 4 eras completes at tick 960, which is exactly where
+  // they cluster.
+  //
+  // The levels run to 9 and stop. At the 2400-tick horizon there are exactly
+  // ten eras, so `ascension-era-count: 10` requires every era in the run to
+  // pass and is unwinnable by construction rather than by balance — the first
+  // search included it, measured 0.000, and spent eleven trials sitting on a
+  // ruleset nobody could win. 7 and 9 were missing from that grid, and the
+  // rate fell from 0.458 at 8 straight to 0.000 at 10, so the interesting
+  // region was never sampled.
+  { constantId: 'ascension-era-count', levels: [4, 5, 6, 7, 8, 9] },
   { constantId: 'ascension-dependence-max', levels: [64, 128, 192, 256] },
   { constantId: 'ascension-loss-max', levels: [0, 1, 2, 3] },
   { constantId: 'ascension-min-tick', levels: [600, 900, 1200] },

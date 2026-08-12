@@ -117,6 +117,54 @@ describe('the band gate dominates everything else', () => {
     expect(score.ascensionRate).toBe(0);
     expect(Number.isFinite(score.score)).toBe(true);
   });
+
+  it('ranks an unwinnable ruleset below one that is far too easy', () => {
+    // The first search run converged on ascensionRate 0.000 and preferred it to
+    // 0.458. Absolute distance said so honestly: the floor is 0.05 and the
+    // ceiling 0.20, so nobody-wins is 0.05 out and 46%-win is 0.26 out. The
+    // band's own asymmetry had become a preference for an unwinnable game.
+    const unwinnable = pool({}, 10);
+    const farTooEasy = pool(
+      {
+        'permissive-breadth': [10, 200],
+        archivist: [10, 120],
+        'portal-rush': [10, 51],
+        'worship-maximizer': [7, 51],
+        'uniform-random-legal': [7, 50],
+      },
+      10,
+    );
+    const easyScore = scoreBalance(farTooEasy, WEIGHTS, BAND);
+    expect(easyScore.ascensionRate).toBeCloseTo(0.55, 2);
+    expect(easyScore.inBand).toBe(false);
+    expect(scoreBalance(unwinnable, WEIGHTS, BAND).score).toBeLessThan(easyScore.score);
+  });
+
+  it('says unwinnable rather than reporting a variety of zero as if it were measured', () => {
+    const score = scoreBalance(pool({}, 10), WEIGHTS, BAND);
+    expect(score.notes.join(' ')).toContain('unwinnable');
+  });
+
+  it('measures distance relative to the edge it missed, so too-hard and too-easy compare', () => {
+    // Equal *relative* misses score equally. Half the floor (0.025, out by 50%
+    // of 0.05) against one and a half times the ceiling (0.30, out by 50% of
+    // 0.20). Note these are not "half" and "double" — relative distance is not
+    // symmetric in the ratio, and pairing them that way was the first version
+    // of this test and was wrong.
+    const runs = 40; // 8 strategies x 40 = 320 runs
+    const tooHard = pool({ archivist: [8, 120] }, runs); // 8/320 = 0.025
+    const tooEasy = pool(
+      Object.fromEntries(POOL.map((id) => [id, [12, 120] as const])) as never,
+      runs,
+    ); // 96/320 = 0.30
+    const hard = scoreBalance(tooHard, WEIGHTS, BAND);
+    const easy = scoreBalance(tooEasy, WEIGHTS, BAND);
+    expect(hard.ascensionRate).toBeCloseTo(0.025, 3);
+    expect(easy.ascensionRate).toBeCloseTo(0.3, 3);
+    expect(hard.inBand).toBe(false);
+    expect(easy.inBand).toBe(false);
+    expect(hard.score).toBeCloseTo(easy.score, 6);
+  });
 });
 
 describe('variety', () => {

@@ -94,6 +94,15 @@ export const EXPLOIT_PROBE = 'uniform-random-legal';
 /** Penalty applied per unit of distance outside the band. Steep on purpose. */
 const OUT_OF_BAND_PENALTY = 1000;
 
+/**
+ * How much worse "nobody can win" is than merely missing the band.
+ *
+ * Large rather than merely larger: the search must never trade its way toward
+ * an unwinnable ruleset, and no finite relative distance should be able to
+ * reach this.
+ */
+const UNWINNABLE_MULTIPLIER = 100;
+
 /** Share of all wins above which one strategy is "dominant". */
 export const DOMINANCE_LIMIT = 0.6;
 
@@ -165,11 +174,18 @@ export function scoreBalance(
   const ascensionRate = runs === 0 ? 0 : wins / runs;
 
   const inBand = ascensionRate >= band.min && ascensionRate <= band.max;
+  // Distance is *relative* to the edge it missed, not absolute. An absolute
+  // distance makes the band's own asymmetry into a preference: the floor is
+  // 0.05 and the ceiling 0.20, so a ruleset nobody can win sits 0.05 from the
+  // band while one where 46% win sits 0.26 from it, and an absolute measure
+  // ranks the unwinnable game higher. The first search run did exactly that and
+  // converged on ascensionRate 0.000. Relative distance makes "ten times too
+  // hard" and "ten times too easy" comparable, which is what the band means.
   const distance = inBand
     ? 0
     : ascensionRate < band.min
-      ? band.min - ascensionRate
-      : ascensionRate - band.max;
+      ? (band.min - ascensionRate) / band.min
+      : (ascensionRate - band.max) / band.max;
 
   const variety = varietyOf(outcomes);
   const rates = outcomes.map((entry) => (entry.runs === 0 ? 0 : entry.ascended / entry.runs));
@@ -187,10 +203,34 @@ export function scoreBalance(
   // says "playing beats not playing".
   const exploitMargin = poolMean - probeRate;
 
+  if (wins === 0) {
+    // Unwinnable, and therefore not a candidate at all. Ranked below every
+    // out-of-band ruleset rather than merely below the in-band ones, because
+    // variety and correlation are not "zero" here — they are undefined, and a
+    // search that treats an undefined objective as a low score will walk
+    // straight into it. Vision §8a: "if almost none do, the meta-game never
+    // starts."
+    notes.push(
+      'no run ascended: the ruleset is unwinnable, which ranks below every ' +
+        'out-of-band candidate rather than merely below the in-band ones.',
+    );
+    return {
+      ascensionRate,
+      inBand: false,
+      variety,
+      correlation,
+      exploitMargin,
+      topShare,
+      score: -OUT_OF_BAND_PENALTY * UNWINNABLE_MULTIPLIER,
+      notes,
+    };
+  }
+
   if (!inBand) {
     notes.push(
       `ascensionRate ${ascensionRate.toFixed(3)} is outside the ${band.min}-${band.max} band by ` +
-        `${distance.toFixed(3)}; every in-band candidate outranks this one.`,
+        `${(distance * 100).toFixed(0)}% of the edge it missed; every in-band candidate ` +
+        'outranks this one.',
     );
     return {
       ascensionRate,
