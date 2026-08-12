@@ -454,3 +454,30 @@ value-blind selection makes (2) and (3) unobservable no matter how well they are
 
 A 2,400-tick run takes about 57 s single-threaded on the reference machine; the 96-run arm A was
 executed as eight parallel processes.
+
+## What was changed, and what `npm run verify` says about it
+
+Three files of production code, all additive, none a constant or a rule:
+
+- `packages/scenario/src/reference-universe.ts` — `ReferenceOptions.foundingSpeciesMask`, default 0
+  meaning every species, plus a refusal for a mask that selects nobody.
+- `packages/scenario/src/long-run.ts` — the new field on `LONG_RUN_OPTIONS`, set to 0.
+- `eslint.config.mjs` — `tools/**/*.mjs` linted as host-side tooling, as `scripts/**/*.mjs` already is.
+
+Plus three new tests in `packages/scenario/test/unit/reference-universe.test.ts` and the two
+measurement tools under `tools/w15/`. **No golden fixture regenerated. No balance baseline
+regenerated.**
+
+    npm run verify   →   verify_exit=0
+
+    Test Files  259 passed (259)
+          Tests  3666 passed (3666)
+
+    Balance gate for balance-gate-v1:            PASS (tolerance k = 3 standard errors)
+    Balance gate for balance-gate-horizon-v1:    PASS (tolerance k = 3 standard errors)
+    Balance gate for balance-gate-ascension-v1:  PASS (tolerance k = 3 standard errors)
+
+**Every metric in all three gates reports `delta 0.00000`.** Not "within tolerance" — identical. That
+is the strongest available evidence that the founding-species-mask default builds the same universe
+the scenario built before it existed, and that nothing in this measurement moved the numbers it was
+measuring.

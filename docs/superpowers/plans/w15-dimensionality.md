@@ -97,10 +97,12 @@ Floats are fine: this is analysis, outside the rules path.
 - [x] Eigenvalue spectrum, components for 80% / 95%
 - [x] Pairwise Jaccard and cosine, between and within strategy
 - [x] Arm 2 — founding species mix (the additive `foundingSpeciesMask` option below).
-      150 of 168 runs; the three human-only groups still executing. No claim rests on them.
+      All 168 runs complete: four strategies x seven founding mixes x 6.
 - [x] Direct fungibility verdict from the ascension predicates
 - [x] Write `docs/design/strategy-dimensionality.md`
-- [x] `npm run verify` green, reported exactly
+- [x] `npm run verify` green, reported exactly — `verify_exit=0`, 3666 tests in 259 files, all
+      three balance gates PASS with **delta 0.00000 on every metric**. No golden fixture and no
+      balance baseline regenerated.
 
 ## The one additive production change, and why it is needed
 
