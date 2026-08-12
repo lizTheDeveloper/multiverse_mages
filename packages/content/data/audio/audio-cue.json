@@ -784,6 +784,22 @@
     "densityThreshold": 4
   },
   {
+    "id": "deny-stranded-echo",
+    "kind": "knowledge",
+    "production": "synthesised",
+    "band": "presence",
+    "grid": "unquantized",
+    "durationMs": 200,
+    "levelDbTenths": -240,
+    "variants": 4,
+    "pitchJitterCents": 0,
+    "prompt": "",
+    "post": "§2.2: layered UNDER the ordinary deny, never instead of it — §2 keeps six clicks. A faint pre-echo of the missing prerequisite cell material, so a node stranded by a dark prerequisite sounds unlike one in a dark cell, and points at why. Synthesised: the material is whichever cell went dark.",
+    "subject": "illegal-action",
+    "source": "2.2",
+    "densityThreshold": 1
+  },
+  {
     "id": "raid-direct-damage",
     "kind": "raid-primitive",
     "production": "granular",

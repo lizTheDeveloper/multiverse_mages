@@ -382,6 +382,26 @@ player learns the shape of legality by feel within a few minutes, and no one is 
 
 Deny is also the correct sound for insufficient favor, with the addition described in §5.6.
 
+**Deny needs one more distinction, because illegality has two causes that feel different.** A
+parallel prototype split the cost of forbidding *Intellego* across the full grid — 102 nodes lost —
+and found it is not one kind of loss: **58 go dark with their cell, and 44 are stranded downstream**,
+in cells that are still live but whose prerequisite went dark. A player experiences those very
+differently. The first is *that whole area went away*, which the grid shows plainly. The second is
+*things I could reach yesterday are unreachable for reasons that are not on screen* — and that one
+is genuinely confusing, because nothing visibly changed where the player is looking.
+
+So deny takes two shapes — **without becoming a seventh click.** The six are a closed set and adding
+to it should require an argument; this is not one. The ordinary deny plays in both cases. For a
+stranded node it is *layered* with a faint pre-echo of the missing prerequisite cell's material
+(§4.2) — the sound of the thing it needed, arriving where the resolution should have been. It says
+*the reason is elsewhere* without a tooltip, and it points at where.
+
+The distinction between layering and replacing is the whole of it. A seventh click would mean
+learning a new sound; a layer means the deny you already know, with something underneath it.
+
+Per §0.3 this is salience, not payload: the interface must still name the missing prerequisite. The
+sound makes you ask; the panel answers.
+
 ### 2.3 Anti-fatigue rules
 
 - Round-robin of 5 variants per click type, indexed by the §0.2 hash — no two consecutive
@@ -643,6 +663,21 @@ player who founds a university every few ticks from being deafened by ceremony.
 | **2 — consequential** | 9 bless mage, 8 grant founding knowledge, 14 open portal | Ceremonial. Longer latch, commit with a tail. |
 | **3 — constitutional** | 1–7: permit/forbid technique or form, dispensation, interdiction, revoke | The ruleset. These change what is *possible*, and must feel like law. |
 | **4 — terminal** | 13 change tradition, 15 declare ascension | **Seal.** The only two. |
+
+**Edicts sit uneasily in tier 3, and the economy says why.** `god-cost.json` prices issuing an edict
+at 6,144 against 8,192 for permitting a technique — comparable — but revocation at only **2,048**.
+That asymmetry means the scarce resource is not the favor, it is the **slot**: there are eight, and
+`EDICT_BUDGET_MAX` is a structural constant. An edict is therefore not a scaled-down axis toggle. It
+is closer to **spending a charge from a small, visible reserve**, and it is cheap to take back.
+
+That is a different sound. Permitting a technique should feel like law — slow, harmonic, the world
+re-tuning. Issuing an edict should feel like *committing one of eight*: a smaller, more mechanical
+act, with the reserve audible in it. §5.2's single-note treatment is right for the wrong reason —
+the note should read as one of a countable few rather than as a small chord. Revoking, at a third
+the price, should sound like taking the charge back rather than like undoing law.
+
+This is the second place where a cost table has corrected a sound brief, after §5.4. Both suggest
+reading `god-cost.json` before writing about how an action should feel.
 
 ### 5.2 Tier 3 is the game
 
