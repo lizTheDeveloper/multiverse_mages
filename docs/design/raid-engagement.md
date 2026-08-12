@@ -353,6 +353,85 @@ it is refused. If that is ever ambiguous in the interface, the interface is wron
 And the live raid must remain legible while someone is looking back — a player who rewinds and
 returns should not find they have lost the thread of the present.
 
+## 11a. Going backwards is a magic power, and it is already authored
+
+The author, on realising what deterministic replay implies:
+
+> *"This gives us the ability to move backwards in time for short stints."*
+> *"Seems like a magic power that's useful but expensive."*
+
+**Fatum is where it lives, and it is the most heavily authored form in the grid** — 25 nodes, five per
+technique, more than any other. Several of them already describe exactly this, written before anyone
+connected replay to a mechanic:
+
+| node | tier | its own gloss |
+|---|--:|---|
+| `muto-fatum` **The Later Appointment** | 3 | *"Change the hour at which a fate falls due, and nothing else about it will have changed."* |
+| `rego-fatum` **Turn the Ill Hour Aside** | 3 | *"Take a misfortune that was arriving here and hold it somewhere else."* |
+| `intellego-fatum` **The Thread Fate Set Down** | 5 | *"Perceive your own thread so exactly that you can tell the moment fate…"* |
+| `perdo-fatum` **The Unmade Discovery** | 5 | *"It does not destroy a node. **It unmakes the arrival of one.**"* |
+| `creo-fatum` **Write the Ending** | 5 | *"Fix how a thing ends and let the middle find its own way there."* |
+
+That last-but-one is the licence: the content already says Fatum reaches *events*, including the
+arrival of knowledge, and does so without touching the node itself. Nobody has to invent the fiction.
+
+### The architecture hands us the limit, and it is the right one
+
+`sim-core` ships versioned snapshots and deterministic replay, and `step` is pure. So going back means
+**restoring the last snapshot and replaying the action log forward** — which is what the golden
+fixtures already do on every commit.
+
+**You can therefore only go back as far as the last snapshot.** That is not a balance decision, it is
+what the architecture is, and it is a far better limit than a number someone picked: *"short stints"*
+is exactly the shape of the constraint. Snapshot cadence becomes a tuning dial with real meaning, and
+a longer reach costs real memory rather than costing a made-up resource.
+
+### The multiplayer problem, and §3 already solved it
+
+Rewinding a shared world is the pause problem again, worse. But the Portal Rule settles it without a
+new rule: **the host universe's ruleset governs all magic cast inside it.** So
+
+> **the host can take back the last few seconds; the raider cannot.**
+
+A raider in your sky is subject to your constitution — including, if you permit Fatum, your ability
+to unmake the moment they just had. That makes **forbidding Fatum a genuine denial play** and
+permitting it a standing deterrent, which is §3's *"prohibiting something is a real strategic option"*
+finally having a case where it obviously bites. It also means an attacker's scouting question is not
+only *what can they throw* but *can they take it back*.
+
+And it composes with §1's lock: **forbid Fatum mid-raid and you have sworn off your own escape**, for
+the rest of the engagement, with no way to reconsider.
+
+### Expensive, and here is what it has to cost
+
+The author's instinct — *useful but expensive* — is right, and the design has three places to charge
+it, which is better than one big number:
+
+- **It is third-age magic.** Under `ages-of-magic.md`, reaching the deep Fatum tiers means compounds,
+  a college, and the years to cross them. That is the real price and it is paid long before the raid.
+- **Vis or favor at the point of use**, per the §3 asymmetry.
+- **A cost the game already has and nothing else spends: exposure and mastery.** Casting the deepest
+  thing you know teaches it to whoever is watching (§3's exposure), and publish-or-perish means the
+  mage who does it is spending standing she has to earn back.
+
+**What it must not do cheaply is un-lose knowledge.** The whole loss economy — decay, marooning, the
+last copy, the dead teacher — is the game's subject, and a spell that reverses it for a moderate price
+deletes the subject. `perdo-fatum`'s *"unmakes the arrival"* is the safe shape: it reaches an *event*,
+not the ledger. A rewind that restores a burned library should be the most expensive thing a
+civilization can do, and it should still cost the years the scholars spent inside the rewound stretch.
+
+### Open
+
+1. **Does a rewind re-roll, or replay?** Restoring a snapshot and replaying the same action log gives
+   you the same outcome, which is useless. Something must differ — the actions taken, or the stream
+   position. **Re-rolling is the tempting answer and is probably wrong**, because a rewind that
+   re-rolls is a retry button and every balance baseline becomes a distribution over attempts. The
+   honest version is that you go back and *act differently*, which means a rewind buys information,
+   not luck.
+2. **Does the raider know the host permits Fatum before committing?** This decides whether it is a
+   deterrent or an ambush, and those are different games.
+3. **Snapshot cadence**, which is now a design parameter and not only an engineering one.
+
 ## 12. Open
 
 1. **Do supply-chain sites exist yet?** Universities do. The supply chain is W29's work and is not
