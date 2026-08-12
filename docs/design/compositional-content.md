@@ -405,6 +405,33 @@ what `unevaluatedProperties` would do in a stricter dialect. The deviation is **
 alternative**, not looser: declaring the variant fields at the parent level would have let a
 `holds-cell` field ride on an `always` condition.
 
+**The wiring reaches `target: "universe"` effects only, and most authored effects are not that.**
+This is the sharpest limitation in the workstream and it is measured, not estimated. Across the v1
+rectangle's 63 world-scale effects: **27 target `universe`**, and 36 target `self`, `single`, `area`
+or `side`. `knowledgeEffectHooks` filters to `universe`, because applying a `self`-scoped effect
+correctly means a **per-mage effect channel that does not exist**. So of the v1 content:
+
+| primitive | universe-target v1 effects | reaches the world stack? |
+|---|--:|---|
+| `resource-yield` | 11 | **yes** |
+| `build-rate` | 14 | no — `advanceConstruction` has no caller |
+| `portal` | 2 | yes, by its own path |
+| `research-rate`, `teach-rate`, `scribe-rate`, `lifespan` | **0** | **no** — all authored `self`/`single`/`area` |
+
+**Eleven effects.** That is how much of the authored v1 world-scale content is live. In particular
+**the life-extension ladder targets `self`, so it does not reach the wiring at all** — the depth axis
+the design asks for is authored, validated, loader-checked and disconnected. `lifespanEffectsFor`
+already takes a mage argument, so the fix is narrow and real: route a `self`-target effect to the
+mage who holds it. It was not done here because doing it after the arms were taken would have
+invalidated every number in §6.2, and a measurement of a system that no longer exists is worse than a
+gap that is written down.
+
+**Rate primitives should probably not be authorable at `universe` scope at all**, which is the
+deeper version of the same finding: `research-rate` is *"multiplier on research progress"* and
+progress belongs to a mage. The scope enum was inherited from an engagement-shaped vocabulary
+(`self`/`single`/`area`/`side`) and the world scale has only ever needed two: *this mage* and *the
+universe*. That is a §2.3 question worth answering before more content is authored against it.
+
 **Raid theft bypasses both enforcement seams.** `knowledge-steal` creates instances through
 `createInstance` directly, so a mage can be handed, by theft, a node her own commitments forbid her
 to learn. It is recorded in `exclusion.ts`'s module comment rather than fixed, because the right
