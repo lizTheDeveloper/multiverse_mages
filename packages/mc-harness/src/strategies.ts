@@ -1109,9 +1109,43 @@ const ALLOCATE_CONCENTRATE: StrategyDefinition = {
  * different tier-1 nodes, so concentrate and spread genuinely seed different
  * knowledge.
  */
+/**
+ * How many blessing slots the spreading arm rotates over.
+ *
+ * **Eight, and not the pinned `k` of thirty-two.** This is a measured
+ * correction, not a guess. `CANDIDATE_SLOTS` pins `blessMage` at 32 and
+ * `candidates.ts` fills that list with *living mages* — of which the reference
+ * universe holds **13 to 18** through the early run, rising to a median of 61
+ * only much later. A bot rotating over the declared 32 therefore names a slot
+ * past the end of the list for most of the run, and §4.4 makes that *"an
+ * ordinary illegal action"*: the gate refuses it and **it buys nothing**.
+ *
+ * Version 1 did exactly that, and the first execution measured the damage —
+ * **13,497 gate rejections on action 9 against the concentrating arm's zero**,
+ * and 24.4 blessings bought against 110.3. That is not an allocation
+ * difference; it is one arm being unable to spend, and it failed G1 by a spend
+ * gap of 32.5% against a 5% tolerance. The comparison was declared invalid and
+ * the instrument repaired, which is what a validity gate is for.
+ *
+ * Eight is chosen to sit strictly below the **13** the population floor was
+ * measured at, and it is **asserted rather than assumed**: the repaired arm's
+ * gate rejections must read zero, and the re-run reports them.
+ *
+ * The contrast survives the narrowing. Slot 0 is the most depleted living mage
+ * and slot 7 is the eighth most depleted, so the concentrating arm still buys
+ * one mage repeatedly while the spreading arm still buys eight in rotation.
+ * What is lost is reach into a part of the list that **was never there** — the
+ * old rotation was not spreading further, it was missing.
+ */
+const SPREAD_BLESS_SLOTS = 8;
+
 const ALLOCATE_SPREAD: StrategyDefinition = {
   strategyId: 'allocate-spread',
-  version: 1,
+  // 2: the blessing rotation was cut from the pinned 32 slots to 8. At 32 it
+  // named slots that did not exist for most of the run and bought nothing
+  // there, which made the pair differ in how much it spent rather than only in
+  // where. See SPREAD_BLESS_SLOTS for the measurement.
+  version: 2,
   hypothesis:
     ALLOCATION_HYPOTHESIS +
     'This is the arm that distrusts the ranking: it rotates across each list\'s full depth, so it ' +
@@ -1137,7 +1171,11 @@ const ALLOCATE_SPREAD: StrategyDefinition = {
           // rotating into it here would buy a different thing at a different
           // price and call the difference allocation.
           1 + (currentRound % (candidateSlotCount(GOD_ACTION.fundUniversity) - 1))
-        : rotate(action, currentRound),
+        : action === GOD_ACTION.blessMage
+          ? // Not `rotate`: the blessing list is shorter than its pinned k for
+            // most of a run. See SPREAD_BLESS_SLOTS.
+            currentRound % SPREAD_BLESS_SLOTS
+          : rotate(action, currentRound),
     ),
 };
 
