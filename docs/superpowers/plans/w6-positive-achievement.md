@@ -139,6 +139,37 @@ Universities do not compound (`libraryDepth` feeds no rate — W7), and nothing 
 so `libraryDependence` is identically zero and redundancy buys nothing (W8's loss channel). Until
 those land, "does ascension follow from play" has one bit of evidence in it.
 
+## Three readings of §8a I did not feel entitled to settle alone
+
+Every mechanic here is meant to be traceable to `docs/design/vision.md` §8a. Three of my choices are
+readings of that sentence rather than magnitudes it left open, and each is written so it can be
+turned off by setting one constant to its identity value. They are recorded here rather than
+resolved silently.
+
+1. **"The deepest node of a cell" — one cell, or a count of them?** §8a's noun is singular. Path A
+   now asks for `ascension-summit-cells` cells at their floor at once, and at 1 that is literally
+   §8a's sentence. My reading is that the multiplicity is a magnitude, because the predicate is
+   unchanged in kind. The reason I could not leave it at 1: an unattended universe drives **all
+   twelve** cells of the v1 rectangle to their floor, so at 1 the conjunct is satisfied by doing
+   nothing. The alternative — keep it singular and gate on the node's *tier* — is worse and was
+   rejected on evidence: the rectangle's deepest node is tier 5 and a passive universe learns it, so
+   no tier inside the starting content discriminates, and the graph's only tier-6 node sits in one
+   specific cell (`creo-fatum`), which would couple the win condition to a single node id and
+   contradict `ascension.ts`'s standing argument that no literal tier may appear anywhere.
+
+2. **"Held its knowledge intact" — size only, or size and spread?** `ascension-canon-breadth` is a
+   magnitude on §8a's own noun and I am confident in it. `ascension-canon-cells` — that the canon
+   span a number of distinct cells — is arguably a *second* rule rather than a magnitude. It is
+   there because size alone is satisfied by driving a few cells deep, which is what Path A already
+   rewards, and because breadth-versus-depth is the tension that keeps the two summits distinct.
+   Identity value 0 turns it off.
+
+3. **The loss allowance became scale-relative.** `max(ascension-loss-max, nodesKnown ×
+   ascension-loss-fraction)` changes the *form* of the "intact" comparison, not only its magnitude.
+   It is traceable to `discriminating-ascension` D2, which proposes exactly this with its reasoning,
+   so it is informed input rather than invention — but it is a rule change and should be read as
+   one. Identity value 0 turns it off.
+
 ## What must be recalibrated later, and against what
 
 | constant | recalibrate when | because |

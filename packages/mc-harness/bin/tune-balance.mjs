@@ -61,6 +61,7 @@ const USAGE = `mm-tune-balance — coordinate descent over the untuned ascension
   --passes <n>           Coordinate-descent passes over every axis. Default 2.
   --workers <n>          Sweep workers. Default 8.
   --out <dir>            Where the trial log is written. Required.
+  --axes <a,b,c>         Search only these constant ids. Default: all of them.
   --apply                Write the winning constants back at the end.
   --help
 
@@ -140,7 +141,7 @@ const WEIGHTS = { variety: 1, correlation: 1, exploit: 1 };
 const BAND = { min: 0.05, max: 0.2 };
 
 function parseArgs(argv) {
-  const known = new Set(['--scenario', '--replicates', '--passes', '--workers', '--out']);
+  const known = new Set(['--scenario', '--replicates', '--passes', '--workers', '--out', '--axes']);
   const args = { replicates: 6, passes: 2, workers: 8, apply: false };
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
@@ -153,7 +154,7 @@ function parseArgs(argv) {
     const value = argv[index + 1];
     if (value === undefined) throw new Error(`${flag} needs a value.`);
     const key = flag.slice(2);
-    args[key] = key === 'scenario' || key === 'out' ? value : Number(value);
+    args[key] = key === 'scenario' || key === 'out' || key === 'axes' ? value : Number(value);
     index += 1;
   }
   for (const required of ['scenario', 'out']) {
@@ -298,6 +299,24 @@ async function main() {
   const trialDir = path.join(tmpdir(), `mm-tune-${process.pid}`);
   mkdirSync(trialDir, { recursive: true });
 
+  // Which axes this run searches. Every axis is still *read* into the incumbent
+  // vector and written on every trial, so a filtered run holds the unsearched
+  // constants at their authored values rather than at whatever the file happened
+  // to contain -- a filter that changed what was held fixed would make two runs
+  // of this tool incomparable.
+  const selected = args.axes === undefined ? null : new Set(args.axes.split(',').map((id) => id.trim()));
+  if (selected !== null) {
+    const unknown = [...selected].filter((id) => !AXES.some((axis) => axis.constantId === id));
+    if (unknown.length > 0) {
+      throw new Error(
+        `--axes names ${unknown.join(', ')}, which is not on the axis list. An axis this tool ` +
+          'cannot search is one whose levels nobody argued for, and silently ignoring the name ' +
+          'would report a search that never happened.',
+      );
+    }
+  }
+  const searchAxes = selected === null ? AXES : AXES.filter((axis) => selected.has(axis.constantId));
+
   const log = [];
   let incumbent = vectorOf(constants);
   let best;
@@ -310,7 +329,7 @@ async function main() {
 
     for (let pass = 1; pass <= args.passes; pass += 1) {
       let improvedThisPass = false;
-      for (const axis of AXES) {
+      for (const axis of searchAxes) {
         for (const candidate of candidatesForAxis(incumbent, axis)) {
           const { score } = await evaluate(args, constants, candidate, trialDir, trialId);
           log.push({ trial: trialId, vector: { ...candidate }, score });
@@ -339,7 +358,7 @@ async function main() {
 
   writeFileSync(
     path.join(outDir, 'tuning-log.json'),
-    `${JSON.stringify({ axes: AXES, weights: WEIGHTS, band: BAND, best: { vector: incumbent, score: best }, trials: log }, null, 2)}\n`,
+    `${JSON.stringify({ axes: searchAxes, allAxes: AXES, weights: WEIGHTS, band: BAND, best: { vector: incumbent, score: best }, trials: log }, null, 2)}\n`,
   );
 
   process.stdout.write(`\nbest      ${report(incumbent, best)}\n`);
