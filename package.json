@@ -20,6 +20,7 @@
     "check:content": "node packages/content/bin/validate-content.mjs",
     "check:audio": "node packages/content/bin/validate-audio.mjs",
     "check:coverage": "node scripts/check-primitive-coverage.mjs",
+    "check:consumption": "node scripts/check-primitive-consumption.mjs",
     "audio:generate": "node scripts/generate-audio.mjs",
     "audio:manifest": "node scripts/audition-manifest.mjs",
     "audition": "node scripts/audition-server.mjs",
@@ -32,7 +33,7 @@
     "prebalance:gate:ascension": "npm run typecheck",
     "test:watch": "vitest",
     "bench": "tsc -p packages/sim-core/bench/tsconfig.run.json && node scripts/bench.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test && npm run balance:gate && npm run balance:gate:horizon && npm run balance:gate:ascension"
+    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run check:consumption && npm run test && npm run balance:gate && npm run balance:gate:horizon && npm run balance:gate:ascension"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
