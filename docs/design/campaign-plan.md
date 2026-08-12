@@ -136,6 +136,48 @@ nothing impedes a universe from learning everything it can reach and never losin
 
 That is the campaign's thesis, and D1-D8 are how it gets tested.
 
+## Three independent reviews, and where they converge
+
+The thesis — *"the v1 subset is not too small, acquisition is too easy"* — was put to three models.
+They **disagree on it**, which is why W15 is measuring rather than arguing:
+
+- **Qwen 3.8 Max:** *"necessary but insufficient"*. All 51 nodes are **fungible** — they feed the
+  same achievement scalar — so making acquisition hard without differentiating value yields
+  *"acquire everything, slowly"*. Six species reaching the same 51 nodes on different schedules is
+  **a speedrun leaderboard, not distinct playstyles.**
+- **GLM 5.2:** *"half-right but ultimately wrong"*. 51 nodes is simply too little state space; hard
+  acquisition would produce *"race conditions"* along one optimal path rather than distinct styles.
+- **Codex:** pending.
+
+**W15 settles it empirically** by computing the strategy-space dimensionality — an eigenvalue
+spectrum over the strategy × node matrix. 1–2 effective dimensions refutes the thesis; 3+ with
+strategies converging anyway supports it.
+
+### Where two reviewers converged, independently — and it is the more important finding
+
+**Species that differ only by *rates* cannot produce distinct playstyles.** Both models reached this
+without prompting and in nearly the same words.
+
+> "Rate differences just shift the timeline; they do not change the optimal strategy. A 60-year orc
+> and a 1500-year dragon will both aim for 'maximize knowledge' — one sprints, one savors."
+> — GLM 5.2
+>
+> "Species just change the *speed* of convergence, not the *shape* of the strategy." — Qwen 3.8 Max
+
+Every authored species trait is currently a **rate or a scalar**: lifespan, curiosity, learn rate,
+retention, fertility, scribe affinity, rediscovery affinity. Only `depthCeiling` is structural, and
+it caps rather than redirects.
+
+That is a direct problem for **D9**. If species differ only in speed, no amount of balance work
+produces more than one viable playstyle per species, because there is only one shape of play to be
+fast or slow at. The fix both reviewers point to is the same: **species must interact with the
+knowledge-location and ruleset mechanics differently, creating mutually exclusive advantages** —
+which storage locations serve them, which rulesets favour them — rather than differing in how
+quickly they walk one path.
+
+This is a **design decision for the author**, not an agent's to invent. It is logged in the open
+questions below.
+
 ## A second premise of mine, refuted
 
 **`completedUniversities` is inverted as a Path A gate.** Both `discriminating-ascension` and my
@@ -271,6 +313,11 @@ invent, and these are the ones already known:
       they shouldn't survive to ascension, because someone should raid them."* §8 does not price it.
 - [ ] **Is 55 copies per node a magnitude problem or a structural one?** Whether the loss channel is
       fixed by faster decay, fewer mages, or only by raids burning things.
+- [ ] **Should species differ structurally, not just by rate?** Two independent reviews converged
+      on this being the blocker for D9. Today all seven traits are rates; the proposal is that
+      species differ in *which knowledge locations and rulesets serve them*. Vision §6 authors the
+      rates; it does not author structural differentiation, so this is a genuine gap and the
+      author's call.
 - [ ] **Does `ascension-canon-breadth` lock out the archivist?** W2 proposes 96 nodes; the archivist
       measures 50.9. Unresolved between two proposals, and deliberately not settled until W7 lands.
 
