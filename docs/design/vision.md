@@ -46,8 +46,15 @@ Consequences, which are the whole strategy layer:
   simply inert when you raid them.
 - Permitting something arms your defense *and* arms anyone who invades you and happens to know it.
 - Prohibiting something is a real strategic option, not a penalty — it is a denial play.
-- **Rules changes are a world-time action.** Nothing about the ruleset — including portal magic
-  — can be altered once a raid has begun. A raid in progress is frozen policy.
+- **Rules changes may be made during a raid, and every change locks until the raid ends.** A cell
+  forbidden mid-raid cannot be permitted again while the raid runs, and one permitted mid-raid
+  cannot be forbidden again. After the raid, reverting a mid-raid change costs substantially more
+  favor than the change did — a raid leaves a mark on your constitution, and unmaking it is
+  expensive. See `raid-engagement.md`, which records why the previous rule ("a raid in progress is
+  frozen policy") was repealed: frozen policy leaves the god with no verbs during the one moment the
+  game is most exciting, which makes a raid a cutscene over a dice roll. The lock preserves what that
+  rule was protecting — you cannot fluidly retune mid-fight to counter whatever you last saw — while
+  making every mid-raid change a commitment under uncertainty.
 
 ## 4. Magic: The Grid
 
