@@ -419,10 +419,13 @@ function main() {
 
   // Applied against scheduled — the mechanism G1 exists to catch.
   say('**Applied against scheduled.** The schedule is deterministic in the round number, so what');
-  say('each arm *asked* for is computable exactly; what it *bought* is the spend above. The gap is');
-  say('an action that was masked or refused by the resolver — the two cannot be separated from');
-  say('here, because a mask-blocked preference never becomes a submission and a resolver refusal');
-  say('increments a counter the session does not read.');
+  say('each arm *asked* for is computable exactly; what it *bought* is the spend above. The gap');
+  say('between them decomposes into two, and the gate rejections reported above are what separate');
+  say('them: a **submission the gate refused** — an invalid or out-of-range slot index, the');
+  say('spreading arm\'s specific risk — lands in `accounting.byActionId`, while the remainder is a');
+  say('**preference the mask never admitted**, which at these prices means the god could not afford');
+  say('it. A refusal inside the resolver is the one case neither counter sees: it increments');
+  say('`state.illegalActionCount`, which the session does not read.');
   say();
   say('| arm | verb | scheduled | applied | applied share |');
   say('|---|---|---|---|---|');
