@@ -1892,3 +1892,96 @@ axis where it holds, which is the most convincing possible way to not notice the
 That matters more after tonight than before it: the raid design leans hard on denial being a peer
 strategy — forbid Perdo to save the library, forbid Fatum and swear off your own escape — and every
 one of those plays is charged twice under the current implementation.
+
+---
+
+## W41's vision audit: the four that change what we do next
+
+Full report from W41; `docs/design/vision-audit.md` (831 lines, branch `w12/vision-audit`, unmerged
+and **cited by nothing**) already did deliverable 1 a day earlier. That is the fourth time this
+project has paid for the same finding. **Merge it.**
+
+### 1. §6's species differentiator is authored and read by nothing
+
+`species.json` carries per-form affinities for five of six species — draconic `ignem: 1792`,
+`vim: 1536`, `nomen: 1280`; dwarf `terram: 1536`; elf `herbam: 1536`. The only reader in the tree is
+`packages/content/src/load.ts:938`, **the key validator** — it checks the keys are spellable and never
+touches the values.
+
+**D7 — *varying the founding species mix changes which strategy wins* — has failed for five sweeps
+while §6's own differentiation mechanism sat authored and unread.** Two external reviewers
+independently prescribed exactly this mechanism, and the campaign's own enumeration of species traits
+omits `affinities` entirely. This is the cheapest large win available: the content exists, the spec
+wants it, nothing has to be designed.
+
+### 2. Both documents written last night are tradition-blind, and §4a says the tradition *is* the universe
+
+`grep -i tradition` over `raid-engagement.md` and `ages-of-magic.md` returns **nothing**. Both are
+written as though every universe were the reference one. Under **Art of Memory** — a shipped v1
+tradition — three things break:
+
+- **The progression spine is foreclosed.** `ages-of-magic.md` §3 says the third age is reachable
+  *"only across generations… only through records"*. Art of Memory has no records:
+  `scribing.ts:76` sets `keepsWrittenCopies: false`. Measured: **zero grimoires across 96 runs, library
+  depth 0.0, 17.2 nodes known against Vancian's 65.8.** The tradition chosen at run start silently
+  decides whether the mid and late game exist — and forecloses them for exactly the short-lived
+  species that most need them.
+- **The raid's objective is an empty room.** Palace-held knowledge is unburnable and unlootable by
+  construction (`consequences.ts:176-180`). The floor plan draws a library with nothing in it. This
+  stacks on the two-distinct-nodes finding: there, libraries hold two things; here, none.
+- **Exposure's strength is set by the *defender's* tradition and the design assumes it constant.** A
+  witness runs their **own** home hooks (§4a). Against True Naming, witnessed knowledge is born at
+  `instanceMastery: 1024` — full, teachable, permanent. Against Art of Memory it lands in a palace and
+  dies with the witness. The self-limiting bound on repeat raiding varies from near-total to
+  near-zero along an axis the document never names.
+
+### 3. Compounds collide with §3, and the collision inverts the progression curve
+
+`arbitration.ts:421` is structurally single-cell — `permits(hostRuleset, grid.cellOf(nodeId))`, and
+`cellOf` returns one cell. If a compound is legal only when the host permits **every** cell in its
+set, then:
+
+**The deeper your magic, the less of it you can carry through a portal.** Third-age magic becomes a
+home-defence technology, which is the exact inverse of the curve `ages-of-magic.md` builds.
+
+And two things follow that nobody priced:
+
+- **One interdiction denies a family.** §4 justifies the small edict budget on interface and
+  action-space grounds — never on power, because at the time one edict could only ever be worth one
+  cell. Under compounds it is worth every compound containing that cell.
+- **The budget grows with the leader**: `edictBudget = 1 + worshipTier`, capped at 8. The player with
+  the most worship holds the most single-cell vetoes precisely when rivals' magic spans the most
+  cells. Composed with the mid-raid lock, one irreversible interdiction can delete a raider's whole
+  third-age repertoire in a single action.
+
+`ages-of-magic.md` §5 lists four things to settle. **None of them is §3.** It should be question zero.
+
+### 4. Three tasks are checked `[x]` and the wiring is absent
+
+Worse than an unwritten plan, because it is the state nobody re-checks. All three in
+`mages-and-species/tasks.md`, in front of 0.4.0:
+
+- **7.5** *"Route the library contribution into the shared (1 + Σ) accumulator"* —
+  `capitalRateMultiplier` has no non-test caller; `gateway.ts:578` passes `NEUTRAL_RATE` and says so.
+  The spec it claims to satisfy is a **shipped requirement**, so §6a's second compounding loop is an
+  agreed acceptance criterion that was never met and nothing tested.
+- **8.1** *"capped resource-yield stacking"* — stacking is real; `world-step.ts:637` hardcodes
+  `resourceYieldBonuses: []`. This is the path of §4's own worked example about *Rego Terram*.
+- **8.2** four materials claimants — `libraryUpkeep: 0`, `construction: 0`, and both
+  `applyLibraryUpkeep` and `advanceConstruction` have no non-test callers.
+
+### And one that is uncomfortable rather than actionable
+
+§11: *"Shipping the client first would make human playtesters the primary balance signal by default,
+**which is the exact outcome the balance-first methodology exists to avoid**."*
+
+`raid-engagement.md` Part II opens *"Author's direction, after playing the prototype"* and then rules
+raid locations, floor plans, portal placement, rewind and target suggestion. The prototype animates a
+**synthetic trace generated in the page**, and the same document names the hazard: *"a raid view that
+animates plausible-looking magic unconnected to what the engine decided is worse than no raid view,
+because it will be believed."*
+
+In fairness the prototypes are honestly labelled and §11's rationale is about *balance* signal rather
+than feel. But the machine signal it defers to is currently measuring a disconnected pipeline, so
+there was no rival signal in the room. Recorded because it is exactly the failure mode §11 predicted,
+arriving by a route §11 did not.
