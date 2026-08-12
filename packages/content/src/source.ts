@@ -57,6 +57,16 @@ export interface ContentSource {
  * (`contracts.md` §2.12). It is content for the same reason every file above it
  * is — which tracks exist and what they exclude is a balance question a sweep
  * turns, not a code change.
+ *
+ * `ritual.json` is last because it is defined *in terms of* `track.json`: a
+ * ritual names two or more caster roles, each pinned to a track, and the
+ * loader's `ritual-castable-by-one` check (`contracts.md` §2.13) has to read
+ * the track exclusion graph to prove a ritual's roles are mutually exclusive
+ * before it will accept the record. Content for the same reason the rest of
+ * this list is — which rituals exist, what they cost, and what they do is a
+ * balance question a sweep turns, not a code change — and it belongs inside
+ * `contentRevision` so two universes cannot disagree about whether a ritual
+ * exists while agreeing they are compatible.
  */
 export const CONTENT_FILES = [
   'technique.json',
@@ -72,6 +82,7 @@ export const CONTENT_FILES = [
   'raid-constant.json',
   'autonomy-weight.json',
   'track.json',
+  'ritual.json',
 ] as const;
 
 export type ContentFileName = (typeof CONTENT_FILES)[number];

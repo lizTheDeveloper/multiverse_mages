@@ -66,7 +66,11 @@ export type ContentDiagnosticCode =
   | 'track-unreachable-from-trunk'
   | 'exclusion-reason-missing'
   | 'research-cost-is-tier-alone'
-  | 'effect-gloss-missing';
+  | 'effect-gloss-missing'
+  | 'ritual-too-few-roles'
+  | 'ritual-role-track-unknown'
+  | 'ritual-duplicate-role-track'
+  | 'ritual-castable-by-one';
 
 /**
  * Thrown by {@link loadContent} when the content set has any defect at all.

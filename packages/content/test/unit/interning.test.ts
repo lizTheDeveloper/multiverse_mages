@@ -266,7 +266,15 @@ describe('contentRevision', () => {
     // node by node. Two universes disagreeing about which nodes exist, what their
     // effects fold into, or which routes exclude which would be developing
     // different magic while their revisions agreed they were compatible.
-    expect(registry.contentRevision).toBe('02b5a898c8fff086f669ce8ddbe8631c');
+    //
+    // 02b5a898c8fff086f669ce8ddbe8631c -> 2fc8c278bee8b8c7e62e645d5c7ebe83, when
+    // `ritual.json` (§2.13) shipped two spells that require more than one mage to
+    // cast, each naming caster roles on tracks `track.json` already declares
+    // mutually exclusive. Two universes disagreeing about which rituals exist, or
+    // what caster roles they demand, would be developing different magic while
+    // their revisions agreed they were compatible — the same argument every prior
+    // entry in this history makes, for the same reason.
+    expect(registry.contentRevision).toBe('2fc8c278bee8b8c7e62e645d5c7ebe83');
   });
 
   it('is stable across loads of identical content', () => {

@@ -813,6 +813,90 @@ practice — and `track-unreachable-from-trunk` for a track none of whose nodes 
 path avoiding every track that excludes it. All three are load failures, not warnings
 (`compositional-content.md` §5).
 
+### 2.13 `ritual.json`
+
+```jsonc
+{
+  "id": "read-the-sealed-shelf",
+  "name": "Read the Sealed Shelf",
+  "gloss": "One mind held open to every colleague in the hall; one mind held shut against every eye outside it. Neither alone builds a library — the first without the second is gossip, the second without the first is a locked box nobody can use. Together they are a shelf that is both fully public and fully secret: different walls of the same room, never one mind's work.",
+  "roles": [
+    {
+      "track": "the-open-mind",       // §2.12's mutually exclusive pair. Every ritual's
+      "minNodes": 2,                  // roles must resolve to tracks the loader can prove
+      "gloss": "The reader. She holds the room's knowledge open to every colleague who asks, which is the half of the working that makes the shelf usable at all."
+    },
+    {
+      "track": "the-sealed-mind",     // are mutually exclusive -- see ritual-castable-by-one
+      "minNodes": 2,                  // below. minNodes must reach the threshold at which
+      "gloss": "The warden. He holds the room's knowledge shut against everyone who is not a colleague, which is the half of the working that makes the shelf worth keeping."
+    }
+  ],
+  "effects": [
+    {
+      "primitive": "research-rate",
+      "magnitude": 1024,
+      "target": "universe",
+      "durationTicks": 0,
+      "mode": "create",
+      "gloss": "The whole faculty reads faster while the shelf stands open to it — a bonus neither caster's own track produces at this scale by itself."
+    }
+  ],
+  "tuningStatus": "untuned"
+}
+```
+
+A **ritual** is a spell that requires more than one mage to cast — the consequence of §2.12's
+exclusions rather than an unrelated mechanic: everything a track excludes is a limitation on one
+mage, and a ritual is what that limitation is *for*. `roles` names two or more caster roles, each
+pinned to a `track.json` id with a `minNodes` floor.
+
+**The gate, and it is what makes the construct self-enforcing.** A ritual's roles must resolve to
+tracks that are mutually exclusive of each other — so that the ritual is uncastable by any one mage
+*by construction*, however long she lives, rather than merely inconvenient for her. The loader
+proves this rather than trusting content to declare it: for every pair of roles, some track
+exclusion must close role *i*'s track once a mage holds `minNodes` of role *j*'s track, and
+symmetrically the other way. A ritual whose roles fail that proof is refused at load with
+`ritual-castable-by-one`, because a "ritual" any sufficiently patient mage could eventually satisfy
+alone is just an expensive spell wearing this shape for no reason — rejecting the weaker version,
+"any *N* mages holding the combined prerequisites", which a single long-lived mage and enough time
+defeats. `ritual-role-track-unknown` refuses a role naming no `track.json` record,
+`ritual-too-few-roles` refuses fewer than two roles, and `ritual-duplicate-role-track` refuses two
+roles on the same track — two roles on one track are one role, authored twice, not two casters.
+
+**Co-location is the same university, never a coordinate.** §7a gives world-scale entities no
+coordinates at all, so a ritual's casters must share a non-spatial proximity instead — the
+university they are affiliated to. `@mm/rules-magic`'s `rituals/` module reads mage affiliation
+(`@mm/rules-world`) to find eligible casters; it never writes it.
+
+**No ritual state is stored anywhere.** Availability is a derived check at cast time over a
+university's living, affiliated mages — never a persisted "ritual team" record — for the same
+reason current knowledge existence is derived (§1.5): it is cheaper, it cannot desynchronise, and it
+makes a caster's death instantly consequential. The capability stops existing on the tick she dies,
+with nothing to migrate and nothing to clean up.
+
+**World time only, in v1, and deliberately.** §4.2 masks nearly every action during engagement, and
+the raid model has no expression of "same university" a visiting caster could satisfy. A raid-time
+ritual would need both: an unmasked ritual-cast action, and a notion of engagement-scale
+co-location that does not yet exist. Neither is built here.
+
+**Cost, under the portal rule.** Every caster pays the active tradition's `cost` hook — vision §4a
+defines cost as *"what casting takes out of the caster"*, and a ritual has several casters, so it
+takes from several. Under the portal rule (§3, "cast/cost are host-governed") a visiting team would
+each pay the *host* universe's price — stated here for the record even though it is moot in v1
+and the loader enforces nothing about it: §4.2's masking already keeps a ritual off any engagement
+action a raid could reach.
+
+`effects` reuses `node.json`'s effect shape (§2.3) for `primitive`, `magnitude`, `target`,
+`durationTicks` and `mode` — `gloss` is required here, unlike on a node's effect, because a ritual
+has no cell or `v1` flag to make it conditional the way `effect-gloss-missing` does. It deliberately
+omits `when`, `reveals`, `control` and `transformTo`: v1 authors only `create`/`remove` rituals, and
+node.json's mode-payload coherence checks (`mode-payload-missing`, `mode-technique-incoherent`) are
+tied to a node's cell and technique, which a ritual does not have. Like `build-rate` before it
+(`compositional-content.md` §6a), a ritual's effects are authored data with no caller yet — casting
+one derives *whether* it may happen; folding its effects into a running universe is future work,
+recorded here rather than smoothed over.
+
 ---
 
 ## 3. Effect Primitive Semantics

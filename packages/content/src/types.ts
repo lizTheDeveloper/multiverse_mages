@@ -45,7 +45,8 @@ export type ContentNamespace =
   | 'god-constant'
   | 'raid-constant'
   | 'autonomy-weight'
-  | 'track';
+  | 'track'
+  | 'ritual';
 
 export interface TechniqueRecord {
   readonly id: string;
@@ -195,6 +196,58 @@ export interface TrackRecord {
   readonly name: string;
   readonly gloss: string;
   readonly excludes: readonly TrackExclusion[];
+  readonly tuningStatus: TuningStatus;
+}
+
+/**
+ * One caster's place in a ritual (`contracts.md` §2.13).
+ *
+ * `track` names a `track.json` record, never a node — a role is a *commitment*,
+ * not an inventory check, which is what lets the loader prove the ritual is
+ * uncastable by one mage from the track graph alone, before any mage exists to
+ * check. `minNodes` is how many distinct nodes of that track the role demands;
+ * `load.ts`'s `ritual-castable-by-one` additionally requires it be at least the
+ * threshold at which this track's declared exclusions close the *other* roles'
+ * tracks, because a role satisfiable below that threshold is a role one mage
+ * could fill alongside another before either door has shut.
+ */
+export interface RitualRole {
+  readonly track: string;
+  readonly minNodes: number;
+  readonly gloss: string;
+}
+
+/**
+ * A spell that requires more than one mage to cast (`compositional-content.md`,
+ * `contracts.md` §2.13).
+ *
+ * **No ritual state is stored anywhere.** `roles` and `effects` are the whole
+ * record; whether a ritual is *available* is derived at cast time from the
+ * living, affiliated mages of one university, and there is nothing here for a
+ * caster's death to leave behind to clean up. `@mm/rules-magic`'s
+ * `rituals/` module is what performs that derivation; this record only
+ * declares what a valid combination of casters looks like.
+ *
+ * `roles` must name at least two mutually exclusive tracks — the loader's
+ * `ritual-castable-by-one` refuses a ritual whose roles are not, because a
+ * ritual any one mage could eventually satisfy alone is an expensive spell
+ * wearing this shape for no reason. `effects` reuses `node.json`'s effect
+ * shape for `primitive`, `magnitude`, `target`, `durationTicks` and `mode` —
+ * `gloss` is required here rather than optional, since a ritual has no cell or
+ * `v1` flag to make it conditional the way `effect-gloss-missing` does for a
+ * node. It deliberately omits `when`, `reveals`, `control` and `transformTo`:
+ * v1 ships only `create`/`remove` rituals, and the mode-payload coherence
+ * checks (`mode-payload-missing`, `mode-technique-incoherent`) are tied to a
+ * node's cell and technique, which a ritual does not have. A ritual's effects
+ * are authored but not wired into cast resolution — see §2.13's note, the same
+ * gap `compositional-content.md` §6a records for `gatherEffects`.
+ */
+export interface RitualRecord {
+  readonly id: string;
+  readonly name: string;
+  readonly gloss: string;
+  readonly roles: readonly RitualRole[];
+  readonly effects: readonly EffectRecord[];
   readonly tuningStatus: TuningStatus;
 }
 
@@ -391,6 +444,17 @@ export interface ContentCounts {
   readonly raidConstants: number;
   readonly autonomyWeights: number;
   readonly tracks: number;
+  /**
+   * Optional, deliberately, unlike every count above it — the same reason
+   * {@link NodeRecord.track} is optional (`catalog.ts`'s note on the field):
+   * a hand-built `ContentRegistry` fixture constructed before rituals existed
+   * (`packages/rules-raid/test/unit/mode-fixture.ts` is, as of `contracts.md`
+   * §2.13, the one such literal in the tree) keeps compiling without it.
+   * `loadContent` always populates it; this is the one place that decides
+   * what its absence means, so a reader never has to guess whether `0` was
+   * loaded or never asked for.
+   */
+  readonly rituals?: number;
 }
 
 /**
@@ -417,6 +481,8 @@ export interface ContentRegistry {
   readonly raidConstants: readonly Interned<RaidConstantRecord>[];
   readonly autonomyWeights: readonly Interned<AutonomyWeightRecord>[];
   readonly tracks: readonly Interned<TrackRecord>[];
+  /** Optional for the same reason {@link ContentCounts.rituals} is; see its note. */
+  readonly rituals?: readonly Interned<RitualRecord>[];
 
   /** String id to interned integer, per namespace. */
   intern(namespace: ContentNamespace, id: string): ContentId;

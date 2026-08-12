@@ -69,6 +69,7 @@ import type {
   TerritoryRecord,
   TraditionRecord,
   TrackRecord,
+  RitualRecord,
 } from './types.js';
 
 /**
@@ -232,6 +233,7 @@ interface ParsedDocuments {
   readonly raidConstant: readonly RaidConstantRecord[];
   readonly autonomyWeight: readonly AutonomyWeightRecord[];
   readonly track: readonly TrackRecord[];
+  readonly ritual: readonly RitualRecord[];
 }
 
 let cachedSchemas: ReadonlyMap<ContentFileName, CompiledSchema> | undefined;
@@ -319,6 +321,7 @@ export function validateContent(source: ContentSource): ValidationResult {
     raidConstant: raw.get('raid-constant.json') as readonly RaidConstantRecord[],
     autonomyWeight: raw.get('autonomy-weight.json') as readonly AutonomyWeightRecord[],
     track: raw.get('track.json') as readonly TrackRecord[],
+    ritual: raw.get('ritual.json') as readonly RitualRecord[],
   };
 
   // ---- Phase 3: graph integrity. ----
@@ -390,6 +393,7 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   indexById(documents.raidConstant, 'raid-constant.json', out);
   indexById(documents.autonomyWeight, 'autonomy-weight.json', out);
   const trackById = indexById(documents.track, 'track.json', out);
+  indexById(documents.ritual, 'ritual.json', out);
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
@@ -397,6 +401,7 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   checkCells(documents.cell, techniqueById, formById, nodeById, out);
   checkNodes(documents.node, cellById, nodeById, primitiveById, out);
   checkTracks(documents.track, trackById, documents.node, nodeById, out);
+  checkRituals(documents.ritual, documents.track, trackById, primitiveById, out);
   checkSpecies(documents.species, formById, cellById, out);
   checkTraditions(documents.tradition, out);
   // `god-agency`'s two tables. Their coverings and identities are checks a JSON
@@ -1383,6 +1388,15 @@ const TRUNK_MAX_TIER = 2;
 const MIN_EXCLUSION_GLOSS_LENGTH = 16;
 
 /**
+ * `ritual-too-few-roles`' floor (`contracts.md` §2.13). `ritual.schema.json`'s
+ * own `roles.minItems` is 1, deliberately below this, so a single-role record
+ * fails here with the diagnostic that explains *why* two is the minimum
+ * — "one caster role is just an expensive spell" — rather than being
+ * foreclosed by the schema before that reasoning ever runs.
+ */
+const MIN_RITUAL_ROLES = 2;
+
+/**
  * The closure `track.excludes` resolves to, honouring each exclusion's own
  * `symmetric` flag rather than imposing one direction on every entry.
  *
@@ -1583,6 +1597,212 @@ function checkTracks(
   }
 }
 
+/**
+ * Like {@link normaliseTrackExclusions}, but keeps the `threshold` each edge
+ * carries instead of collapsing it to membership in a `Set`.
+ *
+ * `ritual-castable-by-one` needs the number: the loader's own `TrackExclusion`
+ * doc says it precisely — *"a mage holding `threshold` nodes of the named
+ * track may not learn anything on this one"* — and a ritual role satisfiable
+ * on fewer nodes than that is a role a mage could fill without the exclusion
+ * ever engaging. This is a second, ritual-only pass over the same `excludes`
+ * declarations rather than a change to `normaliseTrackExclusions`'s return
+ * shape, which every other track check in this file still calls and which
+ * has no use for the number.
+ *
+ * The result reads as `closure.get(trackId)?.get(otherTrackId)` = the fewest
+ * nodes of `otherTrackId` one mind may hold before `trackId` closes to it —
+ * i.e. the edge `acquisitionExclusion` (`@mm/rules-magic`) enforces at
+ * acquisition time. Honours `symmetric` exactly as `normaliseTrackExclusions`
+ * does: a `symmetric: true` entry adds both directed edges, a `symmetric:
+ * false` entry adds only the authored one. Where more than one declaration
+ * would produce the same directed edge, the smaller threshold wins, because
+ * that is the one that actually fires first at runtime — `acquisitionExclusion`
+ * refuses as soon as *any* matching exclusion's threshold is met.
+ */
+function trackExclusionThresholds(
+  tracks: readonly TrackRecord[],
+): ReadonlyMap<string, ReadonlyMap<string, number>> {
+  const closure = new Map<string, Map<string, number>>();
+  const record = (from: string, to: string, threshold: number): void => {
+    let edges = closure.get(from);
+    if (edges === undefined) {
+      edges = new Map();
+      closure.set(from, edges);
+    }
+    const existing = edges.get(to);
+    if (existing === undefined || threshold < existing) edges.set(to, threshold);
+  };
+
+  for (const track of tracks) {
+    for (const exclusion of track.excludes) {
+      record(track.id, exclusion.track, exclusion.threshold);
+      if (exclusion.symmetric) record(exclusion.track, track.id, exclusion.threshold);
+    }
+  }
+  return closure;
+}
+
+/**
+ * `contracts.md` §2.13's self-enforcing gate: a ritual whose caster roles are
+ * not mutually exclusive is refused at load, because such a "ritual" is
+ * satisfiable by one sufficiently patient mage and is just an expensive spell
+ * wearing this shape for no reason.
+ *
+ * **Every check here is a load failure, never a warning** — the same rule
+ * `compositional-content.md` §5 states for the track graph, extended to the
+ * construct built on top of it.
+ */
+function checkRituals(
+  rituals: readonly RitualRecord[],
+  tracks: readonly TrackRecord[],
+  trackById: ReadonlyMap<string, TrackRecord>,
+  primitiveById: ReadonlyMap<string, PrimitiveRecord>,
+  out: ContentDiagnostic[],
+): void {
+  const file = 'ritual.json';
+  const thresholds = trackExclusionThresholds(tracks);
+
+  for (let position = 0; position < rituals.length; position += 1) {
+    const ritual = rituals[position];
+    if (ritual === undefined) continue;
+    const at = pointerAppend('', position);
+
+    if (ritual.roles.length < MIN_RITUAL_ROLES) {
+      out.push(
+        diagnostic(
+          file,
+          `${at}/roles`,
+          'ritual-too-few-roles',
+          `ritual "${ritual.id}" declares ${String(ritual.roles.length)} caster role(s); a ritual needs ` +
+            `at least ${String(MIN_RITUAL_ROLES)} — one caster role is just an expensive spell, and the ` +
+            'whole point of this construct is that no one mage can fill every role herself',
+        ),
+      );
+    }
+
+    // Resolve each role's track, reporting a name no track.json record
+    // defines. `undefined` stands in for "already reported" below, so the
+    // mutual-exclusion and duplicate-track passes never re-report the same
+    // defect a second way.
+    const roleTracks: (string | undefined)[] = [];
+    for (let index = 0; index < ritual.roles.length; index += 1) {
+      const role = ritual.roles[index];
+      if (role === undefined) {
+        roleTracks.push(undefined);
+        continue;
+      }
+      if (trackById.has(role.track)) {
+        roleTracks.push(role.track);
+      } else {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/roles/${String(index)}/track`,
+            'ritual-role-track-unknown',
+            `ritual "${ritual.id}" role ${String(index)} names track "${role.track}", which no track.json ` +
+              'record defines',
+          ),
+        );
+        roleTracks.push(undefined);
+      }
+    }
+
+    // `ritual-duplicate-role-track`: two roles on one track are one role,
+    // authored twice, not two casters — a track cannot exclude itself
+    // (`track-exclusion-self`), so the mutual-exclusion pass below could
+    // never make sense of this pair and does not try.
+    const firstRoleForTrack = new Map<string, number>();
+    for (let index = 0; index < roleTracks.length; index += 1) {
+      const trackId = roleTracks[index];
+      if (trackId === undefined) continue;
+      const firstIndex = firstRoleForTrack.get(trackId);
+      if (firstIndex === undefined) {
+        firstRoleForTrack.set(trackId, index);
+        continue;
+      }
+      out.push(
+        diagnostic(
+          file,
+          `${at}/roles/${String(index)}/track`,
+          'ritual-duplicate-role-track',
+          `ritual "${ritual.id}" names track "${trackId}" in both role ${String(firstIndex)} and role ` +
+            `${String(index)} — two roles on the same track are one role authored twice, not two casters`,
+        ),
+      );
+    }
+
+    // `ritual-castable-by-one`: for every ordered pair of distinct-track
+    // roles (i, j), track i must be closed by holding role j's track — and
+    // role j's own `minNodes` must reach the threshold that closes it, or a
+    // mage below that threshold could dabble in both roles' tracks at once
+    // and the exclusion never engages for her. Proven once per ordered pair
+    // (`compositional-content.md` §3.2's "a mage holding `threshold` nodes of
+    // the named track may not learn anything on this one" run forward and
+    // backward), which is what makes the ritual uncastable by one mage
+    // *however long she lives* rather than merely inconvenient for her.
+    for (let i = 0; i < ritual.roles.length; i += 1) {
+      const trackI = roleTracks[i];
+      if (trackI === undefined) continue;
+
+      for (let j = 0; j < ritual.roles.length; j += 1) {
+        if (i === j) continue;
+        const trackJ = roleTracks[j];
+        if (trackJ === undefined || trackJ === trackI) continue; // already reported
+
+        const roleJ = ritual.roles[j];
+        if (roleJ === undefined) continue;
+
+        const closingThreshold = thresholds.get(trackI)?.get(trackJ);
+        if (closingThreshold === undefined) {
+          out.push(
+            diagnostic(
+              file,
+              `${at}/roles/${String(i)}`,
+              'ritual-castable-by-one',
+              `ritual "${ritual.id}": role ${String(i)}'s track "${trackI}" declares no exclusion — direct ` +
+                `or symmetric — that closes once a mage holds enough of role ${String(j)}'s track "${trackJ}". ` +
+                'Without one, a single sufficiently patient mage could eventually hold both, and this ' +
+                '"ritual" is just an expensive spell',
+            ),
+          );
+          continue;
+        }
+
+        if (roleJ.minNodes < closingThreshold) {
+          out.push(
+            diagnostic(
+              file,
+              `${at}/roles/${String(j)}/minNodes`,
+              'ritual-castable-by-one',
+              `ritual "${ritual.id}": role ${String(j)} requires only ${String(roleJ.minNodes)} node(s) of ` +
+                `track "${trackJ}", below the ${String(closingThreshold)} needed to close track "${trackI}" ` +
+                `to a mage who holds them. A mage could hold ${String(roleJ.minNodes)} of "${trackJ}" without ` +
+                `ever closing role ${String(i)}'s track, so one mage could fill both roles at once`,
+            ),
+          );
+        }
+      }
+    }
+
+    for (let index = 0; index < ritual.effects.length; index += 1) {
+      const effect = ritual.effects[index];
+      if (effect === undefined) continue;
+      if (!primitiveById.has(effect.primitive)) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/effects/${String(index)}/primitive`,
+            'unknown-reference',
+            `ritual "${ritual.id}" declares effect primitive "${effect.primitive}", which primitive.json ` +
+              'does not define',
+          ),
+        );
+      }
+    }
+  }
+}
+
 function byString(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
@@ -1624,6 +1844,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const raidConstants = internNamespace(documents.raidConstant);
   const autonomyWeights = internNamespace(documents.autonomyWeight);
   const tracks = internNamespace(documents.track);
+  const rituals = internNamespace(documents.ritual);
 
   const tables = new Map<ContentNamespace, ReadonlyMap<string, ContentId>>([
     ['technique', tableOf(techniques)],
@@ -1639,6 +1860,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     ['raid-constant', tableOf(raidConstants)],
     ['autonomy-weight', tableOf(autonomyWeights)],
     ['track', tableOf(tracks)],
+    ['ritual', tableOf(rituals)],
   ]);
   const reverse = new Map<ContentNamespace, ReadonlyMap<ContentId, string>>();
   for (const [namespace, table] of tables) {
@@ -1692,6 +1914,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   append('raid-constant', raidConstants);
   append('autonomy-weight', autonomyWeights);
   append('track', tracks);
+  append('ritual', rituals);
 
   // Antirequisites are declared one node at a time but meant as a relation
   // between a pair; the symmetric closure is computed once here, over the
@@ -1713,6 +1936,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     raidConstants: raidConstants.length,
     autonomyWeights: autonomyWeights.length,
     tracks: tracks.length,
+    rituals: rituals.length,
   };
 
   return {
@@ -1731,6 +1955,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     raidConstants,
     autonomyWeights,
     tracks,
+    rituals,
     intern(namespace, id) {
       return tables.get(namespace)?.get(id) ?? 0;
     },
