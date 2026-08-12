@@ -41,6 +41,15 @@ const SEEDS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => 20260811 + n * 7919);
 
 const TICKS = 2400;
 
+/**
+ * Only scalars are retained. A `WindowActivity` holds a reference to its
+ * `RunWindow`, which holds every recorded tick, so keeping the activity objects
+ * would pin twenty-four full 2400-tick runs in memory at once — enough to spend
+ * more time in the collector than in the simulation.
+ */
+const FLOWS = ['lessonsTaught', 'researchCompleted', 'grimoiresScribed', 'births', 'populaceDeaths'];
+const scalars = (activity) => Object.fromEntries(FLOWS.map((k) => [k, activity[k]]));
+
 const rows = [];
 for (const tradition of TRADITIONS) {
   const content = referenceContent(undefined, tradition);
@@ -48,14 +57,18 @@ for (const tradition of TRADITIONS) {
     const result = await runLongReference({ content, runSeed, ticks: TICKS });
     // One window over the whole run, plus per-quarter, so a flow that dies early
     // is distinguishable from one that never started.
-    const whole = activityIn({
-      fromTick: result.ticks[0].worldTick,
-      toTick: result.ticks[result.ticks.length - 1].worldTick,
-      ticks: result.ticks,
-    });
-    const quarters = windowsOf(result, 50).map((w) => activityIn(w));
+    const whole = scalars(
+      activityIn({
+        fromTick: result.ticks[0].worldTick,
+        toTick: result.ticks[result.ticks.length - 1].worldTick,
+        ticks: result.ticks,
+      }),
+    );
+    const quarters = windowsOf(result, 50).map((w) => scalars(activityIn(w)));
     rows.push({ tradition, runSeed, whole, quarters });
-    process.stderr.write(`${tradition} seed ${runSeed}: lessons ${whole.lessonsTaught}\n`);
+    process.stderr.write(
+      `${tradition} seed ${runSeed}: lessons ${whole.lessonsTaught} research ${whole.researchCompleted}\n`,
+    );
   }
 }
 

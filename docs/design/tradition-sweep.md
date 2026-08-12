@@ -220,8 +220,11 @@ cannot be stored anywhere durable.
 
 ### 2. Does teaching actually function under True Naming?
 
-See "Teaching, measured" below — the sweep pipeline cannot see teaching events, so this is answered
-by a second instrument.
+**Yes — and under neither of the other two, where it dies before tick 600.** The sweep pipeline
+cannot see teaching events at all, so this is answered by a second instrument; the full tables and
+the mechanism are in "Teaching, measured" below. In one line: True Naming teaches **1512.9** lessons
+per passive 2400-tick run against Vancian's **134.1**, and it is the only tradition whose lesson
+count is non-zero after the first quarter. It buys **zero** additional nodes known.
 
 ### 3. Is the tradition a genuine playstyle axis?
 
@@ -293,7 +296,55 @@ So teaching was measured with a **second instrument** rather than guessed at:
 2400 ticks with **zero actions** — the passive control and nothing else — under each tradition, at
 eight shared run seeds, and folds `WorldStepReport`. It measures no strategy and changes nothing.
 
-<!-- TEACHING RESULTS -->
+### Table 5 — flows per 2400-tick passive run (n = 8, common seeds)
+
+| tradition | **lessonsTaught** | researchCompleted | grimoiresScribed | births | populaceDeaths |
+|---|---|---|---|---|---|
+| vancian-memorization | **134.1** | 4146.4 | 1223.9 | 45495.1 | 26291.4 |
+| true-naming | **1512.9** | 3487.4 | 1199.3 | 47038.9 | 28069.1 |
+| art-of-memory | **171.6** | 1091.6 | **0.0** | 48055.4 | 29079.5 |
+
+### Table 6 — `lessonsTaught` by quarter of the run
+
+**This is the table that answers question 2.**
+
+| tradition | ticks 1–600 | 601–1200 | 1201–1800 | 1801–2400 |
+|---|---|---|---|---|
+| vancian-memorization | 134.1 | **0.0** | **0.0** | **0.0** |
+| true-naming | 976.6 | 268.5 | 154.0 | 113.8 |
+| art-of-memory | 171.6 | **0.0** | **0.0** | **0.0** |
+
+### Answer to question 2
+
+**Teaching functions under True Naming, and only under True Naming. Under the other two it dies
+completely before tick 600 and never resumes.**
+
+The mechanism named in this workstream's brief is real, and the quarter table shows it happening.
+Under Vancian and Art of Memory a mage teaches 134 and 172 lessons in the first quarter and then
+**exactly zero for the remaining 1800 ticks**. That is the predicted shape and not an approximation
+of it: founding grants are made at `MASTERY_MAX` under *every* tradition, so those nodes are
+teachable at first; they decay below the 512 threshold; and because `setMastery`'s only rules-path
+caller lowers, nothing can ever climb back over it. **The teaching graph is not slow under Vancian.
+It is dead, and it dies on schedule.**
+
+Under True Naming it never dies — 976.6 lessons in the first quarter, then 268.5, 154.0 and 113.8 —
+because `instanceMastery: 1024` puts every acquired instance above the threshold on arrival. Over
+the run that is **11.3× as much teaching as Vancian**, at 16% *less* research (3487 against 4146,
+the 2× `researchCostMultiplier` showing up).
+
+**And it buys nothing.** This is the finding worth carrying back to the campaign. An eleven-fold
+increase in teaching produces, in the paired sweep, **0.0 ±0.1 additional nodes known** under
+passive control and −0.1 to +0.3 across the whole 51-node plateau. What it does produce is copies:
++581.2 ±126.4 knowledge instances under passive control. Teaching multiplies redundancy in nodes the
+universe already has and never reaches a node it does not. That is precisely the causal chain
+`campaign-plan.md` already describes — *"the binding constraint on what a universe knows is the
+ruleset, not the economy"* — now measured on the propagation channel directly rather than inferred
+from stock counts.
+
+**Scope, honestly.** This instrument runs the passive control only, at n = 8, with zero god actions.
+It says what the teaching channel does in an unplayed universe. It does not measure teaching under
+`permissive-breadth`, which is the one strategy the tradition demonstrably moves, and that is the
+obvious gap.
 
 ---
 
@@ -307,3 +358,14 @@ eight shared run seeds, and folds `WorldStepReport`. It measures no strategy and
   of a dead-teaching tradition**. They reproduce under both `acquire` hooks, including the one where
   every instance is born at full mastery. Whatever is causing them, it is not the teach threshold.
 - Nothing here is a balance change and nothing here should be read as a recommendation to make one.
+
+## One anomaly, unexplained
+
+`uniform-random-legal` under Art of Memory reports **1237** mean knowledge instances against
+160–291 for every other strategy in that arm. It is bimodal per run — 111, 118, 149, 152 in the four
+runs that stagnated, against 977–2605 in the eight that lived to ascension or the tick cap — so part
+of it is simply that surviving runs accumulate. But `passive-control` also had four runs reach the
+cap and sits at 206. The plausible explanation is that a bot pressing buttons uniformly at random
+fires the god's grant-knowledge action, which mints instances directly and bypasses the palace's
+research path; **that is a hypothesis, not a measurement**, and it is recorded here rather than
+smoothed over because it is the kind of tail that changes a conclusion if it turns out to be a defect.

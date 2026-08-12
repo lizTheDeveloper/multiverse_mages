@@ -70,26 +70,26 @@ Making `tradition` a multi-level factor **would break CRN**, because each level 
       `tradition` as a **single-level** factor. A single-level factor yields `cellIndex` 0 in all
       three, so the seeds and the round-robin strategy assignment are identical across arms.
 - [x] 3.2 Separate `--out` directories per arm; the arms are labelled in the writeup, not by sweepId.
-- [ ] 3.3 **Empirically verify CRN after the runs**: matching `(cellIndex, replicateIndex)` records
+- [x] 3.3 **Empirically verify CRN after the runs**: matching `(cellIndex, replicateIndex)` records
       must carry the same `runSeed` in all three arms. Report the check.
 
 ## 4. Run the sweep
 
-- [ ] 4.1 96 replicates, eight strategies round-robin (12 runs each), `worldTickCap` 2400.
+- [x] 4.1 96 replicates, eight strategies round-robin (12 runs each), `worldTickCap` 2400.
       Strategies: `passive-control`, `uniform-random-legal`, `permissive-breadth`, `narrow-depth`,
       `denial-warden`, `archivist`, `portal-rush`, `worship-maximizer`.
-- [ ] 4.2 Vancian arm.
-- [ ] 4.3 True Naming arm.
+- [x] 4.2 Vancian arm.
+- [x] 4.3 True Naming arm.
 - [x] 4.4 Art of Memory arm.
 
 ## 5. Report
 
-- [ ] 5.1 Per-tradition table: ascended/total, median ascension tick, per-route split from
+- [x] 5.1 Per-tradition table: ascended/total, median ascension tick, per-route split from
       `terminalReason`, mean nodes known, knowledge instances, grimoires, library depth,
       stagnation counts, `ascensionRate`, the five arm-scoped §7 `armMetrics`.
-- [ ] 5.2 Teaching events per run **if the harness can see them**. If it cannot, say so plainly
+- [x] 5.2 Teaching events per run **if the harness can see them**. If it cannot, say so plainly
       rather than inferring a number.
-- [ ] 5.3 Answer the four questions:
+- [x] 5.3 Answer the four questions:
       1. Does the tradition change the strategy space at all — do the five strategies sharing the
          achievement vector `(12 mastered cells, 51 nodes, 12 cells)` separate under True Naming?
       2. Does teaching function under True Naming — nodes born at 1024 are above the 512 threshold,
@@ -99,9 +99,9 @@ Making `tradition` a multi-level factor **would break CRN**, because each level 
          utterly lost when its holder dies"*? Pre-registered expectation: grimoires ≈ 0, library
          depth flat, knowledge instances dropping on mage deaths. If it shows 4096 grimoires, the
          `store` hook is not doing what §4a says, and that is the finding.
-- [ ] 5.4 Note that the Vancian arm is a **new baseline**, not a reproduction: the prior numbers in
+- [x] 5.4 Note that the Vancian arm is a **new baseline**, not a reproduction: the prior numbers in
       `probable-strategies.md` were taken at `4ea0fcf` with the axis off-by-one live, which W5 has
       since fixed. Qualitative agreement is the check; exact agreement is not expected.
-- [ ] 5.5 Write `docs/design/tradition-sweep.md` with the full tables.
+- [x] 5.5 Write `docs/design/tradition-sweep.md` with the full tables.
 - [ ] 5.6 `npm run verify`, exact result reported, since code was touched.
-- [ ] 5.7 Report a negative result plainly if that is what the numbers say.
+- [x] 5.7 Report a negative result plainly if that is what the numbers say.
