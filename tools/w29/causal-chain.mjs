@@ -24,7 +24,6 @@
  */
 
 import { rngFromRootSeed, step } from '@mm/sim-core';
-import { neutralizing } from '@mm/primitives';
 import {
   KNOWLEDGE_INSTANCE,
   UNIVERSE,
@@ -34,7 +33,7 @@ import {
   componentOf,
   findUniverse,
 } from '@mm/state';
-import { defineWorldSimulation } from '@mm/coordination';
+import { defineWorldSimulation, neutralizing } from '@mm/coordination';
 import {
   LONG_RUN_OPTIONS,
   LONG_RUN_SEED,
