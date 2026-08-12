@@ -77,8 +77,9 @@
  */
 
 import type { Action, SimState } from '@mm/sim-core';
+import { GRID_FORM_COUNT, GRID_TECHNIQUE_COUNT } from '@mm/state';
 
-import { PARAMETERIZED_ACTIONS, candidateSlotCount, isGodAction } from './actions.js';
+import { GOD_ACTION, PARAMETERIZED_ACTIONS, candidateSlotCount, isGodAction } from './actions.js';
 import type { CandidateInput } from './candidates.js';
 import { buildCandidates, candidateAt } from './candidates.js';
 import { isLegal, legalityMask } from './mask.js';
@@ -118,7 +119,30 @@ export type RejectionReason =
    * emitting continuous parameters into a discrete action space — which are two
    * different bugs in two different layers.
    */
-  | 'non-integer-parameter';
+  | 'non-integer-parameter'
+  /**
+   * A direct parameter is an integer, and is outside the range its action's id
+   * space has.
+   *
+   * Only actions 1–4 can produce this today, and only because §2.1's grid is a
+   * **structural** constant: `GRID_TECHNIQUE_COUNT` and `GRID_FORM_COUNT` are
+   * pinned in `@mm/state`, which this package already depends on, so the check
+   * needs no content and no dynamic state — the same footing as `k` for a
+   * candidate list, which the gate has always judged.
+   *
+   * Distinct from `'non-integer-parameter'`, which says the value is not of the
+   * right *type*, and from `'masked'`, which says the action is not available at
+   * all. This one says the action is available, the value has the right type,
+   * and it names nothing in the axis it indexes.
+   *
+   * The reason a separate code earns its place: before it, an out-of-range axis
+   * id was **admitted**, travelled to `god-agency`'s dispatch, and was refused
+   * there into `state.illegalActionCount` — a counter §7's `illegalActionRate`
+   * does not read. The measured consequence was that `mc-harness`'s strategy
+   * pool spent one round in five naming technique `0`, for the whole life of
+   * every balance measurement, with every metric reporting a clean run.
+   */
+  | 'parameter-out-of-range';
 
 /** The outcome of screening one tick's submissions. */
 export interface AdmissionResult {
@@ -185,6 +209,10 @@ export function admit(input: GateInput, submissions: readonly Action[]): Admissi
         reject(action, 'non-integer-parameter');
         continue;
       }
+      if (outOfAxisRange(action.kind, params[0])) {
+        reject(action, 'parameter-out-of-range');
+        continue;
+      }
       admitted.push({ kind: action.kind, params });
       continue;
     }
@@ -206,6 +234,37 @@ export function admit(input: GateInput, submissions: readonly Action[]): Admissi
   }
 
   return { admitted, rejected, mask };
+}
+
+/**
+ * Whether a technique or form parameter names nothing in its axis.
+ *
+ * **1-based, and that is not a choice made here.**
+ * `coordination/src/god/interventions.ts` validates `axisId < 1 || axisId >
+ * count` and flips bit `axisId - 1`; this function exists to say the same thing
+ * one layer earlier and out loud, so a mismatch is a counted rejection instead
+ * of a refusal only the core's own tally ever sees.
+ *
+ * An **absent** parameter is not judged. `params[0] === undefined` is a
+ * different defect — a submission with no value at all rather than a wrong one —
+ * and it is left to the dispatch on purpose; see the test that pins the
+ * decision in `test/unit/admission-gate.test.ts`.
+ *
+ * Scoped to actions 1–4. Actions 5–7 also carry direct parameters, and their
+ * ranges are *not* structural: a cell id's validity is a content question and an
+ * edict index's is a question about the current edict list, so both stay where
+ * §8 already answers them.
+ */
+function outOfAxisRange(kind: number, parameter: number | undefined): boolean {
+  if (parameter === undefined) return false;
+  const count =
+    kind === GOD_ACTION.permitTechnique || kind === GOD_ACTION.forbidTechnique
+      ? GRID_TECHNIQUE_COUNT
+      : kind === GOD_ACTION.permitForm || kind === GOD_ACTION.forbidForm
+        ? GRID_FORM_COUNT
+        : undefined;
+  if (count === undefined) return false;
+  return parameter < 1 || parameter > count;
 }
 
 /** How many slots an action's candidate list has. Re-exported for callers driving the gate. */

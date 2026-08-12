@@ -101,6 +101,7 @@ export function syntheticRecord(input: {
   readonly replicateIndex: number;
   readonly metrics: MetricEntries;
   readonly status?: RunRecord['status'];
+  readonly terminalReason?: number;
   readonly ticksRun?: number;
   readonly sweepId?: string;
   readonly rootSeed?: number;
@@ -119,6 +120,7 @@ export function syntheticRecord(input: {
     levels: { growth: 0, ascendAt: 200 },
     strategies: ['toy-passive'],
     status: input.status ?? 'stagnated',
+    terminalReason: input.terminalReason ?? 0,
     ticksRun: input.ticksRun ?? 1,
     metrics: input.metrics,
     accounting: { submissions: 0, rejections: 0, byActionId: {} },

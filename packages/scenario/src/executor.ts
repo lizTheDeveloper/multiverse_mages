@@ -201,6 +201,7 @@ function recordingSession<TConfig>(
         inner.submit(actionId, parameter);
       },
       status: (): TerminalStatus => inner.status(),
+      terminalReason: (): number => inner.terminalReason(),
       accounting: (): IllegalActionAccounting => inner.accounting(),
     },
   };
@@ -314,6 +315,11 @@ export function executeReferenceRun(
     samples: recorder.samples,
     outcome: {
       status: episode.status,
+      // §1.1's ending, carried through rather than re-derived from the status.
+      // `status` cannot hold it: `agent-api`'s session folds apotheosis and
+      // canon into one `'ascended'`, so a record built from the status alone
+      // could not say which summit a universe took.
+      terminalReason: episode.terminalReason,
       ticksRun: episode.ticksRun,
       metrics: collectReferenceMetrics(task.metrics, measurement),
       accounting: episode.accounting,

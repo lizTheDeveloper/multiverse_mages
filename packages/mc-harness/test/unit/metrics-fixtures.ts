@@ -72,6 +72,7 @@ export function armRun(overrides: Partial<ArmRunSummary> = {}): ArmRunSummary {
   return {
     coordinates: { rootSeed: 1, sweepId: 'fixture', cellIndex: 0, replicateIndex: 0 },
     status: 'stagnated',
+    terminalReason: 3,
     ticksRun: 1200,
     checkpoints: [],
     ...overrides,

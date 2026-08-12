@@ -308,9 +308,15 @@ describe('degeneracy is declared rather than discovered', () => {
     // `ctx.actions`, and `worship` claimed nothing moves the worship channels.
     // `god-agency` made both false, and an entry that outlives its mechanic is
     // worse than none because it excuses a real flat result.
+    // `axis-parameter-base` has expired the same way: the rotations are 1-based
+    // now and the gate range-checks the ids, so the entry it replaced described
+    // a defect this build does not have. What replaced it is a *different*
+    // silent refusal found while fixing that one — the noise floor submits
+    // actions 1–7 with no parameter at all — and it is recorded rather than
+    // fixed, for the reason the entry gives.
     expect(Object.keys(POOL_BUILD_LIMITS).sort()).toEqual([
       'ascension-is-passive',
-      'axis-parameter-base',
+      'noise-floor-submits-axis-actions-bare',
       'open-portal',
       'starting-position-is-broke',
     ]);

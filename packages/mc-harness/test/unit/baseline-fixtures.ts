@@ -147,6 +147,7 @@ export function fixtureSweep(options: FixtureSweepOptions = {}): FixtureSweep {
     cellCount: CELLS,
     runCount: withProvenance.length,
     countsByStatus: { stagnated: withProvenance.length },
+    countsByTerminalReason: { stagnation: withProvenance.length },
     failureCount,
     failuresByClass: failureCount > 0 ? { crash: failureCount } : {},
     failureThreshold: 0,

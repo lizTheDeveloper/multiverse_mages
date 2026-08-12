@@ -77,7 +77,7 @@
  * be a balance claim, at a version that is not allowed to make one.
  */
 
-import { TERMINAL_STATUS } from './session.js';
+import { TERMINAL_STATUS, terminalReasonName } from './session.js';
 import type { TerminalStatus } from './session.js';
 import type { RunRecord } from './records.js';
 import type { AgentPoolSpec, SweepFactor, SweepSpec } from './sweep-spec.js';
@@ -356,6 +356,17 @@ export interface PairwiseOutcome {
   /** Counts by terminal status. Every recorded status has a key, including zeros. */
   readonly countsByStatus: Readonly<Record<TerminalStatus, number>>;
   /**
+   * The same runs split by `contracts.md` §1.1's ending, keyed by route name.
+   *
+   * Reported beside the status counts and not instead of them, because
+   * `countsByStatus.ascended` is the sum of the two ascension routes and a
+   * pairing whose ascensions are all one route is a different result from one
+   * where they are split. Only routes this pairing actually saw get a key —
+   * unlike the status counts, which carry their zeros so the matrix has a fixed
+   * shape. A route that never happened is an absence rather than a column.
+   */
+  readonly countsByTerminalReason: Readonly<Record<string, number>>;
+  /**
    * Ascensions over runs that completed, or `null` when there were none.
    *
    * `failed` runs are excluded from the denominator and `truncated` runs are
@@ -414,11 +425,14 @@ export function pairwiseMatrix(
 ): PairwiseMatrix {
   const members = new Set(pool);
   const strategies = [...members].sort();
-  const byPairing = new Map<string, { counts: Record<TerminalStatus, number>; runs: number }>();
+  const byPairing = new Map<
+    string,
+    { counts: Record<TerminalStatus, number>; reasons: Record<string, number>; runs: number }
+  >();
   let unmatchedRuns = 0;
 
   for (const pair of orderedPairings(strategies)) {
-    byPairing.set(pairingKey(pair), { counts: { ...ZERO_COUNTS }, runs: 0 });
+    byPairing.set(pairingKey(pair), { counts: { ...ZERO_COUNTS }, reasons: {}, runs: 0 });
   }
 
   for (const record of records) {
@@ -432,16 +446,22 @@ export function pairwiseMatrix(
     let cell = byPairing.get(key);
     if (cell === undefined) {
       // A self-pairing, which `mirrored` produces only for a one-strategy pool.
-      cell = { counts: { ...ZERO_COUNTS }, runs: 0 };
+      cell = { counts: { ...ZERO_COUNTS }, reasons: {}, runs: 0 };
       byPairing.set(key, cell);
     }
     cell.counts[record.status] += 1;
+    const reason = terminalReasonName(record.terminalReason ?? 0);
+    cell.reasons[reason] = (cell.reasons[reason] ?? 0) + 1;
     cell.runs += 1;
   }
 
   const outcomes: PairwiseOutcome[] = [];
   for (const key of [...byPairing.keys()].sort()) {
-    const entry = byPairing.get(key) as { counts: Record<TerminalStatus, number>; runs: number };
+    const entry = byPairing.get(key) as {
+      counts: Record<TerminalStatus, number>;
+      reasons: Record<string, number>;
+      runs: number;
+    };
     const [slot0 = '', slot1 = ''] = key.split(' vs ');
     const completed = entry.runs - entry.counts[TERMINAL_STATUS.failed];
     outcomes.push({
@@ -449,6 +469,9 @@ export function pairwiseMatrix(
       slot1,
       runs: entry.runs,
       countsByStatus: Object.freeze({ ...entry.counts }),
+      countsByTerminalReason: Object.freeze(
+        Object.fromEntries(Object.entries(entry.reasons).sort(([a], [b]) => a.localeCompare(b))),
+      ),
       ascensionRate: completed > 0 ? entry.counts[TERMINAL_STATUS.ascended] / completed : null,
     });
   }
@@ -481,9 +504,13 @@ export function describeMatrix(matrix: PairwiseMatrix): string[] {
       .filter(([status]) => status !== TERMINAL_STATUS.running)
       .map(([status, count]) => `${status}=${String(count)}`)
       .join(' ');
+    const routes = Object.entries(entry.countsByTerminalReason)
+      .map(([reason, count]) => `${reason}=${String(count)}`)
+      .join(' ');
     lines.push(
       `  ${entry.slot0} vs ${entry.slot1}: n=${String(entry.runs)} ${counts} ` +
-        `ascensionRate=${entry.ascensionRate === null ? 'n/a' : entry.ascensionRate.toFixed(4)}`,
+        `ascensionRate=${entry.ascensionRate === null ? 'n/a' : entry.ascensionRate.toFixed(4)}` +
+        (routes.length === 0 ? '' : ` | by reason: ${routes}`),
     );
   }
   if (matrix.unmatchedRuns > 0) {

@@ -351,32 +351,61 @@ function channel(observation: Float64Array, index: number): number {
  *
  * `GRID_TECHNIQUE_COUNT` and `GRID_FORM_COUNT` live in `@mm/state`, which §5
  * does not grant the harness. The numbers are therefore written here, and the
- * consequence of them going stale is bounded and visible: a strategy would
- * permit or forbid a bit that does not exist, the gate would pass it through to
- * a `god-agency` that would reject it, and `illegalActionRate` would rise for
- * exactly one action id. That is the failure mode a rate metric is for.
+ * consequence of them going stale is now visible rather than merely bounded:
+ * `agent-api`'s gate range-checks these two parameters against the real
+ * constants and reports `parameter-out-of-range`, so a stale copy raises
+ * `illegalActionRate` for exactly one action id. That is the failure mode a
+ * rate metric is for, and until the gate learned the check it was not the
+ * failure mode this file actually had — see below.
+ *
+ * ## The ids are 1-based, and were not
+ *
+ * `coordination/src/god/interventions.ts` refuses an axis id outside
+ * `1..count` and flips bit `id - 1`. The rotations here were `round % count`,
+ * i.e. `0..count-1`, with two measured consequences that survived into every
+ * balance number this project has ever published:
+ *
+ * - One `permitTechnique` in five and one `permitForm` in fourteen named `0`
+ *   and was refused. The mask said the action was legal, so `policyFor` did not
+ *   fall through, and the round bought nothing.
+ * - **Technique 5 and form 14 were never named by any strategy**, so the top
+ *   row and the last column of §2.1's grid were unreachable in every sweep.
+ *
+ * Neither showed up anywhere. The refusal happened inside the dispatch, which
+ * counts it on `state.illegalActionCount`; §7's `illegalActionRate` is
+ * collected from the session's counters instead, and they never saw it.
  */
 const GRID_TECHNIQUES = 5;
 const GRID_FORMS = 14;
 
-/** The technique bit this round names, cycling. */
+/** The technique id this round names, cycling over `1..GRID_TECHNIQUES`. */
 function technique(round: number): number {
-  return round % GRID_TECHNIQUES;
+  return 1 + (round % GRID_TECHNIQUES);
 }
 
-/** The form bit this round names, cycling. */
+/** The form id this round names, cycling over `1..GRID_FORMS`. */
 function form(round: number): number {
-  return round % GRID_FORMS;
+  return 1 + (round % GRID_FORMS);
 }
 
 /**
- * The same cycles, skipping index 0.
+ * The same cycles, one id short, so that one axis value is never named.
  *
  * `narrow-depth` is defined by keeping exactly one technique and one form, and
- * index 0 is the one it keeps — so its forbid rotation must never name it.
- * Written as its own helper rather than as a conditional inside the rotation,
- * because "skip a value unless it comes up" and "never emit a value" are
- * different, and the first one is the bug.
+ * these rotations are what leave it one: they cover `1..count-1` and therefore
+ * **never name the top id**, which is the one the strategy keeps. Written as
+ * their own helpers rather than as a conditional inside the rotation, because
+ * "skip a value unless it comes up" and "never emit a value" are different, and
+ * the first one is the bug.
+ *
+ * They were already emitting `1..count-1` before the rotations above were made
+ * 1-based, and they are deliberately left alone. Under the corrected reading
+ * that is a valid range naming every id but the last, so the helpers had
+ * neither half of the defect — no refused submission and no unreachable id —
+ * and changing them would have moved which cell `narrow-depth` builds its whole
+ * run on, which is a second variable inside the measurement that exists to
+ * remove one. What *was* wrong here was the comment: it said the kept value was
+ * index 0. It is the top id.
  */
 function techniqueExceptFirst(round: number): number {
   return 1 + (round % (GRID_TECHNIQUES - 1));
@@ -492,7 +521,12 @@ const UNIFORM_RANDOM_LEGAL: StrategyDefinition = {
  */
 const PERMISSIVE_BREADTH: StrategyDefinition = {
   strategyId: 'permissive-breadth',
-  version: 2,
+  // 3: the technique and form rotations became 1-based ids. One permit in five
+  // and one in fourteen used to name `0` and be refused, and this strategy
+  // could never permit technique 5 or form 14 — a fifth of the technique axis
+  // and a fourteenth of the form axis that the pool's widest ruleset never
+  // opened.
+  version: 3,
   hypothesis:
     'Whether breadth outruns the loss channel. A wide ruleset offers more nodes to discover and ' +
     'more institutions to hold them; §6a says knowledge decays and is lost, so breadth might ' +
@@ -571,9 +605,10 @@ const NARROW_DEPTH: StrategyDefinition = {
     GOD_ACTION.encourageResearch,
   ],
   preferences: ({ round }) => [
-    // Forbid everything except index 0, which is the "minimal set" this
-    // strategy is defined by. The rotation skips 0 rather than excluding it
-    // conditionally, so there is no round on which it forbids its own cell.
+    // Forbid everything except the top id of each axis, which is the "minimal
+    // set" this strategy is defined by. The rotation never reaches that id
+    // rather than excluding it conditionally, so there is no round on which it
+    // forbids its own cell.
     { action: GOD_ACTION.forbidTechnique, parameter: techniqueExceptFirst(round) },
     { action: GOD_ACTION.forbidForm, parameter: formExceptFirst(round) },
     { action: GOD_ACTION.encourageResearch, parameter: 0 },
@@ -591,7 +626,11 @@ const NARROW_DEPTH: StrategyDefinition = {
  */
 const DENIAL_WARDEN: StrategyDefinition = {
   strategyId: 'denial-warden',
-  version: 2,
+  // 3: the forbid rotations became 1-based ids, so the warden now reaches
+  // technique 5 and form 14. Before this it could not forbid either, which
+  // means the "as hard as the edict budget allows" claim in its hypothesis was
+  // false about two axis values it never named.
+  version: 3,
   hypothesis:
     'Whether the god can suppress a capability at all. It forbids and interdicts as hard as the ' +
     'edict budget allows, so it probes whether the ruleset is load-bearing: if the knowledge ' +
@@ -697,7 +736,17 @@ const ARCHIVIST: StrategyDefinition = {
  */
 const PORTAL_RUSH: StrategyDefinition = {
   strategyId: 'portal-rush',
-  version: 2,
+  // 3: its one ruleset move, the tempo `permitTechnique`, became a 1-based id.
+  //
+  // Bumped even though a 96-run seed-matched A/B at 2400 ticks produced
+  // byte-identical records before and after. That is not evidence the change is
+  // cosmetic — it is evidence the entry is currently unreachable: it sits third,
+  // behind `openPortal` and `encourageResearch`, and `encourageResearch` is
+  // legal in every round `openPortal` is masked, which in a single-universe run
+  // is all of them. The version is a claim about the definition, not about
+  // whether this build happens to exercise it, and the day `openPortal` becomes
+  // reachable this strategy names a different technique than it used to.
+  version: 3,
   hypothesis:
     'Whether reaching the portal early is worth the tempo it costs. It is the strategy the raid ' +
     'economy is supposed to reward, so it probes whether the multiverse is a strategic axis or a ' +
@@ -1026,18 +1075,20 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'the gate depends on something the god\'s play moves, a strategy\'s ascension timing is ' +
     'evidence about the clock and not about the strategy. That is what W2 of the ascension-meta ' +
     'campaign exists to change; delete this entry when it does.',
-  'axis-parameter-base':
-    'Actions 1–4 take their parameter straight through — agent-api\'s gate passes 0–7 and 15 ' +
-    'unresolved, because a technique bit is not an entity handle — and coordination\'s axisPlan ' +
-    'requires an axis id in 1..GRID_TECHNIQUE_COUNT or 1..GRID_FORM_COUNT. The rotations below are ' +
-    '0-based (round % 5, round % 14), so every fifth permitTechnique and every fourteenth ' +
-    'permitForm names axis 0 and is refused by the dispatch, and the highest axis of each kind is ' +
-    'never named at all. The refusal is silent from here: the mask says the action is legal, the ' +
-    'gate admits it, and only the intervention system turns it away, so it does not appear in ' +
-    'illegalActionRate. The strategies are left as they are for now because changing them is a ' +
-    'change to what the pool plays, and the ascension-stance work is deliberately the only change ' +
-    'to the pool in this campaign — but nothing measured with permissive-breadth or narrow-depth ' +
-    'should be read as "a god that permits an axis", because four fifths of the time it is.',
+  'noise-floor-submits-axis-actions-bare':
+    'uniform-random-legal draws a parameter only when candidateSlotCount says the action has one, ' +
+    'and CANDIDATE_SLOTS covers 8–14 alone — actions 1–7 are not §4.4 parameterized actions, so ' +
+    'they carry no slot list and the floor submits them with no parameter at all. Every one is ' +
+    'then refused inside coordination\'s dispatch for a missing parameter: axisPlan, edictPlan and ' +
+    'revokePlan all return undefined on an absent params[0]. The refusal lands on the core\'s own ' +
+    'illegalActionCount and NOT on the session\'s rejection counters, which is what §7\'s ' +
+    'illegalActionRate is collected from — so the floor reports a near-zero illegal rate while ' +
+    'seven of its fifteen verbs do nothing. Measured consequence: at 2400 ticks uniform-random-legal ' +
+    'ends at essentially the same nodes known as passive-control, because the only actions it can ' +
+    'land are 8–14 and 15. This is NOT fixed here, and the reason is that fixing it means choosing ' +
+    'the distribution the floor draws a technique id, a cell id and an edict index from — a change ' +
+    'to the floor\'s declared distribution, which is a design decision and not a bug fix. Nothing ' +
+    'measured with uniform-random-legal should be read as "uniform over the god\'s verbs".',
   'starting-position-is-broke':
     'The reference scenario seeds zero favor, zero worship and zero prestige, and mask.ts clears ' +
     'every action the god cannot pay for. So a strategy is a passive control for as long as favor ' +

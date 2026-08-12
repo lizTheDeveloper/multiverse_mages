@@ -32,7 +32,18 @@
 
 import type { Action, StepContext, System } from '@mm/sim-core';
 import { rngFromRootSeed, step } from '@mm/sim-core';
-import { EDICT, EDICT_KIND, UNIVERSE, attachRecord, cellIdAt, componentOf, findUniverse, readUniverse } from '@mm/state';
+import {
+  EDICT,
+  EDICT_KIND,
+  GRID_FORM_COUNT,
+  GRID_TECHNIQUE_COUNT,
+  UNIVERSE,
+  attachRecord,
+  cellIdAt,
+  componentOf,
+  findUniverse,
+  readUniverse,
+} from '@mm/state';
 import { GOD_ACTION, OBSERVATION_SIZE, admit, observe } from '@mm/agent-api';
 import { describe, expect, it } from 'vitest';
 
@@ -52,7 +63,13 @@ const NAIVE_RULESET_APPLIER: System = {
     const store = componentOf(ctx.state, UNIVERSE);
     for (const action of ctx.actions) {
       if (action.kind !== GOD_ACTION.forbidTechnique) continue;
-      const bit = action.params?.[0] ?? 0;
+      // The parameter is a **1-based technique id**, and the bit is `id - 1` —
+      // the convention `coordination/src/god/interventions.ts` validates
+      // against and the one the gate now range-checks. The applier is naive
+      // about legality, not about the vocabulary; a stand-in that read the
+      // number differently from the real dispatch would be testing a downstream
+      // consumer that does not exist.
+      const bit = (action.params?.[0] ?? 0) - 1;
       const current = store.get(universe, 'permittedTechniques');
       store.set(universe, 'permittedTechniques', current & ~(1 << bit));
     }
@@ -169,7 +186,7 @@ describe('task 4.8 — a masked rules change mid-engagement leaves the ruleset u
     const before = readUniverse(world.state, universe).permittedTechniques;
     expect(before & 0b1).toBe(0b1); // technique bit 0 is currently permitted
 
-    const submission: Action[] = [{ kind: GOD_ACTION.forbidTechnique, params: [0] }];
+    const submission: Action[] = [{ kind: GOD_ACTION.forbidTechnique, params: [1] }];
     const gated = admit({ state: world.state, catalogue: FIXTURE_CATALOGUE }, submission);
     expect(gated.admitted).toEqual([]);
     expect(gated.rejected).toHaveLength(1);
@@ -188,7 +205,7 @@ describe('task 4.8 — a masked rules change mid-engagement leaves the ruleset u
     const before = readUniverse(world.state, universe).permittedTechniques;
 
     const gated = admit({ state: world.state, catalogue: FIXTURE_CATALOGUE }, [
-      { kind: GOD_ACTION.forbidTechnique, params: [0] },
+      { kind: GOD_ACTION.forbidTechnique, params: [1] },
     ]);
     expect(gated.admitted).toHaveLength(1);
 
@@ -202,9 +219,9 @@ describe('task 4.8 — a masked rules change mid-engagement leaves the ruleset u
     engageWorld(world);
     const submissions: Action[] = [
       { kind: GOD_ACTION.permitTechnique, params: [3] },
-      { kind: GOD_ACTION.forbidTechnique, params: [0] },
+      { kind: GOD_ACTION.forbidTechnique, params: [1] },
       { kind: GOD_ACTION.permitForm, params: [7] },
-      { kind: GOD_ACTION.forbidForm, params: [0] },
+      { kind: GOD_ACTION.forbidForm, params: [1] },
       { kind: GOD_ACTION.issueDispensation, params: [5] },
       { kind: GOD_ACTION.issueInterdiction, params: [5] },
       { kind: GOD_ACTION.revokeEdict, params: [0] },
@@ -242,5 +259,74 @@ describe('a conflicted ruleset does not crash the read path', () => {
     expect(() =>
       admit(input, [{ kind: GOD_ACTION.permitTechnique, params: [1] }]),
     ).not.toThrow();
+  });
+});
+
+/**
+ * The measured defect this block pins.
+ *
+ * `coordination/src/god/interventions.ts` reads the parameter of actions 1–4 as
+ * a **1-based axis id** and refuses anything outside `1..count` — silently: a
+ * no-op, a `refused` tally entry, and `state.illegalActionCount`. But §7's
+ * `illegalActionRate` is collected from the *session's* rejection counters, not
+ * from the core's tally, so a whole class of malformed submission was invisible
+ * to the one metric whose job is to show it. `mc-harness`'s strategy pool was
+ * emitting `0` once every five rounds and nothing could see it.
+ *
+ * The range is judged here, and not left entirely to §8, because it is
+ * **structural**: `GRID_TECHNIQUE_COUNT` and `GRID_FORM_COUNT` are pinned in
+ * `@mm/state`, which this package already depends on and already reads the
+ * ruleset out of. That is the same kind of fact as `k` for a candidate list,
+ * which the gate has always judged. Cell ids and edict indices are deliberately
+ * *not* checked here and stay with §8 — a cell id needs content and an edict
+ * index needs the current edict list, and neither is a structural constant.
+ */
+describe('an axis id outside the grid is a counted rejection, not a silent refusal', () => {
+  it('rejects a technique or form id below 1 or above the axis count', () => {
+    const world = firstUniverse();
+    const before = world.state.illegalActionCount;
+    const submissions: Action[] = [
+      { kind: GOD_ACTION.permitTechnique, params: [0] },
+      { kind: GOD_ACTION.forbidTechnique, params: [GRID_TECHNIQUE_COUNT + 1] },
+      { kind: GOD_ACTION.permitForm, params: [0] },
+      { kind: GOD_ACTION.forbidForm, params: [GRID_FORM_COUNT + 1] },
+      { kind: GOD_ACTION.permitTechnique, params: [-3] },
+    ];
+    const result = admit({ state: world.state, catalogue: FIXTURE_CATALOGUE }, submissions);
+
+    expect(result.admitted).toEqual([]);
+    expect(result.rejected.map((entry) => entry.reason)).toEqual(
+      submissions.map(() => 'parameter-out-of-range'),
+    );
+    expect(world.state.illegalActionCount).toBe(before + submissions.length);
+  });
+
+  it('admits both ends of each axis, including the top id', () => {
+    // The positive control, and the specific thing the harness could not reach:
+    // technique 5 and form 14 are ids, not off-by-one mistakes.
+    const world = firstUniverse();
+    const result = admit({ state: world.state, catalogue: FIXTURE_CATALOGUE }, [
+      { kind: GOD_ACTION.forbidTechnique, params: [1] },
+      { kind: GOD_ACTION.forbidTechnique, params: [GRID_TECHNIQUE_COUNT] },
+      { kind: GOD_ACTION.forbidForm, params: [1] },
+      { kind: GOD_ACTION.forbidForm, params: [GRID_FORM_COUNT] },
+    ]);
+    expect(result.rejected).toEqual([]);
+    expect(result.admitted).toHaveLength(4);
+  });
+
+  it('leaves an axis action carrying no parameter alone', () => {
+    // Deliberately *not* rejected here. A missing parameter is a different
+    // defect from an out-of-range one; it is what `uniform-random-legal`
+    // submits for every action 1–7, because those carry no §4.4 candidate list
+    // and so it draws no slot for them. Turning that into a counted rejection
+    // would move the noise floor's illegal-action rate in the same commit as
+    // the axis fix, which is two changes inside one measurement. Recorded here
+    // so the next campaign finds the decision rather than the behaviour.
+    const world = firstUniverse();
+    const result = admit({ state: world.state, catalogue: FIXTURE_CATALOGUE }, [
+      { kind: GOD_ACTION.permitTechnique },
+    ]);
+    expect(result.admitted).toEqual([{ kind: GOD_ACTION.permitTechnique, params: [] }]);
   });
 });

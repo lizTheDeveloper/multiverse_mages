@@ -215,11 +215,23 @@ export type {
 } from './session.js';
 export {
   RECORDED_STATUSES,
+  TERMINAL_REASON_NAME,
   TERMINAL_STATUS,
   adaptAgentSession,
   normalizeSubmission,
   runEpisode,
+  terminalReasonName,
 } from './session.js';
+
+/**
+ * §1.1's endings, passed through from `agent-api` (which passes them through
+ * from `@mm/state`).
+ *
+ * Re-exported here so a consumer of the harness can name the number
+ * {@link RunRecord.terminalReason} carries without adding a second package
+ * edge for one enum — and, more to the point, without transcribing it.
+ */
+export { TERMINAL_REASON } from '@mm/agent-api';
 
 export type {
   ArmContribution,
@@ -260,6 +272,7 @@ export {
   buildArmTelemetry,
   countByFailureClass,
   countByStatus,
+  countByTerminalReason,
   sortCanonically,
   totalWorldTicks,
 } from './aggregate.js';

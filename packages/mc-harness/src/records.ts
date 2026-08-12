@@ -37,6 +37,8 @@
  * strictly better than a record that looks fine and is missing a column.
  */
 
+import { TERMINAL_REASON } from '@mm/agent-api';
+
 import type { JsonValue } from './canonical.js';
 import { canonicalJson } from './canonical.js';
 import type { MetricEntries } from './metrics.js';
@@ -55,8 +57,16 @@ import { SEED_DERIVATION_VERSION, deriveRunSeed } from './seed.js';
  * offline re-aggregation of the arm metrics is only possible against records
  * that carry it, and "this file predates arm metrics" is a thing a reader in
  * 2031 needs to be able to establish without inspecting every line.
+ *
+ * **3** since every record carries {@link RunRecord.terminalReason}. Additive
+ * again, and `status` is untouched and means exactly what it meant. The version
+ * moves for the same reason as before, sharpened: `status` collapses §1.1's two
+ * ascension routes into one `'ascended'`, so a version 2 file cannot answer
+ * "which summit" *at all* — not approximately, not with effort. A reader must
+ * be able to tell a file that could answer it from one that could not, without
+ * inspecting every line and guessing from tick clustering.
  */
-export const RECORD_FORMAT_VERSION = 2;
+export const RECORD_FORMAT_VERSION = 3;
 
 /** One completed run, as written to the results file. */
 export interface RunRecord {
@@ -71,6 +81,22 @@ export interface RunRecord {
   /** Strategy id per agent slot, in slot order. */
   readonly strategies: readonly string[];
   readonly status: TerminalStatus;
+  /**
+   * `contracts.md` §1.1's ending, as a {@link TERMINAL_REASON} number.
+   *
+   * **Beside `status`, never instead of it.** `status` keeps its meaning
+   * unchanged; this is the thing it could not hold. §1.1 numbers five endings
+   * and `agent-api`'s `status()` folds two of them — apotheosis and canon —
+   * into a single `'ascended'`, so before this field a completed sweep
+   * physically could not report route share and it had to be inferred from
+   * where the ascensions clustered in time.
+   *
+   * `0` (`none`) for a live universe, for a `failed` run, and for a run the
+   * *harness* truncated at its declared cap. That last one is deliberate and is
+   * information rather than a gap: `truncated` + `none` is the measurement
+   * horizon, `truncated` + `4` is the simulation's own truncation.
+   */
+  readonly terminalReason: number;
   readonly ticksRun: number;
   readonly metrics: MetricEntries;
   readonly accounting: IllegalActionAccounting;
@@ -122,6 +148,17 @@ export interface SweepSummary {
   readonly cellCount: number;
   readonly runCount: number;
   readonly countsByStatus: Readonly<Record<string, number>>;
+  /**
+   * The same runs, split by §1.1's ending rather than by status.
+   *
+   * A second fold and not a replacement, because the two partitions do not
+   * nest the way a reader expects: `countsByStatus.ascended` is
+   * `ascensionApotheosis + ascensionCanon`, but `countsByStatus.truncated` is
+   * split between `none` (the harness's cap) and `truncated` (the simulation's
+   * own). Presenting only one of the two would make some other question
+   * unanswerable, so both are reported and both sum to the run count.
+   */
+  readonly countsByTerminalReason: Readonly<Record<string, number>>;
   readonly failureCount: number;
   readonly failuresByClass: Readonly<Record<string, number>>;
   readonly failureThreshold: number;
@@ -163,6 +200,12 @@ export interface SweepSummary {
 export function buildRunRecord(input: {
   readonly task: RunTask;
   readonly status: TerminalStatus;
+  /**
+   * See {@link RunRecord.terminalReason}. Optional, defaulting to `none`, so
+   * that the only callers who have to name one are the ones who know one — a
+   * `failed` run never reached a universe and has nothing to report.
+   */
+  readonly terminalReason?: number;
   readonly ticksRun: number;
   readonly metrics: MetricEntries;
   readonly accounting: IllegalActionAccounting;
@@ -217,6 +260,7 @@ export function buildRunRecord(input: {
     levels: task.levels,
     strategies: task.strategies,
     status: input.status,
+    terminalReason: input.terminalReason ?? TERMINAL_REASON.none,
     ticksRun: input.ticksRun,
     metrics: input.metrics,
     accounting: input.accounting,

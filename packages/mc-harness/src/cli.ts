@@ -136,6 +136,15 @@ export async function runSweepCommand(
   for (const [status, count] of Object.entries(summary.countsByStatus)) {
     sink.out(`  ${status}: ${String(count)}`);
   }
+  // The same runs split by §1.1's ending rather than by status. Printed beside
+  // the status counts and not instead of them: `ascended` is the sum of the two
+  // ascension routes, and `truncated` splits across the harness's cap (`none`)
+  // and the simulation's own truncation, so neither partition subsumes the
+  // other.
+  sink.out('  by terminal reason:');
+  for (const [reason, count] of Object.entries(summary.countsByTerminalReason)) {
+    sink.out(`    ${reason}: ${String(count)}`);
+  }
   sink.out(
     `  throughput: ${summary.performance.runsPerSecond.toFixed(2)} runs/s, ` +
       `${summary.performance.worldTicksPerSecond.toFixed(0)} world ticks/s on ` +

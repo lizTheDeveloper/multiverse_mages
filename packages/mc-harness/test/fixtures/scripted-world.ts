@@ -55,7 +55,13 @@ import type {
   RunTask,
   TerminalStatus,
 } from '@mm/mc-harness';
-import { BOT_POOL_REGISTRY, TOURNAMENT_WORLD_SEED_FACTOR, policiesForRun, runEpisode } from '@mm/mc-harness';
+import {
+  BOT_POOL_REGISTRY,
+  TERMINAL_REASON,
+  TOURNAMENT_WORLD_SEED_FACTOR,
+  policiesForRun,
+  runEpisode,
+} from '@mm/mc-harness';
 
 /** §2.1's grid, as this fixture needs it. */
 const TECHNIQUES = 5;
@@ -359,6 +365,16 @@ export class ScriptedSession implements AgentSession<ScriptedConfig> {
     if (this.ascended) return 'ascended';
     if (this.gaveUp) return 'stagnated';
     return 'running';
+  }
+
+  /**
+   * §1.1's ending. The scripted world models one summit, reached by depth, so
+   * it reports `ascensionApotheosis`.
+   */
+  terminalReason(): number {
+    if (this.ascended) return TERMINAL_REASON.ascensionApotheosis;
+    if (this.gaveUp) return TERMINAL_REASON.stagnation;
+    return TERMINAL_REASON.none;
   }
 
   accounting(): { submissions: number; rejections: number; byActionId: Record<string, number> } {

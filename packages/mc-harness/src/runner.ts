@@ -40,6 +40,7 @@ import {
   buildArmTelemetry,
   countByFailureClass,
   countByStatus,
+  countByTerminalReason,
   sortCanonically,
   totalWorldTicks,
 } from './aggregate.js';
@@ -142,6 +143,7 @@ function recordFor(task: RunTask, result: PoolResult | undefined, fallback: Prov
   return buildRunRecord({
     task,
     status: outcome.status,
+    ...(outcome.terminalReason === undefined ? {} : { terminalReason: outcome.terminalReason }),
     ticksRun: outcome.ticksRun,
     metrics: outcome.metrics,
     accounting: outcome.accounting,
@@ -258,6 +260,7 @@ export async function runSweep(options: RunSweepOptions): Promise<SweepResult> {
       cellCount: plan.cellCount,
       runCount: plan.runCount,
       countsByStatus: countByStatus(records),
+      countsByTerminalReason: countByTerminalReason(records),
       failureCount,
       failuresByClass,
       failureThreshold: spec.failureThreshold,
@@ -309,6 +312,7 @@ export function reaggregate(
   | 'armId'
   | 'armMetrics'
   | 'countsByStatus'
+  | 'countsByTerminalReason'
   | 'failuresByClass'
   | 'failureCount'
   | 'disqualified'
@@ -324,6 +328,7 @@ export function reaggregate(
     aggregates: aggregateMetrics(records, spec.metrics, registries.metrics),
     ...(arm === undefined ? {} : { armId: arm.armId, armMetrics: arm.armMetrics }),
     countsByStatus: countByStatus(records),
+    countsByTerminalReason: countByTerminalReason(records),
     failuresByClass: countByFailureClass(records),
     failureCount,
     disqualified: failureCount > spec.failureThreshold,
