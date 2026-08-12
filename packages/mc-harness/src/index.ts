@@ -348,6 +348,7 @@ export type { GateCommandResult, GateSweepOptions, RegenerateArgs } from './bala
 export { gateCommand, loadBaseline, regenerateCommand } from './balance-cli.js';
 
 export type {
+  AscensionStance,
   BotStrategyRegistry,
   DegeneracyReport,
   PreferenceInput,
@@ -355,11 +356,13 @@ export type {
   StrategyDefinition,
 } from './strategies.js';
 export {
+  ASCENSION_STANCE,
   BOT_POOL,
   BOT_POOL_REGISTRY,
   POOL_BUILD_LIMITS,
   botStrategyRegistry,
   degeneracyOf,
+  effectivePreferences,
   policiesForRun,
   policyFor,
   poolDegeneracy,

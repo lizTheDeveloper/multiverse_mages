@@ -1,0 +1,39 @@
+{
+  "baselineFormatVersion": 1,
+  "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
+  "contentHash": "4b30d2be6b3898ffb1f957c858a700bef4ff8facd051c140740b557c0ce26f68",
+  "kind": "gate",
+  "metrics": [
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":67.19352547732132,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":201.58057643196395,"unit":"grimoires","value":1156.5},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":32,"standardError":238.27790776344543,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":714.8337232903363,"unit":"instances","value":2157.125},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":32,"standardError":0.2181113125054662,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.6543339375163986,"unit":"nodes","value":2.40625},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":32,"standardError":3.93294450194217,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":11.79883350582651,"unit":"mages","value":72.59375},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":32,"standardError":10.920605574603975,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":32.761816723811926,"unit":"nodes","value":56.84375},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":32,"standardError":2.218435591405413,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":6.655306774216239,"unit":"nodes","value":4.34375},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":32,"standardError":10.920605574603975,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":32.761816723811926,"unit":"nodes","value":59.34375},
+    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":32,"standardError":181.15625,"standardErrorMethod":"jackknife","status":"measured","tolerance":543.46875,"unit":"people","value":19302},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":32,"standardError":1127.5895596285286,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3382.768678885586,"unit":"people","value":5175.28125},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1127.5895596285286,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3382.768678885586,"unit":"people","value":5031.28125}
+  ],
+  "notes": [
+    "NOT A BALANCE CLAIM. release-plan.md forbids one before 0.5.0, and 0.5.0 is the release that builds the instrument rather than one that tunes the game. This file records what this build did on 2026-08-11 and nothing more.",
+    "The universe these vital signs describe is still degenerate, and in ways POOL_BUILD_LIMITS in packages/mc-harness/src/strategies.ts enumerates: action 14 is permanently masked in a single-universe run; ascension eligibility opens by passive worship accrual rather than by play; the pool's 0-based axis rotations are refused by a 1-based dispatch for one axis in five and one form in fourteen; and the reference scenario starts with zero favor, so every strategy is a passive control until regeneration pays for its cheapest move.",
+    "Tolerances here are wide on purpose and are not comparable to the other two gates'. The standard-error estimator stratifies on cellIndex, and within a cell of this sweep the eight replicates are eight different strategies rather than eight samples of one — so what it calls noise is mostly strategy effect. That is the price of an instrument that can see a win condition, and it is paid knowingly: this gate answers whether the pool's long-run behaviour changed, and balance:gate answers whether anything moved at all.",
+    "Twenty-seven of the thirty-two runs ascended. ascensionRate is therefore far above contracts.md §7's declared 0.05-0.20 band, and that number is a finding rather than a target: with the harness artefact removed, ascension is revealed to be a button that any strategy can press once a passively-accruing clock has run. Making the gate depend on play is W2 of the ascension-meta campaign, and this baseline is the instrument it will be measured on. Regenerate with a rationale naming the constants that moved; do not widen a tolerance."
+  ],
+  "provenance": {
+    "buildVersion": "0.3.0",
+    "contentHash": "2512ea02d2a7569d8d0bacc4c5a926ca",
+    "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
+    "observationLayoutDigest": "46182c35d829b205",
+    "observationSchemaVersion": 1,
+    "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
+  },
+  "rationale": "First baseline for a third instrument. No game rule or constant changed: this sweep did not exist before, and the two committed gates (60 and 240 ticks, passive-control fixed) are untouched and still green. It runs the eight-strategy pool round-robin to 2400 world ticks, which is the only horizon at which the win condition is observable at all — measured, 0 of 400 runs ascended at 240 ticks and 10 of 80 at 2400. The pool change it is taken after is the ascension stance: every strategy now declares when it would declare ascension, and policyFor composes that declaration into the preference list it already walked. Before it, seven of eight strategies could not win whatever they did, because only portal-rush listed declareAscension and it sat behind two always-legal preferences.",
+  "rootSeed": 20260811,
+  "runCount": 32,
+  "supersededDeltas": [],
+  "supersedes": null,
+  "sweepId": "balance-gate-ascension-v1",
+  "toleranceK": 3
+}

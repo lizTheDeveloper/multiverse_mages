@@ -253,7 +253,15 @@ export class ScriptedSession implements AgentSession<ScriptedConfig> {
     // `candidates.ts` describes. Left masked so the fixture agrees with the
     // build the pool is actually specified against.
     mask[GOD_ACTION.openPortal] = 0;
-    mask[GOD_ACTION.declareAscension] = 1;
+    // Eligibility, and the mask follows it. `mask.ts` clears action 15 unless
+    // the god-state row's `ascensionPath` has left `none`; the equivalent fact
+    // here is the knowledge threshold below. The fixture used to leave the
+    // action legal from tick zero and refuse it on application, which was the
+    // *previous* build's mask and disagreed with the one the pool now plays
+    // against — a strategy whose ascension stance is "declare on the first
+    // permitted round" would have declared on round zero, forever, and every
+    // divergence test in this package would have been measuring that instead.
+    mask[GOD_ACTION.declareAscension] = this.totalInstances() >= this.ascendAt ? 1 : 0;
     return mask;
   }
 
@@ -329,9 +337,9 @@ export class ScriptedSession implements AgentSession<ScriptedConfig> {
         this.traditionId = 1 + ((this.traditionId + parameter) % 3);
         break;
       case GOD_ACTION.declareAscension:
-        // Eligibility, which `mask.ts` says belongs to god-agency, is a
-        // knowledge threshold here. A declaration below it is legal and does
-        // nothing, which is why no strategy prefers it first.
+        // Re-checked rather than trusted, exactly as `interventions.ts`
+        // re-checks the god-state row it was masked on: the mask is advisory
+        // and structural, and the dispatch is authoritative.
         if (this.totalInstances() >= this.ascendAt) this.ascended = true;
         break;
       default:

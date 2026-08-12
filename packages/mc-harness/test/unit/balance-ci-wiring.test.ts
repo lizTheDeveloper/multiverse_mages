@@ -30,10 +30,10 @@
  * somebody renamed fails for a reason that has nothing to do with balance, and
  * whoever sees it first will be tempted to delete the step.
  *
- * There are now **two** gates — five world years and twenty — and every
- * assertion here is made of each of them, because a second gate wired into only
- * one of the two CI systems is the same drift as the first one would have been.
- * Why the second exists at all is in
+ * There are now **three** gates — five world years, twenty, and two hundred —
+ * and every assertion here is made of each of them, because a gate wired into
+ * only one of the two CI systems is the same drift as the first one would have
+ * been. Why each exists at all is in
  * `packages/scenario/test/unit/horizon-gate.test.ts`, with the measurements.
  */
 
@@ -57,11 +57,14 @@ const manifest = JSON.parse(read('package.json')) as {
 /**
  * The npm scripts both CI systems reach the gates through.
  *
- * The five-year gate and the twenty-year gate. Neither substitutes for the
- * other: the fast one is sensitive and runs on every push, and the slow one is
- * the only one that can see a plateau that has not started yet at year five.
+ * The five-year gate, the twenty-year gate and the two-hundred-year gate. None
+ * substitutes for another: the fast one is sensitive and runs on every push, the
+ * twenty-year one is the only one that can see a plateau that has not started
+ * yet at year five, and the two-hundred-year one is the only one that can see
+ * the win condition at all — measured, 0 of 400 runs ascended at twenty years
+ * and 10 of 80 at two hundred.
  */
-const GATE_SCRIPTS = ['balance:gate', 'balance:gate:horizon'] as const;
+const GATE_SCRIPTS = ['balance:gate', 'balance:gate:horizon', 'balance:gate:ascension'] as const;
 
 describe('every gate is a build-failing step in both CI systems', () => {
   it.each(GATE_SCRIPTS)('%s exists as an npm script', (script) => {

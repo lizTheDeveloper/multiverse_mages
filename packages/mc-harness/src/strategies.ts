@@ -57,15 +57,25 @@
  * ordering changes, the strategies that read it change meaning, and §4.4's own
  * note calls that *"a balance-affecting change"*.
  *
+ * ## When a strategy would declare ascension is a field, not a list position
+ *
+ * Every strategy declares an {@link AscensionStance}, and
+ * {@link effectivePreferences} composes it into the list `policyFor` walks.
+ * Read that type before changing a stance: the measurement that made it
+ * necessary is recorded there, and it is the reason no strategy below lists
+ * `declareAscension` among its own preferences.
+ *
  * ## Degeneracy is declared, not discovered
  *
- * Most of what these strategies want does not exist in this build. `god-agency`
- * (0.7.0) is what gives the god's verbs consequences; raids (0.9.0) are what
- * make a portal worth opening; there is no worship loop at all. `design.md`
- * expected this — *"At 0.5.0 the god's verbs do not exist … and every bot
- * degrades toward the passive control"* — and specifying the pool now is what
- * *"forces 0.6.0 and 0.7.0 to deliver actions a strategy can actually
- * differentiate on."*
+ * `god-agency` (0.7.0) has landed, and with it most of what these strategies
+ * want: `coordination/src/god/interventions.ts` implements all fifteen verbs,
+ * worship accrues, favor regenerates and is spent, and a universe can ascend or
+ * stagnate. Measured at 2400 ticks in the reference universe, the pool now
+ * spreads from 9 distinct nodes known (`narrow-depth`) to 249
+ * (`permissive-breadth`) — so the strategies produce different worlds, which is
+ * the thing `design.md` said specifying the pool early would force. What is
+ * still missing is raids (0.9.0), and the ways in which the god's verbs are
+ * reachable-but-not-effective are enumerated in {@link POOL_BUILD_LIMITS}.
  *
  * The danger in that is precise and worth stating: **a strategy that has
  * silently become the passive control corrupts every tournament it appears in**,
@@ -80,12 +90,10 @@
  *
  * - **Masked-degenerate**: every signature action is masked. Detectable from
  *   the mask alone, which is what {@link degeneracyOf} does.
- * - **Effect-degenerate**: the action is admitted and then consumed by nobody.
- *   No system in `rules-magic`, `rules-world`, `rules-raid` or `coordination`
- *   reads `ctx.actions` in this build, so **every god action is currently
- *   effect-degenerate** — `step` hands the admitted actions to the systems and
- *   the systems ignore them. That is recorded in {@link POOL_BUILD_LIMITS}
- *   rather than tested, because testing it from here would mean importing the
+ * - **Effect-degenerate**: the action is admitted and then consumed by nobody,
+ *   or admitted and then refused by a precondition the mask cannot express.
+ *   Each surviving case is recorded in {@link POOL_BUILD_LIMITS} rather than
+ *   tested, because testing any of them from here would mean importing the
  *   rules packages, which §5 forbids the harness.
  */
 
@@ -154,6 +162,13 @@ export interface StrategyDefinition {
    */
   readonly hypothesis: string;
   /**
+   * **When this strategy would declare ascension, and why.**
+   *
+   * Required. See {@link AscensionStance} for what it is for and what it cost
+   * not to have it.
+   */
+  readonly ascension: AscensionStance;
+  /**
    * The actions without which this strategy is not distinguishable from the
    * passive control. See {@link degeneracyOf}.
    *
@@ -161,8 +176,141 @@ export interface StrategyDefinition {
    * it needs nothing to be itself.
    */
   readonly signatureActions: readonly number[];
-  /** What the strategy would like, most-preferred first. `noop` is appended for it. */
+  /**
+   * What the strategy would like, most-preferred first. `noop` is appended for
+   * it, and its {@link StrategyDefinition.ascension} stance is composed in by
+   * {@link effectivePreferences} — a strategy does **not** list
+   * `declareAscension` here.
+   */
   preferences(input: PreferenceInput): readonly ActionSubmission[];
+}
+
+// ---------------------------------------------------------------------------
+// The ascension stance.
+// ---------------------------------------------------------------------------
+
+/**
+ * The four answers a strategy may give to *"when would you declare ascension?"*
+ *
+ * ## Why this is a field and not a line in a preference list
+ *
+ * It was a line in a preference list, and the measurement is what this type
+ * exists to prevent happening again. At 2400 world ticks against `main` @
+ * `71261e9`, `uniform-random-legal` ascended 10 runs of 10 and every other
+ * strategy ascended 0 of 10. Not because random play is strong: because
+ * {@link policyFor} submits the first preference the mask permits, only
+ * `portal-rush` listed `declareAscension` at all, and it sat behind
+ * `encourageResearch` and `permitTechnique` — both always legal. Seven of eight
+ * strategies could not win whatever they did, and the tournament measured
+ * preference-list ordering rather than play.
+ *
+ * Moving `declareAscension` up six lists by hand would have fixed that
+ * particular symptom and left the mechanism exactly where it was: a strategy's
+ * ability to win still decided by where a line happened to sit. So the question
+ * is asked of every strategy, the registry refuses a strategy that does not
+ * answer it, and the answer carries a reason that a reader can compare against
+ * the strategy's own {@link StrategyDefinition.hypothesis}.
+ *
+ * **`never` is an answer.** Silence is a bug.
+ */
+export const ASCENSION_STANCE = {
+  /**
+   * This strategy will not declare, ever, and {@link effectivePreferences}
+   * enforces it by removing action 15 from what the strategy asked for.
+   *
+   * Enforced rather than trusted because the value of a control is that it did
+   * not do the thing, and "it happened not to come up" is a different claim.
+   */
+  never: 'never',
+  /**
+   * No privileged position. The declaration appears only if the strategy's own
+   * preference generation emits it.
+   *
+   * The stance of a bot whose distribution *is* its purpose: prepending an
+   * action to a uniform draw over the legal set makes it a different bot, and
+   * the noise floor is worth nothing if nobody can say what it is a floor of.
+   */
+  asDrawn: 'as-drawn',
+  /** Declare on the first round the mask permits it. Most-preferred, always. */
+  whenEligible: 'when-eligible',
+  /**
+   * Declare on the first permitted round at or after `notBefore` rounds of play.
+   *
+   * A round is one submission, and at one agent slot the harness submits once
+   * per world tick — so `notBefore` is readable as a world tick, and the
+   * rationale of a strategy that uses it should say which tick it is naming.
+   */
+  afterRounds: 'after-rounds',
+} as const;
+
+/** One strategy's declared answer, with the reason it gives. */
+export type AscensionStance =
+  | { readonly when: typeof ASCENSION_STANCE.never; readonly because: string }
+  | { readonly when: typeof ASCENSION_STANCE.asDrawn; readonly because: string }
+  | { readonly when: typeof ASCENSION_STANCE.whenEligible; readonly because: string }
+  | {
+      readonly when: typeof ASCENSION_STANCE.afterRounds;
+      /** Rounds of play to complete before the summit becomes a preference. */
+      readonly notBefore: number;
+      readonly because: string;
+    };
+
+/** The declaration, as a submission. It takes no parameter. */
+const DECLARE: ActionSubmission = Object.freeze({ action: GOD_ACTION.declareAscension });
+
+/**
+ * The preference list {@link policyFor} actually walks: what the strategy asked
+ * for, with its ascension stance composed in.
+ *
+ * Exported because it is what a test of fall-through has to compare against.
+ * The fall-through itself is unchanged and stays where it was — this function
+ * decides *what is in the list*, and `policyFor` still submits the first entry
+ * of it the mask permits, and still ends at `noop`.
+ */
+export function effectivePreferences(
+  definition: StrategyDefinition,
+  input: PreferenceInput,
+): readonly ActionSubmission[] {
+  const own = definition.preferences(input);
+  const stance = definition.ascension;
+  switch (stance.when) {
+    case ASCENSION_STANCE.never:
+      // Enforced, not assumed. A strategy that declared "never" and then drew
+      // action 15 out of some other rule would be a control that won, and the
+      // whole point of asking the question is that the answer is checkable.
+      return own.filter((preference) => preference.action !== GOD_ACTION.declareAscension);
+    case ASCENSION_STANCE.asDrawn:
+      return own;
+    case ASCENSION_STANCE.whenEligible:
+      return [DECLARE, ...own];
+    case ASCENSION_STANCE.afterRounds:
+      return input.round >= stance.notBefore ? [DECLARE, ...own] : own;
+    default:
+      return own;
+  }
+}
+
+/** Why a stance is not usable, or `undefined`. Used by {@link botStrategyRegistry}. */
+function stanceProblem(stance: AscensionStance | undefined): string | undefined {
+  if (stance === undefined || typeof stance !== 'object') {
+    return 'declares no ascension stance';
+  }
+  const known: readonly string[] = Object.values(ASCENSION_STANCE);
+  if (!known.includes(stance.when)) {
+    return `declares an ascension stance of "${String(stance.when)}", which is not one of ${known.join(', ')}`;
+  }
+  if (typeof stance.because !== 'string' || stance.because.trim().length === 0) {
+    return 'declares an ascension stance with no reason';
+  }
+  if (stance.when === ASCENSION_STANCE.afterRounds) {
+    if (!Number.isInteger(stance.notBefore) || stance.notBefore < 0) {
+      return (
+        'declares an ascension stance of "after-rounds" with notBefore ' +
+        `${String(stance.notBefore)}, which is not a whole, non-negative round count`
+      );
+    }
+  }
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -274,6 +422,16 @@ const PASSIVE_CONTROL: StrategyDefinition = {
     'It probes whether the god matters at all — if no strategy separates from this one on any §7 ' +
     'metric, then either the verbs are inert or the metrics cannot see them, and both are findings ' +
     'about the instrument rather than about the game.',
+  ascension: {
+    when: ASCENSION_STANCE.never,
+    because:
+      'A control that presses the win button is not a control. Every other strategy\'s effect is ' +
+      'measured as a difference from this one, and a run this strategy ended early is a run whose ' +
+      'census stops at the tick it stopped — so the null hypothesis would be shorter than the ' +
+      'thing it is the null hypothesis for. It is also what makes the pool\'s eventual answer to ' +
+      '"does ascension follow from play" readable: passive-control is the arm that did nothing, ' +
+      'and it must not be able to win by doing nothing.',
+  },
   signatureActions: [],
   preferences: () => [],
 };
@@ -294,6 +452,16 @@ const UNIFORM_RANDOM_LEGAL: StrategyDefinition = {
     'strategy space to measure. It is also the fastest detector of a mask that is lying — random ' +
     'legal play should produce a near-zero illegal-action rate, so a non-zero one here is a mask ' +
     'and a gate that disagree, not an agent that is confused.',
+  ascension: {
+    when: ASCENSION_STANCE.asDrawn,
+    because:
+      'The floor is worth exactly what can be said about its distribution, and what is said about ' +
+      'it is "uniform over the legal set". Action 15 is in that set the moment eligibility opens, ' +
+      'so this strategy declares about one round in however many are legal — which is why it was ' +
+      'the only winner in the 2400-tick probe. Privileging the declaration would raise that rate ' +
+      'and stop the number being a floor; removing it would make the floor blind to the one action ' +
+      'that ends a run. Neither is a stance. Drawing it like everything else is.',
+  },
   // Everything, because "uniform over what is legal" is a different bot in a
   // world where only no-op is legal, and that difference is the point.
   signatureActions: Object.values(GOD_ACTION).filter((action) => action !== GOD_ACTION.noop),
@@ -324,13 +492,22 @@ const UNIFORM_RANDOM_LEGAL: StrategyDefinition = {
  */
 const PERMISSIVE_BREADTH: StrategyDefinition = {
   strategyId: 'permissive-breadth',
-  version: 1,
+  version: 2,
   hypothesis:
     'Whether breadth outruns the loss channel. A wide ruleset offers more nodes to discover and ' +
     'more institutions to hold them; §6a says knowledge decays and is lost, so breadth might ' +
     'instead spread a fixed teaching capacity too thin. It probes the sign of that trade: if ' +
     'permissive-breadth beats narrow-depth on ascension rate but loses on knowledgeHalfLife, the ' +
     'loss model has teeth and the god is choosing between two real goods.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'Its hypothesis is scored against narrow-depth *on ascension rate*, so it has to be able to ' +
+      'score. Declaring on the first permitted round makes the measurement clean: both strategies ' +
+      'take the summit the moment it opens, so the difference between them is entirely the ' +
+      'difference in when a wide ruleset and a narrow one become eligible — which is the thing the ' +
+      'hypothesis is about. A delay here would be a second variable nobody asked for.',
+  },
   signatureActions: [
     GOD_ACTION.permitTechnique,
     GOD_ACTION.permitForm,
@@ -372,13 +549,22 @@ const PERMISSIVE_BREADTH: StrategyDefinition = {
  */
 const NARROW_DEPTH: StrategyDefinition = {
   strategyId: 'narrow-depth',
-  version: 1,
+  version: 2,
   hypothesis:
     'Whether concentration beats breadth. It permits one technique and one form and pushes the ' +
     'single deepest permitted cell every round, so it probes whether tier progression is the ' +
     'binding constraint on ascension — and, symmetrically, whether a narrow ruleset makes a ' +
     'universe brittle: one cell is one thing to lose, and timeToTierBySpecies against a narrow ' +
     'ruleset is the measurement that would say so.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'The symmetric half of permissive-breadth\'s stance, and it has to be symmetric or the ' +
+      'comparison the two hypotheses set up is not a comparison. Path A also happens to be the ' +
+      'condition this strategy is built for — a mage holding the deepest node of a *permitted* ' +
+      'cell, with two live instances of it — so if concentration is the faster route to a summit, ' +
+      'this is the arm that shows it, and it can only show it by taking one.',
+  },
   signatureActions: [
     GOD_ACTION.forbidTechnique,
     GOD_ACTION.forbidForm,
@@ -405,13 +591,24 @@ const NARROW_DEPTH: StrategyDefinition = {
  */
 const DENIAL_WARDEN: StrategyDefinition = {
   strategyId: 'denial-warden',
-  version: 1,
+  version: 2,
   hypothesis:
     'Whether the god can suppress a capability at all. It forbids and interdicts as hard as the ' +
     'edict budget allows, so it probes whether the ruleset is load-bearing: if the knowledge ' +
     'census under denial-warden is indistinguishable from the census under passive-control, then ' +
     'the ruleset is decorative and every balance number that assumes the god constrains magic is ' +
     'measuring something else. Once raids land it is also the defensive arm of the theft question.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'A denying god still wants to win, and what it does to its own chances is the sharpest ' +
+      'reading of whether the ruleset binds. Path A requires the cell of the qualifying node to be ' +
+      'permitted *at the moment of declaration*, so a warden that has forbidden the grid can ' +
+      'qualify by the Enduring Canon or not at all — and "never became eligible" is then a measured ' +
+      'consequence of denial rather than a stance. The rejected alternative was to declare only ' +
+      'once every edict was masked, which reads as prudence and is "never" in costume: revokeEdict ' +
+      'is legal whenever an edict exists, so the fall-through would never have reached the summit.',
+  },
   signatureActions: [
     GOD_ACTION.forbidTechnique,
     GOD_ACTION.forbidForm,
@@ -438,7 +635,7 @@ const DENIAL_WARDEN: StrategyDefinition = {
  */
 const ARCHIVIST: StrategyDefinition = {
   strategyId: 'archivist',
-  version: 1,
+  version: 2,
   hypothesis:
     'Whether redundancy defeats the loss channel. §6a makes knowledge capital and §2.4 makes it ' +
     'decay; the archivist buys insurance — more universities, more founding instances, more ' +
@@ -446,6 +643,26 @@ const ARCHIVIST: StrategyDefinition = {
     'knowledgeHalfLife and libraryDependence are the two metrics that would separate it from ' +
     'every other strategy, and if neither does, redundancy is free or worthless and the loss ' +
     'model needs re-reading either way.',
+  ascension: {
+    when: ASCENSION_STANCE.afterRounds,
+    // Twice `ascension-min-tick`, which is 600 at this content revision — so
+    // world-year 100, and the archivist has had as long again as the earliest
+    // possible summit to build the thing it is arguing about. Written here
+    // rather than read from content because §5 grants the harness no edge to
+    // `@mm/content`; if the constant moves, this stops being "twice the floor"
+    // and becomes a fixed tick, which is a change of meaning and not a bug that
+    // hides. `POOL_BUILD_LIMITS` is where that kind of coupling is recorded.
+    notBefore: 1200,
+    because:
+      'The archivist is the one strategy whose thesis is about what survives, and knowledgeHalfLife ' +
+      'and libraryDependence are measured over the run rather than at its end. Declaring at first ' +
+      'eligibility would truncate the archive at the moment it started being worth measuring — the ' +
+      'strategy would win its run and lose its experiment. So it is patient on purpose, and the ' +
+      'patience is a number: 1200 rounds, twice the current ascension floor of 600, which at one ' +
+      'submission per world tick is world-year 100. It is also the pool\'s probe for whether waiting ' +
+      'costs anything: if an archivist that waits a century still ascends as often as one that does ' +
+      'not, then eligibility does not lapse and the summit is a standing offer.',
+  },
   signatureActions: [
     GOD_ACTION.fundUniversity,
     GOD_ACTION.grantFoundingKnowledge,
@@ -480,12 +697,22 @@ const ARCHIVIST: StrategyDefinition = {
  */
 const PORTAL_RUSH: StrategyDefinition = {
   strategyId: 'portal-rush',
-  version: 1,
+  version: 2,
   hypothesis:
     'Whether reaching the portal early is worth the tempo it costs. It is the strategy the raid ' +
     'economy is supposed to reward, so it probes whether the multiverse is a strategic axis or a ' +
     'setting: if portal-rush is indistinguishable from permissive-breadth once raids land, then ' +
     'opening a portal early buys nothing and prestigeAdvantage is measuring a coin flip.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'A rush strategy takes the ending. Everything else about this bot is tempo — reach the portal ' +
+      'first, and push one cell while the portal is unreachable — and a racer that declined the ' +
+      'finish line would be measuring something other than the race. This is also the entry that ' +
+      'used to be the last line of the preference list below, where it could never be reached, and ' +
+      'the reason the whole field exists: it made portal-rush the only strategy that *looked* able ' +
+      'to win while being one of the seven that could not.',
+  },
   signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.declareAscension],
   preferences: ({ round }) => [
     { action: GOD_ACTION.openPortal, parameter: rotate(GOD_ACTION.openPortal, round) },
@@ -493,7 +720,6 @@ const PORTAL_RUSH: StrategyDefinition = {
     // the technique that would open more of it.
     { action: GOD_ACTION.encourageResearch, parameter: 0 },
     { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
-    { action: GOD_ACTION.declareAscension },
   ],
 };
 
@@ -508,13 +734,22 @@ const PORTAL_RUSH: StrategyDefinition = {
  */
 const WORSHIP_MAXIMIZER: StrategyDefinition = {
   strategyId: 'worship-maximizer',
-  version: 1,
+  version: 2,
   hypothesis:
     'Whether favor is a binding constraint. §8 prices the god\'s actions in favor and regenerates ' +
     'it from worship; this strategy spends on the things that should raise worship and holds ' +
     'favor otherwise, probing whether the economy binds. If worship-maximizer can afford no more ' +
     'actions per run than uniform-random-legal, the prices are not constraining anything and the ' +
     'favor economy is decoration.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'Path A gates on worship tier, and this is the strategy whose whole thesis is worship. It is ' +
+      'therefore the pool\'s sharpest single test of whether the ascension gate reads play at all: ' +
+      'if a bot that spends every round buying visibility becomes eligible no earlier than one that ' +
+      'never touches worship, the tier gate is being met by passive accrual and Path A is a clock ' +
+      'rather than an achievement. That reading only exists if it declares on the first round it can.',
+  },
   signatureActions: [GOD_ACTION.blessMage, GOD_ACTION.fundUniversity, GOD_ACTION.changeTradition],
   preferences: ({ observation, round }) => {
     const favor = channel(observation, FAVOR);
@@ -604,6 +839,15 @@ export function botStrategyRegistry(
           'because a tournament between strategies nobody can say the purpose of is decorative.',
       );
     }
+    const stance = stanceProblem(definition.ascension);
+    if (stance !== undefined) {
+      throw new Error(
+        `Strategy ${definition.strategyId} ${stance}. When a strategy would declare ascension is ` +
+          'the difference between a pool that can win and a pool that measures preference-list ' +
+          'ordering, and it was the second for a whole release. "never" is an answer; silence is ' +
+          'not one.',
+      );
+    }
     if (byId.has(definition.strategyId)) {
       throw new Error(`Duplicate strategy id ${definition.strategyId} in the registry.`);
     }
@@ -632,6 +876,12 @@ export const BOT_POOL_REGISTRY: BotStrategyRegistry = botStrategyRegistry(BOT_PO
  * task 5.6: walk the preference list, submit the first entry the mask permits,
  * and fall back to `noop`.
  *
+ * The list it walks is {@link effectivePreferences} — what the strategy asked
+ * for, with its declared ascension stance composed in. That is a change to
+ * *what is in the list* and not to how the list is read: the loop below is the
+ * loop that was here before, and `strategy-pool.test.ts` and
+ * `ascension-stance.test.ts` both assert it against the effective list.
+ *
  * **The mask is the only filter applied.** A slot index past the end of a
  * shorter-than-*k* candidate list is still submitted, and §4.4 makes that an
  * ordinary illegal action — a no-op and a counter increment. Filtering it here
@@ -644,7 +894,7 @@ export const BOT_POOL_REGISTRY: BotStrategyRegistry = botStrategyRegistry(BOT_PO
 export function policyFor(definition: StrategyDefinition, context: StrategyContext): SlotPolicy {
   let round = 0;
   return (observation: Float64Array, mask: Uint8Array): ActionSubmission => {
-    const preferences = definition.preferences({ observation, mask, round, context });
+    const preferences = effectivePreferences(definition, { observation, mask, round, context });
     round += 1;
     for (const preference of preferences) {
       if (isLegal(mask, preference.action)) return preference;
@@ -755,26 +1005,43 @@ export function poolDegeneracy(
  * is worse than none, because it excuses a real flat result.
  */
 export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze({
-  'every-god-action':
-    'No system in rules-magic, rules-world, rules-raid or coordination reads ctx.actions in this ' +
-    'build. sim-core hands the admitted actions to the systems and the systems ignore them, so ' +
-    'every god action 1–15 is admitted, counted as a submission, and then has no effect. Until ' +
-    'god-agency (0.7.0) lands, EVERY strategy in the pool is effect-degenerate: it submits ' +
-    'different actions from its neighbours and produces the same world. A pairwise matrix taken ' +
-    'now measures the harness, not the game.',
   'open-portal':
-    'Action 14 has no candidates in a single-universe run — candidates.ts derives them from a ' +
-    'caller-supplied portalTargets list, and contracts.md §1.1 puts exactly one universe in a ' +
-    'simulation instance. It is therefore permanently MASKED, not merely inert, which makes ' +
-    'portal-rush the one strategy that is masked-degenerate and detectable as such by ' +
-    'degeneracyOf. Raids land in 0.9.0.',
-  worship:
-    'The resources block carries favor, worship and worshipTier because §4.1 and the state schema ' +
-    'define them, but nothing in this build moves them: the worship loop is §8, i.e. god-agency. ' +
-    'worship-maximizer therefore reads two channels that are constant for the whole run and takes ' +
-    'the same branch every round.',
-  'ascension-eligibility':
-    'declareAscension is masked only by "this run is already over" — mask.ts says so, and says ' +
-    'that the eligibility rule itself belongs to god-agency (vision §8a). So the action is legal ' +
-    'from tick zero and does nothing, which is why no strategy in the pool prefers it first.',
+    'Action 14 is implemented and unreachable, which are different things and both are true. ' +
+    'coordination/src/god/interventions.ts has a portalPlan that finds a living mage holding a ' +
+    'portal-primitive node and enters engagement. But candidates.ts derives action 14\'s slot list ' +
+    'from a caller-supplied portalTargets, contracts.md §1.1 puts exactly one universe in a ' +
+    'simulation instance, and the reference scenario supplies no targets — so the list is empty and ' +
+    'the mask clears the action every tick. It is therefore permanently MASKED rather than inert, ' +
+    'which makes portal-rush the one strategy whose defining action degeneracyOf reports as ' +
+    'unreachable. Raids, and a second universe to point a portal at, land in 0.9.0.',
+  'ascension-is-passive':
+    'declareAscension is now gated: mask.ts clears it unless the god-state row\'s ascensionPath has ' +
+    'left ASCENSION_PATH.none, and the outcome system recomputes that every world tick so it can ' +
+    'lapse. What is *not* yet true is that eligibility measures play. Path A gates on world tick ' +
+    '>= ascension-min-tick (600) and worship tier >= ascension-tier-gate (4), and worship accrues ' +
+    'from mages, universities and populace whether or not the god acts — so the path opens by ' +
+    'passive accumulation around tick 700 in the reference universe, at the same 51 nodes known ' +
+    'that passive-control reaches doing nothing. Measured: at 2400 ticks the pool\'s winners ' +
+    'declare within a few dozen ticks of each other regardless of what they did beforehand. Until ' +
+    'the gate depends on something the god\'s play moves, a strategy\'s ascension timing is ' +
+    'evidence about the clock and not about the strategy. That is what W2 of the ascension-meta ' +
+    'campaign exists to change; delete this entry when it does.',
+  'axis-parameter-base':
+    'Actions 1–4 take their parameter straight through — agent-api\'s gate passes 0–7 and 15 ' +
+    'unresolved, because a technique bit is not an entity handle — and coordination\'s axisPlan ' +
+    'requires an axis id in 1..GRID_TECHNIQUE_COUNT or 1..GRID_FORM_COUNT. The rotations below are ' +
+    '0-based (round % 5, round % 14), so every fifth permitTechnique and every fourteenth ' +
+    'permitForm names axis 0 and is refused by the dispatch, and the highest axis of each kind is ' +
+    'never named at all. The refusal is silent from here: the mask says the action is legal, the ' +
+    'gate admits it, and only the intervention system turns it away, so it does not appear in ' +
+    'illegalActionRate. The strategies are left as they are for now because changing them is a ' +
+    'change to what the pool plays, and the ascension-stance work is deliberately the only change ' +
+    'to the pool in this campaign — but nothing measured with permissive-breadth or narrow-depth ' +
+    'should be read as "a god that permits an axis", because four fifths of the time it is.',
+  'starting-position-is-broke':
+    'The reference scenario seeds zero favor, zero worship and zero prestige, and mask.ts clears ' +
+    'every action the god cannot pay for. So a strategy is a passive control for as long as favor ' +
+    'regeneration takes to reach the cheapest thing it wants, and the free actions — ascension is ' +
+    'priced at zero — are reachable first. A pool difference that appears only late in a long run ' +
+    'is this, not a strategy that changed its mind.',
 });
