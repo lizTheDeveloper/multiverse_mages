@@ -1985,3 +1985,69 @@ In fairness the prototypes are honestly labelled and §11's rationale is about *
 than feel. But the machine signal it defers to is currently measuring a disconnected pipeline, so
 there was no rival signal in the room. Recorded because it is exactly the failure mode §11 predicted,
 arriving by a route §11 did not.
+
+---
+
+## The regime failure is a V8 TurboFan miscompilation, not our code
+
+W28's four magic regimes measured well and `npm run test` failed with
+`No implementation for "acquire" kind "true-name"` — for a kind that is implemented. I hypothesised
+cross-contaminated content interning under a shared vitest worker. **That was wrong, and the
+refutation is the model to copy:** a contaminated intern table would throw `hooksOf`'s *"No loaded
+tradition has id N"*, not `unimplementedKind`. The throw site is a two-case `switch` on a plain
+string with no table lookup anywhere on the path. A hypothesis that predicts the wrong error is
+refuted whatever else is true.
+
+### The evidence
+
+A **cold-path** probe in the `default:` arm — cold precisely so it cannot perturb timing the way
+per-call logging did, which is what made the bug vanish for the previous agent:
+
+    seen "true-name", typeof "string", length 9,
+    codePoints [116,114,117,101,45,110,97,109,101], ctor "String",
+    seenIsTrueName TRUE, rereadSameAsSeen TRUE,
+    coldSwitchOnSeen "true-name", coldSwitchOnReread "true-name"
+
+**The operand compares `===` equal to a case literal, and an identical switch in a cold function
+dispatches it correctly, while the hot switch takes `default`.** Source hex-dumped (plain ASCII,
+hyphen `0x2d`); esbuild's transform dumped (a plain string switch). Both eliminated.
+
+| configuration | result |
+|---|---|
+| Node 22, CI ubuntu x64 (our `.nvmrc` pin) | **FAIL**, 6 of 6 runs |
+| **Node 24, the "Next Node major" job, same commit** | **PASS** — 275 files, 3,904 tests, *and* all three balance gates and the goldens |
+| base branch, Node 22 | PASS |
+| Node 22 local, `--no-turbofan` | PASS |
+| Node 22 local, `--no-maglev` | FAIL |
+
+TurboFan is necessary and sufficient; Maglev is not involved.
+
+### Why W28 triggers a bug it did not cause
+
+W28 changes **no code on that path**. It changes the *workload*: seven traditions instead of three
+widens the action space, and `researchCost` re-enters `applyAcquire` per candidate node per mage per
+tick — **~33 million calls per run**. That volume tiers the site up into TurboFan. The hot path is a
+real separate defect, already flagged; it is what makes the engine bug *reachable*, not its cause.
+
+### The fix, and its blocking dependency
+
+**Move the Node pin to 24** — `.nvmrc`, `package.json` `engines`, and bump the non-blocking job to 26.
+The evidence is direct rather than inferred: that job is already green end-to-end on the failing
+commit.
+
+**Node 24 must be installed on `cto-tycoon-hel1` first.** `scripts/ci-check.sh:30-33` compares the
+runner's Node major against `.nvmrc` and `FATAL`s on a mismatch — deliberately, with the comment *"fix
+the runner image rather than relaxing this check"*. Flip the pin before the runner has 24 and
+`ci/hetzner-lint` goes red on **every branch**.
+
+### Why no source workaround was applied, which was the right call
+
+No rewrite of that switch is *provably* correct; `store.ts`, `cast.ts` and `cost.ts` carry the
+identical pattern, so a local fix relocates the exposure rather than removing it; and validating one
+empirically is epistemically adjacent to retrying until green — the exact thing this campaign's rules
+forbid. A standalone upstream reproducer was attempted and failed, because the isolating loop was
+optimised away.
+
+**Methodological note worth keeping:** every passing configuration in the tier matrix also runs 3–4×
+slower, which is the same perturbation class as the instrumentation that hid the bug. That is why the
+**Node 24 CI run** is the load-bearing evidence — it is full-speed and fully optimised, and it passes.
