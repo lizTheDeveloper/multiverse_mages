@@ -271,7 +271,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
   box-shadow:none
 }
 .cell[data-locked="1"]{cursor:not-allowed;border-style:dashed}
-.cell[data-locked="1"]::after{content:" \\1F512";font-size:8px}
+.cell[data-locked="1"]::after{content:" \2022";font-size:11px;line-height:0}
 .cell:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
 .cell:not(:disabled):hover{border-color:var(--god-lit)}
 
@@ -343,7 +343,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .legend{background:#0B0F10;border-top:1px solid var(--rule);padding:.55rem .7rem;display:grid;
   grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:.3rem .8rem}
 .lg{display:flex;align-items:center;gap:.4rem;font:9.5px var(--mono);color:#8A9799;letter-spacing:.04em}
-.lg span.k{width:16px;height:16px;flex:none;border-radius:2px;background:#11181A;position:relative}
+.lg svg.k{width:20px;height:20px;flex:none}
 .lg b{color:#C6D2D3;font-weight:500}
 
 /* ---- the log ---- */
@@ -361,7 +361,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .log tr[data-kind="evaded"] td.r{color:var(--brass)}
 .log tr[data-kind="steal"] td.r{color:var(--mentem)}
 .log .side-a{color:var(--raider)} .log .side-d{color:var(--host)}
-.log .empty{padding:.9rem .6rem;font:10px var(--mono);color:var(--faint)}
+.log .empty{padding:.9rem .6rem;font:10px var(--mono);color:var(--faint);white-space:normal;line-height:1.6}
 
 .expolist{max-height:12rem;overflow-y:auto;display:flex;flex-direction:column;gap:.16rem}
 .ex{display:grid;grid-template-columns:1fr auto;gap:.4rem;font:10px var(--mono);color:var(--soft);
@@ -522,8 +522,8 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
         <button class="btn spd" data-spd="4" type="button">4×</button>
         <button class="btn spd" data-spd="12" type="button">12×</button>
         <span class="lab" style="margin-left:.4rem">Damage</span>
-        <button class="btn dmg" data-dmg="1" type="button" title="the authored magnitudes, unscaled">×1</button>
-        <button class="btn dmg" data-dmg="24" type="button" title="a viewing multiplier — not content">×24</button>
+        <button class="btn dmg" data-dmg="1" type="button" title="the authored magnitudes, unscaled — the default">×1 authored</button>
+        <button class="btn dmg" data-dmg="24" type="button" title="a viewing multiplier on node-driven damage — not content">×24</button>
       </div>
       <div class="legend" id="legend"></div>
     </section>
@@ -587,12 +587,14 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
           <li><b>Mage rosters and their held nodes</b> — drawn from the seed. There is no world state
             behind them.</li>
           <li>Objective instance counts, and therefore objective values.</li>
-          <li>The <b>damage multiplier</b>, defaulting to ×24 and applied to both
-            <code>direct-damage</code> and <code>area-denial</code> magnitudes and to neither
-            intrinsic damage. Set it to ×1 to see the authored magnitudes; finding 1 below is why
-            the default is not ×1.</li>
+          <li>The <b>damage multiplier</b>. It defaults to <b>×1 — the authored magnitudes</b>;
+            ×24 is a viewing multiplier on <code>direct-damage</code> and <code>area-denial</code>
+            only, there to show what a world where spells decide fights would look like.</li>
           <li>Line of sight is <b>sampled</b> along the segment, not walked with
-            <code>geometry.ts</code>'s supercover trace.</li>
+            <code>geometry.ts</code>'s supercover trace, and the endpoints' own cells are excluded
+            from it — see finding 4.</li>
+          <li>Movement follows a <b>breadth-first flow field</b> over the 400 terrain cells,
+            standing in for <code>navigation.ts</code>, which this page cannot import.</li>
         </ul>
       </div>
       <div>
@@ -613,46 +615,58 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
       </div>
     </div>
     <div class="findings">
-      <h3>Four things this prototype found, which is what a prototype is for</h3>
+      <h3>Five things this prototype found, which is what a prototype is for</h3>
       <ol>
         <li><b><code>direct-damage</code> is the one engagement primitive the authored magnitudes
-          leave inert.</b> Measured over eight seeds at the authored magnitudes — the ×1 setting
-          above — of every hit point removed in a raid: <b>area-denial 52.8%</b>, <b>summoned
-          servants and soldier detachments 45.3%</b>, and <b><code>direct-damage</code> 1.8%</b>.
-          The arithmetic is visible inside a single node. <code>pm-the-empty-room</code>, tier 5,
-          the deepest working in the v1 rectangle, carries <code>direct-damage: 768</code> —
+          leave inert.</b> Measured over twenty seeds at the authored magnitudes — the ×1 default —
+          of every hit point removed in a raid: <b>area-denial 49.7%</b>, <b>summoned servants and
+          soldier detachments 48.4%</b>, and <b><code>direct-damage</code> 1.9%</b>. The arithmetic
+          is visible inside a single node. <code>pm-the-empty-room</code>, tier 5, the deepest
+          working in the v1 rectangle, carries <code>direct-damage: 768</code> —
           <code>fp(0.75)</code> against a mage's <code>fp(64)</code> of hit points — and
-          <code>area-denial: 192</code> for 40 ticks, which is <code>fp(7.5)</code>: the same node's
-          field does ten times its own bolt. Meanwhile <code>summon-damage</code> is
+          <code>area-denial: 192</code> for 40 ticks, which is <code>fp(7.5)</code>: the same
+          node's field does ten times its own bolt. Meanwhile <code>summon-damage</code> is
           <code>fp(2)</code> <em>per tick</em>. A per-cast primitive is competing with per-tick ones
           and losing by two orders of magnitude. Every node is <code>tuningStatus: untuned</code>,
           so this is a gap waiting on the balance harness rather than a bug — but it is exactly the
           gap <code>winRateByPrimitive</code> exists to catch, and it is catchable now.</li>
         <li><b>Every damaging node in the v1 rectangle is Perdo. All fourteen of them.</b> Which
           makes raid-engagement.md §1's sharpest case sharper than it says, and different in kind:
-          forbidding Perdo mid-raid does not quiet the field, it changes what magic <em>is</em>.
-          Forbid all four Perdo cells at tick 340 and, measured over the same eight seeds, the share
-          of damage done by summons and soldiers goes from <b>14.6% to 47.8%</b> while total cast
-          volume goes <em>up</em> — because mages fall back to the cheaper Rego workings they can
-          still afford, and the field fills with wards, blinks and called servants.
-          <code>forbiddenCastsBlocked</code> comes off zero within a few ticks, from your own
-          defenders. You have not stopped the war. You have traded a war of unmaking for a war of
+          forbidding Perdo mid-raid does not quiet the field, it changes what the war is made of.
+          Forbid all four Perdo cells and, over the same twenty seeds, the share of damage done by
+          summons and soldiers goes from <b>48.4% to 87.2%</b> while cast volume barely moves —
+          119 casts a raid becomes 103, because mages fall back to the Rego workings they can still
+          use and the field fills with wards, blinks and called servants instead.
+          <code>forbiddenCastsBlocked</code> comes off zero immediately and reaches about
+          <b>58 a raid</b>, every one of them your own defender reaching for something you took
+          away. You have not stopped the war; you have traded a war of unmaking for a war of
           summoned servants, and you cannot trade back. Try it: forbid the whole Perdo row and
-          watch the tally.</li>
+          watch the ledger.</li>
+        <li><b>The portal timer, which sound-design §7.2 calls the most important information in a
+          raid, currently decides nothing.</b> Median contact lasts <b>162 engagement ticks</b>
+          against a portal authored to stand for <b>3,000</b>. Across twenty seeds not one raid
+          reached <code>withdraw-stability-margin</code>, so the stranded-raider rule — the number
+          most likely to need softening, by its own gloss — never fired once. Either combatants are
+          far too fragile for the portal's lifetime or the portal is authored for a much longer
+          engagement than the rest of the constants produce, and those are different fixes.</li>
+        <li><b>The authored terrain is harsher about sight than about ground, and both bite.</b>
+          <code>terrain-blocking-chance</code> is <code>fp(154)</code> on top of an 8% impassable
+          roll, so a sight-blocker sits in about a fifth of the 400 cells and a <code>fp(50)</code>
+          cast crosses enough of them that most long shots have no line: closing is the dominant
+          move, and that falls out of the constants rather than out of any policy here. Two
+          consequences bit this page hard enough to be worth passing on. <b>A supercover trace must
+          exclude the endpoints' own cells</b>, or two enemies who walk into the same wood cannot
+          see each other, neither can cast, and both stand there until the portal shuts — which is
+          precisely what happened here, in four seeds out of sixteen, and looked exactly like a
+          pathfinding bug. And <b>8% impassable is enough to make concave pockets</b>: a greedy step
+          oscillates in front of one for the rest of the raid, so this page ended up with a
+          breadth-first flow field. That is an argument for plugging <code>navigation.ts</code> in
+          rather than approximating it.</li>
         <li><b>Two content files disagree about the summon cap.</b>
           <code>primitive.json</code> caps <code>summon</code> at <code>count-per-side: 8</code>;
           <code>raid-constant.json</code>'s <code>max-summons-per-side</code> is <code>16</code>.
-          This page uses 16 as the alive-cap and 8 as the per-stack cap, which is one reading of two,
-          and nothing appears to enforce either against the other.</li>
-        <li><b>The authored terrain makes most long casts blind, and leaves pockets nothing can
-          walk out of.</b> <code>terrain-blocking-chance</code> is <code>fp(154)</code> on top of an
-          8% impassable roll, so a sight-blocker sits in about a fifth of the 400 cells and a
-          <code>fp(50)</code> cast crosses enough of them that most long shots have no line.
-          Closing is therefore the dominant move — a property of the constants, not of any policy
-          on this page. The same 8% also produces pockets a greedy step cannot leave: before this
-          page grew an escape slide, combatants stood in them for the remaining three thousand
-          ticks. That is what <code>navigation.ts</code> is for, and it is a good argument for
-          plugging it in rather than reimplementing it.</li>
+          This page uses 16 as the alive-cap and 8 as the per-stack cap, which is one reading of
+          two, and nothing appears to enforce either against the other.</li>
       </ol>
     </div>
   </section>
@@ -875,11 +889,22 @@ function makeTerrain(seedText) {
   };
 }
 
-/* Sampled line of sight. geometry.ts walks a supercover; this samples. */
+/**
+ * Sampled line of sight. `geometry.ts` walks a supercover; this samples, and
+ * says so on the page.
+ *
+ * The endpoints' own cells are excluded, which is not a shortcut — a
+ * sight-blocking cell is *cover*, and cover you are standing in must not blind
+ * you to the combatant standing beside you in it. Including them deadlocks two
+ * enemies who have walked into the same wood: neither can see the other,
+ * neither can cast, and both stand there for three thousand ticks.
+ */
 function hasLineOfSight(terrain, a, b) {
-  const steps = 24;
+  const from = cellIndex(a), to = cellIndex(b), steps = 24;
   for (let i = 1; i < steps; i++) {
     const x = a.x + floorDiv((b.x - a.x) * i, steps), y = a.y + floorDiv((b.y - a.y) * i, steps);
+    const cell = cellIndex({ x, y });
+    if (cell === from || cell === to) continue;
     if (terrain.atPoint(x, y).blocks) return false;
   }
   return true;
@@ -978,7 +1003,7 @@ function buildRaid(seedText, damageMultiplier) {
     tick: 0, phase: 'muster', damage: damageMultiplier,
     favor: A.favorStart, vis: A.visStart, exposure: new Map(),
     forbiddenCastsBlocked: 0, casts: 0, refusals: 0, evades: 0, thefts: 0,
-    fx: [], fields: [], log: [], summonsAlive: { a: 0, d: 0 },
+    fx: [], fields: [], log: [], summonsAlive: { a: 0, d: 0 }, flow: new Map(),
     ended: null, spent: new Set(), takenValue: 0,
     totalValue: objectives.reduce((s, o) => s + o.value, 0),
     rngs: { combat: streamOf(seedText, 'combat'), theft: streamOf(seedText, 'theft'), move: streamOf(seedText, 'move') },
@@ -1036,7 +1061,17 @@ function step(S) {
   }
 
   S.stability -= K.stabilityDecay;
-  if (S.phase === 'contact' && S.stability <= K.withdrawMargin) S.phase = 'resolution';
+  /* Resolution begins when the outcome is set. The portal reason is authored —
+     withdraw-stability-margin is the tick from which a raider scores withdrawal
+     above everything else, so from there the raid is over in every sense but
+     the arithmetic. The strength reason is authored HERE, because the authored
+     intrinsic damage decides most raids long before the portal does (finding 5),
+     and without it the third phase would almost never be reached. */
+  if (S.phase === 'contact') {
+    const a = S.combatants.filter(c => c.alive && !c.withdrawn && c.side === 'a').length;
+    const d = S.combatants.filter(c => c.alive && c.side === 'd').length;
+    if (S.stability <= K.withdrawMargin || a <= 2 || d <= 2) S.phase = 'resolution';
+  }
 
   const living = S.combatants.filter(c => c.alive && !c.withdrawn);
   for (const c of living) { c.prev = { ...c.pos }; const d = passiveDefences(c, S.permitted); c.ward = d.ward; c.concealment = d.concealment; }
@@ -1106,6 +1141,11 @@ function step(S) {
            rule, and without one an objective simply cannot be defended. */
         const held = S.combatants.filter(t => t.alive && !t.withdrawn && t.side === 'd' && inRange(t.pos, obj.pos, K.objectiveRadius)).length;
         if (held === 0) obj.progress += K.objectiveProgress;
+        /* Standing on a contested objective with no line of sight is a
+           stalemate that lasts the rest of the raid — the first version of this
+           page did exactly that. If she cannot work and cannot shoot, she goes
+           to find whoever is holding it. */
+        else if (!canShoot && target) moveToward(S, c, target.pos);
         if (obj.progress >= K.FP && !obj.taken) {
           obj.taken = true; S.takenValue += obj.value;
           logRow(S, 'note', c, null, obj.label.toLowerCase() + ' taken', '+' + (obj.value / K.FP).toFixed(1) + ' val');
@@ -1285,34 +1325,86 @@ function applyCast(S, caster, target, nodeId) {
 
 const clampField = (v) => Math.max(0, Math.min(K.extent, v));
 
+const NEIGHBOURS = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+const cellIndex = (p) => {
+  const n = K.cellsPerSide;
+  return Math.min(n - 1, Math.max(0, floorDiv(p.y, K.cellSize))) * n
+       + Math.min(n - 1, Math.max(0, floorDiv(p.x, K.cellSize)));
+};
+
 /**
- * A greedy step with an escape slide. `rules-raid` has a whole `navigation.ts`;
- * this has none, so a combatant in a pocket of impassable rock would otherwise
- * stand there for the rest of the raid — which is exactly what happened before
- * the slide was added, and is worth knowing about the authored 8% impassable
- * chance: at that density the field has pockets.
+ * A breadth-first distance field over the 400 terrain cells, memoised per goal
+ * cell for the raid's duration because terrain is fixed once generated.
+ *
+ * `rules-raid` has a whole `navigation.ts` and this page cannot import it, so
+ * something had to stand in. A greedy step was tried first and is not adequate:
+ * at the authored 8% impassable chance the field has concave pockets, and a
+ * combatant that walks into one oscillates in front of the wall for the
+ * remaining three thousand ticks. That is finding 4, and this is the cheapest
+ * honest answer to it — 400 cells is nothing, and it is memoised anyway.
  */
-function moveToward(S, c, to) {
-  const dx = to.x - c.pos.x, dy = to.y - c.pos.y;
-  const dist = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
-  const cost = S.terrain.atPoint(c.pos.x, c.pos.y).moveCost;
-  const stepLen = Math.min(floorDiv(K.movePerTick * cost, K.FP), dist);
-  let nx = clampField(c.pos.x + floorDiv(dx * stepLen, dist));
-  let ny = clampField(c.pos.y + floorDiv(dy * stepLen, dist));
-  if (!S.terrain.atPoint(nx, ny).passable) {
-    if (S.terrain.atPoint(nx, c.pos.y).passable) { ny = c.pos.y; c.stuck = 0; }
-    else if (S.terrain.atPoint(c.pos.x, ny).passable) { nx = c.pos.x; c.stuck = 0; }
-    else {
-      // both axes blocked: step perpendicular, flipping the hand every 16 ticks
-      c.stuck = (c.stuck || 0) + 1;
-      const sign = Math.floor(c.stuck / 16) % 2 === 0 ? 1 : -1;
-      const sx = clampField(c.pos.x + floorDiv(-dy * stepLen * sign, dist));
-      const sy = clampField(c.pos.y + floorDiv(dx * stepLen * sign, dist));
-      if (S.terrain.atPoint(sx, sy).passable) { nx = sx; ny = sy; }
-      else { nx = c.pos.x; ny = c.pos.y; }
+function flowField(S, goal) {
+  const n = K.cellsPerSide, key = cellIndex(goal);
+  const cached = S.flow.get(key);
+  if (cached) return cached;
+  const dist = new Int32Array(n * n).fill(-1);
+  const queue = [key];
+  dist[key] = 0;
+  for (let head = 0; head < queue.length; head++) {
+    const cur = queue[head], cx = cur % n, cy = (cur - cx) / n;
+    /* Eight-connected, because movement is. A four-connected field disconnects
+       regions that a combatant can in fact walk between diagonally, and an
+       unreachable goal is a combatant that never moves again. */
+    for (let i = 0; i < NEIGHBOURS.length; i++) {
+      const nx = cx + NEIGHBOURS[i][0], ny = cy + NEIGHBOURS[i][1];
+      if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+      const ni = ny * n + nx;
+      if (dist[ni] !== -1 || !S.terrain.at(nx, ny).passable) continue;
+      dist[ni] = dist[cur] + 1;
+      queue.push(ni);
     }
-  } else c.stuck = 0;
-  c.pos = { x: nx, y: ny };
+  }
+  if (S.flow.size > 512) S.flow.clear();   // bounded, like everything else here
+  S.flow.set(key, dist);
+  return dist;
+}
+
+/** One tick of movement: downhill on the flow field, then straight in-cell. */
+function moveToward(S, c, to) {
+  const n = K.cellsPerSide;
+  const here = cellIndex(c.pos), goal = cellIndex(to);
+  let aim = to;
+  if (here !== goal) {
+    const dist = flowField(S, to);
+    const cx = here % n, cy = (here - cx) / n;
+    let best = dist[here] === -1 ? Infinity : dist[here], bestCell = -1;
+    for (const [dx, dy] of NEIGHBOURS) {
+      const nx = cx + dx, ny = cy + dy;
+      if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+      if (!S.terrain.at(nx, ny).passable) continue;
+      const d = dist[ny * n + nx];
+      if (d !== -1 && d < best) { best = d; bestCell = ny * n + nx; }
+    }
+    if (bestCell >= 0) {
+      const bx = bestCell % n, by = (bestCell - bx) / n, half = floorDiv(K.cellSize, 2);
+      aim = { x: bx * K.cellSize + half, y: by * K.cellSize + half };
+    }
+  }
+  const dx = aim.x - c.pos.x, dy = aim.y - c.pos.y;
+  const span = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
+  const cost = S.terrain.atPoint(c.pos.x, c.pos.y).moveCost;
+  const stepLen = Math.min(floorDiv(K.movePerTick * cost, K.FP), span);
+  const ex = floorDiv(dx * stepLen, span), ey = floorDiv(dy * stepLen, span);
+  /* The flow field decides the direction; these fallbacks only matter when the
+     goal is unreachable at cell resolution, and they must actually displace —
+     an earlier version accepted a slide that resolved to the combatant's own
+     square, which deadlocks silently and reads as a pathfinding bug. */
+  for (const [mx, my] of [[ex, ey], [ex, 0], [0, ey], [-ey, ex], [ey, -ex]]) {
+    const nx = clampField(c.pos.x + mx), ny = clampField(c.pos.y + my);
+    if ((nx === c.pos.x && ny === c.pos.y) || !S.terrain.atPoint(nx, ny).passable) continue;
+    c.pos = { x: nx, y: ny };
+    return;
+  }
 }
 
 /** Nudges a deployment point onto passable ground, spiralling outward. */
@@ -1557,7 +1649,7 @@ function hexA(hex, alpha) {
    6. THE INTERFACE.
    ========================================================================== */
 const el = (id) => document.getElementById(id);
-let S = null, running = true, speed = 4, damage = 24, acc = 0, last = 0, logDrawn = 0;
+let S = null, running = true, speed = 1, damage = 1, acc = 0, last = 0, logDrawn = 0;
 
 /* --- the constitution: twelve switches, forbidding is defender-only --- */
 function buildConstitution() {
@@ -1575,7 +1667,6 @@ function buildConstitution() {
       const id = t + '-' + f;
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'cell'; b.dataset.cell = id;
-      b.textContent = f.slice(0, 3);
       b.addEventListener('click', () => toggleCell(id));
       row.append(b);
     }
@@ -1591,9 +1682,14 @@ function toggleCell(id) {
 }
 function paintConstitution() {
   for (const b of document.querySelectorAll('.cell')) {
-    const id = b.dataset.cell;
-    b.dataset.state = S.permitted.has(id) ? 'permitted' : 'forbidden';
+    const id = b.dataset.cell, open = S.permitted.has(id);
+    b.dataset.state = open ? 'permitted' : 'forbidden';
     b.dataset.locked = S.locked.has(id) ? '1' : '0';
+    /* the label carries the state in words, so the grid is not colour alone —
+       and the column header already says which form, so repeating it here was
+       twelve cells of nothing */
+    b.textContent = open ? 'open' : 'shut';
+    b.setAttribute('aria-pressed', String(open));
     b.disabled = S.locked.has(id) || S.phase === 'resolution' || !!S.ended;
     b.title = S.locked.has(id)
       ? id + ' — locked until the raid ends. Reverting afterwards costs substantially more favor.'
@@ -1758,19 +1854,34 @@ function paintChrome() {
 
 /* --- legend, once --- */
 function buildLegend() {
+  /* The glyphs are drawn in a neutral canvas ink rather than a form hue, because
+     a coloured glyph beside a primitive name would imply a primitive-to-form
+     mapping that does not exist. The last row is the one that carries hue. */
+  const G = (inner) => '<svg class="k" viewBox="0 0 22 22" aria-hidden="true">' + inner + '</svg>';
+  const ink = 'stroke="#93A2A4" fill="none" stroke-width="1.4"';
   const items = [
-    ['direct-damage', 'a bolt in the node’s form hue, then an impact ring'],
-    ['ward', 'a shell that flares white where it absorbed'],
-    ['area-denial', 'a fp(12) disc with a depleting duration arc'],
-    ['blink', 'dashed after-images along the displacement'],
-    ['summon', 'a burst that settles into small marks'],
-    ['concealment', 'dashed outline; an evaded bolt is struck out'],
-    ['knowledge-steal', 'a beaded filament; a glyph returns on success'],
-    ['exposure', 'a mote of their magic drifting to your edge'],
+    ['direct-damage', 'a bolt in the node’s form hue, then an impact ring',
+      G('<path d="M2 19 L14 8" ' + ink + '/><circle cx="16" cy="6" r="4" ' + ink + '/>')],
+    ['ward', 'a shell that flares white where it absorbed',
+      G('<circle cx="11" cy="11" r="7" ' + ink + '/><path d="M4 8 A8 8 0 0 1 18 8" ' + ink + ' opacity=".55"/>')],
+    ['area-denial', 'a fp(12) disc with a depleting duration arc',
+      G('<circle cx="11" cy="11" r="8" ' + ink + ' stroke-dasharray="2 3"/><path d="M11 3 A8 8 0 0 1 18 14" ' + ink + ' stroke-width="2.2"/>')],
+    ['blink', 'dashed after-images along the displacement',
+      G('<circle cx="4" cy="16" r="2.5" ' + ink + ' opacity=".3"/><circle cx="11" cy="11" r="3" ' + ink + ' opacity=".6"/><circle cx="18" cy="6" r="3.5" ' + ink + '/>')],
+    ['summon', 'a burst that settles into small marks',
+      G('<path d="M11 4 L17 15 L5 15 Z" ' + ink + '/><path d="M11 1 v2 M2 18 l2-2 M20 18 l-2-2" ' + ink + ' opacity=".6"/>')],
+    ['concealment', 'dashed outline; an evaded bolt is struck out',
+      G('<circle cx="11" cy="11" r="6.5" ' + ink + ' stroke-dasharray="2.5 2.5"/><path d="M5 17 L17 5" stroke="#C9A034" fill="none" stroke-width="1.4"/>')],
+    ['knowledge-steal', 'a beaded filament; a glyph returns on success',
+      G('<path d="M3 18 L19 5" ' + ink + ' stroke-dasharray="1.5 3"/><rect x="1" y="15" width="5" height="5" ' + ink + '/>')],
+    ['exposure', 'a mote of their magic drifting to your edge',
+      G('<circle cx="11" cy="17" r="2" fill="#93A2A4" stroke="none"/><circle cx="11" cy="11" r="1.4" fill="#93A2A4" opacity=".55" stroke="none"/><circle cx="11" cy="6" r="1" fill="#93A2A4" opacity=".3" stroke="none"/>')],
   ];
-  el('legend').innerHTML = items.map(([k, d]) =>
-    '<span class="lg"><span class="k"></span><span><b>' + k + '</b><br>' + d + '</span></span>').join('') +
-    '<span class="lg"><span class="k"></span><span><b>hue = form, never side</b><br>' +
+  el('legend').innerHTML = items.map(([k, d, g]) =>
+    '<span class="lg">' + g + '<span><b>' + k + '</b><br>' + d + '</span></span>').join('') +
+    '<span class="lg">' +
+    G(FORMS.map((f, i) => '<rect x="' + (1 + i * 5.2) + '" y="4" width="4" height="14" fill="' + HUE[f] + '" stroke="none"/>').join('')) +
+    '<span><b>hue = form, never side</b><br>' +
     'the host’s ruleset governs both sides, so you cannot tell whose spell it is by its colour</span></span>';
 }
 
@@ -1823,8 +1934,8 @@ for (const b of document.querySelectorAll('.dmg')) b.addEventListener('click', (
   for (const o of document.querySelectorAll('.dmg')) o.setAttribute('aria-pressed', String(Number(o.dataset.dmg) === damage));
   if (S) S.damage = damage;
 });
-document.querySelector('.spd[data-spd="4"]').setAttribute('aria-pressed', 'true');
-document.querySelector('.dmg[data-dmg="24"]').setAttribute('aria-pressed', 'true');
+document.querySelector('.spd[data-spd="1"]').setAttribute('aria-pressed', 'true');
+document.querySelector('.dmg[data-dmg="1"]').setAttribute('aria-pressed', 'true');
 
 /* three-state theme, per the artifact rule: system, then explicit either way */
 const THEMES = ['system', 'light', 'dark'];

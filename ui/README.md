@@ -12,7 +12,7 @@ whether knowledge loss lands off the beat before 520 assets were generated again
 | [`glow/`](glow/) | Cyan is the god's own light and the form hues stay the world's. Does that rule survive a vellum ground, or does light force the client dark? |
 | [`targets/`](targets/) | Six actions carry an entity handle. How does a person pick one mage out of thousands, and does §4.4's top-*k* candidate list serve a human as well as a policy network? |
 | [`tempo/`](tempo/) | What wall-clock pacing does a world tick get, and which events are allowed to interrupt? One question, because speed decides what an event is. |
-| [`raid/`](raid/) | Every action is masked for the duration. What is a player actually *doing* while a raid runs, and what belongs beside the portal timer? |
+| [`raid/`](raid/) | The masking was the bug — `raid-engagement.md` §1 repeals it. Given verbs whose agency decays across three phases, can a player watch seven effect primitives resolve *and* still tell what the engine decided from what the page invented? |
 
 ## Running them
 
@@ -24,11 +24,19 @@ the script exists so nobody has to remember the flags.
 ## What they are allowed to do
 
 - **Load real content.** `ruleset/content.json` is generated from `packages/content/data`, so a
-  prototype is never arguing from invented numbers.
+  prototype is never arguing from invented numbers. `raid/` bakes its extract *inline* instead, so
+  that it opens from `file://` with nothing to fetch; the regeneration command and the content
+  commit are both in its source header, because inlined data drifts silently otherwise.
 - **Synthesise audio live.** Per `docs/design/sound-design.md` §0.8's synthesised tier, so a
   prototype runs from a static file with nothing to fetch.
 
 ## What they are not
+
+**They are not live against the simulation.** `raid/` is the sharpest case: it animates a
+synthetic trace generated in the page, because `packages/rules-raid` is imported by no package and
+there is nothing to be live against. `raid-engagement.md` §5 is why that is stated on the page
+itself rather than only here — *"a raid view that animates plausible-looking magic unconnected to
+what the engine decided is worse than no raid view, because it will be believed."*
 
 **They are not the client.** `electron-client` is proposal-only, and when it exists it must import
 the rules rather than restate them — `contracts.md` §5 puts `permits()` in exactly one place, and a
