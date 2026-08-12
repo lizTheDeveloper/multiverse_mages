@@ -1345,3 +1345,65 @@ A **consumption** check to sit beside the coverage check, in `verify`, failing l
 Getting this wrong in the lenient direction gives a green check and no information, which is worse
 than no check. The output should print the consumer for each primitive on success, for the same
 reason the coverage check prints node counts — so a reviewer watches the number shrink.
+
+---
+
+## W26, measured: 93.4% of what a universe knows cannot be taught, and every metric calls it healthy
+
+2400 ticks, seed `0x00090001`, zero god input. These are measurements, not arguments.
+
+- **2,028 of 2,172 held instances are marooned — 93.4%.** Mean teachable share across the run: 10.6%.
+- **28 of 51 nodes have no teachable copy at all — 54.9%**, across 1,106 held copies.
+- At that same instant: `fragileNodeIds` **0**, `singleLocationNodeIds` **0**, minimum redundancy **4**.
+
+**Every committed metric calls that healthy.** This is the *fifth* instance in this campaign of a
+measurement structurally incapable of reporting the thing it appears to report — after
+`libraryDependence` pinned at 0, `capitalSnowball`'s byte-identical checkpoints,
+`referenceLibraryDepth` at 1.00, and `check:coverage`. It is also the most consequential, because the
+redundancy metrics are what **D5** rests on. Four copies of a node that no living mind can transmit
+is not redundancy 4. **D5 as written may be measuring the wrong quantity**, and that has to be settled
+before any post-wire result is read against it.
+
+### It refutes a claim made earlier in this campaign, and the refutation is the interesting part
+
+The working assumption — mine — was that untransmittable nodes were *already effectively dead*, so
+marooning merely described an existing state. **Falsified for 27 of the 28.** Zero of them never had
+a teachable copy; only one, `pm-the-empty-room` (tier 5), has gone 300+ ticks without one, at 1,790
+ticks. The frontier **oscillates between 4 and 45 nodes** while `nodesHeld` sits flat at 51.
+
+**Untransmittability is churn, not a ratchet** — research re-derives nodes back into teachability at
+full ordinary price. That is the whole mechanism, and it was invisible because the only instrument
+watching was a node count that never moves.
+
+Two consequences worth stating plainly:
+
+- **The durable cost concentrates at depth.** Tier 5 averages 1,019 ticks since a teachable copy;
+  tiers 1–4 average 62–121. **Marooning bites hardest exactly where §6's deep specialists live** —
+  which is where the design wants long-lived species to be worth their slowness. That is either the
+  mechanic working, or the mechanic eating the feature; it is not yet possible to say which, and
+  saying which requires the wire.
+- **1,250 instances were born unteachable**, because `transmittedMastery` is lossy: a teacher at
+  exactly the 512 threshold transmits `mul(512, 512) = 256`. Late in a wave, a lesson manufactures a
+  dead copy.
+
+And it retires an old suspicion: W13's *976 lessons for 0.0 nodes* was never a teaching defect —
+teaching adds no nodes by construction. What marooning destroys is teaching's **preservation** value.
+
+### Two defects reported and deliberately not fixed
+
+- `gateway.ts:441` quotes research at the **≥3× rediscovery price for every node the universe
+  holds**, because `wasEverKnown` is set on `createInstance`, while `research()` charges the ordinary
+  price for exactly those nodes. The two disagree, and the inflated quote is a drag on **the only
+  path that does any preservation at all**.
+- Every stolen instance is born permanently marooned — theft writes at `mastery: 0` — and the comment
+  justifying theft's balance depends on a study operation that does not exist.
+
+### Method worth keeping
+
+Inertness was **proved by snapshot hash**, not asserted: censused-every-tick and clean arms both end
+on `cb1c0efafbd7f66a` at 2400 ticks, with a vacuity guard so the test cannot pass by measuring
+nothing. `ticksToUnteachable` came out one higher than the derived table because `teach()` refuses on
+`mastery < threshold`, so 512 still teaches — caught because the measured maxima were checked against
+a hand-derived table rather than against themselves. Full `verify` green: 279 files, 3,925 tests, all
+three balance gates passing with **thirty metrics at delta 0.00000**, no golden and no baseline
+regenerated.
