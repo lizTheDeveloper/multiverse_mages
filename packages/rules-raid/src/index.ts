@@ -127,10 +127,19 @@ export type {
 } from './outcome.js';
 export { OutcomeLedger } from './outcome.js';
 
+export type { EngagementPhaseValue, PhaseInputs } from './phases.js';
+export {
+  ENGAGEMENT_PHASE,
+  ENGAGEMENT_PHASE_NAMES,
+  phaseAdmitsAction,
+  phaseOf,
+} from './phases.js';
+
 export type { OpenPortalOptions, Raid, RaidFaults, RaidParticipant } from './raid.js';
 export {
   CASTABLE_MASTERY,
   closePortal,
+  currentPhase,
   deploymentPosition,
   engagementTickOf,
   existingNodes,

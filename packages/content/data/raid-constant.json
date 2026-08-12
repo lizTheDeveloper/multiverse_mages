@@ -271,5 +271,19 @@
     "unit": "fp",
     "gloss": "How close to the portal's position a raider must stand to count as having withdrawn through it. fp(8) metres.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "muster-ceiling-ticks",
+    "value": 120,
+    "unit": "ticks",
+    "gloss": "Engagement tick at which the muster phase ends whether or not the two sides have met. The natural boundary is contact itself, and this is the guard on its degenerate case: sides that never close, or a raid whose objectives are all undefended, would otherwise sit in muster with the full verb set for the whole raid. At the shipped movement rate the bands close in about twenty ticks, so this rarely binds and is not meant to.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "resolution-stability-margin",
+    "value": 614400,
+    "unit": "raw",
+    "gloss": "Portal stability at or below which the engagement is in its resolution phase and the player has no verbs left. fp(600), so the last six hundred ticks of a two-to-three-thousand tick raid. Deliberately a separate constant from withdraw-stability-margin even though both are stability thresholds: one decides when a raider runs for the door, the other decides when the god stops being able to help, and tying them would make a balance change to either silently retune the other.",
+    "tuningStatus": "untuned"
   }
 ]

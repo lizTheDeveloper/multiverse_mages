@@ -97,6 +97,8 @@ import {
   takenObjectiveValue,
   totalObjectiveValue,
 } from './objectives.js';
+import type { EngagementPhaseValue } from './phases.js';
+import { phaseOf } from './phases.js';
 import { buildSpatialIndex } from './spatial.js';
 import { generateTerrain } from './terrain.js';
 import type { TerrainGrid } from './terrain.js';
@@ -154,6 +156,15 @@ export interface Raid {
   readonly portal: Point;
   /** Computable before the first tick, from `RaidState` alone. */
   readonly maxTicks: number;
+  /**
+   * The engagement tick contact was first observed on, or `-1` for never.
+   *
+   * The muster phase's boundary (`raid-engagement.md` §2), and the only thing
+   * this change adds to the tick loop. Written once, by the first ledgered
+   * damage or the first resolved cast — see `phases.ts` for why a detachment's
+   * intrinsic attack has to count.
+   */
+  contactTick: number;
   readonly faults: RaidFaults;
   outcome: RaidOutcome | undefined;
 }
@@ -259,6 +270,7 @@ export function openPortal(options: OpenPortalOptions): Raid {
     counters,
     portal: { x: floorDiv(tuning.battlefieldExtent, 2), y: 0 },
     maxTicks: maxEngagementTicks(engagement.raid),
+    contactTick: -1,
     faults: options.faults ?? {},
     outcome: undefined,
   };
@@ -379,6 +391,9 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
   const ledger = new Map<EntityHandle, Fixed>();
   const addDamage = (target: EntityHandle, amount: Fixed): void => {
     ledger.set(target, (ledger.get(target) ?? 0) + amount);
+    // Contact, observed at the one place every point of damage in the tick
+    // passes through — casts, denial fields, detachments and summons alike.
+    if (raid.contactTick < 0) raid.contactTick = tick;
   };
 
   // ---- Phase 3: area denial. Additive across fields; bypasses concealment. ----
@@ -733,6 +748,10 @@ function resolveOneCast(
   });
   if (!resolution.resolved) return;
 
+  // A cast that lands no damage — a ward, a summon, a blink — is still the
+  // moment the two sides are in the same fight.
+  if (raid.contactTick < 0) raid.contactTick = tick;
+
   caster.preparedSpells = resolution.preparedSpells;
   setField(raid, caster.handle, 'vigor', field(raid, caster.handle, 'vigor') - resolution.cost);
 
@@ -1031,6 +1050,24 @@ export function closePortal(raid: Raid): void {
  */
 export function engagementTickOf(raid: Raid): number {
   return raid.host.world.clock.engagementTick;
+}
+
+/**
+ * Which of `raid-engagement.md` §2's three phases this engagement is in.
+ *
+ * Derived on every call and stored nowhere — see `phases.ts`. It gates the
+ * player's verbs and nothing in the tick loop reads it, which is what lets the
+ * whole phase structure be added to a finished engine without moving a number.
+ */
+export function currentPhase(raid: Raid): EngagementPhaseValue {
+  return phaseOf({
+    engagementTick: engagementTickOf(raid),
+    contactTick: raid.contactTick,
+    portalStability: raid.engagement.raid.portalStability,
+    allObjectivesResolved: allObjectivesResolved(raid.objectives),
+    musterCeilingTicks: raid.tuning.musterCeilingTicks,
+    resolutionStabilityMargin: raid.tuning.resolutionStabilityMargin,
+  });
 }
 
 /** Every instance a mage holds, in the shape arbitration reads. */

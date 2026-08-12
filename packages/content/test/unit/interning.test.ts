@@ -229,7 +229,16 @@ describe('contentRevision', () => {
     // whose mages valued the same node differently would be developing
     // different magic while their revisions agreed they were compatible.
     // Nothing existing changed a byte.
-    expect(registry.contentRevision).toBe('d37624e36be00f59cf21b87ff6eba144');
+    //
+    // d37624e36be00f59cf21b87ff6eba144 -> ee25d5ea9d4e732cdff5c5314610c97e,
+    // when W37 added the two `raid-constant.json` magnitudes that decide where
+    // `raid-engagement.md` §2's phase boundaries fall — `muster-ceiling-ticks`
+    // and `resolution-stability-margin`. They are in the preimage for the
+    // reason every other raid magnitude is: two universes that disagreed about
+    // when the defender stops having verbs would be playing two different games
+    // while their revisions agreed they were compatible. Nothing existing
+    // changed a byte.
+    expect(registry.contentRevision).toBe('ee25d5ea9d4e732cdff5c5314610c97e');
   });
 
   it('is stable across loads of identical content', () => {

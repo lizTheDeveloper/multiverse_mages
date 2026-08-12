@@ -47,7 +47,7 @@ import {
   traditionTable,
 } from '@mm/rules-magic';
 import type { RaidParticipant, RaidTuning } from '@mm/rules-raid';
-import { readRaidTuning } from '@mm/rules-raid';
+import { deployRaid, openPortal, readRaidTuning } from '@mm/rules-raid';
 
 export const registry: ContentRegistry = loadContent(shippedContentSource());
 export const grid: MagicGrid = MagicGrid.from(registry);
@@ -240,3 +240,86 @@ export function cellNameOf(node: string): string {
 
 /** Handle type alias so fixtures read the same as the rules do. */
 export type FixtureHandle = Handle;
+
+/**
+ * Two universes and a portal between them, deployed and ready to step.
+ *
+ * Hoisted out of `raid-engine.test.ts`'s local `build` so that the phase, lock
+ * and verb suites fight over the same battlefield rather than three subtly
+ * different ones. The host is deliberately the richer side: a raid against a
+ * universe with nothing to take is a legitimate case, but a bad default,
+ * because every objective assertion would then pass vacuously.
+ */
+export interface BuiltRaid {
+  readonly raid: RaidHandle;
+  readonly attackerWorld: SimState;
+  readonly hostWorld: SimState;
+  readonly attackerKnowledge: KnowledgeSubsystem;
+  readonly hostKnowledge: KnowledgeSubsystem;
+  readonly raider: EntityHandle;
+  readonly warden: EntityHandle;
+}
+
+/** Structural alias so this module does not have to name `Raid`'s whole shape. */
+type RaidHandle = ReturnType<typeof openPortal>;
+
+export interface BuildRaidOptions {
+  readonly hostRuleset?: RulesetSnapshot;
+  readonly raiderRuleset?: RulesetSnapshot;
+  readonly raiderNodes?: readonly string[];
+  readonly hostNodes?: readonly string[];
+  readonly seed?: number;
+  readonly hostTradition?: string;
+  readonly withSoldiers?: boolean;
+  readonly extraWardens?: number;
+  readonly tuningOverride?: Partial<RaidTuning>;
+}
+
+export function buildRaid(options: BuildRaidOptions = {}): BuiltRaid {
+  const attackerWorld = emptyWorld();
+  const hostWorld = emptyWorld();
+  const attackerKnowledge = knowledgeFor(attackerWorld);
+  const hostKnowledge = knowledgeFor(hostWorld);
+
+  const hostSnapshot =
+    options.hostRuleset ??
+    ruleset({ traditionId: traditionId(options.hostTradition ?? 'vancian-memorization') });
+  const raiderSnapshot = options.raiderRuleset ?? ruleset({});
+
+  const raider = addMage(attackerWorld, attackerKnowledge, {
+    role: MAGE_ROLE.raider,
+    nodes: options.raiderNodes ?? ['cig-the-uncontained-hour', 'im-read-the-surface'],
+  });
+  const warden = addMage(hostWorld, hostKnowledge, {
+    role: MAGE_ROLE.warden,
+    nodes: options.hostNodes ?? ['cig-the-uncontained-hour'],
+  });
+  for (let extra = 0; extra < (options.extraWardens ?? 0); extra += 1) {
+    addMage(hostWorld, hostKnowledge, {
+      role: MAGE_ROLE.warden,
+      nodes: options.hostNodes ?? ['cig-the-uncontained-hour'],
+    });
+  }
+  addUniversity(hostWorld, hostKnowledge, ['rl-open-the-portal', 'cig-the-uncontained-hour']);
+  if (options.withSoldiers === true) {
+    addSoldiers(hostWorld, 300);
+    addSoldiers(attackerWorld, 300);
+  }
+
+  const raid = openPortal({
+    attacker: participant(
+      attackerWorld,
+      attackerKnowledge,
+      raiderSnapshot,
+      hostSnapshot.traditionId,
+    ),
+    host: participant(hostWorld, hostKnowledge, hostSnapshot, hostSnapshot.traditionId),
+    registry,
+    grid,
+    tuning: { ...tuning, ...options.tuningOverride },
+    raidSeed: options.seed ?? 0x5eed_1234,
+  });
+  deployRaid(raid);
+
+  return { raid, attackerWorld, hostWorld, attackerKnowledge, hostKnowledge, raider, warden };
+}

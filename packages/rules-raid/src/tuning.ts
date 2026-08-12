@@ -76,6 +76,12 @@ export interface RaidTuning {
   /** Remaining stability below which withdrawal outscores everything. Raw. */
   readonly withdrawStabilityMargin: number;
 
+  // ---- The engagement's three phases (`raid-engagement.md` §2). ----
+  /** Engagement tick muster ends on regardless of contact. Ticks. */
+  readonly musterCeilingTicks: number;
+  /** Stability at or below which the raid is watch-only. Raw. */
+  readonly resolutionStabilityMargin: number;
+
   // ---- Derived combatant statistics. Untuned placeholders, every one. ----
   readonly combatantBaseMaxHp: Fixed;
   readonly combatantHpPerTier: Fixed;
@@ -133,6 +139,9 @@ export function readRaidTuning(source: RaidConstantSource): RaidTuning {
     objectiveProgressPerTick: at('objective-progress-per-tick'),
     portalMargin: at('portal-margin'),
     withdrawStabilityMargin: at('withdraw-stability-margin'),
+
+    musterCeilingTicks: at('muster-ceiling-ticks'),
+    resolutionStabilityMargin: at('resolution-stability-margin'),
 
     combatantBaseMaxHp: at('combatant-base-max-hp'),
     combatantHpPerTier: at('combatant-hp-per-tier'),
