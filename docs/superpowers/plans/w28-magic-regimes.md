@@ -349,6 +349,36 @@ regression, and the regeneration's per-metric deltas are the evidence for which 
 - [ ] 5.1 Regenerate the three balance baselines with written rationale. **Never `goldens:regen`.**
 - [ ] 5.2 `npm run verify`. **A failing golden fixture is a STOP-and-report, never a regen.**
 
+## What landed that was not in the plan
+
+- **Two drafted regimes were cut after the wiring trace, not after the sweep.** *The Covenant*
+  (`personalLocationKind: grimoire`) and *The Egregore* (`library`) are recorded in Part 1 as the
+  evidence for the hard wall, because a regime that cannot be built is a more useful report than a
+  regime quietly replaced.
+- **Adding traditions widens the god's action space.** Action 13's candidates are "every tradition
+  except the one held" (`agent-api/src/candidates.ts:311`), so the list grows from 2 to 6, and the
+  interned id is written into the observation vector. Every strategy that samples the legal action
+  set therefore behaves differently than it did with three traditions. **The tradition axis cannot
+  be swept without perturbing the god's action space**, and no arrangement of sweep files isolates
+  it. Comparisons *between the seven arms* remain valid — one content set, one action space — but
+  comparisons to W13's published table are not controlled and are reported as such.
+- **The glosses are deliberately not the prose they should be.** A pass rewriting them in the
+  in-world register every other content file uses (`territory.json`: *"The ordinary country most
+  people live in…"*) was written and reverted: `gloss` is in the `contentRevision` preimage, the
+  rewrite moved the digest `1f471d16 → db2e8aba`, and the tradition sweep was already running. Prose
+  polish is not worth either re-running seven arms or committing content whose revision differs from
+  the one the reported measurement was taken on. Left for a later commit, with the rewrite recorded
+  here as the reason it is not in this one.
+- **One test failure observed once and not reproduced.** `work-phase.test.ts` failed with
+  `No implementation for "acquire" kind "true-name"` — from `applyAcquire`'s default branch, on a
+  hook whose kind printed as exactly `true-name`. Investigated rather than retried: direct
+  reproduction through the built package resolved all seven traditions' acquire hooks correctly; a
+  control on reverted sources isolated the *other* failure in that file as a 30s CPU-contention
+  timeout from the concurrent sweep; the failure vanished after a rebuild and has not returned,
+  including under instrumentation. Best remaining explanation is a stale vitest transform/dep cache
+  during a concurrent rebuild. Recorded rather than dropped: if it recurs on a clean-room run it is
+  real and blocks.
+
 ## Result
 
 *(written after the sweep, whether or not the thesis holds)*

@@ -256,12 +256,27 @@ for (const arm of arms) {
   }
 }
 
-// ---- Did re-running the three v1 arms on the new content set move them?
-console.log('\n## The three v1 arms, against W13 as published\n');
+// ---- The three v1 arms, against W13 as published. Read the caveat first.
+console.log('\n## The three v1 arms, against W13 as published — NOT a control\n');
 console.log(
-  'W13 measured these on a three-tradition content set. This tree has seven, so every\n' +
-    "tradition's interned id moved. If these columns differ, the interning is reaching the\n" +
-    'simulation somewhere it should not.\n',
+  'These columns differ, and two known causes are enough to explain any amount of it, so\n' +
+    'nothing should be inferred from the size of the gap:\n' +
+    '\n' +
+    '1. W13 measured on `main` at 6e5ecee. This is `integration/campaign-round-2`, which has\n' +
+    '   merged most of a campaign since — including the ascension predicates and the god\n' +
+    '   economy. The tree is not the tree W13 measured.\n' +
+    "2. Adding four traditions widens the god's action space. Action 13's candidate list is\n" +
+    '   "every tradition except the one held" (`agent-api/src/candidates.ts:311`), so it grows\n' +
+    '   from 2 entries to 6, and the interned id is written into the observation vector\n' +
+    '   (`observation.ts:236`). Every strategy that samples the legal action set therefore\n' +
+    '   makes different choices than it did with three traditions. Common random numbers fix\n' +
+    '   the seed; they cannot fix the size of the choice set.\n' +
+    '\n' +
+    'Point 2 is worth stating on its own, because it is a property of the harness rather than\n' +
+    "of this workstream: **the tradition axis cannot be swept without also perturbing the god's\n" +
+    'action space**, and no arrangement of sweep files isolates that. What remains valid is the\n' +
+    'comparison *between the seven arms above*, which all share one content set and therefore\n' +
+    'one action space.\n',
 );
 const W13 = {
   Vancian: { asc: 0.6875, grimoires: 979, nodesKnown: 65.8, population: 6979 },
