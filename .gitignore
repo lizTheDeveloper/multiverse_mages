@@ -24,3 +24,6 @@ assets/candidates/
 __pycache__/
 *.py[cod]
 .w15/
+# W17 measurement output. Same reason .w15/ is ignored: a sweep writes tens of
+# thousands of lines of JSON per arm and none of it is source.
+.w17/
