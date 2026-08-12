@@ -997,6 +997,28 @@ lives, so that the most consequential code in a balance run — *what a universe
 is typechecked, linted, boundary-checked and tested, rather than living in a loose `.mjs` outside
 the workspace.
 
+**The `rules-raid` edge, recorded because it is the first one this grant was ever cashed for.**
+`scenario`'s row above reads *"everything above; a leaf"*, and `rules-raid` is above `scenario` in
+that list, so the edge was licensed from the day the row was written. It stayed theoretical while
+`rules-raid` shipped complete and uncalled — the composition root had no portal to open. It does
+not any more: `raids.ts` drives `openPortal` through `applyRaidOutcome`, and
+`reference-universe.ts` and `rival-universe.ts` read the raid tuning and build the participants.
+
+This is written down because the *reason* it is safe is a property that a future package will not
+automatically share. **`scenario` may reach the raid engine because `scenario` is a leaf** —
+nothing in this repository imports it, the dependency-graph test asserts that by name, and an edge
+out of something nothing depends on cannot create a cycle or drag combat code into a client
+bundle. A composition root reaching the engagement space is exactly the shape this section permits
+`scenario` **and nothing else**. Anyone widening the `ALLOWED` table for a package that is *not* a
+leaf is doing a different thing than this, and should have to say so here.
+
+The corresponding packaging — `@mm/rules-raid` in `packages/scenario/package.json` and the project
+reference in its `tsconfig.json` — went missing for longer than it should have, because the root
+`tsconfig.json` solution file lists `packages/rules-raid` explicitly and npm workspaces symlink
+every workspace into the root `node_modules`. The build therefore worked without the declaration,
+by accident of the root listing rather than by the edge being declared, and would have failed the
+day anyone built `scenario` alone.
+
 **Enforced rules:**
 
 1. `sim-core` depends on nothing and imports no Node built-ins.
