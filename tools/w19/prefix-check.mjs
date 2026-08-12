@@ -59,6 +59,12 @@ const keyOf = (run) =>
 
 const sameSet = (a, b) => a.length === b.length && a.every((id, i) => id === b[i]);
 
+/** Is every id in `a` also in `b`? */
+function subsetOf(a, b) {
+  const right = new Set(b);
+  return a.every((id) => right.has(id));
+}
+
 function main() {
   const root = process.argv[2] ?? '.w19/arm-a';
   const long = new Map(load(join(root, 'h2400')).map((run) => [keyOf(run), run]));
@@ -68,6 +74,8 @@ function main() {
     if (ticks === 2400) continue;
     let compared = 0;
     let agree = 0;
+    let subset = 0;
+    const sizeGaps = {};
     const failures = [];
     for (const short of load(join(root, `h${String(ticks)}`))) {
       const reference = long.get(keyOf(short));
@@ -86,7 +94,21 @@ function main() {
           (short.ticksRun === reference.ticksRun &&
             short.terminalReason === reference.terminalReason));
       if (ok) agree += 1;
-      else if (failures.length < 5) {
+      // The probe is appended to the *end* of the system list, so its sample at
+      // `ctx.tick === H` is taken after tick H has run, while a run capped at H
+      // stops having run ticks 0..H-1. The capped terminal is therefore one tick
+      // behind, and the honest statement of the prefix property is containment
+      // rather than equality: the shorter run's set must sit inside the longer
+      // run's set at the same tick, and the gap must be the nodes acquired in
+      // that one extra tick.
+      if (expected !== null && subsetOf(short.terminal.nodeIds, expected)) {
+        subset += 1;
+        const gap = expected.length - short.terminal.nodeIds.length;
+        sizeGaps[gap] = (sizeGaps[gap] ?? 0) + 1;
+      }
+      if (ok) {
+        // counted above
+      } else if (failures.length < 5) {
         failures.push({
           key: keyOf(short),
           endedEarly,
@@ -97,7 +119,15 @@ function main() {
         });
       }
     }
-    report[ticks] = { compared, agree, allAgree: compared > 0 && agree === compared, failures };
+    report[ticks] = {
+      compared,
+      agree,
+      allAgree: compared > 0 && agree === compared,
+      subset,
+      allSubset: compared > 0 && subset === compared,
+      sizeGaps,
+      failures,
+    };
   }
 
   process.stdout.write(`${JSON.stringify(report, null, 1)}\n`);
