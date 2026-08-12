@@ -229,7 +229,16 @@ describe('contentRevision', () => {
     // whose mages valued the same node differently would be developing
     // different magic while their revisions agreed they were compatible.
     // Nothing existing changed a byte.
-    expect(registry.contentRevision).toBe('d37624e36be00f59cf21b87ff6eba144');
+    //
+    // d37624e36be00f59cf21b87ff6eba144 -> 6b18886a4b3a2803c0b1b92eb8f8fae8,
+    // when `max-summons-per-side` came down from 16 to 8 to agree with
+    // `primitive.json`'s `summon` cap, which is the same ceiling authored twice
+    // and had disagreed with it since both files existed. A value edit rather
+    // than a new file, and the first entry in this list that is one — which is
+    // the point of a revision over the *values*: two universes that disagreed
+    // about how many summons a side may hold would fight two different battles,
+    // and the digest now says so instead of calling them compatible.
+    expect(registry.contentRevision).toBe('6b18886a4b3a2803c0b1b92eb8f8fae8');
   });
 
   it('is stable across loads of identical content', () => {

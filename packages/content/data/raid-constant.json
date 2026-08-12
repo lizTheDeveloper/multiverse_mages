@@ -29,9 +29,9 @@
   },
   {
     "id": "max-summons-per-side",
-    "value": 16,
+    "value": 8,
     "unit": "count",
-    "gloss": "Summons one side may hold at once. A summon over the cap is a no-op, never a queued request — a queue is an unbounded structure wearing a cap's clothes.",
+    "gloss": "Summons one side may hold at once. A summon over the cap is a no-op, never a queued request — a queue is an unbounded structure wearing a cap's clothes. MUST EQUAL primitive.json's `summon` cap, which clamps the stacked magnitude while this bounds the roster; the loader refuses a set where they disagree. They read 16 and 8 until 0.4.0. Both now say 8, the lower — no spec names a number, and too tight reads as weak summoning while too loose reads as a raid nobody can follow.",
     "tuningStatus": "untuned"
   },
   {
