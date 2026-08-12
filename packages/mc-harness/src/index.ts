@@ -387,3 +387,19 @@ export {
   tournamentSchedule,
   tournamentSpec,
 } from './tournament.js';
+
+export type {
+  Band,
+  BalanceScore,
+  ScoreWeights,
+  StrategyOutcome,
+  TuningAxis,
+} from './tuner.js';
+export {
+  DOMINANCE_LIMIT,
+  EXPLOIT_PROBE,
+  candidatesForAxis,
+  correlationOf,
+  scoreBalance,
+  varietyOf,
+} from './tuner.js';
