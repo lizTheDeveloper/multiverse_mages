@@ -147,6 +147,7 @@ import type {
 import {
   DEFAULT_TEACH_THRESHOLD,
   disownGrimoire,
+  isRediscovery,
   research,
   researchRequirement,
   scribe,
@@ -438,7 +439,19 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       const banked =
         this.#deps.effort?.progressOf(effortKey(EFFORT_KIND.research, mage, nodeId, 0)) ?? 0;
       const requirement = researchRequirement(node, {
-        rediscovery: this.#deps.knowledge.wasEverKnown(nodeId),
+        // `isRediscovery`, not `wasEverKnown`. The two differ on exactly the
+        // nodes the universe holds right now: `wasEverKnown` is set by
+        // `createInstance` and never cleared, so it is true of every node
+        // anybody here has ever learned — including the ones still on the
+        // shelf. Quoting those at the ≥3× rediscovery price while `research()`
+        // charges the ordinary one made this method disagree with the only
+        // other place that prices the same work, in the direction that hurts:
+        // research is currently the one route back to a teachable instance, so
+        // an inflated quote drags on the only preservation mechanism there is.
+        // `research.ts` states the rule and this now calls it rather than
+        // restating it: *"Only the gap between the two, known once and now
+        // gone, is expensive."*
+        rediscovery: isRediscovery(this.#deps.knowledge, nodeId),
         rediscoveryAffinity: rates.rediscoveryAffinity,
         learnRate: rates.learnRate,
         // Neutral: the stacked `research-rate` multiplier is a property of the

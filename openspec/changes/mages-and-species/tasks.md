@@ -90,6 +90,11 @@
 - [x] 7.3 Implement the per-university per-tier relevance prefix-sum array, recomputed on library change
 - [x] 7.4 Implement relevance gating by learner species `depthCeiling`
 - [x] 7.5 Route the library contribution into the shared `(1 + Σ)` accumulator for `research-rate`, `teach-rate`, and `scribe-rate` with the `fp(4096)` cap
+  - Re-checked, and it holds. It did not when the box was first ticked —
+    `capitalRateMultiplier` had no caller outside its unit tests and `gateway.ts` passed
+    `NEUTRAL_RATE` — but `w7/knowledge-capital` joined the halves: `world-step.ts` now calls
+    `libraryRateMultiplier(primitive, bonuses, shelves, ceiling, rateClamps)` in the work phase,
+    and `reference-long-run.test.ts` 9.8 reads a capital curve rather than a constant.
 - [x] 7.6 Add the conformance check rejecting any library multiplier applied outside the shared stacking implementation
 - [x] 7.7 Implement library upkeep proportional to instance count, with deterministic degradation on shortfall and no negative materials
 - [x] 7.8 Implement per-tick emission of relevant depth by tier, effective contribution, and clamp count, per university
@@ -99,8 +104,28 @@
 
 ## 8. Materials and the three-input economy
 
-- [x] 8.1 Implement materials production from laborer cohorts, `laborAffinity`, and capped `resource-yield` stacking
-- [x] 8.2 Implement materials consumption by construction, scribing, library upkeep, and populace subsistence, in a documented deterministic priority order
+- [ ] 8.1 Implement materials production from laborer cohorts, `laborAffinity`, and capped `resource-yield` stacking
+  - **Two of three.** Production from laborer cohorts and `laborAffinity` are live in
+    `packages/coordination/src/world-step.ts`'s `produceMaterials`, and
+    `resourceYieldMultiplier` in `packages/rules-world/src/economy/materials.ts` does stack and cap
+    through the shared `stackMagnitudes`. Nothing feeds it: `world-step.ts` passes
+    `resourceYieldBonuses: []` unconditionally, so the multiplier is `(1 + 0)` on every tick of
+    every run and the cap can never bind. `npm run check:consumption` reports the same thing from
+    the other end — `resource-yield` has no node-driven consumer, so no mage's knowledge moves it.
+    The bonuses arrive with `w29/city-and-supply-chain` (PR #42), which routes them through
+    `universe-effects.ts`; re-check the box against that branch, not this one.
+- [ ] 8.2 Implement materials consumption by construction, scribing, library upkeep, and populace subsistence, in a documented deterministic priority order
+  - **Three of the four claimants, and the order is real.** `CONSUMPTION_ORDER` in
+    `packages/rules-world/src/economy/materials.ts` is authored, documented and tested. Subsistence
+    and library upkeep are charged through it (`world-step.ts` passes `libraryUpkeep: upkeepOwed`
+    since `w7/knowledge-capital`); scribing is charged at the desk in the work phase and passed as
+    `0` here deliberately, so that it is not paid twice — that is documented at the call site and
+    reported as `materialsScribed`. **Construction is not charged at all.** `world-step.ts` passes
+    `construction: 0`, and `advanceConstruction` in
+    `packages/rules-world/src/universities/construction.ts` — the function that computes
+    `materialsSpent` — has no caller outside its own unit tests. Universities are attached complete
+    by `coordination/src/god/interventions.ts` and `scenario/src/reference-universe.ts` rather than
+    built, so no universe in any committed sweep has ever paid for one.
 - [x] 8.3 Implement the non-negative materials invariant with recorded shortfalls
 - [x] 8.4 Implement carrying capacity `K` from the universe's territory (`contracts.md` §2.7), modulated by materials stock and completed university capacity through a bounded multiplier that saturates
 - [x] 8.4a Author `territory.json` and its schema as the eighth content file, every magnitude marked `untuned`
