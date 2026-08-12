@@ -1510,3 +1510,38 @@ One caveat to check rather than assume: `state`'s component records declare i32 
 the column declaration cannot be expressed in terms of the shared type, derive the *type* and keep
 the declaration separate. **Do not weaken `schema-duplication.test.ts`** — it caught real production
 drift across a package boundary, which is exactly its job.
+
+### Resolved, and the error was mine: permits cost 96 favor, not 98,304
+
+The discrepancy flagged above is settled by reading the schema. `packages/content/schema/god-cost.schema.json:17`
+types `favorCost` as `$ref: "#/$defs/fp"`, and `packages/content/src/types.ts:205` declares it
+`readonly favorCost: Fp` — **fixed-point at 1/1024**, like everything else in the rules path.
+
+So the raw integers in `god-cost.json` are not favor:
+
+| switch | raw (Fp) | **actual favor** |
+|---|---|---|
+| `permit-technique` | 8192 | **8** |
+| `permit-form` | 4096 | **4** |
+
+- The **v1 subset** — 3 techniques + 4 forms opening all twelve enabled cells — costs **40 favor**.
+- The **whole grid** — 5 techniques + 14 forms — costs **96 favor**.
+
+**W32's 96 is exactly right. Every figure this document has published for permit cost was the raw
+fixed-point integer read as though it were favor, and was therefore 1024× too large.** Strike
+98,304/1.51% and 40,960/0.63% wherever they appear above; they are the same mistake twice.
+
+This does not weaken the argument — **it makes it far stronger than was claimed.** Against W32's
+floor income of 1 favor/tick over 2,400 ticks, opening the entire ruleset costs **1.7% of the
+minimum income a universe can possibly earn**, and against the measured income it rounds to zero. The
+god's central verb is, in practice, free.
+
+It also explains a measurement that never fit: permitting could not be rationed by making favor
+scarce, because favor scarcity would have to be extreme by a factor of hundreds before 40 favor
+became a decision. Qwen's *"a more expensive door to the same empty room"* was right about the
+mechanism and generous about the magnitude.
+
+**Lesson for the campaign's own method:** a number taken from a data file and quoted in a design
+argument must be read through its declared type. Four separate documents and several agent briefs
+carried this figure. Nobody checked the schema because the integer looked like a plausible favor
+price — which is exactly why 1/1024 fixed point is easy to misread and why the type exists.
