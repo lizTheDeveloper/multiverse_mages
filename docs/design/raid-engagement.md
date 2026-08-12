@@ -216,3 +216,118 @@ the measurement that would disprove it:
 6. **Does exposure teach a node outright, or raise a discovery weight?** Teaching it outright is
    legible and brutal; weighting it is subtler and harder to see. The campaign's own evidence favours
    legible, since a mechanic nobody can observe has repeatedly turned out to be doing nothing.
+
+---
+
+# Part II — the raid has a place
+
+Author's direction, 2026-08-12, after playing the prototype. Recorded as ruled unless marked open.
+
+## 7. The world stays abstract; the raid makes it concrete
+
+§7a's rule holds: **at world scale there is no map — universities, populations, materials and
+knowledge are counts and relationships.** Nothing here changes that.
+
+What changes is that **a raid generates a place from those counts, for the duration of the
+engagement, and then it is gone.** The world knows it has *n* universities and that university *U*
+sits in a `river-delta`; the raid turns that into a floor plan. This is the bridge between the two
+scales, and it costs the world layer nothing.
+
+Two pieces already landed that this composes with, and neither was built for it:
+
+- **W24 sited universities in territory kinds** — `university-site {kindId}`, a relationship, no
+  coordinates. So the terrain of a generated place comes from the kind its target sits in. Raiding a
+  delta academy and a highland one should not look alike, and now it need not.
+- **§5 gives knowledge a location** — a mind, a grimoire, a library shelf, a memory palace. So the
+  library *building* contains exactly the grimoire rows whose location is that library. **Targeting
+  the library and physically carrying out the books is not a new mechanic; it is the existing loss
+  channel given a floor plan.**
+
+## 8. What is targeted
+
+> *"They're gonna raid universities because that's where the libraries are and stuff, but they could
+> also raid like your supply chain area to wreck up your supply chain."*
+
+A target is a **site**, and sites are what the world already counts. Universities first, because
+that is where the grimoires are. Supply-chain sites second, because wrecking them is a different kind
+of win — one that costs the defender production rather than knowledge, and therefore is worth doing
+to a rival whose library you cannot reach.
+
+The generated place is **RimWorld-shaped**: an overhead plan of rectangular buildings, laid out from
+the target's contents. A university with a deep library and three scriptoria produces a different
+plan from one with a shallow library and a barracks. The buildings are not decoration — **what is
+inside them is what is in the state**, and it is what can be taken or burned.
+
+`packages/rules-raid` already has `geometry.ts`, `spatial.ts`, `terrain.ts`, `movement.ts` and
+`navigation.ts`. The place is new; the space it lives in is not.
+
+## 9. Portal placement is deterministically random, and that is the tension
+
+> *"Portalling directly into a room is probably not something that they can really achieve. So it's
+> somewhat random, but there's always a chance they could open a portal in there or right next to the
+> library's door, rather than the library's on the other side."*
+
+**You cannot choose where the portal lands.** You choose *what you are coming for*; the arrival is
+drawn. Sometimes you open beside the library door. Sometimes the library is across the compound and
+you have to cross it while the defenders wake up.
+
+This is the single mechanic that makes a raid a *play* rather than a calculation, and it is why the
+muster phase matters: you are committing favor and Vis, and repealing parts of your own constitution,
+**before you know how far you will have to walk.**
+
+Determinism is not optional. The draw is stream-split per `CLAUDE.md`'s third constraint — a raid
+placement draw must not re-roll any other subsystem — and it is seeded so a replay lands the portal
+in the same spot. **Random to the player, fixed to the replay.**
+
+W38 found a live hazard here that buildings will make worse: at 8% impassable, concave pockets exist
+that a greedy step cannot leave, and a supercover trace must exclude the endpoints' own cells or two
+combatants in the same wood deadlock permanently. **Buildings are concave pockets by construction**,
+so `navigation.ts` stops being optional the moment a floor plan exists.
+
+## 10. The god suggests; the mages choose
+
+> *"When you're going to go raid, I think that's like a directive the god should do. And then you
+> should suggest targets and then they actually decide what the target is that they'll open the portal
+> to."*
+
+This is the §4 constraint applied to the one verb that most tempts you to break it. **The god does not
+pick the target.** The god issues the directive — *go raid* — and offers a suggestion. The mages
+weigh it against what they know, what they can carry, and what they think they can reach, and they
+choose.
+
+So the interface is a *recommendation*, and the recommendation can be declined. That is consistent
+with every other verb in the game, it preserves the thing that makes the fiction work, and it makes
+the player's real lever the same one it always is: **you shape who they are and what they know, and
+then you find out what they do with it.**
+
+**Lootable objects are the raider's choice** for the same reason. You do not order a mage to carry the
+third shelf; she decides what is worth the weight.
+
+## 11. Pause is a bid
+
+> *"You should be able to click on any mage and pause the action at any point. But the opponent should
+> be able to unpause. And during a raid that costs favor or vis."*
+
+Click a mage, the action stops, you inspect them — **and you pay for it.** Your opponent pays to start
+it again. Time becomes something the two sides bid over.
+
+This solves the problem that normally makes pause-to-inspect unshippable in live PvP: one player
+freezing the world at will is intolerable, so most games forbid it. Making it **cost** and making it
+**contestable** turns it from an exploit into a decision. It also lands naturally on the asymmetry
+already ruled: **the defender bids favor, the attacker bids Vis**, so the two sides are spending
+different currencies and whoever has more slack in their own economy can hold the clock longer.
+
+**A flat price is the failure mode** — the richer side simply holds the clock forever. Repeated
+pausing has to get more expensive, by rising price, cooldown or cap. Which of those is open.
+
+## 12. Open
+
+1. **Do supply-chain sites exist yet?** Universities do. The supply chain is W29's work and is not
+   merged. Raiding what is not built is not possible, so this may be a two-stage delivery.
+2. **The escalation rule for pause bids** — rising price, cooldown, or cap.
+3. **Does the defender see the target before contact?** If the raider chooses the target and the
+   arrival is drawn, the defender's muster decisions are made under a different kind of uncertainty
+   than the attacker's, which may be exactly right or may be too harsh.
+4. **What does a declined suggestion look like?** If the mages can refuse the god's suggested target,
+   the player needs to see that they did, and why — otherwise the verb reads as broken rather than as
+   autonomous.
