@@ -774,3 +774,73 @@ I disagree on two grounds they did not have:
    makes their own recommendation #3, scarce copies, reachable.
 
 **Deprioritise, do not revert.** Recorded as a disagreement rather than settled.
+
+---
+
+## Integration round 2 — the parts do not compose
+
+`integration/campaign-round-2`, 64 commits, eight merges. **`npm run verify` EXIT=0**, 3,872 tests
+in 275 files, all three gates PASS, and **no golden fixture regenerated or changed at any of the
+eight merges** — checked at each one.
+
+### D1–D9 at n = 400 (2,400 runs, six arms, exactly 40 per strategy)
+
+| # | criterion | number | verdict |
+|---|---|---|---|
+| D1 | rate in 0.05–0.20 | **0.1950** (10-pool); 0.1187 (8-pool) | passed |
+| D2 | margin ≥ 0.05 | +0.2167 | passed — **carries no information** |
+| D3 | ≥3 winners, none > 60% | **2 of 10**, top 51.3% | **failed** |
+| D4 | correlation > 0 | Pearson +0.976, **Spearman +0.685**, 2 of 10 non-zero | passed, weakly |
+| D5 | halfLife falls; nodes leave | instrument absent | **not measurable** |
+| D6 | nobody wins at the passive baseline | no winner ≤ 51.0 | passed, **saturated** |
+| D7 | species mix changes the winner | rate moves 1.000→0.350→0.000, **winner identity invariant** | **failed, saturated** |
+| D8 | verify green, baselines justified, no goldens | all three clauses | passed |
+| D9 | >1 playstyle per species | one, for everyone | **failed** |
+
+**The band is a property of the pool, not the ruleset.** Adding two probes moved the rate
+0.1187 → 0.1950 — **65% of the band's width on pool composition alone.**
+
+### The headline is not a number
+
+**`permit-then-idle` wins 40/40. `permissive-breadth` wins 38/40.**
+
+A bot that presses two permit buttons for 140 of 2,400 ticks and then submits an empty preference
+list forever **beats** the strategy that funds universities, blesses mages and encourages research.
+**Those verbs are worth slightly less than nothing.**
+
+Also confirmed: `uniform-random-legal` — the probe every published exploit margin was measured
+against — is genuinely crippled. `CANDIDATE_SLOTS` covers actions 8–14, so it submits 1–7 bare; the
+gate admits them, coordination refuses them onto `state.illegalActionCount`, and
+`illegalActionRate` reads the *session's* counters. **Seven of fifteen verbs inert, telemetry clean.**
+
+### Three interactions no single branch could have seen
+
+1. **W6 × W7 runs backwards.** Library depth: W6 alone no movement, W7 alone **25.47**, together
+   **9.94** — a 61% cut. W6 lengthened the horizon and W7's own upkeep spends it.
+2. **W6 × W13 annihilates W13's headline.** Art of Memory was *the only in-band tradition* at 0.1250.
+   It is now **the only tradition that cannot ascend at all — 0 of 400** — because a memory palace
+   holds no grimoires and W6's canon predicate wants a written record. **§4a's palace and §8a's
+   canon are structurally incompatible as implemented.** Author's call.
+3. **W7 × W8 collapses looting.** `portal-rush` was **+6.1 nodes at +4.3 SE** on W8's branch; here
+   **+1.0 against a 2.09 SE**. The 151 books still arrive; the nodes do not stay.
+
+### `capitalSnowball` breaches its guard
+
+**0.4571** (True Naming), 0.4129 (Vancian), 0.0000 (Art of Memory), against the **0.35** its sibling
+is held to — while `worshipSnowball` sits at **0.1028**. §6a's two-compounding-loops warning, one
+running hot. Not tuned away.
+
+### Two defects and a duplicate mechanism found by merging
+
+- **Two tradition selectors**: W7's `traditionIndex` (ordinal into content order) and W13's
+  `tradition` (content id). Resolved to **W13's**, because an ordinal *"would move the day a
+  tradition is added"* — and this campaign's most-cited defect is that the reference tradition was
+  True Naming *by accident of the alphabet*.
+- **A raw NUL byte** in W17's `autonomy.ts` made git treat it as binary. Fixed in the squash so it
+  is diffable from first appearance.
+
+### Verdict
+
+Not worse than the parts — but better for a reason that is not good news. **This is the fifth
+independent confirmation that the binding constraint is content exhaustion**, and W8's looting, the
+only mechanism measured to cross the ceiling, **no longer does so durably on the combined tree.**
