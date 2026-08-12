@@ -54,13 +54,13 @@ idle-then-declare probe winning 100% of runs in **every** cell.
 
 ### 4. Calibration
 - [x] 4.1 Extend the tuner's `AXES` with every constant added.
-- [ ] 4.2 Run `tune-balance.mjs` under common random numbers.
-- [ ] 4.3 Record what was measured for each constant, not a guess.
+- [x] 4.2 Run `tune-balance.mjs` under common random numbers.
+- [x] 4.3 Record what was measured for each constant, not a guess.
 
 ### 5. The claim
-- [ ] 5.1 2400-tick eight-strategy sweep at n >= 96, four parts reported with numbers.
-- [ ] 5.2 Regenerate only the baselines that moved, with a written rationale.
-- [ ] 5.3 `npm run verify` green.
+- [x] 5.1 2400-tick eight-strategy sweep at n >= 96, four parts reported with numbers.
+- [x] 5.2 Regenerate the baselines, with a written rationale and the delta check.
+- [x] 5.3 `npm run verify` green.
 
 ## Measurements
 
@@ -187,3 +187,73 @@ resolved silently.
 - Balance baselines only via `regenerate-baseline.mjs`, with the constants and deltas named.
 - Fixed point at 1/1024, integer comparisons, no float in the rules path.
 - Every constant in validated content data, never hardcoded.
+
+## The calibration, constant by constant
+
+`ascension-summit-cells` is the only one the tuner could separate, because it is the only one whose
+levels straddle the feasibility edge. Single-axis scan, common random numbers, 24 runs a trial:
+
+| value | rate | exploit margin | feasible |
+|---|---|---|---|
+| 1 (the shipped rule) | 0.500 | **−0.500** | no |
+| 12 (the passive ceiling) | 0.458 | **−0.542** | no |
+| **13** | 0.167 | +0.167 | **yes** |
+| 14 | 0.167 | +0.167 | yes |
+| 15 | 0.167 | +0.167 | yes |
+| 18 (my first guess) | 0.167 | +0.167 | yes |
+
+The edge sits exactly at the passive ceiling. 13 is therefore a *structural* line rather than a
+tuned magnitude: it is the first value that cannot be met without permitting an axis the universe
+did not start with. 13–18 are metrically identical, so the scorer is indifferent and the design
+argument decides — 13 keeps Path A reachable (the pool peaks at 15) and 18 does not.
+
+Worth recording: trials 1 and 12 carry the **best variety in the whole scan** (0.613, top-share
+0.33) and are the two infeasible points. Variety is high there precisely because ascension is a
+button everyone can press. This is the concrete case `probable-strategies.md` warned about.
+
+The other four were set by anchoring to the measured passive baseline and were not separable by the
+scorer, because every level above the passive ceiling admits the same single winner:
+
+| constant | value | anchor |
+|---|---|---|
+| `ascension-summit-copies` | 2 | the shipped literal, promoted to data unchanged |
+| `ascension-canon-breadth` | 77 | 1.5 × the 51-node passive ceiling |
+| `ascension-canon-cells` | 18 | 1.5 × the 12-cell passive ceiling |
+| `ascension-loss-fraction` | fp 51 (5%) | untestable today: the loss channel never fires |
+
+## The claim, measured at n = 96, 2400 ticks
+
+| strategy | asc/runs | rate | mean nodes | median tick | terminal reasons |
+|---|---|---|---|---|---|
+| archivist | 0/12 | 0.000 | 50.8 | — | 12 truncated |
+| denial-warden | 0/12 | 0.000 | 2.3 | — | 8 truncated, 4 stagnated |
+| narrow-depth | 0/12 | 0.000 | 7.3 | — | 7 truncated, 5 stagnated |
+| passive-control | 0/12 | 0.000 | 50.9 | — | 12 truncated |
+| **permissive-breadth** | **12/12** | **1.000** | **232.3** | 1202 | **6 apotheosis, 6 canon** |
+| portal-rush | 0/12 | 0.000 | 51.0 | — | 12 truncated |
+| uniform-random-legal | 0/12 | 0.000 | 50.9 | — | 12 truncated |
+| worship-maximizer | 0/12 | 0.000 | 50.9 | — | 12 truncated |
+
+1. **`ascensionRate` 0.1250** — inside 0.05–0.20. **PASSES** (was 0.771).
+2. **Exploit margin +0.1250** — at or above 0.05. **PASSES** (was −0.229). The idle-then-declare
+   probe now wins nothing.
+3. **One winner, `topShare` 1.000.** **FAILS.** Not by tuning — see "The impossibility" above.
+4. **Correlation +0.9570** — positive. **PASSES** (was +0.324).
+
+**Both paths are live.** `permissive-breadth` takes 6 apotheosis and 6 canon, so
+`ascensionRateByPath` is 50/50 and neither summit is dead — the failure mode `ascension.ts` warns an
+in-band aggregate can conceal.
+
+## Baselines
+
+| baseline | horizon | outcome |
+|---|---|---|
+| `balance-gate-v1` | 60 ticks | provenance only — **no metric moved** |
+| `balance-gate-horizon-v1` | 240 ticks | provenance only — **no metric moved** |
+| `balance-gate-ascension-v1` | 2400 ticks | moved, as intended |
+
+The two short gates were regenerated because `contentRevision` moved and the gate refuses to compare
+across builds — a provenance refusal, not a measurement change. That both report *no metric moved*
+is the evidence that the 2400-tick movement is the win condition and not a simulation change. The
+ascension gate's metrics rose because seven of eight strategies now run to the tick cap instead of
+ascending at ticks 700–1200, so their census is taken at 2400 ticks rather than where they stopped.
