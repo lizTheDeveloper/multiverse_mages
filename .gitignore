@@ -32,5 +32,8 @@ __pycache__/
 # thousands of lines of JSON per arm and none of it is source.
 .w17/
 
-# Generated reports rendered into ui/ — regenerate with scripts/content-graph.mjs
-ui/*.html
+# The generated lattice report from scripts/content-graph.mjs. Named exactly
+# rather than globbed: `ui/*.html` also matched the hand-authored ui/index.html,
+# and `git add` says nothing when an ignore rule eats a file you meant to commit.
+# That shipped a README advertising a front door that was not in the repository.
+ui/lattices.html
