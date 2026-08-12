@@ -118,7 +118,7 @@ ruleset. `before` reproduces W15 exactly, which is the check that the instrument
 | prefix fidelity | **< 0.7** | 0.9433 (exact 65/84) | **0.9085** (exact 60/84) | **no** |
 | components for 80% of variance | **≥ 2** | 1 | **1** | **no** |
 | cross-strategy containment | **< 1.000** | 1.000 | **1.000** | **no** |
-| gnome vs human node sets | **not identical** | identical (49 = 49) | see §"the mask arms" | — |
+| gnome vs human node sets | **not identical** | identical (49 = 49) | still identical as **unions** (49 = 49); per-run sets fully separated | **no** |
 
 ### What did move, and by how much
 
@@ -173,6 +173,130 @@ vary richly *within* each universe — all six species found every arm-A univers
 *across* strategies under common random numbers. Arm A was therefore always going to be a weak
 instrument for the role term specifically, and the mask arms and a role-varying pool are where that
 term can be seen.
+
+## Attribution: W7 or W17?
+
+`w7/knowledge-capital` landed mid-flight and had already changed `compareTargets` — a novelty-first
+tie-break for *scribing*. A third arm at the same coordinates separates the two.
+
+| measure | before (`main`) | **w7 only** | **after (w7+w17)** |
+|---|--:|--:|--:|
+| prefix fidelity | 0.9433 (65/84 exact) | 0.9445 (67/84) | **0.9085 (60/84)** |
+| participation ratio, binary | 1.19 | 1.21 | 1.20 |
+| participation ratio, binary-shape | 2.28 | 2.34 | **2.70** |
+| participation ratio, effort-weighted | 2.79 | 2.89 | **3.28** |
+| participation ratio, effort-shape | 2.39 | **3.36** | **4.89** |
+| `denial-warden` ↔ `narrow-depth` containment | 0.771 | 0.768 | **0.643** |
+| min containment at tick 240 | 0.742 | 0.759 | **0.612** |
+
+W7 left prefix fidelity and cross-strategy containment untouched — it changes *what gets copied*, not
+*what gets learned* — and moved the effort-shape spectrum a long way on its own (2.39 → 3.36),
+because novel-first scribing spreads a universe's writing across distinct nodes. W17 moved prefix
+fidelity (the only arm that did), moved the shape spectrum again (3.36 → 4.89), and is the whole of
+the containment change. **The two are separable and neither is doing the other's work.**
+
+## The two mechanisms in `compareTargets`, and why they were not merged
+
+W7's novelty rule is a **binary fact about redundancy** on one goal. W17's appeal is a **magnitude
+about value** on all five target-taking goals. They are composed rather than merged: `compareNovelty`
+is factored out and applied **first** in `compareAppeal`, so novelty partitions the candidate list and
+the utility score decides inside the partition.
+
+Folding the binary into the bounded additive sum has exactly two outcomes, and both are bad. A bound
+small enough to be outvoted restores the 1,263-books-and-two-distinct-nodes defect W7 measured. A
+bound large enough to dominate is a lexicographic prefix wearing a magnitude's clothes, and it would
+lie in the ablation report — `contracts.md` §7's whole methodology is removing one term and seeing
+what changed.
+
+## The founding-species-mask arms — gnome against human
+
+`ReferenceOptions.foundingSpeciesMask` 8 (gnome) and 16 (human), two strategies, 6 replicates,
+24 runs each. W15's finding was that these two — sharing only `depthCeiling: 4` — reached the
+**identical 49 nodes**, with paired containment 1.000 in all six coordinate pairs.
+
+| arm | mean nodes | min | max | union | ∩ across seeds | within-strategy Jaccard |
+|---|--:|--:|--:|--:|--:|--:|
+| `archivist` gnome | 49.0 | 49 | 49 | 49 | 49 | 1.000 |
+| `archivist` human | 37.3 | **0** | 49 | 49 | **0** | 0.605 |
+| `passive-control` gnome | 49.0 | 49 | 49 | 49 | 49 | 1.000 |
+| `passive-control` human | 40.8 | **0** | 49 | 49 | **0** | 0.694 |
+
+**Criterion 4 fails on the union and passes on the run.** The *unions* are still byte-identical —
+49 nodes each, intersection 49, nothing in either that is not in both — for the same reason as arm A:
+49 is the entire set reachable at `depthCeiling: 4`, and both species exhaust it in their good seeds.
+But the per-run sets have come apart completely: human's cross-seed intersection fell from 37 to
+**0**, its within-strategy Jaccard is 0.605/0.694 where gnome's is 1.000, and some human-founded
+universes now stagnate at **zero** nodes. Human runs are no longer a stable prefix; gnome runs still
+are, because gnome's curiosity of 1792 makes it want the deep node at every tier and it simply takes
+everything.
+
+At fixed horizons the two separate on count and on shape: at tick 240, `archivist` gnome 44.9 against
+human 42.8, minimum pairwise containment **0.945**; at tick 480, 48.8 against 42.2, containment
+**0.976**. Both were 1.000 throughout in W15.
+
+## Q2 answered: the candidate bound does not bind inside v1
+
+`gatherFrontier` truncates each bucket at `MAX_CANDIDATE_TARGETS = 16` **in cost order**, before any
+value is computed, so a frontier larger than sixteen would let the old cost queue quietly pre-filter
+the new score's inputs. Computed exhaustively over the v1 prerequisite graph, walking it in the old
+cheapest-first order, in deepest-first order, and in 400 pseudo-random orders: **the maximum frontier
+any walk ever reaches is exactly 16**, and a list of exactly sixteen is not truncated. The bound is
+touched and never exceeded, so inside v1 the utility score sees the whole frontier at every step.
+
+It certainly binds for `permissive-breadth`, whose ruleset admits 282 nodes. That is a caveat on the
+one strategy already excluded from the primary tables.
+
+## What the three balance gates say
+
+All three were regenerated; `contentRevision` moved `2512ea02…` → `d37624e3…` when
+`autonomy-weight.json` was added, so every baseline was invalid by provenance regardless of any
+metric. What moved beyond that:
+
+| gate | metric | before | after | SE |
+|---|---|--:|--:|--:|
+| **v1** (200 runs, 600 ticks) | `referenceNodesKnown` | 22.115 | **29.440** | +48.6 |
+| | `referenceLibraryDepth` | 7.145 | **10.435** | +11.8 |
+| | `referenceKnowledgeInstances` | 379.87 | **406.01** | +8.8 |
+| | `referenceGrimoires` | 96.01 | **85.76** | −6.7 |
+| | every population metric | — | — | inside tolerance |
+| **horizon** (200 runs, 2400 ticks) | `referenceNodesKnown` | 46.930 | 46.855 | −0.6 |
+| | `referenceKnowledgeInstances` | 1155.88 | **1036.95** | −15.0 |
+| | `referenceNodesGainedFinalQuarter` | 3.625 | **1.910** | −15.4 |
+| **ascension** (32 runs) | every metric | — | — | inside tolerance |
+
+Those two `referenceNodesKnown` rows are the whole finding in two numbers. At 600 ticks a universe
+knows **a third more**; at 2400 ticks it knows **the same amount**. The value-scored acquirer reaches
+the frontier much sooner and stops in exactly the same place, because the place it stops is the
+ruleset's reachable set rather than a decision. `referenceNodesGainedFinalQuarter` halving is the same
+fact from the other end.
+
+`capitalSnowball` is not recomputed here and remains W7's **0.502**, above the 0.35 guard
+`worshipSnowball` is held to. That threshold belongs to `god-agency` and is untouched.
+
+## The species finding, which was not on the claim list
+
+`reference-time-to-tier` measures ticks to tier 3 per founding species over six seeds. It had to be
+rewritten, and the rewrite is a **positive** result nobody asked for:
+
+| species | before (w7) | after (w17) |
+|---|---|---|
+| gnome | [39, 53] | **[20, 21]** |
+| dwarf | [41, 54] | **[21, 25]** |
+| orc | [42, 63] | **[21, 27]** |
+| human | [44, 57] | **[28, 37]** |
+| elf | [54, 110] | **[35, 58]** |
+| draconic | [68, 245] | **[26, 380]** |
+
+Every species is about **twice as fast** to tier 3, *and the spread reopened*. Where the previous
+build supported exactly one strict separation — draconic after four ordinary species, with elf
+bridging — this one supports three bands: a fast trio (gnome, dwarf, orc) that overlaps internally,
+human strictly after all three, elf strictly after all three again, and draconic no longer a band at
+all but a bridge spanning from inside the fast trio to five times elf's slowest seed. **No species
+magnitude was touched**; the species table simply became legible to the thing that decides what to
+learn.
+
+Task 9.9 wants **four species** separated by more than the cross-seed spread. This build separates
+three groups. It stays unchecked, and it is closer than it has ever been.
 
 ## What this does not say
 

@@ -1,49 +1,47 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
-  "contentHash": "6ec6852825be89b4917977e8fc4ec642d9bba234b96a35adf7181d8eb88752b2",
+  "contentHash": "0af5676720a2e1ce85baa1011401b6693cad5779d9fcdb6dd5fbf35e6b12312a",
   "kind": "gate",
   "metrics": [
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":56.06923086286784,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":168.20769258860352,"unit":"grimoires","value":157.5625},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":32,"standardError":305.59784219646235,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":916.793526589387,"unit":"instances","value":1894.71875},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":32,"standardError":3.7809917267166826,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":11.342975180150049,"unit":"nodes","value":25.46875},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":32,"standardError":3.9840292216907387,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":11.952087665072217,"unit":"mages","value":74},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":32,"standardError":12.25792382210672,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":36.77377146632016,"unit":"nodes","value":58.875},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":32,"standardError":2.1451578051342914,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":6.435473415402875,"unit":"nodes","value":4.28125},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":32,"standardError":12.25792382210672,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":36.77377146632016,"unit":"nodes","value":61.375},
-    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":32,"standardError":187.9375,"standardErrorMethod":"jackknife","status":"measured","tolerance":563.8125,"unit":"people","value":19506},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":32,"standardError":1383.9810862300144,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4151.943258690043,"unit":"people","value":6750.5625},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1383.9810862300144,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4151.943258690043,"unit":"people","value":6606.5625}
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":35.442857525227446,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":106.32857257568233,"unit":"grimoires","value":110.125},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":32,"standardError":337.63326857900023,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1012.8998057370006,"unit":"instances","value":1942.125},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":32,"standardError":3.3689595415880467,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":10.10687862476414,"unit":"nodes","value":24.9375},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":32,"standardError":4.133260803055069,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":12.399782409165205,"unit":"mages","value":70.40625},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":32,"standardError":13.77904298816296,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":41.33712896448888,"unit":"nodes","value":62.96875},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":32,"standardError":1.147833751650722,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.443501254952166,"unit":"nodes","value":2.0625},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":32,"standardError":13.77904298816296,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":41.33712896448888,"unit":"nodes","value":65.46875},
+    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":32,"standardError":285.78125,"standardErrorMethod":"jackknife","status":"measured","tolerance":857.34375,"unit":"people","value":19603},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":32,"standardError":1351.8896436756424,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4055.6689310269276,"unit":"people","value":6116.84375},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1351.8896436756424,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4055.6689310269276,"unit":"people","value":5972.84375}
   ],
   "notes": [
-    "The tradition is a sweep factor now (traditionIndex) and this baseline is taken at its default, which is the tradition scribingTraditionId already chose -- true-naming. Adding the knob moved nothing here.",
-    "Measured on the 200-year reference run alongside these: total effective capital contribution went from fp(32) flat for two centuries to a curve running 0 to fp(332) and back to fp(184), and library depth from 2 distinct nodes to a peak of 35 settling at 15 as the materials economy sheds what it cannot keep. That fall is brake 4 producing the soft equilibrium mages-and-species/design.md predicted, not a regression.",
-    "The universe remains degenerate in known ways, and none of them is closed by this change. These gate sweeps are 100 percent passive-control and submit no god verb, so nothing here measures a played universe. What a universe can *know* is still bounded by the ruleset rather than by its economy: on a 2400-tick eight-strategy sweep, archivist and passive-control both finish at exactly 51.000 nodes known, because neither permits an axis, while permissive-breadth reaches 248.7 -- so the capital loop moves the rate of knowing and not the ceiling of the knowable. Scribing still dies of the economy around world year sixty. And capitalSnowball, computed over the same sweep, went from 0.297 to 0.502 across the checkpoints, which is above the 0.35 guard worshipSnowball is held to; the threshold belongs to god-agency and is not touched here."
+    "No release before 0.5.0 may claim any of this is balanced: every magnitude in autonomy-weight.json carries tuningStatus untuned and the balance harness owns all of them, so this file is a measurement and not a balance claim. The universe also remains degenerate in known ways and this change closes none of them -- it demonstrates the binding one. These gate sweeps are 100 percent passive-control and submit no god verb. On the 2400-tick eight-strategy sweep, five of seven unrestricted strategies still finish holding ALL 51 reachable v1 nodes (mean 51.0, union 51, intersection 51), so cross-strategy containment stays 1.000 and prefix fidelity falls only 0.943 to 0.909. A set that contains everything is contained in every other set; composition is not yet a decision. What did move is every measure that is not saturated: the effort-weighted shape participation ratio 2.39 to 4.89, early-horizon minimum containment 0.742 to 0.612 at tick 240, and denial-warden against narrow-depth containment 0.771 to 0.643. capitalSnowball is not recomputed here and remains W7's 0.502, above the 0.35 guard worshipSnowball is held to; that threshold belongs to god-agency and is not touched."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "2512ea02d2a7569d8d0bacc4c5a926ca",
+    "contentHash": "d37624e36be00f59cf21b87ff6eba144",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Vision 6a's knowledge-as-capital loop is wired, and it was not before. rules-world/universities shipped the whole of it -- the concave contribution table, the depth-ceiling relevance gate, upkeep, the per-tick emission -- and capitalRateMultiplier, contributionFor, applyLibraryUpkeep and emitCapital had zero callers outside their own unit tests, while world-step.ts passed libraryUpkeep: 0 to the consumption order. Five mechanisms now move every number in this file. (1) A library's contribution reaches research-rate, teach-rate and scribe-rate through the shared (1 + sum) accumulator and its one fp(4096) cap; the god's rate seams changed from returning a stacked multiplier to returning magnitudes so a blessing and a library land in one accumulator rather than two. (2) Research takes it through rules-magic's own researchRate seam, which scales the requirement rather than the progress, so a deep library is a lower cost rather than a bigger month. (3) Brake 4 is charged: library upkeep is a real materials demand, reserved out of the scribes' stock at the top of the tick so it cannot be spent twice, and an unpaid shortfall degrades libraries in ascending handle order, duplicates before singles. This is the first channel in the build by which a written copy leaves a universe without a raid, and it is why grimoire counts fall rather than rise. (4) Scribing candidates are ordered novel-before-cheap: cost alone was a total order over content, so the cheapest scribable node was the cheapest for every scribe in every century -- 1,263 books holding two distinct nodes -- and the capital loop had an input that could not move. (5) An affordability filter on the scribable list keeps the goal mask's promise and the target choice the same promise. The new numbers are right because they are the first ones taken with the loop closed: referenceLibraryDepth is a library's depth rather than a constant, and referenceGrimoires is a count of distinct books kept rather than of duplicates hoarded. Nothing here is a balance claim; release-plan.md forbids one before 0.5.0 and every magnitude involved is still tuningStatus untuned.",
+  "rationale": "W17 made target selection a utility score (contracts.md 2.11, docs/design/value-sensitive-acquirer.md), and adding autonomy-weight.json moves contentHash 2512ea02 to d37624e3, so this baseline is invalid by provenance. That is the ONLY reason it is regenerated: every one of the ten metrics in this gate was already inside tolerance against the old numbers -- the largest were referenceNodesGainedFinalQuarter at -1.03 SE and referenceLivingMages at -0.90 SE. This sweep is 32 runs at wide tolerances, so it is the least sensitive of the three and should be read as recording no detectable change rather than as confirming none.",
   "rootSeed": 20260811,
   "runCount": 32,
   "supersededDeltas": [
-    {"delta":-855,"deltaInStandardErrors":-8.875755462575489,"metricId":"referenceGrimoires","previousValue":1012.5625,"value":157.5625},
-    {"delta":-130.65625,"deltaInStandardErrors":-0.5258737066881377,"metricId":"referenceKnowledgeInstances","previousValue":2025.375,"value":1894.71875},
-    {"delta":23.25,"deltaInStandardErrors":124.24676641322874,"metricId":"referenceLibraryDepth","previousValue":2.21875,"value":25.46875},
-    {"delta":0.71875,"deltaInStandardErrors":0.16606173558669302,"metricId":"referenceLivingMages","previousValue":73.28125,"value":74},
-    {"delta":2.84375,"deltaInStandardErrors":0.2554419660157075,"metricId":"referenceNodesGained","previousValue":56.03125,"value":58.875},
-    {"delta":0.0625,"deltaInStandardErrors":0.02760900886950744,"metricId":"referenceNodesGainedFinalQuarter","previousValue":4.21875,"value":4.28125},
-    {"delta":2.84375,"deltaInStandardErrors":0.2554419660157075,"metricId":"referenceNodesKnown","previousValue":58.53125,"value":61.375},
-    {"delta":166,"deltaInStandardErrors":4.509337860780985,"metricId":"referencePeakPopulation","previousValue":19340,"value":19506},
-    {"delta":1891.25,"deltaInStandardErrors":1.6775106902417474,"metricId":"referencePopulation","previousValue":4859.3125,"value":6750.5625},
-    {"delta":1891.25,"deltaInStandardErrors":1.6775106902417474,"metricId":"referencePopulationChange","previousValue":4715.3125,"value":6606.5625}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":110.125,"value":110.125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":1942.125,"value":1942.125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":24.9375,"value":24.9375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":70.40625,"value":70.40625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":62.96875,"value":62.96875},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":2.0625,"value":2.0625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":65.46875,"value":65.46875},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":19603,"value":19603},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":6116.84375,"value":6116.84375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":5972.84375,"value":5972.84375}
   ],
-  "supersedes": "8c545e4648e4bd0f03357cb38c064604d0e88ead85fdb5f052d3f999bea99741",
+  "supersedes": "ce67e9ce4b9cfab4a8e76420e765328dc9ec6c12fd3c1c6cb97546a00953ae0e",
   "sweepId": "balance-gate-ascension-v1",
   "toleranceK": 3
 }

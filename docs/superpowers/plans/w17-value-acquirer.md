@@ -122,17 +122,17 @@ moves and no balance baseline can rot from a re-roll.
 - [x] 4.4 **Age** and **personality** each move a choice on their own (ablation).
 - [x] 4.5 The order is total and deterministic: equal appeal falls to cost then `nodeId`; no RNG
       draw is taken in target selection.
-- [ ] 4.6 The loader rejects an unknown role, an unknown primitive, and a role bound that would let
+- [x] 4.6 The loader rejects an unknown role, an unknown primitive, and a role bound that would let
       a role dominate.
 
 ### 5. Measure, and report the number whether or not it holds
 
-- [ ] 5.1 Re-run the 2400-tick eight-strategy sweep after the change.
-- [ ] 5.2 Prefix fidelity — target **< 0.7**, was 0.943.
-- [ ] 5.3 Effective dimensionality — target **≥ 2 components for 80%**, was 1.
-- [ ] 5.4 Cross-strategy containment — target **< 1.000**, was 1.000 everywhere in v1.
-- [ ] 5.5 Gnome vs human node sets — target **not identical**, were identical (49 = 49).
-- [ ] 5.6 Frontier-length instrumentation, to answer Q2 and to tell "the selector is still flat"
+- [x] 5.1 Re-run the 2400-tick eight-strategy sweep after the change.
+- [x] 5.2 Prefix fidelity — target **< 0.7**, was 0.943.
+- [x] 5.3 Effective dimensionality — target **≥ 2 components for 80%**, was 1.
+- [x] 5.4 Cross-strategy containment — target **< 1.000**, was 1.000 everywhere in v1.
+- [x] 5.5 Gnome vs human node sets — target **not identical**, were identical (49 = 49).
+- [x] 5.6 Frontier-length instrumentation, to answer Q2 and to tell "the selector is still flat"
       apart from "the window was already truncated".
 
 ### 6. Gate and cross-workstream
@@ -140,6 +140,35 @@ moves and no balance baseline can rot from a re-roll.
 - [x] 6.3 W7's capital test: measure the inversion, run the effort-only discriminator, change
       the metric with the numbers written into the test rather than weakening it silently.
 
-- [ ] 6.1 `npm run verify`. **A failing golden fixture is a STOP-and-report, never a regen.**
-- [ ] 6.2 Balance baselines: they will move. Regenerate only with a written rationale naming what
+- [x] 6.1 `npm run verify`. **A failing golden fixture is a STOP-and-report, never a regen.**
+- [x] 6.2 Balance baselines: they will move. Regenerate only with a written rationale naming what
       moved and why the new numbers are right.
+
+## Result
+
+**All four claim thresholds fail, for one measurable reason, and it is not the selector.**
+`docs/design/value-sensitive-acquirer.md` has the numbers. In short:
+
+| claim | threshold | before | after | met |
+|---|---|--:|--:|:--:|
+| prefix fidelity | < 0.7 | 0.9433 | 0.9085 | no |
+| components for 80% | ≥ 2 | 1 | 1 | no |
+| cross-strategy containment | < 1.000 | 1.000 | 1.000 | no |
+| gnome vs human sets | not identical | identical | identical as unions | no |
+
+Five of seven unrestricted strategies still end holding **all 51** reachable v1 nodes, and gnome and
+human both exhaust the 49 reachable at `depthCeiling: 4`. A set that contains everything is contained
+in every other set — those three metrics are arithmetic about the ceiling, not observations about the
+selector. Every measure that is *not* saturated moved, and moved a long way: effort-shape
+participation ratio 2.39 → 4.89, tick-240 minimum containment 0.742 → 0.612, `denial-warden` ↔
+`narrow-depth` containment 0.771 → 0.643, human's cross-seed intersection 37 → 0, and every species
+roughly twice as fast to tier 3 with the spread reopened into three bands.
+
+**The forced next step is a fourth item on W15's list of three: a universe must not be able to exhaust
+the reachable set.** While it can, composition is not a decision for anybody and no selector can make
+it one.
+
+- [x] 5.7 Third arm at `w7/knowledge-capital` alone, to attribute the movement. W7 moved the
+      effort-shape spectrum (2.39 → 3.36) and left prefix fidelity and containment untouched; W17
+      moved prefix fidelity (the only arm that did), the spectrum again (→ 4.89), and all of the
+      containment change.
