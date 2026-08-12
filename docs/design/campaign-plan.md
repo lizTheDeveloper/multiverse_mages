@@ -56,9 +56,13 @@ exploit margin, and the idle probe winning **100% of runs in every cell**.
 | W4 | Reward functions + `metricDeltas` design | lead | **done**, branch `w4/reward-functions` |
 | W5 | Axis off-by-one + `terminalReason` in record | opus | **done**, in PR #16 |
 | — | Balance tuner (CRN, hard constraints) | lead | **done**, in PR #16 |
-| W6 | Positive-achievement ascension predicates | opus | in flight |
-| W7 | §6a library-depth → research-rate loop | opus | in flight |
-| W8 | Make raids actually engage | opus | in flight |
+| W6 | Positive-achievement ascension predicates | opus | **D1/D2/D4 green**; D3 shown unreachable |
+| W7 | §6a loop **+ the teaching fix (C2)** | opus | in flight |
+| W8 | Make raids engage **+ the destruction path (C3)** | opus | in flight |
+| W9 | Octalysis + game-theory proposals | opus | **done**, branch `w9/octalysis-and-mechanics` |
+| W10 | Server contracts + real-time multi-agent | opus | in flight |
+| W11 | Modal sweep fan-out | opus | in flight |
+| W12 | Vision completeness audit | opus | in flight |
 
 Each in-flight workstream owns a checkable plan on its own branch under `docs/superpowers/plans/`.
 Opus leads may delegate reading and tracing to Sonnet subagents; design decisions and final
@@ -75,13 +79,81 @@ reported with numbers**, on the 2400-tick eight-strategy sweep at n >= 96:
 - [ ] **D2** Exploit margin **positive**: the pool out-wins `uniform-random-legal` by >= 0.05
 - [ ] **D3** At least **three** strategies win at materially different rates, none above 60% of wins
 - [ ] **D4** Correlation between per-strategy ascension rate and mean nodes known is **positive**
-- [ ] **D5** `libraryDependence` leaves zero — knowledge can actually be lost
+- [ ] **D5** `knowledgeHalfLife` falls, and nodes are counted actually leaving the universe.
+      *(Restated. The original was `libraryDependence` leaves zero — that would have passed
+      falsely: it tracks the research frontier, not loss exposure, and already sits at 2-3% for
+      some strategies with **zero** actual losses, because a node sits at one copy for the ~70-100
+      ticks a second mage takes to derive it independently.)*
 - [ ] **D6** No strategy wins at the passive knowledge baseline
 - [ ] **D7** Varying the founding species mix changes which strategy wins
 - [ ] **D8** `npm run verify` green, with every baseline movement justified in writing and **no golden fixture regenerated**
 
 D5, D6 and D7 are the ones that say the *game* changed rather than the numbers. D7 is the strongest
 single test that the species table has become load-bearing.
+
+---
+
+## What the campaign has since found — verified in the tree
+
+Three defects that explain the flat strategy space better than the raid finding alone.
+
+### C2 — teaching is dead for anything a mage researched
+
+`DEFAULT_INITIAL_MASTERY` is **256**, `DEFAULT_TEACH_THRESHOLD` is **512**, and `setMastery` has
+exactly one call site in the rules path — `decay.ts:213`, which only ever lowers. Non-dormant decay
+floors at `mul(256, retention)`, i.e. 128-384 across the six species, never zero.
+
+So a researched node is born below the teaching threshold and **nothing in the build can raise it**.
+Only god-granted knowledge (`grant-mastery` 1024) is ever teachable, and it gets taught out.
+Vision §5's *"Teaching — mind → mind. Fast."* is not merely missing, it is **contradicted**, for
+roughly 180 of the 200 simulated years. `reference-long-run.test.ts:24-32` already reported it.
+
+### C3 — written knowledge has no destruction path
+
+`destroyGrimoire` and `destroyLibrary` appear **only in tests**; zero production callers.
+`durability` is written once at scribing and read only by raid code that has never run.
+
+Combined with C2: the only knowledge destruction a player can experience is **their own
+interdiction**. Loss is something the player administers, never something they fear — which is why
+redundancy is worthless and every species trait about retention and scribing is inert.
+
+### C9 — the tradition axis is authored, asymmetric, and never swept
+
+True Naming's `acquire` hook sets `instanceMastery: 1024`; Vancian and Art of Memory use the 256
+default. That single authored number is the difference between a working teaching graph and a dead
+one — and **the reference universe runs Vancian**, the dead one. This is the cheapest untested axis
+of play in the game: a sweep, not a code change.
+
+### The calibration result, and why it is not a tuned magnitude
+
+W6's scan over `ascension-summit-cells`, under common random numbers:
+
+| value | rate | exploit margin | feasible |
+|---|---|---|---|
+| 1 | 0.500 | −0.500 | no — the predicate as it shipped |
+| 12 | 0.458 | −0.542 | no — the passive ceiling, all 12 v1 cells |
+| **13** | **0.167** | **+0.167** | **yes** — first value above the ceiling |
+| 18 | 0.167 | +0.167 | yes |
+
+**The feasibility edge sits exactly at the passive ceiling.** The threshold is therefore not a
+magnitude anyone tuned; it is the structural line *"the god permitted an axis the universe did not
+start with"*. That is what anchoring to the passive baseline — rather than to any strategy — buys.
+
+Note the two infeasible rows have the **best** variety in the whole scan (0.613, top-share 0.33).
+Variety is high there precisely because ascension is a button everyone can press. That is the
+clearest possible vindication of gating feasibility before optimising spread.
+
+### Why D3 cannot be bought with any constant
+
+Five of the eight pool strategies — `passive-control`, `uniform-random-legal`, `archivist`,
+`portal-rush`, `worship-maximizer` — produce **identical** achievement vectors: 12 mastered cells,
+51 nodes, 12 cells. Any predicate that refuses the idle probe refuses all five. The two deniers sit
+strictly below that profile on every axis, so admitting them readmits the passive profile. Exactly
+one winner remains, and the Pareto front over the pool has **one point**.
+
+D3 therefore binds on the **strategy pool and the missing loops**, never on the win condition.
+Tuning a predicate until three strategies clear it would be fitting the win condition to the pool —
+measuring our own labelling, which this campaign explicitly forbids.
 
 ---
 
