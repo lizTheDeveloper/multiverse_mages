@@ -188,3 +188,115 @@ validated by being explicit capped runs, which is the authoritative method in ei
 ## Status
 
 In flight — the composition arms are still running.
+
+---
+
+# The composition measurement — 2,800 runs carrying node identity
+
+W15's probe, reused unchanged: an inert system appended to the world schema, reading
+`collectRecords(state, KNOWLEDGE_INSTANCE)`. **Re-validated on this tree** — a probed and an
+unprobed run agree on snapshot hash, terminal reason and tick count in **8 of 8** checks across four
+strategies and two starting cells.
+
+Ten strategies × two starting cells × 20 replicates = **400 runs per horizon**, seven horizons.
+Strategy is passed explicitly rather than dealt by index, so `strategies[replicateIndex % poolSize]`
+never runs; coverage is asserted anyway and is **exactly 40 runs × 10 strategies at every horizon**.
+`runSeed` is identical on all 400 coordinates at every horizon.
+
+## The prefix property, measured — the seven horizons are one set of universes
+
+| horizon | pairs | exactly equal | **contained** | node gap |
+|--:|--:|--:|--:|---|
+| 300 | 400 | 374 | **400** | 19×1, 6×2, 1×3 |
+| 450 | 400 | 378 | **400** | 22×1 |
+| 600 | 400 | 391 | **400** | 9×1 |
+| 900 | 400 | 396 | **400** | 4×1 |
+| 1200 | 400 | 400 | **400** | — |
+| 1800 | 400 | 400 | **400** | — |
+
+Equality was the wrong test. The probe sits at the **end** of the system list, so its sample at tick
+`H` is taken after tick `H` has run, while a run capped at `H` stops having run ticks `0 .. H-1` —
+the capped terminal is one tick behind. Stated as containment, the property holds in **2,400 of
+2,400** paired comparisons, and every gap is the one to three nodes acquired in that extra tick.
+
+So the horizons are not seven experiments. They are **one set of universes read at seven moments**.
+
+## 1. Saturation, first
+
+`|held ∩ V1| == 51`, with the fifty-one derived from content (`v1CellIds()` → 12 cells → 51 nodes,
+ids 97–112, 215–231, 274–291).
+
+| horizon | saturated runs | fraction | mean v1 coverage |
+|--:|--:|--:|--:|
+| 300 | 4/400 | **0.0100** | 35.9 |
+| 450 | 86/400 | **0.2150** | 38.2 |
+| 600 | 165/400 | **0.4125** | 39.0 |
+| 900 | 225/400 | **0.5625** | 40.1 |
+| 1200 | 231/400 | **0.5775** | 40.3 |
+| 1800 | 234/400 | **0.5850** | 40.4 |
+| 2400 | 236/400 | **0.5900** | 40.4 |
+
+**The pool fraction ceilings at 0.59 because four of the ten strategies can never saturate** — the
+two deniers shrink their own reachable set by edict, and the two ruleset editors leave v1 and hold
+only part of it. Among the six that can, saturation is essentially complete by 900:
+
+| strategy | 300 | 450 | 600 | 900 | 1200 | 2400 |
+|---|--:|--:|--:|--:|--:|--:|
+| `passive-control` | 1/40 | 16/40 | 29/40 | 38/40 | 39/40 | 40/40 |
+| `idle-then-declare` | 1/40 | 16/40 | 29/40 | 38/40 | 39/40 | 40/40 |
+| `worship-maximizer` | 0/40 | 15/40 | 31/40 | 40/40 | 40/40 | 40/40 |
+| `archivist` | 1/40 | 12/40 | 23/40 | 38/40 | 40/40 | 40/40 |
+| `uniform-random-legal` | 0/40 | 17/40 | 32/40 | 37/40 | 36/40 | 38/40 |
+| `portal-rush` | 1/40 | 10/40 | 21/40 | 34/40 | 37/40 | 38/40 |
+
+**Horizon 300 is the only one in this pass where the content is genuinely unexhausted** — 1% of runs
+hold everything. It is also where the universes already hold **48.5 of 51 on average**. The gap
+between "95% of the set" and "all of it" is the whole of the unexhausted window.
+
+## 2. Dimensionality, containment and prefix fidelity
+
+### The full ten-strategy pool
+
+| horizon | 80% | 95% | participation | between-strategy variance | containment mean | containment min | **within-strategy** | prefix fidelity |
+|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| 300 | 2 | 21 | **1.94** | 0.869 | 0.862 | 0.537 | 0.964 | **0.8970** |
+| 450 | 2 | 16 | **1.75** | 0.902 | 0.902 | 0.670 | 0.965 | **0.9214** |
+| 600 | 2 | 20 | **1.77** | 0.894 | 0.913 | 0.673 | 0.963 | **0.9276** |
+| 900 | 2 | 20 | **1.77** | 0.886 | 0.934 | 0.673 | 0.964 | **0.9278** |
+| 1200 | 2 | 19 | **1.74** | 0.891 | 0.941 | 0.667 | 0.962 | **0.9289** |
+| 1800 | 2 | 19 | **1.74** | 0.892 | 0.942 | 0.667 | 0.962 | **0.9292** |
+| 2400 | 2 | 19 | **1.74** | 0.892 | 0.942 | 0.667 | 0.962 | **0.9293** |
+
+### The eight strategies that stay inside v1
+
+| horizon | 80% | participation | containment **cross** | containment **within** | cross − within | prefix fidelity |
+|--:|--:|--:|--:|--:|--:|--:|
+| 300 | **1** | 1.46 | 0.9852 | 0.9649 | **+0.0203** | 0.9244 |
+| 450 | **1** | 1.33 | 0.9875 | 0.9676 | **+0.0199** | 0.9293 |
+| 600 | **1** | 1.26 | 0.9883 | 0.9696 | **+0.0188** | 0.9323 |
+| 900 | **1** | 1.22 | 0.9883 | 0.9696 | **+0.0187** | 0.9325 |
+| 1200 | **1** | 1.22 | 0.9881 | 0.9659 | **+0.0222** | 0.9318 |
+| 1800 | **1** | 1.21 | 0.9881 | 0.9659 | **+0.0222** | 0.9318 |
+| 2400 | **1** | 1.21 | 0.9881 | 0.9659 | **+0.0222** | 0.9318 |
+
+**The pre-registered discriminator fails at every horizon, and it fails in the wrong direction.**
+The rule was that a second dimension is real only if cross-strategy containment sits **below** the
+within-strategy diagonal. Measured, cross containment is **above** it at every horizon by +0.019 to
++0.022: **two different strategies' node sets overlap each other more than two seeds of the same
+strategy do.** The strategy label carries *less* compositional information than the seed.
+
+### The shape-only spectrum settles the "it opens up" reading
+
+Row-normalizing removes magnitude — *"how much a universe knows"* — and leaves composition:
+
+| horizon | 300 | 450 | 600 | 900 | 1200 | 1800 | 2400 |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| shape participation ratio, full pool | 3.31 | 3.22 | 3.24 | 3.30 | 3.31 | 3.31 | 3.30 |
+| shape participation ratio, inside v1 | 2.92 | 2.73 | 2.62 | 2.56 | 2.57 | 2.56 | 2.56 |
+
+**Flat.** Once magnitude is removed the effective dimensionality of composition is
+**indistinguishable between horizon 300 and horizon 2400** — 3.31 against 3.30 for the whole pool.
+The apparent rise in the raw participation ratio (1.74 → 1.94) is *breadth wearing composition's
+clothes*: at a short horizon strategies differ in **how much** they have got through the queue, not
+in **which** magic they hold.
+
