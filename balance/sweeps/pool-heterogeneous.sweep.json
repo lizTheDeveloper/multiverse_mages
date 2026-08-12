@@ -1,0 +1,46 @@
+{
+  "sweepId": "pool-heterogeneous-v1",
+  "kind": "full",
+  "rootSeed": 20260811,
+  "factors": [
+    { "id": "cohortSize", "levels": [4, 12] },
+    { "id": "foundingNodes", "levels": [1, 4] }
+  ],
+  "replicates": 12,
+  "agentPool": {
+    "strategies": [
+      "sect-elemental",
+      "sect-artifice",
+      "sect-umbral",
+      "permissive-breadth",
+      "passive-control",
+      "uniform-random-legal",
+      "idle-then-declare",
+      "permit-then-idle",
+      "archivist",
+      "portal-rush",
+      "narrow-depth",
+      "denial-warden"
+    ],
+    "assignment": "round-robin",
+    "slots": 1
+  },
+  "termination": {
+    "worldTickCap": 2400,
+    "perRunTimeoutMs": 600000
+  },
+  "metrics": [
+    "referenceGrimoires",
+    "referenceKnowledgeInstances",
+    "referenceLibraryDepth",
+    "referenceLivingMages",
+    "referenceNodesGained",
+    "referenceNodesGainedFinalQuarter",
+    "referenceNodesKnown",
+    "referencePeakPopulation",
+    "referencePopulation",
+    "referencePopulationChange"
+  ],
+  "ablation": { "mode": "none", "primitives": [] },
+  "failureThreshold": 0
+}
