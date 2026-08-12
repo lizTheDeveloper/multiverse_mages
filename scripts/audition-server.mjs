@@ -63,14 +63,24 @@ function context() {
   const out = {};
   try {
     for (const cue of JSON.parse(readFileSync('packages/content/data/audio/audio-cue.json', 'utf8'))) {
-      out[cue.id] = { kind: 'cue', text: cue.prompt, note: cue.post, meta: `${cue.kind} · ${cue.band} · ${cue.grid} · §${cue.source}` };
+      out[cue.id] = {
+        kind: 'cue',
+        // §0.8's production tier decides whether a pick is even meaningful.
+        // Granular cues are grain material the client recombines per event, so
+        // every take is kept and choosing one would discard the variation the
+        // tier exists for. Asking for a pick there is asking the wrong question.
+        production: cue.production,
+        text: cue.prompt,
+        note: cue.post,
+        meta: `${cue.kind} · ${cue.band} · ${cue.grid} · §${cue.source}`,
+      };
     }
   } catch { /* cues are optional context */ }
   try {
     for (const bank of JSON.parse(readFileSync('packages/content/data/audio/voice-line.json', 'utf8'))) {
       for (const line of bank.lines) {
         out[line.id] = {
-          kind: 'line', text: line.text, note: bank.voicePrompt,
+          kind: 'line', production: 'rendered', text: line.text, note: bank.voicePrompt,
           meta: `${bank.speaker} · ${line.tier}${line.about ? ` · about ${line.about}` : ''}`,
         };
       }

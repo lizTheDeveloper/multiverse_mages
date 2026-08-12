@@ -72,12 +72,16 @@
   kbd{border:1px solid var(--line);border-radius:3px;padding:0 4px;font:11px var(--mono)}
   .hint{font:11px var(--mono);color:var(--faint)}
   .empty{color:var(--faint);padding:2rem;text-align:center}
+  .grain{margin:0;padding:.7rem .9rem;border-left:3px solid var(--brass);background:color-mix(in srgb,var(--brass) 10%,var(--panel));font-size:.875rem;color:var(--soft);max-width:60ch;border-radius:0 3px 3px 0}
+  .grain b{color:var(--ink)}
+  .grain[data-flash="true"]{background:color-mix(in srgb,var(--brass) 30%,var(--panel))}
+  .row[data-grain="true"] .tick{color:var(--brass)}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <header>
   <h1>Audition</h1>
-  <input id="filter" placeholder="filter — try: orc, dwarf-annoy, click, loss   ( / to focus )" autocomplete="off">
+  <input id="filter" placeholder="filter — orc · dwarf-annoy · click · !todo (undecided only)   ( / to focus )" autocomplete="off">
   <span class="stat" id="cov">—</span>
 </header>
 
@@ -101,8 +105,12 @@
   }
 
   function applyFilter(q) {
-    const terms = q.toLowerCase().split(/\s+/u).filter(Boolean);
-    view = assets.filter((a) => terms.every((t) => a.id.toLowerCase().includes(t)
+    const raw = q.toLowerCase().split(/\s+/u).filter(Boolean);
+    // `!todo` narrows to what still needs a decision: pickable and unpicked.
+    const todoOnly = raw.includes('!todo');
+    const terms = raw.filter((t) => t !== '!todo');
+    view = assets.filter((a) => (!todoOnly || (needsPick(a.id) && !selections[a.id])))
+      .filter((a) => terms.every((t) => a.id.toLowerCase().includes(t)
       || (ctx[a.id]?.text ?? '').toLowerCase().includes(t)
       || (ctx[a.id]?.meta ?? '').toLowerCase().includes(t)));
     if (index >= view.length) index = 0;
@@ -114,9 +122,11 @@
     for (const [i, a] of view.entries()) {
       const row = document.createElement('div');
       row.className = 'row';
-      row.dataset.chosen = String(Boolean(selections[a.id]));
+      const grain = !needsPick(a.id);
+      row.dataset.chosen = String(grain || Boolean(selections[a.id]));
+      row.dataset.grain = String(grain);
       if (i === index) row.setAttribute('aria-current', 'true');
-      row.innerHTML = `<span class="tick">✓</span><span class="id">${a.id}</span><span class="n">${a.takes.length}</span>`;
+      row.innerHTML = `<span class="tick">${grain ? '≡' : '✓'}</span><span class="id">${a.id}</span><span class="n">${a.takes.length}</span>`;
       row.addEventListener('click', () => { index = i; playing = null; renderList(); renderDetail(); });
       el.append(row);
     }
@@ -133,6 +143,16 @@
     el.append(head);
     if (c.text) { const q = document.createElement('p'); q.className = 'quote'; q.textContent = c.kind === 'line' ? `“${c.text}”` : c.text; el.append(q); }
     if (c.note) { const n = document.createElement('p'); n.className = 'note'; n.textContent = c.note; el.append(n); }
+
+    if (!needsPick(a.id)) {
+      const banner = document.createElement('p');
+      banner.className = 'grain';
+      banner.innerHTML = `<b>Grain bank — all ${a.takes.length} takes are kept.</b> `
+        + 'This cue is granular (§0.8): the client recombines these per event, so there is no '
+        + 'single take to choose. Listen for anything unusable and regenerate that one; otherwise '
+        + 'the whole bank ships.';
+      el.append(banner);
+    }
 
     const ol = document.createElement('ol');
     a.takes.forEach((take, i) => {
@@ -160,6 +180,7 @@
     });
     const un = document.createElement('button');
     un.textContent = 'un-choose';
+    un.disabled = !needsPick(a.id);
     un.addEventListener('click', () => choose(null));
     bar.append(more, un);
     const hint = document.createElement('span');
@@ -169,9 +190,18 @@
     el.append(bar);
   }
 
+  /**
+   * A granular asset keeps every take, so it never needs a pick — counting it
+   * as unchosen would report the audition as permanently incomplete and send
+   * you hunting for a decision that does not exist.
+   */
+  const needsPick = (id) => (ctx[id]?.production ?? 'rendered') !== 'granular';
+
   function renderCoverage() {
-    const { total, chosen } = selectionCoverage(assets.map((a) => ({ id: `${a.id}-take1` })), selections);
-    $('cov').innerHTML = `<b>${chosen}</b> / ${total} chosen · ${view.length} shown`;
+    const decidable = assets.filter((a) => needsPick(a.id));
+    const { total, chosen } = selectionCoverage(decidable.map((a) => ({ id: `${a.id}-take1` })), selections);
+    const grain = assets.length - decidable.length;
+    $('cov').innerHTML = `<b>${chosen}</b> / ${total} chosen · ${grain} grain banks · ${view.length} shown`;
   }
 
   function play(i) {
@@ -184,6 +214,11 @@
 
   async function choose(i) {
     const a = view[index]; if (!a) return;
+    if (!needsPick(a.id)) {
+      const b = document.querySelector('.grain');
+      if (b) { b.dataset.flash = 'true'; setTimeout(() => { delete b.dataset.flash; }, 700); }
+      return;
+    }
     const take = i === null ? null : a.takes[i ?? playing ?? 0];
     selections = mergeSelections(selections, { [a.id]: take });
     await fetch('/api/select', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ assetId: a.id, take }) });
