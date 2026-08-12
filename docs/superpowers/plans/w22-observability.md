@@ -180,9 +180,17 @@ Two additive mechanisms, both traced to code:
 1. **`scribingQueueDepth` is hardcoded to `0`** at `packages/coordination/src/world-step.ts:581`,
    so `computeOccupationDemand`'s scribe demand (`rules-world/src/populace/demand.ts:112`) is
    permanently zero. `reallocateOccupations` therefore treats the entire founding scribe cohort
-   as exportable surplus and drains it, with no backfill. Measured: **24 scribes at tick 0,
-   14 by tick 500, 8 by tick 1800, 5 at tick 2400.** The field's own name says it should track
-   queued scribing work; nothing computes that count.
+   as exportable surplus and drains it, and — because demand is the only thing that would ever
+   assign anyone *into* the occupation — nothing backfills it. Scribe headcount is
+   founding-seed-only and monotone down. Measured: **24 scribes at tick 0, 14 by tick 500,
+   8 by tick 1800, 5 at tick 2400.** The field's own name says it should track queued scribing
+   work; nothing computes that count.
+
+   **Scribing does not stop, and the honest claim is narrower than that.** Five scribes still
+   write: with raids off the library recovers from 71 at tick 650 to 129 at tick 900 before
+   settling. What is lost is *scale* — the written record equilibrates at a floor of about 15
+   instances while minds carry 2,000+, so writing stops tracking what the universe knows. Under
+   the shipped configuration raids then take the residual to **zero**.
 2. **Library upkeep shortfall destroys shelved copies** — `degradeLibrary`
    (`coordination/src/gateway.ts:863`), fed by `applyLibraryUpkeep`
    (`rules-world/src/universities/capital.ts:298`), destroys
@@ -200,6 +208,15 @@ zero — but nothing runs long enough to look, and no committed record carries n
 
 This is reported, not fixed. It is `rules-world`/`coordination` territory and two workstreams
 deep.
+
+## One seam left open, deliberately
+
+The census is a library function over `SimState` plus a repo tool. **`AgentSession` does not
+expose it**, because it does not expose `SimState` either, so a client driving a session cannot
+take a census today. The shape of the follow-up is one line — a `census()` beside
+`snapshotHash()` on `AgentSession` — but what it *is* is a widening of §4's session surface, and
+that is `agent-interface`'s contract to make, not this workstream's. Recorded so it reads as a
+decision.
 
 ### Per-mage containment — the W20/W21 instrument's first reading
 
