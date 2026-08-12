@@ -1407,3 +1407,85 @@ nothing. `ticksToUnteachable` came out one higher than the derived table because
 a hand-derived table rather than against themselves. Full `verify` green: 279 files, 3,925 tests, all
 three balance gates passing with **thirty metrics at delta 0.00000**, no golden and no baseline
 regenerated.
+
+---
+
+## W32: the corroboration was double-counted, and the balance target was folklore
+
+Four corrections, each of which invalidates something this document or the campaign asserted.
+
+### 1. "Five independent confirmations" is at most four — and this is arithmetic
+
+**A perfect prefix structure *entails* containment 1.000.** Prefix fidelity and containment are not two
+measurements agreeing; the second is implied by the first. This document, and I in several messages,
+have repeatedly claimed *five independent ways* of establishing content exhaustion. Two of the five
+were one. **Say four, and say which four.**
+
+This is the failure mode the campaign was built to avoid, committed by the campaign: corroboration
+counted by how many numbers were printed rather than by how many independent things were measured.
+
+### 2. The rock-paper-scissors target cannot be sourced, and the defensible target is different
+
+Neither StarCraft's matchup non-transitivity nor Magic's aggro/control/combo triangle could be
+verified by **any** measurement. Both are confident folklore, and the StarCraft data that does exist
+argues **confounding**, not cycling. The only verified non-transitivity measurement in a commercial
+game is chess.
+
+**The replacement target is exact and checkable.** Our strategy poset has **width 1** (Dilworth
+1950) — one chain, everything comparable. The goal is **width > 1**: strategies that are genuinely
+*incomparable*, not a cycle. That is what D3 was reaching for and could not name.
+
+### 3. Every exploit margin this campaign published was measured against a bot that flatters it
+
+**A fixed bot pool lies.** Goodman et al. (2024) measured depth collapsing from 0.125 to **0.000**
+once the agent was tuned. Every exploit-margin number here was measured against
+`uniform-random-legal`, **which has seven of fifteen verbs inert**. A probe that cannot use half the
+action space is not a lower bound on exploitability; it is a lower bound on *that probe*.
+
+**This bears directly on D2**, which is defined as out-winning `uniform-random-legal` by ≥ 0.05. D2 is
+not merely unmet — as specified, it is **not a test of what it claims to test**. It needs an adaptive
+opponent, or an explicit statement that it measures a floor.
+
+### 4. Our statistics already had names, and the names come with caveats we skipped
+
+- **Prefix fidelity 0.943 is a Guttman coefficient of reproducibility** (1944), and clears the
+  customary 0.90. It is also known to be **inflated by extreme marginals** — and we have exactly that
+  pathology, since three strategies hold the entire reachable set. Report the **coefficient of
+  scalability** against **minimal marginal reproducibility**, not the raw number.
+- **Containment 1.000 is nestedness** (Atmar & Patterson 1993; NODF), whose literature has required a
+  **null model** for thirty years, because nested matrices arise by chance from marginals alone. We
+  reported it without one.
+- **Participation ratio is not from this field at all** — it is condensed-matter physics, with no
+  found use in game evaluation. Label it a house metric and report matrix **rank** beside it.
+- **Do not gate on a depth number.** The field's most rigorous recent entrant reports weak, mostly
+  insignificant correlation with human judgement, and Lantz et al. 2017 is a **position paper** that
+  says so of itself. Anyone citing it as empirical is citing it wrong.
+
+### A discrepancy to resolve, not to paper over
+
+W32 reports *"the whole grid costs **96 favor** against a floor income of 1/tick over 2,400 ticks."*
+This document records **40,960 favor** for the seven switches that open the twelve v1 cells, from
+`god-cost.json`. Those cannot both be the price of the same thing. Most likely they are different
+quantities — a per-tick or ruleset-edit cost versus the one-time switch cost — but **nobody has
+checked**, and the permit-opportunity-cost work depends on knowing which number is the real
+constraint. Resolve before tuning anything.
+
+### Also delivered
+
+A checkable design language: eleven closed verbs (`nests`, `incomparable`, `width`, `reproducible`,
+`dominates`, `degenerate`, `chain`, `solved-open-loop`, `inert`, `commits`, `composes`), each a JSON
+record carrying a falsifiable hypothesis and a **`refutedBy`** procedure, validated by the repo's own
+schema compiler so it adds no dependency. `solved-open-loop` is the term we lacked for
+`permit-then-idle`.
+
+It earned its keep before shipping: writing the claim that funding and encouragement are *"worth less
+than nothing"* exposed that the comparison behind it is **40/40 against 38/40 at n=40** — a two-run
+difference with overlapping Wilson intervals and no restricted arm ever run. Verdict `unmeasured`,
+not `holds`. The notation caught an overclaim without anyone running anything.
+
+### And a note on how briefs go wrong
+
+Three research leads died on contact with sources, and **one of them was a fabricated citation that
+originated in the brief I wrote** — a "Deep Hanabi" experiment that does not exist. An agent
+inheriting a confident false premise will spend real time on it. Briefs get citations checked before
+they are sent, or they manufacture work.
