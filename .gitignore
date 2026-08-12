@@ -23,3 +23,6 @@ assets/candidates/
 # Python bytecode, from packages/gym-bridge/python.
 __pycache__/
 *.py[cod]
+
+# Generated reports rendered into ui/ — regenerate with scripts/content-graph.mjs
+ui/*.html
