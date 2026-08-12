@@ -137,17 +137,24 @@ function main() {
   lines.push('');
 
   lines.push('## Ascension');
-  lines.push('| horizon | window | canon reachable | ascensions | rate | terminal reasons |');
-  lines.push('|--:|---|---|--:|--:|---|');
+  lines.push(
+    '| horizon | window | canon reachable | ascensions | rate | apotheosis | canon | ascended at (min/med/max) | terminal reasons |',
+  );
+  lines.push('|--:|---|---|--:|--:|--:|--:|---|---|');
   for (const t of ticks) {
     const a = data.horizons[t].ascension;
     const reasons = Object.entries(a.byReason)
       .map(([k, v]) => `${k} ${String(v)}`)
       .join(', ');
+    const at =
+      a.ascendedTick === null
+        ? '—'
+        : `${String(a.ascendedTick.min)} / ${String(a.ascendedTick.median)} / ${String(a.ascendedTick.max)}`;
     lines.push(
       `| ${String(t)} | ${a.gatedByMinTick ? '**empty** — `[600, H)`' : `\`[600, ${String(t)})\``} | ` +
         `${a.canonReachable ? 'yes' : '**no** — canon needs tick 960'} | ` +
-        `${String(a.ascensions)} | ${fmt(a.rate, 4)} | ${reasons} |`,
+        `${String(a.ascensions)} | ${fmt(a.rate, 4)} | ${String(a.apotheosis)} | ` +
+        `${String(a.canon)} | ${at} | ${reasons} |`,
     );
   }
   lines.push('');

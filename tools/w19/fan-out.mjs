@@ -34,45 +34,16 @@
  */
 
 import { spawn } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-/** The seven horizons, in world ticks. All are multiples of 150. */
-export const HORIZONS = Object.freeze([300, 450, 600, 900, 1200, 1800, 2400]);
-
-/**
- * The composition sampling grid. 150 divides every horizon, which is what makes
- * "the 2400 arm's sample at tick H equals the H-capped arm's terminal" a
- * checkable claim rather than an assumption.
- */
-export const SAMPLE_TICKS = 150;
-
-/** The full pool as `BOT_POOL` holds it — ten, including the two probes. */
-export const POOL_10 = Object.freeze([
-  'passive-control',
-  'uniform-random-legal',
-  'permissive-breadth',
-  'narrow-depth',
-  'denial-warden',
-  'archivist',
-  'portal-rush',
-  'worship-maximizer',
-  'idle-then-declare',
-  'permit-then-idle',
-]);
-
-/**
- * Arm B's strategies and masks. Gnome (8) and human (16) are the pair W15 found
- * share `depthCeiling: 4` and reach the identical 49 nodes at 2400 — so if any
- * two species diverge before exhaustion, these are the ones whose divergence
- * cannot be explained by the ceiling.
- */
-export const SPECIES_STRATEGIES = Object.freeze([
-  'passive-control',
-  'archivist',
-  'permissive-breadth',
-]);
-export const SPECIES_MASKS = Object.freeze([8, 16]);
+import {
+  HORIZONS,
+  POOL_10,
+  SAMPLE_TICKS,
+  SPECIES_MASKS,
+  SPECIES_STRATEGIES,
+} from './horizons.mjs';
 
 function parseArgs(argv) {
   const args = {};
@@ -103,6 +74,41 @@ function jobsFor(arm, out, replicates) {
   // Longest first: a 2400-tick job started last would be the tail of the whole
   // fan-out with thirteen idle cores behind it.
   return jobs.sort((x, y) => y.ticks - x.ticks);
+}
+
+/**
+ * The file this job would write, and whether it is already there and complete.
+ *
+ * Resume rather than redo. The runs are deterministic and the filename encodes
+ * the strategy and the mask while the directory encodes the horizon, so a file
+ * whose recorded cap, sampling grid and replicate count all match is the same
+ * file this job would produce. Every field is checked; a mismatch re-runs. This
+ * exists because a fan-out that has to start over loses half an hour of other
+ * people's cores as well as its own.
+ */
+function outputPath(job) {
+  return join(
+    job.dir,
+    `h${String(job.ticks)}__${job.strategyId}${job.mask === undefined ? '' : `__mask${String(job.mask)}`}.json`,
+  );
+}
+
+function alreadyDone(job) {
+  try {
+    const data = JSON.parse(readFileSync(outputPath(job), 'utf8'));
+    return (
+      data.worldTickCap === job.ticks &&
+      data.sampleEveryTicks === SAMPLE_TICKS &&
+      data.replicates === job.replicates &&
+      data.strategyId === job.strategyId &&
+      (data.foundingSpeciesMask ?? undefined) === job.mask &&
+      Array.isArray(data.runs) &&
+      data.runs.length === job.replicates * 2 &&
+      data.runs.every((run) => Array.isArray(run.terminal?.nodeIds))
+    );
+  } catch {
+    return false;
+  }
 }
 
 function runJob(job) {
@@ -140,9 +146,15 @@ async function main() {
   const replicates = Number(args.replicates ?? (arm === 'a' ? 20 : 12));
   const concurrency = Number(args.jobs ?? 14);
 
-  const queue = jobsFor(arm, out, replicates);
+  const all = jobsFor(arm, out, replicates);
+  const skipped = all.filter(alreadyDone).length;
+  const queue = all.filter((job) => !alreadyDone(job));
   const total = queue.length;
   let done = 0;
+  process.stderr.write(
+    `[w19] arm ${arm}: ${String(all.length)} jobs, ${String(skipped)} already complete, ` +
+      `${String(total)} to run\n`,
+  );
   const started = Date.now();
 
   const workers = Array.from({ length: Math.min(concurrency, total) }, async () => {

@@ -34,7 +34,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { HORIZONS } from './fan-out.mjs';
+import { HORIZONS } from './horizons.mjs';
 
 /** Content order is draconic, dwarf, elf, gnome, human, orc — masks 1..32. */
 const GNOME = 8;

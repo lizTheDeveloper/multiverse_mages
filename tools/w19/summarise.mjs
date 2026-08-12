@@ -39,7 +39,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { HORIZONS } from './fan-out.mjs';
+import { HORIZONS } from './horizons.mjs';
 
 /**
  * `ascension-min-tick`. Below it no universe can ascend by either path.
@@ -145,6 +145,14 @@ function main() {
       reasons[key] = (reasons[key] ?? 0) + 1;
     }
     const ascended = (reasons.apotheosis ?? 0) + (reasons.canon ?? 0);
+    // When ascension happens, not merely how often. Canon cannot be satisfied
+    // before tick 960; if the ascended runs pile up against that line, the win
+    // condition is a timer that fires at the first legal era boundary, which is
+    // a sharper and more falsifiable statement than any rate.
+    const ascendedTicks = runs
+      .filter((run) => run.terminalReason === 1 || run.terminalReason === 2)
+      .map((run) => run.ticksRun)
+      .sort((a, b) => a - b);
 
     // --- per strategy ----------------------------------------------------------
     const strategies = {};
@@ -216,6 +224,16 @@ function main() {
         ascensions: ascended,
         rate: ascended / runs.length,
         byReason: reasons,
+        apotheosis: reasons.apotheosis ?? 0,
+        canon: reasons.canon ?? 0,
+        ascendedTick:
+          ascendedTicks.length === 0
+            ? null
+            : {
+                min: ascendedTicks[0],
+                median: ascendedTicks[Math.floor(ascendedTicks.length / 2)],
+                max: ascendedTicks[ascendedTicks.length - 1],
+              },
       },
       dimensionality: {
         binary: pick(analysis.spectra.binary),

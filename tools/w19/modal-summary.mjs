@@ -36,10 +36,10 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { HORIZONS } from './fan-out.mjs';
+import { HORIZONS } from './horizons.mjs';
 
 const REASON = Object.freeze({
-  0: 'cap',
+  0: 'hit-cap',
   1: 'apotheosis',
   2: 'canon',
   3: 'stagnation',

@@ -18,20 +18,26 @@
  * reason to take them one at a time. Results are cached as
  * `.w19/analysis/h<H>-{all,v1}.json` and `summarise.mjs` reads them.
  *
- * **`v1` excludes `permissive-breadth` and `permit-then-idle`** — the two
- * strategies that leave the v1 subset by permitting cells. W15 named that
- * exclusion and reported the restricted pool; both are reported here, because
- * the restricted one is what compares with W15 and the full one is what answers
- * whether the space opens up.
+ * **`v1` excludes the three strategies that leave the v1 subset by permitting
+ * cells.** Two are deliberate — `permissive-breadth` and `permit-then-idle` —
+ * and the third is not: `uniform-random-legal` submits random *legal* actions,
+ * which includes `permitTechnique` and `permitForm`, and on this integrated tree
+ * it reaches **62.1 nodes at 2400** against a v1 ceiling of 51. On W15's tree it
+ * read 49.8 and stayed inside; that is a difference between the trees, not a
+ * difference of opinion, and leaving it in would put a ruleset editor inside a
+ * comparison labelled "inside the v1 ruleset".
+ *
+ * Excluding all three leaves **seven** strategies, which is also the size of the
+ * pool W15 reported its v1 numbers over — so the two measurements compare.
  */
 
 import { spawn } from 'node:child_process';
 import { createWriteStream, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { HORIZONS } from './fan-out.mjs';
+import { HORIZONS } from './horizons.mjs';
 
-const RULESET_EDITORS = 'permissive-breadth,permit-then-idle';
+const RULESET_EDITORS = 'permissive-breadth,permit-then-idle,uniform-random-legal';
 
 function runOne(dir, outFile, exclude) {
   return new Promise((resolve, reject) => {

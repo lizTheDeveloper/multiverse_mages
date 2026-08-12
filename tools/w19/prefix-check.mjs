@@ -34,10 +34,21 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { HORIZONS } from './fan-out.mjs';
+import { HORIZONS } from './horizons.mjs';
 
+/**
+ * Every arm file present under `dir`, or none. Missing and partial directories
+ * are tolerated deliberately: this check is worth running the moment two
+ * horizons share a single strategy, rather than only after 2,800 runs land.
+ */
 function load(dir) {
-  return readdirSync(dir)
+  let names;
+  try {
+    names = readdirSync(dir);
+  } catch {
+    return [];
+  }
+  return names
     .filter((name) => name.endsWith('.json'))
     .sort()
     .flatMap((name) => JSON.parse(readFileSync(join(dir, name), 'utf8')).runs);
