@@ -389,7 +389,7 @@ performed and it returned the review's answer:
 | claim | measured |
 |---|---|
 | effective dimensions inside the v1 ruleset | **1** for 80% of variance, 2 for 95%, participation ratio **1.19** |
-| do strategies converge on the same subset | worse — they **nest**: containment **1.000** for every cross-strategy pair |
+| do strategies converge on the same subset | worse — they **nest**: containment **1.000** for every cross-strategy pair inside v1 except `denial-warden` ↔ `narrow-depth`, the two smallest sets, at 0.771 |
 | is a run's node set predictable from its size alone | **yes**, prefix fidelity **0.943**, exact on 65/84 |
 | does species change composition | **no** — cross-species containment 1.00; two ceiling-4 species reach the **identical** 49 |
 | are the nodes fungible | differentiated in the win condition, **fungible in play** — the acquirer is value-blind |
