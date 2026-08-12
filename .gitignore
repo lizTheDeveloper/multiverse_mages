@@ -32,5 +32,9 @@ __pycache__/
 # thousands of lines of JSON per arm and none of it is source.
 .w17/
 
-# Generated reports rendered into ui/ — regenerate with scripts/content-graph.mjs
-ui/*.html
+# The generated lattice report, regenerated with scripts/content-graph.mjs.
+# Named exactly rather than globbed: `ui/*.html` also matched ui/index.html, and
+# `git add ui/` skips an ignored file SILENTLY — so the front door was committed
+# as a README pointing at a page that was never in the tree, which is the defect
+# that commit existed to fix.
+ui/lattices.html
