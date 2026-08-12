@@ -1063,18 +1063,39 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'the mask clears the action every tick. It is therefore permanently MASKED rather than inert, ' +
     'which makes portal-rush the one strategy whose defining action degeneracyOf reports as ' +
     'unreachable. Raids, and a second universe to point a portal at, land in 0.9.0.',
-  'ascension-is-passive':
-    'declareAscension is now gated: mask.ts clears it unless the god-state row\'s ascensionPath has ' +
-    'left ASCENSION_PATH.none, and the outcome system recomputes that every world tick so it can ' +
-    'lapse. What is *not* yet true is that eligibility measures play. Path A gates on world tick ' +
-    '>= ascension-min-tick (600) and worship tier >= ascension-tier-gate (4), and worship accrues ' +
-    'from mages, universities and populace whether or not the god acts — so the path opens by ' +
-    'passive accumulation around tick 700 in the reference universe, at the same 51 nodes known ' +
-    'that passive-control reaches doing nothing. Measured: at 2400 ticks the pool\'s winners ' +
-    'declare within a few dozen ticks of each other regardless of what they did beforehand. Until ' +
-    'the gate depends on something the god\'s play moves, a strategy\'s ascension timing is ' +
-    'evidence about the clock and not about the strategy. That is what W2 of the ascension-meta ' +
-    'campaign exists to change; delete this entry when it does.',
+  'five-strategies-are-one-universe':
+    'Ascension eligibility now reads play: Path A counts permitted cells standing at their floor ' +
+    'and Path B requires an era boundary to hold a canon of a stated size spread over a stated ' +
+    'number of cells, both anchored above what a universe reaches with no god action at all. The ' +
+    'entry that used to sit here said the opposite and has been deleted rather than edited, ' +
+    'because it told a reader not to run the experiment that found this one. What replaces it is ' +
+    'a limit of the POOL, not of the game. Measured over four factor cells at 2400 ticks, reading ' +
+    'the god tick report at every era boundary: passive-control, uniform-random-legal, archivist, ' +
+    'portal-rush and worship-maximizer all end at exactly (12 mastered cells, 51 nodes known, 12 ' +
+    'cells spanned). They submit different actions and produce the SAME universe. permissive-' +
+    'breadth reaches (15, 262, 70); narrow-depth and denial-warden reach (0, <=9, <=5), strictly ' +
+    'below the passive profile on every axis. So the pool holds three distinct achievement ' +
+    'profiles and its Pareto front is one point. Any predicate that refuses the exploit probe ' +
+    'refuses all five of its profile-mates, and any predicate that admits the two deniers admits ' +
+    'the passive profile too — which is why no setting of any ascension constant can make three ' +
+    'strategies win at materially different rates while the idle probe still loses. That is a ' +
+    'measurement of the strategy pool and of the two loops that would make the other strategies\' ' +
+    'actions matter: universities do not compound into a rate, and nothing is ever the last copy, ' +
+    'so libraryDependence is identically zero and redundancy buys nothing. Delete this entry when ' +
+    'a second strategy can produce a universe distinguishable from the one the god never touched.',
+  'universities-are-founded-and-never-finished':
+    'fundUniversity slot 0 founds a new university and slots 1+ advance existing ones, and ' +
+    'advanceConstruction in rules-world has no caller outside it — so a completed university is ' +
+    'god-attributable by construction, and the reference universe seeds exactly one. That makes ' +
+    'completedUniversities look like the ideal Path A conjunct, and measured it is the opposite. ' +
+    'Every deliberate strategy in this pool ends the run with that one seeded university: ' +
+    'permissive-breadth lists fundUniversity behind permitTechnique, which is legal every round, ' +
+    'so the entry is never reached; archivist takes slot 0 every round while libraryDepth stays ' +
+    'below its threshold, founding hundreds and completing none. Only uniform-random-legal — which ' +
+    'picks slots at random and therefore sometimes advances the same one twice — completes any, ' +
+    'reaching 26. A Path A gate on completedUniversities would hand the summit exclusively to the ' +
+    'bot that presses buttons at random. Recorded because discriminating-ascension names that gate ' +
+    'as Path A\'s successor knob, and the measurement says it is inverted.',
   'noise-floor-submits-axis-actions-bare':
     'uniform-random-legal draws a parameter only when candidateSlotCount says the action has one, ' +
     'and CANDIDATE_SLOTS covers 8–14 alone — actions 1–7 are not §4.4 parameterized actions, so ' +
