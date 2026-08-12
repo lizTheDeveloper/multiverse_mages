@@ -461,6 +461,8 @@ different stopping point on it.
 | constants, rules, magnitudes changed | **none** |
 | golden fixtures regenerated | **none** |
 | balance baselines regenerated | **none** |
+| `npm run verify` | **EXIT=0** — 3,872 tests in 275 files |
+| all three balance gates | **PASS**, delta **0.00000** on every metric |
 
 Two production-code changes: **none**. Two tool changes, both additive: `--sample` on W15's
 `run-arm.mjs` (default identical, verified run-for-run) and `tools/w19/`.
