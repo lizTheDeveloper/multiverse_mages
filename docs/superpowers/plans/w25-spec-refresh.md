@@ -144,8 +144,13 @@ Kept here so they survive the branch.
   (§11) is amendment A here. D2–D5 are `vision.md` edits nobody has been asked for: §8 should cite
   `contracts.md` §1.1 for what *"uninvolved universes keep advancing"* means; §6 should mark orc
   martial capability as deferred per `contracts.md` §2.4; §4's *"~15 tunable effect primitives"* is
-  16 in `primitive.json`; §13's mage-population figure was re-measured at 72/18,417 against the
-  88/18,713 the section states. D6–D7 are stale first-party code comments.
+  16 in `primitive.json`. D6–D7 are stale first-party code comments. **D5 has expired and should
+  not be actioned as written:** the audit asked for §13's 88 mages / 18,713 populace to be restated
+  as 72/18,417, but that was measured one commit before this integration branch. The suite on this
+  branch prints **87 mages across a population of 18,838, peak 92** (`reference-long-run.test.ts`
+  case 9.10) — so §13's figure is close to right again, and the audit's correction is the one that
+  is now stale. Left alone rather than re-stated, since it is not on this brief and the number
+  clearly moves with the tree.
 - **0.3.0 shipped without a tag.** Root `package.json` is `0.3.0`, `knowledge-model` is archived,
   `CLAUDE.md` says "released through 0.3.0", and `git tag` stops at `v0.2.0`.
   `release-plan.md` says *"every release gets a tag; an untagged release is not a rollback
