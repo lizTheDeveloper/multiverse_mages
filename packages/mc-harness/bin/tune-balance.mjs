@@ -103,6 +103,37 @@ const AXES = [
   { constantId: 'ascension-dependence-max', levels: [64, 128, 192, 256] },
   { constantId: 'ascension-loss-max', levels: [0, 1, 2, 3] },
   { constantId: 'ascension-min-tick', levels: [600, 900, 1200] },
+  // ---- The positive-achievement constants -------------------------------
+  //
+  // The levels here are not a guess and they are not a geometric ladder. They
+  // bracket a *measured* window whose two edges both mean something, taken by
+  // driving all eight pool strategies through the reference universe and reading
+  // the god tick report's `ascensionProgress` block at every era boundary:
+  //
+  //   strategy                masteredCells  nodesKnown  cellsKnown
+  //   passive-control                    12          51          12
+  //   uniform-random-legal               12          51          12
+  //   archivist / portal-rush /
+  //     worship-maximizer                12          51          12
+  //   permissive-breadth                 15         262          70
+  //   narrow-depth                        0           9           5
+  //   denial-warden                       0           5           5
+  //
+  // The v1 rectangle is twelve cells holding fifty-one nodes and an unattended
+  // universe learns **all of them**, so 12 and 51 are the passive ceiling: any
+  // level at or below them is met by doing nothing, and any level above them
+  // requires the god to have permitted an axis the universe did not start with.
+  // Each list therefore runs identity -> passive ceiling -> the window above it.
+  //
+  // The gap between the passive ceiling (12 cells) and the best-playing strategy
+  // in the pool (15) is three cells wide, and that is a measurement of the pool
+  // rather than of the game: five of eight strategies produce a universe
+  // *indistinguishable* from the one the god never touched.
+  { constantId: 'ascension-summit-cells', levels: [1, 12, 13, 14, 15] },
+  { constantId: 'ascension-summit-copies', levels: [2, 4] },
+  { constantId: 'ascension-canon-breadth', levels: [0, 51, 77, 102, 180] },
+  { constantId: 'ascension-canon-cells', levels: [0, 12, 18, 24, 36] },
+  { constantId: 'ascension-loss-fraction', levels: [0, 26, 51, 102] },
 ];
 
 const WEIGHTS = { variety: 1, correlation: 1, exploit: 1 };

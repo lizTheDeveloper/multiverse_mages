@@ -83,6 +83,73 @@ idle-then-declare probe winning 100% of runs in **every** cell.
 `passive-control` scores 0 by construction — its declared stance is `never`. It is the *state*
 baseline, not a win-rate baseline; `uniform-random-legal` is the honest exploit probe.
 
+### The calibration measurement — what each strategy can actually reach
+
+Taken by driving all eight pool strategies through the reference universe over four factor cells
+(`cohortSize` 4/12 × `foundingNodes` 1/4, 2400 ticks) and reading the god tick report's
+`ascensionProgress` block at every era boundary. Maxima over the run:
+
+| strategy | masteredCells | nodesKnown | cellsKnown | completedUniversities |
+|---|---|---|---|---|
+| passive-control | 12 | 51 | 12 | 1 |
+| uniform-random-legal | 12 | 51 | 12 | **26** |
+| archivist | 12 | 51 | 12 | 1 |
+| portal-rush | 12 | 51 | 12 | 1 |
+| worship-maximizer | 12 | 51 | 12 | 1 |
+| permissive-breadth | **15** | **262** | **70** | 1 |
+| narrow-depth | 0 | 9 | 5 | 1 |
+| denial-warden | 0 | 5 | 5 | 1 |
+
+**The passive ceiling is (12, 51, 12), and it is the whole v1 rectangle.** Every threshold below is
+a multiple of it.
+
+**Five strategies are one universe with five labels.** `passive-control`, `uniform-random-legal`,
+`archivist`, `portal-rush` and `worship-maximizer` produce *identical* achievement vectors. Any
+predicate that admits one admits all five; any predicate that refuses one refuses all five. This is
+the binding constraint on part 3 of the claim and it is a property of the pool, not of the win
+condition — see "The impossibility" below.
+
+**`completedUniversities` is inverted.** Only the exploit probe builds any. Gating Path A on it
+would hand the summit exclusively to the bot that presses buttons at random.
+
+## The impossibility, stated so it can be checked
+
+Part 3 of the claim — *at least three strategies win at materially different rates, none above 60%
+of wins* — **cannot be satisfied by any setting of any ascension constant** while parts 2 and 4
+hold. This is an argument from the measured table above, not a report of a failed search.
+
+1. The pool contains exactly **three** distinct achievement profiles: the passive profile
+   `(12, 51, 12)` shared by five strategies, `permissive-breadth` at `(15, 262, 70)`, and the two
+   deniers at `(0, ≤9, ≤5)`.
+2. Part 2 requires `uniform-random-legal` to lose. It carries the passive profile, so every
+   predicate that refuses it refuses all five strategies in that profile.
+3. The two deniers sit **strictly below** the passive profile on every axis. Any positive-achievement
+   predicate that admits them therefore also admits the passive profile, contradicting (2).
+4. So at most **one** strategy can win: `permissive-breadth`. One winner means `topShare = 1.0` and
+   a winner count of 1.
+
+The Pareto front over the pool's achievement vectors has **one point**: `permissive-breadth`
+dominates every other strategy on all three axes at once. The degeneracy is in the strategy pool —
+five bots that submit different actions and produce the same universe — and not in the predicate,
+which has three axes that genuinely trade against one another.
+
+What would change it: `permissive-breadth` is the only strategy whose actions move any measured
+quantity, because the two loops that would make the other strategies' actions matter are missing.
+Universities do not compound (`libraryDepth` feeds no rate — W7), and nothing is ever the last copy,
+so `libraryDependence` is identically zero and redundancy buys nothing (W8's loss channel). Until
+those land, "does ascension follow from play" has one bit of evidence in it.
+
+## What must be recalibrated later, and against what
+
+| constant | recalibrate when | because |
+|---|---|---|
+| `ascension-summit-cells` | W7 lands (knowledge as capital) | mastering a cell will stop being a function of time-since-permitted once library depth feeds research and teaching rates |
+| `ascension-canon-breadth` | content enables cells beyond the v1 rectangle | it is a count, deliberately, so the summit does not recede as content grows — but the passive ceiling it is anchored to moves |
+| `ascension-canon-cells` | same as above | anchored to the same twelve-cell rectangle |
+| `ascension-loss-fraction` | W8 lands (raids engage) | it is the allowance for a loss channel that currently never fires; 5% of a canon is an untested magnitude against zero observed losses |
+| `ascension-dependence-max` | W8 lands | `libraryDependence` is identically zero today, so this conjunct is inert and load-bears nothing |
+| `ascension-summit-copies` | W8 lands | two copies is free when the mean is ~55 copies per node |
+
 ## Constraints held throughout
 
 - `npm run goldens:regen` is **never** run. A failing golden test is a finding, not a regeneration.
