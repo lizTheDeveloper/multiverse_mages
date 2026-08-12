@@ -137,4 +137,63 @@ Report order, fixed in advance:
 
 ## Record — what moved after each merge
 
-*Filled in as the round proceeds. Nothing is written here that has not been run.*
+*Nothing is written here that has not been run. Every figure below is read out of a
+`verify-*.log` or a gate output on disk.*
+
+### Baseline (un-merged, `0b54c84`)
+
+`npm run verify` reached the test stage clean and the three gates were then run individually:
+**275 test files / 3,872 tests, all passing**, and all three balance gates **PASS at delta
+`0.00000` on every metric**. The chain's own exit was 1 for the documented reason — three
+`Timeout calling "onTaskUpdate"` unhandled errors raised *after* `Test Files 275 passed (275)`,
+which is the `reference-long-run.test.ts` RPC-budget defect and not a test failure. No timeout was
+raised to make anything green.
+
+This is the attribution baseline: it reproduces round 2's committed figure exactly, so anything
+that moves below moves because of a merge and not because of this worktree.
+
+Golden fixture fingerprints, recorded here so every later merge can be checked cheaply:
+
+    baa53d12…  engagement-transition.json
+    0c6e4eee…  entity-churn.json
+    3f039155…  world-time-only.json
+
+### Merge 1 — `w18/instrument-repair` (`ce1403b`)
+
+Merged clean, **no textual conflicts** — and then **failed verify**, which is a finding rather
+than a hiccup.
+
+**The interaction: W18's own `verify` green claim does not reproduce.** W18 made
+`replicates % poolSize` a *refusal* rather than a warning, and added `TOY_FIXED_POOL` to
+`packages/mc-harness/test/unit/fixtures.ts` for tests whose subject is scheduling rather than the
+strategy pool. It migrated three call sites to it — `pool.test.ts` (replicates 1),
+`storage.test.ts` (3), `reproduce-run.test.ts` (5). **`shard.test.ts` is the fourth and was
+missed.** It is W11's file, W18's diff does not contain it, and W18's refusal is what rejects it,
+so the failing combination exists on W18's branch as well as on the merge:
+
+    Sweep toy-sweep is not valid and no run was dispatched:
+      replicates is 1 against a round-robin pool of 2 strategies …
+
+Resolved by finishing W18's own migration — the failing case wants exactly one task against four
+shards, so the replicate count of 1 *is* the point of it, and the fixed pool is the honest fixture
+by W18's own comment. **The invariant was not relaxed**, and no timeout or threshold was touched.
+
+`npm run verify` **EXIT=0** after the fix. **277 test files / 3,918 tests, all passing**
+(+2 files, +46 tests against baseline). All three gates **PASS at delta `0.00000` on every
+metric**. **No golden changed** — all three fingerprints identical, and
+`git diff origin/integration/campaign-round-2...HEAD -- packages/sim-core` is empty.
+
+**What moved: nothing in the simulation, and the meaning of every score.** The scorer is not on
+the rules path, which is why the gates are byte-identical. What changed is what the campaign's
+numbers *say*:
+
+- `replicates % poolSize !== 0` is **refused**, not warned.
+- `exploitMargin` is now the **deliberate-strategy mean minus the worst of three probes**
+  (`uniform-random-legal`, `idle-then-declare`, `permit-then-idle`), so it is no longer
+  algebraically `ascensionRate − probeRate`. `EXPLOIT_MARGIN_MIN` 0.05 → **0.10**.
+- The correlation term contributes only at **≥ 3 winners** (`CORRELATION_MIN_SUPPORT`), and
+  contributes the **weaker** of Pearson and Spearman.
+
+Demonstrated on committed run records (`mc-results/gate`, the ascension gate's own 32 runs):
+**Pearson +0.9556, Spearman +0.5916, 1 winner of 8 — the term now contributes 0.** That single
+line is what the repair does to every correlation this campaign has published.
