@@ -305,6 +305,59 @@ The "before" column is this branch measured with W15's instrument unchanged, not
 `strategy-dimensionality.md` — those predate W17's value-sensitive acquirer, which moved
 dimensionality from 1 to 2 and prefix fidelity from 0.943 to 0.9088 and moved nothing else.
 
+### 6.1 Four arms, because two would have confounded the answer
+
+The campaign policy is that a metric must be able to tell a system you *know* is broken from one you
+*know* is working. The corollary here is that a single after-measurement cannot separate **more
+content** from **better-shaped content**, and this workstream changed both. So four arms, each
+differing from its neighbour in one thing:
+
+| arm | content | grid permitted at founding | what it isolates |
+|---|---|---|---|
+| **A — before** | 300 nodes, 51 in v1, ladders | v1 rectangle (12 cells) | the recorded baseline |
+| **B — wide-old** | *unchanged from A* | whole 5 × 14 grid | **enablement alone** |
+| **C — after** | 357 nodes, 108 in v1, compositional | v1 rectangle (12 cells) | **shaping alone** |
+| **D — wide-new** | 357 nodes, compositional | whole 5 × 14 grid | both together |
+
+Arm B was run in a **separate git worktree pinned to the campaign base**, carrying only the
+`fullGridAtFounding` instrument and the measurement tools, so that no other W20 change — not the
+schema, not the species affinities — could leak into the arm that is supposed to isolate enablement.
+
+### 6.2 What each arm measured
+
+| metric | A: before | B: enablement only | C: shaping only | target |
+|---|--:|--:|--:|---|
+| effective dimensionality, 80% of variance | **2** | **23** | **3** | ≥ 3 |
+| participation ratio | 1.95 | 4.02 | 2.72 | — |
+| prefix fidelity | **0.9088** | **0.7866** | **0.8523** | < 0.5 |
+| runs predicted exactly from their size | 60 / 96 | **1 / 96** | 5 / 96 | — |
+| cross-strategy containment, large-set pairs | **1.000** | **0.836 – 0.892** | 0.808 – 0.975 | < 0.9 |
+| within-strategy Jaccard across seeds | 1.000 | 0.67 | 0.70 – 0.73 | — |
+| mean nodes held, `passive-control` | 51.0 of 51 | 190.5 | 65.3 of 108 | — |
+| any strategy holding the whole reachable set | **five of eight** | none | **none** | none |
+
+**The honest headline is that enablement did more than shaping did.** Permitting the whole grid, with
+the ladder content completely unchanged, moved effective dimensionality from 2 to 23 and dropped the
+number of runs predictable from their size alone from 60/96 to **1/96**. That is arm B, and it
+contains none of this workstream's design work.
+
+**Two caveats keep that from being the whole story**, and both are visible in the same table:
+
+1. **Arm B's dimensionality is largely unstructured.** Its between-strategy variance share is
+   **0.512**, against arm A's 0.912 and arm C's 0.778 — so a large part of those 23 components is
+   *within*-strategy seed variation rather than strategy-driven choice. Within-strategy Jaccard of
+   0.67 says two runs of the *same* strategy now differ almost as much as two different strategies
+   do. More content bought variety; it did not by itself buy *decisions*.
+2. **Shaping is what stopped the set being exhausted.** In arm A, five of eight strategies sat at
+   exactly 51.0 of 51 nodes — the content ceiling, reached and held. In arm C the same strategies sit
+   at 62–67 of 108 with a union of 89–95, so no strategy holds everything and the strategies disagree
+   about which two-thirds they hold. That is claim 5, and it is the claim that says a *choice* was
+   made rather than a queue drained.
+
+**Prefix fidelity did not reach its target in any arm.** 0.8523 after shaping, 0.7866 after
+enablement, against a target of 0.5. One ordering still predicts a great deal of what a run holds
+from its size alone. That target was not met and is reported as not met.
+
 And the negative control, which is the one that says a decision exists rather than that a number
 moved: **`permit-then-idle` — a bot that permits the grid for 140 of 2,400 ticks and then submits
 literally nothing — must stop winning.** It currently wins 40/40 in the true-naming arm, beating
