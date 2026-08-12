@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "3293580ead79d05737c9694f7a8050d3358a3fd92b8d37ad9531ba3f97b5d97a",
+  "contentHash": "ddb6669a30cd1858122c085afd4da866cbd91b84c70747071fabe6f3dfa19cbe",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.6317000024389237,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.8951000073167705,"unit":"grimoires","value":83.7},
@@ -15,7 +15,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.4396572180548786,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.318971654164636,"unit":"people","value":-14.605}
   ],
   "notes": [
-    "The reference tradition did not move: scribingTraditionId still returns true-naming on the seven-tradition set. No rules constant was touched."
+    "The universe remains degenerate in the ways integration round 2 recorded, and W28 closes none of them -- it adds four traditions to the enumeration and measures all seven. Four of the seven now cannot ascend at all, which is a new measured fact and not a new mechanism. capitalSnowball is not asserted by this file. These three gate sweeps are 100 percent passive-control and submit no god verb, which is why widening the god's action space moved nothing here."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -25,7 +25,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "W28 authored four traditions and made gloss/tuningStatus required, moving contentRevision a622452a -> 1f471d16; and because the god's action-13 candidate list is every tradition except the one held, the legal action space grew from 2 entries to 6, so every strategy that samples it behaves differently. Provenance invalidation plus a real behavioural cause, both from adding content, neither a regression.",
+  "rationale": "W28 authored four traditions -- chorale, flesh-codex, shared-mind, witch-bond -- and made gloss and tuningStatus required on a tradition, moving contentRevision a622452a3b55e38fd902a2d3264b44d7 to 1f471d16ed93d75ade4284e72596803b. The gate compares provenance.contentHash as a block, so that alone invalidates the baseline. A second, real mechanism came with it: the god's action-13 candidate list is every tradition except the one held, so the legal action space grew from 2 entries to 6, and the interned tradition id is written into the observation vector. Measured rather than assumed -- NO METRIC MOVED on this gate or on either of the other two. So this regeneration is a provenance refresh, not a behaviour change, and the widened action space is measurably inert on a 100 percent passive-control sweep that submits no god verb. The reference tradition did not move: scribingTraditionId still returns true-naming on the seven-tradition set. No rules constant and no god constant was touched, and NO GOLDEN FIXTURE WAS REGENERATED. This file is a measurement, not a balance claim: release-plan.md forbids a balance claim before 0.5.0. The W28 record is docs/superpowers/plans/w28-magic-regimes.md; the tree's prior integration record is docs/superpowers/plans/integration-round-2.md.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
@@ -39,7 +39,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.395,"value":129.395},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.605,"value":-14.605}
   ],
-  "supersedes": "f346f68b04942ab8c9556bab1706070661c0cf20efd2113fd211c86517b55317",
+  "supersedes": "3293580ead79d05737c9694f7a8050d3358a3fd92b8d37ad9531ba3f97b5d97a",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }

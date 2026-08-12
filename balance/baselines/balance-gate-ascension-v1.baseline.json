@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
-  "contentHash": "01cf7a266c9fccfafa13e3145e53b6523b16d3d83dbe14ad57e367d8699796cc",
+  "contentHash": "eafa6efc5dccbbe02c0152d233bc0a432c138c4c75f56e56c0a339210547064e",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":97.1936213334074,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":291.5808640002222,"unit":"grimoires","value":220.40625},
@@ -16,7 +16,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":2323.035608375175,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":6969.106825125525,"unit":"people","value":19477.375}
   ],
   "notes": [
-    "Regenerated alongside balance-gate-v1 and balance-gate-horizon-v1, which moved for the same one reason."
+    "The universe remains degenerate in the ways integration round 2 recorded, and W28 closes none of them. Worth reading beside this gate specifically: W28's seven-arm sweep found that four of the seven shipped traditions ascend at rate 0.0000 while three sit inside the 0.05 to 0.20 band, with no balance constant separating them. That is a measured fact about content, not a claim about this baseline."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -26,7 +26,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "W28 authored four traditions and made gloss/tuningStatus required, moving contentRevision a622452a -> 1f471d16. Provenance invalidation from added content; the reference tradition did not move and no rules constant was touched.",
+  "rationale": "W28 authored four traditions and made gloss and tuningStatus required on a tradition, moving contentRevision a622452a3b55e38fd902a2d3264b44d7 to 1f471d16ed93d75ade4284e72596803b. The gate compares provenance.contentHash as a block, so that alone invalidates the baseline. NO METRIC MOVED -- this is a provenance refresh, not a behaviour change. The reference tradition did not move: scribingTraditionId still returns true-naming on the seven-tradition set. No rules constant was touched and NO GOLDEN FIXTURE WAS REGENERATED. This file is a measurement, not a balance claim: release-plan.md forbids a balance claim before 0.5.0. Record: docs/superpowers/plans/w28-magic-regimes.md.",
   "rootSeed": 20260811,
   "runCount": 32,
   "supersededDeltas": [
@@ -41,7 +41,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":19621.375,"value":19621.375},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":19477.375,"value":19477.375}
   ],
-  "supersedes": "8a9995d66b8dd3f662e20518eaeb2f07f8327fba4697be2982e278b93e1a0958",
+  "supersedes": "01cf7a266c9fccfafa13e3145e53b6523b16d3d83dbe14ad57e367d8699796cc",
   "sweepId": "balance-gate-ascension-v1",
   "toleranceK": 3
 }
