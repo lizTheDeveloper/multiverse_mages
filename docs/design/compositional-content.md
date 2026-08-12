@@ -358,6 +358,49 @@ contains none of this workstream's design work.
 enablement, against a target of 0.5. One ordering still predicts a great deal of what a run holds
 from its size alone. That target was not met and is reported as not met.
 
+### 6.3 Arm D, and the number that decides whether shaping was worth it
+
+| metric | B: enablement only | D: both | reading |
+|---|--:|--:|---|
+| effective dimensionality, 80% | 23 | **5** | fewer components… |
+| **between-strategy variance share** | **0.512** | **0.759** | **…but far more of it is strategy** |
+| prefix fidelity | 0.7866 | **0.8110** | comparable |
+| runs predicted exactly from size | 1 / 96 | **0 / 84** | none |
+| mean nodes, `archivist` | 199.2 | 303.4 | — |
+
+This is the comparison the workstream turns on, and it does **not** read the way the raw
+dimensionality count does. Arm B's 23 components are mostly noise: barely half its variance is
+between strategies, and two runs of the *same* strategy differ nearly as much as two different ones.
+Arm D has fewer components and **three quarters of its variance is between strategies** — so the
+axes it has are axes a player could steer, which is what "a strategy space" means and what a count of
+principal components on its own never says.
+
+The plain statement: **enablement produced variety, shaping produced structure, and the two are not
+substitutes.** A campaign that had only run arm B would have recorded dimensionality 23 and declared
+the problem solved, at 0.512 between-strategy share.
+
+### 6.4 Two behavioural changes large enough to be findings
+
+**Species time-to-tier bands collapsed rather than sharpened.** The hypothesis was that authoring to
+tier 7 would let the high-ceiling species (elf 6, draconic 7) separate, since v1 previously stopped
+at tier 5 with two nodes there. That is not what happened. Every species' *own* spread widened,
+because at each tier a mage now chooses among many roughly-equally-costed nodes rather than one, and
+which she reaches for depends on her own `curiosity` and `affinities`. Measured at tier 3, in ticks:
+gnome went `[20, 21] → [30, 68]`, dwarf `[21, 25] → [31, 48]`, human `[28, 37] → [33, 52]`, while elf
+held at `[35, 58] → [35, 59]`. The fast trio that used to sit strictly below elf now overlaps it
+completely.
+
+**Two mages of one species, differing only by seed, now diverge about as much as two species used
+to.** That is the per-mage variety this design was aimed at, and it arrived at the cost of the
+between-species separation the campaign's D7 wants. Both are true and they pull against each other;
+which one is wanted is a design decision this workstream should not make alone.
+
+**Universes ascend much earlier in the wide configuration.** Several arm-D strategies terminate
+around tick 600–720 against arm A's full 2,400. More reachable content reaches the ascension
+predicates sooner, which is very likely to push `ascensionRate` out of `contracts.md` §7's 0.05–0.20
+band in the wide configuration — the campaign's D1. Not measured here; flagged because it is the
+predictable consequence of the enablement decision and it belongs to whoever takes that decision.
+
 And the negative control, which is the one that says a decision exists rather than that a number
 moved: **`permit-then-idle` — a bot that permits the grid for 140 of 2,400 ticks and then submits
 literally nothing — must stop winning.** It currently wins 40/40 in the true-naming arm, beating
