@@ -40,10 +40,10 @@ can select is **not** reachable.
 - [x] 1.4 `npm run typecheck` — builds `dist/`, without which no execution proof runs
 - [x] 1.5 Re-verify the four calibration examples on the audited commit
 - [x] 1.6 Pin the reachability oracle (above) and commit this plan
-- [ ] 2.1 Dispatch section auditors (§3+§4, §4a+§5, §6+§6a, §7+§7a+§8a, §8, §9+§11+§12)
-- [ ] 2.2 Execution proof: run the reference long-run / census and record observed facts centrally
-- [ ] 2.3 Execution proof: enumerate which god actions are ever legal, and which fire
-- [ ] 2.4 Execution proof: metric registry keys vs `contracts.md` §7's twelve
+- [x] 2.1 Dispatch section auditors (§3+§4, §4a+§5, §6+§6a, §7+§7a+§8a, §8, §9+§11+§12)
+- [x] 2.2 Execution proof: run the reference long-run / census and record observed facts centrally
+- [x] 2.3 Execution proof: enumerate which god actions are ever legal, and which fire
+- [x] 2.4 Execution proof: metric registry keys vs `contracts.md` §7's twelve
 - [ ] 3.1 Synthesise `docs/design/vision-audit.md`: table per section, summary counts, ranked gaps
 - [ ] 3.2 For each of the ten ranked gaps: smallest wiring change + owning workstream
 - [ ] 3.3 Record vision-internal contradictions and code-contradicts-vision rows separately
