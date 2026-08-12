@@ -60,6 +60,25 @@ You have traded your capacity to destroy for a guarantee that nothing of yours i
 That is a legible, costly, irreversible decision made under time pressure, and it uses only
 mechanisms that already exist.
 
+**Measured, and the motive does not hold yet.** W37 implemented this and ran it. The mechanic works
+as combat power: forbid Perdo mid-raid and it leaves the raider and your own wardens alike, and W38's
+independent trace shows the field does not go quiet — summons and soldiers go from **48.4% to 87.2%**
+of hit points removed, cast volume barely moves (119 → 103), and roughly **58 casts a raid are
+blocked from your own defenders**. A war of unmaking becomes a war of summoned servants, and you
+cannot trade back. That is the design working.
+
+**But the library does not fall to Perdo.** Libraries are lost to *objective capture* and
+grimoire-burn rolls, so forbidding Perdo does not protect the thing the worked case says it protects.
+The example above is therefore correct about what the lock costs and **wrong about what it buys**, and
+it is left standing with this correction rather than quietly rewritten, because the gap is the
+finding: a mechanic can be well-formed and still be attached to the wrong outcome.
+
+The deeper version, also measured: **at shipped tuning, raids are decided by objective capture, not
+by combat at all.** Survival-regret measures **zero on every seed** — the raider takes all three
+objectives and leaves before casting kills anyone. *Mid-raid policy cannot decide a raid that combat
+does not decide.* That is the thing to move before anyone tunes a verb, and W37 left it as a passing
+test that starts failing the moment it changes.
+
 ### And it is a drain, which is what the economy was missing
 
 The post-raid revert cost is a **sink attached to a decision**, not a tax on existing. It scales with
