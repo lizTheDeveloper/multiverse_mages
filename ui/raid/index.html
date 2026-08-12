@@ -328,6 +328,46 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
   color:#8A7A46;border:1px solid #4A421F;background:rgba(20,16,6,.72);padding:.22rem .4rem;border-radius:2px
 }
 
+/* ---- the dossier, and the clock two sides bid over ----
+   Cyan throughout, and that is the rule rather than an exception to it: the
+   selection ring is a focus ring and holding the moment is the god's own
+   affordance. The raider's buy-back is raider-coloured, never cyan. ---- */
+.dossier > h2{color:var(--god)}
+.dossier .body{gap:.5rem}
+.say{margin:0;font-size:.85rem;line-height:1.5;color:var(--soft)}
+.say b{color:var(--ink)}
+.holdnote{
+  font:9.5px var(--mono);line-height:1.55;letter-spacing:.04em;padding:.4rem .5rem;border-radius:2px;
+  border:1px solid color-mix(in srgb,var(--god) 45%,var(--rule));color:var(--god);
+  background:color-mix(in srgb,var(--god) 10%,var(--well))
+}
+.holdnote[data-who="a"]{border-color:color-mix(in srgb,var(--raider) 50%,var(--rule));color:var(--raider);
+  background:color-mix(in srgb,var(--raider) 10%,var(--well))}
+.holdnote[data-who="none"]{border-color:var(--rule);color:var(--faint);background:var(--well)}
+.holdnote b{font-weight:600}
+.dsrows{display:grid;grid-template-columns:1fr auto;gap:.1rem .5rem;font:10px var(--mono);color:var(--faint)}
+.dsrows b{color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+.dsnodes{display:flex;flex-wrap:wrap;gap:.22rem}
+.nd{
+  font:9.5px var(--mono);padding:.16rem .3rem;border-radius:2px;border:1px solid var(--rule);
+  background:var(--well);color:var(--soft);letter-spacing:.02em
+}
+.nd[data-legal="0"]{border-style:dashed;color:var(--deny);text-decoration:line-through;opacity:.8}
+.nd[data-reaching="1"]{border-color:var(--god);color:var(--god);background:color-mix(in srgb,var(--god) 12%,var(--well))}
+.dsract{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.1rem}
+.dsract .btn[data-live="1"]{border-color:var(--god);color:var(--god)}
+
+.holdbar{
+  align-self:center;text-align:center;font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;
+  color:#7FD9E1;border:1px solid #1B6A72;background:rgba(6,32,36,.82);padding:.3rem .55rem;border-radius:2px;
+  line-height:1.7;max-width:92%
+}
+.holdbar[hidden]{display:none}
+.holdbar b{color:#BFF6FB;font-weight:600}
+.holdbar .them{color:#F0A08C;text-transform:none;letter-spacing:.03em}
+.holdbar .bid{display:block;height:2px;margin-top:.3rem;background:#1B6A72;border-radius:1px;overflow:hidden}
+.holdbar .bid i{display:block;height:100%;background:#DE7059;width:0}
+
 .stability{padding:.6rem .75rem .7rem;display:flex;flex-direction:column;gap:.3rem;border-bottom:1px solid var(--rule)}
 .stability .row{display:flex;align-items:baseline;gap:.5rem;font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
 .stability .row b{margin-left:auto;font-size:15px;letter-spacing:0;color:var(--limen);font-variant-numeric:tabular-nums}
@@ -499,8 +539,27 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 
   <div class="panel">
 
-    <!-- ============================ LEFT: THE GOD'S VERBS ============================ -->
+    <!-- ============================ LEFT: THE GOD'S VERBS ============================
+      The dossier sits directly above the constitution on purpose. Stopping the
+      action to look at a mage and then forbidding the cell she was reaching for
+      is one motion, and it is the motion the whole verb set is for.
+    ============================================================================ -->
     <div class="stack">
+      <section class="card dossier" id="dossier" hidden>
+        <h2><span id="dsr-who">—</span><span class="side" id="dsr-side"></span></h2>
+        <div class="body">
+          <div class="holdnote" id="dsr-hold"></div>
+          <span class="lab">What she is doing</span>
+          <p class="say" id="dsr-why">—</p>
+          <div class="dsrows" id="dsr-rows"></div>
+          <span class="lab">What she can reach for</span>
+          <div class="dsnodes" id="dsr-nodes"></div>
+          <div class="dsract">
+            <button class="btn" id="dsr-hold-btn" type="button">Hold the moment</button>
+            <button class="btn" id="dsr-close" type="button">Close</button>
+          </div>
+        </div>
+      </section>
       <section class="card">
         <h2>Your constitution <span class="side" style="color:var(--host)">host · you</span></h2>
         <div class="body">
@@ -545,8 +604,9 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
     <section class="card">
       <h2>The engagement <span class="side" id="fieldsub">200 m × 200 m · 100 ms engagement tick</span></h2>
       <div class="fieldwrap">
-        <canvas id="field" width="900" height="900" aria-label="The battlefield. A textual cast log to the right carries the same events."></canvas>
+        <canvas id="field" width="900" height="900" aria-label="The battlefield. Click any combatant to inspect her; once the sides have touched that also holds the clock, for favor. A textual cast log to the right carries the same events."></canvas>
         <div class="overlay">
+          <div class="holdbar" id="holdbar" hidden></div>
           <div class="mclock" id="mclock">
             <div class="n num" id="mclock-n">30.0</div>
             <div class="u">until contact</div>
@@ -568,7 +628,8 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
         <span class="lab">Trace</span>
         <input class="seed" id="seed" value="hollow-gate" aria-label="Trace seed" spellcheck="false">
         <button class="btn" id="restart" type="button">Restart</button>
-        <button class="btn" id="pause" type="button" aria-pressed="false">Pause</button>
+        <button class="btn" id="pause" type="button" aria-pressed="false"
+          title="Scaffolding, like the seed and the damage multiplier: it stops the trace and costs nothing, and no such control exists in the game. The in-fiction way to stop the action is to hold a mage, which costs favor and which the expedition can outbid.">Pause trace</button>
         <button class="btn" id="skip" type="button">Skip muster</button>
         <span class="lab" style="margin-left:.4rem">Speed</span>
         <button class="btn spd" data-spd="1" type="button" title="2.5 ticks a second — a quarter of engagement time, and the default. Muster is never slowed.">1×</button>
@@ -901,7 +962,30 @@ const A = {
   favorStart: 260, favorMax: 320, favorRegen: 1,
   visStart: 480,
   visPerCast: 4,
+
+  /* ---- holding the moment: pause as a purchased, contestable bid ----
+     Author: "you should be able to click on any mage and pause the action at
+     any point. But the opponent should be able to unpause. And during a raid
+     that costs favor or vis."
+
+     One player freezing the world at will is intolerable in live PvP, which is
+     why most games simply forbid pause-to-inspect. Charging for it, and
+     letting the other side buy it back, turns it from an exploit into a
+     decision — and the two sides bid in DIFFERENT currencies, so whoever has
+     slack in their own economy holds the clock longer.
+
+     The price rises with each hold by that side. A flat price is the failure
+     mode: the richer side buys the clock once and keeps it. Rising, the clock
+     changes hands at an increasing cost until one side cannot pay, which is a
+     resource decision rather than a reflex one. The raider also keeps a floor
+     — an expedition will not bid away the Vis it needs to get home. */
+  holdBase: 25,        // favor. Defender pays 25, then 50, then 75...
+  buybackBase: 20,     // Vis. Raider pays 20, then 40, then 60...
+  visFloor: 40,        // ten casts. Below this the expedition will not bid.
+  bidDelayMs: 2600,    // how long the expedition takes to count its Vis
 };
+const holdPrice = (S) => A.holdBase * (S.holds.d + 1);
+const buybackPrice = (S) => A.buybackBase * (S.holds.a + 1);
 
 /* Canvas ink. The field well is dark in BOTH themes — ui/glow's ground B, taken
    as a verdict rather than re-argued. So these are lifted for a dark ground and
@@ -1039,6 +1123,7 @@ function buildRaid(seedText, damageMultiplier) {
       vigor: A.mageVigor, maxVigor: A.mageVigor, held, deepest,
       cooldown: below(r, A.castCooldown), ward: 0, concealment: 0, blessing: 0,
       alive: true, withdrawn: false, stolen: [], name: (side === 'a' ? 'R' : 'H') + (ordinal + 1),
+      why: 'mustered, and waiting for contact', reaching: null, lastCast: null,
     };
   };
   const makeUnit = (side, ordinal, kind) => {
@@ -1047,7 +1132,7 @@ function buildRaid(seedText, damageMultiplier) {
     return {
       key: key++, kind, side, pos: { ...pos }, prev: { ...pos }, hp, maxHp: hp,
       vigor: 0, maxVigor: 0, held: [], deepest: 0, cooldown: 0, ward: 0, concealment: 0, blessing: 0,
-      alive: true, withdrawn: false, stolen: [],
+      alive: true, withdrawn: false, stolen: [], why: 'mustered, and waiting for contact', reaching: null, lastCast: null,
       damage: kind === 'detachment' ? K.detachDamage : K.summonDamage,
       range: kind === 'detachment' ? K.detachRange : K.castRange,
       name: (side === 'a' ? 'r' : 'h') + (kind === 'detachment' ? 'd' : 's') + ordinal,
@@ -1090,6 +1175,8 @@ function buildRaid(seedText, damageMultiplier) {
     stability, maxTicks: floorDiv(K.stabilityInitial + K.stabilityJitter, K.stabilityDecay),
     tick: 0, phase: 'muster', damage: damageMultiplier,
     favor: A.favorStart, favorSpent: 0, vis: A.visStart, exposure: new Map(),
+    /* the clock, as a thing two sides bid over */
+    inspect: null, hold: null, holds: { a: 0, d: 0 }, favorOnClock: 0, visOnClock: 0,
     forbiddenCastsBlocked: 0, casts: 0, refusals: 0, evades: 0, thefts: 0,
     fx: [], fields: [], log: [], summonsAlive: { a: 0, d: 0 }, flow: new Map(),
     ended: null, spent: new Set(), takenValue: 0,
@@ -1197,6 +1284,7 @@ function step(S) {
     /* the stranded-raider rule: below the withdraw margin a raider runs */
     const withdrawing = c.side === 'a' && S.stability <= K.withdrawMargin;
     if (withdrawing) {
+      c.why = 'running for the portal — stability is below the withdraw margin, and getting home now scores above anything else here';
       moveToward(S, c, S.portal);
       if (inRange(c.pos, S.portal, K.portalMargin)) { c.withdrawn = true; logRow(S, 'note', c, null, 'withdrew through the portal', ''); }
       continue;
@@ -1207,11 +1295,12 @@ function step(S) {
 
     if (c.kind !== 'mage') {
       if (target && inRange(c.pos, target.pos, c.range) && hasLineOfSight(S.terrain, c.pos, target.pos)) {
+        c.why = 'striking ' + target.name + ' with its intrinsic damage — no node, no vigor, nothing the ruleset governs';
         const applied = applyWardOnce(c.damage, target.ward);
         target.hp -= applied;
         S.fx.push({ kind: 'intrinsic', t0: S.tick, life: 2, from: { ...c.pos }, to: { ...target.pos }, side: c.side });
         if (target.hp <= 0) kill(S, target, c);
-      } else if (target) moveToward(S, c, target.pos);
+      } else if (target) { c.why = 'closing on ' + target.name; moveToward(S, c, target.pos); }
       continue;
     }
 
@@ -1240,6 +1329,9 @@ function step(S) {
            raider's tick — is authored here; objectives.ts declares no such
            rule, and without one an objective simply cannot be defended. */
         const held = S.combatants.filter(t => t.alive && !t.withdrawn && t.side === 'd' && inRange(t.pos, obj.pos, K.objectiveRadius)).length;
+        c.why = held === 0
+          ? 'working the ' + obj.label.toLowerCase() + ' — ' + Math.round(100 * Math.min(1, obj.progress / K.FP)) + '% carried out, worth ' + (obj.value / K.FP).toFixed(1)
+          : 'standing on the ' + obj.label.toLowerCase() + ' but it is contested — ' + held + ' of yours inside the radius, and a contested objective makes no progress';
         if (held === 0) obj.progress += K.objectiveProgress;
         /* Standing on a contested objective with no line of sight is a
            stalemate that lasts the rest of the raid — the first version of this
@@ -1250,16 +1342,18 @@ function step(S) {
           obj.taken = true; S.takenValue += obj.value;
           logRow(S, 'note', c, null, obj.label.toLowerCase() + ' taken', '+' + (obj.value / K.FP).toFixed(1) + ' val');
         }
-      } else if (obj) moveToward(S, c, obj.pos);
-      else if (target) moveToward(S, c, target.pos);
+      } else if (obj) { c.why = 'crossing to the ' + obj.label.toLowerCase() + ' — she came for it, and she holds the initiative'; moveToward(S, c, obj.pos); }
+      else if (target) { c.why = 'closing on ' + target.name + ' — nothing left of yours to carry out'; moveToward(S, c, target.pos); }
     } else if (!canShoot) {
       /* the host stands on her own ground: hold the nearest unresolved
          objective, and close on a raider only when she has no shot from it */
       const unresolved = S.objectives.filter(o => !o.taken);
       const guard = unresolved.length ? unresolved[c.key % unresolved.length] : null;  // spread the watch
-      if (guard && !inRange(c.pos, guard.pos, floorDiv(K.objectiveRadius, 2))) moveToward(S, c, guard.pos);
-      else if (target) moveToward(S, c, target.pos);
-    }
+      if (guard && !inRange(c.pos, guard.pos, floorDiv(K.objectiveRadius, 2))) {
+        c.why = 'holding the ' + guard.label.toLowerCase() + ' — she stands on her own ground and closes only when she has no shot';
+        moveToward(S, c, guard.pos);
+      } else if (target) { c.why = 'closing on ' + target.name + ' — no line of sight from where she stands'; moveToward(S, c, target.pos); }
+    } else if (canShoot && target) c.why = 'in range of ' + target.name + ' with a line of sight';
 
     if (c.cooldown > 0) continue;
     if (!canShoot) { attemptTheft(S, c, foes); continue; }
@@ -1283,8 +1377,11 @@ function step(S) {
     if (!reached) reached = c.held.find(id => NODE.get(id).effects.some(e => e.primitive === 'direct-damage')) || null;
     if (!reached) { attemptTheft(S, c, foes); continue; }
 
+    c.reaching = reached;
     if (!S.permitted.has(NODE.get(reached).cell)) {
       S.forbiddenCastsBlocked++; S.refusals++;
+      c.why = 'reached for ' + NODE.get(reached).name + ' and found it gone — ' + NODE.get(reached).cell +
+              ' is forbidden, and she is inside your universe too';
       c.cooldown = A.castCooldown;
       logRow(S, 'refused', c, reached, 'forbidden — ' + NODE.get(reached).cell, 'blocked');
       continue;
@@ -1292,16 +1389,22 @@ function step(S) {
     const price = castPrice(NODE.get(reached).tier);
     if (price > c.vigor) {
       S.refusals++; c.cooldown = 3;
+      c.why = 'wants ' + NODE.get(reached).name + ' and cannot pay for it — ' + (price / K.FP).toFixed(0) +
+              ' vigor against ' + (c.vigor / K.FP).toFixed(0) + ' in hand';
       logRow(S, 'refused', c, reached, 'unaffordable — needs ' + (price / K.FP).toFixed(0) + ' vigor', 'refused');
       continue;
     }
     if (c.side === 'a' && S.vis < A.visPerCast) {
       S.refusals++; c.cooldown = 6;
+      c.why = 'out of Vis — the expedition brought ' + A.visStart + ' and has spent it, so nothing she knows can be paid for';
       logRow(S, 'refused', c, reached, 'no Vis left in the expedition', 'refused');
       continue;
     }
 
     c.vigor -= price; c.cooldown = A.castCooldown; S.casts++;
+    c.why = 'casting ' + NODE.get(reached).name + ' — tier ' + NODE.get(reached).tier + ', ' +
+            NODE.get(reached).cell + ', the deepest working she can still afford at this range';
+    c.lastCast = reached;
     let expo = null;
     if (c.side === 'a') { S.vis = Math.max(0, S.vis - A.visPerCast); expo = recordExposure(S, c, reached); }
     applyCast(S, c, target, reached, expo);
@@ -1336,6 +1439,8 @@ function attemptTheft(S, c, foes) {
   if (!thiefNode) return false;
   const mags = NODE.get(thiefNode).effects.filter(e => e.primitive === 'knowledge-steal').map(e => e.magnitude);
   const p = stack('knowledge-steal', mags);
+  c.why = 'reading ' + victim.name + '’s mind at ' + (K.theftRange / K.FP).toFixed(0) +
+          ' m — closer than a cast, because reading a mind is an intimacy. This is her fallback, not her first intent.';
   const hit = below(S.rngs.theft, K.FP) < p;
   const prize = victim.held.length ? victim.held[below(S.rngs.theft, victim.held.length)] : null;
   S.fx.push({ kind: 'steal', t0: S.tick, life: 9, from: { ...c.pos }, to: { ...victim.pos },
@@ -1390,6 +1495,7 @@ function applyCast(S, caster, target, nodeId, expo) {
         key: 10000 + S.combatants.length, kind: 'summon', side: caster.side, pos: p, prev: { ...caster.pos },
         hp: K.summonHp, maxHp: K.summonHp, vigor: 0, maxVigor: 0, held: [], deepest: 0, cooldown: 0,
         ward: 0, concealment: 0, blessing: 0, alive: true, withdrawn: false, stolen: [],
+        why: 'called by name, and bound to the side that called it', reaching: null, lastCast: null,
         damage: K.summonDamage, range: K.castRange, name: (caster.side === 'a' ? 'r' : 'h') + 's',
       });
       S.summonsAlive[caster.side]++;
@@ -1743,6 +1849,34 @@ function draw(S, alpha) {
     }
   }
   S.fx = S.fx.filter(f => S.tick - f.t0 <= f.life);
+
+  /* --- the held moment. It DIMS AND HOLDS; it never covers. The praise this
+     page is being polished against was for watching it, so an inspection that
+     puts a sheet over the field defeats its own purpose. The ring is cyan
+     because a focus ring is the god's own light, the same as the muster clock
+     and the constitution's switches — not because the mage is hers. --- */
+  if (S.hold) { ctx.fillStyle = 'rgba(4,11,12,.3)'; ctx.fillRect(0, 0, PX, PX); }
+  if (S.inspect !== null) {
+    const sel = S.combatants.find(x => x.key === S.inspect);
+    if (sel && sel.alive && !sel.withdrawn) {
+      const x = toPx(REDUCED ? sel.pos.x : sel.prev.x + (sel.pos.x - sel.prev.x) * a);
+      const y = toPx(REDUCED ? sel.pos.y : sel.prev.y + (sel.pos.y - sel.prev.y) * a);
+      ctx.strokeStyle = hexA(GOD_LIT, .95); ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = hexA(GOD, .5);
+      ctx.beginPath(); ctx.arc(x, y, 17, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath();
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        ctx.moveTo(x + dx * 19, y + dy * 19); ctx.lineTo(x + dx * 25, y + dy * 25);
+      }
+      ctx.stroke();
+      ctx.fillStyle = hexA(GOD_LIT, .95);
+      ctx.font = '11px ui-monospace, Menlo, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(sel.name, x, y - 24);
+      ctx.textAlign = 'left';
+    }
+  }
 }
 
 function hexA(hex, alpha) {
@@ -1841,6 +1975,7 @@ function spendVerb(v) {
     S.combatants.push({ key: 20000 + S.combatants.length, kind: 'detachment', side: 'd', pos: p, prev: { ...p },
       hp: K.detachHp, maxHp: K.detachHp, vigor: 0, maxVigor: 0, held: [], deepest: 0, cooldown: 0,
       ward: 0, concealment: 0, blessing: 0, alive: true, withdrawn: false, stolen: [],
+      why: 'levied out of a cohort that does not fight', reaching: null, lastCast: null,
       damage: K.detachDamage, range: K.detachRange, name: 'hd+' });
   }
   logRow(S, 'note', null, null, v.name + ' — ' + v.cost + ' favor', 'spent');
@@ -1896,6 +2031,180 @@ function paintLog() {
   if (w.scrollTop + w.clientHeight > w.scrollHeight - 120) w.scrollTop = w.scrollHeight;
 }
 
+/* ==========================================================================
+   6b. HOLDING THE MOMENT — pause as a purchased, contestable bid.
+
+   Click any combatant to inspect her. Once the sides have touched, that also
+   stops the action, and stopping it costs favor; the expedition can spend Vis
+   to start it again. Two sides bidding for the clock in two different
+   currencies, each ladder rising with use.
+
+   AHEAD OF THE ENGINE. There is no pause verb in packages/rules-raid — the six
+   raid verbs that now exist as content constants on w37/raid-playable are
+   forbid, permit, levy, ward, mend and conceal, and none of them is this. It is
+   drawn here because it answers the objection that makes pause-to-inspect
+   unshippable in live PvP: one player freezing the world at will is
+   intolerable, so most designs forbid it outright. A price the other side can
+   outbid makes it a decision instead.
+   ========================================================================== */
+const ordinal = (n) => n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd'
+                          : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
+
+function pickCombatant(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const fx = (clientX - rect.left) / rect.width * K.extent;
+  const fy = (clientY - rect.top) / rect.height * K.extent;
+  const tol = K.extent * 15 / rect.width;   // 15 css px, whatever the canvas scale
+  let best = null, bd = tol * tol;
+  for (const c of S.combatants) {
+    if (!c.alive || c.withdrawn) continue;
+    const d = (c.pos.x - fx) * (c.pos.x - fx) + (c.pos.y - fy) * (c.pos.y - fy);
+    if (d <= bd) { bd = d; best = c; }
+  }
+  return best;
+}
+
+function takeHold(c) {
+  const price = holdPrice(S);
+  if (S.favor < price || S.hold || S.ended || S.phase === 'muster') return false;
+  S.favor -= price; S.favorOnClock += price; S.holds.d++;
+  S.hold = { at: performance.now(), price, blocked: null };
+  logRow(S, 'note', null, null, 'HELD THE MOMENT to look at ' + c.name + ' — your ' + ordinal(S.holds.d) +
+         ' hold, and the next costs ' + holdPrice(S), '−' + price + ' favor');
+  return true;
+}
+function releaseHold() {
+  if (!S.hold) return;
+  S.hold = null;
+  logRow(S, 'note', null, null, 'released the moment — letting go costs nothing', 'free');
+}
+
+/**
+ * The expedition's counter-bid. Scripted, because there is nobody on the other
+ * side of this page — but the money is real and the refusal is real: it will
+ * not bid below the Vis it needs to get home, so a raider you have already
+ * bled cannot take the clock back, and the clock is worth more to you late.
+ */
+function raiderBid(now) {
+  const price = buybackPrice(S);
+  if (S.vis - price < A.visFloor) {
+    S.hold.blocked = 'The expedition cannot afford it: ' + price + ' Vis against ' + S.vis +
+      ' left, and it will not bid below the ' + A.visFloor + ' it needs to get home. The moment is yours until you let go.';
+    return;
+  }
+  S.hold.blocked = null;
+  if (now - S.hold.at < A.bidDelayMs) return;
+  S.vis -= price; S.visOnClock += price; S.holds.a++;
+  S.hold = null;
+  logRow(S, 'note', { side: 'a', name: 'exp' }, null,
+         'THE EXPEDITION BOUGHT THE CLOCK BACK — their ' + ordinal(S.holds.a) +
+         ', and the next costs them ' + buybackPrice(S), '−' + price + ' Vis');
+}
+
+function onFieldClick(ev) {
+  if (!S) return;
+  const c = pickCombatant(ev.clientX, ev.clientY);
+  if (!c) return;                    // empty ground is not a purchase
+  S.inspect = c.key;
+  /* Muster is free and does not stop. Its clock IS the pressure — a few
+     minutes to decide what to forbid, and you were not ready — and letting a
+     player buy more of it is exactly the thing that must not become possible.
+     Once the sides touch, looking still costs nothing; stopping them costs. */
+  if (S.phase !== 'muster' && !S.ended && !S.hold) takeHold(c);
+  paintDossier();
+}
+
+let dossierSig = '';
+function paintDossier() {
+  const card = el('dossier');
+  const c = S.inspect === null ? null : S.combatants.find(x => x.key === S.inspect);
+  if (!c) { card.hidden = true; dossierSig = ''; return; }
+  card.hidden = false;
+  const price = holdPrice(S);
+  const sig = [c.key, c.hp, c.vigor, c.cooldown, c.why, c.alive, c.stolen.length,
+               !!S.hold, S.hold ? S.hold.blocked : '', S.favor >= price, price, S.phase, !!S.ended,
+               S.locked.size].join('|');
+  if (sig === dossierSig) return;
+  dossierSig = sig;
+
+  const mine = c.side === 'd';
+  el('dsr-who').textContent = c.name + ' · ' + (c.kind === 'mage' ? 'mage' : c.kind);
+  const side = el('dsr-side');
+  side.textContent = mine ? 'host · yours' : 'raider · not yours';
+  side.style.color = mine ? 'var(--host)' : 'var(--raider)';
+
+  const note = el('dsr-hold');
+  if (S.hold) {
+    note.dataset.who = 'd';
+    note.innerHTML = 'You are <b>holding the moment</b> — ' + S.hold.price + ' favor, your ' +
+      ordinal(S.holds.d) + '. ' + (S.hold.blocked || 'The expedition is counting its Vis.');
+  } else if (S.phase === 'muster') {
+    note.dataset.who = 'none';
+    note.innerHTML = 'Muster. Looking costs nothing and the clock does not stop — <b>the muster clock is the pressure</b>, and it is not for sale.';
+  } else if (S.ended) {
+    note.dataset.who = 'none';
+    note.innerHTML = 'The raid is over. Nothing left to hold.';
+  } else if (S.holds.a > 0 && S.favor < price) {
+    note.dataset.who = 'a';
+    note.innerHTML = 'The expedition has the clock. Taking it back costs <b>' + price +
+      ' favor</b> and you have ' + S.favor + '.';
+  } else {
+    note.dataset.who = S.favor >= price ? 'none' : 'a';
+    note.innerHTML = 'The action is running. Holding it costs <b>' + price + ' favor</b>' +
+      (S.favor >= price ? ' — the price rises each time you do.' : ', and you have ' + S.favor + '.');
+  }
+
+  el('dsr-why').innerHTML = c.alive ? c.why.charAt(0).toUpperCase() + c.why.slice(1) + '.'
+                                    : '<b>Felled.</b> Nothing more from her this raid.';
+
+  const rows = [
+    ['hit points', (c.hp / K.FP).toFixed(1) + ' / ' + (c.maxHp / K.FP).toFixed(1)],
+    ...(c.kind === 'mage' ? [
+      ['vigor', (c.vigor / K.FP).toFixed(1) + ' / ' + (c.maxVigor / K.FP).toFixed(1)],
+      ['next cast in', c.cooldown + ' ticks'],
+      ['her deepest tier', c.deepest],
+      ['nodes held', c.held.length],
+    ] : [['intrinsic damage', (c.damage / K.FP).toFixed(1) + ' a tick']]),
+    ['ward', c.ward ? (100 * c.ward / K.FP).toFixed(0) + '% of damage absorbed' : 'none'],
+    ['concealment', c.concealment ? (100 * c.concealment / K.FP).toFixed(0) + '% chance to evade' : 'none'],
+    ...(c.side === 'a' && c.kind === 'mage' ? [['carrying out', c.stolen.length + ' instances']] : []),
+  ];
+  el('dsr-rows').innerHTML = rows.map(([k, v]) => '<span>' + k + '</span><b>' + v + '</b>').join('');
+
+  const nodes = el('dsr-nodes');
+  if (c.kind !== 'mage') nodes.innerHTML = '<span class="nd">No nodes. It fights because it was called, not because it knows anything.</span>';
+  else {
+    const held = c.held.slice().sort((x, y) => NODE.get(y).tier - NODE.get(x).tier).slice(0, 12);
+    nodes.innerHTML = held.map(id => {
+      const n = NODE.get(id), legal = S.permitted.has(n.cell);
+      return '<span class="nd" data-legal="' + (legal ? 1 : 0) + '" data-reaching="' + (c.reaching === id ? 1 : 0) +
+        '" title="' + id + ' · ' + n.cell + ' · tier ' + n.tier + (legal ? '' : ' · FORBIDDEN by your constitution') + '">' +
+        n.name + ' <span style="color:' + HUE[n.form] + '">t' + n.tier + '</span></span>';
+    }).join('') + (c.held.length > 12 ? '<span class="nd">+' + (c.held.length - 12) + ' more</span>' : '');
+  }
+
+  const hb = el('dsr-hold-btn');
+  hb.textContent = S.hold ? 'Release the moment — free' : 'Hold the moment — ' + price + ' favor';
+  hb.disabled = !S.hold && (S.phase === 'muster' || !!S.ended || S.favor < price);
+  hb.dataset.live = S.hold ? '1' : '0';
+}
+
+/** The strip over the field. Cheap enough to update every frame, so it does. */
+function paintHoldbar(now) {
+  const bar = el('holdbar');
+  if (S.ended) S.hold = null;   // a raid cannot end mid-hold, but a stuck clock would be unforgivable
+  if (!S.hold) { bar.hidden = true; return; }
+  bar.hidden = false;
+  const left = Math.max(0, A.bidDelayMs - (now - S.hold.at));
+  const frac = S.hold.blocked ? 0 : 1 - left / A.bidDelayMs;
+  bar.innerHTML = 'Held — you paid <b>' + S.hold.price + ' favor</b>' +
+    (S.hold.blocked
+      ? '<span class="them"><br>The expedition cannot afford to take it back.</span>'
+      : '<span class="them"><br>the expedition is counting its Vis — ' + (left / 1000).toFixed(1) + ' s, ' +
+        buybackPrice(S) + ' Vis</span>') +
+    '<span class="bid"><i style="width:' + (frac * 100).toFixed(1) + '%"></i></span>';
+}
+
 /* --- the ledger.
    Four questions the page could already answer and never showed anyone while
    they were watching: what have I spent, what have they spent, what have they
@@ -1915,7 +2224,8 @@ function paintLedger() {
   const takenObjs = S.objectives.filter(o => o.taken);
   const sig = [S.casts, S.refusals, S.forbiddenCastsBlocked, S.evades, S.thefts, S.fields.length,
                S.takenValue, S.favor, S.favorSpent, S.vis, S.exposure.size, expoTotal,
-               Object.keys(clamps).length, takenObjs.length].join('|');
+               Object.keys(clamps).length, takenObjs.length,
+               S.favorOnClock, S.visOnClock, S.holds.d, S.holds.a, !!S.hold].join('|');
   if (sig === ledgerSig) return;
   ledgerSig = sig;
 
@@ -1923,9 +2233,13 @@ function paintLedger() {
     ['sec', 'Your favor'],
     ['in hand', S.favor],
     ['spent on verbs', S.favorSpent],
+    ['spent holding the clock', S.favorOnClock, S.favorOnClock ? 'good' : ''],
+    ['times you held it', S.holds.d + (S.hold ? ' · holding' : ''), S.hold ? 'good' : ''],
     ['sec', 'Their Vis'],
     ['left in the expedition', S.vis],
-    ['spent — ' + A.visPerCast + ' a cast', A.visStart - S.vis],
+    ['spent — ' + A.visPerCast + ' a cast', A.visStart - S.vis - S.visOnClock],
+    ['spent buying the clock back', S.visOnClock, S.visOnClock ? 'brass' : ''],
+    ['times they took it back', S.holds.a],
     ['sec', 'Casts'],
     ['resolved', S.casts],
     ['refused', S.refusals],
@@ -2011,6 +2325,7 @@ function paintChrome() {
   el('alive').innerHTML = 'raiders <b class="num">' + la + '</b> · host <b class="num">' + ld + '</b>';
 
   paintLedger();
+  paintDossier();
 
   if (S.ended) {
     el('outcome').hidden = false;
@@ -2068,22 +2383,30 @@ function frame(now) {
      and the agency curve is encoded in the pacing rather than only stated in
      the rail. Contact and resolution are played at a quarter of it. */
   const perTick = S.phase === 'muster' ? PACE.musterMs : PACE.engagementMs / speed;
+  /* The trace scaffold's own Pause freezes the deliberation too — otherwise the
+     expedition buys back a clock that was not running in the first place. */
+  if (!running && S.hold) S.hold.at += dt;
   if (running && !S.ended) {
-    acc += dt;
-    let guard = 0;
-    while (acc >= perTick && guard++ < 40) { acc -= perTick; step(S); }
+    if (S.hold) raiderBid(now);
+    else {
+      acc += dt;
+      let guard = 0;
+      while (acc >= perTick && guard++ < 40) { acc -= perTick; step(S); }
+    }
   }
   draw(S, Math.min(1, acc / perTick));
+  paintHoldbar(now);
   paintChrome();
   paintLog();
 }
 
 function restart() {
   S = buildRaid(el('seed').value.trim() || 'hollow-gate', damage);
-  logDrawn = 0; ledgerSig = '';
+  logDrawn = 0; ledgerSig = ''; dossierSig = '';
+  el('dossier').hidden = true; el('holdbar').hidden = true;
   el('log').innerHTML = '<tr><td class="empty" colspan="3">Nothing cast yet. The portal is open; contact has not happened.</td></tr>';
   acc = 0; last = 0; running = true;
-  el('pause').setAttribute('aria-pressed', 'false'); el('pause').textContent = 'Pause';
+  el('pause').setAttribute('aria-pressed', 'false'); el('pause').textContent = 'Pause trace';
   el('fieldnote').textContent = 'seed “' + S.seed + '” · 20 × 20 terrain cells of 10 m · ' +
     S.combatants.length + ' combatants · ' + S.objectives.length + ' objectives';
   sizeCanvas(); paintChrome();
@@ -2091,12 +2414,19 @@ function restart() {
 
 /* --- wiring --- */
 buildConstitution(); buildVerbs(); buildLegend();
+canvas.addEventListener('click', onFieldClick);
+el('dsr-close').addEventListener('click', () => { releaseHold(); S.inspect = null; paintDossier(); });
+el('dsr-hold-btn').addEventListener('click', () => {
+  if (S.hold) releaseHold();
+  else { const c = S.combatants.find(x => x.key === S.inspect); if (c) takeHold(c); }
+  paintDossier();
+});
 el('restart').addEventListener('click', restart);
 el('seed').addEventListener('change', restart);
 el('pause').addEventListener('click', () => {
   running = !running;
   el('pause').setAttribute('aria-pressed', String(!running));
-  el('pause').textContent = running ? 'Pause' : 'Resume';
+  el('pause').textContent = running ? 'Pause trace' : 'Resume trace';
 });
 el('skip').addEventListener('click', () => { if (S && S.phase === 'muster') { S.tick = A.musterTicks - 1; } });
 function paintPace() {
