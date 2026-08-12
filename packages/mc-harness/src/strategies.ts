@@ -898,6 +898,193 @@ const PERMIT_THEN_IDLE: StrategyDefinition = {
         ],
 };
 
+// ---------------------------------------------------------------------------
+// The sects: a pool whose gods do not all permit the same magic (W18, item E).
+// ---------------------------------------------------------------------------
+
+/**
+ * ## Why a homogeneous pool makes looting unmeasurable
+ *
+ * Every strategy above starts from — and, apart from `permissive-breadth`, stays
+ * inside — the same v1 rectangle: three techniques × four forms, twelve cells,
+ * fifty-one nodes. `contracts.md` §5 calls knowledge *"portable, lootable"*, and
+ * W8's raid work measured looting crossing the fifty-one-node ceiling by roughly
+ * nine nodes a run **from cells the raider's own god forbade**.
+ *
+ * That measurement is only available because the raid victim held something the
+ * raider could not have derived. **In a pool where every god permits the same
+ * twelve cells there is nothing foreign to loot**, so raids can move copies and
+ * can never move knowledge, and every metric about knowledge diversity is a
+ * measurement of the instrument rather than of the game. That is a defect in the
+ * pool, not in the raid engine.
+ *
+ * ## What a sect is
+ *
+ * Three gods who disagree about what magic may exist. Each one:
+ *
+ * - **permits a band of the form axis that the others never touch** — the bands
+ *   are disjoint by construction, and the test asserts it from the emitted
+ *   action stream rather than from this comment;
+ * - **forbids at least one axis the v1 rectangle starts with**, so its ruleset
+ *   differs *downward* as well as upward;
+ * - and every axis a sect forbids is one that another sect holds. That is the
+ *   property that makes a raid able to bring home something the raider's own god
+ *   forbade, and it is the one the pairwise test pins.
+ *
+ * The bands are read off the shipped content rather than invented: the v1
+ * rectangle is `intellego`/`perdo`/`rego` × `mentem`/`terram`/`limen`/`nomen`,
+ * which as 1-based axis ids is techniques {2, 4, 5} and forms {8, 9, 13, 14}.
+ * The ten forms outside it are what the three sects divide.
+ *
+ * ## What this is not
+ *
+ * It is **not** a measurement. Raids are not on this branch, so nothing here has
+ * been observed looting anything; what is delivered is pool composition plus an
+ * executable statement of the property, and the sects are appended to
+ * {@link BOT_POOL} rather than substituted into it, so no committed sweep and no
+ * committed baseline changes. `balance/sweeps/pool-heterogeneous.sweep.json` is
+ * the sweep that runs them, and it is deliberately not wired into any gate.
+ */
+interface SectRuleset {
+  readonly strategyId: string;
+  /** Technique ids, 1-based, this sect permits beyond the v1 rectangle. */
+  readonly permitTechniques: readonly number[];
+  /** Form ids, 1-based, this sect permits. Disjoint across sects. */
+  readonly permitForms: readonly number[];
+  /** Form ids this sect forbids. Each is one another sect holds. */
+  readonly forbidForms: readonly number[];
+  readonly gloss: string;
+}
+
+/**
+ * The three sects, and the axes each one claims.
+ *
+ * Disjointness is a property of these three lists and is asserted by
+ * `ruleset-heterogeneity.test.ts` rather than trusted here: three hand-written
+ * lists that must not overlap are exactly the shape of thing that stops being
+ * true in a later edit.
+ */
+export const SECT_RULESETS: readonly SectRuleset[] = Object.freeze([
+  {
+    strategyId: 'sect-elemental',
+    // Creo, the one technique no other sect claims.
+    permitTechniques: [1],
+    // animal, aquam, auram, corpus.
+    permitForms: [1, 2, 3, 4],
+    // limen — a v1 form, and one both other sects keep.
+    forbidForms: [13],
+    gloss: 'the elements and the body, and a god who will not have thresholds',
+  },
+  {
+    strategyId: 'sect-artifice',
+    // Muto.
+    permitTechniques: [3],
+    // herbam, ignem, imaginem, vim.
+    permitForms: [5, 6, 7, 10],
+    // nomen — a v1 form the other two keep.
+    forbidForms: [14],
+    gloss: 'making and unmaking matter, and a god who will not have true names',
+  },
+  {
+    strategyId: 'sect-umbral',
+    // No extra technique: this sect's difference is entirely on the form axis,
+    // which keeps one arm of the trio free of the technique variable.
+    permitTechniques: [],
+    // umbra, fatum.
+    permitForms: [11, 12],
+    // mentem and terram — two v1 forms both other sects keep.
+    forbidForms: [8, 9],
+    gloss: 'shadow and fate, and a god who will not have minds or earth',
+  },
+]);
+
+/** `values[round % values.length]`, or `undefined` for an empty list. */
+function cycle(values: readonly number[], round: number): number | undefined {
+  return values.length === 0 ? undefined : (values[round % values.length] as number);
+}
+
+/**
+ * One sect, as a strategy definition.
+ *
+ * The preference list rotates **which kind of action is most-preferred** on a
+ * four-round cycle rather than listing all four at once. `policyFor` submits the
+ * first preference the mask permits, and `permitTechnique` is legal in almost
+ * every round, so a single list would starve the forbids and the encouragement
+ * for the whole run — which is the mechanism that made `portal-rush`'s third
+ * preference unreachable for every sweep this project has published.
+ */
+function sectStrategy(sect: SectRuleset): StrategyDefinition {
+  return {
+    strategyId: sect.strategyId,
+    version: 1,
+    hypothesis:
+      `Whether a pool of gods who disagree makes looting measurable. This sect permits ${sect.gloss}, ` +
+      'and every axis it forbids is one another sect holds — so a raid against a rival can bring ' +
+      'home a node from a cell this god forbade, which is the only way §5\'s "portable, lootable" ' +
+      'can show up as knowledge rather than as copies. It probes the instrument as much as the ' +
+      'game: if the three sects still end on the same node set, then the ruleset is not what ' +
+      'binds what a universe knows, and the campaign\'s central claim is wrong.',
+    ascension: {
+      when: ASCENSION_STANCE.whenEligible,
+      because:
+        'Symmetric with permissive-breadth, whose ruleset move this is a partition of. The three ' +
+        'sects are compared against each other, so a difference in stance between them — or ' +
+        'between them and the strategy they partition — would be a second variable in a ' +
+        'comparison that exists to isolate one.',
+    },
+    // `permitTechnique` is listed only by the sects that claim one. A signature
+    // action a strategy never names is a claim `degeneracyOf` would report as
+    // denied when the strategy never wanted it — the pool's own definition of a
+    // signature is "the actions without which this strategy is not
+    // distinguishable from the passive control", and sect-umbral's difference is
+    // entirely on the form axis.
+    signatureActions: [
+      ...(sect.permitTechniques.length > 0 ? [GOD_ACTION.permitTechnique] : []),
+      GOD_ACTION.permitForm,
+      GOD_ACTION.forbidForm,
+      GOD_ACTION.encourageResearch,
+    ],
+    preferences: ({ round }) => {
+      const preferred: ActionSubmission[] = [];
+      switch (round % 4) {
+        case 0: {
+          const parameter = cycle(sect.permitTechniques, round);
+          if (parameter !== undefined) {
+            preferred.push({ action: GOD_ACTION.permitTechnique, parameter });
+          }
+          break;
+        }
+        case 1: {
+          const parameter = cycle(sect.permitForms, round);
+          if (parameter !== undefined) {
+            preferred.push({ action: GOD_ACTION.permitForm, parameter });
+          }
+          break;
+        }
+        case 2: {
+          const parameter = cycle(sect.forbidForms, round);
+          if (parameter !== undefined) {
+            preferred.push({ action: GOD_ACTION.forbidForm, parameter });
+          }
+          break;
+        }
+        default:
+          break;
+      }
+      // Slot 0 is the deepest permitted cell, so this pushes whatever the sect's
+      // own ruleset has made reachable — which is the point of giving the three
+      // of them different rulesets.
+      preferred.push({ action: GOD_ACTION.encourageResearch, parameter: 0 });
+      return preferred;
+    },
+  };
+}
+
+/** The three sects, as strategies. Appended to the pool, never substituted in. */
+export const SECT_STRATEGIES: readonly StrategyDefinition[] = Object.freeze(
+  SECT_RULESETS.map(sectStrategy),
+);
+
 /**
  * The pool, in registration order.
  *
@@ -906,10 +1093,12 @@ const PERMIT_THEN_IDLE: StrategyDefinition = {
  * sorts the ids it publishes, and this array is what a reader compares against
  * the spec paragraph.
  *
- * The two verification probes are appended rather than inserted so that
- * `round-robin` assignment — `strategies[replicateIndex % size]` over the *sweep
- * file's* list, not this one — is unaffected for any sweep that does not name
- * them.
+ * The two verification probes and the three sects are appended rather than
+ * inserted so that `round-robin` assignment — `strategies[replicateIndex % size]`
+ * over the *sweep file's* list, not this one — is unaffected for any sweep that
+ * does not name them. `balance-gate-ascension.sweep.json` names the original
+ * eight and only the original eight, so its committed baseline is untouched by
+ * anything below `WORSHIP_MAXIMIZER`.
  */
 export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   PASSIVE_CONTROL,
@@ -922,6 +1111,7 @@ export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   WORSHIP_MAXIMIZER,
   IDLE_THEN_DECLARE,
   PERMIT_THEN_IDLE,
+  ...SECT_STRATEGIES,
 ]);
 
 // ---------------------------------------------------------------------------

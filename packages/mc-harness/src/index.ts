@@ -374,6 +374,8 @@ export {
   BOT_POOL,
   BOT_POOL_REGISTRY,
   POOL_BUILD_LIMITS,
+  SECT_RULESETS,
+  SECT_STRATEGIES,
   botStrategyRegistry,
   degeneracyOf,
   effectivePreferences,
