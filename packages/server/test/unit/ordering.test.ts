@@ -140,3 +140,37 @@ describe('a submission for the wrong tick is late, not applied', () => {
     expect(rejected[0]?.reason).toBe(REJECTION.late);
   });
 });
+
+describe('a refusal cannot retract an action already admitted', () => {
+  it('keeps the winner when a later submission is refused', () => {
+    const assembly = new TickAssembly(0, 1);
+    // A legal action lands first.
+    expect(assembly.offer(submission(0, 1, 5))).toBeUndefined();
+    // Then the participant sends something the boundary refuses — a masked
+    // action, or one past its per-tick budget.
+    assembly.refuse(0, 2, REJECTION.budgetExceeded);
+
+    const { batch, rejected } = assembly.close();
+    // The legal action stands. Clearing it would have given a participant a way
+    // to un-submit by sending garbage.
+    expect(batch.entries[0]).toMatchObject({
+      slot: 0,
+      action: { kind: 5 },
+      source: ENTRY_SOURCE.submitted,
+      sequence: 1,
+    });
+    // And the refusal is still on the record.
+    expect(rejected.map((r) => r.reason)).toEqual([REJECTION.budgetExceeded]);
+  });
+
+  it('still explains a no-op when the refused submission was the only one', () => {
+    const assembly = new TickAssembly(0, 1);
+    assembly.refuse(0, 1, REJECTION.rulesetFrozen);
+    const { batch } = assembly.close();
+    expect(batch.entries[0]).toMatchObject({
+      source: ENTRY_SOURCE.substituted,
+      action: { kind: 0 },
+      rejection: REJECTION.rulesetFrozen,
+    });
+  });
+});

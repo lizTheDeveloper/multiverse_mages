@@ -144,7 +144,20 @@ export class TickAssembly {
    * carrying the reason so the tick notice can say why.
    */
   refuse(slot: number, sequence: number, reason: RejectionReason): void {
-    this.winning.delete(slot);
+    // **A refusal never retracts an action already admitted for this tick.**
+    //
+    // The alternative — clearing the slot — was what this did first, and it is
+    // wrong in a way that only shows up under a misbehaving client. A
+    // participant that submits a legal action and then a masked one, or one
+    // that submits a legal action and then exceeds its per-tick budget, would
+    // have had its *legal* action replaced by a no-op. The later submission
+    // could not have won on sequence anyway — `host.ts` requires a connection's
+    // sequence numbers to strictly increase — so retracting the winner gave a
+    // participant a way to un-submit by sending garbage, and gave a hostile peer
+    // a way to force an opponent's tick to a no-op if slots were ever shared.
+    //
+    // The reason is still recorded, because a slot with no winner needs it to
+    // say *why* its no-op is there.
     this.rejected.push({ slot, tick: this.tick, sequence, reason });
   }
 
