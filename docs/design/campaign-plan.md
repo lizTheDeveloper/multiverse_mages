@@ -1706,3 +1706,69 @@ W19 adds one more thing worth keeping: the **only** place the two species' node 
 content is under `permissive-breadth` — reached by editing the ruleset — and that comparison is
 **confounded by design**, because removing a species changes founding order and therefore every
 downstream draw. Any future species claim resting on `permissive-breadth` inherits that confound.
+
+---
+
+## The question nobody in this project has asked
+
+An external review was given the measured findings cold and asked four questions. Its answer to the
+last one is the sharpest thing anyone has said about this work:
+
+> **"What player decision can make a losing universe win, through a causal chain the player can
+> understand and verify?"**
+>
+> Not *"are the primitives authored?"*, *"are metrics in range?"*, or *"can species diverge?"* Those
+> are implementation and simulation questions. The missing question is whether the god's constrained
+> authority creates **counterfactual, legible leverage** over outcomes.
+>
+> If the answer is not demonstrably yes for at least one decision, the honest description is a
+> promising autonomous-world simulator — not yet a strategy game about being the god of magic.
+
+Every definition-of-done item in this document is one of the questions it says are the wrong ones.
+D1–D8 measure whether the *simulation* behaves; none of them asks whether the *player* has leverage.
+That is not an argument for deleting them — they are still necessary — but they are not sufficient,
+and nothing here has been checking the difference.
+
+### It also puts a caveat on the campaign's best result
+
+On W20's species divergence:
+
+> "It is probably a real **graph-level** result, but not evidence that the game's magic system works.
+> The rewrite can change discovery, teaching and species trajectories through authored graph topology
+> **even if spell effects are inert**. Gnome/human divergence and `ascensionRate` may be genuine
+> outputs of the academic simulation — but they are **not yet attributable to the god legalizing
+> magic**."
+
+That is fair and it is testable. The distinguishing measurement it proposes: **fixed-seed paired runs
+with every effect contribution forcibly neutralized versus normal**, comparing species Jaccard,
+`ascensionRate` and win state. If the delta is ~0, W20's result is a knowledge-graph artifact wearing
+a magic-system label. `packages/primitives/src/ablation.ts` already exports `neutralizing()` and
+`ablationMaskFor()` — the mechanism exists and has never been pointed at this question.
+
+### And it named the way tonight gets wasted, accurately
+
+> "The likely waste: spending the night tuning numbers, adding drains, or polishing the content graph
+> until aggregate metrics look 'in band'. That can produce prettier charts while leaving the core
+> causal path disconnected. **Second-most-likely waste: fixing all 16 primitives instead of proving
+> one.**"
+
+Both were in flight when this arrived. Redirected: W29 now owes **one primitive proven end to end**
+rather than six wired — permit the cell, see use rise, see a contribution logged, see world state
+mutate, see a visible outcome change, and **forbid the cell and watch the change disappear**. Step
+five is what makes it proof instead of a demo.
+
+### The drains critique, kept because it is the acceptance criteria inverted
+
+> "Drains can make the economy feel constrained **without creating decisions**. You may turn 'favor is
+> meaningless' into 'favor is a tax bill,' while the optimal policy remains 'permit everything, idle,
+> and pay upkeep.'"
+>
+> "A drain is only valuable if it produces a hard, legible tradeoff — *'keeping this family legal
+> preserves human portal defense but starves gnome ritual research'* — not merely 'your number went
+> down.'"
+
+So a uniform upkeep is the version that fails. A drain earns its place when two sinks draw on the
+same pool, each attached to a **different visible capability**, and the right answer **differs by
+species or ruleset**. The failure signature to watch for: outcome metrics move while **policy
+sensitivity does not** — same total favor, different allocation, identical result. That is a distinct
+measurement from any level metric and nothing currently collects it.
