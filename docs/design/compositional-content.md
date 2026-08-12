@@ -428,6 +428,55 @@ the strategy that funds, blesses and encourages.
 
 ---
 
+## 6.45 Claim 0, the primary measure — and it is a negative result
+
+Two instruments, and they disagree in a way that is worth reading carefully.
+
+**The deterministic tests pass, and they are the ones that prove the claim as stated.** Claim 0 is
+*incomparable **by construction**, not by luck*, and construction is not a thing a sampling estimate
+can demonstrate:
+
+- `packages/rules-magic/test/unit/exclusion.test.ts` — two mages ending with incomparable held sets
+  by construction, named as the workstream's primary acceptance test.
+- `packages/rules-magic/test/unit/rituals.test.ts` — the **greedy-mage proof**: a mage pursuing both
+  of a ritual's roles, in *either* pursuit order, checked against the real `acquisitionExclusion`
+  gate that research and teaching use, never reaches both. That is a proof of impossibility, which
+  is what "by construction" means.
+
+**The Monte Carlo fraction moved the wrong way**, and reporting the deterministic pass without this
+would be exactly the kind of selective reading this campaign was burned by three times:
+
+| strategy | incomparable, before | after | nodes/mage, before | after |
+|---|--:|--:|--:|--:|
+| `passive-control` | 0.4409 | **0.3506** | 3.0 | 20.3 |
+| `archivist` | 0.3946 | **0.3536** | 2.4 | 18.8 |
+| `portal-rush` | 0.5043 | **0.3375** | 4.0 | 20.8 |
+| `worship-maximizer` | 0.4091 | **0.3297** | 3.2 | 21.3 |
+| `uniform-random-legal` | 0.2395 | **0.2110** | 3.3 | 22.2 |
+| `permissive-breadth` | 0.5216 | **0.7687** | 39.9 | 122.7 |
+
+**The before-number was noise.** At a mean of **3 nodes per mage**, two mages' sets are incomparable
+about as often as two coin flips differ — 0.42 measures nothing. After, mages hold 20 and the
+fraction falls to 0.35 with mean containment rising to 0.90–0.94. So the honest statement is not
+*"incomparability got worse"*; it is:
+
+> **Mages now hold seven times as much, and what they hold nests. The per-mage exclusions are real,
+> tested, and live in the loop — and they are not reached.**
+
+**The mechanism is measurable and it is the trunk.** The v1 graph is 39 untracked trunk nodes and 69
+tracked ones. A mage holding a mean of 20 nodes has, on average, **never left the trunk** — and the
+trunk is deliberately shared, because §3.2.3 made tiers 1–2 commitment-free so that no mage could
+soft-lock into uselessness. That safety rail is now the thing preventing the mechanic from firing.
+
+`permissive-breadth` is the exception that confirms it: at 122.7 nodes per mage it is far past any
+trunk, and its incomparable fraction is the only one that rose — **0.5216 → 0.7687**, the largest
+single movement in this workstream.
+
+**So the finding is a ratio, not a mechanism failure.** Exclusivity binds at tier 3 and above; the
+median mage dies before she gets there. Whatever raises nodes-per-mage — longer teachable windows,
+cheaper depth, a smaller trunk, a mastery-raising verb — will make the exclusions bite without any
+change to the exclusions themselves. That is a cheaper next move than anything in the graph.
+
 ## 6.5 The negative control: `permit-then-idle` still wins, and that is the headline
 
 **It still wins. 12/12, rate 1.0000.** Measured on the true-naming arm with the same sweep file,
