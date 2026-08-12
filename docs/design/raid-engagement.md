@@ -422,12 +422,26 @@ civilization can do, and it should still cost the years the scholars spent insid
 
 ### Open
 
-1. **Does a rewind re-roll, or replay?** Restoring a snapshot and replaying the same action log gives
-   you the same outcome, which is useless. Something must differ — the actions taken, or the stream
-   position. **Re-rolling is the tempting answer and is probably wrong**, because a rewind that
-   re-rolls is a retry button and every balance baseline becomes a distribution over attempts. The
-   honest version is that you go back and *act differently*, which means a rewind buys information,
-   not luck.
+1. ~~**Does a rewind re-roll, or replay?**~~ **Ruled: it replays unless you change something.**
+
+   Same actions, same outcome — no re-roll, no new stream position, no retry button, and every
+   balance baseline stays a measurement rather than a distribution over attempts. **A rewind buys
+   information, not luck**, which makes Fatum a *precognition* magic rather than a fortune one. The
+   content already named it: `intellego-fatum` **The Fork Seen From Above** — *"stand outside a
+   decision and see both roads to their ends at once."*
+
+   **The consequence that needs a second ruling: a rewind hands you the opponent's future.** You saw
+   what they did; you go back; their recorded actions replay while you are ready for them. Against an
+   AI that is simply the mechanic working. Against a live player it is sharper — they would now
+   choose differently, and the log says they do not. Three readings, and they are different games:
+
+   - *Their actions replay as recorded.* Strongest, cleanest, and the clearest justification for the
+     price. It is genuinely seeing the future, and only the host can do it (§3).
+   - *They re-decide too.* Symmetric and fair, but then a rewind buys nothing except a shared reset,
+     and it stops being worth an age of research.
+   - *They re-decide, but you keep what you learned.* Probably the truest to the fiction — you know
+     the shape of what is coming without knowing the details — and much the hardest to build.
+
 2. **Does the raider know the host permits Fatum before committing?** This decides whether it is a
    deterrent or an ambush, and those are different games.
 3. **Snapshot cadence**, which is now a design parameter and not only an engineering one.
