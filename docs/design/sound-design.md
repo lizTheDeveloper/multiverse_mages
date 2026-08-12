@@ -549,6 +549,10 @@ cast and cost, since acquire and store are world-time processes with no single m
 | **Vancian memorization** | A page tearing; a slot emptying | **The absence afterward.** Each prepared spell contributes a quiet held partial to the mage's personal tone. Casting removes it. You hear your loadout depleting, and an empty Vancian mage is audibly thin. |
 | **True Naming** | The spoken name, pitched into the universe's key | **The caster's own voice thins.** Formants narrow with each use. Naming costs you some of your own. |
 | **The Art of Memory** | A spatial move — the sound originates from a fixed position in the stereo field, *the same position for the same node, always* | **The room shrinks.** Reverb decay shortens as the palace is drawn on. |
+| **The Chorale** | Sung, and never alone — the cast is a second voice arriving under the caster's, in the universe's key. A node the caster learned from someone still living carries that teacher's timbre in the lower voice | **The harmony thins to unison.** Casting spends the ensemble, not the singer: voices drop out of the chord one at a time, and a spent Chorale mage is a single unaccompanied line. It costs nothing she owns, which is exactly the tradition's bargain. |
+| **The Flesh Codex** | A wet, close-mic'd sound with no tail at all — no reverb, because the instrument is inside the caster. Each node has a fixed position *on the body*, panned by where it was cut | **It does not stop when the spell does.** The cost is a pitch-bend downward in the caster's own tone that never fully returns; a Flesh Codex mage's timbre is a record of everything she has ever cast, and it only degrades. |
+| **The Shared Mind** | No localisable source. The cast arrives simultaneously from every living mage's position at once, quietest at the caster's own | **The others go quiet.** Cost is levied on the ensemble's bed: the ambient hum of the other mages drops for the duration. You hear that casting took something from people who were not casting. |
+| **The Witch's Bond** | Two sounds slightly out of sync — the caster's, and a second, lower, arriving a few milliseconds *early*. The thing that already knew the answer speaks first | **Nothing, audibly, now.** The release is clean and cheap and that is what should frighten the player: the bond's price is not paid at cast. What the mix carries instead is a slow accumulating detune on the caster's fundamental, one step per bond struck, five bonds from true. |
 
 The Art of Memory's panning is not decoration. Vision §5 makes the memory palace unburnable,
 unlootable, un-loanable, and utterly lost when its holder dies. Giving each node a permanent
@@ -559,6 +563,21 @@ ever being told to — and §6.5 describes what happens to that map when she die
 like the host universe: a Vancian raider in an Art of Memory sky tears her own pages, but pays in a
 shrinking room. Vision §3 calls the portal rule the single load-bearing mechanic. This is what it
 sounds like, and a player who has raided twice will understand the rule without having read it.
+
+**A note on the four regimes below the first three, and on what audio is being asked to carry.**
+W28 measured that these four differ from each other mechanically in `acquire` and `store` — where
+knowledge lives, how much of it fits, and whether it can be taught — and that *none of that is
+audible*, because acquire and store are world-time and have no single moment to sound. So the rows
+above are doing something the first three rows were not: they are giving four regimes a cast/cost
+character that is **consistent with** a mechanical identity living entirely elsewhere. The Chorale's
+cost falls on the ensemble because its knowledge is held by living people; the Flesh Codex's cost is
+permanent because its knowledge is mortal and unwritten; the Witch's Bond charges nothing at release
+because its bargain was struck long before. Each row is a *claim about the tradition* that a player
+could in principle catch the game contradicting, which is the only test that separates a regime from
+a label — and §6 is where the world-time half of each becomes audible, since research, teaching,
+scribing and loss all have moments and these four traditions differ most in which of those moments
+ever occur at all. A Chorale universe never plays the scribing sound. A Flesh Codex universe plays
+the loss sound constantly.
 
 ---
 
