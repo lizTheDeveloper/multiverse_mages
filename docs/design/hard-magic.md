@@ -93,20 +93,49 @@ flavours: **materials** for grimoires and buildings (a universe can be knowledge
 write any of it down — §6a says so explicitly), **time** for teaching and research, **favor** for the
 god's own interventions, and **risk** for sending a mage through a portal.
 
-## What is missing, in order
+## What is actually missing — measured, and not what it first looked like
 
-1. **Mortality must cost knowledge.** A node held only in a dying mage's mind must leave the
-   universe. Without this, lifespan is decoration and the entire table above is inert.
-2. **Teaching must require a living teacher and cost time**, so that "make it home to teach" is a
-   real branch and not a formality.
-3. **Scribing must consume materials**, so that insurance has a price and *"vellum's expensive"* is a
-   rule rather than a joke.
-4. **Library depth must feed research rate** — §6a's compounding loop, *"the consequential one"*,
-   currently unimplemented and being built separately.
-5. **Grimoire durability by species**, so *"it's dwarven, it'll outlive us both"* is mechanical.
+The mechanics above mostly **exist**. `subsystem.ts` has a mortality path that destroys everything a
+dying mage held; `teaching.ts` exists; `scribing.ts` consumes materials and can refuse for
+`insufficient-materials`. An earlier draft of this document said they were absent. They are not.
 
-Items 1–3 are what make the species table load-bearing. Item 4 is what makes universities worth
-funding. Item 5 is what makes the archivist's insurance specific rather than generic.
+What the numbers say instead, from a 2400-tick run:
+
+| | `passive-control` | `archivist` |
+|---|---|---|
+| nodes known | 51.0 | **51.0** |
+| grimoires | 1156 | **4096** |
+| library depth | 1.00 | 1.00 |
+| knowledge instances | 2922 | 2738 |
+| living mages | 71.5 | 68.3 |
+
+The archivist's play *works*: it produces three and a half times the grimoires. And it buys
+**nothing**, because those are redundant copies of the same fifty-one nodes.
+
+Two facts explain the whole flat result:
+
+1. **Nothing is ever the last copy.** Around 2900 instances spread over 51 nodes is roughly
+   **fifty-five copies per node**. The loss channel is real and can never reach a last copy, so
+   redundancy is free *and* worthless, `libraryDependence` sits near zero, and the dwarf's second
+   cross-reference protects against a fire that cannot happen. Insurance has no value where there is
+   no risk.
+2. **The binding constraint on knowledge is the ruleset, not the economy.** Passive and archivist
+   both plateau at 51 nodes; `permissive-breadth`, which does nothing but permit more cells, reaches
+   217. What the god permits decides what can be known; everything else only makes copies.
+
+So the missing pieces, in dependency order:
+
+1. **Library depth must feed research rate** — §6a's compounding loop, *"the consequential one"*,
+   genuinely unimplemented and being built separately. This is what makes a university worth funding
+   for a reason other than worship.
+2. **The loss channel must be able to reach a last copy.** Whether by fewer copies, faster decay, or
+   raids that burn, `libraryDependence` has to be able to leave zero — otherwise the archivist, the
+   dwarf's retention and the gnome's rediscovery are all insurance against nothing.
+3. **Grimoire durability by species**, so *"it's dwarven, it'll outlive us both"* is mechanical
+   rather than flavour — worth doing only after (2), for the same reason.
+
+Item 1 is what makes universities matter. Item 2 is what makes the species table load-bearing. The
+order is forced: durability and retention are meaningless until destruction is possible.
 
 ## The claim this design makes, and how it would be disproved
 
