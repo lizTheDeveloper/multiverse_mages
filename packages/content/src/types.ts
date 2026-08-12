@@ -43,7 +43,8 @@ export type ContentNamespace =
   | 'territory'
   | 'god-cost'
   | 'god-constant'
-  | 'raid-constant';
+  | 'raid-constant'
+  | 'autonomy-weight';
 
 export interface TechniqueRecord {
   readonly id: string;
@@ -245,6 +246,31 @@ export interface RaidConstantRecord {
   readonly tuningStatus: TuningStatus;
 }
 
+/**
+ * One named magnitude of a mage's choice of *which node to work on*.
+ *
+ * Two kinds of record share the table. A **scalar** — a term weight, a divisor,
+ * a per-term bound — declares neither `role` nor `primitive` and is read by
+ * name. A **role-appeal row** declares both, and prices one authored effect
+ * primitive for one standing role, which is what makes vision §7's *"their
+ * assigned standing role"* a number rather than an intention. See
+ * `autonomy.ts` for the checks, including the one that stops a role
+ * outvoting every other term at once.
+ */
+export interface AutonomyWeightRecord {
+  readonly id: string;
+  /** May be negative: a role can find a whole kind of magic distasteful. */
+  readonly value: number;
+  /** `fp` for a magnitude on the score's own axis, `raw` for a divisor. */
+  readonly unit: 'fp' | 'raw';
+  /** Present exactly on a role-appeal row. One of `contracts.md` §1.2's four. */
+  readonly role?: 'researcher' | 'warden' | 'professor' | 'raider';
+  /** Present exactly on a role-appeal row. An id from `primitive.json`. */
+  readonly primitive?: string;
+  readonly gloss: string;
+  readonly tuningStatus: TuningStatus;
+}
+
 /** A record plus the integer it was interned to. */
 export interface Interned<T> {
   readonly contentId: ContentId;
@@ -265,6 +291,7 @@ export interface ContentCounts {
   readonly godCosts: number;
   readonly godConstants: number;
   readonly raidConstants: number;
+  readonly autonomyWeights: number;
 }
 
 /**
@@ -289,6 +316,7 @@ export interface ContentRegistry {
   readonly godCosts: readonly Interned<GodCostRecord>[];
   readonly godConstants: readonly Interned<GodConstantRecord>[];
   readonly raidConstants: readonly Interned<RaidConstantRecord>[];
+  readonly autonomyWeights: readonly Interned<AutonomyWeightRecord>[];
 
   /** String id to interned integer, per namespace. */
   intern(namespace: ContentNamespace, id: string): ContentId;
@@ -321,4 +349,23 @@ export interface ContentRegistry {
    * `0` would be a cast range of zero or a portal that never decays.
    */
   raidConstant(id: string): number;
+  /**
+   * A named scalar weight of target selection.
+   *
+   * @throws Error for an id the table does not declare, for the reason
+   * {@link ContentRegistry.godConstant} does. A silent `0` here would be a
+   * divisor of zero or a term bound that removes a whole input from the score,
+   * and a mage would go on choosing plausibly from an arithmetic that had
+   * quietly stopped reading half of what shapes her.
+   */
+  autonomyWeight(id: string): number;
+  /**
+   * What one standing role thinks of one authored effect primitive, or `0` for
+   * a pair the table declines to price.
+   *
+   * `0` is a real answer here and not a missing one — an unpriced pair is a
+   * role with no opinion — which is why this reads as a total function while
+   * {@link ContentRegistry.autonomyWeight} throws.
+   */
+  roleAppeal(role: string, primitiveId: string): number;
 }

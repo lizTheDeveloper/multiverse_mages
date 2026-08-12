@@ -1,0 +1,1266 @@
+{
+ "tag": "before",
+ "sweepId": "w15-dimensionality-v1",
+ "rootSeed": 20260811,
+ "strategyId": "denial-warden",
+ "foundingSpeciesMask": null,
+ "worldTickCap": 2400,
+ "replicates": 6,
+ "cells": [
+  {
+   "cellIndex": 0,
+   "options": {
+    "cohortSize": 4,
+    "foundingNodes": 1
+   }
+  },
+  {
+   "cellIndex": 3,
+   "options": {
+    "cohortSize": 12,
+    "foundingNodes": 4
+   }
+  }
+ ],
+ "wallClockMs": 17000,
+ "runs": [
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 0,
+    "replicateIndex": 0
+   },
+   "runSeed": 970191734,
+   "options": {
+    "cohortSize": 4,
+    "foundingNodes": 1
+   },
+   "status": "stagnated",
+   "terminalReason": 3,
+   "ticksRun": 506,
+   "snapshotHash": "85b51e78ea678e69",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99
+     ],
+     "counts": [
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      107
+     ],
+     "counts": [
+      1
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      107
+     ],
+     "counts": [
+      1
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 506,
+    "nodeIds": [
+     107
+    ],
+    "counts": [
+     1
+    ]
+   }
+  },
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 0,
+    "replicateIndex": 1
+   },
+   "runSeed": 3624627495,
+   "options": {
+    "cohortSize": 4,
+    "foundingNodes": 1
+   },
+   "status": "ascended",
+   "terminalReason": 2,
+   "ticksRun": 1202,
+   "snapshotHash": "9e6a1ec21e0cd605",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99
+     ],
+     "counts": [
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      23,
+      4
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      23,
+      4
+     ]
+    },
+    {
+     "worldTick": 720,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      23,
+      4
+     ]
+    },
+    {
+     "worldTick": 960,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      23,
+      4
+     ]
+    },
+    {
+     "worldTick": 1200,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      23,
+      4
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 1202,
+    "nodeIds": [
+     99,
+     107
+    ],
+    "counts": [
+     23,
+     4
+    ]
+   }
+  },
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 0,
+    "replicateIndex": 2
+   },
+   "runSeed": 1984095960,
+   "options": {
+    "cohortSize": 4,
+    "foundingNodes": 1
+   },
+   "status": "stagnated",
+   "terminalReason": 3,
+   "ticksRun": 507,
+   "snapshotHash": "f729410a4c4bdd2a",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99
+     ],
+     "counts": [
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      24,
+      3
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      24,
+      3
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 507,
+    "nodeIds": [
+     99,
+     107
+    ],
+    "counts": [
+     24,
+     3
+    ]
+   }
+  },
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 0,
+    "replicateIndex": 3
+   },
+   "runSeed": 343564425,
+   "options": {
+    "cohortSize": 4,
+    "foundingNodes": 1
+   },
+   "status": "stagnated",
+   "terminalReason": 3,
+   "ticksRun": 508,
+   "snapshotHash": "111e844f405c1d8f",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99
+     ],
+     "counts": [
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      23,
+      4
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      23,
+      4
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 508,
+    "nodeIds": [
+     99,
+     107
+    ],
+    "counts": [
+     23,
+     4
+    ]
+   }
+  },
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 0,
+    "replicateIndex": 4
+   },
+   "runSeed": 2998000186,
+   "options": {
+    "cohortSize": 4,
+    "foundingNodes": 1
+   },
+   "status": "stagnated",
+   "terminalReason": 3,
+   "ticksRun": 506,
+   "snapshotHash": "89fc8a14ae4d5df2",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99
+     ],
+     "counts": [
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      24,
+      3
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      24,
+      3
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 506,
+    "nodeIds": [
+     99,
+     107
+    ],
+    "counts": [
+     24,
+     3
+    ]
+   }
+  },
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 0,
+    "replicateIndex": 5
+   },
+   "runSeed": 1357468651,
+   "options": {
+    "cohortSize": 4,
+    "foundingNodes": 1
+   },
+   "status": "stagnated",
+   "terminalReason": 3,
+   "ticksRun": 507,
+   "snapshotHash": "aac84fbd136f4f79",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99
+     ],
+     "counts": [
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      22,
+      4
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      99,
+      107
+     ],
+     "counts": [
+      22,
+      4
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 507,
+    "nodeIds": [
+     99,
+     107
+    ],
+    "counts": [
+     22,
+     4
+    ]
+   }
+  },
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 3,
+    "replicateIndex": 0
+   },
+   "runSeed": 2800153462,
+   "options": {
+    "cohortSize": 12,
+    "foundingNodes": 4
+   },
+   "status": "ascended",
+   "terminalReason": 2,
+   "ticksRun": 1202,
+   "snapshotHash": "67fc1cddcc49faf9",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      112
+     ],
+     "counts": [
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      48,
+      20,
+      10
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      48,
+      20,
+      10
+     ]
+    },
+    {
+     "worldTick": 720,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      48,
+      20,
+      10
+     ]
+    },
+    {
+     "worldTick": 960,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      48,
+      20,
+      10
+     ]
+    },
+    {
+     "worldTick": 1200,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      48,
+      20,
+      10
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 1202,
+    "nodeIds": [
+     99,
+     104,
+     107
+    ],
+    "counts": [
+     48,
+     20,
+     10
+    ]
+   }
+  },
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 3,
+    "replicateIndex": 1
+   },
+   "runSeed": 1159621927,
+   "options": {
+    "cohortSize": 12,
+    "foundingNodes": 4
+   },
+   "status": "truncated",
+   "terminalReason": 0,
+   "ticksRun": 2400,
+   "snapshotHash": "6eceeebaa365a3bd",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      112
+     ],
+     "counts": [
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      25,
+      20,
+      1
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      25,
+      20,
+      1
+     ]
+    },
+    {
+     "worldTick": 720,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      25,
+      20,
+      1
+     ]
+    },
+    {
+     "worldTick": 960,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      25,
+      20,
+      1
+     ]
+    },
+    {
+     "worldTick": 1200,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      25,
+      20,
+      1
+     ]
+    },
+    {
+     "worldTick": 1440,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      25,
+      20,
+      1
+     ]
+    },
+    {
+     "worldTick": 1680,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      25,
+      20,
+      1
+     ]
+    },
+    {
+     "worldTick": 1920,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      25,
+      20,
+      1
+     ]
+    },
+    {
+     "worldTick": 2160,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      25,
+      20,
+      1
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 2400,
+    "nodeIds": [
+     99,
+     104,
+     107
+    ],
+    "counts": [
+     25,
+     20,
+     1
+    ]
+   }
+  },
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 3,
+    "replicateIndex": 2
+   },
+   "runSeed": 3814057688,
+   "options": {
+    "cohortSize": 12,
+    "foundingNodes": 4
+   },
+   "status": "ascended",
+   "terminalReason": 2,
+   "ticksRun": 1442,
+   "snapshotHash": "d4165160722b75ee",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      112
+     ],
+     "counts": [
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      108,
+      277,
+      281
+     ],
+     "counts": [
+      43,
+      20,
+      70,
+      2,
+      4,
+      4
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      43,
+      20,
+      70
+     ]
+    },
+    {
+     "worldTick": 720,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      43,
+      20,
+      70
+     ]
+    },
+    {
+     "worldTick": 960,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      43,
+      20,
+      70
+     ]
+    },
+    {
+     "worldTick": 1200,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      43,
+      20,
+      70
+     ]
+    },
+    {
+     "worldTick": 1440,
+     "nodeIds": [
+      99,
+      104,
+      107
+     ],
+     "counts": [
+      43,
+      20,
+      70
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 1442,
+    "nodeIds": [
+     99,
+     104,
+     107
+    ],
+    "counts": [
+     43,
+     20,
+     70
+    ]
+   }
+  },
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 3,
+    "replicateIndex": 3
+   },
+   "runSeed": 2173526153,
+   "options": {
+    "cohortSize": 12,
+    "foundingNodes": 4
+   },
+   "status": "ascended",
+   "terminalReason": 2,
+   "ticksRun": 1442,
+   "snapshotHash": "40457a7518af7cdb",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      112
+     ],
+     "counts": [
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      108,
+      215,
+      224,
+      274,
+      281,
+      285,
+      289
+     ],
+     "counts": [
+      27,
+      20,
+      38,
+      1,
+      2,
+      10,
+      9,
+      7,
+      9,
+      8
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      27,
+      20,
+      38,
+      2
+     ]
+    },
+    {
+     "worldTick": 720,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      27,
+      20,
+      38,
+      2
+     ]
+    },
+    {
+     "worldTick": 960,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      27,
+      20,
+      38,
+      2
+     ]
+    },
+    {
+     "worldTick": 1200,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      27,
+      20,
+      38,
+      2
+     ]
+    },
+    {
+     "worldTick": 1440,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      27,
+      20,
+      38,
+      2
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 1442,
+    "nodeIds": [
+     99,
+     104,
+     107,
+     215
+    ],
+    "counts": [
+     27,
+     20,
+     38,
+     2
+    ]
+   }
+  },
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 3,
+    "replicateIndex": 4
+   },
+   "runSeed": 532994618,
+   "options": {
+    "cohortSize": 12,
+    "foundingNodes": 4
+   },
+   "status": "ascended",
+   "terminalReason": 2,
+   "ticksRun": 1442,
+   "snapshotHash": "13fb20737579217f",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      112
+     ],
+     "counts": [
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      108,
+      215,
+      225,
+      276,
+      283,
+      290
+     ],
+     "counts": [
+      28,
+      20,
+      46,
+      4,
+      2,
+      6,
+      1,
+      8,
+      1
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      28,
+      20,
+      46,
+      2
+     ]
+    },
+    {
+     "worldTick": 720,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      28,
+      20,
+      46,
+      2
+     ]
+    },
+    {
+     "worldTick": 960,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      28,
+      20,
+      46,
+      2
+     ]
+    },
+    {
+     "worldTick": 1200,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      28,
+      20,
+      46,
+      2
+     ]
+    },
+    {
+     "worldTick": 1440,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      28,
+      20,
+      46,
+      2
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 1442,
+    "nodeIds": [
+     99,
+     104,
+     107,
+     215
+    ],
+    "counts": [
+     28,
+     20,
+     46,
+     2
+    ]
+   }
+  },
+  {
+   "strategyId": "denial-warden",
+   "coordinates": {
+    "rootSeed": 20260811,
+    "sweepId": "w15-dimensionality-v1",
+    "cellIndex": 3,
+    "replicateIndex": 5
+   },
+   "runSeed": 3187430379,
+   "options": {
+    "cohortSize": 12,
+    "foundingNodes": 4
+   },
+   "status": "ascended",
+   "terminalReason": 2,
+   "ticksRun": 1202,
+   "snapshotHash": "947dc2e2f37ff081",
+   "samples": [
+    {
+     "worldTick": 0,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      112
+     ],
+     "counts": [
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    {
+     "worldTick": 240,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215,
+      276
+     ],
+     "counts": [
+      44,
+      20,
+      73,
+      1,
+      3
+     ]
+    },
+    {
+     "worldTick": 480,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      44,
+      20,
+      73,
+      1
+     ]
+    },
+    {
+     "worldTick": 720,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      44,
+      20,
+      73,
+      1
+     ]
+    },
+    {
+     "worldTick": 960,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      44,
+      20,
+      73,
+      1
+     ]
+    },
+    {
+     "worldTick": 1200,
+     "nodeIds": [
+      99,
+      104,
+      107,
+      215
+     ],
+     "counts": [
+      44,
+      20,
+      73,
+      1
+     ]
+    }
+   ],
+   "terminal": {
+    "worldTick": 1202,
+    "nodeIds": [
+     99,
+     104,
+     107,
+     215
+    ],
+    "counts": [
+     44,
+     20,
+     73,
+     1
+    ]
+   }
+  }
+ ]
+}

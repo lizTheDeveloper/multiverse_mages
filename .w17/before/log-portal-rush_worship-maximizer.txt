@@ -1,0 +1,26 @@
+before portal-rush mask=undefined cell=0 rep=0 ticks=962 reason=2 nodes=51
+before portal-rush mask=undefined cell=0 rep=1 ticks=962 reason=2 nodes=51
+before portal-rush mask=undefined cell=0 rep=2 ticks=962 reason=2 nodes=51
+before portal-rush mask=undefined cell=0 rep=3 ticks=962 reason=2 nodes=51
+before portal-rush mask=undefined cell=0 rep=4 ticks=962 reason=2 nodes=51
+before portal-rush mask=undefined cell=0 rep=5 ticks=962 reason=2 nodes=51
+before portal-rush mask=undefined cell=3 rep=0 ticks=962 reason=2 nodes=51
+before portal-rush mask=undefined cell=3 rep=1 ticks=962 reason=2 nodes=51
+before portal-rush mask=undefined cell=3 rep=2 ticks=962 reason=2 nodes=51
+before portal-rush mask=undefined cell=3 rep=3 ticks=962 reason=2 nodes=51
+before portal-rush mask=undefined cell=3 rep=4 ticks=962 reason=2 nodes=51
+before portal-rush mask=undefined cell=3 rep=5 ticks=962 reason=2 nodes=51
+before wrote .w17/before/before__portal-rush.json
+before worship-maximizer mask=undefined cell=0 rep=0 ticks=962 reason=2 nodes=51
+before worship-maximizer mask=undefined cell=0 rep=1 ticks=962 reason=2 nodes=51
+before worship-maximizer mask=undefined cell=0 rep=2 ticks=962 reason=2 nodes=51
+before worship-maximizer mask=undefined cell=0 rep=3 ticks=962 reason=2 nodes=51
+before worship-maximizer mask=undefined cell=0 rep=4 ticks=962 reason=2 nodes=51
+before worship-maximizer mask=undefined cell=0 rep=5 ticks=962 reason=2 nodes=51
+before worship-maximizer mask=undefined cell=3 rep=0 ticks=1202 reason=2 nodes=50
+before worship-maximizer mask=undefined cell=3 rep=1 ticks=962 reason=2 nodes=51
+before worship-maximizer mask=undefined cell=3 rep=2 ticks=1148 reason=1 nodes=51
+before worship-maximizer mask=undefined cell=3 rep=3 ticks=909 reason=1 nodes=51
+before worship-maximizer mask=undefined cell=3 rep=4 ticks=962 reason=2 nodes=51
+before worship-maximizer mask=undefined cell=3 rep=5 ticks=962 reason=2 nodes=51
+before wrote .w17/before/before__worship-maximizer.json

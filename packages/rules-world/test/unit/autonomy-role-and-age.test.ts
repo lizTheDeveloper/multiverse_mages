@@ -51,7 +51,7 @@ import {
   selectGoal,
 } from '../../src/index.js';
 
-import { outlook, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
+import { appealWeights, outlook, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
 import { stepRng } from './mage-fixtures.js';
 
 describe('the role bias table is bounded', () => {
@@ -121,6 +121,7 @@ describe('a role changes the ordering without closing anything off', () => {
       teachableByMe: [target(41)],
     });
     const selection = selectGoal({
+      appeal: appealWeights,
       outlook: stuck,
       worldTick: 0,
       incumbent: undefined,
@@ -134,6 +135,7 @@ describe('a role changes the ordering without closing anything off', () => {
     // opportunity can make a given role choose.
     for (const role of MAGE_ROLE_VALUES) {
       const mask = selectGoal({
+      appeal: appealWeights,
         outlook: richOutlook({ roleId: role }),
         worldTick: 0,
         incumbent: undefined,

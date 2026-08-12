@@ -1,0 +1,70 @@
+# .w17/before — 84 runs, grouped by strategyId
+
+**prefix fidelity** (one fixed node ordering predicts every run's set from its size): mean **0.9433**, worst 0.000, exact on 65/84 runs
+
+| group | n | mean nodes | min | max | union | ∩ | mean instances | mean ticks | within J | within cos |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| archivist | 12 | 51.0 | 51 | 51 | 51 | 51 | 3389 | 1224 | 1.000 | 0.998 |
+| denial-warden | 12 | 2.7 | 1 | 4 | 4 | 1 | 59 | 1072 | 0.674 | 0.719 |
+| narrow-depth | 12 | 7.7 | 4 | 11 | 14 | 3 | 1359 | 920 | 0.576 | 0.543 |
+| passive-control | 12 | 51.0 | 51 | 51 | 51 | 51 | 3168 | 2400 | 1.000 | 0.999 |
+| portal-rush | 12 | 51.0 | 51 | 51 | 51 | 51 | 2734 | 962 | 1.000 | 0.996 |
+| uniform-random-legal | 12 | 49.8 | 45 | 51 | 51 | 44 | 2767 | 734 | 0.962 | 0.956 |
+| worship-maximizer | 12 | 50.9 | 50 | 51 | 51 | 50 | 2803 | 993 | 0.997 | 0.995 |
+
+## spectrum — binary (51 node columns)
+top-10 variance share: 0.9142, 0.0367, 0.0202, 0.0100, 0.0042, 0.0035, 0.0029, 0.0025, 0.0019, 0.0018
+components for 80%: **1**, for 95%: **2**, participation ratio: **1.19**, variance between strategyId: **0.946**
+
+## spectrum — binary-shape (51 node columns)
+top-10 variance share: 0.6267, 0.1795, 0.1082, 0.0280, 0.0184, 0.0152, 0.0089, 0.0063, 0.0027, 0.0022
+components for 80%: **2**, for 95%: **5**, participation ratio: **2.28**
+
+## spectrum — effort (51 node columns)
+top-10 variance share: 0.5164, 0.2557, 0.1489, 0.0560, 0.0218, 0.0004, 0.0003, 0.0002, 0.0001, 0.0001
+components for 80%: **3**, for 95%: **4**, participation ratio: **2.79**, variance between strategyId: **0.548**
+
+## spectrum — effort-shape (51 node columns)
+top-10 variance share: 0.5959, 0.1899, 0.1600, 0.0340, 0.0142, 0.0035, 0.0010, 0.0002, 0.0002, 0.0002
+components for 80%: **3**, for 95%: **4**, participation ratio: **2.39**
+
+## pairwise Jaccard (diagonal = within-group across seeds)
+| | archivist | denial-warden | narrow-depth | passive-control | portal-rush | uniform-random-legal | worship-maximizer |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| archivist | 1.000 | 0.052 | 0.150 | 1.000 | 1.000 | 0.977 | 0.998 |
+| denial-warden | 0.052 | 0.674 | 0.256 | 0.052 | 0.052 | 0.054 | 0.052 |
+| narrow-depth | 0.150 | 0.256 | 0.576 | 0.150 | 0.150 | 0.155 | 0.151 |
+| passive-control | 1.000 | 0.052 | 0.150 | 1.000 | 1.000 | 0.977 | 0.998 |
+| portal-rush | 1.000 | 0.052 | 0.150 | 1.000 | 1.000 | 0.977 | 0.998 |
+| uniform-random-legal | 0.977 | 0.054 | 0.155 | 0.977 | 0.977 | 0.962 | 0.979 |
+| worship-maximizer | 0.998 | 0.052 | 0.151 | 0.998 | 0.998 | 0.979 | 0.997 |
+
+## pairwise cosine over effort vectors
+| | archivist | denial-warden | narrow-depth | passive-control | portal-rush | uniform-random-legal | worship-maximizer |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| archivist | 0.998 | 0.729 | 0.035 | 0.993 | 0.995 | 0.970 | 0.994 |
+| denial-warden | 0.729 | 0.719 | 0.010 | 0.727 | 0.732 | 0.746 | 0.734 |
+| narrow-depth | 0.035 | 0.010 | 0.543 | 0.054 | 0.047 | 0.058 | 0.049 |
+| passive-control | 0.993 | 0.727 | 0.054 | 0.999 | 0.997 | 0.976 | 0.997 |
+| portal-rush | 0.995 | 0.732 | 0.047 | 0.997 | 0.996 | 0.979 | 0.999 |
+| uniform-random-legal | 0.970 | 0.746 | 0.058 | 0.976 | 0.979 | 0.956 | 0.978 |
+| worship-maximizer | 0.994 | 0.734 | 0.049 | 0.997 | 0.999 | 0.978 | 0.995 |
+
+## pairwise containment |A∩B| / min(|A|,|B|) — 1.0 means nested, not different
+| | archivist | denial-warden | narrow-depth | passive-control | portal-rush | uniform-random-legal | worship-maximizer |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| archivist | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| denial-warden | 1.000 | 1.000 | 0.771 | 1.000 | 1.000 | 1.000 | 1.000 |
+| narrow-depth | 1.000 | 0.771 | 0.817 | 1.000 | 1.000 | 1.000 | 1.000 |
+| passive-control | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| portal-rush | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| uniform-random-legal | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.999 | 1.000 |
+| worship-maximizer | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+
+## composition at fixed horizons — speed against shape
+| tick | archivist n | denial-warden n | narrow-depth n | passive-control n | portal-rush n | uniform-random-legal n | worship-maximizer n | min pairwise containment |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|
+| 240 | 46.5 | 3.9 | 7.7 | 46.8 | 46.6 | 46.8 | 47.1 | 0.742 |
+| 480 | 48.8 | 2.7 | 7.7 | 48.6 | 48.8 | 48.3 | 49.0 | 0.771 |
+| 960 | 50.9 | 3.3 | 9.1 | 50.9 | 51.0 | — | 50.9 | 0.708 |
+| 1440 | 51.0 | 3.5 | — | 51.0 | — | — | — | 1.000 |

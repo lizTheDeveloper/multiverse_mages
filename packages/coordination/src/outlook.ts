@@ -39,10 +39,11 @@ import {
   UNIVERSITY,
   componentOf,
 } from '@mm/state';
-import type { KnowledgeTarget, MageOutlook } from '@mm/rules-world';
+import type { KnowledgeTarget, MageOutlook, SpeciesAffinities } from '@mm/rules-world';
 import { ageInMonths, boundCandidates, gatherFrontier, normalizedAge } from '@mm/rules-world';
 
 import type { CoordinatingKnowledgeGateway } from './gateway.js';
+import type { NodeFacetResolver } from './node-facets.js';
 
 /** Everything an outlook needs beyond the mage's own row. */
 export interface OutlookDeps {
@@ -59,6 +60,18 @@ export interface OutlookDeps {
   readonly scribeThroughputOf: (universityId: Handle) => Fixed;
   /** The tier of a node, for the scribable list. */
   readonly tierOf: (nodeId: number) => number;
+  /** A node's cell, form and effect primitives, for the target utility score. */
+  readonly facetsOf: NodeFacetResolver;
+  /**
+   * A species' `affinities`, resolved onto interned ids.
+   *
+   * Supplied rather than computed per mage because it is a pure function of the
+   * species record and the registry, and there are six species and potentially
+   * thousands of mages. §6 counts *"technique/form affinities"* among the seven
+   * things a species is tuned on; this callback is how the first rule that ever
+   * read one gets to see it.
+   */
+  readonly affinitiesOf: (species: SpeciesRecord) => SpeciesAffinities;
   /**
    * The university this mage would rather be at, given the one she is at.
    *
@@ -94,6 +107,7 @@ export function buildOutlook(
   return {
     mage,
     species,
+    affinities: deps.affinitiesOf(species),
     personality: { curiosity: row.curiosity, ambition: row.ambition, caution: row.caution },
     roleId: row.roleId as MageRoleValue,
     normalizedAge: normalizedAge(ageInMonths(deps.worldTick, row.birthTick), lifespanMonths),
@@ -130,6 +144,7 @@ function teachableToMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
     if (teacher === mage) continue;
     const nodeId = deps.gateway.teachableTo(teacher, mage);
     if (nodeId === undefined || found.has(nodeId)) continue;
+    const facets = deps.facetsOf(nodeId);
     found.set(nodeId, {
       nodeId,
       tier: deps.tierOf(nodeId),
@@ -137,6 +152,9 @@ function teachableToMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
       // authors `teachCost` below `researchCost`), and what the utility-AI needs
       // here is the pair's cost rather than the learner's solo cost.
       remainingCost: deps.gateway.teachCostOf(nodeId),
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
     });
   }
   return [...found.values()];
@@ -149,10 +167,14 @@ function teachableByMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
     if (student === mage) continue;
     const nodeId = deps.gateway.teachableTo(mage, student);
     if (nodeId === undefined || found.has(nodeId)) continue;
+    const facets = deps.facetsOf(nodeId);
     found.set(nodeId, {
       nodeId,
       tier: deps.tierOf(nodeId),
       remainingCost: deps.gateway.teachCostOf(nodeId),
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
     });
   }
   return [...found.values()];

@@ -112,6 +112,32 @@ export { argmaxWithTieBreak, chooseTarget, selectGoal } from './select.js';
 export type { AutonomyTickInput, AutonomyTickReport, MageDecision } from './tick.js';
 export { stepMageAutonomy } from './tick.js';
 
+export type {
+  SpeciesAffinities,
+  TargetAppealOptions,
+  TargetAppealSource,
+  TargetAppealWeights,
+  TargetScore,
+  TargetTermKind,
+  TargetTerms,
+} from './target-appeal.js';
+export {
+  NO_AFFINITIES,
+  TARGET_APPEAL_TUNING_STATUS,
+  TARGET_TERM_KINDS,
+  affinityTerm,
+  ageTargetTerm,
+  compareAppeal,
+  effortTerm,
+  personalityTargetTerm,
+  readTargetAppeal,
+  resolveSpeciesAffinities,
+  roleTargetTerm,
+  speciesTargetTerm,
+  targetAppeal,
+  targetTerms,
+} from './target-appeal.js';
+
 export type { ScoreTerms, TermKind } from './terms.js';
 export {
   AFFILIATION_OPPORTUNITY,

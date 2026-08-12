@@ -125,7 +125,9 @@ import type {
   CohortDemography,
   MageGoalCommitment,
   ScaleFreeHazard,
+  SpeciesAffinities,
   StepRng,
+  TargetAppealWeights,
   TerritoryExtent,
 } from '@mm/rules-world';
 import {
@@ -157,6 +159,7 @@ import { EffortLedger } from './effort-store.js';
 import { cellNodeIndex } from './frontier-index.js';
 import { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { MageRates } from './gateway.js';
+import type { NodeFacetResolver } from './node-facets.js';
 import type { GodDeps, GodTickReport } from './god/index.js';
 import { frozenWhenTerminal, godSystems } from './god/index.js';
 import { buildOutlook, universityPreference } from './outlook.js';
@@ -186,6 +189,26 @@ export interface WorldStepDeps {
   readonly speciesOf: (speciesId: number) => SpeciesRecord | undefined;
   readonly catalog: NodeCatalog;
   readonly cells: CellResolver;
+  /**
+   * A node's cell, form and effect primitives, and a species' resolved
+   * affinities.
+   *
+   * The two content projections vision §7's utility-scored target selection
+   * needs and nothing else in the loop does. Both are pure functions of the
+   * registry, built once at the composition root — see `node-facets.ts` and
+   * `resolveSpeciesAffinities`.
+   */
+  readonly facets: NodeFacetResolver;
+  readonly affinitiesOf: (species: SpeciesRecord) => SpeciesAffinities;
+  /**
+   * Every magnitude target selection is made of, read once from
+   * `autonomy-weight.json`.
+   *
+   * On the deps rather than read per tick for the reason `readRaidTuning` gives:
+   * a run is a reproducible function of its seed and its content revision, and
+   * content is not one of the inputs a tick is allowed to re-read.
+   */
+  readonly appeal: TargetAppealWeights;
   /** The universe's resolved `store` hook, from its tradition. */
   readonly store: StorePolicy;
   /**
@@ -452,6 +475,7 @@ export function worldSystem(
           knowledge,
           catalog: deps.catalog,
           cells: deps.cells,
+          facets: deps.facets,
           nodesByCell,
           ruleset,
           ratesOf: (mage) => ratesOf(state, mage, deps),
@@ -502,6 +526,7 @@ export function worldSystem(
         state,
         worldTick,
         rng,
+        appeal: deps.appeal,
         // The caller's judgement, which is exactly how `select.ts` asks for it:
         // completion is a fact about the work, and the work happened one phase
         // ago. A mage who finished this month reconsiders this month rather than
@@ -521,6 +546,8 @@ export function worldSystem(
             scribeThroughputOf: (universityId) =>
               scribeThroughputFor(state, universityId, cohorts, deps),
             tierOf: (nodeId) => deps.catalog.node(nodeId)?.tier ?? 1,
+            facetsOf: deps.facets,
+            affinitiesOf: deps.affinitiesOf,
             preferredUniversityFor,
           });
         },

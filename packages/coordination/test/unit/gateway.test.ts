@@ -28,13 +28,7 @@ import { KnowledgeSubsystem } from '@mm/rules-magic';
 
 import { CoordinatingKnowledgeGateway } from '../../src/index.js';
 
-import {
-  catalogAndCells,
-  registry,
-  shippedAcquirePolicy,
-  shippedStorePolicy,
-  speciesTable,
-} from './world-fixtures.js';
+import { catalogAndCells, nodeFacets, registry, shippedAcquirePolicy, shippedStorePolicy, speciesTable } from './world-fixtures.js';
 
 function universeWithOneMage(): ReturnType<typeof buildWorld> {
   return buildWorld();
@@ -90,6 +84,7 @@ function buildWorld() {
     knowledge,
     catalog,
     cells,
+    facets: nodeFacets(),
     ruleset: captureRuleset(state, universe),
     ratesOf: () => ({
       learnRate: species.learnRate,
@@ -181,6 +176,7 @@ function buildGatewayOver(
     knowledge,
     catalog,
     cells,
+    facets: nodeFacets(),
     ruleset: {
       permittedTechniques: 0b11111,
       permittedForms: 0b11111111111111,
