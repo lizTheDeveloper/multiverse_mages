@@ -72,6 +72,45 @@ export function buildMatrix(runs, weight) {
   return { columns, rows };
 }
 
+/**
+ * How much of the total variance sits **between** groups rather than within them.
+ *
+ * The reason rows are runs and never group means: an analysis of means cannot
+ * report this number at all, and it is the one that says whether a label
+ * explains anything. A high between-share with a low effective dimensionality is
+ * "the groups differ, along one axis"; a low between-share means the label is
+ * not what is moving the composition.
+ */
+export function varianceDecomposition(rows, width, labelOf) {
+  if (rows.length === 0) return { between: 0, within: 0, total: 0, betweenShare: Number.NaN };
+  const grand = new Float64Array(width);
+  for (const row of rows) for (let c = 0; c < width; c += 1) grand[c] += row[c] / rows.length;
+
+  const byLabel = new Map();
+  rows.forEach((row, i) => {
+    const label = labelOf(i);
+    byLabel.set(label, [...(byLabel.get(label) ?? []), row]);
+  });
+
+  let between = 0;
+  for (const group of byLabel.values()) {
+    for (let c = 0; c < width; c += 1) {
+      let mean = 0;
+      for (const row of group) mean += row[c] / group.length;
+      between += group.length * (mean - grand[c]) ** 2;
+    }
+  }
+  let total = 0;
+  for (const row of rows) for (let c = 0; c < width; c += 1) total += (row[c] - grand[c]) ** 2;
+
+  return {
+    between,
+    within: total - between,
+    total,
+    betweenShare: total === 0 ? Number.NaN : between / total,
+  };
+}
+
 /** Column-mean-centres a matrix in place and returns it. */
 function centre(rows, width) {
   if (rows.length === 0) return rows;
@@ -311,6 +350,17 @@ function main() {
         : `${arm.strategyId}/mask${String(arm.foundingSpeciesMask)}`;
     groups.set(label, [...(groups.get(label) ?? []), ...arm.runs]);
   }
+  // `--exclude` exists for one specific comparison and is worth naming: the
+  // thesis under test is about **the v1 subset**, and `permissive-breadth` is
+  // the one strategy that leaves it by permitting cells outside v1. Including it
+  // measures the god's permission edict — a known axis — and excluding it
+  // measures what the other seven do *inside* the twelve cells. Both are
+  // reported; neither alone is the answer.
+  const excludeAt = process.argv.indexOf('--exclude');
+  const excluded = new Set(
+    excludeAt === -1 ? [] : (process.argv[excludeAt + 1] ?? '').split(',').filter(Boolean),
+  );
+  for (const label of excluded) groups.delete(label);
   const labels = [...groups.keys()].sort();
   const allRuns = labels.flatMap((label) => groups.get(label));
 
@@ -365,6 +415,14 @@ function main() {
       nodeColumns: columns.length,
       ...spectrum(shaped, columns.length),
     };
+    const labelOfRow = allRuns.map((run) =>
+      labels.find((label) => groups.get(label).includes(run)),
+    );
+    report.spectra[weight].variance = varianceDecomposition(
+      rows,
+      columns.length,
+      (i) => labelOfRow[i],
+    );
   }
 
   report.overlap.jaccard = {};
@@ -480,7 +538,10 @@ function main() {
     lines.push(`top-10 variance share: ${share.map((v) => fmt(v, 4)).join(', ')}`);
     lines.push(
       `components for 80%: **${String(s.forEighty)}**, for 95%: **${String(s.forNinetyFive)}**, ` +
-        `participation ratio: **${fmt(s.participationRatio, 2)}**`,
+        `participation ratio: **${fmt(s.participationRatio, 2)}**` +
+        (s.variance === undefined
+          ? ''
+          : `, variance between ${groupBy}: **${fmt(s.variance.betweenShare, 3)}**`),
     );
     lines.push('');
   }
