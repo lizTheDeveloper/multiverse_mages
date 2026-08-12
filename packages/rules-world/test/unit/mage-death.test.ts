@@ -49,7 +49,7 @@ class FakeKnowledge {
     return {
       knowledge: {
         instanceCount: (nodeId) => this.instanceCount(nodeId),
-        everKnown: () => true,
+        rediscovery: () => false,
         knows: (mage, nodeId) =>
           this.instances.some(
             (instance) => instance.nodeId === nodeId && instance.locationId === mage,

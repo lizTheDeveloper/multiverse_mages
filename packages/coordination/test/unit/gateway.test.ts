@@ -259,8 +259,13 @@ describe('what the frontier quotes is what research charges', () => {
     });
 
     const after = buildGatewayOver(state, knowledge, gateway);
-    expect(after.everKnown(nodeId)).toBe(true);
+    // The persisted mark is set and stays set — read off the subsystem, because
+    // that is where §1.5's record lives. What the *gateway* reports is the
+    // narrower question its callers actually ask, and the answer is no: a node
+    // somebody is holding is not a lost art.
+    expect(knowledge.wasEverKnown(nodeId)).toBe(true);
     expect(after.instanceCount(nodeId)).toBe(1);
+    expect(after.rediscovery(nodeId)).toBe(false);
     // Unchanged: somebody else holding it is not the second mage rediscovering
     // a lost art, and `research()` would charge her exactly what it charged
     // before.
@@ -283,8 +288,11 @@ describe('what the frontier quotes is what research charges', () => {
     knowledge.destroyInstance(instance, 1);
 
     const after = buildGatewayOver(state, knowledge, gateway);
-    expect(after.everKnown(nodeId)).toBe(true);
+    expect(knowledge.wasEverKnown(nodeId)).toBe(true);
     expect(after.instanceCount(nodeId)).toBe(0);
+    // And the gateway agrees, so goal selection buckets this one as a
+    // rediscovery and the quote above prices it as one.
+    expect(after.rediscovery(nodeId)).toBe(true);
     // Known once, now gone: the gap `contracts.md` prices at three times, and
     // the half of the old behaviour that was right.
     expect(quoteFor(after, second, nodeId)).toBeGreaterThan(ordinary as number);
