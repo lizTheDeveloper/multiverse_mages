@@ -72,6 +72,33 @@
  * Every term above is paired with a negative and a positive control in
  * `scoring-controls.ts`, and a term that cannot separate its own controls fails
  * the suite. That machinery, not this comment, is what keeps the list honest.
+ *
+ * ## The first reading from the repaired instrument
+ *
+ * The shipped constants, on the committed ascension sweep, 32 runs at 2400
+ * ticks, all eight strategies covered evenly:
+ *
+ *     FEASIBLE score -0.2571 | rate 0.125 variety 0.000 pearson 0.96
+ *     spearman 0.60 winners 1 exploit 0.143 (deliberate 0.143 vs probe 0.000)
+ *     top 1.00
+ *
+ * Two things to read off it.
+ *
+ * **The exploit margin is no longer the band.** It reads 0.143 — the mean over
+ * the seven non-probe strategies — where the old formula returned 0.125, the
+ * `ascensionRate` exactly. One number became two, which is what W18 claimed and
+ * this is the measurement of it.
+ *
+ * **The same ruleset that scored +0.685 now scores −0.257**, and every point of
+ * the difference is the correlation term. Pearson +0.96 and Spearman +0.60 over
+ * **one** winner are not evidence of anything, so the term contributes zero and
+ * the note says so. `ascension-summit-cells = 13` was chosen by a search that
+ * counted that +0.96 as a point in its favour — and did so on a six-strategy
+ * pool. Neither is true of this reading.
+ *
+ * The candidate is still `FEASIBLE`, because feasibility is the band and the
+ * exploit margin and both hold. It is feasible and badly scored, which is the
+ * correct description of a ruleset exactly one strategy can win.
  */
 
 /** One strategy's outcome over a sweep's runs. */
