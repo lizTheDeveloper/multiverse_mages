@@ -190,8 +190,9 @@ the honest control.
   Git therefore classifies the whole file as binary: no diff, no review, no three-way merge. Fixed
   as its own commit at the W17 step by replacing the raw byte with the `\u0000` escape, which is
   the identical string at runtime. Reported as a W17 defect.
-- **`.w17-masks.sh` and `.w17-run.sh` are committed at the repository root** on W17 — throwaway
-  sweep launchers. Flagged, not removed; that is the author's call.
+- **`.w17-masks.sh` and `.w17-run.sh`** — flagged while reading the branch's diffstat, then
+  **found already removed at the tip** by W17's own `b1aab70`. No defect; recorded so the earlier
+  flag in this document is not read as an outstanding one.
 - **W17's commits `5afce74` and `1acf8e5` carry ~60,000 lines of `.w17/` sweep JSON.** A later
   commit untracked the files, but the blobs remain in the pushed history and a normal merge would
   put them in `main` permanently — and this is a public repository, so "permanently" is the
@@ -378,8 +379,40 @@ Two instrument facts already established by reading the tree, before any number 
       lengthened, and over a longer horizon W7's own library upkeep keeps destroying single-copy
       shelves. That is `narrow-depth`'s 12/12 → 0/12 effect showing up as a continuous quantity,
       which is evidence the mechanism is real rather than a threshold artefact.
-- [ ] 6. `w8/raid-engagement-live`
-- [ ] 7. `w17/value-sensitive-acquirer` (+ the NUL fix)
-- [ ] 8. `w10/server-contracts`
-- [ ] Single baseline regeneration, with its rationale
-- [ ] Final sweep at n ≥ 384, D1–D9 reported
+- [x] 6. `w8/raid-engagement-live` — **conflicts**: three baselines and `interning.test.ts`'s
+      pinned `contentRevision`. W6 recorded `2512ea02 -> ec506311`, W8 recorded
+      `2512ea02 -> aeedc362`; neither contained the other, so each believed itself the successor.
+      The merged tree is a third value, `61f6aa53`. `strategies.ts` auto-merged and was checked
+      rather than assumed: `portal-rush` is W8's v4 and both probes remain appended after
+      `worship-maximizer`. Tests **3737 in 267 files, all pass**; gates refused on provenance with
+      W7's `referenceLibraryDepth` reproducing at **+193 SE** against W8's baseline.
+- [x] 7. `w17/value-sensitive-acquirer` — **squashed**, because two of its commits carry ~60k lines
+      of `.w17/` sweep JSON that a normal merge would put in `main` permanently, in a public repo.
+      Conflicts: three baselines; `reference-universe.ts` and `long-run.ts` (collision 5 from the
+      other side — `foundingSpeciesMask` kept, `traditionIndex` dropped again);
+      `shipped-content.test.ts`, which wanted **both** counts rather than either (46 raid constants
+      *and* 36 autonomy weights); and `interning.test.ts`, now a **third**-revision collision —
+      final value `a622452a3b55e38fd902a2d3264b44d7`, which is none of W6's, W8's or W17's.
+      One real interaction the typechecker caught: W8's `rival-universe.ts` builds
+      `ReferenceOptions` directly and W15 made `foundingSpeciesMask` required; the rival is pinned
+      to 0 rather than inheriting the host's mask, so D7 does not confound "which species founded
+      me" with "which species I am fighting". **The NUL byte in `autonomy.ts` is fixed here.**
+- [x] 8. `w10/server-contracts` — clean, no conflicts. `package-lock.json` verified to still list
+      the new workspace after `npm install`; it did.
+- [x] **Single baseline regeneration**, all three at once, after every merge, one rationale written
+      into all three files. Deltas in each file's `supersededDeltas`.
+- [x] **`npm run verify` EXIT=0** — 3,872 tests in 275 files, all three gates **PASS**. No golden
+      fixture regenerated or changed at any point in this integration.
+- [x] **Final sweep at n = 400 × 6 arms = 2,400 runs**, on Modal. Results in
+      `docs/design/integration-round-2-results.md`; raw analyser output in
+      `balance/results-integration-r2.txt`.
+
+## The answer
+
+**D1 = 0.1950, in band.** W6's 0.125 and W8's 0.854 are both reconciled — the predicates dominate
+and raids barely move the rate, which is itself the finding that raids are not yet pressure.
+
+**And the headline is not a number.** `permit-then-idle` — 140 ticks of permits, then an empty
+preference list for 2,260 — wins **40/40**, beating `permissive-breadth`'s 38/40. Everything
+`permissive-breadth` does beyond permitting is worth slightly less than nothing. The win condition
+reads the ruleset, not play.
