@@ -270,6 +270,13 @@ describe('contentRevision', () => {
     // what a form's magic actually yields, or about what a stretch of land
     // produces, would be running different economies while their revisions
     // agreed they were compatible.
+    //
+    // `main` reached this merge asserting d37624e3 — W17's successor, taken
+    // there without W6's or W8's constants and without the material split. It
+    // is not a competing claim about the same tree: it is a claim about a
+    // smaller preimage, and this tree's preimage strictly contains it. The
+    // digest moving from d37624e3 to 2c67315a across this merge is therefore
+    // the union arriving, not a disagreement being settled.
     expect(registry.contentRevision).toBe('2c67315ae04ee6c74dfa204474af4eb6');
   });
 

@@ -3,7 +3,7 @@
     "id": "bank-human",
     "speaker": "human",
     "speakerKind": "species",
-    "voiceId": "TX3LPaxmHKxFdv7VOQHJ",
+    "voiceId": "7DTpboyigwqXiCkvQjMX",
     "voicePrompt": "Mid-thirties, quick and slightly breathless, warm, always sounds like they are already late. Neutral accent. Reads sincerely, never for laughs.",
     "lines": [
       {
@@ -399,7 +399,7 @@
     "id": "bank-dwarf",
     "speaker": "dwarf",
     "speakerKind": "species",
-    "voiceId": "onwK4e9ZLuTAKqWW03F9",
+    "voiceId": "rZcizibcb1rTBqSwSjpY",
     "voicePrompt": "Dry, precise, mid-range, the cadence of someone reading a catalogue number aloud. Certain. Not unkind.",
     "lines": [
       {
@@ -765,7 +765,7 @@
     "id": "bank-gnome",
     "speaker": "gnome",
     "speakerKind": "species",
-    "voiceId": "FGY2WhTYpPnrIDTdsKH5",
+    "voiceId": "OTMqA7lryJHXgAnPIQYt",
     "voicePrompt": "Fast, bright, interrupts itself constantly, genuinely delighted by everything. Trails off mid-sentence and starts a new one.",
     "lines": [
       {
@@ -942,7 +942,7 @@
     "id": "bank-orc",
     "speaker": "orc",
     "speakerKind": "species",
-    "voiceId": "CwhRBWXzGAHq8TQ4Fs17",
+    "voiceId": "DUAKkudcC2PI6KEqJ60K",
     "voicePrompt": "Warm, blunt, unbothered. Working-voice — the sound of someone talking while carrying something. Quietly amused by everyone else.",
     "lines": [
       {
@@ -1131,37 +1131,37 @@
       {
         "id": "scribe-selection-1",
         "tier": "selection",
-        "text": "Copying.",
+        "text": "Copying. He writes his threes like fives. I fix them. He's never known.",
         "about": ""
       },
       {
         "id": "scribe-selection-2",
         "tier": "selection",
-        "text": "My hand hurts.",
+        "text": "My hand stopped hurting years ago. I've decided not to look into that.",
         "about": ""
       },
       {
         "id": "scribe-selection-3",
         "tier": "selection",
-        "text": "Vellum's expensive. Nobody tells them that.",
+        "text": "This one cost a herd. He's titled it 'Preliminary Notes.'",
         "about": ""
       },
       {
         "id": "scribe-selection-4",
         "tier": "selection",
-        "text": "This one's dwarven. It'll outlive us both.",
+        "text": "Dwarven binding. This'll still be legible when the building isn't.",
         "about": ""
       },
       {
         "id": "scribe-selection-5",
         "tier": "selection",
-        "text": "She dictates faster than I write. I've stopped saying so.",
+        "text": "She dictates faster than a person can write. I've never asked her to slow down.",
         "about": ""
       },
       {
         "id": "scribe-selection-6",
         "tier": "selection",
-        "text": "Third copy of this. Ask me what it says. Go on. I've no idea.",
+        "text": "Third copy of this one. I understood it on the second. I'd rather I hadn't.",
         "about": ""
       }
     ]
@@ -1176,31 +1176,31 @@
       {
         "id": "student-selection-1",
         "tier": "selection",
-        "text": "Am I doing it right?",
+        "text": "Is that right? That's right, isn't it? I can do it again.",
         "about": ""
       },
       {
         "id": "student-selection-2",
         "tier": "selection",
-        "text": "I'm *nearly* a mage.",
+        "text": "I'm nearly a mage. There's a resit involved. Don't write that down.",
         "about": ""
       },
       {
         "id": "student-selection-3",
         "tier": "selection",
-        "text": "Is this on the exam?",
+        "text": "Is this on the exam? It's Thursday. Everything's Thursday.",
         "about": ""
       },
       {
         "id": "student-selection-4",
         "tier": "selection",
-        "text": "Professor says I have promise. She says that to everyone.",
+        "text": "Professor says I show promise. Six years running. She's four hundred.",
         "about": ""
       },
       {
         "id": "student-selection-5",
         "tier": "selection",
-        "text": "I saw an archmage once. She didn't see me.",
+        "text": "I saw an archmage once. I said good morning. It was evening.",
         "about": ""
       }
     ]
@@ -1215,31 +1215,31 @@
       {
         "id": "laborer-selection-1",
         "tier": "selection",
-        "text": "Materials are low.",
+        "text": "We're low on stone. We're always low on stone. It works out.",
         "about": ""
       },
       {
         "id": "laborer-selection-2",
         "tier": "selection",
-        "text": "Another university? Where?",
+        "text": "Another university. We've run out of flat ground. We'll make more.",
         "about": ""
       },
       {
         "id": "laborer-selection-3",
         "tier": "selection",
-        "text": "It'll hold.",
+        "text": "It'll hold. First hard winter tells you the truth. Always does.",
         "about": ""
       },
       {
         "id": "laborer-selection-4",
         "tier": "selection",
-        "text": "We built the last one twice. Foundations.",
+        "text": "We built the last one twice. Second time we asked about the ground.",
         "about": ""
       },
       {
         "id": "laborer-selection-5",
         "tier": "selection",
-        "text": "They study in it. We're in it more than they are.",
+        "text": "They've studied here two years. I knew it as a hole.",
         "about": ""
       }
     ]
@@ -1254,25 +1254,25 @@
       {
         "id": "soldier-selection-1",
         "tier": "selection",
-        "text": "No magic. Just me.",
+        "text": "No magic. A sword and a good breakfast. It's held so far.",
         "about": ""
       },
       {
         "id": "soldier-selection-2",
         "tier": "selection",
-        "text": "Point me at it.",
+        "text": "Point me at it. I don't need the reasoning.",
         "about": ""
       },
       {
         "id": "soldier-selection-3",
         "tier": "selection",
-        "text": "I've held a door before.",
+        "text": "I've held a door before. Six hours. It's mostly standing still.",
         "about": ""
       },
       {
         "id": "soldier-selection-4",
         "tier": "selection",
-        "text": "The mages go through the portal. Someone's got to be on this side.",
+        "text": "Mages go through the portal. I stay this side. Things come back.",
         "about": ""
       }
     ]
