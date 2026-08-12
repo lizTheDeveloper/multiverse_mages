@@ -1,0 +1,354 @@
+<!doctype html>
+<!--
+  Multiverse Mages — watching a raid you cannot touch.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  electron-client's last open question, and the only one where the player has
+  no verbs at all: "How is a raid watched by someone who cannot intervene?"
+
+  The constraints are unusually total. The god issues no orders ever (vision
+  §7). Rules changes are frozen for both sides (vision §3), and contracts §4.2
+  masks *every* action to no-op for the duration — not just the ruleset ones.
+  World time stops for both participants and keeps running for everyone else
+  (vision §8). The engagement tick is 100ms against a world tick of a month.
+  So for the length of a raid the player is, mechanically, an audience.
+
+  sound-design §7.2 already picks the lead: "the portal timer is the most
+  important information in a raid", because it is the thing that guarantees
+  termination. Three directions differ in what they put beside it.
+
+    A  the battlefield   200m x 200m, positioned combatants. It looks like an RTS.
+    B  the clock         stability enormous; everything else is consequence.
+    C  the ledger        a raid as a transaction. No battlefield at all.
+
+  Serve with `npm run ui`, then open /ui/raid/.
+
+  KNOWN COST: raid-engagement is proposal-only, so combatant counts, casualty
+  rates and objective timings here are invented at plausible magnitudes. The
+  200m x 200m field and the 100ms tick are real (contracts §0). Nothing here
+  evaluates a rule; the frozen action bar is a presentation of §4.2's mask, not
+  an implementation of it.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — watching a raid</title>
+
+<style>
+  :root{
+    --ground:#080B0C;--panel:#0E1315;--sunk:#131A1C;--edge:#1D2729;
+    --ink:#DDE7E8;--soft:#94A3A5;--faint:#5F6F71;
+    --god:#12B8C6;--god-lit:#6FF0FA;--god-deep:#06525C;
+    --limen:#A692EC;--loss:#DE7059;--warn:#C9A034;--ok:#4DBE97;--foe:#B4574A;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+    --serif:"Hoefler Text","Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:84rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--limen)}
+  h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
+  .lede{color:var(--soft);max-width:68ch;margin:0 0 .45rem}
+  .lede b{color:var(--limen);font-weight:500}.lede em{color:var(--ink);font-style:italic}
+  code{font:12.5px var(--mono);color:#AFC0C2}
+
+  /* the frozen bar — the same verbs as everywhere else, all of them dead */
+  .frozen{margin:1.3rem 0 1.4rem;padding:.7rem .85rem;background:var(--panel);
+    border:1px solid var(--edge);border-radius:4px;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+  .frozen .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--warn)}
+  .frozen .v{font:11px var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:.4rem .6rem;
+    border:1px dashed #2A3538;border-radius:3px;color:#93A0A2;cursor:not-allowed;background:transparent}
+  .frozen .why{font:10.5px var(--mono);color:var(--faint);margin-left:auto}
+  .frozen .run{margin-left:.4rem;font:11px var(--mono);text-transform:uppercase;letter-spacing:.05em;
+    padding:.4rem .7rem;border-radius:3px;border:1px solid var(--limen);color:#CFC2FF;background:transparent;cursor:pointer}
+
+  .dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem;align-items:start}
+  @media (max-width:76rem){.dirs{grid-template-columns:1fr}}
+  .dir{border:1px solid var(--edge);border-radius:5px;background:var(--panel);display:flex;flex-direction:column}
+  .dhead{padding:.75rem .9rem;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:.5rem}
+  .dhead .letter{font:700 13px var(--mono);color:var(--limen)}
+  .dhead .name{font:400 1.06rem var(--serif)}
+  .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .dbody{padding:.85rem .9rem;display:flex;flex-direction:column;gap:.7rem}
+  .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
+
+  /* ---- shared: portal stability ---- */
+  .stab{display:flex;flex-direction:column;gap:.3rem}
+  .stab .lab{display:flex;align-items:baseline;gap:.4rem;font:10px var(--mono);letter-spacing:.12em;
+    text-transform:uppercase;color:var(--faint)}
+  .stab .lab b{margin-left:auto;color:var(--limen);font-variant-numeric:tabular-nums}
+  .stab .track{height:8px;background:#101718;border-radius:4px;overflow:hidden;position:relative}
+  .stab .track i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#4C3A86,var(--limen));
+    box-shadow:0 0 12px -2px color-mix(in srgb,var(--limen) 80%,transparent);transition:width 180ms linear}
+  .stab .track.q1 i{background:linear-gradient(90deg,#7A3A32,var(--loss));
+    box-shadow:0 0 14px -1px color-mix(in srgb,var(--loss) 85%,transparent)}
+  .stab .q{font:9.5px var(--mono);color:var(--faint);letter-spacing:.08em}
+
+  /* the enormous clock, direction B */
+  .bigclock{text-align:center;padding:.4rem 0 .2rem}
+  .bigclock .n{font:400 4.6rem/1 var(--serif);font-variant-numeric:tabular-nums;letter-spacing:-.03em;
+    color:var(--limen);text-shadow:0 0 34px color-mix(in srgb,var(--limen) 45%,transparent)}
+  .bigclock .n.crit{color:var(--loss);text-shadow:0 0 38px color-mix(in srgb,var(--loss) 55%,transparent)}
+  .bigclock .u{font:10px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+
+  /* ---- A: battlefield ---- */
+  .field{position:relative;aspect-ratio:1;background:
+      repeating-linear-gradient(0deg,#0D1213 0 1px,transparent 1px 40px),
+      repeating-linear-gradient(90deg,#0D1213 0 1px,transparent 1px 40px),#0A1011;
+    border:1px solid #1B2426;border-radius:3px;overflow:hidden}
+  .field .scale{position:absolute;left:.4rem;bottom:.3rem;font:9px var(--mono);color:var(--faint)}
+  .unit{position:absolute;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%);transition:left 380ms linear,top 380ms linear}
+  .unit.own{background:var(--god);box-shadow:0 0 8px -1px var(--god)}
+  .unit.foe{background:var(--foe);box-shadow:0 0 8px -1px var(--foe)}
+  .unit.dead{background:#2A3234;box-shadow:none;opacity:.6}
+  .obj{position:absolute;transform:translate(-50%,-50%);font:9px var(--mono);letter-spacing:.06em;
+    color:var(--warn);border:1px solid var(--warn);padding:1px 4px;border-radius:2px;
+    background:color-mix(in srgb,var(--warn) 14%,#0A1011);white-space:nowrap}
+  .obj.taken{color:var(--loss);border-color:var(--loss);background:color-mix(in srgb,var(--loss) 18%,#0A1011);
+    text-decoration:line-through}
+
+  /* ---- C: ledger ---- */
+  .ledger{display:flex;flex-direction:column;gap:.4rem}
+  .stake{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center;padding:.45rem .55rem;
+    border:1px solid #22302F;border-radius:3px;background:var(--sunk)}
+  .stake .n{font-size:.9rem}
+  .stake .sub{font:9.5px var(--mono);color:var(--faint);display:block;margin-top:.1rem}
+  .stake .st{font:9.5px var(--mono);letter-spacing:.09em;text-transform:uppercase}
+  .stake[data-st="held"] .st{color:var(--ok)}
+  .stake[data-st="contested"]{border-color:var(--warn)}
+  .stake[data-st="contested"] .st{color:var(--warn)}
+  .stake[data-st="lost"]{border-color:var(--loss);background:color-mix(in srgb,var(--loss) 10%,var(--sunk))}
+  .stake[data-st="lost"] .st{color:var(--loss)}
+  .stake[data-st="lost"] .n{text-decoration:line-through;color:var(--soft)}
+  .irrev{margin-top:.3rem;padding:.5rem .6rem;border:1px solid var(--loss);border-radius:3px;
+    font:10.5px var(--mono);line-height:1.6;color:#F0AA9C;background:color-mix(in srgb,var(--loss) 9%,transparent)}
+  .irrev b{color:var(--loss)}
+
+  .counts{display:flex;gap:.9rem;flex-wrap:wrap;font:10.5px var(--mono);color:var(--faint)}
+  .counts b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .counts .own b{color:var(--god-lit)}.counts .foe b{color:#E0958A}
+
+  .elsewhere{padding:.5rem .6rem;border:1px dashed #2A3538;border-radius:3px;font:10.5px var(--mono);
+    color:var(--faint);line-height:1.6}
+  .elsewhere b{color:var(--soft)}
+
+  .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
+  .note h2{font:400 1.4rem var(--serif);margin:0 0 .5rem}
+  .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
+  .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--limen)}
+  footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages · the raid, read-only · vision §3 §7 §8 · sound-design §7.2</div>
+  <h1>Watching a raid you cannot touch</h1>
+  <p class="lede">The constraints here are unusually total. The god issues no orders, ever. Rules are frozen
+  for both sides, and <code>contracts §4.2</code> masks <em>every</em> action to no-op for the duration —
+  not just the ruleset ones. World time stops for the two participants and keeps running for everyone else.
+  <b>For the length of a raid the player is, mechanically, an audience.</b></p>
+  <p class="lede"><code>sound-design §7.2</code> already picks the lead — the portal timer is the most
+  important information in a raid, because it is the thing that guarantees the raid ends. Three directions
+  differ in what they put beside it.</p>
+
+  <div class="frozen">
+    <span class="k">frozen</span>
+    <button class="v" type="button" disabled>Permit</button>
+    <button class="v" type="button" disabled>Forbid</button>
+    <button class="v" type="button" disabled>Edict</button>
+    <button class="v" type="button" disabled>Bless</button>
+    <button class="v" type="button" disabled>Grant</button>
+    <button class="v" type="button" disabled>Assign role</button>
+    <button class="v" type="button" disabled>Fund</button>
+    <button class="v" type="button" disabled>Ascend</button>
+    <span class="why">all sixteen masked · §4.2 · only no-op remains legal</span>
+    <button class="run" id="run" type="button">Restart raid</button>
+  </div>
+
+  <div class="dirs" id="dirs"></div>
+
+  <div class="note">
+    <h2>What operating these settles</h2>
+    <p><b class="hot">The timer is the lead in all three, and that is not a stylistic agreement.</b> It is
+    the only quantity on screen that is <em>monotonic and terminal</em>: it only ever falls, and when it
+    reaches zero the raid is over regardless of anything else. Everything else — casualties, objectives,
+    loot — is a consequence whose meaning depends on how much clock is left. <code>sound-design §7.2</code>
+    reached the same conclusion for the ear independently, which is a good sign the reading is right rather
+    than a coincidence of one designer's taste.</p>
+    <p><b>A is the version everyone pictures and the hardest to justify.</b> A 200 m × 200 m field with
+    positioned combatants is real — <code>contracts §0</code> fixes it, and <code>raid-engagement</code>
+    will produce it. But watching dots converge is the part of an RTS that exists so you can <em>issue
+    orders</em>, and here you cannot. It is the direction most likely to make a player reach for controls
+    that are masked, and vision §12 already puts animated RTS presentation out of scope for v1 — so the
+    honest question is whether the field is load-bearing or whether it is here because raids are supposed
+    to look like this.</p>
+    <p><b>C is the one that matches what a raid actually is.</b> A raid transfers permanent things:
+    casualties do not heal, a burned library does not come back, and a node whose last instance dies is
+    gone from the universe. Rendering that as a ledger of stakes — held, contested, lost — says what is at
+    risk before it is taken and what was taken after. It also has the property none of the others do:
+    <em>it degrades gracefully to a replay</em>, because a ledger of irreversible transfers is exactly what
+    you would want to read afterwards.</p>
+    <p><b>What all three must show and only one currently does.</b> Vision §8 says uninvolved universes
+    keep advancing while these two are stopped — that is the tempo cost, it is the whole reason raiding is
+    never free, and it is invisible unless the interface says so. A player who cannot see what raiding is
+    costing them cannot price it, and the balance harness is required to report tempo lost to inbound raids
+    as a first-class metric. If the client does not surface it, the player and the metric are looking at
+    different games.</p>
+  </div>
+
+  <footer>
+    Prototype · not the client. <code>raid-engagement</code> is proposal-only, so combatant counts,
+    casualty rates and objective timings are invented at plausible magnitudes; the 200 m × 200 m field and
+    the 100 ms engagement tick are real (contracts §0).<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+</div>
+
+<script type="module">
+const OBJECTIVES = [
+  { id:'lib',  label:'Coldharbour Library', x:26, y:30, hp:100, note:'holds 41 instances, 2 of them sole copies' },
+  { id:'uni',  label:'The Athenaeum',        x:68, y:22, hp:100, note:'capacity 12, build complete' },
+  { id:'arch', label:'Archmage Ismene',      x:52, y:74, hp:100, note:'holds the only copy of Keep the Name Close' },
+];
+const DURATION = 900;           // engagement ticks; 100ms each => 90s of raid
+let seed = 4242;
+const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+
+let S;
+function reset() {
+  seed = 4242;
+  S = {
+    t: 0,
+    stability: 1,
+    own: Array.from({ length: 14 }, () => ({ x: 20 + rnd() * 60, y: 60 + rnd() * 34, alive: true })),
+    foe: Array.from({ length: 11 }, () => ({ x: 20 + rnd() * 60, y: 6 + rnd() * 26, alive: true })),
+    objs: OBJECTIVES.map(o => ({ ...o })),
+    lostNodes: [],
+    ownDead: 0, foeDead: 0,
+    elsewhereTicks: 0,
+  };
+}
+reset();
+
+function step() {
+  if (S.t >= DURATION) return;
+  S.t += 1;
+  S.stability = Math.max(0, 1 - S.t / DURATION);
+  // uninvolved universes keep advancing: one world tick per 30 engagement ticks
+  S.elsewhereTicks = Math.floor(S.t / 30);
+
+  for (const u of S.foe) {
+    if (!u.alive) continue;
+    const tgt = S.objs.find(o => o.hp > 0) ?? S.objs[0];
+    u.x += (tgt.x - u.x) * 0.012 + (rnd() - 0.5) * 0.8;
+    u.y += (tgt.y - u.y) * 0.012 + (rnd() - 0.5) * 0.8;
+  }
+  for (const u of S.own) {
+    if (!u.alive) continue;
+    const tgt = S.foe.find(f => f.alive);
+    if (tgt) {
+      u.x += (tgt.x - u.x) * 0.010 + (rnd() - 0.5) * 0.8;
+      u.y += (tgt.y - u.y) * 0.010 + (rnd() - 0.5) * 0.8;
+    }
+  }
+  if (S.t % 22 === 0) {
+    const a = S.own.find(u => u.alive); const b = S.foe.find(u => u.alive);
+    if (a && rnd() < 0.55) { a.alive = false; S.ownDead += 1; }
+    if (b && rnd() < 0.45) { b.alive = false; S.foeDead += 1; }
+  }
+  const target = S.objs.find(o => o.hp > 0);
+  if (target && S.t > 120) {
+    const pressure = S.foe.filter(u => u.alive && Math.hypot(u.x - target.x, u.y - target.y) < 18).length;
+    target.hp = Math.max(0, target.hp - pressure * 0.42);
+    if (target.hp === 0 && target.id === 'arch') S.lostNodes.push('Keep the Name Close');
+    if (target.hp === 0 && target.id === 'lib') S.lostNodes.push('Read the Binding', 'Seal the Way');
+  }
+}
+
+const q = () => Math.max(1, Math.ceil(S.stability * 4));
+const stabBlock = () => `
+  <div class="stab">
+    <div class="lab">portal stability <b>${Math.round(S.stability * 100)}%</b></div>
+    <div class="track ${q() === 1 ? 'q1' : ''}"><i style="width:${S.stability * 100}%"></i></div>
+    <div class="q">quartile ${q()} of 4 · collapse ends the raid whatever else is true</div>
+  </div>`;
+
+const elsewhereBlock = () => `
+  <div class="elsewhere">Uninvolved universes have advanced <b>${S.elsewhereTicks} world
+    ${S.elsewhereTicks === 1 ? 'month' : 'months'}</b> while these two are stopped. That is what the raid
+    costs both sides, and it is invisible unless the interface says it.</div>`;
+
+function render() {
+  const host = document.getElementById('dirs');
+  const ownAlive = S.own.filter(u => u.alive).length;
+  const foeAlive = S.foe.filter(u => u.alive).length;
+
+  host.innerHTML = `
+    <section class="dir">
+      <div class="dhead"><span class="letter">A</span><span class="name">The battlefield</span>
+        <span class="tag">200 m × 200 m</span></div>
+      <div class="dbody">
+        ${stabBlock()}
+        <div class="field">
+          ${S.objs.map(o => `<span class="obj ${o.hp === 0 ? 'taken' : ''}" style="left:${o.x}%;top:${o.y}%">${o.label}</span>`).join('')}
+          ${S.own.map(u => `<span class="unit own ${u.alive ? '' : 'dead'}" style="left:${u.x}%;top:${u.y}%"></span>`).join('')}
+          ${S.foe.map(u => `<span class="unit foe ${u.alive ? '' : 'dead'}" style="left:${u.x}%;top:${u.y}%"></span>`).join('')}
+          <span class="scale">200 m · grid 20 m · engagement tick 100 ms</span>
+        </div>
+        <div class="counts"><span class="own">defenders <b>${ownAlive}</b></span>
+          <span class="foe">raiders <b>${foeAlive}</b></span>
+          <span>tick <b>${S.t}</b></span></div>
+      </div>
+      <div class="dfoot">What everyone pictures. Positioned combatants are real and raid-engagement will
+        produce them — but watching dots converge is the part of an RTS that exists so you can give orders,
+        and you cannot.</div>
+    </section>
+
+    <section class="dir">
+      <div class="dhead"><span class="letter">B</span><span class="name">The clock</span>
+        <span class="tag">§7.2's lead, taken literally</span></div>
+      <div class="dbody">
+        <div class="bigclock">
+          <div class="n ${q() === 1 ? 'crit' : ''}">${Math.round(S.stability * 100)}</div>
+          <div class="u">percent portal stability</div>
+        </div>
+        ${stabBlock()}
+        <div class="counts"><span class="own">defenders <b>${ownAlive}</b> · lost <b>${S.ownDead}</b></span>
+          <span class="foe">raiders <b>${foeAlive}</b></span></div>
+        ${elsewhereBlock()}
+      </div>
+      <div class="dfoot">The one monotonic, terminal quantity on screen, at the size of its importance.
+        Everything else is a consequence whose meaning depends on how much clock is left.</div>
+    </section>
+
+    <section class="dir">
+      <div class="dhead"><span class="letter">C</span><span class="name">The ledger</span>
+        <span class="tag">a raid is a transaction</span></div>
+      <div class="dbody">
+        ${stabBlock()}
+        <div class="ledger">
+          ${S.objs.map(o => {
+            const st = o.hp === 0 ? 'lost' : o.hp < 100 ? 'contested' : 'held';
+            return `<div class="stake" data-st="${st}">
+              <span><span class="n">${o.label}</span><span class="sub">${o.note}</span></span>
+              <span class="st">${st}${st === 'contested' ? ` ${Math.round(o.hp)}%` : ''}</span></div>`;
+          }).join('')}
+        </div>
+        ${S.lostNodes.length ? `<div class="irrev"><b>gone from the universe:</b><br>
+          ${S.lostNodes.map(n => `· ${n}`).join('<br>')}<br>
+          rediscovery costs at least three times research, and only if someone tries.</div>` : ''}
+        <div class="counts"><span>casualties are permanent · <span class="own">yours <b>${S.ownDead}</b></span>
+          · <span class="foe">theirs <b>${S.foeDead}</b></span></span></div>
+        ${elsewhereBlock()}
+      </div>
+      <div class="dfoot">Says what is at risk before it is taken and what was taken after. The only
+        direction that degrades gracefully into a replay, because a ledger of irreversible transfers is
+        what you would want to read afterwards.</div>
+    </section>`;
+}
+
+document.getElementById('run').addEventListener('click', () => { reset(); render(); });
+render();
+setInterval(() => { step(); render(); }, 380);
+</script>
