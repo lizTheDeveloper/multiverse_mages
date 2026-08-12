@@ -8,6 +8,7 @@ whether knowledge loss lands off the beat before 520 assets were generated again
 | Prototype | Answers |
 |---|---|
 | [`ruleset/`](ruleset/) | Does vision §4's grid read as nineteen switches with combinatorial consequences, or as seventy independent toggles? |
+| [`mage/`](mage/) | Can a player be told *why* an autonomous mage chose what she chose, from state the core already has — and what does the read path still lack? |
 
 ## Running them
 
@@ -29,3 +30,15 @@ the script exists so nobody has to remember the flags.
 the rules rather than restate them — `contracts.md` §5 puts `permits()` in exactly one place, and a
 prototype that reimplements it is a deliberate, temporary exception with a stated cost. Each
 prototype records that cost in its own header comment.
+
+## Not prototypes, but next door
+
+`scripts/content-graph.mjs` renders the authored node graph — the same content these prototypes
+load — as drawn prerequisite lattices or as dense text:
+
+    npm run content:graph -- --out ui/lattices.html   # then open /ui/lattices.html
+    npm run content:map                               # the same graph as text
+
+Its output is **generated and deliberately not committed**: a checked-in copy would drift from
+`node.json` silently, and the whole value of the drawing is that it is true right now. `ui/*.html`
+at the top level is gitignored for that reason.

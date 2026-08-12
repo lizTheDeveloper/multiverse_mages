@@ -1,0 +1,981 @@
+<!doctype html>
+<!--
+  Multiverse Mages — the mage, up close.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  A prototype of vision §7's hardest promise: mages are autonomous, the god
+  issues no orders, and the interface therefore has to answer "why did she do
+  that?" from observable state alone. One mage at one world tick, laid out as a
+  dossier rather than a unit card, because three of the sixteen actions in
+  contracts §4.2 apply to a mage and everything else on the screen is reading.
+
+  Every value is real. Species traits from packages/content/data/species.json,
+  node names from node.json, and the constants from the shipped code:
+  MASTERY_MAX 1024, DEFAULT_TEACH_THRESHOLD 512, MASTERY_FLOOR_SHARE 256,
+  MASTERY_DECAY_PER_TICK 8, HYSTERESIS_MARGIN 128, EVAL_PERIOD 3,
+  MIN_COMMITMENT_TICKS 6, MAX_EFFORTS_PER_MAGE 8, ROLE_BIAS_MAX 384.
+
+  Serve with `npm run ui`, then open /ui/mage/.
+
+  KNOWN COST: unlike ui/ruleset/ this reimplements no rule, because it computes
+  nothing — it is a static composition of one hand-picked world state. The
+  arithmetic on the page (a retention floor of 128, a 12-month crossing of the
+  teaching threshold at 16 mastery per tick) was derived offline from the
+  constants above rather than evaluated here. That is not a dodge, it is the
+  finding: contracts §5 forbids the renderer computing decay, so a real client
+  cannot produce this reading unless rules-magic publishes the floor and the
+  rate the way it already publishes libraryDepth. Toggling "show data
+  provenance" marks that gap, and four others, in place.
+-->
+<meta charset="utf-8">
+<title>The Mage, Up Close — Multiverse Mages UI study</title>
+
+<style>
+  :root {
+    --ground:  #E4DECD;
+    --plate:   #F1EDE3;
+    --sunk:    #D6CFBB;
+    --ink:     #1E1A15;
+    --graphite:#554E40;
+    --faint:   #7B7362;
+    --rule:    #CBC3AE;
+    --rule-hi: #ABA189;
+
+    --limen:  #61499F;
+    --mentem: #1F6B55;
+    --nomen:  #395F99;
+    --terram: #8F4F2A;
+
+    --oxide:     #A2331F;
+    --oxide-bg:  #F0DBD4;
+    --brass:     #8A6207;
+
+    --ghost: rgba(30, 26, 21, 0.13);
+
+    --serif: "Hoefler Text", "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:  #121009;
+      --plate:   #1A1710;
+      --sunk:    #0C0A06;
+      --ink:     #EDE7D6;
+      --graphite:#ADA48E;
+      --faint:   #8B8270;
+      --rule:    #302A20;
+      --rule-hi: #453D2E;
+
+      --limen:  #A692EC;
+      --mentem: #46A98D;
+      --nomen:  #7099D8;
+      --terram: #CC8450;
+
+      --oxide:     #DE7059;
+      --oxide-bg:  #30150F;
+      --brass:     #C9A034;
+
+      --ghost: rgba(237, 231, 214, 0.16);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:  #121009;
+    --plate:   #1A1710;
+    --sunk:    #0C0A06;
+    --ink:     #EDE7D6;
+    --graphite:#ADA48E;
+    --faint:   #8B8270;
+    --rule:    #302A20;
+    --rule-hi: #453D2E;
+
+    --limen:  #A692EC;
+    --mentem: #46A98D;
+    --nomen:  #7099D8;
+    --terram: #CC8450;
+
+    --oxide:     #DE7059;
+    --oxide-bg:  #30150F;
+    --brass:     #C9A034;
+
+    --ghost: rgba(237, 231, 214, 0.16);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 30px 22px 90px; }
+
+  /* ============ instrument label: the one utility style ============ */
+
+  .lab {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--faint);
+    font-weight: 500;
+  }
+
+  .num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* ============ preamble ============ */
+
+  .pre { margin-bottom: 26px; }
+  .pre .lab { display: block; margin-bottom: 10px; }
+  .pre h1 {
+    font-family: var(--serif);
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.06;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin: 0 0 12px;
+    text-wrap: balance;
+  }
+  .pre p {
+    margin: 0 0 8px; font-size: 15px; color: var(--graphite);
+    max-width: 66ch; line-height: 1.55;
+  }
+  .pre p:last-child { margin-bottom: 0; }
+  .pre b { color: var(--ink); font-weight: 600; }
+  .pre code, .fnd code, .cap code {
+    font-family: var(--mono); font-size: 0.86em; color: var(--ink);
+  }
+
+  /* ============ provenance ============ */
+
+  .provbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px;
+    padding: 11px 0; margin-bottom: 26px;
+    border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  }
+  .provbar label {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.16em; font-weight: 600; color: var(--ink);
+  }
+  .provbar input { accent-color: var(--oxide); width: 14px; height: 14px; cursor: pointer; }
+  .provbar .key { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  .provbar .key span { display: inline-flex; align-items: center; gap: 6px; }
+  .provbar .key i {
+    width: 7px; height: 7px; display: block; flex: none;
+  }
+
+  .p {
+    display: none;
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 1px 4px;
+    vertical-align: 1px; margin-left: 6px; white-space: nowrap;
+    border: 1px solid currentColor; font-weight: 500;
+  }
+  body.prov .p { display: inline-block; }
+  .p-s { color: var(--graphite); }
+  .p-d { color: var(--mentem); }
+  .p-e { color: var(--limen); }
+  .p-a { color: var(--oxide); background: var(--oxide-bg); }
+
+  .gap {
+    display: none;
+    margin-top: 12px; padding: 10px 0 0;
+    border-top: 1px solid var(--oxide);
+    font-size: 13.5px; line-height: 1.5; color: var(--graphite);
+    max-width: 70ch;
+  }
+  body.prov .gap { display: block; }
+  .gap b { color: var(--oxide); font-weight: 600; }
+
+  /* ============ identity ============ */
+
+  .ident {
+    display: flex; flex-wrap: wrap; align-items: flex-end;
+    justify-content: space-between; gap: 18px;
+    padding-bottom: 14px; border-bottom: 2px solid var(--ink);
+  }
+  .ident .nm {
+    font-size: clamp(34px, 6vw, 52px); line-height: 1; font-weight: 400;
+    letter-spacing: -0.025em; margin: 0 0 8px;
+  }
+  .ident .meta {
+    display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline;
+    font-family: var(--mono); font-size: 11.5px; color: var(--graphite);
+    letter-spacing: 0.02em;
+  }
+  .ident .meta .sep { color: var(--rule-hi); }
+
+  .verbs { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .verbrow { display: flex; gap: 6px; flex-wrap: wrap; }
+  .verb {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em;
+    text-transform: uppercase; font-weight: 600;
+    padding: 8px 12px; border: 1px solid var(--rule-hi);
+    background: transparent; color: var(--ink); cursor: pointer;
+    display: inline-flex; align-items: baseline; gap: 8px;
+    transition: background 110ms linear, border-color 110ms linear;
+  }
+  .verb:hover:not(:disabled) { background: var(--sunk); border-color: var(--ink); }
+  .verb:focus-visible { outline: 2px solid var(--nomen); outline-offset: 2px; }
+  .verb .aid { color: var(--faint); font-size: 10px; letter-spacing: 0.02em; }
+  .verb:disabled { cursor: not-allowed; color: var(--faint); border-color: var(--rule); }
+  .verb-note { font-family: var(--mono); font-size: 10px; color: var(--faint); letter-spacing: 0.02em; }
+
+  /* ============================================================
+     THE STAFF — the signature
+     ============================================================ */
+
+  .staff-block { margin: 26px 0 0; }
+
+  .staff-head {
+    display: flex; flex-wrap: wrap; justify-content: space-between;
+    align-items: baseline; gap: 12px; margin-bottom: 14px;
+  }
+  .staff-head .t { font-size: 19px; letter-spacing: -0.01em; }
+  .staff-head .t em { font-style: normal; color: var(--graphite); }
+
+  .staffscroll { overflow-x: auto; }
+  .staff {
+    position: relative; min-width: 840px;
+    padding: 30px 24px 0 156px;
+    background: var(--plate);
+    border: 1px solid var(--rule);
+  }
+
+  .field { position: relative; height: 232px; }
+
+  /* faint column guides tie each mark to its label */
+  .guides {
+    position: absolute; inset: 0;
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    pointer-events: none;
+  }
+  .guides span { border-right: 1px solid var(--rule); }
+  .guides span:last-child { border-right: none; }
+
+  /* reference lines */
+  .ref { position: absolute; left: 0; right: 0; height: 0; pointer-events: none; }
+  .ref .line { position: absolute; left: 0; right: 0; top: 0; height: 1px; }
+  .ref .tick {
+    position: absolute; right: calc(100% + 12px); top: -7px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em;
+    color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  .ref .cap {
+    position: absolute; right: calc(100% + 12px); top: -19px;
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--faint);
+    white-space: nowrap; line-height: 11px;
+  }
+  .ref-max .line { background: var(--ink); }
+  .ref-max .cap, .ref-max .tick { color: var(--graphite); }
+  .ref-teach .line { background: repeating-linear-gradient(to right,
+      var(--brass) 0 4px, transparent 4px 9px); opacity: .7; }
+  .ref-teach .cap, .ref-teach .tick { color: var(--brass); }
+  .ref-floor .line { background: repeating-linear-gradient(to right,
+      var(--rule-hi) 0 3px, transparent 3px 8px); }
+  .ref-zero .line { background: var(--rule-hi); }
+
+  /* instance columns */
+  .cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(7, 1fr); }
+  .inst { position: relative; }
+
+  .stem {
+    position: absolute; top: 0; left: 50%; width: 1px;
+    background: var(--rule-hi); height: var(--drop);
+  }
+  .mark {
+    position: absolute; top: var(--drop); left: 50%;
+    width: 13px; height: 13px; margin-left: -6.5px; margin-top: -6.5px;
+    background: var(--c);
+  }
+  .inst .val {
+    position: absolute; top: var(--drop); left: 50%;
+    transform: translate(-50%, -20px);
+    font-family: var(--mono); font-size: 10.5px; font-variant-numeric: tabular-nums;
+    color: var(--graphite); background: var(--plate); padding: 0 3px;
+  }
+
+  /* the sole copy, and where it is going */
+  .inst.sole .stem { background: var(--oxide); width: 2px; }
+  .inst.sole .mark { background: var(--plate); border: 2px solid var(--oxide); }
+  .inst.sole .val { color: var(--oxide); font-weight: 700; }
+
+  .fall {
+    position: absolute; left: 50%; width: 2px; margin-left: -1px;
+    top: var(--from); height: var(--len);
+    background: repeating-linear-gradient(to bottom,
+      var(--oxide) 0 3px, transparent 3px 7px);
+    opacity: .85;
+  }
+  .stop {
+    position: absolute; left: 50%; top: var(--at);
+    transform: translate(-50%, -50%);
+    width: 9px; height: 9px; border: 2px solid var(--oxide);
+    border-radius: 50%; background: var(--plate);
+  }
+  .stoplab {
+    position: absolute; left: 50%; top: var(--at);
+    transform: translate(12px, -50%);
+    font-family: var(--mono); font-size: 10px; color: var(--oxide);
+    white-space: nowrap; letter-spacing: 0.03em;
+    background: var(--plate); padding: 1px 6px;
+  }
+  .stoplab b { font-weight: 700; }
+  .stoplab i { font-style: normal; color: var(--graphite); }
+
+  /* redundancy strip */
+  .stripwrap { border-top: 1px solid var(--rule-hi); margin-top: 14px; }
+  .striphead {
+    font-family: var(--mono); font-size: 8.5px; text-transform: uppercase;
+    letter-spacing: 0.13em; color: var(--faint); padding: 10px 0 10px;
+  }
+  .strip { display: grid; grid-template-columns: repeat(7, 1fr); align-items: end; height: 34px; }
+  .scell { position: relative; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+  .scell i { display: block; width: 30%; background: var(--rule-hi); height: var(--h); }
+  .scell b {
+    position: absolute; bottom: calc(var(--h) + 4px); left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 10px; color: var(--graphite); font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .scell.none::before {
+    content: ""; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 34%; height: 100%; border: 1px dashed var(--oxide); opacity: .55;
+  }
+  .scell.none::after {
+    content: "none"; position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 9px; color: var(--oxide);
+    letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700;
+  }
+
+  /* labels */
+  .legend { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid var(--rule); margin-top: 10px; }
+  .leg { padding: 9px 6px 15px; text-align: center; }
+  .leg .cell {
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.11em;
+    text-transform: uppercase; display: block; margin-bottom: 3px;
+  }
+  .leg .nname { font-size: 13px; line-height: 1.25; display: block; }
+  .leg.sole .nname { color: var(--oxide); font-weight: 600; }
+
+  .c-limen  { color: var(--limen); }
+  .c-mentem { color: var(--mentem); }
+  .c-nomen  { color: var(--nomen); }
+  .c-terram { color: var(--terram); }
+
+  /* the reading */
+  .reading {
+    margin-top: 18px; border: 1px solid var(--oxide);
+    display: grid; grid-template-columns: auto minmax(0, 1fr);
+  }
+  @media (max-width: 700px) { .reading { grid-template-columns: minmax(0, 1fr); } }
+  .reading .clock {
+    padding: 16px 22px; border-right: 1px solid var(--oxide);
+    background: var(--oxide-bg); text-align: center;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .reading .clock .big {
+    font-family: var(--mono); font-size: 38px; line-height: 1;
+    font-weight: 700; color: var(--oxide); font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+  }
+  .reading .clock .unit {
+    font-family: var(--mono); font-size: 9px; text-transform: uppercase;
+    letter-spacing: 0.14em; color: var(--oxide); margin-top: 5px;
+  }
+  .reading .body { padding: 14px 18px; }
+  .reading .body .hd {
+    font-family: var(--mono); font-size: 9.5px; text-transform: uppercase;
+    letter-spacing: 0.15em; color: var(--oxide); margin-bottom: 6px; font-weight: 700;
+  }
+  .reading .body p { margin: 0 0 7px; font-size: 14.5px; line-height: 1.5; }
+  .reading .body p:last-of-type { margin-bottom: 0; }
+  .reading .body .work {
+    font-family: var(--mono); font-size: 10.5px; color: var(--graphite);
+    font-variant-numeric: tabular-nums; margin-top: 9px;
+    padding-top: 8px; border-top: 1px solid var(--rule); letter-spacing: 0.02em;
+  }
+
+  /* ============ two-column body ============ */
+
+  .grid2 {
+    display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: 0; margin-top: 34px; border-top: 1px solid var(--rule);
+  }
+  @media (max-width: 880px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+
+  .grid2 > div { padding-top: 22px; }
+  .grid2 > .left { padding-right: 30px; border-right: 1px solid var(--rule); }
+  @media (max-width: 880px) {
+    .grid2 > .left { padding-right: 0; border-right: none; border-bottom: 1px solid var(--rule); padding-bottom: 24px; }
+  }
+  .grid2 > .right { padding-left: 30px; }
+  @media (max-width: 880px) { .grid2 > .right { padding-left: 0; } }
+
+  .blk { margin-bottom: 30px; }
+  .blk:last-child { margin-bottom: 0; }
+  .blk > .lab { display: block; margin-bottom: 12px; }
+
+  .say { font-size: 14.5px; line-height: 1.55; color: var(--graphite); margin: 10px 0 0; max-width: 62ch; }
+  .say b { color: var(--ink); font-weight: 600; }
+  .say em { color: var(--ink); font-style: italic; }
+
+  /* ---- committed ---- */
+  .cg { border-left: 3px solid var(--terram); padding-left: 14px; }
+  .cg .g {
+    font-family: var(--mono); font-size: 19px; font-weight: 600;
+    letter-spacing: -0.01em; display: block; margin-bottom: 2px;
+  }
+  .cg .tgt { font-size: 17px; display: block; margin-bottom: 10px; }
+  .cg .tgt .ar { color: var(--faint); }
+  .cg .row {
+    display: flex; flex-wrap: wrap; gap: 3px 18px;
+    font-family: var(--mono); font-size: 11px; color: var(--graphite);
+    font-variant-numeric: tabular-nums;
+  }
+  .cg .row b { color: var(--ink); font-weight: 600; }
+
+  /* ---- waterfall ---- */
+  .wf { margin-top: 6px; }
+  .wfrow {
+    display: grid; grid-template-columns: 78px minmax(0, 1fr) 74px;
+    gap: 10px; align-items: center; height: 21px;
+  }
+  .wfrow .k { font-family: var(--mono); font-size: 10.5px; color: var(--graphite); text-align: right; letter-spacing: 0.04em; }
+  .wftrack { position: relative; height: 100%; }
+  .wftrack .seg {
+    position: absolute; top: 4px; bottom: 4px;
+    left: var(--x); width: var(--w); background: var(--terram);
+  }
+  .wftrack .seg.dn { background: var(--oxide); }
+  .wftrack .carry {
+    position: absolute; top: 0; bottom: 0; left: var(--c); width: 1px;
+    background: var(--rule-hi);
+  }
+  .wfrow .v {
+    font-family: var(--mono); font-size: 11px; text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .wfrow .v .b { color: var(--faint); font-size: 9.5px; }
+  .wfrow .v.dn { color: var(--oxide); }
+
+  .wftot {
+    display: grid; grid-template-columns: 78px minmax(0, 1fr) 74px;
+    gap: 10px; align-items: baseline; margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--ink);
+  }
+  .wftot .k { font-family: var(--mono); font-size: 10.5px; text-align: right; color: var(--ink); letter-spacing: 0.04em; }
+  .wftot .n { font-family: var(--mono); font-size: 10px; color: var(--faint); letter-spacing: 0.02em; }
+  .wftot .v {
+    font-family: var(--mono); font-size: 17px; font-weight: 600;
+    text-align: right; font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- ladder ---- */
+  .lad { display: flex; flex-direction: column; }
+  .lrow {
+    display: grid; grid-template-columns: 16px 118px minmax(0, 1fr) 46px;
+    gap: 10px; align-items: center; padding: 5px 0;
+  }
+  .lrow .i { font-family: var(--mono); font-size: 9.5px; color: var(--faint); text-align: right; }
+  .lrow .n { font-family: var(--mono); font-size: 12px; }
+  .lrow .b { height: 6px; background: var(--sunk); position: relative; }
+  .lrow .b i { position: absolute; inset: 0 auto 0 0; background: var(--rule-hi); }
+  .lrow .s { font-family: var(--mono); font-size: 11px; text-align: right; font-variant-numeric: tabular-nums; }
+  .lrow.inc .n { font-weight: 700; }
+  .lrow.inc .b i { background: var(--terram); }
+  .lrow.chal .b i { background: var(--brass); }
+  .lrow.msk { color: var(--faint); }
+  .lrow.msk .n { text-decoration: line-through; }
+  .lrow.msk .b { background: repeating-linear-gradient(45deg,
+      var(--sunk) 0 3px, transparent 3px 6px); }
+  .lrow.msk .s { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .held {
+    margin-top: 14px; border: 1px solid var(--brass); padding: 12px 14px;
+  }
+  .held .h {
+    font-family: var(--mono); font-size: 9.5px; text-transform: uppercase;
+    letter-spacing: 0.16em; color: var(--brass); font-weight: 600; margin-bottom: 6px;
+  }
+  .held p { margin: 0; font-size: 14.5px; line-height: 1.5; }
+  .held .num { font-weight: 600; }
+
+  /* ---- constants ---- */
+  .tr { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; align-items: baseline; margin-bottom: 9px; }
+  .tr .k { font-family: var(--mono); font-size: 11px; color: var(--graphite); letter-spacing: 0.02em; }
+  .tr .v { font-family: var(--mono); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .tr .v .u { color: var(--faint); }
+  .tr .m {
+    grid-column: 1 / -1; height: 3px; background: var(--sunk); position: relative;
+  }
+  .tr .m i { position: absolute; inset: 0 auto 0 0; }
+  .tr .m .base { position: absolute; top: -2px; bottom: -2px; left: 50%; width: 1px; background: var(--faint); }
+
+  /* ---- projects ---- */
+  .pj { margin-bottom: 13px; }
+  .pj .h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+  .pj .kd { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--faint); flex: none; }
+  .pj .nm2 { flex: 1 1 auto; font-size: 14.5px; min-width: 0; }
+  .pj .pc { font-family: var(--mono); font-size: 11px; color: var(--graphite); flex: none; font-variant-numeric: tabular-nums; }
+  .pj .bar { height: 5px; background: var(--sunk); position: relative; }
+  .pj .bar i { position: absolute; inset: 0 auto 0 0; background: var(--rule-hi); }
+  .pj.on .bar i { background: var(--terram); }
+  .pj .sb { font-family: var(--mono); font-size: 10px; color: var(--faint); margin-top: 4px; letter-spacing: 0.02em; }
+
+  .slots { display: flex; gap: 3px; margin-top: 14px; align-items: center; flex-wrap: wrap; }
+  .slots b { width: 11px; height: 11px; border: 1px solid var(--faint); display: block; flex: none; }
+  .slots b.f { background: var(--graphite); border-color: var(--graphite); }
+  .slots .t { font-family: var(--mono); font-size: 10px; color: var(--graphite); margin-left: 8px; letter-spacing: 0.02em; }
+
+  /* ============ findings ============ */
+
+  .fnd { margin-top: 42px; border-top: 2px solid var(--ink); padding-top: 20px; }
+  .fnd > .lab { display: block; margin-bottom: 10px; }
+  .fnd > h2 { font-size: 24px; font-weight: 400; letter-spacing: -0.015em; margin: 0 0 8px; }
+  .fnd > .say { margin-bottom: 20px; }
+  .fitem { padding: 16px 0; border-top: 1px solid var(--rule); display: grid;
+    grid-template-columns: minmax(0, 1fr) 210px; gap: 26px; }
+  @media (max-width: 760px) { .fitem { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+  .fitem h3 { margin: 0 0 5px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  .fitem p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--graphite); }
+  .fitem .where {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+    color: var(--faint); line-height: 1.7;
+  }
+  .fitem .where b { display: block; color: var(--oxide); text-transform: uppercase;
+    letter-spacing: 0.14em; font-size: 9px; margin-bottom: 4px; }
+
+  footer {
+    margin-top: 34px; padding-top: 14px; border-top: 1px solid var(--rule);
+    font-family: var(--mono); font-size: 10px; color: var(--faint);
+    line-height: 1.8; letter-spacing: 0.02em;
+  }
+
+  /* ============ motion: one settle ============ */
+
+  @media (prefers-reduced-motion: no-preference) {
+    .stem { animation: drop 560ms cubic-bezier(.22,.61,.36,1) both; }
+    .mark, .inst .val { animation: fall 560ms cubic-bezier(.22,.61,.36,1) both; }
+    .fall, .stop, .stoplab { animation: fade 500ms ease-out both; animation-delay: 620ms; }
+    .inst:nth-child(1) .stem, .inst:nth-child(1) .mark, .inst:nth-child(1) .val { animation-delay: 40ms; }
+    .inst:nth-child(2) .stem, .inst:nth-child(2) .mark, .inst:nth-child(2) .val { animation-delay: 100ms; }
+    .inst:nth-child(3) .stem, .inst:nth-child(3) .mark, .inst:nth-child(3) .val { animation-delay: 160ms; }
+    .inst:nth-child(4) .stem, .inst:nth-child(4) .mark, .inst:nth-child(4) .val { animation-delay: 220ms; }
+    .inst:nth-child(5) .stem, .inst:nth-child(5) .mark, .inst:nth-child(5) .val { animation-delay: 280ms; }
+    .inst:nth-child(6) .stem, .inst:nth-child(6) .mark, .inst:nth-child(6) .val { animation-delay: 340ms; }
+    .inst:nth-child(7) .stem, .inst:nth-child(7) .mark, .inst:nth-child(7) .val { animation-delay: 400ms; }
+    @keyframes drop { from { height: 0; } }
+    @keyframes fall { from { top: 0; opacity: 0; } }
+    @keyframes fade { from { opacity: 0; } }
+  }
+
+</style>
+
+<div class="wrap">
+
+  <div class="pre">
+    <span class="lab">UI study 01 · electron-client · world-presentation</span>
+    <h1>The mage, up close</h1>
+    <p>One mage, at one world tick, built entirely from shipped content and the code already in
+    <code>packages/</code>. The screen makes one argument: <b>you are a god, not a general, so almost nothing
+    here is operable.</b> Three of the sixteen actions in §4.2 apply to a mage; the rest is instrumentation
+    for reading someone you cannot command.</p>
+  </div>
+
+  <div class="provbar">
+    <label><input type="checkbox" id="pt"> Show data provenance</label>
+    <div class="key">
+      <span><i style="background:var(--graphite)"></i><span class="lab">snapshot</span></span>
+      <span><i style="background:var(--mentem)"></i><span class="lab">core-derived</span></span>
+      <span><i style="background:var(--limen)"></i><span class="lab">explain channel §4.4</span></span>
+      <span><i style="background:var(--oxide)"></i><span class="lab">does not exist</span></span>
+    </div>
+  </div>
+
+  <!-- ================= IDENTITY ================= -->
+  <div class="ident">
+    <div>
+      <div class="nm">Ismene Farrowgate</div>
+      <div class="meta">
+        <span>GNOME<span class="p p-s">speciesId</span></span><span class="sep">/</span>
+        <span>265 YR<span class="p p-d">worldTick − birthTick</span></span><span class="sep">/</span>
+        <span>SENESCENT<span class="p p-d">age band</span></span><span class="sep">/</span>
+        <span>RESEARCHER<span class="p p-s">roleId</span></span><span class="sep">/</span>
+        <span>COLDHARBOUR ATHENAEUM<span class="p p-s">universityId</span></span><span class="sep">/</span>
+        <span>T40 196</span>
+      </div>
+    </div>
+    <div class="verbs">
+      <div class="verbrow">
+        <button class="verb" type="button">Assign role <span class="aid">10</span></button>
+        <button class="verb" type="button">Bless <span class="aid">09</span></button>
+        <button class="verb" type="button" disabled>Grant founding <span class="aid">08</span></button>
+      </div>
+      <span class="verb-note">grant masked — every root in her reach already has an instance</span>
+    </div>
+  </div>
+
+  <!-- ================= THE STAFF ================= -->
+  <div class="staff-block">
+    <div class="staff-head">
+      <div class="t">What she knows, and how firmly <em>— seven instances</em></div>
+      <span class="lab">vertical axis: mastery, fp 0–1024</span>
+    </div>
+
+    <div class="staffscroll">
+    <div class="staff">
+      <div class="field">
+        <div class="guides"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+
+        <div class="ref ref-max"   style="top:0">      <span class="tick">1024</span><span class="line"></span><span class="cap">full mastery</span></div>
+        <div class="ref ref-teach" style="top:50%">    <span class="tick">512</span><span class="line"></span><span class="cap">teach threshold</span></div>
+        <div class="ref ref-floor" style="top:87.5%">  <span class="tick">128</span><span class="line"></span><span class="cap">her floor</span></div>
+        <div class="ref ref-zero"  style="top:100%">   <span class="tick">0</span><span class="line"></span></div>
+
+        <div class="cols">
+          <div class="inst" style="--drop:0%;     --c:var(--nomen);">
+            <span class="stem"></span><span class="val">1024</span><span class="mark"></span>
+          </div>
+
+          <div class="inst sole" style="--drop:31.25%;">
+            <span class="stem"></span><span class="val">704</span><span class="mark"></span>
+            <span class="fall" style="--from:31.25%;--len:56.25%"></span>
+            <span class="stop"    style="--at:50%"></span>
+            <span class="stoplab" style="--at:50%"><b>12 mo</b> <i>· unteachable below here</i></span>
+            <span class="stop"    style="--at:87.5%"></span>
+            <span class="stoplab" style="--at:87.5%"><b>36 mo</b> <i>· settles here forever</i></span>
+          </div>
+
+          <div class="inst" style="--drop:0%;     --c:var(--mentem);">
+            <span class="stem"></span><span class="val">1024</span><span class="mark"></span>
+          </div>
+          <div class="inst" style="--drop:10.06%; --c:var(--mentem);">
+            <span class="stem"></span><span class="val">921</span><span class="mark"></span>
+          </div>
+          <div class="inst" style="--drop:0%;     --c:var(--terram);">
+            <span class="stem"></span><span class="val">1024</span><span class="mark"></span>
+          </div>
+          <div class="inst" style="--drop:18.65%; --c:var(--terram);">
+            <span class="stem"></span><span class="val">833</span><span class="mark"></span>
+          </div>
+          <div class="inst" style="--drop:0%;     --c:var(--limen);">
+            <span class="stem"></span><span class="val">1024</span><span class="mark"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stripwrap">
+        <div class="striphead">Copies of this node elsewhere in the universe</div>
+        <div class="strip">
+          <span class="scell" style="--h:87%"><b>31</b><i></i></span>
+          <span class="scell none"></span>
+          <span class="scell" style="--h:96%"><b>44</b><i></i></span>
+          <span class="scell" style="--h:65%"><b>12</b><i></i></span>
+          <span class="scell" style="--h:100%"><b>52</b><i></i></span>
+          <span class="scell" style="--h:55%"><b>8</b><i></i></span>
+          <span class="scell" style="--h:75%"><b>19</b><i></i></span>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="leg"><span class="cell c-nomen">rego nomen</span><span class="nname">Call by Name</span></div>
+        <div class="leg sole"><span class="cell c-nomen">rego nomen</span><span class="nname">Keep the Name Close</span></div>
+        <div class="leg"><span class="cell c-mentem">intellego mentem</span><span class="nname">Weigh the Attention</span></div>
+        <div class="leg"><span class="cell c-mentem">intellego mentem</span><span class="nname">Follow the Thought</span></div>
+        <div class="leg"><span class="cell c-terram">perdo terram</span><span class="nname">Crumble</span></div>
+        <div class="leg"><span class="cell c-terram">perdo terram</span><span class="nname">Open the Ground</span></div>
+        <div class="leg"><span class="cell c-limen">rego limen</span><span class="nname">Hold the Door</span></div>
+      </div>
+    </div>
+    </div>
+
+    <div class="reading">
+      <div class="clock">
+        <span class="big">12</span>
+        <span class="unit">months</span>
+      </div>
+      <div class="body">
+        <div class="hd">Until the last copy stops being teachable</div>
+        <p><em>Keep the Name Close</em> exists in one place, and that place is her memory. It is never
+        destroyed — her floor is <span class="num">128</span>, so it settles there and stays. It stops being
+        <em>transmissible</em>, which is worse, because nothing announces it. Below
+        <span class="num">512</span> she cannot teach it and cannot pass it on, and nothing in the subsystem
+        restores mastery — practice does, and practice is an operation somebody has to perform.</p>
+        <div class="work">704 − 512 = 192 &nbsp;·&nbsp; decay 16/tick at retention 512 &nbsp;·&nbsp; 192 ÷ 16 = 12 ticks &nbsp;·&nbsp; 1 tick = 1 month</div>
+        <div class="gap"><b>The panel cannot compute any of this.</b> Mastery is a snapshot field, but the
+        floor, the per-tick rate and the threshold crossing are rules computations, and contracts §5 forbids
+        the renderer performing them. So either the core publishes them the way <code>libraryDepth</code>
+        already is, or this reading cannot exist and <code>704</code> stays inert.</div>
+      </div>
+    </div>
+
+    <p class="say"><b>Reading the staff.</b> Height is how firmly she holds a thing; the stem is what she has
+    already forgotten. The strip beneath counts copies elsewhere in the universe — so <em>the column with a
+    gap in it is the one that can be lost.</em> Sound-design §0.3 requires salience parity: whatever the audio
+    makes urgent, something visual must make equally urgent. Loss is not an alert here. It is a gap where
+    depth should be, and a dotted line showing where the survivor is going.</p>
+  </div>
+
+  <!-- ================= BODY ================= -->
+  <div class="grid2">
+    <div class="left">
+
+      <div class="blk">
+        <span class="lab">What she is doing</span>
+        <div class="cg">
+          <span class="g">rediscover-node<span class="p p-s">goalId</span></span>
+          <span class="tgt">The Swallowed Hall <span class="ar">·</span> <span class="c-terram">perdo terram</span>, tier 4<span class="p p-s">targetNodeId</span></span>
+          <div class="row">
+            <span>ADOPTED <b>T40 118</b></span>
+            <span>HELD <b>78</b> TICKS</span>
+            <span>AT SCORE <b>1589</b></span>
+            <span>TIER 4 = <b>HER CEILING</b></span>
+          </div>
+        </div>
+        <p class="say">This universe knew <em>The Swallowed Hall</em> and lost it. Rediscovery costs at least
+        three times research, divided by her affinity — the best of any species. She is the right mage for it,
+        and she chose it herself.</p>
+      </div>
+
+      <div class="blk">
+        <span class="lab">Why — six terms, summed once</span>
+        <div class="wf">
+          <div class="wfrow">
+            <span class="k">base</span>
+            <span class="wftrack"><i class="seg" style="--x:0%;--w:27.7%"></i></span>
+            <span class="v">+448 <span class="b">/512</span></span>
+          </div>
+          <div class="wfrow">
+            <span class="k">role</span>
+            <span class="wftrack"><i class="carry" style="--c:27.7%"></i><i class="seg" style="--x:27.7%;--w:17.8%"></i></span>
+            <span class="v">+288 <span class="b">/384</span></span>
+          </div>
+          <div class="wfrow">
+            <span class="k">species</span>
+            <span class="wftrack"><i class="carry" style="--c:45.5%"></i><i class="seg" style="--x:45.5%;--w:31.7%"></i></span>
+            <span class="v">+512 <span class="b">/512</span></span>
+          </div>
+          <div class="wfrow">
+            <span class="k">personality</span>
+            <span class="wftrack"><i class="carry" style="--c:77.2%"></i><i class="seg" style="--x:77.2%;--w:18.6%"></i></span>
+            <span class="v">+301 <span class="b">/512</span></span>
+          </div>
+          <div class="wfrow">
+            <span class="k">age</span>
+            <span class="wftrack"><i class="carry" style="--c:95.8%"></i><i class="seg dn" style="--x:84.2%;--w:11.6%"></i></span>
+            <span class="v dn">−188 <span class="b">/256</span></span>
+          </div>
+          <div class="wfrow">
+            <span class="k">opportunity</span>
+            <span class="wftrack"><i class="carry" style="--c:84.2%"></i><i class="seg" style="--x:84.2%;--w:15.8%"></i></span>
+            <span class="v">+256 <span class="b">/512</span></span>
+          </div>
+          <div class="wftot">
+            <span class="k">score</span>
+            <span class="n">clamped once, after summation — never per term<span class="p p-e">GoalScore.terms</span></span>
+            <span class="v">1617</span>
+          </div>
+        </div>
+        <p class="say">Read it as a sentence: <b>her species pushes rediscovery as hard as the term allows,
+        her age pulls against it, and she does it anyway.</b> Each term is bounded on its own axis, so this is
+        arithmetic the panel displays rather than a model it interprets.</p>
+        <div class="gap"><b>This is why the mage was mocked first.</b> The explain channel exists in §4.4 but
+        its payload is not pinned, and it gets pinned in <code>agent-interface</code>. §4.4 describes
+        <em>on-demand explanation of one decision</em>; both known consumers — this panel and the bark system
+        (sound-design §10.1) — want <em>per-mage reasons at world-tick granularity</em>. Different shape,
+        far cheaper to settle before the format is fixed. <code>GoalScore</code> already carries
+        <code>{score, terms, rawTotal, clamped}</code>.</div>
+      </div>
+
+      <div class="blk">
+        <span class="lab">What else she weighed</span>
+        <div class="lad">
+          <div class="lrow inc"><span class="i">2</span><span class="n">rediscover-node</span><span class="b"><i style="width:100%"></i></span><span class="s">1617</span></div>
+          <div class="lrow chal"><span class="i">1</span><span class="n">research-node</span><span class="b"><i style="width:90.5%"></i></span><span class="s">1463</span></div>
+          <div class="lrow"><span class="i">4</span><span class="n">teach</span><span class="b"><i style="width:36%"></i></span><span class="s">582</span></div>
+          <div class="lrow"><span class="i">5</span><span class="n">scribe</span><span class="b"><i style="width:19%"></i></span><span class="s">307</span></div>
+          <div class="lrow"><span class="i">6</span><span class="n">affiliate</span><span class="b"><i style="width:15.2%"></i></span><span class="s">246</span></div>
+          <div class="lrow"><span class="i">7</span><span class="n">ward-duty</span><span class="b"><i style="width:6.4%"></i></span><span class="s">103</span></div>
+          <div class="lrow"><span class="i">0</span><span class="n">idle</span><span class="b"><i style="width:0%"></i></span><span class="s">0</span></div>
+          <div class="lrow msk"><span class="i">3</span><span class="n">seek-teaching</span><span class="b"></span><span class="s">masked</span></div>
+          <div class="lrow msk"><span class="i">8</span><span class="n">raid-readiness</span><span class="b"></span><span class="s">masked</span></div>
+        </div>
+
+        <p class="say"><b>Scribe scores 307.</b> Her caution is <span class="num">610</span> and her scribe
+        affinity is below baseline, so the one act that would preserve the copy on the staff is the fifth
+        thing she wants to do. Nothing in the game will make her do it — the god assigns roles, not goals.</p>
+
+        <div class="held">
+          <div class="h">Held — not reconsidering this tick</div>
+          <p><span class="num">research-node</span> now beats her incumbent by <span class="num">154</span>,
+          past the <span class="num">128</span> margin, so it <em>would</em> displace. But
+          <span class="num">(40 196 + 1448) mod 3 ≠ 0</span>, so she does not re-evaluate until world tick
+          <span class="num">40 198</span> — two ticks away.<span class="p p-d">reevaluationReason</span></p>
+        </div>
+        <p class="say">Without this, autonomy reads as lag: a player watches a better option go untaken and
+        concludes the simulation is broken. <code>ReevaluationReason</code> is already an exported union —
+        <code>no-incumbent | complete | infeasible | scheduled | held</code> — which is nearly display copy
+        as written.</p>
+
+        <div class="gap"><b>A masked goal says which, never why.</b> <code>FeasibilityOutcome</code> carries
+        <code>feasible</code>, <code>masked</code> and <code>maskedCount</code> — enough to grey a row out,
+        not enough to say anything about it. The panel can report that <em>seek-teaching</em> is unavailable,
+        but not that it is unavailable <em>because no living mage holds a node she can still learn</em> —
+        which is the fact that would send a player to found a university. The interface's own comment calls
+        the masked list <em>"for attributing a stall"</em>; attributing a stall to a player needs the reason,
+        and the reason is computed inside <code>isFeasible</code> and discarded.</div>
+      </div>
+    </div>
+
+    <!-- ---------------- right ---------------- -->
+    <div class="right">
+
+      <div class="blk">
+        <span class="lab">Species constants — gnome</span>
+        <div class="tr"><span class="k">curiosity</span><span class="v">1792</span><span class="m"><i style="width:87.5%;background:var(--mentem)"></i><span class="base"></span></span></div>
+        <div class="tr"><span class="k">learn rate</span><span class="v">1280</span><span class="m"><i style="width:62.5%;background:var(--mentem)"></i><span class="base"></span></span></div>
+        <div class="tr"><span class="k">retention</span><span class="v">512</span><span class="m"><i style="width:25%;background:var(--oxide)"></i><span class="base"></span></span></div>
+        <div class="tr"><span class="k">rediscovery affinity</span><span class="v">1792</span><span class="m"><i style="width:87.5%;background:var(--mentem)"></i><span class="base"></span></span></div>
+        <div class="tr"><span class="k">scribe affinity</span><span class="v">896</span><span class="m"><i style="width:43.8%;background:var(--graphite)"></i><span class="base"></span></span></div>
+        <div class="tr"><span class="k">depth ceiling</span><span class="v">4<span class="u"> / 7</span></span></div>
+        <p class="say">The tick at midpoint is <span class="num">fp(1024)</span>, the human baseline. Every
+        trait is higher-is-better, rediscovery affinity included — it is applied as a divisor.
+        <span class="p p-s">species.json</span></p>
+        <div class="gap"><b>Untuned.</b> Every species magnitude carries <code>tuningStatus: untuned</code>,
+        and no release before 0.5.0 may claim any of them is balanced. Rendering these as a spider chart or
+        a letter grade would assert a balance the project has not measured.</div>
+      </div>
+
+      <div class="blk">
+        <span class="lab">Personality — rolled at birth, immutable</span>
+        <div class="tr"><span class="k">curiosity</span><span class="v">1690</span><span class="m"><i style="width:82.5%;background:var(--mentem)"></i><span class="base"></span></span></div>
+        <div class="tr"><span class="k">ambition</span><span class="v">880</span><span class="m"><i style="width:43%;background:var(--graphite)"></i><span class="base"></span></span></div>
+        <div class="tr"><span class="k">caution</span><span class="v">610</span><span class="m"><i style="width:29.8%;background:var(--oxide)"></i><span class="base"></span></span></div>
+        <p class="say">Clamped to <span class="num">[0, 2048]</span>. Ambition and caution mean
+        <span class="num">1024</span> in every species; only curiosity tracks the species.<span class="p p-s">mage row</span></p>
+      </div>
+
+      <div class="blk">
+        <span class="lab">Vigor — what the tradition spends</span>
+        <div class="tr"><span class="k">current</span><span class="v">612<span class="u"> / 1024</span></span><span class="m"><i style="width:59.8%;background:var(--nomen)"></i></span></div>
+        <p class="say">This universe runs True Naming.<span class="p p-s">vigor / maxVigor</span></p>
+      </div>
+
+      <div class="blk">
+        <span class="lab">Work she has set down</span>
+        <div class="pj on">
+          <div class="h"><span class="kd">research</span><span class="nm2">The Swallowed Hall</span><span class="pc">65%</span></div>
+          <div class="bar"><i style="width:65%"></i></div>
+          <div class="sb">active — the goal she holds</div>
+        </div>
+        <div class="pj">
+          <div class="h"><span class="kd">research</span><span class="nm2">Open the Locked Room</span><span class="pc">79%</span></div>
+          <div class="bar"><i style="width:79%"></i></div>
+          <div class="sb">set down — nothing records when</div>
+        </div>
+        <div class="pj">
+          <div class="h"><span class="kd">teaching</span><span class="nm2">Call by Name → Bettany Orrel</span><span class="pc">38%</span></div>
+          <div class="bar"><i style="width:38%"></i></div>
+          <div class="sb">the lesson belongs to the pair</div>
+        </div>
+        <div class="slots">
+          <b class="f"></b><b class="f"></b><b class="f"></b><b></b><b></b><b></b><b></b><b></b>
+          <span class="t">3 / 8 — a ninth gives up the least-invested</span>
+        </div>
+        <p class="say">Progress deliberately outlives a goal switch: hysteresis exists to move a mage off a
+        goal, so progress stored on the commitment would be destroyed by the mechanism most likely to touch
+        it. A mage displaced after fifteen years returns to find it waiting.<span class="p p-s">effort-progress</span></p>
+        <div class="gap"><b>Two things this block wants and cannot have.</b> <code>effort-progress</code> holds
+        <code>subject, kind, nodeId, counterparty, progress</code> — and no tick, so <em>"she set this down
+        twenty-three years ago"</em> is not derivable. And when the bound displaces the least-invested project,
+        nothing emits an event, so years of work vanish with no entry in the classified per-tick deltas
+        sound-design §10 asks for.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FINDINGS ================= -->
+  <div class="fnd">
+    <span class="lab">Output</span>
+    <h2>Five things the read path does not carry</h2>
+    <p class="say">All five land in <code>agent-interface</code> rather than in the client, and four of the
+    five are cheap now and expensive once the observation format is pinned.</p>
+
+    <div class="fitem">
+      <div>
+        <h3>The explain channel's payload shape</h3>
+        <p>§4.4 describes on-demand explanation of a single decision. Two known consumers want per-mage
+        reasons every world tick. <code>GoalScore</code> already carries the six terms, the raw total and the
+        clamp flag, so this is a transport decision — but it has to be made before the format is fixed.</p>
+      </div>
+      <div class="where"><b>lands in</b>agent-interface<br>already flagged · sound-design §10.1</div>
+    </div>
+
+    <div class="fitem">
+      <div>
+        <h3>Why a goal is masked</h3>
+        <p><code>FeasibilityOutcome</code> reports which goals were removed and how many. The reason is
+        computed inside <code>isFeasible</code> and thrown away, so a stalled universe cannot tell the player
+        what would unstall it.</p>
+      </div>
+      <div class="where"><b>lands in</b>rules-world autonomy<br>surfaced via agent-interface</div>
+    </div>
+
+    <div class="fitem">
+      <div>
+        <h3>Mastery trajectory, not just mastery</h3>
+        <p>The countdown at the top of this page is the most important thing on it, and the renderer may not
+        compute any of it. Floor, per-tick rate and threshold crossing are rules computations — publish them
+        the way <code>libraryDepth</code> already is, or <code>704</code> stays a number that means nothing.</p>
+      </div>
+      <div class="where"><b>lands in</b>rules-magic<br>published accessor</div>
+    </div>
+
+    <div class="fitem">
+      <div>
+        <h3>When a project was last touched</h3>
+        <p><code>effort-progress</code> carries no tick. The component exists so progress outlives a goal
+        switch — the most humane rule in the schema — and the interface cannot say how long ago that was.</p>
+      </div>
+      <div class="where"><b>lands in</b>contracts §1.2<br>a third schema revision — argue this one</div>
+    </div>
+
+    <div class="fitem">
+      <div>
+        <h3>Displacement at the project bound is silent</h3>
+        <p>Passing <code>MAX_EFFORTS_PER_MAGE</code> gives up the least-invested project with no event, so it
+        appears in none of the classified per-tick deltas. Loss with no channel, in a game whose emotional
+        core is loss.</p>
+      </div>
+      <div class="where"><b>lands in</b>coordination<br>the §10 event-delta list</div>
+    </div>
+  </div>
+
+  <footer>
+    Study for electron-client / world-presentation. Not a specification. Layout, wording and emphasis are
+    proposals; field values, constants, content ids and code references are real and current on this branch.
+    Species magnitudes are untuned and nothing here asserts a balance claim.<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+
+</div>
+
+<script>
+  document.getElementById('pt').addEventListener('change', function (e) {
+    document.body.classList.toggle('prov', e.target.checked);
+  });
+</script>
