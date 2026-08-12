@@ -6,19 +6,27 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 # W24 — universities are somewhere (vision §7a, contracts §2.7)
 
 **Branch:** `w24/university-siting`, from `integration/campaign-round-2` (`0b54c84`).
-**Status:** complete. `npm run verify` green — **277 files, 3,901 tests passing**, and all three
-balance gates **PASS** against baselines regenerated once at the end. No golden fixture regenerated
-or changed.
+**Status:** complete, and the verify result is stated as a decomposition rather than as the word
+"green", because on this machine the two are not the same thing.
 
-**One caveat, with its evidence, because "green" should mean something.** This machine was running
-at a load average above 200 while the change was verified, and two long `packages/coordination`
-tests sit close enough to vitest's 30-second per-test timeout to fail under that load. They are
-**pre-existing and not this change's**: on the base commit `0b54c84`, standalone, *"records one era
-evaluation per boundary"* timed at 22.1 s, 13.7 s and 25.0 s across three runs, and *"teaches and
-scribes"* timed at **38.5 s and failed outright**. On this branch the same two timed at 20.4 s and
-17.9 s respectively. The variance is the box, not the branch — the branch was faster than the base
-in two of the four paired measurements. The full suite passes end to end whenever the machine is
-quiet, twice observed.
+- **Test stage: 277 files, 3,901 of 3,901 tests passing.** Observed three times.
+- **All three balance gates PASS**, against baselines regenerated once at the end of the change.
+- **No golden fixture regenerated or changed.** `git diff` over `packages/sim-core/test/golden`
+  against the base is empty, `SNAPSHOT_VERSION` is still 1, and the 200-year reference run's
+  snapshot-hash-across-two-executions test passes.
+- **No single `npm run verify` invocation has been observed exiting 0**, and the reason is not a
+  test. This box has been sitting at a load average above **200** throughout; vitest's own reporting
+  channel times out under it, printing `[vitest-worker]: Timeout calling "onTaskUpdate"` and exiting
+  non-zero **after reporting 3,901 passed**, which stops npm chaining into the gate stage. The gates
+  were therefore run separately, and pass.
+
+The two long `packages/coordination` tests that also time out under that load are **pre-existing and
+not this change's**. Measured standalone on the base commit `0b54c84`: *"records one era evaluation
+per boundary"* at 22.1 s, 13.7 s and 25.0 s across three runs, and *"teaches and scribes"* at
+**38.5 s, failing outright** against vitest's 30-second per-test limit. On this branch the same two
+measured 20.4 s and 17.9 s. The branch was **faster than the base in two of four paired
+measurements**; the variance is the box. The timeout was deliberately not raised — softening a gate
+to make it pass is the thing `CLAUDE.md` forbids, wearing a different hat.
 
 ## What this is, and the sentence that permits it
 
@@ -280,7 +288,12 @@ snapshot-hash-across-two-executions test passes. `SNAPSHOT_VERSION` is still 1.
    documented default. Naming a site is §4.4's parameterized channel and a change to the action
    space. Until it exists, siting is a **scenario** decision and not a **play** decision, which
    limits how much of the strategic value is reachable.
-3. **Is the population direction right?** A bigger academy costing labour is a defensible tradeoff,
+3. **Should a god be able to found a university before the world has a first tick?** The god's
+   intervention system runs ahead of the world system, so a `fundUniversity` on tick one resolves
+   before holdings materialize. It is handled — founding falls back to the endowment, which
+   describes the same country — but the ordering is worth knowing before the next capability leans
+   on it.
+4. **Is the population direction right?** A bigger academy costing labour is a defensible tradeoff,
    but it means the richest ground currently *shrinks* a universe over fifty years. Whether that is
    the intended shape or a sign that student demand should not scale one-for-one with seats is a
    design call, not an implementation one.
