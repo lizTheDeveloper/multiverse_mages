@@ -166,7 +166,25 @@ describe('a stepped universe finishes what its mages start', () => {
     expect(run.grimoiresScribed).toBeGreaterThan(0);
     expect(run.materialsScribed).toBeGreaterThan(0);
     expect(componentOf(run.state, GRIMOIRE).size).toBeGreaterThan(0);
-  });
+    // 90s, and the number is a measurement rather than a comfortable round one.
+    //
+    // This is the heaviest test in the suite — it steps a fully-staffed academy
+    // for `TICKS` and asserts all four kinds of work happen — and W20 made the
+    // world loop measurably more expensive: the catalog went 300 -> 357 nodes,
+    // `knowledgeEffectHooks` now gathers effects over every held instance once
+    // per tick, and every candidate is checked against the mage's own track
+    // commitments. Measured on the reference machine it takes **25.8s alone and
+    // 38.8s under the full suite's parallelism**, against vitest's 30s default —
+    // so it passed in isolation and failed in `npm run verify`, which is the
+    // worst way for a cost to show up.
+    //
+    // Raising the bound is the honest response *because the cost is real and is
+    // written down here*, not because the test was inconvenient. The frontier
+    // scan is O(nodes) per mage per tick and `npm run bench` does not reach this
+    // layer; `MAX_CONTENT_NODES`' note in `packages/content/src/load.ts` records
+    // the same gap. **If this test creeps toward 90s, measure the loop rather
+    // than raising this again.**
+  }, 90_000);
 
   it('holds no effort row for a mage who is not working', () => {
     // Every row names a living mage. A row for a dead one would be work nobody
