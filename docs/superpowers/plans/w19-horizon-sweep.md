@@ -135,18 +135,51 @@ Saturation first, because it is the variable that should explain everything else
 
 ## Tasks
 
-- [ ] Commit and push this plan
-- [ ] Confirm `probeIsInert` on **this** tree — W15 validated it on a branch from `main`, before
-      W8's raid systems merged. If it is not inert, every number below is void.
-- [ ] Add `--sample` to `run-arm.mjs`; confirm the default path is unchanged
-- [ ] Write `tools/w19/fan-out.mjs` and `tools/w19/summarise.mjs`
+- [x] Commit and push this plan
+- [x] Confirm `probeIsInert` on **this** tree — W15 validated it on a branch from `main`, before
+      W8's raid systems merged. **8 of 8 agree** on snapshot hash, terminal reason and tick count,
+      across four strategies × two cells at a 1200-tick cap. The probe is inert here too.
+- [x] Add `--sample` to `run-arm.mjs`; confirm the default path is unchanged — a `passive-control`
+      arm written before the change and one written after are **identical run for run**.
+- [x] Write `tools/w19/fan-out.mjs` and `tools/w19/summarise.mjs`
+- [x] Arm C — Modal sweep files; **`runSeed` identical on 400/400 coordinates** at every horizon,
+      coverage exactly 40 runs × 10 strategies, and the 2400 arm reproduces integration round 2's
+      `ascensionRate` **0.1950**
 - [ ] Arm A — 7 horizons × 10 strategies × 40 runs
+- [ ] Second pass — 30/60/120/180/240, added because the first production numbers falsified the
+      brief's premise (see below)
 - [ ] Prefix cross-check: 2400 samples vs capped terminals
 - [ ] Arm B — gnome and human at every horizon
-- [ ] Arm C — seven Modal sweep files; verify `runSeed` equality pairwise across horizons
-- [ ] Assert per-strategy coverage in every arm
+- [x] Assert per-strategy coverage in every arm
 - [ ] Write `docs/design/horizon-sweep.md`
 - [ ] `npm run verify`, reported exactly. No golden fixture, no balance baseline regenerated.
+
+## What changed after the pre-registration, and why
+
+Both are recorded here rather than folded in quietly.
+
+1. **The horizon grid was extended downward to 30/60/120/180/240.** The brief's premise was that a
+   300-tick universe holds about a third of the reachable set. Measured at n = 400 on the production
+   executor, `passive-control` holds **48.9 of 51 at a cap of 300** — 96%. The sweep's shortest
+   horizon was already past exhaustion and could not have seen the space open up even if it does.
+2. **The "inside v1" pool excludes three strategies, not two.** `uniform-random-legal` reaches
+   **62.1 nodes** on this tree — it submits random *legal* actions, which include `permitTechnique`
+   and `permitForm` — where on W15's tree it read 49.8 and stayed inside. Leaving it in would put a
+   ruleset editor inside a comparison labelled "inside the v1 ruleset". Excluding all three leaves
+   **seven** strategies, which is also the size of the pool W15 reported its v1 numbers over.
+
+## A defect in this workstream's own tooling, found in flight
+
+`fan-out.mjs` calls `main()` at module scope, and four analysis files imported `HORIZONS` from it —
+so **each of them silently started a second 2,800-run fan-out on load**. It surfaced as the analysis
+processes sitting at 0% CPU while forty-one workers fought over sixteen cores, and as the Modal
+summary's output file containing fan-out progress lines. The constants moved to `horizons.mjs`,
+which runs nothing.
+
+No data was affected: the duplicate workers write deterministic runs to the same paths, and all
+twenty-one completed job files validated — forty runs each, the recorded cap matching the directory,
+the sampling grid as recorded, every run carrying a terminal node set. `fan-out.mjs` gained resume,
+checking every one of those fields before skipping a job.
 
 ## Status
 
