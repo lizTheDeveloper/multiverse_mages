@@ -188,9 +188,28 @@ machine was at **load average 260 on 16 cores with 87 node processes** from conc
 the suite ran, and the two longest tests are `reference-long-run` at 308 s and
 `reference-time-to-tier` at 220 s. Nothing in this change touches the simulation, the test suite or
 vitest's configuration — the diff is a `concurrency` block, a Markdown file and one `echo` string.
-Re-run the chained command on an unloaded machine. The Actions run for this SHA is corroboration but
-not a substitute: that workflow lists every stage as its own step rather than invoking
-`npm run verify`, so a green there proves every stage passes on quiet hardware without exercising
-the chained command itself. The self-hosted runner is the system that literally runs
-`npm run verify` — and it posted no status on these SHAs, because it only acts on a push to `main`
-or a same-repo PR, and this branch is deliberately neither.
+**That diagnosis was then tested rather than asserted.** Control: check `origin/main`'s
+`.github/workflows/ci.yml` and `scripts/ci-check.sh` back into the working tree — the only two files
+in this change that any test reads — and run `npm test` again in the same `node_modules`, on the same
+machine, at load 210. Result:
+
+```text
+ Test Files  1 failed | 258 passed (259)
+      Tests  1 failed | 3662 passed (3663)
+FAIL packages/coordination/test/unit/god-loop.test.ts
+  Error: Test timed out in 30000ms.
+Unhandled Error: [vitest-worker]: Timeout calling "onTaskUpdate"
+```
+
+**The unmodified tree fails the same way, and worse** — it also starves a 30-second test that this
+branch's run passed. Both failures are wall-clock deadlines on a machine running 15× its core count,
+which is what a test-timeout and an RPC-timeout look like under starvation. The failure is the
+machine, and it is not this branch's; on this branch the suite reported 3663/3663.
+
+The Actions run for this SHA is the corroboration, though not a literal substitute: that workflow
+lists every stage as its own step rather than invoking `npm run verify`, so a green there proves
+every stage passes on quiet hardware without exercising the chained command itself. Run
+**31558403178** on SHA `609360b` is **success** on both jobs, with all three balance gates executing
+by name — 13 s, 82 s and 119 s. The system that literally runs `npm run verify` is the self-hosted
+runner, and it posted no status on any of these SHAs, because it only acts on a push to `main` or a
+same-repo PR and this branch is deliberately neither.
