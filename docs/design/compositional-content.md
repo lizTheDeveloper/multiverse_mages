@@ -883,6 +883,36 @@ forbids Intellego is not left with literally nothing, which matters given §4's 
 be made deliberately in one direction or the other before the Muto and Creo columns are authored,
 because those will need the same call and will otherwise inherit whichever way this fell.
 
+### 6e.3 The expansion made Intellego a much stronger chokepoint, and that settles which pair to use
+
+The base content's chokepoint was measured as *"strip every Intellego node and 18 of 51 v1 nodes stay
+reachable"* — perception gating depth rather than entry, since every Perdo and Rego cell kept a
+tier-1 root. The same computation on the expanded graph:
+
+| | base content | **after W20** |
+|---|--:|--:|
+| v1 nodes surviving the removal of every Intellego node | 18 of 51 (35%) | **12 of 108 (11%)** |
+| techniques surviving | perdo + rego | **perdo only** |
+| deepest tier still reachable | — | **3** |
+
+**No Rego node survives at all**, because the expansion gave every Rego tier-1 node an Intellego
+tier-1 prerequisite. So on this graph perception gates *entry* for Rego and *depth* for Perdo, and
+**89% of the v1 rectangle sits behind Intellego**.
+
+Three conclusions follow, and they are the useful part:
+
+1. **An exclusive pair containing Intellego is disqualified**, decisively and on a measured number
+   rather than an overstatement. A mage locked out of Intellego reaches 12 nodes, none past tier 3,
+   and no Rego at all. That is not a specialist, it is a cripple — and it is exactly what
+   `track-excluded-by-trunk` exists to refuse.
+2. **Perdo ↔ Rego is the structurally cheapest pairing**, and this measurement is why: both keep a
+   viable route in — Perdo through its four independent roots, Rego through the entire Intellego
+   trunk — so the exclusion removes a **branch** rather than a **start**. That is the property an
+   exclusion needs, and none of the three v1 pairs authored here have it as cleanly.
+3. **`rl-open-the-portal` requires `il-read-the-binding`**, so raid access runs through perception.
+   Any exclusion touching Intellego Limen has consequences past the knowledge graph, into whether a
+   universe can open a portal at all. Worth checking before any future pairing goes near that cell.
+
 ## 7. The open question, raised rather than answered
 
 The author's instruction says *"author a complex web of nodes **per tradition**"*. Tracks as

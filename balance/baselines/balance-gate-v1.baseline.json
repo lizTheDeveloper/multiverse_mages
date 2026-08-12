@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "e57f83148c6b9065b571c75d3d0e43ed3ec3a8f1ebcaed4bdb68a308b7de70d2",
+  "contentHash": "c5ba2be12b17c99050fecec944f8e719e4bcb9c159381cd62b4e1710f000b764",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.7327078607232798,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":5.198123582169839,"unit":"grimoires","value":92.09},
@@ -25,21 +25,21 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "W20 made previously-inert content live and replaced the v1 knowledge graph.\nFive mechanisms move these numbers, and each is measured rather than asserted.\n(1) The v1 graph went from 51 ladder nodes to 108 compositional ones, tiers 1-7\nwhere it previously stopped at 5, so every acquisition path is different and\ndeeper species reach further. (2) researchCost stopped being a pure function of\ntier -- 6 to 16 distinct values within every tier now, from the per-technique\ncost curves -- so the global acquisition order is gone. (3) knowledgeEffectHooks\nwired held knowledge into the world-tick (1+SIGMA) channels for the first time;\nresource-yield is the largest live mover at 11 universe-target v1 effects, and\nthe previously-hardcoded empty arrays for resource-yield and fertility now carry\nnode-sourced magnitudes. (4) lifespan changed stacking from additive to\ndiminishing, so stacked extensions have logarithmic returns. (5) Per-mage track\nexclusions and anti-requisites refuse acquisitions that were previously legal,\nwhich lowers what any one mage holds and raises how much mages differ.\nSpecies affinities also gained v1-rectangle forms, without which the affinity\nterm in target-appeal.ts had nothing to read for human or gnome.\nMeasured deltas are in docs/design/compositional-content.md section 6.2.",
+  "rationale": "W20 made previously-inert content live and replaced the v1 knowledge graph.\nFive mechanisms move these numbers, and each is measured rather than asserted.\n(1) The v1 graph went from 51 ladder nodes to 108 compositional ones, tiers 1-7\nwhere it previously stopped at 5, so every acquisition path is different and\ndeeper species reach further. (2) researchCost stopped being a pure function of\ntier -- 6 to 16 distinct values within every tier now, from the per-technique\ncost curves -- so the global acquisition order is gone. (3) knowledgeEffectHooks\nwired held knowledge into the world-tick (1+SIGMA) channels for the first time;\nresource-yield is the largest live mover at 11 universe-target v1 effects, and\nthe previously-hardcoded empty arrays for resource-yield and fertility now carry\nnode-sourced magnitudes. (4) lifespan changed stacking from additive to\ndiminishing, so stacked extensions have logarithmic returns. (5) Per-mage track\nexclusions and anti-requisites refuse acquisitions that were previously legal,\nwhich lowers what any one mage holds and raises how much mages differ.\nSpecies affinities also gained v1-rectangle forms, without which the affinity\nterm in target-appeal.ts had nothing to read for human or gnome.\nMeasured deltas are in docs/design/compositional-content.md section 6.6.\nThese numbers are a MEASUREMENT, not a balance claim. release-plan.md forbids any\nbalance claim before 0.5.0, and every magnitude behind these figures is still\ntuningStatus \"untuned\" -- so this baseline records what the simulation does, not\nwhat anyone has decided it should do.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":8.39,"deltaInStandardErrors":5.141876562762368,"metricId":"referenceGrimoires","previousValue":83.7,"value":92.09},
-    {"delta":38.46500000000003,"deltaInStandardErrors":12.925215735515005,"metricId":"referenceKnowledgeInstances","previousValue":403.32,"value":441.785},
-    {"delta":1.3249999999999993,"deltaInStandardErrors":3.8232634724038776,"metricId":"referenceLibraryDepth","previousValue":10.285,"value":11.61},
-    {"delta":-0.09000000000000341,"deltaInStandardErrors":-0.938887784600023,"metricId":"referenceLivingMages","previousValue":39.02,"value":38.93},
-    {"delta":6.339999999999996,"deltaInStandardErrors":56.50638359411244,"metricId":"referenceNodesGained","previousValue":26.96,"value":33.3},
-    {"delta":6.339999999999996,"deltaInStandardErrors":56.50638359411244,"metricId":"referenceNodesKnown","previousValue":29.46,"value":35.8},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":92.09,"value":92.09},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":441.785,"value":441.785},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":11.61,"value":11.61},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":38.93,"value":38.93},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":33.3,"value":33.3},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":35.8,"value":35.8},
     {"delta":0,"deltaInStandardErrors":null,"metricId":"referencePeakPopulation","previousValue":216,"value":216},
-    {"delta":0.009999999999990905,"deltaInStandardErrors":0.022744992210596872,"metricId":"referencePopulation","previousValue":129.395,"value":129.405},
-    {"delta":0.009999999999999787,"deltaInStandardErrors":0.022744992210617074,"metricId":"referencePopulationChange","previousValue":-14.605,"value":-14.595}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.405,"value":129.405},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.595,"value":-14.595}
   ],
-  "supersedes": "f346f68b04942ab8c9556bab1706070661c0cf20efd2113fd211c86517b55317",
+  "supersedes": "e61c1bed8e253fa28f05482837df5364a0e356b2710aa183d7065260f3c1b29f",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }
