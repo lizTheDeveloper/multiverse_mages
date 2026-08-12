@@ -260,6 +260,65 @@ commitment about who your rivals will be rather than a free trade agreement.
    before promoting. Alliances imply a non-conquest path through the same bubble, and whether both
    routes reach promotion is a real design question.
 
+## 2g. Familiarity: what training with another species buys
+
+> *"Training with another species gives you affinity for a species, resistance to its damage, and a
+> bonus to your damage against that species, up to 1.15."*
+
+Three effects on one accumulating quantity, per *(your species, their species)* pair:
+
+| effect | what it does |
+|---|---|
+| **affinity** | you learn from, and teach, that species better — directly against §2e's pacing mismatch |
+| **resistance** | you take less from their magic |
+| **advantage** | you deal more to them |
+
+Capped at **1.15**, and the cap is what keeps it seasoning rather than a snowball.
+
+### The affinity term closes §2e's loop
+
+Paced teaching says a dragon repeats a human's brisk class several times. Familiarity says **she
+repeats it fewer times the longer she has been among humans.** So the mismatch is not a permanent tax
+on mixed institutions — it is a cost that a mixed institution *pays down*. A university that has
+taught both kinds for a century becomes good at teaching both kinds, and a newly-mixed one is
+genuinely worse than either homogeneous parent. That is a real reason to keep a faculty together and
+a real cost to reorganising one.
+
+### And it makes an alliance the best possible preparation for betrayal
+
+The combat half is the sharp bit, and it should be built exactly as stated rather than softened.
+**Studying alongside a species teaches you how to fight it.** So the realm you have exchanged
+scholars with for fifty years is the realm you are most dangerous to — and most resistant to.
+
+Everything follows from that one line:
+
+- **Today's exchange partner is tomorrow's target**, and both sides know it, which is the correct
+  amount of paranoia for a persistent multiverse.
+- **An alliance is not a safe move.** §2f already costs you a stationed mage and teaches your ally
+  your magic by hosting them; familiarity adds that you are *arming them against yourself* at the
+  same rate they arm you.
+- **It is symmetric, so it does not decide a war — it decides a matchup.** Against a species you have
+  never met you are ordinary. That makes a *third* party genuinely dangerous to two long-standing
+  rivals, which is the shape that keeps a multiverse from settling into two blocs.
+- It is the mechanical form of the thing academia actually does: you know your rivals' work better
+  than anyone, because you trained with them.
+
+### Two things to get right in the build
+
+**1.15 is not representable in this project's fixed point.** At scale 1/1024, `1.15 × 1024 = 1177.6`.
+The nearest values are **fp 1177 = 1.149414** and **fp 1178 = 1.150391**. The cap must be authored as
+one of those exactly, in validated content with `tuningStatus: "untuned"`, and the doc should say
+which — a constant that reads 1.15 in prose and rounds differently in two places is precisely how a
+determinism bug gets in.
+
+**Familiarity is per-pair and accumulating, which means it is state.** `(species × species)` is 36
+entries for six species, small enough to carry per universe. But it accrues from an interaction that
+happens over time, so it needs a home in the world schema, a decay rule or an explicit decision that
+it never decays, and — if it can be lost — a reason. Whether familiarity is a property of a
+*universe*, an *institution*, or an individual *mage* is open, and the three give different games:
+per-mage makes it die with her, per-university makes it a raid objective, per-universe makes it
+history.
+
 ## 3. The species split falls straight out, and it is the playstyle difference
 
 Lifespans span **25×** — orc 720 months, draconic 18,000:
