@@ -276,6 +276,12 @@ export function contentCatalogue(registry: ContentRegistry): ContentCatalogue {
     byAction: god.costs.byAction,
     foundUniversity: god.costs.foundUniversity,
     hysteresisStep: god.constants.hysteresisStep,
+    // `sound-design.md` §5.2's eight bars. The mask reprices every action
+    // itself, so these travel with the prices — an action the mask calls
+    // affordable and the resolver refuses is not a cost, it is an
+    // illegal-action counter.
+    uneaseBars: god.constants.uneaseBars,
+    uneaseStep: god.constants.uneaseStep,
   });
 }
 

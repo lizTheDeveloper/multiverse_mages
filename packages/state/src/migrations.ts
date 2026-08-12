@@ -80,6 +80,7 @@ import type {
 import { decodeSnapshot, envelopeToState } from '@mm/sim-core';
 
 import {
+  BAR_PHASE,
   BLESSING,
   EFFORT_PROGRESS,
   ERA_EVALUATION,
@@ -97,6 +98,7 @@ import {
  * | 2        | `mages-and-species` | adds `goal-commitment` (`contracts.md` §1.2)  |
  * | 3        | `mages-and-species` | adds `effort-progress` (`contracts.md` §1.2)  |
  * | 4        | `god-agency`        | adds `god-state`, `blessing`, `upheaval`, `era-evaluation` (§1.1) |
+ * | 5        | W21 timing          | adds `bar-phase` — sound-design §5.2's eight-bar unease |
  *
  * Revision 4 adds four components in one step, where the two before it added
  * one each. That is not a loosening of the rule — it is what the rule is for.
@@ -109,7 +111,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 4;
+export const WORLD_SCHEMA_VERSION = 5;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -133,6 +135,7 @@ export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   // not any row was written — and because it is the first of the four in
   // `WORLD_COMPONENTS`, so a partially-appended envelope reads as the older
   // revision and is completed rather than being read as current and left short.
+  if (carried.has(BAR_PHASE.name)) return 5;
   if (carried.has(GOD_STATE.name)) return 4;
   if (carried.has(EFFORT_PROGRESS.name)) return 3;
   if (carried.has(GOAL_COMMITMENT.name)) return 2;
@@ -260,11 +263,37 @@ export const addGodAgencyState: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 4 → 5: append an empty `bar-phase` section.
+ *
+ * `sound-design.md` §5.2's eight-bar unease needs one integer per universe, and
+ * §1.1's note on `god-state` says plainly which shape to give it: an added
+ * component is an appended empty section, an added *field* reshapes a section
+ * and rewrites every older save column by column.
+ *
+ * Empty, for the reason the three steps before it were. No row means the
+ * universe has never changed its own law, which is true of every save written
+ * before the rule existed — and a synthesised row would hand a restored
+ * universe a decaying unease over an act nobody ever committed, which is the
+ * cost surcharge equivalent of inventing a `favorWasted` nobody wasted.
+ */
+export const addBarPhase: WorldSchemaMigration = {
+  from: 4,
+  to: 5,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(BAR_PHASE)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
   addEffortProgress,
   addGodAgencyState,
+  addBarPhase,
 ];
 
 /**

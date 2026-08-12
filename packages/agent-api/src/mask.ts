@@ -66,7 +66,9 @@ import { FP_ONE, mul } from '@mm/sim-core';
 import {
   ASCENSION_PATH,
   AXIS_KIND,
+  BAR_PHASE,
   axisChangeCount,
+  componentOf,
   GRID_FORM_COUNT,
   GRID_TECHNIQUE_COUNT,
   TERMINAL_REASON,
@@ -212,13 +214,28 @@ function cheapestPrice(
   const base = costs.byAction[action] ?? 0;
   if (base === 0 && action !== GOD_ACTION.fundUniversity) return 0;
 
+  // `sound-design.md` §5.2's eight-bar unease. Applied to every §5.1 tier-3
+  // action, after whatever else prices it, in the same order and with the same
+  // `mul` `god-agency`'s `interventionCost` uses — see `coordination/god/timing.ts`.
+  const unease = uneaseMultiplier(state, costs, action);
+
   switch (action) {
     case GOD_ACTION.permitTechnique:
     case GOD_ACTION.forbidTechnique:
-      return mul(base, cheapestAxisMultiplier(state, AXIS_KIND.technique, GRID_TECHNIQUE_COUNT, costs));
+      return mul(
+        mul(base, cheapestAxisMultiplier(state, AXIS_KIND.technique, GRID_TECHNIQUE_COUNT, costs)),
+        unease,
+      );
     case GOD_ACTION.permitForm:
     case GOD_ACTION.forbidForm:
-      return mul(base, cheapestAxisMultiplier(state, AXIS_KIND.form, GRID_FORM_COUNT, costs));
+      return mul(
+        mul(base, cheapestAxisMultiplier(state, AXIS_KIND.form, GRID_FORM_COUNT, costs)),
+        unease,
+      );
+    case GOD_ACTION.issueDispensation:
+    case GOD_ACTION.issueInterdiction:
+    case GOD_ACTION.revokeEdict:
+      return mul(base, unease);
     case GOD_ACTION.grantFoundingKnowledge: {
       // §4.2 prices a grant at `base × node tier`, so the cheapest grant is the
       // shallowest node in the list. `candidates` carries `[mageId, nodeId]`
@@ -267,6 +284,31 @@ function cheapestAxisMultiplier(
     if (bit === 0 || multiplier < lowest) lowest = multiplier;
   }
   return lowest;
+}
+
+/**
+ * `sound-design.md` §5.2's unease multiplier, for a §5.1 tier-3 action.
+ *
+ * `fp(1024)` — nothing owing — for every other action, for a universe that has
+ * never changed its own law, and for a cost table built before the rule
+ * existed. The arithmetic is `coordination/god/timing.ts`'s `interventionPhase`
+ * restated, for the reason `cheapestAxisMultiplier` restates hysteresis:
+ * `contracts.md` §5 gives neither package an edge to the other, and the two are
+ * bound by a test rather than by an import.
+ */
+function uneaseMultiplier(state: SimState, costs: ActionCostTable, action: number): number {
+  const bars = costs.uneaseBars ?? 0;
+  const step = costs.uneaseStep ?? 0;
+  if (bars <= 0 || step === 0) return FP_ONE;
+  if (action < GOD_ACTION.permitTechnique || action > GOD_ACTION.revokeEdict) return FP_ONE;
+
+  const universe = findUniverse(state);
+  if (universe === 0) return FP_ONE;
+  const store = componentOf(state, BAR_PHASE);
+  if (!store.has(universe)) return FP_ONE;
+
+  const remaining = Math.max(store.get(universe, 'uneaseUntilTick') - state.clock.worldTick, 0);
+  return FP_ONE + Math.min(remaining, bars) * step;
 }
 
 /** Whether an action's mask entry is set. Out-of-range ids read as illegal. */

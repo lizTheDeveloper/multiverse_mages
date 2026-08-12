@@ -26,6 +26,7 @@ import {
   ASCENSION_PATH,
   AXIS_CHANGE_COUNTER,
   AXIS_KIND,
+  BAR_PHASE,
   BLESSING,
   COMBATANT,
   COMBATANT_SOURCE_KIND,
@@ -240,6 +241,13 @@ export function populatedWorld(): PopulatedWorld {
     libraryDependence: 192,
     nodesLost: 1,
     passed: 1,
+  });
+
+  // On the universe's handle, like the god-state row and for the same reason:
+  // one universe has one law, so it has one unease.
+  attachRecord(state, BAR_PHASE, universe, {
+    uneaseUntilTick: 46,
+    lastConstitutionalTick: 38,
   });
 
   assertEveryWorldComponentPopulated(state);

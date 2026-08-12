@@ -40,6 +40,7 @@ import {
 import {
   BLESSING,
   EFFORT_PROGRESS,
+  BAR_PHASE,
   ERA_EVALUATION,
   GOAL_COMMITMENT,
   GOD_STATE,
@@ -75,17 +76,27 @@ const GOD_SECTIONS = [GOD_STATE.name, BLESSING.name, UPHEAVAL.name, ERA_EVALUATI
 
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, ...GOD_SECTIONS);
+  return envelopeWithout(
+    GOAL_COMMITMENT.name,
+    EFFORT_PROGRESS.name,
+    ...GOD_SECTIONS,
+    BAR_PHASE.name,
+  );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(EFFORT_PROGRESS.name, ...GOD_SECTIONS);
+  return envelopeWithout(EFFORT_PROGRESS.name, ...GOD_SECTIONS, BAR_PHASE.name);
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(...GOD_SECTIONS);
+  return envelopeWithout(...GOD_SECTIONS, BAR_PHASE.name);
+}
+
+/** The world as the last build before the god's law had a clock saw it. */
+function revisionFourEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(BAR_PHASE.name);
 }
 
 describe('the world-schema revision is read off the snapshot itself', () => {
@@ -93,6 +104,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     expect(worldSchemaVersionOf(revisionOneEnvelope())).toBe(1);
     expect(worldSchemaVersionOf(revisionTwoEnvelope())).toBe(2);
     expect(worldSchemaVersionOf(revisionThreeEnvelope())).toBe(3);
+    expect(worldSchemaVersionOf(revisionFourEnvelope())).toBe(4);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -105,7 +117,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(4);
+    expect(WORLD_SCHEMA_VERSION).toBe(5);
   });
 });
 
@@ -138,8 +150,8 @@ describe('migrating a revision-1 world snapshot forward', () => {
   });
 
   it('walks a revision-1 envelope to the current revision, one step at a time', () => {
-    // Three steps, not a shortcut: a revision-1 save has to pass through
-    // revisions 2 and 3 to reach 4, and the loop is what makes that true
+    // Four steps, not a shortcut: a revision-1 save has to pass through
+    // revisions 2, 3 and 4 to reach 5, and the loop is what makes that true
     // without an extra code path only the oldest saves would ever exercise.
     const walked = migrateWorldEnvelope(revisionOneEnvelope());
     const carried = walked.components.map((component) => component.name);
@@ -147,6 +159,7 @@ describe('migrating a revision-1 world snapshot forward', () => {
     expect(carried).toContain(GOAL_COMMITMENT.name);
     expect(carried).toContain(EFFORT_PROGRESS.name);
     for (const name of GOD_SECTIONS) expect(carried).toContain(name);
+    expect(carried).toContain(BAR_PHASE.name);
   });
 
   it('returns an already-current envelope untouched, as the same object', () => {
@@ -275,6 +288,7 @@ describe('an older save loads into a current world', () => {
       BLESSING,
       UPHEAVAL,
       ERA_EVALUATION,
+      BAR_PHASE,
     ];
     for (const spec of godSpecs) {
       const store = componentOf(state, spec);
@@ -313,6 +327,7 @@ describe('an older save loads into a current world', () => {
       [encodeSnapshot(revisionOneEnvelope()), /goal-commitment/],
       [encodeSnapshot(revisionTwoEnvelope()), /effort-progress/],
       [encodeSnapshot(revisionThreeEnvelope()), /god-state/],
+      [encodeSnapshot(revisionFourEnvelope()), /bar-phase/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(

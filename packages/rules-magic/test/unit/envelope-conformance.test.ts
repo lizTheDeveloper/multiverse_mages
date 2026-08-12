@@ -93,7 +93,13 @@ describe('§4.4: a tradition recolours cost, and the curve is not a fifth hook',
   it('lets the acquire hook price the node while the curve redistributes the effort', () => {
     // A tradition that halves the price. It moves `required`; it does not touch
     // the shape, and the shape does not touch it.
-    const halving = { researchCost: (cost: number): number => Math.floor(cost / 2) };
+    const halving = {
+      kind: 'halving (test)',
+      researchCost: (cost: number): number => Math.floor(cost / 2),
+      teachCost: (cost: number): number => cost,
+      initialMastery: 512,
+      stolenMastery: 256,
+    };
     const base = researchRequirement(node, {
       rediscovery: false,
       rediscoveryAffinity: 1024,
@@ -107,7 +113,7 @@ describe('§4.4: a tradition recolours cost, and the curve is not a fifth hook',
       learnRate: 1024,
       researchRate: 1024,
       clampCounter: createRediscoveryClampCounter(),
-      acquire: { ...halving, initialMastery: 512 },
+      acquire: halving,
     });
 
     expect(priced).toBe(Math.floor(base / 2));

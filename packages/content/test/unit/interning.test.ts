@@ -259,15 +259,18 @@ describe('contentRevision', () => {
     // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
     // other. This is the revision of the tree that holds all three.
     //
-    // a622452a3b55e38fd902a2d3264b44d7 -> b7799a710ee0e3b68baa1653b2ae45c8, when W21 gave
+    // a622452a3b55e38fd902a2d3264b44d7 -> d89d4eefa457f08c90a25e9f02039675, when W21 gave
     // each technique an `envelope` (§2.1) — `sound-design.md` §4.1's shape over
-    // the duration an acquisition takes. It belongs in the preimage more
-    // squarely than most: the envelope is the only thing in the project that
-    // makes the five techniques mechanically different from one another, so two
-    // universes disagreeing about a curve would be researching at different
-    // speeds, on different trajectories, while their revisions agreed they were
-    // compatible. Only `technique.json` changed; no other file moved a byte.
-    expect(registry.contentRevision).toBe('b7799a710ee0e3b68baa1653b2ae45c8');
+    // the duration an acquisition takes — and added §5.2's two unease constants
+    // to `god-constant.json`. The envelope belongs in the preimage more squarely
+    // than most: it is the only thing in the project that makes the five
+    // techniques mechanically different from one another, so two universes
+    // disagreeing about a curve would be researching at different speeds, on
+    // different trajectories, while their revisions agreed they were
+    // compatible. The unease constants belong for the reason the rest of the
+    // god table does — two universes disagreeing about what changing the law
+    // costs are playing different games.
+    expect(registry.contentRevision).toBe('d89d4eefa457f08c90a25e9f02039675');
   });
 
   it('is stable across loads of identical content', () => {
