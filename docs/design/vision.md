@@ -447,6 +447,20 @@ Tracked for resolution during the changes that need them, not blocking:
   values.
 - How much prestige may carry between runs before the meta-game decides matches before they
   start? Deferred to `god-agency`; the balance harness must test it adversarially.
+- **How asymmetric should the technique switches be, and is the Intellego trunk deliberate?**
+  Surfaced while prototyping the ruleset UI, and verified against shipped content: **all eleven
+  cross-cell prerequisites in the v1 subset originate in an Intellego cell**, nine of them within
+  the same form. Perception before unmaking or command reads as a deliberate and rather good idea —
+  but it was never written down, and it makes the nineteen switches wildly unequal. Of the v1
+  subset's 51 nodes, forbidding *Perdo* leaves 34 reachable and *Rego* leaves 33, while forbidding
+  *Intellego* leaves **18**, because a dormant instance cannot satisfy a prerequisite and the loss
+  propagates downstream. That asymmetry is either the most interesting thing about the v1 subset or
+  an accident of authoring, and the balance harness cannot tell which until someone decides. Any
+  interface that renders the five techniques as equivalent toggles is lying about the game.
+- **`depthCeiling` is close to inert in v1.** No v1 cell is authored past tier 5, so species with
+  ceilings of 5, 6 and 7 — dwarf, elf and draconic — all reach 51 of 51. This is a content
+  shortfall rather than a tuning one, and it bears directly on any species-differentiation claim
+  made before deeper tiers exist.
 - Which 3 techniques × 4 forms make the v1 subset? Deferred to `knowledge-model`; the subset must
   contain *Rego Limen* for portals and enough asymmetry to make the permit/forbid decision real.
 - How large is the edict budget, and how does it scale with worship tier? Deferred to

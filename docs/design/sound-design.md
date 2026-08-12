@@ -124,6 +124,21 @@ Thresholds are per-class and are tuning values, not contracts. Starting points i
 itself is structural: **no event class may be discrete without a stated threshold**, because the
 one that lacks it is the one that turns a mature universe into noise.
 
+**The eye and the ear must share the numbers.** A parallel prototype applied this same rule
+visually and found the same cliff — research, teaching and scribing all stop being readable as
+discrete lines somewhere between 200 and 600 mages. If the visual layer and the audio layer each
+pick their own thresholds, they will disagree about the moment a class became weather, and a player
+will see individual events while hearing a texture. There is one threshold per class, and both
+layers read it.
+
+**One class resists this rule, and the tension is not resolved.** §6.5 requires that last-instance
+loss is *never* aggregated away — its threshold is pinned at 1, the lowest legal value, because a
+node leaving the universe is the emotional core of the design. That is a direct exception to the
+rule above, and it holds only while loss is **rare**. Loss is a property of *redundancy*, not of
+population: more mages means more deaths but also more copies, so the rate does not scale with the
+roster the way mortality does. If tuning ever makes loss frequent, §6.5's off-grid moment becomes a
+texture whether or not this document permits it, and the two rules collide. See §6.5.
+
 ### 0.5 Licensing
 
 `CLAUDE.md`: assets are licensed separately from code, and the AGPL is not assumed to cover
@@ -280,6 +295,14 @@ them.
 
 Voice and clicks share 800 Hz–3 kHz and must not fight: clicks are ≤80 ms and barks duck the click
 bus by 3 dB for their duration. The player's own action always wins over a bark.
+
+**The same argument governs colour, one dimension over.** A parallel proposal allocates hue the way
+this section allocates frequency: the fourteen forms plus the god are the whole budget, cyan is
+reserved for the god's own light, and nothing glows that the god cannot currently do — so absence
+of light is the legality mask, exactly as §2.2's deny click is the absence of a resolving sound.
+Both rules exist for the same reason and fail the same way: an allocation that is merely
+conventional gets spent, and by the time the fifteenth thing wants a colour or a band, the
+convention is not there to refuse it.
 
 ### 1.4 Loudness and mix bus
 
@@ -742,6 +765,20 @@ never does.*
    exists to make possible. It does not belong here, which is the entire point.
 4. **The cell's material leaves the ambient bed** and does not return until rediscovery. The world
    is quieter afterward, permanently, in a specific place in the frequency spectrum.
+
+**This sound is exposed to a balance number nobody has fixed yet.** Everything above assumes loss
+is rare enough that an arrhythmic, untuned, un-aggregated event can carry it. That assumption is
+not free: it is a bet on a tuning value the harness has not produced. Below roughly one
+last-instance loss per year it is the best moment in the game; past roughly three a year it is a
+nuisance, and past §0.4's threshold it is weather that this section forbids treating as weather.
+The current reference run is nowhere near that — measured at about fifty-five copies per node,
+loss is close to never — while the design is simultaneously trying to make loss *bite*. Both
+directions are live.
+
+If the rate lands high, the honest response is to change the mechanic rather than the sound: loss
+that happens weekly is not a tragedy the audio can rescue. What must not happen is quietly raising
+the threshold, which would aggregate away the one event this entire document is built around while
+leaving every sentence about it still standing.
 
 **Instance loss** — a copy destroyed while others survive — is none of that. It is a quiet, on-grid
 subtraction, barely a sound. The difference between these two must be instantly, unmistakably
