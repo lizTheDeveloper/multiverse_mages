@@ -310,6 +310,80 @@ support-gated scorer (contributes only at ≥ 3 winners, and contributes the *we
 
 ---
 
+## Pre-wire: what this build can and cannot do with a choice
+
+**Added after the arms were launched**, on the coordinator's instruction that W29/W30 found the
+effect pipeline unconnected, and **verified independently here against the tree** rather than taken
+on report. The decision rule above is unchanged; nothing here alters a threshold. It changes what a
+result *means*, which is a separate thing and belongs on the record before the numbers are read.
+
+### The three legs, checked
+
+- **`gatherEffects` has no production caller.** Every hit is its own definition
+  (`packages/rules-magic/src/effects/gather.ts:96`), its re-export, `dist/`, or `test/`.
+- **`stackContributions` likewise** (`packages/rules-magic/src/effects/stack.ts:119`).
+- **`yieldSources`** (`packages/coordination/src/god/system.ts:649`) gates on
+  `knowledge.instanceCount(nodeId) > 0` with **no `permits()` call**.
+
+And a fourth leg, stronger than "nothing calls it", found here: the consumers **exist and are fed
+nothing.** `world-step.ts` passes `resourceYieldBonuses: []` (772), `fertilityBonuses: []` (1199),
+`scribeRateBonuses: []` (1340), and `rate(deps.primitives.scribeRate, NO_BONUSES)` (1044). The
+channel by which a node a mage knows would raise a rate is handed an empty array at every call site.
+
+### What that leaves live, and what it severs
+
+`packages/content/data/node.json` authors **407 effects across 300 nodes**. Of the sixteen
+primitives they use, exactly one — `worship-yield`, on **11 nodes** — reaches the running
+simulation, and it does so as a **per-node boolean**: one contribution per node, whatever the
+instance count. **Of those 11, exactly one is tier 1** — and tier 1 is the only tier
+`grantFoundingKnowledge` can reach.
+
+| channel | wired? |
+|---|---|
+| bless → research rate, teach rate, lifespan, worship bonus | **live** (`god/effects.ts:133-152`) |
+| encourage → per-cell research emphasis, capped at `encourage-max-cells` = 3 | **live** |
+| fund → build progress → `completedUniversities` → worship | **live** |
+| grant → an instance exists, counting toward `nodesKnown` and the ascension predicates | **live, but content-blind** |
+| a node's authored effect → any rate anywhere | **severed — 396 of 407** |
+| `worship-yield` node identity → favor regeneration | live, as a boolean; 11 nodes, **1 grantable** |
+
+### The consequence, stated before the numbers
+
+**Every entity the god can choose between is very nearly fungible with every other, because the
+thing that would distinguish them is severed.** A blessing is worth the same constant on any mage; an
+encouragement is worth the same constant on any cell; one university is another; and a granted node
+is a token that counts, not a capability that does something. That is a *mechanistic prediction of
+flatness* which does not depend on this experiment's outcome — and it is why a flat result here must
+be stamped **pre-wire** and must not be quoted as "the god's decision space is flat" without it.
+
+**Two independent reasons flatness could be trivially true**, and both would have to be fixed:
+
+1. **The god cannot express a property-based choice** — finding zero, above. The salience orderings
+   are the targeting policy and they rank by vigor, build progress and node id, never by what a
+   thing *is*.
+2. **Properties do not do anything anyway** — the severed wire. Even a god who could name "the node
+   that raises research rate" would be naming a node whose effect nothing reads.
+
+These are separate defects at separate layers. Closing the wire without widening the action space
+would leave the god unable to aim at the newly-live properties; widening the action space without
+closing the wire would let it aim at nothing.
+
+### Residual room, which is why the result is not a foregone conclusion
+
+Flatness would be **substantially but not entirely** explained by the missing wire, and the part it
+does not explain is what makes running this worthwhile:
+
+- `encourage-max-cells` is **3**, so encouragement is a genuinely scarce, targeted resource, and
+  pointing it at different cells changes acquisition *order*. That is live.
+- The **one grantable `worship-yield` node** is a real identity-sensitive lever the grant verb can
+  reach, and it feeds favor regeneration, which feeds everything.
+- Blessing changes lifespan and rates for *particular* mages, and mages are not identical — species
+  differ, and `depthCeiling` is structural.
+
+So a **shaped** result is possible here and would be the more surprising outcome. Per the
+coordinator: separation despite an unwired effect pipeline would mean a second path from god actions
+to outcomes that nobody has mapped, and that would matter more than the wire.
+
 ## What the four candidate explanations predict
 
 An external review offered four reasons the verbs produce no marginal value, and bet on the last two.
