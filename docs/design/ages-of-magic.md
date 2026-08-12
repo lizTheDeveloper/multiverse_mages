@@ -159,6 +159,56 @@ class. The levers stay what they already are: who is stationed where, what they 
 what the constitution permits. The curriculum follows from those, which is exactly the "you shape
 who they are, then find out what they do" contract §4 is built on.
 
+## 2e. A class has a length, and both species set it
+
+> *"The species' learning speed is the length of the time they must spend in class, or some
+> derivative of that. And the teacher's species is the length of the class — so a dragon might have
+> to repeat a human's short class a few times to really get it."*
+
+Two species set two different numbers, and teaching is what happens where they meet:
+
+- **The student's species sets the contact time required** to actually hold the material.
+- **The teacher's species sets the length of the class offered.**
+
+If the requirement exceeds the offer, the student **repeats**. A dragon sitting a human's short,
+brisk class takes it three or four times before it sticks.
+
+**And it is lossy in both directions.** A human in a dragon's class has what she needs long before it
+ends, and the remainder is a life she does not have to spare — 960 months against 18,000. Mismatched
+pace wastes time whichever way the mismatch runs, which is what makes it a *tension* rather than a
+ranking.
+
+### Why this is the most valuable small mechanic in the design
+
+**It makes the founding species mix decide outcomes**, which is `D7` — *varying the founding species
+mix changes which strategy wins* — the campaign's own strongest test that the species table has
+become load-bearing, and the one that has been unreachable from the start. Under paced teaching, D7
+is close to true by construction: a homogeneous faculty teaches its own kind efficiently and
+everyone else badly; a mixed faculty covers more students and wastes more hours.
+
+**It gives §6a's compression an actual unit.** A college's job (§2, §2a) is moving a novice through
+the known fast enough to reach the frontier with working years left. Now "fast enough" is a number
+with two species in it, and a college's real output is *matched* teaching hours rather than hours.
+
+**It gives the long-lived species their weakness.** Draconic already has the longest life and,
+tellingly, the **lowest curiosity — 256 against a human's 1,152**, the trait most naturally read as
+learning speed. So the dragon's advantage is time and its cost is that time is exactly what it needs
+more of. It is not simply a better human. The same table that gives it 18,000 months gives it the
+slowest passage through anything anyone else teaches — which is precisely why §2a's *"the college is
+the only road"* does not simply hand the third age to whoever lives longest.
+
+### Open
+
+- **Which trait is learning speed?** `curiosity` is the obvious candidate and is currently read only
+  by `outlook.ts`'s personality scoring, so it is nearly free to repurpose — but "curious" and "quick
+  to learn" are not the same idea, and conflating them is the kind of thing that reads fine now and
+  is confusing in six months. It may want its own trait.
+- **What sets class length?** Lifespan is the intuitive answer for a teacher's pace, but the derived
+  quantity matters more than the source; author it rather than deriving it silently.
+- **Does repeating cost the teacher as well?** If a repeated class occupies the teacher again, a
+  badly-matched faculty burns the roster that §2b already has three claims on. If it does not,
+  repetition is only the student's problem and the mechanic is half as sharp.
+
 ## 3. The species split falls straight out, and it is the playstyle difference
 
 Lifespans span **25×** — orc 720 months, draconic 18,000:
