@@ -38,7 +38,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { POOL, content, runOne } from './composition.mjs';
+import { ERA_TICKS, POOL, content, runOne } from './composition.mjs';
 
 /** The sweep id every arm shares. Part of the seed; holding it constant is the point. */
 export const SWEEP_ID = 'w15-dimensionality-v1';
@@ -71,6 +71,12 @@ function main() {
   const strategies = (args.strategies ?? POOL.join(',')).split(',').filter(Boolean);
   const replicates = Number(args.replicates ?? 6);
   const worldTickCap = Number(args.ticks ?? 2400);
+  // W19: the composition sampling grid, defaulting to the era grid this file has
+  // always used. It is a flag rather than a constant because W19's horizons —
+  // 300, 450, 600, 900, 1200, 1800, 2400 — are multiples of 150 and not of 240,
+  // so the cross-check "a short cap is a prefix of a long run" needs a grid that
+  // lands on them. Absent, behaviour is byte-identical to before.
+  const sampleEveryTicks = Number(args.sample ?? ERA_TICKS);
   const masks = (args.masks ?? '').split(',').filter(Boolean).map(Number);
   const out = args.out ?? '.w15/out';
   const tag = args.tag ?? 'arm';
@@ -99,6 +105,7 @@ function main() {
             },
             options,
             worldTickCap,
+            sampleEveryTicks,
           });
           runs.push(run);
           process.stderr.write(
@@ -121,6 +128,7 @@ function main() {
             strategyId,
             foundingSpeciesMask: mask ?? null,
             worldTickCap,
+            sampleEveryTicks,
             replicates,
             cells: CELLS,
             wallClockMs: Date.now() - started,
