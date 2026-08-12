@@ -68,17 +68,33 @@
         nodes, objective instance counts, and the damage viewing multiplier
       · line of sight is sampled along the segment rather than walked with
         geometry.ts's supercover trace
+      · THE PLAYBACK RATE, which is a viewing rate and not a rule. The
+        engagement tick is 100 ms; contact and resolution are played at 400 ms
+        a tick, a quarter of engagement time, so that a cast can be read.
+        Muster is played 1:1 and is deliberately not slowed — its clock is the
+        pressure, and the author praised exactly that.
+      · the prices on the clock: 25 favor a hold rising by 25, 20 Vis a
+        buy-back rising by 20, a 40-Vis floor, 2.6 s of deliberation
 
     AHEAD OF THE ENGINE, deliberately, and the likeliest thing to be believed —
       · arbitration.ts computes the legal mask ONCE from a frozen snapshot and
         says so in its own comments. The lock-don't-freeze behaviour animated
         here is raid-engagement.md §1, which W37 is implementing on
         w37/raid-playable. This page shows the design, not the shipped code.
-      · Vis, exposure and the raid verb set exist in no package. They are §3
-        proposals, drawn as proposals.
+      · Vis and exposure exist in no package. They are §3 proposals, drawn as
+        proposals.
+      · the raid verb set DOES now exist, on w37/raid-playable, as six verb-*
+        costs in raid-constant.json — forbid, permit, levy, ward, mend,
+        conceal. None of them is in this tree, and the four drawn here are an
+        older, different set; even "levy" means something else there. Said in
+        full in the provenance panel.
+      · holding the moment — pause as a purchased, contestable bid — is a verb
+        in no package at all, on any branch. It is new design, and it is here
+        because a pause nobody can outbid cannot ship in live PvP.
       · vision §7's "the god issues no orders" is NOT repealed. Every verb here
-        is god-shaped: permit, forbid, and favor spent on a standing condition.
-        Nothing on this page targets or moves a combatant.
+        is god-shaped: permit, forbid, favor spent on a standing condition, and
+        favor spent to stop the clock. Nothing on this page targets or moves a
+        combatant — inspecting one is not commanding her.
 
   Two open questions in §6 are deliberately not answered here: the muster clock
   runs on engagement time because something had to be picked (§6.5 open), and
@@ -542,7 +558,9 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
       <p class="lede">A raid, watched from inside the universe being raided. Agency is
         <b>front-loaded</b>: you spend the raid verb set under a clock, intervene less and less
         sharply once the two sides touch, and by the end you have earned the right to
-        <em>only watch</em>. Every spell drawn on the field is a node in
+        <em>only watch</em>. Even that right is bought — <b>click any mage to stop the action and
+        look at her</b>, and once the sides have touched it costs favor, and they can spend Vis to
+        start it again. Every spell drawn on the field is a node in
         <code>packages/content/data</code> dispatched through the seven effect primitives
         <code>arbitration.ts</code> knows.</p>
     </div>
@@ -752,6 +770,16 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
         <ul>
           <li>The <b>muster duration</b> (300 engagement ticks), the cast cooldown, vigor regeneration,
             and the intent policy that picks a target and a node.</li>
+          <li><b>The playback rate, which is a viewing rate and not a rule.</b> The engagement tick is
+            100 ms, so a trace played at 100 ms a tick runs 1:1 with the world. Contact and resolution
+            are played at <b>400 ms a tick — 2.5 ticks a second, a quarter of engagement time</b> — so
+            that a cast can be read. <b>Muster is not slowed</b>, because its clock is the pressure.
+            The speed control is rebased on the slow pace: 1× is the default, 4× is 1:1, 16× is for
+            skipping ahead. Nothing about it changes what the trace decides.</li>
+          <li>The <b>prices on the clock</b>: 25 favor for your first hold and 25 more each time,
+            20 Vis for their first buy-back and 20 more each time, a 40-Vis floor below which the
+            expedition will not bid, and 2.6 seconds for it to decide. Every one of those numbers is
+            invented here, and the ladders are the load-bearing part — see the next column.</li>
           <li><b>Mage rosters and their held nodes</b> — drawn from the seed. There is no world state
             behind them.</li>
           <li>Objective instance counts, and therefore objective values.</li>
@@ -772,8 +800,26 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
             <em>frozen</em> snapshot. The lock-don't-freeze behaviour animated here is
             raid-engagement.md §1, which W37 is implementing on <code>w37/raid-playable</code>. This is
             the single most believable untruth on the page, which is why it is named here.</li>
-          <li><b>Vis, exposure, and the raid verb set</b> exist in no package. §3 proposals, drawn as
-            proposals. Vis is also a spec collision — economy spec §250 forbids a fourth resource.</li>
+          <li><b>Holding the moment is not a verb anywhere.</b> Click a mage and the action stops for
+            favor; the expedition spends Vis to start it again, and both ladders rise. It is drawn
+            because it answers the objection that makes pause-to-inspect unshippable in live PvP —
+            one player freezing the world at will is intolerable, so most designs forbid it outright,
+            and a price the other side can outbid makes it a decision instead. <b>Muster is exempt:
+            looking is free there and the clock does not stop</b>, because buying more time to decide
+            what to forbid is exactly the thing that must not become possible.</li>
+          <li><b>Vis and exposure</b> exist in no package. §3 proposals, drawn as proposals. Vis is also
+            a spec collision — economy spec §250 forbids a fourth resource.</li>
+          <li><b>The raid verb set no longer "exists in no package" — and this page's four are not
+            it.</b> <code>w37/raid-playable</code>'s <code>raid-constant.json</code> now carries six
+            verb costs: <code>verb-forbid</code>, <code>verb-permit</code>, <code>verb-levy</code>,
+            <code>verb-ward</code>, <code>verb-mend</code> and <code>verb-conceal</code> — four for the
+            defender and two for the attacker. None of them is in <em>this</em> tree, and the four
+            drawn here (bless, levy, veil, second wind) are an older, different set. <b>Even the shared
+            name diverges</b>: w37's levy is one detachment out of a cohort that does <em>not</em>
+            fight, and its own gloss says a second soldier detachment "could never fire" because the
+            opening deployment already commits every one a soldier cohort can field — which is
+            precisely what this page's levy does. Read the verbs here as a sketch that has been
+            overtaken, not as the shipped set.</li>
           <li><b>The god still issues no orders.</b> vision §7 is not repealed. Every verb here is
             permit, forbid, or favor spent on a standing condition; nothing targets a combatant.</li>
           <li><b>Open questions left open.</b> The muster clock runs on engagement time because
