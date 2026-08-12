@@ -123,6 +123,11 @@ Kept here so they survive the branch.
   `CLAUDE.md` says "released through 0.3.0", and `git tag` stops at `v0.2.0`.
   `release-plan.md` says *"every release gets a tag; an untagged release is not a rollback
   target."* Stated in §11's new paragraph; fixing it is a release action, not a docs one.
+- **`CLAUDE.md`'s "Current state" paragraph has the same drift §11 had.** It ends *"Next up is
+  `mages-and-species` (0.4.0)"*, while `openspec list` puts `mages-and-species` at 102/107 and both
+  `agent-interface` (0.5.0) and `gym-bridge` (0.11.0) at complete. Every agent reads that paragraph
+  before anything else, so it is the highest-traffic stale sentence in the repository. Not amended:
+  `CLAUDE.md` is not this workstream's to edit.
 - **§12 still puts audio out of scope, and audio is in `npm run verify`.** Five audio source files
   in `packages/content/src`, `data/audio/{audio-cue,voice-line}.json`, a schema directory,
   `tools/audition/`, and `check:audio` as a step of `verify`. W12's audit flagged this in its
