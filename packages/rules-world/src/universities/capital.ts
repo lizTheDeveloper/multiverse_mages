@@ -266,19 +266,35 @@ export interface UpkeepOutcome {
   readonly library: EntityHandle;
   /** Materials actually paid, `fp`. */
   readonly paid: Fixed;
-  /** Materials owed and not paid, `fp`. */
-  readonly shortfall: Fixed;
   /**
-   * Instances this library must give up because it could not be maintained.
+   * Materials owed and not paid, `fp`.
    *
-   * A count rather than a list of handles: *which* instance is destroyed is the
-   * knowledge subsystem's decision (`contracts.md` §5 rule 3 — this package may
-   * not reach into `rules-magic`), and this side owns only how many.
+   * **This is the whole of what degradation is charged against**, and it is
+   * reported rather than converted here. It used to be turned into an instance
+   * count on the way out, at a flat `floorDiv(shortfall, 32)` — every book on
+   * the shelf priced the same regardless of how well it was made, which is why
+   * a grimoire's `durability` never changed an outcome outside a raid that has
+   * never run. See {@link DEGRADATION_PER_SHORTFALL}.
    */
-  readonly degradedInstances: number;
+  readonly shortfall: Fixed;
 }
 
-/** Materials of unpaid upkeep that cost a library one instance. **Untuned.** */
+/**
+ * Divisor turning a book's `durability` into the unpaid upkeep it takes to
+ * destroy it. **Untuned.**
+ *
+ * `durability = mul(1024, scribeAffinity) + roll(0..256)`, so at the reference
+ * affinity of `fp(1024)` a book costs `1024 / 32 = 32` — **exactly the flat
+ * price this constant used to charge every book**, which is what makes the
+ * change neutral where the old number was implicitly calibrated and differential
+ * on either side of it. A dwarf's book (`scribeAffinity` 1792) costs ~56 to
+ * neglect to death; an orc's (384) costs ~12.
+ *
+ * The magnitude lives here, in `rules-world`, because it is upkeep's price.
+ * *Spending* it against particular books is `coordination`'s job — `contracts.md`
+ * §5 rule 3 keeps this package out of `rules-magic`, so it may not know that a
+ * shelf holds books at all, let alone how sturdy they are.
+ */
 export const DEGRADATION_PER_SHORTFALL: Fixed = 32;
 
 /**
@@ -308,17 +324,12 @@ export function applyLibraryUpkeep(
     const paid = Math.min(owed, remaining);
     remaining -= paid;
     const shortfall = owed - paid;
-    outcomes.push({
-      library: handle,
-      paid,
-      shortfall,
-      // Floor, so a shortfall smaller than one instance's worth costs nothing
-      // this tick. It is not banked -- a "pending degradation" counter would be
-      // a field on a component `contracts.md` §1.5 does not have, and a library
-      // that is one unit short every tick forever is a library whose universe
-      // has a materials problem the economy layer will report.
-      degradedInstances: Math.min(depth.instanceCount, floorDiv(shortfall, DEGRADATION_PER_SHORTFALL)),
-    });
+    // The shortfall is reported whole. Nothing is banked between ticks -- a
+    // "pending degradation" counter would be a field on a component
+    // `contracts.md` §1.5 does not have, and a library that is a unit short
+    // every tick forever is a library whose universe has a materials problem
+    // the economy layer already reports.
+    outcomes.push({ library: handle, paid, shortfall });
   }
 
   return { outcomes, materialsRemaining: remaining };

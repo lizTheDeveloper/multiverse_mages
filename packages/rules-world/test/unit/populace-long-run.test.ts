@@ -136,15 +136,19 @@ function runReferenceCentury(rootSeed: number): RunResult {
     }
 
     // **Harness.** Demand tracks the population, so reallocation is exercised
-    // with a moving target rather than a constant one. The four inputs are the
-    // ones the `economy` spec names; universities do not exist yet to supply
-    // them.
+    // with a moving target rather than a constant one. The inputs are the ones
+    // the `economy` spec names; universities do not exist yet to supply them.
+    // `materialsObligation` — W23's fifth driver — tracks the population too,
+    // at the subsistence rate of one material a head, which is exactly the
+    // shape that makes the oscillation check below worth running: it is the
+    // driver most tightly coupled to the quantity reallocation itself moves.
     const population = store.totalCount();
     const demand = computeOccupationDemand({
       constructionBacklog: FP_ONE * (1 + (tick % 5)),
       scribingQueueDepth: floorDiv(population, 4_000),
       universityCapacity: floorDiv(population, 20),
       standingSoldierTarget: floorDiv(population, 40),
+      materialsObligation: population,
     });
 
     // Taken before the step: these are what mortality will visit, and the

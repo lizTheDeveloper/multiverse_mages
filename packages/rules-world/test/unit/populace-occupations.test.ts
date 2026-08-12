@@ -287,13 +287,14 @@ describe('allocation order is deterministic', () => {
   });
 });
 
-describe('demand comes from the four sources the spec names', () => {
-  it('turns construction backlog, the scribing queue, capacity, and the soldier target into headcount', () => {
+describe('demand comes from the five sources the spec names', () => {
+  it('turns construction backlog, the scribing queue, capacity, the soldier target and the bill into headcount', () => {
     const demand = computeOccupationDemand({
       constructionBacklog: FP_ONE * 2,
       scribingQueueDepth: 7,
       universityCapacity: 60,
       standingSoldierTarget: 25,
+      materialsObligation: 0,
     });
 
     expect(demand[OCCUPATION.laborer]).toBe(2 * LABORERS_PER_BUILD_UNIT);
@@ -308,17 +309,19 @@ describe('demand comes from the four sources the spec names', () => {
       scribingQueueDepth: 3,
       universityCapacity: 10,
       standingSoldierTarget: 4,
+      materialsObligation: 96,
     });
     expect(demand[OCCUPATION.idle]).toBe(0);
   });
 
-  it('asks for nobody when nothing is being built, queued, taught, or garrisoned', () => {
+  it('asks for nobody when nothing is being built, queued, taught, garrisoned, or owed', () => {
     expect(
       computeOccupationDemand({
         constructionBacklog: 0,
         scribingQueueDepth: 0,
         universityCapacity: 0,
         standingSoldierTarget: 0,
+        materialsObligation: 0,
       }),
     ).toEqual(NO_DEMAND);
   });
@@ -330,6 +333,7 @@ describe('demand comes from the four sources the spec names', () => {
         scribingQueueDepth: 0,
         universityCapacity: 0,
         standingSoldierTarget: 0,
+        materialsObligation: 0,
       }),
     ).toThrow(RangeError);
   });
