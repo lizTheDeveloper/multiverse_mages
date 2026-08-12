@@ -827,12 +827,60 @@ const WORSHIP_MAXIMIZER: StrategyDefinition = {
 };
 
 /**
+ * The ablation of {@link PERMISSIVE_BREADTH}: open the grid, then stop playing.
+ *
+ * Not one of the capability spec's eight roles, and deliberately not a
+ * *strategy* at all — it is a **negative control on the permit economy**, the
+ * counterpart to `uniform-random-legal`'s negative control on the action space.
+ * `permissive-breadth` differs from it in exactly one variable: whether the god
+ * does anything after the switches are thrown. So the pair answers the question
+ * a price on permitting is supposed to change — *is the opening portfolio the
+ * whole game?* — and the answer is a subtraction rather than an argument.
+ *
+ * It submits `permitTechnique`/`permitForm` for 140 rounds and an empty
+ * preference list for the remaining 2,260 ticks of a 2,400-tick horizon. An
+ * empty list is `noop` through {@link policyFor}'s fall-through, which is the
+ * honest encoding of "declines to act" and is distinguished in the accounting
+ * from "was refused".
+ */
+const PERMIT_THEN_IDLE: StrategyDefinition = {
+  strategyId: 'permit-then-idle',
+  version: 1,
+  hypothesis:
+    'Whether the god has any verb worth using after the ruleset is set. It opens the grid with ' +
+    'permitTechnique/permitForm alone for 140 rounds and then submits nothing at all. If it wins ' +
+    'at or above the rate of the strategies that fund, bless and grant for the whole run, then ' +
+    'permitting is the only god verb connected to anything, and every price in god-cost.json ' +
+    'below the permit rows is a price on a no-op.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'Symmetric with permissive-breadth, which it is the ablation of: same declaration policy, ' +
+      'every non-permit action removed. A difference in stance would be a second variable, and ' +
+      'the whole value of this entry is that it differs in exactly one.',
+  },
+  signatureActions: [GOD_ACTION.permitTechnique, GOD_ACTION.permitForm],
+  preferences: ({ round }) =>
+    round >= 140
+      ? []
+      : [
+          { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
+          { action: GOD_ACTION.permitForm, parameter: form(round) },
+        ],
+};
+
+/**
  * The pool, in registration order.
  *
- * Eight, which is the capability spec's *"at least eight"*. Order is the order
- * the spec lists the roles in, not alphabetical: {@link botStrategyRegistry}
- * sorts the ids it publishes, and this array is what a reader compares against
- * the spec paragraph.
+ * Eight roles, which is the capability spec's *"at least eight"*, plus one
+ * negative control. Order is the order the spec lists the roles in, not
+ * alphabetical: {@link botStrategyRegistry} sorts the ids it publishes, and
+ * this array is what a reader compares against the spec paragraph.
+ *
+ * {@link PERMIT_THEN_IDLE} is last because it is not a role. It is the control
+ * the permit economy is measured against, and it is in the pool rather than in
+ * a test fixture because a control that only exists inside one agent's
+ * scratch directory gets re-derived, differently, by the next one.
  */
 export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   PASSIVE_CONTROL,
@@ -843,6 +891,7 @@ export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   ARCHIVIST,
   PORTAL_RUSH,
   WORSHIP_MAXIMIZER,
+  PERMIT_THEN_IDLE,
 ]);
 
 // ---------------------------------------------------------------------------

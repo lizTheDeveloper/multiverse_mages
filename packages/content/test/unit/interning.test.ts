@@ -229,7 +229,13 @@ describe('contentRevision', () => {
     // whose mages valued the same node differently would be developing
     // different magic while their revisions agreed they were compatible.
     // Nothing existing changed a byte.
-    expect(registry.contentRevision).toBe('d37624e36be00f59cf21b87ff6eba144');
+    //
+    // It moved again when W35 added the four `stewardship-*` magnitudes to
+    // `god-constant.json` — the first drain in the economy. A digest change on
+    // a god constant is exactly what the preimage is for: two universes whose
+    // rulesets cost different amounts to govern are not running the same game,
+    // however identical their node graphs look.
+    expect(registry.contentRevision).toBe('966e94d10164ec78516731cd2dc5ee59');
   });
 
   it('is stable across loads of identical content', () => {

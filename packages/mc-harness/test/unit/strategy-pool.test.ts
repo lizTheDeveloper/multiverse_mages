@@ -290,8 +290,14 @@ describe('degeneracy is declared rather than discovered', () => {
   it('reports every strategy but the passive control as degenerate under a full mask-out', () => {
     const reports = poolDegeneracy(BOT_POOL_REGISTRY, noopOnlyMask());
     const degenerate = reports.filter((report) => report.degenerate).map((r) => r.strategyId);
+    // Derived from the pool rather than from REQUIRED_ROLES: the claim is
+    // about every entry that declares a signature action, and the pool is
+    // allowed to hold entries beyond the eight required roles — the
+    // `permit-then-idle` negative control is one.
     expect(degenerate.sort()).toEqual(
-      REQUIRED_ROLES.filter((role) => role !== 'passive-control').slice().sort(),
+      BOT_POOL.filter((definition) => definition.signatureActions.length > 0)
+        .map((definition) => definition.strategyId)
+        .sort(),
     );
     // The passive control is never degenerate: it has no signature actions, so
     // there is nothing it is failing to reach.

@@ -104,6 +104,10 @@ export const REQUIRED_GOD_CONSTANTS: readonly string[] = Object.freeze([
   'stagnation-stasis-ticks',
   'stagnation-worship-floor',
   'stagnation-worship-ticks',
+  'stewardship-free-axes',
+  'stewardship-per-axis',
+  'stewardship-per-known-node',
+  'stewardship-reserve',
   'tradition-shock',
   'tradition-shock-ticks',
   'upheaval-shock-floor',
@@ -375,5 +379,49 @@ export function checkGodConstants(
     );
   }
 
+  return out;
+}
+
+/**
+ * The one identity that spans both god tables, and the reason it cannot live in
+ * either.
+ *
+ * **`stewardship-reserve` must be at least what forbidding a form costs.** The
+ * stewardship drain takes favor out of the pool every world tick for as long as
+ * the ruleset is broad, and the only way a god escapes it is to narrow the
+ * ruleset — which is an action, and an action has a price. A reserve below that
+ * price is a state the drain can put a universe into and from which no play
+ * removes it: the pool sits too low to forbid anything, the ruleset stays
+ * broad, and the drain keeps taking. That is Dormans' captured engine, and the
+ * remedy is a floor the drain cannot reach.
+ *
+ * Forbidding a *form* is the cheapest exit rather than forbidding a technique
+ * because the cost table's symmetry check already ties each forbid price to its
+ * permit price, and the form row is the smaller of the two.
+ *
+ * It is a separate exported function rather than a line inside either checker
+ * because each of those takes one table. A checker that reached for the other
+ * would be a checker whose signature lied about what it reads.
+ */
+export function checkGodEconomy(
+  costs: readonly GodCostRecord[],
+  constants: readonly GodConstantRecord[],
+): readonly ContentDiagnostic[] {
+  const out: ContentDiagnostic[] = [];
+  const forbidForm = costs.find((record) => record.actionId === 4)?.favorCost;
+  const reserve = constants.find((record) => record.id === 'stewardship-reserve')?.value;
+  if (forbidForm === undefined || reserve === undefined) return out;
+  if (reserve >= forbidForm) return out;
+  out.push(
+    problem(
+      'god-constant.json',
+      '',
+      `stewardship-reserve is ${String(reserve)} and forbidding a form costs ` +
+        `${String(forbidForm)}. The reserve must be at least the cheapest way out of the drain: ` +
+        'below it, the stewardship upkeep can hold a universe at a favor level from which it can ' +
+        'never afford to narrow the ruleset that is draining it, which is a deadlock the drain ' +
+        'created rather than a decision the god made.',
+    ),
+  );
   return out;
 }
