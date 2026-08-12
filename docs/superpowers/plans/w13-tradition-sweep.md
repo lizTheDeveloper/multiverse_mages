@@ -8,9 +8,21 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 **Finding under test.** The tradition axis is authored, asymmetric, and has never been swept.
 True Naming's `acquire` hook sets `instanceMastery: 1024`; Vancian and Art of Memory take the
 `DEFAULT_INITIAL_MASTERY` of 256. The teach threshold is 512, and `setMastery`'s only rules-path
-caller lowers — so a node born at 256 can never become teachable. **The reference universe runs the
-dead-teaching tradition.** Every measurement this campaign has taken was taken under one of three
-authored traditions, and specifically that one.
+caller lowers — so a node born at 256 can never become teachable.
+
+**Correction, measured before the sweep was written.** The brief for this workstream states that the
+reference universe runs Vancian, the dead-teaching tradition. **It does not. It runs True Naming.**
+`scribingTraditionId` returns the first tradition whose `store` hook has `scribingAvailable`, in
+*interned* order, and `internSorted` sorts the id strings lexicographically — `art-of-memory`(1),
+`true-naming`(2), `vancian-memorization`(3). Art of Memory is skipped (its `palace` store cannot
+scribe), so True Naming wins the loop before Vancian is ever reached. Verified by loading the
+shipped content:
+
+    RESOLVED reference traditionId = 2
+    acquire policy = {"kind":"true-name","initialMastery":1024,"stolenMastery":1024}
+
+So the campaign's whole measured record was taken under the **live-teaching** tradition, and the two
+never measured are Vancian and Art of Memory. The sweep is unchanged; its framing is inverted.
 
 **This is a measurement workstream.** No constant, no magnitude, no rule changes. If a tradition
 looks broken, it gets reported, not fixed.
@@ -22,7 +34,7 @@ looks broken, it gets reported, not fixed.
 - [x] 1.3 The three tradition ids, from `packages/content/data/tradition.json`:
       `vancian-memorization`, `true-naming`, `art-of-memory`.
 - [x] 1.4 Establish how the reference universe picks its tradition today.
-- [ ] 1.5 Establish which metrics the scenario registry actually exposes — `terminalReason`,
+- [x] 1.5 Establish which metrics the scenario registry actually exposes — `terminalReason`,
       `ascensionRate`, the five arm-scoped §7 metrics, and any teaching counter.
 
 ## 2. Make the tradition selectable
@@ -36,15 +48,17 @@ finding.
 The change must be the smallest one that makes it selectable, and must be byte-identical to today
 when the key is absent — otherwise it moves baselines.
 
-- [ ] 2.1 `referenceContent(registry, traditionId?)` takes an optional explicit tradition;
+- [x] 2.1 `referenceContent(registry, traditionId?)` takes an optional explicit tradition;
       absent means `scribingTraditionId(registry)`, exactly as now.
-- [ ] 2.2 `referenceOptions` reads a `tradition` string key, **refusing** an unknown or non-string
-      value rather than defaulting — mirroring `readCount`'s stated reasoning, so a typo cannot
-      silently run Vancian and be reported as True Naming.
-- [ ] 2.3 `'tradition'` added to `REFERENCE_FACTOR_IDS`.
-- [ ] 2.4 The executor resolves content per requested tradition, memoized, so a worker still pays
+- [x] 2.2 The `tradition` level is read and **refused** if unknown or non-string — mirroring
+      `readCount`'s stated reasoning, so a typo cannot silently run one tradition and be reported as
+      another. It is *not* a `ReferenceOptions` field, because it is not read when tick-zero state is
+      built: the `store` and `acquire` hooks are baked into `WorldStepDeps` before `Scenario.create`
+      is ever called. `traditionIdNamed` refuses the name; `traditionOf` refuses the type.
+- [x] 2.3 `'tradition'` added to `REFERENCE_FACTOR_IDS`.
+- [x] 2.4 The executor resolves content per requested tradition, memoized, so a worker still pays
       for the node graph once per tradition rather than once per run.
-- [ ] 2.5 `npm run typecheck` green; no golden fixture regenerated; no baseline regenerated.
+- [x] 2.5 `npm run typecheck` green; no golden fixture regenerated; no baseline regenerated.
 
 ## 3. Common random numbers
 
@@ -52,10 +66,10 @@ Run seed is `f(rootSeed, sweepId, cellIndex, replicateIndex)` — `packages/mc-h
 Making `tradition` a multi-level factor **would break CRN**, because each level takes its own
 `cellIndex` and therefore its own seed. That mistake has been made once in this campaign already.
 
-- [ ] 3.1 Three sweep files, one per tradition, each with **the same `sweepId` and `rootSeed`** and
+- [x] 3.1 Three sweep files, one per tradition, each with **the same `sweepId` and `rootSeed`** and
       `tradition` as a **single-level** factor. A single-level factor yields `cellIndex` 0 in all
       three, so the seeds and the round-robin strategy assignment are identical across arms.
-- [ ] 3.2 Separate `--out` directories per arm; the arms are labelled in the writeup, not by sweepId.
+- [x] 3.2 Separate `--out` directories per arm; the arms are labelled in the writeup, not by sweepId.
 - [ ] 3.3 **Empirically verify CRN after the runs**: matching `(cellIndex, replicateIndex)` records
       must carry the same `runSeed` in all three arms. Report the check.
 
@@ -66,7 +80,7 @@ Making `tradition` a multi-level factor **would break CRN**, because each level 
       `denial-warden`, `archivist`, `portal-rush`, `worship-maximizer`.
 - [ ] 4.2 Vancian arm.
 - [ ] 4.3 True Naming arm.
-- [ ] 4.4 Art of Memory arm.
+- [x] 4.4 Art of Memory arm.
 
 ## 5. Report
 
