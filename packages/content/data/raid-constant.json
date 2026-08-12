@@ -271,5 +271,40 @@
     "unit": "fp",
     "gloss": "How close to the portal's position a raider must stand to count as having withdrawn through it. fp(8) metres.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "rival-universe-count",
+    "value": 3,
+    "unit": "count",
+    "gloss": "How many other universes hang in the sky beside this one. contracts.md section 1.1 puts one universe in a simulation instance, so the multiverse is never in state; this is how many rivals the composition root fabricates so action 14 has somewhere to point and something can raid back. Three, because a target list of one makes the god's choice of target vacuous. INVENTED: pvp-server owns real pairing against persisted peer snapshots, and this stands in for it in headless Monte Carlo only.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "rival-raider-count",
+    "value": 6,
+    "unit": "count",
+    "gloss": "Mages a rival universe re-roles to raider, and therefore the size of the warband it can field through a portal. Under max-combatants-per-side by design: a rival that saturated the cap would make every raid a question about the cap. INVENTED alongside rival-universe-count and untuned for the same reason.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "rival-raider-node-count",
+    "value": 8,
+    "unit": "count",
+    "gloss": "Combat-carrying nodes granted to each rival raider, at full mastery, drawn in content order from the nodes whose effects carry direct-damage, ward, concealment or knowledge-steal. Granted rather than researched because a rival built at world tick zero has researched nothing, and a warband that arrives holding no castable node is a walkover that would read as a balance result. Full mastery because CASTABLE_MASTERY is the activation threshold and an instance below it deploys inert.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "inbound-raid-chance-per-world-tick",
+    "value": 4,
+    "unit": "fp",
+    "gloss": "Probability per world tick that a rival opens a portal into this universe, drawn on stream 10 (objective and raid generation). fp(0.0039) — about one inbound raid every 256 world ticks, so roughly nine over the 2400-tick reference horizon. This is the arrival process vision section 8 leaves unspecified and demands be BOUNDED: it is the griefing surface, and inboundRaidTempoLoss exists to measure it. Untuned, and the first number a balance sweep should move.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "inbound-raid-cooldown-world-ticks",
+    "value": 60,
+    "unit": "ticks",
+    "gloss": "World ticks after any raid during which no further inbound raid may open. Five world years. Vision section 8 requires inbound raid frequency to be bounded rather than merely improbable — a Bernoulli process alone admits a run of arrivals that strips a universe with no floor under it, which is the live-PvP death sentence that section names. A cooldown is a hard bound the arrival rate cannot defeat.",
+    "tuningStatus": "untuned"
   }
 ]

@@ -72,8 +72,10 @@ import {
   UNIVERSITY,
   attachRecord,
   createUniverse,
+  defineWorldStateSchema,
 } from '@mm/state';
-import { KnowledgeSubsystem, MASTERY_MAX } from '@mm/rules-magic';
+import { KnowledgeSubsystem, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
+import { readRaidTuning } from '@mm/rules-raid';
 import { createMage } from '@mm/rules-world';
 import type { GodTickReport, WorldStepReport } from '@mm/coordination';
 import { defineWorldSimulation, resolveGodContent } from '@mm/coordination';
@@ -88,6 +90,9 @@ import {
   v1RulesetAxes,
   worldDeps,
 } from './content-set.js';
+import type { RaidRecord } from './raids.js';
+import { raidSystem } from './raids.js';
+import { portalTargetIds, readRivalConstants } from './rival-universe.js';
 
 /** `fp(1.0)`, spelled out where a record reads as a game value. */
 const FP_ONE = 1024;
@@ -409,10 +414,34 @@ export interface ReferenceRun {
    * tier)` quantities the observation was never meant to carry.
    */
   lastGodReport: () => GodTickReport | undefined;
+  /**
+   * Every raid this run resolved, in resolution order.
+   *
+   * Empty on a scenario built with `raids: false`, and empty on a run that
+   * simply had none. §7 needs those two cases distinguished, and the flag that
+   * distinguishes them is `MechanicAvailability.raidEngagement` — a declaration
+   * the build makes, not something a collector infers from an empty list.
+   */
+  raids: () => readonly RaidRecord[];
 }
 
 /** The scenario id every reference run records. Stable; a baseline is keyed on it. */
 export const REFERENCE_SCENARIO_ID = 'reference-universe-v1';
+
+/** How a reference scenario is built. */
+export interface ReferenceScenarioOptions {
+  /**
+   * Whether portals open and raids resolve. Default `true`.
+   *
+   * A switch rather than a permanent truth, because it is the only honest way
+   * to A/B a mechanic that moves every balance baseline: `false` reproduces the
+   * pre-raid build byte for byte — no portal targets, so action 14 stays
+   * masked, and no arrival roll, so stream 10 is never touched — and that
+   * identity is asserted in `test/unit/raid-engagement.test.ts` rather than
+   * assumed. Everything shipped runs with it `true`.
+   */
+  readonly raids?: boolean;
+}
 
 /**
  * Builds one reference scenario.
@@ -421,23 +450,84 @@ export const REFERENCE_SCENARIO_ID = 'reference-universe-v1';
  * report closure and a rediscovery-clamp counter, both of which are per-run
  * measurements; sharing one across the runs a worker executes would be exactly
  * the shared mutable state the harness's second capability scenario forbids, and
- * the symptom would be a census describing whichever run finished last.
+ * the symptom would be a census describing whichever run finished last. The raid
+ * record below is a third such closure and inherits the same rule.
  */
-export function referenceScenario(content: ReferenceContent = referenceContent()): ReferenceRun {
+export function referenceScenario(
+  content: ReferenceContent = referenceContent(),
+  options: ReferenceScenarioOptions = {},
+): ReferenceRun {
   const simulation = defineWorldSimulation(content.deps);
+  const raiding = options.raids ?? true;
+
+  if (!raiding) {
+    return {
+      scenario: {
+        scenarioId: REFERENCE_SCENARIO_ID,
+        catalogue: content.catalogue,
+        create: (runSeed: number, config: ScenarioConfig): SimState =>
+          buildReferenceState({
+            runSeed,
+            options: referenceOptions(config),
+            content,
+            schema: simulation.schema,
+          }),
+      },
+      lastReport: simulation.lastReport,
+      lastGodReport: simulation.lastGodReport,
+      raids: () => [],
+    };
+  }
+
+  const records: RaidRecord[] = [];
+  const constants = readRivalConstants(content.registry);
+
+  // The raid system is appended to the schema `defineWorldSimulation` built
+  // rather than installed inside it, and the reason is a package boundary:
+  // `coordination` may not import `rules-raid` — §5 runs that edge the other
+  // way, because a raid's consequences land in world state *through*
+  // `coordination`. This package is the composition root and is the one place
+  // both are in scope.
+  //
+  // Last in the list, so the god's action 14 has already been resolved and paid
+  // for by the time this reads it.
+  const schema = defineWorldStateSchema([
+    ...simulation.schema.systems,
+    raidSystem({
+      content,
+      grid: MagicGrid.from(content.registry),
+      tuning: readRaidTuning(content.registry),
+      constants,
+      // `simulation.schema`, deliberately: a rival is never stepped — nothing
+      // advances its world tick, and its only job is to hold mages, knowledge
+      // and a library for the raid to read and write. Giving it the raid system
+      // as well would let a rival open a portal of its own if anything ever did
+      // step it, which is a second, unowned arrival process.
+      schema: simulation.schema,
+      onRaid: (record) => records.push(record),
+    }),
+  ]);
+
   return {
     scenario: {
       scenarioId: REFERENCE_SCENARIO_ID,
       catalogue: content.catalogue,
-      create: (runSeed: number, config: ScenarioConfig): SimState =>
-        buildReferenceState({
+      portalTargets: portalTargetIds(constants),
+      create: (runSeed: number, config: ScenarioConfig): SimState => {
+        // A new episode is a new run: the raid log belongs to one, and a
+        // scenario reused across two would report the first one's raids in the
+        // second one's record.
+        records.length = 0;
+        return buildReferenceState({
           runSeed,
           options: referenceOptions(config),
           content,
-          schema: simulation.schema,
-        }),
+          schema,
+        });
+      },
     },
     lastReport: simulation.lastReport,
     lastGodReport: simulation.lastGodReport,
+    raids: () => records,
   };
 }
