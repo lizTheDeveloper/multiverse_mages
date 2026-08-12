@@ -166,6 +166,7 @@ import { compareTargets } from '@mm/rules-world';
 import { NO_INHERITOR } from '@mm/rules-world';
 
 import type { EffortKey, EffortLedger } from './effort-store.js';
+import type { NodeFacetResolver } from './node-facets.js';
 import type { CellNodeIndex } from './frontier-index.js';
 import { cellNodeIndex } from './frontier-index.js';
 
@@ -214,6 +215,16 @@ export interface GatewayDeps {
   readonly knowledge: KnowledgeSubsystem;
   readonly catalog: NodeCatalog;
   readonly cells: CellResolver;
+  /**
+   * A node's cell, form and effect primitives, for the utility score that
+   * decides which target a mage takes.
+   *
+   * Here rather than on `NodeCatalog` because that projection keeps the effects
+   * list out of reach on purpose (`catalog.ts`), and rightly: this index reads
+   * *which* primitives a node declares and never a magnitude, so nothing that
+   * holds it can start applying an effect.
+   */
+  readonly facets: NodeFacetResolver;
   /** The universe's ruleset. Legality gates world-time acquisition (§1.1). */
   readonly ruleset: Ruleset;
   /**
@@ -445,7 +456,15 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
         // would inflate the denominator with evaluations nobody paid for.
         clampCounter: createRediscoveryClampCounter(),
       });
-      found.push({ nodeId, tier: node.tier, remainingCost: Math.max(requirement - banked, 0) });
+      const facets = this.#deps.facets(nodeId);
+      found.push({
+        nodeId,
+        tier: node.tier,
+        remainingCost: Math.max(requirement - banked, 0),
+        cellId: facets.cellId,
+        formId: facets.formId,
+        primitives: facets.primitives,
+      });
     }
     found.sort(compareTargets);
     return found.length > limit ? found.slice(0, limit) : found;
@@ -492,14 +511,18 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (node === undefined) return undefined;
     if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return undefined;
     if (!this.knows(mage, nodeId)) return undefined;
-    // Whether the shelf she would write onto already holds it. See
-    // `candidates.ts`'s `compareTargets` for why the answer changes the order
-    // she considers her options in, and `coordination.ts`'s `libraryHolds` for
-    // the measurement that says it has to.
+    const facets = this.#deps.facets(nodeId);
+    // `libraryHolds`: whether the shelf she would write onto already holds it.
+    // See `candidates.ts`'s `compareTargets` for why the answer changes the
+    // order she considers her options in, and `coordination.ts`'s
+    // `libraryHolds` for the measurement that says it has to.
     return {
       nodeId,
       tier: node.tier,
       remainingCost: node.scribeCost,
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
       libraryHolds: this.#shelfHolds(mage, nodeId),
     };
   }

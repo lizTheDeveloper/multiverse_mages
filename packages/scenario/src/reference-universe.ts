@@ -132,6 +132,19 @@ const DEFAULT_FOUNDING_MAGES = 1;
 const DEFAULT_FOUNDING_NODES = 1;
 
 /**
+ * Every species founds the universe.
+ *
+ * Zero, and zero means "all of them" rather than "none of them", which is the
+ * one thing about this knob worth reading twice. The alternative encoding — a
+ * default of `(1 << speciesCount) - 1` — would have hardcoded the species count
+ * into a default, and `CLAUDE.md` puts species in validated content data. Zero
+ * is the only value that means *whatever the content declares* without knowing
+ * how many that is, and it makes the absent option and the documented default
+ * the same universe byte for byte.
+ */
+const DEFAULT_FOUNDING_SPECIES_MASK = 0;
+
+/**
  * The occupations a founding population is seeded into.
  *
  * Laborers produce the materials, students are what a mage is promoted from, and
@@ -168,6 +181,24 @@ export interface ReferenceOptions {
    * module note.
    */
   readonly foundingNodes: number;
+  /**
+   * Which species found the universe, as a bitmask over content order.
+   *
+   * Bit *i* selects the *i*th species `speciesTable` enumerates. **Zero selects
+   * every species**, which is what this scenario has always done, so an absent
+   * option and this default build the identical state.
+   *
+   * It exists because there was no founding-mix knob at all and the campaign's
+   * D7 — *"varying the founding species mix changes which strategy wins"* — is
+   * not measurable without one. It is an **instrument**, not a magnitude: it
+   * turns no constant and changes no rule. A bitmask rather than a list because
+   * `ScenarioConfig.options` is restricted to scalars, so that a sweep can hash
+   * a config into a run record without inventing a serialization.
+   *
+   * A mask that selects nothing is refused rather than silently building an
+   * empty universe — see {@link buildReferenceState}.
+   */
+  readonly foundingSpeciesMask: number;
 }
 
 /**
@@ -181,6 +212,7 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'cohortSize',
   'foundingMages',
   'foundingNodes',
+  'foundingSpeciesMask',
   'tradition',
 ]);
 
@@ -231,6 +263,7 @@ export function referenceOptions(config: ScenarioConfig): ReferenceOptions {
     cohortSize: readCount(config, 'cohortSize', DEFAULT_COHORT_SIZE),
     foundingMages: readCount(config, 'foundingMages', DEFAULT_FOUNDING_MAGES),
     foundingNodes: readCount(config, 'foundingNodes', DEFAULT_FOUNDING_NODES),
+    foundingSpeciesMask: readCount(config, 'foundingSpeciesMask', DEFAULT_FOUNDING_SPECIES_MASK),
   };
 }
 
@@ -360,8 +393,21 @@ export function buildReferenceState(input: {
   });
 
   const { speciesOf, ids } = speciesTable(content.registry);
+  // Zero means every species; see DEFAULT_FOUNDING_SPECIES_MASK. Refused rather
+  // than defaulted when a non-zero mask selects nothing the content declares: a
+  // universe founded with no species is a run of two hundred silent years that
+  // would be recorded as an ordinary observation.
+  const mask = options.foundingSpeciesMask;
+  if (mask !== 0 && (mask & ((1 << ids.length) - 1)) === 0) {
+    throw new Error(
+      `foundingSpeciesMask ${String(mask)} selects none of the ${String(ids.length)} species the ` +
+        'content declares. An empty founding population is not a starting position, and a run ' +
+        'taken from one would be recorded as a measurement of something.',
+    );
+  }
   const founders: EntityHandle[] = [];
-  for (const speciesId of ids) {
+  for (const [speciesIndex, speciesId] of ids.entries()) {
+    if (mask !== 0 && (mask & (1 << speciesIndex)) === 0) continue;
     const species = speciesOf(speciesId);
     if (species === undefined) continue;
 

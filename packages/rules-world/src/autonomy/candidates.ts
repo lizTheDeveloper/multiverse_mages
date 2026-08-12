@@ -95,11 +95,37 @@ export function withinDepthCeiling(target: KnowledgeTarget, species: SpeciesReco
  * reachable.
  */
 export function compareTargets(a: KnowledgeTarget, b: KnowledgeTarget): number {
-  const aHolds = a.libraryHolds === true ? 1 : 0;
-  const bHolds = b.libraryHolds === true ? 1 : 0;
-  if (aHolds !== bHolds) return aHolds - bHolds;
+  const novelty = compareNovelty(a, b);
+  if (novelty !== 0) return novelty;
   if (a.remainingCost !== b.remainingCost) return a.remainingCost - b.remainingCost;
   return a.nodeId - b.nodeId;
+}
+
+/**
+ * Orders a novel node ahead of one the shelf already holds. `0` when neither is
+ * a scribing candidate, which is every research and teaching target.
+ *
+ * ## Why this is a separate axis from the target utility score, and stays one
+ *
+ * `target-appeal.ts` scores a candidate on six bounded, additive terms and
+ * `chooseTarget` takes the argmax. Novelty is not one of those terms and must
+ * not become one. It is a **binary fact about redundancy** on exactly one goal,
+ * where the six are **magnitudes about value** on all five target-taking goals,
+ * and folding a binary into a bounded sum has only two outcomes: a bound small
+ * enough to be outvoted, which restores the 1,263-books-two-nodes defect the
+ * measurement above records, or a bound large enough to dominate, which is a
+ * lexicographic prefix wearing a magnitude's clothes and lying about it in the
+ * ablation report.
+ *
+ * So the two are composed rather than merged: novelty partitions the candidate
+ * list, and the utility score decides inside the partition. Exported for
+ * `compareAppeal`, which is the only other place that has to know the order the
+ * two mechanisms apply in.
+ */
+export function compareNovelty(a: KnowledgeTarget, b: KnowledgeTarget): number {
+  const aHolds = a.libraryHolds === true ? 1 : 0;
+  const bHolds = b.libraryHolds === true ? 1 : 0;
+  return aHolds - bHolds;
 }
 
 /** A frontier split into what has never been known here and what has been lost. */

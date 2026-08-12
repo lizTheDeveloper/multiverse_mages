@@ -1,47 +1,47 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
-  "contentHash": "99c984da0243bb85b029ffe1bff3d9b197c0dc6ae3ae35ec16b90dc72cb77714",
+  "contentHash": "65c888d1875fd09daa85b8d1b6c0494737075a66c0a62e78884b8c86596d3d44",
   "kind": "gate",
   "metrics": [
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":86.57726633981348,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":259.7317990194404,"unit":"grimoires","value":650.5},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":32,"standardError":243.9242769260246,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":731.7728307780737,"unit":"instances","value":1911.09375},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":32,"standardError":0.22903134532822608,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.6870940359846782,"unit":"nodes","value":2},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":32,"standardError":4.137005662095991,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":12.411016986287972,"unit":"mages","value":65.53125},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":32,"standardError":10.863884919112238,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":32.59165475733671,"unit":"nodes","value":56.125},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":32,"standardError":2.413197299301726,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":7.239591897905178,"unit":"nodes","value":5.28125},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":32,"standardError":10.863884919112238,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":32.59165475733671,"unit":"nodes","value":58.625},
-    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":32,"standardError":679.09375,"standardErrorMethod":"jackknife","status":"measured","tolerance":2037.28125,"unit":"people","value":19789},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":32,"standardError":1211.4802112770344,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3634.4406338311032,"unit":"people","value":5777.96875},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1211.4802112770344,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3634.4406338311032,"unit":"people","value":5633.96875}
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":35.442857525227446,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":106.32857257568233,"unit":"grimoires","value":110.125},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":32,"standardError":337.63326857900023,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1012.8998057370006,"unit":"instances","value":1942.125},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":32,"standardError":3.3689595415880467,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":10.10687862476414,"unit":"nodes","value":24.9375},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":32,"standardError":4.133260803055069,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":12.399782409165205,"unit":"mages","value":70.40625},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":32,"standardError":13.77904298816296,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":41.33712896448888,"unit":"nodes","value":62.96875},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":32,"standardError":1.147833751650722,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.443501254952166,"unit":"nodes","value":2.0625},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":32,"standardError":13.77904298816296,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":41.33712896448888,"unit":"nodes","value":65.46875},
+    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":32,"standardError":285.78125,"standardErrorMethod":"jackknife","status":"measured","tolerance":857.34375,"unit":"people","value":19603},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":32,"standardError":1351.8896436756424,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4055.6689310269276,"unit":"people","value":6116.84375},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1351.8896436756424,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4055.6689310269276,"unit":"people","value":5972.84375}
   ],
   "notes": [
-    "release-plan.md forbids a balance claim before 0.5.0 and this file makes none. The universe remains degenerate in the ways the other baselines name, and raids add a new way for it to be so: portal-rush is at strategy version 4 in these numbers, and version 3 opened portals and assigned nobody, so every raid version 3 recorded was fought by an empty warband. Do not compare a version 4 number against a version 3 one."
+    "No release before 0.5.0 may claim any of this is balanced: every magnitude in autonomy-weight.json carries tuningStatus untuned and the balance harness owns all of them, so this file is a measurement and not a balance claim. The universe also remains degenerate in known ways and this change closes none of them -- it demonstrates the binding one. These gate sweeps are 100 percent passive-control and submit no god verb. On the 2400-tick eight-strategy sweep, five of seven unrestricted strategies still finish holding ALL 51 reachable v1 nodes (mean 51.0, union 51, intersection 51), so cross-strategy containment stays 1.000 and prefix fidelity falls only 0.943 to 0.909. A set that contains everything is contained in every other set; composition is not yet a decision. What did move is every measure that is not saturated: the effort-weighted shape participation ratio 2.39 to 4.89, early-horizon minimum containment 0.742 to 0.612 at tick 240, and denial-warden against narrow-depth containment 0.771 to 0.643. capitalSnowball is NOT RECOMPUTED HERE and no number in this file is a claim about it: 0.502 is W7's figure for W7's build, and this change raised early referenceLibraryDepth from 7.145 to 10.435, which is exactly the input that metric is a Gini over -- so it must be re-measured before anyone quotes it against the 0.35 guard worshipSnowball is held to. That threshold belongs to god-agency and is not touched. W7's Enduring Canon effect is intact and not restored by this change: narrow-depth ends 0 of 12 in canon on both the w7-only and the w7-plus-w17 arms, against 7 of 12 before W7."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "aeedc36269843fb0c46bc6330ec70b2b",
+    "contentHash": "d37624e36be00f59cf21b87ff6eba144",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "The eight-strategy 2400-tick sweep, and the one where raids change what a strategy is. portal-rush went from a bot whose defining action was permanently masked to one that opens portals, assigns raiders and carries books home from universes that permitted cells this one forbids; every other strategy is now raided several times a run and loses shelved grimoires to fire. Grimoires fall 362 (-3.76 SE) and living mages 7.8. The new numbers are right because the old ones were recorded on a build where openPortal had zero candidates in every tick of every run -- the pre-raid figures measure the portal action being unreachable, not the raid economy.",
+  "rationale": "W17 made target selection a utility score (contracts.md 2.11, docs/design/value-sensitive-acquirer.md), and adding autonomy-weight.json moves contentHash 2512ea02 to d37624e3, so this baseline is invalid by provenance. That is the ONLY reason it is regenerated: every one of the ten metrics in this gate was already inside tolerance against the old numbers -- the largest were referenceNodesGainedFinalQuarter at -1.03 SE and referenceLivingMages at -0.90 SE. This sweep is 32 runs at wide tolerances, so it is the least sensitive of the three and should be read as recording no detectable change rather than as confirming none.",
   "rootSeed": 20260811,
   "runCount": 32,
   "supersededDeltas": [
-    {"delta":-362.0625,"deltaInStandardErrors":-3.7585710083844885,"metricId":"referenceGrimoires","previousValue":1012.5625,"value":650.5},
-    {"delta":-114.28125,"deltaInStandardErrors":-0.4599665499542023,"metricId":"referenceKnowledgeInstances","previousValue":2025.375,"value":1911.09375},
-    {"delta":-0.21875,"deltaInStandardErrors":-1.168988393672851,"metricId":"referenceLibraryDepth","previousValue":2.21875,"value":2},
-    {"delta":-7.75,"deltaInStandardErrors":-1.7905787141521683,"metricId":"referenceLivingMages","previousValue":73.28125,"value":65.53125},
-    {"delta":0.09375,"deltaInStandardErrors":0.008421163714803545,"metricId":"referenceNodesGained","previousValue":56.03125,"value":56.125},
-    {"delta":1.0625,"deltaInStandardErrors":0.4693531507816265,"metricId":"referenceNodesGainedFinalQuarter","previousValue":4.21875,"value":5.28125},
-    {"delta":0.09375,"deltaInStandardErrors":0.008421163714803545,"metricId":"referenceNodesKnown","previousValue":58.53125,"value":58.625},
-    {"delta":449,"deltaInStandardErrors":12.196943972835314,"metricId":"referencePeakPopulation","previousValue":19340,"value":19789},
-    {"delta":918.65625,"deltaInStandardErrors":0.8148344639959789,"metricId":"referencePopulation","previousValue":4859.3125,"value":5777.96875},
-    {"delta":918.65625,"deltaInStandardErrors":0.8148344639959789,"metricId":"referencePopulationChange","previousValue":4715.3125,"value":5633.96875}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":110.125,"value":110.125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":1942.125,"value":1942.125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":24.9375,"value":24.9375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":70.40625,"value":70.40625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":62.96875,"value":62.96875},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":2.0625,"value":2.0625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":65.46875,"value":65.46875},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":19603,"value":19603},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":6116.84375,"value":6116.84375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":5972.84375,"value":5972.84375}
   ],
-  "supersedes": "8c545e4648e4bd0f03357cb38c064604d0e88ead85fdb5f052d3f999bea99741",
+  "supersedes": "0af5676720a2e1ce85baa1011401b6693cad5779d9fcdb6dd5fbf35e6b12312a",
   "sweepId": "balance-gate-ascension-v1",
   "toleranceK": 3
 }

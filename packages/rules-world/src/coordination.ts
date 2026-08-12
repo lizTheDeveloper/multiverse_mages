@@ -83,6 +83,30 @@ export interface KnowledgeTarget {
    */
   readonly remainingCost: Fixed;
   /**
+   * The interned cell the node sits in, and the cell's form.
+   *
+   * Both, because a species `affinities` key may be either
+   * (`load.ts`'s `checkSpecies`), and the cell key is the finer authored claim.
+   * They are here rather than fetched per candidate for the reason this whole
+   * type exists: `outlook.ts` records that scoring *"needs a cost and depth
+   * gating needs a tier, and nothing on this side of the port may need more"*
+   * — the moment scoring needed more, the port had to carry it, because the
+   * alternative is a second gateway question per candidate, which is exactly
+   * the unbounded scan the port was shaped to prevent.
+   */
+  readonly cellId: ContentId;
+  readonly formId: ContentId;
+  /**
+   * The node's authored effect primitives, interned.
+   *
+   * What the node is *for* — the only statement in the content set about that —
+   * and therefore the only thing a standing role can have an opinion about.
+   * Magnitudes are deliberately absent: a role's preference is over kinds of
+   * magic, not over how much of one, and carrying the magnitudes would invite a
+   * selector that reimplements the effect pipeline.
+   */
+  readonly primitives: readonly ContentId[];
+  /**
    * Whether this mage's library already holds a copy of the node.
    *
    * **Set by the scribing candidate scan and by nothing else.** Research and

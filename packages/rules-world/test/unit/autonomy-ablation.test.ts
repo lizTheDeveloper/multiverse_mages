@@ -29,7 +29,7 @@ import { describe, expect, it } from 'vitest';
 import { GOALS_IN_ORDER, TERM_KINDS, scoreGoal, selectGoal } from '../../src/index.js';
 import type { TermKind } from '../../src/index.js';
 
-import { richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
+import { appealWeights, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
 import { stepRng } from './mage-fixtures.js';
 
 describe('each term can be removed on its own', () => {
@@ -82,6 +82,7 @@ describe('ablation changes selections, and the change is attributable', () => {
     Array.from({ length: 40 }, (_unused, index) => {
       const mage = index + 1;
       return selectGoal({
+      appeal: appealWeights,
         outlook: contested(mage),
         worldTick: 0,
         incumbent: undefined,
@@ -105,12 +106,14 @@ describe('ablation changes selections, and the change is attributable', () => {
   it('leaves every non-ablated term identical between the two runs', () => {
     const state = contested(3);
     const full = selectGoal({
+      appeal: appealWeights,
       outlook: state,
       worldTick: 0,
       incumbent: undefined,
       rng: stepRng(555, 0),
     });
     const ablated = selectGoal({
+      appeal: appealWeights,
       outlook: state,
       worldTick: 0,
       incumbent: undefined,

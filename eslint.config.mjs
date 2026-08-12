@@ -343,8 +343,12 @@ export default tseslint.config(
   },
 
   {
-    // Repo tooling is allowed to touch the filesystem and the clock.
-    files: ['*.mjs', '*.ts', 'scripts/**/*.mjs'],
+    // Repo tooling is allowed to touch the filesystem and the clock. `tools/` is
+    // here for the same reason `scripts/` is: measurement harnesses that read
+    // argv, write result files and print tables are host-side by definition, and
+    // the determinism obligation on them is to run the core faithfully rather
+    // than to be pure themselves.
+    files: ['*.mjs', '*.ts', 'scripts/**/*.mjs', 'tools/**/*.mjs'],
     languageOptions: { globals: globals.nodeBuiltin },
   },
 

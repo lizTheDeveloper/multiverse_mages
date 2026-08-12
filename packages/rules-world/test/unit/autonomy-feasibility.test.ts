@@ -33,7 +33,7 @@ import {
   selectGoal,
 } from '../../src/index.js';
 
-import { outlook, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
+import { appealWeights, outlook, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
 import { stepRng } from './mage-fixtures.js';
 
 describe('goals a mage cannot pursue are removed', () => {
@@ -107,6 +107,7 @@ describe('a masked goal is unreachable, not merely unattractive', () => {
 
     expect(scores.map((entry) => entry.goal)).not.toContain(GOAL.researchNode);
     const chosen = selectGoal({
+      appeal: appealWeights,
       outlook: barren,
       worldTick: 0,
       incumbent: undefined,
@@ -124,6 +125,7 @@ describe('idle is always feasible', () => {
 
   it('leaves the argmax with something to return, so no "no goal" state exists', () => {
     const selection = selectGoal({
+      appeal: appealWeights,
       outlook: outlook(),
       worldTick: 0,
       incumbent: undefined,
@@ -149,6 +151,7 @@ describe('masking is counted, not only applied', () => {
 
   it('surfaces the count on a selection, which is where an aggregate reads it', () => {
     const selection = selectGoal({
+      appeal: appealWeights,
       outlook: outlook(),
       worldTick: 0,
       incumbent: undefined,

@@ -1,0 +1,174 @@
+<!--
+Multiverse Mages — Copyright (C) 2026 Ann Kelner
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
+# W17 — the value-sensitive acquirer
+
+**Branch:** `w17/value-sensitive-acquirer`, from `main` at `6e5ecee`.
+**Upstream measurement:** `docs/design/strategy-dimensionality.md` on `origin/w15/strategy-dimensionality`.
+**Mandate:** vision §7 — *"mages act on utility-scored goals shaped by species, age, personality, and
+their assigned standing role (researcher, warden, professor, raider)."*
+
+## The defect, restated in one line
+
+`compareTargets` orders candidate nodes by `remainingCost`, then `nodeId`. **Target selection is not
+a utility score and is shaped by none of §7's four things.** Goal selection already is one
+(`autonomy/terms.ts`, six terms, all four inputs); target selection was never given the same
+treatment, and target selection is what decides *which magic a universe ends up holding*.
+
+## The fact that makes the defect total, measured before writing any code
+
+In the v1 content set `researchCost` is a **pure function of tier**: 2048, 4096, 8192, 16384, 32768
+for tiers 1–5, with **no within-tier variation at all** (12/13/13/11/2 nodes). So
+`compareTargets` is not merely "cost first" — inside v1 it is exactly **tier, then node id**, one
+fixed total order shared by every mage of every species in every universe. That is the whole of
+W15's prefix fidelity 0.943, and it is why species change only the stopping point.
+
+It also tells us which new terms can and cannot break the queue:
+
+- A term proportional to **tier** (curiosity appetite, age, ambition, caution) can *reverse* or
+  *bend* the ordering and can create an interior optimum, but on its own it yields another total
+  order over tiers. Necessary, not sufficient.
+- A term keyed on **which cell/form a node is in** (species `affinities`) or on **what a node
+  does** (its authored `effects` primitives) is *orthogonal to tier* and is the thing that actually
+  reorders. **These two are the load-bearing terms.**
+
+The v1 primitive histogram over the 51 nodes is rich enough to carry a role term:
+`direct-damage` 11, `research-rate` 7, `area-denial` 6, `concealment` 5, `teach-rate` 5,
+`resource-yield` 5, `build-rate` 5, `knowledge-steal` 4, `scribe-rate` 4, `ward` 3, `blink` 2,
+`portal` 2, `worship-yield` 2, `summon` 2. Every v1 node has at least one effect.
+
+## The score
+
+`targetAppeal(goal, target, outlook, weights) -> Fixed`, six additive terms, each bounded on its own
+axis, **one clamp after summation** — the same shape as `scoring.ts`, for the same stated reason
+(additive terms are individually ablatable; a product cannot be interrogated).
+
+| term | what it reads | vision sentence it traces to |
+|---|---|---|
+| `effort` | `-remainingCost / divisor` | §5 *"**Research** — a mage derives a new node from prerequisites they hold. **Slow.**"* — the incumbent cost order, demoted from *the* order to one term among six |
+| `affinity` | species `affinities`, cell key then form key | §6 *"Tuned on: lifespan, curiosity …, and **technique/form affinities**."* |
+| `species` | `(species.curiosity − fp1)/d × tier` | §6 *"**curiosity** (rate of self-directed research)"*; §6 table *"Gnome … Highest curiosity"* / *"Draconic … Barely curious"* |
+| `age` | age-band weight × tier | §7 *"utility-scored goals shaped by species, **age**, personality"* |
+| `personality` | `(ambition − fp1)/d × tier − (caution − fp1)/d × tier` | §7 *"…species, age, **personality**…"* |
+| `role` | Σ over the node's authored effect primitives of `roleAppeal[role][primitive]` | §7 *"and their assigned standing **role** (researcher, warden, professor, raider)"* |
+
+**Tie-break: `compareTargets` — `remainingCost`, then `nodeId`. `nodeId` remains the final
+tie-break, so the order is total and no draw is taken.** No RNG is added anywhere, so no stream
+moves and no balance baseline can rot from a re-roll.
+
+## Questions raised rather than answered
+
+- [ ] **Q1.** The loader accepts an affinity key that is a **form id or a cell id**
+      (`load.ts:938`), but vision §6 says *"technique/form affinities"* — a **technique** key is
+      illegal today. Not extended here; nothing in the score needs it. Raised for the spec owner.
+- [ ] **Q2.** `gatherFrontier` truncates each bucket at `MAX_CANDIDATE_TARGETS = 16` **in cost
+      order**, before any value is computed. If the frontier exceeds 16, value can only reorder
+      inside a cost-ordered window. Left alone (it is a documented cost device), but frontier
+      length is instrumented in the sweep so the report can say whether it binds.
+- [ ] **Q3.** Human and gnome declare **no affinity in any v1 form** (human `{}`, gnome
+      `imaginem`/`vim`, neither v1). Their split therefore has to come from the curiosity term, not
+      from affinities. **No affinity was authored into `species.json` to make the measurement
+      pass** — that would be tuning the instrument.
+
+## What landed that was not in the plan
+
+- **W7 `knowledge-capital` merged into this branch mid-flight** and it had already
+  changed `compareTargets` — a novelty-first tie-break for *scribing*. The two are
+  **composed rather than merged**: `compareNovelty` is factored out and applied first in
+  `compareAppeal`, so novelty partitions the candidate list and the utility score decides
+  inside the partition. Folding a binary into a bounded additive sum is either inert or a
+  lexicographic prefix wearing a magnitude's clothes; the second lies in the ablation report.
+- **W7's `researchCompleted` comparison inverted** under the value-scored acquirer, and the
+  discriminating experiment is committed with it. See task 6.3.
+
+## Tasks
+
+### 1. Instrument and baseline
+
+- [x] 1.1 Read W15's measurement, the vision §§5–7, `contracts.md` §2.3, `CLAUDE.md`.
+- [x] 1.2 Establish that v1 `researchCost` is a pure function of tier.
+- [x] 1.3 Merge `origin/w15/strategy-dimensionality` for `foundingSpeciesMask`, the inert probe and
+      `tools/w15/{run-arm,composition,analyse}.mjs`. **Reuse, do not rebuild.**
+- [x] 1.4 Record the "before" numbers on this branch with this tooling.
+
+### 2. Content — every weight authored, none hardcoded
+
+- [x] 2.1 `packages/content/data/autonomy-weight.json`: scalar weights and the role × primitive
+      appeal table, each with a `gloss` and `tuningStatus: "untuned"`.
+- [x] 2.2 Schema + `checkAutonomyWeights`: role must be one of the four, primitive must exist in
+      `primitive.json`, ids unique, the required scalar set present in both directions, and the
+      **bound invariant** — the role bound is strictly below the sum of the other five bounds, so a
+      role can never outvote everything else. The §7 pillar as arithmetic, checked at load.
+- [x] 2.3 Register the file, intern it, expose `autonomyWeight(id)` and the role table on the
+      registry.
+
+### 3. Rules — the score
+
+- [x] 3.1 `KnowledgeTarget` gains `cellId`, `formId` and the node's effect `primitives`.
+- [x] 3.2 `MageOutlook` gains the species affinity table resolved to interned ids.
+- [x] 3.3 `autonomy/target-appeal.ts`: `readTargetAppeal(source)` (the `rules-raid/tuning.ts`
+      pattern), the six term functions, `targetAppeal`, per-term bounds, one clamp, ablation.
+- [x] 3.4 `chooseTarget` becomes an argmax over `targetAppeal` with `compareTargets` as tie-break.
+- [x] 3.5 Thread the weights through `SelectionInput` / `AutonomyTickInput` / coordination /
+      scenario.
+
+### 4. Tests, written first
+
+- [x] 4.1 Two mages identical but for **role** choose different targets from one candidate list.
+- [x] 4.2 Two species differing only in **affinity** choose different targets.
+- [x] 4.3 Gnome and human, same depth ceiling, order the same list differently (curiosity term).
+- [x] 4.4 **Age** and **personality** each move a choice on their own (ablation).
+- [x] 4.5 The order is total and deterministic: equal appeal falls to cost then `nodeId`; no RNG
+      draw is taken in target selection.
+- [x] 4.6 The loader rejects an unknown role, an unknown primitive, and a role bound that would let
+      a role dominate.
+
+### 5. Measure, and report the number whether or not it holds
+
+- [x] 5.1 Re-run the 2400-tick eight-strategy sweep after the change.
+- [x] 5.2 Prefix fidelity — target **< 0.7**, was 0.943.
+- [x] 5.3 Effective dimensionality — target **≥ 2 components for 80%**, was 1.
+- [x] 5.4 Cross-strategy containment — target **< 1.000**, was 1.000 everywhere in v1.
+- [x] 5.5 Gnome vs human node sets — target **not identical**, were identical (49 = 49).
+- [x] 5.6 Frontier-length instrumentation, to answer Q2 and to tell "the selector is still flat"
+      apart from "the window was already truncated".
+
+### 6. Gate and cross-workstream
+
+- [x] 6.3 W7's capital test: measure the inversion, run the effort-only discriminator, change
+      the metric with the numbers written into the test rather than weakening it silently.
+
+- [x] 6.1 `npm run verify`. **A failing golden fixture is a STOP-and-report, never a regen.**
+- [x] 6.2 Balance baselines: they will move. Regenerate only with a written rationale naming what
+      moved and why the new numbers are right.
+
+## Result
+
+**All four claim thresholds fail, for one measurable reason, and it is not the selector.**
+`docs/design/value-sensitive-acquirer.md` has the numbers. In short:
+
+| claim | threshold | before | after | met |
+|---|---|--:|--:|:--:|
+| prefix fidelity | < 0.7 | 0.9433 | 0.9085 | no |
+| components for 80% | ≥ 2 | 1 | 1 | no |
+| cross-strategy containment | < 1.000 | 1.000 | 1.000 | no |
+| gnome vs human sets | not identical | identical | identical as unions | no |
+
+Five of seven unrestricted strategies still end holding **all 51** reachable v1 nodes, and gnome and
+human both exhaust the 49 reachable at `depthCeiling: 4`. A set that contains everything is contained
+in every other set — those three metrics are arithmetic about the ceiling, not observations about the
+selector. Every measure that is *not* saturated moved, and moved a long way: effort-shape
+participation ratio 2.39 → 4.89, tick-240 minimum containment 0.742 → 0.612, `denial-warden` ↔
+`narrow-depth` containment 0.771 → 0.643, human's cross-seed intersection 37 → 0, and every species
+roughly twice as fast to tier 3 with the spread reopened into three bands.
+
+**The forced next step is a fourth item on W15's list of three: a universe must not be able to exhaust
+the reachable set.** While it can, composition is not a decision for anybody and no selector can make
+it one.
+
+- [x] 5.7 Third arm at `w7/knowledge-capital` alone, to attribute the movement. W7 moved the
+      effort-shape spectrum (2.39 → 3.36) and left prefix fidelity and containment untouched; W17
+      moved prefix fidelity (the only arm that did), the spectrum again (→ 4.89), and all of the
+      containment change.

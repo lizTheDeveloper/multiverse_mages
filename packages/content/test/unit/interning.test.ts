@@ -246,7 +246,19 @@ describe('contentRevision', () => {
     // contains both sets of constants, so it is a third revision, and that it is
     // neither of theirs is the whole point of a digest over the preimage rather
     // than a hand-maintained list.
-    expect(registry.contentRevision).toBe('61f6aa53e091684809765b1f9020ee96');
+    //
+    // 61f6aa53e091684809765b1f9020ee96 -> a622452a3b55e38fd902a2d3264b44d7, when W17 added
+    // `autonomy-weight.json` (§2.11) — every magnitude a mage's choice of *which
+    // node to work on* is made of, including the role x primitive table that
+    // makes vision §7's standing role a number. It is in the preimage for the
+    // reason the other three tables are: two universes whose mages valued the
+    // same node differently would be developing different magic while their
+    // revisions agreed they were compatible. Nothing existing changed a byte.
+    //
+    // Three branches each recorded a successor to 2512ea02 — W6's ec506311,
+    // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
+    // other. This is the revision of the tree that holds all three.
+    expect(registry.contentRevision).toBe('a622452a3b55e38fd902a2d3264b44d7');
   });
 
   it('is stable across loads of identical content', () => {

@@ -265,7 +265,14 @@ export function buildRival(input: {
     // The rival's founding options are the scenario's defaults. A rival sized
     // by the *player's* factor levels would make an ablation on `cohortSize`
     // silently also an ablation on the opposition.
-    options: { cohortSize: 64, foundingMages: 2, foundingNodes: 6 },
+    //
+    // `foundingSpeciesMask: 0` is "every species", and it is pinned here for the
+    // same reason the other three are pinned: W15 added the mask so that D7 could
+    // vary the *host's* founding mix, and a rival that inherited that variation
+    // would confound "which species founded my universe" with "which species I am
+    // fighting". Zero is also what this builder did before the field existed, so
+    // no raid measured before it moves.
+    options: { cohortSize: 64, foundingMages: 2, foundingNodes: 6, foundingSpeciesMask: 0 },
     content,
     schema: input.schema,
   });

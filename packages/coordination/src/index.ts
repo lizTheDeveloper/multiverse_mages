@@ -84,6 +84,9 @@ export {
   isHeldAtMind,
 } from './gateway.js';
 
+export type { NodeFacetResolver, NodeFacets } from './node-facets.js';
+export { UNKNOWN_NODE_FACETS, nodeFacetsFrom } from './node-facets.js';
+
 export type { OutlookDeps } from './outlook.js';
 export { buildOutlook, universityPreference } from './outlook.js';
 
