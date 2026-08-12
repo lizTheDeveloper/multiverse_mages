@@ -23,3 +23,4 @@ assets/candidates/
 # Python bytecode, from packages/gym-bridge/python.
 __pycache__/
 *.py[cod]
+.w15/
