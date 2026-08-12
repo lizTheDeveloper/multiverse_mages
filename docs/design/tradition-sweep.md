@@ -13,7 +13,24 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 This is the first time `vision.md` §4a's tradition axis has been measured. Everything here is read
 off run records. Where a number is derived, the derivation is arithmetic over recorded values and
-the script that does it is committed (`scripts/w13-analyse.mjs`, `scripts/w13-paired.mjs`).
+the script that does it is committed (`scripts/w13-analyse.mjs`, `scripts/w13-paired.mjs`,
+`scripts/w13-teaching-probe.mjs`).
+
+## The result in five lines
+
+1. **The reference universe runs True Naming, not Vancian.** The campaign's entire measured record
+   was taken under the tradition where teaching *works*. The premise this workstream was given is
+   false, and the choice is an accident of lexicographic interning rather than a decision.
+2. **Vancian and True Naming are near-duplicates** for seven of eight strategies. The 51-node
+   plateau, the flat achievement vectors and `ascensionRate` ≈ 0.69 reproduce under both. This is a
+   negative result and it is the most important one here.
+3. **Teaching dies at tick 600 under Vancian and Art of Memory, and never under True Naming** —
+   134 lessons against 1513 per passive run — **and the 11× difference buys zero extra nodes known.**
+4. **Art of Memory is a genuinely different game**: zero grimoires in 96 runs, zero library depth,
+   `capitalSnowball` exactly zero, `permissive-breadth` falling from 12/12 wins to 0/12, and the
+   only `ascensionRate` inside §7's band (0.125) without touching an ascension constant.
+5. So the tradition is a **real axis with two levels, not three**, and the split runs between
+   `store` hooks rather than `acquire` hooks.
 
 ---
 
