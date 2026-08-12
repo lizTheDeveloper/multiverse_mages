@@ -9974,12 +9974,12 @@
     "rediscoveryMultiplier": 7168,
     "effects": [
       {
-        "primitive": "fertility",
+        "primitive": "resource-yield",
         "magnitude": 1024,
         "target": "area",
         "durationTicks": 0,
         "mode": "control",
-        "gloss": "Once the doctrine's discipline is legible, the ground left alone recovers no slower than this.",
+        "gloss": "Once the doctrine's discipline is legible, a seam left unopened recovers its yield no slower than this. The fallow ground pays, eventually, for having been left alone.",
         "when": {
           "kind": "revealed"
         },
