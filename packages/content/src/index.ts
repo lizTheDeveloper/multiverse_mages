@@ -84,6 +84,7 @@ export type { AudioFileName, AudioValidationResult } from './audio.js';
 export type {
   AudioCueRecord,
   AudioCueKind,
+  AudioProduction,
   AudioBand,
   AudioGridPosition,
   VoiceLineRecord,

@@ -1446,6 +1446,22 @@ it is the entire music budget for the game.
 One voice per species, plus the four populace roles. Direction, not accent — per §0.6, no species
 voice may read as a real people's accent.
 
+**Two notes from casting in practice.**
+
+*Verify a voice before spending on it, and verify it the right way.* Looking an id up in the
+account's own collection is not sufficient — a voice from the shared library is absent there and
+still works perfectly for synthesis, so that check produces false negatives. Probe the
+text-to-speech endpoint itself with one short line. The same habit caught a genuine mismatch: an id
+that resolved to a cartoon-monster character voice, which was in fact deliberate, and one that did
+not exist at all, which was not. One request is cheaper than a hundred and twelve.
+
+*The human bank's voice is accent-tagged, which sits against §0.6.* §0.6 forbids a species voice
+reading as a real people's accent, and the shipped human voice carries an accent label. This is a
+recorded, deliberate exception made by the copyright holder on hearing the alternatives — not an
+oversight, and not a loosening of §0.6, which continues to govern the other nine banks. If the
+performance reads as a specific real-world people rather than as a person, that is the signal to
+revisit it.
+
 **The cast lives in content, not in the environment.** Each bank in `voice-line.json` carries a
 `voiceId` alongside its `voicePrompt`, because ten banks with ten directions cannot be expressed by
 one process-wide setting — and a generator that quietly recorded every species in the same voice

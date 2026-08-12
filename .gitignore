@@ -19,3 +19,7 @@ coverage/
 
 # Generated audio candidates. Selected takes are committed under assets/selected/.
 assets/candidates/
+
+# Superseded takes from a voice recast. Kept on disk so a swap is reversible
+# with one `mv`, but they are regenerable audio and do not belong in history.
+assets/retired/

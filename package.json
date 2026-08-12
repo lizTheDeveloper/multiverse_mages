@@ -21,6 +21,8 @@
     "check:audio": "node packages/content/bin/validate-audio.mjs",
     "check:coverage": "node scripts/check-primitive-coverage.mjs",
     "audio:generate": "node scripts/generate-audio.mjs",
+    "audio:manifest": "node scripts/audition-manifest.mjs",
+    "audition": "node scripts/audition-server.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "bench": "tsc -p packages/sim-core/bench/tsconfig.run.json && node scripts/bench.mjs",

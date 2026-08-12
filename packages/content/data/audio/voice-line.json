@@ -3,7 +3,7 @@
     "id": "bank-human",
     "speaker": "human",
     "speakerKind": "species",
-    "voiceId": "TX3LPaxmHKxFdv7VOQHJ",
+    "voiceId": "7DTpboyigwqXiCkvQjMX",
     "voicePrompt": "Mid-thirties, quick and slightly breathless, warm, always sounds like they are already late. Neutral accent. Reads sincerely, never for laughs.",
     "lines": [
       {
@@ -399,7 +399,7 @@
     "id": "bank-dwarf",
     "speaker": "dwarf",
     "speakerKind": "species",
-    "voiceId": "onwK4e9ZLuTAKqWW03F9",
+    "voiceId": "rZcizibcb1rTBqSwSjpY",
     "voicePrompt": "Dry, precise, mid-range, the cadence of someone reading a catalogue number aloud. Certain. Not unkind.",
     "lines": [
       {
@@ -765,7 +765,7 @@
     "id": "bank-gnome",
     "speaker": "gnome",
     "speakerKind": "species",
-    "voiceId": "FGY2WhTYpPnrIDTdsKH5",
+    "voiceId": "OTMqA7lryJHXgAnPIQYt",
     "voicePrompt": "Fast, bright, interrupts itself constantly, genuinely delighted by everything. Trails off mid-sentence and starts a new one.",
     "lines": [
       {
@@ -942,7 +942,7 @@
     "id": "bank-orc",
     "speaker": "orc",
     "speakerKind": "species",
-    "voiceId": "CwhRBWXzGAHq8TQ4Fs17",
+    "voiceId": "DUAKkudcC2PI6KEqJ60K",
     "voicePrompt": "Warm, blunt, unbothered. Working-voice — the sound of someone talking while carrying something. Quietly amused by everyone else.",
     "lines": [
       {
