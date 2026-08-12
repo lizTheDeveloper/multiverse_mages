@@ -312,6 +312,52 @@ the strategy that funds, blesses and encourages.
 
 ---
 
+## 6a. What the build found on the way, recorded rather than smoothed over
+
+Six things surfaced while implementing this that are worth more than the code that fixed them.
+
+**The declared effect pipeline had no callers.** `rules-magic/src/effects/` documents
+`instances → gatherEffects → contributions → stackContributions → outcomes`, and `gatherEffects` and
+`stackContributions` had **zero production callers** — every reference was inside that directory or
+its own tests. A mage holding a `research-rate` node got nothing from it. The world-tick bonus arrays
+were god-blessings-only (`research-rate`, `teach-rate`, `lifespan`) or literally `[]`
+(`resource-yield`, `fertility`, `scribe-rate`). So most authored magnitudes in the game were inert,
+and had been through every measurement the campaign has taken.
+
+**`build-rate` is worse than inert: its consumer has no caller either.** `advanceConstruction` in
+`rules-world/src/universities/construction.ts` is called only from inside its own file. Wiring
+`buildRateBonuses` would have been dead code, so it was deliberately not wired — and 14 authored
+`build-rate` effects are therefore still asleep. That is a finding for whoever owns construction, not
+something to paper over here.
+
+**Engagement scale re-implements the gather gates.** `rules-raid/src/arbitration.ts` reads
+`node.effects` magnitudes through its own copy of the location/mastery/legality checks rather than
+through `gatherEffects`. That is why adding `mode` had to touch the raid layer separately: a
+`control`-mode effect with a placeholder magnitude would otherwise have stacked as a 100% ward and a
+guaranteed knowledge-steal. Two implementations of one rule is the defect; this change makes them
+agree rather than merging them, and the merge is still owed.
+
+**Two pre-existing content defects fell out of the new checks.** `cell.json`'s `nodes` lists had
+drifted from `node.json`, and `creo-mentem`'s `cm-the-made-scholar` declared an effect targeting the
+whole universe — which contradicts sound-design §4.2's *"the only form with no reverb at all… it is
+happening inside the listener's head rather than in the world"*. Neither is in the v1 rectangle, so
+neither had ever been executed. `mentem-is-not-in-the-world` is enforced for **all** cells precisely
+because it is a statement about the form.
+
+**The schema interpreter grew one documented deviation.** `packages/content/src/json-schema.ts`
+enforces a closed keyword list on purpose — *"a constraint that enforces nothing while reading as
+though it did is worse than its absence"*. `oneOf` was added for the `when` condition, and it folds
+the matching branch's `properties` into the parent before running `additionalProperties`, which is
+what `unevaluatedProperties` would do in a stricter dialect. The deviation is **stricter than the
+alternative**, not looser: declaring the variant fields at the parent level would have let a
+`holds-cell` field ride on an `always` condition.
+
+**Raid theft bypasses both enforcement seams.** `knowledge-steal` creates instances through
+`createInstance` directly, so a mage can be handed, by theft, a node her own commitments forbid her
+to learn. It is recorded in `exclusion.ts`'s module comment rather than fixed, because the right
+answer is a design question — theft that can violate a commitment is arguably *correct*, and a very
+good reason to steal — and it belongs with whoever owns the raid layer.
+
 ## 7. The open question, raised rather than answered
 
 The author's instruction says *"author a complex web of nodes **per tradition**"*. Tracks as
