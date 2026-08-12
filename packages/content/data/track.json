@@ -7,7 +7,8 @@
       {
         "track": "the-sealed-mind",
         "threshold": 2,
-        "gloss": "A scholar who has learned to open a mind cannot also learn to shut one. Intellego Mentem sounds like eavesdropping because it is; Perdo Mentem is a hole taken out of the same tone. One hand cannot do both."
+        "symmetric": true,
+        "gloss": "Opening a mind and shutting one are the same act run backwards. Intellego Mentem is a filter opening onto a reverbless tone; Perdo Mentem is a hole taken out of that same tone. Opposed in kind, so the exclusion runs both ways."
       }
     ],
     "tuningStatus": "untuned"
@@ -27,7 +28,8 @@
       {
         "track": "the-hollow-ground",
         "threshold": 2,
-        "gloss": "A scholar who has learned to hollow the ground cannot go on quarrying it. The two lines want the same stone in opposite directions, and one pair of hands cannot work a seam it has been taught to collapse."
+        "symmetric": true,
+        "gloss": "Raising stone and collapsing it are one skill practised in opposite directions. A mason who has learned where a seam gives way cannot unlearn it, and will not trust the course she lays on it. Opposed in kind, so it runs both ways."
       }
     ],
     "tuningStatus": "untuned"
@@ -47,7 +49,8 @@
       {
         "track": "the-nameless-road",
         "threshold": 2,
-        "gloss": "A gate is a name for a place, kept. The nameless road is the practice of taking names away. One mind cannot hold both doctrines and still find its own doors."
+        "symmetric": true,
+        "gloss": "A gate is a name for a place, kept. The nameless road is the practice of taking names away. One mind cannot hold both doctrines and still find its own doors. Opposed in kind, so it runs both ways."
       }
     ],
     "tuningStatus": "untuned"
@@ -67,12 +70,14 @@
       {
         "track": "the-open-mind",
         "threshold": 1,
-        "gloss": "The unwritten is what a mind holds that it has never made legible. One lesson given from an open mind forecloses it."
+        "symmetric": true,
+        "gloss": "The unwritten is what a mind holds that it has never made legible. A scholar who has given one lesson from an open mind has written it down in someone. Opposed in kind, so it runs both ways."
       },
       {
         "track": "the-quarried-world",
         "threshold": 1,
-        "gloss": "A scholar who has cut one stone has written on the world. The unwritten is the practice of having left it alone."
+        "symmetric": true,
+        "gloss": "A scholar who has cut one stone has written on the world. The unwritten is the practice of having left it alone. Opposed in kind, so it runs both ways."
       }
     ],
     "tuningStatus": "untuned"

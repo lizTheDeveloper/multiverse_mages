@@ -118,18 +118,73 @@ become true at once:
    grant *does* commit the recipient — which would be a real consequence for a verb currently
    measured to be worth nothing, and should be adopted deliberately rather than discovered.
 
-### 3.2.4 The relation is symmetric — and that is an open question
+### 3.2.4 Symmetry is derived from the reason, never chosen
 
-`load.ts` normalises the relation so that holding either member blocks the other, whichever arrived
-first. Declaring it on both sides is not an error.
+The author's ruling:
 
-**This is a choice, and it is being escalated rather than settled.** The author's phrasing is
-one-directional — *"you can only know track 3 if you don't know 1 and 2"* — which says nothing about
-whether a mage who reached track 3 first may afterwards learn track 1. Symmetry is implemented
-because it is the only reading under which the stated invariant survives every acquisition order: if
-the rule is one-directional, a mage can hold 3 and then hold 1, and *"you can only know 3 if you
-don't know 1"* becomes false of a legal state. It is isolated behind a single named predicate so the
-one-directional answer is a one-line change if that is what was meant.
+> *"It depends on why. It should be a **lore / mechanic / making-sense thing**. E.g. if you use light
+> magic you can't also use dark magic."*
+
+So an exclusion's shape **follows from its justification**. Two things opposed *in kind* — making
+and unmaking, light and dark — exclude each other mutually. A one-way reason gives a one-way lock.
+`TrackExclusion` therefore carries a required `symmetric: boolean` beside a required `gloss`, and
+the gloss is not decoration: it is the justification the shape was derived from, and it must be
+legible to a reader who sees only the data.
+
+Three rules follow, and they are enforced:
+
+- **No arbitrary exclusions.** If the reason cannot be stated in one sentence, the exclusion does not
+  belong in the content. `exclusion-reason-missing` is the loader half of that.
+- **The reason determines the shape**, not the designer's convenience.
+- **The reason lives in the data**, beside the mechanism, in the same voice as a node gloss.
+
+All five v1 exclusions are `symmetric: true`, because every opposition that could be motivated from
+`sound-design.md` §4.1/§4.2 turned out to be opposed in kind. The one-directional form is
+implemented and tested, and no v1 content uses it — which is a fact about this content, not a
+limitation of the mechanism.
+
+### 3.2.5 The oppositions this grid actually wanted are outside v1 — stated plainly
+
+`sound-design.md` §4.1 and §4.2 gave every technique and form a semantic identity, and the
+oppositions fall out of them. The two cleanest are:
+
+- **Creo ↔ Perdo.** Creo is *"the only technique whose energy increases across its duration"*; Perdo
+  is *"subtractive… its signature is a hole"*. Making against unmaking. This is the clearest
+  symmetric pair in the game.
+- **Umbra ↔ Imaginem.** The game's literal light and dark, and the author's own example. Umbra is
+  *"the negative — everything in the reverb tail, nothing in the dry signal"*; Imaginem is *"other
+  sounds — convolution, doubled and detuned copies"*, the form of images.
+
+**Neither is expressible in v1.** The v1 rectangle is `intellego`/`perdo`/`rego` ×
+`limen`/`mentem`/`nomen`/`terram`, and Creo, Muto, Umbra, Imaginem and Fatum are all outside it.
+
+This is the second design conclusion in this workstream to point outside the rectangle — the first
+is life extension, whose authored home is the `creo-corpus` ladder (`cc-close-the-wound`,
+`cc-the-mended-decade`, `cc-the-long-tenure`, `cc-the-unfinished-death`), also outside v1, also
+structurally unreachable, with `lifespan` sitting in `PRIMITIVE_COVERAGE_EXCLUSIONS` *because*
+nothing in v1 used it.
+
+**Two independent conclusions pointing at the same boundary is evidence about the boundary.** The
+honest reading is that the v1 rectangle may be the wrong scope for *proving* this design, and that
+is a legitimate finding rather than a failure. The alternatives, with costs:
+
+| option | cost |
+|---|---|
+| **Widen v1 to include Creo and Corpus** | 3×4 → 4×5 = **8 new cells**, against vision §12's deliberate v1 scoping. Buys Creo↔Perdo and the authored life-extension ladder outright, and both are already written. |
+| **Widen v1 to include Umbra and Imaginem** | two more forms; 3×6 = 6 new cells. Buys the author's own light/dark example. |
+| **Author equivalents inside the twelve cells** (what this branch does) | no scope change. Life extension is re-homed in `rego-nomen` — defensible, because sound-design §4.2 makes Nomen *"the only voice… naming is speech"* and vision §5 puts compulsion-by-name there, so keeping your own true name is keeping yourself. The exclusions become the five authored tracks, whose oppositions are real but weaker than making-against-unmaking. **What is lost is the two best-motivated exclusions in the game, and a ladder that is already written.** |
+
+This branch takes the third option so that the measurement can be taken without a scope change. The
+recommendation is the first: **Creo and Corpus buy more design per cell than anything else
+available**, and the content for both already exists.
+
+One interaction found while considering the alternatives, and deliberately not shipped:
+**Intellego ↔ Perdo is expressible inside v1** — *"a reveal, not an event; nothing is struck"*
+against *"a hole where there was content"* — and it was rejected rather than authored, because
+Intellego is the **reveal key** that switches on every latent effect (§3.4). Excluding Intellego
+from Perdo-committed mages would leave every Perdo latent structurally dead for exactly the mages
+who hold them. That is a real coupling between the exclusion system and the condition system, and it
+is the kind of thing that would have looked like a balance problem for months.
 
 ### 3.3 Effect modes — sound-design §4.1's envelopes, made mechanical
 

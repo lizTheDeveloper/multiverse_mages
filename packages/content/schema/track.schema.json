@@ -27,7 +27,7 @@
     "exclusion": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["track", "threshold", "gloss"],
+      "required": ["track", "threshold", "symmetric", "gloss"],
       "properties": {
         "track": { "$ref": "#/$defs/contentId" },
         "threshold": {
@@ -36,7 +36,16 @@
           "minimum": 1,
           "maximum": 64
         },
-        "gloss": { "type": "string", "minLength": 1, "maxLength": 240 }
+        "symmetric": {
+          "description": "Whether the exclusion runs both ways. **This follows from the reason and is never a free choice**: two things opposed *in kind* exclude each other mutually — light and dark, making and unmaking — while a one-way reason gives a one-way lock. That is why `gloss` is required beside it: an exclusion whose reason cannot be stated in one sentence does not belong in the content, and an exclusion whose stated reason is symmetric while this field says otherwise is a content bug a reader can catch by eye.",
+          "type": "boolean"
+        },
+        "gloss": {
+          "description": "The reason, in the same voice as a node gloss. Not decoration — it is the justification the shape is derived from, and it must be legible to a reader who sees only the data.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        }
       }
     },
     "contentId": {
