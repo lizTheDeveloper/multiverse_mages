@@ -21,8 +21,9 @@ the same role `core-contracts` played as change #2.
 - [x] 2.3 Newline-delimited JSON framing with a **bounded** reader
 - [x] 2.4 `SnapshotPayload` pinned to `mmsn-base64`, with `kind` separating world from engagement
       transport per §1.6 — declared, and unused in v1
-- [x] 2.5 `UniverseRef` and `challengeEligibility`: persisted identity and the single reachability
-      predicate
+- [x] 2.5 `UniverseRef`: a stable universe identity, distinct from the in-instance `EntityHandle`
+- [x] 2.6 `BubbleRoster` and `rosterContains`: an adjacency set with no coordinate, per §7a
+- [x] 2.7 `challengeEligibility`: the single reachability predicate, roster-first and label-fallback
 
 ## 3. Ordering, admission, and the authoritative tick
 
@@ -66,7 +67,7 @@ exist yet, named beside it.
 - [ ] 7.1 Persist universes at run boundaries — needs a storage layer; the wire's bootstrap is
       already the shape a persisted universe would replay from
 - [ ] 7.2 Prestige carry-forward at the ascension and stagnated bases — needs `god-agency`
-- [ ] 7.3 Transfer on conquest, and respawn into a different cluster — needs `raid-engagement` for
+- [ ] 7.3 Transfer on conquest, and respawn into a different bubble — needs `raid-engagement` for
       a raid to be able to extinguish a universe at all
 - [ ] 7.4 Engagement transport: carrying a raid across the wire — needs `raid-engagement`. Nothing
       supplies `portalTargets` today, so `openPortal` is permanently masked and no raid can fire.

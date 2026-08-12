@@ -42,23 +42,77 @@ running build's SHALL be refused rather than guessed at.
 - **THEN** it is migrated through the registered migration chain, or the load is refused naming the
   missing migration
 
-### Requirement: Cluster membership is part of a persisted universe's identity
+### Requirement: A universe has a stable identity distinct from its entity handle
 
-A persisted universe SHALL carry a stable `universeId` and the `clusterId` of the group of
-multiverses it belongs to. Cluster membership SHALL be the state that `direct-challenge`'s
-reachability predicate reads, so that which universes can portal to which is a stored fact rather
-than an assumption.
+A persisted universe SHALL carry a `universeId` that is stable across processes and across runs,
+and that is **not** the `EntityHandle` by which the universe is addressed inside one simulation
+instance. A handle is an index into one process's entity store, is reused after a destroy, and
+means nothing to any other process; nothing in the codebase currently provides an identity that
+outlives one instance, and three separate things need one — naming a portal target, expressing
+bubble membership, and carrying prestige across a run boundary.
+
+#### Scenario: Identity outlives the process
+
+- **WHEN** a universe is persisted, the process exits, and the universe is reloaded elsewhere
+- **THEN** its `universeId` is unchanged, while its entity handle may differ
+
+#### Scenario: Identity outlives the run
+
+- **WHEN** a run ends and a successor universe is created from it
+- **THEN** the relationship between the two is expressible in terms of stable ids
+
+#### Scenario: A handle is never used as an identity
+
+- **WHEN** a universe is named on the wire, in a roster, or in a persisted record
+- **THEN** it is named by `universeId`, never by an entity handle
+
+### Requirement: Bubble membership is part of a persisted universe's identity
+
+A persisted universe SHALL carry a stable `universeId` and the `bubbleId` of the bubble — the
+bounded neighbourhood of universes that can portal to one another — it belongs to. Bubble
+membership SHALL be the state that `direct-challenge`'s reachability predicate reads, so that which
+universes can portal to which is a stored fact rather than an assumption.
 
 #### Scenario: Identity survives a run boundary
 
 - **WHEN** a universe ends a run and its successor is created
-- **THEN** the successor carries forward an identity that names which cluster it is in
+- **THEN** the successor carries forward an identity that names which bubble it is in
 
 #### Scenario: Reachability is answerable from storage alone
 
 - **WHEN** two persisted universes are considered for a match
-- **THEN** whether they may meet is decided from their stored cluster membership without consulting
+- **THEN** whether they may meet is decided from their stored bubble membership without consulting
   a live session
+
+### Requirement: A bubble roster is a persisted adjacency set
+
+A bubble SHALL be persisted as a roster: a `bubbleId` and the set of `universeId`s in it. The
+roster SHALL carry no coordinates, no distance and no ordering that means anything — vision §7a
+says that at world scale there is no map, and a bubble is a **relationship, not a place**. The
+roster SHALL be authoritative for membership where one exists, and the set it holds SHALL be what
+`openPortal`'s candidate list is built from, so that "whom may I challenge" and "whom may I raid"
+cannot answer differently. Tiers, promotion between bubbles, and tribute are out of scope for v1.
+
+#### Scenario: The roster is a set of ids and nothing else
+
+- **WHEN** a roster is inspected
+- **THEN** it holds a bubble id and universe ids, with no position, distance or coordinate
+
+#### Scenario: The roster is authoritative over a claimed label
+
+- **WHEN** a universe claims a bubble whose roster does not list it
+- **THEN** it is not reachable, because a label a universe asserts about itself is not membership
+
+#### Scenario: Portal targets come from the roster
+
+- **WHEN** the candidate list for `openPortal` is built for a universe
+- **THEN** it is drawn from that universe's bubble roster, using the same reachability predicate a
+  direct challenge is checked against
+
+#### Scenario: Order carries no meaning
+
+- **WHEN** two rosters hold the same members in different orders
+- **THEN** they describe the same bubble, and nothing reads a member's position as nearness
 
 ### Requirement: Prestige carries forward at a base set by how the run ended
 
@@ -89,7 +143,7 @@ participant announces.
 
 A universe whose magic users are wiped out SHALL end its run as extinguished. Its populace,
 materials and worship SHALL transfer to the conquering universe, and the extinguished player's
-successor universe SHALL be created **in a different cluster**, carrying prestige at the stagnated
+successor universe SHALL be created **in a different bubble**, carrying prestige at the stagnated
 base. This is the first operation in the design that writes to a universe other than the one being
 stepped, and it SHALL occur only at a run boundary, never during a tick.
 
@@ -102,7 +156,7 @@ stepped, and it SHALL occur only at a run boundary, never during a tick.
 #### Scenario: The loser respawns elsewhere
 
 - **WHEN** an extinguished player's successor universe is created
-- **THEN** its cluster differs from the cluster it was extinguished in, so the conqueror keeps the
+- **THEN** its bubble differs from the bubble it was extinguished in, so the conqueror keeps the
   tribute and loses the target
 
 #### Scenario: A cross-universe write happens only at a run boundary

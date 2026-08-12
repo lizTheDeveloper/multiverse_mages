@@ -89,12 +89,35 @@ direction: a world-time universe in which every action happened to be unaffordab
 same mask. It would have meant a management tick occasionally getting a raid's deadline, a bug
 visible only on a poor universe under load.
 
-**Universe identity carries a cluster.** A participant announces a `UniverseRef` — `universeId`,
-`clusterId`, advisory `prestige` — and `challengeEligibility` is the single reachability predicate.
-Nothing consults the cluster yet; every participant defaults into `DEFAULT_CLUSTER_ID`. It is
-declared now because cluster membership is a property of a *persisted* universe, and adding a field
-to a storage format before anything is stored is free while adding it afterwards is a migration
-arriving at the same moment as the feature that needs it.
+**Universe identity is stable, and it is not an entity handle.** Nothing in the codebase provided
+an identity that outlived one simulation instance — a universe was an `EntityHandle`, which is an
+index into one process's entity store, reused after a destroy, and meaningless anywhere else. Three
+things sit directly on top of that hole: naming a portal target (which is why
+`CandidateInput.portalTargets` is unpopulated and `openPortal`'s mask bit is permanently 0),
+expressing bubble membership, and carrying prestige across a run boundary. `UniverseRef` —
+`universeId`, `bubbleId`, advisory `prestige` — is that identity, and it is a string precisely so it
+cannot be confused with a handle.
+
+**A bubble is a relationship, not a place.** Vision §7a says that at world scale there is no map,
+and a `BubbleRoster` respects that literally: a bubble id and a set of universe ids, with no
+coordinate, no distance, and no ordering that means anything. `rosterContains` is the membership
+test and `challengeEligibility` is the single reachability predicate — **yes, a challenge's legality
+is a predicate over the roster**, and the same predicate is what `openPortal`'s candidate list must
+be filtered by, so that "whom may I challenge" and "whom may I raid" cannot answer differently.
+
+The roster and the label are not the same thing, which is why both exist. A shared `bubbleId` is an
+equivalence class decided by comparing two strings; a roster is a set. They stop agreeing the moment
+a universe claims a bubble it is not in, or a bubble gains a member by conquest, or an id appears in
+a roster before its universe has ever connected. So the roster is authoritative where one is loaded,
+and the label is the fallback — which is what v1 uses, because no persistence layer exists to have
+written a roster and every participant defaults into `DEFAULT_BUBBLE_ID`.
+
+It is all declared now, before anything is stored, because a field added to a storage format costs
+nothing today and costs a migration later — arriving at the same moment as the feature that needs
+it, which is the worst time to be changing how universes are written down. **W8 should take the
+`universeId` from here rather than minting its own**: two notions of universe identity would drift,
+and that is exactly the kind of divergence that is cheap now and expensive once both sides depend on
+one.
 
 ---
 

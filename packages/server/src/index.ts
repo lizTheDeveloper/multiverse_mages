@@ -75,7 +75,7 @@ export {
 export { compareHash, desyncLogLine, type HashReport } from './desync.js';
 
 export {
-  DEFAULT_CLUSTER_ID,
+  DEFAULT_BUBBLE_ID,
   HOST_PROTOCOL_VERSION,
   MatchHost,
   type Connection,
@@ -110,11 +110,13 @@ export {
   challengeEligibility,
   contractDisagreements,
   isFatal,
+  rosterContains,
 } from './protocol.js';
 
 export type {
   AcceptRequest,
   ActionRequest,
+  BubbleRoster,
   CanonicalBatch,
   CanonicalEntry,
   ChallengeRequest,

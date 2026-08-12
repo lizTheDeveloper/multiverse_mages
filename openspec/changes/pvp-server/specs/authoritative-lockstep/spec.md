@@ -166,6 +166,36 @@ could.
 - **WHEN** the server's public surface is inspected
 - **THEN** it offers no resync, rollback, reconcile or snapshot-push operation
 
+### Requirement: A checkpoint is authorised by the seat, not by the frame
+
+A hash report SHALL be attributed to the match and slot the reporting connection actually holds,
+and MUST NOT be resolved from an identifier the frame supplies. A connection holding no seat SHALL
+be refused; a connection naming a match other than its own SHALL be refused; and a participant
+SHALL vouch only for a universe it mirrors, which in v1 is its own slot. A checkpoint is the only
+frame that can end a match, so a frame trusted to name its own subject is a frame that ends other
+people's matches.
+
+#### Scenario: A connection with no seat cannot report on a match
+
+- **WHEN** a handshaken connection that is in no match sends a hash report naming a live match
+- **THEN** it is refused, the match continues, no desync is reported and no desync is logged
+
+#### Scenario: A participant cannot report on another match
+
+- **WHEN** a participant sends a hash report naming a match other than the one it is in
+- **THEN** it is refused and that other match is unaffected
+
+#### Scenario: A participant cannot vouch for its opponent's universe
+
+- **WHEN** a participant reports a hash for a slot other than its own
+- **THEN** it is refused, and the match does not end — otherwise one participant could deny the
+  other the objective with a single frame
+
+#### Scenario: A settled match cannot be evicted by a stranger
+
+- **WHEN** a connection that was not in a just-ended match reports a hash for it
+- **THEN** it is refused, and the legitimate participants' final hash reports are still compared
+
 ### Requirement: The boundary applies an admission policy before the core
 
 Every action crossing the network boundary SHALL be screened against the legality mask before it

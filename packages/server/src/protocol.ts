@@ -361,11 +361,11 @@ export function contractDisagreements(
  * extinguished, and its prestige carries into whatever comes next (vision §8a).
  * The name is how a challenge addresses it; this is what it is.
  *
- * ## `clusterId`, and why it is here before anything uses it
+ * ## `bubbleId`, and why it is here before anything uses it
  *
  * A universe belongs to a **group of multiverses** — a bounded neighbourhood
  * whose members can portal to one another. Nothing in this release consults it:
- * every universe the skeleton hosts is in one cluster, and
+ * every universe the skeleton hosts is in one bubble, and
  * {@link challengeEligibility} compares the field and finds it equal.
  *
  * It is declared now because of what it costs to add later. Cluster membership
@@ -377,7 +377,7 @@ export function contractDisagreements(
  * worst moment to be changing a storage format.
  *
  * The concrete thing it will be for: a universe extinguished by conquest
- * respawns **in a different cluster**, carrying its prestige. That is an
+ * respawns **in a different bubble**, carrying its prestige. That is an
  * anti-farming property — the conqueror keeps the tribute and loses the target —
  * and it is only expressible if "which neighbourhood" is a thing a universe has.
  * See `universe-persistence`'s spec for the life-cycle in full.
@@ -392,7 +392,7 @@ export interface UniverseRef {
    * The group of multiverses this universe is in. Membership decides
    * reachability: two universes may only meet if they share it.
    */
-  readonly clusterId: string;
+  readonly bubbleId: string;
   /**
    * §8a's carry-forward, read-only during a run (§1.1).
    *
@@ -417,7 +417,7 @@ export const INELIGIBILITY = {
    * an *eligibility predicate on a direct challenge*: the challenge names its
    * opponent, and this says whether the portal could exist between them.
    */
-  cluster: 'cluster',
+  bubble: 'bubble',
   /** A universe cannot challenge itself. */
   self: 'self',
 } as const;
@@ -425,21 +425,86 @@ export const INELIGIBILITY = {
 export type IneligibilityReason = (typeof INELIGIBILITY)[keyof typeof INELIGIBILITY];
 
 /**
+ * The set of universes reachable from inside one bubble.
+ *
+ * A bubble is a **relationship, not a place.** Vision §7a says that at world
+ * scale there is no map, and a roster respects that: it is an adjacency set over
+ * stable universe ids, carrying no coordinates, no distance and no geometry. Two
+ * universes are neighbours because the roster says so.
+ *
+ * ## Why this exists alongside {@link UniverseRef.bubbleId}
+ *
+ * A shared label is an *equivalence class*: everyone carrying `bubble-3` is
+ * mutually reachable, symmetrically and transitively, and membership is decided
+ * by comparing two strings. A roster is a *set*, and the two stop agreeing the
+ * moment anything wants a universe to be in a bubble it does not itself claim —
+ * a universe added to a neighbourhood by conquest, a bubble that splits, an id
+ * that appears in a roster before its universe has ever connected.
+ *
+ * So the roster is the authoritative form and the label is the fast path. When a
+ * roster for the challenger's bubble is available, {@link challengeEligibility}
+ * decides membership from it; when none is, it falls back to comparing labels,
+ * which is what v1 does because no persistence layer exists to have written a
+ * roster yet.
+ *
+ * **`members` is what `portalTargets` will be built from.** `openPortal`'s mask
+ * bit is permanently 0 today because `CandidateInput.portalTargets` is optional
+ * and nothing populates it — a portal target is another universe, and naming one
+ * needs an id that means something outside this process. This is that id, and
+ * this is the set to enumerate.
+ */
+export interface BubbleRoster {
+  readonly bubbleId: string;
+  /**
+   * Every universe in the bubble, by stable id, including the one being asked
+   * about. Order carries no meaning and MUST NOT be given any: a roster is a
+   * set, and anything that read position 0 as "nearest" would have invented the
+   * coordinate §7a says does not exist.
+   */
+  readonly members: readonly string[];
+}
+
+/** Whether a universe is in a roster. */
+export function rosterContains(roster: BubbleRoster, universeId: string): boolean {
+  return roster.members.includes(universeId);
+}
+
+/**
  * Whether a direct challenge between two universes is legal.
  *
  * Returns the reason to refuse, or `undefined` to allow. Pure, total, and
  * deliberately the *only* place reachability is decided, so that adding a rule
- * later — a portal-range limit, a cooldown after conquest, the griefing guard
- * §7's `inboundRaidTempoLoss` implies — is an edit to one function rather than a
+ * later — a cooldown after conquest, the griefing guard §7's
+ * `inboundRaidTempoLoss` implies — is an edit to one function rather than a
  * search for every place a challenge is admitted.
+ *
+ * **Yes: a challenge's legality is a predicate over the bubble roster.** It is
+ * not a queue and not matchmaking — vision §12 keeps both out of v1. The
+ * challenge names its opponent, and this decides whether the portal between them
+ * could exist. The same predicate is what `openPortal`'s candidate list will be
+ * filtered by, so that "who may I challenge" and "whom may I raid" cannot answer
+ * differently.
+ *
+ * @param roster the challenger's bubble roster, when one has been loaded. Absent
+ * in v1, where membership falls back to comparing bubble labels.
  */
 export function challengeEligibility(
   challenger: UniverseRef,
   opponent: UniverseRef,
   contentRevisions?: { readonly challenger: string; readonly opponent: string },
+  roster?: BubbleRoster,
 ): IneligibilityReason | undefined {
   if (challenger.universeId === opponent.universeId) return INELIGIBILITY.self;
-  if (challenger.clusterId !== opponent.clusterId) return INELIGIBILITY.cluster;
+
+  const reachable =
+    roster === undefined
+      ? challenger.bubbleId === opponent.bubbleId
+      : // The roster is authoritative when there is one, and it must also be
+        // the challenger's own — a roster for some other bubble would answer a
+        // question nobody asked.
+        roster.bubbleId === challenger.bubbleId && rosterContains(roster, opponent.universeId);
+  if (!reachable) return INELIGIBILITY.bubble;
+
   if (
     contentRevisions !== undefined &&
     contentRevisions.challenger !== contentRevisions.opponent
@@ -558,7 +623,7 @@ export interface HelloRequest extends Frame {
    * Optional in v1, because no persistence layer exists to have issued one yet
    * and a server that refused a participant for lacking an id it cannot obtain
    * would be unusable. A participant that omits it is placed in
-   * {@link DEFAULT_CLUSTER_ID} under an id derived from its name — see
+   * {@link DEFAULT_BUBBLE_ID} under an id derived from its name — see
    * `host.ts`. When `universe-persistence` ships, the field becomes the thing a
    * stored universe is loaded by, and the default becomes a refusal.
    */

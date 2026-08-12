@@ -16,10 +16,11 @@ import { describe, expect, it } from 'vitest';
 import {
   ALL_VERBS,
   ConnectionBudget,
-  DEFAULT_CLUSTER_ID,
+  DEFAULT_BUBBLE_ID,
   ERROR_CODE,
   INELIGIBILITY,
   challengeEligibility,
+  rosterContains,
   MatchHost,
   encodeFrame,
   isFatal,
@@ -237,21 +238,21 @@ describe('vision §12: direct challenge only', () => {
 });
 
 describe('a universe belongs to a group of multiverses', () => {
-  const inCluster = (universeId: string, clusterId: string) => ({ universeId, clusterId });
+  const inCluster = (universeId: string, bubbleId: string) => ({ universeId, bubbleId });
 
-  it('allows a challenge between two universes in one cluster', () => {
+  it('allows a challenge between two universes in one bubble', () => {
     expect(
       challengeEligibility(inCluster('u1', 'c1'), inCluster('u2', 'c1')),
     ).toBeUndefined();
   });
 
-  it('refuses a challenge across clusters', () => {
+  it('refuses a challenge across bubbles', () => {
     // The rule this exists for: a universe extinguished by conquest respawns in
-    // a *different* cluster, carrying its prestige. The conqueror keeps the
+    // a *different* bubble, carrying its prestige. The conqueror keeps the
     // tribute and loses the target, and that anti-farming property is only
     // expressible if reachability is a predicate rather than an assumption.
     expect(challengeEligibility(inCluster('u1', 'c1'), inCluster('u2', 'c2'))).toBe(
-      INELIGIBILITY.cluster,
+      INELIGIBILITY.bubble,
     );
   });
 
@@ -270,7 +271,7 @@ describe('a universe belongs to a group of multiverses', () => {
     ).toBe(INELIGIBILITY.contentRevision);
   });
 
-  it('places a participant that announces no universe in the default cluster', () => {
+  it('places a participant that announces no universe in the default bubble', () => {
     const h = new MatchHost({
       contract: probeContract(),
       createSession: probeSession,
@@ -288,19 +289,19 @@ describe('a universe belongs to a group of multiverses', () => {
       encodeFrame({ type: 'accept', challengeId: bob.ofType('challenged')[0]!.challengeId }).trim(),
     );
 
-    // Nothing has issued a universe id, so both are placed in one cluster and
+    // Nothing has issued a universe id, so both are placed in one bubble and
     // are mutually reachable — which is what makes v1 work at all.
     const started = alice.ofType('match-start')[0]!;
-    expect(started.participants.map((p) => p.universe.clusterId)).toEqual([
-      DEFAULT_CLUSTER_ID,
-      DEFAULT_CLUSTER_ID,
+    expect(started.participants.map((p) => p.universe.bubbleId)).toEqual([
+      DEFAULT_BUBBLE_ID,
+      DEFAULT_BUBBLE_ID,
     ]);
     // The identity travels even when it was defaulted, so a match record can
     // name which universes played rather than only which connections did.
     expect(started.participants[0]?.universe.universeId).toContain('alice');
   });
 
-  it('refuses a challenge to a universe in another cluster, and says which predicate refused', () => {
+  it('refuses a challenge to a universe in another bubble, and says which predicate refused', () => {
     const h = new MatchHost({
       contract: probeContract(),
       createSession: probeSession,
@@ -316,7 +317,7 @@ describe('a universe belongs to a group of multiverses', () => {
         type: 'hello',
         participant: 'alice',
         contract: probeContract(),
-        universe: { universeId: 'u-alice', clusterId: 'north' },
+        universe: { universeId: 'u-alice', bubbleId: 'north' },
       }).trim(),
     );
     h.receive(
@@ -325,14 +326,14 @@ describe('a universe belongs to a group of multiverses', () => {
         type: 'hello',
         participant: 'bob',
         contract: probeContract(),
-        universe: { universeId: 'u-bob', clusterId: 'south' },
+        universe: { universeId: 'u-bob', bubbleId: 'south' },
       }).trim(),
     );
     h.receive('a', encodeFrame({ type: 'challenge', opponent: 'bob', runSeed: 1, stepLimit: 2 }).trim());
 
     const error = alice.ofType('error')[0];
     expect(error?.code).toBe(ERROR_CODE.ineligible);
-    expect(error?.ineligibility).toBe(INELIGIBILITY.cluster);
+    expect(error?.ineligibility).toBe(INELIGIBILITY.bubble);
     // Not fatal: challenging an unreachable universe is an ordinary mistake and
     // the participant may challenge someone else.
     expect(error?.fatal).toBe(false);
@@ -340,5 +341,50 @@ describe('a universe belongs to a group of multiverses', () => {
     // And no match was established, nor was bob even told.
     expect(alice.ofType('match-start')).toHaveLength(0);
     expect(bob.ofType('challenged')).toHaveLength(0);
+  });
+});
+
+describe('a bubble roster is an adjacency set, not a coordinate', () => {
+  const ref = (universeId: string, bubbleId: string) => ({ universeId, bubbleId });
+
+  it('decides membership from the roster when one is loaded', () => {
+    const roster = { bubbleId: 'north', members: ['u-a', 'u-b'] };
+    expect(
+      challengeEligibility(ref('u-a', 'north'), ref('u-b', 'north'), undefined, roster),
+    ).toBeUndefined();
+  });
+
+  it('refuses a universe whose label matches but which the roster does not list', () => {
+    // The case a shared label cannot express, and the reason the roster is the
+    // authoritative form: a universe can claim a bubble it is not in.
+    const roster = { bubbleId: 'north', members: ['u-a', 'u-b'] };
+    expect(
+      challengeEligibility(ref('u-a', 'north'), ref('u-impostor', 'north'), undefined, roster),
+    ).toBe(INELIGIBILITY.bubble);
+  });
+
+  it('ignores a roster belonging to a different bubble', () => {
+    // A roster for somebody else's bubble answers a question nobody asked.
+    const roster = { bubbleId: 'south', members: ['u-a', 'u-b'] };
+    expect(
+      challengeEligibility(ref('u-a', 'north'), ref('u-b', 'north'), undefined, roster),
+    ).toBe(INELIGIBILITY.bubble);
+  });
+
+  it('falls back to the label when no roster has been loaded', () => {
+    // Which is what v1 does: no persistence layer exists to have written one.
+    expect(challengeEligibility(ref('u-a', 'north'), ref('u-b', 'north'))).toBeUndefined();
+    expect(challengeEligibility(ref('u-a', 'north'), ref('u-b', 'south'))).toBe(
+      INELIGIBILITY.bubble,
+    );
+  });
+
+  it('answers membership without any notion of distance', () => {
+    // Vision §7a: at world scale there is no map. The roster carries ids and
+    // nothing else, so there is no position to mistake for a coordinate.
+    const roster = { bubbleId: 'north', members: ['u-a', 'u-b', 'u-c'] };
+    expect(rosterContains(roster, 'u-c')).toBe(true);
+    expect(rosterContains(roster, 'u-z')).toBe(false);
+    expect(Object.keys(roster)).toEqual(['bubbleId', 'members']);
   });
 });

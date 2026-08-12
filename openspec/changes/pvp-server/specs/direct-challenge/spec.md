@@ -18,6 +18,12 @@ that reason.
 - **WHEN** a challenged participant declines
 - **THEN** no match is created and neither participant is placed in any pending pool
 
+#### Scenario: Only the challenged party may decline
+
+- **WHEN** a connection that is not the challenged party sends a decline naming a challenge
+- **THEN** the challenge survives and the challenged party may still accept it, because challenge
+  identifiers are guessable and an unchecked decline is a denial of service made of one frame
+
 #### Scenario: The vocabulary offers no queue
 
 - **WHEN** the protocol's verb table is inspected
@@ -68,23 +74,34 @@ negotiation and no partial-compatibility rule, as `contracts.md` §0 requires.
 - **WHEN** a content-revision mismatch occurs
 - **THEN** the only frame the participant receives is the refusal
 
-### Requirement: Reachability is decided by cluster membership
+### Requirement: Reachability is a predicate over the bubble roster
 
 A participant SHALL announce the persisted universe it plays, identified by a stable `universeId`
-and the `clusterId` of the group of multiverses it belongs to. Whether a direct challenge between
-two universes is legal SHALL be a single eligibility predicate over those identities, refusing a
-universe challenging itself and refusing two universes in different clusters. The refusal SHALL
-name which predicate refused, and SHALL NOT be fatal to the connection.
+and the `bubbleId` of the bubble it belongs to. Whether a direct challenge between two universes is
+legal SHALL be a **single eligibility predicate**, evaluated against the challenger's bubble roster
+where one has been loaded and against bubble labels where none has, refusing a universe challenging
+itself and refusing a universe the roster does not reach. The refusal SHALL name which predicate
+refused, and SHALL NOT be fatal to the connection.
 
-#### Scenario: Two universes in one cluster may meet
+This is an eligibility check on a direct challenge, **not a queue**: vision §12 keeps matchmaking
+beyond direct challenge out of scope for v1. The same predicate SHALL decide `openPortal`'s
+candidates, so the two questions cannot answer differently.
 
-- **WHEN** a challenge is issued between two distinct universes sharing a cluster
+#### Scenario: Two universes in one bubble may meet
+
+- **WHEN** a challenge is issued between two distinct universes sharing a bubble
 - **THEN** the challenge is delivered to the opponent
 
-#### Scenario: A challenge across clusters is refused, and the connection survives
+#### Scenario: The roster overrides a claimed label
 
-- **WHEN** a challenge is issued to a universe in a different cluster
-- **THEN** it is refused with the cluster predicate named, the opponent is not notified, and the
+- **WHEN** a roster is loaded and the challenged universe claims the challenger's bubble but is not
+  in that roster
+- **THEN** the challenge is refused
+
+#### Scenario: A challenge across bubbles is refused, and the connection survives
+
+- **WHEN** a challenge is issued to a universe in a different bubble
+- **THEN** it is refused with the bubble predicate named, the opponent is not notified, and the
   challenger may issue another challenge on the same connection
 
 #### Scenario: A universe cannot challenge itself
@@ -92,10 +109,10 @@ name which predicate refused, and SHALL NOT be fatal to the connection.
 - **WHEN** a challenge names a universe id equal to the challenger's
 - **THEN** it is refused
 
-#### Scenario: A participant announcing no universe is placed in a default cluster
+#### Scenario: A participant announcing no universe is placed in a default bubble
 
 - **WHEN** a participant completes a handshake without declaring a universe
-- **THEN** it is given a derived identity in the default cluster, so that every participant is
+- **THEN** it is given a derived identity in the default bubble, so that every participant is
   mutually reachable until a persistence layer issues real identities
 
 ### Requirement: Slot assignment is a property of establishment

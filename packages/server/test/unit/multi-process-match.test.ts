@@ -242,7 +242,7 @@ describe('two independent agent processes play one authoritative match', () => {
     expect(a.summary.ticksApplied).toBeLessThan(6);
   }, 90_000);
 
-  it('refuses a challenge across clusters, over a real socket', async () => {
+  it('refuses a challenge across bubbles, over a real socket', async () => {
     const { port } = await startServer();
 
     // Swallowed deliberately: bob is never challenged, so he waits until
@@ -250,12 +250,12 @@ describe('two independent agent processes play one authoritative match', () => {
     // as a failure in whichever test happened to be running next.
     const southern = runAgent([
       '--port', String(port), '--name', 'bob',
-      '--universe', 'u-bob', '--cluster', 'south',
+      '--universe', 'u-bob', '--bubble', 'south',
     ]).catch(() => undefined);
     await new Promise((r) => setTimeout(r, 500));
     const northern = await runAgent([
       '--port', String(port), '--name', 'alice',
-      '--universe', 'u-alice', '--cluster', 'north',
+      '--universe', 'u-alice', '--bubble', 'north',
       '--challenge', 'bob', '--seed', '1', '--steps', '4',
     ]);
 
@@ -263,11 +263,11 @@ describe('two independent agent processes play one authoritative match', () => {
     // predicate. Nothing about this is a queue — vision §12 keeps matchmaking
     // out of v1 — it is whether the portal between these two could exist.
     expect(northern.stderr).toContain('ineligible');
-    expect(northern.stderr).toContain('cluster');
+    expect(northern.stderr).toContain('bubble');
     // Not fatal, so the connection stayed open and no match was ever started.
     expect(northern.summary.slot).toBe(-1);
     expect(northern.summary.ticksApplied).toBe(0);
-    expect(northern.summary.reason).toBe('refused:cluster');
+    expect(northern.summary.reason).toBe('refused:bubble');
     void southern;
   }, 60_000);
 

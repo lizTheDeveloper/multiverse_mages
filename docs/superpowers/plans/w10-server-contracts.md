@@ -77,7 +77,8 @@ and `openPortal` is permanently masked, so no raid can fire in this tree).
 - [x] 5.5 E2E: server process + 2 agent processes, match to terminal, all hashes agree
 - [x] 5.6 Replay the recorded batch log in-process and assert the same final hashes
 - [x] 5.7 Split pacing per layer — the management mini-game and the raid are not one real-time model
-- [x] 5.8 `UniverseRef` and `challengeEligibility`, so clusters are a field and a predicate later
+- [x] 5.8 `UniverseRef` — a stable universe id, distinct from the in-instance `EntityHandle`
+- [x] 5.9 `BubbleRoster` — an adjacency set, not a coordinate (§7a), and the predicate over it
 
 ### 6. OpenSpec and documentation
 

@@ -93,16 +93,16 @@ import {
 const SETTLED_MATCH_LIMIT = 64;
 
 /**
- * The cluster a participant is placed in when it announces no universe.
+ * The bubble a participant is placed in when it announces no universe.
  *
  * v1 has no persistence layer to have issued a universe id, so every
- * participant lands here and {@link challengeEligibility}'s cluster comparison
+ * participant lands here and {@link challengeEligibility}'s bubble comparison
  * is satisfied by everyone. The constant is named rather than inlined so that
- * the day a stored universe arrives carrying a real cluster, the thing to
+ * the day a stored universe arrives carrying a real bubble, the thing to
  * delete is findable — and so a reader can see that "everyone is reachable" is
  * a stated default rather than an absent check.
  */
-export const DEFAULT_CLUSTER_ID = 'cluster-0';
+export const DEFAULT_BUBBLE_ID = 'bubble-0';
 
 /** A peer this host can write frames to. The transport's half of the contract. */
 export interface Connection {
@@ -440,8 +440,8 @@ export class MatchHost {
     // Reachability, decided in one place. Vision §12 keeps matchmaking out of
     // v1, so this is not a queue admitting a pairing — it is whether the portal
     // between these two universes could exist at all. Today it can, because
-    // every universe is in `DEFAULT_CLUSTER_ID`; the check is here so that the
-    // day a respawned universe lands in another cluster, nothing else moves.
+    // every universe is in `DEFAULT_BUBBLE_ID`; the check is here so that the
+    // day a respawned universe lands in another bubble, nothing else moves.
     const mine = peer.universe as UniverseRef;
     const ineligible = challengeEligibility(mine, target.universe);
     if (ineligible !== undefined) {
@@ -699,7 +699,7 @@ export class MatchHost {
       });
     }
     this.log(
-      `match-start match=${matchId} cluster=${challenge.fromUniverse.clusterId} ` +
+      `match-start match=${matchId} bubble=${challenge.fromUniverse.bubbleId} ` +
         `universes=${seats.map((seat) => seat.universe.universeId).join(',')} ` +
         `seed=${challenge.runSeed}`,
     );
@@ -839,7 +839,7 @@ export class MatchHost {
  * v1 has no persistence layer, so nothing has issued a universe id and a server
  * that demanded one would refuse every honest client. A participant that omits
  * the field is given an id derived from its name inside
- * {@link DEFAULT_CLUSTER_ID} — which makes every universe mutually reachable,
+ * {@link DEFAULT_BUBBLE_ID} — which makes every universe mutually reachable,
  * exactly as it is today, while routing the decision through the same predicate
  * a stored universe will use.
  *
@@ -852,19 +852,19 @@ function universeOf(declared: unknown, participant: string): UniverseRef {
     if (
       typeof candidate.universeId === 'string' &&
       candidate.universeId.length > 0 &&
-      typeof candidate.clusterId === 'string' &&
-      candidate.clusterId.length > 0
+      typeof candidate.bubbleId === 'string' &&
+      candidate.bubbleId.length > 0
     ) {
       return typeof candidate.prestige === 'number' && Number.isFinite(candidate.prestige)
         ? {
             universeId: candidate.universeId,
-            clusterId: candidate.clusterId,
+            bubbleId: candidate.bubbleId,
             prestige: candidate.prestige,
           }
-        : { universeId: candidate.universeId, clusterId: candidate.clusterId };
+        : { universeId: candidate.universeId, bubbleId: candidate.bubbleId };
     }
   }
-  return { universeId: `unpersisted:${participant}`, clusterId: DEFAULT_CLUSTER_ID };
+  return { universeId: `unpersisted:${participant}`, bubbleId: DEFAULT_BUBBLE_ID };
 }
 
 /** The protocol version this host speaks. Re-exported for a binary's banner. */

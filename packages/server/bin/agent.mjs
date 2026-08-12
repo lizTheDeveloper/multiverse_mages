@@ -72,7 +72,7 @@ const USAGE = `mm-agent — a reference participant that mirror-simulates.
   --revision <hex>      Override the declared contentRevision. For refusal tests.
   --policy <lowest|highest>  Which legal action to take. Default lowest.
   --universe <id>       Persisted universe id. Defaults to one derived from --name.
-  --cluster <id>        Group of multiverses this universe is in. Default cluster-0.
+  --bubble <id>        Group of multiverses this universe is in. Default bubble-0.
 
 Writes one JSON summary line to stdout at the end. Everything else is stderr.`;
 
@@ -89,7 +89,7 @@ function parseArgs(argv) {
     '--revision',
     '--policy',
     '--universe',
-    '--cluster',
+    '--bubble',
   ]);
   const args = {};
   for (let index = 0; index < argv.length; index += 1) {
@@ -159,14 +159,14 @@ async function main() {
         },
         // The persisted identity this universe plays under. Announced even
         // though nothing stores it yet, because reachability is decided from
-        // `clusterId` and a client that never sent one would have to start
+        // `bubbleId` and a client that never sent one would have to start
         // when the persistence layer arrives.
-        ...(args.universe === undefined && args.cluster === undefined
+        ...(args.universe === undefined && args.bubble === undefined
           ? {}
           : {
               universe: {
                 universeId: args.universe ?? `unpersisted:${name}`,
-                clusterId: args.cluster ?? 'cluster-0',
+                bubbleId: args.bubble ?? 'bubble-0',
               },
             }),
       });
