@@ -173,6 +173,14 @@ export const ERROR_CODE = {
   /** A frame of a known verb whose fields are missing or the wrong type. */
   badRequest: 'bad-request',
   /**
+   * The two universes may not meet. See {@link challengeEligibility}.
+   *
+   * Not fatal: a challenge to an unreachable universe is an ordinary mistake,
+   * and the participant may challenge someone else. The frame names the reason
+   * so a client can say *why* rather than "no".
+   */
+  ineligible: 'ineligible',
+  /**
    * The connection exceeded its admission budget. **Fatal.**
    *
    * §4.2: *"The core does not defend itself; the boundary does."* A hostile
@@ -342,6 +350,106 @@ export function contractDisagreements(
 }
 
 // ---------------------------------------------------------------------------
+// Who is playing: persisted universe identity.
+// ---------------------------------------------------------------------------
+
+/**
+ * The persisted identity a participant brings to a match.
+ *
+ * A participant is not merely a name on a connection. It is **a universe**, with
+ * a life longer than any one session: it accumulates knowledge, it ascends or is
+ * extinguished, and its prestige carries into whatever comes next (vision §8a).
+ * The name is how a challenge addresses it; this is what it is.
+ *
+ * ## `clusterId`, and why it is here before anything uses it
+ *
+ * A universe belongs to a **group of multiverses** — a bounded neighbourhood
+ * whose members can portal to one another. Nothing in this release consults it:
+ * every universe the skeleton hosts is in one cluster, and
+ * {@link challengeEligibility} compares the field and finds it equal.
+ *
+ * It is declared now because of what it costs to add later. Cluster membership
+ * is a property of a *persisted universe*, so it has to be in whatever the
+ * persistence layer writes and in whatever a participant announces itself with.
+ * Adding a field to those two places before anything is stored is free; adding
+ * it afterwards means a snapshot migration and a protocol version bump, and it
+ * would arrive at the same time as the feature that needs it — which is the
+ * worst moment to be changing a storage format.
+ *
+ * The concrete thing it will be for: a universe extinguished by conquest
+ * respawns **in a different cluster**, carrying its prestige. That is an
+ * anti-farming property — the conqueror keeps the tribute and loses the target —
+ * and it is only expressible if "which neighbourhood" is a thing a universe has.
+ * See `universe-persistence`'s spec for the life-cycle in full.
+ */
+export interface UniverseRef {
+  /**
+   * Stable across runs and across sessions. Not the participant's display name,
+   * which is a connection-scoped label anyone may choose.
+   */
+  readonly universeId: string;
+  /**
+   * The group of multiverses this universe is in. Membership decides
+   * reachability: two universes may only meet if they share it.
+   */
+  readonly clusterId: string;
+  /**
+   * §8a's carry-forward, read-only during a run (§1.1).
+   *
+   * Advisory on the wire. §7 caps `prestigeAdvantage` at 60%, which the balance
+   * harness measures offline; in live play prestige is an account-level value
+   * and therefore the first thing worth cheating, so a server that trusted this
+   * number would be trusting a participant about its own advantage. It travels
+   * so a match record can name it. Whoever builds `universe-persistence` owns
+   * making the authoritative copy the server's own.
+   */
+  readonly prestige?: number;
+}
+
+/** Why two universes may not meet. */
+export const INELIGIBILITY = {
+  /** §0: their content revisions differ. No negotiation, no partial compatibility. */
+  contentRevision: 'content-revision',
+  /**
+   * They are in different groups of multiverses.
+   *
+   * Not a queue and not matchmaking — vision §12 keeps both out of v1. This is
+   * an *eligibility predicate on a direct challenge*: the challenge names its
+   * opponent, and this says whether the portal could exist between them.
+   */
+  cluster: 'cluster',
+  /** A universe cannot challenge itself. */
+  self: 'self',
+} as const;
+
+export type IneligibilityReason = (typeof INELIGIBILITY)[keyof typeof INELIGIBILITY];
+
+/**
+ * Whether a direct challenge between two universes is legal.
+ *
+ * Returns the reason to refuse, or `undefined` to allow. Pure, total, and
+ * deliberately the *only* place reachability is decided, so that adding a rule
+ * later — a portal-range limit, a cooldown after conquest, the griefing guard
+ * §7's `inboundRaidTempoLoss` implies — is an edit to one function rather than a
+ * search for every place a challenge is admitted.
+ */
+export function challengeEligibility(
+  challenger: UniverseRef,
+  opponent: UniverseRef,
+  contentRevisions?: { readonly challenger: string; readonly opponent: string },
+): IneligibilityReason | undefined {
+  if (challenger.universeId === opponent.universeId) return INELIGIBILITY.self;
+  if (challenger.clusterId !== opponent.clusterId) return INELIGIBILITY.cluster;
+  if (
+    contentRevisions !== undefined &&
+    contentRevisions.challenger !== contentRevisions.opponent
+  ) {
+    return INELIGIBILITY.contentRevision;
+  }
+  return undefined;
+}
+
+// ---------------------------------------------------------------------------
 // Actions on the wire.
 // ---------------------------------------------------------------------------
 
@@ -444,6 +552,17 @@ export interface HelloRequest extends Frame {
   /** How this participant wishes to be addressed in a challenge. */
   readonly participant: string;
   readonly contract: MatchContract;
+  /**
+   * The persisted universe this participant is playing.
+   *
+   * Optional in v1, because no persistence layer exists to have issued one yet
+   * and a server that refused a participant for lacking an id it cannot obtain
+   * would be unusable. A participant that omits it is placed in
+   * {@link DEFAULT_CLUSTER_ID} under an id derived from its name — see
+   * `host.ts`. When `universe-persistence` ships, the field becomes the thing a
+   * stored universe is loaded by, and the default becomes a refusal.
+   */
+  readonly universe?: UniverseRef;
 }
 
 export interface ChallengeRequest extends Frame {
@@ -520,6 +639,8 @@ export interface ChallengedNotice extends Frame {
   readonly type: typeof NOTICE.challenged;
   readonly challengeId: string;
   readonly from: string;
+  /** The challenger's universe, so the recipient can judge the offer. */
+  readonly fromUniverse: UniverseRef;
   readonly runSeed: number;
   readonly stepLimit: number;
 }
@@ -536,8 +657,12 @@ export interface MatchStartNotice extends Frame {
   readonly matchId: string;
   /** This connection's slot. Also the first half of its ordering key. */
   readonly slot: number;
-  /** Every participant, by slot. */
-  readonly participants: readonly { readonly slot: number; readonly participant: string }[];
+  /** Every participant, by slot, with the universe each is playing. */
+  readonly participants: readonly {
+    readonly slot: number;
+    readonly participant: string;
+    readonly universe: UniverseRef;
+  }[];
   readonly runSeed: number;
   readonly stepLimit: number;
   readonly contract: MatchContract;
@@ -676,6 +801,8 @@ export interface ErrorFrame extends Frame {
   readonly fatal: boolean;
   /** Present on `contract-mismatch`, naming every field that disagreed. */
   readonly disagreements?: readonly ContractDisagreement[];
+  /** Present on `ineligible`, naming which predicate refused. */
+  readonly ineligibility?: IneligibilityReason;
   /**
    * Present on `content-revision-mismatch`, naming both revisions.
    *

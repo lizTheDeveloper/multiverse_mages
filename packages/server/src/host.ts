@@ -30,10 +30,12 @@ import {
   VERB,
   type ErrorCode,
   TICK_MODE,
+  challengeEligibility,
   type MatchContract,
   type MatchPacing,
   type ServerFrame,
   type TickMode,
+  type UniverseRef,
 } from './protocol.js';
 
 /**
@@ -87,6 +89,18 @@ import {
  */
 const SETTLED_MATCH_LIMIT = 64;
 
+/**
+ * The cluster a participant is placed in when it announces no universe.
+ *
+ * v1 has no persistence layer to have issued a universe id, so every
+ * participant lands here and {@link challengeEligibility}'s cluster comparison
+ * is satisfied by everyone. The constant is named rather than inlined so that
+ * the day a stored universe arrives carrying a real cluster, the thing to
+ * delete is findable — and so a reader can see that "everyone is reachable" is
+ * a stated default rather than an absent check.
+ */
+export const DEFAULT_CLUSTER_ID = 'cluster-0';
+
 /** A peer this host can write frames to. The transport's half of the contract. */
 export interface Connection {
   readonly id: string;
@@ -122,6 +136,8 @@ interface Peer {
   readonly connection: Connection;
   readonly budget: ConnectionBudget;
   participant: string | undefined;
+  /** The persisted universe this peer is playing. See {@link UniverseRef}. */
+  universe: UniverseRef | undefined;
   /** Strictly increasing per connection. See this module's note on early close. */
   lastSequence: number;
   matchId: string | undefined;
@@ -133,6 +149,8 @@ interface Challenge {
   readonly id: string;
   readonly from: string;
   readonly to: string;
+  readonly fromUniverse: UniverseRef;
+  readonly toUniverse: UniverseRef;
   readonly runSeed: number;
   readonly stepLimit: number;
 }
@@ -140,7 +158,11 @@ interface Challenge {
 /** A match and the wall-clock state of its open tick. */
 interface LiveMatch {
   readonly match: Match;
-  readonly participants: readonly { slot: number; participant: string }[];
+  readonly participants: readonly {
+    slot: number;
+    participant: string;
+    universe: UniverseRef;
+  }[];
   /** When the open tick's submissions close. The clock's only simulation-adjacent job. */
   deadlineAt: number;
   /** Which layer each slot was in when the open tick opened. Picks the deadline. */
@@ -206,6 +228,7 @@ export class MatchHost {
           : new ConnectionBudget(this.clock, this.policy),
       lastSequence: -1,
       participant: undefined,
+      universe: undefined,
       matchId: undefined,
       slot: undefined,
     });
@@ -382,6 +405,7 @@ export class MatchHost {
       return;
     }
     peer.participant = name;
+    peer.universe = universeOf(frame['universe'], name);
     this.byParticipant.set(name, peer.connection.id);
     this.send(peer, {
       type: NOTICE.welcome,
@@ -402,15 +426,38 @@ export class MatchHost {
     }
     const targetId = this.byParticipant.get(opponent);
     const target = targetId === undefined ? undefined : this.peers.get(targetId);
-    if (target === undefined) {
+    if (target === undefined || target.universe === undefined) {
       this.fail(peer, ERROR_CODE.badRequest, `No participant named ${JSON.stringify(opponent)}.`);
       return;
     }
+
+    // Reachability, decided in one place. Vision §12 keeps matchmaking out of
+    // v1, so this is not a queue admitting a pairing — it is whether the portal
+    // between these two universes could exist at all. Today it can, because
+    // every universe is in `DEFAULT_CLUSTER_ID`; the check is here so that the
+    // day a respawned universe lands in another cluster, nothing else moves.
+    const mine = peer.universe as UniverseRef;
+    const ineligible = challengeEligibility(mine, target.universe);
+    if (ineligible !== undefined) {
+      this.send(peer, {
+        type: NOTICE.error,
+        code: ERROR_CODE.ineligible,
+        message:
+          `A challenge from ${mine.universeId} to ${target.universe.universeId} is not ` +
+          `eligible: ${ineligible}. Two universes may only meet inside one group of multiverses.`,
+        fatal: false,
+        ineligibility: ineligible,
+      });
+      return;
+    }
+
     const id = this.nextId('challenge');
     this.challenges.set(id, {
       id,
       from: peer.participant as string,
       to: opponent,
+      fromUniverse: mine,
+      toUniverse: target.universe,
       runSeed: runSeed as number,
       stepLimit: stepLimit as number,
     });
@@ -418,6 +465,7 @@ export class MatchHost {
       type: NOTICE.challenged,
       challengeId: id,
       from: peer.participant as string,
+      fromUniverse: mine,
       runSeed: runSeed as number,
       stepLimit: stepLimit as number,
     });
@@ -561,21 +609,32 @@ export class MatchHost {
   // -------------------------------------------------------------------------
 
   private start(challenge: Challenge): void {
-    const names = [challenge.from, challenge.to];
+    // Slot order is challenger first, and it is fixed here rather than anywhere
+    // later: the slot index is half the ordering key, so which participant is
+    // slot 0 must be a property of how the match was established and never of
+    // who connected first or answered fastest.
+    const seats = [
+      { participant: challenge.from, universe: challenge.fromUniverse },
+      { participant: challenge.to, universe: challenge.toUniverse },
+    ];
     const slots: MatchSlot[] = [];
     const matchId = this.nextId('match');
 
-    for (const [slot, participant] of names.entries()) {
+    for (const [slot, seat] of seats.entries()) {
       const session = this.createSession(slot);
       session.reset(challenge.runSeed, { worldTickCap: challenge.stepLimit });
-      slots.push({ slot, participant, session });
+      slots.push({ slot, participant: seat.participant, session });
     }
 
     const match = new Match({ matchId, slots, stepLimit: challenge.stepLimit });
     const modes = match.modes();
     const live: LiveMatch = {
       match,
-      participants: slots.map((s) => ({ slot: s.slot, participant: s.participant })),
+      participants: seats.map((seat, slot) => ({
+        slot,
+        participant: seat.participant,
+        universe: seat.universe,
+      })),
       deadlineAt: this.clock.now() + this.deadlineFor(modes),
       modes,
       answered: new Set<number>(),
@@ -602,7 +661,11 @@ export class MatchHost {
         initialHashes: live.lastHashes,
       });
     }
-    this.log(`match-start match=${matchId} participants=${names.join(',')} seed=${challenge.runSeed}`);
+    this.log(
+      `match-start match=${matchId} cluster=${challenge.fromUniverse.clusterId} ` +
+        `universes=${seats.map((seat) => seat.universe.universeId).join(',')} ` +
+        `seed=${challenge.runSeed}`,
+    );
   }
 
   /** Closes the open tick, applies it, broadcasts it, and opens the next. */
@@ -731,6 +794,40 @@ export class MatchHost {
     this.counter += 1;
     return `${prefix}-${this.counter}`;
   }
+}
+
+/**
+ * The universe a participant announced, or the default one it is placed in.
+ *
+ * v1 has no persistence layer, so nothing has issued a universe id and a server
+ * that demanded one would refuse every honest client. A participant that omits
+ * the field is given an id derived from its name inside
+ * {@link DEFAULT_CLUSTER_ID} — which makes every universe mutually reachable,
+ * exactly as it is today, while routing the decision through the same predicate
+ * a stored universe will use.
+ *
+ * The validation is deliberately narrow: ids are compared, never parsed, so the
+ * only thing that matters is that they are non-empty strings.
+ */
+function universeOf(declared: unknown, participant: string): UniverseRef {
+  if (typeof declared === 'object' && declared !== null) {
+    const candidate = declared as Partial<UniverseRef>;
+    if (
+      typeof candidate.universeId === 'string' &&
+      candidate.universeId.length > 0 &&
+      typeof candidate.clusterId === 'string' &&
+      candidate.clusterId.length > 0
+    ) {
+      return typeof candidate.prestige === 'number' && Number.isFinite(candidate.prestige)
+        ? {
+            universeId: candidate.universeId,
+            clusterId: candidate.clusterId,
+            prestige: candidate.prestige,
+          }
+        : { universeId: candidate.universeId, clusterId: candidate.clusterId };
+    }
+  }
+  return { universeId: `unpersisted:${participant}`, clusterId: DEFAULT_CLUSTER_ID };
 }
 
 /** The protocol version this host speaks. Re-exported for a binary's banner. */

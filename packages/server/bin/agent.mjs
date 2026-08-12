@@ -71,6 +71,8 @@ const USAGE = `mm-agent — a reference participant that mirror-simulates.
   --corrupt-at <tick>   Report a wrong hash at this tick. For the desync test.
   --revision <hex>      Override the declared contentRevision. For refusal tests.
   --policy <lowest|highest>  Which legal action to take. Default lowest.
+  --universe <id>       Persisted universe id. Defaults to one derived from --name.
+  --cluster <id>        Group of multiverses this universe is in. Default cluster-0.
 
 Writes one JSON summary line to stdout at the end. Everything else is stderr.`;
 
@@ -86,6 +88,8 @@ function parseArgs(argv) {
     '--corrupt-at',
     '--revision',
     '--policy',
+    '--universe',
+    '--cluster',
   ]);
   const args = {};
   for (let index = 0; index < argv.length; index += 1) {
@@ -153,6 +157,18 @@ async function main() {
           scenarioId: loaded.probe.scenarioId,
           buildVersion: loaded.provenance?.buildVersion ?? 'unknown',
         },
+        // The persisted identity this universe plays under. Announced even
+        // though nothing stores it yet, because reachability is decided from
+        // `clusterId` and a client that never sent one would have to start
+        // when the persistence layer arrives.
+        ...(args.universe === undefined && args.cluster === undefined
+          ? {}
+          : {
+              universe: {
+                universeId: args.universe ?? `unpersisted:${name}`,
+                clusterId: args.cluster ?? 'cluster-0',
+              },
+            }),
       });
     },
   );
@@ -286,7 +302,18 @@ async function main() {
 
       case 'error':
         process.stderr.write(`error code=${frame.code} ${frame.message}\n`);
-        if (frame.fatal) finish(`error:${frame.code}`);
+        if (frame.fatal) {
+          finish(`error:${frame.code}`);
+          return;
+        }
+        // A refused challenge is not fatal to the connection — the participant
+        // may challenge someone else — but this reference client has exactly
+        // one opponent in mind, named on its command line. With that challenge
+        // refused it has nothing left to do, and staying connected would make
+        // it look like a participant waiting for a match that is never coming.
+        if (frame.code === 'ineligible' && args.challenge !== undefined) {
+          finish(`refused:${frame.ineligibility ?? frame.code}`);
+        }
         return;
 
       default:

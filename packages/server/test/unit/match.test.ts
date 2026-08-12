@@ -282,3 +282,39 @@ describe('the boundary screens actions before the core sees them', () => {
     expect(screen(session, { kind: 1, params: [1.5] })).toBe('malformed-action');
   });
 });
+
+describe('the two layers are paced separately', () => {
+  it('reports which layer each slot is in, per slot rather than per match', () => {
+    const { host, alice, matchId } = twoPlayerMatch();
+    submit(host, 'a', matchId, 0, 1, NOOP);
+    submit(host, 'b', matchId, 0, 1, NOOP);
+    host.pump();
+
+    const tick = alice.ofType('tick')[0]!;
+    // One entry per slot. §0 makes clocks per-universe — a raid freezes world
+    // time for its two participants only — so a single match-wide mode would be
+    // a claim §0 forbids, even while every slot happens to agree.
+    expect(tick.modes).toHaveLength(2);
+    // No raid can fire in this tree: nothing supplies portalTargets, so
+    // openPortal is permanently masked. Every tick is a management tick, and
+    // this test says so rather than leaving a reader to assume it.
+    expect(tick.modes).toEqual([TICK_MODE.world, TICK_MODE.world]);
+  });
+
+  it('gives a management tick the world deadline, not the raid one', () => {
+    const { host, alice, clock, matchId } = twoPlayerMatch(TEST_PACING);
+    submit(host, 'a', matchId, 0, 1, NOOP);
+
+    // Past the engagement deadline. If the two profiles were one, or if the
+    // world layer had inherited the raid's, bob would already have been given a
+    // substituted no-op for a decision he is entitled to take his time over.
+    clock.advance(TEST_PACING.engagement.actionDeadlineMs + 1);
+    host.pump();
+    expect(alice.ofType('tick')).toHaveLength(0);
+
+    // Past the world deadline, it closes.
+    clock.advance(TEST_PACING.world.actionDeadlineMs);
+    host.pump();
+    expect(alice.ofType('tick')).toHaveLength(1);
+  });
+});

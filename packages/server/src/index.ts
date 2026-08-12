@@ -74,7 +74,13 @@ export {
 
 export { compareHash, desyncLogLine, type HashReport } from './desync.js';
 
-export { HOST_PROTOCOL_VERSION, MatchHost, type Connection, type HostOptions } from './host.js';
+export {
+  DEFAULT_CLUSTER_ID,
+  HOST_PROTOCOL_VERSION,
+  MatchHost,
+  type Connection,
+  type HostOptions,
+} from './host.js';
 
 export { Match, screen, type MatchOptions, type MatchSlot, type TickOutcome } from './match.js';
 
@@ -91,6 +97,7 @@ export {
   ALL_VERBS,
   ENTRY_SOURCE,
   ERROR_CODE,
+  INELIGIBILITY,
   FATAL_ERROR_CODES,
   MATCH_END,
   NOTICE,
@@ -100,6 +107,7 @@ export {
   STRUCTURAL_CONTRACT_FIELDS,
   TICK_MODE,
   VERB,
+  challengeEligibility,
   contractDisagreements,
   isFatal,
 } from './protocol.js';
@@ -121,6 +129,7 @@ export type {
   ErrorFrame,
   Frame,
   HelloRequest,
+  IneligibilityReason,
   LeaveRequest,
   MatchContract,
   MatchEndNotice,
@@ -135,6 +144,7 @@ export type {
   TickMode,
   TickNotice,
   TickPacing,
+  UniverseRef,
   Verb,
   WelcomeNotice,
   WireAction,
