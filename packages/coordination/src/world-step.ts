@@ -141,6 +141,7 @@ import {
   CohortStore,
   GOAL,
   LABORERS_PER_BUILD_UNIT,
+  MATERIALS_PER_LABOR_MONTH,
   MATERIAL_KINDS,
   advanceConstruction,
   applyLibraryUpkeep,
@@ -598,7 +599,10 @@ export function worldSystem(
 
       // Labour is exclusive between the fields and the building sites, so the
       // split is decided once, here, before either phase spends it.
-      const labour = planConstructionLabour(state, cohorts);
+      // The opening stone is read before production because a crew is hired at
+      // the start of the month out of what is already in the yard, not out of
+      // what the quarry will deliver by the end of it.
+      const labour = planConstructionLabour(state, cohorts, readMaterialStock(state, universe).stone);
       const produced = produceMaterials(cohorts, deps, economy, labour.onSites);
       const opening = readMaterialStock(state, universe);
       const stock = zeroAmounts();
@@ -960,6 +964,7 @@ function produceMaterials(
 function planConstructionLabour(
   state: SimState,
   cohorts: CohortStore,
+  stone: Fixed,
 ): { readonly onSites: ReadonlyMap<EntityHandle, number>; readonly total: number } {
   const backlog = constructionBacklog(state);
   const onSites = new Map<EntityHandle, number>();
@@ -977,7 +982,28 @@ function planConstructionLabour(
   // double and that is not the point: `CLAUDE.md` forbids floating-point
   // arithmetic in the rules path categorically, because the constraint is only
   // worth anything if nobody has to audit which divisions happen to be safe.
-  let wanted = floorDiv(backlog * LABORERS_PER_BUILD_UNIT + FP_UNIT - 1, FP_UNIT);
+  //
+  // And bounded by what the stone can pay for, which is the difference between
+  // a famine somebody chose and a waste nobody did. Labour is exclusive: a
+  // laborer on a site is not in a field. Sizing the crew from the backlog alone
+  // would send the whole workforce to stand at sites there is no stone to build,
+  // producing neither buildings nor food — the one arrangement with nothing to
+  // recommend it. `advanceConstruction` already computes exactly this bound for
+  // itself (`affordableMonths`); applying it before anyone leaves the field is
+  // the same rule asked one step earlier, where it can still change an answer.
+  //
+  // What this deliberately does **not** do is cap the share of the workforce a
+  // god may divert. Measured with `tools/w29/over-founding.mjs`: founding a
+  // hundred sites at once takes food production to exactly **zero** for as long
+  // as they are building, and finishes eighty-four of them in a hundred and
+  // fifty months. That is a real decision with a real cost, and inventing a cap
+  // would be this file deciding how much rope a player gets. It is raised as an
+  // author question instead.
+  let wanted = Math.min(
+    floorDiv(backlog * LABORERS_PER_BUILD_UNIT + FP_UNIT - 1, FP_UNIT),
+    floorDiv(Math.max(0, stone), MATERIALS_PER_LABOR_MONTH),
+  );
+  if (wanted <= 0) return { onSites, total: 0 };
 
   let total = 0;
   const laborers: { handle: EntityHandle; count: number }[] = [];
