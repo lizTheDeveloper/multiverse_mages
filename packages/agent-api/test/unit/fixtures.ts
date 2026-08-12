@@ -42,6 +42,7 @@ import {
   LOCATION_KIND,
   MAGE,
   MAGE_ROLE,
+  MATERIAL_STOCK,
   OBJECTIVE,
   OBJECTIVE_STATUS,
   OCCUPATION,
@@ -112,13 +113,20 @@ export function firstUniverse(): FixtureWorld {
     favor: 40 * FP,
     worship: 12 * FP,
     worshipTier: 3,
-    materials: 500 * FP,
     prestige: 2 * FP,
     prestigeEarned: 0,
     terminalReason: 0,
     favorCap: 100 * FP,
     ascended: 0,
   });
+  // `materials` was one field on `UNIVERSE`; the observation's resources block
+  // (`observation.ts`) reads the **sum** of the three `MATERIAL_STOCK` kinds
+  // for this slot, so which kind carries the figure does not matter to any
+  // assertion here — `resources-dynamic-range.test.ts` checks the raw slot
+  // against `500 * FP` regardless of how it is split. Put entirely in `food`
+  // for a single, unambiguous source rather than splitting it three ways for
+  // no reason.
+  attachRecord(state, MATERIAL_STOCK, universe, { food: 500 * FP, stone: 0, vellum: 0 });
 
   const edict = state.entities.create();
   attachRecord(state, EDICT, edict, { cellId: cellIdAt(1, 2), kind: EDICT_KIND.interdiction });
@@ -211,13 +219,16 @@ export function secondUniverse(): FixtureWorld {
     favor: 5 * FP,
     worship: 1 * FP,
     worshipTier: 0,
-    materials: 0,
     prestige: 0,
     prestigeEarned: 0,
     terminalReason: 0,
     favorCap: 20 * FP,
     ascended: 0,
   });
+  // No `MATERIAL_STOCK` row at all — deliberately, not `{food: 0, stone: 0,
+  // vellum: 0}`. `observation.ts` treats a missing row as all-zero
+  // (`stocks.has(universe) ? … : 0`), and this universe is meant to differ
+  // from `firstUniverse` in every readable way, including "never stepped".
 
   const cohort = state.entities.create();
   attachRecord(state, POPULACE_COHORT, cohort, {
