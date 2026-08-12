@@ -1345,3 +1345,466 @@ A **consumption** check to sit beside the coverage check, in `verify`, failing l
 Getting this wrong in the lenient direction gives a green check and no information, which is worse
 than no check. The output should print the consumer for each primitive on success, for the same
 reason the coverage check prints node counts — so a reviewer watches the number shrink.
+
+---
+
+## W26, measured: 93.4% of what a universe knows cannot be taught, and every metric calls it healthy
+
+2400 ticks, seed `0x00090001`, zero god input. These are measurements, not arguments.
+
+- **2,028 of 2,172 held instances are marooned — 93.4%.** Mean teachable share across the run: 10.6%.
+- **28 of 51 nodes have no teachable copy at all — 54.9%**, across 1,106 held copies.
+- At that same instant: `fragileNodeIds` **0**, `singleLocationNodeIds` **0**, minimum redundancy **4**.
+
+**Every committed metric calls that healthy.** This is the *fifth* instance in this campaign of a
+measurement structurally incapable of reporting the thing it appears to report — after
+`libraryDependence` pinned at 0, `capitalSnowball`'s byte-identical checkpoints,
+`referenceLibraryDepth` at 1.00, and `check:coverage`. It is also the most consequential, because the
+redundancy metrics are what **D5** rests on. Four copies of a node that no living mind can transmit
+is not redundancy 4. **D5 as written may be measuring the wrong quantity**, and that has to be settled
+before any post-wire result is read against it.
+
+### It refutes a claim made earlier in this campaign, and the refutation is the interesting part
+
+The working assumption — mine — was that untransmittable nodes were *already effectively dead*, so
+marooning merely described an existing state. **Falsified for 27 of the 28.** Zero of them never had
+a teachable copy; only one, `pm-the-empty-room` (tier 5), has gone 300+ ticks without one, at 1,790
+ticks. The frontier **oscillates between 4 and 45 nodes** while `nodesHeld` sits flat at 51.
+
+**Untransmittability is churn, not a ratchet** — research re-derives nodes back into teachability at
+full ordinary price. That is the whole mechanism, and it was invisible because the only instrument
+watching was a node count that never moves.
+
+Two consequences worth stating plainly:
+
+- **The durable cost concentrates at depth.** Tier 5 averages 1,019 ticks since a teachable copy;
+  tiers 1–4 average 62–121. **Marooning bites hardest exactly where §6's deep specialists live** —
+  which is where the design wants long-lived species to be worth their slowness. That is either the
+  mechanic working, or the mechanic eating the feature; it is not yet possible to say which, and
+  saying which requires the wire.
+- **1,250 instances were born unteachable**, because `transmittedMastery` is lossy: a teacher at
+  exactly the 512 threshold transmits `mul(512, 512) = 256`. Late in a wave, a lesson manufactures a
+  dead copy.
+
+And it retires an old suspicion: W13's *976 lessons for 0.0 nodes* was never a teaching defect —
+teaching adds no nodes by construction. What marooning destroys is teaching's **preservation** value.
+
+### Two defects reported and deliberately not fixed
+
+- `gateway.ts:441` quotes research at the **≥3× rediscovery price for every node the universe
+  holds**, because `wasEverKnown` is set on `createInstance`, while `research()` charges the ordinary
+  price for exactly those nodes. The two disagree, and the inflated quote is a drag on **the only
+  path that does any preservation at all**.
+- Every stolen instance is born permanently marooned — theft writes at `mastery: 0` — and the comment
+  justifying theft's balance depends on a study operation that does not exist.
+
+### Method worth keeping
+
+Inertness was **proved by snapshot hash**, not asserted: censused-every-tick and clean arms both end
+on `cb1c0efafbd7f66a` at 2400 ticks, with a vacuity guard so the test cannot pass by measuring
+nothing. `ticksToUnteachable` came out one higher than the derived table because `teach()` refuses on
+`mastery < threshold`, so 512 still teaches — caught because the measured maxima were checked against
+a hand-derived table rather than against themselves. Full `verify` green: 279 files, 3,925 tests, all
+three balance gates passing with **thirty metrics at delta 0.00000**, no golden and no baseline
+regenerated.
+
+---
+
+## W32: the corroboration was double-counted, and the balance target was folklore
+
+Four corrections, each of which invalidates something this document or the campaign asserted.
+
+### 1. "Five independent confirmations" is at most four — and this is arithmetic
+
+**A perfect prefix structure *entails* containment 1.000.** Prefix fidelity and containment are not two
+measurements agreeing; the second is implied by the first. This document, and I in several messages,
+have repeatedly claimed *five independent ways* of establishing content exhaustion. Two of the five
+were one. **Say four, and say which four.**
+
+This is the failure mode the campaign was built to avoid, committed by the campaign: corroboration
+counted by how many numbers were printed rather than by how many independent things were measured.
+
+### 2. The rock-paper-scissors target cannot be sourced, and the defensible target is different
+
+Neither StarCraft's matchup non-transitivity nor Magic's aggro/control/combo triangle could be
+verified by **any** measurement. Both are confident folklore, and the StarCraft data that does exist
+argues **confounding**, not cycling. The only verified non-transitivity measurement in a commercial
+game is chess.
+
+**The replacement target is exact and checkable.** Our strategy poset has **width 1** (Dilworth
+1950) — one chain, everything comparable. The goal is **width > 1**: strategies that are genuinely
+*incomparable*, not a cycle. That is what D3 was reaching for and could not name.
+
+### 3. Every exploit margin this campaign published was measured against a bot that flatters it
+
+**A fixed bot pool lies.** Goodman et al. (2024) measured depth collapsing from 0.125 to **0.000**
+once the agent was tuned. Every exploit-margin number here was measured against
+`uniform-random-legal`, **which has seven of fifteen verbs inert**. A probe that cannot use half the
+action space is not a lower bound on exploitability; it is a lower bound on *that probe*.
+
+**This bears directly on D2**, which is defined as out-winning `uniform-random-legal` by ≥ 0.05. D2 is
+not merely unmet — as specified, it is **not a test of what it claims to test**. It needs an adaptive
+opponent, or an explicit statement that it measures a floor.
+
+### 4. Our statistics already had names, and the names come with caveats we skipped
+
+- **Prefix fidelity 0.943 is a Guttman coefficient of reproducibility** (1944), and clears the
+  customary 0.90. It is also known to be **inflated by extreme marginals** — and we have exactly that
+  pathology, since three strategies hold the entire reachable set. Report the **coefficient of
+  scalability** against **minimal marginal reproducibility**, not the raw number.
+- **Containment 1.000 is nestedness** (Atmar & Patterson 1993; NODF), whose literature has required a
+  **null model** for thirty years, because nested matrices arise by chance from marginals alone. We
+  reported it without one.
+- **Participation ratio is not from this field at all** — it is condensed-matter physics, with no
+  found use in game evaluation. Label it a house metric and report matrix **rank** beside it.
+- **Do not gate on a depth number.** The field's most rigorous recent entrant reports weak, mostly
+  insignificant correlation with human judgement, and Lantz et al. 2017 is a **position paper** that
+  says so of itself. Anyone citing it as empirical is citing it wrong.
+
+### A discrepancy to resolve, not to paper over
+
+W32 reports *"the whole grid costs **96 favor** against a floor income of 1/tick over 2,400 ticks."*
+This document records **40,960 favor** for the seven switches that open the twelve v1 cells, from
+`god-cost.json`. Those cannot both be the price of the same thing. Most likely they are different
+quantities — a per-tick or ruleset-edit cost versus the one-time switch cost — but **nobody has
+checked**, and the permit-opportunity-cost work depends on knowing which number is the real
+constraint. Resolve before tuning anything.
+
+### Also delivered
+
+A checkable design language: eleven closed verbs (`nests`, `incomparable`, `width`, `reproducible`,
+`dominates`, `degenerate`, `chain`, `solved-open-loop`, `inert`, `commits`, `composes`), each a JSON
+record carrying a falsifiable hypothesis and a **`refutedBy`** procedure, validated by the repo's own
+schema compiler so it adds no dependency. `solved-open-loop` is the term we lacked for
+`permit-then-idle`.
+
+It earned its keep before shipping: writing the claim that funding and encouragement are *"worth less
+than nothing"* exposed that the comparison behind it is **40/40 against 38/40 at n=40** — a two-run
+difference with overlapping Wilson intervals and no restricted arm ever run. Verdict `unmeasured`,
+not `holds`. The notation caught an overclaim without anyone running anything.
+
+### And a note on how briefs go wrong
+
+Three research leads died on contact with sources, and **one of them was a fabricated citation that
+originated in the brief I wrote** — a "Deep Hanabi" experiment that does not exist. An agent
+inheriting a confident false premise will spend real time on it. Briefs get citations checked before
+they are sent, or they manufacture work.
+
+### Decided: `state` reuses `content`'s material type, not the reverse
+
+`schema-duplication.test.ts` flags that `content`'s `MaterialKindAmounts<T>` and `state`'s
+`MaterialStockRecord` are the same three fields. The peer session that hit it refused to resolve it
+and flagged it, which was right — it is a §5 boundary call, not a style choice. Settled by the table
+in `packages/sim-core/test/unit/module-boundaries.test.ts`:
+
+    content: { value: [], typeOnly: ['sim-core'] }
+    state:   { value: ['sim-core'], typeOnly: ['content'] }
+
+`content` is the root of the tree — its `value` list is **empty**, and there is no `@mm/state` import
+anywhere in `packages/content/src`. `state` **already** has a type-only edge to `content`. So `state`
+deriving `MaterialStockRecord` from `content`'s `MaterialKindAmounts<T>` needs no new edge and no
+boundary-table change; the reverse would give the root package a downstream dependency and require a
+written §5 deviation.
+
+One caveat to check rather than assume: `state`'s component records declare i32 column layouts. If
+the column declaration cannot be expressed in terms of the shared type, derive the *type* and keep
+the declaration separate. **Do not weaken `schema-duplication.test.ts`** — it caught real production
+drift across a package boundary, which is exactly its job.
+
+### Resolved, and the error was mine: permits cost 96 favor, not 98,304
+
+The discrepancy flagged above is settled by reading the schema. `packages/content/schema/god-cost.schema.json:17`
+types `favorCost` as `$ref: "#/$defs/fp"`, and `packages/content/src/types.ts:205` declares it
+`readonly favorCost: Fp` — **fixed-point at 1/1024**, like everything else in the rules path.
+
+So the raw integers in `god-cost.json` are not favor:
+
+| switch | raw (Fp) | **actual favor** |
+|---|---|---|
+| `permit-technique` | 8192 | **8** |
+| `permit-form` | 4096 | **4** |
+
+- The **v1 subset** — 3 techniques + 4 forms opening all twelve enabled cells — costs **40 favor**.
+- The **whole grid** — 5 techniques + 14 forms — costs **96 favor**.
+
+**W32's 96 is exactly right. Every figure this document has published for permit cost was the raw
+fixed-point integer read as though it were favor, and was therefore 1024× too large.** Strike
+98,304/1.51% and 40,960/0.63% wherever they appear above; they are the same mistake twice.
+
+This does not weaken the argument — **it makes it far stronger than was claimed.** Against W32's
+floor income of 1 favor/tick over 2,400 ticks, opening the entire ruleset costs **1.7% of the
+minimum income a universe can possibly earn**, and against the measured income it rounds to zero. The
+god's central verb is, in practice, free.
+
+It also explains a measurement that never fit: permitting could not be rationed by making favor
+scarce, because favor scarcity would have to be extreme by a factor of hundreds before 40 favor
+became a decision. Qwen's *"a more expensive door to the same empty room"* was right about the
+mechanism and generous about the magnitude.
+
+**Lesson for the campaign's own method:** a number taken from a data file and quoted in a design
+argument must be read through its declared type. Four separate documents and several agent briefs
+carried this figure. Nobody checked the schema because the integer looked like a plausible favor
+price — which is exactly why 1/1024 fixed point is easy to misread and why the type exists.
+
+---
+
+## Author's direction: add drains, do not cut
+
+> *"Try not to cut stuff, instead add drains — there are no drains at all in this whole thing, and
+> the economy should be a bit of a drain of stuff."*
+
+This supersedes the permit-repricing approach. **Making the god's one meaningful verb expensive
+nerfs the interesting thing to compensate for the boring thing.** The switch prices stay roughly
+where they are; the deliverable is the sinks the economy has never had.
+
+It converges exactly with W31's research, arrived at independently from the other direction:
+
+- **A cap is not a drain.** 9.1–12.4M favor is discarded per run. In Machinations' vocabulary a Drain
+  is *"elements that consume resources… permanently removed from a game's economy"* — an outflow
+  something can be traded against. Silent truncation at a ceiling is not that: it breaks conservation
+  **and destroys the signal** that would feed back to whatever is overproducing.
+- **Cook's power matching:** a growing source needs a growing or competitive sink. Worship scales
+  with populace; the spend menu does not. No repricing of one purchase can fix a structural
+  mismatch — which is the formal reason the repricing plan would have eaten itself.
+- **Dormans names both kinds of friction**, and the applicability note for the second is verbatim
+  *"use dynamic friction to balance games where resources are produced too fast."* That is this game,
+  named, with a prescription.
+
+**Stewardship survives the change of direction where the one-time price does not:** a recurring favor
+drain scaling with how many doctrine families stay legal keeps a broad ruleset *possible* and makes
+it *expensive to govern*. Breadth becomes a running commitment rather than a toll at the door.
+
+Two constraints on any drain built: unmet upkeep **lapses into decay, never banks as debt** (W26
+measured what the debt version does — a library at zero for 1,400 ticks), and anything draining the
+knowledge loop needs a **weak static engine** beside it, since a converter engine deadlocks and that
+is the documented remedy.
+
+---
+
+## W20 delivered the thing the campaign exists for: the species now diverge
+
+`w20/compositional-content`, 33 commits, measured in four arms.
+
+| claim | before | after |
+|---|--:|--:|
+| dimensionality (80%) | 2 | **3** (v1), 5 wide — **met** |
+| `ascensionRate` | 0.79 | **0.1250**, inside §7's 0.05–0.20 — **D1 met** |
+| gnome vs human | identical 49 nodes | **Jaccard 0.57, 1.7× reach, gnome ascends and human does not — met** |
+| no strategy holds the whole set | 5 of 8 did | **met in v1** |
+| rituals requiring several casters | — | **met**, with a greedy-mage impossibility proof |
+| prefix fidelity | 0.9088 | 0.8523 against a target of 0.5 — **missed in every arm** |
+| D6 | failing | **passes** |
+| D3 | failing | still failing |
+
+**"Gnome ascends and human does not" is the first measured distinct playstyle in this project.** D7 —
+varying the founding species mix changes which strategy wins — was unreachable for the whole campaign
+and is now within reach.
+
+The effect schema traces construct-by-construct to `sound-design.md` §4.1's five envelopes:
+**Intellego → `reveal`** contributes *no magnitude* and switches on latent effects; **Perdo →
+`remove`** contributes a negative and suppresses a presence primitive; **Rego → `control`**
+contributes a `{floor, ceiling}` clamp rather than a bonus. Mentem never targets `universe` (§4.2,
+*"the only form with no reverb at all"*), enforced across all 70 cells — and that rule caught a
+pre-existing defect outside v1.
+
+**Enablement beat shaping, and the margin is the finding.** Arm B — old ladder content, only the grid
+permitted — moved dimensionality 2 → 23 by itself, against arm D's shaped content. But arm B scores
+0.512 between-strategy variance to arm D's **0.759**. *Enablement produced variety; shaping produced
+structure.* Both are needed and they are not substitutes.
+
+### It agrees with the root cause, from a completely different direction
+
+> **"Only eleven effects are live.** `knowledgeEffectHooks` filters to `target: "universe"`; there is
+> **no per-mage effect channel**, so the life-extension ladder is authored, validated and
+> disconnected. Scribe accrual is hardcoded `NO_BONUSES`; `build-rate`'s consumer has no caller; raid
+> theft bypasses both exclusion seams. **The cheapest next move is not more content — it's connecting
+> what exists.**"
+
+That is the third independent arrival at the same conclusion, after W30 and W29. It also means the
+per-mage exclusivity and the logarithmic life-extension ladder the author asked for are **built and
+unreachable** — they need a per-mage effect channel that does not exist.
+
+### And it sharpens why `permit-then-idle` wins
+
+Still 12/12 — but it now **ties** `permissive-breadth` where it previously beat it 40/40 to 38/40. The
+sharper reading is W20's: it permits the grid in its first 140 ticks and buys **299.6 nodes against
+passive's 60.2**. Everything W20 built is a decision *inside the knowledge graph that no god verb
+reaches*. §4's edict budget is the mechanism the vision already has for that.
+
+### Six escalations, unresolved and recorded
+
+1. **Tracks vs §4a's four-hook cap** — tradition-owned content would be a fifth hook. Shipped at
+   graph level instead.
+2. **Rituals need a vision amendment** — not traceable to any existing section.
+3. **Enablement default deferred** — `fullGridAtFounding` ships as an instrument defaulting to 0.
+   This is the "does wide mean enabled or permitted" question, now with an evidence package.
+4. **Perdo-on-`concealment` is inverted** — ~10 nodes lower their own caster's concealment while
+   every gloss says they hide her. Left unfixed deliberately: it answers *"does Perdo destroy the
+   shadow or the observation"* across all fourteen forms.
+5. **Perdo has four free roots** where Rego is fully gated behind Intellego. An accident, not a
+   decision — settle before Muto and Creo.
+6. **Intellego cannot be half of an exclusive pair**: stripping it leaves **12 of 108** nodes, none
+   past tier 3. **Perdo ↔ Rego** remains the recommendation, which is where the corrected lattice
+   reading already pointed.
+
+### The phantom test failures had a measured cause, and it was us
+
+Every workstream tonight reported the same signature: `npm run verify` failing with
+`Error: [vitest-worker]: Timeout calling "onTaskUpdate"` and **zero named failing tests**. It was
+labelled "contention" and worked around. Measured:
+
+    cores: 16          load average: 287
+    node processes: 52     of which 8 were Monte Carlo sweeps
+    one workstream alone held 6
+
+**18× oversubscription.** That is not contention, it is starvation, and the vitest timeouts were
+real test failures caused by it rather than a reporting artifact. Several agents lost time to it,
+`ci-check.sh` mirrors `verify`, so it can fail a good commit on the runner — and at least one agent
+correctly refused to write "verify exit 0" because it had never witnessed one.
+
+Mitigated without losing work by renicing every sweep to `NI 15` rather than killing them: the two
+largest dropped from 341% and 266% CPU to 207% and 173% immediately, so tests now win the scheduler
+while the sweeps continue.
+
+**The structural cause is that `balance:gate` runs `--workers 4`, and nothing coordinates across
+workstreams.** Six agents each running a gate is 24 workers on 16 cores before any test process
+starts. Either the harness binaries should nice themselves outside CI, or the campaign needs a stated
+cap on concurrent sweeps. Recorded rather than fixed, because the fix belongs in `mc-harness` and
+touching it while six sweeps are mid-flight would invalidate them.
+
+---
+
+## W19 is the negative control for W20's headline, and neither workstream knew it
+
+W19 swept the **old** content at five horizons, asking whether shortening the run made the species
+reach different magic before exhaustion flattened them:
+
+| horizon | gnome union | human union | nodes unique to either | paired containment |
+|--:|--:|--:|--:|--:|
+| 300 | 49 | 49 | **0** | 0.970 / 0.992 |
+| 450 | 49 | 49 | **0** | 0.990 / 0.996 |
+| 600 | 49 | 49 | **0** | 0.999 / 0.999 |
+| 900–2400 | 49 | 49 | **0** | 1.000 |
+
+At horizon 300 humans hold a mean of **37.7** nodes against gnomes' **45.2** — a 20% gap in count —
+and the union over seeds is the **same 49 nodes, with zero unique to either side**. Shortening the
+horizon does not make species reach different magic; it catches humans earlier on the same queue.
+That is W15's *"speed, not shape"* confirmed at every horizon where content is still unexhausted.
+
+**Put beside W20's result on the new content — Jaccard 0.57, 1.7× reach, gnome ascending where human
+does not — this is a before-and-after with the before measured five ways.** The divergence is
+attributable to the content graph, not to the horizon, not to the measurement, and not to
+exhaustion. W19 was commissioned to test a hypothesis that had already been refuted; it turned out to
+be the control the campaign's best result needed.
+
+**The caveat, stated because the pairing is only as good as its comparability:** these are separate
+sweeps with different arms, so this is a strong suggestive pairing rather than a controlled
+experiment. The clean version is W20's arm structure re-run at W19's horizons. Worth doing —
+it would convert the campaign's headline from *measured* to *attributed*.
+
+W19 adds one more thing worth keeping: the **only** place the two species' node sets differ on old
+content is under `permissive-breadth` — reached by editing the ruleset — and that comparison is
+**confounded by design**, because removing a species changes founding order and therefore every
+downstream draw. Any future species claim resting on `permissive-breadth` inherits that confound.
+
+---
+
+## The question nobody in this project has asked
+
+An external review was given the measured findings cold and asked four questions. Its answer to the
+last one is the sharpest thing anyone has said about this work:
+
+> **"What player decision can make a losing universe win, through a causal chain the player can
+> understand and verify?"**
+>
+> Not *"are the primitives authored?"*, *"are metrics in range?"*, or *"can species diverge?"* Those
+> are implementation and simulation questions. The missing question is whether the god's constrained
+> authority creates **counterfactual, legible leverage** over outcomes.
+>
+> If the answer is not demonstrably yes for at least one decision, the honest description is a
+> promising autonomous-world simulator — not yet a strategy game about being the god of magic.
+
+Every definition-of-done item in this document is one of the questions it says are the wrong ones.
+D1–D8 measure whether the *simulation* behaves; none of them asks whether the *player* has leverage.
+That is not an argument for deleting them — they are still necessary — but they are not sufficient,
+and nothing here has been checking the difference.
+
+### It also puts a caveat on the campaign's best result
+
+On W20's species divergence:
+
+> "It is probably a real **graph-level** result, but not evidence that the game's magic system works.
+> The rewrite can change discovery, teaching and species trajectories through authored graph topology
+> **even if spell effects are inert**. Gnome/human divergence and `ascensionRate` may be genuine
+> outputs of the academic simulation — but they are **not yet attributable to the god legalizing
+> magic**."
+
+That is fair and it is testable. The distinguishing measurement it proposes: **fixed-seed paired runs
+with every effect contribution forcibly neutralized versus normal**, comparing species Jaccard,
+`ascensionRate` and win state. If the delta is ~0, W20's result is a knowledge-graph artifact wearing
+a magic-system label. `packages/primitives/src/ablation.ts` already exports `neutralizing()` and
+`ablationMaskFor()` — the mechanism exists and has never been pointed at this question.
+
+### And it named the way tonight gets wasted, accurately
+
+> "The likely waste: spending the night tuning numbers, adding drains, or polishing the content graph
+> until aggregate metrics look 'in band'. That can produce prettier charts while leaving the core
+> causal path disconnected. **Second-most-likely waste: fixing all 16 primitives instead of proving
+> one.**"
+
+Both were in flight when this arrived. Redirected: W29 now owes **one primitive proven end to end**
+rather than six wired — permit the cell, see use rise, see a contribution logged, see world state
+mutate, see a visible outcome change, and **forbid the cell and watch the change disappear**. Step
+five is what makes it proof instead of a demo.
+
+### The drains critique, kept because it is the acceptance criteria inverted
+
+> "Drains can make the economy feel constrained **without creating decisions**. You may turn 'favor is
+> meaningless' into 'favor is a tax bill,' while the optimal policy remains 'permit everything, idle,
+> and pay upkeep.'"
+>
+> "A drain is only valuable if it produces a hard, legible tradeoff — *'keeping this family legal
+> preserves human portal defense but starves gnome ritual research'* — not merely 'your number went
+> down.'"
+
+So a uniform upkeep is the version that fails. A drain earns its place when two sinks draw on the
+same pool, each attached to a **different visible capability**, and the right answer **differs by
+species or ruleset**. The failure signature to watch for: outcome metrics move while **policy
+sensitivity does not** — same total favor, different allocation, identical result. That is a distinct
+measurement from any level metric and nothing currently collects it.
+
+### W19's final numbers answer Codex's attribution question — and the answer is "graph topology, and that is real"
+
+W19 committed its decision rule before seeing the data, then measured the **old** content at every
+horizon from 300 to 2400:
+
+- **one** component carries 80% of the variance, at every horizon;
+- **cross-strategy containment sits *above* the within-strategy diagonal** by +0.019 to +0.022 — two
+  different strategies' node sets overlap each other *more* than two seeds of the same strategy do.
+  That is the most compact statement of "the strategies are not different" this campaign has
+  produced;
+- prefix fidelity is flat: **0.9244 at horizon 300, 0.9318 at 2400**;
+- and with magnitude removed, the shape-only participation ratio is **3.31 at horizon 300 against
+  3.30 at 2400**. The apparent rise in the raw ratio (1.74 → 1.94) is *"breadth wearing composition's
+  clothes"* — at a short horizon strategies differ in how far along **one queue** they have got, not
+  in which magic they hold.
+
+Even at horizon 300, where only 1% of runs hold the full set, the v1-bound strategies already hold
+**48.5 of 51**. The unexhausted window is the gap between 95% of the set and all of it.
+
+**Put together with W20 this resolves the attribution question, though not in the flattering
+direction.** Effects were disconnected in *both* measurements. Old content: one dimension, flat at
+every horizon. New content: three dimensions in v1, five wide, with species reaching different magic.
+The difference therefore **is** graph topology, exactly as the external review suspected — and that
+is a real result rather than a deflating one. Restructuring what depends on what is what made species
+matter. What it is not is evidence that the magic *system* works, because no spell effect reached
+anything in either arm.
+
+So the honest statement of the campaign's best result: **the content graph now produces distinct
+playstyles; the effect pipeline has still never run.** Those are two different claims and only the
+first is measured.
+
+W19 also reported an incident against itself: its validator hardcoded the first pass's sampling grid
+and deleted 50 valid files from the second. The tool now takes the grid as a parameter and does not
+delete unless asked. Recorded because a workstream that reports its own destroyed data is worth more
+than one that quietly regenerates it.
