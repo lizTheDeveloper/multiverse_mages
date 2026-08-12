@@ -1545,3 +1545,104 @@ mechanism and generous about the magnitude.
 argument must be read through its declared type. Four separate documents and several agent briefs
 carried this figure. Nobody checked the schema because the integer looked like a plausible favor
 price — which is exactly why 1/1024 fixed point is easy to misread and why the type exists.
+
+---
+
+## Author's direction: add drains, do not cut
+
+> *"Try not to cut stuff, instead add drains — there are no drains at all in this whole thing, and
+> the economy should be a bit of a drain of stuff."*
+
+This supersedes the permit-repricing approach. **Making the god's one meaningful verb expensive
+nerfs the interesting thing to compensate for the boring thing.** The switch prices stay roughly
+where they are; the deliverable is the sinks the economy has never had.
+
+It converges exactly with W31's research, arrived at independently from the other direction:
+
+- **A cap is not a drain.** 9.1–12.4M favor is discarded per run. In Machinations' vocabulary a Drain
+  is *"elements that consume resources… permanently removed from a game's economy"* — an outflow
+  something can be traded against. Silent truncation at a ceiling is not that: it breaks conservation
+  **and destroys the signal** that would feed back to whatever is overproducing.
+- **Cook's power matching:** a growing source needs a growing or competitive sink. Worship scales
+  with populace; the spend menu does not. No repricing of one purchase can fix a structural
+  mismatch — which is the formal reason the repricing plan would have eaten itself.
+- **Dormans names both kinds of friction**, and the applicability note for the second is verbatim
+  *"use dynamic friction to balance games where resources are produced too fast."* That is this game,
+  named, with a prescription.
+
+**Stewardship survives the change of direction where the one-time price does not:** a recurring favor
+drain scaling with how many doctrine families stay legal keeps a broad ruleset *possible* and makes
+it *expensive to govern*. Breadth becomes a running commitment rather than a toll at the door.
+
+Two constraints on any drain built: unmet upkeep **lapses into decay, never banks as debt** (W26
+measured what the debt version does — a library at zero for 1,400 ticks), and anything draining the
+knowledge loop needs a **weak static engine** beside it, since a converter engine deadlocks and that
+is the documented remedy.
+
+---
+
+## W20 delivered the thing the campaign exists for: the species now diverge
+
+`w20/compositional-content`, 33 commits, measured in four arms.
+
+| claim | before | after |
+|---|--:|--:|
+| dimensionality (80%) | 2 | **3** (v1), 5 wide — **met** |
+| `ascensionRate` | 0.79 | **0.1250**, inside §7's 0.05–0.20 — **D1 met** |
+| gnome vs human | identical 49 nodes | **Jaccard 0.57, 1.7× reach, gnome ascends and human does not — met** |
+| no strategy holds the whole set | 5 of 8 did | **met in v1** |
+| rituals requiring several casters | — | **met**, with a greedy-mage impossibility proof |
+| prefix fidelity | 0.9088 | 0.8523 against a target of 0.5 — **missed in every arm** |
+| D6 | failing | **passes** |
+| D3 | failing | still failing |
+
+**"Gnome ascends and human does not" is the first measured distinct playstyle in this project.** D7 —
+varying the founding species mix changes which strategy wins — was unreachable for the whole campaign
+and is now within reach.
+
+The effect schema traces construct-by-construct to `sound-design.md` §4.1's five envelopes:
+**Intellego → `reveal`** contributes *no magnitude* and switches on latent effects; **Perdo →
+`remove`** contributes a negative and suppresses a presence primitive; **Rego → `control`**
+contributes a `{floor, ceiling}` clamp rather than a bonus. Mentem never targets `universe` (§4.2,
+*"the only form with no reverb at all"*), enforced across all 70 cells — and that rule caught a
+pre-existing defect outside v1.
+
+**Enablement beat shaping, and the margin is the finding.** Arm B — old ladder content, only the grid
+permitted — moved dimensionality 2 → 23 by itself, against arm D's shaped content. But arm B scores
+0.512 between-strategy variance to arm D's **0.759**. *Enablement produced variety; shaping produced
+structure.* Both are needed and they are not substitutes.
+
+### It agrees with the root cause, from a completely different direction
+
+> **"Only eleven effects are live.** `knowledgeEffectHooks` filters to `target: "universe"`; there is
+> **no per-mage effect channel**, so the life-extension ladder is authored, validated and
+> disconnected. Scribe accrual is hardcoded `NO_BONUSES`; `build-rate`'s consumer has no caller; raid
+> theft bypasses both exclusion seams. **The cheapest next move is not more content — it's connecting
+> what exists.**"
+
+That is the third independent arrival at the same conclusion, after W30 and W29. It also means the
+per-mage exclusivity and the logarithmic life-extension ladder the author asked for are **built and
+unreachable** — they need a per-mage effect channel that does not exist.
+
+### And it sharpens why `permit-then-idle` wins
+
+Still 12/12 — but it now **ties** `permissive-breadth` where it previously beat it 40/40 to 38/40. The
+sharper reading is W20's: it permits the grid in its first 140 ticks and buys **299.6 nodes against
+passive's 60.2**. Everything W20 built is a decision *inside the knowledge graph that no god verb
+reaches*. §4's edict budget is the mechanism the vision already has for that.
+
+### Six escalations, unresolved and recorded
+
+1. **Tracks vs §4a's four-hook cap** — tradition-owned content would be a fifth hook. Shipped at
+   graph level instead.
+2. **Rituals need a vision amendment** — not traceable to any existing section.
+3. **Enablement default deferred** — `fullGridAtFounding` ships as an instrument defaulting to 0.
+   This is the "does wide mean enabled or permitted" question, now with an evidence package.
+4. **Perdo-on-`concealment` is inverted** — ~10 nodes lower their own caster's concealment while
+   every gloss says they hide her. Left unfixed deliberately: it answers *"does Perdo destroy the
+   shadow or the observation"* across all fourteen forms.
+5. **Perdo has four free roots** where Rego is fully gated behind Intellego. An accident, not a
+   decision — settle before Muto and Creo.
+6. **Intellego cannot be half of an exclusive pair**: stripping it leaves **12 of 108** nodes, none
+   past tier 3. **Perdo ↔ Rego** remains the recommendation, which is where the corrected lattice
+   reading already pointed.
