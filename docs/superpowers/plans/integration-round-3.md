@@ -122,10 +122,10 @@ Report order, fixed in advance:
 
 ## Checklist
 
-- [ ] Plan committed and pushed
-- [ ] Baseline `npm run verify` on the un-merged base, per stage
-- [ ] Merge 1 — `w18/instrument-repair`, verify, record, push
-- [ ] Merge 2 — `w22/knowledge-observability`, verify, record, push
+- [x] Plan committed and pushed
+- [x] Baseline `npm run verify` on the un-merged base, per stage
+- [x] Merge 1 — `w18/instrument-repair`, verify, record, push
+- [x] Merge 2 — `w22/knowledge-observability`, verify, record, push
 - [ ] Merge 3 — `w19/horizon-sweep`, verify, record, push
 - [ ] Merge 4 — `w24/university-siting`, verify, record, push
 - [ ] Merge 5 — `w21/timing-and-envelopes`, verify, record, push
@@ -197,3 +197,38 @@ numbers *say*:
 Demonstrated on committed run records (`mc-results/gate`, the ascension gate's own 32 runs):
 **Pearson +0.9556, Spearman +0.5916, 1 winner of 8 — the term now contributes 0.** That single
 line is what the repair does to every correlation this campaign has published.
+
+### Merge 2 — `w22/knowledge-observability` (`81c125e`)
+
+Merged clean, **no conflicts**. Verify was run **per stage**, because the chained run stopped at
+the test stage under load.
+
+**The failure was load, and it was checked rather than assumed.** Four test files timed out at
+30 s — `god-loop`, `work-phase`, `world-step`, `raid-engagement` — none with an assertion failure,
+all four with `Test timed out in 30000ms`. Two independent checks say this is the machine and not
+the merge:
+
+1. **Nothing in the rules path imports the census.** `grep` over `packages/coordination/src`,
+   `packages/rules-*/src` and `packages/scenario/src` for `knowledgeCensus` returns nothing, so
+   the projection cannot slow the step loop — it is a function that must be called, and the
+   simulation never calls it.
+2. **All four pass in isolation: 4 files / 39 tests, EXIT=0.** Measured while the machine reported
+   **load average 216.5 across 126 node processes** — several other agents are working in this
+   repository concurrently, which `CLAUDE.md` warns about by name. `reference-long-run.test.ts`
+   took **332 s here against 161 s at merge 1**, the same test on the same tree, which is the
+   clearest single indicator that the tree did not change speed.
+
+**No timeout was raised**, and the four are reported as timed out rather than folded into a green
+chain.
+
+Stages, individually: typecheck, lint, purity, content, audio, coverage all pass; **279 test files
+/ 3,948 tests** (275 passing + the 4 that pass in isolation); all three balance gates **PASS at
+delta `0.00000` on every metric**; **no golden changed.**
+
+**Both halves of the known W22/W24 interaction hold at this point:**
+
+- `OBSERVATION_LAYOUT_DIGEST` **unmoved at `46182c35d829b205`** — and now pinned in *three* places
+  that agree: `agent-api/test/unit/layout-digest.test.ts`, W22's new
+  `agent-api/test/unit/knowledge-census.test.ts`, and `gym-bridge/python/tests/test_contract.py`.
+- `SNAPSHOT_VERSION` **1**, `WORLD_SCHEMA_VERSION` **4** — both untouched, which is correct: W22
+  adds no world state, so neither claim should move.
