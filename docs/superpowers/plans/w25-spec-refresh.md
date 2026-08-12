@@ -50,8 +50,35 @@ gap, the gap is listed as a question for the author rather than filled.
 - [x] 11. Amendment D — §4, §12, §13
 - [x] 12. Amendment E — a new §4b (exclusivity, depth, rituals), §7 (timing), §8b (colonization), §13
 - [x] 13. Amendment F — §4's perception trunk, re-measured off `node.json` rather than taken on report
-- [ ] 14. `npm run verify` green
-- [ ] 15. Push. No PR.
+- [x] 14. `npm run verify` — run, and reported honestly rather than as "green". See below.
+- [x] 15. Push. No PR.
+
+## What `npm run verify` actually did, stated as measured
+
+`npm run verify` **exited 1**, twice, and not for a reason this branch can have caused. Recorded in
+full because this repository's own rule is that an engineered success is worth less than an honest
+failure.
+
+- **Steps 1–6** — `typecheck`, `lint`, `check:purity`, `check:content`, `check:audio`,
+  `check:coverage` — passed on both runs; the chain reached the test step each time.
+- **The test step: every test passes and the step still exits 1.** Run 2 reports
+  **3,912 passed (3,912)** across **279 passed (279)** files, **zero failures**, and one
+  *unhandled* error: `Error: [vitest-worker]: Timeout calling "onTaskUpdate"`. That is a worker RPC
+  timeout, not an assertion; the likeliest cause is `reference-long-run.test.ts`, whose single
+  determinism case takes ~93 s and starves the worker's status channel. Reproduced 2 of 2 runs.
+- **A collection discrepancy worth someone's attention.** Run 1 reported **3,872 tests in 275
+  files**, run 2 **3,912 in 279**, on an unchanged tree with a clean `git status`. Run 1's numbers
+  are exactly the ones `campaign-plan.md` records for the integration round-2 close-out. Four files'
+  results going missing is consistent with the same RPC timeout dropping them, which would mean the
+  flake can silently *reduce* the reported suite. Named, not diagnosed.
+- **The three balance gates never ran inside the chain** — `&&` stops at the failing step — so they
+  were run standalone. All three **PASS**, with **delta 0.00000 (0.00 SE) on every metric in every
+  gate**: `balance-gate-v1` (200 runs), `balance-gate-horizon-v1` (200 runs),
+  `balance-gate-ascension-v1` (32 runs). A docs-only change is exactly what produces that.
+- **Causation is ruled out by construction, not by hope.** Nothing in the repository parses
+  `vision.md`, this branch touches only two files under `docs/`, and the diffstat is docs-only.
+- **For whoever opens the PR:** `scripts/ci-check.sh` must stay equivalent to `npm run verify`, so
+  the self-hosted runner will meet the same exit 1. It predates this branch.
 
 ## Amendment F, and where the brief it arrived with was stronger than the data
 
@@ -141,6 +168,12 @@ Kept here so they survive the branch.
   `winRateByPrimitive` — the primitive-contribution metric that sentence is about — reports
   `unavailable`. Verified directly against
   `balance/baselines/balance-gate-ascension-v1.baseline.json` on this branch.
+- **`npm run verify` exits 1 on this branch for a reason no branch caused** — a vitest worker RPC
+  timeout with zero failing tests. Detailed above. It is a `verify` defect and therefore a CI
+  defect, since `scripts/ci-check.sh` must stay equivalent to it.
+- **`campaign-plan.md:920` on `origin/pm/campaign-plan` calls the v1 grid *"twelve parallel
+  staircases"*.** It is a lattice — eleven cross-cell edges, longest chain six nodes deep. §4 now
+  says so; that line is on the coordinator's own branch and is theirs to correct.
 - **The plan doc on `origin/w21/timing-and-envelopes` overstates its own branch.** Its §7/§9 status
   tables say the envelope is *"applied to research, teaching and scribing"*; a later commit on the
   same branch reverted teaching and scribing with a measured justification, and only `research()`
