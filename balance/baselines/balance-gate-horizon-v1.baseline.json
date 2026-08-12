@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "5f899f0c9e398b20a147b0dacd5bc3cced259f2caaa09e661ca80cfcc016a2f8",
+  "contentHash": "afd9379d2afb8444bcf4e52a41abd8e83c712c26995e0662d4c67bac26bddaf7",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":9.081567421801958,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":27.244702265405877,"unit":"grimoires","value":359.435},
@@ -16,7 +16,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.2992065867682632,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.8976197603047895,"unit":"people","value":67.7}
   ],
   "notes": [
-    "At five and twenty years every metric is unchanged or moves under half a standard error; effectively only contentRevision moved. That is the expected result and worth recording: the founding stock saturates K's provisioning multiplier in both builds, subsistence never goes short, and the knowledge metrics do not touch the economy. A gate that moved here would have meant the change reached further than intended. Untuned, and not a balance claim before 0.5.0."
+    "At five and twenty years every metric is unchanged; only contentRevision moved. That is the expected result and worth recording: the founding stock saturates K's provisioning multiplier in both builds, subsistence never goes short, and the knowledge metrics do not touch the economy. A gate that moved here would have meant the change reached further than intended. Untuned, and not a balance claim before 0.5.0. The universe these numbers describe is still degenerate, and this change moved which ways rather than removing them. Two items leave the list: library depth is no longer pinned near two distinct nodes, because scribing survives now that parchment and bread are different things; and universities the god funds now actually get finished, so completedUniversities is no longer identically one. What remains degenerate: the god is still passive in the two fast gates, so 400 of the 432 runs measure the simulation's own evolution and not play; ascension eligibility still opens by passive accumulation, so the ascension rate remains a statement about a clock; the scribable list is still cost-ordered, so the same cheap nodes are copied repeatedly; and several observation channels still saturate. Read every figure here as a vital sign of a build, not as a description of the finished game."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -41,7 +41,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":211.7,"value":211.7},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":67.7,"value":67.7}
   ],
-  "supersedes": "0680fe70f518c3e7d80158238a03cf8a5be08551d201f902697d6c9363786854",
+  "supersedes": "5f899f0c9e398b20a147b0dacd5bc3cced259f2caaa09e661ca80cfcc016a2f8",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }

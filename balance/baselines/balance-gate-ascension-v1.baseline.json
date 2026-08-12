@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "268779c41c14b70dd624f3b6496a8d479b07096dcdbc8e24859ea917d40c738c",
-  "contentHash": "f946fe2f7a8a31242fa0bcebca14a6e284e046c854f56cfea91184a1256b843a",
+  "contentHash": "4ab7447a2d27bbd313a27249efdb4a350a0b0fa23d90b4a0a8c4cdb8c0f0aae0",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":43.85434781802875,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":131.56304345408626,"unit":"grimoires","value":255.40625},
@@ -16,7 +16,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1424.0544569645747,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4272.163370893724,"unit":"people","value":16087.78125}
   ],
   "notes": [
-    "Three metrics moved far beyond tolerance and all three are consequences of construction working. referenceLivingMages 105.5 -> 461.0 (18.20 SE) and referenceLibraryDepth 9.94 -> 31.09 (6.50 SE): universities the god funds now get finished by laborers, so they open seats, seats take students, students become mages, and mages fill libraries. mc-harness recorded the old behaviour as 'universities-are-founded-and-never-finished' and that entry is annotated on this branch rather than deleted. referencePeakPopulation 50080 -> 29489 (-156 SE) is the other side of the same change and is the number most worth an author's attention: carrying capacity's provisioning multiplier now reads the food stock alone rather than every material summed, and laborers standing on a building site produce nothing that month. Both are documented decisions, neither is tuned, and if the intended world is one where a god may not halve its own peak population by over-founding then the lever is a cap on the divertible labour share, which this branch deliberately did not invent. perRunTimeoutMs was also raised from 600000 to 1800000: one archivist run now takes 305 s alone, measured with reproduce-run.mjs, against a cap sized for a build whose universities never completed, and pool.ts says that budget is sized against what the simulation does. None of this is a balance claim; release-plan.md forbids one before 0.5.0."
+    "Three metrics moved far beyond tolerance and all three are consequences of construction working. referenceLivingMages 105.5 -> 461.0 (18.20 SE) and referenceLibraryDepth 9.94 -> 31.09 (6.50 SE): universities the god funds now get finished by laborers, so they open seats, seats take students, students become mages, and mages fill libraries. mc-harness recorded the old behaviour as 'universities-are-founded-and-never-finished' and that entry is annotated on this branch rather than deleted. referencePeakPopulation 50080 -> 29489 (-156 SE) is the other side of the same change and is the number most worth an author's attention: carrying capacity's provisioning multiplier now reads the food stock alone rather than every material summed, and laborers standing on a building site produce nothing that month. Both are documented decisions, neither is tuned, and if the intended world is one where a god may not halve its own peak population by over-founding then the lever is a cap on the divertible labour share, which this branch deliberately did not invent. perRunTimeoutMs was also raised from 600000 to 1800000: one archivist run now takes 305 s alone, measured with reproduce-run.mjs, against a cap sized for a build whose universities never completed, and pool.ts says that budget is sized against what the simulation does. None of this is a balance claim; release-plan.md forbids one before 0.5.0. The universe these numbers describe is still degenerate, and this change moved which ways rather than removing them. Two items leave the list: library depth is no longer pinned near two distinct nodes, because scribing survives now that parchment and bread are different things; and universities the god funds now actually get finished, so completedUniversities is no longer identically one. What remains degenerate: the god is still passive in the two fast gates, so 400 of the 432 runs measure the simulation's own evolution and not play; ascension eligibility still opens by passive accumulation, so the ascension rate remains a statement about a clock; the scribable list is still cost-ordered, so the same cheap nodes are copied repeatedly; and several observation channels still saturate. Read every figure here as a vital sign of a build, not as a description of the finished game."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -41,7 +41,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":16231.78125,"value":16231.78125},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":16087.78125,"value":16087.78125}
   ],
-  "supersedes": "6050cd7d422e307eee6d01edf8b7125b969c2fefb5470814a03d424425d335bd",
+  "supersedes": "f946fe2f7a8a31242fa0bcebca14a6e284e046c854f56cfea91184a1256b843a",
   "sweepId": "balance-gate-ascension-v1",
   "toleranceK": 3
 }
