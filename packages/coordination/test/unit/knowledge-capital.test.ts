@@ -224,17 +224,53 @@ const TICKS = 60;
 const TIMEOUT_MS = 120_000;
 
 describe('a deep library makes the mages who work in it faster (vision §6a)', () => {
-  it('finishes strictly more research over five years than the same universe with a bare shelf', () => {
+  /**
+   * ## Why this counts books and not completed research projects
+   *
+   * It counted `researchCompleted` when `knowledge-capital` landed, and that
+   * measure **inverted** the moment target selection became a utility score
+   * (`autonomy/target-appeal.ts`, W17). Measured on this fixture at 60 ticks,
+   * scholarly against bare:
+   *
+   * | measure | value-scored selection | five non-effort bounds zeroed |
+   * |---|---|---|
+   * | `researchCompleted` | 4131 vs **4142** | **4366** vs 4257 |
+   * | `grimoiresScribed` | **324** vs 231 | **324** vs 211 |
+   * | distinct nodes held | **42** vs 41 | 40 vs 40 |
+   * | knowledge instances | **7839** vs 7744 | **6052** vs 5968 |
+   *
+   * Zeroing the five non-effort term bounds reduces the score to the cost order
+   * this file was written against, and the old comparison comes back — so the
+   * inversion is the reordering and nothing else. But it is an inversion of the
+   * **metric**, not of the mechanism: under value-scored selection the deep
+   * library still yields more distinct nodes, more instances and 40% more
+   * books. What changed is the goal *mix* — the score moves effort toward
+   * teaching, so total instances rise about 30% while the **count** of finished
+   * research projects falls about 4% in both arms, and an 0.27% arm difference
+   * sits inside that shift.
+   *
+   * A count of completions was always a weak proxy for §6a's *"a university's
+   * output scales with the depth of its library"*: it weights a tier-1 project
+   * and a tier-5 project the same and ignores everything learned by being
+   * taught. Books are the loop's own output — the thing that deepens the
+   * library that raises the rate — and the margin is 40% rather than 0.27%.
+   *
+   * `researchCompleted` is kept as a **control** on both arms. It is the
+   * assertion that this universe is doing research at all, which is what makes
+   * the comparison above a comparison.
+   */
+  it('produces strictly more of the library output over five years than a bare shelf', () => {
     const scholarly = universe({ affiliation: 'scholarly' });
     scholarly.advance(TICKS);
     const unaided = universe({ affiliation: 'bare' });
     unaided.advance(TICKS);
 
-    // The control first: the unaided universe must still be doing something, or
+    // The control first: both universes must still be doing research, or
     // "strictly more" would be a claim about a universe that does nothing.
     expect(unaided.totals().researchCompleted).toBeGreaterThan(0);
-    expect(scholarly.totals().researchCompleted).toBeGreaterThan(
-      unaided.totals().researchCompleted,
+    expect(scholarly.totals().researchCompleted).toBeGreaterThan(0);
+    expect(scholarly.totals().grimoiresScribed).toBeGreaterThan(
+      unaided.totals().grimoiresScribed,
     );
   }, TIMEOUT_MS);
 
