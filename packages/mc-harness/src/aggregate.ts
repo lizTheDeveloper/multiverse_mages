@@ -58,6 +58,7 @@ import type { MetricRegistry } from './metrics.js';
 import { isMeasured } from './metrics.js';
 import type { ArmRunSummary, ArmTelemetry, MirroredPlay } from './metrics-telemetry.js';
 import type { ArmContribution } from './protocol.js';
+import { terminalReasonName } from './session.js';
 
 /** The ablation play shape `ArmTelemetry` carries. Named so the fold can hold one. */
 type ArmTelemetryAblationPlay = NonNullable<ArmTelemetry['ablationPlays']>[number];
@@ -186,6 +187,28 @@ export function countByStatus(records: readonly RunRecord[]): Record<string, num
   return sortedCounts(counts);
 }
 
+/**
+ * Run counts by §1.1's ending, in canonical key order.
+ *
+ * Keyed by **name**, not by number. The numbering is the contract and the name
+ * is derived from it, so nothing here can renumber anything — but a summary
+ * file saying `ascensionApotheosis: 7` is readable by the person who has to act
+ * on it, and one saying `1: 7` is a lookup table away from being readable, and
+ * the lookup table is in another package.
+ *
+ * A record whose reason this build has no name for is counted under
+ * `unknown-<n>` rather than dropped or folded into `none`. See
+ * {@link terminalReasonName}.
+ */
+export function countByTerminalReason(records: readonly RunRecord[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const record of sortCanonically(records)) {
+    const name = terminalReasonName(record.terminalReason ?? 0);
+    counts[name] = (counts[name] ?? 0) + 1;
+  }
+  return sortedCounts(counts);
+}
+
 /** Failure counts by classification, in canonical key order. */
 export function countByFailureClass(records: readonly RunRecord[]): Record<string, number> {
   const counts: Record<string, number> = {};
@@ -283,6 +306,7 @@ export function buildArmTelemetry(input: {
     runs.push({
       coordinates: record.coordinates,
       status: record.status,
+      terminalReason: record.terminalReason ?? 0,
       ticksRun: record.ticksRun,
       checkpoints: contribution?.checkpoints ?? [],
     });

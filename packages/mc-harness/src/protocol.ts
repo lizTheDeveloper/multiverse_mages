@@ -142,6 +142,14 @@ export interface ArmContribution {
 /** What an executor returns for a run that completed, however it ended. */
 export interface RunOutcome {
   readonly status: TerminalStatus;
+  /**
+   * §1.1's ending. See {@link RunRecord.terminalReason}.
+   *
+   * Optional so that an executor written before the field existed still
+   * satisfies the type; it then records `none`, which is the honest reading of
+   * "this executor does not report a route".
+   */
+  readonly terminalReason?: number;
   readonly ticksRun: number;
   readonly metrics: MetricEntries;
   readonly accounting: IllegalActionAccounting;

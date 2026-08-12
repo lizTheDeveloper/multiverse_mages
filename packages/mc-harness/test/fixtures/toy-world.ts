@@ -52,6 +52,7 @@ import type {
   SlotPolicy,
   TerminalStatus,
 } from '@mm/mc-harness';
+import { TERMINAL_REASON } from '@mm/mc-harness';
 
 /** The scenario configuration a toy session is reset with. */
 export interface ToyConfig {
@@ -140,6 +141,25 @@ export class ToySession implements AgentSession<ToyConfig> {
     if (this.wealth >= this.ascendAt) return 'ascended';
     if (this.wealth <= 0) return 'stagnated';
     return 'running';
+  }
+
+  /**
+   * §1.1's ending, as the toy models it.
+   *
+   * The toy has one way to ascend, so it names `ascensionApotheosis` and never
+   * `ascensionCanon` — which is exactly the shape a route breakdown has to
+   * survive: a fold over these runs must report one route at 100% rather than
+   * dividing by an absent second one.
+   */
+  terminalReason(): number {
+    switch (this.status()) {
+      case 'ascended':
+        return TERMINAL_REASON.ascensionApotheosis;
+      case 'stagnated':
+        return TERMINAL_REASON.stagnation;
+      default:
+        return TERMINAL_REASON.none;
+    }
   }
 
   accounting(): IllegalActionAccounting {

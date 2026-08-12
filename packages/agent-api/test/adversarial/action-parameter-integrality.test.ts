@@ -142,15 +142,40 @@ describe('DEFECT 1 — the gate is the last integer boundary, and it does not ho
     expect(result.rejected.map((entry) => entry.reason)).toEqual(['masked', 'empty-slot']);
   });
 
-  it('HOLDS: an out-of-range integer parameter is passed through, as documented', () => {
-    // Not asserted as a defect. `src/mask.ts` states that structural validity is
-    // all this layer judges and that §8's `god-agency` owns the rest, and a
-    // technique id of 9999 is an integer — it is the *type* boundary that this
-    // file argues the gate owns, not the *range* one.
+  it('REVERSED: an out-of-range axis id is now rejected, not passed through', () => {
+    // This assertion used to read the other way, and the reasoning it carried
+    // was: *"structural validity is all this layer judges and §8's `god-agency`
+    // owns the rest, and a technique id of 9999 is an integer — it is the type
+    // boundary this file argues the gate owns, not the range one."*
+    //
+    // The range boundary was then measured, and the argument does not survive
+    // it. `interventions.ts` refuses an axis id outside `1..count` into
+    // `state.illegalActionCount`, which §7's `illegalActionRate` does not read,
+    // so the refusal was invisible to every metric — and `mc-harness`'s pool
+    // was emitting an out-of-range id once every five rounds, unnoticed, in
+    // every balance measurement ever taken.
+    //
+    // What changed is *which* ranges count as structural, not the boundary
+    // itself. `GRID_TECHNIQUE_COUNT` and `GRID_FORM_COUNT` are pinned in
+    // `@mm/state`, need no content and no dynamic state, and are exactly the
+    // kind of fact the gate already judges for a candidate slot index. Cell ids
+    // (5–6) and edict indices (7) are not, and are still passed through.
     const state = universeHolding(LEAN_RESOURCES);
     const result = admit({ state, catalogue: FIXTURE_CATALOGUE }, [
       { kind: GOD_ACTION.forbidTechnique, params: [9999] },
     ]);
-    expect(result.admitted).toEqual([{ kind: GOD_ACTION.forbidTechnique, params: [9999] }]);
+    expect(result.admitted).toEqual([]);
+    expect(result.rejected.map((entry) => entry.reason)).toEqual(['parameter-out-of-range']);
+  });
+
+  it('HOLDS: an out-of-range cell id is still passed through', () => {
+    // The half of the old assertion that survives, kept so the narrowing is
+    // visible rather than implied. A cell id's validity is a content question,
+    // and §8 is where content answers it.
+    const state = universeHolding(LEAN_RESOURCES);
+    const result = admit({ state, catalogue: FIXTURE_CATALOGUE }, [
+      { kind: GOD_ACTION.issueInterdiction, params: [9999] },
+    ]);
+    expect(result.admitted).toEqual([{ kind: GOD_ACTION.issueInterdiction, params: [9999] }]);
   });
 });

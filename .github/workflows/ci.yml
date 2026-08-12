@@ -76,6 +76,18 @@ jobs:
         # measurements, and horizon-gate.test.ts fails if this step goes missing.
         run: npm run balance:gate:horizon
 
+      - name: Balance regression gate (two hundred world years)
+        # The third instrument, and the only one that can observe the win
+        # condition. Measured: 0 of 400 runs ascended at twenty world years and
+        # 10 of 80 at two hundred, so both gates above are structurally blind to
+        # the ending of the game they gate. This one runs the whole eight-strategy
+        # pool round-robin rather than the passive control, because a summit is
+        # something a strategy reaches. It is not the horizon gate with a bigger
+        # number and must not be merged into it — horizon-gate.test.ts fails if
+        # this step goes missing or if any of the three horizons collapses into
+        # another.
+        run: npm run balance:gate:ascension
+
   next-node:
     # Early warning only: a failure here means the next Node major may change
     # simulation behaviour, which we want to know about before it is pinned.
@@ -137,3 +149,15 @@ jobs:
         # blind spot the other does not cover — balance/README.md has the
         # measurements, and horizon-gate.test.ts fails if this step goes missing.
         run: npm run balance:gate:horizon
+
+      - name: Balance regression gate (two hundred world years)
+        # The third instrument, and the only one that can observe the win
+        # condition. Measured: 0 of 400 runs ascended at twenty world years and
+        # 10 of 80 at two hundred, so both gates above are structurally blind to
+        # the ending of the game they gate. This one runs the whole eight-strategy
+        # pool round-robin rather than the passive control, because a summit is
+        # something a strategy reaches. It is not the horizon gate with a bigger
+        # number and must not be merged into it — horizon-gate.test.ts fails if
+        # this step goes missing or if any of the three horizons collapses into
+        # another.
+        run: npm run balance:gate:ascension

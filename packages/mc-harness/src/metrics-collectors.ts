@@ -56,6 +56,7 @@ import { gini } from './metrics-gini.js';
 import type { SurvivalObservation } from './metrics-survival.js';
 import { kaplanMeier, survivalQuantile } from './metrics-survival.js';
 import type { ArmTelemetry, CensusSample, RunTelemetry } from './metrics-telemetry.js';
+import { terminalReasonName } from './session.js';
 
 /* ------------------------------------------------------------------------- *
  * Pinned constants. Every one of these is covered by the `definitionVersion`
@@ -828,8 +829,11 @@ export function collectAscensionRate(arm: ArmTelemetry): MetricEntry {
   let eligible = 0;
   let failed = 0;
   const byStatus: Record<string, number> = {};
+  const byReason: Record<string, number> = {};
   for (const run of arm.runs) {
     byStatus[run.status] = (byStatus[run.status] ?? 0) + 1;
+    const reason = terminalReasonName(run.terminalReason);
+    byReason[reason] = (byReason[reason] ?? 0) + 1;
     if (run.status === 'failed') {
       failed += 1;
       continue;
@@ -844,6 +848,11 @@ export function collectAscensionRate(arm: ArmTelemetry): MetricEntry {
     denominator: eligible,
     failedExcluded: failed,
     countsByStatus: sortedCounts(byStatus),
+    // The rate's own numerator, split. §1.1 gives two routes to a summit and
+    // `status` collapses them, so a rate inside the 0.05–0.20 band built
+    // entirely out of one route is a different game from the same rate built
+    // out of both — and until this line nothing reported the difference.
+    countsByTerminalReason: sortedCounts(byReason),
     targetBandMin: 0.05,
     targetBandMax: 0.2,
   };

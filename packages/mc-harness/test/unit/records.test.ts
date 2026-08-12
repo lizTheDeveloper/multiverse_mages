@@ -232,6 +232,7 @@ describe('the summary separates the performance section', () => {
       cellCount: 1,
       runCount: 1,
       countsByStatus: { stagnated: 1 },
+      countsByTerminalReason: { stagnation: 1 },
       failureCount: 0,
       failuresByClass: {},
       failureThreshold: 0,

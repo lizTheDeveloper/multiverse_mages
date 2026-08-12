@@ -22,6 +22,7 @@
 import { ACTION_SPACE_SIZE, GOD_ACTION, agentRng, isLegal } from '@mm/agent-api';
 import type { ActionSubmission, StrategyDefinition } from '@mm/mc-harness';
 import {
+  ASCENSION_STANCE,
   BOT_POOL,
   BOT_POOL_REGISTRY,
   POOL_BUILD_LIMITS,
@@ -29,6 +30,7 @@ import {
   botStrategyRegistry,
   degeneracyOf,
   describeDivergence,
+  effectivePreferences,
   observationDivergence,
   poolDegeneracy,
   policiesForRun,
@@ -103,9 +105,12 @@ function adversarialMasks(): Uint8Array[] {
     masks.push(onlyOne);
   }
   // The build the pool is actually specified against: `openPortal` has no
-  // candidates in a single-universe run and is therefore permanently masked.
+  // candidates in a single-universe run and is therefore permanently masked,
+  // and `declareAscension` is masked for every tick before `ascensionPath`
+  // leaves `none` — which is most of a run, and all of a short one.
   const realistic = fullMask();
   realistic[GOD_ACTION.openPortal] = 0;
+  realistic[GOD_ACTION.declareAscension] = 0;
   masks.push(realistic);
   return masks;
 }
@@ -143,6 +148,10 @@ describe('pool composition is enumerable (task 5.1)', () => {
       strategyId: 'stub',
       version: 1,
       hypothesis: 'Whether a stub can be registered.',
+      ascension: {
+        when: ASCENSION_STANCE.never,
+        because: 'A stub has no thesis worth ending a run for.',
+      },
       signatureActions: [],
       preferences: () => [],
     };
@@ -187,7 +196,13 @@ describe('a blocked preference falls through (task 5.6)', () => {
         // Two identically-derived contexts, so the reference call and the
         // policy call draw the same numbers from the same position.
         const policy = policyFor(definition, contextFor(definition.strategyId, 99));
-        const reference = definition.preferences({
+        // The *effective* list — what the strategy asked for with its declared
+        // ascension stance composed in. That composition is what `policyFor`
+        // walks, and asserting against `preferences` alone would be asserting
+        // that the stance has no effect, which is the bug the stance exists to
+        // fix. `ascension-stance.test.ts` is where the composition itself is
+        // pinned; this test is still only about fall-through.
+        const reference = effectivePreferences(definition, {
           observation: blankObservation(),
           mask,
           round: 0,
@@ -228,6 +243,10 @@ describe('a blocked preference falls through (task 5.6)', () => {
     const definition = BOT_POOL_REGISTRY.get('portal-rush') as StrategyDefinition;
     const mask = fullMask();
     mask[GOD_ACTION.openPortal] = 0;
+    // Before eligibility, which is where the scenario is set: portal-rush's
+    // stance is "declare when eligible", so leaving action 15 legal here would
+    // make this a test of the stance rather than of the portal fall-through.
+    mask[GOD_ACTION.declareAscension] = 0;
     const policy = policyFor(definition, contextFor('portal-rush', 7));
     const submissions: number[] = [];
     for (let round = 0; round < 12; round += 1) {
@@ -239,8 +258,10 @@ describe('a blocked preference falls through (task 5.6)', () => {
 
     // The control: with the portal open it does prefer it, so the fall-through
     // above is a fall-through and not a strategy that never wanted a portal.
+    const portalOpen = fullMask();
+    portalOpen[GOD_ACTION.declareAscension] = 0;
     const openPolicy = policyFor(definition, contextFor('portal-rush', 7));
-    expect((openPolicy(blankObservation(), fullMask(), 0) as ActionSubmission).action).toBe(
+    expect((openPolicy(blankObservation(), portalOpen, 0) as ActionSubmission).action).toBe(
       GOD_ACTION.openPortal,
     );
   });
@@ -282,11 +303,22 @@ describe('degeneracy is declared rather than discovered', () => {
     // Prose, and untestable from here by construction — but its *presence* is
     // testable, and an empty limits block would be a claim that the pool is
     // fully exercised, which it is not.
+    // Two of the four entries this list used to hold have expired and are
+    // deleted rather than softened: `every-god-action` claimed nothing reads
+    // `ctx.actions`, and `worship` claimed nothing moves the worship channels.
+    // `god-agency` made both false, and an entry that outlives its mechanic is
+    // worse than none because it excuses a real flat result.
+    // `axis-parameter-base` has expired the same way: the rotations are 1-based
+    // now and the gate range-checks the ids, so the entry it replaced described
+    // a defect this build does not have. What replaced it is a *different*
+    // silent refusal found while fixing that one — the noise floor submits
+    // actions 1–7 with no parameter at all — and it is recorded rather than
+    // fixed, for the reason the entry gives.
     expect(Object.keys(POOL_BUILD_LIMITS).sort()).toEqual([
-      'ascension-eligibility',
-      'every-god-action',
+      'ascension-is-passive',
+      'noise-floor-submits-axis-actions-bare',
       'open-portal',
-      'worship',
+      'starting-position-is-broke',
     ]);
     for (const [key, text] of Object.entries(POOL_BUILD_LIMITS)) {
       expect(text.length, `${key} needs a reason, not a label`).toBeGreaterThan(80);

@@ -61,6 +61,24 @@
  * stops subtle drift being detectable at all. That trades one blind spot for
  * another. So the two gates are two instruments, and the tests below assert that
  * neither has quietly become the other.
+ *
+ * ## And a third, for the blind spot both of them share
+ *
+ * Neither can see the game end. Measured on the same day: **0 of 400 runs
+ * ascended at 240 ticks, and 10 of 80 at 2400** — `ascensionRate` 0.125, inside
+ * `contracts.md` §7's declared 0.05–0.20 band. A build in which nobody could win
+ * any more would pass both gates above, indefinitely, because neither runs long
+ * enough for a declaration to be possible and neither puts a strategy in front
+ * of the opportunity: both run `passive-control` fixed.
+ *
+ * `balance-gate-ascension-v1` closes that. It differs from the horizon gate in
+ * exactly two declared ways — 2400 ticks instead of 240, and the whole
+ * eight-strategy pool round-robin instead of the passive control — and both
+ * differences are asserted below rather than described, so that "we already
+ * have a long gate" has to argue with a failing test. It is small: 32 runs,
+ * four per strategy, with tolerances about a hundred times wider than the
+ * horizon gate's. `balance/README.md` argues why that is the right trade and why
+ * adding replicates would not fix it.
  */
 
 import { readFileSync } from 'node:fs';
@@ -91,6 +109,7 @@ const TICKS_PER_YEAR = 12;
 
 const fast = readSweep('balance-gate.sweep.json');
 const horizon = readSweep('balance-gate-horizon.sweep.json');
+const ascension = readSweep('balance-gate-ascension.sweep.json');
 
 const scripts = (
   JSON.parse(readRepoFile('package.json')) as {
@@ -172,8 +191,61 @@ describe('the fast gate keeps the sensitivity the horizon gate cannot afford', (
   });
 });
 
-describe('both gates are wired into both CI systems (docs/devops/ci-and-deploy.md)', () => {
-  const gateScripts = ['balance:gate', 'balance:gate:horizon'] as const;
+describe('the two-hundred-year gate is a third instrument, not a longer second one', () => {
+  it('runs to two hundred world years, where the win condition is observable at all', () => {
+    // Measured, not chosen for roundness: 0 of 400 runs ascended at 240 ticks
+    // and 10 of 80 at 2400, which is `ascensionRate` 0.125 — inside §7's
+    // declared 0.05–0.20 band. A gate that cannot observe its game's ending
+    // cannot regress on it either, and both committed gates are structurally
+    // incapable of seeing one.
+    expect(ascension.termination.worldTickCap).toBe(200 * TICKS_PER_YEAR);
+    expect(ascension.termination.worldTickCap).toBeGreaterThanOrEqual(
+      10 * horizon.termination.worldTickCap,
+    );
+  });
+
+  it('does not lengthen either of the gates whose horizons were argued from measurement', () => {
+    // The third instrument is added *beside* the other two. `balance/README.md`
+    // argues 60 and 240 from sensitivity per second, and the assertions above
+    // pin both; this one states the relationship between all three in one place
+    // so that "we already have a long gate, delete one" has to argue with it.
+    expect(fast.termination.worldTickCap).toBeLessThan(horizon.termination.worldTickCap);
+    expect(horizon.termination.worldTickCap).toBeLessThan(ascension.termination.worldTickCap);
+  });
+
+  it('runs the whole scripted pool rather than the passive control', () => {
+    // This is the difference that makes it a third instrument rather than the
+    // horizon gate with a bigger number. The other two run `passive-control`
+    // fixed, which is what makes them measure the simulation's own evolution.
+    // A win condition is something a *strategy* reaches, so the long gate has to
+    // put strategies in front of it — all eight, round-robin, so no strategy is
+    // observed under a starting position another never sees.
+    expect(fast.agentPool.assignment).toBe('fixed');
+    expect(horizon.agentPool.assignment).toBe('fixed');
+    expect(ascension.agentPool.assignment).toBe('round-robin');
+    expect(ascension.agentPool.strategies.length).toBe(8);
+    // Round-robin assigns `strategies[replicateIndex % size]`, so a replicate
+    // count that is not a multiple of the pool size gives some strategies one
+    // more run than others in every cell — an imbalance that would show up as a
+    // strategy effect.
+    expect(ascension.replicates % ascension.agentPool.strategies.length).toBe(0);
+  });
+
+  it('is bound to its tick cap and its pool by its own baseline', () => {
+    const loaded = loadBaseline(
+      repoPath('balance/baselines/balance-gate-ascension-v1.baseline.json'),
+    );
+    expect('baseline' in loaded, JSON.stringify(loaded)).toBe(true);
+    if (!('baseline' in loaded)) return;
+    expect(loaded.baseline.sweepId).toBe(ascension.sweepId);
+    expect(loaded.baseline.configurationHash).toBe(
+      expandSweep(ascension, REFERENCE_REGISTRIES).configurationHash,
+    );
+  });
+});
+
+describe('every gate is wired into both CI systems (docs/devops/ci-and-deploy.md)', () => {
+  const gateScripts = ['balance:gate', 'balance:gate:horizon', 'balance:gate:ascension'] as const;
 
   it.each(gateScripts)('%s is an npm script that runs the gate entrypoint', (name) => {
     expect(scripts[name]).toContain('balance-gate.mjs');

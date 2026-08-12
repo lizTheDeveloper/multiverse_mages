@@ -253,6 +253,7 @@ describe('the episode loop drives the adapted session', () => {
         stuck.received.push(action);
         return { admitted: true, observation: stuck.observe(), status: 'running' as const };
       },
+      outcome: () => stuck.outcome(),
       status: () => 'running' as const,
       accounting: () => stuck.accounting(),
     });

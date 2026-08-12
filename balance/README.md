@@ -7,22 +7,24 @@ Two kinds of file live here, and one command each.
 
 ## What the gates actually do
 
-There are **two** of them, and they are two instruments rather than one instrument run twice.
+There are **three** of them, and they are three instruments rather than one instrument run three
+times.
 
-| | `npm run balance:gate` | `npm run balance:gate:horizon` |
-|---|---|---|
-| sweep | `balance-gate.sweep.json` | `balance-gate-horizon.sweep.json` |
-| horizon | 60 ticks — **five** world years | 240 ticks — **twenty** world years |
-| runs | 4 cells × 50 = 200 | 4 cells × 50 = 200 |
-| wall clock | ~8 s idle, ~7 s in `verify` | ~35 s idle, ~57 s in `verify` |
-| answers | *did anything move?* | *did the universe stop?* |
+| | `npm run balance:gate` | `npm run balance:gate:horizon` | `npm run balance:gate:ascension` |
+|---|---|---|---|
+| sweep | `balance-gate.sweep.json` | `balance-gate-horizon.sweep.json` | `balance-gate-ascension.sweep.json` |
+| horizon | 60 ticks — **five** world years | 240 ticks — **twenty** world years | 2400 ticks — **two hundred** world years |
+| pool | `passive-control`, fixed | `passive-control`, fixed | all eight, round-robin |
+| runs | 4 cells × 50 = 200 | 4 cells × 50 = 200 | 4 cells × 8 = 32 |
+| wall clock | ~8 s idle, ~7 s in `verify` | ~35 s idle, ~57 s in `verify` | ~46 s on 4 workers |
+| answers | *did anything move?* | *did the universe stop?* | *can anyone still win?* |
 
 Each runs its sweep against the reference universe, compares every metric to its own committed
-baseline, and exits non-zero if anything is out of place. Both are part of `npm run verify`, so the
-self-hosted runner picks them up, and both are named as their own steps in
-`.github/workflows/ci.yml`, because that workflow lists its steps by hand. Both, deliberately — see
-`docs/devops/ci-and-deploy.md` for why this repository has two CI systems and why neither can cover
-for the other.
+baseline, and exits non-zero if anything is out of place. All three are part of `npm run verify`, so
+the self-hosted runner picks them up, and all three are named as their own steps in
+`.github/workflows/ci.yml`, because that workflow lists its steps by hand. All three, deliberately —
+see `docs/devops/ci-and-deploy.md` for why this repository has two CI systems and why neither can
+cover for the other.
 
 ### Why five years is not enough, in numbers
 
@@ -48,6 +50,39 @@ The fix is not to lengthen the fast gate. Its value is sensitivity per second �
 budget would mean about 48 runs, widening every tolerance by roughly 2× so that subtle drift stops
 being detectable. That trades one blind spot for another. Hence two gates.
 `packages/scenario/test/unit/horizon-gate.test.ts` fails if either turns into the other.
+
+### Why two hundred years is a third instrument and not a longer second one
+
+Both gates above are structurally incapable of observing the thing the game is for. Measured on
+2026-08-11: **0 of 400 runs ascended at 240 ticks; 10 of 80 ascended at 2400**, giving
+`ascensionRate` 0.125 — inside `contracts.md` §7's declared 0.05–0.20 band. A gate that cannot see
+its game's ending cannot regress on it either, and a build in which nobody can win any more would
+have passed both of them.
+
+Two things make `balance:gate:ascension` a different instrument rather than the horizon gate with a
+bigger number, and both are asserted by `horizon-gate.test.ts`:
+
+- **The horizon.** 2400 ticks, ten times the twenty-year gate. The earliest declaration this build
+  produces is around tick 630, which is `ascension-min-tick` (600) plus the time it takes worship
+  to accrue past the tier gate.
+- **The pool.** All eight strategies, round-robin, one slot — where the other two run
+  `passive-control` fixed. A win condition is something a *strategy* reaches, so a gate over the
+  passive control alone would be blind to it however long it ran. Round-robin assigns
+  `strategies[replicateIndex % 8]`, which is why the replicate count is a multiple of eight: any
+  other number gives some strategies an extra run in every cell.
+
+Its sample is small — 32 runs, four per strategy — and its tolerances are correspondingly wide,
+about 33 nodes on `referenceNodesKnown` against the horizon gate's 0.238. That is not sloppiness and
+it is not fixable by adding replicates: the standard-error estimator stratifies on `cellIndex`, and
+within a cell of *this* sweep the eight replicates are eight different strategies, so most of what
+it calls noise is real strategy effect. The two instruments therefore answer different questions and
+the wide one is still worth running, because the failure it catches — the pool stops being able to
+win, or starts winning at a wholly different time — is invisible to a tolerance of 0.238 taken over
+a control that never plays.
+
+**Do not lengthen the two gates above to fold this one in.** Their horizons are argued from
+measured sensitivity per second, and 200 runs at 2400 ticks is roughly forty minutes of a four-core
+container per push.
 
 The gate fails on any of these, and reports `baseline-invalid` rather than a delta for the last
 four:
@@ -116,26 +151,29 @@ measurement: **a regenerated baseline is a claim that behaviour changed on purpo
 `packages/mc-harness/test/unit/baseline-regeneration.test.ts` reads the CI configuration and fails
 if that ever stops being true.
 
-## The three sweeps
+## The four sweeps
 
-| | `balance-gate.sweep.json` | `balance-gate-horizon.sweep.json` | `balance-full.sweep.json` |
-|---|---|---|---|
-| `sweepId` | `balance-gate-v1` | `balance-gate-horizon-v1` | `balance-full-v1` |
-| cells × replicates | 4 × 50 = **200 runs** | 4 × 50 = **200 runs** | 40 × 250 = **10,000 runs** |
-| world-tick cap | 60 (five world years) | 240 (twenty world years) | 240 (twenty world years) |
-| metrics | 9 vital signs | 9 + `referenceNodesGainedFinalQuarter` | 9 + `referenceNodesGainedFinalQuarter` |
-| wall clock | ~8 s idle, ~7 s in `verify` | ~35 s idle, ~57 s in `verify` | **3392 s measured** — see below |
-| committed baseline | yes | yes | **no**, and deliberately |
+| | `balance-gate.sweep.json` | `balance-gate-horizon.sweep.json` | `balance-gate-ascension.sweep.json` | `balance-full.sweep.json` |
+|---|---|---|---|---|
+| `sweepId` | `balance-gate-v1` | `balance-gate-horizon-v1` | `balance-gate-ascension-v1` | `balance-full-v1` |
+| cells × replicates | 4 × 50 = **200 runs** | 4 × 50 = **200 runs** | 4 × 8 = **32 runs** | 40 × 250 = **10,000 runs** |
+| world-tick cap | 60 (five world years) | 240 (twenty world years) | 2400 (two hundred world years) | 240 (twenty world years) |
+| pool | `passive-control` | `passive-control` | all eight, round-robin | `passive-control` |
+| metrics | 9 vital signs | 9 + `referenceNodesGainedFinalQuarter` | 9 + `referenceNodesGainedFinalQuarter` | 9 + `referenceNodesGainedFinalQuarter` |
+| wall clock | ~8 s idle, ~7 s in `verify` | ~35 s idle, ~57 s in `verify` | ~46 s on 4 workers | **3392 s measured** — see below |
+| committed baseline | yes | yes | yes | **no**, and deliberately |
 
-Both gate sweeps are sized to run on every push. That is the whole design constraint: a gate that
-takes ten minutes gets deleted, and a gate that never runs is worse than none. Their resulting
+All three gate sweeps are sized to run on every push. That is the whole design constraint: a gate
+that takes ten minutes gets deleted, and a gate that never runs is worse than none. Their resulting
 standard errors are recorded per metric in each baseline.
 
-The two gate sweeps deliberately share their four cells, their fifty replicates and their root
-seed, so that the **only** thing that could explain a divergence between them is the tick cap. They
-do not share run seeds — a run seed is derived from `(rootSeed, sweepId, cellIndex,
+The two `passive-control` gate sweeps deliberately share their four cells, their fifty replicates
+and their root seed, so that the **only** thing that could explain a divergence between them is the
+tick cap. They do not share run seeds — a run seed is derived from `(rootSeed, sweepId, cellIndex,
 replicateIndex)` and the sweep ids differ — so they are two samples of the same universe, not one
-sample measured twice.
+sample measured twice. The ascension sweep shares their four cells and their root seed and differs
+in two declared ways, the tick cap and the pool; both differences are asserted rather than described,
+in `horizon-gate.test.ts`.
 
 ### The throughput arithmetic, re-measured
 
@@ -254,8 +292,8 @@ errors where `referenceNodesKnown` separates them by 52.7, because a derivative 
 the plateau it describes has set in. Its sharpest reading is around world-year ten.
 
 The universe those vital signs describe is still degenerate, and the ways it is are recorded in each
-baseline's own `notes` so that nobody reads the numbers as a description of the finished game: every
-scripted strategy produces the same universe because no system reads a god action; the population
+baseline's own `notes` so that nobody reads the numbers as a description of the finished game: the
+population
 halves before it grows at five years; library depth reaches 1.70 distinct nodes against 525
 grimoires, because the scribable list is cost-ordered and the same cheap nodes are copied over and
 over; and several observation channels saturate. Node discovery has left that list — it now reaches
@@ -280,8 +318,25 @@ A baseline says what the build did on a date. It does not say the build is right
 
 ## What these baselines are keyed to
 
-Both are keyed to a build in which **no system reads `ctx.actions`**. Every scripted strategy
-therefore produces the same universe, and all 400 gated runs are the passive control under four
-starting positions. The `god-agency` change will make a god action change a universe, and when it
-lands every number in both files should move. **That is the gates working, not a defect.**
-Regenerate with a rationale naming `god-agency`; do not widen a tolerance.
+**This section used to say that no system read `ctx.actions`, so that every scripted strategy
+produced the same universe. That stopped being true when `god-agency` landed and the sentence
+survived it.** It is corrected here rather than deleted, because a stale limitation is worse than
+none: it excuses a real flat result, and this one told a reader not to run the experiment that found
+the pool could not win.
+
+What is true now:
+
+- `coordination/src/god/interventions.ts` implements all fifteen verbs; worship accrues, favor
+  regenerates and is spent, and a universe can ascend or stagnate. Measured at 2400 ticks, the pool
+  spreads from 9 distinct nodes known (`narrow-depth`) to 237 (`permissive-breadth`).
+- `balance-gate-v1` and `balance-gate-horizon-v1` are still keyed to the **passive control**, by
+  choice: they run `passive-control` fixed, so all 400 of their runs measure the simulation's own
+  evolution rather than a strategy's. Substituting a strategy that acts is a different experiment,
+  which is what `balance-gate-ascension-v1` is.
+- `balance-gate-ascension-v1` is keyed to a build in which ascension eligibility opens by **passive
+  accumulation**: Path A gates on world tick ≥ 600 and worship tier ≥ 4, and worship accrues from
+  mages, universities and populace whether or not the god acts. So its 27-of-32 ascension rate is a
+  statement about a clock, not about play. Making the gate depend on play is W2 of the
+  ascension-meta campaign, and when it lands **every number in that file should move**. That is the
+  gate working, not a defect. Regenerate with a rationale naming the constants that changed and the
+  measured deltas that justify them; do not widen a tolerance.

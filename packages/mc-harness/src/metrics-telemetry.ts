@@ -231,6 +231,11 @@ export interface RunTelemetry {
 export interface ArmRunSummary {
   readonly coordinates: RunCoordinates;
   readonly status: TerminalStatus;
+  /**
+   * §1.1's ending, so `ascensionRate` can report *which summit* alongside how
+   * many. Defaults to `none` for a record written before the field existed.
+   */
+  readonly terminalReason: number;
   readonly ticksRun: number;
   readonly checkpoints: readonly CheckpointSample[];
 }

@@ -45,6 +45,10 @@ class NeverEndingSession implements AgentSession<Record<string, never>> {
   status(): TerminalStatus {
     return TERMINAL_STATUS.running;
   }
+  /** Nothing ended, so §1.1's `none` — the honest answer for a live universe. */
+  terminalReason(): number {
+    return 0;
+  }
   accounting() {
     return { submissions: this.submissions, rejections: 0, byActionId: {} };
   }

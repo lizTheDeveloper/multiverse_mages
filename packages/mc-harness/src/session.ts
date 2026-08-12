@@ -72,6 +72,8 @@
  * caps is not redundancy here; they catch different failures.
  */
 
+import { TERMINAL_REASON } from '@mm/agent-api';
+
 /** How an episode ended. `failed` is the harness's, not the session's. */
 export const TERMINAL_STATUS = {
   running: 'running',
@@ -92,6 +94,32 @@ export const RECORDED_STATUSES: readonly TerminalStatus[] = [
   TERMINAL_STATUS.truncated,
   TERMINAL_STATUS.failed,
 ];
+
+/**
+ * `contracts.md` §1.1's endings, by name, for keying a report a human reads.
+ *
+ * Derived from `agent-api`'s re-export of the enum `god-agency` actually
+ * writes, not transcribed — the numbering is §1.1's and this file is not
+ * entitled to a second opinion about it. The names are the same identifiers the
+ * enum uses, so a route named in a summary file and a route named in the
+ * dispatch are the same word.
+ */
+export const TERMINAL_REASON_NAME: Readonly<Record<number, string>> = Object.freeze(
+  Object.fromEntries(Object.entries(TERMINAL_REASON).map(([name, value]) => [value, name])),
+);
+
+/**
+ * A reason's name, or an explicit unknown for a number this build has no name
+ * for.
+ *
+ * A record written by a later build carrying a sixth ending must aggregate
+ * rather than throw — a reader in 2031 with a file from 2032 gets
+ * `unknown-5` and a count, which is a worse answer than the name and a far
+ * better one than a crash or a silent fold into `none`.
+ */
+export function terminalReasonName(reason: number): string {
+  return TERMINAL_REASON_NAME[reason] ?? `unknown-${String(reason)}`;
+}
 
 /** Illegal-action accounting, as task 2.3 requires it to be readable. */
 export interface IllegalActionAccounting {
@@ -125,6 +153,23 @@ export interface AgentSession<TConfig = unknown> {
    */
   submit(actionId: number, parameter?: number): void;
   status(): TerminalStatus;
+  /**
+   * §1.1's ending, as a {@link TERMINAL_REASON} number.
+   *
+   * Beside {@link AgentSession.status} rather than instead of it, because the
+   * two answer different questions and one of them is lossy. `status()` folds
+   * `ascensionApotheosis` and `ascensionCanon` into a single `'ascended'` —
+   * `agent-api`'s session does the folding and it is right to, because a status
+   * is what an episode loop branches on. But a sweep that recorded only the
+   * status could not say which summit a universe took, and route share had to
+   * be inferred from when the ascensions clustered in time.
+   *
+   * `TERMINAL_REASON.none` while the run is live, and also for a run the
+   * *harness* truncated at its own cap: the universe did not end, the harness
+   * stopped asking. §1.1's `truncated` is the simulation's own truncation and
+   * stays distinct from it.
+   */
+  terminalReason(): number;
   accounting(): IllegalActionAccounting;
 }
 
@@ -159,6 +204,16 @@ interface ApiSessionLike<TConfig> {
   observe(): Float64Array;
   legalActions(): Uint8Array;
   submit(action: { readonly kind: number; readonly params?: readonly number[] }): unknown;
+  /**
+   * §4.3's outcome record, of which the adapter reads exactly one field.
+   *
+   * Narrowed to that one field on purpose. The real record carries `terminal`,
+   * `truncated`, `era` and the metric deltas as well, and a harness that read
+   * them here would be taking a second opinion on questions `status()` and the
+   * episode loop already answer — which is how two sources of truth about "is
+   * this run over" get created.
+   */
+  outcome(): { readonly terminalReason: number };
   status(): 'running' | 'ascended' | 'stagnated' | 'truncated';
   accounting(): {
     readonly submitted: number;
@@ -193,6 +248,7 @@ export function adaptAgentSession<TConfig>(session: ApiSessionLike<TConfig>): Ag
       session.submit(parameter === undefined ? { kind: actionId } : { kind: actionId, params: [parameter] });
     },
     status: () => session.status(),
+    terminalReason: () => session.outcome().terminalReason,
     accounting(): IllegalActionAccounting {
       const source = session.accounting();
       const byActionId: Record<string, number> = {};
@@ -236,6 +292,8 @@ export interface EpisodeOutcome {
   readonly status: TerminalStatus;
   /** World ticks actually stepped. Feeds the recorded throughput figure. */
   readonly ticksRun: number;
+  /** §1.1's ending. See {@link AgentSession.terminalReason}. */
+  readonly terminalReason: number;
   readonly accounting: IllegalActionAccounting;
 }
 
@@ -310,6 +368,12 @@ export function runEpisode<TConfig>(input: EpisodeInput<TConfig>): EpisodeOutcom
       return {
         status: TERMINAL_STATUS.truncated,
         ticksRun,
+        // The session's own answer, verbatim, and it is `none`: the universe is
+        // still running and the harness is the party that stopped. Synthesising
+        // §1.1's `truncated` here would put the harness's cap and the
+        // simulation's own truncation under one number, and the first is a
+        // measurement horizon while the second is a fact about the run.
+        terminalReason: session.terminalReason(),
         accounting: session.accounting(),
       };
     }
@@ -334,5 +398,10 @@ export function runEpisode<TConfig>(input: EpisodeInput<TConfig>): EpisodeOutcom
     ticksRun += 1;
   }
 
-  return { status: session.status(), ticksRun, accounting: session.accounting() };
+  return {
+    status: session.status(),
+    ticksRun,
+    terminalReason: session.terminalReason(),
+    accounting: session.accounting(),
+  };
 }

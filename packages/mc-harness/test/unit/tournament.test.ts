@@ -189,6 +189,7 @@ function record(slot0: string, slot1: string, status: RunRecord['status']): RunR
     levels: { [TOURNAMENT_WORLD_SEED_FACTOR]: 11 },
     strategies: [slot0, slot1],
     status,
+    terminalReason: status === 'ascended' ? 1 : status === 'stagnated' ? 3 : 0,
     ticksRun: 10,
     metrics: {},
     accounting: { submissions: 0, rejections: 0, byActionId: {} },

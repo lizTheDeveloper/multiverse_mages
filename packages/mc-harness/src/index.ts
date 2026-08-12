@@ -215,11 +215,23 @@ export type {
 } from './session.js';
 export {
   RECORDED_STATUSES,
+  TERMINAL_REASON_NAME,
   TERMINAL_STATUS,
   adaptAgentSession,
   normalizeSubmission,
   runEpisode,
+  terminalReasonName,
 } from './session.js';
+
+/**
+ * §1.1's endings, passed through from `agent-api` (which passes them through
+ * from `@mm/state`).
+ *
+ * Re-exported here so a consumer of the harness can name the number
+ * {@link RunRecord.terminalReason} carries without adding a second package
+ * edge for one enum — and, more to the point, without transcribing it.
+ */
+export { TERMINAL_REASON } from '@mm/agent-api';
 
 export type {
   ArmContribution,
@@ -260,6 +272,7 @@ export {
   buildArmTelemetry,
   countByFailureClass,
   countByStatus,
+  countByTerminalReason,
   sortCanonically,
   totalWorldTicks,
 } from './aggregate.js';
@@ -348,6 +361,7 @@ export type { GateCommandResult, GateSweepOptions, RegenerateArgs } from './bala
 export { gateCommand, loadBaseline, regenerateCommand } from './balance-cli.js';
 
 export type {
+  AscensionStance,
   BotStrategyRegistry,
   DegeneracyReport,
   PreferenceInput,
@@ -355,11 +369,13 @@ export type {
   StrategyDefinition,
 } from './strategies.js';
 export {
+  ASCENSION_STANCE,
   BOT_POOL,
   BOT_POOL_REGISTRY,
   POOL_BUILD_LIMITS,
   botStrategyRegistry,
   degeneracyOf,
+  effectivePreferences,
   policiesForRun,
   policyFor,
   poolDegeneracy,
@@ -384,3 +400,19 @@ export {
   tournamentSchedule,
   tournamentSpec,
 } from './tournament.js';
+
+export type {
+  Band,
+  BalanceScore,
+  ScoreWeights,
+  StrategyOutcome,
+  TuningAxis,
+} from './tuner.js';
+export {
+  DOMINANCE_LIMIT,
+  EXPLOIT_PROBE,
+  candidatesForAxis,
+  correlationOf,
+  scoreBalance,
+  varietyOf,
+} from './tuner.js';

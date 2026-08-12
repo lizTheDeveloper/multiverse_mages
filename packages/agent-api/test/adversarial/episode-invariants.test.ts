@@ -248,16 +248,50 @@ describe('two sessions at one seed agree tick by tick, not only on the first obs
   });
 });
 
+/**
+ * A parameter that is in range for this action id, whatever the action is.
+ *
+ * `1` for the four axis toggles, whose ids are 1-based and run to
+ * `GRID_TECHNIQUE_COUNT` / `GRID_FORM_COUNT`, and for the two edict issuers,
+ * whose cell ids are 1-based too. `0` everywhere else: it is slot zero of a
+ * §4.4 candidate list, the first edict index, and the ignored parameter of the
+ * unparameterized actions.
+ */
+function wellFormedParameter(kind: number): number {
+  switch (kind) {
+    case GOD_ACTION.permitTechnique:
+    case GOD_ACTION.forbidTechnique:
+    case GOD_ACTION.permitForm:
+    case GOD_ACTION.forbidForm:
+    case GOD_ACTION.issueDispensation:
+    case GOD_ACTION.issueInterdiction:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
 describe('the mask and submit agree, across the whole action space', () => {
   it('admits everything the mask calls legal and rejects everything it does not', () => {
     // A mask that lied in either direction would show up here: an agent trained
     // against it would either waste its budget on rejections or never try
     // something that would have worked.
+    //
+    // The parameter has to be **well-formed for the action**, and that is a
+    // narrowing of what this test could once assume rather than a weakening of
+    // what it proves. The mask is per-action: `legalityMask` answers "is
+    // `permitTechnique` available", and §4.2 gives it no way to say "…with
+    // technique id 0". So a submission the mask calls legal is admitted *given
+    // a parameter of the right type and in range* — the same qualification the
+    // integrality check already imposed, now that the gate also range-checks
+    // the two axis ids against §2.1's grid. `params: [0]` used to satisfy that
+    // for every action only because nothing checked; for actions 1–4 the ids
+    // are 1-based and `0` names nothing.
     for (let kind = 0; kind < ACTION_SPACE_SIZE; kind += 1) {
       const session = createSession({ scenario: plainScenario() });
       session.reset(0x3030_0001, { worldTickCap: 8 });
       const legal = session.legalActions()[kind] === 1;
-      const result = session.submit({ kind, params: [0] });
+      const result = session.submit({ kind, params: [wellFormedParameter(kind)] });
       expect(result.admitted, `action ${String(kind)}`).toBe(legal);
       expect(result.rejection === undefined, `action ${String(kind)}`).toBe(legal);
       expect(session.illegalActionCount(), `action ${String(kind)}`).toBe(legal ? 0 : 1);
