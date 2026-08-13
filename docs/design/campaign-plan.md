@@ -2468,3 +2468,26 @@ Three withdrawals rather than three widenings: the 2.05× retracted; `denial-war
 (*"7 zeros and a 4"*) withdrawn as unquotable; and 9.8's books-to-depth bound **withdrawn, not
 widened**, at 159 books / 17 nodes against 157 / 48. `balance:gate:ascension` was still running at the
 end and is recorded as **a named gap rather than a promise.**
+
+### The ascension gate finished, and it upgrades the negative result
+
+`referenceLibraryDepth` **34.13 → 14.03, −58.9% at −3.02 SE** — the only metric clearing this gate's
+tolerance. It is the same metric that regressed on both faster gates (−23%, −25%) and the same
+collapse `reference-long-run` 9.8 sees at two centuries (**48 → 17 distinct nodes**).
+
+**Three gates and a long run now agree: the library stops broadening under the practice gate.** That
+is the most robust result this change produced, and it is negative. Practice targets sort
+stalest-first, so a mage maintains what she holds instead of acquiring what she lacks — the library
+deepens on fewer things. That is a real design tradeoff rather than a tuning error, and it should be
+decided rather than smoothed: **publish-or-perish and library breadth are in tension, and this is the
+first measurement of the exchange rate.**
+
+Two readings the results table invites and W53 refused:
+
+- **`referenceGrimoires` falls 38% and passes.** It passes because the ascension sweep's spread
+  absorbs it — tolerances run to **±33 on a value of 60, and ±1456 on 3267**. *"Nine of ten pass"* is
+  a fact about the tolerances, not about the build, and the doc says so in the same breath as the
+  table.
+- **`referenceNodesGainedFinalQuarter` +12.2%** moves the same direction as the horizon gate's
+  +10.9%, but at 0.28 SE it carries no weight here. **Two same-signed observations, one significant:
+  watched, not claimed.**
