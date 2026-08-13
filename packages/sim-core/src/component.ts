@@ -53,6 +53,101 @@ export const NO_ROW = -1;
 /** Rows allocated the first time a component is used at all. */
 const MIN_ROWS = 8;
 
+// ---------------------------------------------------------------------------
+// The value sentinel.
+// ---------------------------------------------------------------------------
+
+/** Which door a rejected value came through. See {@link installValueSentinel}. */
+export type ComponentWriteDoor = 'set' | 'field';
+
+/** One value that should never have been written to a component column. */
+export interface ComponentValueViolation {
+  readonly component: string;
+  readonly field: string;
+  /** Row index within the component's dense arrays. `-1` when unknown. */
+  readonly row: number;
+  /** The offending value, exactly as the caller supplied it. */
+  readonly value: unknown;
+  readonly door: ComponentWriteDoor;
+}
+
+/** Called for every value that fails the integrality check on the way in. */
+export type ComponentValueSentinel = (violation: ComponentValueViolation) => void;
+
+let activeSentinel: ComponentValueSentinel | undefined;
+
+/**
+ * Watches every value on its way into component storage, and is off by default.
+ *
+ * ## Why this exists at the write boundary and nowhere else
+ *
+ * The failure it catches does not look like a failure. A `NaN` — from a missed
+ * lookup, an `undefined` property, a ratio over an empty collection — written
+ * to an `i32` column is coerced by the typed array to `0`. Nothing throws. The
+ * mechanic that produced it simply contributes nothing, forever, and reads as a
+ * balance result rather than a bug.
+ *
+ * That coercion is also why a *sweep of stored values* cannot find it: by the
+ * time a column can be read, `NaN` is already `0` and indistinguishable from a
+ * legitimate zero. The check has to sit where the value is written, which is
+ * here.
+ *
+ * ## Why it can be complete
+ *
+ * {@link ComponentStore.set} and {@link ComponentStore.field} are the only two
+ * doors into component storage. Everything else — `add`, `remove`, the
+ * swap-remove in `#detach`, `#ensureRows`, `cloneStateInto`, and the snapshot
+ * deserializer — either zeroes a row, copies values that were already accepted,
+ * or routes back through `field`. So watching these two is not a sample of the
+ * write boundary; it is the whole of it.
+ *
+ * ## Cost
+ *
+ * Zero when no sentinel is installed: `set` runs the integrality check it
+ * always ran, and `field` returns the raw typed array with no wrapper. With one
+ * installed, `field` returns a validating `Proxy`, which is slow and is meant
+ * to be — it is a debugging instrument, not a shipping guard.
+ *
+ * @param next - The sentinel to install, or `undefined` to remove it.
+ * @returns The sentinel that was installed before, so a caller can restore it.
+ */
+export function installValueSentinel(
+  next: ComponentValueSentinel | undefined,
+): ComponentValueSentinel | undefined {
+  const previous = activeSentinel;
+  activeSentinel = next;
+  return previous;
+}
+
+/** Whether a sentinel is currently watching. */
+export function valueSentinelInstalled(): boolean {
+  return activeSentinel !== undefined;
+}
+
+/**
+ * What a component column may hold: a finite integer.
+ *
+ * Written as `Number.isInteger` rather than a range comparison because every
+ * comparison with `NaN` is false, so a bounds check waves it through — the
+ * mistake `assertRepresentable` in `fixed-point.ts` made for the project's
+ * whole history. `Number.isInteger` also rejects `±Infinity` and `undefined`,
+ * which are the same defect wearing different masks.
+ *
+ * `-0` is deliberately admitted: `Number.isInteger(-0)` is true, and every
+ * integer typed array stores it as `+0`, so it cannot reach a snapshot. The
+ * place it would matter is arithmetic, and `floorDiv` normalises it there.
+ */
+function isStorableValue(value: unknown): boolean {
+  return Number.isInteger(value);
+}
+
+function reportViolation(violation: ComponentValueViolation): void {
+  activeSentinel?.(violation);
+}
+
+/** An array index as it arrives at a `Proxy` `set` trap: a canonical decimal string. */
+const INDEX_PROPERTY = /^(?:0|[1-9][0-9]*)$/;
+
 /**
  * The minimal view of the entity store a component needs. Declared structurally
  * so this module has no runtime import from `entity-store.ts`, which would
@@ -163,13 +258,57 @@ export class ComponentStore<F extends ComponentFields> {
    * component replaces the array, and a reference captured beforehand would
    * keep writing into the abandoned buffer. Call {@link reserve} first if a
    * pass both adds and writes.
+   *
+   * **"Unchecked" includes NaN, and that is the expensive part.** {@link set}
+   * rejects a non-integer with a `TypeError`; a write through this array does
+   * not, because a typed array coerces silently — `new Int32Array(1)[0] = NaN`
+   * yields `0`. So a NaN that arrives here does not crash. It becomes a
+   * plausible zero, and the mechanic that produced it reads as one that
+   * contributed nothing, which is indistinguishable from a balance result. This
+   * method and {@link set} are the only two doors into component storage, so
+   * this is the *one* place where that can happen: a probe that wraps this
+   * return value covers the unchecked half of the write boundary completely.
    */
   field<K extends Extract<keyof F, string>>(name: K): ComponentFieldArray<F[K]> {
     const array = this.#arrays.get(name);
     if (array === undefined) {
       throw new Error(`Component "${this.name}" has no field "${name}".`);
     }
-    return array as ComponentFieldArray<F[K]>;
+    if (activeSentinel === undefined) {
+      return array as ComponentFieldArray<F[K]>;
+    }
+    return this.#watched(array, name) as ComponentFieldArray<F[K]>;
+  }
+
+  /**
+   * The validating wrapper {@link field} hands out while a sentinel is
+   * installed. Only index writes are inspected; everything else is forwarded.
+   *
+   * The `get` trap passes `target` as the receiver rather than the proxy
+   * because typed arrays brand-check `this`: forwarding the proxy makes every
+   * method call — `set`, `subarray`, `slice`, which the snapshot writer uses —
+   * throw `TypeError: not a typed array`.
+   */
+  #watched(array: AnyIntArray, fieldName: string): AnyIntArray {
+    const component = this.name;
+    return new Proxy(array, {
+      get(target, property) {
+        const value = Reflect.get(target, property, target) as unknown;
+        return typeof value === 'function' ? (value as () => unknown).bind(target) : value;
+      },
+      set(target, property, value: unknown) {
+        if (typeof property === 'string' && INDEX_PROPERTY.test(property) && !isStorableValue(value)) {
+          reportViolation({
+            component,
+            field: fieldName,
+            row: Number(property),
+            value,
+            door: 'field',
+          });
+        }
+        return Reflect.set(target, property, value, target);
+      },
+    });
   }
 
   /** Whether a live entity carries this component. A stale handle is always `false`. */
@@ -269,10 +408,13 @@ export class ComponentStore<F extends ComponentFields> {
       throw new Error(`Component "${this.name}" has no field "${name}".`);
     }
     const row = this.rowOf(handle);
-    if (!Number.isInteger(value)) {
+    if (!isStorableValue(value)) {
+      reportViolation({ component: this.name, field: name, row, value, door: 'set' });
       throw new TypeError(
-        `Component "${this.name}" field "${name}" takes an integer, got ${value}. ` +
-          'The rules path is float-free — fixed-point values are integers at scale 1/1024.',
+        `Component "${this.name}" field "${name}" takes an integer, got ${String(value)} ` +
+          `(row ${String(row)}). The rules path is float-free — fixed-point values are integers ` +
+          'at scale 1/1024, and NaN, ±Infinity or undefined here means an unguarded value reached ' +
+          'the arithmetic that produced it.',
       );
     }
     array[row] = value;
