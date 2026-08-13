@@ -475,6 +475,83 @@ there being another road, which §2a and §3 say there is.
 3. **Corpus is dark in v1** — the enabled rectangle is `{intellego, perdo, rego} × {limen, mentem,
    nomen, terram}`. None of these 23 nodes is reachable today.
 
+## 3b. Outside review, and two rulings taken on it
+
+An external model was given the nine mechanics cold and asked where they break. Three of its findings
+land, and I have ruled on two as delegated author.
+
+### It found a contradiction I wrote myself
+
+> *"Item 2 says the college is the **only** road to the third age. Item 7 calls necromancy the **third
+> road**. So it is either a second road *through* the college, a road *around* it, or item 7 is
+> overselling it."*
+
+Correct, and mine. §2a and §3a contradict each other flatly.
+
+### RULED: the college is the *fast* road, not the only one
+
+> *"'Only road' is a trap. It converts a strategic question — how do I reach the third age? — into a
+> binary gate: build college or lose. There is no decision, no tension, no interesting failure…
+> **A rule that tells the player their job is to stop playing is a bad rule.**"*
+
+**§2a is amended: a fully developed college is the fast, reliable road. It is not the only one.** The
+alternative is slow, fragile and attrition-based — scattered independent researchers who may die
+before they teach anyone, which is exactly the loss channel the game already models.
+
+That preserves the thing §2a was protecting (an institution is *load-bearing*, not optional-feeling)
+while restoring a decision: invest in the institution, or gamble on geniuses. It also removes the
+contradiction — necromancy is then a third road among several rather than an exception to a rule that
+said there were none.
+
+The reviewer's sharper version of the same point is the one to keep in view:
+
+> *"The optimal strategy is: permit everything, build a college, then do nothing. The design hands the
+> player a god-role with seventy cells of veto power, then proves that exercising it is strictly worse
+> than not. **Either the college system self-optimizes, in which case the player is unnecessary, or
+> active intervention is broken, in which case the player is punished.**"*
+
+That is the measured `permit-then-idle` result restated as a design problem rather than a balance
+one, and it is the sharpest framing of it anyone has produced.
+
+### RULED: a compound is held by the *university*, not by a mage or a named group
+
+`ages-of-magic.md` §5 listed "who holds a compound" as an open question and my own answer — a standing
+arrangement between named mages — was worse than the reviewer's:
+
+> *"The university holds it. A compound spell isn't a thing any one mage possesses — it is a **pattern
+> of overlapping partial knowledge across the faculty**. No single mage needs to hold all cells; the
+> compound exists as long as enough mages hold enough of its cells in a teachable state
+> simultaneously."*
+
+**Adopted.** Four reasons, all of which connect mechanics that were separate:
+
+- **A raid attacks the *distribution*, not a target.** There is no scroll to steal and no one mage to
+  assassinate — you degrade a faculty until an overlap fails.
+- **Fragility is organic rather than authored.** Lose three faculty and a triple-compound collapses
+  not because they held specific cells, but because the remaining overlap drops **below
+  teachability** — which routes the whole thing through publish-or-perish and the measured 93.4%.
+- **It is why colleges are necessary**, and it says so mechanically rather than by fiat: only an
+  institution sustains the density of overlapping knowledge a compound needs. That is a much better
+  argument for §2a than §2a made for itself.
+- **The third age becomes a property of a roster**, not of a prodigy — which is precisely the
+  long-lived-versus-institutional split §3 draws.
+
+It also composes with §2d exactly: a curriculum is what the faculty can still teach, and a compound is
+what the faculty can still *combine*. Same quantity, one order higher.
+
+### Not ruled, and the one I think is most dangerous
+
+> *"The 93.4% fact kills paced teaching. **The university doesn't compress the passage to the frontier
+> — it compresses the passage to forgetting.** You have built a system where the act of teaching
+> destroys the thing being taught, and the pacing rules control the speed of erosion."*
+
+I do not think this is right as stated — teaching does not consume the teacher's mastery in the
+current model — but the shape of it is: **with no `publish` operation, every hour a scholar spends
+teaching is an hour she is not spending keeping her own standing**, and paced teaching makes those
+hours longer for mismatched pairs. The reviewer's conclusion stands either way and matches §2c's:
+**build `publish` before building paced teaching.** Ordering matters here and it was not obvious
+before.
+
 ## 4. It retires three measured problems, which is how I know the framing is right
 
 **Content exhaustion was the first age ending.** The campaign's oldest and most-confirmed finding is
