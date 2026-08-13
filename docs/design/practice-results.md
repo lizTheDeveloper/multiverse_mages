@@ -516,3 +516,48 @@ No assertion was edited. No species constant was retuned — `species.json` is u
 measurement says species tuning is not the binding constraint and retuning to make orc non-zero at
 one seed would be fitting to the noise this document just characterised. No baseline was regenerated.
 `tools/w53/species-collapse.mjs` is the instrument every number above came from.
+
+### The three balance gates, re-measured after the fix
+
+Same three gates, same command, same **un-regenerated** baselines. All three still open with
+`baseline-invalid` — the content hash moved when this branch merged `main`, which predates anything
+here and is the gate correctly refusing to call a cross-build delta a regression. The per-metric
+numbers are reported anyway, against the ones this document recorded for the branch as merged.
+
+`balance:gate` (200 runs, 100 world ticks) — **every metric now passes.**
+
+| metric | baseline | as merged | **fixed** |
+|---|---|---|---|
+| `referenceKnowledgeInstances` | 310.26 | 294.01 (−7.6 SE, regressed) | **309.61 (−0.30 SE, pass)** |
+| `referenceLibraryDepth` | 5.280 | 4.055 (−5.6 SE, regressed) | **5.265 (−0.07 SE, pass)** |
+| `referenceGrimoires` | 90.97 | 88.35 (−1.6 SE) | **90.74 (−0.14 SE)** |
+| `referenceLivingMages` | 38.95 | 38.94 | **38.945** |
+
+`balance:gate:horizon` (200 runs, the long horizon) — two metrics still outside tolerance, both
+roughly 60–70% recovered.
+
+| metric | baseline | as merged | **fixed** |
+|---|---|---|---|
+| `referenceKnowledgeInstances` | 1003.9 | 890.2 (−13.3 SE, regressed) | **970.2 (−3.93 SE, still regressed)** |
+| `referenceLibraryDepth` | 18.64 | 13.95 (−6.2 SE, regressed) | **16.60 (−2.68 SE, now passes)** |
+| `referenceNodesGainedFinalQuarter` | 7.645 | 8.480 (+7.9 SE, regressed) | **8.080 (+4.10 SE, still regressed)** |
+| `referenceGrimoires` | 321.5 | 299.9 (−2.9 SE) | **310.2 (−1.54 SE)** |
+
+The two that remain say the same thing they said before, at a third of the size: practice still buys
+its months from research and scribing, so a universe holds fewer *copies* at two centuries, and it
+still pushes node discovery later in the run rather than removing it — `referenceNodesGainedFinalQuarter`
+rising is the one metric whose movement is arguably an improvement, and it is called a regression
+because the gate is two-sided. Neither is a reason to regenerate a baseline that is invalid on
+provenance grounds anyway. **That call belongs to whoever owns the baselines, not to this branch.**
+
+### Test status at the end of this work
+
+- `reference-long-run.test.ts` — **green**, all of it, including the 9.5 scribing tripwire that
+  was the one failure this branch caused.
+- `loss-shock-recovery.test.ts` — **two assertions still red**, both requiring orc to hold living
+  mages at tick 1200 at `LONG_RUN_SEED`. Post-fix that seed reads draconic 11, dwarf 18, elf 8,
+  gnome 7, human 13 (up from 5), orc 0. The measurement above says orc is at zero on 11 of 32 seeds
+  with no practice mechanic in the tree, so making this green by any means available here would be
+  fitting to one seed. Left red and reported.
+- `god-loop.test.ts` — timed out at 30 s inside the full suite and passes in **19.9 s** run alone.
+  The documented CPU-oversubscription flake, not a finding.
