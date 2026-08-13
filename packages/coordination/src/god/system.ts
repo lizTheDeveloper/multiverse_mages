@@ -345,6 +345,13 @@ function outcomeSystem(
       const knowledge = deps.knowledgeFor(state);
       let god = godState(state, universe);
 
+      // Read once, used twice: `yieldSources` at step 5 and `qualifyingPath` at
+      // step 7. Hoisted above the regeneration because worship-yield is now
+      // gated on the ruleset, and a second `readRulesetForObservation` would
+      // walk every edict again per tick for an answer that cannot have changed
+      // — nothing between these two points issues or revokes one.
+      const ruleset = readRulesetForObservation(state, universe);
+
       // ---- 1–3. Worship ------------------------------------------------------
       const target = worshipTarget(worshipSources(state, ctx.tick), constants);
       const shocked = shockedTarget(
@@ -369,7 +376,7 @@ function outcomeSystem(
       const regenerated = favorRegeneration(
         worship,
         constants,
-        yieldSources(knowledge, deps),
+        yieldSources(knowledge, deps, (cellId) => permits(ruleset, cellId)),
         deps.worshipYield,
         deps.clampCounters,
       );
@@ -399,7 +406,6 @@ function outcomeSystem(
 
       // ---- 7. Ascension eligibility, recomputed so it can lapse ---------------
       deepest ??= deepestNodesByCell(deps.catalog, (nodeId) => deps.cells.cellOf(nodeId));
-      const ruleset = readRulesetForObservation(state, universe);
       const path = qualifyingPath(
         {
           heldByLivingMage: nodesHeldByLivingMages(state),
@@ -609,12 +615,31 @@ function tierOf(worship: Fixed, constants: GodContent['constants']): number {
  * be the §6a knowledge loop feeding the §7 worship loop through a door the cap
  * cannot close, since the cap bounds the stack and not the number of sources
  * feeding it.
+ *
+ * **A forbidden cell pays nothing.** This used to gate on the instance count
+ * alone, which meant a node whose cell the god had interdicted — or whose axis
+ * she had never permitted — went on regenerating favor for as long as one copy
+ * of it survived anywhere. That is a defect on its own terms: §1.1 makes
+ * `permits()` the single question *may this magic exist here*, and a ruleset
+ * that cannot stop a spell from being worshipped is not a ruleset. It is also
+ * exactly backwards for `dailyRelevance`, whose claim is that *what* a god
+ * allows decides what she is paid — a claim that is empty if forbidding
+ * something costs her nothing. The gate is the cell's rather than the
+ * instance's, because worship is paid for magic that exists in the world and
+ * not for a book: a book whose subject is outlawed is a book nobody may
+ * practise from.
  */
-function yieldSources(knowledge: KnowledgeSubsystem, deps: GodDeps): Fixed[] {
+function yieldSources(
+  knowledge: KnowledgeSubsystem,
+  deps: GodDeps,
+  permitsCell: (cellId: number) => boolean,
+): Fixed[] {
   if (deps.worshipYieldNodes.size === 0) return [];
   const found: Fixed[] = [];
   for (const [nodeId, magnitudes] of deps.worshipYieldNodes) {
-    if (knowledge.instanceCount(nodeId) > 0) found.push(...magnitudes);
+    if (knowledge.instanceCount(nodeId) === 0) continue;
+    if (!permitsCell(deps.cells.cellOf(nodeId))) continue;
+    found.push(...magnitudes);
   }
   return found;
 }
