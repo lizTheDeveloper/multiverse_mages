@@ -35,7 +35,7 @@ import {
 } from '../../src/index.js';
 
 /**
- * The registry as shipped at 0.4.0.
+ * The registry as shipped, ids 0-8 at 0.4.0 and `practice` appended after it.
  *
  * A second copy, on purpose. Every other pinned table in this repository is
  * pinned the same way — `WORLD_COMPONENTS` in `state-schema.test.ts`,
@@ -53,6 +53,10 @@ const AS_SHIPPED: readonly (readonly [string, number])[] = [
   ['affiliate', 6],
   ['ward-duty', 7],
   ['raid-readiness', 8],
+  // Appended by W53. Nothing above it moved, which is the whole property this
+  // file exists to hold: a baseline taken before this line is a baseline over a
+  // nine-goal world, and it still means what it meant.
+  ['practice', 9],
 ];
 
 const BASELINE_CONSEQUENCE =
@@ -63,7 +67,7 @@ const BASELINE_CONSEQUENCE =
   'there moves.';
 
 describe('the goal registry is append-only', () => {
-  it('holds exactly the nine goals shipped at 0.4.0, at exactly their ids', () => {
+  it('holds exactly the goals shipped so far, at exactly their ids', () => {
     const actual = GOALS_IN_ORDER.map((goal) => [GOAL_NAMES[goal], goal] as const);
     // The message is attached to the assertion rather than left to the diff so
     // that a renumbering explains itself where CI prints it.
