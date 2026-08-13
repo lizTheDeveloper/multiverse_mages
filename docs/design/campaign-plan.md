@@ -4103,3 +4103,31 @@ and satisfying it would be fitting to a single draw. **The test carries a `main`
 encodes "all six species survive and recover measurably" against a build where two do not — and it
 should be made seed-robust on its own branch, together with the orc tuning. All six species are
 `untuned`; that is the pass where this gets resolved.
+
+### W84, at full n — 320 of 400 paired runs are bit-identical
+
+| strategy | before | after | bit-identical |
+|---|---|---|---|
+| **`permit-then-idle`** | **40/40** | **0/40** | 0 of 40 |
+| **`permissive-breadth`** | **40/40** | **0/40** | 0 of 40 |
+| **`open-then-build`** | 40/40 | **40/40** | 40 of 40 |
+| the other seven | 0/40 | 0/40 | 40 of 40 each |
+
+**Exactly the 80 runs of the two strategies that used to win by editing the ruleset changed. Nothing
+else did.** A conjunct reaching a universe it should not touch would show as a differing hash on a
+strategy that never qualified; none does, and there are zero discordant pairs in the after-only
+direction. All four pre-registered claims hold, and `procedure`, `refutedBy`, `hypothesis` and
+`pinnedConstants` are **byte-identical to the pre-registration commit** — only the verdict fields were
+added. Pre-registration is worth nothing if the claims can move afterwards, and here they demonstrably
+did not.
+
+**A defect the tooling introduced and a test caught:** the baseline regeneration command **replaces
+`notes` wholesale**, so all three regenerated baselines had silently dropped the standing disclaimer
+*"no release before 0.5.0 may claim this is balanced — this file is a measurement and not a balance
+claim."* `balance-ci-wiring.test.ts` failed three ways and was right to. Restored and re-sealed through
+`baselineContentHash` rather than hand-edited, with no metric value, tolerance or `toleranceK` changed.
+
+**Worth generalising: a regenerator that rewrites a field it was not asked to change is a silent
+provenance loss.** The only reason this was caught is that someone had written a test asserting the
+disclaimer's presence. Every other regenerated artefact in this repo should be checked for the same
+class of loss.
