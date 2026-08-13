@@ -542,6 +542,64 @@ sharpest possible version of §1's *"commitment made under uncertainty"*.
   The player should see *"the world said no"*, never *"the world said no, recently"*.
 - **What a scout learns must carry a timestamp**, not a guarantee.
 
+## 11c. A raid is where mētis comes from
+
+> *"Battle should give you a lot of mētis."*
+
+`openspec/changes/metis-knowledge` already defines the kind: **mētis** is the practitioner's knowledge
+that codification destroys — Scott's helmsman reading a sea he cannot chart. Nodes carry a
+`knowledgeKind`; mētis refuses scribing, may exist only at `mind` and `palace`, transmits **only by
+teaching from a living holder**, and *"leaves the universe when its last holder dies without having
+taught it — which can happen with no raid, no fire, and no enemy."*
+
+What the proposal lacks is a **source**. Battle is it, and it is the right one: practitioner knowledge
+comes from doing the thing under conditions a text cannot reproduce.
+
+### It gives a raid a knowledge payoff that is not loot
+
+Everything a raid currently produces is transferable — grimoires you carry out, nodes the defender
+witnesses and learns. Mētis is the opposite: **you cannot take it and they cannot copy it.** Both
+sides come home with something the other cannot have, which is a much better model of what a fight
+teaches than a book with legs.
+
+It also completes the exposure loop asymmetrically, which is what makes it interesting. The
+attacker's *spells* leak to the defender as episteme — witnessed, writable, permanent. The **mētis**
+both sides accumulate leaks nowhere. **You teach your enemy your magic and keep what you learned about
+fighting them.**
+
+### It is what makes "only if they make it home" bite
+
+The author's line from the very start of this project — *"they teach when they come home from battle…
+**but only if they make it home to teach**"* — has never had teeth, because everything a mage knew was
+also in a book.
+
+Battle mētis has **no backup**. No grimoire, no shelf, no library copy, no rediscovery from a text
+because no text exists. A mage who dies on the far side of a portal takes all of it, and the only
+recovery is to send someone else to learn it the same way. That is the loss channel the game has been
+describing since its first page and has never actually had.
+
+### Two things it connects that were separate
+
+**It sharpens the detached-frontier ruling** (`ages-of-magic.md` §2c). Battle mētis is a veteran's
+*fundamentals*, and fundamentals stay fresh only by teaching. So a veteran who stops teaching loses
+her battle knowledge outright — and unlike an episteme node, there is nothing to read to get it back.
+**The retired soldier who never trained anyone is a total loss.**
+
+**It gives necromancy a reason that is not "more mages."** Corpus lets you keep a scholar past death.
+For an episteme specialist that is a convenience — her results are in the library. For a **veteran it
+is the only way her mētis survives at all.** `rego-corpus`'s *The Unclaimed Body* and `creo-corpus`'s
+*The Unfinished Death* stop being ghoulish luxuries and become the answer to a real, mechanical
+problem: **you raise the dead for what they never wrote down.**
+
+### Open
+
+1. **How much, and to whom?** Everyone who fought, the survivors only, or weighted by what they
+   actually did? Survivors-only is the harshest and matches the fiction.
+2. **Is battle mētis its own node, or a mastery term on nodes already held?** Its own node is
+   legible and authorable; a mastery term is subtler and reaches the teach threshold directly.
+3. **Does the losing side learn more?** There is a real argument that it does, and it would be the
+   first mechanic in this game that pays for defeat.
+
 ## 12. Open
 
 1. **Do supply-chain sites exist yet?** Universities do. The supply chain is W29's work and is not
