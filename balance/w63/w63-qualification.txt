@@ -5,10 +5,21 @@ after-arm:  ascension-institutions = 2 (shipped)
 40 worlds per strategy: 4 starting positions x 10 replicates, 2400 ticks, rootSeed 20260811.
 
 ARCHIVIST IS n=11 PER ARM, NOT 40, and is reported at that n rather than omitted or rounded up.
-Its runs found 1281-1345 universities each and are an order of magnitude slower than the rest
-of the pool; the arm was still running when this file was written. It holds exactly 51 nodes in
-every run measured -- the content ceiling of the starting rectangle it never permits past -- and
-all 11 pairs are bit-identical across the two arms. Every other strategy below is the full 40.
+Its runs found 1281-1345 universities each and are an order of magnitude slower than the rest of
+the pool. BOTH ARCHIVIST ARMS TERMINATED EARLY, at 11 of 40, and the cause is not established:
+the processes exited leaving no error in their logs, no stack trace and no non-zero status that
+was captured, having been launched detached from a shell that had already exited. An unattended
+process that vanishes silently is most consistent with the OS reclaiming it -- these runs hold
+over thirteen hundred university records each and were the largest in the pool -- but that is an
+inference and not a diagnosis, so it is written here as one. The arm was NOT stopped deliberately
+and was not truncated for time.
+
+What the 11 support, and it is a claim about the content ceiling rather than about a sample:
+archivist holds exactly 51 nodes in every run measured, in both arms, which is the ceiling of the
+starting rectangle it never permits past. All 11 pairs are bit-identical across the two arms.
+A universe that permits nothing cannot reach a canon it has no access to, so the remaining 29
+replicates are not expected to differ -- but that expectation is untested, and any claim resting
+on archivist should be read at n=11. Every other strategy below is the full 40.
 
 === paired: same worlds, one constant apart ===
 

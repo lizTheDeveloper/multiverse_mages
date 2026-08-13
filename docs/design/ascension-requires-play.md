@@ -149,10 +149,13 @@ requirement that the god do a second thing while doing the first. The conjunct c
 by scaling either axis alone, which is exactly the property the two earlier proposals asked for and
 which no threshold over knowledge could have.
 
-**The `archivist` figures are n=11 per arm, not 40.** Its runs found over thirteen hundred
-universities each and were the slowest in the pool by an order of magnitude; the arm was still
-running when this branch was reported, and the evidence file records the partial count rather than
-rounding it up to the others. The reading is not sensitive to the remaining 29: `archivist` holds
+**The `archivist` figures are n=11 per arm, not 40, and the arm did not finish.** Its runs found
+over thirteen hundred universities each and were the slowest in the pool by an order of magnitude.
+Both arms then terminated early at 11 of 40, leaving no error in their logs and no captured exit
+status — they had been launched detached from a shell that had since exited. Silent disappearance
+under that much resident state is most consistent with the OS reclaiming them, but **that is an
+inference, not a diagnosis**, and it is recorded as one in the evidence file. The arm was not
+stopped deliberately. The reading is not sensitive to the remaining 29: `archivist` holds
 exactly **51** nodes in every run measured — the content ceiling of the starting rectangle, which it
 never permits past — and every one of the 11 pairs is bit-identical across the two arms. Nothing in
 the remaining replicates can make a universe that permits nothing reach a canon it has no access to.
