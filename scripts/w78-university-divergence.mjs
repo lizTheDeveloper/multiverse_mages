@@ -41,9 +41,11 @@ import {
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
   MAGE,
+  UNIVERSE,
   UNIVERSITY,
   collectRecords,
   componentOf,
+  findUniverse,
 } from '../packages/state/dist/index.js';
 import { LONG_RUN_OPTIONS, LONG_RUN_SEED, TICKS_PER_WORLD_YEAR } from '../packages/scenario/dist/long-run.js';
 import {
@@ -53,6 +55,29 @@ import {
 
 /** Two academies, everything else exactly the long run's starting position. */
 const OPTIONS = Object.freeze({ ...LONG_RUN_OPTIONS, foundingUniversities: 2 });
+
+/**
+ * `--all-cells` — the same run against a content set that is not exhausted.
+ *
+ * The v1 ruleset permits twelve of the seventy cells, which is **51 reachable
+ * nodes**, and two academies over two hundred world years both find essentially
+ * all of them. Under exhaustion no boundary can hold a difference, so the
+ * default arm cannot separate *"the container leaks"* from *"there is one thing
+ * to put in it"*.
+ *
+ * This flag opens every technique and every form — seventy cells, **300
+ * authored nodes** — by writing the two ruleset masks on the universe row at
+ * tick zero. It is the crudest possible stand-in for the worlds
+ * `w80/research-cost-variation` and `w72`'s seeded opening squares are building,
+ * and it is offered as a probe rather than a result: **the 249 nodes outside the
+ * enabled twelve are authored and have never been exercised**, so expect them to
+ * be wrong in ways the enabled twelve are not. Nothing is tuned against this arm
+ * and no gate reads it.
+ */
+const ALL_CELLS = process.argv.includes('--all-cells');
+/** Five techniques, fourteen forms — the whole authored grid. */
+const EVERY_TECHNIQUE = 0b11111;
+const EVERY_FORM = 0b11111111111111;
 
 /** Every world year for the first ten, then widening steps to the long-run horizon. */
 const HORIZONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 80, 100, 150, 200].map(
@@ -70,6 +95,16 @@ let state = buildReferenceState({
   content,
   schema: simulation.schema,
 });
+
+if (ALL_CELLS) {
+  // Written on the row rather than passed to `createUniverse`, because the
+  // ruleset is captured from the row on every tick — so widening it here is the
+  // whole of the change and no scenario knob has to exist for a probe.
+  const universes = componentOf(state, UNIVERSE);
+  const universe = findUniverse(state);
+  universes.set(universe, 'permittedTechniques', EVERY_TECHNIQUE);
+  universes.set(universe, 'permittedForms', EVERY_FORM);
+}
 
 /** Every academy, its library, and the living mages currently affiliated to it. */
 function academies(current) {
@@ -110,6 +145,15 @@ console.log(
     'grants. Everything else is `LONG_RUN_OPTIONS`.\n',
 );
 console.log(
+  ALL_CELLS
+    ? '**`--all-cells`: every technique and every form permitted — seventy cells, 300 authored ' +
+      'nodes.** A probe against a content set the run cannot exhaust. The 249 nodes outside the ' +
+      'enabled twelve have never been exercised; treat every number below as a direction, not a ' +
+      'magnitude.\n'
+    : 'The v1 ruleset: twelve cells, **51 reachable nodes**. Run with `--all-cells` for the arm ' +
+      'where content is not exhausted.\n',
+);
+console.log(
   '`dominantCell` is the highest-weighted cell of a profile derived from the academy library plus ' +
     'its resident mages, distinct nodes counted once. **Differing dominant cells is the ' +
     'measurement S2 asks for.**\n',
@@ -142,9 +186,9 @@ function heldNodes(current, academy) {
 
 console.log(
   '| world year | A nodes | A dominant | B nodes | B dominant | dominant differs | shared | ' +
-    'A only | B only | A staff | B staff | unaffiliated | lessons |',
+    'A only | B only | overlap | A staff | B staff | unaffiliated | lessons |',
 );
-console.log('|---:|---:|---|---:|---|:---:|---:|---:|---:|---:|---:|---:|---:|');
+console.log('|---:|---:|---|---:|---|:---:|---:|---:|---:|---:|---:|---:|---:|---:|');
 
 let tick = 0;
 let lessonsTaught = 0;
@@ -165,6 +209,12 @@ for (const horizon of HORIZONS) {
   );
   const held = found.map((academy) => heldNodes(state, academy));
   const shared = [...held[0]].filter((nodeId) => held[1].has(nodeId)).length;
+  // Jaccard: shared over union. The raw exclusive counts cannot be compared
+  // across arms, because an arm that holds fewer nodes in total has fewer of
+  // everything — and the boundary lowers the totals. **1.000 is two
+  // indistinguishable institutions; lower is divergence.**
+  const union = held[0].size + held[1].size - shared;
+  const overlap = union === 0 ? 1 : shared / union;
   const dominants = profiles.map((profile) => dominantCell(profile));
   const differ = dominants[0] !== dominants[1];
   rows.push({
@@ -173,6 +223,7 @@ for (const horizon of HORIZONS) {
     dominants,
     differ,
     shared,
+    overlap,
     onlyA: held[0].size - shared,
     onlyB: held[1].size - shared,
     staff: found.map((academy) => academy.residentMages.length),
@@ -183,8 +234,8 @@ for (const horizon of HORIZONS) {
   console.log(
     `| ${last.year} | ${profiles[0].distinctNodes} | ${name(dominants[0])} | ` +
       `${profiles[1].distinctNodes} | ${name(dominants[1])} | ${differ ? 'yes' : 'no'} | ` +
-      `${shared} | ${last.onlyA} | ${last.onlyB} | ${last.staff[0]} | ${last.staff[1]} | ` +
-      `${unaffiliated} | ${lessonsTaught} |`,
+      `${shared} | ${last.onlyA} | ${last.onlyB} | ${overlap.toFixed(3)} | ${last.staff[0]} | ` +
+      `${last.staff[1]} | ${unaffiliated} | ${lessonsTaught} |`,
   );
 }
 
@@ -208,7 +259,11 @@ console.log(
 const final = rows[rows.length - 1];
 console.log(
   `At world year ${final.year}: ${final.shared} nodes shared, ${final.onlyA} held only by A, ` +
-    `${final.onlyB} held only by B.`,
+    `${final.onlyB} held only by B — **overlap ${final.overlap.toFixed(3)}**.`,
+);
+console.log(
+  '\nOverlap is the headline number and the only one comparable across arms. ' +
+    `Series: ${rows.map((row) => `${row.year}:${row.overlap.toFixed(3)}`).join(' ')}`,
 );
 
 console.log('\n## Full cell profiles at the last horizon\n');

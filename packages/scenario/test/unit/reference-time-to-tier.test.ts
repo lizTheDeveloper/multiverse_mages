@@ -255,8 +255,30 @@ describe('time to tier, by species', () => {
     const draconic = interval('draconic');
     const fastTrio = [gnome, dwarf, orc];
 
-    // What separates strictly, in every seed: the fast trio arrives before elf,
-    // and gnome arrives before human. Both are real statements about
+    // ## KNOWN RED, HELD DELIBERATELY — do not repair this bound
+    //
+    // `w78/teaching-boundary` moved orc's tier-3 interval from **[24, 31]** to
+    // **[24, 52]**, which crosses elf's low of 44 and fails the first assertion
+    // below. Elf moved too, [47, 57] → [44, 57]. Nothing else in this file
+    // moved.
+    //
+    // **The owner ruled it stays red rather than be rebounded**, and the reason
+    // is that the species underneath it is being retuned right now: **orc
+    // reaches zero occupied grid cells on plain `main` by world year 160**
+    // (`speciesCellOccupancy`, #71), and all six species carry
+    // `"tuningStatus": "untuned"`. A bound rewritten against orc's post-boundary
+    // interval would bake in a number nobody believes, on a species whose
+    // constants are about to move — and this file's own module note is about
+    // exactly that failure: a checked box that is false.
+    //
+    // So this is a **known deferral, not an unexplained failure.** It is
+    // resolved by the species-tuning pass, at which point orc's interval should
+    // be re-measured and this comment deleted along with the red. Do not widen
+    // the bound, do not skip the test, and do not delete the assertion: the
+    // whole value of the three-band claim is that it is falsifiable.
+    //
+    // What the assertion says, and still means: the fast trio arrives before
+    // elf, and gnome arrives before human. Both are real statements about
     // `curiosity` — gnome 1792, human 1152, elf 896 — now that curiosity is an
     // input to *which* node a mage reaches for and not only to how fast she
     // works on whichever one was cheapest.
