@@ -5,6 +5,7 @@
     "gloss": "Silt, flood, and three harvests a year. Small, and worth more than everything around it.",
     "landUnits": 300,
     "capacityPerLandUnit": 40960,
+    "yieldPerLandUnit": { "food": 2048, "stone": 128, "vellum": 384 },
     "tuningStatus": "untuned"
   },
   {
@@ -13,6 +14,7 @@
     "gloss": "The ordinary country most people live in, and the reason there are most people.",
     "landUnits": 1600,
     "capacityPerLandUnit": 20480,
+    "yieldPerLandUnit": { "food": 1536, "stone": 256, "vellum": 384 },
     "tuningStatus": "untuned"
   },
   {
@@ -21,6 +23,7 @@
     "gloss": "Thin soil that carries herds rather than fields.",
     "landUnits": 1200,
     "capacityPerLandUnit": 6144,
+    "yieldPerLandUnit": { "food": 640, "stone": 384, "vellum": 768 },
     "tuningStatus": "untuned"
   },
   {
@@ -29,6 +32,7 @@
     "gloss": "Timber and game, and a long walk to either.",
     "landUnits": 900,
     "capacityPerLandUnit": 3072,
+    "yieldPerLandUnit": { "food": 384, "stone": 256, "vellum": 1024 },
     "tuningStatus": "untuned"
   },
   {
@@ -37,6 +41,7 @@
     "gloss": "Rock, weather, and the occasional stubborn holdfast.",
     "landUnits": 2000,
     "capacityPerLandUnit": 512,
+    "yieldPerLandUnit": { "food": 64, "stone": 512, "vellum": 64 },
     "tuningStatus": "untuned"
   }
 ]

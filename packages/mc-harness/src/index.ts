@@ -95,11 +95,30 @@ export type {
   CheckpointSample,
   MechanicAvailability,
   MirroredPlay,
+  LossShockSample,
   RaidObservation,
+  RoleDemographySample,
+  RosterSample,
   RunTelemetry,
+  SpeciesGridReach,
+  SpeciesVersatilitySample,
   TierReach,
 } from './metrics-telemetry.js';
 export { MECHANICS_AT_0_5_0, NO_MECHANICS } from './metrics-telemetry.js';
+
+export type {
+  LossShockFinding,
+  RoleDemographyFinding,
+  SpeciesVersatilityFinding,
+} from './metrics-species-health.js';
+export {
+  RECOVERY_FRACTION,
+  STAFFABLE_DEFINITION,
+  VERSATILITY_HEGEMONY_FRACTION,
+  collectLossShockRecovery,
+  collectRoleAssignmentDemographicCost,
+  collectSpeciesGridVersatility,
+} from './metrics-species-health.js';
 
 export {
   KNOWLEDGE_CENSUS_INTERVAL_TICKS,

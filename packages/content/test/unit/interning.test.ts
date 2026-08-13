@@ -259,6 +259,8 @@ describe('contentRevision', () => {
     // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
     // other. This is the revision of the tree that holds all three.
     //
+    // ---- This branch's lineage from a622452a ----------------------------
+    //
     // a622452a3b55e38fd902a2d3264b44d7 -> 02b5a898c8fff086f669ce8ddbe8631c, when W20
     // replaced 51 ladder nodes with 108 compositional ones across the twelve v1
     // cells (300 -> 357 nodes) and gave every effect a required `mode`, plus
@@ -286,7 +288,116 @@ describe('contentRevision', () => {
     // of the nodes they merely unlock, claiming a steal or an erasure at a node
     // that contributes zero magnitude — content asserting a mechanic it does not
     // have, invisible to every test, because a gloss is a string.
-    expect(registry.contentRevision).toBe('e3d4613284f6d261cac90fe13e80c1a6');
+    //
+    // ---- `main`'s lineage from the same a622452a -------------------------
+    //
+    // a622452a3b55e38fd902a2d3264b44d7 -> 2c67315ae04ee6c74dfa204474af4eb6,
+    // when the single undifferentiated materials stock was split into three
+    // material kinds — `food`, `stone`, `vellum` — routed by form and produced
+    // in differing mixes by territory. Unlike most entries above this one is
+    // not "nothing existing changed a byte": every one of the fourteen
+    // `form.json` records gained `yieldWeights` and `tuningStatus`, and every
+    // one of the five `territory.json` records gained `yieldPerLandUnit`. Both
+    // are in the preimage on purpose — two universes that disagreed about
+    // what a form's magic actually yields, or about what a stretch of land
+    // produces, would be running different economies while their revisions
+    // agreed they were compatible.
+    //
+    // `main` reached this merge asserting d37624e3 — W17's successor, taken
+    // there without W6's or W8's constants and without the material split. It
+    // is not a competing claim about the same tree: it is a claim about a
+    // smaller preimage, and this tree's preimage strictly contains it. The
+    // digest moving from d37624e3 to 2c67315a across this merge is therefore
+    // the union arriving, not a disagreement being settled.
+    //
+    // 2c67315ae04ee6c74dfa204474af4eb6 -> ba7be8d68b582e2985e0360bbc7e11b0,
+    // when this branch merged `main` and took `main`'s
+    // `max-summons-per-side`. On `main` that
+    // edit reads `d37624e36be00f59cf21b87ff6eba144 ->
+    // 6b18886a4b3a2803c0b1b92eb8f8fae8`: the cap came down from 16 to 8 to
+    // agree with `primitive.json`'s `summon` cap, which is the same ceiling
+    // authored twice and had disagreed with it since both files existed. It is
+    // a *value* edit rather than a new file — the first one in this list that
+    // is — which is the point of a revision over the values: two universes
+    // that disagreed about how many summons a side may hold would fight two
+    // different battles, and the digest says so instead of calling them
+    // compatible.
+    //
+    // So neither 2c67315a nor 6b18886a survives the merge, and that is
+    // correct rather than a lost claim. Each was a digest over a preimage the
+    // other did not contain — this branch's material split, `main`'s summon
+    // cap — and this tree is the first one holding both. A fourth value is
+    // what a digest over the union is supposed to produce; a merge that kept
+    // either side's literal would be asserting a revision no tree has.
+    // ba7be8d68b582e2985e0360bbc7e11b0 -> 6973d2c55f6d7788bbaa6886e507bbde, when this branch
+    // merged `main` a second time and took the two `node.json` passes `main`
+    // had landed meanwhile. On `main` they read as two edits.
+    //
+    // The first, `6b18886a4b3a2803c0b1b92eb8f8fae8 ->
+    // d97caaaa431191d5a8e3cc46b55be1f7`, added `knowledgeKind` to `node.json`
+    // (§2.3) with `episteme` on every one of the 300 records — the field that
+    // decides whether a node's knowledge survives being written down. No node's
+    // kind was *judged* in this step and no simulated result moved: the revision
+    // is in the preimage because the field will gate scribing, so two universes
+    // disagreeing about which nodes can be written would run different libraries
+    // while their revisions agreed they were compatible. Kept separate from the
+    // authoring pass below on purpose, so the mechanical edit and the design
+    // judgements are reviewable apart.
+    //
+    // The second, `d97caaaa431191d5a8e3cc46b55be1f7 ->
+    // 5c319f8275e05ddef2a166dd7552942b`, judged twenty-nine of the three
+    // hundred `metis` — the first authoring pass, reasoned node by node in
+    // `docs/design/metis-authoring.md`. A pure value edit, like the summons cap
+    // above and unlike the four file additions before it. It belongs in the
+    // preimage because two universes disagreeing about *which* knowledge can be
+    // written down would keep different libraries and lose different things,
+    // which is not a difference a compatibility check may shrug at.
+    //
+    // And so, for the second time in this list, neither side's literal survives:
+    // not this branch's ba7be8d6, which is a digest over a preimage holding the
+    // material split and the raid constants but neither `node.json` pass, and
+    // not `main`'s 5c319f82, which holds both passes and neither of this
+    // branch's. This tree is the first one holding all four. A fifth value is
+    // what a digest over the union is supposed to produce, and it is the same
+    // reason the check is a digest over the preimage rather than a
+    // hand-maintained list of file names.
+    //
+    // ---- W64: the two lineages meet -------------------------------------
+    //
+    // 6973d2c55f6d7788bbaa6886e507bbde and e3d4613284f6d261cac90fe13e80c1a6
+    // -> 542c55de64f8c9348ff6256e5e57bb61, when `w20/compositional-content`
+    // was re-cut against current `main` and the two lineages above — which
+    // fork at a622452a and had not met until this commit — were merged.
+    //
+    // Neither parent's literal survives, and for the third time in this list
+    // that is the correct outcome rather than a lost claim. `main`'s
+    // 6973d2c5 is a digest over a preimage holding the material split, the
+    // raid constants, the summons cap and both `node.json` passes, and none
+    // of this branch's 108 compositional nodes, `track.json`, `ritual.json`
+    // or the effect `mode`. This branch's e3d46132 is a digest over the
+    // mirror-image preimage. This tree is the first one holding both, so a
+    // third value is exactly what a digest over the union is supposed to
+    // produce; a merge that kept either literal would be asserting a
+    // revision no tree has.
+    //
+    // One authoring decision inside that union is recorded here rather than
+    // buried in the data, because it is a deferral and not a judgement. The
+    // merged `node.json` is 357 records: `main`'s 300, each keeping the
+    // `knowledgeKind` it was judged with — all twenty-nine `metis` calls in
+    // `docs/design/metis-authoring.md` survive this merge unmoved — plus
+    // this branch's 57 new compositional nodes, which are marked `episteme`
+    // **uniformly and mechanically, exactly as `d97caaaa`'s pass marked the
+    // original 300.** No probe in `metis-authoring.md` §1 was applied to any
+    // of the 57, and twenty of them are Intellego, where that document's
+    // first pass found 25 of its 29 calls — so the honest reading is that
+    // the mētis pass over W20's content has not been done, not that it was
+    // done and came back empty. It is deliberately left as a separate,
+    // reviewable authoring change for the same reason `d97caaaa` and
+    // `5c319f82` were kept apart: a merge is not a defensible place to make
+    // 57 new content judgements. Nothing in the rules path reads
+    // `knowledgeKind`, so this moves no metric today; what it defers is a
+    // design claim, not a number.
+    expect(registry.contentRevision).toBe('542c55de64f8c9348ff6256e5e57bb61');
   });
 
   it('is stable across loads of identical content', () => {

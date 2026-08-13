@@ -241,3 +241,66 @@ describe('the full sweep is committed beside the gate sweep, and is a different 
     expect(readme).toContain('Four workers, not eight');
   });
 });
+
+describe('the docs-only sweep skip cannot silently exempt code', () => {
+  // `ci-check.sh` skips the three sweeps when every changed path is docs. That
+  // is a throughput fix for the single self-hosted runner, not a weakening of
+  // the gate — so the two things that make it safe are asserted here rather
+  // than trusted to review.
+
+  it('verify:nosweeps is exactly verify minus the three balance gates', () => {
+    const verify = manifest.scripts['verify'] as string;
+    const nosweeps = manifest.scripts['verify:nosweeps'] as string;
+    expect(nosweeps, 'verify:nosweeps is missing').toBeDefined();
+
+    // Derive rather than compare to a literal: a new step added to `verify`
+    // must appear in `verify:nosweeps` too, and this fails until it does.
+    const derived = verify
+      .split(' && ')
+      .filter((step) => !GATE_SCRIPTS.some((gate) => step === `npm run ${gate}`))
+      .join(' && ');
+    expect(nosweeps).toBe(derived);
+  });
+
+  it('runs no balance gate, so the skip cannot be a no-op that still sweeps', () => {
+    const nosweeps = manifest.scripts['verify:nosweeps'] as string;
+    for (const gate of GATE_SCRIPTS) expect(nosweeps).not.toContain(gate);
+  });
+
+  it('allowlists documentation paths rather than denylisting code', () => {
+    const runner = read('scripts/ci-check.sh');
+    // A denylist of code paths would exempt any new top-level directory the day
+    // someone adds one. The case arm must therefore name what IS docs.
+    expect(runner).toContain('docs/*|openspec/*|.claude/*|ui/*|*.md|LICENSE');
+    expect(runner).toContain('docs_only=0; break');
+  });
+
+  it.each(['packages/', 'scripts/', 'balance/', '.github/', 'package.json', 'tsconfig'])(
+    'never exempts %s from the sweeps',
+    (path) => {
+      // Pinning the arm's exact text catches a widening, but only if someone
+      // reads the diff. These assert the property the arm exists to have, so a
+      // future edit that adds a genuinely dangerous path fails by name rather
+      // than by string mismatch. `ui/` is on the list because it is in no
+      // tsconfig, no eslint glob and no vitest include — but `ui-theme.test.ts`
+      // still reads it, and the tests are not what gets skipped.
+      const arm = /^\s*docs\/\*\|.*\)\s*;;/m.exec(read('scripts/ci-check.sh'))?.[0] ?? '';
+      expect(arm, 'the allowlist arm was not found — has it been rewritten?').not.toBe('');
+      expect(arm, `${path} must never be sweep-exempt`).not.toContain(path);
+    },
+  );
+
+  it('fails closed: docs_only starts at 0 and is only ever raised inside a successful diff', () => {
+    const runner = read('scripts/ci-check.sh');
+    expect(runner).toContain('docs_only=0\nbase=');
+    // No merge base, a shallow clone or a git error must all leave it at 0.
+    expect(runner).toContain('if git rev-parse --verify --quiet "$base"');
+    expect(runner).toContain('if changed="$(git diff --name-only "$base"...HEAD 2>/dev/null)"');
+  });
+
+  it('still runs the full verify when anything outside docs changed', () => {
+    const runner = read('scripts/ci-check.sh');
+    expect(runner).toContain('npm run verify:nosweeps');
+    expect(runner).toContain('npm run verify\n');
+  });
+});

@@ -76,6 +76,38 @@ describe('invalid content is a hard load failure', () => {
     expect(diagnostics[0]?.pointer).toMatch(/^\/\d+$/u);
   });
 
+  it('rejects a node missing knowledgeKind, naming the node and the field', () => {
+    // The field is required rather than defaulted on purpose: a node's kind
+    // decides whether it can ever be written down, and a reader who has to know
+    // an unwritten default is a reader who will guess wrong about a whole cell.
+    const diagnostics = expectHardFail(
+      brokenSource((documents) => {
+        const node = recordById(documents, 'node.json', 'il-sense-the-seam');
+        delete node['knowledgeKind'];
+      }),
+    );
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]?.code).toBe('schema');
+    expect(diagnostics[0]?.file).toBe('node.json');
+    expect(diagnostics[0]?.message).toContain('il-sense-the-seam');
+    expect(diagnostics[0]?.message).toContain('knowledgeKind');
+    expect(diagnostics[0]?.pointer).toMatch(/^\/\d+$/u);
+  });
+
+  it('rejects an out-of-enumeration knowledgeKind, naming the permitted values', () => {
+    const diagnostics = expectHardFail(
+      brokenSource((documents) => {
+        recordById(documents, 'node.json', 'il-sense-the-seam')['knowledgeKind'] = 'techne';
+      }),
+    );
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]?.code).toBe('schema');
+    expect(diagnostics[0]?.pointer).toContain('/knowledgeKind');
+    const message = messages(diagnostics);
+    expect(message).toContain('episteme');
+    expect(message).toContain('metis');
+  });
+
   it('rejects a node with a float magnitude', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {

@@ -143,11 +143,20 @@ export interface KnowledgeGateway {
   instanceCount(nodeId: ContentId): number;
 
   /**
-   * Whether this universe has *ever* known the node — the persisted record §1.5
-   * says instances alone cannot reconstruct, and the input that decides whether
-   * a research target is a discovery or a rediscovery.
+   * Whether re-deriving this node would be a *rediscovery* — the input that
+   * decides whether a research target is a discovery or a rediscovery.
+   *
+   * This used to be `everKnown`, the raw §1.5 persisted mark, and that was the
+   * wrong question asked of the right record. The mark is set when an instance
+   * is created and never cleared, so it is true of every node anybody here has
+   * ever learned, *including the ones still on the shelf*. Rediscovery is the
+   * narrower fact: known once and now gone. `rules-magic` states it as
+   * `wasEverKnown && !exists` and prices it at three times, and the
+   * implementation calls that function rather than restating it, so the
+   * predicate that quotes a cost, the predicate that charges it, and the
+   * predicate that sorts a mage's options are one predicate.
    */
-  everKnown(nodeId: ContentId): boolean;
+  rediscovery(nodeId: ContentId): boolean;
 
   /** Whether a mage holds an instance of a node in mind or memory palace. */
   knows(mage: MageHandle, nodeId: ContentId): boolean;

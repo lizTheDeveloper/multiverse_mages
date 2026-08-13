@@ -73,7 +73,14 @@ const FORMS: readonly FormRecord[] = Array.from({ length: 14 }, (_, bit) => {
     ([, namedBit]) => namedBit === bit,
   );
   const id = named?.[0] ?? `form-${String(bit)}`;
-  return { id, name: id, gloss: 'fixture form', bit };
+  return {
+    id,
+    name: id,
+    gloss: 'fixture form',
+    bit,
+    yieldWeights: { food: 341, stone: 341, vellum: 342 },
+    tuningStatus: 'untuned',
+  };
 });
 
 function internedTechniques(): Interned<TechniqueRecord>[] {
@@ -237,6 +244,7 @@ export function buildModeFixture(specs: readonly NodeSpec[]): ModeFixture {
       scribeCost: 1024,
       rediscoveryMultiplier: 5632,
       effects: spec.effects,
+      knowledgeKind: 'episteme',
       tuningStatus: 'untuned',
     };
     const contentId = index + 1;

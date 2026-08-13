@@ -126,6 +126,7 @@ export function addSyntheticNode(
     scribeCost: 100,
     rediscoveryMultiplier: 5376,
     effects: [built],
+    knowledgeKind: 'episteme',
     tuningStatus: 'untuned',
   });
 }
@@ -150,7 +151,6 @@ export function seedUniverse(state: SimState, registry: ContentRegistry): Entity
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    materials: 0,
     prestige: 0,
     prestigeEarned: 0,
     terminalReason: 0,
