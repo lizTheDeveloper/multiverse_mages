@@ -74,7 +74,7 @@ end throws.
 | ID | Claim | Disproved by | Mechanism | Cadence |
 |---|---|---|---|---|
 | **INV-37** | No non-integer value ever crosses into component storage in an assembled universe — not under any shipped strategy, and not on the raid path. | The value sentinel reporting one violation at either door, in any arm. | `installValueSentinel` over the reference universe, all shipped strategies, and a resolved-raid arm | **C** |
-| **INV-38** | The set of functions that floor a live non-zero quantity to zero is exactly the registered set. It grows only by review. | An unregistered `module:functionName` appearing in the annihilation recorder's report. | `installAnnihilationSentinel` + the registry in `annihilation-registry.test.ts` | **C** |
+| **INV-38** | The set of functions that floor a live non-zero quantity to zero is exactly the registered set — in both directions. It grows only by review, and an entry that stops firing fails too. | An unregistered `module:functionName` in the annihilation recorder's report, or a registered one absent from it. | `installAnnihilationSentinel` on `floorDiv` — the core's only `/`, which `mul`, `div` and `toInt` all route through — plus the registry in `annihilation-registry.test.ts` | **C** |
 | **INV-39** | Every arm that claims to check a mechanic reaches it. A coverage assertion accompanies each numeric-integrity arm whose mechanic is reached probabilistically. | An arm asserting cleanliness while its mechanic count is zero. | Resolved-raid count asserted alongside the violation list | **C** |
 
 **INV-39 is the meta-claim that protects the other two,** the way INV-7 protects the determinism
@@ -88,10 +88,17 @@ accidental raid away, and nothing would have gone red.
 **What these three do not cover, stated so nobody reads them as more than they are.** The value
 sentinel watches component storage, so a `Fixed` living in a plain object — `RaidState.portalStability`
 and `stabilityDecayPerTick` are the current examples — is outside it, and there `NaN` survives rather
-than coercing. The annihilation sentinel sees `mul` and `div` only; a floor reached by `floorDiv`
-directly, or by a bare `-`, is invisible to it. Both are off by default and cost one comparison when
-off, so neither is a shipping guard — they are instruments, and they are only as good as the arms
-that install them.
+than coercing. The annihilation sentinel sees division; a quantity driven to zero by a bare `-` is
+invisible to it. Both are off by default and cost one comparison when off, so neither is a shipping
+guard — they are instruments, and they are only as good as the arms that install them.
+
+The annihilation sentinel sat on `mul` and `div` first, which made INV-38 claim a completeness it did
+not have: the rules path calls `floorDiv` **directly at eighty sites**, and every one was invisible.
+An adversarial reviewer on a different model found it. Moving the check to `floorDiv` — the only `/`
+in the core — took the registry from one entry to ten. All ten turned out to be explainable, which is
+the useful result rather than a disappointing one: three bank the fraction as a probability, five are
+index or bucket arithmetic where a zero quotient *is* the meaning, one is a documented contract
+choice, and one is handled at the site. None of them was written down anywhere before.
 
 ## 3. Contract integrity — live from 0.2.0
 

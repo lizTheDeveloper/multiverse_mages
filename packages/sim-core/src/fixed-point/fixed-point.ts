@@ -44,81 +44,6 @@ export const FP_INT_MIN = -2097152;
 /** Largest whole number `fromInt` accepts. */
 export const FP_INT_MAX = 2097151;
 
-// ---------------------------------------------------------------------------
-// The annihilation sentinel.
-// ---------------------------------------------------------------------------
-
-/** Which scaling operation annihilated its operands. */
-export type FixedPointOperation = 'mul' | 'div';
-
-/**
- * One scaling operation that turned two non-zero operands into exactly zero.
- *
- * Carries the operands and nothing else. Attribution — which call site, how
- * often, whether it is the same site every tick — is the consumer's job, and
- * deliberately so: the core performs no I/O and cannot afford to capture a
- * stack on a hot path.
- */
-export interface FixedPointAnnihilation {
-  readonly operation: FixedPointOperation;
-  readonly a: Fixed;
-  readonly b: Fixed;
-}
-
-/** Called for every scaling operation whose exact result floored to zero. */
-export type AnnihilationSentinel = (event: FixedPointAnnihilation) => void;
-
-let activeAnnihilationSentinel: AnnihilationSentinel | undefined;
-
-/**
- * Watches for the rounding step that silently deletes a quantity, and is off by
- * default.
- *
- * ## The defect it exists to find
- *
- * {@link installValueSentinel} in `component.ts` catches values that are not
- * integers. This catches the opposite failure: a value that is a *perfectly
- * legal* integer — zero — arrived at because {@link floorDiv} rounded a small
- * non-zero product down. Nothing is corrupt, nothing throws, and the resulting
- * zero is indistinguishable from a zero that was meant.
- *
- * The project has met this three times and defended against it by hand each
- * time. `planConstructionLabour` floored a backlog into a headcount of zero and
- * froze every building at 98% forever. `RaidState.stabilityDecayPerTick` is
- * an authored integer rather than a derived one, with a comment explaining that
- * a derived decay becomes `0` and gives "a raid that runs forever, with no
- * error and no symptom". Each fix was a site someone happened to look at.
- *
- * This makes the class visible rather than the site. A `mul` or `div` whose
- * operands are both non-zero and whose result is zero is not necessarily a bug
- * — flooring small products is what fixed-point *does*. What distinguishes a
- * stall is **persistence**: the same site annihilating on every tick while its
- * inputs stay non-zero. So this reports events, and the instrument that
- * consumes them reports rates.
- *
- * ## Cost, and why it may not change a result
- *
- * One comparison against `undefined` when nothing is installed. The sentinel is
- * observation-only and must stay so — a callback that mutated state would break
- * INV-5, which requires that a run with recording enabled and one without
- * produce identical results.
- *
- * @param next - The sentinel to install, or `undefined` to remove it.
- * @returns The sentinel that was installed before, so a caller can restore it.
- */
-export function installAnnihilationSentinel(
-  next: AnnihilationSentinel | undefined,
-): AnnihilationSentinel | undefined {
-  const previous = activeAnnihilationSentinel;
-  activeAnnihilationSentinel = next;
-  return previous;
-}
-
-/** Whether an annihilation sentinel is currently watching. */
-export function annihilationSentinelInstalled(): boolean {
-  return activeAnnihilationSentinel !== undefined;
-}
-
 function assertFixed(value: Fixed, role: string): void {
   if (!Number.isInteger(value) || value < FP_MIN || value > FP_MAX) {
     throw new RangeError(
@@ -213,11 +138,7 @@ export function mul(a: Fixed, b: Fixed): Fixed {
       `mul overflowed: ${String(a)} * ${String(b)} exceeds exact integer arithmetic`,
     );
   }
-  const result = assertRepresentable(floorDiv(product, FP_ONE), 'mul');
-  if (activeAnnihilationSentinel !== undefined && result === 0 && a !== 0 && b !== 0) {
-    activeAnnihilationSentinel({ operation: 'mul', a, b });
-  }
-  return result;
+  return assertRepresentable(floorDiv(product, FP_ONE), 'mul');
 }
 
 /**
@@ -236,11 +157,7 @@ export function div(a: Fixed, b: Fixed): Fixed {
   if (b === 0) {
     throw new RangeError('div by zero');
   }
-  const result = assertRepresentable(floorDiv(a * FP_ONE, b), 'div');
-  if (activeAnnihilationSentinel !== undefined && result === 0 && a !== 0) {
-    activeAnnihilationSentinel({ operation: 'div', a, b });
-  }
-  return result;
+  return assertRepresentable(floorDiv(a * FP_ONE, b), 'div');
 }
 
 /**

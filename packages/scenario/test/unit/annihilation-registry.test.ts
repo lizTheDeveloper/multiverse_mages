@@ -79,11 +79,59 @@ const TICKS = 240;
  * a function does not fail this test. See `src/annihilation.ts`.
  */
 const REGISTERED: ReadonlyMap<string, string> = new Map([
+  // ---- The fraction is banked, not discarded. ----
+  //
+  // These floor a rate into a whole count and then spend the remainder as a
+  // probability: `whole + (draw < remainder ? 1 : 0)`. A cohort whose expected
+  // births are 0.3 has no births on 70% of ticks and one on the other 30%. The
+  // floor is real and the sentinel is right to see it; nothing is lost, so
+  // none of these can stall.
+  [
+    'carrying-capacity:cohortBirths',
+    'Banked. `expectedBirths` floors to whole births and the remainder becomes ' +
+      'the probability of one more, drawn once per cohort per tick.',
+  ],
+  [
+    'mortality:cohortDeathsThisTick',
+    'Banked, same shape as births. The draw is taken before the early return ' +
+      'so the stream advances identically whether or not anyone dies.',
+  ],
+  [
+    'promotion:promoteStudentCohort',
+    'Banked. "How many mages a matured student cohort yields, and the single ' +
+      'draw that decides the fraction."',
+  ],
+
+  // ---- The floor *is* the meaning. ----
+  //
+  // Index and bucket arithmetic, where a quotient of zero names the first
+  // bucket rather than losing a quantity. There is nothing here to stall.
+  ['grid:techniqueBitOf', 'Index arithmetic. Zero is the first technique, not a lost quantity.'],
+  ['clock:eraOf', 'Era index. Tick 1 is in era 0, which is what a floor is for.'],
+  ['buckets:birthBucketOf', 'Bucket index. The youngest bucket is 0.'],
+  [
+    'buckets:normalizedCohortAge',
+    'A normalized age in [0, FP_ONE]. A cohort younger than one bucket ' +
+      'normalizes to 0, which is the intended reading.',
+  ],
+  ['age:normalizedAge', 'The same normalization, per mage rather than per cohort.'],
+
+  // ---- Floored, discarded, and documented as such. ----
+  [
+    'reallocation:collectSources',
+    'A genuine floor with no banking, and a declared consequence rather than ' +
+      'an oversight: `TRANSFER_RATE_PER_TICK` is `FP_ONE / 16`, and the ' +
+      "module's own note says \"cohorts smaller than 1 / TRANSFER_RATE_PER_TICK " +
+      'never transfer at all". Sixteen is the threshold. If that stops being ' +
+      'the intent, this is the line that says so.',
+  ],
+
+  // ---- Handled at the site. ----
   [
     'worship:laggedWorship',
     'Handled. A rising gap of one unit floors to zero, and the function moves ' +
       'one unit instead of returning the stalled value, so worship still ' +
-      'converges on its target. See the convergence note on the function.',
+      'converges on its target.',
   ],
 ]);
 
@@ -121,8 +169,8 @@ describe('the set of functions that floor a live quantity to zero', () => {
       .map(
         (row) =>
           `${row.site} annihilated on ${String(row.ticks)}/${String(TICKS)} ticks ` +
-          `(${row.persistence.toFixed(3)}), e.g. ${row.sample.operation}(` +
-          `${String(row.sample.a)}, ${String(row.sample.b)}) -> 0`,
+          `(${row.persistence.toFixed(3)}), e.g. floorDiv(` +
+          `${String(row.sample.numerator)}, ${String(row.sample.denominator)}) -> 0`,
       );
 
     expect(detail, detail.join('\n')).toEqual([]);
@@ -143,7 +191,7 @@ describe('the set of functions that floor a live quantity to zero', () => {
 
     expect(recorder.siteNames()).toEqual(['annihilation-registry.test:annihilateOnPurpose']);
     const [site] = recorder.sites();
-    expect(site?.sample.operation).toBe('mul');
+    expect(site?.sample.denominator).toBe(1024);
     expect(site?.persistence).toBe(1);
   });
 

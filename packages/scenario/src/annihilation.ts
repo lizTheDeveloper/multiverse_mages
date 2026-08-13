@@ -190,7 +190,7 @@ function attributeToCaller(): string {
     // frame would also skip any caller whose *own* file happened to be named
     // for what it tests — which is exactly what this module's test is called.
     const module = basename(file);
-    if (module === 'fixed-point' || module === 'annihilation') continue;
+    if (module === 'fixed-point' || module === 'divide' || module === 'annihilation') continue;
 
     return `${module}:${named === null ? '<anonymous>' : (named[1] ?? '<anonymous>')}`;
   }

@@ -74,15 +74,19 @@ it appears to look for.
 > *survives* rather than coercing — which means a state-walk validator would work on that surface,
 > and does not exist yet.
 
-**`installAnnihilationSentinel`** (`sim-core/src/fixed-point/fixed-point.ts`) reports every `mul` or
-`div` that turns two non-zero operands into exactly zero. A single event is not a defect — flooring
+**`installAnnihilationSentinel`** (`sim-core/src/fixed-point/divide.ts`) reports every division that
+turns a non-zero numerator into exactly zero. It sits on `floorDiv` — the only `/` in the simulation
+core, which `mul`, `div` and `toInt` all route through — so it sees every floor, not a sample of
+them. A single event is not a defect — flooring
 small products is what fixed-point arithmetic *does*, constantly and correctly. The discriminating
 signal is **persistence**: the same function annihilating on tick after tick while its inputs stay
 non-zero. Attribution lives in `scenario/src/annihilation.ts`, not the core, because the core
 performs no I/O and cannot capture a stack on a hot path.
 
-> Blind to: a floor reached through `floorDiv` directly, or a quantity driven to zero by a bare
-> subtraction. It sees the two scaling helpers and nothing else.
+> Blind to: a quantity driven to zero by a bare subtraction, and a quantity that is never divided
+> at all.
+>
+> It was blind to much more than that until an adversarial reviewer said so. See below.
 
 ## What is actually measured on this tree
 
@@ -93,7 +97,8 @@ Every number here was produced by running it, not by reading the code.
 | Value sentinel | Reference universe, 240 ticks | Zero non-integer writes |
 | Value sentinel | 10 strategies × 3 seeds × 2 level sets × raids on/off, 60 ticks — 120 arms | Zero non-integer writes |
 | Value sentinel | `portal-rush`, 520 ticks, raids resolved | Zero non-integer writes |
-| Annihilation sentinel | Reference universe + all 10 strategies, 600 ticks, raids live | **One** site: `worship:laggedWorship`, persistence 0.131 — the site that already handles it |
+| Annihilation sentinel on `mul`/`div` | Reference universe + all 10 strategies, 600 ticks, raids live | One site: `worship:laggedWorship` — and this number was wrong, see below |
+| Annihilation sentinel on `floorDiv` | Reference universe, 240 ticks | **Ten** sites, all explainable, none previously written down |
 | Balance baselines | All three committed baselines | No `NaN` fossils; the one `null` is the designed `standardError === 0` sentinel, not a coerced `NaN` |
 | `applyDescriptor` | All five normalization rules, `NaN` and `±Infinity` | Floors to `min` under every rule; the historical `log-bucket` disagreement is fixed |
 | All three balance gates | `balance-gate`, `-horizon`, `-ascension` | Every metric `delta 0.00000` — the instruments are observation-only, and the baselines say so |
@@ -117,6 +122,44 @@ That is why INV-39 exists, and why every numeric-integrity arm now asserts that 
 mechanic. **A run that never reaches a mechanic reports zero violations and passes.** An arm without
 a coverage assertion is indistinguishable from an arm that checks nothing, and it is the more
 dangerous of the two because it reads as reassurance.
+
+## What the breakers found
+
+Two independent reviewers on different models were pointed at this work with one instruction: *do not
+agree with it.* Both drew blood, and both hit the same theme — not a contaminated value anywhere, but
+**an instrument claiming more than it checked.** That is worth more than a clean bill of health,
+because it is the failure mode this whole document argues against, committed by the document.
+
+**The recorder stopped watching at the first `await`.** `AnnihilationRecorder.record` was
+`try { return body(); } finally { restore() }`. With an async body that is silently useless: `body()`
+returns its promise at the first `await`, `finally` runs *then*, and the sentinel is uninstalled
+before any awaited work happens. Measured, an async body around one `mul(1, 1)`:
+
+    async body -> sites: []
+    sync  body -> sites: ["repro-async:<anonymous>"]
+
+Every long arm in this repository yields to the vitest runner once a world year, which makes it
+async. So the shape most likely to be used was the shape that recorded nothing. The registry test
+survived only because its body happens to be synchronous.
+
+**The registry was blind to eighty call sites.** The sentinel wrapped `mul` and `div`. The rules path
+calls `floorDiv` *directly* — 44 times in `rules-world`, 28 in `rules-raid`, 8 in `coordination` — and
+the test asserted completeness over a surface it did not cover. `materialsProduced` floors each
+material kind's share through a bare `floorDiv`; so does the cohort transfer budget. The document
+admitted the blind spot; **the test did not**, and the test is what runs.
+
+Moving the check to `floorDiv` took the registry from one entry to ten:
+
+| Site | Verdict |
+|---|---|
+| `carrying-capacity:cohortBirths`, `mortality:cohortDeathsThisTick`, `promotion:promoteStudentCohort` | **Banked.** The floor is real and the remainder is spent as a probability — `whole + (draw < remainder ? 1 : 0)`. A cohort whose expected births are 0.3 has one birth on 30% of ticks. Nothing is lost, so none can stall. |
+| `grid:techniqueBitOf`, `clock:eraOf`, `buckets:birthBucketOf`, `buckets:normalizedCohortAge`, `age:normalizedAge` | **The floor is the meaning.** Index and bucket arithmetic, where a zero quotient names the first bucket. |
+| `reallocation:collectSources` | **Floored, discarded, declared.** `TRANSFER_RATE_PER_TICK` is `FP_ONE / 16`, and the module's own note says *"cohorts smaller than 1 / TRANSFER_RATE_PER_TICK never transfer at all."* Sixteen is the threshold. If that stops being the intent, this is the line that says so. |
+| `worship:laggedWorship` | **Handled at the site.** Moves one unit when the step floors away. |
+
+So the result of widening the instrument tenfold is that **no live stall was found** — and ten places
+where a quantity can round to nothing are now named, reviewed, and standing in a test, where before
+exactly one of them was.
 
 ## The remaining gaps, scoped
 
@@ -146,31 +189,32 @@ on it.
    pre-release), not **C**, and it needs a cheaper sentinel — sampling, or a build flag — rather than
    a longer timeout.
 
-4. **`npm run verify` is stochastically red, and not because of the code.** Vitest exits non-zero on
-   an unhandled error even when every test passes, and this suite produces
+4. **`npm run verify` goes red under machine load, and not because of the code.** Vitest exits
+   non-zero on an unhandled error even when every test passes, and this suite produces
    `[vitest-worker]: Timeout calling "onTaskUpdate"` — a worker doing unbroken synchronous work
    cannot answer its runner's RPC, and a runner that has not heard from a worker treats it as dead.
    Because `verify` chains with `&&`, that exit code means **the three balance gates never run at
    all**, which is the part of the gate most worth having.
 
-   Measured, on an untouched `origin/main` checkout with no changes from this campaign: `npm test`
-   exits **1**, with 4,052 tests passed, 287 files passed, and **2 unhandled errors**. So this is
-   not a regression introduced here. It is a pre-existing, stochastic property of the suite — an
-   earlier run of the same untouched tree exited 0.
+   What this looked like, and the correction, because the first reading was wrong. Four consecutive
+   runs went red — including one on an untouched `origin/main` checkout, which is what ruled out this
+   campaign as the cause. The obvious next hypothesis was worker oversubscription, and capping
+   `--maxWorkers=6` passed twice. But then the **default** configuration also passed **three times in
+   a row** on an idle machine. The variable was not the worker count. It was that the earlier runs
+   had a 2,400-tick balance gate and two agents running beside them.
 
-   The cause is concentrated in a few files that step hundreds of world ticks synchronously:
-   `loss-shock-recovery.test.ts` at 205s, `reference-long-run.test.ts` at 185s, and
-   `reference-time-to-tier.test.ts` at 133s. The same contention intermittently pushes
-   `god-loop.test.ts` — 15s alone — past the 30s `testTimeout` under parallel load.
+   So: no config change is warranted, and the honest statement is narrower than "the suite is
+   flaky". It is **load-sensitive**, the load in every observed failure was self-inflicted by running
+   heavy jobs concurrently, and CI on a dedicated runner is a different machine. The files that
+   cannot answer their runner are real and worth fixing anyway — `god-loop.test.ts` takes 15s alone
+   and 31s under load against a 30s `testTimeout`, and `raid-engagement.test.ts`'s `playOnce` steps
+   520 ticks synchronously.
 
-   The fix is the device this repository already uses in `runLongReference` and
-   `assembled-run-values.test.ts`: hand the event loop back once a world year. It changes no number.
-   It is not applied here because those files belong to other workstreams in flight, and a
-   campaign about not claiming more than you check should not quietly rewrite three suites it did
-   not measure.
+   The fix, when someone takes it, is the device this repository already uses in `runLongReference`
+   and `assembled-run-values.test.ts`: hand the event loop back once a world year. It changes no
+   number. It is not applied here because those files belong to workstreams in flight, and a campaign
+   about not claiming more than you check should not quietly rewrite three suites it did not measure.
 
-   `vitest.config.ts` already contains the argument for doing it, written about a different
-   intermittent failure: *"A conformance suite that goes red for reasons unrelated to the code under
-   test is a suite people learn to re-run rather than read."* Every invariant in `invariants.md`
-   with cadence **C** depends on someone reading a red gate as information. This is the highest
-   priority item on this list, and it is not a numeric-integrity problem at all.
+   `vitest.config.ts` already contains the argument, written about a different intermittent failure:
+   *"A conformance suite that goes red for reasons unrelated to the code under test is a suite people
+   learn to re-run rather than read."*
