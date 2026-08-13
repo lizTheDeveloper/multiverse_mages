@@ -19,7 +19,13 @@
  * completes"*, and *"A blocked preference falls through"*.
  */
 
-import { ACTION_SPACE_SIZE, GOD_ACTION, agentRng, isLegal } from '@mm/agent-api';
+import {
+  ACTION_SPACE_SIZE,
+  GOD_ACTION,
+  agentRng,
+  isLegal,
+  observationBlock,
+} from '@mm/agent-api';
 import type { ActionSubmission, StrategyDefinition } from '@mm/mc-harness';
 import {
   ASCENSION_STANCE,
@@ -77,6 +83,25 @@ function noopOnlyMask(): Uint8Array {
 /** A zero observation of the real width, for the mask-only tests. */
 function blankObservation(): Float64Array {
   return new Float64Array(400);
+}
+
+/**
+ * A strategy's own preference list, with the composed ascension entry removed.
+ *
+ * `effectivePreferences` prepends `declareAscension` for any strategy whose
+ * stance is not `never`, which is correct and is pinned elsewhere — but it means
+ * a test about a strategy's *own* ordering has to look past it.
+ */
+function ownPreferences(
+  definition: StrategyDefinition,
+  observation: Float64Array,
+): ActionSubmission[] {
+  return effectivePreferences(definition, {
+    observation,
+    mask: fullMask(),
+    round: 0,
+    context: contextFor(definition.strategyId, 7),
+  }).filter((preference) => preference.action !== GOD_ACTION.declareAscension);
 }
 
 /**
@@ -217,6 +242,58 @@ describe('a blocked preference falls through (task 5.6)', () => {
         ).toEqual(expected);
       }
     }
+  });
+
+  /**
+   * `permissive-breadth` founds before it permits, while it has nothing to fund.
+   *
+   * This is the regression test for a defect that survived every sweep ever
+   * taken. `fundUniversity` sat behind `permitTechnique` in the preference
+   * list, `policyFor` takes the first *legal* preference, and `permitTechnique`
+   * is legal on every round — so the strategy whose entire role is "permits
+   * widely, funds broadly" ended every run at one university: the seeded
+   * academy, never having completed one of its own.
+   *
+   * It went unnoticed because nothing read `universityCount` until the
+   * ascension conjunct did, and because the code carried a comment — *"found
+   * until there is something to fund"* — describing an intent the list defeated.
+   * A comment is not a test, which is the whole reason this one exists.
+   *
+   * Asserted on the preference *order* rather than on a run outcome, because
+   * the order is the defect. An outcome assertion would pass again the moment
+   * anything else made a university appear, and would have said nothing about
+   * why.
+   *
+   * `declareAscension` is filtered out first: `effectivePreferences` composes
+   * the ascension stance in ahead of the strategy's own list, and this strategy
+   * declares `whenEligible`. That composition is pinned in
+   * `ascension-stance.test.ts` and is not what this test is about.
+   */
+  it('makes permissive-breadth found before it permits, while it has none', () => {
+    const definition = BOT_POOL.find((entry) => entry.strategyId === 'permissive-breadth');
+    expect(definition, 'permissive-breadth left the pool').toBeDefined();
+
+    const withNone = ownPreferences(definition as StrategyDefinition, blankObservation());
+    expect(
+      withNone[0]?.action,
+      'permissive-breadth must found first when it holds no university — behind an ' +
+        'always-legal permit it never founds at all',
+    ).toBe(GOD_ACTION.fundUniversity);
+    expect(withNone[0]?.parameter, 'slot 0 is the standing "found a new one" option').toBe(0);
+
+    // And once it holds one, permitting leads again — the strategy is about
+    // breadth, and founding is the precondition it was skipping, not its point.
+    const held = blankObservation();
+    held[observationBlock('institutions').offset] = 3;
+    const withSome = ownPreferences(definition as StrategyDefinition, held);
+    expect(
+      withSome[0]?.action,
+      'with universities in hand the ruleset actions lead again',
+    ).toBe(GOD_ACTION.permitTechnique);
+    expect(
+      withSome.some((preference) => preference.action === GOD_ACTION.fundUniversity),
+      'it must still spread funding across what exists',
+    ).toBe(true);
   });
 
   it('does not stall or raise even against a mask §4.2 says cannot exist', () => {
