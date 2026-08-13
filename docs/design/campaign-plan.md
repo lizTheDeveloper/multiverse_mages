@@ -64,10 +64,15 @@ production caller; gate tolerances at ±118% of mean with 80 of 80 collapse-to-z
 three gates resolving **zero raids**; the ablation mask never reaching the god subsystem; and a
 regenerator silently eating a provenance disclaimer.
 
-**The simulation does not touch the mechanic** — five more (W85): `advanceConstruction` and
-`applyLibraryUpkeep` have definitions and **no production callers**, so `world-step.ts` passes literal
-`0` for construction and library upkeep every tick; `UNIVERSITY_STAFF` is declared and never read, so
-every university draws from one global scribe pool; `carriedPrestige` and `legacyGrant` are unreachable.
+**The simulation does not touch the mechanic** — **115 findings**, now measured by a real check rather
+than by anecdote (W89). `@mm/rules-raid` is a package **nothing depends on**, 75 exports collapsed.
+**Two of the four licensed tradition hooks — `castPolicy` and `costPolicy` — have no simulation path**,
+because they are read only by that package. University **admissions and specialisation** are built and
+unwired. `UNIVERSITY_STAFF` is declared and never read, so every university draws from one global
+scribe pool. The whole prestige cluster is unreachable.
+
+*(W85 originally listed `advanceConstruction` and `applyLibraryUpkeep` here. **That was my error** —
+I verified in a checkout sitting on the wrong branch. Both are wired on `main`. See W89.)*
 
 **Together: "the symbol exists" and "a test covers it" are both compatible with "the game never runs
 it."** `check:consumption` asks this for primitives. Nothing asked it for functions, components or
@@ -4232,3 +4237,90 @@ buy **51 nodes** — the same 51 that `passive-control` reaches doing nothing at
 capacity is not the binding constraint on knowledge; the content is.** That is a third independent
 confirmation of W87's finding, arriving from a strategy built years of campaign-time earlier for an
 entirely different purpose.
+
+---
+
+## W89 — W85 is half wrong, I verified against the wrong branch, and the real count is 115
+
+*2026-08-13, PR #77. A correction, and the check that makes this class of error impossible to repeat.*
+
+### The correction
+
+**W85 claimed `advanceConstruction` and `applyLibraryUpkeep` have no production callers. Both are
+wired on `main`, and have been for days.**
+
+| symbol | wired in | when |
+|---|---|---|
+| `applyLibraryUpkeep` | `ef3bba9` — `world-step.ts` via `degradeUnkeptLibraries` | Aug 11 |
+| `advanceConstruction` | `9a3b6b5` (w29) — `world-step.ts` via `advanceUniversities` | Aug 12 |
+
+On `main`, `world-step.ts` reads `libraryUpkeep: upkeepOwed` and `construction: construction.stoneOwed`.
+The literal zeroes I quoted are on the **`knowledge-model`** branch, which is what the shared checkout
+happened to be sitting on.
+
+**I verified Codex's findings by running greps in the shared checkout without checking which branch it
+was on.** That is the second time in one session the shared checkout's branch has produced a wrong
+result — the first sent five plan commits to a 1,224-line variant of this file. **CLAUDE.md's worktree
+rule exists for exactly this, and I broke it twice while instructing other agents to follow it.**
+
+The lesson is narrower and more useful than "use worktrees": **a finding about what the code does is a
+finding about a specific ref, and it is worth nothing without one.** Every entry in this document that
+reports code state should name the ref it was read at. Most do not, including several of mine.
+
+It also cost real work: W68 recorded library upkeep as *"already built — recorded so nobody
+re-proposes it"*, W85 then recorded it as *"built and never called"*, and both were written about
+different branches. **The first entry was right.**
+
+Two of W85's five stand: `UNIVERSITY_STAFF` is still declared and never read or written, and the
+prestige cluster is still unreachable.
+
+### The check, and the number
+
+`scripts/check-reachability.mjs` — **115 findings.**
+
+| category | count |
+|---|---|
+| packages nothing depends on | **1 — `@mm/rules-raid`, 75 exports** |
+| exported values with no production caller | 94 |
+| called only by symbols that are themselves unreached | 10 |
+| components declared and never read or written | 1 |
+| constants resolved and never read | 3 |
+| constants read only by unreached code | 6 |
+
+**It parses TypeScript rather than grepping, and that is the point.** `world-step.ts` discussed
+`advanceConstruction` in prose before anything called it, and `mc-harness/src/strategies.ts` quotes the
+W85 finding **inside a string literal**. A grep-based check would have been fooled by both — as I was.
+Comments, string literals, import/re-export specifiers and `typeof` references are excluded; a caller
+in the same file counts, because an earlier draft flagged `worldSystem` — the loop of the entire game —
+as unreached.
+
+**Non-blocking, and the count is the argument.** 115 is far too many to hold inside `verify`; a gate
+that cannot merge is a gate nobody sees. Wired exactly as `check:consumption` is — its own script,
+absent from `verify` and `verify:nosweeps`, its own `continue-on-error` Actions job. **That absence is
+what keeps `scripts/ci-check.sh` equivalent to `verify`.** The flip condition is written at the flip
+point: *under ten, reached by wiring or deleting, **never by lengthening the exclusions list**.*
+
+### Three findings beyond W85, hand-verified, any of which is worse than what W85 got wrong
+
+1. **Two of the four licensed tradition hooks have no simulation path.** `acquirePolicy` and
+   `storePolicy` are read by `scenario`. **`castPolicy` and `costPolicy` are read only by
+   `@mm/rules-raid` — the package nothing depends on.** CLAUDE.md names those four hooks as the one
+   licensed exception to content-lives-in-data. **Half of the exception does not run.**
+2. **University admissions and specialisation are built and unwired** — `admitStudents`,
+   `AdmissionRefusals`, `effectiveCapacity`, `universityProfile`, `dominantCell`. Universities are
+   created directly by the god intervention path and **never through `createUniversity`**.
+3. **`worship-max` is resolved into `GodConstants` and never read off it** — `worship.ts` recomputes
+   the sum instead.
+
+Also confirmed dead on `main`: `stackContributions` (independently corroborating `consumption.ts`'s own
+claim), `loadWorldSnapshot`/`migrateWorldEnvelope` (**nothing loads a save**), `replay`,
+`speciesRediscoveryMultiplier`, `applyWard`, `traitValueOf`/`advantageOf`/`SPECIES_FP_TRAITS`.
+
+### And a third reason the teaching boundary may show nothing
+
+W87 found universities converge by content exhaustion with no channel between them. Two more channels
+turn out not to exist in the way that matters: **the global scribe pool is still live on `main`**
+(`world-step.ts:1735–1769`, `scribeThroughputFor`, whose own comment concedes *"Taking the whole scribe
+population is the honest placeholder"*), **and the specialisation mechanism itself — `universityProfile`
+and `dominantCell` — is built and never called.** Scoping teaching to co-affiliates changes little if
+every university draws from one staff pool and none of them has a profile in the loop.
