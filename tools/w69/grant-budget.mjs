@@ -354,6 +354,16 @@ function main() {
   const content = referenceContent();
   const result = { sweepId: SWEEP_ID, rootSeed: ROOT_SEED, worldTickCap, replicates, arms: {} };
 
+  // Written after every arm rather than once at the end. These runs are long and
+  // the machine they share is not idle; an arm that completed is a measurement,
+  // and losing it because a later arm was interrupted would be losing data that
+  // had already been paid for.
+  const save = () => {
+    if (typeof args.out !== 'string') return;
+    mkdirSync(dirname(args.out), { recursive: true });
+    writeFileSync(args.out, `${JSON.stringify(result, null, 2)}\n`);
+  };
+
   // -------------------------------------------------------------------------
   // Arm 1: reach. Which strategies can a grant budget possibly bind?
   // -------------------------------------------------------------------------
@@ -379,6 +389,7 @@ function main() {
       );
     }
     result.arms.reach = reach;
+    save();
     const spenders = Object.entries(reach)
       .filter(([, s]) => s.grantsUsedTotal > 0)
       .map(([id]) => id);
@@ -428,6 +439,7 @@ function main() {
       );
     }
     result.arms.control = control;
+    save();
   }
 
   // -------------------------------------------------------------------------
@@ -456,6 +468,7 @@ function main() {
       process.stdout.write('\n');
     }
     result.arms.curve = curve;
+    save();
   }
 
   // -------------------------------------------------------------------------
@@ -495,14 +508,12 @@ function main() {
       }
     }
     result.arms.zero = zero;
+    save();
     process.stdout.write('\n');
   }
 
-  if (typeof args.out === 'string') {
-    mkdirSync(dirname(args.out), { recursive: true });
-    writeFileSync(args.out, `${JSON.stringify(result, null, 2)}\n`);
-    process.stdout.write(`\nWrote ${args.out}\n`);
-  }
+  save();
+  if (typeof args.out === 'string') process.stdout.write(`\nWrote ${args.out}\n`);
 }
 
 main();
