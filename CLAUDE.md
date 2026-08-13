@@ -70,7 +70,8 @@ grid is pre-authored: 300 nodes across all seventy cells, of which twelve cells 
 
 Since then the task lists have run well ahead of the releases, and **a finished task list is not a
 shipped version.** Check with `openspec list` rather than this paragraph, but as of this commit:
-`mages-and-species` is 102/107, `agent-interface` (91/91) and `gym-bridge` (76/76) are
+`mages-and-species` is 100/107 — tasks 8.1 and 8.2 were deliberately unchecked, so a lower number
+here is not a regression — `agent-interface` (91/91) and `gym-bridge` (76/76) are
 task-complete and unreleased, `god-agency` is 59/75 with its favor and worship systems installed
 into the world step, and `raid-engagement` is 67/92 with `packages/rules-raid` built but nothing in
 `scenario` opening a portal yet. `metis-knowledge` (1/51), `electron-client` and `pvp-server` are

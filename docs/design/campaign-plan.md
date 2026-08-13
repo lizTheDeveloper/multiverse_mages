@@ -1007,6 +1007,17 @@ ruleset. They are separate gates, and conflating them was implicit in the go-wid
 
 ## The root cause, found twice independently and verified directly
 
+> **Correction, 2026-08-12 (W48).** Everything in this section is still true of `main` and is on
+> its way to being false. Re-checked today: `gatherEffects` still has zero production callers on
+> `main` — every hit outside `rules-magic/src/effects` is in `test/` or `dist/`. On
+> `w29/city-and-supply-chain`, **PR #42 (open, not merged)**,
+> `packages/coordination/src/universe-effects.ts:254` calls `gatherEffects` over the universe's
+> knowledge instances. That also settles the presence-versus-`gatherEffects` fork this section
+> ends on: W29 did not keep a second implementation, it calls the one carrying the adversarial
+> test. The original text is kept because the diagnosis is the document's value; read it as *the
+> state at the time the campaign was run*, and read every baseline taken before #42 merges as a
+> measurement of a favor trickle.
+
 Two workstreams that were not talking to each other — W30 (hard-SF projection of the magic rules)
 and W29 (city and supply chain) — arrived at the same finding from opposite ends. I verified all
 three legs of it myself against the tree rather than taking either agent's word:
@@ -1322,6 +1333,16 @@ nobody has watched fail is not a check", and provides a directory argument so th
 exercised by hand. It was watched failing on the case it models. It models the wrong case.
 
 ### The missing gate, specified
+
+> **Correction, 2026-08-12 (W48): this gate is built.** `scripts/check-primitive-consumption.mjs`
+> and `npm run check:consumption` exist on `main`, and the specification below was followed rather
+> than approximated — it builds a real universe through `@mm/scenario`'s composition root with a
+> recorder threaded through it, registers a primitive only when the assembled simulation asks for
+> its magnitudes, and its own header says why grep cannot do the job. One thing landed differently
+> and deliberately: it is **not** in `verify`. `.github/workflows/ci.yml` runs it as a separate
+> job, *Primitive consumption (non-blocking)*, which is **expected to be red** until the effect
+> pipeline is wired, so that a red check is information rather than a broken gate. The specification
+> below is left as written; it is what was built against.
 
 A **consumption** check to sit beside the coverage check, in `verify`, failing loudly:
 
@@ -1774,6 +1795,12 @@ sensitivity does not** — same total favor, different allocation, identical res
 measurement from any level metric and nothing currently collects it.
 
 ### W19's final numbers answer Codex's attribution question — and the answer is "graph topology, and that is real"
+
+> **Correction, 2026-08-12 (W48).** The closing sentence of this subsection — *"the effect pipeline
+> has still never run"* — is true of `main` today and is the specific thing PR #42
+> (`w29/city-and-supply-chain`, open) exists to change; see the dated note on *The root cause*
+> above. Nothing else here is affected: the attribution result is about graph topology and does not
+> depend on the pipeline's state.
 
 W19 committed its decision rule before seeing the data, then measured the **old** content at every
 horizon from 300 to 2400:

@@ -4,6 +4,26 @@
 `w12/vision-audit`. Audit only: nothing under `packages/` was changed, no baseline and no golden
 fixture was regenerated.*
 
+> **Stale about the vision's text, not about the code — noted 2026-08-12 (W48).** This audit is a
+> measurement of `vision.md` **as it read at `6e5ecee`**, and `vision.md` was amended the next day
+> by W25's spec refresh and by the raid-engagement design, both landed in the same PR as this note.
+> Four places therefore audit sentences that no longer exist:
+>
+> - **§11 — the finding was applied.** The Status column now carries task counts rather than
+>   *"not started"*, so the three `contradicted` verdicts below describe a superseded table. The
+>   counts here (`102/107` for `mages-and-species`, and the rest) were correct at `6e5ecee`; two of
+>   `mages-and-species`'s boxes were deliberately unchecked afterwards and it now reads 100/107.
+> - **§13 — partially closed.** W25 struck four of the open questions and added seven others.
+> - **§3 — the row auditing *"Rules changes are a world-time action. Nothing … can be altered once
+>   a raid has begun"* audits a rule that has been repealed.** See `raid-engagement.md`. Its
+>   *evidence* is still accurate; the claim it is evidence about is gone.
+> - **§12 — the row on grid cells beyond the v1 subset** audits a line that has since been struck
+>   as in-scope.
+>
+> **Nothing here about reachability has been superseded.** `REFERENCE_MECHANICS.raidEngagement` is
+> still `false` on `main` and nothing opens a portal, so every `implemented-unreached` verdict below
+> still holds against the tree. Findings are not rewritten; this note is the only addition.
+
 `CLAUDE.md` states the standard this document exists to enforce: *"Work that isn't traceable to a
 section there is scope creep; sections that never ship are unmet promises."* This is the list of
 unmet promises, with evidence for each, arranged so it can be ticked off.
