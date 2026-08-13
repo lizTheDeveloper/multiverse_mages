@@ -4627,3 +4627,54 @@ measured under exactly that constraint.
 
 **Do not add either as a gate until the current re-baselining settles.** Four approved changes already
 invalidate every baseline; adding factors mid-flight would make the resulting diff uninterpretable.
+
+### W91 addendum — the orc question settled as far as five seeds can settle it, and the curve renormalised
+
+**Orc pre-shock roster, seeds 589825–589829, both content sets, everything else held:**
+
+| | by seed | mean | zero |
+|---|---|--:|--:|
+| flat | 3 1 0 1 4 | 1.8 | 1/5 |
+| priced | 0 0 0 2 3 | 1.0 | 3/5 |
+
+Paired difference **−0.8 mages, SE 0.66, t = −1.2 on 4 df** — not distinguishable from zero. The
+32-seed reading of plain `main` (mean 1.22, zero on 11 of 32) sits **between** the two arms, and every
+other species is flat across them.
+
+**Verdict: ambiguous, leaning noise**, in the agent's own framing — *five seeds cannot exclude a real
+effect of under one mage, and what is established is that the single-seed 3 → 0 is not evidence of
+one.* That distinction is the whole difference between a measurement and a story. **The curve was not
+tuned to resurrect orc**, and both assertions stay red with the distribution recorded beside them.
+
+### The curve is kept and renormalised, on the author's recommendation
+
+**Keep the idea; renormalise the levels.** The defect survives the null: *a field whose value is a pure
+function of another field carries no information*, and the ordering it produced was alphabetical.
+`im-weigh-the-attention` leading 42 of 84 runs is **a fact about a hash table** under the flat surface
+and **a fact about a design claim** under the priced one — and only one of those is a thing a person
+can argue with.
+
+But not as authored, because of a number nobody asked for: **`referenceNodesGainedFinalQuarter` falls
+20%**, which is tier-5 (+12.3%) and tier-6 (+41.4%) drift — **sixteen nodes moving late-game pace as a
+by-product of price terms correlating with depth.** The claim was about *which node inside a tier is
+dearer*, and it survives untouched if each tier's grades are recentred on their own mean before the
+octave is applied.
+
+**A global pacing change arriving as a side effect of a content judgement about individual nodes is two
+decisions made by one edit.** The cost of separating them is locality — a node's absolute price will
+depend on how its tier-mates are authored — and that is a worse property for an author and a better one
+for a design, because relative standing within a tier is inherently a property of the set.
+
+---
+
+## A note on process, since three of these arrived tonight
+
+**The scratchpad directory is shared between concurrent agents, and it has now cost work twice.** One
+agent's PR body was overwritten at a shared path by a third agent's file and briefly published to a
+live PR; another lost `/tmp/pr-body.md` mid-edit and recovered by pulling the live body back with
+`gh pr view`. **Use a session-scoped or task-scoped filename**, and if a PR body must be staged, treat
+the live PR as the source of truth rather than the file.
+
+This belongs beside the two hazards already recorded in CLAUDE.md — `git stash` being repo-global
+across worktrees, and the shared checkout frequently not being on `main`. **All three are the same
+class: a resource that looks local and is not.**
