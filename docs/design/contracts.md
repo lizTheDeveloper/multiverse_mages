@@ -432,6 +432,11 @@ serialized into snapshots.
   "effects": [
     { "primitive": "direct-damage", "magnitude": 512, "target": "single", "durationTicks": 0 }
   ],
+  "knowledgeKind": "episteme",      // "episteme" | "metis". Authored, never derived: `metis` marks
+                                    // knowledge that codification destroys, so a cell's deep end is
+                                    // an authoring decision rather than a consequence of tier. The
+                                    // principle and every call in the shipped set are in
+                                    // docs/design/metis-authoring.md
   "tuningStatus": "untuned"         // "untuned" | "tuned". Same meaning as in §2.4: every magnitude
                                     // above is a placeholder awaiting the balance harness
 }
@@ -1077,6 +1082,9 @@ unavailable status is an honest answer.
 | `illegalActionRate` | fraction of agent actions rejected by the mask; a spec-clarity smell |
 | `inboundRaidTempoLoss` | world ticks a universe spends frozen in engagement as a defender, as a fraction of elapsed multiverse time. **Must stay under its threshold** — this is the griefing guard |
 | `raidInitiationCost` | tempo an attacker forgoes per raid, for comparison against what they gain |
+| `speciesGridVersatility` | cells of the seventy a species can staff with a qualified researcher, over the full grid and over the permitted cells separately. **Flag above 80% coverage even when depth is low** — the hegemony guard, and a different question from depth |
+| `lossShockRecovery` | world ticks a species roster takes to regain its pre-shock headcount after a deterministic cull, per species, right-censored. Asserts that long-lived species recover *worse* rather than assuming fertility handles it |
+| `roleAssignmentDemographicCost` | fall in a species' share of the roster under role assignment into lossy roles, against a paired arm that assigned none. Makes action 10 a demographic lever with a price rather than a free choice |
 
 ---
 

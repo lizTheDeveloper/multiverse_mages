@@ -1,0 +1,412 @@
+<!doctype html>
+<!--
+  Multiverse Mages — choosing who.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  Six of the sixteen actions in contracts §4.2 carry an entity handle: grant
+  founding knowledge, bless, assign role, fund university, encourage research,
+  open portal. §4.4 resolves that for an agent — a fixed-length top-k candidate
+  list under a deterministic salience ordering, and the agent picks a slot index
+  — and says nothing at all about a person.
+
+  THE QUESTION: how does a human pick one mage out of thousands, when the god
+  may not command and the only per-mage verb worth spending favor on is the one
+  that changes what she is able to do?
+
+  Three directions on the same task, so they can be operated rather than
+  described:
+
+    A  roster        scan and click. Familiar, honest, dies at scale.
+    B  salience      the §4.4 candidate list itself, shown as-is.
+    C  consequence   name the outcome; the game names the mage.
+
+  Serve with `npm run ui`, then open /ui/targets/.
+
+  KNOWN COST: the cast is generated here from real species traits rather than
+  loaded from a running simulation, and the salience ordering is invented,
+  because §4.4 does not define one. Both are called out on the page — the
+  missing definition is the finding, not an oversight of this prototype.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — choosing who</title>
+
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  .wrap{max-width:84rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
+  h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
+  .lede{color:var(--soft);max-width:66ch;margin:0 0 .45rem}
+  .lede b{color:var(--god-lit);font-weight:500}
+  .lede em{color:var(--ink);font-style:italic}
+  code{font:12.5px var(--mono);color:var(--soft)}
+
+  .verbbar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:1.3rem 0 1.5rem;
+    padding:.7rem .8rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
+  .verbbar .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-right:.3rem}
+  .verb{font:11.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;padding:.45rem .7rem;
+    border-radius:3px;border:1px solid var(--edge);background:transparent;color:var(--soft);cursor:pointer;
+    transition:box-shadow 150ms ease,border-color 150ms ease,color 150ms ease,background 150ms ease}
+  .verb[aria-pressed="true"]{color:var(--god-lit);border-color:var(--god);background:color-mix(in srgb,var(--god) 10%,transparent);
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--god) 26%,transparent),0 0 16px -3px color-mix(in srgb,var(--god) 60%,transparent)}
+  .verb:focus-visible{outline:2px solid var(--god-lit);outline-offset:2px}
+  .verb .aid{color:var(--faint);margin-left:.4rem}
+  .scale{margin-left:auto;font:11px var(--mono);color:var(--faint)}
+  .scale input{vertical-align:middle;accent-color:var(--god)}
+  .scale b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+  .dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem;align-items:start}
+  @media (max-width:74rem){.dirs{grid-template-columns:1fr}}
+  .dir{border:1px solid var(--edge);border-radius:5px;background:var(--panel);display:flex;flex-direction:column;min-height:31rem}
+  .dhead{padding:.75rem .9rem;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:.5rem}
+  .dhead .letter{font:700 13px var(--mono);color:var(--god)}
+  .dhead .name{font:400 1.08rem var(--serif)}
+  .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .dbody{padding:.85rem .9rem;flex:1;display:flex;flex-direction:column;gap:.55rem;overflow:hidden}
+  .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
+  .dfoot .verdict{display:block;margin-top:.4rem;padding-top:.4rem;border-top:1px dotted var(--edge)}
+  .dfoot .ok{color:var(--ok)}.dfoot .no{color:var(--deny)}
+
+  /* ---- A: roster ---- */
+  .roster{overflow-y:auto;max-height:22rem;display:flex;flex-direction:column;gap:2px}
+  .rrow{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center;padding:.4rem .5rem;
+    border:1px solid transparent;border-radius:3px;cursor:pointer;background:var(--sunk)}
+  .rrow:hover{border-color:var(--rule-hi)}
+  .rrow[aria-selected="true"]{border-color:var(--god);background:color-mix(in srgb,var(--god) 9%,var(--sunk));
+    box-shadow:0 0 14px -4px color-mix(in srgb,var(--god) 70%,transparent)}
+  .rrow .nm{font-size:.92rem}
+  .rrow .sub{font:9.5px var(--mono);color:var(--faint);letter-spacing:.04em}
+  .rrow .sc{font:11px var(--mono);color:var(--soft);font-variant-numeric:tabular-nums}
+  .scroller{font:10px var(--mono);color:var(--faint);text-align:center;padding:.35rem 0}
+
+  /* ---- B: salience slots ---- */
+  .slots{display:flex;flex-direction:column;gap:.35rem}
+  .slot{display:grid;grid-template-columns:1.6rem 1fr auto;gap:.55rem;align-items:center;
+    padding:.45rem .55rem;border:1px solid var(--edge);border-radius:3px;background:var(--sunk);cursor:pointer}
+  .slot:hover{border-color:var(--rule-hi)}
+  .slot[aria-selected="true"]{border-color:var(--god);box-shadow:0 0 14px -4px color-mix(in srgb,var(--god) 70%,transparent)}
+  .slot .ix{font:10px var(--mono);color:var(--god);text-align:right}
+  .slot .nm{font-size:.92rem}
+  .slot .sub{font:9.5px var(--mono);color:var(--faint)}
+  .slot .sc{font:11px var(--mono);color:var(--soft);font-variant-numeric:tabular-nums}
+  .slot.empty{opacity:.4;cursor:not-allowed;border-style:dashed}
+  .slot.empty .nm{color:var(--faint);font-style:italic}
+  .cutline{display:flex;align-items:center;gap:.5rem;font:9.5px var(--mono);color:var(--warn);
+    letter-spacing:.1em;text-transform:uppercase;margin-top:.15rem}
+  .cutline::before,.cutline::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--warn) 40%,transparent)}
+  .below{font:10.5px var(--mono);color:var(--faint);line-height:1.5}
+  .saturated{margin-top:.5rem;padding:.5rem .55rem;border:1px solid var(--warn);border-radius:3px;
+    font:10.5px var(--mono);line-height:1.6;color:color-mix(in srgb, var(--warn) 55%, var(--ink))}
+  .saturated b{color:var(--warn)}
+
+  /* ---- C: consequence-first ---- */
+  .outcomes{display:flex;flex-direction:column;gap:.4rem}
+  .outcome{text-align:left;padding:.6rem .65rem;border:1px solid var(--edge);border-radius:3px;background:var(--sunk);
+    cursor:pointer;color:inherit;font:inherit}
+  .outcome:hover{border-color:var(--rule-hi)}
+  .outcome[aria-pressed="true"]{border-color:var(--god);background:color-mix(in srgb,var(--god) 9%,var(--sunk));
+    box-shadow:0 0 14px -4px color-mix(in srgb,var(--god) 70%,transparent)}
+  .outcome .want{font-size:.93rem;display:block}
+  .outcome .why{font:10px var(--mono);color:var(--faint);display:block;margin-top:.2rem;line-height:1.5}
+  .resolved{margin-top:.5rem;padding:.6rem .65rem;border:1px solid var(--god-deep);border-radius:3px;
+    background:color-mix(in srgb,var(--god) 7%,transparent)}
+  .resolved .k{font:9.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--god);display:block}
+  .resolved .who{font:400 1.1rem var(--serif);display:block;margin:.15rem 0 .1rem}
+  .resolved .because{font:10.5px var(--mono);color:var(--soft);line-height:1.55}
+  .resolved .none{font:10.5px var(--mono);color:var(--deny)}
+
+  .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
+  .note h2{font:400 1.4rem var(--serif);margin:0 0 .5rem}
+  .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
+  .note b{color:var(--ink);font-weight:600}
+  .note .hot{color:var(--god-lit)}
+  footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages · parameterized actions · contracts §4.4</div>
+  <h1>Choosing who</h1>
+  <p class="lede">Six of the sixteen actions carry an entity handle. §4.4 resolves that for an agent —
+  a fixed-length <b>top-<i>k</i> candidate list</b> under a deterministic salience ordering, and the agent
+  picks a slot index. It says nothing about a person, and <em>a flat list cannot express "bless, but only
+  these forty of three thousand"</em> to a human either.</p>
+  <p class="lede">Three directions on the same task. Move the population slider — that is where they
+  separate.</p>
+
+  <div class="verbbar">
+    <span class="k">Verb</span>
+    <button class="verb" type="button" data-verb="9"  aria-pressed="true">Bless <span class="aid">09</span></button>
+    <button class="verb" type="button" data-verb="10" aria-pressed="false">Assign role <span class="aid">10</span></button>
+    <button class="verb" type="button" data-verb="8"  aria-pressed="false">Grant founding <span class="aid">08</span></button>
+    <label class="scale">population <input id="pop" type="range" min="12" max="3000" step="1" value="48"> <b id="popv">48</b> mages</label>
+  </div>
+
+  <div class="dirs" id="dirs"></div>
+
+  <div class="note">
+    <h2>What operating these settles</h2>
+    <p><b>The population number decides this, and nobody has chosen it.</b> Vision §13 leaves "how many
+    mages does a mature universe hold" to benchmarking. At 48 the roster is the best of the three and the
+    other two look like ceremony. At 3,000 it is unusable and B and C are the only things left standing.
+    Drag the slider and the ranking inverts — which means <em>this is not a taste question and should not
+    be settled by taste.</em></p>
+    <p><b class="hot">The finding worth carrying to agent-interface.</b> Direction B shows the player
+    exactly the candidate list the observation already carries. That has a property nothing else here has:
+    the human and the policy network are choosing from <em>the same menu</em>. If <i>k</i> is too small for
+    a person it is also too small for the agent, and if a person needs a different <i>k</i> then
+    contracts §4's "one interface serves scripted bots, Monte Carlo and RL" quietly acquires a fourth
+    consumer with different needs. Pinning <i>k</i> is therefore a joint decision, not an RL one.</p>
+    <p><b class="hot">Saturation, found by dragging the slider.</b> At three thousand mages every one of
+    the eight slots is a sole-copy holder: a single criterion takes the whole list, and the other 2,992
+    mages become unreachable by that verb no matter what the player wants. <em>Raising k does not fix
+    this</em> — it admits more of the same kind. A top-k list needs either a blended ordering or
+    stratified slots reserved per criterion, and §4.4 requires neither. This is a live defect in the
+    specified design, not a property of this prototype.</p>
+    <p><b>Salience is undefined.</b> §4.4 says the list is "ranked by a deterministic salience ordering"
+    and never says what it is. The ordering used here is invented — mastery at risk, then age, then
+    tier — and it is doing all the work in both B and C. Two different orderings give a player two
+    different games, so this is a content-shaped decision hiding in a data-structure sentence.</p>
+    <p><b>Direction C needs something the core does not emit.</b> "Preserve the last copy of a node" is
+    answerable from <code>libraryDependence</code>, which exists. "Who is about to stop being able to
+    teach it" is the mastery-trajectory gap already filed against <code>ui/mage/</code>. C is the direction
+    most aligned with being a god rather than a general, and it is the one that cannot be built today.</p>
+  </div>
+
+  <footer>
+    Prototype · not the client. The cast is generated from real <code>species.json</code> traits and real
+    <code>node.json</code> names; the salience ordering is invented because §4.4 does not define one.<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+</div>
+
+<script type="module">
+/* Real traits, from packages/content/data/species.json. */
+const SPECIES = {
+  human:    { life: 960,   mature: 216,  cur: 1152, depth: 4, ret: 1024, scribe: 1024 },
+  elf:      { life: 8400,  mature: 1800, cur: 896,  depth: 6, ret: 1280, scribe: 1024 },
+  dwarf:    { life: 3000,  mature: 600,  cur: 512,  depth: 5, ret: 1536, scribe: 1792 },
+  draconic: { life: 18000, mature: 3600, cur: 256,  depth: 7, ret: 1536, scribe: 640  },
+  gnome:    { life: 4200,  mature: 900,  cur: 1792, depth: 4, ret: 512,  scribe: 896  },
+  orc:      { life: 720,   mature: 168,  cur: 384,  depth: 3, ret: 896,  scribe: 384  },
+};
+const SPECIES_IDS = Object.keys(SPECIES);
+const ROLES = ['researcher', 'warden', 'professor', 'raider'];
+/* Real node names, from packages/content/data/node.json (v1 cells only). */
+const NODES = [
+  ['Keep the Name Close', 'nomen'], ['The Standing Gate', 'limen'],
+  ['Open the Locked Room', 'mentem'], ['The Swallowed Hall', 'terram'],
+  ['Read the Binding', 'limen'], ['Derive the True Name', 'nomen'],
+  ['The Shared Mind', 'mentem'], ['Quarry Without Hands', 'terram'],
+];
+const GIVEN = ['Ismene','Bettany','Corvin','Aldis','Perrin','Thessaly','Orrin','Maud','Sabra','Gethin',
+  'Linnet','Ambrose','Verity','Halloran','Nesta','Crispin','Rowan','Odile','Ferris','Wrenna'];
+const FAMILY = ['Farrowgate','Orrel','Stonecrake','Ashlock','Quillon','Vantwig','Bellwether','Marchmain',
+  'Underhay','Cardew','Sallow','Pyrford','Netherby','Grimsditch','Halloway','Ferrand'];
+
+/* Deterministic, so the same population is the same population every reload. */
+let seed = 20260812;
+const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+
+function makeCast(n) {
+  seed = 20260812;
+  const out = [];
+  for (let i = 0; i < n; i += 1) {
+    const sp = SPECIES_IDS[Math.floor(rnd() * SPECIES_IDS.length)];
+    const s = SPECIES[sp];
+    const age = Math.floor(s.mature + rnd() * (s.life - s.mature));
+    const [node, form] = NODES[Math.floor(rnd() * NODES.length)];
+    const mastery = Math.floor(160 + rnd() * 864);
+    const soleCopy = rnd() < 0.06;
+    const floor = Math.floor((256 * s.ret) / 1024);
+    const decay = Math.max(Math.floor((8 * 1024) / s.ret), 1);
+    const toUnteachable = mastery > 512 ? Math.ceil((mastery - 512) / decay) : 0;
+    out.push({
+      id: i + 1,
+      name: `${GIVEN[Math.floor(rnd() * GIVEN.length)]} ${FAMILY[Math.floor(rnd() * FAMILY.length)]}`,
+      species: sp, age, role: ROLES[Math.floor(rnd() * ROLES.length)],
+      node, form, mastery, soleCopy, floor, toUnteachable,
+      normAge: Math.floor((age * 1024) / s.life),
+    });
+  }
+  return out;
+}
+
+/* INVENTED. §4.4 requires "a deterministic salience ordering" and defines none. */
+function salience(m) {
+  let s = 0;
+  if (m.soleCopy) s += 4000;                                  // holds the only copy
+  if (m.soleCopy && m.toUnteachable > 0) s += 2200 - Math.min(2000, m.toUnteachable * 40);
+  s += Math.floor(m.normAge * 1.6);                            // closer to death
+  s += m.mastery > 512 ? 0 : 400;                              // already below teaching
+  return s;
+}
+
+const K = 8;   // a structural constant per action, pinned like EDICT_BUDGET_MAX
+const state = { verb: '9', pop: 48, sel: { a: null, b: null, c: null }, outcome: 0 };
+
+const OUTCOMES = [
+  { id: 'preserve', want: 'Keep something that exists in one place',
+    why: 'libraryDependence — nodes surviving on exactly one instance',
+    pick: (cast) => cast.filter(m => m.soleCopy).sort((x, y) => salience(y) - salience(x))[0],
+    because: (m) => `holds the only copy of ${m.node}${m.toUnteachable ? `, unteachable in ${m.toUnteachable} months` : ', already below the teaching threshold'}` },
+  { id: 'depth', want: 'Push someone toward the deepest tier they can reach',
+    why: 'species depthCeiling against tier already held',
+    pick: (cast) => cast.filter(m => SPECIES[m.species].depth >= 5).sort((x, y) => SPECIES[y.species].depth - SPECIES[x.species].depth || x.normAge - y.normAge)[0],
+    because: (m) => `${m.species} — ceiling ${SPECIES[m.species].depth}, and young at ${Math.round(m.normAge / 10.24)}% of lifespan` },
+  { id: 'succession', want: 'Stop a lifetime of knowledge dying with its holder',
+    want2: true,
+    why: 'normalized age past the senescent band, holding rare nodes',
+    pick: (cast) => cast.filter(m => m.normAge > 700).sort((x, y) => y.normAge - x.normAge)[0],
+    because: (m) => `${Math.round(m.normAge / 10.24)}% through a ${SPECIES[m.species].life}-month life` },
+  { id: 'scribe', want: 'Get something written down before it is lost',
+    why: 'scribeAffinity against nodes held only in mind',
+    pick: (cast) => cast.slice().sort((x, y) => SPECIES[y.species].scribe - SPECIES[x.species].scribe)[0],
+    because: (m) => `${m.species} scribe affinity ${SPECIES[m.species].scribe} — the best hands available` },
+];
+
+const fmtAge = (m) => `${Math.round(m.age / 12)}y`;
+
+function render() {
+  const cast = makeCast(state.pop);
+  const ranked = cast.slice().sort((a, b) => salience(b) - salience(a));
+  const host = document.getElementById('dirs');
+  host.innerHTML = '';
+
+  /* ---------------------------------------------------------- A: roster */
+  const a = document.createElement('section');
+  a.className = 'dir';
+  const shown = Math.min(cast.length, 60);
+  a.innerHTML = `
+    <div class="dhead"><span class="letter">A</span><span class="name">Roster</span>
+      <span class="tag">scan and click</span></div>
+    <div class="dbody">
+      <div class="roster">${cast.slice(0, shown).map(m => `
+        <div class="rrow" role="option" tabindex="0" data-id="${m.id}" aria-selected="false">
+          <span><span class="nm">${m.name}</span><br>
+            <span class="sub">${m.species} · ${fmtAge(m)} · ${m.role}</span></span>
+          <span class="sc">${m.mastery}</span>
+        </div>`).join('')}</div>
+      ${cast.length > shown ? `<div class="scroller">— ${cast.length - shown} more below —</div>` : ''}
+    </div>
+    <div class="dfoot">Every mage, in entity order. Nothing is hidden and nothing is ranked, so the
+      player forms their own opinion — which is the only direction here that does not put a designer's
+      judgement between them and the world.
+      <span class="verdict"></span></div>`;
+  host.append(a);
+
+  /* ------------------------------------------------------- B: salience */
+  const top = ranked.slice(0, K);
+  const b = document.createElement('section');
+  b.className = 'dir';
+  b.innerHTML = `
+    <div class="dhead"><span class="letter">B</span><span class="name">Salience slots</span>
+      <span class="tag">the §4.4 list, as-is</span></div>
+    <div class="dbody">
+      <div class="slots">${Array.from({ length: K }, (_, i) => {
+        const m = top[i];
+        return m ? `
+          <div class="slot" role="option" tabindex="0" data-id="${m.id}" aria-selected="false">
+            <span class="ix">${i}</span>
+            <span><span class="nm">${m.name}</span><br>
+              <span class="sub">${m.species} · ${fmtAge(m)}${m.soleCopy ? ' · sole copy' : ''}</span></span>
+            <span class="sc">${salience(m)}</span>
+          </div>`
+          : `<div class="slot empty"><span class="ix">${i}</span><span class="nm">empty slot</span><span></span></div>`;
+      }).join('')}</div>
+      <div class="cutline">cut at k = ${K}</div>
+      <div class="below">${Math.max(0, cast.length - K)} mages are below the cut and cannot be
+        addressed by this action at all this tick.</div>
+      ${top.length === K && top.every(m => m.soleCopy) ? `<div class="saturated">
+        <b>saturated:</b> every slot is a sole-copy holder. One criterion has taken the whole list, so
+        no other kind of mage is reachable by this verb at any price — and raising k does not fix it,
+        it just admits more of the same kind. Either the ordering blends, or slots are stratified.
+      </div>` : ''}
+    </div>
+    <div class="dfoot">The player sees exactly what the policy network sees. Cheap, already specified,
+      and constant-cost at any population — but the ordering decides the game and it is invented here.
+      <span class="verdict"></span></div>`;
+  host.append(b);
+
+  /* --------------------------------------------------- C: consequence */
+  const oc = OUTCOMES[state.outcome];
+  const found = oc.pick(cast);
+  const c = document.createElement('section');
+  c.className = 'dir';
+  c.innerHTML = `
+    <div class="dhead"><span class="letter">C</span><span class="name">Consequence first</span>
+      <span class="tag">name the outcome</span></div>
+    <div class="dbody">
+      <div class="outcomes">${OUTCOMES.map((o, i) => `
+        <button class="outcome" type="button" data-oc="${i}" aria-pressed="${i === state.outcome}">
+          <span class="want">${o.want}</span><span class="why">${o.why}</span>
+        </button>`).join('')}</div>
+      <div class="resolved">
+        <span class="k">the game proposes</span>
+        ${found
+          ? `<span class="who">${found.name}</span>
+             <span class="because">${oc.because(found)}</span>`
+          : `<span class="none">no mage in this universe answers that right now — which is itself
+             worth knowing, and no roster would have told you.</span>`}
+      </div>
+    </div>
+    <div class="dfoot">You never pick a mage; you pick a consequence and the world answers. Closest to
+      "you are a god, not a general" — and the only one that can say <em>nobody</em>.
+      <span class="verdict"></span></div>`;
+  host.append(c);
+
+  /* verdicts change with the population, which is the whole point */
+  const n = cast.length;
+  const verdicts = n <= 80
+    ? ['<span class="ok">works — this is the best of the three at this size</span>',
+       '<span class="no">ceremony — the player can already see everyone</span>',
+       '<span class="no">over-engineered at this size, but it still answers "nobody"</span>']
+    : n <= 600
+      ? ['<span class="no">scrolling starts to cost more than it returns</span>',
+         '<span class="ok">holds — constant cost regardless of n</span>',
+         '<span class="ok">holds, and needs no scrolling at all</span>']
+      : ['<span class="no">unusable — ' + n + ' rows, and no reason to prefer any of them</span>',
+         '<span class="ok">unchanged at n = ' + n + '</span>',
+         '<span class="ok">unchanged at n = ' + n + '</span>'];
+  [a, b, c].forEach((el, i) => { el.querySelector('.verdict').innerHTML = verdicts[i]; });
+
+  /* selection */
+  const wire = (root, key) => {
+    root.querySelectorAll('[role="option"]').forEach((row) => {
+      const choose = () => {
+        root.querySelectorAll('[role="option"]').forEach(r => r.setAttribute('aria-selected', 'false'));
+        row.setAttribute('aria-selected', 'true');
+        state.sel[key] = row.dataset.id;
+      };
+      row.addEventListener('click', choose);
+      row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(); } });
+    });
+  };
+  wire(a, 'a'); wire(b, 'b');
+  c.querySelectorAll('.outcome').forEach((btn) => {
+    btn.addEventListener('click', () => { state.outcome = Number(btn.dataset.oc); render(); });
+  });
+}
+
+document.querySelectorAll('.verb').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.verb').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    btn.setAttribute('aria-pressed', 'true');
+    state.verb = btn.dataset.verb;
+    render();
+  });
+});
+const pop = document.getElementById('pop');
+pop.addEventListener('input', () => {
+  state.pop = Number(pop.value);
+  document.getElementById('popv').textContent = state.pop;
+  render();
+});
+
+render();
+</script>
+
+<script type="module">
+  import { floatThemeControl } from '../shared/theme.js';
+  floatThemeControl();
+</script>

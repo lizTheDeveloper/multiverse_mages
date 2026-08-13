@@ -376,7 +376,7 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   out.push(...checkGodConstants(documents.godConstant));
   // `raid-engagement`'s table. Two of its checks are not tuning hygiene but the
   // termination proof — see `raid.ts`.
-  out.push(...checkRaidConstants(documents.raidConstant));
+  out.push(...checkRaidConstants(documents.raidConstant, documents.primitive));
   // `mage-autonomy`'s target-appeal table. Its dominance check is the §7 pillar
   // rather than tuning hygiene — see `autonomy.ts`.
   out.push(...checkAutonomyWeights(documents.autonomyWeight, documents.primitive));

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://multiverse-mages.invalid/schema/form.schema.json",
   "title": "form.json",
-  "description": "The fourteen forms — what magic is done to. `bit` positions are dense, stable, and serialized into snapshots (contracts.md §2.1).",
+  "description": "The fourteen forms — what magic is done to. `bit` positions are dense, stable, and serialized into snapshots (contracts.md §2.1). `yieldWeights` routes a `resource-yield` magnitude on a node in this form's cells to the material kind (`food`, `stone`, `vellum`) sound-design.md §4.2 says this form actually is.",
   "type": "array",
   "minItems": 14,
   "maxItems": 14,
@@ -11,14 +11,27 @@
     "form": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "gloss", "bit"],
+      "required": ["id", "name", "gloss", "bit", "yieldWeights", "tuningStatus"],
       "properties": {
         "id": { "$ref": "#/$defs/contentId" },
         "name": { "type": "string", "minLength": 1, "maxLength": 64 },
         "gloss": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "bit": { "type": "integer", "minimum": 0, "maximum": 13 }
+        "bit": { "type": "integer", "minimum": 0, "maximum": 13 },
+        "yieldWeights": { "$ref": "#/$defs/yieldWeights" },
+        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
       }
     },
+    "yieldWeights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["food", "stone", "vellum"],
+      "properties": {
+        "food": { "$ref": "#/$defs/weightFp" },
+        "stone": { "$ref": "#/$defs/weightFp" },
+        "vellum": { "$ref": "#/$defs/weightFp" }
+      }
+    },
+    "weightFp": { "type": "integer", "minimum": 0, "maximum": 1024 },
     "contentId": {
       "type": "string",
       "minLength": 1,
