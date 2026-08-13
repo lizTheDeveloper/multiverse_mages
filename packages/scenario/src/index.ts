@@ -52,6 +52,9 @@ export {
   worldDeps,
 } from './content-set.js';
 
+export type { AnnihilationSite } from './annihilation.js';
+export { AnnihilationRecorder } from './annihilation.js';
+
 export type { CensusSample } from './census.js';
 export { censusLine, censusOf } from './census.js';
 
