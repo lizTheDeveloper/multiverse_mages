@@ -23,7 +23,8 @@ one standard error of zero** over 32 runs. The point ratios moved (1.0422 → 0.
 gated) and none of that movement survives its own spread.
 
 **Worse, the gate starves its own measurement channel.** Under the tick-sharp gate, **2 of 8 runs
-per strategy accrue exactly zero** and one run carries a third of an arm's total. The quantity a
+accrue exactly zero for every strategy that accrues at all** — `denial-warden`'s figure is 7 of 8 —
+and one run carries a third of an arm's total. The quantity a
 mētis mechanic would accrue on is not merely un-separating; at this gate's sharpness it is too
 sparse to compare gods by at all.
 
@@ -93,8 +94,8 @@ Applied use per run, mean ± standard error over 8 runs each:
 
 Every one of those is a coin flip. The 2.05× gated ratio is the one that looks like a result and it
 is the least trustworthy number in this document: it is a ratio of two means of a count that is
-**zero in 2 of 8 runs for every strategy**, whose largest single run (3,280) is more than three
-times the arm's own mean.
+**zero in 2 of 8 runs for each of the three strategies that accrue at all**, whose largest single
+run (3,280) is more than three times the arm's own mean.
 
 Here are the raw gated per-run values, sorted, because a mean of these is close to meaningless:
 
@@ -214,7 +215,7 @@ about `raid-engagement.md` §11c's proposal rather than about this build.
 
 ## The cost of the gate, stated plainly
 
-Gating `resource-yield` on a tick-sharp practice commitment removes **99.3% to 99.6%** of the
+Gating `resource-yield` on a tick-sharp practice commitment removes **99.2% to 99.6%** of the
 economy's magical contribution:
 
 | strategy | ungated use/tick | gated use/tick | remaining |
