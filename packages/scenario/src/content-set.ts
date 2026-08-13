@@ -40,6 +40,8 @@ import type { ContentId, ContentRegistry, PrimitiveRecord, SpeciesRecord } from 
 import { loadContent, shippedContentSource } from '@mm/content';
 import type { RngStream, SimState } from '@mm/sim-core';
 import { nextBounded } from '@mm/sim-core';
+import type { Ruleset } from '@mm/state';
+import { permits } from '@mm/state';
 import type { CatalogueNode, ContentCatalogue } from '@mm/agent-api';
 import { buildCatalogue } from '@mm/agent-api';
 import type {
@@ -339,20 +341,29 @@ export function explicitOpeningAxes(
   );
 }
 
-/** Whether a cell record lies inside a pair of axis masks. */
-function cellIsOpen(
-  axes: RulesetAxes,
-  techniqueBits: Map<string, number>,
-  formBits: Map<string, number>,
-  cell: { readonly technique: string; readonly form: string },
-): boolean {
-  const techniqueBit = techniqueBits.get(cell.technique);
-  const formBit = formBits.get(cell.form);
-  if (techniqueBit === undefined || formBit === undefined) return false;
-  return (
-    (axes.permittedTechniques & (1 << techniqueBit)) !== 0 &&
-    (axes.permittedForms & (1 << formBit)) !== 0
-  );
+/**
+ * The opening square, in the shape `permits()` takes.
+ *
+ * **Membership in the square is asked of the one arbitration function and
+ * nowhere else.** This file used to answer it itself — two lines of
+ * `axes.permittedTechniques & (1 << techniqueBit)` — and
+ * `state/test/unit/arbitration-conformance.test.ts` caught it, correctly: a
+ * second implementation of legality is a second implementation, however small,
+ * and the part every reimplementation drops is edict precedence. A square with
+ * an interdiction inside it would then deal a founding grant in a cell the
+ * universe forbids.
+ *
+ * No edicts, because an opening square is the axis halves of a ruleset and a
+ * universe has issued nothing at tick zero. Passing the empty list rather than
+ * skipping `permits()` is what keeps the day edicts *are* part of a founding
+ * position a one-line change here instead of a second rule.
+ */
+function openingRuleset(axes: RulesetAxes): Ruleset {
+  return {
+    permittedTechniques: axes.permittedTechniques,
+    permittedForms: axes.permittedForms,
+    edicts: [],
+  };
 }
 
 /**
@@ -383,11 +394,14 @@ export function foundingCandidates(
   registry: ContentRegistry,
   axes: RulesetAxes = v1RulesetAxes(registry),
 ): readonly ContentId[] {
-  const techniqueBits = new Map(registry.techniques.map((e) => [e.record.id, e.record.bit]));
-  const formBits = new Map(registry.forms.map((e) => [e.record.id, e.record.bit]));
+  const ruleset = openingRuleset(axes);
+  // A cell's interned `contentId` *is* its grid cell id — `@mm/content` interns
+  // it as `techniqueBit × 14 + formBit + 1`, which is what `permits()` expects,
+  // and `state/test/unit/grid-agrees-with-content.test.ts` pins the two together
+  // for all seventy.
   const openCells = new Set(
     registry.cells
-      .filter((entry) => cellIsOpen(axes, techniqueBits, formBits, entry.record))
+      .filter((entry) => permits(ruleset, entry.contentId))
       .map((entry) => entry.record.id),
   );
   return Object.freeze(
