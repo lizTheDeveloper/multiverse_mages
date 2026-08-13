@@ -12,6 +12,13 @@ strategies × two starting positions × six replicates, 2,400 world ticks, walki
 coordinate grid (`rootSeed` 20260811, `sweepId` `w15-dimensionality-v1`, cells 0 and 3, replicates
 0–5) so the only difference between the arms is `packages/content/data/node.json`.
 
+**Seven strategies rather than W15's eight: `archivist` is excluded from both arms.** Its runs are
+roughly fifteen times slower per world tick than any other strategy's and twelve of them would have
+cost more wall clock than the other seven arms combined. The exclusion is symmetric — neither arm has
+it — so it is a statement about the measurement's scope and not a result. It does mean the
+knowledge-hoarding strategy is absent from every containment figure below, which is worth knowing
+before reading them.
+
 Everything below is measured. Where a number is a hypothesis rather than a reading, it says so.
 
 ## The headline, in one paragraph
