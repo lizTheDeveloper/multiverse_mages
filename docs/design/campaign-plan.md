@@ -4324,3 +4324,55 @@ turn out not to exist in the way that matters: **the global scribe pool is still
 population is the honest placeholder"*), **and the specialisation mechanism itself — `universityProfile`
 and `dominantCell` — is built and never called.** Scoping teaching to co-affiliates changes little if
 every university draws from one staff pool and none of them has a profile in the loop.
+
+### W87, refined — the boundary is a prerequisite, not a substitute
+
+*A cheap follow-up changed the conclusion, and it is the difference between "this mechanic does
+nothing" and "this mechanic is waiting for something."*
+
+Opening all 70 cells (300 authored nodes) and measuring Jaccard overlap between two academies' held
+node sets — the only figure comparable across arms, since the boundary lowers both totals:
+
+| world year | 51 nodes, off | 51 nodes, **on** | 300 nodes, off | 300 nodes, **on** |
+|---:|---:|---:|---:|---:|
+| 50 | 0.796 | 0.714 | 0.641 | 0.590 |
+| 100 | 0.922 | 0.882 | 0.681 | 0.639 |
+| 150 | 0.961 | 0.961 | 0.805 | **0.596** |
+| 200 | 0.961 | 0.961 | 0.927 | **0.684** |
+
+**Without the boundary, two academies in a large content set re-homogenise as the run goes on**
+(0.641 → 0.927). **With it, they do not** (0.590 → 0.684).
+
+Under exhaustion the same mechanic buys only a mid-game wobble that is then erased — both 51-node arms
+pin at **0.961 from year 150, identical to three decimals**.
+
+**So the exhaustion diagnosis is now a result obtained by manipulating the content set, not an inference
+from the absence of a channel.** And the reading of W87 changes with it: **the teaching boundary is a
+prerequisite whose value is unlocked by the content work, not a substitute for it.** `w80`
+(`researchCost` variation) and `w72` (the opening square) build the world in which it pays.
+
+One seed, and 249 of the 300 nodes have never been exercised. **A direction, not a magnitude.**
+
+### An incident: `git stash` is repo-global and unsafe here
+
+An agent's `git stash push` failed silently, and the following `git stash pop` **popped a different
+agent's stash** — `WIP on demo/shell` — leaving conflicted `ui/` files in a worktree that had nothing
+to do with the UI. **This is precisely the hazard CLAUDE.md's worktree section warns about**, and it
+happened anyway, because the warning names the danger without naming the safe alternative.
+
+It was caught by a smell test rather than by tooling: a control run came back **byte-identical to the
+treated run**, which was implausible. No work was lost — a conflicted `pop` does not drop, and both
+stashes remained listed — and the contaminated arm was discarded and re-run rather than reported.
+
+**The safe equivalent, now recorded in CLAUDE.md: swap files with `git show <ref>:<path> > <path>`,
+which touches no index and is not repo-global.** A `git stash` with an explicit pathspec is *still*
+repo-global and still unsafe in a checkout other agents share.
+
+Two process notes worth keeping:
+
+- **The agent found the contamination by disbelieving a result that was too clean.** Byte-identical
+  control and treatment is a signal, not a convenience, and treating it as one is what kept the number
+  honest.
+- **It also re-measured the unaffected numbers rather than asserting they were unaffected** — 1,210
+  lessons and overlap 0.961 reproduce exactly on the clean tree. "That part was probably fine" is not
+  a measurement.
