@@ -48,11 +48,17 @@ recorded here rather than left to be noticed:
 | instrument | state | what was used instead |
 |---|---|---|
 | `w59/gate-power` — the 8.7-second agency gate | **not merged** (4 commits ahead of `main`) | the four starting positions of `balance-gate-ascension.sweep.json` at 2400 ticks, driven through `tools/w58/harness.mjs`, which exercises the god verbs because each arm *is* a strategy |
-| `w62/metrics-collector` | **merged** | — |
+| `w62/metrics-collector` — wiring `collectRunMetrics` | **not merged** (8 commits ahead) | nothing. `collectRunMetrics` is exported by `index.ts` and called by no production code on this tree, so the per-run metrics it would drive did not run here either |
 | `w32/depth-language` | **not merged** (5 commits ahead) | its claim shape, unvalidated |
 
-The measuring instrument is `tools/w58/harness.mjs` with `tools/w63/qualification.mjs` reading its
-output. It is the production episode path — `buildReferenceState`, `createSession`,
+**All three named instruments are unmerged**, which is worth stating plainly rather than leaving to
+be inferred from a table: this change is measured with what is committed on `main` plus the two
+tools added here. The consequence for `w62` is the concrete one — the quantities below are read
+straight out of `GodStateRecord` and the world components, not from the metrics registry, because
+the registry's per-run collector has no caller to run it.
+
+The measuring instrument is `tools/w58/harness.mjs` with `tools/w63/qualification.mjs` and
+`tools/w63/paired.mjs` reading its output. It is the production episode path — `buildReferenceState`, `createSession`,
 `adaptAgentSession`, `runEpisode`, `BOT_POOL_REGISTRY`, `policiesForRun` — with one read-only system
 appended, and every result file records its own inertness check: a probed run and an unprobed run at
 the same coordinates must produce the same snapshot hash, status, terminal reason and tick count. A
