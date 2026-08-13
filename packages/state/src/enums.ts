@@ -147,21 +147,36 @@ export type AxisKindValue = (typeof AXIS_KIND)[keyof typeof AXIS_KIND];
  * (`contracts.md` §1.2, "Effort progress").
  *
  * `0` is left unassigned, per §0's null convention: a zeroed row is a malformed
- * record rather than a research project nobody started. The three members are
- * the three operations `rules-magic` takes accumulated progress for, and there
- * is no fourth because there is no fourth such operation — a goal that needs no
- * accrual (`idle`, `affiliate`, `ward-duty`, `raid-readiness`) has no row.
+ * record rather than a research project nobody started. The members are the
+ * operations `rules-magic` takes accumulated progress for — a goal that needs
+ * no accrual (`idle`, `affiliate`, `ward-duty`, `raid-readiness`) has no row.
  *
  * **A discriminator is required and not decorative.** A mage who holds a node
  * can be part-way through teaching it *and* part-way through writing it down at
  * the same moment, and those two projects have different costs — `teachCost`
  * against `scribeCost`. Keying an effort on `(subject, nodeId)` alone would let
  * a month at the writing desk finish a student's education.
+ *
+ * ## `practice` was the fourth operation this comment said did not exist
+ *
+ * It said *"there is no fourth because there is no fourth such operation"*, and
+ * that was true of the code and false of the design. `decay.ts` had already
+ * written down what was missing, about itself: *"Nothing in this subsystem
+ * restores mastery; practice does, and practice is an operation somebody has to
+ * perform."* Nobody performed it, so mastery fell monotonically for every
+ * instance in the game and 93.4% of held instances sat below the teach
+ * threshold (`ages-of-magic.md` §2c). `practice` is that operation, and it is a
+ * project with a cost like the other three rather than a free per-tick top-up,
+ * because the whole point is that it **competes for the month**.
+ *
+ * Appended, never renumbered: the value is stored in a `uint8` column of a
+ * versioned component and every committed snapshot carries the old numbering.
  */
 export const EFFORT_KIND = {
   research: 1,
   teaching: 2,
   scribing: 3,
+  practice: 4,
 } as const;
 
 export type EffortKindValue = (typeof EFFORT_KIND)[keyof typeof EFFORT_KIND];

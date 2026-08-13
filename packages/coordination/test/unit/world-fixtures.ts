@@ -157,6 +157,7 @@ export function worldDeps(traditionId: number): WorldStepDeps {
       researchRate: primitiveNamed('research-rate'),
       teachRate: primitiveNamed('teach-rate'),
       scribeRate: primitiveNamed('scribe-rate'),
+      practiceRate: primitiveNamed('practice-rate'),
       fertility: primitiveNamed('fertility'),
     },
     knowledgeFor: (state) => KnowledgeSubsystem.fromState(state, catalog.nodeCount),

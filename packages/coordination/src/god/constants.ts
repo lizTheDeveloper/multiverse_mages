@@ -86,6 +86,7 @@ export interface GodConstants {
   // Interventions.
   readonly blessResearchRate: Fp;
   readonly blessTeachRate: Fp;
+  readonly blessPracticeRate: Fp;
   readonly blessLifespanMonths: number;
   readonly blessDurationTicks: number;
   readonly encourageMagnitude: Fp;
@@ -183,6 +184,7 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
 
     blessResearchRate: value('bless-research-rate'),
     blessTeachRate: value('bless-teach-rate'),
+    blessPracticeRate: value('bless-practice-rate'),
     blessLifespanMonths: value('bless-lifespan-months'),
     blessDurationTicks: value('bless-duration-ticks'),
     encourageMagnitude: value('encourage-magnitude'),

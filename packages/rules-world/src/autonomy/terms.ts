@@ -134,6 +134,13 @@ export const GOAL_BASE_APPEAL: Readonly<Record<GoalId, Fixed>> = {
   [GOAL.affiliate]: 256,
   [GOAL.wardDuty]: 320,
   [GOAL.raidReadiness]: 256,
+  // Below both research goals and both teaching goals on purpose. Maintenance
+  // is what a mage does when she has fallen behind, not what she wants to be
+  // doing — `ages-of-magic.md` §2c's scholar is a scholar because of the
+  // frontier, and practice is the price of staying one. The pressure that makes
+  // it win comes from `opportunityTerm`'s stale-holdings count, which is a fact
+  // about her situation rather than a preference.
+  [GOAL.practice]: 320,
 };
 
 /**
@@ -162,6 +169,7 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.affiliate]: 128,
     [GOAL.wardDuty]: -64,
     [GOAL.raidReadiness]: 64,
+    [GOAL.practice]: -64,
   },
   [AGE_BAND.prime]: {
     [GOAL.idle]: 0,
@@ -173,6 +181,7 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.affiliate]: 0,
     [GOAL.wardDuty]: 0,
     [GOAL.raidReadiness]: 0,
+    [GOAL.practice]: 0,
   },
   [AGE_BAND.senescent]: {
     [GOAL.idle]: 0,
@@ -184,6 +193,7 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.affiliate]: -64,
     [GOAL.wardDuty]: 64,
     [GOAL.raidReadiness]: -256,
+    [GOAL.practice]: 192,
   },
 };
 
@@ -202,6 +212,25 @@ export const OPPORTUNITY_CANDIDATE_CAP = 4;
 
 /** Opportunity a change of affiliation offers when one is worth making. **Untuned.** */
 export const AFFILIATION_OPPORTUNITY: Fixed = 256;
+
+/**
+ * Opportunity each node held below the teaching threshold adds to `practice`.
+ * **Untuned.**
+ *
+ * Larger than {@link OPPORTUNITY_PER_CANDIDATE}, because a node she has lost
+ * standing in is a stronger reason to practise than a node she merely could.
+ */
+export const OPPORTUNITY_PER_STALE_HOLDING: Fixed = 96;
+
+/**
+ * Stale holdings past which more of them add nothing.
+ *
+ * Concave by truncation, exactly as {@link OPPORTUNITY_CANDIDATE_CAP} is, and
+ * chosen so that the two together cannot exceed `TERM_BOUND.opportunity` — a
+ * term that saturates its own clamp on ordinary inputs has stopped being a
+ * signal, and `boundTerm` would hide that rather than report it.
+ */
+export const STALE_HOLDING_CAP = 3;
 
 function candidateOpportunity(count: number): Fixed {
   return Math.min(count, OPPORTUNITY_CANDIDATE_CAP) * OPPORTUNITY_PER_CANDIDATE;
@@ -232,6 +261,15 @@ export function speciesTerm(goal: GoalId, outlook: MageOutlook): Fixed {
       return boundTerm('species', shareOfDeviation(species.learnRate, 4));
     case GOAL.scribe:
       return boundTerm('species', shareOfDeviation(species.scribeAffinity, 2));
+    case GOAL.practice:
+      // Retention, inverted. A species that forgets slowly has less maintenance
+      // to do and finds it correspondingly less pressing; a species that forgets
+      // fast lives closer to the threshold. `contracts.md` §2.4's retention is
+      // the trait decay divides by, so this is that same trait read from the
+      // mage's side of the ledger — and it is the second rule anywhere that
+      // gives retention a behavioural consequence rather than only an
+      // arithmetic one.
+      return boundTerm('species', -shareOfDeviation(species.retention, 2));
     default:
       return 0;
   }
@@ -268,6 +306,15 @@ export function personalityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
       return boundTerm('personality', shareOfDeviation(caution, 2));
     case GOAL.raidReadiness:
       return boundTerm('personality', shareOfDeviation(ambition, 2));
+    case GOAL.practice:
+      // Caution keeps what it has; ambition wants the next thing. Both axes,
+      // opposed, because practice is the one goal on the table that is purely
+      // defensive — it produces no node, no student and no book, and an
+      // ambitious mage has to be talked into it by her own decay.
+      return boundTerm(
+        'personality',
+        shareOfDeviation(caution, 2) - shareOfDeviation(ambition, 4),
+      );
     default:
       return 0;
   }
@@ -306,6 +353,20 @@ export function opportunityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
       return boundTerm('opportunity', outlook.wardPressure);
     case GOAL.raidReadiness:
       return boundTerm('opportunity', outlook.raidPressure);
+    case GOAL.practice:
+      // Two counts, and the second is the mechanic. The first is the ordinary
+      // candidate concavity every other goal gets. The second is how many nodes
+      // she holds *below the teaching threshold* — a scholar who has lost the
+      // standing to supervise anything is under real pressure to get it back,
+      // and `ages-of-magic.md` §2c is explicit that research at ordinary price
+      // was the only route there before this goal existed.
+      //
+      // Untruncated, unlike the candidate list: see `MageOutlook.staleHoldings`.
+      return boundTerm(
+        'opportunity',
+        candidateOpportunity(outlook.practiceTargets.length) +
+          Math.min(outlook.staleHoldings, STALE_HOLDING_CAP) * OPPORTUNITY_PER_STALE_HOLDING,
+      );
     default:
       return 0;
   }

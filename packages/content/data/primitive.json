@@ -70,6 +70,13 @@
     "cap": { "kind": "fp", "value": 4096 }
   },
   {
+    "id": "practice-rate",
+    "unit": "multiplier-on-practice-progress",
+    "scale": "world",
+    "stacking": "additive-into-multiplier",
+    "cap": { "kind": "fp", "value": 4096 }
+  },
+  {
     "id": "lifespan",
     "unit": "additive-months",
     "scale": "world",

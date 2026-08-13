@@ -33,6 +33,8 @@ __pycache__/
 .w17/
 # W46's affinity-ablation arms. Same reason.
 .w46/
+# W53's practice arms — the before/after of the applied-use probe. Same reason.
+.w53/
 
 # The generated lattice report, regenerated with scripts/content-graph.mjs.
 # Named exactly rather than globbed: `ui/*.html` also matched ui/index.html, and

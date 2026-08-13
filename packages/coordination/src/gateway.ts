@@ -146,8 +146,11 @@ import type {
 } from '@mm/rules-magic';
 import {
   DEFAULT_TEACH_THRESHOLD,
+  MASTERY_MAX,
   disownGrimoire,
   isRediscovery,
+  practice,
+  practiceRequirement,
   research,
   researchRequirement,
   scribe,
@@ -819,6 +822,125 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     ledger.clear(key);
     this.#completed.push({
       kind: EFFORT_KIND.scribing,
+      subject: mage,
+      counterparty: 0,
+      nodeId,
+    });
+  }
+
+  /**
+   * This mage's best mastery of a node she holds, or `0`.
+   *
+   * The same reading {@link canTeach} takes — the best copy, not the stalest —
+   * so that "how stale is she in this subject" has one answer across the outlook
+   * builder, the teaching mask and the staleness count.
+   */
+  masteryOf(mage: MageHandle, nodeId: ContentId): Fp {
+    return this.#holdings(mage).get(nodeId) ?? 0;
+  }
+
+  /**
+   * A node this mage holds and could keep sharp, or `undefined`.
+   *
+   * The three conditions are `practice`'s own refusals — permitted cell, held
+   * instance, below full mastery — asked here so that the utility-AI never
+   * commits a month to a project that can never complete. `remainingCost` is the
+   * months still owed **after** what she has already banked, because the outlook
+   * quotes it to `target-appeal.ts`' effort term and a mage two months from
+   * finishing should read as cheaper than one who has not started.
+   */
+  practisableBy(mage: MageHandle, nodeId: ContentId): KnowledgeTarget | undefined {
+    const node = this.#deps.catalog.node(nodeId);
+    if (node === undefined) return undefined;
+    if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return undefined;
+    const mastery = this.#holdings(mage).get(nodeId);
+    if (mastery === undefined || mastery >= MASTERY_MAX) return undefined;
+
+    const required = practiceRequirement(node);
+    // The banked months, when there is a ledger to ask. A query-only gateway —
+    // the observation path — has none, and quoting the full price there is
+    // right: it is the price of starting, which is what a reader of an
+    // observation is being told.
+    const banked =
+      this.#deps.effort?.progressOf({
+        subject: mage,
+        kind: EFFORT_KIND.practice,
+        nodeId,
+        counterparty: 0,
+      }) ?? 0;
+
+    const facets = this.#deps.facets(nodeId);
+    return {
+      nodeId,
+      tier: node.tier,
+      remainingCost: Math.max(required - banked, 0),
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
+    };
+  }
+
+  /**
+   * How many nodes this mage holds at a mastery below the teaching threshold.
+   *
+   * The count `ages-of-magic.md` §2c's 93.4% is the population share of, asked
+   * per mage. Her *best* copy of each node is the one compared, because that is
+   * the copy `canTeach` reads: a scholar with one stale duplicate and one fresh
+   * copy has not lost her standing in that subject.
+   */
+  staleHoldings(mage: MageHandle): number {
+    let stale = 0;
+    for (const mastery of this.#holdings(mage).values()) {
+      if (mastery < DEFAULT_TEACH_THRESHOLD) stale += 1;
+    }
+    return stale;
+  }
+
+  /**
+   * Spends mage-months keeping a node sharp, and restores a mastery quantum on
+   * the tick the requirement is met.
+   *
+   * The arithmetic is entirely `rules-magic`'s `practice`; what this method owns
+   * is where the running total sits between two calls, which is the same
+   * division of labour {@link contributeResearch} describes.
+   *
+   * **No RNG.** `practice` draws nothing — see its module note — so unlike the
+   * other three accruals this one does not reach for `#rng`, and a gateway built
+   * without one can still run it. That is the property that keeps every
+   * committed balance baseline's stream sequences untouched by this change.
+   */
+  contributePractice(
+    mage: MageHandle,
+    nodeId: ContentId,
+    mageMonths: Fixed,
+    practiceRate: Fixed = NEUTRAL_RATE,
+  ): void {
+    const ledger = this.#ledger('practice');
+    const key = effortKey(EFFORT_KIND.practice, mage, nodeId, 0);
+    const outcome = practice({
+      knowledge: this.#deps.knowledge,
+      catalog: this.#deps.catalog,
+      cells: this.#deps.cells,
+      ruleset: this.#deps.ruleset,
+      subject: mage,
+      nodeId,
+      worldTick: this.#deps.state.clock.worldTick,
+      progress: ledger.progressOf(key),
+      effort: mageMonths,
+      practiceRate,
+    });
+
+    if (outcome.refusal !== undefined) return;
+    if (!outcome.completed) {
+      ledger.accrue(key, outcome.progress - ledger.progressOf(key));
+      return;
+    }
+    // Cleared rather than carried: a completed quantum is a finished project,
+    // and leaving the surplus behind would let a mage bank months against a node
+    // she is about to abandon and cash them all at once on returning to it.
+    ledger.clear(key);
+    this.#completed.push({
+      kind: EFFORT_KIND.practice,
       subject: mage,
       counterparty: 0,
       nodeId,

@@ -118,6 +118,7 @@ export function buildOutlook(
     teachableToMe: boundCandidates(teachableToMe(mage, deps), species),
     teachableByMe: boundCandidates(teachableByMe(mage, deps), species),
     scribableTargets: boundCandidates(scribableBy(mage, deps), species),
+    practiceTargets: boundCandidates(practisableBy(mage, deps), species),
 
     materials: deps.materials,
     scribeThroughput: deps.scribeThroughputOf(row.universityId),
@@ -128,7 +129,40 @@ export function buildOutlook(
     // `raid-engagement` supplies a number instead of amending the goal set.
     wardPressure: 0,
     raidPressure: 0,
+
+    staleHoldings: deps.gateway.staleHoldings(mage),
   };
+}
+
+/**
+ * Nodes this mage holds that are worth keeping sharp, stalest first.
+ *
+ * ## The sort is the mechanic, not a tidy-up
+ *
+ * `boundCandidates` truncates at `MAX_CANDIDATE_TARGETS`, and what a truncation
+ * drops is a design decision whether or not anybody makes it. Sorted by
+ * remaining cost ascending — which for practice is *"how close she is to
+ * restoring this one"* — the list keeps the nodes she has already spent months
+ * on and drops the ones she has not started. That is the wrong end for a mage
+ * who has fallen out of teaching standing in a subject she has not touched in
+ * twenty years, which is the case `ages-of-magic.md` §2c is entirely about.
+ *
+ * So this sorts on **held mastery ascending** before the bound applies: the
+ * stalest node survives truncation, and `target-appeal.ts`' effort term then
+ * chooses among the survivors. Ties fall to the lower node id, which is a total
+ * order over content ids rather than over whatever order `heldNodes` produced —
+ * and `heldNodes` already sorts, so this is a stable refinement of a declared
+ * order and not a rescue of an undeclared one.
+ */
+function practisableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
+  const found: { target: KnowledgeTarget; mastery: Fixed }[] = [];
+  for (const nodeId of deps.gateway.heldNodes(mage)) {
+    const target = deps.gateway.practisableBy(mage, nodeId);
+    if (target === undefined) continue;
+    found.push({ target, mastery: deps.gateway.masteryOf(mage, nodeId) });
+  }
+  found.sort((a, b) => a.mastery - b.mastery || a.target.nodeId - b.target.nodeId);
+  return found.map((entry) => entry.target);
 }
 
 /**

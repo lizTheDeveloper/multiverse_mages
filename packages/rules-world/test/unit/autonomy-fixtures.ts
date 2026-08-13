@@ -144,6 +144,8 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     preferredUniversity: 0,
     wardPressure: 0,
     raidPressure: 0,
+    practiceTargets: [],
+    staleHoldings: 0,
   };
   return { ...base, ...overrides };
 }
