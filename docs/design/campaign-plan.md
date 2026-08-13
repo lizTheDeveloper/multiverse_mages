@@ -3718,3 +3718,158 @@ plays god verbs moved **at most 0.38 SE against a tolerance of 3** — meaning *
 regeneration would have passed the gates untouched.** The gates are provenance here, not evidence; the
 evidence is a bespoke paired instrument. That is the correct division of labour and should be the
 default until the gates can see what they are gating.
+
+---
+
+## W82 — the opening square works, buys a content dimension not a strategic one, and costs 84 favor
+
+*2026-08-13, PR #72. 480 runs, five arms, common random numbers.*
+
+| arm | cross | within | cross − within | distinct nodes reached |
+|---|--:|--:|--:|--:|
+| **`v1-3x4`** (control) | 0.928 | **0.980** | **−0.052** | **51 of 300** |
+| `seeded-1x1` | 0.989 | 0.176 | +0.813 | 28 |
+| `seeded-2x2` | 0.956 | 0.174 | +0.782 | 120 |
+| `seeded-3x3` | 0.941 | 0.250 | +0.691 | 194 |
+| `seeded-3x4` | 0.944 | 0.277 | +0.667 | **236 of 300** |
+
+Sign stable at every horizon from 240 to 1440.
+
+**Sharpest number: same size, same seeds, same strategies — the authored square reaches 51 of 300
+nodes; a seeded 3×4 reaches 236.** Six of eight strategies today hold the *literally identical* node
+set in all twelve universes (within-strategy containment **1.000**); under a seeded square, 4–19%
+overlap.
+
+### The honest headline, narrower than I would have written
+
+**This is a second dimension in the *content* space, keyed by whoever chooses the square. Cross-strategy
+containment stays 0.93–0.99 in every arm — at a fixed square, strategies are still one queue.** Nobody
+should sell it as a second *strategic* dimension; that needs a strategy×square interaction measurement
+this probe cannot see. The agent wrote that qualification itself, ahead of its favourable numbers,
+which is why the favourable numbers are worth having.
+
+### Two rulings
+
+**3×3, not 2×2.** `2×2` buys nothing over `1×1` (within 0.174 vs 0.176) and `1×1` is unplayable. `3×3`
+reaches 194 nodes against `2×2`'s 120 while holding within-containment at 0.250. The owner offered 2×2
+as a guess and opened it to measurement; **the measurement says 3×3 and the measurement wins.** That is
+what the sweep-don't-guess rule was written for.
+
+**The square must be priced, or it is not a constraint.** `permissive-breadth` is unmoved in every arm
+because **going from 1×1 to the whole grid costs 84 favor, once.** At that price the square is a
+starting position, not a limit — the same disease as W72's free universities and W83's unlimited
+grants, in a third currency. `permit-technique` and `permit-form` are both `untuned`; pricing them is
+the companion to the grant budget and should land with it.
+
+### Three findings from the 249 unexercised nodes, any one of which justifies the branch
+
+1. **Raiding hangs off two nodes in one cell.** Both `portal` nodes sit in `rego-limen` behind an
+   `intellego-limen` prerequisite. **0 of 70 possible 1×1 openings and 13 of 910 2×2 openings can ever
+   raid.** PvP is the vision's core and it depends on one cell pair. This alone makes 3×3 the floor.
+2. **`fertility` and `lifespan` have zero v1 nodes** — all live in Creo/Corpus/Animal/Fatum cells, every
+   one disabled. **This completely explains the campaign's one surviving null.** Knowledge does not
+   convert into population because *no node in the twelve enabled cells touches population at all.* Not
+   a balance problem and not a mechanism problem — a content-placement fact, invisible for the whole
+   campaign because nobody asked which cells the relevant primitives lived in.
+3. **The fixed-point trap is latent in `lifespan`.** Magnitudes authored 18–480, declared
+   `additive-months`, which as `Fp` are **0.017–0.47 months**. Inert today because nothing consumes
+   them; it will read as a balance bug the day the consumer is wired. **Third appearance of the 1024×
+   error this campaign** — twice shipped, once caught. That rate justifies a lint rule, not more care.
+
+Also **36 cross-cell prerequisite edges, 24 into `intellego-*`.** 80% of 2×2 and 92% of 3×3 squares
+contain unreachable nodes, and the loader's `v1-unreachable-prerequisite` diagnostic has no general
+version. Any square-based opening needs one.
+
+### The v1 twelve were chosen with care
+
+The shipped rectangle is one of only **126 of 10,010** possible 3×4 squares that are both
+prerequisite-closed *and* raid-capable — but ranks **175th by reachable primitives**.
+`{intellego, muto, rego} × {aquam, fatum, limen, nomen}` is closed, raid-capable, and reaches all 16.
+Defensible and improvable, which is a better position than either extreme.
+
+**A structural cost to know before the next subsystem lands:** all three gates refused on
+`provenance.rngRegistryHash` alone, because `gate.ts` hashes the whole `RNG_STREAM` table and this
+appends stream 12. **Twenty-nine metrics across three gates all pass at delta exactly `0.00000`**, and
+16 paired runs agree on snapshot hash, terminal reason and tick count. Recorded in `contracts.md` §6:
+**any future RNG subsystem addition forces a re-baseline event, however provably inert.**
+
+---
+
+## W83 — the grant budget is inert, and the reason is better than the mechanic
+
+*2026-08-13, PR #74.*
+
+Built, correct, swept rather than guessed, and **measurably does nothing**:
+
+| bot | budget 0 | unbounded |
+|---|---|---|
+| `permit-then-idle` | 213.3 nodes | 213.3 — identical at 4/4 coordinates |
+| `permissive-breadth` | 205.5 | 205.5 — identical at 4/4 |
+
+**The verb is not unreachable. It is unchosen.**
+
+- `archivist` — blocked by **affordability** on 4307 of 4804 ticks, and by an empty candidate list on
+  **zero**. That refutes the agent's own starting assumption that the grantable set empties.
+- `denial-warden` — empty candidate list, 3508 ticks.
+- `narrow-depth` — sees action 8 **legal on 76% of ticks and asks zero times**, because
+  `encourageResearch` sits ahead of it in the preference list.
+
+**That last is W73's disease again**, where `fundUniversity` sat behind an always-legal
+`permitTechnique`. Two of eight strategies now found never to exercise a verb they nominally use,
+because preference-list order silently shadows it. **This is a class of defect, not two incidents.**
+The pool needs a systematic check: per strategy, per verb in `signatureActions`, ticks-legal against
+times-submitted. Any verb legal often and submitted never is shadowed.
+
+**Founding knowledge is worth about 1% of outcome.** Remove all of it — `foundingNodes: 0`, budget 0 —
+and `permit-then-idle` goes 194.5 → 193.5 nodes. **Rationing a 1% channel cannot make seeding a felt
+commitment**, whatever the budget.
+
+**A pre-existing mask/rules mismatch, correctly left unfixed:** `uniform-random-legal` submitted action
+8 **234 times and landed 1**. `foundingKnowledgeCandidates` excludes a node only when *this mage* holds
+it; `grantPlan` refuses any node with an instance *anywhere*. The one-line fix changes that bot's
+action sequence and would move all three gates, so it needs its own PR and baseline argument.
+
+### Corrections to my own briefs
+
+- **CLAUDE.md said `WORLD_SCHEMA_VERSION` was 3. It was already 4**, and I repeated the stale number to
+  two agents. Now 5, recorded in `contracts.md` §1.1 — not §1.2, because the component hangs on the
+  universe handle beside `godState`.
+- **The headline measurement I specified was null by construction.** Neither control bot names action 8
+  in its preference list, so no budget could have moved that pair. I specified a measurement without
+  checking whether the thing measured was reachable — **the campaign's modal defect, committed by me,
+  inside a brief warning about it.**
+
+---
+
+## W84 — the ruleset-only exploit is closed
+
+*2026-08-13, PR #68, at 806 of 880 runs with the decisive numbers settled.*
+
+| strategy | before | after |
+|---|---|---|
+| **`permit-then-idle`** | **40/40** | **0/37** |
+| **`permissive-breadth`** | **40/40** | **0/37** |
+| `open-then-build` | 40/40 | **40/40** |
+| `passive-control` | 0/40 | 0/40 |
+| `idle-then-declare` | 0/40 | 0/40 |
+
+**The bot that permitted the grid for 140 ticks and then submitted nothing for 2260 no longer wins, and
+a bot that builds still does.** That is the campaign's founding complaint, closed.
+
+The mechanism is proven rather than inferred: by `snapshotHash`, **all 40 paired runs each of six
+strategies are bit-identical across the two arms.** The conjunct changes nothing for a universe that
+was never going to qualify, so the deltas are attributable to the four `permissive-breadth` runs that
+now play to the cap instead of stopping at tick 1094. `referencePeakPopulation`, a max aggregation,
+moved by **exactly zero** — the changed runs never held the maximum.
+
+**Two qualifications that must travel with the result:**
+
+- **`permissive-breadth` falling to 0/37 is partly W73's bug, not the conjunct's doing.** It ends every
+  run at `unis=1` because it never founds a university. If a `permissive-breadth` that actually funds
+  clears the conjunct, then the predicate discriminates playing from not-playing after all and the
+  pessimistic reading was an artefact. **Re-measure against PR #70 before quoting this.**
+- **Four tolerances widened** — `referenceKnowledgeInstances` 1455.70 → 2235.54, `referenceNodesKnown`
+  33.44 → 45.05, `referenceLibraryDepth` 19.95 → 24.30. **No tolerance was set**: `toleranceK` stayed 3
+  and six others narrowed in the same pass, so this is grown variance from runs no longer terminating
+  early. **The gate is nonetheless less sensitive on those four**, the remedy is replicates, and it is
+  deferred into the re-baselining that W80/W82/W74/W77 already force.
