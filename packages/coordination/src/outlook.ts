@@ -39,7 +39,7 @@ import {
   UNIVERSITY,
   componentOf,
 } from '@mm/state';
-import type { KnowledgeTarget, MageOutlook, SpeciesAffinities } from '@mm/rules-world';
+import type { CellEmphasis, KnowledgeTarget, MageOutlook, SpeciesAffinities } from '@mm/rules-world';
 import { ageInMonths, boundCandidates, gatherFrontier, normalizedAge } from '@mm/rules-world';
 
 import type { CoordinatingKnowledgeGateway } from './gateway.js';
@@ -72,6 +72,17 @@ export interface OutlookDeps {
    * read one gets to see it.
    */
   readonly affinitiesOf: (species: SpeciesRecord) => SpeciesAffinities;
+  /**
+   * Which cells the god has encouraged, and how strongly, on this tick.
+   *
+   * A value rather than a callback, unlike its neighbours: it is one map for the
+   * whole universe on one tick, already built and cached by `godEffectHooks`,
+   * and every mage gets the identical one. A callback would invite a caller to
+   * hand a different answer to two mages deciding in the same tick, which would
+   * make an encouragement a private nudge instead of the public instruction it
+   * is.
+   */
+  readonly emphasis: CellEmphasis;
   /**
    * The university this mage would rather be at, given the one she is at.
    *
@@ -108,6 +119,7 @@ export function buildOutlook(
     mage,
     species,
     affinities: deps.affinitiesOf(species),
+    emphasis: deps.emphasis,
     personality: { curiosity: row.curiosity, ambition: row.ambition, caution: row.caution },
     roleId: row.roleId as MageRoleValue,
     normalizedAge: normalizedAge(ageInMonths(deps.worldTick, row.birthTick), lifespanMonths),

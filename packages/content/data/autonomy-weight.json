@@ -98,10 +98,24 @@
     "tuningStatus": "untuned"
   },
   {
+    "id": "target-emphasis-divisor",
+    "value": 1,
+    "unit": "raw",
+    "gloss": "Divides a cell's live research emphasis into the emphasis term. 1 passes the god's own authored magnitude through at par, so encourage-magnitude fp(256) is the only place the strength of an encouragement is written and this knob exists to move it without editing what a blessing-sized intervention means. A raise above encourage-magnitude would make the term round to zero and the verb silently inert.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "target-bound-emphasis",
+    "value": 256,
+    "unit": "fp",
+    "gloss": "Largest magnitude the god's research emphasis may contribute to what a mage picks next. 256 equals encourage-magnitude, so a fresh encouragement uses the whole axis and then decays down it; against the effort divisor of 64 it is worth fp(16384) of remaining cost, which reorders about two tiers of depth and never five. The loader checks it is STRICTLY BELOW the sum of the five mage-owned bounds, so the god emphasises and they still decide.",
+    "tuningStatus": "untuned"
+  },
+  {
     "id": "target-appeal-ceiling",
     "value": 4096,
     "unit": "fp",
-    "gloss": "Symmetric clamp on the summed appeal, applied once after summation. The six bounds sum to 2304, so it does not bind today; it is a guard rail that fires only when a bound has been raised without anyone rechecking it, and the score reports whether it fired.",
+    "gloss": "Symmetric clamp on the summed appeal, applied once after summation. The seven bounds sum to 2560, so it does not bind today; it is a guard rail that fires only when a bound has been raised without anyone rechecking it, and the score reports whether it fired.",
     "tuningStatus": "untuned"
   },
 

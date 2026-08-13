@@ -309,29 +309,35 @@ export function worldDeps(
   // §5 does not grant `scenario` an edge to `@mm/primitives`, and the
   // dependency-graph test is right to refuse one. This file wires; it does not
   // compute.
-  const effects = godEffectHooks({ constants: god.constants, cells });
+  const effects = godEffectHooks({ constants: god.constants });
 
   // Species affinities are resolved once per species, not once per mage per
   // tick: six records against potentially thousands of mages, and the answer is
   // a pure function of the species record and the registry.
   const affinityCache = new Map<string, SpeciesAffinities>();
 
-  // The god hooks stack blessing and encouragement *constants*, never a node's
-  // authored magnitude — a blessed mage researches faster because the god blessed
-  // her, not because anyone discovered anything. Recorded so the consumption
-  // report can say "consumed, but never from node effects" about these three
-  // rather than leaving a reader to wonder how `research-rate` can be in use and
+  // The god hooks stack blessing *constants*, never a node's authored
+  // magnitude — a blessed mage researches faster because the god blessed her,
+  // not because anyone discovered anything. Recorded so the consumption report
+  // can say "consumed, but never from node effects" about these three rather
+  // than leaving a reader to wonder how `research-rate` can be in use and
   // unconsumed at the same time. A non-node registration never counts toward
   // consumption; it only explains.
+  //
+  // **An encouragement is no longer among them.** It used to be a second source
+  // of `research-rate` here; it is now the emphasis term in `target-appeal.ts`,
+  // which consumes no primitive at all because what it changes is *which node a
+  // mage picks*, not how fast any rate runs. So `research-rate`'s god-side
+  // consumer is the blessing and nothing else.
   registerNonNodeConsumer(
     recorder,
     'research-rate',
-    'coordination/god/effects.researchMultiplierFor (blessing + encouragement constants)',
+    'coordination/god/effects.researchBonusesFor (blessing constants)',
   );
   registerNonNodeConsumer(
     recorder,
     'teach-rate',
-    'coordination/god/effects.teachMultiplierFor (blessing constants)',
+    'coordination/god/effects.teachBonusesFor (blessing constants)',
   );
   registerNonNodeConsumer(
     recorder,

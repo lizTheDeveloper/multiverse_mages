@@ -32,9 +32,8 @@
  *
  * ## Existing primitives only
  *
- * A blessing contributes to `research-rate`, `teach-rate` and `lifespan`; an
- * encouragement contributes to `research-rate` for one cell. All four are
- * **magnitudes**, handed to a caller that puts them through `stackMagnitudes`
+ * A blessing contributes to `research-rate`, `teach-rate` and `lifespan`. All
+ * three are **magnitudes**, handed to a caller that puts them through `stackMagnitudes`
  * alongside every other source of the same primitive — a library's contribution
  * above all — so they share one `(1 + Σ)` channel and one cap with it. That is
  * what keeps a blessing visible to
@@ -45,7 +44,6 @@
 
 import type { Fixed, SimState } from '@mm/sim-core';
 import { fromInt } from '@mm/sim-core';
-import type { CellResolver } from '@mm/rules-magic';
 import { activeBlessings, activeEncouragements } from '@mm/state';
 
 import type { GodConstants } from './constants.js';
@@ -61,20 +59,33 @@ import { emphasisAt } from './interventions.js';
  * and the one cap — so the registry records moved to `WorldStepDeps.primitives`
  * with them. Keeping them here as well would be a dep nothing reads, which in
  * this codebase is how a tuning knob comes to do nothing.
+ *
+ * **And no `CellResolver` either, for the same rule.** It was here to answer
+ * *"which cell is this node in"* while an encouragement multiplied research on
+ * that node. The emphasis map is now handed out keyed by cell and the node-to-
+ * cell question is asked by the party that holds the candidate — which already
+ * carries its `cellId` — so the dep would be an unread one.
  */
 export interface GodEffectDeps {
   readonly constants: GodConstants;
-  readonly cells: CellResolver;
 }
 
-/** The three callbacks `WorldStepDeps` takes. */
+/** The four callbacks `WorldStepDeps` takes. */
 export interface GodEffectHooks {
   readonly researchBonusesFor: (
     state: SimState,
     worldTick: number,
     mage: number,
-    nodeId: number,
   ) => readonly Fixed[];
+  /**
+   * Which cells carry a live emphasis this tick, and how strongly.
+   *
+   * The whole of what `encourageResearch` now buys. It is handed to the outlook
+   * rather than to the work phase because an encouragement is a statement about
+   * **what to study**, and the only place that decision is made is
+   * `target-appeal.ts`.
+   */
+  readonly emphasisFor: (state: SimState, worldTick: number) => ReadonlyMap<number, Fixed>;
   readonly teachBonusesFor: (
     state: SimState,
     worldTick: number,
@@ -87,7 +98,12 @@ export interface GodEffectHooks {
   ) => readonly Fixed[];
 }
 
-/** One tick's god-side effects, cached per state. */
+/**
+ * One tick's god-side effects, cached per state.
+ *
+ * `emphasis` is keyed by **cell** id and valued in `fp`, and it is now read by
+ * target selection rather than by the work phase. See {@link GodEffectHooks}.
+ */
 interface GodEffects {
   readonly worldTick: number;
   readonly blessed: ReadonlySet<number>;
@@ -95,7 +111,7 @@ interface GodEffects {
 }
 
 /**
- * Builds the three hooks over one per-run cache.
+ * Builds the four hooks over one per-run cache.
  *
  * The cache is keyed on the `SimState` object rather than on the tick, because
  * `step` clones the state every tick: a new state is a new key, an old state is
@@ -130,14 +146,19 @@ export function godEffectHooks(deps: GodEffectDeps): GodEffectHooks {
     // *"4.0 × 2.0 without anyone deciding it should be 8.0"* that
     // `mages-and-species/design.md` rejects. The caller sums the sources and
     // clamps them once; this function's job is to say what the god contributed.
-    researchBonusesFor: (state, worldTick, mage, nodeId) => {
-      const effects = effectsFor(state, worldTick);
-      const sources: Fixed[] = [];
-      if (effects.blessed.has(mage)) sources.push(deps.constants.blessResearchRate);
-      const emphasis = effects.emphasis.get(deps.cells.cellOf(nodeId));
-      if (emphasis !== undefined && emphasis > 0) sources.push(emphasis);
-      return sources;
-    },
+    //
+    // Blessing only, now. An encouragement used to push `research-rate` for its cell
+    // from here, and it does not any more: vision §4's `encourageResearch` is
+    // the god's one *ordinal* verb — it names a cell as a preference — and
+    // spending it on a speed left the queue's order identical in every universe,
+    // which `strategy-dimensionality.md` measured as containment 1.000 for every
+    // cross-strategy pair. It is now a term in `target-appeal.ts` instead, and
+    // deliberately not both: a verb that is simultaneously a preference and a
+    // speed cannot be attributed by an ablation.
+    researchBonusesFor: (state, worldTick, mage) =>
+      effectsFor(state, worldTick).blessed.has(mage) ? [deps.constants.blessResearchRate] : [],
+
+    emphasisFor: (state, worldTick) => effectsFor(state, worldTick).emphasis,
 
     teachBonusesFor: (state, worldTick, mage) =>
       effectsFor(state, worldTick).blessed.has(mage) ? [deps.constants.blessTeachRate] : [],

@@ -18,7 +18,7 @@ import type { Handle, MageRoleValue } from '@mm/state';
 
 import type { KnowledgeTarget, MageHandle, UniversityHandle } from '../coordination.js';
 import type { Personality } from '../mages/personality.js';
-import type { SpeciesAffinities } from './target-appeal.js';
+import type { CellEmphasis, SpeciesAffinities } from './target-appeal.js';
 
 /**
  * ## The point of gathering this first
@@ -81,6 +81,20 @@ export interface MageOutlook {
    * rule read.
    */
   readonly affinities: SpeciesAffinities;
+  /**
+   * Which cells the god has encouraged, and how strongly, on this tick.
+   *
+   * The one field on this record that is a fact about the *universe* rather than
+   * about the mage, and it is here because the outlook is the only thing the
+   * utility-AI reads: a term that could not reach it could not exist. Every mage
+   * in a universe sees the identical map, which is what makes an encouragement a
+   * public instruction rather than a private nudge — and what makes it able to
+   * move a whole universe's node set rather than one mage's.
+   *
+   * Empty for a universe whose god has encouraged nothing, which is every
+   * universe under `passive-control`.
+   */
+  readonly emphasis: CellEmphasis;
   /** Her rolled personality, from her own component fields. */
   readonly personality: Personality;
   /** Her standing role. Only the god writes this; autonomy only reads it. */

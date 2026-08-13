@@ -238,7 +238,16 @@ describe('contentRevision', () => {
     // the point of a revision over the *values*: two universes that disagreed
     // about how many summons a side may hold would fight two different battles,
     // and the digest now says so instead of calling them compatible.
-    expect(registry.contentRevision).toBe('6b18886a4b3a2803c0b1b92eb8f8fae8');
+    //
+    // 6b18886a4b3a2803c0b1b92eb8f8fae8 -> 591880dd878fc50d42090d11cded5223,
+    // when W52 added `target-emphasis-divisor` and `target-bound-emphasis` to
+    // `autonomy-weight.json` — what the god's `encourageResearch` is worth to a
+    // mage deciding what to study next, now that it is a preference rather than
+    // a research rate. Two new records and one gloss edit; no existing value
+    // moved. They are in the preimage for the same reason the rest of that file
+    // is: two universes that disagreed about how strongly an encouragement
+    // pulls would develop different magic from the same edicts.
+    expect(registry.contentRevision).toBe('591880dd878fc50d42090d11cded5223');
   });
 
   it('is stable across loads of identical content', () => {

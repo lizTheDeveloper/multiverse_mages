@@ -69,7 +69,7 @@ describe('shipped content', () => {
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are.
       raidConstants: 39,
-      autonomyWeights: 36,
+      autonomyWeights: 38,
     });
   });
 

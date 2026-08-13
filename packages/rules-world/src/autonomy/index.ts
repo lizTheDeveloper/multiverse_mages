@@ -114,6 +114,7 @@ export type { AutonomyTickInput, AutonomyTickReport, MageDecision } from './tick
 export { stepMageAutonomy } from './tick.js';
 
 export type {
+  CellEmphasis,
   SpeciesAffinities,
   TargetAppealOptions,
   TargetAppealSource,
@@ -124,12 +125,14 @@ export type {
 } from './target-appeal.js';
 export {
   NO_AFFINITIES,
+  NO_EMPHASIS,
   TARGET_APPEAL_TUNING_STATUS,
   TARGET_TERM_KINDS,
   affinityTerm,
   ageTargetTerm,
   compareAppeal,
   effortTerm,
+  emphasisTerm,
   personalityTargetTerm,
   readTargetAppeal,
   resolveSpeciesAffinities,

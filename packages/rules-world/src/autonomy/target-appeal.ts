@@ -50,6 +50,7 @@
  * | `age` | age band × tier | §7 *"shaped by species, **age**, personality"* |
  * | `personality` | ambition and caution × tier | §7 *"…**personality**…"* |
  * | `role` | the node's authored effect primitives | §7 *"their assigned standing **role**"* |
+ * | `emphasis` | the god's live `encourageResearch`, by cell | §4 *"the god… encourages research"* |
  *
  * The `effort` term is the old behaviour, kept and **demoted**: cheapest-first
  * was never wrong, it was merely the only thing being asked. Deleting it would
@@ -61,10 +62,45 @@
  * their own each of them bends or reverses the tier gradient and yields another
  * total order over tiers. They matter — a gnome and a human end up wanting
  * different halves of one reachable set, and two mages of one species disagree
- * — but the terms that are *orthogonal* to tier are `affinity` (which cell) and
- * `role` (what the node does). Those two are the ones that can make two
- * universes hold genuinely different sets rather than different prefixes of one
- * set, and they are why this module reads content nothing read before.
+ * — but the terms that are *orthogonal* to tier are `affinity` (which cell),
+ * `role` (what the node does) and `emphasis` (which cell the god named). Those
+ * three are the ones that can make two universes hold genuinely different sets
+ * rather than different prefixes of one set, and they are why this module reads
+ * content nothing read before.
+ *
+ * ## The emphasis term is a verb moved, not a verb added
+ *
+ * `encourageResearch` is the god's only action that names a **cell** as a
+ * preference, and it used to be spent entirely on `research-rate`: an encouraged
+ * cell was researched *faster* and never *chosen sooner*. So the one ordinal-
+ * shaped thing the god can say was implemented as a scalar, and
+ * `strategy-dimensionality.md`'s headline followed arithmetically — if every
+ * universe walks the same order, one held set always contains the other.
+ *
+ * The sharpest form of it, and the reason this term exists: species affinities
+ * could reorder what a universe studies and the god could not.
+ *
+ * The rate contribution is **gone**, not kept alongside. A verb that is
+ * simultaneously a preference and a speed cannot be attributed by an ablation —
+ * the campaign has already been burned by exactly that, when an exploit margin
+ * turned out to be `ascensionRate` under another name — and the two effects
+ * would have had to be separated inside one arm rather than between two.
+ *
+ * **Uniform across every target-taking goal.** The scorer is goal-blind by
+ * construction: `select.ts` hands it a candidate list without saying whether the
+ * mage is researching, being taught, teaching or scribing. So an encouraged cell
+ * is also the cell mages seek teaching in and write books about. That is a
+ * choice and not an oversight — it amplifies the reorder, because a cell the god
+ * names is pulled at every point knowledge moves rather than only where it is
+ * created — and confining it to research would need a seam the appeal path does
+ * not have.
+ *
+ * ## Breadth is bounded by the god's own constant, not by a second one
+ *
+ * How many cells can carry an emphasis at once is `encourage-max-cells`, which
+ * `encouragePlan` already enforces by masking the fourth encouragement. Nothing
+ * here re-bounds it. What this file bounds is *strength*, and the loader checks
+ * that strength against the five mage-owned bounds.
  *
  * ## Determinism: no draw, and `nodeId` is still the last word
  *
@@ -103,7 +139,7 @@ import type { MageOutlook } from './outlook.js';
 /** Mirrors `@mm/content`'s `TuningStatus` without importing a type for a constant. */
 export const TARGET_APPEAL_TUNING_STATUS = 'untuned';
 
-/** The six terms, in the order the table above writes them. */
+/** The seven terms, in the order the table above writes them. */
 export const TARGET_TERM_KINDS = [
   'effort',
   'affinity',
@@ -111,6 +147,7 @@ export const TARGET_TERM_KINDS = [
   'age',
   'personality',
   'role',
+  'emphasis',
 ] as const;
 
 /** One of the six. Also the ablation selector. */
@@ -135,6 +172,21 @@ export interface SpeciesAffinities {
   readonly byCell: ReadonlyMap<ContentId, Fp>;
   readonly byForm: ReadonlyMap<ContentId, Fp>;
 }
+
+/**
+ * Which cells the god has encouraged, and how strongly, as of one world tick.
+ *
+ * Keyed by interned cell id, valued in `fp` — `emphasisAt`'s derived magnitude.
+ * A cell that is absent carries no instruction. Built once per tick by whoever
+ * can see `ENCOURAGED_CELL` rows and handed down, for the reason every other
+ * derived input on an outlook is: the scoring path may not read the entity
+ * store, and rebuilding this per mage would scan every encouragement for every
+ * mage in the universe on every evaluation.
+ */
+export type CellEmphasis = ReadonlyMap<ContentId, Fixed>;
+
+/** A universe whose god has encouraged nothing. Every universe, most ticks. */
+export const NO_EMPHASIS: CellEmphasis = Object.freeze(new Map<ContentId, Fixed>());
 
 /** A species with no declared affinity at all. Human's, in the shipped set. */
 export const NO_AFFINITIES: SpeciesAffinities = Object.freeze({
@@ -167,6 +219,7 @@ export interface TargetAppealWeights {
   readonly curiosityDivisor: number;
   readonly ambitionDivisor: number;
   readonly cautionDivisor: number;
+  readonly emphasisDivisor: number;
   readonly agePerTier: Readonly<Record<AgeBandValue, Fixed>>;
   readonly bound: Readonly<Record<TargetTermKind, Fixed>>;
   readonly ceiling: Fixed;
@@ -218,6 +271,7 @@ export function readTargetAppeal(source: TargetAppealSource): TargetAppealWeight
     curiosityDivisor: at('target-curiosity-divisor'),
     ambitionDivisor: at('target-ambition-divisor'),
     cautionDivisor: at('target-caution-divisor'),
+    emphasisDivisor: at('target-emphasis-divisor'),
     agePerTier: Object.freeze({
       [AGE_BAND.young]: at('target-age-young-per-tier'),
       [AGE_BAND.prime]: at('target-age-prime-per-tier'),
@@ -230,6 +284,7 @@ export function readTargetAppeal(source: TargetAppealSource): TargetAppealWeight
       age: at('target-bound-age'),
       personality: at('target-bound-personality'),
       role: at('target-bound-role'),
+      emphasis: at('target-bound-emphasis'),
     }),
     ceiling: at('target-appeal-ceiling'),
     roleAppealOf(roleId: MageRoleValue, primitiveId: ContentId): Fixed {
@@ -409,7 +464,38 @@ export function roleTargetTerm(
   return boundTerm('role', total, weights);
 }
 
-/** All six terms for one target, before summation. */
+/**
+ * The emphasis term: the god's one ordinal verb, spent on order.
+ *
+ * Reads the live emphasis on the candidate's **cell** — `emphasisAt`'s linearly
+ * decaying magnitude, which is `encourage-magnitude` on the tick the
+ * encouragement is issued and zero once it lapses. A cell nobody encouraged is
+ * absent from the map and scores zero, which is *"no instruction"* rather than
+ * *"discouraged"*: there is no verb for the god to say don't, and inventing one
+ * out of an absent map entry would give every unnamed cell a penalty nobody
+ * authored.
+ *
+ * Positive only, because `emphasisAt` is. The bound is symmetric like every
+ * other term's because {@link boundTerm} is one function, not because a negative
+ * emphasis is reachable.
+ *
+ * **The decay is what makes this a preference and not a decree.** A fresh
+ * encouragement is worth its whole axis; sixty-four ticks later it is worth
+ * nothing, and a mage who committed to an encouraged project keeps it because
+ * `select.ts` holds a commitment rather than re-deciding every tick. So the god
+ * moves the front of the queue and does not own it.
+ */
+export function emphasisTerm(
+  target: KnowledgeTarget,
+  outlook: MageOutlook,
+  weights: TargetAppealWeights,
+): Fixed {
+  const live = outlook.emphasis.get(target.cellId);
+  if (live === undefined || live <= 0) return 0;
+  return boundTerm('emphasis', floorDiv(live, weights.emphasisDivisor), weights);
+}
+
+/** All seven terms for one target, before summation. */
 export function targetTerms(
   target: KnowledgeTarget,
   outlook: MageOutlook,
@@ -422,11 +508,12 @@ export function targetTerms(
     age: ageTargetTerm(target, outlook, weights),
     personality: personalityTargetTerm(target, outlook, weights),
     role: roleTargetTerm(target, outlook, weights),
+    emphasis: emphasisTerm(target, outlook, weights),
   };
 }
 
 /**
- * Sums the six terms and applies the single clamp.
+ * Sums the seven terms and applies the single clamp.
  *
  * One clamp, at the end — the position `scoring.ts` fixes for goal scores and
  * for the same reason: clamping each addend as it lands is the natural way to

@@ -54,6 +54,12 @@
  * requires every role-appeal magnitude to fit inside the role bound. Raising one
  * without the other fails the load rather than quietly widening the god's
  * authority over what an individual mage studies.
+ *
+ * **There are now two god-owned terms and therefore two of that check.** The
+ * emphasis bound — what `encourageResearch` is worth to a mage deciding what to
+ * study next — is checked against the *same five* mage-owned bounds, separately
+ * and not as part of a sum that includes the role bound. See
+ * {@link NON_ROLE_BOUND_IDS} for why folding them together would defeat both.
  */
 
 import type { ContentDiagnostic } from './diagnostics.js';
@@ -87,6 +93,8 @@ export const REQUIRED_AUTONOMY_WEIGHTS = [
   'target-bound-age',
   'target-bound-personality',
   'target-bound-role',
+  'target-emphasis-divisor',
+  'target-bound-emphasis',
   'target-appeal-ceiling',
 ] as const;
 
@@ -97,9 +105,22 @@ const DIVISOR_IDS = [
   'target-curiosity-divisor',
   'target-ambition-divisor',
   'target-caution-divisor',
+  'target-emphasis-divisor',
 ] as const;
 
-/** The five bounds the role bound is checked against. */
+/**
+ * The five bounds the role bound and the emphasis bound are each checked
+ * against.
+ *
+ * **Five, not six, and the emphasis bound is deliberately not among them.**
+ * These are the terms a mage owns — what a project costs her, what her species
+ * is good at, how curious it is, how old she is, who she is. The role bound and
+ * the emphasis bound are the two the *god* writes, and each is checked against
+ * this sum separately rather than against a sum that includes the other. Folding
+ * them together would let a future role bound hide behind the god's own second
+ * instruction and still pass: two god-owned terms summing to more than the mage
+ * keeps is exactly the puppeteer the check exists to refuse.
+ */
 const NON_ROLE_BOUND_IDS = [
   'target-bound-effort',
   'target-bound-affinity',
@@ -266,6 +287,30 @@ export function checkAutonomyWeights(
     );
   }
 
+  const emphasisBound = value('target-bound-emphasis');
+  if (emphasisBound !== undefined && emphasisBound < 1) {
+    out.push(
+      problem(
+        '',
+        `"target-bound-emphasis" is ${String(emphasisBound)}. A bound below 1 removes the god's ` +
+          'emphasis from target selection entirely, which is an ablation rather than a tuning ' +
+          'value — run it through the divisor if that is what you want, so the arm says so.',
+      ),
+    );
+  }
+  if (emphasisBound !== undefined && boundsKnown && emphasisBound >= otherBounds) {
+    out.push(
+      problem(
+        '',
+        `"target-bound-emphasis" is ${String(emphasisBound)} and the five mage-owned bounds sum ` +
+          `to ${String(otherBounds)}. An encouragement must never be able to outvote everything a ` +
+          'mage knows about her own situation at once: vision §4 makes the god a legislator over ' +
+          'what magic may exist, not a foreman over who studies what, and an emphasis that ' +
+          'dominates the sum deletes the autonomy the whole design rests on.',
+      ),
+    );
+  }
+
   if (roleBound !== undefined) {
     for (const record of records) {
       if (!isRoleAppeal(record)) continue;
@@ -282,13 +327,13 @@ export function checkAutonomyWeights(
   }
 
   const ceiling = value('target-appeal-ceiling');
-  if (ceiling !== undefined && boundsKnown && roleBound !== undefined) {
-    const totalBound = otherBounds + roleBound;
+  if (ceiling !== undefined && boundsKnown && roleBound !== undefined && emphasisBound !== undefined) {
+    const totalBound = otherBounds + roleBound + emphasisBound;
     if (ceiling < totalBound) {
       out.push(
         problem(
           '',
-          `"target-appeal-ceiling" is ${String(ceiling)} but the six bounds sum to ` +
+          `"target-appeal-ceiling" is ${String(ceiling)} but the seven bounds sum to ` +
             `${String(totalBound)}. A clamp that binds on an ordinary outlook flattens real ` +
             'differences into ties, and a score whose ceiling is reachable by summing its own ' +
             'bounds is a score that quietly stops discriminating at the top.',

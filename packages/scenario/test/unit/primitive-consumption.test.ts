@@ -124,7 +124,7 @@ describe('god-driven consumption is recorded, and does not count', () => {
     const text = formatPrimitiveConsumptionReport(checkPrimitiveConsumption(registry, recorder));
 
     expect(text).toContain('Consumed, but never from node effects');
-    expect(text).toContain('coordination/god/effects.researchMultiplierFor');
+    expect(text).toContain('coordination/god/effects.researchBonusesFor');
   });
 });
 

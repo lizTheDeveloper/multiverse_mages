@@ -37,6 +37,7 @@ import { snapshotHash, step } from '@mm/sim-core';
 import {
   BLESSING,
   ERA_EVALUATION,
+  KNOWLEDGE_INSTANCE,
   MAGE,
   TERMINAL_REASON,
   UNIVERSE,
@@ -50,7 +51,7 @@ import {
 import type { WorldSimulation } from '../../src/index.js';
 import { ACTION, defineWorldSimulation, ledgerBalances } from '../../src/index.js';
 
-import { registry, seededWorld, sourceFor } from './world-fixtures.js';
+import { catalogAndCells, registry, seededWorld, sourceFor } from './world-fixtures.js';
 import { constants, costs, godlyWorldDeps } from './god-fixtures.js';
 
 const C = constants();
@@ -189,6 +190,66 @@ describe('a god action submitted to step reaches the rules', () => {
       busy = step(busy, mage === 0 ? [] : [{ kind: ACTION.blessMage, params: [mage] }], active.source);
     }
     expect(snapshotHash(busy)).not.toBe(snapshotHash(quiet));
+  });
+});
+
+describe("an encouragement reaches what a mage decides to study", () => {
+  /** Which nodes this universe holds, and how many copies of each. */
+  function heldByCell(state: SimState, cellOf: (nodeId: number) => number): Map<number, number> {
+    const byCell = new Map<number, number>();
+    for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
+      const cellId = cellOf(row.nodeId);
+      byCell.set(cellId, (byCell.get(cellId) ?? 0) + 1);
+    }
+    return byCell;
+  }
+
+  it('is a preference and not a rate, so an encouraged cell fills faster than the god paid for', () => {
+    // The whole of W52 in one assertion. `encourageResearch` used to feed
+    // `research-rate` for its cell, which made an encouraged cell arrive sooner
+    // and never made it arrive *first*; the emphasis term in `target-appeal.ts`
+    // is what makes it a choice. Two universes on one seed, one of which is told
+    // where to look.
+    const { cells } = catalogAndCells();
+    const cellOf = (nodeId: number): number => cells.cellOf(nodeId);
+    const TICKS = 160;
+
+    const run = (encouraged: number): SimState => {
+      const { state, source } = world(0x0006_0052);
+      let current = state;
+      for (let tick = 0; tick < TICKS; tick += 1) {
+        current = step(
+          current,
+          encouraged !== 0 && tick % 40 === 0
+            ? [{ kind: ACTION.encourageResearch, params: [encouraged] }]
+            : [],
+          source,
+        );
+      }
+      return current;
+    };
+
+    // The cell the god names is chosen from what the *silent* universe reached
+    // on its own — the least-populated cell it holds anything in. Choosing a
+    // cell it never reaches would test whether the grid is connected; choosing
+    // its busiest would ask the emphasis to push on an open door.
+    const silent = run(0);
+    const baseline = heldByCell(silent, cellOf);
+    let encouraged = 0;
+    let fewest = Number.POSITIVE_INFINITY;
+    for (const [cellId, count] of [...baseline.entries()].sort((a, b) => a[0] - b[0])) {
+      if (count < fewest) {
+        fewest = count;
+        encouraged = cellId;
+      }
+    }
+    expect(encouraged).not.toBe(0);
+
+    const instructed = run(encouraged);
+
+    // Two universes that ran the same seed and disagree about what they know.
+    expect(snapshotHash(instructed)).not.toBe(snapshotHash(silent));
+    expect(heldByCell(instructed, cellOf).get(encouraged) ?? 0).toBeGreaterThan(fewest);
   });
 });
 

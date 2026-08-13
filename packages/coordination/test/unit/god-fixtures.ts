@@ -107,13 +107,12 @@ export function godDeps(): GodDeps {
   };
 }
 
-/** World deps with the god installed, and the three effect seams filled. */
+/** World deps with the god installed, and the four effect seams filled. */
 export function godlyWorldDeps(traditionId: number): WorldStepDeps {
-  const { cells } = catalogAndCells();
   return {
     ...worldDeps(traditionId),
     god: godDeps(),
-    ...godEffectHooks({ constants: constants(), cells }),
+    ...godEffectHooks({ constants: constants() }),
   };
 }
 
