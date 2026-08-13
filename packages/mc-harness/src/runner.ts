@@ -178,6 +178,10 @@ function recordFor(task: RunTask, result: PoolResult | undefined, fallback: Prov
     ...(outcome.armContribution === undefined
       ? {}
       : { armContribution: outcome.armContribution }),
+    ...(outcome.godSpendByAction === undefined
+      ? {}
+      : { godSpendByAction: outcome.godSpendByAction }),
+    ...(outcome.censusTrace === undefined ? {} : { censusTrace: outcome.censusTrace }),
   });
 }
 

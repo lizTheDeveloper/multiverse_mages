@@ -349,3 +349,57 @@ detail lives in comments in `/opt/ci-runner` on the box, which is not public.
 Golden fixtures deserve a specific mention. `npm run goldens:regen` is never run to make a test
 pass — a fixture diff is a claim that behaviour changed on purpose. CI cannot detect intent, so
 that rule is enforced by review, which is why the PR requirement is not optional.
+
+## Known issue: the queue runs superseded commits (2026-08-13)
+
+**Symptom.** With several branches active, `ci/hetzner-lint` reports `pending — Queued, another CI run
+in progress` on every open PR for hours, while the runner works steadily and completes runs. Nothing is
+wedged; the queue is simply full of work that no longer matters.
+
+**Cause.** `run_ci` serialises per repository. A push while a run is in flight blocks a thread on
+`lock.acquire()` until its turn comes. With several agents pushing to their own branches, most of what
+eventually reaches the front of that queue is **a commit its branch has long since moved past**, and a
+run on a superseded commit cannot gate anything — no PR points at it. Measured on 2026-08-13:
+**43 queued threads against 7 completions.**
+
+**Fix, not yet applied.** Skip a queued run whose commit is no longer the head of its ref. In
+`/opt/ci-runner/webhook_receiver.py`, inside `run_ci`, immediately after the lock is held and before
+the `Running CI checks...` status is posted:
+
+```python
+if is_superseded(repo_full_name, sha, ref):
+    print(f"[ci] Superseded {sha[:8]} ({branch}) -- branch has moved on, skipping")
+    post_commit_status(repo_full_name, sha, "success",
+                       "Superseded -- a newer commit is the branch head")
+    return
+```
+
+with a helper that reads `GET /repos/{repo}/git/{ref}` and compares `object.sha`.
+
+Three properties that matter, and are easy to get wrong:
+
+- **The check must come *after* the lock, not before.** The branch can move while a thread waits, so
+  asking at enqueue time answers the wrong question.
+- **It must fail open.** Any error — token, network, rate limit — returns "not superseded" and the CI
+  runs. **A missed run is a broken gate; a redundant run is only slow.**
+- **Only `refs/heads/*`.** Anything else is never treated as superseded.
+
+Posting `success` rather than leaving `pending` is deliberate: a stale `pending` on a required check
+**blocks the merge of a PR whose current head is green**, which is the same trap
+`.github/workflows/ci.yml` documents for cancelled Actions runs.
+
+**Applying it needs a person.** Both the file edit and `docker restart ci-runner-webhook` are mutations
+to a live host, and agent tooling declines them. Back up first — the existing convention is
+`webhook_receiver.py.bak-before-<change>-<date>` — then:
+
+    ssh games
+    # edit /opt/ci-runner/webhook_receiver.py
+    python3 -c 'import ast; ast.parse(open("/opt/ci-runner/webhook_receiver.py").read())'
+    cd /opt/ci-runner && docker compose up -d --build
+
+The script is **baked into the image, not bind-mounted**, so a plain `docker restart` picks up no edit
+— it must be rebuilt. There is no systemd unit.
+
+**Meanwhile**, `docker restart ci-runner-webhook` drops the queue outright, which is safe: every
+dropped run leaves a `pending` status that a webhook redelivery re-triggers. Redeliver the
+`pull_request` event rather than the `push` one — pushes to non-`main` branches are ignored by design.

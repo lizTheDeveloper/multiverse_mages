@@ -330,6 +330,18 @@ describe('contentRevision', () => {
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of file names.
     //
+    // 6973d2c55f6d7788bbaa6886e507bbde -> 162f80bf169296d0e5fd516cc3c5257a,
+    // when the founding-grant budget added three god constants — the starting
+    // allowance, the self-discovered nodes that earn another grant, and the
+    // ceiling. In the preimage for the reason every other god constant is: two
+    // universes that disagreed about how many nodes a god may seed would be
+    // playing different games while their revisions agreed they were
+    // compatible. Nothing existing changed a byte, and all three ship at values
+    // no run can reach, so this revision plays identically to the last one —
+    // which is the opposite of the ascension-constant move above, and the
+    // difference is worth reading: that one changed when a run ends, this one
+    // changes nothing until a sweep names a level.
+    //
     // **And a sixth, from `w80/research-cost-variation`.** Every one of the
     // three hundred nodes' `researchCost` was `2048 << (tier - 1)` and nothing
     // else, so the field carried no information `tier` did not already carry
@@ -341,7 +353,15 @@ describe('contentRevision', () => {
     // edit over one file, and exactly the kind this pin exists to make visible:
     // two universes disagreeing about what a node costs would research in
     // different orders and hold different things.
-    expect(registry.contentRevision).toBe('de757d602173b6e6db296a37486891e0');
+    //
+    // And a further value again, because this tree is the first holding
+    // `main`'s revision *and* the priced cost surface. Neither side's literal
+    // survives, for the same reason none of the earlier pairs did: each is a
+    // digest over a preimage the other does not contain. A universe that
+    // prices research within a tier and one that does not would run visibly
+    // different discovery curves while their revisions agreed they were
+    // compatible, which is exactly what the digest exists to refuse.
+    expect(registry.contentRevision).toBe('938a659562b1ca222bcc34bb5d2c7b1a');
   });
 
   it('is stable across loads of identical content', () => {

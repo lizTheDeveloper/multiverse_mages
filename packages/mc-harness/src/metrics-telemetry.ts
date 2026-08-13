@@ -251,6 +251,74 @@ export interface SpeciesVersatilitySample {
   readonly species: readonly SpeciesGridReach[];
 }
 
+/**
+ * One species' **realised** occupancy of the grid at run end.
+ *
+ * The counterpart to {@link SpeciesGridReach}, and the difference is the whole
+ * reason both exist. `SpeciesGridReach` is *capability*, derived from content:
+ * which cells a species **could** staff given its `depthCeiling` and the
+ * prerequisite closure. This is *outcome*, read off world state: which cells a
+ * species **did** occupy, meaning at least one living mage of that species holds
+ * a knowledge instance of a node in that cell, in a mind.
+ *
+ * `speciesGridVersatility`'s own falsification test is stated over exactly this
+ * quantity — *"the predicted-staffable set must be a superset of the
+ * observed-staffed set"* — and until this channel existed there was no observed
+ * set to check it against.
+ */
+export interface SpeciesCellOccupancy {
+  readonly speciesId: string;
+  /**
+   * Cells this species occupies, over the full seventy.
+   *
+   * A cell is occupied when a **living** mage of the species holds an instance
+   * of one of its nodes at location kind `mind`. Library copies are excluded on
+   * purpose: `contracts.md` §1.5 makes a shelved book exactly as magical as a
+   * shelf, and a species whose only claim on a cell is a book somebody else can
+   * read is not staffing it.
+   */
+  readonly occupiedCells: number;
+  /** Of those, the ones the ruleset currently permits. */
+  readonly occupiedEnabledCells: number;
+  /** Living mages of this species, so a zero can be read as "none alive". */
+  readonly livingMages: number;
+  /** Distinct nodes held in a mind by a living mage of the species. */
+  readonly nodesHeld: number;
+  /**
+   * **Which** cells, by interned cell id, ascending.
+   *
+   * Not a nicety. Merging `main` into `w53/practice` produced the campaign's
+   * first mechanic-driven species divergence — two short-lived species collapse
+   * and one goes extinct — and a count alone would have shown nothing, because
+   * two species can hold twelve cells each and hold *different* twelve. The ids
+   * are what make "these two species stopped overlapping" visible in a record
+   * somebody reads later, without a second run.
+   *
+   * Ascending rather than in discovery order: a record whose array order
+   * depends on entity-creation history is a record two machines disagree about.
+   */
+  readonly occupiedCellIds: readonly number[];
+}
+
+/**
+ * Realised per-species grid occupancy for one run, with its denominators.
+ *
+ * Carries the denominators rather than letting the collector assume seventy and
+ * twelve: `enabledCells` is whatever `permits()` accepted for the ruleset this
+ * run actually played, and a hardcoded twelve would silently misreport every
+ * run whose god forbade or dispensed anything.
+ */
+export interface SpeciesCellOccupancySample {
+  /** Cells in the full grid. `contracts.md` §2.2's seventy. */
+  readonly gridCells: number;
+  /** Cells the ruleset permitted at the moment of the reading. */
+  readonly enabledCells: number;
+  /** The world tick the reading was taken at. */
+  readonly worldTick: number;
+  /** One entry per species the content declares, in content order. */
+  readonly species: readonly SpeciesCellOccupancy[];
+}
+
 /** One species' roster at one world tick, for the loss-shock recovery curve. */
 export interface RosterSample {
   readonly worldTick: number;
@@ -369,6 +437,15 @@ export interface RunTelemetry {
    * not report one, not a mechanic that does not exist.
    */
   readonly speciesVersatility?: SpeciesVersatilitySample;
+  /**
+   * The realised per-species grid occupancy at run end, or absent when the
+   * executor did not supply it.
+   *
+   * Absent is `no-observations` for the same reason {@link speciesVersatility}'s
+   * is: species and the grid have both shipped, so a missing sample is a run
+   * that did not report one rather than a mechanic that does not exist.
+   */
+  readonly speciesCellOccupancy?: SpeciesCellOccupancySample;
   /** The loss shock this run was subjected to, or absent on an unshocked run. */
   readonly lossShock?: LossShockSample;
   /** The role-assignment demography pair, or absent when the run made no assignments. */
