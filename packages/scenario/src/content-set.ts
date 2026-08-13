@@ -395,6 +395,16 @@ export function worldDeps(
         'coordination/god/system.yieldSources',
         recorder,
       ),
+      // Every cell, not only the carrying ones: `yieldSources` looks up by the
+      // cell of whatever node it is holding, and a map built from the nodes
+      // that carry `worship-yield` today would silently start missing entries
+      // the first time a later content pass moved the primitive onto a node in
+      // a cell this map had skipped. The lookup's fallback is the identity, so
+      // that failure would read as "the mechanic stopped applying" rather than
+      // as an error — which is the kind of defect that survives a release.
+      cellRelevance: new Map(
+        registry.cells.map((entry) => [entry.contentId, entry.record.dailyRelevance]),
+      ),
       portalNodes: new Set(
         nodeEffectMagnitudes(
           registry,

@@ -52,7 +52,7 @@
  */
 
 import type { ComponentSpec, EntityHandle, SimState, System } from '@mm/sim-core';
-import { FP_ONE, TIME_MODE, eraOf } from '@mm/sim-core';
+import { FP_ONE, TIME_MODE, eraOf, mul } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
@@ -118,6 +118,20 @@ export interface GodDeps {
    * `stackMagnitudes` is the only thing permitted to apply it.
    */
   readonly worshipYieldNodes: ReadonlyMap<number, readonly Fixed[]>;
+  /**
+   * Each cell's `dailyRelevance`, `fp` — the share of ordinary people whose
+   * daily life the cell touches (`contracts.md` §2.2).
+   *
+   * Every `worship-yield` magnitude is multiplied by its own cell's value
+   * before it enters the stack, so a god is paid for magic her subjects live
+   * inside rather than for magic that impresses them.
+   *
+   * A **missing** cell reads as `fp(1024)` — the identity — rather than as
+   * zero. A partial map is a composition defect, and the failure it should
+   * produce is "nothing changed", not "this universe silently stopped being
+   * worshipped": the second is a balance mystery and the first is a diff.
+   */
+  readonly cellRelevance: ReadonlyMap<number, Fixed>;
   /** Node ids carrying the `portal` primitive. */
   readonly portalNodes: ReadonlySet<number>;
   /** Where `worship-yield` cap clamps are counted, when a caller keeps counters. */
@@ -628,6 +642,23 @@ function tierOf(worship: Fixed, constants: GodContent['constants']): number {
  * instance's, because worship is paid for magic that exists in the world and
  * not for a book: a book whose subject is outlawed is a book nobody may
  * practise from.
+ *
+ * **Each magnitude is scaled by its own cell's `dailyRelevance` before it
+ * enters the list** — never by scaling the stacked total. `worship-yield`
+ * stacks additively into `(1 + Σ)`, so multiplying the stacked value would
+ * scale the `1` as well, and a low-relevance cell would become a *penalty* on
+ * the base regeneration rate instead of a small contribution to it. Per
+ * magnitude is also the only order in which two cells of different relevance
+ * can each contribute their own share of one stack, which is the whole
+ * mechanic. Stacking itself stays `stackMagnitudes`'s alone to perform, exactly
+ * as the note on `worshipYieldNodes` requires.
+ *
+ * `mul` floors, as everywhere in the rules path. At the shipped magnitudes that
+ * costs at most one `fp` unit per source, and it costs it in the direction of
+ * the god earning slightly less — the direction an unproven multiplier should
+ * err in. **No randomness is drawn here and none should be:** relevance is a
+ * multiply, and a draw would make every committed balance baseline in the
+ * repository rot for a term that has no distribution.
  */
 function yieldSources(
   knowledge: KnowledgeSubsystem,
@@ -638,8 +669,10 @@ function yieldSources(
   const found: Fixed[] = [];
   for (const [nodeId, magnitudes] of deps.worshipYieldNodes) {
     if (knowledge.instanceCount(nodeId) === 0) continue;
-    if (!permitsCell(deps.cells.cellOf(nodeId))) continue;
-    found.push(...magnitudes);
+    const cellId = deps.cells.cellOf(nodeId);
+    if (!permitsCell(cellId)) continue;
+    const relevance = deps.cellRelevance.get(cellId) ?? FP_ONE;
+    for (const magnitude of magnitudes) found.push(mul(magnitude, relevance));
   }
   return found;
 }

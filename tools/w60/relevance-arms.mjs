@@ -75,7 +75,7 @@ import { join } from 'node:path';
 import { CONTENT_FILES, loadContent, memorySource } from '../../packages/content/dist/index.js';
 import { referenceContent } from '../../packages/scenario/dist/index.js';
 
-import { FP_ONE, probeIsInert, runOne } from './favor-probe.mjs';
+import { FP_ONE, lateWardenPolicy, probeIsInert, runOne } from './favor-probe.mjs';
 
 /** Where the shipped content files live, relative to this file. */
 const DATA_DIR = new URL('../../packages/content/data/', import.meta.url);
@@ -116,6 +116,14 @@ const RULESETS = Object.freeze({
   'creo-fatum': ['creo-fatum'],
   'creo-vim': ['creo-vim'],
 });
+
+/**
+ * The round from which the late warden starts interdicting: world year 100,
+ * twice `ascension-min-tick`, and the same figure `archivist` uses for "long
+ * enough that the thing being argued about exists". By then the dispensed
+ * `creo-fatum` chain is established in every arm that got one.
+ */
+const LATE_WARDEN_NOT_BEFORE = 1200;
 
 /** The shipped content documents, as a mutable object keyed by file name. */
 function shippedDocuments() {
@@ -288,7 +296,49 @@ function main() {
     }
   }
 
-  const payload = { fieldPresent, inert, rootSeed: ROOT_SEED, sweepId: SWEEP_ID, arms };
+  // The late warden: `creo-fatum` dispensed at tick zero, then interdicted from
+  // world year 100 onward. Nothing in the bot pool produces this sequence, and
+  // it is the only sequence in which the missing `permits()` check was ever
+  // observable, so it is written rather than hoped for.
+  const wardenRuns = [];
+  const wardenCell = dispensedCellIds(contents[regimes[0]].registry, 'creo-fatum')[0];
+  for (const regime of regimes) {
+    for (const cell of CELLS) {
+      for (let replicateIndex = 0; replicateIndex < replicates; replicateIndex += 1) {
+        const run = runOne({
+          content: contents[regime],
+          strategyId: 'late-warden',
+          coordinates: {
+            rootSeed: ROOT_SEED,
+            sweepId: SWEEP_ID,
+            cellIndex: cell.cellIndex,
+            replicateIndex,
+          },
+          options: cell.options,
+          worldTickCap,
+          dispensations: [wardenCell],
+          policy: lateWardenPolicy(wardenCell, LATE_WARDEN_NOT_BEFORE),
+        });
+        wardenRuns.push({ ...run, regime });
+        process.stderr.write(
+          `w60 late-warden/${regime} cell=${String(cell.cellIndex)} ` +
+            `rep=${String(replicateIndex)} ticks=${String(run.ticksRun)} ` +
+            `regen/tick=${perTick(run).favorRegenerated.toFixed(1)} ` +
+            `forbidden/tick=${perTick(run).yieldForbidden.toFixed(1)}\n`,
+        );
+      }
+    }
+  }
+
+  const payload = {
+    fieldPresent,
+    inert,
+    rootSeed: ROOT_SEED,
+    sweepId: SWEEP_ID,
+    arms,
+    wardenRuns,
+    lateWardenNotBefore: LATE_WARDEN_NOT_BEFORE,
+  };
   writeFileSync(join(out, 'arms.json'), `${JSON.stringify(payload)}\n`, 'utf8');
   report(payload);
 }
@@ -300,7 +350,7 @@ function pct(from, to) {
 }
 
 function report(payload) {
-  const { arms, fieldPresent, inert } = payload;
+  const { arms, fieldPresent, inert, wardenRuns = [], lateWardenNotBefore = 0 } = payload;
   const lines = [];
   const push = (text) => lines.push(text);
 
@@ -427,6 +477,28 @@ function report(payload) {
     );
   }
   push('');
+
+  if (wardenRuns.length > 0) {
+    push(
+      `## Q3b — the late warden: \`creo-fatum\` dispensed at tick 0, interdicted from round ` +
+        `${String(lateWardenNotBefore)}`,
+    );
+    push('');
+    push('| regime | ticks | regen/tick | forbidden yield/tick | ticks paying it | share of ticks |');
+    push('| --- | ---: | ---: | ---: | ---: | ---: |');
+    for (const regime of new Set(wardenRuns.map((run) => run.regime))) {
+      const runs = wardenRuns.filter((run) => run.regime === regime);
+      const ticks = mean(runs.map((r) => r.totals.ticks));
+      push(
+        `| ${regime} | ${mean(runs.map((r) => r.ticksRun)).toFixed(0)} | ` +
+          `${mean(runs.map((r) => perTick(r).favorRegenerated)).toFixed(1)} | ` +
+          `${mean(runs.map((r) => perTick(r).yieldForbidden)).toFixed(1)} | ` +
+          `${mean(runs.map((r) => r.totals.ticksWithForbiddenYield)).toFixed(0)} | ` +
+          `${((mean(runs.map((r) => r.totals.ticksWithForbiddenYield)) / Math.max(ticks, 1)) * 100).toFixed(1)}% |`,
+      );
+    }
+    push('');
+  }
 
   process.stdout.write(`${lines.join('\n')}\n`);
 }

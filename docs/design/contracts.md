@@ -385,6 +385,18 @@ serialized into snapshots.
   "form": "corpus",
   "classicalLabels": ["necromancy"],                 // display only, never mechanical.
                                                      // Vision §4's mapping table is authoritative
+  "dailyRelevance": 576,                             // fp; the share of ordinary people whose daily
+                                                     // life this cell touches. fp(1024) is everyone
+                                                     // (water, healing, bread); fp(64) is a cell only
+                                                     // mages can perceive. It multiplies every
+                                                     // worship-yield magnitude a node in the cell
+                                                     // carries, so water and crops and roads
+                                                     // out-worship spectacular destruction. Authored,
+                                                     // never derived; the principle and all seventy
+                                                     // calls are in docs/design/daily-relevance-authoring.md
+  "relevanceGloss": "Surgery and labour.",           // required; why the number is what it is.
+                                                     // Never read by a rule; <= 600 chars
+  "tuningStatus": "untuned",                         // "untuned" | "tuned"
   "v1": true,                                        // optional; flags membership of the 12-cell
                                                      // v1 rectangle. Absent means not in v1
   "edicts": [],                                      // optional; "dispensation" | "interdiction".
@@ -397,6 +409,17 @@ serialized into snapshots.
 
 70 cells exist in schema. The **v1 subset** is flagged per-cell with `"v1": true`; exactly 12 cells
 (3 techniques × 4 forms) carry it, and the set must include `rego-limen`.
+
+`dailyRelevance` is the one term in the §7 favor economy that is **bounded by population share
+rather than by power**. Worship buys favor, favor buys permits, permits buy worship, and §7 admits
+that loop can snowball; a multiplier a player can only raise by permitting cells that touch more
+lives has a ceiling that is a property of the ruleset instead of a property of the run. It is also
+what gives a permissive ruleset a shape: permitting broadly is otherwise strictly safe, and under
+this you can permit a great deal of magic nobody's life touches and be paid for none of it.
+
+Note what it does **not** scale. `worship-yield` multiplies favor *regeneration* and never
+`favorCap` (§8), so relevance cannot raise the pool's ceiling either — a god who over-invests in
+low-relevance yield does not get a smaller pool, she gets the same pool more slowly.
 
 ### 2.3 `node.json`
 

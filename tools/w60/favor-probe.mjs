@@ -72,7 +72,7 @@ import {
   findUniverse,
 } from '../../packages/state/dist/index.js';
 import { defineWorldSimulation } from '../../packages/coordination/dist/index.js';
-import { createSession } from '../../packages/agent-api/dist/index.js';
+import { GOD_ACTION, createSession } from '../../packages/agent-api/dist/index.js';
 import {
   BOT_POOL_REGISTRY,
   adaptAgentSession,
@@ -142,6 +142,7 @@ export function runOne(input) {
     probe = true,
     sampleEveryTicks = ERA_TICKS,
     dispensations = [],
+    policy,
   } = input;
 
   const runSeed = deriveRunSeed(coordinates);
@@ -254,11 +255,13 @@ export function runOne(input) {
     session,
     runSeed,
     scenarioConfig: { worldTickCap, options },
-    policies: policiesForRun({
-      registry: BOT_POOL_REGISTRY,
-      strategies: [strategyId],
-      runSeed,
-    }),
+    // A caller may hand in its own `SlotPolicy` instead of naming a pool
+    // strategy. The pool has no bot that lets a cell prosper and then outlaws
+    // it, and that is the only sequence in which the missing `permits()` check
+    // could ever have been observed — see `lateWardenPolicy`.
+    policies: policy === undefined
+      ? policiesForRun({ registry: BOT_POOL_REGISTRY, strategies: [strategyId], runSeed })
+      : [policy()],
     worldTickCap,
   });
 
@@ -284,6 +287,34 @@ export function runOne(input) {
  * Reported rather than thrown, so a failure appears in the writeup as a refusal
  * to quote numbers instead of as a stack trace nobody kept.
  */
+/**
+ * A god who lets a cell prosper and then outlaws it.
+ *
+ * Holds — the passive control's own submission — for `notBefore` rounds, then
+ * issues an interdiction on `cellId` every round thereafter. The repeat is not
+ * redundancy: the edict budget falls with the worship tier and the resolver
+ * refuses a submission over budget, so a god who issued once and stopped would
+ * have her prohibition quietly lapse and the arm would be measuring that
+ * instead.
+ *
+ * This is the missing-`permits()` demonstration, and it has to be written
+ * because **no shipped bot produces the sequence**. `denial-warden` interdicts
+ * from round one, which strangles the research that would have produced the
+ * instances, so across ninety measured runs of the pool it never once held an
+ * instanced node in a forbidden cell. That is a real finding about the pool and
+ * it is also exactly why an untested null here would have been worthless.
+ */
+export function lateWardenPolicy(cellId, notBefore) {
+  return () => {
+    let round = 0;
+    return () => {
+      round += 1;
+      if (round <= notBefore) return { action: GOD_ACTION.noop };
+      return { action: GOD_ACTION.issueInterdiction, parameter: cellId };
+    };
+  };
+}
+
 export function probeIsInert(content, strategyId, coordinates, worldTickCap, options, dispensations) {
   const shared = { content, strategyId, coordinates, worldTickCap, options, dispensations };
   const withProbe = runOne({ ...shared, probe: true });

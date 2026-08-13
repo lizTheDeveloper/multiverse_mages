@@ -258,7 +258,25 @@ describe('contentRevision', () => {
     // preimage because two universes disagreeing about *which* knowledge can be
     // written down would keep different libraries and lose different things,
     // which is not a difference a compatibility check may shrug at.
-    expect(registry.contentRevision).toBe('5c319f8275e05ddef2a166dd7552942b');
+    //
+    // 5c319f8275e05ddef2a166dd7552942b -> 7dc9fc639acbacd34d2fbf1fa0f3cfb1,
+    // when `dailyRelevance` was added to `cell.json` (§2.2) and authored for all
+    // seventy cells in one pass — the share of ordinary people whose daily life
+    // a cell touches, reasoned cell by cell in
+    // `docs/design/daily-relevance-authoring.md`. A file addition and an
+    // authoring pass in one revision, unlike `knowledgeKind`, which was split
+    // in two: there was no mechanical intermediate to split at, because the
+    // field has no defensible default. Every value is a judgement, and a
+    // placeholder of `fp(1024)` on seventy cells would have been the claim that
+    // every cell touches everybody.
+    //
+    // It belongs in the preimage for the strongest reason on this list: it is
+    // read by a rule. `yieldSources` multiplies every `worship-yield` magnitude
+    // by its cell's value, so two universes disagreeing about relevance would
+    // pay their gods different favor for identical play, and a raid arbitrated
+    // by the host's ruleset would price the guest's magic by numbers the guest
+    // never agreed to.
+    expect(registry.contentRevision).toBe('7dc9fc639acbacd34d2fbf1fa0f3cfb1');
   });
 
   it('is stable across loads of identical content', () => {
