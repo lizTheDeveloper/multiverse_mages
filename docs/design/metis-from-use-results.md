@@ -114,7 +114,10 @@ playing**:
 - `archivist` accrues **3.19× more** than either permit-everything bot, at 3529 holders against 92,
   because it maximises mage count and every mage is a passive applier.
 
-A mētis mechanic on this hook would rank the pool almost exactly by how little the god interferes.
+A mētis mechanic on this hook would rank the pool *almost* by how little the god interferes — almost,
+because `archivist` breaks the monotonicity by playing hard in a direction that happens to grow the
+mage count. Which is the same point from the other side: what the hook rewards is **population
+holding permitted knowledge**, and a god's verbs reach that only by accident.
 
 ## 3. Q2 — whether `permit-then-idle`'s advantage moves
 
@@ -291,6 +294,24 @@ someone should change them deliberately:
   says `world-step.ts` passes `resourceYieldBonuses: []`; it now passes `economy.resourceYield`. So
   the consumption report may be *understating* what is wired.
 - **The brief's 38/40 belongs to `permissive-breadth`.** See §3.
+
+### One inherited test failure, which is the merge's and not this branch's
+
+`packages/scenario/test/unit/reference-long-run.test.ts` — *"9.5 — teaching now sustains, and
+scribing survives the whole run"* — fails on this tree: `no lesson taught in 20-year window 9`.
+3989 of 3990 tests pass.
+
+It is **a property of the merge**, not of anything here. This branch's diff after the merge commit
+touches five files — one `.mjs` tool, one document, two result JSONs and `.gitignore` — and **zero
+TypeScript under `packages/`**. Nothing on this branch can move a simulation.
+
+The test is a deliberate tripwire and says so in its own prose: *"This tripwire has fired twice
+already and been rewritten both times, which is what a tripwire is for."* It has now fired a third
+time, on the interaction between `main`'s frontier-predicate work and W29's material split — each
+side green alone, the union not. That is exactly the class of thing a tripwire exists to catch, and
+it wants the hand of whoever lands #42, who can see both sides. **It must not be rewritten to go
+green by someone who has not found the cause**, which is the third time that instruction would
+apply.
 
 ### Randomness
 
