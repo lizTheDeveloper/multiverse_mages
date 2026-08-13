@@ -2272,3 +2272,51 @@ W49 also found and fixed a defect in its own instrument: `defineWorldSimulation`
 so its `onReport` callback was silently dropped and the agreement check was printing *"clean"* without
 ever evaluating. It reported this rather than quietly repairing it, and confirmed the applied-use
 figures were unchanged by the fix.
+
+### The numbers, and a correction to the negative control itself
+
+W49 ran the gate and did not build. Five strategies, matched seeds, applied use normalised per tick:
+
+| strategy | mean ticks | use/tick | ticks applying | form mix |
+|---|--:|--:|--:|---|
+| `passive-control` | 2400 | 21.11 | 98.8% | Terram 100% |
+| `permit-then-idle` | 1082 | **118.78** | 98.6% | seven forms |
+| `permissive-breadth` | 1122 | **118.77** | 99.1% | seven forms |
+| `denial-warden` | 1768 | **0.14** | 1.6% | Terram 100% |
+| `archivist` | 2400 | 379.22 | 99.2% | Terram 100% |
+
+**`permit-then-idle` / `permissive-breadth` = 1.0001.** Idle is the *ablation* of breadth — same
+opening, every action after round 140 replaced by nothing — and **2,260 ticks of doing nothing cost it
+0.01% of its applied use.** §11c predicted it would accumulate none.
+
+Worse, **the hook is anti-correlated with playing**: `denial-warden`, the god using its verbs hardest,
+accrues **877× less** than the god doing nothing. And `archivist` has the pool's largest volume with
+**the same 100%-Terram mix as the do-nothing arm**, because it spends its verbs on scribing rather
+than permitting. Volume and composition are set by two different things and **neither of them is
+work.**
+
+**Correction to a figure this document has used repeatedly.** `balance/results-integration-r2.txt`
+records **`permit-then-idle` at 40/40**; the **38/40** quoted here and in several agent briefs is
+`permissive-breadth`. The idle bot is not matching the active one — **it is beating it.**
+
+### The recommendation, which is the thing to build next
+
+> **Build `practice` as a tenth autonomy goal.** It competes for a mage's month, restores mastery —
+> closing `ages-of-magic.md` §2c's publish-or-perish loop — and is what `resource-yield` should gate
+> on, so the economy reads **work performed** rather than **knowledge held**.
+
+The game named this operation itself and then never built it. `decay.ts:115`: *"Nothing in this
+subsystem restores mastery; **practice does, and practice is an operation somebody has to perform.**"*
+It is a `mages-and-species` change, not a `knowledge-model` one.
+
+**The battle half may survive the gate that killed this one**, for a reason worth stating: a raid
+**is** an act, with a roster of who was there and who came home. The attribution the economy lacks is
+already present. Prefer a mastery term over its own node, survivors only, and run the same shaped
+measurement before believing it.
+
+### Four stale facts, flagged and not fixed
+
+`CLAUDE.md` says `WORLD_SCHEMA_VERSION` is **3**; the code says **5**. *"`gatherEffects` has no
+production caller"* is stale in **five places** now that #42 has landed it. And `content-set.ts`'s
+consumption note is stale in the *other* direction, which may make the consumption report understate
+what is actually wired.
