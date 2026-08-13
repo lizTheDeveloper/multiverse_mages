@@ -129,12 +129,12 @@ it costs one run instead of two.
 
 The objection a reviewer should raise is that `open-then-build` was written by the same workstream
 as the conjunct, so of course it passes. The `archivist` arm answers it, and it does so from the
-opposite corner: **`archivist` founds 1,281-1,327 universities per run and never qualifies.**
+opposite corner: **`archivist` founds 1,281-1,345 universities per run and never qualifies.**
 
 | strategy | universities | nodes known | qualifies? |
 |---|---|---|---|
 | `permit-then-idle` | **1** | 261-269 | **no** |
-| `archivist` | **~1,300** | **51** | **no** |
+| `archivist` | **1,281-1,345** | **51** | **no** |
 | `passive-control` | 1 | 51 | no |
 | **`open-then-build`** | 78-98 | 198-220 | **yes** |
 
@@ -148,6 +148,16 @@ university race — `archivist` wins that race by a factor of thirteen and still
 requirement that the god do a second thing while doing the first. The conjunct cannot be satisfied
 by scaling either axis alone, which is exactly the property the two earlier proposals asked for and
 which no threshold over knowledge could have.
+
+**The `archivist` figures are n=11 per arm, not 40.** Its runs found over thirteen hundred
+universities each and were the slowest in the pool by an order of magnitude; the arm was still
+running when this branch was reported, and the evidence file records the partial count rather than
+rounding it up to the others. The reading is not sensitive to the remaining 29: `archivist` holds
+exactly **51** nodes in every run measured — the content ceiling of the starting rectangle, which it
+never permits past — and every one of the 11 pairs is bit-identical across the two arms. Nothing in
+the remaining replicates can make a universe that permits nothing reach a canon it has no access to.
+If a later run of the full 40 contradicts that, this section is wrong and the 2x2 loses its
+strongest corner.
 
 **It also bounds how much of the result is `open-then-build` being purpose-built.** The probe was
 constructed to pass, so its passing is weak evidence on its own. `archivist`'s failure is not:
