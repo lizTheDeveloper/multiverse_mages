@@ -620,15 +620,6 @@ export function worldSystem(
       // stays correct exactly as long as nothing else touches them.
       const efforts = new EffortLedger(state);
 
-      // One counter per tick, for the §7 emission. `contracts.md` §3's cap is
-      // the only bound on the capital loop, so how often it binds is the
-      // measurement that says whether the brakes are doing anything.
-      //
-      // Constructed before phase 1 rather than after it because the labour
-      // displacement ceiling is clamped and counted in phase 1, and a second
-      // counter for it would be a second report nobody reads.
-      const rateClamps = new ClampCounters();
-
       // ---- 1. Materials production ---------------------------------------
       // What the universe's knowledge is worth to its economy, read once. This
       // is the wire `universe-effects.ts` exists to run: before it, this line's
@@ -649,7 +640,20 @@ export function worldSystem(
       // — the fields and the building sites — because a share applied twice by
       // two phases that each thought they were the only one is the arithmetic
       // this whole layer is arranged to make impossible.
-      const displaced = stackDisplacedLabor(economy.displacement, { counters: rateClamps });
+      // No `counters` here, deliberately. The only clamp counter this loop has
+      // is `rateClamps`, and its total is what a `CapitalEmission` reports as
+      // *"times the shared cap bound during this tick's evaluations"* — a
+      // series `capitalSnowball` is computed from at 0.5.0. Folding an
+      // unrelated ceiling into it would move a balance metric for a reason
+      // that has nothing to do with capital, which is exactly the kind of
+      // quiet conflation that makes a baseline irreproducible.
+      //
+      // Displacement's ceiling is observable anyway, and more directly:
+      // `displacedLaborShare` below is the folded share itself, so a run
+      // pinned at `DISPLACED_LABOR_CAP` says so in every tick it is pinned.
+      // `stackDisplacedLabor` still takes a counter, for a harness that wants
+      // one of its own.
+      const displaced = stackDisplacedLabor(economy.displacement);
 
       // Labour is exclusive between the fields and the building sites, so the
       // split is decided once, here, before either phase spends it.
@@ -684,6 +688,11 @@ export function worldSystem(
         cells: deps.cells,
         ruleset,
       });
+      // One counter per tick, for the §7 emission. `contracts.md` §3's cap is
+      // the only bound on the capital loop, so how often it binds is the
+      // measurement that says whether the brakes are doing anything.
+      const rateClamps = new ClampCounters();
+
       // Scribing is paid at the desk rather than in phase 9 — see the module
       // note — so what a scribe may spend is the **vellum** stock less this
       // tick's library upkeep, which outranks her in `CONSUMPTION_ORDER` and is
