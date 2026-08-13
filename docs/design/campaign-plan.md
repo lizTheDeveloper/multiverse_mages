@@ -2320,3 +2320,88 @@ measurement before believing it.
 production caller"* is stale in **five places** now that #42 has landed it. And `content-set.ts`'s
 consumption note is stale in the *other* direction, which may make the consumption report understate
 what is actually wired.
+
+---
+
+## No mage ever chooses to teach
+
+W47, instrumenting the empty teaching window on the merged economy tree, measured this and it is the
+most consequential thing in its report:
+
+> **`teach` is feasible on 2,628 evaluations in the window and selected on none.** Over two
+> centuries, on either tree, **no mage ever chooses to teach — every lesson happens because a student
+> went looking.**
+
+Teaching in this game is entirely student-pull. The `teach` goal exists, is scored, is feasible, and
+loses every time. That single fact runs underneath a large part of the design written this week:
+
+- **`ages-of-magic.md` §2b's stationed set** — the tension between teaching, researching and
+  defending — assumes a mage *chooses* to teach. She never does.
+- **§2c's publish-or-perish loop** has teaching keeping a scholar's fundamentals fresh. If teaching is
+  only ever student-initiated, a scholar cannot elect to maintain herself; she can only be found.
+- **The college** (§2, §2a) is an arrangement for teaching to happen. Its faculty do not teach — they
+  are taught *at*.
+
+W47 handed it forward rather than fixing it, correctly: it belongs to `mage-autonomy` and touching
+goal scoring inside a merge PR has baseline consequences. Alongside it, `affiliate` holds **76 of 90**
+mages by world year 200 (69 of 83 on main) — the emergent monoculture the goal histogram was built to
+expose, visible as a number for the first time.
+
+### And the tripwire it was blocking was never a property of the build
+
+`reference-long-run` 9.5 asserted a lesson in *every* 20-year window. W47 ruled out three
+explanations by measurement rather than argument — not the economy (261 research projects complete in
+the same empty window), not crowd-out (`teachableToMe` is empty on **all 21,471** mage-evaluations,
+so `seek-teaching` is masked infeasible rather than out-scored), not the threshold (`fp(512)`
+untouched, and the supply wave crosses it nine windows in ten).
+
+**Teaching's supply oscillates, and the horizon ends inside a trough.** Across five run seeds, **three
+of five have an empty window on `main` too — where the assertion is green.** It was measuring a wave
+at one phase. Replaced with three claims that hold on every seed on both trees: teaching starts, it
+is not confined to the founding-grant era, and it happens in more than half the windows.
+
+The instrument reproduced main's own committed claim exactly — main's baseline note says the thinnest
+window holds 16, and it measured 16 — which forecloses *"the probe is wrong."*
+
+---
+
+## The CI ceiling is now the binding constraint, and it needs the owner
+
+`npm run verify` on the economy branch is **11m59s**, of which the ascension gate is **565.4s — 79%**.
+The self-hosted runner's timeout is **600s**. Its history on that branch: timed out, failed mid-test,
+timed out. Every other branch passes, so this is specific to what the tree costs.
+
+**The sequencing point is the actionable part:** verify is over budget *because of what the branch
+does* — a universe 2.6× the population, now fighting raids. **The moment #42 merges, `main` inherits
+that cost and `ci/hetzner-lint` should begin timing out repo-wide.**
+
+So the decision is not "retry". It is:
+
+> **Raise the timeout in `/opt/ci-runner/webhook_receiver.py` before merging #42, or accept a red
+> required check on `main`.**
+
+That receiver is shared with `themultiverse.school` and the docs require owner sign-off, so it is not
+an agent's call. W47 correctly refused the two tempting alternatives: it did not touch
+`scripts/ci-check.sh` (which must stay equivalent to `verify`), and it did not trim the ascension
+sweep, because 32 runs is already `balance/README.md`'s argued minimum and **shrinking a gate to fit
+CI is tuning the instrument.**
+
+### Freezing main
+
+W47 merged main twice during one CI cycle and main moved twice more, most recently taking
+`knowledgeKind` onto all 300 nodes. The gate treats `provenance.contentHash` as block-level
+invalidation, so each round costs a **full baseline regeneration (~15 min) even when no metric
+moves** — and that buys nothing while the runner ceiling stands, because merge freshness is not what
+is failing.
+
+**Main is therefore frozen to non-`packages/` changes until #42 lands.** Docs, `ui/` and tooling may
+continue; anything touching the simulation waits. This is my call as delegated author and is the
+cheapest way to stop paying a regeneration per cycle for a race nobody can win.
+
+### Two false statements withdrawn from the superseded baseline notes
+
+Found while writing their replacements, and both matter beyond this PR: the notes called all three
+sweeps **100% `passive-control`** (the ascension sweep round-robins all eight strategies), and said
+**nothing in `packages/scenario` opens a portal** — `raidEngagement` is `false` on main and `true` on
+the branch, so **raids firing is part of this merge's delta** and was never isolated from the economy
+wire.
