@@ -67,6 +67,11 @@ that failed the gate, and it is stated in §2 as a ratio.
 This is the seventh mechanic aimed at `permit-then-idle` and it is the first to die **before** the
 build rather than after it. That is the measurement doing its job.
 
+One correction to the brief this work was given, since it will be quoted again: the bot currently
+wins **40/40**, not 38/40. `balance/results-integration-r2.txt` records `permit-then-idle` at 40/40
+and `permissive-breadth` — the strategy it is the ablation of — at 38/40. The idle bot is not
+matching the active one. It is beating it.
+
 ## 4. Q3 — whether two universes with different territory diverge
 
 **Under this hook, no — by construction, not by measurement.**
@@ -75,11 +80,19 @@ build rather than after it. That is the measurement doing its job.
 `river-delta` yields `food 2048 / stone 128 / vellum 384` per land unit, a `highland-waste` yields
 `food 64 / stone 512 / vellum 64`. The delta and the quarry are authored and they differ.
 
-They cannot differ in mētis, because the accrual predicate never reads them. It reads which nodes
-are held above threshold in permitted cells. Two universes with identical rulesets and different
-land accrue **identical** applied use and differ only in what the land pays out. The divergence
-§11c wants — *"a realm that irrigates accumulates Aquam mētis; one that quarries accumulates
-Terram"* — requires accrual to key on the work, and the work is not in the predicate.
+The predicate never reads them. It reads which nodes are held above threshold in permitted cells.
+
+Two universes with identical rulesets and different land would still differ in *how much* applied
+use they accrue — territory moves food, food moves population, population moves the mage count, and
+the mage count moves the number of instances. That divergence is **demographic**, and it would exist
+under any hook whatsoever.
+
+What they cannot differ in is **form composition**, and form composition is the whole of the claim.
+*"A realm that irrigates accumulates Aquam mētis; one that quarries accumulates Terram"* asks for the
+*kind* of practitioner knowledge to follow the *kind* of work. Under this predicate the form mix is
+set by the ruleset and by what the autonomy layer chose to research — the delta and the quarry, given
+the same edicts, accrue the same mix in different volumes. The divergence §11c wants requires accrual
+to key on the work, and the work is not in the predicate.
 
 What *does* diverge is the **ruleset**, and that is measurable:
 
