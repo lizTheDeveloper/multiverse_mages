@@ -4376,3 +4376,78 @@ Two process notes worth keeping:
 - **It also re-measured the unaffected numbers rather than asserting they were unaffected** — 1,210
   lessons and overlap 0.961 reproduce exactly on the clean tree. "That part was probably fine" is not
   a measurement.
+
+---
+
+## W90 — displacement lands, and the falsifying measurement I specified was unreachable
+
+*2026-08-13, PR #79. S5 implemented; its stated falsifier turns out not to exist.*
+
+An effect gains an optional `displacement: { role, fraction }` — `role` a one-member occupation enum
+(`laborer`, the only v1 role paid in materials), `fraction` an `Fp` share **one contributing instance**
+removes, per-instance like the magnitude beside it. Absence is never read as zero (tested with
+`'displacement' in contribution`). Shares fold through `@mm/primitives`' own `multiplicativeOnRemainder`
+and clamp through `applyCap`, so the stacking arithmetic is not bypassed.
+
+**Deliberately not a new primitive** (that is A5, refused) and **not a god constant** (that is w69's
+surface). Five effects on four `rego-terram` nodes — **Rego, not Intellego, because knowing where the
+seam is does not dig it.**
+
+### S5's falsifier had a false premise, and I did not check it
+
+S5 says displacement is confirmed when *"a resource-yield-maximising strategy stops dominating on
+population."* **On `main`, it never dominated: +91.4 ± 135.1, 0.68 SE — null.**
+
+Population is set by land carrying capacity, and `subsistenceShortfallShare` sits near **fp(1000) in
+every arm, including the untouched one.** The penalty channel is already saturated, so food barely moves
+the headcount. *"Stops dominating"* is not a thing that can be observed on this build.
+
+**This is the second time in one night that a measurement I specified was null by construction.** The
+grant-budget brief named a control pair in which neither bot ever submits the action being budgeted.
+Both times I wrote the brief; both times the agent discovered the defect by trying to take the
+measurement. **Checking that a measurement can move before demanding that it move is precisely the
+discipline this campaign exists to enforce**, and the orchestrator has now failed it twice while issuing
+briefs about it.
+
+### What displacement actually does, which is the result S5 was reaching for
+
+**Permitting the economy cells stops being free** — 8 CRN seeds, 2400 ticks, paired per seed:
+
+| breadth − no-terram | before | after |
+|---|---|---|
+| population | −88.8 ± 113.0 (null) | **−396.4 ± 122.3 (−3.2 SE)** |
+| food | +32,799 ± 29,430 (null) | **−618,517 ± 32,122 (−39.7%)** |
+| stone | +2,127,957 (+276%) | +827,429 (+107%) |
+
+`no-terram` moves by **exactly 0.0 ± 0.0** between content sets — a clean control, and the reason the
+rest of the table is believable.
+
+### The honest limit, volunteered rather than buried
+
+**The ceiling pins.** Mean share runs fp 220–385 against ticks at 512, so at scale the pair reads
+**4× output against half the workforce — net 2×.** No longer a *pure* bonus; still a bonus. If
+saturation should be break-even, the cap wants fp(768), not fp(512). Left unchanged deliberately, and
+flagged so whoever tunes it next knows whether fp(512) was a half-measure or a first guess.
+
+### And a directional movement that passes tolerance but is real
+
+The **ascension gate** — the only committed gate running strategies for 2400 ticks — moves
+`referenceGrimoires` **−99.41 (−35%, −2.24 SE)**. Inside tolerance, and a genuine behavioural claim:
+**displacement costs a third of the books.** `balance-gate` reads exactly 0.00000 on every metric and
+`horizon` moves `referenceGrimoires` −0.92 (−0.13 SE) — the known gate blindness, confirmed a second
+time from an independent direction.
+
+### A spec that four branches cite existed only in a working tree
+
+`grungeon-master-suggestions.md` was **untracked**. It has been the working spec for
+`w77/effect-displacement`, `w78/teaching-boundary` and the triage of S4, S6, S8 and S11 — and the agent
+implementing S5 had to be told its contents second-hand, then reported it missing.
+
+**An unversioned spec is worse than none**: agents cite section numbers a reviewer cannot look up, and
+the S5 that PR #79 implements would have had no readable referent in the history. Committed on
+`docs/stash-hazard` (PR #78), with its own status line saying nothing in it is approved and `vision.md`
+remains the vision of record.
+
+The same agent also reported `§W72` as existing in no committed copy. **It exists** — line 3345 of this
+file, on `pm/campaign-plan`, not on `main`. My brief cited a section without citing a ref. **A finding
+about a document is a finding about a ref, exactly as a finding about code is.**
