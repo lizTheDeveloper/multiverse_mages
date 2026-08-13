@@ -60,6 +60,39 @@ feature work and is invisible until a desync or an irreproducible sweep appears 
 | **INV-9** | No floating-point arithmetic anywhere in the rules path. All rules math is fixed-point at 1/1024, and division rounds toward negative infinity through one shared helper. | A non-integer literal or `Math.*` float operation in the rules path; a division rounding inconsistently for negative operands. | Float-ban lint + rounding property tests | **C** |
 | **INV-10** | The package dependency graph holds: `sim-core` depends on nothing, `rules-magic` and `rules-world` never import each other, and no package depends on the client or the server. | The dependency-graph test naming a forbidden edge. | Dependency-graph test | **C** |
 
+### 2a. Numeric integrity — live from 0.4.0
+
+INV-8 and INV-9 keep the *operations* clean. These three keep the *values* clean, and they exist
+because this project has now met the same defect four times and caught it four different ways, all
+of them luck.
+
+The defect has two halves and one mechanism. A lookup misses, `undefined` enters arithmetic, `NaN`
+comes out — and an `Int32Array` coerces `NaN` to **`0`**. So "NaN contamination" and "the value
+silently fell to zero" are not two problems. They are one problem seen from two ends, and neither
+end throws.
+
+| ID | Claim | Disproved by | Mechanism | Cadence |
+|---|---|---|---|---|
+| **INV-37** | No non-integer value ever crosses into component storage in an assembled universe — not under any shipped strategy, and not on the raid path. | The value sentinel reporting one violation at either door, in any arm. | `installValueSentinel` over the reference universe, all shipped strategies, and a resolved-raid arm | **C** |
+| **INV-38** | The set of functions that floor a live non-zero quantity to zero is exactly the registered set. It grows only by review. | An unregistered `module:functionName` appearing in the annihilation recorder's report. | `installAnnihilationSentinel` + the registry in `annihilation-registry.test.ts` | **C** |
+| **INV-39** | Every arm that claims to check a mechanic reaches it. A coverage assertion accompanies each numeric-integrity arm whose mechanic is reached probabilistically. | An arm asserting cleanliness while its mechanic count is zero. | Resolved-raid count asserted alongside the violation list | **C** |
+
+**INV-39 is the meta-claim that protects the other two,** the way INV-7 protects the determinism
+block. A run that never reaches a mechanic reports zero violations and passes — so an arm without a
+coverage assertion is indistinguishable from an arm that checks nothing. This is not hypothetical:
+before 0.4.0 the raid path's only coverage was one raid resolved across the whole ten-strategy pool,
+on one seed, by accident. `portal-rush` — the strategy whose entire purpose is opening portals —
+resolved none at 60, 90, 120, 180 or 240 ticks. Any content change could have taken that last
+accidental raid away, and nothing would have gone red.
+
+**What these three do not cover, stated so nobody reads them as more than they are.** The value
+sentinel watches component storage, so a `Fixed` living in a plain object — `RaidState.portalStability`
+and `stabilityDecayPerTick` are the current examples — is outside it, and there `NaN` survives rather
+than coercing. The annihilation sentinel sees `mul` and `div` only; a floor reached by `floorDiv`
+directly, or by a bare `-`, is invisible to it. Both are off by default and cost one comparison when
+off, so neither is a shipping guard — they are instruments, and they are only as good as the arms
+that install them.
+
 ## 3. Contract integrity — live from 0.2.0
 
 Once these hold, capabilities can be built concurrently without inventing incompatible versions of

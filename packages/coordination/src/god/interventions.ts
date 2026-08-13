@@ -60,7 +60,7 @@
 
 import type { Action, EntityHandle, SimState } from '@mm/sim-core';
 import type { AxisChangeCounterRecord } from '@mm/state';
-import { FP_ONE, TIME_MODE } from '@mm/sim-core';
+import { FP_ONE, NULL_ENTITY, TIME_MODE } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
 import {
@@ -242,7 +242,7 @@ function refuse(state: SimState, tally: Tally): void {
 
 function findTheUniverse(state: SimState): EntityHandle {
   const rows = collectRecords(state, UNIVERSE);
-  return rows[0]?.handle ?? 0;
+  return rows[0]?.handle ?? NULL_ENTITY;
 }
 
 /** One action: validate everything, price it, deduct, apply. */
