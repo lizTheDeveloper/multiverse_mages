@@ -329,7 +329,13 @@ describe('contentRevision', () => {
     // what a digest over the union is supposed to produce, and it is the same
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of file names.
-    expect(registry.contentRevision).toBe('6973d2c55f6d7788bbaa6886e507bbde');
+    //
+    // 6973d2c55f6d7788bbaa6886e507bbde -> abec6372723895f8135bbb5b700c0d57, when
+    // W63 added a sixth ascension constant, `ascension-institutions`. Same shape
+    // as the five above and the same reason it is not a shrug: it is a conjunct
+    // of both paths, so two universes on either side of this revision would
+    // disagree about whether a game was over. No existing record changed a byte.
+    expect(registry.contentRevision).toBe('abec6372723895f8135bbb5b700c0d57');
   });
 
   it('is stable across loads of identical content', () => {

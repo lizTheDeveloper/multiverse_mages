@@ -921,6 +921,70 @@ const PERMIT_THEN_IDLE: StrategyDefinition = {
 };
 
 /**
+ * `permit-then-idle` plus one purchase a world year: the reachability probe for
+ * W63's institution conjunct.
+ *
+ * W63 added `ascension-institutions` to both paths after `permit-then-idle` won
+ * 40 of 40 at n=400 by opening the grid and then submitting nothing for 2260
+ * ticks. That conjunct refuses every strategy in the pool, and **a predicate
+ * nothing can satisfy is indistinguishable from a predicate that is correct
+ * over an impoverished pool** — the two readings have opposite consequences and
+ * no committed measurement separated them, because no member both opens the
+ * grid and buys anything. `permissive-breadth` lists `fundUniversity` behind
+ * `permitTechnique`, which is always legal, so it never reaches it;
+ * `archivist` funds constantly and permits nothing, so it sits at the
+ * fifty-one-node content ceiling.
+ *
+ * This is the ablation-complement of `permit-then-idle` and nothing else: the
+ * identical 140-round permit prefix, the identical silence afterwards, with
+ * `fundUniversity` at slot 0 on every twelfth round — one world year — so that
+ * `policyFor` actually reaches it. Placement is the whole of the difference and
+ * it is placement, not effort: a strategy that lists the purchase behind an
+ * always-legal action has not chosen to build, it has been sorted out of
+ * building.
+ *
+ * It is a **verification probe and not part of the shipped pool's argument**,
+ * appended for the reason `idle-then-declare` and `permit-then-idle` were: the
+ * claim it exists to falsify is W63's own.
+ */
+const OPEN_THEN_BUILD: StrategyDefinition = {
+  strategyId: 'open-then-build',
+  version: 1,
+  hypothesis:
+    'Whether W63\'s institution conjunct is satisfiable at all, or whether it closes both paths ' +
+    'for everyone. It differs from permit-then-idle by one submission a world year — founding a ' +
+    'university, the one thing in this build no ruleset edit produces — and by nothing else. If ' +
+    'it also ends at 0 of 40 then the conjunct is unreachable and the predicate is wrong; if it ' +
+    'wins where permit-then-idle no longer does, then the difference between the two is exactly ' +
+    'what the win condition now reads.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'Symmetric with permit-then-idle, which it is the one-action extension of. A difference in ' +
+      'stance would put a second variable inside a comparison that exists to isolate one.',
+  },
+  signatureActions: [GOD_ACTION.fundUniversity, GOD_ACTION.permitTechnique, GOD_ACTION.permitForm],
+  preferences: ({ round }) => {
+    const opening: ActionSubmission[] =
+      round >= 140
+        ? []
+        : [
+            { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
+            { action: GOD_ACTION.permitForm, parameter: form(round) },
+          ];
+    // Parameter 0 is the founding purchase rather than a top-up of an existing
+    // site: §4.2 gives founding and funding one action id, and `god-cost.json`
+    // prices them apart.
+    return round % WORLD_TICKS_PER_YEAR === 0
+      ? [{ action: GOD_ACTION.fundUniversity, parameter: 0 }, ...opening]
+      : opening;
+  },
+};
+
+/** `contracts.md` §1.1's world year. One founding attempt per year, not per tick. */
+const WORLD_TICKS_PER_YEAR = 12;
+
+/**
  * The pool, in registration order.
  *
  * Eight, which is the capability spec's *"at least eight"*. Order is the order
@@ -928,7 +992,7 @@ const PERMIT_THEN_IDLE: StrategyDefinition = {
  * sorts the ids it publishes, and this array is what a reader compares against
  * the spec paragraph.
  *
- * The two verification probes are appended rather than inserted so that
+ * The three verification probes are appended rather than inserted so that
  * `round-robin` assignment — `strategies[replicateIndex % size]` over the *sweep
  * file's* list, not this one — is unaffected for any sweep that does not name
  * them.
@@ -944,6 +1008,7 @@ export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   WORSHIP_MAXIMIZER,
   IDLE_THEN_DECLARE,
   PERMIT_THEN_IDLE,
+  OPEN_THEN_BUILD,
 ]);
 
 // ---------------------------------------------------------------------------

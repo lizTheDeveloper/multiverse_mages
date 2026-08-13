@@ -419,6 +419,11 @@ function outcomeSystem(
             cellsKnown: knownCells.size,
             dependence,
             eraNodesLost: god.eraNodesLost,
+            // Read from the same `worshipSources` projection the worship class
+            // uses, taken at step 1 of this tick. A second walk of the
+            // component would be a second answer to the same question, and the
+            // two could disagree while both looked right.
+            completedUniversities: sources.completedUniversities,
           },
           constants,
         );
@@ -441,6 +446,7 @@ function outcomeSystem(
         cellOf: (nodeId: number) => deps.cells.cellOf(nodeId),
         deepest,
         worshipTier,
+        completedUniversities: sources.completedUniversities,
       };
       const path = qualifyingPath(apotheosisFacts, god, ctx.tick, constants);
       god = {

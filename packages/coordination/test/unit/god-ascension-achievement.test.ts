@@ -101,6 +101,7 @@ function facts(mastered: number, copies = 2, overrides: Partial<ApotheosisFacts>
     cellOf: GRID.cellOf,
     deepest: DEEPEST,
     worshipTier: C.ascensionTierGate,
+    completedUniversities: C.ascensionInstitutions,
     ...overrides,
   };
 }
@@ -112,6 +113,7 @@ function boundary(overrides: Partial<EraBoundaryFacts> = {}): EraBoundaryFacts {
     cellsKnown: C.ascensionCanonCells,
     dependence: 0,
     eraNodesLost: 0,
+    completedUniversities: C.ascensionInstitutions,
     ...overrides,
   };
 }
@@ -174,13 +176,17 @@ describe('Path B requires breadth held, not merely misfortune avoided', () => {
   });
 
   it('reduces to the pre-change predicate at the identity values', () => {
-    const identity = { ...C, ascensionCanonBreadth: 0, ascensionCanonCells: 0, ascensionLossFraction: 0 };
-    expect(eraBoundaryPassed({ nodesKnown: 0, cellsKnown: 0, dependence: 0, eraNodesLost: 0 }, identity)).toBe(true);
+    const identity = {
+      ...C,
+      ascensionCanonBreadth: 0,
+      ascensionCanonCells: 0,
+      ascensionLossFraction: 0,
+      ascensionInstitutions: 0,
+    };
+    const bare = { nodesKnown: 0, cellsKnown: 0, dependence: 0, completedUniversities: 0 };
+    expect(eraBoundaryPassed({ ...bare, eraNodesLost: 0 }, identity)).toBe(true);
     expect(
-      eraBoundaryPassed(
-        { nodesKnown: 0, cellsKnown: 0, dependence: 0, eraNodesLost: identity.ascensionLossMax + 1 },
-        identity,
-      ),
+      eraBoundaryPassed({ ...bare, eraNodesLost: identity.ascensionLossMax + 1 }, identity),
     ).toBe(false);
   });
 });
@@ -205,12 +211,13 @@ describe('the loss allowance scales with the canon, because a flat cap measures 
     // Isolated from the breadth conjuncts on purpose: this asserts the *loss*
     // rule, and a small canon that also failed breadth would pass the assertion
     // for the wrong reason.
-    const open = { ...C, ascensionCanonBreadth: 0, ascensionCanonCells: 0 };
+    const open = { ...C, ascensionCanonBreadth: 0, ascensionCanonCells: 0, ascensionInstitutions: 0 };
     const large = 40 * (FP_ONE / Math.max(open.ascensionLossFraction, 1)) * (open.ascensionLossMax + 1);
     const lost = open.ascensionLossMax + 1;
     expect(lossAllowance(large, open)).toBeGreaterThanOrEqual(lost);
-    expect(eraBoundaryPassed({ nodesKnown: large, cellsKnown: 1, dependence: 0, eraNodesLost: lost }, open)).toBe(true);
-    expect(eraBoundaryPassed({ nodesKnown: 1, cellsKnown: 1, dependence: 0, eraNodesLost: lost }, open)).toBe(false);
+    const held = { dependence: 0, eraNodesLost: lost, completedUniversities: 0 };
+    expect(eraBoundaryPassed({ ...held, nodesKnown: large, cellsKnown: 1 }, open)).toBe(true);
+    expect(eraBoundaryPassed({ ...held, nodesKnown: 1, cellsKnown: 1 }, open)).toBe(false);
   });
 
   it('never lets the allowance fall below the authored floor', () => {
