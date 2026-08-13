@@ -45,11 +45,15 @@ function contractsMarkdown(): string {
 }
 
 describe('the §7 table parser', () => {
-  it('finds exactly the twelve metric names §7 tabulates', () => {
+  it('finds exactly the fourteen metric names §7 tabulates', () => {
     const ids = contractSection7MetricIds(contractsMarkdown());
     expect(ids).toEqual([
       'ascensionRate',
       'capitalSnowball',
+      // The two combat metrics. §7 described combat only in units of magnitude
+      // applied, and measured raids say that ranks the wrong thing.
+      'combatActionEconomy',
+      'combatThresholdEfficiency',
       'illegalActionRate',
       'inboundRaidTempoLoss',
       'knowledgeHalfLife',

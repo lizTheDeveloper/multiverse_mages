@@ -64,6 +64,8 @@ import {
   collectLibraryDependence,
   collectPrestigeAdvantage,
   collectRaidInitiationCost,
+  collectCombatActionEconomy,
+  collectCombatThresholdEfficiency,
   collectRaidLengthDistribution,
   collectTimeToTierBySpecies,
   collectWinRateByPrimitive,
@@ -90,6 +92,32 @@ export interface BalanceMetricDefinition extends MetricDefinition {
   readonly pinnedConstants: Readonly<Record<string, JsonValue>>;
   /** The capability that owns the *threshold*, per §7's ownership split. */
   readonly thresholdOwner: string;
+  /**
+   * **What would prove this metric wrong.** The column `docs/design/invariants.md`
+   * has and this registry did not.
+   *
+   * Four metrics in this project have read as healthy constants while being
+   * structurally incapable of moving: `libraryDependence` pinned at 0,
+   * `capitalSnowball`'s byte-identical checkpoints, `referenceLibraryDepth` at
+   * 1.00, and a coverage gate reporting fourteen primitives exercised for
+   * primitives nothing consumed. Each was green for months. The thing they had
+   * in common is that no one had written down an observation that would have
+   * contradicted them, so there was nothing to check against and nothing to
+   * notice the absence of.
+   *
+   * A sentence here is not a test. What it is, is the thing a test can be
+   * written from — and the thing a reviewer can hold a suspiciously steady
+   * number against.
+   *
+   * **Optional, and deliberately not in {@link definitionDigest}.** The digest
+   * covers what changes the *quantity*; folding a new field in would move every
+   * metric's digest at once and the committed pin fixture would fail for all
+   * fourteen, which reads as a mass redefinition and is not one. Adding the
+   * sentence to a metric is therefore free, and that is the point — the column
+   * should fill in as capabilities revisit their own metrics rather than being
+   * back-filled in one sitting by whoever happened to add the field.
+   */
+  readonly disprovedBy?: string;
 }
 
 /** {@link MetricRegistry}, plus access to the full definitions. */
@@ -345,6 +373,82 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
     definitionVersion: 1,
     pinnedConstants: { denominator: 'raids initiated' },
     thresholdOwner: 'raid-engagement',
+  },
+  {
+    id: 'combatActionEconomy',
+    definition:
+      'Combatant-ticks of enemy action denied per raid, over the combatant-ticks the raid ' +
+      'contained, pooled across the raids of a run. A combatant-tick is one combatant acting for ' +
+      'one engagement tick, and a raid contains, for every combatant, the ticks from its entry to ' +
+      'its removal or to resolution. Three channels are denied: a world-scale combatant reaching ' +
+      'zero hit points denies the ticks from that moment to resolution, credited across sources in ' +
+      "proportion to the hit points each removed over that combatant's whole life; a ward or " +
+      'concealment save turning a lethal tick into a survived one denies the attacker the ticks ' +
+      'its target went on to act for, at most one save per combatant-tick; and an attack spent on ' +
+      'a summon denies one combatant-tick. Summon removals are excluded from the numerator and ' +
+      'reported alongside. Overkill is excluded from the secondary hit-point vector. Channels the ' +
+      'engine has no code path for are declared rather than reported as zero.',
+    scope: METRIC_SCOPE.perRun,
+    collectRun: collectCombatActionEconomy,
+    aggregation: 'mean',
+    unit: "fraction of the raid's combatant-ticks",
+    definitionVersion: 1,
+    pinnedConstants: {
+      denominator: 'combatant-ticks the raid contained: entry to removal or resolution, every combatant',
+      removalDuration: 'removal tick to resolution tick',
+      killAttribution:
+        "proportional to the hit points each source removed over the target's life; floored, " +
+        'remainder to the largest, ties on ascending source id',
+      saveAttribution:
+        'one save per combatant-tick; concealment when the evaded magnitude was necessary, ' +
+        'otherwise ward; each save owns the span to the next save, the removal, or resolution',
+      decoyTicksPerAbsorbedAttack: 1,
+      summonRemovalsExcluded: true,
+      overkillExcluded: true,
+      unimplementedChannels: ['displacement'],
+      castAndIntrinsicSeparated: true,
+    },
+    thresholdOwner: 'raid-engagement',
+    disprovedBy:
+      'Ablate a combat primitive to zero magnitude and its credited combatant-ticks do not fall to ' +
+      'zero. A raid in which every combatant survives to resolution reports non-zero denial through ' +
+      'the removal channel. A raid credits more combatant-ticks to removals than the sum, over its ' +
+      'removed combatants, of the ticks between each removal and resolution — the attribution ' +
+      'conserves exactly, so any excess is double-counting. The metric ranks two primitives in the ' +
+      'same order as raw magnitude applied on every sweep, in which case it is damage in a hat and ' +
+      'the three channels are not doing the work claimed for them.',
+  },
+  {
+    id: 'combatThresholdEfficiency',
+    definition:
+      'Of the combat attempts that removed any hit points, the fraction that removed a target from ' +
+      'action on a tick they fed. An attempt is one resolved cast per primitive it carries, or one ' +
+      'intrinsic attack by a summon or soldier detachment; an area-denial field is one attempt for ' +
+      'its whole life, attributed to the cast that laid it. Attempts that landed nothing — evaded, ' +
+      'or warded to zero — are counted and excluded from both numerator and denominator. The ' +
+      'per-run scalar is the ratio pooled over every raid in the run; the per-source breakdown ' +
+      'accompanies it, with a null efficiency where a source had no landing attempt at all.',
+    scope: METRIC_SCOPE.perRun,
+    collectRun: collectCombatThresholdEfficiency,
+    aggregation: 'mean',
+    unit: 'fraction of landing attempts',
+    definitionVersion: 1,
+    pinnedConstants: {
+      attemptUnit: 'one resolved cast per primitive, or one intrinsic attack; a field is one attempt for its whole life',
+      numerator: 'attempts that damaged a combatant which reached zero hit points on a tick they fed',
+      denominator: 'removing plus hurting attempts',
+      spentAttemptsExcluded: true,
+      pooling: 'over every raid in the run',
+      undefinedEfficiencyIsNull: true,
+    },
+    thresholdOwner: 'raid-engagement',
+    disprovedBy:
+      'A run with no removals at all reports a non-zero ratio, or a run in which every landing ' +
+      'attempt removed its target reports below 1. A source whose attempts all landed reports a ' +
+      'null efficiency, or a source whose attempts were all evaded reports 0 rather than null. ' +
+      'Removing attempts exceed the removals the same raids reported, which is impossible unless an ' +
+      'attempt is being counted more than once — the case an area-denial field spanning forty ticks ' +
+      'would produce if its cast provenance were dropped.',
   },
 ]);
 
