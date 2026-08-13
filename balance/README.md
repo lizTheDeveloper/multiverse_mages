@@ -347,10 +347,26 @@ What is true now:
   choice: they run `passive-control` fixed, so all 400 of their runs measure the simulation's own
   evolution rather than a strategy's. Substituting a strategy that acts is a different experiment,
   which is what `balance-gate-ascension-v1` is.
-- `balance-gate-ascension-v1` is keyed to a build in which ascension eligibility opens by **passive
-  accumulation**: Path A gates on world tick ≥ 600 and worship tier ≥ 4, and worship accrues from
-  mages, universities and populace whether or not the god acts. So its 27-of-32 ascension rate is a
-  statement about a clock, not about play. Making the gate depend on play is W2 of the
-  ascension-meta campaign, and when it lands **every number in that file should move**. That is the
+- `balance-gate-ascension-v1` — **the paragraph that stood here was written pre-W6 and read as
+  current for two workstreams after it stopped being true. It is kept, dated, and corrected rather
+  than deleted, because a reader who acts on a stale "what is true now" bullet does not know to
+  check it.**
+
+  *As written (pre-`ceb1492`):* the gate was keyed to a build in which ascension eligibility opened
+  by **passive accumulation** — Path A gating on world tick ≥ 600 and worship tier ≥ 4, with worship
+  accruing from mages, universities and populace whether or not the god acts — so its 27-of-32
+  ascension rate was *"a statement about a clock, not about play."*
+
+  *What is true now:* that clock is gone. W6 (`ceb1492`) made both predicates read positive
+  achievement, and W63 verified the consequence directly — `passive-control` ends at
+  `ascensionPath = none` in 4 of 4 starting positions, and `idle-then-declare`, a probe that plays
+  nothing and declares the instant the mask opens, ascends **0 of 40** in each of five committed
+  arms. **A bot can no longer win without pressing the button.** The defect that survives is a
+  different mechanism and a sharper one: a bot can win by pressing only the **ruleset** buttons and
+  then nothing else — `permit-then-idle` at 40/40 against `permissive-breadth`'s 38/40. W63's
+  `ascension-institutions` conjunct is aimed at that, not at the clock.
+
+  The regeneration instruction below was written for the landing that has now happened, and it still
+  governs: when the win condition changes, **every number in that file should move**. That is the
   gate working, not a defect. Regenerate with a rationale naming the constants that changed and the
-  measured deltas that justify them; do not widen a tolerance.
+  measured deltas that justify them; **do not widen a tolerance.**

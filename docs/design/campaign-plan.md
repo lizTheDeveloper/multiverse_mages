@@ -1964,3 +1964,76 @@ pointed at a run.
 
 **No mechanism code, content or golden fixture was touched by W46.** The deliverable is the tool and
 this section.
+
+## W63: favor is not a constraint anywhere, and a converter with no input constraint is not a decision
+
+Found while measuring something else, which is why it is recorded as its own entry rather than as a
+caveat on the workstream that hit it. **W63 added `ascension-institutions` to both ascension paths**
+— a conjunct that no edit to the ruleset can satisfy, because the world loop founds no university
+and `foundUniversity` is the only thing in the build that creates one. To show the conjunct was
+reachable at all, the pool gained `open-then-build`: `permit-then-idle` plus **one** founding
+attempt every twelfth round, at preference slot 0, and nothing else changed.
+
+### The numbers
+
+One run, 2400 ticks, reference universe, `open-then-build`:
+
+| quantity | value |
+|---|---|
+| `fundUniversity` submissions | **99** |
+| universities completed | **98** |
+| `ascension-institutions` (the threshold) | **2** |
+| submissions refused for cost | **0** |
+| `favorWasted` over the run | **4,789,833** |
+| terminal `favor` / `favorCap` | 59,579 / 61,440 |
+
+**The policy cleared a threshold of two by a factor of forty-nine, was never once refused, and
+still ended the run at 97% of its favor cap having discarded 4.8 million favor it could not spend.**
+
+### Why this is a finding and not a tuning note
+
+A cost that is never binding is not a cost, and an action that is never refused is not a choice.
+`foundUniversity` is a **converter with no input constraint**: it turns favor, which the god has an
+unbounded surplus of, into universities, of which the god can have as many as it submits for. There
+is no shortage anywhere in that sentence, so there is no decision in it either — the god does not
+choose *whether* to found, only whether its preference list happens to reach the verb.
+
+This is the same disease as `POOL_BUILD_LIMITS`'s `starting-position-is-broke` entry, seen from the
+far end of the run rather than the near one. That entry records that a strategy is a passive control
+until regeneration reaches the cheapest thing it wants. What it does not say, and what this
+measures, is that **after that point the constraint never returns**: favor saturates against
+`favorCap` and stays there, so every subsequent purchase is free for the rest of the run. The
+opening is broke and the remaining 95% of the run is post-scarcity.
+
+### What it means for W63's own conjunct, stated against interest
+
+W63's fix is therefore a **placement fix, not an economic one.** It converts *"the win condition
+reads the ruleset"* into *"the win condition reads the ruleset **and** one button nobody was
+pressing."* That is strictly better — no amount of permitting produces a university, so the conjunct
+does discriminate — and it is not deep. The difference between `permissive-breadth` and
+`open-then-build` is which slot `fundUniversity` sits in, not what either god gave up to build.
+`ascension-institutions` could be raised by an order of magnitude before any strategy that builds at
+all would notice, which is the measurement a tuner should start from; the constant is
+`tuningStatus: "untuned"`.
+
+### Bearing on two mechanics in flight
+
+- **`w69/grant-budget`** — a founding-grant budget making grants scarce. This entry is the evidence
+  that the scarcity does not currently exist: 98 foundings, zero refusals. If founding were priced
+  against a budget that binds, W63's conjunct would become an economic fix rather than a placement
+  one, and the same constant would start measuring a tradeoff instead of a preference-list order.
+- **`w70/opening-square`** — opening at 2 techniques × 2 forms instead of the twelve enabled cells.
+  Aimed at content exhaustion, which is the constraint this campaign has now confirmed six times.
+  Note the interaction: a smaller opening makes `permitTechnique`/`permitForm` more valuable, and if
+  favor stays unbounded the god simply buys those too. **A smaller opening without a binding budget
+  moves the free lunch rather than removing it.**
+
+### The falsifiable form
+
+    inert(favor-cap) — neutralising the favor constraint moves no registered measure outside its
+    interval, because it is not binding on any strategy in the pool after the opening.
+
+**refutedBy**: any pool strategy whose submissions are refused for cost after tick 600 at a rate
+above zero, or any run terminating with `favorWasted` at zero and a non-saturated `favorCap`.
+Verdict `unmeasured` — this entry has one run's numbers against one strategy, which is an existence
+proof of the surplus and not a measurement of its extent across the pool.
