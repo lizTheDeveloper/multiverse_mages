@@ -71,6 +71,38 @@ exactly zero, which is what should happen when the changed runs never held the m
 **The direction is the point.** These numbers rose because a universe that used to win by editing
 the ruleset and then idling now keeps running instead of stopping at its own coronation.
 
+### Four tolerances widened, and the honest reading of that
+
+`balance/README.md`'s instruction is *"do not widen a tolerance"*, and the regenerated file has four
+tolerances larger than the ones it replaced:
+
+| metric | tolerance before → after | standard error before → after |
+|---|---|---|
+| `referenceKnowledgeInstances` | 1455.70 → **2235.54** | 485.23 → 745.18 |
+| `referenceNodesKnown` / `...Gained` | 33.44 → **45.05** | 11.15 → 15.02 |
+| `referenceLibraryDepth` | 19.95 → **24.30** | 6.65 → 8.10 |
+
+**No tolerance was set.** `tolerance = standardError × toleranceK`, `toleranceK` is **3** in both the
+old file and the new one, and the flag that would change it was never passed — verified by diffing
+the field. Every number in the right-hand column is a *measurement of the sweep's own variance*, and
+four of them went up because the sweep genuinely became more variable: four of its 32 runs stopped
+terminating early, so those arms now run 2400 ticks and accumulate stock that the other 28 do not.
+A pool with one strategy running twice as long as it used to has a wider spread, and the estimator
+reports it. Six other tolerances *narrowed* in the same regeneration, which a widening-for-comfort
+would not produce.
+
+**The distinction that matters, stated so a reviewer can reject it if they disagree:** widening a
+tolerance is choosing to be told about fewer regressions; this is the instrument reporting that the
+thing it measures got noisier. The first is a decision, the second is data. But the *consequence* is
+the same either way — **this gate is now less sensitive on four metrics than it was**, and a future
+regression in knowledge instances would need to be half again as large to trip it. That is a real
+cost of this change and it is not paid back by the reasoning above.
+
+The recourse, if a reviewer wants the sensitivity back: raise `replicates` in
+`balance-gate-ascension.sweep.json`. Standard error falls with the square root of the sample, so the
+tolerances tighten without touching `toleranceK` and without asking the gate to ignore anything.
+That is a sweep change rather than a rule change and is deliberately **not** made here.
+
 ## The notation, and the instrument it borrows from
 
 The records are written in the shape `w32/depth-language` defines — `claimId`, `form`, `subjects`,
