@@ -195,6 +195,22 @@ describe('shipped content', () => {
     }
   });
 
+  it('authors mētis somewhere inside the v1 subset, or the mechanic is unreachable', () => {
+    // A marking that puts every mētis node outside the twelve enabled cells is
+    // a marking with no consequence in the shipped game: nothing could be
+    // refused scribing, nothing could be lost to succession, and
+    // metisSuccessionRisk would read zero forever while looking healthy.
+    //
+    // Only non-emptiness is asserted. The count is an authoring output —
+    // docs/design/metis-authoring.md gives it as 6 of 51 and shows its working —
+    // and pinning it here would turn every future content judgement into a test
+    // edit, which is exactly the pressure that makes an author stop judging.
+    const v1Metis = registry.nodes.filter(
+      (entry) => V1_CELLS.includes(entry.record.cell) && entry.record.knowledgeKind === 'metis',
+    );
+    expect(v1Metis.length).toBeGreaterThan(0);
+  });
+
   it('authors rediscovery multipliers above the floor so affinity can differentiate', () => {
     for (const entry of registry.nodes) {
       expect(entry.record.rediscoveryMultiplier).toBeGreaterThanOrEqual(
