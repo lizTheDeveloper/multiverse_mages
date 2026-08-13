@@ -3264,3 +3264,44 @@ resolution:** this is the first time in the campaign that a mechanic produced sp
 without anyone tuning a species constant to produce it. Whatever the fix turns out to be, it must keep
 that and lose the extinction. All six species carry `"tuningStatus": "untuned"`, so retuning is
 legitimate — but the differentiation is the asset here, not the accident.
+
+---
+
+## W72 — favor is not a binding constraint anywhere, and a converter with no input
+
+*2026-08-13. Surfaced as a caveat on the ascension work; it is larger than the work it was a caveat on.*
+
+**`open-then-build` founds 98 universities against a threshold of 2, with zero rejections and 4.7M
+favor left unspent.** The god sits at its favor cap, so the purchase is free.
+
+In Machinations terms this is a **converter with no input constraint**. Founding a university is
+supposed to be a decision — a thing you can do instead of something else. It is currently a button
+that always works, ninety-eight times, while the resource that nominally prices it accumulates unspent
+in the millions. There is no shortage, so there is no decision, so the verb carries no information
+about what kind of god you are.
+
+**This is the same disease as the two mechanics now in flight, showing up in a third place:**
+
+| where | the free thing |
+|---|---|
+| **founding knowledge** | grants are unlimited; a full instance at mastery 1024, as often as you like |
+| **the opening ruleset** | twelve cells, enabled at the start, identically, for everyone |
+| **founding universities** | 98 for the price of nothing, against a threshold of 2 |
+
+The founding-grant budget (`w69/grant-budget`) and the 2×2 opening (`w70/opening-square`) treat the
+first two. **Nothing yet treats the third**, and it is arguably the cheapest of the three to fix,
+because the price already exists and simply never binds.
+
+**Why this matters more than a tuning note:** it explains why the ascension conjunct is, in its
+author's own honest phrase, *"a placement fix, not an economic one."* Requiring universities before
+ascension converts "reads the ruleset" into "reads the ruleset **and** one button nobody pressed."
+Strictly better, and not deep — because the button is free. **If founding a university were actually
+priced, the same conjunct would be an economic fix.** The mechanism is sound; it is resting on an
+economy that does not push back.
+
+The general form, worth stating once so it can be checked against every future verb: **a cost that
+never binds is not a cost, and a verb whose cost never binds is not a choice.** The measurement is
+simple and nobody has been running it — for each god verb, the fraction of legal invocations that were
+declined for want of resource. Any verb sitting at zero over a full run is free, whatever its
+declared price says. `favorCost` being typed `Fp` makes this easy to get wrong in the reassuring
+direction: a price that looks like 98,304 is 96.
