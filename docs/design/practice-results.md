@@ -1,4 +1,4 @@
-# W53 — practice: what it moved, and the two questions it answered "no" to
+# W53 — practice: the mechanic works, and the measurement it was built for is a null
 
 **Status: measured.** Every number below comes from `tools/w53/practice.mjs`, which is W49's
 `tools/w49/applied-use.mjs` with four columns added and its arithmetic untouched. Both arms were run
@@ -13,23 +13,31 @@ Raw output: `balance/results-w53-practice-before.json`, `balance/results-w53-pra
 
 ## The short version
 
-**The mechanic runs.** Mages practise, mastery goes back up, and it costs them the month.
+**The mechanic runs.** Mages practise, mastery goes back up, and it costs them the month. That much
+is not in doubt anywhere below.
 
-**The gate separates the strategies — by a factor of two, in the wrong direction.**
-`permit-then-idle` accrues **2.05×** `permissive-breadth` on applied use, where before it accrued
-1.04×. The number moved. What it says is that a god who funds universities and encourages research
-makes its scholars *busier at the frontier and worse at maintenance*, and the economy now reads
-maintenance.
+**Question 1 is a null, and it is the eighth mechanic aimed at this bot.** Applied use does **not**
+separate `permit-then-idle` from `permissive-breadth` at any usable confidence — not before the
+change, not after it, and not on the gated column. Every one of the three comparisons is **within
+one standard error of zero** over 32 runs. The point ratios moved (1.0422 → 0.9482 ungated, 2.0524
+gated) and none of that movement survives its own spread.
 
-**Publish-or-perish moved about a point and a half.** The share of held instances below the teach
-threshold went from 88.1% to 86.3% on `permissive-breadth`. That is a real movement and it is not
-the loop closing.
+**Worse, the gate starves its own measurement channel.** Under the tick-sharp gate, **2 of 8 runs
+per strategy accrue exactly zero** and one run carries a third of an arm's total. The quantity a
+mētis mechanic would accrue on is not merely un-separating; at this gate's sharpness it is too
+sparse to compare gods by at all.
 
-**`denial-warden` is more anti-correlated with playing, not less.** It was 207× behind the god that
-does nothing; it is now 230× behind on the ungated quantity and **426× behind on the gated one**.
+**Question 2 moves, weakly and consistently.** The share of held instances below the teach threshold
+falls on **all four** arms, by 0.8 to 2.5 percentage points, at 1.2 to 2.1 standard errors. Real
+direction, small size, and not the loop closing.
 
-**A null result is a full-value result, and two of the three questions here are nulls.** Nothing
-below has been tuned to make a number look better.
+**Question 3 is a null in the unhelpful direction.** `denial-warden` remains hundreds of times
+behind the god that does nothing, and the gated figure for it is 7 zeros and a 4 — a number with no
+information in it.
+
+**A null result is a full-value result. Nothing here was tuned to make a number look better**, and
+the brief's instruction — *"if it does not, say so plainly and stop"* — is what the rest of this
+document does.
 
 ---
 
@@ -49,30 +57,74 @@ Plus `teachableInstanceTicks` / `heldInstanceTicks` (the share `ages-of-magic.md
 `practiceCompleted` off the world report.
 
 The probe is one appended system that draws nothing and mutates nothing, exactly as W49's was.
-Agreement with the production path: **0 of 51,468 ticks** had the world report come in below the
+Agreement with the production path: **0 of 50,508 ticks** had the world report come in below the
 gated probe figure in the before arm, **30 of 51,468 (0.06%)** in the after arm — the residue is
 W49's own documented phase-order asymmetry (the report describes the beginning of a tick, the probe
 the end of it), not a predicate mismatch.
+
+**One disclosed difference between the two arms' copies of the instrument.** Commit `780b5de` has no
+`GOAL.practice` and no `readCommitment` export to import, so the before-arm copy replaces those two
+imports with a stub that makes the gated column identically zero. Nothing else differs, and the
+zero is reported rather than hidden: at `780b5de` no mage applies magic to anything, which is the
+condition this whole workstream exists because of.
+
+**Every comparison below is reported with its spread.** W49's record was burned once by a ratio
+without one; a ratio over eight heavy-tailed counts is not a finding until its standard error says
+so.
 
 ---
 
 ## Question 1 — does applied use separate `permit-then-idle` from `permissive-breadth`?
 
+**No.** Not before the change, not after it, and not on the gated column.
+
 The two bots declare the same permits. `permit-then-idle` is `permissive-breadth` with every
 non-permit action removed: no `fundUniversity`, no `encourageResearch`, no `issueDispensation`, and
-nothing at all submitted after round 140 of 2,400.
+nothing at all submitted after round 140 of 2,400. It is the ablation of playing.
+
+Applied use per run, mean ± standard error over 8 runs each:
 
 | | before, ungated | after, ungated | after, **gated** |
 |---|---|---|---|
-| `permit-then-idle`, use/run | 135,353 | 120,331 | **945** |
-| `permissive-breadth`, use/run | 129,867 | 126,899 | **460** |
-| **ratio** | **1.0422** | 0.9482 | **2.0524** |
+| `permit-then-idle` | 135,353 ± 15,183 | 120,331 ± 17,531 | 945 ± 444 |
+| `permissive-breadth` | 129,867 ± 23,133 | 126,899 ± 19,557 | 460 ± 200 |
+| point ratio | 1.0422 | 0.9482 | 2.0524 |
+| **difference, in SE** | **+0.20 SE** | **−0.25 SE** | **+0.99 SE** |
 
-**The ratio moved: 1.04 → 2.05.** It is no longer indistinguishable, and by that literal reading the
-gate did what it was built to do — an idle god and a playing god are now 2× apart on the quantity a
-mētis mechanic would accrue on.
+Every one of those is a coin flip. The 2.05× gated ratio is the one that looks like a result and it
+is the least trustworthy number in this document: it is a ratio of two means of a count that is
+**zero in 2 of 8 runs for every strategy**, whose largest single run (3,280) is more than three
+times the arm's own mean.
 
-**It moved the wrong way, and the mechanism is legible.** Practice completions per run:
+Here are the raw gated per-run values, sorted, because a mean of these is close to meaningless:
+
+| strategy | the eight runs | non-zero |
+|---|---|---|
+| `passive-control` | 0, 0, 11, 63, 88, 138, 291, 1115 | 6/8 |
+| `permit-then-idle` | 0, 0, 53, 117, 418, 1381, 2308, 3280 | 6/8 |
+| `permissive-breadth` | 0, 0, 26, 126, 209, 858, 1010, 1453 | 6/8 |
+| `denial-warden` | 0, 0, 0, 0, 0, 0, 0, 4 | 1/8 |
+
+**So the honest finding is sharper than "the ratio did not move", and it is about the gate rather
+than about the gods:** a tick-sharp practitioner gate does not merely fail to separate the two bots,
+it removes 99%+ of the signal (see *The cost of the gate* below) and leaves a quantity too sparse to
+compare anything by. The eighth mechanic aimed at `permit-then-idle` has produced nothing, and this
+one produced nothing while also taking the measurement channel with it.
+
+### What is not the explanation
+
+The obvious suspicion — that the god's verbs never reach practice, so the null is a wiring bug — was
+ruled out **before** the sweep ran, on purpose.
+`packages/coordination/test/unit/practice-rate-channel.test.ts` asserts that `bless-practice-rate`
+is non-zero and reaches a blessed mage, that an unblessed mage in an unencouraged cell receives
+nothing, that the hook is not an alias of the research hook, and that a deep library raises the
+practice multiplier through the same `(1 + Σ)` accumulator research uses. The channel is wired. A
+null with that file green is a statement about the game.
+
+### What may be the explanation, offered as a hypothesis and not as a result
+
+Practice completions per run point one way, and the direction is worth recording even though the
+applied-use comparison cannot support it:
 
 | | practice completions/run | held instances/tick |
 |---|---|---|
@@ -81,48 +133,48 @@ mētis mechanic would accrue on.
 | `permissive-breadth` | 8,901 | 2,290 |
 | `denial-warden` | 11 | 12 |
 
-A god's verbs reach practice through a real channel — `practice-rate` takes the blessing constant,
-the cell encouragement and vision §6a's library depth, and
-`packages/coordination/test/unit/practice-rate-channel.test.ts` asserts each of those is non-zero
-where it should be and absent where it should not, *specifically* so that this result cannot be
-confused with an unwired seam. But the same verbs reach research through the same kind of channel,
-and research is what they make cheaper first. A funded, encouraged universe produces scholars who
-research more, hold more (2,290 instances/tick against `passive-control`'s 1,416), and practise
-**less** than the scholars of a god who does nothing.
+The god that does nothing has the most practice completions and the fewest instances; the two gods
+that play have roughly 60% as many completions and 60% more instances. The reading that fits is
+that **every verb which makes research cheaper bids a mage away from maintenance** — a funded,
+encouraged university produces scholars who are busier at the frontier — and an economy that reads
+maintenance would then reward the god who leaves its scholars alone.
 
-So the finding is not "the god cannot influence practice". It is:
-
-> **The god's verbs reach how *well* a mage practises, not *whether* she does — and every verb that
-> makes research cheaper bids the mage away from maintenance.** An economy that reads maintenance
-> therefore rewards the god who leaves its scholars alone.
-
-That is the same shape as W49's complaint, one layer in. It is a design problem in the *goal
-competition*, not in the accrual predicate, and no amount of tuning the practice constants fixes the
-sign — raising practice's appeal raises it for every strategy equally.
-
----
+That is a hypothesis about goal competition, not a measured result: `passive-control` differs from
+the other two in far more than its verbs, and no ablation here isolates the claim. It is written
+down because it names the experiment somebody should run next — hold the ruleset fixed, vary only
+`fundUniversity`, and read practice completions — and because if it is right, no tuning of the
+practice constants changes the sign.
 
 ## Question 2 — does the teachable fraction move off 93.4%?
 
-Share of held instances **below** `DEFAULT_TEACH_THRESHOLD`, and nodes with at least one teachable
-copy, averaged per tick over the whole run:
+**It moves, on every arm, in the right direction, and weakly.**
 
-| strategy | below threshold, before | below threshold, after | nodes w/ teachable copy, before | after |
+Share of held instances **below** `DEFAULT_TEACH_THRESHOLD`, per-run mean ± standard error over 8
+runs each:
+
+| strategy | before | after | delta | in SE |
 |---|---|---|---|---|
-| `passive-control` | 91.7% | **91.1%** | 31.6 of 47.9 | 30.6 of 47.5 |
-| `permit-then-idle` | 87.8% | **86.6%** | 70.6 of 126.2 | 66.2 of 125.8 |
-| `permissive-breadth` | 88.1% | **86.3%** | 68.8 of 126.6 | 67.2 of 126.3 |
-| `denial-warden` | 51.3% | **50.9%** | 0.6 of 1.3 | 0.6 of 1.1 |
+| `passive-control` | 91.64 ± 0.34% | 90.82 ± 0.60% | **−0.81 pts** | −1.18 SE |
+| `permit-then-idle` | 87.59 ± 0.51% | 85.69 ± 1.17% | **−1.89 pts** | −1.48 SE |
+| `permissive-breadth` | 87.84 ± 0.42% | 85.31 ± 1.13% | **−2.53 pts** | −2.10 SE |
+| `denial-warden` | 51.50 ± 0.44% | 50.41 ± 0.45% | **−1.09 pts** | −1.72 SE |
 
-**It moved 0.4 to 1.8 percentage points, in the right direction, on every arm.** It did not close.
+No single arm clears three standard errors; **all four move the same way**, which on a sign test
+alone is 1 in 16. Taken together this is a small real improvement rather than noise, and it is
+nowhere near closing the loop.
+
+Nodes with at least one teachable copy, averaged per tick, did **not** improve — 68.8 of 126.6 →
+67.2 of 126.3 on `permissive-breadth`. Practice raises the mastery of nodes somebody already
+teaches before it rescues a node nobody does, which is what stalest-*within-a-mage* ordering buys
+and what a stalest-*within-the-universe* ordering would not.
 
 Two honest caveats about the 93.4% itself. It is W26's number, taken on a different tree with a
-different instrument at a different instant; **this tree's own before-value is 88.1%**, and 88.1% →
-86.3% is the comparison that is actually like-for-like. And `denial-warden`'s 51% is not health — it
+different instrument at a different instant; **this tree's own before-value is 87.8%**, and 87.8% →
+85.3% is the comparison that is actually like-for-like. And `denial-warden`'s 51% is not health — it
 holds twelve instances.
 
 Where the loop *is* visibly closed is at unit scale, and it is worth recording because it is a test
-that was written before the mechanic existed:
+written before the mechanic existed:
 `packages/coordination/test/unit/acquire-hook-in-the-loop.test.ts` asserted that a standard-tradition
 universe's mastery ceiling was its placeholder `fp(256)`, *"which nothing in the loop ever raises"*.
 Over twenty world years that universe now reaches **1019** and teaches **3** lessons where it
@@ -134,17 +186,20 @@ project, `PRACTICE_COST_PER_TIER` is `fp(1024)` of a mage-month per tier, and a 
 nodes while practising one. Both constants are `Untuned` and the harness that would tune them is
 0.5.0's. **This measurement is a reason to tune them, not evidence that they are wrong.**
 
----
-
 ## Question 3 — does `denial-warden` stop being anti-correlated with playing?
 
-No. It got worse.
+**No**, and the gated figure for it carries no information at all.
 
 | | before | after, ungated | after, gated |
 |---|---|---|---|
-| `passive-control` / `denial-warden` | **207.1×** | 230.0× | **426.5×** |
+| `passive-control` use/run | 52,061 ± 4,508 | 47,990 ± 4,340 | 213 ± 133 |
+| `denial-warden` use/run | 251 ± 103 | 209 ± 93 | **0.5 ± 0.5** |
+| point ratio | 207.1× | 230.0× | 426.5× |
 
-The god using its verbs hardest accrues 426 times less applied use than the god doing nothing.
+The ungated comparison is dense on both sides and says plainly that the god using its verbs hardest
+accrues two hundred times less applied use than the god doing nothing — unchanged by this work. The
+gated one is **seven zeros and a four**; the 426× is arithmetic on a sample with one non-zero
+observation and should not be quoted.
 
 This was always the least likely of the three to move, and the reason is structural rather than
 incidental: `denial-warden` forbids and interdicts, practice is **refused in a forbidden cell** by
@@ -156,8 +211,6 @@ to reward.
 **Any mechanic that accrues on applied magic will be anti-correlated with denial.** If the design
 wants a denying god to score, the currency it scores in cannot be applied use — which is a finding
 about `raid-engagement.md` §11c's proposal rather than about this build.
-
----
 
 ## The cost of the gate, stated plainly
 
@@ -271,9 +324,15 @@ be false, plus the measurement that would disprove it:
 > **Mastery is no longer monotone.** A mage who spends months on a node she holds raises its
 > mastery, can cross back over the teaching threshold, and pays for it in the research and teaching
 > she did not do. Disproved by: `practiceCompleted` at zero in any run of the reference universe, or
-> the teachable share failing to move between the two arms above.
+> the below-threshold share failing to fall on the arms above.
 
-The claim it deliberately does **not** make:
+The claims it deliberately does **not** make:
 
-> That the economy now rewards playing. It does not. On the measurement above it rewards leaving
-> your scholars alone, by a factor of two.
+> That applied use now separates a god who plays from a god who does not. It does not — every
+> comparison is inside one standard error, and the tick-sharp gate leaves the quantity too sparse to
+> compare with.
+
+> That the economy now rewards playing. Nothing here establishes that. What little signal there is
+> points the other way.
+
+> That publish-or-perish is closed. It moved 0.8 to 2.5 points on four arms and remains at 85%.
