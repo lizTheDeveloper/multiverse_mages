@@ -2883,3 +2883,100 @@ universe knows and does not move how many people it has.
 
 Every reported null was checked against the silent-zero confound per quantity, and none is a
 `NaN → 0`.
+
+---
+
+## W66 — the research guide, spot-checked against `packages/`, and four of five items withdrawn
+
+*2026-08-13. A review pass over the five research-dive items I had queued. It refutes items I had
+already dispatched agents on, including one I had called the cheap one.*
+
+**The general lesson, which matters more than any single item: the guide was briefed on
+`vision.md`, which describes intent, and not on the code, which is well ahead of it.** So it
+systematically over-recommends things that already exist. The hit rate on "already built" is high
+enough that any entry must be spot-checked against `packages/` before acting. I did not do that
+before dispatching, and it cost two agent-runs.
+
+### Item 1 — combat primitives are measured wrong. **Withdrawn, and the fix would have been a regression.**
+
+`winRateByPrimitive` (`packages/mc-harness/src/ablation.ts`) does not score combat nodes by damage.
+It ablates each primitive and measures the win rate of the arm retaining it against the arm where
+it is neutralised, over **mirrored paired seeds** with a **Wilson score interval**. That is
+outcome-based by construction: if `direct-damage` contributes less to winning than `area-denial`
+does, the ablation says so without anyone deciding in advance that control matters more. Bolting a
+damage-output metric onto that is a regression, not a fix.
+
+The mirroring is the tell that this was thought through. `ablation.ts` states that an unmirrored
+measurement would report side 0's structural advantage as the primitive's contribution — "quietly,
+as a number near 50% that drifts."
+
+The timing argument was backwards as well. It said land this *before* the baselines are committed.
+**The baselines are committed already.**
+
+**What survives is narrow and real:** ablation measures a primitive's *presence*, not its *tuning*.
+The 300 nodes carry **37 `direct-damage` effects spanning magnitudes 96 to 768 — an 8× spread** —
+and whether a given node's magnitude clears a kill threshold is invisible to a presence/absence
+experiment. That is a question about node tuning *inside* one primitive, not a flaw in how the
+harness values combat. PR #57's `combatActionEconomy` is a legitimate second view but is a
+**secondary diagnostic beside the ablation, not a replacement**, and no gate should be built on it
+until it has been checked against what the ablation already reports. Its PR body has been corrected.
+
+### Item 2 — species insights. **Holds, and is the best-timed thing on the list.**
+
+All six species carry `"tuningStatus": "untuned"` in `packages/content/data/species.json`. This work
+is genuinely ahead of the campaign.
+
+- **Versatility hegemony is a real registry gap.** Twelve metrics, and none measures how many cells
+  a species can staff; `grep` for `coverage` or `hegemony` returns zero. The tuner scores strategy
+  variety, but that is concentration *across strategies*, not across *species capability* — a
+  different question. **Now the highest-priority open item**, dispatched.
+- **Long-lived brittleness is weaker than billed**, because the data already encodes it hard:
+  fertility runs **96 (draconic) to 1536 (orc), a 16× spread**, against lifespans of 18000 vs 720
+  months. The asymmetry probably already emerges. This wants a **balance assertion, not a mechanic.**
+
+### Item 3 — tie worship to daily relevance. **Half-anticipated; the surviving half is real and is not cheap.**
+
+`god-constant.json` already implements worship as three saturating classes — mage, university,
+populace — each with a per-head rate and a half-cap. And the design has already *rejected* "worship
+equals power": `favor-cap-base`'s gloss says the cap "converts a worship lead from power into tempo
+— a high-worship god cannot do more things, only sooner." There is even a documented
+`worshipSnowball` retune order across four constants.
+
+**What genuinely is not there: worship is completely independent of which cells you permit.**
+Nothing connects the ruleset to devotion, so "water and crops out-worship spectacular destruction"
+is unimplemented. But it couples the ruleset into a loop that already has a tuned anti-snowball
+retune order, so it is a bigger change than I described it as.
+
+### Item 4 — forbidding Intellego costs counter-intelligence. **Does not map. Withdrawn.**
+
+I called this the cheap one. It is the opposite. `concealment` exists, but as a **raid-scale** combat
+primitive — a probability of evading targeting, stacked multiplicatively in
+`packages/rules-raid/src/arbitration.ts`. **There is no world-scale screening concept for it to
+modify.** "Forbidding Intellego leaves hostile concealment unopposed" would require inventing a new
+world-scale subsystem, which the insight does not justify. The agent was stopped and re-pointed at
+item 2.
+
+### Item 5 — make the university prestige loop explicit. **Already done, better than proposed.**
+
+`capitalSnowball` measures the Gini of library-held nodes at five checkpoints; `libraryDependence`
+measures the fraction of nodes down to a single surviving instance; `prestigeAdvantage` and
+`prestige-per-worship-tier` both exist. The compounding loop is instrumented. I was recommending
+building something that is built.
+
+### Revised ranking, replacing the one above
+
+1. **Species cell-coverage metric** — a real gap in the registry, and species tuning is the live work.
+2. **Node-level damage-threshold tuning** — the surviving fragment of item 1: ablation cannot see
+   magnitude tuning within a primitive, against an 8× spread over 37 damage effects.
+3. **Ruleset-to-worship coupling** — genuinely absent, genuinely interesting, not cheap.
+4. Everything else — already implemented to a higher standard than the guide proposes, or needing
+   new subsystems the insight does not justify.
+
+### An aside the CI queue handed over for free
+
+`check:consumption` fails identically on all six open PRs in ~25s. That is not six regressions and
+not a broken check: **the condition is true on `main`.** Two of sixteen primitives have a
+node-driven consumer — `portal` (2 nodes) and `worship-yield` (11 nodes). The other twelve, including
+every combat primitive, cannot be moved by anything the academics know. The check is non-blocking and
+is working exactly as designed; it is the clearest single statement of the gap the campaign is
+closing. It also independently confirms the "two, not one" correction recorded above.
