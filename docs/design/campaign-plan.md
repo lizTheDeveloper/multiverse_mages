@@ -49,13 +49,26 @@ confidently here.*
 
 Eight mechanics were declared null by that apparatus. Some of those nulls were the instrument.
 
-### And the win condition is a button on a passive clock
+### And the win condition reads the ruleset, not play
 
-**`passive-control` reaches `ascensionPath = apotheosis` at tick 960 in 8 of 8 runs.** It scores 0/80
-for one reason: its stance is `never`, so it never submits action 15. **`uniform-random-legal` holds
-the same 51 nodes and ascends 80/80 — because it draws the button.** Across 560 paired
-world-by-world comparisons there is no world where a designed strategy summited and the random bot did
-not.
+**`permit-then-idle` wins 40/40** by permitting the grid for 140 of 2400 ticks and then submitting
+**nothing at all** for the remaining 2260. It beats `permissive-breadth` (38/40), which does the same
+permitting *and* funds, blesses and encourages. **The idle bot beats the active one**, and what
+separates them is not play — it is which cells were opened in the first 6% of the run.
+
+*Corrected 2026-08-13.* An earlier version of this section said the win condition was a button on a
+passive clock — that `passive-control` reached apotheosis at tick 960 in 8 of 8 runs and scored 0
+only because its stance is `never`, and that `uniform-random-legal` ascended 80/80 by drawing the
+button. **That was true when measured and is now stale.** `ceb1492` (W6, *"both paths must read an
+achievement, not an absence"*) closed it. Direct re-measurement finds **0 of 4 qualify** with
+`ascensionFirstMetTick = 0`, and the committed n=400 record agrees: `idle-then-declare` and
+`uniform-random-legal` both ascend **0/40**, not 80/80. `balance/README.md`'s passage about the
+27-of-32 rate being *"a statement about a clock, not about play"* describes the pre-W6 build and
+should be read with that date attached.
+
+The defect survived the correction; only its mechanism changed. It is no longer that a bot can win
+without pressing the button — it is that a bot can win **by pressing only the ruleset buttons and
+then nothing else.**
 
 ### Three things below are now known to be wrong
 
