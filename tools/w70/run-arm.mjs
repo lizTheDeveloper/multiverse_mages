@@ -84,13 +84,23 @@ export const ARMS = Object.freeze([
   { id: 'seeded-3x4', options: { openingTechniqueCount: 3, openingFormCount: 4 } },
 ]);
 
-/** Every run this sweep intends, in a fixed order so shards partition cleanly. */
+/**
+ * Every run this sweep intends, in a fixed order so shards partition cleanly.
+ *
+ * **Replicate-major, and that ordering is load-bearing.** Arm-major would have
+ * the whole pool finish `v1-3x4` before touching `seeded-1x1`, so a sweep
+ * stopped early would hold every replicate of one arm and none of another —
+ * which is not a smaller version of this experiment, it is a different one with
+ * no comparison in it. Replicate-major means an interrupted sweep still holds
+ * every arm at every strategy for as many replicates as it got through, and the
+ * containment statistic is defined on that.
+ */
 export function plan(replicates) {
   const jobs = [];
-  for (const arm of ARMS) {
-    for (const strategyId of POOL) {
-      for (const cell of CELLS) {
-        for (let replicateIndex = 0; replicateIndex < replicates; replicateIndex += 1) {
+  for (let replicateIndex = 0; replicateIndex < replicates; replicateIndex += 1) {
+    for (const arm of ARMS) {
+      for (const strategyId of POOL) {
+        for (const cell of CELLS) {
           jobs.push({ arm: arm.id, armOptions: arm.options, strategyId, cell, replicateIndex });
         }
       }
@@ -157,6 +167,11 @@ function main() {
       `${job.arm} ${job.strategyId} c${String(job.cell.cellIndex)}r${String(job.replicateIndex)} ` +
         `-> ${String(run.terminal.nodeIds.length)} nodes, ${String(run.ticksRun)} ticks\n`,
     );
+    // Rewritten after every run rather than once at exit. A sweep this long is
+    // going to be interrupted at least once, and a shard that only lands its
+    // JSON on a clean exit turns an interruption into a total loss of the work
+    // already paid for.
+    writeFileSync(join(out, `shard-${String(shard)}.json`), JSON.stringify({ records }));
   }
   writeFileSync(join(out, `shard-${String(shard)}.json`), JSON.stringify({ records }));
 }
