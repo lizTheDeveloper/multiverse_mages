@@ -223,6 +223,53 @@ describe('the constant table checks catch what a schema cannot', () => {
     ]);
   });
 
+  // The ascension achievement constants. Each check below pins a setting that
+  // would make a summit *unreachable* rather than merely hard — the failure
+  // mode that costs a whole 2400-tick sweep to notice, because every run simply
+  // truncates and the rate reads a flat zero that looks like a balance result.
+
+  it('fails a summit that no cell can stand at, because zero copies is not mastery', () => {
+    const table = constants().map((record) =>
+      record.id === 'ascension-summit-copies' ? { ...record, value: 0 } : record,
+    );
+    expect(checkGodConstants(table).map((entry) => entry.message)).toEqual([
+      expect.stringMatching(/satisfied by a node nobody holds/u),
+    ]);
+  });
+
+  it('fails a Path A that asks for no mastered cell at all', () => {
+    // At zero the apotheosis path is a worship-tier clock, which is exactly the
+    // defect the constant was introduced to close.
+    const table = constants().map((record) =>
+      record.id === 'ascension-summit-cells' ? { ...record, value: 0 } : record,
+    );
+    expect(checkGodConstants(table).map((entry) => entry.message)).toEqual([
+      expect.stringMatching(/worship-tier clock/u),
+    ]);
+  });
+
+  it('fails a canon asked to span more cells than it holds nodes', () => {
+    // Unsatisfiable by arithmetic rather than by difficulty: a universe cannot
+    // know nodes in more cells than it knows nodes.
+    const table = constants().map((record) =>
+      record.id === 'ascension-canon-cells' ? { ...record, value: 100_000 } : record,
+    );
+    expect(checkGodConstants(table).map((entry) => entry.message)).toEqual([
+      expect.stringMatching(/cannot know nodes in more cells than it knows nodes/u),
+    ]);
+  });
+
+  it('fails a loss allowance outside the unit interval, at either end', () => {
+    for (const value of [-1, 1025]) {
+      const table = constants().map((record) =>
+        record.id === 'ascension-loss-fraction' ? { ...record, value } : record,
+      );
+      expect(checkGodConstants(table).map((entry) => entry.message)).toEqual([
+        expect.stringMatching(/outside \[0, fp\(1024\)\]/u),
+      ]);
+    }
+  });
+
   it('fails an encouragement that never decays', () => {
     const table = constants().map((record) =>
       record.id === 'encourage-decay-per-tick' ? { ...record, value: 0 } : record,

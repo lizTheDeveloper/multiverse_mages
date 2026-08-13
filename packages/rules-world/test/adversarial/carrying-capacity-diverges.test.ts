@@ -57,11 +57,15 @@ import { describe, expect, it } from 'vitest';
 
 import { FP_ONE, floorDiv } from '@mm/sim-core';
 
+import type { MaterialAmounts } from '../../src/index.js';
 import {
   BIRTH_RATE_ONE,
   MATERIALS_PROVISION_CAP,
   MATERIALS_PROVISION_SATURATION,
   MAX_PROVISIONING,
+  NO_MATERIALS,
+  NO_YIELD_BONUSES,
+  addAmounts,
   carryingCapacity,
   consumeMaterials,
   expectedBirths,
@@ -70,6 +74,7 @@ import {
   maxCarryingCapacity,
   subsistenceDemand,
   territoryExtent,
+  territoryYieldShares,
 } from '../../src/index.js';
 
 import { primitiveNamed, shippedRegistry } from '../unit/universities-fixtures.js';
@@ -79,6 +84,17 @@ const RUN_TICKS = 2_400;
 
 /** The shipped territory — the fixed resource `K` is now derived from. */
 const TERRITORY = territoryExtent(shippedRegistry().territories.map((entry) => entry.record));
+
+/**
+ * The shipped territory's yield mix — fixed for the length of every run, the
+ * same way {@link TERRITORY} is. `materialsProduced` needs it every tick;
+ * computing it once outside the loop is what {@link territoryYieldShares}'s own
+ * doc comment means by "labour supplies the magnitude" — the mix itself does
+ * not move.
+ */
+const SHARES: MaterialAmounts = territoryYieldShares(
+  shippedRegistry().territories.map((entry) => entry.record),
+);
 
 /**
  * The laborer shares the audit ran, as `fp`.
@@ -99,6 +115,19 @@ interface Trace {
   readonly label: string;
   readonly capacity: readonly number[];
   readonly population: readonly number[];
+  /**
+   * The **food** stock, tick by tick — not the total across kinds.
+   *
+   * `CapacityInput.food` is the only kind `carryingCapacity` reads (stone and
+   * seats bound *building* and *institutions*, not headcount), and this file's
+   * whole argument is that the input driving `K` is still unbounded. Tracking
+   * the total would be a weaker and slightly dishonest check here: this harness
+   * gives stone and vellum no claimant at all, so their stocks grow every tick
+   * regardless of laborShare and a total-across-kinds series would "diverge"
+   * even at a laborShare too small to feed the populace. Food is the one kind
+   * with a real claimant (subsistence) contesting it, so food growing without
+   * bound is the same divergence the superseded single-stock shape exhibited.
+   */
   readonly materials: readonly number[];
 }
 
@@ -117,19 +146,23 @@ function run(share: number): Trace {
   const resourceYield = primitiveNamed('resource-yield');
 
   let population = 1_000;
-  let stock = 0;
+  let stock: MaterialAmounts = NO_MATERIALS;
   const capacity: number[] = [];
   const populationSeries: number[] = [];
   const materials: number[] = [];
 
   for (let tick = 0; tick < RUN_TICKS; tick += 1) {
     const laborers = floorDiv(population * share, FP_ONE);
-    stock += materialsProduced({
-      laborerCount: laborers,
-      laborAffinity: FP_ONE,
-      resourceYield,
-      resourceYieldBonuses: [],
-    });
+    stock = addAmounts(
+      stock,
+      materialsProduced({
+        laborerCount: laborers,
+        laborAffinity: FP_ONE,
+        shares: SHARES,
+        resourceYield,
+        resourceYieldBonuses: NO_YIELD_BONUSES,
+      }),
+    );
 
     const demand = subsistenceDemand(population);
     const outcome = consumeMaterials(stock, {
@@ -138,13 +171,13 @@ function run(share: number): Trace {
       scribing: 0,
       construction: 0,
     });
-    stock = outcome.materialsRemaining;
+    stock = outcome.remaining;
     const shortfallShare =
       demand > 0 ? Math.min(FP_ONE, floorDiv(outcome.shortfall.subsistence * FP_ONE, demand)) : 0;
 
     const K = carryingCapacity({
       territory: TERRITORY,
-      materials: stock,
+      food: stock.food,
       completedCapacity: 0,
       subsistenceShortfallShare: shortfallShare,
     });
@@ -162,7 +195,7 @@ function run(share: number): Trace {
 
     capacity.push(K);
     populationSeries.push(population);
-    materials.push(stock);
+    materials.push(stock.food);
   }
 
   return { label: '', capacity, population: populationSeries, materials };
@@ -223,14 +256,26 @@ describe('carrying capacity converges over 200 world years of the composed loop'
   it('stops moving once the modulating term saturates, rather than slowing down', () => {
     // A runaway that decelerated would still be a runaway. What is asserted is
     // that `K` arrives at a value and stays there: over the final quarter of the
-    // run, every run whose stock has passed saturation reports one number.
+    // run, every run whose *food* stock had already passed saturation **before**
+    // that quarter began reports one number throughout it.
+    //
+    // The check is against the tail's first tick, not its last. Food is the one
+    // kind subsistence actually contests, so -- unlike the old undifferentiated
+    // stock, which nothing in this harness ever drew down -- it can cross the
+    // saturation threshold only partway through the final quarter at a middling
+    // laborShare. A run that saturates *during* the window it is being judged
+    // over is not the property this test means to check, and checking the last
+    // tick instead of the first would silently accept "arrived at the very end,"
+    // which is a weaker claim than "stayed."
     const saturatingStock = TERRITORY.landUnits * MATERIALS_PROVISION_SATURATION;
+    const tailStartTick = Math.floor((RUN_TICKS * 3) / 4);
     let saturated = 0;
 
     for (const trace of traces) {
-      if (last(trace.materials) < saturatingStock) continue;
+      const foodAtTailStart = trace.materials[tailStartTick] as number;
+      if (foodAtTailStart < saturatingStock) continue;
       saturated += 1;
-      const tail = trace.capacity.slice(Math.floor((RUN_TICKS * 3) / 4));
+      const tail = trace.capacity.slice(tailStartTick);
       expect(
         new Set(tail).size,
         `at laborShare ${trace.label}, K was still moving over the final quarter of the run`,
@@ -238,8 +283,8 @@ describe('carrying capacity converges over 200 world years of the composed loop'
       expect(last(trace.capacity)).toBe(UNIVERSITY_FREE_CEILING);
     }
 
-    // Not every share saturates inside 2,400 ticks, but the assertion above is
-    // worthless if none does.
+    // Not every share saturates before the final quarter begins inside 2,400
+    // ticks, but the assertion above is worthless if none does.
     expect(saturated).toBeGreaterThan(0);
   });
 

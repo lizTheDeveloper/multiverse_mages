@@ -41,12 +41,14 @@ import {
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
   MAGE,
+  MATERIAL_STOCK,
   OBJECTIVE,
   POPULACE_COHORT,
   PREPARED_SPELL,
   RAID_SIDE,
   UNIVERSITY,
   collectRecords,
+  componentOf,
   findUniverse,
   inEngagement,
   readEdicts,
@@ -244,10 +246,22 @@ function writeResources(view: Int32Array, state: SimState): void {
   const record = readUniverse(state, universe);
   // §4.1's order, and the order is the contract: favor, worship, worshipTier,
   // materials, prestige.
+  //
+  // `materials` is now three stocks rather than one, and this slot carries
+  // their **sum**. The observation block is fixed at five slots and vision §6
+  // is explicit about what widening one costs: *"a resize invalidates every
+  // trained agent."* So the layout does not move, the slot keeps meaning what it
+  // has always meant, and the fact that an agent cannot yet tell a food shortage
+  // from a vellum one is recorded as an open question rather than paid for with
+  // a resize nobody scheduled.
+  const stocks = componentOf(state, MATERIAL_STOCK);
+  const materials = stocks.has(universe)
+    ? stocks.get(universe, 'food') + stocks.get(universe, 'stone') + stocks.get(universe, 'vellum')
+    : 0;
   view[offset] = saturate(record.favor);
   view[offset + 1] = saturate(record.worship);
   view[offset + 2] = saturate(record.worshipTier);
-  view[offset + 3] = saturate(record.materials);
+  view[offset + 3] = saturate(materials);
   view[offset + 4] = saturate(record.prestige);
 }
 
