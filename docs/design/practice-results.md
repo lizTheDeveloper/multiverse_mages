@@ -24,9 +24,8 @@ gated) and none of that movement survives its own spread.
 
 **Worse, the gate starves its own measurement channel.** Under the tick-sharp gate, **2 of 8 runs
 accrue exactly zero for every strategy that accrues at all** — `denial-warden`'s figure is 7 of 8 —
-and one run carries a third of an arm's total. The quantity a
-mētis mechanic would accrue on is not merely un-separating; at this gate's sharpness it is too
-sparse to compare gods by at all.
+and one run carries a third of an arm's total. The quantity a mētis mechanic would accrue on is not
+merely un-separating; at this gate's sharpness it is too sparse to compare gods by at all.
 
 **Question 2 moves, weakly and consistently.** The share of held instances below the teach threshold
 falls on **all four** arms, by 0.8 to 2.5 percentage points, at 1.2 to 2.1 standard errors. Real
