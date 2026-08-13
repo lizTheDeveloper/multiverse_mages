@@ -1040,7 +1040,7 @@ and that hash is taken over this whole table — so adding a row invalidates eve
 baseline *by identity*, before a single number has moved. That is conservative rather than wrong,
 but it means **any** future subsystem addition forces a re-baseline event, and the cost belongs in
 the plan for one rather than being discovered in a red gate. See
-`docs/design/opening-square.md` §5.
+`docs/design/opening-square.md` §4.
 
 Draws key on `(rootSeed, stream, tick, actorKey, drawOrdinal)` where `actorKey` is stable identity,
 never array index. This gives **insertion invariance**: adding a combatant, or adding a draw,

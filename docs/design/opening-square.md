@@ -26,7 +26,7 @@ zero, and growing the square is `permitTechnique` / `permitForm`, which `god/int
 already prices in favor. That is why this change costs **no component, no `WORLD_SCHEMA_VERSION`
 bump and no §1.2 deviation** — the state to express it was already there and nobody had varied it.
 
-The one thing it does cost is `RNG_STREAM.openingSquare: 12`, and §5 is about what that costs.
+The one thing it does cost is `RNG_STREAM.openingSquare: 12`, and §4 is about what that costs.
 
 ---
 
