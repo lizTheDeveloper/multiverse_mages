@@ -1,27 +1,150 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "268779c41c14b70dd624f3b6496a8d479b07096dcdbc8e24859ea917d40c738c",
-  "contentHash": "9b0a9fe9dc7ad06fd8ecccef2f480622901345d64d77111070933ea5840a34e6",
+  "contentHash": "032f1de2572d998266dd70b53afd2c4ffecf4477fbfccc74816333abf8a2efa0",
   "kind": "gate",
   "metrics": [
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":39.889424101306965,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":119.6682723039209,"unit":"grimoires","value":255.21875},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":32,"standardError":745.1811639298814,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":2235.5434917896446,"unit":"instances","value":4016.625},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":32,"standardError":8.101390836278846,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":24.304172508836537,"unit":"nodes","value":37.5625},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":32,"standardError":176.40292093214572,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":529.2087627964372,"unit":"mages","value":461.5625},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":32,"standardError":15.018078763015689,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":45.05423628904707,"unit":"nodes","value":66.5625},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":32,"standardError":1.4339533110301346,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.3018599330904035,"unit":"nodes","value":3.21875},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":32,"standardError":15.018078763015689,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":45.05423628904707,"unit":"nodes","value":69.0625},
-    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":32,"standardError":1915.21875,"standardErrorMethod":"jackknife","status":"measured","tolerance":5745.65625,"unit":"people","value":29490},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":32,"standardError":1124.5139450374572,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3373.5418351123717,"unit":"people","value":17866.40625},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1124.5139450374572,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3373.5418351123717,"unit":"people","value":17722.40625}
+    {
+      "aggregation": "mean",
+      "definitionVersion": 1,
+      "metricId": "referenceGrimoires",
+      "sampleSize": 32,
+      "standardError": 39.889424101306965,
+      "standardErrorMethod": "stratified-by-cell",
+      "status": "measured",
+      "tolerance": 119.6682723039209,
+      "unit": "grimoires",
+      "value": 255.21875
+    },
+    {
+      "aggregation": "mean",
+      "definitionVersion": 1,
+      "metricId": "referenceKnowledgeInstances",
+      "sampleSize": 32,
+      "standardError": 745.1811639298814,
+      "standardErrorMethod": "stratified-by-cell",
+      "status": "measured",
+      "tolerance": 2235.5434917896446,
+      "unit": "instances",
+      "value": 4016.625
+    },
+    {
+      "aggregation": "mean",
+      "definitionVersion": 1,
+      "metricId": "referenceLibraryDepth",
+      "sampleSize": 32,
+      "standardError": 8.101390836278846,
+      "standardErrorMethod": "stratified-by-cell",
+      "status": "measured",
+      "tolerance": 24.304172508836537,
+      "unit": "nodes",
+      "value": 37.5625
+    },
+    {
+      "aggregation": "mean",
+      "definitionVersion": 1,
+      "metricId": "referenceLivingMages",
+      "sampleSize": 32,
+      "standardError": 176.40292093214572,
+      "standardErrorMethod": "stratified-by-cell",
+      "status": "measured",
+      "tolerance": 529.2087627964372,
+      "unit": "mages",
+      "value": 461.5625
+    },
+    {
+      "aggregation": "mean",
+      "definitionVersion": 1,
+      "metricId": "referenceNodesGained",
+      "sampleSize": 32,
+      "standardError": 15.018078763015689,
+      "standardErrorMethod": "stratified-by-cell",
+      "status": "measured",
+      "tolerance": 45.05423628904707,
+      "unit": "nodes",
+      "value": 66.5625
+    },
+    {
+      "aggregation": "mean",
+      "definitionVersion": 1,
+      "metricId": "referenceNodesGainedFinalQuarter",
+      "sampleSize": 32,
+      "standardError": 1.4339533110301346,
+      "standardErrorMethod": "stratified-by-cell",
+      "status": "measured",
+      "tolerance": 4.3018599330904035,
+      "unit": "nodes",
+      "value": 3.21875
+    },
+    {
+      "aggregation": "mean",
+      "definitionVersion": 1,
+      "metricId": "referenceNodesKnown",
+      "sampleSize": 32,
+      "standardError": 15.018078763015689,
+      "standardErrorMethod": "stratified-by-cell",
+      "status": "measured",
+      "tolerance": 45.05423628904707,
+      "unit": "nodes",
+      "value": 69.0625
+    },
+    {
+      "aggregation": "max",
+      "definitionVersion": 1,
+      "metricId": "referencePeakPopulation",
+      "sampleSize": 32,
+      "standardError": 1915.21875,
+      "standardErrorMethod": "jackknife",
+      "status": "measured",
+      "tolerance": 5745.65625,
+      "unit": "people",
+      "value": 29490
+    },
+    {
+      "aggregation": "mean",
+      "definitionVersion": 1,
+      "metricId": "referencePopulation",
+      "sampleSize": 32,
+      "standardError": 1124.5139450374572,
+      "standardErrorMethod": "stratified-by-cell",
+      "status": "measured",
+      "tolerance": 3373.5418351123717,
+      "unit": "people",
+      "value": 17866.40625
+    },
+    {
+      "aggregation": "mean",
+      "definitionVersion": 1,
+      "metricId": "referencePopulationChange",
+      "sampleSize": 32,
+      "standardError": 1124.5139450374572,
+      "standardErrorMethod": "stratified-by-cell",
+      "status": "measured",
+      "tolerance": 3373.5418351123717,
+      "unit": "people",
+      "value": 17722.40625
+    }
   ],
   "notes": [
-    "permissive-breadth's 40/40 -> 0/40 has a second cause not visible from this branch: its role is 'funds broadly' and it has NEVER founded a university in any run of any sweep ever taken, because fundUniversity sits behind the always-legal permitTechnique and policyFor never reaches it. Fixed on w73/pool-build-order (PR #70). These numbers must be re-measured against that fix, and the reading 'only a purpose-built probe clears the conjunct' may not survive it. See docs/design/ascension-requires-play.md for the four pre-registered claims, and the campaign-plan entry recording that favor never binds -- 98 universities founded against a threshold of 2 with zero refusals -- which makes this conjunct a placement fix rather than an economic one."
+    "No release before 0.5.0 may claim any of this is balanced: every magnitude in the shipped content carries tuningStatus untuned and the balance harness owns all of them -- so this file is a measurement and not a balance claim.",
+    "permissive-breadth's 40/40 -> 0/40 has a second cause not visible from this branch: its role is 'funds broadly' and it has NEVER founded a university in any run of any sweep ever taken, because fundUniversity sits behind the always-legal permitTechnique and policyFor never reaches it. Fixed on w73/pool-build-order (PR #70). These numbers must be re-measured against that fix, and the reading 'only a purpose-built probe clears the conjunct' may not survive it. See docs/design/ascension-requires-play.md for the four pre-registered claims, and the campaign-plan entry recording that favor never binds -- 98 universities founded against a threshold of 2 with zero refusals -- which makes this conjunct a placement fix rather than an economic one.",
+    "The universe is still degenerate in ways this file cannot close, and W63 changes which of them binds rather than removing one. The pool is round-robin over eight strategies and only permissive-breadth moved: its four runs stopped ascending, because it never founds a university at all -- fundUniversity sits behind the always-legal permitTechnique and policyFor never reaches it, which w73/pool-build-order fixes. Favor is also not a binding constraint anywhere after the opening, so the conjunct this file measures is a placement fix rather than an economic one: open-then-build founds 98 universities against a threshold of 2 with zero refusals."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
     "contentHash": "abec6372723895f8135bbb5b700c0d57",
-    "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
+    "metricDefinitionVersions": {
+      "referenceGrimoires": 1,
+      "referenceKnowledgeInstances": 1,
+      "referenceLibraryDepth": 1,
+      "referenceLivingMages": 1,
+      "referenceNodesGained": 1,
+      "referenceNodesGainedFinalQuarter": 1,
+      "referenceNodesKnown": 1,
+      "referencePeakPopulation": 1,
+      "referencePopulation": 1,
+      "referencePopulationChange": 1
+    },
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
@@ -30,16 +153,76 @@
   "rootSeed": 20260811,
   "runCount": 32,
   "supersededDeltas": [
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":255.21875,"value":255.21875},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":4016.625,"value":4016.625},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":37.5625,"value":37.5625},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":461.5625,"value":461.5625},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":66.5625,"value":66.5625},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":3.21875,"value":3.21875},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":69.0625,"value":69.0625},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":29490,"value":29490},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":17866.40625,"value":17866.40625},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":17722.40625,"value":17722.40625}
+    {
+      "delta": 0,
+      "deltaInStandardErrors": 0,
+      "metricId": "referenceGrimoires",
+      "previousValue": 255.21875,
+      "value": 255.21875
+    },
+    {
+      "delta": 0,
+      "deltaInStandardErrors": 0,
+      "metricId": "referenceKnowledgeInstances",
+      "previousValue": 4016.625,
+      "value": 4016.625
+    },
+    {
+      "delta": 0,
+      "deltaInStandardErrors": 0,
+      "metricId": "referenceLibraryDepth",
+      "previousValue": 37.5625,
+      "value": 37.5625
+    },
+    {
+      "delta": 0,
+      "deltaInStandardErrors": 0,
+      "metricId": "referenceLivingMages",
+      "previousValue": 461.5625,
+      "value": 461.5625
+    },
+    {
+      "delta": 0,
+      "deltaInStandardErrors": 0,
+      "metricId": "referenceNodesGained",
+      "previousValue": 66.5625,
+      "value": 66.5625
+    },
+    {
+      "delta": 0,
+      "deltaInStandardErrors": 0,
+      "metricId": "referenceNodesGainedFinalQuarter",
+      "previousValue": 3.21875,
+      "value": 3.21875
+    },
+    {
+      "delta": 0,
+      "deltaInStandardErrors": 0,
+      "metricId": "referenceNodesKnown",
+      "previousValue": 69.0625,
+      "value": 69.0625
+    },
+    {
+      "delta": 0,
+      "deltaInStandardErrors": 0,
+      "metricId": "referencePeakPopulation",
+      "previousValue": 29490,
+      "value": 29490
+    },
+    {
+      "delta": 0,
+      "deltaInStandardErrors": 0,
+      "metricId": "referencePopulation",
+      "previousValue": 17866.40625,
+      "value": 17866.40625
+    },
+    {
+      "delta": 0,
+      "deltaInStandardErrors": 0,
+      "metricId": "referencePopulationChange",
+      "previousValue": 17722.40625,
+      "value": 17722.40625
+    }
   ],
   "supersedes": "d7d9fc21215d3e83248a480bb664d127c6ef932685fe62d4fea2e02a51576b02",
   "sweepId": "balance-gate-ascension-v1",
