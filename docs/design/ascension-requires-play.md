@@ -155,7 +155,12 @@ Both arms then terminated early at 11 of 40, leaving no error in their logs and 
 status — they had been launched detached from a shell that had since exited. Silent disappearance
 under that much resident state is most consistent with the OS reclaiming them, but **that is an
 inference, not a diagnosis**, and it is recorded as one in the evidence file. The arm was not
-stopped deliberately. The reading is not sensitive to the remaining 29: `archivist` holds
+stopped deliberately.
+
+  A re-run was started and then **deliberately abandoned**: at the measured pace of ~19 minutes per
+  run it is ~12.7 hours per arm, ~25 hours for the pair, and that is not a cost worth paying to firm
+  up a corner already reported honestly at n=11 while the branch sits unreviewed. The command to
+  complete it is in the evidence file for anyone who wants it. The reading is not sensitive to the remaining 29: `archivist` holds
 exactly **51** nodes in every run measured — the content ceiling of the starting rectangle, which it
 never permits past — and every one of the 11 pairs is bit-identical across the two arms. Nothing in
 the remaining replicates can make a universe that permits nothing reach a canon it has no access to.

@@ -14,6 +14,15 @@ over thirteen hundred university records each and were the largest in the pool -
 inference and not a diagnosis, so it is written here as one. The arm was NOT stopped deliberately
 and was not truncated for time.
 
+A re-run was attempted and DELIBERATELY ABANDONED rather than left to finish. Measured pace on the
+original arm is ~19 minutes per run, so 40 runs is ~12.7 hours per arm and ~25 hours for the pair.
+That is not a cost this branch should pay for a corner it already reports honestly at n=11, and a
+result nobody is waiting for is worse than a result nobody has: the branch would sit unreviewed for
+a day to firm up a number whose direction is not in question. Anyone who wants the full 40 can run:
+
+    node tools/w63/arms.mjs --arm before --strategies archivist --replicates 10 --ticks 2400 --out <dir>
+    node tools/w63/arms.mjs --arm after  --strategies archivist --replicates 10 --ticks 2400 --out <dir>
+
 What the 11 support, and it is a claim about the content ceiling rather than about a sample:
 archivist holds exactly 51 nodes in every run measured, in both arms, which is the ceiling of the
 starting rectangle it never permits past. All 11 pairs are bit-identical across the two arms.
