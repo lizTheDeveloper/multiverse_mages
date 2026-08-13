@@ -272,6 +272,9 @@ export function runOne(input) {
   };
 }
 
+const pad = (s, n) => String(s).padEnd(n);
+const num = (s, n) => String(s).padStart(n);
+
 function parseArgs(argv) {
   const args = {};
   for (let i = 0; i < argv.length; i += 2) {
@@ -280,6 +283,35 @@ function parseArgs(argv) {
     args[key.slice(2)] = argv[i + 1];
   }
   return args;
+}
+
+/**
+ * The probe's own validity check, following `tools/w15/composition.mjs`.
+ *
+ * A probed and an unprobed run at the same coordinates must be the same run.
+ * Reported rather than asserted, so a failure appears in the writeup as a
+ * refusal to report numbers instead of as a stack trace nobody kept.
+ */
+export function probeIsInert(content, economic, strategyId, coordinates, options, worldTickCap) {
+  const withProbe = runOne({ content, economic, strategyId, coordinates, options, worldTickCap, probe: true });
+  const without = runOne({ content, economic, strategyId, coordinates, options, worldTickCap, probe: false });
+  return {
+    strategyId,
+    agrees:
+      withProbe.snapshotHash === without.snapshotHash &&
+      withProbe.terminalReason === without.terminalReason &&
+      withProbe.ticksRun === without.ticksRun,
+    probed: {
+      snapshotHash: withProbe.snapshotHash,
+      terminalReason: withProbe.terminalReason,
+      ticksRun: withProbe.ticksRun,
+    },
+    unprobed: {
+      snapshotHash: without.snapshotHash,
+      terminalReason: without.terminalReason,
+      ticksRun: without.ticksRun,
+    },
+  };
 }
 
 function main() {
@@ -292,6 +324,36 @@ function main() {
   const content = referenceContent();
   const economic = economicNodeIndex(content.registry);
   process.stderr.write(`nodes carrying an economic universe effect: ${String(economic.size)}\n`);
+
+  if (args['check-inert'] !== undefined || process.argv.includes('--check-inert')) {
+    let allAgree = true;
+    for (const strategyId of strategies) {
+      for (const cell of CELLS) {
+        const verdict = probeIsInert(
+          content,
+          economic,
+          strategyId,
+          { rootSeed: ROOT_SEED, sweepId: SWEEP_ID, cellIndex: cell.cellIndex, replicateIndex: 0 },
+          cell.options,
+          worldTickCap,
+        );
+        allAgree = allAgree && verdict.agrees;
+        process.stdout.write(
+          `inert ${verdict.agrees ? 'YES' : 'NO '} ${pad(strategyId, 22)} cell=${String(cell.cellIndex)} ` +
+            `${verdict.probed.snapshotHash} vs ${verdict.unprobed.snapshotHash} ` +
+            `ticks ${String(verdict.probed.ticksRun)}/${String(verdict.unprobed.ticksRun)} ` +
+            `reason ${String(verdict.probed.terminalReason)}/${String(verdict.unprobed.terminalReason)}\n`,
+        );
+      }
+    }
+    process.stdout.write(
+      allAgree
+        ? '\nThe probe is inert: every probed run is byte-identical to its unprobed twin.\n'
+        : '\nTHE PROBE IS NOT INERT. Every number this tool produces is void.\n',
+    );
+    if (!allAgree) process.exitCode = 1;
+    return;
+  }
 
   const runs = [];
   for (const strategyId of strategies) {
@@ -331,8 +393,6 @@ function main() {
     byStrategy.set(run.strategyId, acc);
   }
 
-  const pad = (s, n) => String(s).padEnd(n);
-  const num = (s, n) => String(s).padStart(n);
   process.stdout.write(
     `\n${pad('strategy', 22)}${num('runs', 5)}${num('use/run', 12)}${num('use/tick', 10)}` +
       `${num('live%', 8)}${num('holders', 9)}  top forms\n`,
