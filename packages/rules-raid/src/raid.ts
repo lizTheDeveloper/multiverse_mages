@@ -420,9 +420,14 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
       // A field targets nobody, so there is nothing for concealment to evade —
       // which is the mechanical reason area denial is the counter to a
       // concealment build, and it is stated rather than left emergent.
+      //
+      // It also decoys nobody, and this is the one place that is easy to get
+      // wrong. A field catching a summon diverts no enemy attention: it damages
+      // everything in radius whether the summon is there or not. The
+      // action-economy decoy channel is defined as *an attack spent on a
+      // summon*, and only the two targeted sites in phase 4 spend one.
       addDamage(brief.handle, denial.magnitude, COMBAT_SOURCE.areaDenial, denial.attempt);
       raid.ledger.applied(COMBAT_PRIMITIVES.areaDenial, denial.owner, denial.magnitude);
-      if (brief.sourceKind === COMBATANT_SOURCE_KIND.summon) raid.economy.decoyed(brief.side);
     }
   }
 
