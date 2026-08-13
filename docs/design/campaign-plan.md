@@ -4557,3 +4557,73 @@ had 3 (human went 16 → 32). Two readings — the curve harms the weakest speci
 exhaustible cells), or orc was marginal at three and any perturbation re-rolls it. **One seed cannot
 separate them. Run 3–4 seeds and report; do not tune the curve to resurrect orc.** Editing the
 assertion would hide a species going to zero, and the agent was right to refuse.
+
+---
+
+## W92 — the gates hold constant the two factors most likely to make universes differ
+
+*2026-08-13. A direct consequence of W91's rule, checked immediately because the rule makes it
+checkable.*
+
+W91 established: **a shared constant cannot be a source of divergence. Only things that differ between
+universes can make universes differ.** Applied to the instrument rather than the game, that is a
+question with a one-command answer — *which factors do the gates actually vary?*
+
+`REFERENCE_FACTOR_IDS` offers five: `cohortSize`, `foundingMages`, `foundingNodes`,
+**`foundingSpeciesMask`**, and **`tradition`**.
+
+| sweep | factors varied |
+|---|---|
+| `balance-gate` | `cohortSize`, `foundingNodes` |
+| `balance-gate-horizon` | `cohortSize`, `foundingNodes` |
+| `balance-gate-ascension` | `cohortSize`, `foundingNodes` |
+| `balance-full` | `cohortSize`, `foundingMages`, `foundingNodes` |
+
+**Not one committed gate varies species or tradition.** `DEFAULT_FOUNDING_SPECIES_MASK = 0`, and zero
+means *every species*. So every universe in every gate is founded with **all six species** and governed
+by **the same tradition**.
+
+Those are, on the face of it, the two most game-shaping factors available — *which peoples exist* and
+*what magic fundamentally is* — and they are the two the instrument pins.
+
+### Why this matters more than a coverage gap
+
+**Tradition is not a flavour setting.** The reference tradition is True Naming, whose `acquire` hook
+sets `instanceMastery: 1024` on **every** instance — so in every gate run, researched knowledge is
+immediately teachable and chains losslessly. Under a different tradition it is not. This is exactly the
+mechanism that made my *"grants are the only teachable knowledge"* claim false (W87): the 93.4%
+figure was a statement about *some* traditions, and **the gates only ever run one.**
+
+Three v1 traditions exist and are confined to four hooks — `acquire`, `store`, `cast`, `cost` — which
+CLAUDE.md names as the one licensed exception to content-lives-in-data. **Two of those four hooks have
+no simulation path at all** (W89: `castPolicy` and `costPolicy` are read only by `@mm/rules-raid`, a
+package nothing depends on). So of the design's single licensed extension mechanism: half does not run,
+and the half that does is never varied by any gate.
+
+**Species are pinned in the same way.** All six can staff all 70 cells, all six are `"tuningStatus":
+"untuned"`, and the gates never ask what a universe of only gnomes or only orcs does. Three
+`integration-r2-species-*` sweeps exist and do vary the mask — but they are not gates, so nothing
+regression-tests the answer.
+
+### This is the same failure shape, applied to itself
+
+W81 recorded five instances of *the instrument does not touch the thing*, W89 five of *the simulation
+does not touch the mechanic*. **This is a third: the instrument holds constant the thing it exists to
+vary.** A gate over a world where every universe has the same peoples and the same magic cannot report
+that peoples or magic matter — and every "species make no difference" result in this campaign was
+measured under exactly that constraint.
+
+### What to do, in order
+
+1. **Add `tradition` to the ascension gate first.** It is the only committed gate that runs strategies
+   for 2400 ticks, tradition is already a registered factor requiring no new machinery, and the
+   True-Naming-only assumption has already produced one wrong claim in this document.
+2. **Then `foundingSpeciesMask`**, single-species arms included, so "all six can staff 70 cells" is
+   tested against "this universe only has orcs" rather than assumed equivalent to it.
+3. **Expect the cost.** More arms mean more runs, and the ascension gate is already the expensive one.
+   It is also the one whose pooled standard error the W59 work stratified precisely so arms spanning
+   294× stop reading as noise — **that fix is what makes adding arms affordable**, and this is the
+   first thing to spend it on.
+
+**Do not add either as a gate until the current re-baselining settles.** Four approved changes already
+invalidate every baseline; adding factors mid-flight would make the resulting diff uninterpretable.
