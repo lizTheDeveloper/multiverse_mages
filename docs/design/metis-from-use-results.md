@@ -194,6 +194,23 @@ Not built — it needs raids reachable, which is a separate branch. What is inhe
 - **No accrual code, no content, no schema change, no metric.** The gate said stop, and
   `docs/design/release-plan.md` forbids the claim that would have justified building anyway.
 
+### Four stale facts found on the way, flagged rather than fixed
+
+Not touched, because none is this branch's business and two of them are load-bearing enough that
+someone should change them deliberately:
+
+- **`CLAUDE.md` says `WORLD_SCHEMA_VERSION` is 3.** `packages/state/src/migrations.ts:121` says 5 —
+  revisions 4 (`god-agency`) and 5 (`city-and-supply-chain`'s `material-stock`, which also removes
+  `universe.materials`) landed after that paragraph was written.
+- **"`gatherEffects` has no production caller" is stale everywhere it appears** —
+  `docs/design/vision-audit.md`, `docs/design/campaign-plan.md`,
+  `docs/design/strategy-dimensionality.md`, `scripts/check-primitive-consumption.mjs` and the header
+  of `packages/rules-magic/src/effects/consumption.ts`. `universe-effects.ts` is that caller.
+- **`packages/scenario/src/content-set.ts`'s consumption note is stale in the other direction.** It
+  says `world-step.ts` passes `resourceYieldBonuses: []`; it now passes `economy.resourceYield`. So
+  the consumption report may be *understating* what is wired.
+- **The brief's 38/40 belongs to `permissive-breadth`.** See §3.
+
 ### Randomness
 
 **No RNG draw was added, in any subsystem.** The probe is a read. `RNG_STREAM` is unchanged and
