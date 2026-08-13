@@ -16,7 +16,7 @@ whether knowledge loss lands off the beat before 520 assets were generated again
 | [`commitments/`](commitments/) | Four verbs pay out somewhere other than the tick you spend on. How do you show a purchase whose consequence is not now — and one that is out of reach rather than expensive? |
 | [`ascension/`](ascension/) | Action 15 appears, may be refused, and can be taken away while you hesitate. How is an ending you have to choose presented — and what happens at the moment it lapses? |
 | [`tempo/`](tempo/) | What wall-clock pacing does a world tick get, and which events are allowed to interrupt? One question, because speed decides what an event is. |
-| [`raid/`](raid/) | Every action is masked for the duration. What is a player actually *doing* while a raid runs, and what belongs beside the portal timer? |
+| [`raid/`](raid/) | Muster, contact, resolution — agency spends down as the fight goes on. What is a player *doing*, what does each cast cost them in secrets, and can you look back at what happened without stopping the clock? |
 | [`glow/`](glow/) | Cyan is the god's own light and the form hues stay the world's. Does that rule survive a vellum ground, or does light force the client dark? |
 
 ## What these found
@@ -53,7 +53,7 @@ Surfaces that are not actions, and still need directions:
 | Why a mage did something | `mage/` | 1 — the panel is one design; the *gaps* it found are the deliverable |
 | Where knowledge lives | `knowledge/` | 3 — node, vessel, risk |
 | Pacing and interruption | `tempo/` | 3 — speeds, self-slowing, feed-as-clock |
-| Watching a raid | `raid/` | 3 — battlefield, clock, ledger |
+| Playing a raid | `raid/` | 4 — field, muster clock, record cursor, the ledger and cast log |
 | The light system | `glow/` | 3 grounds — vellum, aether insets, full dark |
 
 **Known incompleteness.** `mage/` offers one direction rather than three: it was built to find out what
@@ -75,8 +75,11 @@ the script exists so nobody has to remember the flags.
 ## Light and dark
 
 Every prototype carries a theme control — **light / system / dark** — and the choice is remembered
-per browser rather than per prototype. All colour lives in [`shared/theme.css`](shared/theme.css);
-no prototype declares one.
+per browser rather than per prototype. Colour lives in [`shared/theme.css`](shared/theme.css), and a
+prototype declares a token of its own only where the shared set has no name for it — `raid/` declares
+five (`--host`, `--raider`, `--brass`, and two field-scoped cyans that must not follow the theme,
+because the engagement field is a dark plate in both). A prototype that redeclares a token the sheet
+already names is drifting, and `ui-theme.test.ts` is what catches it.
 
 The two themes are not two skins. On ink, a charged control **emits** light. On vellum it cannot: a
 cyan fill bright enough to read measures 1.01:1 against the latent state, a hue difference with no
