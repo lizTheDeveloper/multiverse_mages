@@ -54,7 +54,7 @@ import {
 /** Two academies, everything else exactly the long run's starting position. */
 const OPTIONS = Object.freeze({ ...LONG_RUN_OPTIONS, foundingUniversities: 2 });
 
-/** Every world year for the first ten, then every ten to a century. */
+/** Every world year for the first ten, then widening steps to the long-run horizon. */
 const HORIZONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 80, 100, 150, 200].map(
   (year) => year * TICKS_PER_WORLD_YEAR,
 );
