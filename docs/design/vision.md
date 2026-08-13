@@ -1,8 +1,15 @@
 # Multiverse Mages — Design Vision
 
-*Status: approved 2026-08-10. This document is the vision of record. Every OpenSpec change
-should trace to a section here; anything built that isn't described here is scope creep, and
-anything described here that never ships is an unmet promise.*
+*Status: approved 2026-08-10; amended 2026-08-12 during campaign round 2 — §4, §4b, §7, §7a, §8,
+§8a, §8b, §11, §12 and §13; and §3 the same day, whose frozen-policy rule was repealed and
+replaced by the raid-engagement design (`docs/design/raid-engagement.md`). This document is the
+vision of record. Every OpenSpec change should trace to a section here; anything built that isn't
+described here is scope creep, and anything described here that never ships is an unmet promise.*
+
+*Those two sets of amendments were authored in parallel on separate branches and were reconciled
+into this single copy on 2026-08-12. Nothing was dropped in the reconciliation, which means §4 and
+§13 both speak about the perception trunk and do not agree about how settled it is; that
+disagreement is left standing for the author rather than smoothed over here.*
 
 ---
 
@@ -46,8 +53,15 @@ Consequences, which are the whole strategy layer:
   simply inert when you raid them.
 - Permitting something arms your defense *and* arms anyone who invades you and happens to know it.
 - Prohibiting something is a real strategic option, not a penalty — it is a denial play.
-- **Rules changes are a world-time action.** Nothing about the ruleset — including portal magic
-  — can be altered once a raid has begun. A raid in progress is frozen policy.
+- **Rules changes may be made during a raid, and every change locks until the raid ends.** A cell
+  forbidden mid-raid cannot be permitted again while the raid runs, and one permitted mid-raid
+  cannot be forbidden again. After the raid, reverting a mid-raid change costs substantially more
+  favor than the change did — a raid leaves a mark on your constitution, and unmaking it is
+  expensive. See `raid-engagement.md`, which records why the previous rule ("a raid in progress is
+  frozen policy") was repealed: frozen policy leaves the god with no verbs during the one moment the
+  game is most exciting, which makes a raid a cutscene over a dice roll. The lock preserves what that
+  rule was protecting — you cannot fluidly retune mid-fight to counter whatever you last saw — while
+  making every mid-raid change a commitment under uncertainty.
 
 ## 4. Magic: The Grid
 
@@ -107,6 +121,44 @@ The edict budget is small and grows with worship tier, so exceptions stay precio
 keeps the ruleset expressive without turning it into seventy independent switches, which would
 bloat both the interface and the reinforcement-learning action space.
 
+### Perception is the trunk: how the grid is wired
+
+The cells are not independent of each other, and the way they are joined is a rule rather than an
+accident of authoring. In the v1 subset, **all eleven cross-cell prerequisite edges originate in an
+*Intellego* cell** — nine into the same form (*Intellego Terram* → *Perdo Terram* and → *Rego
+Terram*, and so on for Mentem, Nomen and Limen), and two between *Intellego* cells themselves. One
+sentence encodes them: **you must perceive a thing before you can unmake or command it.**
+
+That is not new design; it is an unstated consequence of design already written. §4.1 of
+`docs/design/sound-design.md` gives *Intellego* the one technique with no impact at all — *"a
+reveal, not an event… nothing is struck"* — and perception preceding action follows from it. Five
+independent content branches converged on the same wiring, which is what makes it deliberate.
+
+**What it gates, and what it does not.** Every *Perdo* and *Rego* cell still carries its own tier-1
+root, so shallow work in them needs no perception at all. The *Intellego* edge attaches partway up —
+tier 2 to 4 — and everything above it in that cell sits behind it. Strip every *Intellego* node out
+of the v1 subset and **18 of 51 nodes remain reachable**: perception does not gate entry to the
+grid, it gates **depth** in it. The sharpest case is the portal itself. §8 says entry requires *Rego
+Limen*; in the content, `rl-open-the-portal` also requires *Intellego Limen*'s `il-read-the-binding`.
+You cannot open a door you have not read.
+
+**Two consequences.** **First, and it is a hard constraint on §4b: *Intellego* cannot be a member
+of a mutually exclusive pair.** Excluding it would cost a mage two-thirds of the grid rather than a
+school, which is not what an exclusion is for. Second, the rule is violable by accident and nothing
+tests it — any later node giving *Perdo* or *Rego* depth without a perception prerequisite breaks it
+silently. A loader assertion over cross-cell edges is the obvious guard; recorded here as a
+recommendation, not built.
+
+**Whether the other fifty-eight cells are wired this way is open.** Across all seventy cells there
+are 36 cross-cell edges and **29** of them originate in *Intellego* — dominant, not universal, with
+five from *Perdo* and two from *Rego*. Whether the *Muto* and *Creo* columns should acquire the same
+trunk is a live authoring decision and is not settled here.
+
+**And the v1 grid is a lattice, not twelve parallel ladders.** That characterisation has been
+repeated in campaign notes and it is wrong: eleven cross-links join the twelve cells into four
+form-columns trunked on perception, plus two links between the trunks, with a longest chain six
+nodes deep.
+
 ### Balance still runs on primitives
 
 Nodes are expressed as compositions of ~15 tunable **effect primitives**, and balance assertions
@@ -122,8 +174,18 @@ are made over the primitives, where Monte Carlo has enough samples to be truthfu
 *Rego Terram* letting universities go up faster is not a special case in code — it is a node
 weighted toward `build-rate`.
 
-**v1 ships a playable subset of the grid** — 3 techniques × 4 forms — against a schema built for
-all 70 cells.
+**v1 ships the whole grid.** The original line here scoped v1 to a playable subset — 3 techniques
+× 4 forms, twelve cells — against a schema built for all seventy. That scope was about bounding
+*authoring*, and **the authoring is done**: all 70 cells and 300 nodes are written, validated and
+in `packages/content/data`. What the subset bought is no longer worth its cost, because the twelve
+cells hold only 51 of those 300 nodes and W19 measured an idle universe holding **48.9 of 51 by
+world tick 300** — an eighth of a 2,400-tick run. A subset that a universe exhausts while doing
+nothing is not a scoped-down game; it is a game that is over before it starts.
+
+The twelve cells survive as the **starting** enabled set, not as the ceiling. Permitting an axis
+is still the god's core verb and still what opens the rest of the grid — that mechanic is
+unchanged and is, on the measurements so far, the only lever that adds content to a set the world
+exhausts on its own.
 
 ## 4a. Traditions: How Magic Is Performed
 
@@ -170,6 +232,36 @@ and destruction cycles, forbidden texts that teach themselves and damage the rea
 
 **Sourcing note:** content draws on historical, literary, and folkloric material and deliberately
 avoids living practiced religions.
+
+## 4b. What One Mage Can Hold
+
+The grid says what a universe may contain. Three further decisions constrain the **individual**,
+and together they are why the deepest magic has to be collective.
+
+**Schools are mutually exclusive, and the test is per mage.** An individual mage cannot learn all
+the magic, because some bodies of magic exclude others — *if you use light magic you can't also
+use dark magic*. Not every school is eligible: §4 shows *Intellego* is the grid's perception trunk,
+so excluding it costs a mage two-thirds of the grid rather than a school, and it is therefore not a
+candidate. The exclusion is checked against the **mage's** held set, never the universe's: a
+universe can eventually hold everything, spread across many mages, and that is exactly what a
+civilization is for. Every exclusion carries its **reason**, and symmetry follows from the reason
+rather than being asserted alongside it — an exclusion whose reason does not run both ways is not
+yet an exclusion. This is an **anti-requisite**: the mirror of a prerequisite, which is the only
+relation the content graph carries today.
+
+**Depth requires a long life.** Reaching the deepest nodes should be *weird* — the province of a
+naturally long-lived species, or of absurd life-extension magic. Extension therefore returns
+**logarithmically**, so that buying more life never makes a species' own lifespan irrelevant; the
+draconic 1,500 years must stay worth having next to a human who has bought her way upward. The
+`lifespan` primitive already caps at `fraction-of-species-base 512` — half a species' base again,
+and no further — which is the same instinct written as a ceiling rather than as a curve.
+
+**The deepest magic is cast by more than one mage.** Rituals requiring several casters, ideally
+casters from mutually exclusive schools, so that the summit of the grid is *structurally*
+collective: a single archmage cannot be a whole civilization, and losing one mage from a ritual
+group is a real loss rather than a slower schedule. Nothing in any spec today mentions rituals or
+co-casting — this section is where that decision now lives, and the questions it leaves open are
+in §13.
 
 ## 5. Knowledge Has a Location
 
@@ -274,6 +366,23 @@ encourage a research direction, and — rarely and ruinously — change the univ
 their assigned standing **role** (researcher, warden, professor, raider). You set the role; they
 decide everything else. You never issue direct orders — including in raids.
 
+**When an intervention lands is part of what it costs.** §3.1 of `docs/design/sound-design.md`
+makes one world tick one **bar**, and gives each subsystem a subdivision of it: economy on beats 1
+and 3, teaching on the backbeat, research on 8ths, scribing on 16ths, and knowledge loss and
+portal events off-grid, because off-grid means wrong. That arrangement is a claim about the
+simulation and not only about the music, and the god's acts are meant to answer to it — *when* an
+intervention lands should matter, and §4.1's technique envelopes should become real **cost curves**
+rather than a description of a sound.
+
+Part of this is built, on `w21/timing-and-envelopes`. The five techniques carry authored envelopes
+— Creo swells, Perdo hollows out, Intellego opens, Muto bends, Rego is rigid — and the curve now
+shapes the effort a mage spends on **research**, the one acquisition path with an interior for a
+curve to be a curve over. And a **constitutional act** — permitting, forbidding, an edict —
+committed within eight ticks of the last one pays a surcharge, so churning the ruleset is priced
+rather than free. What is deliberately computed and *not* charged is the off-grid surcharge
+itself, because §3.1 assigns subdivisions to world subsystems and never to god interventions.
+Which subdivision each intervention belongs to is an open question, and it is in §13.
+
 ## 7a. Space and Scale
 
 **The world is abstract. Raids are positional.** This split is deliberate and it defines what the
@@ -292,6 +401,18 @@ The consequence for the simulation core: only engagement-mode state needs spatia
 only combatants need positions. World-scale entities carry no coordinates at all. This is a large
 saving and it is why the entity store's component model must not assume every entity is placed.
 
+**Where the boundary actually runs, because "no map" gets read too widely.** Forbidden at world
+scale: coordinates, distance, geometric adjacency, and pathfinding. Permitted — and already
+permitted by this section's own *"counts and relationships"* — is a **place with a kind**, and a
+link from a thing to it. `contracts.md` §2.7 carries exactly such a place: a territory, with
+`landUnits` and a `capacityPerLandUnit` that is *"a property of the kind of country and not of
+who holds it"*, and it anticipates ground changing hands by name — *"when that stops being true —
+a raid that takes ground — `landUnits` moves to §1.1."* Siting a university **in** a territory is
+therefore a relationship, not a coordinate, and stays inside the rule. What would break the rule
+is anything that makes *where* a thing sits answer a question about *how far*. (A workstream is
+siting universities in territories; no branch for it exists as of this amendment, so this
+paragraph fixes the rule rather than describing an implementation.)
+
 ## 8. Raids
 
 - **Two clocks, and clocks are per-universe.** World time advances in months/years while you tend
@@ -301,11 +422,17 @@ saving and it is why the entity store's component model must not assume every en
   researching, teaching, and building. An attacker pays that price as surely as a defender, which
   means raiding is never free and a third party profits from every war. This is the intended
   shape.
-- **It also creates a griefing surface, which must be measured, not assumed away.** A player who
-  is raided repeatedly loses world time others are spending. `raid-engagement` and `god-agency`
-  must between them bound inbound raid frequency, and the balance harness must report tempo lost
-  to inbound raids as a first-class metric. An unbounded version of this rule is a live-PvP
-  death sentence dressed as a strategic cost.
+- **It also creates a griefing surface, which must be measured, not assumed away** — but what
+  bounds it is not a cap on raid frequency. **Elimination is intended.** A player raided to
+  ruin loses a *universe*, and rejoins: a fresh universe in a different bubble, carrying prestige
+  (§8a, §8b). A losing player quits — that is the game — and you can always rejoin. So the
+  quantity to hold down is the **cost of re-entry**, not the number of doors someone may knock on.
+  The balance harness still reports tempo lost to inbound raids as a first-class metric, and it
+  should be read for what it is: W8 measured `inboundRaidTempoLoss` at **0.0** and named why —
+  §8's tempo cost is defined against *uninvolved* universes, and `contracts.md` §1.1 puts exactly
+  one universe in a simulation instance, so there is no third party for it to be relative to. The
+  metric cannot bite until a bubble exists to hold the third party. That is a fact about the
+  measurement, not a finding about the game.
 - **Entry** requires *Rego Limen* — the portal cell — and favor.
 - **Arbitration:** host ruleset governs (§3). Casting and cost follow the host's tradition; what
   a raider knows and how she carries it follow her own (§4a).
@@ -339,6 +466,53 @@ Design constraints this creates, to be honoured in `god-agency` and the balance 
   ascend, it is not a summit; if almost none do, the meta-game never starts.
 - Defeat is not the opposite of ascension. A universe that is raided to ruin does not "lose" —
   it stagnates, and stagnation is its own ending.
+
+**Defeat is a re-entry, and it is already priced.** A universe ends; a player does not. Losing
+returns you to a fresh universe in a new bubble (§8b) rather than to a menu, and the legacy you
+carry is not zero: `prestige-base-stagnated` is **128**, and the constant's own gloss in
+`god-constant.json` says why it is not zero — *"a zero floor makes losing streaks spiral, which is
+runaway leaders wearing the opposite sign."* Both ends of the prestige range are therefore bounded
+on purpose: a cap so winning does not compound, a floor so losing does not. What re-entry must not
+become is a *better* opening than a normal one, which is what `prestigeAdvantage` is for.
+
+## 8b. Bubbles, Colonization, and Where You Land Next
+
+A universe does not float in an unbounded multiverse. It lives in a **bubble**: a bounded
+neighbourhood of universes that may portal to one another. That is the answer to the question §8
+never asks — *who, exactly, can raid me?* — and the question is not academic: no raid fired at all
+for three releases because nothing supplied a portal target, and what fires them today is a single
+rival the headless scenario builds as a stand-in. A bubble is the general answer that a stand-in
+is standing in for.
+
+Inside a bubble the loop is §8 carried to its end. Raid a rival; loot their books; and if you
+extinguish their mages, that universe ends and its populace, materials and worship pass to you.
+Clear your bubble and you are **promoted** to a tier populated by others who cleared theirs. Lose
+your universe and you rejoin a fresh bubble, carrying prestige. Only universes end.
+
+Three things anchor this to the design as it already stands rather than bolting a second game onto
+it. A mageless universe is *already* terminal — `stagnation-mageless-ticks` is 60 — so
+"extinguish their mages" is a new **consequence** of an existing ending, not a new ending. §7's
+worship loop is already the transfer channel, since favor regeneration scales with worship drawn
+from mages, universities *and populace*, and a populace revering a new god is a quantity the model
+already holds. And §7a survives intact: populace, materials and worship are counts and
+relationships, which is all a colony is.
+
+**Where the balance risk moves is onto the conqueror**, and §6a already warned about exactly this
+shape. Tribute feeding an already-compounding worship→favor loop is the second compounding loop
+feeding the first. The number to watch is named: integration round 2 measured `capitalSnowball` at
+**0.4571** against the **0.35** its sibling is held to, from a population carrying *zero* prestige.
+Colonization would push on a loop that is already over its guard.
+
+**Specified, not scheduled.** `openspec/changes/colonization` holds the design, and its own verdict
+is that colonization does not earn a place in v1 beside looting: its effect is measurably near-zero
+at this build, and it does not address the constraint the campaign measured as binding. The piece
+that *is* urgent is the bubble as a bounded neighbourhood, because nothing else supplies
+`portalTargets`. The tier ladder is a ranked progression whatever it is called, and §12 puts one
+out of v1. This section records the mechanic so it is traceable; the change decides when.
+
+**One word, one meaning.** *Prestige* is a **noun**: §8a's carried-forward score, with authored
+constants and a loader-asserted identity behind it. Advancing a tier is **promotion**. This
+document does not use *prestige* as a verb, and neither should the code.
 
 ## 9. Balance Methodology
 
@@ -380,16 +554,38 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 |---|---|---|---|
 | 0.1.0 | `sim-core-foundation` | `simulation-core`, `world-persistence`, `deterministic-replay` | released |
 | 0.2.0 | `core-contracts` | `state-schema`, `content-schemas`, `primitive-semantics`, `observation-action-space`, `module-boundaries` | released |
-| 0.3.0 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | released |
-| 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | in progress |
-| 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | not started |
-| 0.7.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | not started |
-| 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | not started |
-| 0.11.0 | `gym-bridge` | `rl-bridge` | in progress |
-| 0.13.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only |
-| 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | proposal only |
-| — | `metis-knowledge` | `metis-knowledge` | proposal only |
+| 0.3.0 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | released; archived |
+| 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | 100/107 — 8.1 and 8.2 deliberately unchecked |
+| 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | 91/91 — tasks complete, unreleased |
+| 0.7.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | 59/75, and it runs every world tick |
+| 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | 67/92; raids fire on the campaign branches, not yet on `main` |
+| 0.11.0 | `gym-bridge` | `rl-bridge` | 76/76 — tasks complete, unreleased |
+| 0.13.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only — no tasks, no package |
+| 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | proposal only — no tasks, no package on `main` |
+| — | `metis-knowledge` | `metis-knowledge` | proposal only — 1/51 |
 | 1.0.0 | — | contracts freeze; public release | — |
+
+**The Status column is task progress, and task progress is not a release.** Reconciled on
+2026-08-12 against `openspec list` and the campaign integration tree, then **re-checked against
+`main` when this amendment landed there (W48, same day)**, because the note's own instruction is to
+re-run the command rather than trust the cell. Three rows had read *"not started"* while the code
+they name was between two-thirds and entirely built, and one of the three now executes on `main` —
+`god-agency`'s worship and favor systems, on every world tick. `raid-engagement`'s engine fires on
+the campaign integration branches; on `main` `REFERENCE_MECHANICS.raidEngagement` is still `false`
+and nothing opens a portal, so that row says what it says. Four cells moved between the two checks:
+`mages-and-species` is 100/107 rather than 102 because tasks 8.1 and 8.2 were deliberately
+unchecked, `pvp-server` has neither tasks nor a package on `main`, and `v0.3.0` is now tagged.
+Anyone reading the old column would still have materially underestimated how far the project has
+gone, which is the failure mode this table exists to prevent.
+
+The distinction the old column lost is the one worth keeping: **a finished task list is not a
+shipped version.** `agent-interface` and `gym-bridge` are complete and unreleased, which under the
+parity rule below is precisely what *in flight* means — they land on an odd MINOR and are promoted
+once the baselines are green. Root `package.json` is `0.3.0`, and this note first recorded that the
+newest tag was `v0.2.0` — that 0.3.0 had shipped its change without the tag
+`docs/design/release-plan.md` requires. That is now fixed: `v0.3.0` is tagged. Re-run
+`openspec list` and `git tag` before trusting any cell — writing the counts down is what makes them
+falsifiable, not what makes them permanent.
 
 Versions skip because **MINOR parity encodes balance validation from 0.5.0 onward** — odd means
 in flight, even means the Monte Carlo baselines are committed and green. Every capability therefore
@@ -418,8 +614,9 @@ that are confidently wrong in ways nobody can see yet.
 
 ## 12. Deliberately Out of Scope for v1
 
-- Grid cells beyond the v1 subset (3 techniques × 4 forms), and traditions beyond the three
-  named in §4a
+- ~~Grid cells beyond the v1 subset (3 techniques × 4 forms)~~ — **in scope as of 2026-08-12**;
+  see §4. The line bounded authoring, the authoring is finished, and the subset is exhausted by an
+  idle universe by tick 300. Traditions beyond the three named in §4a remain out of scope
 - Animated RTS presentation, art pipeline, audio
 - Reinforcement learning *training*. The interface ships; the training does not
 - Ranked ladder, matchmaking beyond direct challenge, economy, monetization
@@ -488,11 +685,38 @@ Tracked for resolution during the changes that need them, not blocking:
   ceilings of 5, 6 and 7 — dwarf, elf and draconic — all reach 51 of 51. This is a content
   shortfall rather than a tuning one, and it bears directly on any species-differentiation claim
   made before deeper tiers exist.
-- Which 3 techniques × 4 forms make the v1 subset? Deferred to `knowledge-model`; the subset must
-  contain *Rego Limen* for portals and enough asymmetry to make the permit/forbid decision real.
+- ~~Which 3 techniques × 4 forms make the v1 subset?~~ **Answered in 0.3.0, and then outgrown.**
+  The twelve cells are *Intellego / Perdo / Rego* × *Mentem / Terram / Limen / Nomen*, `rego-limen`
+  included so portals exist. They are now the **starting** enabled set rather than v1's ceiling
+  (§4, §12). What remains open is the successor question: does going wide mean every cell ships
+  enabled, or that the twelve-cell start stands and the other fifty-eight are reached by
+  permitting? The two are very different games and the second is the one §4's permit verb
+  describes.
 - How large is the edict budget, and how does it scale with worship tier? Deferred to
   `god-agency` and expected to be retuned repeatedly by the balance harness.
 - What is the exact worship formula? Deferred to `god-agency`, same caveat.
+- **Which schools exclude which, and what reason does each exclusion carry?** §4b fixes the rule
+  and the test — per mage, reason-bearing, symmetric because the reason is — and names no pairs.
+  The content shape is also open: an anti-requisite is the mirror of a prerequisite and
+  `node.json` has only the latter, so whether exclusion is authored on nodes, on cells, or on a
+  named school region is undecided.
+- **Do the *Muto* and *Creo* columns get the same perception trunk?** §4 records the rule the v1
+  subset already obeys — all eleven of its cross-cell edges originate in *Intellego* — and does not
+  extend it. Across the full grid 29 of 36 cross-cell edges do; the other seven are the question.
+- **How many casters does a ritual need, and what happens when one dies mid-ritual?** §4b decides
+  that the deepest magic is collective; nothing else about co-casting is decided. Whether a ritual
+  is a raid-scale act, a world-scale one, or both is the first thing to settle, because it decides
+  which clock it runs on.
+- **Which subdivision of the bar does each god intervention belong to?** `sound-design.md` §3.1
+  assigns subdivisions to world subsystems, not to interventions, and W21 declined to charge an
+  off-grid surcharge it could not derive. Answering this turns a computed number into a price.
+- **Bubble size, rejoin tier, and what "cleared" means** when rivals are eliminating each other
+  too. Raised by `openspec/changes/colonization` and unresolved; bubble size is the sharp one,
+  since small clears fast and churns tiers while large makes raids frequent and promotion rare.
+- **Confirm or replace the names.** §8b uses *bubble*, *promotion*, and *prestige* strictly as a
+  noun. `openspec/changes/colonization` proposes `bubbleTier` for the index and offers *echelon*,
+  *sphere* and *rank* as alternatives. The point is only that two mechanics may not share one
+  word; which words is the author's.
 - How much of the grid is **mētis** — knowledge that cannot be written down at all? Proposed in
   `metis-knowledge` and deliberately held at proposal depth until the balance harness exists: it
   adds a decay pressure that runs on a demographic clock rather than an adversarial one, and how

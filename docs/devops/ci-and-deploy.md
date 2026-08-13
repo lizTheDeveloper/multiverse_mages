@@ -41,7 +41,25 @@ Flow for a push to `main` or a same-repo PR:
 1. GitHub posts to the receiver on the runner host, HMAC-signed with `CI_WEBHOOK_SECRET`. The
    endpoint is deliberately not written down here — see "What this file does not record" below.
 2. The receiver clones or updates the repo under `/repo/lizTheDeveloper_multiverse_mages`.
-3. `detect_ci_script` finds `scripts/ci-check.sh` and runs it, with a **600-second timeout**.
+3. `detect_ci_script` finds `scripts/ci-check.sh` and runs it, with a **2400-second timeout**
+   (`CI_RUN_TIMEOUT_S` in `webhook_receiver.py`).
+
+   **Raised from 600s on 2026-08-13, and the reason is worth keeping.** `npm run verify` grew past
+   ten minutes when the economy wire landed — the ascension balance gate alone measures **565–892s**,
+   the whole gate is ~12 minutes locally and ~24 on GitHub's runners — so the check began timing out
+   on green trees. A red that says nothing about the commit is worse than no check.
+
+   Two things about that ceiling that are easy to get wrong:
+
+   - **This receiver is shared with `themultiverse.school`**, so the ceiling is not per-repo. Raising
+     it is safe for both, since it only ever permits a longer run.
+   - **Runs here are serialised**, so the cost of a higher ceiling is that a *wedged* run occupies
+     the queue for forty minutes instead of ten. The bound exists so a hung process cannot hold it
+     forever; it is not there to make CI fast.
+
+   The two tempting alternatives are both worse. Editing `scripts/ci-check.sh` to run less breaks the
+   rule that it must stay equivalent to `npm run verify`. Trimming the ascension sweep to fit is
+   **tuning the instrument** — 32 runs is already `balance/README.md`'s argued minimum.
 4. It posts a commit status under the context **`ci/hetzner-lint`** — that exact string is what the
    branch-protection ruleset requires, so renaming it silently disarms branch protection.
 

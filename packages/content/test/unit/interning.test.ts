@@ -297,6 +297,39 @@ describe('contentRevision', () => {
     // cap — and this tree is the first one holding both. A fourth value is
     // what a digest over the union is supposed to produce; a merge that kept
     // either side's literal would be asserting a revision no tree has.
+    // ba7be8d68b582e2985e0360bbc7e11b0 -> 6973d2c55f6d7788bbaa6886e507bbde, when this branch
+    // merged `main` a second time and took the two `node.json` passes `main`
+    // had landed meanwhile. On `main` they read as two edits.
+    //
+    // The first, `6b18886a4b3a2803c0b1b92eb8f8fae8 ->
+    // d97caaaa431191d5a8e3cc46b55be1f7`, added `knowledgeKind` to `node.json`
+    // (§2.3) with `episteme` on every one of the 300 records — the field that
+    // decides whether a node's knowledge survives being written down. No node's
+    // kind was *judged* in this step and no simulated result moved: the revision
+    // is in the preimage because the field will gate scribing, so two universes
+    // disagreeing about which nodes can be written would run different libraries
+    // while their revisions agreed they were compatible. Kept separate from the
+    // authoring pass below on purpose, so the mechanical edit and the design
+    // judgements are reviewable apart.
+    //
+    // The second, `d97caaaa431191d5a8e3cc46b55be1f7 ->
+    // 5c319f8275e05ddef2a166dd7552942b`, judged twenty-nine of the three
+    // hundred `metis` — the first authoring pass, reasoned node by node in
+    // `docs/design/metis-authoring.md`. A pure value edit, like the summons cap
+    // above and unlike the four file additions before it. It belongs in the
+    // preimage because two universes disagreeing about *which* knowledge can be
+    // written down would keep different libraries and lose different things,
+    // which is not a difference a compatibility check may shrug at.
+    //
+    // And so, for the second time in this list, neither side's literal survives:
+    // not this branch's ba7be8d6, which is a digest over a preimage holding the
+    // material split and the raid constants but neither `node.json` pass, and
+    // not `main`'s 5c319f82, which holds both passes and neither of this
+    // branch's. This tree is the first one holding all four. A fifth value is
+    // what a digest over the union is supposed to produce, and it is the same
+    // reason the check is a digest over the preimage rather than a
+    // hand-maintained list of file names.
+    //
     // ba7be8d68b582e2985e0360bbc7e11b0 -> b418fc0278d53ccfd12dc16facef97b8,
     // when W53 added the `practice-rate` primitive, the `bless-practice-rate`
     // god constant, and the two `rego-mentem` nodes that grant the primitive.
@@ -304,7 +337,17 @@ describe('contentRevision', () => {
     // the digest moving is the whole of what a digest is for: a universe that
     // does not know `practice-rate` exists cannot restore mastery, and would
     // run a visibly different economy while claiming to be compatible.
-    expect(registry.contentRevision).toBe('b418fc0278d53ccfd12dc16facef97b8');
+    //
+    // And then a sixth value, because this tree is the first holding `main`'s
+    // two `node.json` passes *and* W53's `practice-rate` primitive at once.
+    // Neither `b418fc02` nor `6973d2c5` survives -- the union is `c1512ad5` --, for the third time in this
+    // list and for the same reason each earlier pair did not: each was a digest
+    // over a preimage the other did not contain. A universe that has
+    // `knowledgeKind` but not `practice-rate` cannot restore mastery; one that
+    // has `practice-rate` but not the metis pass keeps a different library.
+    // Both differences are exactly what the revision exists to refuse to shrug
+    // at, so the digest over the union is a value no tree has held before.
+    expect(registry.contentRevision).toBe('c1512ad561126f3cfb89a62dafd776e2');
   });
 
   it('is stable across loads of identical content', () => {

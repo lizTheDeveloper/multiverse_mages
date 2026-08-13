@@ -143,6 +143,20 @@ export interface EffectRecord {
 
 export type TuningStatus = 'untuned' | 'tuned';
 
+/**
+ * Whether a node's knowledge survives being written down.
+ *
+ * `episteme` is a result — a procedure, a derivation, a name, a formula — that a
+ * competent stranger can reproduce from a correct text. `metis` is the
+ * practitioner's knowledge that codification destroys: reading a situation,
+ * judging a moment, telling two things apart that a text can only name.
+ *
+ * Authored, never derived. Tier is not the axis: a tier-1 knack can be pure
+ * mētis and a tier-5 result perfectly writable. The reasoning behind every call
+ * in the shipped set is in `docs/design/metis-authoring.md`.
+ */
+export type KnowledgeKind = 'episteme' | 'metis';
+
 export interface NodeRecord {
   readonly id: string;
   readonly cell: string;
@@ -155,6 +169,7 @@ export interface NodeRecord {
   readonly scribeCost: Fp;
   readonly rediscoveryMultiplier: Fp;
   readonly effects: readonly EffectRecord[];
+  readonly knowledgeKind: KnowledgeKind;
   readonly tuningStatus: TuningStatus;
 }
 

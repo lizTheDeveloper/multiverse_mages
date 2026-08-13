@@ -50,6 +50,16 @@ npm ci
 #   1. ALLOWLIST, NEVER DENYLIST. We skip only when *every* changed path is a
 #      known documentation path. A denylist of code paths would silently exempt
 #      any new top-level directory the day someone adds one.
+#
+#      `ui/` is on the list for the same reason `docs/` is, and the reason is
+#      narrower than it looks: it is in no tsconfig, no eslint glob and no
+#      vitest include, so a `ui/`-only diff cannot change what the simulation
+#      does. It is NOT unwatched — `packages/content/test/unit/ui-theme.test.ts`
+#      reads every prototype and asserts the shared palette, and that test still
+#      runs here, because what is skipped is the three Monte Carlo sweeps and
+#      nothing else. A prototype that drifts still fails; it just no longer
+#      spends five hundred seconds proving a stylesheet did not move a
+#      balance number.
 #   2. FAIL CLOSED. Any uncertainty — no merge base, a shallow clone, a git
 #      error, an unrecognised path — runs the full gate. A skipped sweep must
 #      be a decision, never an accident.
@@ -67,7 +77,7 @@ if git rev-parse --verify --quiet "$base" >/dev/null 2>&1; then
       while IFS= read -r f; do
         [ -z "$f" ] && continue
         case "$f" in
-          docs/*|openspec/*|.claude/*|*.md|LICENSE) ;;
+          docs/*|openspec/*|.claude/*|ui/*|*.md|LICENSE) ;;
           *) docs_only=0; break ;;
         esac
       done <<< "$changed"
