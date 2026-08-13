@@ -2980,3 +2980,274 @@ node-driven consumer — `portal` (2 nodes) and `worship-yield` (11 nodes). The 
 every combat primitive, cannot be moved by anything the academics know. The check is non-blocking and
 is working exactly as designed; it is the clearest single statement of the gap the campaign is
 closing. It also independently confirms the "two, not one" correction recorded above.
+
+---
+
+## W68 — the teaching leak, investigated on request, and three measurements that turn out to name one mechanism
+
+*2026-08-13. From the grungeon-master digest (eps 13/14/27/29/33/36/38/41/43). The item asked for
+an investigation; here it is, with one correction that makes the fix substantially cheaper.*
+
+### The finding holds. `studentFor` and `teacherFor` scan every living mage in the universe.
+
+`packages/coordination/src/gateway.ts:501` and `:513` both iterate `this.livingMages()` with **no
+affiliation test and no proximity test**, returning the lowest-handle counterparty. `outlook.ts:104–105`
+feeds `teachableToMe` / `teachableByMe` from that unfiltered scan. There is no institutional boundary
+on teaching. Confirmed.
+
+### The correction: a university *is* a container — just not for teaching.
+
+The item says "a university is not a container for anything." That is too strong, and the difference
+is the whole cost estimate. `universityId` has **41 read sites**, and three of them are real containers
+already:
+
+| what `universityId` gates | where | works? |
+|---|---|---|
+| **which library your books are shelved into** | `gateway.ts:912` → `#libraryOf` → `#shelfFor` | **yes** |
+| **scribe-months available to you** | `outlook.ts:59, 109` `scribeThroughputOf` | **yes** |
+| **whether you'd rather be elsewhere** | `outlook.ts:92, 110` `preferredUniversityFor` | **yes** |
+| **who can teach you** | `gateway.ts:501, 513` | **no — leaks universe-wide** |
+
+So the container exists, is load-bearing, and has exactly one hole in it. Scoping teaching to
+co-affiliates is **plugging a hole in a working boundary**, not building a boundary. The item's own
+suggested route — cross-university transfer through `affiliate`, which already exists as a goal — is
+therefore the right one, and `preferredUniversityFor` is already the machinery that would move mages
+between containers.
+
+### Three independent measurements name this one mechanism
+
+This is the part that was not visible from any single workstream:
+
+- **W24's siting result had nothing to bite on.** The item's diagnosis — *sites differ, libraries
+  can't* — is right, and now has a mechanism: books are shelved per-university (that boundary works),
+  but the knowledge that produces the books is universally available (this one does not). Siting can
+  only matter if what a site holds can diverge.
+- **W19's horizon sweep, 9,600 runs over twelve horizons, found the strategy space one-dimensional at
+  every horizon** — including tick 30, where universes hold 31% of the reachable set. Its own
+  explanation: `compareTargets` orders candidates by cost then node id, so *"a value-blind acquirer
+  walks one queue at any horizon over any set."* Cross-strategy containment sits **above** the
+  within-strategy diagonal at all twelve horizons, worst at the shortest.
+- **`studentFor` returns the lowest-handle student and `teachableTo` returns the cheapest node.** The
+  docstring says so and gives a defensible reason for each (a handle is a total order depending on
+  nothing but state). Locally correct, globally the same queue.
+
+**One queue, walked by everyone, with no container to hold a difference in.** That is why seed beats
+strategy on node composition even though strategy dominates node *count* (η² = 1.00 from tick 60):
+strategies differ in how much they acquire and not in what, because there is only one "what" to walk.
+
+### Consequences for the roadmap
+
+W19's conclusion — that no pacing change and no mechanic altering acquisition difficulty will produce
+a second dimension, because the ordering is value-blind — is **correct but incomplete**. Value-blind
+ordering and boundary-free teaching are two separate causes of the same one-queue result, and fixing
+either alone leaves the other. W17's value-sensitive acquirer makes the queue *ordered differently*;
+scoping teaching makes there be *more than one queue*. **Both are needed and neither substitutes.**
+
+### The proposed measurement has no instrument yet
+
+`universityProfile` exists only in `packages/rules-world/test/unit/universities-library.test.ts` — it
+is a test helper, not a registered metric. "Dominant cells differ between two universities on the same
+seed" is the right check and cannot currently be run in a sweep. That is a small, well-defined gap and
+should be closed before the mechanic changes, so the before-figure exists.
+
+### Items 1, 5, 9 and 43 from the same digest — triaged, not yet actioned
+
+- **Ep 13/29, founding knowledge is blueprint-shaped.** Confirmed at
+  `interventions.ts:624`: `createInstance` at `constants.grantMastery`, a full instance in a mind.
+  **And it is worse than the item knows** — `setMastery`'s only non-test caller is the decay pass in
+  `decay.ts:213`, and it lowers. **Mastery can only ever fall.** Research creates instances at 256
+  against a 512 teach threshold, so founding grants at 1024 are the *only* source of teachable
+  knowledge in the universe, which is why 93.4% of held knowledge cannot be taught. Making the grant
+  nudge-shaped **without landing `practice` first would remove the only source of teachable knowledge
+  there is.** `w53/practice` is therefore a hard prerequisite, not a parallel track. Sequenced.
+- **Ep 41, universities have one growth axis.** Holds. A second axis — coordinated non-magical
+  throughput — would give `laborAffinity` (orc 1536, dwarf 1280) something to do; it currently sits in
+  the same category the species `affinities` field sat in before W20 wired it. Queued behind the
+  teaching boundary, because a second axis for a container that cannot hold a difference is a second
+  axis on nothing.
+- **Ep 36, portal security as a materials drain.** Holds, and is the cleanest available instance of
+  the "permission should be necessary but not sufficient" shape that two external reviewers converged
+  on independently in round 3. `portal` is one of only **two** primitives with a node-driven consumer,
+  so it is also one of the few places where a drain would actually be reachable from what mages know.
+- **Ep 43, maintenance. Already built — recording it so nobody re-proposes it.**
+  `LIBRARY_UPKEEP_PER_INSTANCE` in `library.ts` plus `applyLibraryUpkeep` at `capital.ts:271` degrade
+  instances on unpaid materials, and W7 measured it flipping narrow-depth from 12/12 to 0/12. The
+  unbuilt half is the material axis: `GrimoireRecord.durability` (`components.ts:735`) is written from
+  `scribeAffinity` and was read by nothing until W8's looting. A material tag on grimoires now
+  multiplies a live axis instead of adding a dead one.
+
+**The general lesson from the previous digest still applies and applied again here:** every one of
+these needed checking against `packages/` before acting. Two of the six were already built, one was
+sharper than stated, and one would have been actively destructive if landed in the order proposed.
+
+### The founding-grant budget — decision, 2026-08-13
+
+**Grants stay full instances. What changes is that you only get two at first, and more accrue.**
+
+This is the owner's call and it is better than the nudge-shaped grant the digest proposed, for a
+reason the digest could not have known: the nudge shape achieves "necessary but not sufficient" by
+weakening *what* a grant is, and a grant at mastery 1024 is currently the **only** source of
+teachable knowledge in the universe. Weakening it removes the thing before its replacement exists.
+
+A **budget** achieves the same design goal by making grants *scarce* instead of *weak*:
+
+- permission is still necessary and no longer sufficient — you cannot seed the whole grid, so what
+  you seed is a commitment and the rest has to be discovered;
+- specialisation is sharp from the founding, which is ep 29's point, because two grants force a
+  choice where nineteen did not;
+- the valuable import is a direction rather than a destination, which is ep 13's point, because two
+  nodes cannot be a curriculum;
+- and **nothing that currently works stops working**, because a granted instance is still a granted
+  instance. `practice` stops being a hard prerequisite and becomes an independent improvement.
+
+**What accrues is the open sub-question.** It should be something the universe *does*, not something
+the god spends, or the budget becomes a second favor pool with extra steps. The candidates worth
+measuring, in preference order:
+
+1. **Nodes the mages discovered for themselves** — the god earns the right to seed more by the
+   universe having demonstrated it can grow without seeding. Reads directly off knowledge instances,
+   needs no new state, and makes the early game teach the loop it wants you to trust.
+2. **Universities founded and still standing** — ties the budget to the institution, which is where
+   ep 41's second growth axis and the teaching boundary both land.
+3. **Worship**, only if it can be made ruleset-sensitive first — otherwise it is the favor pool again.
+
+**Measurement, unchanged from the digest and now actually runnable:** `permit-then-idle` stops
+matching `permissive-breadth`'s 231-node profile. That pair is the campaign's negative control and its
+sharpest single number — the idle bot currently scores **40/40** against the active bot's 38/40. If a
+grant budget does not move it, the budget is not doing the work.
+
+### The 2×2 opening — decision, 2026-08-13
+
+**A universe does not begin with the grid. It begins with a 2×2 square of it, and techniques and
+forms are themselves discovered.**
+
+Today v1 enables twelve cells — `{intellego, perdo, rego} × {limen, mentem, nomen, terram}`, a 3×4
+block — and enables them *at the start*, for everyone, identically. The opening becomes **2 techniques
+× 2 forms = 4 cells**, chosen at founding, and the rest of the grid is reached by discovering
+techniques and forms rather than by being handed them.
+
+**This is the structural answer to the one-dimensionality W19 measured over 9,600 runs.** That sweep
+found the strategy space one-dimensional at *every* horizon from tick 30 to 2400, and its explanation
+was that a value-blind acquirer walks one queue. But there was a deeper reason it could only ever find
+one queue: **every universe was walking the same content set.** Cross-strategy containment sat above
+the within-strategy diagonal at all twelve horizons — which is what "there is only one thing to
+discover, and strategies differ only in how fast" looks like when you measure it.
+
+Different opening squares are **different content sets from tick 0**. Two universes that begin at
+`{intellego, perdo} × {mentem, nomen}` and `{rego, creo} × {terram, limen}` do not have a queue in
+common to walk. That is a second dimension obtained structurally rather than by tuning, and it is the
+one thing on the list that no acquirer change and no pacing change could have produced.
+
+**How it composes with the other two fixes, which is the point:**
+
+| fix | what it does to the queue |
+|---|---|
+| **2×2 opening** | there is more than one queue, and yours is not mine |
+| **grant budget (2 grants)** | you cannot seed your whole square — inside 4 cells, 2 grants is a sharp commitment |
+| **teaching boundary** | two universities in *the same* universe can hold different parts of one square |
+
+Each is necessary. The budget without the square is a sharp commitment to a shared destination; the
+square without the budget lets you seed all four cells and skip the discovery the square exists to
+force; the boundary without either has nothing to hold apart. **Together they are the first design in
+this campaign that makes "which magic does your universe have" a question with more than one answer.**
+
+**This is also what `docs/design/ages-of-magic.md` was describing without a mechanism.** Ages governed
+by the interactions of two, with the interactions of three taking time to develop, is exactly a grid
+that opens 2×2 and grows — the early game is raw and new because you genuinely hold four cells, and the
+late game has fully developed colleges because by then the square has grown and the prerequisites are
+reachable. The doc had the fiction and the pacing; this is the rule underneath it.
+
+**Open questions, to settle with measurement rather than argument:**
+
+1. **Who chooses the opening square — god, seed, or species?** God-chosen makes it the first and most
+   path-dependent decision in the game, which is ep 29's argument. Seed-chosen guarantees divergence
+   across a sweep without relying on the strategy to produce it, which is what the measurement needs.
+   These are not exclusive: seed-chosen for the harness, god-chosen for play, is a legitimate answer if
+   the scenario layer can express both.
+2. **Must the square stay contiguous as it grows?** A 2×2 that grows to a 2×3 and then a 3×3 is a
+   different game from one that adds arbitrary cells — contiguity is what makes a technique or form
+   an *axis* rather than a token.
+3. **Do the twelve currently-enabled cells survive as a "standard opening"?** The 51 authored nodes in
+   those cells are the only content that has ever been measured. A 2×2 elsewhere on the grid draws on
+   the other 249 nodes, which are authored but unexercised — expect them to be wrong in ways the
+   enabled twelve are not.
+4. **What does this do to the balance baselines?** All of them. Every committed baseline was measured
+   against a 12-cell opening. This is the largest behavioural change proposed in the campaign and it
+   invalidates the lot; that is a cost to plan for, not a reason to avoid it.
+
+### On guessing at numbers — a standing rule, recorded because it keeps coming up
+
+The owner's response to being asked for a grant budget was *"idk what the right budget is, I am
+guessing."* That is the correct answer, and the correct response to it is **not to guess better.**
+
+This project has a Monte Carlo harness, paired seeds, common random numbers, mirrored ablation and a
+strategy pool. **A number nobody can defend should be a swept parameter, not a chosen constant.** The
+rule, for this campaign and after it:
+
+> When a design decision reduces to a scalar and no one can say why it should take a particular value,
+> the deliverable is the **curve**, not the value. Sweep it, with both degenerate ends as controls, and
+> let the recommended value fall out of the measurement.
+
+For the grant budget that means sweeping 0 (pure discovery, no grants) through unlimited (today's
+behaviour) with 1, 2 and 4 between. **Both endpoints must be in the sweep**, because a range whose ends
+are not controls cannot say whether the mechanic did anything. A flat curve is a real finding: it would
+mean grants are not the binding constraint and the budget is theatre.
+
+This is also the honest reading of why so much of this campaign produced null results. Eight mechanics
+were declared null by an apparatus that mostly did not run — but several of the *design* decisions
+underneath them were single guessed constants that nobody swept, and a guessed constant that happens to
+sit in a flat region of its own curve is indistinguishable from a mechanic that does nothing. **The
+instrument was one failure; unswept scalars are the other, and this one is ours.**
+
+The same rule applies to the 2×2 opening: **the square size is a parameter too.** 2×2 is the owner's
+intuition and deserves the same treatment as the budget — sweep 1×1, 2×2, 3×3 and the full 3×4 that
+v1 currently ships, and report what square size actually buys a second dimension. It may be that 2×2
+is too tight to be playable, or that 3×3 is enough; neither is knowable by argument.
+
+---
+
+## W71 — practice changes which species survive, and that is both the result and the problem
+
+*2026-08-13. Isolated while merging `main` into `w53/practice`. Three tests fail on the merged tree
+and pass on `main`; they are reporting a real change, not flake.*
+
+`w53/practice` adds a `practice-rate` primitive so mages can restore mastery. Before it, `setMastery`
+had one non-test caller — the decay pass — and it only ever lowered.
+
+Same test, same seed, the two trees:
+
+| species | lifespan (months) | on `main` (pre / killed) | on `w53/practice` |
+|---|---|---|---|
+| human | 720 | **16 / 7** | **5 / 1** |
+| orc | 720 | **3 / 2** | **absent — no row at all** |
+| dwarf | 3,600 | 18 / 10 | 23 / 14 |
+| gnome | 2,400 | 10 / 6 | 12 / 6 |
+| elf | 8,400 | 8 / 4 | 8 / 4 |
+| draconic | 18,000 | 11 / 4 | 11 / 4 |
+
+**The direction is exactly what a retention mechanic predicts.** If you keep what you learn, a species
+that lives 18,000 months compounds mastery and one that lives 720 dies before practice pays off. The
+two shortest-lived species collapse; the longer-lived ones grow or hold.
+
+**This is simultaneously the best and the worst news on the branch.** Species differentiation that
+*emerges from a mechanic* rather than from tuned constants is precisely what this campaign has failed
+to produce for weeks — W19 found the strategy space one-dimensional across 9,600 runs, and all six
+species can staff 70 of 70 cells. A mechanic that makes species genuinely different is the goal.
+**But driving a playable species to zero is not differentiation, it is deletion.**
+
+Orc going extinct is doubly surprising: **orc fertility is 1536, the highest of the six**, against
+draconic's 96 — a 16× spread. A species with the best fertility in the game reaching zero says the
+lifespan channel is overwhelming the fertility channel rather than trading against it.
+
+**The third failure may be the primary one and is not yet ruled out.** `reference-long-run.test.ts`
+fails with *"scribing died of the economy again — vellum ran out, not just food."* More retained
+mastery means more scribing means more vellum drawn, and a materials collapse would hit the most
+populous species hardest — which would make the population table a *symptom* of an economic failure
+rather than a lifespan effect. Those are very different fixes and the two hypotheses have not yet been
+discriminated. Under investigation.
+
+**Recorded now rather than after the fix, because the shape of the finding matters more than its
+resolution:** this is the first time in the campaign that a mechanic produced species divergence
+without anyone tuning a species constant to produce it. Whatever the fix turns out to be, it must keep
+that and lose the extinction. All six species carry `"tuningStatus": "untuned"`, so retuning is
+legitimate — but the differentiation is the asset here, not the accident.
