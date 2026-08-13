@@ -170,6 +170,31 @@ describe('shipped content', () => {
     for (const entry of registry.species) expect(entry.record.tuningStatus).toBe('untuned');
   });
 
+  it('never authors a mētis node cheaper to rediscover than an episteme peer', () => {
+    // metis-knowledge's proposal makes rediscovery of a mētis node costlier
+    // "expressed through the existing rediscoveryMultiplier, not a new
+    // mechanism" — there is no text to work from. Nothing in the rules path may
+    // branch on knowledgeKind to compute that cost, so the only place the claim
+    // can be true is the authored data, and the only place it can be checked is
+    // here. Compared within a cell and tier, because the multiplier already
+    // varies along both and a cross-cell comparison would fail on that instead.
+    for (const cell of registry.cells) {
+      const inCell = registry.nodes.filter((entry) => entry.record.cell === cell.record.id);
+      for (const tier of new Set(inCell.map((entry) => entry.record.tier))) {
+        const peers = inCell.filter((entry) => entry.record.tier === tier);
+        const episteme = peers.filter((entry) => entry.record.knowledgeKind === 'episteme');
+        if (episteme.length === 0) continue;
+        const dearest = Math.max(...episteme.map((entry) => entry.record.rediscoveryMultiplier));
+        for (const entry of peers.filter((e) => e.record.knowledgeKind === 'metis')) {
+          expect([entry.record.id, entry.record.rediscoveryMultiplier >= dearest]).toEqual([
+            entry.record.id,
+            true,
+          ]);
+        }
+      }
+    }
+  });
+
   it('authors rediscovery multipliers above the floor so affinity can differentiate', () => {
     for (const entry of registry.nodes) {
       expect(entry.record.rediscoveryMultiplier).toBeGreaterThanOrEqual(

@@ -238,7 +238,18 @@ describe('contentRevision', () => {
     // the point of a revision over the *values*: two universes that disagreed
     // about how many summons a side may hold would fight two different battles,
     // and the digest now says so instead of calling them compatible.
-    expect(registry.contentRevision).toBe('6b18886a4b3a2803c0b1b92eb8f8fae8');
+    //
+    // 6b18886a4b3a2803c0b1b92eb8f8fae8 -> d97caaaa431191d5a8e3cc46b55be1f7,
+    // when `knowledgeKind` was added to `node.json` (§2.3) with `episteme` on
+    // every one of the 300 records — the field that decides whether a node's
+    // knowledge survives being written down. No node's kind was *judged* in this
+    // step and no simulated result moved: the revision is in the preimage
+    // because the field will gate scribing, so two universes disagreeing about
+    // which nodes can be written would run different libraries while their
+    // revisions agreed they were compatible. Kept separate from the authoring
+    // pass below on purpose, so the mechanical edit and the design judgements
+    // are reviewable apart.
+    expect(registry.contentRevision).toBe('d97caaaa431191d5a8e3cc46b55be1f7');
   });
 
   it('is stable across loads of identical content', () => {

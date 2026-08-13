@@ -432,6 +432,11 @@ serialized into snapshots.
   "effects": [
     { "primitive": "direct-damage", "magnitude": 512, "target": "single", "durationTicks": 0 }
   ],
+  "knowledgeKind": "episteme",      // "episteme" | "metis". Authored, never derived: `metis` marks
+                                    // knowledge that codification destroys, so a cell's deep end is
+                                    // an authoring decision rather than a consequence of tier. The
+                                    // principle and every call in the shipped set are in
+                                    // docs/design/metis-authoring.md
   "tuningStatus": "untuned"         // "untuned" | "tuned". Same meaning as in §2.4: every magnitude
                                     // above is a placeholder awaiting the balance harness
 }
