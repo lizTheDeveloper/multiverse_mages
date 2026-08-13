@@ -175,6 +175,12 @@ rise with variation. It was not near zero — the acquirer already spread it —
 `|A∩B| / min(|A|,|B|)`, cross-strategy pairs taken **universe for universe** at matched coordinates,
 within-strategy pairs taken across coordinates. Held sets read off the era grid.
 
+**Scope, restated here because it applies to every number in this section: the pool is seven
+strategies and `archivist` is not one of them.** It is excluded from both arms, so it cannot bias the
+comparison — but the knowledge-hoarding strategy contributes to no containment figure below, and a
+reader weighing "do strategies hold different things" should know that the strategy most likely to
+hold a *different amount* of the same thing was not asked.
+
 | horizon | cross (flat) | cross (priced) | within (flat) | within (priced) | cross − within (flat → priced) |
 |--:|--:|--:|--:|--:|--:|
 | 240 | 0.8101 | **0.8299** | 0.9432 | 0.9499 | −0.1331 → **−0.1200** |
@@ -251,15 +257,35 @@ its fourth rewrite, and the file records each one.
 flat one.** Two assertions in `loss-shock-recovery` fail as a result, and they are **left failing on
 purpose**: editing them would hide a species going to zero in the reference universe.
 
-Two readings fit the evidence and one seed cannot separate them:
+Two readings fit a single seed, so the run was taken at five (`tools/w80/orc-seeds.mjs`, seeds
+589825–589829, both contents, everything else held):
 
-- **(a) the price curve systematically harms the weakest species.** Orc has `depthCeiling` 3 and two
-  exhaustible cells of seventy; a priced surface changes which of its few reachable nodes is nearest
-  and could plausibly cost it the ones that were carrying it.
-- **(b) orc was marginal and any perturbation re-rolls which marginal species survives.** Three mages
-  out of sixty-six is inside the noise of a run, and human simultaneously doubled from 16 to 32.
+| species | flat, by seed | mean | zero | priced, by seed | mean | zero |
+|---|---|--:|--:|---|--:|--:|
+| draconic | 11 11 12 10 10 | 10.8 | 0/5 | 11 11 12 10 10 | 10.8 | 0/5 |
+| dwarf | 18 13 12 12 12 | 13.4 | 0/5 | 12 20 13 10 15 | 14.0 | 0/5 |
+| elf | 8 8 8 8 10 | 8.4 | 0/5 | 8 8 8 8 10 | 8.4 | 0/5 |
+| gnome | 10 21 13 23 8 | 15.0 | 0/5 | 10 10 16 23 11 | 14.0 | 0/5 |
+| human | 16 5 12 2 38 | 14.6 | 0/5 | 32 10 19 1 27 | 17.8 | 0/5 |
+| **orc** | **3 1 0 1 4** | **1.8** | **1/5** | **0 0 0 2 3** | **1.0** | **3/5** |
 
-**Taking `loss-shock-recovery` at three or four seeds would separate them.** It has not been taken.
+**The answer is: ambiguous, and leaning towards noise.** The paired per-seed difference for orc is
+**−0.8 mages with a standard error of 0.66** — t = −1.2 on four degrees of freedom, which is not
+distinguishable from zero. An independent reading of plain `main` across thirty-two seeds puts orc at
+a mean of **1.22 living mages and zero on 11 of 32 seeds with no content change at all**, and both
+arms here bracket that figure.
+
+So reading (b) — *orc is marginal at every seed and a perturbation re-rolls it* — fits the evidence
+better than reading (a). **Five seeds cannot exclude a real effect of under one mage**, and this
+measurement does not claim to. What it does establish is that **the single-seed 3 → 0 is not evidence
+of one**, and that `loss-shock-recovery`'s two red assertions are, at this seed count, asserting that
+a coin came up heads.
+
+Every species magnitude carries `tuningStatus: "untuned"`, and the species-tuning pass is where this
+resolves: either orc gets a roster that survives a century, or the test stops reading one seed of the
+most marginal species as an invariant. **The assertions stay red rather than being edited to agree
+with whichever content set ran last**, and the test now carries this distribution in a comment beside
+them.
 
 ## Baselines this invalidates
 
@@ -314,3 +340,31 @@ ranks them:
    cannot create variance; it can only reweight the ones that already exist. If the goal is that two
    universes on the same opening should walk different queues, the lever has to be something the two
    universes do not share.
+
+## Is the curve worth keeping? — a view, labelled as one
+
+The reason it was built is gone: measured above, it does not produce divergence, and it cannot,
+because a shared constant is not a source of divergence. What remains is a narrower question the
+measurement does not answer, so this is judgement rather than evidence.
+
+**My view: keep the idea, renormalise the levels, and do not keep it as-is.**
+
+Keep the idea, because the defect it fixes is real independently of containment. A field whose value
+is a pure function of another field carries no information, and the ordering it produced was
+alphabetical — `intern` walking `node.json`. That is an authoring accident promoted to game
+behaviour, and it stays a defect whether or not fixing it moves a metric. `im-weigh-the-attention`
+leading 42 of 84 runs is a fact about a hash table under the flat surface and a fact about a design
+claim under the priced one, and only one of those is arguable by a person.
+
+Do not keep it as-is, because of the one number in this report that nobody asked for:
+**`referenceNodesGainedFinalQuarter` falls 20%.** That is the tier-5 (+12.3%) and tier-6 (+41.4%)
+geometric-mean drift arriving, and it is sixteen nodes moving the pace of the whole late game. The
+drift is a side effect of the price terms correlating with depth, not a claim anyone made; the claim
+was about *which node inside a tier is dearer*, and that claim survives untouched if each tier's
+grades are recentred on their own mean before the octave is applied.
+
+That recentring is a real trade and I would take it: it makes a node's absolute price depend on how
+its tier-mates are authored, which is a genuine loss of locality — but the within-tier **ordering**,
+which is the entire claim, is preserved exactly, and pace is a global property that a content
+judgement about individual nodes should not be allowed to move as a by-product. **If the curve is
+kept, it should be kept with the per-tier mean pinned rather than approximately preserved.**
