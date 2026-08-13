@@ -47,15 +47,22 @@ them at all and end up identical anyway.
 **They converge by content exhaustion, not by exchange. The container holds; there is one thing to put
 in it.**
 
-Two facts about the content explain it, and both are cheap to fix because both are data:
+**One fact about the content explains it, and it is cheap to fix because it is data:**
 
-1. **`researchCost` is a pure function of tier** (W79). All 300 nodes, six distinct values, none
-   deviating. `compareTargets` orders by cost then node id, so within a tier *everything* ties and the
-   ordering is entirely a content-interning artifact. Even a value-aware acquirer would have nothing to
-   value.
-2. **Every universe opens on the same twelve cells**, reaching **51 of 300 nodes** (W82). A seeded
-   opening square of the same size reaches **236**, and takes within-strategy containment from 0.980 to
-   0.250.
+**Every universe opens on the same twelve cells**, reaching **51 of 300 nodes** (W82). A seeded opening
+square of the *same size* reaches **236**, and takes within-strategy containment from 0.980 to 0.250.
+Opening all seventy cells is what makes the teaching boundary work at all (W87): with 300 nodes
+available, two academies without a boundary re-homogenise 0.641 → 0.927, and with one they do not,
+0.590 → 0.684.
+
+*(An earlier version of this section named a second fact — that `researchCost` is a pure function of
+tier, so ordering was entirely a node-id tiebreak. **That is refuted; see W91.** The cost table is flat
+exactly as described, but `compareTargets` stopped deciding target selection on 2026-08-11, two days
+before the claim was written. **Pricing the nodes was measured and made containment slightly worse.**)*
+
+**And W19's one-dimensionality result must be read with its date attached.** It was true of the build it
+ran on. On current `main`, cross-strategy containment sits **below** the within-strategy diagonal at
+every horizon — the sign is reversed.
 
 ### The two failure shapes that hid it
 
@@ -4451,3 +4458,102 @@ remains the vision of record.
 The same agent also reported `§W72` as existing in no committed copy. **It exists** — line 3345 of this
 file, on `pm/campaign-plan`, not on `main`. My brief cited a section without citing a ref. **A finding
 about a document is a finding about a ref, exactly as a finding about code is.**
+
+---
+
+## W91 — W79 is refuted, W19 is reversed, and pricing the nodes made it slightly worse
+
+*2026-08-13, PR #80. The strongest correction in this document, because it retires a claim this file
+carried at the very top.*
+
+### The facts in W79 are exact. Its conclusion was two days stale.
+
+The cost table is precisely as reported — 70/71/78/65/15/1 nodes at 2048/4096/8192/16384/32768/65536,
+**zero deviations.** But the inference from it — *"every universe walks the same seventy doors in the
+same order"* — **was already false on `main` when it was written.**
+
+`1acf8e5` (`w7/knowledge-capital`, merged **2026-08-11**, two days before W79) replaced target
+selection with an **argmax over a six-term utility score**. `compareTargets` still exists, still sorts
+cheapest-then-id, and **no longer decides anything.**
+
+The code says so itself, in `packages/content/src/autonomy.ts`:
+
+> Before it, `compareTargets` ordered a mage's candidate nodes by `remainingCost` and then by `nodeId`
+> — and in the v1 content set `researchCost` is a pure function of tier with no within-tier variation,
+> so that was exactly *"tier, then node id"*, one fixed total order shared by every mage of every
+> species in every universe.
+
+**W79 rediscovered a known fact whose fix had already landed, and then misattributed a live symptom to
+it.** Vision §7 had specified the remedy — *"mages act on utility-scored goals shaped by species, age,
+personality, and their assigned standing role"* — and w7 built it. The answer was never to vary the
+cost; it was to stop letting cost be the primary key.
+
+### W19 is reversed on current `main`
+
+Measured over 84 runs (7 strategies × 2 openings × 6 replicates, 2,400 ticks):
+
+| | W19 (older build) | current `main` |
+|---|---|---|
+| distinct tier-1 discovery orderings | effectively one | **62 of 84 runs** (63 tie-grouped) |
+| cross − within containment | **above** the diagonal at all 12 horizons | **below** at every horizon: −0.133 @240 → −0.031 @1200 |
+| tier-1 first-discovery sd | near zero | **30.7 ticks** |
+
+**I quoted W19's 9,600 runs repeatedly as current evidence.** It was measured on a build whose
+acquisition path has since been replaced. **A measurement is a statement about a ref, and this is the
+third time tonight that has bitten** — the same lesson as `advanceConstruction` and `§W72`, now
+applied to a headline result rather than a code fact.
+
+### Phase 2 is a null, in the mildly adverse direction
+
+| | flat | priced |
+|---|--:|--:|
+| distinct tier-1 orderings | **62** | **56** |
+| cross-strategy containment @240/480/960 | 0.810/0.856/0.892 | **0.830/0.877/0.924** |
+| cross − within @240/480/960 | −0.133/−0.100/−0.092 | −0.120/−0.086/−0.064 |
+| tier-1 first-discovery sd | 30.7 | **21.5** |
+
+Containment **rose** and the gap to the diagonal **narrowed**, consistent in sign across all seventeen
+horizon readings (nested on the same 84 runs — one experiment, not seventeen confirmations). The first
+door was `im-weigh-the-attention` in 42 of 84 runs in **both** arms; only the tail thinned.
+
+**The mechanism is arithmetic, and it generalises:** a cost surface is **shared by every universe**, so
+it can only reweight terms that already differ between them. Inside a non-overlapping band it does that
+at **10 fp against appeal bounds of 256–512.** The price fully replaces the id tiebreak in
+`compareTargets` — which works perfectly — and never reaches the argmax.
+
+**A shared constant cannot be a source of divergence.** That is worth carrying forward to every
+remaining proposal: only things that *differ between universes* — the opening square, the seed, the
+species mix, what a god actually did — can make universes differ.
+
+### What survives, precisely
+
+- **W87 stands.** It was measured on current `main`, and its all-cells arm manipulates the content set
+  directly rather than inferring from an absent channel.
+- **W82 stands.** Seeded squares differ *between universes*, which is exactly the property W91 shows a
+  shared cost surface lacks.
+- **"Content is the binding constraint" stands, on W87 and W82** — not on W79, which is withdrawn, and
+  not on W19, which is dated.
+
+The arms here are *"fixed opening, varied strategies"*, and cross-strategy containment did not fall.
+**Caveat the agent volunteered: they measure the v1 square, 51 of 300 nodes.** All 300 are priced, so
+re-running inside a `w72` seeded square (194 nodes) is the experiment this one could not be. Also
+`archivist` is absent from both arms (~15× slower per tick) — symmetric, so scope not result, but the
+knowledge-hoarder is in no containment figure here.
+
+### The cost curve, and the decision left open
+
+**A node's price is what it commands and where on the grid it sits** — five terms from authored fields
+only (reach, payload, technique, form, metis), no node id, no hash, no randomness. Non-overlapping
+bands `[base/√2, base·√2]`, because `speciesTargetTerm`, `ageTargetTerm` and `withinDepthCeiling` all
+pay or gate per tier and overlap would make four mechanisms ambiguous. Geometric-mean preserving; all
+twelve enabled roots distinct.
+
+**Baselines invalidated**, and one delta is large: `referenceNodesGainedFinalQuarter` **7.645 → 6.105,
+−14.53 SE — research in the last fifty years falls 20%**, the tier-4/5 mean drift arriving. Nothing
+regenerated.
+
+**Ruling on `loss-shock-recovery`, left failing:** orc has **0 living mages at the cull tick** where it
+had 3 (human went 16 → 32). Two readings — the curve harms the weakest species (`depthCeiling` 3, two
+exhaustible cells), or orc was marginal at three and any perturbation re-rolls it. **One seed cannot
+separate them. Run 3–4 seeds and report; do not tune the curve to resurrect orc.** Editing the
+assertion would hide a species going to zero, and the agent was right to refuse.
