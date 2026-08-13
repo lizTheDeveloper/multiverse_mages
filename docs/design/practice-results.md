@@ -308,8 +308,15 @@ Read together, the three that moved say one thing each:
   seventeen and this is the first time anything has been measured against it under a maintenance
   mechanic.
 
-`balance:gate:ascension` is recorded in the same shape below when its 32 runs finish; it is the
-slowest of the three by two orders of magnitude.
+**`balance:gate:ascension` is not reported here, and that is a gap rather than a result.** It is the
+slowest of the three by two orders of magnitude — W49 measured 504 s for its 32 runs and had to
+raise a timeout to get it — and on the machine this work was done on it was still running when this
+document was finished, alongside two other agents' sweeps. What is knowable without it: it reads the
+same `provenance.contentHash`, so it will refuse on the same revision pair as the other two. What is
+*not* knowable without it is its per-metric deltas, and the ascension metrics are the ones a
+maintenance mechanic is most likely to move — `permit-then-idle` and `permissive-breadth` both
+ascended 8/8 in the sweep above, before and after, so the interesting question is whether the
+*timing* moved. **Somebody should run it and append the table.**
 
 The comparison that would be *meaningful* is a regeneration taken deliberately after the
 freshness-window decision above, not one taken to make a gate go green.
