@@ -130,8 +130,34 @@
   the exposure ledger counts what the host's academics OBSERVED rather than
   what they learned, because §6.6 has not been ruled.
 
-  Self-contained: no CDN, no webfont, no network, no build step. Opens from
-  file://. `npm run ui` and /ui/raid/ works too.
+  ============================================================================
+  WHAT IT DEPENDS ON — two files, both in this repository
+  ============================================================================
+  No CDN, no webfont, no network call, no build step. It does depend on two
+  siblings, and this is the one thing that changed about how to open it:
+
+    ../shared/theme.css   ALL themed colour. This page declares three themed
+                          tokens of its own — host, raider, brass — plus two
+                          that are deliberately NOT themed, because they are
+                          laid over the field, which is dark in both themes. It
+                          used to carry a private copy of the whole palette,
+                          which is how a prototype silently opts out of a
+                          contrast fix landed in the shared sheet: on vellum the
+                          twelve grid switches read 1.47:1 here, against 5.28:1
+                          for the same control anywhere else in ui/.
+    ../shared/theme.js    the light / system / dark control, remembered per
+                          browser rather than per prototype.
+
+  Opened from file:// with the repository tree intact, the stylesheet resolves
+  and both themes render, following the OS. The theme *control* does not mount
+  there: it is an ES module, and a module load from a file origin fails the CORS
+  check in every current browser. That is a missing button, not a broken page,
+  and it is the same everywhere in ui/. Over http:// — `npm run ui`, then
+  http://localhost:8200/ui/raid/ — everything mounts.
+
+  Copied out on its own, without ../shared/, this file is NOT self-contained and
+  will render unstyled. Publishing it as a single artifact therefore has to
+  inline theme.css first; nothing in this repository does that today.
 
   To regenerate the baked content block below:
     node -e "const c=require('./packages/content/data/cell.json'),n=Object.fromEntries(require('./packages/content/data/node.json').map(x=>[x.id,x])),P=new Set(['direct-damage','ward','area-denial','blink','summon','concealment','knowledge-steal','portal']);console.log(JSON.stringify(c.filter(x=>x.v1).map(x=>({id:x.id,t:x.technique,f:x.form,n:x.nodes.map(i=>({id:i,name:n[i].name,tier:n[i].tier,e:n[i].effects.filter(e=>P.has(e.primitive)).map(e=>({p:e.primitive,m:e.magnitude,d:e.durationTicks}))}))}))))"
@@ -140,80 +166,64 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multiverse Mages — the engagement</title>
+<link rel="stylesheet" href="../shared/theme.css">
 <style>
 /* ==========================================================================
    TOKENS
-   The :root block below is ui/glow/index.html's, verbatim, because glow is
-   where the rule lives: cyan is the god's own light and the form hues stay the
-   world's. Only the four forms of the v1 rectangle are needed — limen, mentem,
-   nomen, terram — and glow already defines exactly those four.
+   Colour lives in ui/shared/theme.css. This page used to restate that palette
+   locally — it was copied out of ui/glow/index.html before the shared sheet
+   existed — and a copied palette is how a prototype drifts without anyone
+   seeing it: the sheet takes a contrast fix, the copy keeps the old value, and
+   nothing in the repository compares them by eye. So the copy is gone, and the
+   values below are the sheet's wherever the two disagreed.
+
+   The sheet is also where the colour *rule* is enforced rather than merely
+   restated. ui/glow/ argues it: cyan is the god's own light, the fourteen form
+   hues stay the world's — and on vellum the god's light is DARK, because a
+   cyan bright enough to read measures 1.01:1 against latent. That inversion is
+   the sheet's job. A local copy of the light-mode palette would have quietly
+   opted this page out of it.
+
+   What remains here is only what the shared sheet has no name for: the two
+   sides of an engagement, and the brass that marks a number authored on this
+   page rather than baked from content. Three tokens, declared in all three
+   theme states, because a token declared only inside a dark block falls back
+   to its light value when a viewer *chooses* dark.
+
+   Two tokens went out unreplaced rather than moved, because nothing referenced
+   them: --god-deep, and a --shadow that no rule on this page ever spent.
    ========================================================================== */
 :root {
-  /* ---- world palette, shared with the other prototypes ---- */
-  --vellum:   #E7E1D1;
-  --plate:    #F2EEE4;
-  --sunk:     #D8D1BD;
-  --ink:      #1C1913;
-  --soft:     #55503F;
-  --faint:    #7E7563;
-  --line:     #C9C1AC;
+  --host:    #4A5F6B;   /* the defending universe. A cold slate, never cyan. */
+  --raider:  #A2331F;   /* the attacking universe. The deny family. */
+  --brass:   #8A6207;   /* authored here, not baked from content. */
 
-  /* ---- the fourteen form hues own the world's magic (four of them here) ---- */
-  --limen:    #6A52B8;
-  --mentem:   #26775F;
-  --nomen:    #3E66A4;
-  --terram:   #9A5730;
-
-  /* ---- the god's light. Not a form hue: see the collision note on the page. ---- */
-  --god:      #12B8C6;
-  --god-lit:  #6FF0FA;
-  --god-deep: #06525C;
-
-  --deny:     #A2331F;
-
-  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-  --sans: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
-  --serif: "Hoefler Text", "Iowan Old Style", Palatino, "Book Antiqua", Georgia, serif;
-
-  /* ---- added here: the chrome surfaces, so every colour below is a token ---- */
-  --ground:   var(--vellum);
-  --panel:    var(--plate);
-  --well:     var(--sunk);
-  --rule:     var(--line);
-  --rule-hi:  #B3A98F;
-  --host:     #4A5F6B;   /* the defending universe. A cold slate, never cyan. */
-  --raider:   #A2331F;   /* the attacking universe. The deny family. */
-  --ok:       #1B7A5A;
-  --brass:    #8A6207;
-  --shadow:   rgba(28,25,19,.09);
+  /* The engagement field is a dark plate in BOTH themes — .fieldwrap paints
+     #090D0E and the canvas is drawn from the on-ink palette either way, because
+     you are looking into the world rather than at a page. So anything laid over
+     it must NOT follow the theme, and this is declared once and never
+     redefined below. The muster clock is the case that proves it: it briefly
+     read var(--god-lit), which on vellum resolves to #04454E and put the
+     largest, most load-bearing number on the page at 1.83:1 against black.
+     The rest of the on-field chrome is literal hex for the same reason. */
+  --field-god:      #6FF0FA;
+  --field-god-glow: #12B8C6;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --vellum:  #14120C; --plate: #1A1710; --sunk: #100E09;
-  --ink:     #E9E3D3; --soft:  #A79D89; --faint: #7D745F;
-  --line:    #2E2A20;
-  --limen:   #A692EC; --mentem: #46A98D; --nomen: #7099D8; --terram: #CC8450;
-  --god:     #12B8C6; --god-lit: #6FF0FA; --god-deep: #073C43;
-  --deny:    #DE7059;
-  --ground:  var(--vellum); --panel: var(--plate); --well: var(--sunk);
-  --rule:    var(--line); --rule-hi: #453D2E;
-  --host:    #8FB4C4; --raider: #DE7059; --ok: #4DBE97; --brass: #C9A034;
-  --shadow:  rgba(0,0,0,.4);
+  --host:    #8FB4C4;
+  --raider:  #DE7059;
+  --brass:   #C9A034;
 }}
 :root[data-theme="dark"] {
-  --vellum:  #14120C; --plate: #1A1710; --sunk: #100E09;
-  --ink:     #E9E3D3; --soft:  #A79D89; --faint: #7D745F;
-  --line:    #2E2A20;
-  --limen:   #A692EC; --mentem: #46A98D; --nomen: #7099D8; --terram: #CC8450;
-  --god:     #12B8C6; --god-lit: #6FF0FA; --god-deep: #073C43;
-  --deny:    #DE7059;
-  --ground:  var(--vellum); --panel: var(--plate); --well: var(--sunk);
-  --rule:    var(--line); --rule-hi: #453D2E;
-  --host:    #8FB4C4; --raider: #DE7059; --ok: #4DBE97; --brass: #C9A034;
-  --shadow:  rgba(0,0,0,.4);
+  --host:    #8FB4C4;
+  --raider:  #DE7059;
+  --brass:   #C9A034;
 }
 
-*{box-sizing:border-box}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* box-sizing, the reduced-motion override and the body rule below all come
+   from the shared sheet too. body is restated here and only here because the
+   host paints its own ground behind the page: an inherited background is not
+   the same claim as an explicit one. */
 body{
   margin:0; background:var(--ground); color:var(--ink);
   font:15px/1.55 var(--sans); -webkit-font-smoothing:antialiased;
@@ -238,7 +248,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .chips{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
 .chip{
   font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;
-  padding:.4rem .6rem;border:1px solid var(--rule);border-radius:2px;
+  padding:.4rem .6rem;border:1px solid var(--line);border-radius:2px;
   background:var(--panel);color:var(--soft);cursor:pointer
 }
 .chip:hover{border-color:var(--rule-hi)}
@@ -250,14 +260,14 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 /* ============================== PHASE RAIL ============================== */
 .rail{
   display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:1.3rem 0 1rem;
-  background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden
+  background:var(--line);border:1px solid var(--line);border-radius:3px;overflow:hidden
 }
 .ph{background:var(--panel);padding:.7rem .85rem .75rem;display:flex;flex-direction:column;gap:.3rem;min-width:0}
 .ph .top{display:flex;align-items:baseline;gap:.5rem}
 .ph .nm{font:400 1.02rem var(--serif);color:var(--faint)}
 .ph .agency{margin-left:auto;font:9.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
 .ph .what{font-size:.83rem;color:var(--faint);line-height:1.45}
-.ph .bar{height:3px;background:var(--well);border-radius:2px;overflow:hidden}
+.ph .bar{height:3px;background:var(--sunk);border-radius:2px;overflow:hidden}
 .ph .bar i{display:block;height:100%;width:0;background:var(--rule-hi)}
 .ph[data-live="1"]{background:color-mix(in srgb,var(--god) 9%,var(--panel))}
 .ph[data-live="1"] .nm{color:var(--god);font-weight:500}
@@ -283,12 +293,12 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
   .panel > .stack:first-child{flex-direction:column}
 }
 
-.card{border:1px solid var(--rule);border-radius:3px;background:var(--panel);display:flex;flex-direction:column;min-width:0}
+.card{border:1px solid var(--line);border-radius:3px;background:var(--panel);display:flex;flex-direction:column;min-width:0}
 /* a class-level display beats [hidden]'s UA display:none. Every hideable
    element on this page needs its own rule, and the dossier is a .card. */
 .card[hidden]{display:none}
 .card > h2{
-  margin:0;padding:.55rem .75rem;border-bottom:1px solid var(--rule);
+  margin:0;padding:.55rem .75rem;border-bottom:1px solid var(--line);
   font:10px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--faint);font-weight:500;
   display:flex;align-items:center;gap:.45rem
 }
@@ -300,7 +310,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .meter{display:flex;flex-direction:column;gap:.25rem}
 .meter .row{display:flex;align-items:baseline;gap:.4rem;font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
 .meter .row b{margin-left:auto;font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:0;font-size:12px}
-.meter .track{height:6px;background:var(--well);border-radius:3px;overflow:hidden;border:1px solid var(--rule)}
+.meter .track{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden;border:1px solid var(--line)}
 .meter .track i{display:block;height:100%;width:0;transition:width 140ms linear}
 .meter.favor .track i{background:var(--god)}
 .meter.favor .row b{color:var(--god)}
@@ -320,18 +330,18 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .crow .tech{font:9.5px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--faint);text-align:right;padding-right:.15rem}
 .chead .form{font:9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);text-align:center}
 .cell{
-  appearance:none;border:1px solid var(--rule);border-radius:2px;background:var(--well);
+  appearance:none;border:1px solid var(--line);border-radius:2px;background:var(--sunk);
   color:var(--god);font:9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;
   padding:.34rem .1rem;cursor:pointer;text-align:center;min-width:0;overflow:hidden;white-space:nowrap
 }
 .cell[data-state="permitted"]{
-  border-color:color-mix(in srgb,var(--god) 55%,var(--rule));
-  background:color-mix(in srgb,var(--god) 13%,var(--well));
+  border-color:color-mix(in srgb,var(--god) 55%,var(--line));
+  background:color-mix(in srgb,var(--god) 13%,var(--sunk));
   box-shadow:0 0 9px -3px color-mix(in srgb,var(--god) 70%,transparent)
 }
 .cell[data-state="forbidden"]{
-  border-color:color-mix(in srgb,var(--deny) 50%,var(--rule));
-  background:color-mix(in srgb,var(--deny) 12%,var(--well));color:var(--deny);
+  border-color:color-mix(in srgb,var(--deny) 50%,var(--line));
+  background:color-mix(in srgb,var(--deny) 12%,var(--sunk));color:var(--deny);
   box-shadow:none
 }
 .cell[data-locked="1"]{cursor:not-allowed;border-style:dashed}
@@ -345,7 +355,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .csum{
   display:flex;align-items:baseline;gap:.3rem;flex-wrap:wrap;
   font:9.5px var(--mono);letter-spacing:.05em;color:var(--faint);
-  padding:.1rem .1rem;border-bottom:1px dashed color-mix(in srgb,var(--rule) 75%,transparent)
+  padding:.1rem .1rem;border-bottom:1px dashed color-mix(in srgb,var(--line) 75%,transparent)
 }
 .csum[hidden]{display:none}
 .csum .tk{color:var(--soft);text-transform:uppercase;letter-spacing:.1em}
@@ -354,8 +364,8 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .csum .open{color:var(--god)}
 .cclosed{
   font:9.5px var(--mono);line-height:1.7;letter-spacing:.04em;color:var(--soft);
-  border:1px dashed color-mix(in srgb,var(--god) 40%,var(--rule));border-radius:2px;
-  padding:.45rem .55rem;background:color-mix(in srgb,var(--god) 6%,var(--well))
+  border:1px dashed color-mix(in srgb,var(--god) 40%,var(--line));border-radius:2px;
+  padding:.45rem .55rem;background:color-mix(in srgb,var(--god) 6%,var(--sunk))
 }
 .cclosed[hidden]{display:none}
 .cclosed b{color:var(--god);font-weight:600}
@@ -369,8 +379,8 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
    so, in brass, immediately above the switches. ---- */
 .nowbar{
   font:9.5px var(--mono);line-height:1.6;letter-spacing:.04em;padding:.42rem .5rem;border-radius:2px;
-  border:1px solid color-mix(in srgb,var(--brass) 55%,var(--rule));color:var(--brass);
-  background:color-mix(in srgb,var(--brass) 10%,var(--well))
+  border:1px solid color-mix(in srgb,var(--brass) 55%,var(--line));color:var(--brass);
+  background:color-mix(in srgb,var(--brass) 10%,var(--sunk))
 }
 .nowbar[hidden]{display:none}
 .nowbar b{font-weight:600;color:var(--brass)}
@@ -379,33 +389,33 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .verbs{display:flex;flex-direction:column;gap:.35rem}
 .verb{
   display:grid;grid-template-columns:1fr auto;gap:.3rem .5rem;align-items:center;
-  border:1px solid var(--rule);border-radius:2px;background:var(--well);
+  border:1px solid var(--line);border-radius:2px;background:var(--sunk);
   padding:.42rem .55rem;cursor:pointer;text-align:left;color:var(--ink);font:inherit;font-size:.88rem
 }
 .verb .cost{font:10px var(--mono);color:var(--god);letter-spacing:.05em}
 .verb .sub{grid-column:1/-1;font:9.5px var(--mono);color:var(--faint);line-height:1.45}
-.verb:not(:disabled){border-color:color-mix(in srgb,var(--god) 42%,var(--rule))}
-.verb:not(:disabled):hover{background:color-mix(in srgb,var(--god) 10%,var(--well));border-color:var(--god)}
+.verb:not(:disabled){border-color:color-mix(in srgb,var(--god) 42%,var(--line))}
+.verb:not(:disabled):hover{background:color-mix(in srgb,var(--god) 10%,var(--sunk));border-color:var(--god)}
 .verb:disabled{cursor:not-allowed;opacity:.44;border-style:dashed}
 .verb:disabled .cost{color:var(--faint)}
-.verb[data-spent="1"]{opacity:.55;border-style:solid;border-color:var(--rule)}
+.verb[data-spent="1"]{opacity:.55;border-style:solid;border-color:var(--line)}
 .verb[data-spent="1"] .cost{color:var(--ok)}
 .verb[data-dead="1"] .sub{display:none}
 .verb[data-dead="1"]{padding:.3rem .55rem;opacity:.5}
 
 .deadbar{
-  border:1px dashed var(--rule);border-radius:2px;padding:.5rem .6rem;
+  border:1px dashed var(--line);border-radius:2px;padding:.5rem .6rem;
   font:10px var(--mono);line-height:1.6;color:var(--faint);letter-spacing:.04em
 }
 
 /* ---- the field ---- */
-.fieldwrap{position:relative;background:#090D0E;border-bottom:1px solid var(--rule)}
+.fieldwrap{position:relative;background:#090D0E;border-bottom:1px solid var(--line)}
 .fieldwrap canvas{display:block;width:100%;height:auto;aspect-ratio:1}
 .overlay{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;padding:.55rem .6rem}
 .mclock{margin:auto;text-align:center;pointer-events:none}
 .mclock .n{
   font:400 clamp(3rem,7vw,5.2rem)/1 var(--serif);font-variant-numeric:tabular-nums;letter-spacing:-.03em;
-  color:var(--god-lit);text-shadow:0 0 42px color-mix(in srgb,var(--god) 60%,transparent)
+  color:var(--field-god);text-shadow:0 0 42px color-mix(in srgb,var(--field-god-glow) 60%,transparent)
 }
 .mclock .n.urgent{color:#FFD27A;text-shadow:0 0 46px rgba(255,180,60,.55)}
 .mclock .u{font:10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:#7FD9E1;margin-top:.2rem}
@@ -430,20 +440,20 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .say b{color:var(--ink)}
 .asof{
   font:9.5px var(--mono);line-height:1.55;letter-spacing:.04em;padding:.4rem .5rem;border-radius:2px;
-  border:1px solid var(--rule);color:var(--faint);background:var(--well)
+  border:1px solid var(--line);color:var(--faint);background:var(--sunk)
 }
 .asof b{font-weight:600}
-.asof[data-rec="1"]{border-color:color-mix(in srgb,var(--brass) 55%,var(--rule));color:var(--brass);
-  background:color-mix(in srgb,var(--brass) 10%,var(--well))}
+.asof[data-rec="1"]{border-color:color-mix(in srgb,var(--brass) 55%,var(--line));color:var(--brass);
+  background:color-mix(in srgb,var(--brass) 10%,var(--sunk))}
 .dsrows{display:grid;grid-template-columns:1fr auto;gap:.1rem .5rem;font:10px var(--mono);color:var(--faint)}
 .dsrows b{color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
 .dsnodes{display:flex;flex-wrap:wrap;gap:.22rem}
 .nd{
-  font:9.5px var(--mono);padding:.16rem .3rem;border-radius:2px;border:1px solid var(--rule);
-  background:var(--well);color:var(--soft);letter-spacing:.02em
+  font:9.5px var(--mono);padding:.16rem .3rem;border-radius:2px;border:1px solid var(--line);
+  background:var(--sunk);color:var(--soft);letter-spacing:.02em
 }
 .nd[data-legal="0"]{border-style:dashed;color:var(--deny);text-decoration:line-through;opacity:.8}
-.nd[data-reaching="1"]{border-color:var(--god);color:var(--god);background:color-mix(in srgb,var(--god) 12%,var(--well))}
+.nd[data-reaching="1"]{border-color:var(--god);color:var(--god);background:color-mix(in srgb,var(--god) 12%,var(--sunk))}
 .dsract{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.1rem}
 .dsract .btn[data-live="1"]{border-color:var(--god);color:var(--god)}
 
@@ -464,10 +474,10 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .recbar .live{display:block;color:#9FC2CB;text-transform:none;letter-spacing:.03em}
 .recbar .live b{color:#DBEFF3}
 
-.stability{padding:.6rem .75rem .7rem;display:flex;flex-direction:column;gap:.3rem;border-bottom:1px solid var(--rule)}
+.stability{padding:.6rem .75rem .7rem;display:flex;flex-direction:column;gap:.3rem;border-bottom:1px solid var(--line)}
 .stability .row{display:flex;align-items:baseline;gap:.5rem;font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
 .stability .row b{margin-left:auto;font-size:15px;letter-spacing:0;color:var(--limen);font-variant-numeric:tabular-nums}
-.stability .track{height:10px;background:var(--well);border:1px solid var(--rule);border-radius:2px;overflow:hidden;position:relative}
+.stability .track{height:10px;background:var(--sunk);border:1px solid var(--line);border-radius:2px;overflow:hidden;position:relative}
 .stability .track i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,color-mix(in srgb,var(--limen) 45%,transparent),var(--limen))}
 .stability .track u{position:absolute;top:0;bottom:0;width:1px;background:var(--brass);text-decoration:none}
 .stability.crit .track i{background:linear-gradient(90deg,color-mix(in srgb,var(--deny) 45%,transparent),var(--deny))}
@@ -482,7 +492,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
    for "authored, or not now". ---- */
 .rec{
   padding:.5rem .75rem .55rem;display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;
-  border-bottom:1px solid var(--rule)
+  border-bottom:1px solid var(--line)
 }
 .rec .scrub{flex:1 1 9rem;min-width:7rem;accent-color:var(--faint);height:1.1rem}
 .rec[data-rec="1"] .scrub{accent-color:var(--brass)}
@@ -490,7 +500,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .rec[data-rec="1"]{background:color-mix(in srgb,var(--brass) 9%,var(--panel))}
 .rec[data-rec="1"] .lab{color:var(--brass)}
 .rec .btn[data-live="1"]{border-color:var(--brass);color:var(--brass);
-  background:color-mix(in srgb,var(--brass) 14%,var(--well))}
+  background:color-mix(in srgb,var(--brass) 14%,var(--sunk))}
 /* the record chrome is scoped to what is showing the past — the field and the
    number under it. The viewing controls below stay ordinary, because playback
    rate is a live setting whichever tick you are looking at. */
@@ -501,19 +511,19 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .controls .lab{margin-right:.1rem}
 .btn{
   font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:.38rem .6rem;
-  border:1px solid var(--rule);border-radius:2px;background:var(--well);color:var(--soft);cursor:pointer
+  border:1px solid var(--line);border-radius:2px;background:var(--sunk);color:var(--soft);cursor:pointer
 }
 .btn:hover{border-color:var(--rule-hi);color:var(--ink)}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.btn:disabled:hover{border-color:var(--rule);color:var(--soft)}
-.btn[aria-pressed="true"]{border-color:var(--god);color:var(--god);background:color-mix(in srgb,var(--god) 12%,var(--well))}
+.btn:disabled:hover{border-color:var(--line);color:var(--soft)}
+.btn[aria-pressed="true"]{border-color:var(--god);color:var(--god);background:color-mix(in srgb,var(--god) 12%,var(--sunk))}
 .seed{
-  font:11px var(--mono);width:6.5rem;padding:.34rem .45rem;background:var(--well);color:var(--ink);
-  border:1px solid var(--rule);border-radius:2px
+  font:11px var(--mono);width:6.5rem;padding:.34rem .45rem;background:var(--sunk);color:var(--ink);
+  border:1px solid var(--line);border-radius:2px
 }
 
 /* ---- the legend strip: always dark, because it swatches canvas ink ---- */
-.legend{background:#0B0F10;border-top:1px solid var(--rule);padding:.55rem .7rem;display:grid;
+.legend{background:#0B0F10;border-top:1px solid var(--line);padding:.55rem .7rem;display:grid;
   grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:.3rem .8rem}
 .lg{display:flex;align-items:center;gap:.4rem;font:9.5px var(--mono);color:#8A9799;letter-spacing:.04em}
 .lg svg.k{width:20px;height:20px;flex:none}
@@ -538,11 +548,11 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 
 /* ---- the log. Three columns, and the third one wraps: the detail is the
        thing worth reading and the old nowrap table pushed it off the side. ---- */
-.log{overflow-y:auto;background:var(--well);border-top:1px solid var(--rule)}
+.log{overflow-y:auto;background:var(--sunk);border-top:1px solid var(--line)}
 .log table{border-collapse:collapse;width:100%;table-layout:fixed}
 .log td{
   font:10px var(--mono);line-height:1.5;padding:.28rem .35rem;
-  border-bottom:1px solid color-mix(in srgb,var(--rule) 55%,transparent);
+  border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);
   vertical-align:top;overflow-wrap:anywhere
 }
 .log td.t{color:var(--faint);text-align:right;font-variant-numeric:tabular-nums;width:2.7rem;white-space:nowrap}
@@ -578,7 +588,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .ledblk{display:flex;flex-direction:column;gap:.28rem}
 .expolist{max-height:7rem;overflow-y:auto;display:flex;flex-direction:column;gap:.16rem}
 .ex{display:grid;grid-template-columns:1fr auto;gap:.4rem;font:10px var(--mono);color:var(--soft);
-  padding:.2rem .3rem;border-bottom:1px solid color-mix(in srgb,var(--rule) 45%,transparent)}
+  padding:.2rem .3rem;border-bottom:1px solid color-mix(in srgb,var(--line) 45%,transparent)}
 .ex b{color:var(--mentem);font-variant-numeric:tabular-nums;white-space:nowrap}
 .ex .tier{color:var(--faint)}
 .ex .empty{color:var(--faint)}
@@ -588,7 +598,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .tally b{color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
 .tally .bad{color:var(--deny)}
 .tally .sec{
-  grid-column:1/-1;margin-top:.35rem;padding-top:.3rem;border-top:1px solid color-mix(in srgb,var(--rule) 60%,transparent);
+  grid-column:1/-1;margin-top:.35rem;padding-top:.3rem;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);
   font:9.5px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)
 }
 .tally .sec:first-child{margin-top:0;padding-top:0;border-top:0}
@@ -604,8 +614,8 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .outcome .h{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--brass);display:block;margin-bottom:.25rem}
 
 /* ============================== PROVENANCE ============================== */
-.prov{margin-top:1.6rem;border:1px solid var(--rule);border-radius:3px;background:var(--panel)}
-.prov > h2{margin:0;padding:.6rem .85rem;border-bottom:1px solid var(--rule);
+.prov{margin-top:1.6rem;border:1px solid var(--line);border-radius:3px;background:var(--panel)}
+.prov > h2{margin:0;padding:.6rem .85rem;border-bottom:1px solid var(--line);
   font:10px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--brass);font-weight:500}
 .prov .inner{padding:.9rem .85rem 1.1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1.1rem}
 .prov h3{font:400 1.02rem var(--serif);margin:0 0 .35rem}
@@ -618,12 +628,12 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .prov ul{margin:.2rem 0 0;padding-left:1.05rem;font-size:.85rem;color:var(--soft);line-height:1.55}
 .prov li{margin-bottom:.22rem}
 .prov li b{color:var(--ink);font-weight:600}
-.findings{border-top:1px solid var(--rule);padding:.9rem .85rem 1.1rem}
+.findings{border-top:1px solid var(--line);padding:.9rem .85rem 1.1rem}
 .findings h3{font:400 1.05rem var(--serif);margin:0 0 .5rem}
 .findings ol{margin:0;padding-left:1.15rem;font-size:.88rem;color:var(--soft);line-height:1.6;max-width:88ch}
 .findings li{margin-bottom:.5rem}
 .findings li b{color:var(--ink)}
-.findings code{background:var(--well);padding:.05rem .22rem;border-radius:2px}
+.findings code{background:var(--sunk);padding:.05rem .22rem;border-radius:2px}
 
 .foot{margin-top:1.4rem;font:10px var(--mono);line-height:1.7;color:var(--faint);max-width:86ch}
 .foot a{color:var(--soft)}
@@ -647,7 +657,10 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
     </div>
     <div class="chips">
       <span class="chip synthetic" title="rules-raid is imported by no package. There is nothing to be live against.">Synthetic trace</span>
-      <button class="chip" id="theme" type="button">Theme: system</button>
+      <!-- ui/shared/theme.js mounts the light/system/dark control here. It is
+           the shared one so the choice carries between prototypes; this page
+           used to ship a private cycling button that remembered nothing. -->
+      <span id="theme-host"></span>
     </div>
   </header>
 
@@ -2894,16 +2907,27 @@ document.querySelector('.spd[data-spd="1"]').setAttribute('aria-pressed', 'true'
 document.querySelector('.dmg[data-dmg="1"]').setAttribute('aria-pressed', 'true');
 paintPace();
 
-/* three-state theme, per the artifact rule: system, then explicit either way */
-const THEMES = ['system', 'light', 'dark'];
-let themeIx = 0;
-el('theme').addEventListener('click', () => {
-  themeIx = (themeIx + 1) % 3;
-  const t = THEMES[themeIx];
-  if (t === 'system') document.documentElement.removeAttribute('data-theme');
-  else document.documentElement.setAttribute('data-theme', t);
-  el('theme').textContent = 'Theme: ' + t;
-});
+/* The three-state theme control — light / system / dark — is ui/shared/theme.js's
+   and not this page's, so the choice is remembered per browser rather than per
+   prototype. This file previously cycled `data-theme` from a private button that
+   remembered nothing, which is the same drift as a private palette wearing a
+   different hat.
+
+   Loaded by dynamic import, from inside this classic script, on purpose. A
+   module `<script>` does not execute at all under file:// — the browser treats
+   a file origin as opaque and the CORS check fails — and this page is meant to
+   open by double-click, so making the whole 1900-line script a module would
+   trade a missing toggle for a blank page. Dynamic import fails the same way,
+   but it fails HERE, where the failure costs only the control: theme.css is a
+   <link> and loads from file:// fine, so the page still renders in both themes
+   and still follows the OS. Served over http:// — `npm run ui`, then
+   /ui/raid/ — the control mounts and this branch never runs. */
+import('../shared/theme.js')
+  .then(({ mountThemeControl }) => mountThemeControl(el('theme-host')))
+  .catch(() => {
+    /* file://: no control, and no empty gap in the chip row where one was. */
+    el('theme-host').remove();
+  });
 
 window.addEventListener('resize', sizeCanvas);
 restart();
