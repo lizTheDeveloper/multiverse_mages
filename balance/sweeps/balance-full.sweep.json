@@ -18,6 +18,12 @@
     "perRunTimeoutMs": 600000
   },
   "metrics": [
+    "illegalActionRate",
+    "inboundRaidTempoLoss",
+    "knowledgeHalfLife",
+    "libraryDependence",
+    "raidInitiationCost",
+    "raidLengthDistribution",
     "referenceGrimoires",
     "referenceKnowledgeInstances",
     "referenceLibraryDepth",
@@ -27,7 +33,8 @@
     "referenceNodesKnown",
     "referencePeakPopulation",
     "referencePopulation",
-    "referencePopulationChange"
+    "referencePopulationChange",
+    "timeToTierBySpecies"
   ],
   "ablation": { "mode": "none", "primitives": [] },
   "failureThreshold": 0

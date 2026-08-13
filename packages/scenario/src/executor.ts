@@ -36,18 +36,24 @@ import type {
   IllegalActionAccounting,
   JsonValue,
   MechanicAvailability,
+  MetricEntries,
+  MetricEntry,
   Provenance,
   RaidObservation,
   RunExecutor,
   RunOutcome,
   RunTask,
+  RunTelemetry,
   TerminalStatus,
 } from '@mm/mc-harness';
 import {
+  BALANCE_METRIC_REGISTRY,
   BOT_POOL_REGISTRY,
   SNOWBALL_CHECKPOINT_TICKS,
   adaptAgentSession,
   canonicalHash,
+  collectRunMetrics,
+  metricDefinitionVersions,
   policiesForRun,
   runEpisode,
 } from '@mm/mc-harness';
@@ -224,6 +230,31 @@ function recordingSession<TConfig>(
   };
 }
 
+/**
+ * Every metric this executor can put in a record, at the version it collects.
+ *
+ * Both registries, because this executor now collects from both: the vital
+ * signs of `measures.ts` and `contracts.md` §7's registry. A record whose
+ * provenance omitted a metric it carries would leave a reader with a number and
+ * no way to know which definition produced it — and the gate compares a
+ * baseline's per-metric `definitionVersion` against the sweep's, which it can
+ * only do for versions that were written down.
+ *
+ * Both scopes of §7 are listed, not only the per-run half. The five arm-scoped
+ * metrics are computed by `runner.ts` out of this executor's `armContribution`
+ * and land in the sweep **summary**; they are as much this build's output as the
+ * per-run ones, and a summary whose arm metrics had no declared versions is the
+ * same gap one level up.
+ *
+ * `metricDefinitionVersions` is not one of the provenance keys the gate compares
+ * as a block, so widening this map does not invalidate a committed baseline —
+ * the per-metric comparison only ever runs against metrics the baseline records.
+ */
+const COLLECTED_METRIC_VERSIONS: Readonly<Record<string, number>> = Object.freeze({
+  ...REFERENCE_METRIC_VERSIONS,
+  ...metricDefinitionVersions(),
+});
+
 /** What the harness believes about a build that runs the reference universe. */
 export function referenceProvenance(content: ReferenceContent = referenceContent()): Provenance {
   return {
@@ -235,7 +266,7 @@ export function referenceProvenance(content: ReferenceContent = referenceContent
     rngRegistryHash: canonicalHash(RNG_STREAM as unknown as JsonValue, 'rng-stream-registry'),
     observationSchemaVersion: OBSERVATION_SCHEMA_VERSION,
     observationLayoutDigest: OBSERVATION_LAYOUT_DIGEST,
-    metricDefinitionVersions: REFERENCE_METRIC_VERSIONS,
+    metricDefinitionVersions: COLLECTED_METRIC_VERSIONS,
   };
 }
 
@@ -360,6 +391,52 @@ export interface ReferenceRunResult {
   readonly rawRaids: readonly RaidRecord[];
   /** What this run declares it implements. Feeds every §7 availability check. */
   readonly mechanics: MechanicAvailability;
+  /**
+   * Everything §7's seven per-run collectors read, as they read it.
+   *
+   * Exported beside the outcome so a test can assert what a metric was computed
+   * *from* rather than only what it came to. The outcome carries the declared
+   * metrics and nothing more, because that is what a record is made of.
+   */
+  readonly telemetry: RunTelemetry;
+}
+
+/**
+ * Collects the metrics a task declared, from whichever registry defines each.
+ *
+ * The reference scenario now answers to two registries, and the split is by id
+ * rather than by guess: `measures.ts` owns everything prefixed `reference`, and
+ * `contracts.md` §7 owns the twelve in `BALANCE_METRIC_REGISTRY`. The prefix was
+ * chosen for exactly this moment — *"a metric registry whose ids collide with
+ * §7's would let a sweep declare `nodesKnown` and be validated against a
+ * definition nobody wrote"*.
+ *
+ * `collectRunMetrics` is called once and its entries selected from, rather than
+ * per requested id. That is not an optimization: the function's first documented
+ * property is that *"every registered metric gets an entry"*, and calling it per
+ * id would quietly reduce it to a per-metric collector and lose the guarantee
+ * that a dead collector fails the run instead of writing a missing key.
+ *
+ * @throws Error naming a metric neither registry defines. The sweep validator
+ * rejects that before dispatch, so reaching here means a hand-built task.
+ */
+export function collectDeclaredMetrics(
+  requested: readonly string[],
+  measurement: RunMeasurement,
+  telemetry: RunTelemetry,
+): MetricEntries {
+  const referenceIds = requested.filter((metricId) => !BALANCE_METRIC_REGISTRY.has(metricId));
+  const entries: Record<string, MetricEntry> = {
+    ...collectReferenceMetrics(referenceIds, measurement),
+  };
+  if (referenceIds.length === requested.length) return entries;
+
+  const balance = collectRunMetrics(telemetry);
+  for (const metricId of requested) {
+    if (!BALANCE_METRIC_REGISTRY.has(metricId)) continue;
+    entries[metricId] = balance[metricId] as MetricEntry;
+  }
+  return entries;
 }
 
 /**
@@ -382,7 +459,9 @@ export function executeReferenceRun(
   const interval = options.censusIntervalTicks ?? CENSUS_INTERVAL_TICKS;
 
   const raiding = options.raids ?? true;
-  const { scenario, lastGodReport, raids } = referenceScenario(content, { raids: raiding });
+  const { scenario, lastGodReport, raids, balanceTelemetry } = referenceScenario(content, {
+    raids: raiding,
+  });
   const strategyId = task.strategies[0];
   if (strategyId === undefined) {
     throw new Error(
@@ -419,13 +498,32 @@ export function executeReferenceRun(
   };
 
   const mechanics = raiding ? REFERENCE_MECHANICS : RAIDLESS_MECHANICS;
+  const raidObservations = raiding
+    ? raids().map((record) => raidObservationOf(record, lastGodReport()))
+    : undefined;
+
+  // After the episode, deliberately: `balanceTelemetry()` takes the terminal
+  // census sample, which is the one a system inside `step` cannot reach.
+  const balance = balanceTelemetry();
+  const runTelemetry: RunTelemetry = {
+    coordinates: task.coordinates,
+    status: episode.status,
+    ticksRun: episode.ticksRun,
+    mechanics,
+    census: balance.census,
+    speciesIds: balance.speciesIds,
+    tierFirstReached: balance.tierFirstReached,
+    checkpoints: recorder.checkpoints,
+    raids: raidObservations,
+    accounting: episode.accounting,
+  };
+
   return {
     samples: recorder.samples,
     mechanics,
-    raids: raiding
-      ? raids().map((record) => raidObservationOf(record, lastGodReport()))
-      : undefined,
+    raids: raidObservations,
     rawRaids: raiding ? [...raids()] : [],
+    telemetry: runTelemetry,
     outcome: {
       status: episode.status,
       // §1.1's ending, carried through rather than re-derived from the status.
@@ -434,7 +532,7 @@ export function executeReferenceRun(
       // could not say which summit a universe took.
       terminalReason: episode.terminalReason,
       ticksRun: episode.ticksRun,
-      metrics: collectReferenceMetrics(task.metrics, measurement),
+      metrics: collectDeclaredMetrics(task.metrics, measurement, runTelemetry),
       accounting: episode.accounting,
       provenance: referenceProvenance(content),
       armContribution: armContributionOf(recorder.checkpoints, content, mechanics),
