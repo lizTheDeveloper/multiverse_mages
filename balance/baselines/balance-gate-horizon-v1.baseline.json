@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "3ad58321a099674cfd2e16ed7e21dfdb96b28b6397a1d80d2391dbdbf5a7bf95",
+  "contentHash": "f3627e0648c70f2f7990a10ef4311d7d6c68095ef32e5c20539dfa067a8ab220",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":7.588667268919316,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":22.76600180675795,"unit":"grimoires","value":353.605},
@@ -16,33 +16,32 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.2659744572978604,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.797923371893581,"unit":"people","value":67.645}
   ],
   "notes": [
-    "No release before 0.5.0 may claim any of this is balanced: every magnitude in the shipped content carries tuningStatus untuned and the balance harness owns all of them -- so this file is a measurement and not a balance claim.",
-    "The universe is still degenerate in the following ways, and this edit closes one of them. The gate sweeps are 100 percent passive-control and submit no god verb. Nothing in packages/scenario opens a portal, so no raid runs in any committed sweep and no summon is ever created. Scribing still stops when the materials stock empties. Teaching no longer dies out once the founding grants are taught -- that note was carried by the superseded files and is now measurably false: over the reference two hundred years a lesson is taught in every one of the ten twenty-year windows, the thinnest holding 16."
+    "Every metric in the passive gates was identical before this regeneration - delta 0.00000 on all ten, in both balance-gate-v1 and balance-gate-horizon-v1 - because neither sweep's strategies ever submit encourageResearch. The ascension sweep, which does, moved every metric inside 0.5 SE: referenceGrimoires +7.78 (0.19 SE), referenceKnowledgeInstances +39.41 (0.12 SE), referenceLivingMages +1.94 (0.50 SE), referenceLibraryDepth -0.91 (-0.27 SE), referenceNodesKnown -0.56 (-0.05 SE), referencePopulation -186.53 (-0.15 SE), referencePeakPopulation 0.00."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "6b18886a4b3a2803c0b1b92eb8f8fae8",
+    "contentHash": "591880dd878fc50d42090d11cded5223",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "One predicate changed and nothing else. gatherFrontier bucketed a research target into the research-node or rediscover-node candidate list on the raw ever-known mark, which is never cleared, so every node the universe currently held was filed as a lost art; it now asks rules-magic isRediscovery -- wasEverKnown AND NOT exists -- the same predicate the research quote and the research charge already use. No constant, cap, magnitude or content value moved. The gated metrics move because goal selection moved, and the direction is the mechanism working rather than a magnitude being tuned: acquisition is no longer front-loaded into a land grab over nodes nobody had lost, so the five-year and twenty-year totals fall while referenceNodesGainedFinalQuarter rises 1.875 to 7.595 (64.55 SE) and the two-hundred-year end state is unchanged inside tolerance on every metric. Regenerated rather than tolerance-widened, and all three files are re-recorded together so the chain stays coherent, the ascension sweep included even though it passed.",
+  "rationale": "W52 moved the god's encourageResearch from research-rate to a target-appeal term: target-emphasis-divisor 1 and target-bound-emphasis fp(256) in autonomy-weight.json, and the rate contribution removed from godEffectHooks. contentRevision therefore moved 6b18886a4b3a2803c0b1b92eb8f8fae8 -> 591880dd878fc50d42090d11cded5223 and the provenance check refuses the old file.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":-34.77999999999997,"deltaInStandardErrors":-3.9198976004433415,"metricId":"referenceGrimoires","previousValue":388.385,"value":353.605},
-    {"delta":-59.934999999999945,"deltaInStandardErrors":-5.8188617857944545,"metricId":"referenceKnowledgeInstances","previousValue":1084.965,"value":1025.03},
-    {"delta":-6.834999999999997,"deltaInStandardErrors":-9.573261049461554,"metricId":"referenceLibraryDepth","previousValue":25.88,"value":19.045},
-    {"delta":-0.00999999999999801,"deltaInStandardErrors":-0.052083131498662026,"metricId":"referenceLivingMages","previousValue":37.71,"value":37.7},
-    {"delta":-5.170000000000002,"deltaInStandardErrors":-37.88282889162602,"metricId":"referenceNodesGained","previousValue":44.515,"value":39.345},
-    {"delta":5.72,"deltaInStandardErrors":64.55336184963619,"metricId":"referenceNodesGainedFinalQuarter","previousValue":1.875,"value":7.595},
-    {"delta":-5.170000000000002,"deltaInStandardErrors":-37.88282889162602,"metricId":"referenceNodesKnown","previousValue":47.015,"value":41.845},
-    {"delta":-10,"deltaInStandardErrors":-0.5025125628140705,"metricId":"referencePeakPopulation","previousValue":370,"value":360},
-    {"delta":0.7050000000000125,"deltaInStandardErrors":0.5781685913827411,"metricId":"referencePopulation","previousValue":210.94,"value":211.645},
-    {"delta":0.7049999999999983,"deltaInStandardErrors":0.5781685913827295,"metricId":"referencePopulationChange","previousValue":66.94,"value":67.645}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":353.605,"value":353.605},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":1025.03,"value":1025.03},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":19.045,"value":19.045},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":37.7,"value":37.7},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":39.345,"value":39.345},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":7.595,"value":7.595},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":41.845,"value":41.845},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":360,"value":360},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":211.645,"value":211.645},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":67.645,"value":67.645}
   ],
-  "supersedes": "8168b005b6150ef0312880c67463d19f01dfcf8e65aa1039ab42683edb215b70",
+  "supersedes": "3ad58321a099674cfd2e16ed7e21dfdb96b28b6397a1d80d2391dbdbf5a7bf95",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }
