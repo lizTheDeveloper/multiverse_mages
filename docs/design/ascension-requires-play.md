@@ -10,11 +10,15 @@ to `openspec/changes/god-agency/specs/ascension-and-prestige/spec.md`, which is 
 
 Four claims, each naming what would refute it, authored **before** the sweep was run.
 
-**Every verdict below is `unmeasured` in this commit, and that is the point.** The verdicts and their
-reasons are filled in by a *later* commit, so the git history shows the claims were fixed before the
-numbers existed rather than after. A predicate's refutation written once the answer is known is a
-rationalisation; the only thing that makes "we said what would refute this in advance" checkable is
-that a reader can `git show` the commit where it was still unanswered.
+**Every verdict below was `unmeasured` when the claims were committed, and that was the point.** They
+were filled in by a later commit, so the git history shows the claims were fixed before the numbers
+existed rather than after — `git show 878ea28` is the commit where they were still unanswered. A
+predicate's refutation written once the answer is known is a rationalisation.
+
+**All four hold.** Not one was edited between being written and being answered; the `procedure` and
+`refutedBy` fields are byte-identical to `878ea28`, and only `verdict`, `verdictReason` and
+`evidence` were added. The result, in one line: **the exploit is closed, the conjunct is reachable,
+and the pool still holds one winning profile rather than three.**
 
 ### What had already been seen when these claims were fixed
 
@@ -196,7 +200,9 @@ defect.
     "cells": "cohortSize [4,12] x foundingNodes [1,4]"
   },
   "definitionVersion": 1,
-  "verdict": "unmeasured"
+  "verdict": "holds",
+  "verdictReason": "0 of 40 qualify, in BOTH arms. ascensionFirstMetTick is 0 and ascensionPath is none in every one of 40 worlds before the change and after it, and all 40 paired runs are bit-identical across the two arms. The brief this branch was opened on asserted apotheosis at tick 960 in 8 of 8; that finding predates ceb1492 (W6), which closed it. idle-then-declare -- a probe that plays nothing and declares the instant the mask opens -- is likewise 0 of 40 in both arms.",
+  "evidence": ["balance/w63/w63-qualification.txt"]
 }
 ```
 
@@ -227,7 +233,9 @@ The live defect, and the one this change exists to close.
     "sweepId": "w58-falsification-v1"
   },
   "definitionVersion": 1,
-  "verdict": "unmeasured",
+  "verdict": "holds",
+  "verdictReason": "40 of 40 before, 0 of 40 after, on the same 40 worlds. Every one of the 40 is a discordant pair in the before-only direction and none in the after-only direction, which is the sign test at its maximum. The mechanism is visible in the run rows: permit-then-idle ends every run at universities = 1, the academy the scenario seeds, having never founded one.",
+  "evidence": ["balance/w63/w63-qualification.txt"],
   "supersedes": ["solved-open-loop-2400"]
 }
 ```
@@ -260,7 +268,9 @@ separates them, because no pool member both opens the grid and buys anything.
     "ascensionInstitutions": 2
   },
   "definitionVersion": 1,
-  "verdict": "unmeasured"
+  "verdict": "holds",
+  "verdictReason": "40 of 40 in BOTH arms, and all 40 paired runs bit-identical across them -- the conjunct is not merely satisfiable, it is satisfied in every world by a policy that differs from permit-then-idle by one submission a world year. So the refutation this claim named (a shared zero, which would have meant the conjunct was unreachable and the predicate wrong) did not occur. The margin is enormous and that is its own finding: 98 universities against a threshold of 2, with zero refusals -- see the campaign-plan entry on favor never binding.",
+  "evidence": ["balance/w63/w63-qualification.txt"]
 }
 ```
 
@@ -286,7 +296,9 @@ not fix D3**, and saying so before the run is the difference between a limitatio
   },
   "pinnedConstants": { "horizonTicks": 2400, "poolSize": 11 },
   "definitionVersion": 1,
-  "verdict": "unmeasured"
+  "verdict": "holds",
+  "verdictReason": "One strategy qualifies after the change (open-then-build, 40/40) against two before it (permit-then-idle and permissive-breadth, 40/40 each). Three or more distinct winners at materially different non-zero rates would have refuted it; the count went from two to one. D3 fails before and after, and this change moves WHICH policies qualify rather than how many profiles the pool holds. The binding constraint remains content exhaustion.",
+  "evidence": ["balance/w63/w63-qualification.txt"]
 }
 ```
 
