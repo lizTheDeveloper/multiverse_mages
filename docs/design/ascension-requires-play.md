@@ -125,6 +125,35 @@ So paying 32 minutes now to tighten tolerances on a baseline about to be replace
 wrong order. **The replicate increase belongs in the re-baselining those four changes force**, where
 it costs one run instead of two.
 
+## The 2x2 that answers the obvious objection
+
+The objection a reviewer should raise is that `open-then-build` was written by the same workstream
+as the conjunct, so of course it passes. The `archivist` arm answers it, and it does so from the
+opposite corner: **`archivist` founds 1,281-1,327 universities per run and never qualifies.**
+
+| strategy | universities | nodes known | qualifies? |
+|---|---|---|---|
+| `permit-then-idle` | **1** | 261-269 | **no** |
+| `archivist` | **~1,300** | **51** | **no** |
+| `passive-control` | 1 | 51 | no |
+| **`open-then-build`** | 78-98 | 198-220 | **yes** |
+
+Both single-axis maximisers fail. A god that opens the entire grid and builds nothing fails; a god
+that builds thirteen hundred universities and opens nothing fails, sitting at the 51-node content
+ceiling of the starting rectangle. **Only the conjunction passes**, and it passes with two orders of
+magnitude *fewer* universities than the strategy that fails.
+
+That is the difference between a predicate and a counter. `ascension-institutions` is not a
+university race — `archivist` wins that race by a factor of thirteen and still loses — it is a
+requirement that the god do a second thing while doing the first. The conjunct cannot be satisfied
+by scaling either axis alone, which is exactly the property the two earlier proposals asked for and
+which no threshold over knowledge could have.
+
+**It also bounds how much of the result is `open-then-build` being purpose-built.** The probe was
+constructed to pass, so its passing is weak evidence on its own. `archivist`'s failure is not:
+nobody wrote `archivist` for this branch, it has been in the pool since the beginning, and it fails
+while maximising the very quantity the new conjunct reads.
+
 ## The notation, and the instrument it borrows from
 
 The records are written in the shape `w32/depth-language` defines — `claimId`, `form`, `subjects`,
