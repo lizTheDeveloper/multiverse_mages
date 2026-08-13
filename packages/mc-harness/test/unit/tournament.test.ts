@@ -300,9 +300,14 @@ describe('a tournament runs end to end over the shipped pool', () => {
       now: () => 0,
     });
 
-    // 2 world seeds × 56 ordered pairings = 112 runs, and every one of them
+    // 2 world seeds × every ordered pairing of the pool, and every one of them
     // ends with a status from the recorded set. Nothing stalls, nothing raises.
-    expect(result.records).toHaveLength(112);
+    //
+    // Derived from BOT_POOL rather than written as 112, because the count is
+    // `2 × k × (k − 1)` and the literal silently encoded k = 8. The W6
+    // verification branch appends two adversarial probes; a literal here turns
+    // "the pool grew" into a failure that reads as a tournament defect.
+    expect(result.records).toHaveLength(2 * POOL.length * (POOL.length - 1));
     for (const record of result.records) {
       expect(RECORDED_STATUSES).toContain(record.status);
       expect(record.status).not.toBe('failed');

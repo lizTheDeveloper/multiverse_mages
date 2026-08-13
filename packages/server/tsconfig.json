@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Library build. Host-side, like gym-bridge and mc-harness: this package owns sockets and a wall clock, so it sees Node's ambient types. It computes no rules — it drives agent-api sessions — so it sits outside the rules-path bans for the same reason those two do, and for no other.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../agent-api" }]
+}

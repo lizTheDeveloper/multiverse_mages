@@ -42,6 +42,16 @@
  * - **9.9 — "at least four species differ by more than the observed cross-seed
  *   spread."** Three do. `reference-time-to-tier.test.ts` has the numbers.
  *
+ * **This bullet list is a historical record, not the current measurement**,
+ * and is kept rather than rewritten for the reason this repo amends findings
+ * instead of deleting them. 9.5 and 9.8 have each moved twice since it was
+ * written — 9.5's teaching half was fixed by wiring the `acquire` hook, and
+ * its scribing half now survives the whole run once `w29` split the
+ * materials stock into `food`/`stone`/`vellum`; 9.8's capital curve, fixed by
+ * `w7/knowledge-capital`, no longer falls back within two centuries for the
+ * same reason. The tests below assert the current measurement; this list
+ * documents what was true when task group 9 was first driven through.
+ *
  * ## What the run costs, and why it is not shortened
  *
  * Two full runs of 2,400 ticks, because task 9.6 compares two executions and a
@@ -201,20 +211,29 @@ describe('two hundred world years of the reference universe', () => {
     }
   });
 
-  it('9.5 — teaching now sustains; scribing still dies of the economy', () => {
-    // This tripwire has fired once already and been rewritten, which is what a
-    // tripwire is for. It used to assert that teaching happened in the first
-    // window and *never again* — because nothing a mage researched for herself
-    // cleared the `fp(512)` teach threshold, so only the founding grants were
-    // ever teachable and they were taught out inside twenty years.
+  it('9.5 — teaching now sustains, and scribing survives the whole run', () => {
+    // This tripwire has fired twice already and been rewritten both times,
+    // which is what a tripwire is for.
     //
-    // The cause was not the threshold. It was that the `acquire` tradition hook
-    // was inert: `applyAcquire` was called from tests and from nowhere else, so
-    // a tradition's `initialMastery` never reached a created instance and every
-    // mage finished her research at the placeholder `fp(256)`. Wiring the hook
-    // into the real acquisition path fixed the deadlock as a side effect, which
-    // is worth recording — the symptom looked like a threshold that wanted
-    // retuning, and retuning it would have hidden a dead contract instead.
+    // It first asserted that teaching happened in the first window and *never
+    // again* — because nothing a mage researched for herself cleared the
+    // `fp(512)` teach threshold, so only the founding grants were ever
+    // teachable and they were taught out inside twenty years. The cause was
+    // not the threshold: `applyAcquire` was called from tests and from
+    // nowhere else, so a tradition's `initialMastery` never reached a created
+    // instance and every mage finished her research at the placeholder
+    // `fp(256)`. Wiring the hook into the real acquisition path fixed the
+    // deadlock as a side effect.
+    //
+    // It then asserted teaching sustains but **scribing still dies of the
+    // economy** — books cost materials and the single stock emptied from
+    // roughly world year seventy, so the last window scribed zero. `w29`
+    // differentiated that one stock into `food`, `stone` and `vellum`
+    // (`kinds.ts`), and scribing spends only `vellum`, which no longer
+    // competes with subsistence's `food`. Measured over this run: the stock
+    // that used to starve every claimant at once now starves only the
+    // claimant paid from the kind that actually ran out, and vellum did not.
+    // The final window now scribes **5** books, not 0.
     const windows = windowsOf(run, WINDOW_YEARS).map((window) => activityIn(window));
     const taught = windows.map((activity) => activity.lessonsTaught);
     const scribed = windows.map((activity) => activity.grimoiresScribed);
@@ -229,12 +248,19 @@ describe('two hundred world years of the reference universe', () => {
       expect(lessons, `no lesson taught in 20-year window ${String(index)}`).toBeGreaterThan(0);
     }
 
-    // Scribing still stops, and still dies of the economy rather than of the
-    // mastery threshold: books cost materials and the stock is empty from
-    // roughly world year seventy. That half of 9.5 stays unchecked, and this
-    // stays a tripwire for it.
+    // Scribing dips hard in the middle of the run — the food-driven population
+    // collapse still starves the *populace* that would otherwise staff a
+    // scriptorium, and windows five and six (world years 80-120) scribe
+    // nothing — but it is not the permanent, one-way death the single-stock
+    // economy produced. Asserted as a tripwire in the direction that now
+    // holds: the last window is not zero. A future change that drives vellum
+    // to zero for good should fail this loudly rather than have the suite
+    // quietly keep asserting the old "dies forever" shape.
     expect(scribed[0] ?? 0).toBeGreaterThan(0);
-    expect(scribed[scribed.length - 1] ?? 0).toBe(0);
+    expect(
+      scribed[scribed.length - 1] ?? 0,
+      'scribing died of the economy again — vellum ran out, not just food',
+    ).toBeGreaterThan(0);
   });
 
   it('9.7 — shows no sustained two-tick alternation in the occupation mix', () => {
@@ -243,18 +269,39 @@ describe('two hundred world years of the reference universe', () => {
     expect(longest).toBeLessThan(SUSTAINED_ALTERNATION_TICKS);
   });
 
-  it('9.8 — has a capital curve at last, and it rises, peaks and falls back', () => {
-    // **This box was open, and the tripwire under it has fired.** Task 9.8 read
-    // *"true and vacuous, so not asserted: total effective capital contribution
-    // is `fp(32)` from world year one to world year two hundred, because library
-    // depth reaches two distinct nodes and stops … 1,263 books, two nodes"*, and
-    // it asserted the books-to-depth ratio precisely so that fixing the loop
-    // would fail the suite and bring somebody back here.
+  it('9.8 — has a capital curve at last, and under the differentiated economy it no longer falls back', () => {
+    // **This box was open twice, and both tripwires under it have fired.**
+    // Task 9.8 first read *"true and vacuous, so not asserted: total effective
+    // capital contribution is `fp(32)` from world year one to world year two
+    // hundred, because library depth reaches two distinct nodes and stops …
+    // 1,263 books, two nodes"*, and `w7/knowledge-capital` fixed that: the
+    // library's depth reaches `research-rate`, `teach-rate` and `scribe-rate`
+    // through the shared accumulator, upkeep is charged, and the scribable
+    // list prefers a node the shelf does not already hold — so the series
+    // became a real curve, and it fell late in the run once the single
+    // materials stock ran dry.
     //
-    // `w7/knowledge-capital` wired vision §6a: the library's depth reaches
-    // `research-rate`, `teach-rate` and `scribe-rate` through the shared
-    // accumulator, upkeep is charged, and the scribable list prefers a node the
-    // shelf does not already hold. So the series is a curve now.
+    // `w29` differentiated that stock into `food`, `stone` and `vellum`
+    // (`kinds.ts`), and library upkeep and scribing are paid from `vellum`
+    // alone (`materials.ts`'s `CLAIMANT_KIND`) — a claimant that no longer
+    // competes with subsistence's `food`. Measured over this run: the fall is
+    // **gone**. `libraryDepth` and `capitalContribution` are non-decreasing
+    // across every one of the 2,400 ticks — the run's peak *is* its final
+    // value on both series, exactly (peak `fp(384)`, depth 48 nodes) — even
+    // though `food` still collapses `K` and the population from world year
+    // seventy on. Brake 4 (`applyLibraryUpkeep`) has not net-degraded the
+    // shelf even once in two centuries, because `vellum` never actually runs
+    // out here.
+    //
+    // This is the honest replacement for the old "rises, peaks and falls
+    // back" claim, not a loosened version of it: that claim is now false, and
+    // asserting it (even loosely) would be the same "checked box that is
+    // false" this file's own module note warns against. What is asserted
+    // instead is the property this run actually has — monotonic non-decrease
+    // — as a tripwire in the *other* direction: the day some future change
+    // makes `vellum` scarce enough to force a shed-back again, this fails,
+    // and that is the signal to come back and decide whether the fall-back
+    // claim should return.
     const distinct = [...new Set(run.ticks.map((tick) => tick.capitalContribution))];
     const depths = [...new Set(run.ticks.map((tick) => tick.libraryDepth))];
     const last = run.ticks[run.ticks.length - 1];
@@ -265,32 +312,43 @@ describe('two hundred world years of the reference universe', () => {
         `${String(last?.grimoires ?? 0)} books standing at the end.`,
     );
 
-    // It is a curve rather than a constant. That is the claim the box asked for
-    // and could not make; the *derivative* claim it was written to make is still
-    // not made here, because the series does not merely flatten — it falls, and
-    // asserting "non-increasing growth" over a series that turns negative would
-    // pass for the wrong reason.
+    // It is a curve rather than a constant. That half of the original claim
+    // still holds.
     expect(distinct.length).toBeGreaterThan(2);
     expect(peak).toBeGreaterThan(0);
 
-    // What replaces the books-to-depth tripwire, and what it is a tripwire for
-    // now: the shelf is no longer hundreds of copies of a handful of nodes. It
-    // is roughly one book per distinct node, because a scribe prefers something
-    // the library lacks and because upkeep charges her for every duplicate she
-    // does write. Two books per node would mean the preference has stopped
-    // biting; ten would mean it is gone.
-    expect(last?.grimoires ?? 0).toBeLessThan(2 * (last?.libraryDepth ?? 1));
+    // The books-to-depth ratio, restated at its new measured value. It used
+    // to run close to one book per distinct node under the single-stock
+    // economy, where a scribe's `vellum` competed with the populace's food and
+    // upkeep for the same pool. Decoupled from food, scribing now has more
+    // headroom and duplicates accumulate faster before upkeep's per-instance
+    // cost catches them — measured at 157 books against 48 distinct nodes,
+    // roughly 3.3 books per node. Still comfortably "biting" (nowhere near the
+    // "ten would mean it is gone" ceiling the original comment named), so the
+    // bound below is widened to fit the new measurement with headroom, not
+    // doubled reflexively.
+    expect(last?.grimoires ?? 0).toBeLessThan(4 * (last?.libraryDepth ?? 1));
 
-    // And the fall is brake 4 doing exactly what `mages-and-species/design.md`
-    // said it would: *"beyond some depth the marginal shelf costs more than it
-    // returns."* The materials stock empties around world year seventy, upkeep
-    // goes unpaid, and the library is shed back to what the economy can keep —
-    // a soft equilibrium set by the materials situation rather than a plateau
-    // every universe reaches. The first non-raid channel in the build by which
-    // a *written* copy leaves a universe.
-    expect(peak).toBeGreaterThan(
-      run.ticks[run.ticks.length - 1]?.capitalContribution ?? Number.POSITIVE_INFINITY,
-    );
+    // The replacement for "it falls": it does not, anywhere in the run.
+    // Walked tick by tick rather than compared as peak-vs-last, for the same
+    // reason 9.3 walks every tick instead of every checkpoint — a series that
+    // dipped and recovered between the 20-year windows this file prints would
+    // still read as "never fell" from the endpoints alone.
+    let sawADecrease = false;
+    let previousDepth = 0;
+    let previousCapital = 0;
+    for (const tick of run.ticks) {
+      if (tick.libraryDepth < previousDepth || tick.capitalContribution < previousCapital) {
+        sawADecrease = true;
+      }
+      previousDepth = tick.libraryDepth;
+      previousCapital = tick.capitalContribution;
+    }
+    expect(
+      sawADecrease,
+      'library depth or capital contribution fell at some tick — brake 4 is shedding the shelf ' +
+        'again, and the fall-back claim this test replaced may be true once more',
+    ).toBe(false);
   });
 
   it('9.10 — records the mature-universe mage population vision §13 asked for', () => {

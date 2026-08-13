@@ -221,24 +221,78 @@ describe('contentRevision', () => {
     // portal holds would fight two different battles while their revisions
     // agreed they were compatible. Nothing existing changed a byte.
     //
-    // 2512ea02d2a7569d8d0bacc4c5a926ca -> d37624e36be00f59cf21b87ff6eba144,
-    // when W17 added `autonomy-weight.json` (§2.11) — every magnitude a mage's
-    // choice of *which node to work on* is made of, including the role x
-    // primitive table that makes vision §7's standing role a number. It is in
-    // the preimage for the reason the other three tables are: two universes
-    // whose mages valued the same node differently would be developing
-    // different magic while their revisions agreed they were compatible.
-    // Nothing existing changed a byte.
+    // 2512ea02d2a7569d8d0bacc4c5a926ca -> ec506311ed7aadeb1aaf0e14f5750465,
+    // when the ascension predicates were made to read positive achievement and
+    // five constants joined `god-constant.json`: `ascension-summit-cells`,
+    // `ascension-summit-copies`, `ascension-canon-breadth`,
+    // `ascension-canon-cells` and `ascension-loss-fraction`. Unlike every move
+    // above it, this one is *not* "nothing existing changed a byte" in effect —
+    // no existing record changed, but the rules that read these constants decide
+    // when a run ends, so two universes on either side of this revision would
+    // disagree about whether a game was over. That is exactly what the revision
+    // exists to make incompatible, and it is why the digest is checked rather
+    // than the file list.
     //
-    // d37624e36be00f59cf21b87ff6eba144 -> 6b18886a4b3a2803c0b1b92eb8f8fae8,
-    // when `max-summons-per-side` came down from 16 to 8 to agree with
-    // `primitive.json`'s `summon` cap, which is the same ceiling authored twice
-    // and had disagreed with it since both files existed. A value edit rather
-    // than a new file, and the first entry in this list that is one — which is
-    // the point of a revision over the *values*: two universes that disagreed
-    // about how many summons a side may hold would fight two different battles,
-    // and the digest now says so instead of calling them compatible.
-    expect(registry.contentRevision).toBe('6b18886a4b3a2803c0b1b92eb8f8fae8');
+    // ec506311ed7aadeb1aaf0e14f5750465 -> 61f6aa53e091684809765b1f9020ee96, when
+    // `raid-engagement` added the constants that make a raid fire — the arrival
+    // process, the loot count, and the rival stand-in a warband is drawn from.
+    // They are in the preimage for the reason the god tables are: two universes
+    // that disagreed about how long a portal holds, or about how many books come
+    // off a shelf, would fight two different battles while their revisions agreed
+    // they were compatible.
+    //
+    // W6 and W8 each recorded a successor to 2512ea02 on their own branches —
+    // ec506311 and aeedc362 — because neither contained the other. This tree
+    // contains both sets of constants, so it is a third revision, and that it is
+    // neither of theirs is the whole point of a digest over the preimage rather
+    // than a hand-maintained list.
+    //
+    // 61f6aa53e091684809765b1f9020ee96 -> a622452a3b55e38fd902a2d3264b44d7, when W17 added
+    // `autonomy-weight.json` (§2.11) — every magnitude a mage's choice of *which
+    // node to work on* is made of, including the role x primitive table that
+    // makes vision §7's standing role a number. It is in the preimage for the
+    // reason the other three tables are: two universes whose mages valued the
+    // same node differently would be developing different magic while their
+    // revisions agreed they were compatible. Nothing existing changed a byte.
+    //
+    // Three branches each recorded a successor to 2512ea02 — W6's ec506311,
+    // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
+    // other. This is the revision of the tree that holds all three.
+    //
+    // a622452a3b55e38fd902a2d3264b44d7 -> 2c67315ae04ee6c74dfa204474af4eb6,
+    // when the single undifferentiated materials stock was split into three
+    // material kinds — `food`, `stone`, `vellum` — routed by form and produced
+    // in differing mixes by territory. Unlike most entries above this one is
+    // not "nothing existing changed a byte": every one of the fourteen
+    // `form.json` records gained `yieldWeights` and `tuningStatus`, and every
+    // one of the five `territory.json` records gained `yieldPerLandUnit`. Both
+    // are in the preimage on purpose — two universes that disagreed about
+    // what a form's magic actually yields, or about what a stretch of land
+    // produces, would be running different economies while their revisions
+    // agreed they were compatible.
+    //
+    // `2c67315a` is the digest W29 recorded on its own branch, which reached
+    // that point holding W6's, W8's and W17's constants and the material split
+    // but *not* the value edit below.
+    //
+    // 2c67315ae04ee6c74dfa204474af4eb6 -> ba7be8d68b582e2985e0360bbc7e11b0,
+    // when W29's tree met a `main` that had meanwhile brought
+    // `max-summons-per-side` down from 16 to 8 to agree with `primitive.json`'s
+    // `summon` cap — the same ceiling authored twice, disagreeing since both
+    // files existed. That edit is the first entry in this whole list that
+    // changes a *value* rather than adding a file, which is the point of a
+    // revision taken over the values: two universes that disagreed about how
+    // many summons a side may hold would fight two different battles, and the
+    // digest now says so instead of calling them compatible.
+    //
+    // `main` reached this merge asserting 6b18886a — W17's successor plus that
+    // value edit, taken there without W6's or W8's constants and without the
+    // material split. Neither 6b18886a nor 2c67315a is a competing claim about
+    // *this* tree: each is a claim about a smaller preimage, and this tree's
+    // preimage strictly contains both. ba7be8d6 is therefore the union
+    // arriving, not a disagreement being settled — the same situation the
+    // three-branch paragraph above describes, one level up.
+    expect(registry.contentRevision).toBe('ba7be8d68b582e2985e0360bbc7e11b0');
   });
 
   it('is stable across loads of identical content', () => {

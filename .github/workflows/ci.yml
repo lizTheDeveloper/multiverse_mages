@@ -13,9 +13,40 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Keyed on the *branch the code is on*, not on `github.ref`, which names two
+# different things for the two events that fire for one commit: `refs/heads/foo`
+# for the push, `refs/pull/<n>/merge` for the pull_request. Those are different
+# groups, so neither run cancelled the other and every PR-branch SHA ran the
+# whole matrix twice — measured on c02fb481 as four jobs and 1655 s of compute to
+# produce one 443 s required status, with 26 of the last 100 runs duplicates.
+#
+# The two expressions below are deliberately built from the *same* pair, because
+# `cancel-in-progress` is a property of the incoming run but its effect lands on
+# older runs already in the group. A guard that varies run by run inside one
+# group — the obvious `github.ref != 'refs/heads/main'` — can therefore let a run
+# whose own ref is not main cancel a main run that is. Deriving the group and the
+# guard from one pair makes the guard constant per group, which is the property
+# that makes it sound.
+#
+#   effective repo = head repo of the PR, else this repo
+#   effective ref  = head branch of the PR, else the pushed/dispatched branch
+#
+# The repo component is not decoration: without it a fork PR whose head branch is
+# named `main` would land in this repository's `main` group and could cancel a
+# real `main` run, leaving a merge commit with no green on record. With it, forks
+# get their own groups and `main` runs serialise instead of superseding each
+# other. Cancellation only ever hits the *older* run in a group, so the newest
+# check run for a given name always belongs to the survivor and a cancelled
+# `Verify (pinned Node)` can never mask a newer green one.
+#
+# `push:` stays at '**' on purpose. Narrowing it to main would delete CI for
+# every branch pushed before its PR exists, which is most of them here, and would
+# save nothing on the branches that do have one. `pull_request:` must never be
+# narrowed at all: fork PRs generate no push event, and this workflow is the only
+# gate that may safely see a fork.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: ${{ (github.event.pull_request.head.repo.full_name || github.repository) != github.repository || (github.event.pull_request.head.ref || github.ref_name) != 'main' }}
 
 permissions:
   contents: read
