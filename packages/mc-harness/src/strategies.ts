@@ -1255,7 +1255,15 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'measured (tools/w29/two-universes.mjs, 200 ticks, seed 589825): food 321443 vs 468099, vellum ' +
     '75733 vs 274403, months to raise a university 30 vs 42. The reason the five strategies ' +
     'converged was that permitting a cell had no economic consequence; it now has one. Re-run the ' +
-    'four factor cells before quoting any figure in this entry.',
+    'four factor cells before quoting any figure in this entry. '  +
+    'W63 RE-MEASUREMENT: the Pareto front is still one point and it has moved onto the permit '  +
+    'axis. At n=400 over five arms, permit-then-idle -- two buttons for 140 of 2400 ticks, then '  +
+    'an empty preference list forever -- ascends 40 of 40, ahead of permissive-breadth at 38 of '  +
+    '40 which does the same AND funds, dispenses and encourages; every other member is at 0. So '  +
+    'the pool separates on exactly one thing and it is not play, it is whether the ruleset was '  +
+    'edited. ascension-institutions is the conjunct added against that, and open-then-build is '  +
+    'the probe that shows it reachable. The sentence to delete this entry on is unchanged and '  +
+    'still unmet.',
   'universities-are-founded-and-never-finished':
     'SUPERSEDED BY W29, kept because the measurement it records is still the measurement — what ' +
     'changed underneath it is the mechanism. The clause "advanceConstruction in rules-world has ' +
@@ -1267,7 +1275,13 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'round and founds hundreds. Those are facts about the strategies, not about construction, and ' +
     'a Path A gate on completedUniversities is still inverted for that reason. Re-measure before ' +
     'quoting any number here: every one of them was taken against a build where nothing a laborer ' +
-    'did could finish a site.',
+    'did could finish a site. W63 ACTED ON THIS AND THE INVERSION IS WHY: both ascension paths ' +
+    'now carry an ascension-institutions conjunct, and the inversion recorded above is exactly ' +
+    'what made it untestable from this pool -- permissive-breadth cannot reach fundUniversity ' +
+    'and archivist cannot reach the knowledge conjuncts, so no member both opens the grid and ' +
+    'buys anything. open-then-build is permit-then-idle plus one founding a world year at slot ' +
+    '0, appended for that reason and no other. It is the difference between a predicate that is ' +
+    'wrong and a pool that cannot exhibit it.',
 'noise-floor-submits-axis-actions-bare':
     'uniform-random-legal draws a parameter only when candidateSlotCount says the action has one, ' +
     'and CANDIDATE_SLOTS covers 8–14 alone — actions 1–7 are not §4.4 parameterized actions, so ' +
