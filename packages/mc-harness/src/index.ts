@@ -99,6 +99,8 @@ export type {
   RaidObservation,
   RoleDemographySample,
   RosterSample,
+  SpeciesCellOccupancy,
+  SpeciesCellOccupancySample,
   RunTelemetry,
   SpeciesGridReach,
   SpeciesVersatilitySample,
@@ -117,6 +119,7 @@ export {
   VERSATILITY_HEGEMONY_FRACTION,
   collectLossShockRecovery,
   collectRoleAssignmentDemographicCost,
+  collectSpeciesCellOccupancy,
   collectSpeciesGridVersatility,
 } from './metrics-species-health.js';
 

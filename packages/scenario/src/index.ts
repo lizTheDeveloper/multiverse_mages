@@ -106,3 +106,5 @@ export {
   timeToTierBySpecies,
   windowsOf,
 } from './long-run.js';
+
+export { speciesCellOccupancy } from './species-occupancy.js';
