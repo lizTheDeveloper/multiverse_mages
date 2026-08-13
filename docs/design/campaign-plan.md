@@ -4678,3 +4678,58 @@ the live PR as the source of truth rather than the file.
 This belongs beside the two hazards already recorded in CLAUDE.md — `git stash` being repo-global
 across worktrees, and the shared checkout frequently not being on `main`. **All three are the same
 class: a resource that looks local and is not.**
+
+---
+
+## W93 — raids are 4,525 lines that nothing imports, and the fix for it has been sitting in a PR since the session opened
+
+*2026-08-13. Found by following W89's "package nothing depends on" finding to its conclusion.*
+
+**On `main`, `@mm/rules-raid` has zero dependents.** No `package.json` declares it. **No source file
+in any package imports it.** Every reference to it outside its own directory — in `agent-api`,
+`content`, `coordination`, `mc-harness`, `primitives` — is **a comment or a string literal.**
+
+The code says so plainly. `packages/mc-harness/src/metrics-collectors.ts`:
+
+> `reasonDetail: 'no raid mechanic in this build; rules-raid is a skeleton.'`
+
+**Universes raiding each other through portals, arbitrated by the host's ruleset, is the vision's core
+and the whole premise of live PvP.** It is built — sixteen files, 4,525 lines, arbitration, combat,
+action economy, an engagement view — and on `main` it is unreachable.
+
+### Consequences that were recorded as separate findings
+
+- **The three balance gates resolve zero raids** (W76). Of course they do; the package is not linked.
+- **Two of the four licensed tradition hooks have no simulation path** (W89). `castPolicy` and
+  `costPolicy` are read *only* by `rules-raid`. CLAUDE.md names those four hooks as the **one licensed
+  exception** to content-lives-in-data — and half of the exception hangs off a package nothing imports.
+- **Every raid mechanic this campaign measured came back null.** That is not a finding about raids.
+
+### The fix exists and has never landed
+
+`babe2d8` — *"build(scenario): declare the rules-raid edge that was already licensed"* — is **not on
+`main`.** It lives on `integration/campaign-round-3`, which is **PR #26: 208 files, +28,774/−571,
+nineteen conflicts, `DIRTY` since before this session started.**
+
+**This is the first defect reported to me in this session** — *"`@mm/rules-raid` is imported by
+`packages/scenario/src` and declared in neither its `package.json` nor its `tsconfig`"* — and the
+reason it reads as fixed is that the import was never on `main` either. The whole edge is on the
+integration branch. **The defect and its fix are both somewhere other than where I looked.**
+
+### What to do, and what not to
+
+**Do not land PR #26 to get this.** 28,774 lines across 208 files with nineteen conflicts, much of it
+superseded by work that landed tonight, is not a reviewable change and re-baselining it would be
+uninterpretable.
+
+**Extract the edge instead** — the `scenario` → `rules-raid` dependency, its `package.json` and
+`tsconfig` declarations, and the minimum needed to open one portal — as its own small PR. That is a
+change a person can read, and its baseline movement is a change a person can argue with.
+
+Expect that movement to be large: **a build where raids resolve is a different game from one where
+they cannot**, and every committed baseline was measured on the latter. That is the point, not an
+obstacle.
+
+**And it belongs behind the current re-baselining, not inside it.** Four approved changes already
+invalidate every baseline; a fifth that turns on an entire subsystem should land with its own diff and
+its own argument.
