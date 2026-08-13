@@ -1032,6 +1032,15 @@ invalidates every committed balance baseline.**
 | 9 | knowledge theft |
 | 10 | objective and raid generation |
 | 11 | terrain generation and combatant deployment |
+| 12 | the opening square — which techniques and forms a universe is founded holding |
+
+**Stream 12 is the first append since the baselines were committed, and it is what taught us that
+appending is not free.** The gate compares `provenance.rngRegistryHash` as a block-level refusal,
+and that hash is taken over this whole table — so adding a row invalidates every committed
+baseline *by identity*, before a single number has moved. That is conservative rather than wrong,
+but it means **any** future subsystem addition forces a re-baseline event, and the cost belongs in
+the plan for one rather than being discovered in a red gate. See
+`docs/design/opening-square.md` §5.
 
 Draws key on `(rootSeed, stream, tick, actorKey, drawOrdinal)` where `actorKey` is stable identity,
 never array index. This gives **insertion invariance**: adding a combatant, or adding a draw,
