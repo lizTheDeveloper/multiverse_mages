@@ -223,7 +223,9 @@ is `permits(ruleset, cell)`, evaluated at application time. So:
 - and a god who does **nothing else at all** is indistinguishable from one who does everything.
 
 `permit-then-idle` permits the whole grid across its first 140 rounds and then submits nothing for
-the remaining 2260 ticks. On this hook it is the maximal case.
+the remaining 2260 ticks. It is not quite the maximum — `archivist` beats it 3.19× by growing a
+population of 3529 passive appliers inside the founding twelve cells — but it reaches the maximum
+*breadth* for free, and it is the arm the mechanic was aimed at.
 
 The founding ruleset makes the size of the effect concrete. Twelve of seventy cells are permitted at
 founding — `{intellego, perdo, rego} × {mentem, terram, limen, nomen}` — and they contain **8 of the
@@ -271,7 +273,15 @@ Not built — it needs raids reachable, which is a separate branch. What is inhe
   none? Unlike the economy, the answer is probably yes — which is why the battle half may survive
   the gate that killed this one.
 
-## 8. What this branch contains
+## 8. Where the two design documents cited here live
+
+**Neither `docs/design/raid-engagement.md` nor `docs/design/ages-of-magic.md` is on `main`,** and so
+neither is on this branch. Both are on `design/raid-engagement`, which is where §11c — the ruling this
+whole measurement tests — was written. Quotations above were taken from that branch at
+`c7dab18`. Whoever lands either document should expect this file to start resolving its own
+references.
+
+## 9. What this branch contains
 
 - `tools/w49/applied-use.mjs` — the probe, the predicate, the agreement check and `--check-inert`.
 - A merge of `w29/city-and-supply-chain` (PR #42), because the wire only exists there.
