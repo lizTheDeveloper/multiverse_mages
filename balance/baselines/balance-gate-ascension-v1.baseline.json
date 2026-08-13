@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
-  "contentHash": "8509b55c1a5ab56f20fe7ec31289f274506d9c8932b9dc3df39056e3e0efcdbf",
+  "contentHash": "4be03087bfa2ed3fbd5e942abc26f597623386036c58d82492b2840f3c4e1f79",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":41.54153438717775,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":124.62460316153324,"unit":"grimoires","value":113.53125},
@@ -16,7 +16,9 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1278.7374037681695,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3836.212211304509,"unit":"people","value":5638.59375}
   ],
   "notes": [
-    "Every metric in the passive gates was identical before this regeneration - delta 0.00000 on all ten, in both balance-gate-v1 and balance-gate-horizon-v1 - because neither sweep's strategies ever submit encourageResearch. The ascension sweep, which does, moved every metric inside 0.5 SE: referenceGrimoires +7.78 (0.19 SE), referenceKnowledgeInstances +39.41 (0.12 SE), referenceLivingMages +1.94 (0.50 SE), referenceLibraryDepth -0.91 (-0.27 SE), referenceNodesKnown -0.56 (-0.05 SE), referencePopulation -186.53 (-0.15 SE), referencePeakPopulation 0.00."
+    "No release before 0.5.0 may claim any of this is balanced: every magnitude in the shipped content carries tuningStatus untuned and the balance harness owns all of them -- so this file is a measurement and not a balance claim.",
+    "The universe is still degenerate in the following ways, and one standing note is corrected here. The superseded files said the gate sweeps are 100 percent passive-control and submit no god verb; that is true of balance-gate-v1 and balance-gate-horizon-v1 and FALSE of this one, whose agentPool is the whole eight-strategy pool round-robin. W52 measured the proof: changing what encourageResearch does moved nothing in the other two gates and moved every metric here. Nothing in packages/scenario opens a portal, so no raid runs in any committed sweep and no summon is ever created. Scribing still stops when the materials stock empties. Teaching no longer dies out once the founding grants are taught -- over the reference two hundred years a lesson is taught in every one of the ten twenty-year windows, the thinnest holding 16.",
+    "What moved, measured against the superseded baseline before this file replaced it: balance-gate-v1 and balance-gate-horizon-v1 moved NO metric at all -- delta 0.00000 on all ten in each -- because neither sweep's strategies ever submit encourageResearch. balance-gate-ascension-v1, whose pool does, moved every metric inside 0.5 SE: referenceLivingMages +1.9375 (0.50 SE), referenceGrimoires +7.78125 (0.19 SE), referenceKnowledgeInstances +39.4063 (0.12 SE), referenceLibraryDepth -0.90625 (-0.27 SE), referenceNodesKnown -0.5625 (-0.05 SE), referenceNodesGained -0.5625 (-0.05 SE), referenceNodesGainedFinalQuarter -0.0625 (-0.04 SE), referencePopulation -186.531 (-0.15 SE), referencePopulationChange -186.531 (-0.15 SE), referencePeakPopulation 0.00000."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -26,22 +28,22 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "W52 moved the god's encourageResearch from research-rate to a target-appeal term: target-emphasis-divisor 1 and target-bound-emphasis fp(256) in autonomy-weight.json, and the rate contribution removed from godEffectHooks. contentRevision therefore moved 6b18886a4b3a2803c0b1b92eb8f8fae8 -> 591880dd878fc50d42090d11cded5223 and the provenance check refuses the old file.",
+  "rationale": "W52 moved the god's encourageResearch from research-rate to a target-appeal term: target-emphasis-divisor 1 and target-bound-emphasis fp(256) in autonomy-weight.json, and the rate contribution removed from godEffectHooks. contentRevision therefore moved 6b18886a4b3a2803c0b1b92eb8f8fae8 -> 591880dd878fc50d42090d11cded5223, and the provenance check refuses the superseded file across two builds by design. Re-recorded once, deliberately, not to make a gate go green mid-iteration.",
   "rootSeed": 20260811,
   "runCount": 32,
   "supersededDeltas": [
-    {"delta":7.78125,"deltaInStandardErrors":0.18761263097919334,"metricId":"referenceGrimoires","previousValue":105.75,"value":113.53125},
-    {"delta":39.40625,"deltaInStandardErrors":0.12216773110982622,"metricId":"referenceKnowledgeInstances","previousValue":2035.25,"value":2074.65625},
-    {"delta":-0.90625,"deltaInStandardErrors":-0.2665185162440936,"metricId":"referenceLibraryDepth","previousValue":24.9375,"value":24.03125},
-    {"delta":1.9375,"deltaInStandardErrors":0.49987461979416986,"metricId":"referenceLivingMages","previousValue":69.5,"value":71.4375},
-    {"delta":-0.5625,"deltaInStandardErrors":-0.051767818938494706,"metricId":"referenceNodesGained","previousValue":55.625,"value":55.0625},
-    {"delta":-0.0625,"deltaInStandardErrors":-0.036851549044646804,"metricId":"referenceNodesGainedFinalQuarter","previousValue":3.75,"value":3.6875},
-    {"delta":-0.5625,"deltaInStandardErrors":-0.051767818938494706,"metricId":"referenceNodesKnown","previousValue":58.125,"value":57.5625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":113.53125,"value":113.53125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":2074.65625,"value":2074.65625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":24.03125,"value":24.03125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":71.4375,"value":71.4375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":55.0625,"value":55.0625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":3.6875,"value":3.6875},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":57.5625,"value":57.5625},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":19381,"value":19381},
-    {"delta":-186.53125,"deltaInStandardErrors":-0.1464470466972668,"metricId":"referencePopulation","previousValue":5969.125,"value":5782.59375},
-    {"delta":-186.53125,"deltaInStandardErrors":-0.1464470466972668,"metricId":"referencePopulationChange","previousValue":5825.125,"value":5638.59375}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":5782.59375,"value":5782.59375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":5638.59375,"value":5638.59375}
   ],
-  "supersedes": "d8a528c3d08b11b29c605248ce186168e99fe65cd41bb01204a6a0ff18c4a624",
+  "supersedes": "8509b55c1a5ab56f20fe7ec31289f274506d9c8932b9dc3df39056e3e0efcdbf",
   "sweepId": "balance-gate-ascension-v1",
   "toleranceK": 3
 }

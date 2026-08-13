@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "f3627e0648c70f2f7990a10ef4311d7d6c68095ef32e5c20539dfa067a8ab220",
+  "contentHash": "e19f6e03197034f5798846c9adbcd3f96e37d05581912909c80d0088b64acb9f",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":7.588667268919316,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":22.76600180675795,"unit":"grimoires","value":353.605},
@@ -16,7 +16,9 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.2659744572978604,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.797923371893581,"unit":"people","value":67.645}
   ],
   "notes": [
-    "Every metric in the passive gates was identical before this regeneration - delta 0.00000 on all ten, in both balance-gate-v1 and balance-gate-horizon-v1 - because neither sweep's strategies ever submit encourageResearch. The ascension sweep, which does, moved every metric inside 0.5 SE: referenceGrimoires +7.78 (0.19 SE), referenceKnowledgeInstances +39.41 (0.12 SE), referenceLivingMages +1.94 (0.50 SE), referenceLibraryDepth -0.91 (-0.27 SE), referenceNodesKnown -0.56 (-0.05 SE), referencePopulation -186.53 (-0.15 SE), referencePeakPopulation 0.00."
+    "No release before 0.5.0 may claim any of this is balanced: every magnitude in the shipped content carries tuningStatus untuned and the balance harness owns all of them -- so this file is a measurement and not a balance claim.",
+    "The universe is still degenerate in the following ways. This sweep is 100 percent passive-control and submits no god verb, which is why W52 -- moving encourageResearch from a research rate to a target-appeal term -- moved not one of its ten metrics by a single count. Nothing in packages/scenario opens a portal, so no raid runs in any committed sweep and no summon is ever created. Scribing still stops when the materials stock empties. Teaching no longer dies out once the founding grants are taught -- that note was carried by the superseded files and is now measurably false: over the reference two hundred years a lesson is taught in every one of the ten twenty-year windows, the thinnest holding 16.",
+    "What moved, measured against the superseded baseline before this file replaced it: balance-gate-v1 and balance-gate-horizon-v1 moved NO metric at all -- delta 0.00000 on all ten in each -- because neither sweep's strategies ever submit encourageResearch. balance-gate-ascension-v1, whose pool does, moved every metric inside 0.5 SE: referenceLivingMages +1.9375 (0.50 SE), referenceGrimoires +7.78125 (0.19 SE), referenceKnowledgeInstances +39.4063 (0.12 SE), referenceLibraryDepth -0.90625 (-0.27 SE), referenceNodesKnown -0.5625 (-0.05 SE), referenceNodesGained -0.5625 (-0.05 SE), referenceNodesGainedFinalQuarter -0.0625 (-0.04 SE), referencePopulation -186.531 (-0.15 SE), referencePopulationChange -186.531 (-0.15 SE), referencePeakPopulation 0.00000."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -26,7 +28,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "W52 moved the god's encourageResearch from research-rate to a target-appeal term: target-emphasis-divisor 1 and target-bound-emphasis fp(256) in autonomy-weight.json, and the rate contribution removed from godEffectHooks. contentRevision therefore moved 6b18886a4b3a2803c0b1b92eb8f8fae8 -> 591880dd878fc50d42090d11cded5223 and the provenance check refuses the old file.",
+  "rationale": "W52 moved the god's encourageResearch from research-rate to a target-appeal term: target-emphasis-divisor 1 and target-bound-emphasis fp(256) in autonomy-weight.json, and the rate contribution removed from godEffectHooks. contentRevision therefore moved 6b18886a4b3a2803c0b1b92eb8f8fae8 -> 591880dd878fc50d42090d11cded5223, and the provenance check refuses the superseded file across two builds by design. Re-recorded once, deliberately, not to make a gate go green mid-iteration.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
@@ -41,7 +43,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":211.645,"value":211.645},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":67.645,"value":67.645}
   ],
-  "supersedes": "3ad58321a099674cfd2e16ed7e21dfdb96b28b6397a1d80d2391dbdbf5a7bf95",
+  "supersedes": "f3627e0648c70f2f7990a10ef4311d7d6c68095ef32e5c20539dfa067a8ab220",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }
