@@ -85,7 +85,12 @@ export {
 
 export { floorDiv } from './fixed-point/divide.js';
 
-export type { Fixed } from './fixed-point/fixed-point.js';
+export type {
+  AnnihilationSentinel,
+  Fixed,
+  FixedPointAnnihilation,
+  FixedPointOperation,
+} from './fixed-point/fixed-point.js';
 export {
   FP_INT_MAX,
   FP_INT_MIN,
@@ -93,8 +98,10 @@ export {
   FP_MIN,
   FP_ONE,
   FP_SHIFT,
+  annihilationSentinelInstalled,
   div,
   fromInt,
+  installAnnihilationSentinel,
   lerp,
   mul,
   toInt,
