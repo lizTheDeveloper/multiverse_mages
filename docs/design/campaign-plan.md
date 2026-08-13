@@ -2196,3 +2196,79 @@ assumed file order was measuring a different species than it reported.
 **`contentRevision` sits inside the hashed header**, so snapshot-hash comparison is useless as an
 inertness check across a content ablation — the hash moves because the content moved, whatever the
 behaviour did.
+
+---
+
+## The root under the root cause: this game has no concept of a mage *doing* anything
+
+W49 was sent to build mētis accrual from applied use, with one gating question to answer first:
+**does an idle god's universe apply magic to its economy anyway?** If it does, the mechanic is
+decoration. The answer came back in an hour and it is worse than a null:
+
+> **"No mage in this game ever applies magic to anything."**
+
+Three facts, each verified:
+
+- **Application is passive.** `universeEconomyBonuses` reads `KNOWLEDGE_INSTANCE` every tick and
+  derives its multipliers from what mages **know**. Not from what they do.
+- **The autonomy goal registry has nine entries and none of them is an applied-use activity.** A mage
+  can research, teach, scribe, and so on — she cannot *work*.
+- **The economy's labour is populace cohorts, not mages.** The people who farm and quarry are not the
+  people who know magic.
+- Measured: the zero-god-input arm applies magic on **96.7% of ticks**, because *knowing is applying*.
+
+**So there is no distinction between having knowledge and using it**, and every mechanic that depends
+on that distinction is unbuildable as specified — mētis from use most obviously, but also
+publish-or-perish's *"practice is an operation somebody has to perform"*, and `ages-of-magic.md`'s
+whole account of a working mage whose fundamentals stay fresh through use.
+
+### This is a better explanation of the negative control than any we have had
+
+The campaign has spent forty sweeps asking why `permit-then-idle` wins. Here is the structural answer:
+
+> **If magic is a passive property of what a universe knows, then acquiring knowledge is the only
+> verb that exists, and the god's only lever on it is permitting more.** Which is exactly, and
+> exclusively, what `permit-then-idle` does.
+
+Every other god verb — fund, bless, encourage, grant, assign — tries to influence *how* a universe
+practises. There is no practice to influence.
+
+### And the economy wire rewards the idle bot more than anyone
+
+The sharpest finding in the report, and it inverts the reason the wire was built:
+
+> **The only god lever on the economic path is the permit gate, and it points the wrong way.** The
+> twelve founding-permitted cells hold **8 of the 74 economic nodes** — all Terram. Opening the grid
+> multiplies reachable economic content **ninefold**, and opening the grid is the one thing
+> `permit-then-idle` does.
+
+W29's wire was built to give the god's verbs marginal value. Measured against this, it gives the
+*permit* verb ninefold value and the other nine verbs none — which is the negative control's thesis
+with a larger number attached.
+
+**This does not make the wire wrong.** Connecting authored effects to the world was necessary and its
+causal proof stands. It means the wire alone cannot produce the result it was aimed at, and nobody
+had measured which verb it actually pays.
+
+### What follows
+
+**Mētis-from-use is blocked on a prerequisite nobody had named: application must become an
+activity.** A mage must be able to *work* — to spend her time applying a cell to a site — and that
+work must be distinguishable from merely holding the node. Until then there is no "use" for use-based
+mechanics to accrue from, and the cheapest wrong move would be to accrue mētis from *knowing*, which
+would reward the idle bot a third time.
+
+That is a significant piece of design, not a fix, and it is now the highest-value open question in
+the project. It also reframes several things already ruled:
+
+- **`encourageResearch` reordering the queue** (W52, in flight) becomes more important, not less —
+  it is currently the *only* proposal that gives a god verb a non-permit lever.
+- **The stationed set's three-way tension** (`ages-of-magic.md` §2b) assumes mages allocate their
+  hours between teaching, researching and defending. Two of those three exist.
+- **Territory and siting** produce different materials, and W24 measured real divergence — but no mage
+  is standing in the delta making it happen.
+
+W49 also found and fixed a defect in its own instrument: `defineWorldSimulation` takes one argument,
+so its `onReport` callback was silently dropped and the agreement check was printing *"clean"* without
+ever evaluating. It reported this rather than quietly repairing it, and confirmed the applied-use
+figures were unchanged by the fix.
