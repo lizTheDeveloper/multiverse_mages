@@ -28,7 +28,77 @@ Magnitudes the spec leaves open go into validated content data as `tuningStatus:
 
 ---
 
-## Where this stands — read this first
+## The answer, found 2026-08-13
+
+*This section replaced an earlier "where this stands" that led with a diagnosis three times
+superseded. Everything below is the record in the order it was found, corrections included. Read this,
+then jump to W85–W88 for the current front.*
+
+### Why every universe looks the same
+
+**Not the plumbing. The content.**
+
+The campaign spent weeks on mechanisms that move knowledge around — teaching, migration, libraries,
+acquisition order. The teaching boundary shipped (W87) and settled it: with teaching sealed between
+institutions, **migration measured at zero**, books shelving per-library and knowledge capital already
+own-university, two academies **still reach 49–51 of the same 51 nodes.** They have no channel between
+them at all and end up identical anyway.
+
+**They converge by content exhaustion, not by exchange. The container holds; there is one thing to put
+in it.**
+
+Two facts about the content explain it, and both are cheap to fix because both are data:
+
+1. **`researchCost` is a pure function of tier** (W79). All 300 nodes, six distinct values, none
+   deviating. `compareTargets` orders by cost then node id, so within a tier *everything* ties and the
+   ordering is entirely a content-interning artifact. Even a value-aware acquirer would have nothing to
+   value.
+2. **Every universe opens on the same twelve cells**, reaching **51 of 300 nodes** (W82). A seeded
+   opening square of the same size reaches **236**, and takes within-strategy containment from 0.980 to
+   0.250.
+
+### The two failure shapes that hid it
+
+**The instrument does not touch the thing** — five instances (W81): ten of fifteen metrics with no
+production caller; gate tolerances at ±118% of mean with 80 of 80 collapse-to-zero events passing; all
+three gates resolving **zero raids**; the ablation mask never reaching the god subsystem; and a
+regenerator silently eating a provenance disclaimer.
+
+**The simulation does not touch the mechanic** — five more (W85): `advanceConstruction` and
+`applyLibraryUpkeep` have definitions and **no production callers**, so `world-step.ts` passes literal
+`0` for construction and library upkeep every tick; `UNIVERSITY_STAFF` is declared and never read, so
+every university draws from one global scribe pool; `carriedPrestige` and `legacyGrant` are unreachable.
+
+**Together: "the symbol exists" and "a test covers it" are both compatible with "the game never runs
+it."** `check:consumption` asks this for primitives. Nothing asked it for functions, components or
+constants — `w86/reachability` is building that gate, and it is worth more than any single fix on this
+board.
+
+### What is fixed
+
+- **The founding complaint is closed** (W84). `permit-then-idle` — permit the grid for 140 ticks, then
+  submit nothing for 2260 — goes **40/40 → 0/40**, while `open-then-build` holds 40/40. **320 of 400
+  paired runs bit-identical**: exactly the 80 runs of the two ruleset-only strategies changed.
+- **Publish-or-perish closes** (W88). Practice roughly doubles second-century teaching and returns
+  library depth from 14.6 to 30.9.
+- **Worship depends on what magic is for** (W81). `daily` vs `spectacle` goes +23.0% → +48.8%, against
+  a −13.4% overall effect predicted from content *before* the measurement was run.
+- **Two combat primitives now cast** (W76): `area-denial` 0 → 10,182 applications, `blink` 0 → 284.
+
+### Claims in this document now known false
+
+- ~~The win condition is a button on a passive clock~~ — `ceb1492` closed it; the defect is one step over.
+- ~~Practice drives orcs extinct~~ — orc is already marginal on `main`: mean 1.22 mages, **zero on 11 of
+  32 seeds** with no practice in the tree.
+- ~~Library maintenance is already built~~ — built, and never called.
+- ~~Grants are the only teachable knowledge~~ — false under True Naming, which sets every instance to 1024.
+- ~~`affiliate` is the existing door for cross-university transfer~~ — it never fires, in any run.
+- ~~Seed beats strategy~~ — an artifact of round-robin assignment giving strategies disjoint replicates.
+- ~~Permits cost 98,304 favor~~ — 96. `favorCost` is typed `Fp`.
+
+---
+
+## Where this stands — the earlier summary, superseded 2026-08-13
 
 *Written 2026-08-13, after the day that answered the campaign's question. Everything below this
 section is the record in the order it was found, including the parts later shown wrong. That order is
