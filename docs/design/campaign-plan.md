@@ -2602,3 +2602,71 @@ combatant does not stand in a field choosing a node that does nothing, and the c
 above says so — *"a refusal that costs a tick is a behavioural bug wearing a safety check's
 clothes."* The correct test is *does this node do anything in an engagement*, which is the seven
 `COMBAT_PRIMITIVES`, not the one.
+
+---
+
+## No NaN contamination — and two findings that matter more than the one we were hunting
+
+**Verdict: clean, and negative-controlled.** Zero non-integer values crossed into state across a
+2,400-tick reference run and eight strategy arms — **74,859,594** writes through the unchecked door
+and **12,789,123** through the checked one. The probe was **proven able to fire first** (2 of 2
+injected NaNs caught, one per door), and the run's snapshot hash matched the committed
+`6ed339c6d1dea724` exactly, so the instrument did not perturb what it measured.
+
+A state *sweep* can never work, which is worth recording: **by read time a NaN is already `0`.** The
+check watches values **as written**, at the only two doors.
+
+### The specimen for "how did 3,900 tests miss this"
+
+`packages/rules-world/test/unit/economy-materials.test.ts:37` declares its helper with:
+
+    resourceYieldBonuses: readonly number[] = []
+
+Two tests pass a non-empty list and prove `resourceYieldMultiplier` stacks correctly. **Not one test
+of `materialsProduced` overrides that default — and the default is character-for-character the `[]`
+that `world-step.ts:772` passes in production.**
+
+> **The suite verified the function and never the wiring.** The test's own convenience default *is*
+> the production defect.
+
+Same shape for `assertRepresentable`: it had tests, they asserted out-of-range rejection, and none
+ever handed it a NaN. This is the whole answer to the author's question, and it is a category of test
+the project lacked rather than carelessness in the ones it has.
+
+### FINDING 1 — the balance gates cannot see a doubling
+
+Two of the three gates play **no god verbs at all** (`worldTickCap` 60 and 240, `passive-control`
+only). The third pools all eight arms — **whose outcomes span 40×** — into one mean, with tolerance
+set at 3× that pooled standard error:
+
+> **±118% of mean for `referenceGrimoires`. ±136% for `referenceNodesGainedFinalQuarter`.**
+>
+> **A mechanic could double knowledge output and the gate would pass.**
+
+This is a better explanation of eight null results than any mechanism theory. The instrument that
+declared them null has tolerances wider than the effects being looked for, and two thirds of it never
+exercises the verbs under test. **Every null this campaign has recorded needs re-reading against
+that**, and no baseline cut before it is fixed can mean what §11's parity rule claims an even MINOR
+means.
+
+### FINDING 2 — the float ban does not cover `packages/coordination/src`
+
+`CLAUDE.md`'s first non-negotiable constraint is no floating point in the rules path. **eslint's
+`RULES_SRC` omits `packages/coordination/src` while `check-purity.mjs` treats it as rules path** — so
+the two disagree about what the rule covers, and four raw-division sites sit in the gap:
+`god/ascension.ts:336,337` and `god/interventions.ts:441,798`.
+
+### The 1.9% question, answered a second way and agreeing
+
+Independently of W56's ×24 discovery, W55 reached the same verdict by arithmetic: `CastArbiter#effectsOf`
+uses `requireRegistryNode`, **which throws on a miss**, and compares strings on both sides — no
+mismatch is possible. And the numbers predict the result without any measurement: direct-damage is
+fp(276) **once per cast** behind an evasion roll, 0.42% of max HP, while `summon-damage` is fp(2048)
+**per tick per summon** up to eight. **One summon out-damages an entire cast 7.4× in a single tick.**
+
+Two agents, two methods, same answer. That is the strongest form of confirmation this campaign gets.
+
+### Scope, stated rather than implied
+
+The clean bill covers the reference run and all eight arms. It does **not** cover `rules-raid`'s
+engagement path, because nothing opens a portal at this build and **no engagement tick ever ran.**
