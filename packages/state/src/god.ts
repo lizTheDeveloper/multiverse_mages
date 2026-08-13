@@ -43,6 +43,7 @@
  */
 
 import type { EntityHandle, SimState } from '@mm/sim-core';
+import { floorDiv } from '@mm/sim-core';
 
 import {
   BLESSING,
@@ -148,8 +149,12 @@ export function selfDiscoveredNodes(state: SimState, universe: EntityHandle): nu
 export function foundingGrantsRemaining(state: SimState, universe: EntityHandle): number {
   const row = readGrantBudget(state, universe);
   if (row === undefined) return Number.POSITIVE_INFINITY;
+  // `floorDiv` rather than `Math.floor(a / b)`: float division is banned in the
+  // rules path, and the ban is not pedantry here — these are counts today and a
+  // reader copying the shape into a fixed-point quantity would inherit a defect
+  // that only appears at magnitudes no test reaches.
   const earned =
-    row.accrualNodes === 0 ? 0 : Math.floor(selfDiscoveredNodes(state, universe) / row.accrualNodes);
+    row.accrualNodes === 0 ? 0 : floorDiv(selfDiscoveredNodes(state, universe), row.accrualNodes);
   const authorized = Math.min(row.startingGrants + earned, row.cap);
   return Math.max(0, authorized - row.grantsUsed);
 }

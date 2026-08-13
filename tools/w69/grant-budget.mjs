@@ -362,7 +362,8 @@ function main() {
     process.stdout.write('   (budget unbounded, so this is every grant each strategy wants)\n\n');
     process.stdout.write(
       `   ${pad('strategy', 22)}${num('runs', 5)}${num('ticks', 8)}${num('mask open', 11)}` +
-        `${num('asked', 8)}${num('granted', 9)}${num('nodes', 8)}\n`,
+        `${num('no cands', 10)}${num('unafford', 10)}${num('asked', 7)}${num('granted', 9)}` +
+        `${num('nodes', 8)}${num('illegal', 9)}\n`,
     );
     const reach = {};
     for (const strategyId of POOL) {
@@ -371,8 +372,10 @@ function main() {
       reach[strategyId] = summary;
       process.stdout.write(
         `   ${pad(strategyId, 22)}${num(summary.n, 5)}${num(summary.ticks, 8)}` +
-          `${num(summary.maskOpenTicks, 11)}${num(summary.grantSubmissions, 8)}` +
-          `${num(summary.grantsUsedTotal, 9)}${num(summary.illegalActions, 9)}\n`,
+          `${num(summary.maskOpenTicks, 11)}${num(summary.closedCandidatesEmpty, 10)}` +
+          `${num(summary.closedUnaffordable, 10)}${num(summary.grantSubmissions, 7)}` +
+          `${num(summary.grantsUsedTotal, 9)}${num(summary.nodesKnownMean.toFixed(1), 8)}` +
+          `${num(summary.illegalActions, 9)}\n`,
       );
     }
     result.arms.reach = reach;
