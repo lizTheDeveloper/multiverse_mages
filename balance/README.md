@@ -114,10 +114,10 @@ reproducible from a file in this directory:
 
 | metric, at 240 ticks | `denial-warden` | `narrow-depth` | `passive-control` | `permissive-breadth` | spread over all eight arms |
 |---|---|---|---|---|---|
-| `referenceNodesKnown` | 5.00 | 7.63 | 41.63 | 75.38 | **15.1x** |
-| `referenceLibraryDepth` | 3.25 | 7.63 | 18.13 | 37.75 | **11.6x** |
-| `referenceGrimoires` | 59.25 | 342.88 | 344.75 | 339.63 | **5.8x** |
-| `referenceNodesGainedFinalQuarter` | **-4.75** | **-3.25** | +7.00 | +17.00 | **sign change** |
+| `referenceNodesKnown` | 4.75 | 7.88 | 42.12 | 74.50 | **15.7x** |
+| `referenceLibraryDepth` | 3.12 | 7.88 | 19.62 | 37.25 | **11.9x** |
+| `referenceGrimoires` | 48.25 | 354.50 | 317.75 | 273.12 | **7.8x** |
+| `referenceNodesGainedFinalQuarter` | **-4.88** | **-3.25** | **+7.12** | **+16.75** | **sign change** |
 
 The last row is the interesting one: under `denial-warden` and `narrow-depth` the universe is
 **losing** distinct nodes faster than it finds them in its final quarter, and under
@@ -257,24 +257,24 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 5.4 % | 6.9 % | 12.0 % | 17.7 % |
-| `referenceKnowledgeInstances` | 2.1 % | 2.6 % | 5.7 % | 6.5 % |
-| `referenceLibraryDepth` | 12.4 % | 12.3 % | 22.5 % | 18.0 % |
-| `referenceLivingMages` | 0.8 % | 1.6 % | 3.0 % | 5.4 % |
-| `referenceNodesGained` | 2.3 % | 1.2 % | 2.9 % | 1.9 % |
-| `referenceNodesGainedFinalQuarter` | — | 4.2 % | 13.1 % | 8.9 % |
-| `referenceNodesKnown` | 1.9 % | 1.2 % | 2.7 % | 1.8 % |
-| `referencePeakPopulation` | 0.0 % | 5.1 % | 21.3 % | 4.2 % |
-| `referencePopulation` | 1.0 % | 1.7 % | 2.8 % | 7.7 % |
-| `referencePopulationChange` | 9.2 % | 5.2 % | 8.8 % | 7.8 % |
+| `referenceGrimoires` | 5.4 % | 6.9 % | 12.7 % | 17.2 % |
+| `referenceKnowledgeInstances` | 2.1 % | 2.6 % | 5.9 % | 6.2 % |
+| `referenceLibraryDepth` | 12.4 % | 12.3 % | 21.0 % | 13.9 % |
+| `referenceLivingMages` | 0.8 % | 1.6 % | 3.1 % | 8.8 % |
+| `referenceNodesGained` | 2.3 % | 1.2 % | 2.9 % | 2.9 % |
+| `referenceNodesGainedFinalQuarter` | — | 4.2 % | 12.2 % | 24.0 % |
+| `referenceNodesKnown` | 1.9 % | 1.2 % | 2.7 % | 2.8 % |
+| `referencePeakPopulation` | 0.0 % | 5.1 % | 17.2 % | 4.2 % |
+| `referencePopulation` | 1.0 % | 1.7 % | 2.7 % | 7.6 % |
+| `referencePopulationChange` | 9.2 % | 5.2 % | 8.5 % | 7.7 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
 
 Both multi-strategy gates carry **80 further lines each**, one per `(metric, strategy)`. That is
 where their power actually lives; the column above is a summary of a mean taken over eight
-strategies that do very different things. Agency arm lines: median MDE 13.4 %, 78 of 80 below
-100 %. Ascension arm lines: median 14.1 %, 73 of 80 below 100 %.
+strategies that do very different things. Agency arm lines: median MDE 12.9 %, 78 of 80 below
+100 %. Ascension arm lines: median 11.7 %, 72 of 80 below 100 %.
 
 `referencePeakPopulation` on the five-year gate has an MDE of exactly zero — its jackknife standard
 error is 0, because the peak is 216 in all 200 runs, so the gate demands exact equality. That is the
@@ -283,7 +283,15 @@ estimator behaving as designed and it is the one line gating perfectly.
 ### What this looked like before 2026-08-12, and why
 
 The 200-year gate was incapable of detecting almost anything. Both columns below are the **same
-build** — the merged tree — so the difference is the statistic and nothing else:
+build** — the merged tree as it stood on 2026-08-12 — so the difference is the statistic and
+nothing else.
+
+**Read the right-hand column as dated, not as current.** It is deliberately not refreshed when a
+baseline is regenerated, because the whole point of the table is that one build is held fixed while
+the statistic changes; refreshing it from a build that also changed the simulation would confound
+exactly the comparison it exists to make. For today's figures use the power table above — they have
+since moved, most sharply on `referenceNodesGainedFinalQuarter`, which the section on the blind arm
+lines explains.
 
 | metric | MDE before | MDE now |
 |---|---|---|
@@ -363,17 +371,33 @@ fails trades false negatives for false positives and produces a gate people lear
 is worse than a blunt one — a blunt gate at least fails honestly when it fails. Every number above
 moved because the *estimator* was corrected.
 
-### The nine arm lines that are still blind
+### The ten arm lines that are still blind
 
-Of the 160 arm lines across the two multi-strategy gates, **9 still have a tolerance wider than
+Of the 160 arm lines across the two multi-strategy gates, **10 still have a tolerance wider than
 their own value.** They are named individually in `gate-power.test.ts`, which fails if the set
 changes in either direction.
 
-Seven of the nine are `denial-warden`, whose whole purpose is to suppress discovery to nearly
+Seven of the ten are `denial-warden`, whose whole purpose is to suppress discovery to nearly
 nothing: an arm that gains a fraction of a node has no meaningful *proportional* tolerance, because
 the denominator is almost zero. That is a fact about the strategy, not a slack tolerance, and more
 replicates buy only √n against it. They are listed rather than thresholded so that nobody reads
 "the gate was fixed" as "the gate sees everything".
+
+**The tenth is different in kind, and it is a loss of coverage rather than a fact about a
+strategy.** `referenceNodesGainedFinalQuarter@portal-rush` was sharp until `w60/daily-relevance`,
+at 6.25 nodes gained in the final quarter against a tolerance of 2.65. On the merged tree it
+measures **0.75**, a fall of 88 % and 6.22 standard errors, which is the largest single movement
+either multi-strategy gate has recorded. The line is blind now because its own value collapsed, not
+because the tolerance was widened -- and the consequence is that the 200-year gate can no longer
+police late-run discovery under the one strategy in which it just stopped.
+
+Two things follow, and neither is fixable by adding replicates. **The arm went blind for the same
+reason it is interesting**, so the gate is least sensitive exactly where this build changed most.
+And the sweep-level `referenceNodesGainedFinalQuarter` line was dragged with it: its minimum
+detectable effect went from 8.9 % to **24.0 %**, still gating, but a third as sharp as it was. The
+honest reading is that daily relevance bought a mechanic and spent some of this gate's power on it.
+That trade is recorded here rather than argued away, because the alternative -- a list that grows
+in silence -- is the failure mode this section exists to prevent.
 
 ### How to read "power" for a deterministic sweep
 
@@ -398,8 +422,8 @@ So the claim this directory can support is the first, and it is the one to quote
 
 > **The five-year and twenty-year gates detect any uniform proportional change larger than
 > 0.8–12.4 % of a metric's value, with probability 1. The twenty-year agency gate detects one larger
-> than 2.7–22.5 % at sweep level and 0.8–217 % per strategy arm, median 13.4 %. The 200-year gate
-> detects one larger than 1.8–18.0 % at sweep level and 0–300 % per arm, median 14.1 %. All four
+> than 2.7–21.0 % at sweep level and 0.8–217 % per strategy arm, median 12.9 %. The 200-year gate
+> detects one larger than 2.8–24.0 % at sweep level and 0–897 % per arm, median 11.7 %. All four
 > detect a uniform change smaller than those figures with probability 0, at any sample size.**
 
 ## Running a sweep on more cores than you have
