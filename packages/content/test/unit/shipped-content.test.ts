@@ -60,12 +60,12 @@ describe('shipped content', () => {
       species: 6,
       traditions: 3,
       territories: 5,
-      primitives: 16,
+      primitives: 17,
       // One per action id in contracts.md §4.2, and one per magnitude the
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.
       godCosts: 16,
-      godConstants: 69,
+      godConstants: 70,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of
       // them are the composition root's rather than the engine's — how many
@@ -356,7 +356,14 @@ describe('shipped content', () => {
     }
     const registered = registry.primitives.map((entry) => entry.record.id);
     const uncovered = registered.filter((id) => !declared.has(id)).sort();
-    expect(uncovered).toEqual([]);
+    // `library-legacy` is the one primitive no node carries, and the exclusion
+    // is the claim rather than an oversight: its magnitude is a count of titles
+    // on a shelf, which is a property of the civilization and not of a working,
+    // so a node authoring it would be authoring the wrong thing. The reasoning
+    // lives with the coverage exclusion in `rules-magic/effects/coverage.ts`;
+    // this assertion is narrowed to the same one name so that a *second*
+    // uncarried primitive still fails here.
+    expect(uncovered).toEqual(['library-legacy']);
   });
 
   it('confines the portal primitive to rego-limen', () => {

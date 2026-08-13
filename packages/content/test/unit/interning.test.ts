@@ -330,7 +330,7 @@ describe('contentRevision', () => {
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of file names.
     //
-    // 6973d2c55f6d7788bbaa6886e507bbde -> 0300687b08567c65a1b1ac31cf32e720,
+    // 6973d2c55f6d7788bbaa6886e507bbde -> 947f84e5adc4572932b606e72d2c1e9a,
     // when `dailyRelevance` was added to `cell.json` (§2.2) and authored for all
     // seventy cells in one pass — the share of ordinary people whose daily life
     // a cell touches, reasoned cell by cell in
@@ -347,7 +347,7 @@ describe('contentRevision', () => {
     // pay their gods different favor for identical play, and a raid arbitrated
     // by the host's ruleset would price the guest's magic by numbers the guest
     // never agreed to.
-    expect(registry.contentRevision).toBe('0300687b08567c65a1b1ac31cf32e720');
+    expect(registry.contentRevision).toBe('947f84e5adc4572932b606e72d2c1e9a');
   });
 
   it('is stable across loads of identical content', () => {

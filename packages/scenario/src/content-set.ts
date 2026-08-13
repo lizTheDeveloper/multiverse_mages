@@ -448,6 +448,7 @@ export function worldDeps(
       // a cell this map had skipped. The lookup's fallback is the identity, so
       // that failure would read as "the mechanic stopped applying" rather than
       // as an error — which is the kind of defect that survives a release.
+      libraryLegacy: primitiveNamed(registry, 'library-legacy'),
       cellRelevance: new Map(
         registry.cells.map((entry) => [entry.contentId, entry.record.dailyRelevance]),
       ),

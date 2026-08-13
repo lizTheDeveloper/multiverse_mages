@@ -58,6 +58,7 @@ import {
   readUniverse,
 } from '@mm/state';
 import { MASTERY_MAX } from '@mm/rules-magic';
+import { ablationMaskFor } from '@mm/primitives';
 
 import type { GodDeps } from '../../src/index.js';
 import { defineWorldSimulation } from '../../src/index.js';
@@ -108,6 +109,12 @@ interface Case {
   readonly interdicted?: readonly ContentId[];
   /** Whether to seed an instance of the carrier at all. */
   readonly seedInstance?: boolean;
+  /** Distinct titles shelved in a library, feeding `library-legacy`. */
+  readonly shelvedTitles?: number;
+  /** Overrides the `legacy-yield-per-node` constant. `0` switches the channel off. */
+  readonly legacyPerNode?: Fixed;
+  /** A primitive id to neutralize through §9's mask. */
+  readonly ablate?: string;
 }
 
 /**
@@ -122,14 +129,25 @@ interface Case {
 function favorAfter(options: Case): Fixed {
   const { nodeId } = carrier();
   const deps = godlyWorldDeps(traditionId());
+  const base = godDeps();
   const god: GodDeps = {
-    ...godDeps(),
+    ...base,
     ...(options.relevance === undefined ? {} : { cellRelevance: options.relevance }),
+    ...(options.legacyPerNode === undefined
+      ? {}
+      : {
+          content: {
+            ...base.content,
+            constants: { ...base.content.constants, legacyYieldPerNode: options.legacyPerNode },
+          },
+        }),
+    ...(options.ablate === undefined ? {} : { ablation: ablationMaskFor([options.ablate]) }),
   };
   const simulation = defineWorldSimulation({ ...deps, god });
   const { state } = seededWorld(simulation.schema, { rootSeed: ROOT_SEED });
 
   if (options.seedInstance !== false) seedCarrier(state, nodeId);
+  shelve(state, options.shelvedTitles ?? 0);
   for (const cellId of options.interdicted ?? []) {
     attachRecord(state, EDICT, state.entities.create(), {
       cellId,
@@ -153,6 +171,34 @@ function seedCarrier(state: SimState, nodeId: ContentId): void {
     acquiredTick: 0,
     mastery: MASTERY_MAX,
   });
+}
+
+/**
+ * `count` distinct titles on one library shelf.
+ *
+ * The node ids are the first `count` in the catalogue and carry no
+ * `worship-yield` of their own — checked, because a shelved carrier would move
+ * both channels at once and the whole point of these cases is that the two move
+ * separately.
+ */
+function shelve(state: SimState, count: number): void {
+  if (count === 0) return;
+  const carriers = new Set(nodesCarrying('worship-yield').keys());
+  const ids = registry()
+    .nodes.map((entry) => entry.contentId)
+    .filter((id) => !carriers.has(id))
+    .slice(0, count);
+  if (ids.length < count) throw new Error('the registry holds too few non-carrying nodes to shelve');
+  const library = state.entities.create();
+  for (const nodeId of ids) {
+    attachRecord(state, KNOWLEDGE_INSTANCE, state.entities.create(), {
+      nodeId,
+      locationKind: LOCATION_KIND.library,
+      locationId: library,
+      acquiredTick: 0,
+      mastery: MASTERY_MAX,
+    });
+  }
 }
 
 function firstMage(state: SimState): EntityHandle {
@@ -231,5 +277,43 @@ describe('daily relevance scales what the god is paid', () => {
     // source of magnitude zero, which the additive `(1 + Σ)` channel absorbs —
     // so the god earns what she would have earned with no carrier, and not less.
     expect(favorAfter({ relevance: zeroed })).toBe(absent);
+  });
+});
+
+describe('library-legacy is a second, opposed, separately ablatable channel', () => {
+  it('pays more for a deeper shelf, and nothing for an empty one', () => {
+    const bare = favorAfter({});
+    const shelved = favorAfter({ shelvedTitles: 8 });
+    const deeper = favorAfter({ shelvedTitles: 24 });
+
+    // `legacyChannel` returns `undefined` for an empty shelf, so a universe with
+    // no library is the universe this branch found — not a universe paying a
+    // multiplier of one, which would be the same number arrived at by running
+    // arithmetic that should not have run.
+    expect(shelved).toBeGreaterThan(bare);
+    expect(deeper).toBeGreaterThan(shelved);
+  });
+
+  it('is off, not small, when its constant is zero', () => {
+    // The channel's own switch, checked before a source is built. This is what
+    // the measurement's `legacy: off` arm sets, so if it were merely small the
+    // arm would be a second treatment rather than a control.
+    expect(favorAfter({ shelvedTitles: 24, legacyPerNode: 0 })).toBe(favorAfter({ legacyPerNode: 0 }));
+  });
+
+  it('neutralizes independently of worship-yield, which is why it is declared', () => {
+    const both = favorAfter({ shelvedTitles: 24 });
+    const noLegacy = favorAfter({ shelvedTitles: 24, ablate: 'library-legacy' });
+    const noYield = favorAfter({ shelvedTitles: 24, ablate: 'worship-yield' });
+
+    // Each mask must remove its own channel and leave the other standing. If
+    // the two had been fused into one multiplier — the tempting simplification —
+    // these two numbers would be equal, and `winRateByPrimitive` would be unable
+    // to say which of the two opposed loops was doing the work. That is the
+    // methodological claim the whole declaration exists for, asserted rather
+    // than described.
+    expect(noLegacy).toBeLessThan(both);
+    expect(noYield).toBeLessThan(both);
+    expect(noLegacy).not.toBe(noYield);
   });
 });

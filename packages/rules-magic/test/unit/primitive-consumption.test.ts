@@ -383,6 +383,6 @@ describe('the two checks share one exclusion list', () => {
   it('states the exclusions in the formatted report, so a reader sees the gap', () => {
     const { recorder, registry } = fullyConsumed();
     const text = formatPrimitiveConsumptionReport(checkPrimitiveConsumption(registry, recorder));
-    expect(text).toContain('Declared exclusions: fertility, lifespan');
+    expect(text).toContain('Declared exclusions: fertility, library-legacy, lifespan');
   });
 });

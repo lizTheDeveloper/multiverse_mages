@@ -45,7 +45,7 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
     expect(report.misplacedPortalNodes).toEqual([]);
   });
 
-  it('exercises every registry primitive except lifespan and fertility', () => {
+  it('exercises every registry primitive except the declared exclusions', () => {
     const registry = shippedRegistry();
     const report = checkPrimitiveCoverage(registry);
     const exercised = new Set(report.exercised.map((entry) => entry.primitiveId));
@@ -56,13 +56,18 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
     expect([...exercised].sort()).toEqual([...expected].sort());
   });
 
-  it('declares exactly the two exclusions the design accepted', () => {
-    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility', 'lifespan']);
+  it('declares exactly the three exclusions the design accepted', () => {
+    // `library-legacy` is the third and the only one a node *could* have
+    // carried. It is excluded because its magnitude is a count of titles on a
+    // shelf rather than anything a working does — see the note in
+    // `coverage.ts`, which is where the claim is argued.
+    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility', 'library-legacy', 'lifespan']);
   });
 
   it('states the exclusions in the formatted report, so a reader sees the gap', () => {
     const text = formatPrimitiveCoverageReport(checkPrimitiveCoverage(shippedRegistry()));
     expect(text).toContain('fertility');
+    expect(text).toContain('library-legacy');
     expect(text).toContain('lifespan');
   });
 });

@@ -56,7 +56,7 @@ import { FP_ONE, TIME_MODE, eraOf, mul } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
-import type { ClampCounters } from '@mm/primitives';
+import type { AblationMask, ClampCounters } from '@mm/primitives';
 import {
   ASCENSION_PATH,
   BLESSING,
@@ -96,7 +96,7 @@ import {
   stepStagnation,
 } from './ascension.js';
 import type { GodContent } from './constants.js';
-import type { FavorLedgerEntry } from './favor.js';
+import type { FavorLedgerEntry, LegacyChannel } from './favor.js';
 import { applyRegeneration, favorRegeneration, ledgerBalances } from './favor.js';
 import { godState, writeGodState } from './god-state.js';
 import type { InterventionReport } from './interventions.js';
@@ -134,6 +134,24 @@ export interface GodDeps {
    * worshipped": the second is a balance mystery and the first is a diff.
    */
   readonly cellRelevance: ReadonlyMap<number, Fixed>;
+  /**
+   * The `library-legacy` registry record — the compounding half of the pair.
+   *
+   * Optional, and absent means the channel does not run at all rather than runs
+   * at zero. A build whose content predates the primitive should behave exactly
+   * as it did, and `stackMagnitudes` on an empty source list would still be a
+   * behaviour change waiting to be mistaken for a tuning one.
+   */
+  readonly libraryLegacy?: PrimitiveRecord;
+  /**
+   * §9's ablation mask, neutralizing at most one primitive.
+   *
+   * Forwarded by `defineWorldSimulation` from the world deps. Both favor
+   * channels stack through it, which is what makes each of them a thing
+   * `winRateByPrimitive` can turn down independently — the whole reason
+   * `library-legacy` is a declared primitive rather than an emergent term.
+   */
+  readonly ablation?: AblationMask;
   /** Node ids carrying the `portal` primitive. */
   readonly portalNodes: ReadonlySet<number>;
   /** Where `worship-yield` cap clamps are counted, when a caller keeps counters. */
@@ -414,6 +432,8 @@ function outcomeSystem(
         yieldSources(knowledge, deps, (cellId) => permits(ruleset, cellId)),
         deps.worshipYield,
         deps.clampCounters,
+        legacyChannel(state, deps, constants),
+        deps.ablation,
       );
       const outcome = applyRegeneration(opening, regenerated, favorCap);
       universeStore.set(universe, 'favor', outcome.favor);
@@ -711,6 +731,43 @@ function yieldSources(
     for (const magnitude of magnitudes) found.push(mul(magnitude, relevance));
   }
   return found;
+}
+
+/**
+ * The `library-legacy` sources for this tick, or `undefined` if the channel is
+ * not installed.
+ *
+ * **Distinct nodes on a shelf, not instances.** Ten copies of one treatise are
+ * redundancy against loss — which §6a already rewards through the loss rules —
+ * and paying for them here would make transcription a favor pump. The quantity
+ * this term is about is how much a civilization *knows and has written down*,
+ * and that is a count of titles.
+ *
+ * Counted from `KNOWLEDGE_INSTANCE` rather than through `rules-world`'s
+ * `libraryDepth`, which is a per-library `fp` weighted by tier and would make
+ * this term a second reading of a number already tuned for a different job. The
+ * pass is one sweep of a component this system walks twice already.
+ *
+ * A single magnitude, not one per node: the channel is
+ * `additive-into-multiplier` and `depth × perNode` is exactly what a list of
+ * `depth` copies of `perNode` would stack to, without asking `stackMagnitudes`
+ * to walk a list that grows with the library. The cap still binds — it binds on
+ * the stacked value, and there is only one source to stack.
+ */
+function legacyChannel(
+  state: SimState,
+  deps: GodDeps,
+  constants: GodContent['constants'],
+): LegacyChannel | undefined {
+  const primitive = deps.libraryLegacy;
+  if (primitive === undefined || constants.legacyYieldPerNode <= 0) return undefined;
+  const shelved = new Set<number>();
+  for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
+    if (row.locationKind !== LOCATION_KIND.library) continue;
+    shelved.add(row.nodeId);
+  }
+  if (shelved.size === 0) return undefined;
+  return { primitive, magnitudes: [shelved.size * constants.legacyYieldPerNode] };
 }
 
 function nodesHeldByLivingMages(state: SimState): ReadonlySet<number> {

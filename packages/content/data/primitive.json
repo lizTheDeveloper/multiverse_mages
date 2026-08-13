@@ -1,114 +1,167 @@
 [
   {
-    "id": "direct-damage",
-    "unit": "hp-per-application",
-    "scale": "engagement",
-    "stacking": "summed-then-single-ward",
-    "cap": { "kind": "none" }
-  },
-  {
-    "id": "ward",
-    "unit": "fraction-of-damage-prevented",
-    "scale": "engagement",
-    "stacking": "multiplicative-on-remainder",
-    "cap": { "kind": "fp", "value": 922 }
-  },
-  {
     "id": "area-denial",
     "unit": "hp-per-engagement-tick-within-radius-fp-metres",
     "scale": "engagement",
     "stacking": "additive",
-    "cap": { "kind": "none" }
+    "cap": {
+      "kind": "none"
+    }
   },
   {
     "id": "blink",
     "unit": "fp-metres-of-instantaneous-displacement",
     "scale": "engagement",
     "stacking": "max",
-    "cap": { "kind": "none" }
-  },
-  {
-    "id": "summon",
-    "unit": "count-of-combatants-from-a-template",
-    "scale": "engagement",
-    "stacking": "additive",
-    "cap": { "kind": "count-per-side", "value": 8 }
+    "cap": {
+      "kind": "none"
+    }
   },
   {
     "id": "build-rate",
     "unit": "multiplier-on-construction-progress",
     "scale": "world",
     "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 4096 }
-  },
-  {
-    "id": "resource-yield",
-    "unit": "multiplier-on-materials-per-world-tick",
-    "scale": "world",
-    "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 4096 }
-  },
-  {
-    "id": "research-rate",
-    "unit": "multiplier-on-research-progress",
-    "scale": "world",
-    "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 4096 }
-  },
-  {
-    "id": "teach-rate",
-    "unit": "multiplier-on-teaching-throughput",
-    "scale": "world",
-    "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 4096 }
-  },
-  {
-    "id": "scribe-rate",
-    "unit": "multiplier-on-scribing-throughput",
-    "scale": "world",
-    "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 4096 }
-  },
-  {
-    "id": "lifespan",
-    "unit": "additive-months",
-    "scale": "world",
-    "stacking": "additive",
-    "cap": { "kind": "fraction-of-species-base", "value": 512 }
-  },
-  {
-    "id": "fertility",
-    "unit": "multiplier-on-cohort-birth-rate",
-    "scale": "world",
-    "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 3072 }
-  },
-  {
-    "id": "worship-yield",
-    "unit": "multiplier-on-favor-regeneration",
-    "scale": "world",
-    "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 2048 }
+    "cap": {
+      "kind": "fp",
+      "value": 4096
+    }
   },
   {
     "id": "concealment",
     "unit": "fp-probability-of-evading-targeting-or-detection",
     "scale": "both",
     "stacking": "multiplicative-on-remainder",
-    "cap": { "kind": "fp", "value": 870 }
+    "cap": {
+      "kind": "fp",
+      "value": 870
+    }
+  },
+  {
+    "id": "direct-damage",
+    "unit": "hp-per-application",
+    "scale": "engagement",
+    "stacking": "summed-then-single-ward",
+    "cap": {
+      "kind": "none"
+    }
+  },
+  {
+    "id": "fertility",
+    "unit": "multiplier-on-cohort-birth-rate",
+    "scale": "world",
+    "stacking": "additive-into-multiplier",
+    "cap": {
+      "kind": "fp",
+      "value": 3072
+    }
   },
   {
     "id": "knowledge-steal",
     "unit": "fp-probability-per-attempt-of-copying-an-instance",
     "scale": "engagement",
     "stacking": "max",
-    "cap": { "kind": "none" }
+    "cap": {
+      "kind": "none"
+    }
+  },
+  {
+    "id": "library-legacy",
+    "unit": "multiplier-on-favor-regeneration",
+    "scale": "world",
+    "stacking": "additive-into-multiplier",
+    "cap": {
+      "kind": "fp",
+      "value": 1536
+    }
+  },
+  {
+    "id": "lifespan",
+    "unit": "additive-months",
+    "scale": "world",
+    "stacking": "additive",
+    "cap": {
+      "kind": "fraction-of-species-base",
+      "value": 512
+    }
   },
   {
     "id": "portal",
     "unit": "boolean-gate-enables-raid-initiation",
     "scale": "world",
     "stacking": "presence",
-    "cap": { "kind": "none" }
+    "cap": {
+      "kind": "none"
+    }
+  },
+  {
+    "id": "research-rate",
+    "unit": "multiplier-on-research-progress",
+    "scale": "world",
+    "stacking": "additive-into-multiplier",
+    "cap": {
+      "kind": "fp",
+      "value": 4096
+    }
+  },
+  {
+    "id": "resource-yield",
+    "unit": "multiplier-on-materials-per-world-tick",
+    "scale": "world",
+    "stacking": "additive-into-multiplier",
+    "cap": {
+      "kind": "fp",
+      "value": 4096
+    }
+  },
+  {
+    "id": "scribe-rate",
+    "unit": "multiplier-on-scribing-throughput",
+    "scale": "world",
+    "stacking": "additive-into-multiplier",
+    "cap": {
+      "kind": "fp",
+      "value": 4096
+    }
+  },
+  {
+    "id": "summon",
+    "unit": "count-of-combatants-from-a-template",
+    "scale": "engagement",
+    "stacking": "additive",
+    "cap": {
+      "kind": "count-per-side",
+      "value": 8
+    }
+  },
+  {
+    "id": "teach-rate",
+    "unit": "multiplier-on-teaching-throughput",
+    "scale": "world",
+    "stacking": "additive-into-multiplier",
+    "cap": {
+      "kind": "fp",
+      "value": 4096
+    }
+  },
+  {
+    "id": "ward",
+    "unit": "fraction-of-damage-prevented",
+    "scale": "engagement",
+    "stacking": "multiplicative-on-remainder",
+    "cap": {
+      "kind": "fp",
+      "value": 922
+    }
+  },
+  {
+    "id": "worship-yield",
+    "unit": "multiplier-on-favor-regeneration",
+    "scale": "world",
+    "stacking": "additive-into-multiplier",
+    "cap": {
+      "kind": "fp",
+      "value": 2048
+    }
   }
 ]

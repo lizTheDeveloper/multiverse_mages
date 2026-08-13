@@ -145,16 +145,24 @@ function shippedDocuments() {
  * write is a no-op, and {@link main} says the two regimes coincided rather than
  * quietly presenting one arm twice.
  */
-function registryOf(relevance) {
+function registryOf(relevance, legacy = 'on') {
   const documents = shippedDocuments();
   if (relevance === 'neutral') {
     for (const cell of documents['cell.json']) {
       if (cell.dailyRelevance !== undefined) cell.dailyRelevance = FP_ONE;
     }
   }
+  if (legacy === 'off') {
+    // `legacy-yield-per-node: 0` is the channel's own off switch, checked by
+    // `legacyChannel` before it builds a source at all — so the "off" side is
+    // the build without the mechanic rather than the mechanic set small.
+    for (const constant of documents['god-constant.json']) {
+      if (constant.id === 'legacy-yield-per-node') constant.value = 0;
+    }
+  }
   const files = {};
   for (const fileName of CONTENT_FILES) files[fileName] = JSON.stringify(documents[fileName]);
-  return loadContent(memorySource(files, `w60-${relevance}`));
+  return loadContent(memorySource(files, `w60-${relevance}-${legacy}`));
 }
 
 /** One interned cell id by name, refusing an id the registry lacks. */
@@ -202,6 +210,25 @@ function perTick(run) {
   };
 }
 
+/**
+ * Max over min across an arm's runs — the runaway readout.
+ *
+ * §6a's risk is a *leader running away*, and every run here is one universe, so
+ * there is no leader to watch. What there is: the same starting positions on
+ * different seeds, and a compounding term makes a lucky universe compound its
+ * luck. So the dispersion between the best-served and worst-served run is the
+ * shape of the runaway, measured on the quantity the mechanic multiplies.
+ *
+ * A ratio rather than a variance, because it is scale-free and both knobs move
+ * the level as well as the spread. `1.0` is every run paid the same.
+ */
+function spread(values) {
+  if (values.length === 0) return 0;
+  const low = Math.min(...values);
+  const high = Math.max(...values);
+  return low <= 0 ? 0 : high / low;
+}
+
 /** A run's key within an arm, so two arms can be paired run-for-run. */
 function runKey(run) {
   return `${String(run.coordinates.cellIndex)}:${String(run.coordinates.replicateIndex)}:${run.strategyId}`;
@@ -239,17 +266,27 @@ function main() {
   // registries are byte-identical and running both would double the wall clock
   // to produce one arm twice.
   const regimes = (args.regimes ?? 'authored,neutral').split(',').filter(Boolean);
+  // The second factor: `library-legacy`, the compounding channel. The two knobs
+  // pull opposite ways on one quantity — relevance is bounded by population
+  // share and damps, library depth compounds and feeds — so the 2x2 is the
+  // experiment, not two experiments run next to each other.
+  const legacies = (args.legacies ?? 'on,off').split(',').filter(Boolean);
 
   const fieldPresent = contentHasRelevance();
   mkdirSync(out, { recursive: true });
 
   const contents = {};
-  for (const regime of regimes) contents[regime] = referenceContent(registryOf(regime));
+  for (const regime of regimes) {
+    for (const legacy of legacies) {
+      contents[`${regime}|${legacy}`] = referenceContent(registryOf(regime, legacy));
+    }
+  }
+  const firstContent = contents[`${regimes[0]}|${legacies[0]}`];
 
   // The inertness check first, because a probe that moves the universe voids
   // every number below it.
   const inert = probeIsInert(
-    contents[regimes[0]],
+    firstContent,
     'passive-control',
     { rootSeed: ROOT_SEED, sweepId: SWEEP_ID, cellIndex: 0, replicateIndex: 0 },
     240,
@@ -261,14 +298,16 @@ function main() {
   const arms = [];
   for (const rulesetId of rulesets) {
     for (const regime of regimes) {
-      const dispensations = dispensedCellIds(contents[regime].registry, rulesetId);
+     for (const legacy of legacies) {
+      const content = contents[`${regime}|${legacy}`];
+      const dispensations = dispensedCellIds(content.registry, rulesetId);
       for (const strategyId of strategies) {
         const runs = [];
         const started = Date.now();
         for (const cell of CELLS) {
           for (let replicateIndex = 0; replicateIndex < replicates; replicateIndex += 1) {
             const run = runOne({
-              content: contents[regime],
+              content,
               strategyId,
               coordinates: {
                 rootSeed: ROOT_SEED,
@@ -282,7 +321,8 @@ function main() {
             });
             runs.push(run);
             process.stderr.write(
-              `w60 ${rulesetId}/${regime} ${strategyId} cell=${String(cell.cellIndex)} ` +
+              `w60 ${rulesetId}/${regime}/legacy-${legacy} ${strategyId} ` +
+                `cell=${String(cell.cellIndex)} ` +
                 `rep=${String(replicateIndex)} ticks=${String(run.ticksRun)} ` +
                 `regen/tick=${perTick(run).favorRegenerated.toFixed(1)} ` +
                 `forbidden/tick=${perTick(run).yieldForbidden.toFixed(1)}\n`,
@@ -292,6 +332,7 @@ function main() {
         arms.push({
           rulesetId,
           regime,
+          legacy,
           strategyId,
           dispensations,
           replicates,
@@ -300,6 +341,7 @@ function main() {
           runs,
         });
       }
+     }
     }
   }
 
@@ -318,12 +360,12 @@ function main() {
   // holds two carriers in well before round 1200, which is what makes the
   // instances exist to be wrongly paid for.
   const wardenRuns = [];
-  const wardenCell = registryCellId(contents[regimes[0]].registry, 'rego-mentem');
+  const wardenCell = registryCellId(firstContent.registry, 'rego-mentem');
   for (const regime of regimes) {
     for (const cell of CELLS) {
       for (let replicateIndex = 0; replicateIndex < replicates; replicateIndex += 1) {
         const run = runOne({
-          content: contents[regime],
+          content: contents[`${regime}|${legacies[0]}`],
           strategyId: 'late-warden',
           coordinates: {
             rootSeed: ROOT_SEED,
@@ -381,22 +423,24 @@ function report(payload) {
   push('');
 
   const byArm = new Map();
-  for (const arm of arms) byArm.set(`${arm.rulesetId}/${arm.regime}/${arm.strategyId}`, arm);
+  for (const arm of arms) {
+    byArm.set(`${arm.rulesetId}/${arm.regime}/${arm.legacy ?? 'on'}/${arm.strategyId}`, arm);
+  }
 
   push('## Arm summary (per-tick means over the runs of the arm)');
   push('');
-  push('| ruleset | regime | strategy | ticks | regen/tick | worship | tier | yield permitted | yield forbidden |');
-  push('| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |');
+  push('| ruleset | relevance | legacy | strategy | ticks | regen/tick | worship | tier | yield permitted | spread |');
+  push('| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |');
   for (const arm of arms) {
     const stats = arm.runs.map(perTick);
     push(
-      `| ${arm.rulesetId} | ${arm.regime} | ${arm.strategyId} | ` +
+      `| ${arm.rulesetId} | ${arm.regime} | ${arm.legacy ?? 'on'} | ${arm.strategyId} | ` +
         `${mean(arm.runs.map((r) => r.ticksRun)).toFixed(0)} | ` +
         `${mean(stats.map((s) => s.favorRegenerated)).toFixed(1)} | ` +
         `${mean(stats.map((s) => s.worship)).toFixed(1)} | ` +
         `${mean(stats.map((s) => s.worshipTier)).toFixed(2)} | ` +
         `${mean(stats.map((s) => s.yieldPermitted)).toFixed(1)} | ` +
-        `${mean(stats.map((s) => s.yieldForbidden)).toFixed(1)} |`,
+        `${spread(stats.map((s) => s.favorRegenerated)).toFixed(2)} |`,
     );
   }
   push('');
@@ -408,7 +452,8 @@ function report(payload) {
   const ablation = new Map();
   for (const arm of arms) {
     if (arm.regime !== 'authored') continue;
-    const off = byArm.get(`${arm.rulesetId}/neutral/${arm.strategyId}`);
+    if ((arm.legacy ?? 'on') !== 'on') continue;
+    const off = byArm.get(`${arm.rulesetId}/neutral/${arm.legacy ?? 'on'}/${arm.strategyId}`);
     if (off === undefined) continue;
     const offByKey = new Map(off.runs.map((run) => [runKey(run), run]));
     const deltas = [];
@@ -450,8 +495,8 @@ function report(payload) {
   for (const [high, low] of PAIRS) {
     for (const strategyId of new Set(arms.map((arm) => arm.strategyId))) {
       for (const regime of ['neutral', 'authored']) {
-        const highArm = byArm.get(`${high}/${regime}/${strategyId}`);
-        const lowArm = byArm.get(`${low}/${regime}/${strategyId}`);
+        const highArm = byArm.get(`${high}/${regime}/on/${strategyId}`);
+        const lowArm = byArm.get(`${low}/${regime}/on/${strategyId}`);
         if (highArm === undefined || lowArm === undefined) continue;
         const d = mean(highArm.runs.map((r) => perTick(r).favorRegenerated));
         const s = mean(lowArm.runs.map((r) => perTick(r).favorRegenerated));
@@ -489,9 +534,44 @@ function report(payload) {
     const ticks = mean(arm.runs.map((r) => r.totals.ticks));
     if (forbidden === 0 && ticksPaying === 0) continue;
     push(
-      `| ${arm.rulesetId} | ${arm.regime} | ${arm.strategyId} | ${forbidden.toFixed(2)} | ` +
+      `| ${arm.rulesetId} | ${arm.regime}/${arm.legacy ?? 'on'} | ${arm.strategyId} | ${forbidden.toFixed(2)} | ` +
         `${ticksPaying.toFixed(0)} | ${((ticksPaying / Math.max(ticks, 1)) * 100).toFixed(1)}% |`,
     );
+  }
+  push('');
+
+  push('## Q4 — the two knobs, opposed: `dailyRelevance` damps, `library-legacy` compounds');
+  push('');
+  push('| ruleset | strategy | relevance | legacy | regen/tick | spread (max/min) |');
+  push('| --- | --- | --- | --- | ---: | ---: |');
+  for (const arm of arms) {
+    const stats = arm.runs.map(perTick).map((entry) => entry.favorRegenerated);
+    push(
+      `| ${arm.rulesetId} | ${arm.strategyId} | ${arm.regime} | ${arm.legacy ?? 'on'} | ` +
+        `${mean(stats).toFixed(1)} | ${spread(stats).toFixed(3)} |`,
+    );
+  }
+  push('');
+  push('| ruleset | strategy | Δ regen/tick from legacy | Δ spread from legacy | Δ regen/tick from relevance | Δ spread from relevance |');
+  push('| --- | --- | ---: | ---: | ---: | ---: |');
+  for (const rulesetId of new Set(arms.map((arm) => arm.rulesetId))) {
+    for (const strategyId of new Set(arms.map((arm) => arm.strategyId))) {
+      const cellOf = (regime, legacy) => {
+        const arm = byArm.get(`${rulesetId}/${regime}/${legacy}/${strategyId}`);
+        if (arm === undefined) return undefined;
+        const stats = arm.runs.map(perTick).map((entry) => entry.favorRegenerated);
+        return { level: mean(stats), spread: spread(stats) };
+      };
+      const on = cellOf('authored', 'on');
+      const noLegacy = cellOf('authored', 'off');
+      const neutral = cellOf('neutral', 'on');
+      if (on === undefined || noLegacy === undefined || neutral === undefined) continue;
+      push(
+        `| ${rulesetId} | ${strategyId} | ` +
+          `${(on.level - noLegacy.level).toFixed(1)} | ${(on.spread - noLegacy.spread).toFixed(3)} | ` +
+          `${(on.level - neutral.level).toFixed(1)} | ${(on.spread - neutral.spread).toFixed(3)} |`,
+      );
+    }
   }
   push('');
 

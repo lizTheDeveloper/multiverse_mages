@@ -105,6 +105,7 @@ export function godDeps(): GodDeps {
     worshipYield: worshipYieldPrimitive(),
     worshipYieldNodes: nodesCarrying('worship-yield'),
     cellRelevance: cellRelevance(),
+    libraryLegacy: primitiveNamed('library-legacy'),
     portalNodes: new Set(nodesCarrying('portal').keys()),
   };
 }
