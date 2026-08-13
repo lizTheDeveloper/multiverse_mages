@@ -146,6 +146,53 @@ describe('the set of functions that floor a live quantity to zero', () => {
     expect(site?.sample.operation).toBe('mul');
     expect(site?.persistence).toBe(1);
   });
+
+  it('keeps watching across an await, which it did not', async () => {
+    // Found by an adversarial reviewer on a different model, pointed at this
+    // campaign's own work.
+    //
+    // `record` was `try { return body(); } finally { restore() }`. With an
+    // async body that is silently useless: `body()` returns its promise at the
+    // first `await`, `finally` runs *then*, and the sentinel is uninstalled
+    // before any awaited work happens. Measured before the fix: this body
+    // reported `[]` while the identical synchronous body reported the site.
+    //
+    // It matters because every long arm in this repository yields to the vitest
+    // runner once a world year, which makes it async — so the shape most likely
+    // to be used was the shape that recorded nothing. An instrument that
+    // appears to be watching and is not is the exact failure this module exists
+    // to catch, one level up.
+    const recorder = new AnnihilationRecorder();
+
+    await recorder.record(async () => {
+      await Promise.resolve();
+      recorder.atTick(0);
+      annihilateOnPurpose();
+    });
+
+    expect(recorder.siteNames()).toEqual(['annihilation-registry.test:annihilateOnPurpose']);
+  });
+
+  it('restores the previous sentinel even when an async body rejects', async () => {
+    const recorder = new AnnihilationRecorder();
+
+    await expect(
+      recorder.record(async () => {
+        await Promise.resolve();
+        throw new Error('body failed');
+      }),
+    ).rejects.toThrow('body failed');
+
+    // If the restore had been skipped on the rejecting path, this recorder
+    // would still be installed and the next arm would attribute to it.
+    const after = new AnnihilationRecorder();
+    after.record(() => {
+      after.atTick(0);
+      annihilateOnPurpose();
+    });
+    expect(recorder.siteNames()).toEqual([]);
+    expect(after.siteNames()).toEqual(['annihilation-registry.test:annihilateOnPurpose']);
+  });
 });
 
 /** `1 * 1` in fixed-point is `1/1024 * 1/1024`, which floors to nothing. */

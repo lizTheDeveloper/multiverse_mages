@@ -71,15 +71,59 @@ export class AnnihilationRecorder {
     this.#observed = Math.max(this.#observed, tick + 1);
   }
 
-  /** Installs the sentinel, runs `body`, and always restores what was there. */
+  /**
+   * Installs the sentinel, runs `body`, and always restores what was there —
+   * including when `body` is async, which is the version this got wrong.
+   *
+   * ## The bug this shape exists to avoid
+   *
+   * The obvious implementation is `try { return body(); } finally { restore() }`.
+   * With an async `body` that is silently useless: `body()` returns a promise
+   * the instant it reaches its first `await`, `finally` runs *then*, and the
+   * sentinel is uninstalled before any of the awaited work happens. The
+   * recorder reports nothing and the arm passes.
+   *
+   * That is exactly the failure this whole module exists to catch, one level
+   * up — an instrument that appears to be watching and is not — and it matters
+   * here because every long arm in this repository yields to the vitest runner
+   * once a world year, which makes it async. Verified: an async body around a
+   * `mul(1, 1)` reported `[]` while the identical synchronous body reported the
+   * site.
+   *
+   * ## What it means to hold the sentinel across an await
+   *
+   * The sentinel is process-global, so anything else that runs while `body` is
+   * suspended is recorded too. That is the honest behaviour for a global
+   * instrument and the reason this is a diagnostic rather than a shipping
+   * guard; arms that care run one universe at a time.
+   */
   record<T>(body: () => T): T {
     const previous = installAnnihilationSentinel((event) => {
       this.#note(event);
     });
-    try {
-      return body();
-    } finally {
+    const restore = (): void => {
       installAnnihilationSentinel(previous);
+    };
+
+    let pending = false;
+    try {
+      const result = body();
+      if (isThenable(result)) {
+        pending = true;
+        return result.then(
+          (value) => {
+            restore();
+            return value;
+          },
+          (error: unknown) => {
+            restore();
+            throw error;
+          },
+        ) as T;
+      }
+      return result;
+    } finally {
+      if (!pending) restore();
     }
   }
 
@@ -112,6 +156,15 @@ export class AnnihilationRecorder {
   siteNames(): readonly string[] {
     return [...this.#sites.keys()].sort();
   }
+}
+
+/** Whether a value is a promise-like, without assuming it is a real `Promise`. */
+function isThenable(value: unknown): value is PromiseLike<unknown> {
+  return (
+    (typeof value === 'object' || typeof value === 'function') &&
+    value !== null &&
+    typeof (value as { then?: unknown }).then === 'function'
+  );
 }
 
 /**
