@@ -227,6 +227,21 @@ not fix D3**, and saying so before the run is the difference between a limitatio
   `POOL_BUILD_LIMITS`, and it means `ascension-institutions` could be raised by an order of
   magnitude before any strategy that builds at all would notice. The constant carries
   `tuningStatus: "untuned"` and this is the measurement a tuner should start from.
+- **`permissive-breadth` — a god that does play — also drops to zero, and the reason is a pool
+  defect rather than a rule defect.** It ends every run at `unis=1`, the seeded academy: it lists
+  `fundUniversity`, but behind `permitTechnique`, which is always legal, so `policyFor` submits the
+  first legal preference and never reaches the founding. That is `POOL_BUILD_LIMITS`'s
+  `universities-are-founded-and-never-finished` entry becoming decisive instead of merely recorded.
+  The honest statement is therefore that **this change closes the exploit and takes the pool's one
+  playing strategy down with it**, and that `open-then-build` — identical to `permit-then-idle`
+  except for one submission a world year at slot 0 — is the only member that clears the conjunct.
+  A reader is entitled to ask whether a predicate that only a purpose-built probe satisfies is a
+  good predicate. The answer this workstream gives is that the predicate is right and the pool is
+  impoverished, and the evidence for that ordering is that the fix for `permissive-breadth` is a
+  one-line reordering of its preference list rather than any change to the rule. **That reordering
+  is deliberately not made here**, because a strategy edited to pass a predicate committed in the
+  same branch measures the edit, not the rule.
+
 - **A conjunct is not the same as a cost.** The honest reading of the above is that this change
   converts "the win condition reads the ruleset" into "the win condition reads the ruleset **and**
   one button nobody was pressing". It is a strictly better predicate and it is not a deep one. What
