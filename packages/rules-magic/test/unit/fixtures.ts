@@ -163,6 +163,7 @@ export function gridContentFixture(options: FixtureOptions = {}): GridContent {
       scribeCost: 1024,
       rediscoveryMultiplier: 5376,
       effects: [],
+      knowledgeKind: 'episteme',
       tuningStatus: 'untuned',
     },
   }));

@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
-  "contentHash": "d8a528c3d08b11b29c605248ce186168e99fe65cd41bb01204a6a0ff18c4a624",
+  "contentHash": "8b5e5ffeaf55ef922caafc4709eaec3aa4552e8dd33c02d0b05f58314098e5bb",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":41.47508597575692,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":124.42525792727076,"unit":"grimoires","value":105.75},
@@ -17,32 +17,33 @@
   ],
   "notes": [
     "No release before 0.5.0 may claim any of this is balanced: every magnitude in the shipped content carries tuningStatus untuned and the balance harness owns all of them -- so this file is a measurement and not a balance claim.",
-    "The universe is still degenerate in the following ways, and this edit closes one of them. The gate sweeps are 100 percent passive-control and submit no god verb. Nothing in packages/scenario opens a portal, so no raid runs in any committed sweep and no summon is ever created. Scribing still stops when the materials stock empties. Teaching no longer dies out once the founding grants are taught -- that note was carried by the superseded files and is now measurably false: over the reference two hundred years a lesson is taught in every one of the ten twenty-year windows, the thinnest holding 16."
+    "The universe is still degenerate in the following ways, and this edit closes none of them -- it is a provenance re-record. The gate sweeps are 100 percent passive-control and submit no god verb. Nothing in packages/scenario opens a portal, so no raid runs in any committed sweep and no summon is ever created. Scribing still stops when the materials stock empties. Teaching does not die out once the founding grants are taught: over the reference two hundred years a lesson is taught in every one of the ten twenty-year windows, the thinnest holding 16.",
+    "knowledgeKind has no consumer in the rules path. When metis-knowledge is implemented, scribing refusal and succession loss will change these numbers for real, and that regeneration will be a behaviour claim in a way this one is not."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "6b18886a4b3a2803c0b1b92eb8f8fae8",
+    "contentHash": "5c319f8275e05ddef2a166dd7552942b",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "One predicate changed and nothing else. gatherFrontier bucketed a research target into the research-node or rediscover-node candidate list on the raw ever-known mark, which is never cleared, so every node the universe currently held was filed as a lost art; it now asks rules-magic isRediscovery -- wasEverKnown AND NOT exists -- the same predicate the research quote and the research charge already use. No constant, cap, magnitude or content value moved. The gated metrics move because goal selection moved, and the direction is the mechanism working rather than a magnitude being tuned: acquisition is no longer front-loaded into a land grab over nodes nobody had lost, so the five-year and twenty-year totals fall while referenceNodesGainedFinalQuarter rises 1.875 to 7.595 (64.55 SE) and the two-hundred-year end state is unchanged inside tolerance on every metric. Regenerated rather than tolerance-widened, and all three files are re-recorded together so the chain stays coherent, the ascension sweep included even though it passed.",
+  "rationale": "Provenance only. Marking twenty-nine of the three hundred nodes knowledgeKind metis moved contentRevision 6b18886a4b3a2803c0b1b92eb8f8fae8 -> 5c319f8275e05ddef2a166dd7552942b, which invalidated the baseline as a matter of build identity rather than of behaviour. Before this regeneration all three gates reported baseline-invalid on the hash and pass on every single metric with delta exactly 0.00000 -- thirty metrics across the three sweeps, not one of them moved by a representable amount. Nothing in the rules path reads knowledgeKind yet: metis-knowledge is held at proposal depth until after 0.5.0, so the field is authored data no code branches on. Re-recorded so the chain stays coherent, not because anything was measured to have changed. Reasoning for the marking is in docs/design/metis-authoring.md.",
   "rootSeed": 20260811,
   "runCount": 32,
   "supersededDeltas": [
-    {"delta":-14.84375,"deltaInStandardErrors":-0.3553099434619148,"metricId":"referenceGrimoires","previousValue":120.59375,"value":105.75},
-    {"delta":-56.375,"deltaInStandardErrors":-0.1431640986501238,"metricId":"referenceKnowledgeInstances","previousValue":2091.625,"value":2035.25},
-    {"delta":-1.96875,"deltaInStandardErrors":-0.4592671227693786,"metricId":"referenceLibraryDepth","previousValue":26.90625,"value":24.9375},
-    {"delta":-2.53125,"deltaInStandardErrors":-0.6202079538167317,"metricId":"referenceLivingMages","previousValue":72.03125,"value":69.5},
-    {"delta":-3.71875,"deltaInStandardErrors":-0.3104091495547389,"metricId":"referenceNodesGained","previousValue":59.34375,"value":55.625},
-    {"delta":0.65625,"deltaInStandardErrors":0.4249708763134481,"metricId":"referenceNodesGainedFinalQuarter","previousValue":3.09375,"value":3.75},
-    {"delta":-3.71875,"deltaInStandardErrors":-0.3104091495547389,"metricId":"referenceNodesKnown","previousValue":61.84375,"value":58.125},
-    {"delta":76,"deltaInStandardErrors":0.3189089955415683,"metricId":"referencePeakPopulation","previousValue":19305,"value":19381},
-    {"delta":-207.34375,"deltaInStandardErrors":-0.15547785945720166,"metricId":"referencePopulation","previousValue":6176.46875,"value":5969.125},
-    {"delta":-207.34375,"deltaInStandardErrors":-0.15547785945720166,"metricId":"referencePopulationChange","previousValue":6032.46875,"value":5825.125}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":105.75,"value":105.75},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":2035.25,"value":2035.25},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":24.9375,"value":24.9375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":69.5,"value":69.5},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":55.625,"value":55.625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":3.75,"value":3.75},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":58.125,"value":58.125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":19381,"value":19381},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":5969.125,"value":5969.125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":5825.125,"value":5825.125}
   ],
-  "supersedes": "ae48425d40b8678f5e0030ec345f682115207599ebf9c31d7b3d2a17981300bd",
+  "supersedes": "d8a528c3d08b11b29c605248ce186168e99fe65cd41bb01204a6a0ff18c4a624",
   "sweepId": "balance-gate-ascension-v1",
   "toleranceK": 3
 }
