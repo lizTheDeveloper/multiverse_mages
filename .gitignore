@@ -38,3 +38,6 @@ __pycache__/
 # as a README pointing at a page that was never in the tree, which is the defect
 # that commit existed to fix.
 ui/lattices.html
+
+# W49 measurement scratch; the committed copies live in balance/
+.w49/
