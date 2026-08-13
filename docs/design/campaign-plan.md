@@ -3375,3 +3375,51 @@ same seed is real whatever drives it, and mechanic-driven species divergence rem
 campaign has failed to produce for weeks. If the extinction proves to be main-side, the divergence may
 still be practice's doing and is still the asset. **Do not let the extinction discredit the
 divergence.**
+
+---
+
+## BLOCKER — the self-hosted runner is wedged, and it needs a human
+
+*2026-08-13 08:02Z. Recorded as a blocker rather than a note, because nothing merges until it clears.*
+
+**Ten open PRs are stacked behind `ci/hetzner-lint`, and not one status has resolved in eighty
+minutes.** Every commit on `main` since `fa99353` also reads `pending`.
+
+| PR | queued since | waiting |
+|---|---|---|
+| #64 | 06:43Z | **1h 19m** |
+| #65, #66 | 06:50Z | 1h 12m |
+| #67 | 07:17Z | 45m |
+| #37 | 07:24Z | 38m |
+| #61, #63, #68, #69, #70 | 07:44–08:00Z | — |
+
+**This is wedged, not merely slow.** `verify` runs about twenty minutes and the receiver's timeout is
+2400 s, so a serial queue should have produced three or four completions in eighty minutes. It has
+produced none, and the oldest entry has now exceeded the timeout without the timeout firing. The last
+runs to complete were at 06:47–06:48Z, which is when PRs #58 #59 #60 #62 merged.
+
+**What is needed, and why I could not do it:** the fix is on the runner host — inspect the receiver
+process, clear whatever run is holding the lock, restart the container. `docs/devops/ci-and-deploy.md`
+documents no remote re-trigger or cancel path, and the status is written by the receiver rather than
+by GitHub, so there is nothing to re-request from this side. **My SSH to the host was blocked by
+policy**, which is the correct outcome — an agent should not be restarting a production container that
+also runs `themultiverse.school` on its own initiative.
+
+**What I deliberately did not do.** Making `ci/hetzner-lint` non-required would clear the queue in one
+command. It is also exactly the "obvious cleanup that is a security regression" CLAUDE.md warns about:
+the self-hosted runner is the credentialed half of a two-gate design, and weakening it to unblock a
+backlog is how that design gets lost. **A blocked queue is a worse outcome than a slow one and a much
+better outcome than an ungated `main`.**
+
+**A contributing cause worth fixing regardless:** `main`'s own merge commits queue on the same
+serialised runner and compete with PR checks, so every merge makes the backlog longer. PR #62 (merged)
+addressed one-event-per-commit; PR #61 — **which is itself in this queue** — moves the 200-year
+horizon gate off `verify` onto a parallel non-required Actions job and would cut each run from ~20
+minutes to a few. **The fix for the queue is stuck in the queue**, which is as close to deadlock as
+this setup produces.
+
+**Meanwhile, work that does not need CI has continued**, and the demo is verified sound independently
+of the gate: all eleven prototypes serve 200, every inline script parses (module blocks parsed as
+modules), and every local asset reference resolves. That was checked with a static pass rather than a
+browser, because the browser extension is not connected in this session — so *rendering* is unverified
+even though *loading* is.
