@@ -67,6 +67,9 @@ const manifest = JSON.parse(read('package.json')) as {
  * 400 runs; and the two-hundred-year one is the only one that can see the win
  * condition — measured, 0 of 400 runs ascended at twenty years and 10 of 80 at
  * two hundred.
+ *
+ * They do not all run in the same place, and since 2026-08-13 that is the point.
+ * See {@link PUSH_GATES} and {@link RELEASE_GATES}.
  */
 const GATE_SCRIPTS = [
   'balance:gate',
@@ -74,6 +77,47 @@ const GATE_SCRIPTS = [
   'balance:gate:agency',
   'balance:gate:ascension',
 ] as const;
+
+/**
+ * The gates a commit must clear to merge: `npm run verify`, both CI systems.
+ *
+ * Three of the four, and they cost about forty seconds together.
+ */
+const PUSH_GATES = ['balance:gate', 'balance:gate:horizon', 'balance:gate:agency'] as const;
+
+/**
+ * The gates required at release rather than at merge: `npm run verify:full`.
+ *
+ * Only the two-hundred-year one, and the reason is measured rather than felt.
+ * It costs **830 s on a quiet machine and 1154 s on a busy one**, against the
+ * other three's ~40 s combined, and `scripts/ci-check.sh` runs on a self-hosted
+ * runner that **serialises** against a 2400 s timeout. Holding it in `verify`
+ * made every unrelated pull request queue behind the win condition: seven PRs
+ * were stacked on that runner the day this split landed, and the fix for the
+ * queue was itself in the queue.
+ *
+ * What it measures is the win condition, and that is the claim
+ * `release-plan.md`'s MINOR parity makes — *even = Monte Carlo baselines
+ * committed and green* — which is a release-time claim, not a per-commit one.
+ *
+ * **It still runs on every commit**, in its own parallel GitHub Actions job that
+ * is not required to merge. Moving a gate off the blocking path is not the same
+ * act as running it less often, and the assertions below exist so that it cannot
+ * quietly decay into the same thing.
+ */
+const RELEASE_GATES = ['balance:gate:ascension'] as const;
+
+/**
+ * Whether a job block actually sets the `continue-on-error` key.
+ *
+ * The key, anchored at line start — not the bare substring. The two-hundred-year
+ * job's comment *explains why it has no* `continue-on-error`, and a substring
+ * check reads that explanation as the thing it denies. A test that a comment can
+ * flip is a test of prose.
+ */
+function softensFailures(job: string): boolean {
+  return /^\s*continue-on-error\s*:/m.test(job);
+}
 
 describe('every gate is a build-failing step in both CI systems', () => {
   it.each(GATE_SCRIPTS)('%s exists as an npm script', (script) => {
@@ -101,7 +145,7 @@ describe('every gate is a build-failing step in both CI systems', () => {
     expect(hook).toContain('typecheck');
   });
 
-  it.each(GATE_SCRIPTS)(
+  it.each(PUSH_GATES)(
     '%s is part of npm run verify, which is what the self-hosted runner runs',
     (script) => {
       expect(manifest.scripts['verify']).toContain(`npm run ${script}`);
@@ -115,9 +159,29 @@ describe('every gate is a build-failing step in both CI systems', () => {
     },
   );
 
-  it.each(GATE_SCRIPTS)('%s runs after the typecheck that builds the dist it loads', (script) => {
+  it.each(PUSH_GATES)('%s runs after the typecheck that builds the dist it loads', (script) => {
     const verify = manifest.scripts['verify'] as string;
     expect(verify.indexOf('npm run typecheck')).toBeLessThan(verify.indexOf(script));
+  });
+
+  it.each(RELEASE_GATES)('%s is in verify:full and deliberately not in verify', (script) => {
+    // The split, asserted from both sides. Putting it back into `verify` fails
+    // here, and so does dropping it out of `verify:full` — which would leave the
+    // release checklist naming a command that no longer runs the thing the
+    // checklist is about.
+    expect(manifest.scripts['verify:full'], 'verify:full is missing').toBeDefined();
+    expect(manifest.scripts['verify:full']).toContain(`npm run ${script}`);
+    expect(manifest.scripts['verify']).not.toContain(`npm run ${script}`);
+  });
+
+  it('verify:full is exactly verify plus the release gates', () => {
+    // Derived, not compared to a literal: a step added to `verify` has to reach
+    // `verify:full` too, and building it by composition rather than by copying
+    // the chain is what makes that automatic.
+    const expected = ['npm run verify', ...RELEASE_GATES.map((gate) => `npm run ${gate}`)].join(
+      ' && ',
+    );
+    expect(manifest.scripts['verify:full']).toBe(expected);
   });
 
   it.each(GATE_SCRIPTS)(
@@ -127,20 +191,39 @@ describe('every gate is a build-failing step in both CI systems', () => {
       // Anchored at the end of the line, so `balance:gate` does not count the
       // `balance:gate:horizon` steps as its own and report a green four.
       const steps = [...workflow.matchAll(new RegExp(`run: npm run ${script}$`, 'gm'))];
-      // Once per job: the pinned-Node gate and the next-major early warning.
-      expect(steps).toHaveLength(2);
+      // Push gates: once per full-suite job — the pinned-Node gate and the
+      // next-major early warning. Release gates: once, in the parallel job of
+      // their own that is not required to merge.
+      expect(steps).toHaveLength((PUSH_GATES as readonly string[]).includes(script) ? 2 : 1);
       expect(workflow).toContain('Balance regression gate');
     },
   );
 
-  it.each(GATE_SCRIPTS)('%s is not silenced by continue-on-error in the blocking job', (script) => {
+  it.each(PUSH_GATES)('%s is not silenced by continue-on-error in the blocking job', (script) => {
     const workflow = read('.github/workflows/ci.yml');
     const verifyJob = workflow.slice(
       workflow.indexOf('  verify:'),
       workflow.indexOf('  next-node:'),
     );
     expect(verifyJob).toContain(script);
-    expect(verifyJob).not.toContain('continue-on-error');
+    expect(softensFailures(verifyJob)).toBe(false);
+  });
+
+  it.each(RELEASE_GATES)('%s runs in a job of its own, and is not softened', (script) => {
+    const workflow = read('.github/workflows/ci.yml');
+    const job = workflow.slice(workflow.indexOf('  ascension:'), workflow.indexOf('  consumption:'));
+    expect(job, 'the ascension job is missing from the workflow').not.toBe('');
+    expect(job).toContain(`npm run ${script}`);
+    // The two non-blocking jobs in this workflow are *expected* red and carry
+    // `continue-on-error`. This one is expected green, so a failure has to look
+    // like one: it is off the blocking path because of its runtime, not because
+    // its result is soft. Non-required is a branch-protection fact, not a
+    // workflow one, and softening it here would turn a real regression in the
+    // win condition into a green tick.
+    expect(softensFailures(job)).toBe(false);
+    // It must not need anything the sandbox lacks: Actions is the only CI system
+    // here that may safely see a fork pull request, and it holds no credentials.
+    expect(job).not.toContain('secrets.');
   });
 });
 

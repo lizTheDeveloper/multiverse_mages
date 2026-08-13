@@ -121,18 +121,6 @@ jobs:
         # horizon-gate.test.ts fails if that stops being true.
         run: npm run balance:gate:agency
 
-      - name: Balance regression gate (two hundred world years)
-        # The third instrument, and the only one that can observe the win
-        # condition. Measured: 0 of 400 runs ascended at twenty world years and
-        # 10 of 80 at two hundred, so both gates above are structurally blind to
-        # the ending of the game they gate. This one runs the whole eight-strategy
-        # pool round-robin rather than the passive control, because a summit is
-        # something a strategy reaches. It is not the horizon gate with a bigger
-        # number and must not be merged into it — horizon-gate.test.ts fails if
-        # this step goes missing or if any of the three horizons collapses into
-        # another.
-        run: npm run balance:gate:ascension
-
       # `check:consumption` is deliberately NOT here. It is expected to be red
       # until the effect pipeline is wired, so it runs in its own non-blocking
       # job at the bottom of this file. See that job for the condition under
@@ -214,22 +202,80 @@ jobs:
         # horizon-gate.test.ts fails if that stops being true.
         run: npm run balance:gate:agency
 
-      - name: Balance regression gate (two hundred world years)
-        # The third instrument, and the only one that can observe the win
-        # condition. Measured: 0 of 400 runs ascended at twenty world years and
-        # 10 of 80 at two hundred, so both gates above are structurally blind to
-        # the ending of the game they gate. This one runs the whole eight-strategy
-        # pool round-robin rather than the passive control, because a summit is
-        # something a strategy reaches. It is not the horizon gate with a bigger
-        # number and must not be merged into it — horizon-gate.test.ts fails if
-        # this step goes missing or if any of the three horizons collapses into
-        # another.
-        run: npm run balance:gate:ascension
-
       # `check:consumption` is deliberately NOT here. It is expected to be red
       # until the effect pipeline is wired, so it runs in its own non-blocking
       # job at the bottom of this file. See that job for the condition under
       # which it moves back into this one.
+
+  ascension:
+    # The two-hundred-year balance gate, run on every commit and required at
+    # release rather than at merge.
+    #
+    # ## Why it is not in `verify` any more
+    #
+    # It measures the win condition, and it is the only instrument that can:
+    # 0 of 400 runs ascend at twenty world years and 46 of 64 at two hundred, so
+    # every other gate is structurally blind to the ending of the game. It is
+    # also, now, the entire cost of checking a commit. Measured 2026-08-12 on the
+    # merged tree: **830 s on a quiet eight-core machine and 1154 s while three
+    # sibling worktrees were building**, against 83 s for the same sweep a day
+    # earlier. The sweep did not change; the simulation got heavier — mean
+    # population 5,400 to 15,764, living mages 70 to 468.
+    #
+    # `balance/README.md` states this repository's own rule: *a gate that takes
+    # ten minutes gets deleted*, and a gate people route around is worse than no
+    # gate, because it still costs the time and no longer earns the trust. On the
+    # self-hosted runner it is worse than slow — that runner serialises, against a
+    # 2400 s timeout, so a twenty-minute `verify` is a queue hazard for every
+    # other pull request.
+    #
+    # So the win condition moves to where the claim it supports actually lives.
+    # `docs/design/release-plan.md` makes MINOR parity mean "even = Monte Carlo
+    # baselines committed and green" — a **release-time** claim — and this job is
+    # what substantiates it. Taking an even MINOR without this job green is
+    # precisely the failure the parity scheme exists to prevent, and the release
+    # checklist now says so by name.
+    #
+    # ## Why it is here and not merely per-release
+    #
+    # GitHub Actions is free and unmetered for this public repository, so running
+    # it on every commit costs nothing but wall clock nobody is waiting on. Held
+    # to release time only, a regression would surface weeks after the commit
+    # that caused it, with the bisect range to match.
+    #
+    # ## Why it has no `continue-on-error`, unlike the two jobs below
+    #
+    # Those two are *expected* red and say so. This one is expected **green**, so
+    # a failure here is a real finding and must look like one. It is non-blocking
+    # because it is not in this repository's required status checks — which are
+    # `Verify (pinned Node)` and `ci/hetzner-lint`, and are configured in branch
+    # protection rather than here — and not because its result is soft. Red here
+    # means the win condition moved: read the delta, do not re-run until green.
+    name: Balance gate, two hundred world years (not required to merge)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # `prebalance:gate:ascension` runs this too; naming it as its own step
+      # makes a build failure land on "Typecheck" rather than inside the gate,
+      # where it would read as a balance regression.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Balance regression gate (two hundred world years)
+        # It needs no credentials, no network and no services — `npm ci`, a
+        # typecheck and a deterministic simulation — which is what makes it safe
+        # to run in the only job that may see a fork pull request.
+        run: npm run balance:gate:ascension
 
   consumption:
     # The measurement that says how much of the authored magic reaches the

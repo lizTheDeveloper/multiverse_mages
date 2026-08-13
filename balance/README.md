@@ -17,6 +17,7 @@ There are **four** of them, and they are four instruments rather than one instru
 | runs | 4 cells × 50 = 200 | 4 cells × 50 = 200 | 4 cells × 16 = 64 | 4 cells × 16 = 64 |
 | wall clock | 4 s | 27 s | **10 s** | **830–1154 s** |
 | plays a god verb | **no** | **no** | yes | yes |
+| in `npm run verify` | yes | yes | yes | **no** — own Actions job, required at release |
 | answers | *did anything move?* | *did the universe stop?* | *do the god's verbs still do anything?* | *can anyone still win?* |
 
 Wall clock measured 2026-08-12 on four workers of an eight-core machine, against the merged tree.
@@ -149,7 +150,7 @@ hand as a step in both full-suite GitHub Actions jobs, and reached by the self-h
 the two-hundred-year gate's — so "the agency gate is just the horizon gate" has to argue with a
 failing test.
 
-### The 200-year gate has become expensive
+### The 200-year gate has become expensive, and has moved off the merge path
 
 Measured on the merged tree: **830 s** for its 64 runs on an otherwise-quiet eight-core machine,
 and **1154 s** for the same 64 runs an hour later while three sibling worktrees were running their
@@ -164,18 +165,49 @@ figure to plan around is the *contended* one, because a runner that is busy is t
 Halving back to 32 runs would cost about 415 s and give back every blind spot this section is about,
 so that is not the lever.
 
-This document does not decide what to do about it, but it does state the options plainly, because a
-gate that takes fourteen minutes is the kind that gets deleted in a hurry by whoever is blocked:
+**Decided 2026-08-13: it is off the blocking path, and still runs on every commit.**
 
-- **Keep it on every push.** `verify` then costs about fifteen minutes, nearly all of it here.
-- **Move it to per-release** and keep the other three on every push. The agency gate already covers
-  god-verb sensitivity for 10 s; what the 200-year horizon uniquely buys is the **win condition** —
-  0 of 400 runs ascend at 240 ticks — which is a per-release question more than a per-commit one.
-- **Fan it out.** `bin/run-sweep-distributed.mjs` writes byte-identical output; the section below
-  reports 1096 runs of this exact sweep in 85 s and $0.57 on 64 containers.
+The forcing event was concrete rather than theoretical. Seven pull requests — #37, #61, #63, #64,
+#65, #66, #67 — were queued on the self-hosted runner at once, every one reporting
+`ci/hetzner-lint pending: "Queued -- another CI run in progress"`. That runner **serialises**, and
+against a 2400 s timeout a twenty-minute `verify` is not merely slow; it is a queue hazard for every
+unrelated pull request. The fix was itself in the queue, behind the problem it solved.
 
-The measurement is the contribution here. The choice is a project decision with a cost attached to
-it, and it should be made by someone who owns the CI budget rather than settled by a default.
+So:
+
+| | runs it |
+|---|---|
+| `npm run verify` | five-year, twenty-year, agency. **~40 s of gates.** Both CI systems. |
+| `npm run verify:full` | the above **plus** the two-hundred-year gate. Nothing automated calls it. |
+| **Balance gate, two hundred world years** | its own parallel GitHub Actions job, **every commit**, **not required to merge**. |
+| `docs/design/release-plan.md` | makes it **required at release**. |
+
+Three things this is *not*, because each is a way the arrangement could decay:
+
+- **It is not "run it less often".** It runs on every commit and on `main`, exactly as before.
+  Actions is free and unmetered for this public repository, so per-commit coverage costs nothing but
+  wall clock nobody waits on. Held to release time only, a regression would surface weeks after the
+  commit that caused it with a bisect range to match.
+- **It is not softened.** The job carries no `continue-on-error`, unlike the two jobs in that
+  workflow that are *expected* red. This one is expected green, so a failure has to look like one.
+  It is off the blocking path because of its runtime, not because its result is soft.
+- **It is not a weakening of the merge gate's coverage of god agency.** That was the whole point of
+  the agency gate: god-verb sensitivity now costs 10 s and stays on every push. What the long
+  horizon uniquely buys is the **win condition**, and *"Monte Carlo baselines committed and green"*
+  is a release-time claim — that is what `release-plan.md`'s MINOR parity means.
+
+**Why not fan it out into `verify` instead?** `run-sweep-distributed.mjs` is genuinely reproducible
+— byte-identical output across five topologies — and 1096 runs in 85 s for $0.57 is real. It is the
+right tool for the large-N release-time sweeps that give `ascensionRate` an interval narrower than
+its own band. It is the **wrong** tool for a merge gate, for a reason that is structural rather than
+a matter of taste: it needs Modal credentials, and `docs/devops/ci-and-deploy.md` makes GitHub
+Actions *the only CI system that may safely see a fork pull request*, precisely because it holds
+none. A credentialed gate either fails on every fork PR or stops being credential-free, and the
+second is a security regression. That it would also turn a third-party outage into a red build is
+true, and is the smaller of the two objections.
+
+`scripts/ci-check.sh` stays equivalent to `npm run verify` — a standing `CLAUDE.md` constraint that
+this decision does not bend. It runs the fast one.
 
 The gate fails on any of these, and reports `baseline-invalid` rather than a delta for the last
 four:
@@ -426,7 +458,7 @@ if that ever stops being true.
 | metrics | 9 vital signs | 9 + `referenceNodesGainedFinalQuarter` | 10, × 8 arms = 90 lines | 10, × 8 arms = 90 lines | 9 + `referenceNodesGainedFinalQuarter` |
 | wall clock | 4 s | 27 s | 10 s | **830–1154 s** | **3392 s measured** — see below |
 | committed baseline | yes | yes | yes | yes | **no**, and deliberately |
-| wired into CI | yes | yes | yes | yes | n/a |
+| where it runs | `verify` | `verify` | `verify` | own Actions job, `verify:full` | by hand |
 
 All four gate sweeps are sized to run on every push. That is the whole design constraint: a gate
 that takes ten minutes gets deleted, and a gate that never runs is worse than none. Their resulting

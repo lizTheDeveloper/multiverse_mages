@@ -368,15 +368,50 @@ describe('every gate is wired into both CI systems (docs/devops/ci-and-deploy.md
     'balance:gate:ascension',
   ] as const;
 
+  /**
+   * The gates a commit must clear to merge.
+   *
+   * The two-hundred-year gate is not among them, since 2026-08-13. It costs
+   * 830–1154 s against these three's ~40 s combined, and `scripts/ci-check.sh`
+   * runs on a runner that serialises against a 2400 s timeout — so holding it
+   * here made every unrelated pull request queue behind the win condition.
+   * It still runs on every commit, in a parallel Actions job of its own that is
+   * not required to merge, and `release-plan.md` makes it required at release.
+   * `balance-ci-wiring.test.ts` owns the detailed assertions about that split.
+   */
+  const pushGateScripts = ['balance:gate', 'balance:gate:horizon', 'balance:gate:agency'] as const;
+
   it.each(gateScripts)('%s is an npm script that runs the gate entrypoint', (name) => {
     expect(scripts[name]).toContain('balance-gate.mjs');
   });
 
-  it.each(gateScripts)('npm run verify runs %s', (name) => {
+  it.each(pushGateScripts)('npm run verify runs %s', (name) => {
     // This is the whole of the self-hosted runner's wiring: scripts/ci-check.sh
     // names no gate of its own, because its contract is to stay equivalent to
     // verify. Asserting that here means the runner cannot silently lose a gate.
     expect(scripts['verify']).toContain(`npm run ${name}`);
+  });
+
+  it('npm run verify:full runs every gate, so one command still means all of them', () => {
+    // The escape hatch the split needs. `verify` is the merge gate and no longer
+    // runs everything; `verify:full` is what a person and the release checklist
+    // name when they mean the whole suite. Without this, "run the gates" would
+    // have no single referent and the two-hundred-year one would be the gate
+    // nobody remembers to run.
+    //
+    // Expanded one level, because `verify:full` reaches the first three gates
+    // *through* `npm run verify` rather than by naming them. Asserting on the
+    // raw string would either fail on a correct composition or force the chain
+    // to be copied, and a copied chain is one that drifts.
+    const expand = (name: string): string =>
+      (scripts[name] as string).replaceAll(
+        /npm run (verify(?::\w+)?)/g,
+        (whole, inner: string) => (inner === name ? whole : expand(inner)),
+      );
+    const full = expand('verify:full');
+    for (const name of gateScripts) {
+      expect(full, `verify:full omits ${name}`).toContain(`npm run ${name}`);
+    }
   });
 
   it('leaves the self-hosted runner delegating to verify rather than listing gates', () => {
@@ -385,7 +420,7 @@ describe('every gate is wired into both CI systems (docs/devops/ci-and-deploy.md
     expect(script).not.toContain('balance-gate.mjs');
   });
 
-  it.each(gateScripts)('every full-suite GitHub Actions job runs %s by name', (name) => {
+  it.each(pushGateScripts)('every full-suite GitHub Actions job runs %s by name', (name) => {
     // The workflow lists its steps by hand, so a gate added only to verify would
     // run on the self-hosted runner and be absent from Actions — which is the
     // exact drift docs/devops/ci-and-deploy.md warns about, in the form where
