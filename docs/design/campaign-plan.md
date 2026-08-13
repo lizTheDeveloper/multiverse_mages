@@ -2670,3 +2670,76 @@ Two agents, two methods, same answer. That is the strongest form of confirmation
 
 The clean bill covers the reference run and all eight arms. It does **not** cover `rules-raid`'s
 engagement path, because nothing opens a portal at this build and **no engagement tick ever ran.**
+
+---
+
+## Ten of fifteen metrics have never run. The four dead constants were not accidents.
+
+W57, while building species metrics, found the general mechanism:
+
+> **`collectRunMetrics` has no production caller anywhere.** Nothing constructs a `RunTelemetry`;
+> `KnowledgeCensus` is never instantiated. **Ten of the fifteen registered metrics are per-run and
+> are therefore all structurally incapable of moving in a real sweep.**
+
+Baselines gate only `scenario`'s ten `reference*` vital signs. Everything else in the registry is
+decoration.
+
+**Put beside W55's finding, the measurement apparatus is comprehensively broken:**
+
+- **10 of 15 metrics are never collected.**
+- The few that are get tolerances of **±118% of mean**, set at 3× a standard error pooled over arms
+  spanning 40×.
+- **Two of three gates play no god verb at all.**
+
+That is a complete explanation of eight consecutive null results, and it is not a mechanism theory.
+**We have been measuring with an instrument that mostly does not run, and grading it against
+tolerances that cannot fail.** `libraryDependence` pinned at 0, `capitalSnowball`'s byte-identical
+checkpoints, `referenceLibraryDepth` at 1.00 and the coverage gate were four visible symptoms of one
+structural fact.
+
+## Nothing in the rules path ever raises mastery
+
+Found while trying to gate "qualified" on teachability:
+
+> **`setMastery` has one non-test caller — the decay pass — and it only lowers.**
+
+Research creates instances at **256**, below the **512** teach threshold, and **they can never
+climb.** Every teachable instance in the game descends from a god grant at 1024, sliding toward a
+retention floor that is also below 512 **for all six species**.
+
+So `ages-of-magic.md` §2c's publish-or-perish is not merely missing its *publish* half — the arrow
+only points down, by construction, everywhere. W53's `practice` is the fix and it is unmerged.
+
+This also makes the **teachable window** the real species discriminator: gnome **32** ticks against
+dwarf and draconic **102**.
+
+## The three species claims, measured
+
+**Claim 1 — versatility hegemony — refuted, and what replaces it is worse.** All six species staff
+**70 of 70** cells and 12 of 12; all six trip an 80% flag. Every cell has a prerequisite-free tier-1
+node and the lowest depth ceiling is 3, so **cell entry is free for everyone and nothing limits
+breadth at all.** The contrast vector confirms the derivation reads content correctly: elf and
+draconic are exactly top on `exhaustibleCells` at 70/70, against orc's **2**.
+
+**Claim 2 — long-lived brittleness — half supported, mechanism refuted.** Elf and draconic never
+recover, so losses do compound. But *"human and orc get absorbed"* is **false** — both are censored
+too, despite human having the highest mage-production rate and orc the shortest maturity lag. Only
+gnome (72 ticks) and dwarf (372) recover. **Recovery is not fertility-limited**: student demand *is*
+university capacity, and the carrying-capacity brake is one scalar shared across all species.
+Retuning `fertility` would move a number that is not the binding constraint.
+
+**Claim 3 — role assignment as a demographic lever — refuted, and reported `mechanic-absent` rather
+than 0.** `roleId` never enters the mortality hazard; `perTickHazard` reads age, birth tick and
+effective lifespan and nothing else. The only role-to-death pathway is raid combatant eligibility,
+and `raidEngagement` is false. **The price is undefined, not zero. The lever does not exist yet.**
+
+### And it caught itself falling into this project's own trap
+
+Its first shock run returned `recoveryTicks: 0` for all six species. The cause was its own sampling
+window — the shock-tick observation is recorded *before* the cull, so the collector received the
+pre-shock roster as its first post-shock sample.
+
+> *"Six species reporting instant recovery after losing half their mages was the tell."*
+
+A plausible zero, caught because it was implausible. That is the discipline the four dead constants
+needed and did not get.
