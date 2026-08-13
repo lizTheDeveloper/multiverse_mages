@@ -131,8 +131,72 @@ same hours competing. That makes the allocation in §2b sharper still: a mage se
 researching, not on the wall, **and not maintaining her own frontier**. Publish or perish is what the
 clock is doing to her while she does any of the other three.
 
-**Open, and it is the first thing to build from this document:** whether *publish* is its own
-operation, or a side effect of research and teaching. Making it a side effect is cheaper and means a
+### RULED: a new spell is the publication, and teaching is what makes it possible
+
+The author, closing the open question below:
+
+> *"I learn a lot by teaching. I learn new stuff and it keeps the fundamentals fresh — **it's what
+> informs my research into new spells.** Research into new spells is publish. **New spell =
+> publish.**"*
+
+So the loop, and every arrow in it already exists in the game except the last:
+
+    teach the fundamentals  ->  the fundamentals stay fresh
+                            ->  fresh fundamentals inform research at the frontier
+                            ->  research yields a new spell
+                            ->  THE NEW SPELL IS THE PUBLICATION
+                            ->  standing maintained
+                            ->  and standing is what lets you teach
+
+**Publish or perish, exactly: the publication is a new node, and a scholar who has not produced one
+in long enough loses the standing to supervise.** That is what a mastery below the teach threshold
+*means*. The 93.4% are not people who forgot things — they are **faculty who have not had a new
+result in twenty years**, which is both funnier and more accurate.
+
+Two consequences, and the second reverses something this document said an hour ago:
+
+**Mastery is maintained by use, and there are two uses.** Teaching what you know keeps *those* nodes
+fresh — it is the prerequisites, the low tiers, the fundamentals, which is exactly the mass that
+marooning eats. Discovering what you do not know is the other, and it is the one that counts for
+standing. A scholar who only teaches still perishes; a scholar who tries to research on stale
+fundamentals cannot reach the frontier. **You need both, which is the academic life stated as a
+resource loop.**
+
+**Teaching is an input to research, not a subtraction from it.** §2b calls the stationed set the
+tightest coupling in the design, because a mage set to teach is not researching and not on the wall.
+The first half of that is now wrong: **teaching feeds research.** The wall still competes. So the
+real tension is not three-way — it is *teach-and-research* against *defend*, and defending is the
+only thing that is purely a cost.
+
+### Which finally says what a college is *for*, mechanically
+
+§2 argued a college compresses a novice's passage through the known. True, and secondary. The real
+function:
+
+> **The faculty need the students.** Teaching the first age is what keeps a scholar's fundamentals
+> live enough to research the third.
+
+Students are not the product. **They are the mechanism.** That is a far better argument for §2a than
+throughput ever was — a lone genius in a tower cannot reach the third age not because she is slow,
+but because she has nobody to teach and her fundamentals go stale underneath her.
+
+And it preserves §3b's amendment rather than undoing it: the requirement is **teaching**, not an
+institution. A master with one apprentice satisfies the loop. That is precisely the *"slow, fragile,
+attrition-based"* alternative road — one death ends it — while a college is the industrial form of the
+same mechanism.
+
+### It also puts a joke inside paced teaching
+
+Under §2e a mismatched student repeats a class several times. Every repetition is another pass over
+the fundamentals **for the teacher**. So a dragon sitting a human's brisk class four times is a mild
+inconvenience to the dragon and **four reinforcements for the human** — mismatched pairs are lossy for
+the student and *good* for the teacher, which is a tension worth having and is also how it actually
+works.
+
+**Still open:** whether discovery refreshes only the new node or also the prerequisites it was reached
+through. Refreshing the prerequisites is the version that makes the loop self-sustaining and is
+probably right; refreshing only the new node means the fundamentals depend entirely on teaching, which
+is a harsher and more interesting game. Making it a side effect is cheaper and means a
 working scholar is automatically a maintained one. Making it separate creates a fourth demand on a
 roster that already has three, which is either the best tension in the game or one too many.
 
