@@ -297,9 +297,10 @@ rationale for. `balance:gate` (200 runs, 100 world ticks):
 
 Read together, the three that moved say one thing each:
 
-- **Instances and library depth fall**, by 5–11% and 23–25%. Practice takes months that were
-  research and scribing, and the gated economy pays for less `vellum`. This is the cost, and it is
-  the same movement `reference-long-run` 9.8 shows at two centuries.
+- **Instances and library depth fall**, by 5–11% and 23–25% on these two gates, and by 59% on the
+  ascension gate below. Practice takes months that were research and scribing, and the gated economy
+  pays for less `vellum`. This is the cost, and it is the same movement `reference-long-run` 9.8
+  shows at two centuries.
 - **`referenceNodesGainedFinalQuarter` *rises* 10.9%, and it is the only metric that improves.** A
   universe with fresher fundamentals is still gaining nodes late in a run where it used to be
   slowing down. That is `ages-of-magic.md` §2c's claim — *"fresh fundamentals inform research at
@@ -308,15 +309,33 @@ Read together, the three that moved say one thing each:
   seventeen and this is the first time anything has been measured against it under a maintenance
   mechanic.
 
-**`balance:gate:ascension` is not reported here, and that is a gap rather than a result.** It is the
-slowest of the three by two orders of magnitude — W49 measured 504 s for its 32 runs and had to
-raise a timeout to get it — and on the machine this work was done on it was still running when this
-document was finished, alongside two other agents' sweeps. What is knowable without it: it reads the
-same `provenance.contentHash`, so it will refuse on the same revision pair as the other two. What is
-*not* knowable without it is its per-metric deltas, and the ascension metrics are the ones a
-maintenance mechanic is most likely to move — `permit-then-idle` and `permissive-breadth` both
-ascended 8/8 in the sweep above, before and after, so the interesting question is whether the
-*timing* moved. **Somebody should run it and append the table.**
+`balance:gate:ascension` (32 runs, **892.0 s** — W49 measured 504 s for the same sweep and had to
+raise a timeout to get it; this machine was carrying two other agents' sweeps at the time):
+
+| metric | baseline | current | delta | verdict |
+|---|---|---|---|---|
+| `referenceLibraryDepth` | 34.13 | 14.03 | **−20.09 (−58.9%, −3.02 SE)** | regressed |
+| `referenceGrimoires` | 283.56 | 175.84 | −107.72 (−38.0%, −2.42 SE) | pass |
+| `referenceKnowledgeInstances` | 3266.6 | 3005.7 | −260.9 (−8.0%, −0.54 SE) | pass |
+| `referenceNodesGainedFinalQuarter` | 4.875 | 5.469 | +0.594 (+12.2%, +0.28 SE) | pass |
+| `referenceNodesKnown` | 60.88 | 59.72 | −1.16 (−0.10 SE) | pass |
+| `referenceLivingMages` | 459.9 | 473.9 | +14.1 (+0.08 SE) | pass |
+| population series | — | — | unchanged within noise | pass |
+
+Two things to read carefully here, because this gate's tolerances are enormous — `referenceNodesKnown`
+tolerates ±33 on a value of 60, and `referenceKnowledgeInstances` ±1456 on 3267:
+
+- **`referenceLibraryDepth` is the only metric that clears its tolerance, and it is the same metric
+  that regressed on both faster gates.** −59% here against −23% and −25% there, and the same
+  collapse `reference-long-run` 9.8 sees at two centuries. Three gates and a long run all say the
+  library stops broadening; that is the most robust negative result in this document.
+- **`referenceGrimoires` falls 38% and *passes*.** It passes because the ascension sweep's spread is
+  wide enough to absorb it, not because it did not happen. A reader taking "9 of 10 pass" off this
+  table would be reading the tolerances, not the build.
+
+`referenceNodesGainedFinalQuarter` moves the same direction as it did on the horizon gate (+12.2%
+against +10.9%) but at 0.28 SE it carries no weight here. Two same-signed observations, one of them
+significant: worth watching, not worth claiming.
 
 The comparison that would be *meaningful* is a regeneration taken deliberately after the
 freshness-window decision above, not one taken to make a gate go green.
