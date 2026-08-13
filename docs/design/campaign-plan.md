@@ -3477,3 +3477,85 @@ smaller secret surface does not change that. `ci/hetzner-lint` also keeps its st
 despite no longer running on a box called hetzner — renaming it would require a branch-protection
 change and would invalidate every historical status. **The name is now wrong and the cost of fixing it
 is higher than the cost of documenting it.**
+
+---
+
+## W76 — the balance gates resolve zero raids, and the species collapse is not practice's fault
+
+*2026-08-13. Two findings from the castability work, either of which would have justified the branch.*
+
+### The gates are structurally blind to `rules-raid`
+
+**All three balance gates resolve zero raids at every committed tick cap — 60, 240 and 2400 —
+measured directly.** `packages/rules-raid` is 4,525 lines across 16 files, and not one committed gate
+exercises any of it.
+
+This belongs beside the ten uncollected metrics and the ±118% tolerances as a **third** instance of the
+same failure: the instrument does not touch the thing. It also explains a long-standing puzzle — every
+raid mechanic this campaign has measured came back null, and a gate that resolves no raids cannot
+report otherwise. **Re-measure anything raid-shaped that was declared null before believing it.**
+
+### Five of seven combat primitives were 0-castable; two now cast
+
+`firstCastableNode` filtered cast candidates on `direct-damage` alone. The safety check was correct;
+its test was too narrow by four primitives. Over 48 raids with identical warbands and seeds, a
+permit-all host and the Vancian hook:
+
+| primitive | before | after |
+|---|---|---|
+| `area-denial` | **0** | **10,182** applications |
+| `blink` | **0** | **284** |
+| `direct-damage` | 6,724 | 6,741 |
+| `summon` / `ward` / `portal` | 0 | 0 |
+
+**`ward` and `concealment` remain 0-castable on purpose** — §3 gives each a stacking rule and no
+trigger, so there is nothing to cast. That is a content gap, not a filter bug, and stating which is
+which is the point.
+
+**Two further defects found and deliberately not fixed**, so each gets its own argument:
+
+1. **`summon` is still 0** because Vancian readies the four lowest-**id** legal nodes and
+   `rn-call-by-name` is fifth. A `knowledge-steal` node also burns a slot for an intent that never
+   fires.
+2. **Ascending-id selection shadows everything above the lowest damage node.** Under the `standard`
+   cast hook only `direct-damage` ever lands — `true-naming` measures area-denial 0, blink 0,
+   direct-damage 16,788. **The filter was one of two causes and the smaller one.**
+
+### The species collapse reproduces on plain `main`, so `w53/practice` is exonerated
+
+`speciesCellOccupancy`, reference universe, seed 589825, **no actions taken at all**:
+
+| world year | draconic | dwarf | elf | gnome | human | orc | Gini |
+|---|---|---|---|---|---|---|---|
+| 0 | 1 | 1 | 1 | 1 | 1 | 1 | 0.0000 |
+| 40–80 | 12 | 12 | 12 | 12 | 12 | 12 | 0.0000 |
+| 100 | 12 | 12 | 12 | 12 | 12 | **1** | 0.1503 |
+| 160–200 | 12 | 12 | 12 | 12 | **0** | **0** | 0.3333 |
+
+**Orc (720 months) and human (960) — the two shortest-lived — die in lifespan order, on `main`, with
+no species constant touched and no god acting.** W74 suspected this and it is now measured: practice
+did not cause the collapse, and W20's independent sighting of the same orc dropout was the same
+underlying fact. **The extinction is a `main` defect with its own owner.**
+
+The divergence claim survives intact and separate, as W74 insisted it must.
+
+### And realised occupancy is capped at twelve, not seventy
+
+**No species can occupy a cell its universe forbids.** The 70/70 figure everyone has been quoting —
+including me, repeatedly — is *capability*; this is *outcome*, and outcome is bounded by the ruleset at
+**12**. That materially strengthens the case for the 2×2 opening: the thing that limits what a species
+actually does is already the ruleset, and today the ruleset is the same twelve cells for everyone.
+
+Carrying **which** cells rather than only how many paid off immediately: at year 20 gnome is four cells
+short, and the four are *Perdo Mentem, Perdo Terram, Perdo Limen and Rego Terram* — "behind in Perdo",
+not merely "behind". At founding all six hold one cell each and **no two the same**, which a bare
+`1,1,1,1,1,1` cannot distinguish from six species crowded into one cell.
+
+### Corrections to briefs I issued
+
+- **The registry was 15 metrics on `main`, not 12.** I gave the wrong count twice.
+- **`VERSATILITY_HEGEMONY_FRACTION` already existed**, having arrived with #59. My claim that `grep`
+  for coverage or hegemony returned nothing was true when made and stale when I repeated it.
+- **`collectRunMetrics` still has no production caller on `main`** — the wiring is on `w62`, unmerged.
+  So the new metric is registered, collected and tested but **will not appear in sweep records** until
+  that lands.
