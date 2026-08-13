@@ -3873,3 +3873,81 @@ moved by **exactly zero** — the changed runs never held the maximum.
   and six others narrowed in the same pass, so this is grown variance from runs no longer terminating
   early. **The gate is nonetheless less sensitive on those four**, the remedy is replicates, and it is
   deferred into the re-baselining that W80/W82/W74/W77 already force.
+
+---
+
+## W85 — three university subsystems are built, tested, and never invoked. And I recorded one of them as working.
+
+*2026-08-13. Found by Codex, asked to hunt for code reachable in principle and never reached in
+practice. Every finding verified with one grep before recording.*
+
+`world-step.ts:578–586` supplies the materials consumer **zero for three of its four demands**:
+
+```
+libraryUpkeep: 0,
+scribing:      0,   // legitimately zero — already paid at the desk in phase 5
+construction:  0,
+```
+
+Only `scribing: 0` is justified, and the comment says why. The other two are not zero because the
+demand is zero. **They are zero because the functions that would compute them are never called.**
+
+| function | production callers | consequence |
+|---|---|---|
+| `advanceConstruction` (`construction.ts:219`) | **none — definition only** | `BUILD_PROGRESS_PER_LABOR_MONTH`, `MATERIALS_PER_LABOR_MONTH`, `laborAffinity` and the whole `build-rate` primitive have **no simulation path** |
+| `applyLibraryUpkeep` (`capital.ts:271`) | **none — definition only** | libraries are **free** and cannot degrade from insolvency |
+| `UNIVERSITY_STAFF` (`components.ts:664`) | **declared and exported, never read or written** | every university draws from **the same global scribe pool** |
+
+### The correction: I recorded the upkeep mechanic as already built
+
+In W68 I wrote, triaging the grungeon digest: *"Ep 43, maintenance. **Already built** — recording it
+so nobody re-proposes it. `LIBRARY_UPKEEP_PER_INSTANCE` plus `applyLibraryUpkeep` at `capital.ts:271`
+degrade instances on unpaid materials, and W7 measured it flipping narrow-depth from 12/12 to 0/12."**
+
+**The function exists. The constant exists. The production loop never calls it.** W7's measurement must
+have run through a test harness or a modified loop, not the shipped one. So the item is *implemented*
+and *not in the game*, which is the worst of both states — it reads as done to anyone grepping for the
+symbol, and it does nothing to anyone playing.
+
+I made that entry to stop the item being re-proposed. **It should be re-proposed**, and the work is
+smaller than the original suggestion: not "build maintenance" but "call the maintenance that exists."
+
+### These three explain findings I had recorded as separate mysteries
+
+- **W72: `open-then-build` founds 98 universities against a threshold of 2, zero rejections, 4.7M favor
+  unspent.** Of course it does — **construction never binds**, because `advanceConstruction` is never
+  called. I diagnosed that as a favor-pricing problem. Favor pricing is real, but the nearer cause is
+  that the *build* half of building a university does not run.
+- **Qwen's "universities have no specialisation mechanism", and S2's teaching boundary.** Even with
+  teaching scoped to co-affiliates, **all universities share one global scribe pool** — the world loop
+  counts every scribe cohort for whichever university it is evaluating, and the code's own comment
+  concedes it: *"Taking the whole scribe population."* An institution that cannot own its staff is not
+  much of an institution, and this is a second reason the boundary alone may produce no divergence.
+- **S4/ep41's "second growth axis: coordinated non-magical throughput"**, which I queued as new design
+  work needing `laborAffinity` to be given meaning. **`laborAffinity` already has meaning — it feeds
+  `advanceConstruction`.** The axis is built. Nothing calls it.
+
+### And two more, on prestige
+
+`executor.ts:96` declares `prestigeCarryForward: true` and comments call the carry-forward "real".
+**No production caller invokes `carriedPrestige` or `legacyGrant`**, and every reference state begins
+`prestige: 0`, so the terminating universe writes `prestigeEarned` into the void. Two authored
+constants — `legacy-archive-max-tier` and `legacy-reference-tick` — are resolved and never consumed.
+
+Consequently the prestige metric's honest-looking `no observations` status is **concealing a missing
+mechanism rather than an unscheduled matchup**. Even with a pair scheduler there is no way to seed the
+high-prestige side. The collector distinguishes "mechanic exists, arm has no pairs" from "mechanic
+absent" and lands on the wrong side of its own distinction.
+
+### The pattern this completes
+
+The campaign's modal defect was *the instrument does not touch the thing* — four instances, recorded in
+W81. **This is the same shape one level down: the simulation does not touch the mechanic.** Five more
+instances, all in `packages` rather than in the harness.
+
+The general lesson is now specific enough to act on: **"the symbol exists" and "a test covers it" are
+both compatible with "the game never runs it."** The `check:consumption` script asks this question for
+*primitives* and is the reason `portal` and `worship-yield` are known to be the only two with
+node-driven consumers. **There is no equivalent asking it for functions, components or constants**, and
+these five would all have been caught by one. That check is now the highest-value tooling item on the
+board, above any individual fix, because it converts a class of defect into a build failure.
