@@ -21,11 +21,7 @@ import {
   collectSpeciesGridVersatility,
 } from '../../src/metrics-species-health.js';
 import { UNAVAILABLE_REASON } from '../../src/metrics.js';
-import type {
-  RosterSample,
-  RunTelemetry,
-  SpeciesGridReach,
-} from '../../src/metrics-telemetry.js';
+import type { RosterSample, SpeciesGridReach } from '../../src/metrics-telemetry.js';
 import { MECHANICS_AT_0_5_0 } from '../../src/metrics-telemetry.js';
 import { telemetry } from './metrics-fixtures.js';
 
@@ -111,7 +107,7 @@ describe('speciesGridVersatility', () => {
         },
       }),
     );
-    const species = (entry as { detail: { species: Record<string, unknown>[] } }).detail.species;
+    const species = (entry as unknown as { detail: { species: Record<string, unknown>[] } }).detail.species;
     expect(species[0]).toMatchObject({ staffableFraction: 1, exhaustibleFraction: 2 / 70 });
   });
 });
@@ -187,7 +183,7 @@ describe('lossShockRecovery', () => {
         },
       }),
     );
-    const species = (entry as { detail: { species: Record<string, unknown>[] } }).detail.species;
+    const species = (entry as unknown as { detail: { species: Record<string, unknown>[] } }).detail.species;
     // Both rosters returned; draconic's knowledge did not. A headcount series
     // alone would have reported a full recovery.
     expect(species[0]).toMatchObject({ nodesNotRecovered: 0 });
