@@ -26,9 +26,9 @@ This document did not name a tradition, and it has to, because `vision.md` §4a 
 has exactly one** and one of the three decides whether the thing this raid is built to take exists
 at all.
 
-**What this document assumes: a store hook that makes records.** In `packages/content/data/
-tradition.json` that is `store: { kind: "standard" }`, which is **Vancian Memorization** and **True
-Naming**. Everything below about libraries — §8's *"universities first, because that is where the
+**What this document assumes: a store hook that makes records.** In
+`packages/content/data/tradition.json` that is `store: { kind: "standard" }`, which is **Vancian
+Memorization** and **True Naming**. Everything below about libraries — §8's *"universities first, because that is where the
 grimoires are"*, §1's correction that libraries fall to objective capture and grimoire-burn rolls
 rather than to *Perdo*, §8's claim that a deep library and three scriptoria produce a different
 plan from a shallow library and a barracks — is a statement about a universe under one of those

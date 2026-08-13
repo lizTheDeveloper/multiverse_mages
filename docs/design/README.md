@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # `docs/design/` — what is in here, and what each thing is worth
 
-Eighteen documents, four of them over five hundred lines. Two audits have been commissioned in this
+Nineteen documents, eight of them over five hundred lines. Two audits have been commissioned in this
 project that re-derived work already sitting in this directory, because the existing work was
 invisible. This index exists to make that mistake cost one file read.
 

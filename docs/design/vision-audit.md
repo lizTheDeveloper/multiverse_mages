@@ -13,7 +13,8 @@ fixture was regenerated.*
 >   *"not started"*, so the three `contradicted` verdicts below describe a superseded table. The
 >   counts here (`102/107` for `mages-and-species`, and the rest) were correct at `6e5ecee`; two of
 >   `mages-and-species`'s boxes were deliberately unchecked afterwards and it now reads 100/107.
-> - **§13 — partially closed.** W25 struck four of the open questions and added seven others.
+> - **§13 — partially closed.** W25 struck one open question — *"Which 3 techniques × 4 forms make
+>   the v1 subset?"*, answered in 0.3.0 and then outgrown — and added six new ones.
 > - **§3 — the row auditing *"Rules changes are a world-time action. Nothing … can be altered once
 >   a raid has begun"* audits a rule that has been repealed.** See `raid-engagement.md`. Its
 >   *evidence* is still accurate; the claim it is evidence about is gone.
