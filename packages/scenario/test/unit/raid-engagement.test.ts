@@ -32,10 +32,10 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { rngFromRootSeed, snapshotHash, step } from '@mm/sim-core';
+import { installValueSentinel, rngFromRootSeed, snapshotHash, step } from '@mm/sim-core';
 import { KNOWLEDGE_INSTANCE, collectRecords } from '@mm/state';
 import { executeReferenceRun, referenceContent, referenceScenario } from '@mm/scenario';
-import type { SimState } from '@mm/sim-core';
+import type { ComponentValueViolation, SimState } from '@mm/sim-core';
 
 /**
  * Long enough for the arrival process to fire, short enough to run in a gate.
@@ -50,6 +50,14 @@ const HORIZON = 520;
 
 /** Seeds these tests play. Three, so a pass is not one lucky arrival. */
 const SEEDS: readonly number[] = Object.freeze([0x1234_5678, 0x0bad_c0de]);
+
+/**
+ * The one seed the sentinel arm plays. One rather than all of {@link SEEDS},
+ * because the sentinel routes every component write through a `Proxy` and the
+ * cost is per-universe; the claim is about the raid code path, which one
+ * resolved raid exercises as well as three do.
+ */
+const SEED_UNDER_SENTINEL = 0x1234_5678;
 
 const content = referenceContent();
 
@@ -118,6 +126,69 @@ function playOnce(seed: number, raids: boolean, ticks: number): Arm {
     instances: collectRecords(state, KNOWLEDGE_INSTANCE).length,
   };
 }
+
+/**
+ * Hands the event loop back so the vitest worker can answer its runner, for the
+ * reason `assembled-run-values.test.ts` documents: a worker doing unbroken
+ * synchronous work cannot answer an RPC, and a runner that has not heard from a
+ * worker treats it as dead. It changes no number.
+ */
+async function yieldToRunner(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
+/**
+ * # The NaN check, on the one path it could not previously reach
+ *
+ * `assembled-run-values.test.ts` watches the component write boundary across
+ * the reference universe and every shipped strategy, and finds nothing. It also
+ * cannot see `rules-raid`, which is 4,525 lines: its strategy arms run sixty
+ * ticks, and the arrival process behind a sixty-tick cooldown needs hundreds.
+ * Measured on this tree, the whole ten-strategy pool at that horizon resolves
+ * *one* raid, and that one is an accident of `archivist`'s seed --
+ * `portal-rush`, whose entire purpose is opening portals, resolves none at 60,
+ * 90, 120, 180 or 240 ticks.
+ *
+ * So raid coverage in the NaN check was never a property of a test. It was a
+ * property of one seed. This file already pays for the horizon that reaches the
+ * mechanic, so the check belongs here.
+ *
+ * The resolved-raid count is asserted for the reason the violation list is not
+ * enough on its own: a run that resolves no raid reports zero violations and
+ * passes while covering nothing. Asserting the count makes the arm fail when it
+ * stops reaching the mechanic, instead of quietly hollowing out.
+ */
+describe('a raid writes no non-finite value into state', () => {
+  it('stays clean at the component write boundary across every resolved raid', async () => {
+    const violations: ComponentValueViolation[] = [];
+    const previous = installValueSentinel((violation) => violations.push(violation));
+
+    let resolved = 0;
+    try {
+      const run = referenceScenario(content, { raids: true });
+      let state = run.scenario.create(SEED_UNDER_SENTINEL, { worldTickCap: HORIZON });
+      for (let tick = 0; tick < HORIZON; tick += 1) {
+        state = step(state, [], rngFromRootSeed(state.rootSeed));
+        // Once a world year, as the long run does.
+        if (tick % 12 === 11) await yieldToRunner();
+      }
+      resolved = run.raids().length;
+    } finally {
+      installValueSentinel(previous);
+    }
+
+    expect(
+      violations.map(
+        (violation) =>
+          `${violation.component}.${violation.field}[${String(violation.row)}] = ` +
+          `${String(violation.value)} (via ${violation.door})`,
+      ),
+    ).toEqual([]);
+    expect(resolved).toBeGreaterThan(0);
+  }, 180_000);
+});
 
 describe('a reference universe is raided', () => {
   it('resolves raids over forty-three world years, where the build before this one resolved none', () => {
