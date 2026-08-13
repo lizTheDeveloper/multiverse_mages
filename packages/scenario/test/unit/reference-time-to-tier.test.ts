@@ -35,17 +35,28 @@
  * measurement from one in which they time out, so the earlier assertions here
  * are obsolete rather than weakened.
  *
+ * ## Re-measured again after vision §6a's capital loop, and it got worse
+ *
+ * `w7/knowledge-capital` wired the library's contribution into `research-rate`,
+ * `teach-rate` and `scribe-rate`. It is a *shared* acceleration — every mage at
+ * a university reads the same shelves — so the spread **compressed** rather than
+ * widening.
+ *
  * Time to a mage of tier 3, in world ticks, six seeds of a sixty-year run:
  *
  * ```text
- *  gnome     [41,  55]        dwarf  [45,  57]        human  [46,  55]
- *  elf       [60, 127]        orc    [61,  76]     draconic  [71, 345]
+ *  gnome     [39,  53]        dwarf  [41,  54]         orc  [42,  63]
+ *  human     [44,  57]          elf  [54, 110]    draconic  [68, 245]
  * ```
  *
- * Two bands, cleanly separated: every fast species arrives strictly before
- * every slow one, in every seed. Inside a band nothing separates — which is
- * exactly why 9.9 stays unticked. The task asks for species to differentiate,
- * and three of them arriving together is three species wearing one trait.
+ * Orc left the slow band outright — it was `[61, 76]` — and elf now overlaps
+ * *both* the four ordinary species below it and draconic above it, so the six
+ * no longer partition into ordered bands at all. One strict separation
+ * survives: draconic arrives after every one of the ordinary four, in every
+ * seed. **That is a species-differentiation regression and it is recorded
+ * rather than repaired**: the lever is the species table, every magnitude in it
+ * is `tuningStatus: "untuned"`, and `release-plan.md` forbids answering a
+ * tuning question before 0.5.0.
  *
  * Tier 3 is asserted rather than tier 2 because it is the tier
  * `species-traits` names, and because at tier 2 the bands blur: draconic's
@@ -189,18 +200,45 @@ describe('time to tier, by species', () => {
     }
   });
 
-  it('separates two bands of three, not six species, and 9.9 stays unchecked', () => {
-    // Rewritten after the `acquire` hook was wired into the real acquisition
-    // path. Every number below moved, and all of them for the better: draconic
-    // went from [63, 548] ticks to [33, 104], and orc stopped being censored
-    // altogether — it was censored in seven of eight seeds and now reaches
-    // tier 2 in all six. A universe in which the slow species arrive at all is
-    // a different measurement from one in which they time out, so the previous
-    // assertions are not weakened here, they are obsolete.
+  it('separates three bands of six, and 9.9 is closer than it has ever been', () => {
+    // **Rewritten three times, and this time the direction reversed back.** The
+    // previous version recorded a single separation — draconic strictly after
+    // four ordinary species, with elf bridging — taken after
+    // `w7/knowledge-capital` wired vision §6a's library contribution into the
+    // three rates and compressed the spread.
     //
-    // What the data now supports is a two-band split rather than six ordered
-    // species, and the bands are cleanest at tier 3 — which is the tier
-    // `species-traits` names, so it is the tier asserted.
+    // `w17/value-sensitive-acquirer` then made target selection a utility score
+    // shaped by species, age, personality and standing role
+    // (`docs/design/value-sensitive-acquirer.md`). Every species got roughly
+    // twice as fast to tier 3 *and the spread reopened*, because a species now
+    // walks toward the tier-3 nodes its own `curiosity` and `affinities` favour
+    // rather than down one queue shared by everybody.
+    //
+    // Measured, tier 3, in ticks, this build against the previous one:
+    //
+    // | species | w7 | w17 |
+    // |---|---|---|
+    // | gnome    | [39, 53]  | **[20, 21]** |
+    // | dwarf    | [41, 54]  | **[21, 25]** |
+    // | orc      | [42, 63]  | **[21, 27]** |
+    // | human    | [44, 57]  | **[28, 37]** |
+    // | elf      | [54, 110] | **[35, 58]** |
+    // | draconic | [68, 245] | **[26, 380]** |
+    //
+    // Three bands now, where there was one separation: a fast trio
+    // (gnome, dwarf, orc) that overlaps internally, human strictly after all
+    // three, and elf strictly after all three again. Draconic has stopped being
+    // a band at all — it spans from inside the fast trio to five times elf's
+    // slowest seed, which is `depthCeiling: 7` and `curiosity: 512` pulling
+    // against each other under the new score.
+    //
+    // **Task 9.9 wants four species separated by more than the cross-seed
+    // spread. This build separates three groups and not four species**, because
+    // gnome, dwarf and orc still overlap. Recorded rather than repaired: every
+    // species magnitude carries `tuningStatus: "untuned"`, no release before
+    // 0.5.0 may claim any of them is balanced, and inventing a species number to
+    // make a test go green is what `release-plan.md`'s measurement pivot exists
+    // to prevent.
     const interval = (name: string): { low: number; high: number } => {
       const column = tierThree.find((entry) => entry.name === name);
       if (column === undefined || column.observed.length === 0) {
@@ -209,31 +247,35 @@ describe('time to tier, by species', () => {
       return { low: Math.min(...column.observed), high: Math.max(...column.observed) };
     };
 
-    const fast = ['gnome', 'dwarf', 'human'].map(interval);
-    const slow = ['elf', 'orc', 'draconic'].map(interval);
+    const gnome = interval('gnome');
+    const dwarf = interval('dwarf');
+    const orc = interval('orc');
+    const human = interval('human');
+    const elf = interval('elf');
+    const draconic = interval('draconic');
+    const fastTrio = [gnome, dwarf, orc];
 
-    // The bands separate: in every seed, every fast species arrived strictly
-    // before every slow one. That is a stronger statement than comparing means,
-    // and it is the one the observed intervals actually support.
-    const slowest = Math.max(...fast.map((entry) => entry.high));
-    const earliest = Math.min(...slow.map((entry) => entry.low));
-    expect(slowest).toBeLessThan(earliest);
+    // What separates strictly, in every seed: the fast trio arrives before elf,
+    // and gnome arrives before human. Both are real statements about
+    // `curiosity` — gnome 1792, human 1152, elf 896 — now that curiosity is an
+    // input to *which* node a mage reaches for and not only to how fast she
+    // works on whichever one was cheapest.
+    for (const entry of fastTrio) expect(entry.high).toBeLessThan(elf.low);
+    expect(gnome.high).toBeLessThan(human.low);
 
-    // Inside a band nothing separates, which is why 9.9 stays unchecked: the
-    // task asks for species to differentiate, and three of them arriving
-    // together is three species wearing one trait.
+    // Draconic is the bridge now, and elf is not. It starts before human and
+    // ends long after elf, which is one species spanning the whole range rather
+    // than a slow band — asserted so that the day content gives it a band, this
+    // box is reopened.
+    expect(draconic.low).toBeLessThan(human.low);
+    expect(draconic.high).toBeGreaterThan(elf.high);
+
+    // Inside the fast trio nothing separates, which is why 9.9 stays unchecked:
+    // three groups is not four species.
     const overlaps = (a: { low: number; high: number }, b: { low: number; high: number }): boolean =>
       a.low <= b.high && b.low <= a.high;
-    const [gnome, dwarfBand, humanBand] = fast;
-    const [elfBand, orcBand] = slow;
-    if (gnome === undefined || dwarfBand === undefined || humanBand === undefined) {
-      throw new Error('a fast-band species was censored in every seed');
-    }
-    if (elfBand === undefined || orcBand === undefined) {
-      throw new Error('a slow-band species was censored in every seed');
-    }
-    expect(overlaps(gnome, dwarfBand)).toBe(true);
-    expect(overlaps(dwarfBand, humanBand)).toBe(true);
-    expect(overlaps(elfBand, orcBand)).toBe(true);
+    expect(overlaps(gnome, dwarf)).toBe(true);
+    expect(overlaps(dwarf, orc)).toBe(true);
+    expect(overlaps(gnome, orc)).toBe(true);
   });
 });

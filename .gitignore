@@ -20,6 +20,23 @@ coverage/
 # Generated audio candidates. Selected takes are committed under assets/selected/.
 assets/candidates/
 
+# Superseded takes from a voice recast. Kept on disk so a swap is reversible
+# with one `mv`, but they are regenerable audio and do not belong in history.
+assets/retired/
+
 # Python bytecode, from packages/gym-bridge/python.
 __pycache__/
 *.py[cod]
+.w15/
+# W17 measurement output. Same reason .w15/ is ignored: a sweep writes tens of
+# thousands of lines of JSON per arm and none of it is source.
+.w17/
+# W46's affinity-ablation arms. Same reason.
+.w46/
+
+# The generated lattice report, regenerated with scripts/content-graph.mjs.
+# Named exactly rather than globbed: `ui/*.html` also matched ui/index.html, and
+# `git add ui/` skips an ignored file SILENTLY — so the front door was committed
+# as a README pointing at a page that was never in the tree, which is the defect
+# that commit existed to fix.
+ui/lattices.html

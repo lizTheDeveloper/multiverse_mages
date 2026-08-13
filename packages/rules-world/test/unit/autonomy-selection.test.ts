@@ -29,7 +29,7 @@ import { RNG_STREAM } from '@mm/sim-core';
 import { GOAL, argmaxWithTieBreak, chooseTarget, completeAffiliation, selectGoal } from '../../src/index.js';
 import type { GoalScore } from '../../src/index.js';
 
-import { outlook, richOutlook, target } from './autonomy-fixtures.js';
+import { appealWeights, outlook, richOutlook, target } from './autonomy-fixtures.js';
 import { mageRow, recordingRng, stepRng } from './mage-fixtures.js';
 
 const scored = (goal: number, score: number): GoalScore => ({
@@ -114,6 +114,7 @@ describe('identical runs select identical goals', () => {
       for (let tick = 0; tick < 24; tick += 1) {
         for (let mage = 1; mage <= 12; mage += 1) {
           const selection = selectGoal({
+      appeal: appealWeights,
             outlook: richOutlook({ mage }),
             worldTick: tick,
             incumbent: undefined,
@@ -128,21 +129,25 @@ describe('identical runs select identical goals', () => {
   });
 });
 
-describe('targets are chosen cheapest first', () => {
+describe('targets are chosen by utility, and ties still fall to cost then node id', () => {
   it('picks the cheapest candidate and breaks cost ties on node id', () => {
+    // Three candidates identical in everything the utility score reads — same
+    // tier, no cell, no effects — so the whole decision is the effort term and
+    // then the tie-break, which is the old behaviour and still the fallback.
     const state = richOutlook({
       discoveryTargets: [target(9, 1, 100), target(4, 1, 100), target(2, 1, 900)],
     });
-    expect(chooseTarget(GOAL.researchNode, state)).toBe(4);
+    expect(chooseTarget(GOAL.researchNode, state, appealWeights)).toBe(4);
   });
 
   it('returns the absent reference for a goal that needs no node', () => {
-    expect(chooseTarget(GOAL.idle, richOutlook())).toBe(0);
-    expect(chooseTarget(GOAL.wardDuty, richOutlook())).toBe(0);
+    expect(chooseTarget(GOAL.idle, richOutlook(), appealWeights)).toBe(0);
+    expect(chooseTarget(GOAL.wardDuty, richOutlook(), appealWeights)).toBe(0);
   });
 
   it('re-points a goal whose committed target has gone', () => {
     const first = selectGoal({
+      appeal: appealWeights,
       outlook: richOutlook({ mage: 3, discoveryTargets: [target(11, 1, 10)] }),
       worldTick: 0,
       incumbent: undefined,
@@ -151,6 +156,7 @@ describe('targets are chosen cheapest first', () => {
     expect(first.commitment.targetNodeId).toBe(11);
 
     const gone = selectGoal({
+      appeal: appealWeights,
       outlook: richOutlook({ mage: 3, discoveryTargets: [target(12, 1, 10)] }),
       worldTick: 1,
       incumbent: first.commitment,

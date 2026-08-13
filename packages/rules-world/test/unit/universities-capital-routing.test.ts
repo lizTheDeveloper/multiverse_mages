@@ -155,10 +155,25 @@ function listTypeScript(dir: string): string[] {
 
 const ROUTING_MODULE = 'packages/rules-world/src/universities/capital.ts';
 
-const sourceFiles = listTypeScript(join(repoRoot, 'packages', 'rules-world', 'src')).map((full) => ({
-  path: relative(repoRoot, full).split(sep).join('/'),
-  source: readFileSync(full, 'utf8'),
-}));
+/**
+ * Both packages the contribution could reach a rate from.
+ *
+ * `coordination` joined the scan when vision §6a's loop was wired: it is the
+ * layer that holds a library's depth and a mage's affiliation at the same time,
+ * so it is the one place outside this package where a bespoke multiplier could
+ * be written — and it is the *only* consumer, through
+ * `libraryRateMultiplier`, which keeps the lookup itself inside
+ * {@link ROUTING_MODULE}. Scanning only `rules-world` would have made this
+ * check pass by looking away from the code it exists to constrain.
+ */
+const SCANNED_PACKAGES = ['rules-world', 'coordination'];
+
+const sourceFiles = SCANNED_PACKAGES.flatMap((pkg) =>
+  listTypeScript(join(repoRoot, 'packages', pkg, 'src')).map((full) => ({
+    path: relative(repoRoot, full).split(sep).join('/'),
+    source: readFileSync(full, 'utf8'),
+  })),
+);
 
 describe('the library contribution has exactly one consumer', () => {
   it('has files to scan, so a pass is not an empty walk', () => {

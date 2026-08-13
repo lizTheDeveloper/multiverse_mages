@@ -34,7 +34,7 @@ import {
 } from '../../src/index.js';
 import type { MageGoalCommitment } from '../../src/index.js';
 
-import { outlook, richOutlook, target } from './autonomy-fixtures.js';
+import { appealWeights, outlook, richOutlook, target } from './autonomy-fixtures.js';
 import { stepRng } from './mage-fixtures.js';
 
 const commitment = (overrides: Partial<MageGoalCommitment> = {}): MageGoalCommitment => ({
@@ -152,6 +152,7 @@ describe('hysteresis governs displacement', () => {
     // goal, with the commitment period already elapsed.
     const state = richOutlook({ mage: 3, discoveryTargets: [target(11, 1, 1024)] });
     const selection = selectGoal({
+      appeal: appealWeights,
       outlook: state,
       worldTick: 300,
       incumbent: commitment({ adoptedTick: 0 }),
@@ -166,6 +167,7 @@ describe('hysteresis governs displacement', () => {
   it('lets a decisively better challenger through', () => {
     const state = richOutlook({ mage: 3, discoveryTargets: [target(11, 1, 1024)] });
     const selection = selectGoal({
+      appeal: appealWeights,
       outlook: state,
       worldTick: 300,
       incumbent: commitment({ goalId: GOAL.raidReadiness, targetNodeId: 0, adoptedTick: 0 }),
@@ -182,6 +184,7 @@ describe('hysteresis governs displacement', () => {
     const state = richOutlook({ mage: 3, discoveryTargets: [target(11, 1, 1024)] });
     const incumbent = commitment({ adoptedTick: 10 });
     const selection = selectGoal({
+      appeal: appealWeights,
       outlook: state,
       worldTick: 300,
       incumbent,
@@ -197,6 +200,7 @@ describe('hysteresis governs displacement', () => {
 describe('a held tick costs nothing and reports as much', () => {
   it('scores no goals and reports no masking', () => {
     const selection = selectGoal({
+      appeal: appealWeights,
       outlook: outlook({ mage: 4 }),
       worldTick: 101,
       incumbent: commitment({ goalId: GOAL.idle, targetNodeId: 0, adoptedTick: 100 }),

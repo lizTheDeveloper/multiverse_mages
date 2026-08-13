@@ -65,6 +65,7 @@ import { createState, rngFromRootSeed } from '@mm/sim-core';
 import type { Scenario, ScenarioConfig } from '@mm/agent-api';
 import {
   LIBRARY,
+  MATERIAL_STOCK,
   LOCATION_KIND,
   MAGE,
   OCCUPATION,
@@ -72,8 +73,10 @@ import {
   UNIVERSITY,
   attachRecord,
   createUniverse,
+  defineWorldStateSchema,
 } from '@mm/state';
-import { KnowledgeSubsystem, MASTERY_MAX } from '@mm/rules-magic';
+import { KnowledgeSubsystem, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
+import { readRaidTuning } from '@mm/rules-raid';
 import { createMage } from '@mm/rules-world';
 import type { GodTickReport, WorldStepReport } from '@mm/coordination';
 import { defineWorldSimulation, resolveGodContent } from '@mm/coordination';
@@ -85,21 +88,32 @@ import {
   scribingTraditionId,
   shippedContent,
   speciesTable,
+  traditionIdNamed,
   v1RulesetAxes,
   worldDeps,
 } from './content-set.js';
+import type { RaidRecord } from './raids.js';
+import { raidSystem } from './raids.js';
+import { portalTargetIds, readRivalConstants } from './rival-universe.js';
 
 /** `fp(1.0)`, spelled out where a record reads as a game value. */
 const FP_ONE = 1024;
 
 /**
- * The starting materials stock, `fp`.
+ * The starting stock of **each** material kind, `fp`.
  *
  * A working stock, not a lever on carrying capacity: `K` comes from the shipped
  * territory (`contracts.md` §2.7) and sits orders of magnitude above anything a
- * founding population reaches, so materials only modulate it within the bound
- * `carrying-capacity.ts` states. It exists so that the first tick's subsistence
- * and the first book are payable before the first harvest is in.
+ * founding population reaches, so food only modulates it within the bound
+ * `carrying-capacity.ts` states. It exists so that the first tick's subsistence,
+ * the first book and the first course of stone are payable before the first
+ * harvest is in.
+ *
+ * Split evenly across the three rather than weighted, and the reason is the same
+ * one `splitMaterialsByKind` gives for its thirds: a founding endowment is not a
+ * measurement of anything, so any weighting would be a claim about a starting
+ * position nobody made. The total is unchanged from the single-stock scenario at
+ * 3,000, which keeps the opening comparable across this change.
  */
 const STARTING_MATERIALS = 1000 * FP_ONE;
 
@@ -124,6 +138,19 @@ const DEFAULT_FOUNDING_MAGES = 1;
 
 /** Nodes granted at full mastery across the founding mages. */
 const DEFAULT_FOUNDING_NODES = 1;
+
+/**
+ * Every species founds the universe.
+ *
+ * Zero, and zero means "all of them" rather than "none of them", which is the
+ * one thing about this knob worth reading twice. The alternative encoding — a
+ * default of `(1 << speciesCount) - 1` — would have hardcoded the species count
+ * into a default, and `CLAUDE.md` puts species in validated content data. Zero
+ * is the only value that means *whatever the content declares* without knowing
+ * how many that is, and it makes the absent option and the documented default
+ * the same universe byte for byte.
+ */
+const DEFAULT_FOUNDING_SPECIES_MASK = 0;
 
 /**
  * The occupations a founding population is seeded into.
@@ -162,14 +189,59 @@ export interface ReferenceOptions {
    * module note.
    */
   readonly foundingNodes: number;
+  /**
+   * Which species found the universe, as a bitmask over content order.
+   *
+   * Bit *i* selects the *i*th species `speciesTable` enumerates. **Zero selects
+   * every species**, which is what this scenario has always done, so an absent
+   * option and this default build the identical state.
+   *
+   * It exists because there was no founding-mix knob at all and the campaign's
+   * D7 — *"varying the founding species mix changes which strategy wins"* — is
+   * not measurable without one. It is an **instrument**, not a magnitude: it
+   * turns no constant and changes no rule. A bitmask rather than a list because
+   * `ScenarioConfig.options` is restricted to scalars, so that a sweep can hash
+   * a config into a run record without inventing a serialization.
+   *
+   * A mask that selects nothing is refused rather than silently building an
+   * empty universe — see {@link buildReferenceState}.
+   */
+  readonly foundingSpeciesMask: number;
 }
 
-/** The factor ids a sweep may name. Exactly the keys of {@link ReferenceOptions}. */
+/**
+ * The factor ids a sweep may name.
+ *
+ * `tradition` is the one entry that is **not** a key of {@link ReferenceOptions}:
+ * it is resolved while the executor picks content, before the tick-zero state is
+ * built at all. See {@link TRADITION_FACTOR_ID}.
+ */
 export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'cohortSize',
   'foundingMages',
   'foundingNodes',
+  'foundingSpeciesMask',
+  'tradition',
 ]);
+
+/**
+ * The factor naming the universe's tradition (`vision.md` §4a).
+ *
+ * Unlike the other three it is not a {@link ReferenceOptions} field, because it
+ * is not read when the tick-zero state is built: the tradition's `store` and
+ * `acquire` hooks are baked into `WorldStepDeps` before `Scenario.create` is
+ * called at all. The executor therefore reads this level while resolving
+ * content, not while building state. See `executor.ts`.
+ *
+ * **A warning for whoever sweeps it next.** A run's seed is a function of its
+ * `cellIndex` (`mc-harness/src/seed.ts`), and each level of a factor takes its
+ * own cell. Declaring `tradition` with three levels in one sweep file therefore
+ * compares three traditions *and* three different sets of universes, and the
+ * tradition effect cannot be separated from the seed effect. To hold common
+ * random numbers, give this factor **one** level and write one file per
+ * tradition, all sharing a `sweepId` and `rootSeed`.
+ */
+export const TRADITION_FACTOR_ID = 'tradition';
 
 /**
  * Reads one option out of a scenario config, or refuses.
@@ -199,6 +271,7 @@ export function referenceOptions(config: ScenarioConfig): ReferenceOptions {
     cohortSize: readCount(config, 'cohortSize', DEFAULT_COHORT_SIZE),
     foundingMages: readCount(config, 'foundingMages', DEFAULT_FOUNDING_MAGES),
     foundingNodes: readCount(config, 'foundingNodes', DEFAULT_FOUNDING_NODES),
+    foundingSpeciesMask: readCount(config, 'foundingSpeciesMask', DEFAULT_FOUNDING_SPECIES_MASK),
   };
 }
 
@@ -228,9 +301,32 @@ export interface ReferenceContent {
   readonly prestigeCap: number;
 }
 
-/** Resolves everything a reference universe needs out of a content registry. */
-export function referenceContent(registry: ContentRegistry = shippedContent()): ReferenceContent {
-  const traditionId = scribingTraditionId(registry);
+/**
+ * Resolves everything a reference universe needs out of a content registry.
+ *
+ * @param traditionName - The `tradition.json` id the universe should hold, or
+ * `undefined` for {@link scribingTraditionId}'s pick. Named rather than interned
+ * because the interned ids are assigned by sorting the id strings, so the number
+ * that means "True Naming" is a fact about the alphabet and would move the day a
+ * tradition is added — a sweep file that named `2` would then silently be an arm
+ * for something else. Absent means byte-identical to the behaviour before this
+ * parameter existed, which is what keeps the committed baselines meaningful.
+ *
+ * **W7 arrived with a second selector, `traditionIndex`, doing this same job by
+ * ordinal.** The integration merge kept exactly one, and kept this one: an
+ * ordinal into content order is the hazard that made the reference universe run
+ * True Naming by accident of the alphabet in the first place, and a committed
+ * sweep file naming `2` is that hazard with a baseline attached. See
+ * `docs/superpowers/plans/integration-round-2.md`, collision 5.
+ */
+export function referenceContent(
+  registry: ContentRegistry = shippedContent(),
+  traditionName?: string,
+): ReferenceContent {
+  const traditionId =
+    traditionName === undefined
+      ? scribingTraditionId(registry)
+      : traditionIdNamed(registry, traditionName);
   return {
     registry,
     traditionId,
@@ -274,7 +370,7 @@ export function buildReferenceState(input: {
       source.actorStream(subsystemId, FOUNDING_TICK, actorKey),
   };
 
-  createUniverse(state, {
+  const universe = createUniverse(state, {
     permittedTechniques: content.axes.permittedTechniques,
     permittedForms: content.axes.permittedForms,
     edictBudget: STARTING_EDICT_BUDGET,
@@ -284,12 +380,21 @@ export function buildReferenceState(input: {
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    materials: STARTING_MATERIALS,
     prestige: 0,
     prestigeEarned: 0,
     terminalReason: 0,
     favorCap: 0,
     ascended: 0,
+  });
+
+  // The three stocks, on their own component since revision 5. Written here
+  // rather than left for the loop to materialize, because a founding endowment
+  // is a starting position and a starting position should be visible in the
+  // scenario that declares it, not inferred from the absence of a row.
+  attachRecord(state, MATERIAL_STOCK, universe, {
+    food: STARTING_MATERIALS,
+    stone: STARTING_MATERIALS,
+    vellum: STARTING_MATERIALS,
   });
 
   const library = state.entities.create();
@@ -298,15 +403,38 @@ export function buildReferenceState(input: {
   attachRecord(state, UNIVERSITY, university, {
     libraryId: library,
     capacity: ACADEMY_CAPACITY,
-    // Complete at tick zero. An academy still under construction would carry no
-    // students and no scriptorium, and the construction mechanic that would
-    // finish it is not built.
+    // Complete at tick zero, and still the right call now that construction is
+    // built. The sentence that used to be here — *the construction mechanic that
+    // would finish it is not built* — was true when it was written and is not
+    // any more: laborers raise buildings from the world loop as of W29. What
+    // stands is the other half of the argument. An academy still under
+    // construction would carry no students and no scriptorium, so a universe
+    // founded on one would spend its first years unable to teach or write, and
+    // every knowledge measurement in the reference run would be measuring the
+    // opening delay instead of the mechanism.
+    //
+    // A universe therefore builds nothing at all unless the god funds a site.
+    // That is not a gap: it is what gives `fundUniversity` a marginal value it
+    // did not have when nothing could finish what it founded.
     buildProgress: FP_ONE,
   });
 
   const { speciesOf, ids } = speciesTable(content.registry);
+  // Zero means every species; see DEFAULT_FOUNDING_SPECIES_MASK. Refused rather
+  // than defaulted when a non-zero mask selects nothing the content declares: a
+  // universe founded with no species is a run of two hundred silent years that
+  // would be recorded as an ordinary observation.
+  const mask = options.foundingSpeciesMask;
+  if (mask !== 0 && (mask & ((1 << ids.length) - 1)) === 0) {
+    throw new Error(
+      `foundingSpeciesMask ${String(mask)} selects none of the ${String(ids.length)} species the ` +
+        'content declares. An empty founding population is not a starting position, and a run ' +
+        'taken from one would be recorded as a measurement of something.',
+    );
+  }
   const founders: EntityHandle[] = [];
-  for (const speciesId of ids) {
+  for (const [speciesIndex, speciesId] of ids.entries()) {
+    if (mask !== 0 && (mask & (1 << speciesIndex)) === 0) continue;
     const species = speciesOf(speciesId);
     if (species === undefined) continue;
 
@@ -409,10 +537,34 @@ export interface ReferenceRun {
    * tier)` quantities the observation was never meant to carry.
    */
   lastGodReport: () => GodTickReport | undefined;
+  /**
+   * Every raid this run resolved, in resolution order.
+   *
+   * Empty on a scenario built with `raids: false`, and empty on a run that
+   * simply had none. §7 needs those two cases distinguished, and the flag that
+   * distinguishes them is `MechanicAvailability.raidEngagement` — a declaration
+   * the build makes, not something a collector infers from an empty list.
+   */
+  raids: () => readonly RaidRecord[];
 }
 
 /** The scenario id every reference run records. Stable; a baseline is keyed on it. */
 export const REFERENCE_SCENARIO_ID = 'reference-universe-v1';
+
+/** How a reference scenario is built. */
+export interface ReferenceScenarioOptions {
+  /**
+   * Whether portals open and raids resolve. Default `true`.
+   *
+   * A switch rather than a permanent truth, because it is the only honest way
+   * to A/B a mechanic that moves every balance baseline: `false` reproduces the
+   * pre-raid build byte for byte — no portal targets, so action 14 stays
+   * masked, and no arrival roll, so stream 10 is never touched — and that
+   * identity is asserted in `test/unit/raid-engagement.test.ts` rather than
+   * assumed. Everything shipped runs with it `true`.
+   */
+  readonly raids?: boolean;
+}
 
 /**
  * Builds one reference scenario.
@@ -421,23 +573,85 @@ export const REFERENCE_SCENARIO_ID = 'reference-universe-v1';
  * report closure and a rediscovery-clamp counter, both of which are per-run
  * measurements; sharing one across the runs a worker executes would be exactly
  * the shared mutable state the harness's second capability scenario forbids, and
- * the symptom would be a census describing whichever run finished last.
+ * the symptom would be a census describing whichever run finished last. The raid
+ * record below is a third such closure and inherits the same rule.
  */
-export function referenceScenario(content: ReferenceContent = referenceContent()): ReferenceRun {
+export function referenceScenario(
+  content: ReferenceContent = referenceContent(),
+  options: ReferenceScenarioOptions = {},
+): ReferenceRun {
   const simulation = defineWorldSimulation(content.deps);
+  const raiding = options.raids ?? true;
+
+  if (!raiding) {
+    return {
+      scenario: {
+        scenarioId: REFERENCE_SCENARIO_ID,
+        catalogue: content.catalogue,
+        create: (runSeed: number, config: ScenarioConfig): SimState =>
+          buildReferenceState({
+            runSeed,
+            options: referenceOptions(config),
+            content,
+            schema: simulation.schema,
+          }),
+      },
+      lastReport: simulation.lastReport,
+      lastGodReport: simulation.lastGodReport,
+      raids: () => [],
+    };
+  }
+
+  const records: RaidRecord[] = [];
+  const constants = readRivalConstants(content.registry);
+
+  // The raid system is appended to the schema `defineWorldSimulation` built
+  // rather than installed inside it, and the reason is a package boundary:
+  // `coordination` may not import `rules-raid` — §5 runs that edge the other
+  // way, because a raid's consequences land in world state *through*
+  // `coordination`. This package is the composition root and is the one place
+  // both are in scope.
+  //
+  // Last in the list, so the god's action 14 has already been resolved and paid
+  // for by the time this reads it.
+  const schema = defineWorldStateSchema([
+    ...simulation.schema.systems,
+    raidSystem({
+      content,
+      grid: MagicGrid.from(content.registry),
+      tuning: readRaidTuning(content.registry),
+      constants,
+      // `simulation.schema`, deliberately: a rival is never stepped — nothing
+      // advances its world tick, and its only job is to hold mages, knowledge
+      // and a library for the raid to read and write. Giving it the raid system
+      // as well would let a rival open a portal of its own if anything ever did
+      // step it, which is a second, unowned arrival process.
+      schema: simulation.schema,
+      onRaid: (record) => records.push(record),
+      raidsSoFar: () => records,
+    }),
+  ]);
+
   return {
     scenario: {
       scenarioId: REFERENCE_SCENARIO_ID,
       catalogue: content.catalogue,
-      create: (runSeed: number, config: ScenarioConfig): SimState =>
-        buildReferenceState({
+      portalTargets: portalTargetIds(constants),
+      create: (runSeed: number, config: ScenarioConfig): SimState => {
+        // A new episode is a new run: the raid log belongs to one, and a
+        // scenario reused across two would report the first one's raids in the
+        // second one's record.
+        records.length = 0;
+        return buildReferenceState({
           runSeed,
           options: referenceOptions(config),
           content,
-          schema: simulation.schema,
-        }),
+          schema,
+        });
+      },
     },
     lastReport: simulation.lastReport,
     lastGodReport: simulation.lastGodReport,
+    raids: () => records,
   };
 }

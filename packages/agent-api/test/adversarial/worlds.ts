@@ -25,6 +25,7 @@
 import type { Action, SimState, System } from '@mm/sim-core';
 import { TIME_MODE, createState } from '@mm/sim-core';
 import {
+  MATERIAL_STOCK,
   OCCUPATION,
   POPULACE_COHORT,
   attachRecord,
@@ -79,7 +80,7 @@ export function universeHolding(resources: Resources, rootSeed = 0x5150_0001): S
     schema: defineWorldStateSchema(),
     contentRevision: FIXTURE_CONTENT_REVISION,
   });
-  createUniverse(state, {
+  const universe = createUniverse(state, {
     permittedTechniques: 0b00111,
     permittedForms: 0b00000000111111,
     edictBudget: 4,
@@ -87,12 +88,22 @@ export function universeHolding(resources: Resources, rootSeed = 0x5150_0001): S
     favor: resources.favor,
     worship: resources.worship,
     worshipTier: resources.worshipTier,
-    materials: resources.materials,
     prestige: resources.prestige,
     prestigeEarned: 0,
     terminalReason: 0,
     favorCap: resources.favorCap,
     ascended: 0,
+  });
+  // `observation.ts`'s resources block reads the **sum** of the three
+  // `MATERIAL_STOCK` kinds for the slot `materials` used to occupy alone, so
+  // an exact raw-value check (`resources-dynamic-range.test.ts`) is
+  // satisfied by putting the whole figure in one kind. Which kind is
+  // arbitrary — nothing in this suite reads `food`, `stone` or `vellum`
+  // individually — so `food` is picked for a single, unambiguous source.
+  attachRecord(state, MATERIAL_STOCK, universe, {
+    food: resources.materials,
+    stone: 0,
+    vellum: 0,
   });
   const cohort = state.entities.create();
   attachRecord(state, POPULACE_COHORT, cohort, {
@@ -133,7 +144,7 @@ export function plainScenario(seenActions?: Action[][]): Scenario {
         schema: defineWorldStateSchema(systems),
         contentRevision: FIXTURE_CONTENT_REVISION,
       });
-      createUniverse(state, {
+      const universe = createUniverse(state, {
         permittedTechniques: 0b00111,
         permittedForms: 0b00000000111111,
         edictBudget: 4,
@@ -141,13 +152,13 @@ export function plainScenario(seenActions?: Action[][]): Scenario {
         favor: 20 * FP,
         worship: 0,
         worshipTier: 1,
-        materials: 100 * FP,
         prestige: 0,
         prestigeEarned: 0,
         terminalReason: 0,
         favorCap: 100 * FP,
         ascended: 0,
       });
+      attachRecord(state, MATERIAL_STOCK, universe, { food: 100 * FP, stone: 0, vellum: 0 });
       const cohort = state.entities.create();
       attachRecord(state, POPULACE_COHORT, cohort, {
         speciesId: 1,

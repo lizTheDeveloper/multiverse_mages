@@ -36,17 +36,39 @@ declare before `ASCENSION_MIN_TICK`. Path A's depth requirement MUST be expresse
 loaded content graph rather than as a literal node tier, so that the condition stays reachable as
 content changes.
 
-**Path A — Apotheosis of Mastery.** A living mage holds a node that is the deepest node present in
-its cell's content graph; `permits` returns true for that cell; at least two instances of that node
-survive anywhere in the universe; and `worshipTier` is at least `ASCENSION_TIER_GATE`.
+Both paths MUST read a quantity the god's play produces. Neither MAY be satisfiable by a universe
+the god never touched, and this is a requirement rather than a tuning target: eligibility that
+accrues on its own makes the terminal reward maximal for a policy that idles until eligible and
+presses one button, whatever the constants are set to.
 
-**Path B — Enduring Canon.** The universe has reached era `ASCENSION_ERA_COUNT`; at every era
-boundary since era 1, `libraryDependence` was at or below `ASCENSION_DEPENDENCE_MAX`; and no more
-than `ASCENSION_LOSS_MAX` nodes left the universe during any of those eras.
+**Path A — Apotheosis of Mastery.** A *cell stands at its floor* when a living mage holds the
+deepest node present in that cell's content graph, `permits` returns true for the cell, and at
+least `ASCENSION_SUMMIT_COPIES` instances of that node survive anywhere in the universe. Path A is
+satisfied when at least `ASCENSION_SUMMIT_CELLS` cells stand at their floor at once and
+`worshipTier` is at least `ASCENSION_TIER_GATE`.
+
+**Path B — Enduring Canon.** The universe has reached era `ASCENSION_ERA_COUNT`, and every era
+boundary since era 1 passed. A boundary passes when all four hold: the universe knows at least
+`ASCENSION_CANON_BREADTH` nodes; those nodes span at least `ASCENSION_CANON_CELLS` distinct cells;
+`libraryDependence` is at or below `ASCENSION_DEPENDENCE_MAX`; and the nodes that left the universe
+during the era number no more than `max(ASCENSION_LOSS_MAX, nodesKnown × ASCENSION_LOSS_FRACTION)`.
+
+The loss allowance SHALL scale with the canon rather than being a flat cap, because a flat cap over
+a quantity that scales measures scale rather than custodianship. `ASCENSION_LOSS_MAX` is retained
+as its floor, so that a small canon is not handed a free loss by the fraction rounding to zero.
 
 `ASCENSION_MIN_TICK = 600`, `ASCENSION_TIER_GATE = 4`, `ASCENSION_ERA_COUNT = 4`,
-`ASCENSION_DEPENDENCE_MAX = fp(256)` (25%), and `ASCENSION_LOSS_MAX = 2` are untuned placeholders
-awaiting the balance harness.
+`ASCENSION_DEPENDENCE_MAX = fp(256)` (25%), `ASCENSION_LOSS_MAX = 2`, `ASCENSION_SUMMIT_CELLS`,
+`ASCENSION_SUMMIT_COPIES = 2`, `ASCENSION_CANON_BREADTH`, `ASCENSION_CANON_CELLS` and
+`ASCENSION_LOSS_FRACTION` are untuned placeholders awaiting the balance harness. The five
+achievement constants each have an *identity value* — `ASCENSION_SUMMIT_CELLS = 1`,
+`ASCENSION_SUMMIT_COPIES = 2`, `ASCENSION_CANON_BREADTH = 0`, `ASCENSION_CANON_CELLS = 0`,
+`ASCENSION_LOSS_FRACTION = 0` — at which each predicate is exactly the one that shipped at 0.7.0,
+so a moved balance number can be bisected between the rule and the tuning.
+
+The achievement thresholds SHALL be calibrated against the *passive baseline* — what a universe
+reaches with no god action at all — and not against any strategy's score. Calibrating against a
+strategy whose own summit is the passive baseline would reproduce the defect exactly.
 
 #### Scenario: Depth is relative to content
 
@@ -56,10 +78,30 @@ awaiting the balance harness.
 
 #### Scenario: A single copy does not qualify
 
-- **WHEN** a living mage holds the deepest node of a permitted cell but only one instance of it
-  exists
-- **THEN** Path A is not satisfied, and it becomes satisfied once a second instance is taught or
-  scribed
+- **WHEN** a living mage holds the deepest node of a permitted cell but fewer than
+  `ASCENSION_SUMMIT_COPIES` instances of it exist
+- **THEN** that cell does not stand at its floor, and it begins to once a further instance is taught
+  or scribed
+
+#### Scenario: An unattended universe qualifies for neither path
+
+- **WHEN** a universe runs to the tick cap with no god action at all
+- **THEN** it reaches the ceiling its starting ruleset allows and satisfies neither path, because
+  every achievement threshold is set above that ceiling
+- **AND** an agent that idles until eligible and then declares does not win, which is the property
+  the balance harness's exploit margin measures
+
+#### Scenario: A canon that lost nothing but holds too little does not qualify
+
+- **WHEN** an era boundary is reached with zero nodes lost, zero `libraryDependence`, and fewer than
+  `ASCENSION_CANON_BREADTH` nodes known
+- **THEN** the boundary does not pass, and the run of good eras resets
+
+#### Scenario: A large canon survives a loss that would end a small one
+
+- **WHEN** two universes each lose `ASCENSION_LOSS_MAX + 1` nodes in one era, one holding a canon
+  large enough that its scaled allowance exceeds that number and one not
+- **THEN** the larger universe's boundary passes and the smaller one's does not
 
 #### Scenario: A forbidden summit does not qualify
 

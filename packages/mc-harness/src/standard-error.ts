@@ -34,6 +34,34 @@
  * with variance `σ_c²`, and which collapses to the textbook `s²/n` for a sweep
  * with one cell. `sum` is the same quantity without the `1/N²`.
  *
+ * ## The strategy arm is a stratum too, and for eighteen months it was not
+ *
+ * `cellIndex` covers the sweep's declared `factors` and nothing else. A sweep's
+ * `agentPool` is a **second design factor** that never reaches it: round-robin
+ * assignment gives run *r* of a cell the strategy `strategies[r % size]`, which
+ * is as deliberate and as reproducible as any factor level, and about as random
+ * as choosing `cohortSize`. Stratifying on the cell alone therefore folded the
+ * entire between-strategy spread into the estimate — the exact mistake the
+ * paragraph above rejects for factor levels, committed one layer down.
+ *
+ * On the committed 200-year gate that spread runs to 294× between the narrowest
+ * and the widest arm, and it produced tolerances of 117.7 % and 135.7 % of the
+ * metric's own mean: a mechanic could have doubled grimoire output inside them.
+ * Stratifying on `(cellIndex, arm)` shrinks those standard errors by between
+ * 1.2× and 6.8×, measured over 64 runs of that sweep on 2026-08-12.
+ *
+ * It changes **nothing** for a single-strategy sweep — one arm makes the two
+ * partitions identical — which is why `balance-gate-v1` and
+ * `balance-gate-horizon-v1` keep the standard errors they were committed with
+ * and needed no regeneration for this.
+ *
+ * ## An arm-scoped metric id is estimated over its arm alone
+ *
+ * `referenceGrimoires@archivist` is that metric measured over the runs
+ * `archivist` played, so its spread is taken over those runs and no others.
+ * Handled here rather than by the caller so that one function answers "how far
+ * does this number move", whichever of the two things the id names.
+ *
  * ## `min` and `max` are not means and are not treated as one
  *
  * There is no closed form for the standard error of an extremum, and applying
@@ -66,10 +94,11 @@ import type { AggregationRule } from './metrics.js';
 import type { RunRecord } from './records.js';
 import { isMeasured } from './metrics.js';
 import { sortCanonically } from './aggregate.js';
+import { parseMetricScope, strategyKeyOf } from './arm-scope.js';
 
 /** How a standard error was arrived at. Recorded per metric in the baseline. */
 export const STANDARD_ERROR_METHOD = {
-  /** Within-cell variance, pooled across cells. For `mean` and `sum`. */
+  /** Within-stratum variance, pooled across strata. For `mean` and `sum`. */
   stratifiedByCell: 'stratified-by-cell',
   /** Delete-one jackknife over runs. For `min` and `max`. */
   jackknife: 'jackknife',
@@ -88,37 +117,56 @@ export interface StandardErrorEstimate {
   readonly standardError: number;
   /** Measurements that contributed. Runs reporting `unavailable` do not. */
   readonly sampleSize: number;
-  /** Cells that contributed at least one measurement. */
+  /** `(cellIndex, arm)` strata that contributed at least one measurement. */
   readonly strataCount: number;
   /**
-   * Cells that contributed exactly one measurement.
+   * Strata that contributed exactly one measurement.
    *
-   * Their within-cell variance is unestimable and contributes 0, which biases
-   * the standard error *down*. Reported rather than corrected: the fix is more
-   * replicates, and a sweep whose cells hold one run each should be visibly
-   * that rather than quietly under-toleranced.
+   * Their within-stratum variance is unestimable and contributes 0, which
+   * biases the standard error *down*. Reported rather than corrected: the fix
+   * is more replicates, and a sweep whose strata hold one run each should be
+   * visibly that rather than quietly under-toleranced.
+   *
+   * This is the number that decides a multi-strategy sweep's replicate count.
+   * Round-robin over eight strategies at eight replicates per cell puts exactly
+   * one run in every `(cell, arm)` stratum, so every stratum is a singleton,
+   * every within-stratum variance is 0 and every tolerance derived from it
+   * would be 0. Sixteen replicates is the smallest count that gives each arm a
+   * spread of its own.
    */
   readonly singletonStrata: number;
 }
 
-/** Measurements of one metric, grouped by cell, in canonical order throughout. */
-function valuesByCell(
+/**
+ * Measurements of one metric, grouped by stratum, in canonical order throughout.
+ *
+ * A stratum is `(cellIndex, arm)`. Both halves are chosen rather than drawn, so
+ * neither belongs in the spread — see the module note. An arm-scoped
+ * `metricId` restricts the records first, so its strata are the cells of that
+ * one arm.
+ */
+function valuesByStratum(
   records: readonly RunRecord[],
   metricId: string,
-): { readonly cells: readonly (readonly number[])[]; readonly flat: readonly number[] } {
-  const byCell = new Map<number, number[]>();
+): { readonly strata: readonly (readonly number[])[]; readonly flat: readonly number[] } {
+  const { baseMetricId, strategyKey } = parseMetricScope(metricId);
+  const byStratum = new Map<string, number[]>();
   const flat: number[] = [];
   for (const record of sortCanonically(records)) {
-    const entry = record.metrics[metricId];
+    const arm = strategyKeyOf(record);
+    if (strategyKey !== null && arm !== strategyKey) continue;
+    const entry = record.metrics[baseMetricId];
     if (entry === undefined || !isMeasured(entry)) continue;
-    const cellIndex = record.coordinates.cellIndex;
-    const bucket = byCell.get(cellIndex);
-    if (bucket === undefined) byCell.set(cellIndex, [entry.value]);
+    // Zero-padded so the map's key order is the numeric cell order, and the
+    // fold below stays canonical without a second comparator.
+    const key = `${String(record.coordinates.cellIndex).padStart(9, '0')}|${arm}`;
+    const bucket = byStratum.get(key);
+    if (bucket === undefined) byStratum.set(key, [entry.value]);
     else bucket.push(entry.value);
     flat.push(entry.value);
   }
-  const cells = [...byCell.keys()].sort((a, b) => a - b).map((key) => byCell.get(key) as number[]);
-  return { cells, flat };
+  const strata = [...byStratum.keys()].sort().map((key) => byStratum.get(key) as number[]);
+  return { strata, flat };
 }
 
 /** Mean of values already in canonical order. */
@@ -193,10 +241,10 @@ export function standardErrorOf(
   metricId: string,
   aggregation: AggregationRule,
 ): StandardErrorEstimate {
-  const { cells, flat } = valuesByCell(records, metricId);
+  const { strata, flat } = valuesByStratum(records, metricId);
   const sampleSize = flat.length;
-  const strataCount = cells.length;
-  const singletonStrata = cells.filter((cell) => cell.length < 2).length;
+  const strataCount = strata.length;
+  const singletonStrata = strata.filter((stratum) => stratum.length < 2).length;
 
   if (sampleSize < 2) {
     return {
@@ -210,7 +258,7 @@ export function standardErrorOf(
 
   if (aggregation === 'mean' || aggregation === 'sum') {
     let total = 0;
-    for (const cell of cells) total += cell.length * sampleVariance(cell);
+    for (const stratum of strata) total += stratum.length * sampleVariance(stratum);
     const variance = aggregation === 'mean' ? total / (sampleSize * sampleSize) : total;
     return {
       method: STANDARD_ERROR_METHOD.stratifiedByCell,

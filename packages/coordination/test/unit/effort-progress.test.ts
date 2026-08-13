@@ -55,14 +55,7 @@ import {
   effortKey,
 } from '../../src/index.js';
 
-import {
-  catalogAndCells,
-  registry,
-  scribingTraditionId,
-  shippedAcquirePolicy,
-  shippedStorePolicy,
-  speciesTable,
-} from './world-fixtures.js';
+import { catalogAndCells, nodeFacets, registry, scribingTraditionId, shippedAcquirePolicy, shippedStorePolicy, speciesTable } from './world-fixtures.js';
 
 const ROOT_SEED = 0x0eff_0001;
 /** A quarter of a mage-month per call, so a project takes enough steps to interrupt. */
@@ -111,7 +104,6 @@ function laboratory(mageCount = 2, rootSeed = ROOT_SEED): Laboratory {
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    materials: 10_000 * 1024,
     prestige: 0,
     prestigeEarned: 0,
     terminalReason: 0,
@@ -161,6 +153,7 @@ function laboratory(mageCount = 2, rootSeed = ROOT_SEED): Laboratory {
         knowledge,
         catalog,
         cells,
+        facets: nodeFacets(),
         ruleset,
         ratesOf: () => ({
           learnRate: species.learnRate,

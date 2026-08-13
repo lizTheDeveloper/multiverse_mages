@@ -178,6 +178,7 @@ const SECTIONS: readonly DocumentedSection[] = [
   { contentFile: 'god-cost.json', heading: '### 2.8 `god-cost.json`', recordIndex: 0 },
   { contentFile: 'god-constant.json', heading: '### 2.9 `god-constant.json`', recordIndex: 0 },
   { contentFile: 'raid-constant.json', heading: '### 2.10 `raid-constant.json`', recordIndex: 0 },
+  { contentFile: 'autonomy-weight.json', heading: '### 2.11 `autonomy-weight.json`', recordIndex: 0 },
 ];
 
 /**
@@ -209,6 +210,47 @@ interface PendingAmendment {
  * fails and the failure says to delete it.
  */
 const PENDING_DOC_AMENDMENTS: readonly PendingAmendment[] = [
+  {
+    contentFile: 'form.json',
+    kind: 'undocumented',
+    at: 'yieldWeights',
+    why:
+      'the material-kinds content-layer change added yieldWeights to every form record ahead of ' +
+      'a contracts.md §2.1 amendment; the schema and shipped data are the source of truth in the ' +
+      'meantime',
+  },
+  {
+    contentFile: 'form.json',
+    kind: 'undocumented',
+    at: 'tuningStatus',
+    why:
+      'the same change gave form.json a tuningStatus field, matching every other tunable content ' +
+      'file, ahead of the same §2.1 amendment',
+  },
+  {
+    contentFile: 'territory.json',
+    kind: 'undocumented',
+    at: 'yieldPerLandUnit',
+    why:
+      'the material-kinds content-layer change added yieldPerLandUnit to every territory record ' +
+      'ahead of a contracts.md §2.7 amendment',
+  },
+  {
+    contentFile: 'form.json',
+    kind: 'invalid-example',
+    at: '',
+    why:
+      'the §2.1 form example predates yieldWeights and tuningStatus and is missing both, so it ' +
+      'fails the loader\'s required-property check until §2.1 is amended',
+  },
+  {
+    contentFile: 'territory.json',
+    kind: 'invalid-example',
+    at: '',
+    why:
+      'the §2.7 territory example predates yieldPerLandUnit and is missing it, so it fails the ' +
+      "loader's required-property check until §2.7 is amended",
+  },
 ];
 
 function pendingFor(contentFile: ContentFileName, kind: PendingAmendment['kind']): string[] {

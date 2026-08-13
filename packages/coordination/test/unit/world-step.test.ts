@@ -28,7 +28,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { CORE_ACTION, snapshotHash, step } from '@mm/sim-core';
-import { MAGE, POPULACE_COHORT, UNIVERSE, componentOf, findUniverse, readRecord } from '@mm/state';
+import {
+  MAGE,
+  MATERIAL_STOCK,
+  POPULACE_COHORT,
+  UNIVERSE,
+  componentOf,
+  findUniverse,
+  readRecord,
+} from '@mm/state';
 
 import { defineWorldSimulation } from '../../src/index.js';
 
@@ -99,7 +107,7 @@ describe('a seeded universe advances through every phase', () => {
     expect(componentOf(current, POPULACE_COHORT).size).toBeGreaterThan(0);
   });
 
-  it('never drives the materials stock negative', () => {
+  it('never drives any of the three material stocks negative', () => {
     const simulation = defineWorldSimulation(worldDeps(traditionId()));
     const { state } = seededWorld(simulation.schema, { rootSeed: ROOT_SEED });
     const source = sourceFor(ROOT_SEED);
@@ -108,7 +116,18 @@ describe('a seeded universe advances through every phase', () => {
     for (let tick = 0; tick < TICKS; tick += 1) {
       current = step(current, [], source);
       const universe = findUniverse(current);
-      expect(readRecord(current, UNIVERSE, universe).materials).toBeGreaterThanOrEqual(0);
+      // `materials` was one field on `UNIVERSE`; it is now three on
+      // `MATERIAL_STOCK` (`components.ts`), and `assertMaterialsNonNegative`
+      // (`materials.ts`) is a per-kind invariant — so the honest port of this
+      // test checks all three, not their sum. A universe could in principle
+      // have a negative `stone` stock and a large enough `food` surplus to
+      // keep the sum non-negative, and that is exactly the defect this test
+      // exists to catch.
+      const stocks = componentOf(current, MATERIAL_STOCK);
+      expect(stocks.has(universe)).toBe(true);
+      expect(stocks.get(universe, 'food')).toBeGreaterThanOrEqual(0);
+      expect(stocks.get(universe, 'stone')).toBeGreaterThanOrEqual(0);
+      expect(stocks.get(universe, 'vellum')).toBeGreaterThanOrEqual(0);
     }
   });
 });
