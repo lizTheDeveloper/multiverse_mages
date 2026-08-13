@@ -2405,3 +2405,66 @@ sweeps **100% `passive-control`** (the ascension sweep round-robins all eight st
 **nothing in `packages/scenario` opens a portal** — `raidEngagement` is `false` on main and `true` on
 the branch, so **raids firing is part of this merge's delta** and was never isolated from the economy
 wire.
+
+---
+
+## `practice` is built. Eighth null on the bot — and the first mechanic to move the thing it was *for*.
+
+W53 built the operation `decay.ts` named about itself and nobody wrote: a tenth autonomy goal that
+accrues mage-months against a tier-scaled requirement and restores mastery. **`decay.ts` is
+untouched** — relaxing its monotonicity clamp is what reopens the re-permitted-fragment exploit it
+documents — and a forbidden cell **refuses** practice, closing the same door from the other side.
+Zero new RNG draws: `practice()` takes no `rng` and displaces no baseline's stream sequence.
+
+Publish-or-perish enters as **candidate ordering, not a weight** — practice targets sort
+*stalest-first*, deliberately bypassing `boundCandidates`, whose novel-before-cheap comparator is
+exactly wrong for a node you are **keeping** rather than acquiring.
+
+### The three answers
+
+**Q1 — does applied use separate `permit-then-idle` from `permissive-breadth`? No.** All three
+comparisons sit inside one standard error of zero (+0.20, −0.25, +0.99 SE). **Eighth mechanic aimed at
+that bot; eighth null.**
+
+W53 initially wrote up a 2.05× ratio as a real inverted separation **and retracted it**, because the
+per-run values are `0, 0, 53, 117, 418, 1381, 2308, 3280` — a point ratio that does not survive its
+own spread. That retraction is worth more than the finding would have been.
+
+**The sharper result is why it failed:** gating `resource-yield` on being *committed to practice on
+that node this tick* removes **99.2–99.6% of the economy's magical contribution**, leaving a quantity
+too sparse to compare gods by. The mechanism is right and the gate is too sharp. W53's own named
+follow-up is the fix: a **freshness window** (`lastPracticedTick`) rather than a tick-sharp test,
+traded away to land the measurement.
+
+**Q2 — the teachable fraction moves, weakly but on every arm.** Below-threshold share falls 0.8–2.5
+points at 1.2–2.1 SE; this tree's like-for-like goes **87.8% → 85.3%**. At unit scale it is louder: a
+standard universe's twenty-year mastery ceiling went **256 → 1019**, and it teaches **3 lessons where
+it taught 0.** Publish-or-perish is closing.
+
+**And the number I did not expect:** `referenceNodesGainedFinalQuarter` **+10.9%**. That is
+`ages-of-magic.md` §2c's *"fresh fundamentals inform research at the frontier"* arriving as a
+measurement, from a mechanic built for a different reason.
+
+**Q3 — `denial-warden` is unchanged**, 207× → 230× behind the god doing nothing.
+
+### Q3 is a flaw in my design, not in this build
+
+W53 names it structurally and it is correct: **practice is refused in forbidden cells, so any
+applied-use currency is anti-correlated with denial.** A denial strategy cannot accrue what it
+refuses to permit.
+
+That is a finding about `raid-engagement.md` §11c — the mētis-from-use section I wrote — not about
+`practice`. §11c argued applied use would attack `permit-then-idle` structurally. It does something
+worse: it **punishes the denial play**, which vision §2's first pillar insists must be a peer
+strategy. An applied-use currency is a permissiveness tax wearing a different name.
+
+Any use-based mechanic therefore needs an answer for what a denier accrues, and the honest candidates
+are narrow: practice on the cells you *do* permit counting for more, or denial buying a different
+currency entirely. **Unresolved, and it should block the battle half of §11c until it is.**
+
+### Discipline worth copying
+
+Three withdrawals rather than three widenings: the 2.05× retracted; `denial-warden`'s gated figure
+(*"7 zeros and a 4"*) withdrawn as unquotable; and 9.8's books-to-depth bound **withdrawn, not
+widened**, at 159 books / 17 nodes against 157 / 48. `balance:gate:ascension` was still running at the
+end and is recorded as **a named gap rather than a promise.**
