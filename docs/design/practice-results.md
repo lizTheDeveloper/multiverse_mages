@@ -517,7 +517,7 @@ measurement says species tuning is not the binding constraint and retuning to ma
 one seed would be fitting to the noise this document just characterised. No baseline was regenerated.
 `tools/w53/species-collapse.mjs` is the instrument every number above came from.
 
-### The balance gates, re-measured after the fix
+### The three balance gates, re-measured after the fix
 
 Same three gates, same command, same **un-regenerated** baselines. All three still open with
 `baseline-invalid` — the content hash moved when this branch merged `main`, which predates anything
@@ -543,12 +543,29 @@ roughly 60–70% recovered.
 | `referenceNodesGainedFinalQuarter` | 7.645 | 8.480 (+7.9 SE, regressed) | **8.080 (+4.10 SE, still regressed)** |
 | `referenceGrimoires` | 321.5 | 299.9 (−2.9 SE) | **310.2 (−1.54 SE)** |
 
-`balance:gate:ascension` — **not yet re-measured.** It ran 892 s when this branch first recorded it
-and had not returned when this section was written; the as-merged figure it carries is a 59% fall in
-library depth, which is the one number here the fix has not been shown to move. Stated as an open
-gap rather than left as an unmarked absence.
+`balance:gate:ascension` (32 runs, **2,161 s** on a loaded machine) — **every metric passes, and the
+one this document called its most robust negative result is inside tolerance.**
 
-The two that remain say the same thing they said before, at a third of the size: practice still buys
+| metric | baseline | as merged | **fixed** |
+|---|---|---|---|
+| `referenceLibraryDepth` | 34.13 | 14.03 (−58.9%, **−3.02 SE, regressed**) | **22.97 (−32.7%, −1.68 SE, pass)** |
+| `referenceGrimoires` | 283.56 | 175.84 (−38.0%, −2.42 SE) | **201.16 (−29.1%, −1.85 SE)** |
+| `referenceKnowledgeInstances` | 3266.6 | 3005.7 (−0.54 SE) | **3065.7 (−0.41 SE)** |
+| `referenceNodesGainedFinalQuarter` | 4.875 | 5.469 (+0.28 SE) | **3.875 (−0.47 SE)** |
+| `referenceLivingMages` | 459.9 | 473.9 (+0.08 SE) | **489.1 (+0.17 SE)** |
+
+**That retires this document's own headline finding, and the retirement should be read carefully.**
+The section above said *"`referenceLibraryDepth` is the only metric that clears its tolerance … three
+gates and a long run all say the library stops broadening; that is the most robust negative result in
+this document."* It was robust, and it was real, and it was **the two defects rather than the
+mechanic**. All three gates now hold it inside tolerance and the two-century run reads a *deeper*
+library than the practice-free control (30.9 against 28.9). The warning attached to that section
+still stands and applies here too: this gate's tolerances are enormous — ±19.95 on a depth of 34 —
+so "passes" here means "not distinguishable at 32 runs", not "unchanged". `referenceGrimoires` is
+still 29% down and still passing for that reason.
+
+The two that remain outside tolerance on the horizon gate say the same thing they said before, at a
+third of the size: practice still buys
 its months from research and scribing, so a universe holds fewer *copies* at two centuries, and it
 still pushes node discovery later in the run rather than removing it — `referenceNodesGainedFinalQuarter`
 rising is the one metric whose movement is arguably an improvement, and it is called a regression
