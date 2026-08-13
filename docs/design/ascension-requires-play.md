@@ -217,3 +217,18 @@ not fix D3**, and saying so before the run is the difference between a limitatio
   named five times in this campaign: **a universe must not be able to exhaust the reachable set.**
 - **D3 and D9.** One viable line per species, and it is still *"edit the ruleset"*, now with a
   building attached.
+- **The conjunct is a placement fix, not an economic one, and the margin is enormous.** Measured on
+  a single `open-then-build` run at 2400 ticks: 99 foundings submitted, **98 completed**, against a
+  threshold of **2** — with **zero** rejections and `favorWasted` at 4,789,833, because the god sits
+  at its favor cap discarding regeneration for most of the run. So the conjunct does not ask the god
+  to *trade* anything; it asks whether the policy ever presses the button at all. That is a real
+  discrimination — no amount of permitting produces a university, which is the whole point — but it
+  is the `starting-position-is-broke` and favor-cap saturation already recorded in
+  `POOL_BUILD_LIMITS`, and it means `ascension-institutions` could be raised by an order of
+  magnitude before any strategy that builds at all would notice. The constant carries
+  `tuningStatus: "untuned"` and this is the measurement a tuner should start from.
+- **A conjunct is not the same as a cost.** The honest reading of the above is that this change
+  converts "the win condition reads the ruleset" into "the win condition reads the ruleset **and**
+  one button nobody was pressing". It is a strictly better predicate and it is not a deep one. What
+  would make it deep is founding competing with permitting for a scarce resource, which requires the
+  favor economy to bind — and on this build it does not.
