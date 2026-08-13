@@ -65,6 +65,7 @@ import { createState, rngFromRootSeed } from '@mm/sim-core';
 import type { Scenario, ScenarioConfig } from '@mm/agent-api';
 import {
   LIBRARY,
+  MATERIAL_STOCK,
   LOCATION_KIND,
   MAGE,
   OCCUPATION,
@@ -99,13 +100,20 @@ import { portalTargetIds, readRivalConstants } from './rival-universe.js';
 const FP_ONE = 1024;
 
 /**
- * The starting materials stock, `fp`.
+ * The starting stock of **each** material kind, `fp`.
  *
  * A working stock, not a lever on carrying capacity: `K` comes from the shipped
  * territory (`contracts.md` §2.7) and sits orders of magnitude above anything a
- * founding population reaches, so materials only modulate it within the bound
- * `carrying-capacity.ts` states. It exists so that the first tick's subsistence
- * and the first book are payable before the first harvest is in.
+ * founding population reaches, so food only modulates it within the bound
+ * `carrying-capacity.ts` states. It exists so that the first tick's subsistence,
+ * the first book and the first course of stone are payable before the first
+ * harvest is in.
+ *
+ * Split evenly across the three rather than weighted, and the reason is the same
+ * one `splitMaterialsByKind` gives for its thirds: a founding endowment is not a
+ * measurement of anything, so any weighting would be a claim about a starting
+ * position nobody made. The total is unchanged from the single-stock scenario at
+ * 3,000, which keeps the opening comparable across this change.
  */
 const STARTING_MATERIALS = 1000 * FP_ONE;
 
@@ -362,7 +370,7 @@ export function buildReferenceState(input: {
       source.actorStream(subsystemId, FOUNDING_TICK, actorKey),
   };
 
-  createUniverse(state, {
+  const universe = createUniverse(state, {
     permittedTechniques: content.axes.permittedTechniques,
     permittedForms: content.axes.permittedForms,
     edictBudget: STARTING_EDICT_BUDGET,
@@ -372,12 +380,21 @@ export function buildReferenceState(input: {
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    materials: STARTING_MATERIALS,
     prestige: 0,
     prestigeEarned: 0,
     terminalReason: 0,
     favorCap: 0,
     ascended: 0,
+  });
+
+  // The three stocks, on their own component since revision 5. Written here
+  // rather than left for the loop to materialize, because a founding endowment
+  // is a starting position and a starting position should be visible in the
+  // scenario that declares it, not inferred from the absence of a row.
+  attachRecord(state, MATERIAL_STOCK, universe, {
+    food: STARTING_MATERIALS,
+    stone: STARTING_MATERIALS,
+    vellum: STARTING_MATERIALS,
   });
 
   const library = state.entities.create();
@@ -386,9 +403,19 @@ export function buildReferenceState(input: {
   attachRecord(state, UNIVERSITY, university, {
     libraryId: library,
     capacity: ACADEMY_CAPACITY,
-    // Complete at tick zero. An academy still under construction would carry no
-    // students and no scriptorium, and the construction mechanic that would
-    // finish it is not built.
+    // Complete at tick zero, and still the right call now that construction is
+    // built. The sentence that used to be here — *the construction mechanic that
+    // would finish it is not built* — was true when it was written and is not
+    // any more: laborers raise buildings from the world loop as of W29. What
+    // stands is the other half of the argument. An academy still under
+    // construction would carry no students and no scriptorium, so a universe
+    // founded on one would spend its first years unable to teach or write, and
+    // every knowledge measurement in the reference run would be measuring the
+    // opening delay instead of the mechanism.
+    //
+    // A universe therefore builds nothing at all unless the god funds a site.
+    // That is not a gap: it is what gives `fundUniversity` a marginal value it
+    // did not have when nothing could finish what it founded.
     buildProgress: FP_ONE,
   });
 

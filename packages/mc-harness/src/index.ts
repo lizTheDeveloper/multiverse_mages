@@ -95,11 +95,30 @@ export type {
   CheckpointSample,
   MechanicAvailability,
   MirroredPlay,
+  LossShockSample,
   RaidObservation,
+  RoleDemographySample,
+  RosterSample,
   RunTelemetry,
+  SpeciesGridReach,
+  SpeciesVersatilitySample,
   TierReach,
 } from './metrics-telemetry.js';
 export { MECHANICS_AT_0_5_0, NO_MECHANICS } from './metrics-telemetry.js';
+
+export type {
+  LossShockFinding,
+  RoleDemographyFinding,
+  SpeciesVersatilityFinding,
+} from './metrics-species-health.js';
+export {
+  RECOVERY_FRACTION,
+  STAFFABLE_DEFINITION,
+  VERSATILITY_HEGEMONY_FRACTION,
+  collectLossShockRecovery,
+  collectRoleAssignmentDemographicCost,
+  collectSpeciesGridVersatility,
+} from './metrics-species-health.js';
 
 export {
   KNOWLEDGE_CENSUS_INTERVAL_TICKS,
@@ -340,6 +359,14 @@ export { DEFAULT_OUTPUT_MODE, describeSweep, reproduceCommand, runSweepCommand }
 export type { SweepFileResult } from './sweep-file.js';
 export { parseSweepFile, readSweepFile } from './sweep-file.js';
 
+export type { ArmScopedRun, ScopedMetricId } from './arm-scope.js';
+export {
+  ARM_SCOPE_SEPARATOR,
+  armScopedMetricId,
+  distinctStrategyKeys,
+  parseMetricScope,
+  strategyKeyOf,
+} from './arm-scope.js';
 export type { StandardErrorEstimate, StandardErrorMethod } from './standard-error.js';
 export { STANDARD_ERROR_METHOD, standardErrorOf } from './standard-error.js';
 

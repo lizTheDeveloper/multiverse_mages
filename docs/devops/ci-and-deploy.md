@@ -41,7 +41,25 @@ Flow for a push to `main` or a same-repo PR:
 1. GitHub posts to the receiver on the runner host, HMAC-signed with `CI_WEBHOOK_SECRET`. The
    endpoint is deliberately not written down here — see "What this file does not record" below.
 2. The receiver clones or updates the repo under `/repo/lizTheDeveloper_multiverse_mages`.
-3. `detect_ci_script` finds `scripts/ci-check.sh` and runs it, with a **600-second timeout**.
+3. `detect_ci_script` finds `scripts/ci-check.sh` and runs it, with a **2400-second timeout**
+   (`CI_RUN_TIMEOUT_S` in `webhook_receiver.py`).
+
+   **Raised from 600s on 2026-08-13, and the reason is worth keeping.** `npm run verify` grew past
+   ten minutes when the economy wire landed — the ascension balance gate alone measures **565–892s**,
+   the whole gate is ~12 minutes locally and ~24 on GitHub's runners — so the check began timing out
+   on green trees. A red that says nothing about the commit is worse than no check.
+
+   Two things about that ceiling that are easy to get wrong:
+
+   - **This receiver is shared with `themultiverse.school`**, so the ceiling is not per-repo. Raising
+     it is safe for both, since it only ever permits a longer run.
+   - **Runs here are serialised**, so the cost of a higher ceiling is that a *wedged* run occupies
+     the queue for forty minutes instead of ten. The bound exists so a hung process cannot hold it
+     forever; it is not there to make CI fast.
+
+   The two tempting alternatives are both worse. Editing `scripts/ci-check.sh` to run less breaks the
+   rule that it must stay equivalent to `npm run verify`. Trimming the ascension sweep to fit is
+   **tuning the instrument** — 32 runs is already `balance/README.md`'s argued minimum.
 4. It posts a commit status under the context **`ci/hetzner-lint`** — that exact string is what the
    branch-protection ruleset requires, so renaming it silently disarms branch protection.
 
@@ -104,6 +122,28 @@ a queued job whose SHA is no longer its branch tip would cut that queue by rough
 concurrency key cut on Actions. It is not done here because it needs production access to
 `cto-tycoon-hel1` and the receiver is **shared with `themultiverse.school`**, so a change there
 affects another repository and wants owner sign-off.
+
+## The third Actions job: primitive consumption, non-blocking
+
+`npm run check:consumption` assembles a real universe through `@mm/scenario`'s composition root and
+asks, per primitive, whether an authored node effect reaches anything the simulation applies. It is
+the missing half of `check:coverage`, which only asks whether content *authors* the primitive.
+
+It runs as its own Actions job — `Primitive consumption (non-blocking)`, `continue-on-error: true`
+— and is **not** in `npm run verify`, so `scripts/ci-check.sh` does not run it either and the two
+gates stay equivalent.
+
+The reason is that **red is the correct current answer.** When the job was split out, 2 of 14
+primitives were reachable from authored nodes, 2 were declared exclusions, and 12 had no
+node-driven consumer at all. Holding that inside `verify` meant the pull request carrying the check
+could not merge until the separate pull request carrying the fix did — a gate nobody can see is not
+a gate. This is the same reasoning, and the same mechanism, as `Next Node major (non-blocking)`.
+
+**The condition for making it blocking again** is written at the flip point in `ci.yml` and repeated
+here so it is not only in a workflow comment: *every primitive has a node-driven consumer, or the
+remaining ones are declared exclusions.* Declared exclusions are `fertility` and `lifespan`, in
+`packages/rules-magic/src/effects/consumption.ts`. Lengthening that list to go green is the exact
+failure the check exists to catch; the number in the FAIL line going down is the progress.
 
 ## The balance regression gates
 
@@ -211,6 +251,85 @@ When `pvp-server` lands, deployment requires:
 
 Deliberately not decided here: production promotion. Staging is automatic; production should not
 be, and inventing that flow before there is a production is how it gets invented wrong.
+
+## A second runner, for build capacity
+
+**Status: proposed, not provisioned.** Written so the work is a checklist rather than a design
+session. Nothing below is live.
+
+### The problem it solves, measured
+
+The self-hosted runner is **serialized**. With five pull requests open, all five sat on
+`ci/hetzner-lint` reporting *"Queued -- another CI run in progress"* while every GitHub Actions check
+was already green. Nothing was failing; the queue was the whole delay.
+
+Each run is the full `npm run verify` — typecheck, lint, purity, content, audio, coverage, ~3,900
+tests, **and three Monte Carlo balance gates**. One test alone (`reference-long-run`) takes 332s in
+isolation.
+
+That last number matters more than it looks, because **the receiver kills a run at 600 seconds**. The
+existing box is already inside a factor of two of that ceiling on the test suite alone. A second
+runner adds throughput; it does **not** raise the per-run timeout, and if `verify` grows past 600s
+every runner starts failing identically. Track the wall time, not just the queue.
+
+### What it should and should not hold
+
+The proposal is a **build-only** box: it holds no Coolify, Neon, Matrix or deploy credentials, and
+its GitHub token is scoped to `statuses:write` on this one repository.
+
+That materially reduces the blast radius of a compromise — a shell on the build box is not a shell on
+the machine that deploys the fleet. **It does not by itself make fork PRs safe.** A fork head still
+executes attacker-controlled `npm` lifecycle scripts during `npm ci`, on a machine that sits on the
+same network as everything else. Extending it to fork PRs is a **separate decision** requiring
+network isolation, and until that decision is made the new box carries the **same fork guard** as the
+existing one (`head.repo.full_name != base.repo.full_name`, failing closed if either is absent).
+GitHub Actions remains the only gate that sees fork PRs.
+
+### ARM, and why it is a free test of the core constraint
+
+The candidate hardware is a 32 GB ARM box. Every runner today is x86.
+
+`CLAUDE.md`'s first non-negotiable constraint is that the simulation core is deterministic: no
+floats in the rules path, fixed-point integers at 1/1024, precisely so results do not depend on the
+machine. **Nothing currently tests that claim across architectures.** Running the golden replay
+fixtures on ARM64 is a real test of it: green is genuine evidence for the determinism claim, and red
+is a determinism finding rather than a broken server.
+
+Because red is a *possible correct outcome*, land it **non-blocking first**, under its own status
+context, and promote it to required only after it has been green across several PRs. The workflow
+already has that pattern in "Next Node major (non-blocking)". Making an unproven architecture a
+required check on day one would let a legitimate discovery block every merge.
+
+The 32 GB is also expected to remove a class of phantom failure. Under parallel load the suite
+currently emits `Error: [vitest-worker]: Timeout calling "onTaskUpdate"` with **zero** named failing
+tests — a contention artifact that has already cost several agents time, and which can fail a good
+commit on the runner, since `ci-check.sh` mirrors `verify`.
+
+### Provisioning checklist
+
+1. **Node must be exactly 22.** `scripts/ci-check.sh` reads the major from `.nvmrc` and hard-fails
+   otherwise with *"Fix the runner image rather than relaxing this check."* Provisioning with
+   "latest Node" produces a `FATAL` that looks like a broken box and is the guard working.
+2. **Run the identical `scripts/ci-check.sh`.** CLAUDE.md requires that script stay equivalent to
+   `npm run verify`. A build box running a faster subset would let a commit pass there and fail
+   elsewhere — the exact failure the rule exists to prevent. Two identical runners load-balancing is
+   the simple correct answer. Splitting fast checks from the Monte Carlo gates is defensible but
+   changes what each status context *means*, so it is a separate decision, not an optimisation to
+   slip in during provisioning.
+3. **Choose the status context deliberately.** `ci/hetzner-lint` is the exact string the
+   branch-protection ruleset requires — renaming it silently disarms branch protection. Either the
+   new box reports the *same* context as a second worker in one pool (simplest, doubles throughput,
+   no ruleset change), or it reports a new context that must then be added to the ruleset. Decide
+   before registering, not after.
+4. **The receiver is shared with `themultiverse.school`.** It is not specific to this repo, so
+   changes to `/opt/ci-runner` affect that repo too. A second runner must not regress it.
+5. **Keep the 600-second timeout in view.** See above.
+
+### First job for the new box
+
+Before it reports any status anybody relies on: run the golden replay fixtures on ARM64 and record
+the result here. That answers the determinism question while the box is still unprivileged and
+non-blocking, which is the cheapest moment to find out.
 
 ## What this file does not record
 

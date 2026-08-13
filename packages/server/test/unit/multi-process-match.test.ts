@@ -67,16 +67,52 @@ interface AgentSummary {
 
 const alive: ChildProcessWithoutNullStreams[] = [];
 
+/**
+ * Spawn and pipe failures, recorded so a timeout can print them.
+ *
+ * See {@link launch}. Not asserted on: a failure here is a failure of the
+ * machine to start a process, and what a reader needs is the reason printed
+ * beside whichever wait timed out.
+ */
+const processFailures: string[] = [];
+
 function launch(command: string, args: readonly string[]): ChildProcessWithoutNullStreams {
   const child = spawn(process.execPath, [command, ...args], { cwd: REPO });
   child.stdout.setEncoding('utf8');
   child.stderr.setEncoding('utf8');
+  // **A `ChildProcess` with no `error` listener turns a failed spawn into an
+  // uncaught exception**, and its pipes do the same with `EPIPE` once
+  // `afterEach` sends `SIGKILL`. Vitest reports either as an *unhandled
+  // error* and fails the whole run even when every test passed, which is a
+  // failure mode that does not exist on an idle machine and does exist on a
+  // shared CI runner, where a spawn under load can fail with `EAGAIN` and a
+  // killed child's stdout can reset mid-read.
+  //
+  // Recorded rather than swallowed. The reason lands in
+  // {@link processFailures} and both waits below print it, so a machine that
+  // genuinely cannot start a process still says so — it says it as a timeout
+  // naming the cause instead of as an unhandled error in whichever test
+  // happened to be running when it landed.
+  const note = (error: Error): void => {
+    processFailures.push(`${command}: ${error.message}`);
+  };
+  child.on('error', note);
+  child.stdout.on('error', note);
+  child.stderr.on('error', note);
   alive.push(child);
   return child;
 }
 
+/** The recorded failures, as a printable block, or the empty string. */
+function failureNote(): string {
+  return processFailures.length === 0
+    ? ''
+    : `\nprocess failures:\n${processFailures.join('\n')}`;
+}
+
 afterEach(() => {
   for (const child of alive.splice(0)) child.kill('SIGKILL');
+  processFailures.splice(0);
 });
 
 /** Starts the server and resolves the port it printed. */
@@ -93,7 +129,7 @@ async function startServer(extra: readonly string[] = []): Promise<{
 
   const port = await new Promise<number>((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error(`The server never printed a port. stderr was:\n${errors}`));
+      reject(new Error(`The server never printed a port. stderr was:\n${errors}${failureNote()}`));
     }, 20_000);
     let out = '';
     child.stdout.on('data', (chunk: string) => {
@@ -121,13 +157,13 @@ function runAgent(args: readonly string[]): Promise<{ summary: AgentSummary; std
   });
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error(`Agent did not finish. stdout:\n${out}\nstderr:\n${err}`));
+      reject(new Error(`Agent did not finish. stdout:\n${out}\nstderr:\n${err}${failureNote()}`));
     }, 40_000);
     child.on('close', () => {
       clearTimeout(timer);
       const line = out.trim().split('\n').filter(Boolean).pop();
       if (line === undefined) {
-        reject(new Error(`Agent wrote no summary. stderr:\n${err}`));
+        reject(new Error(`Agent wrote no summary. stderr:\n${err}${failureNote()}`));
         return;
       }
       resolve({ summary: JSON.parse(line) as AgentSummary, stderr: err });
