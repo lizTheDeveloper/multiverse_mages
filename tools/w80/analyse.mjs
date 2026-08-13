@@ -123,6 +123,22 @@ function report(arm) {
     }
   }
 
+  process.stdout.write('\nthe first door opened, by run (the node discovered earliest, ties listed together):\n');
+  const firstDoor = new Map();
+  for (const run of runs) {
+    const head = run.discovered[0];
+    if (head === undefined) continue;
+    const ids = run.discovered
+      .filter((entry) => entry.tick === head.tick)
+      .map((entry) => arm.byId.get(entry.nodeId)?.id ?? String(entry.nodeId))
+      .sort()
+      .join('+');
+    firstDoor.set(ids, (firstDoor.get(ids) ?? 0) + 1);
+  }
+  for (const [ids, count] of [...firstDoor].sort((a, b) => b[1] - a[1])) {
+    process.stdout.write(`  ${String(count).padStart(3)}  ${ids}\n`);
+  }
+
   process.stdout.write('\nfirst-discovery tick, by tier (over every run and node):\n');
   const byTier = new Map();
   for (const run of runs) {

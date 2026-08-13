@@ -200,7 +200,7 @@ describe('time to tier, by species', () => {
     }
   });
 
-  it('separates three bands of six, and 9.9 is closer than it has ever been', () => {
+  it('separates two bands and two spanners, and 9.9 is still not four species', () => {
     // **Rewritten three times, and this time the direction reversed back.** The
     // previous version recorded a single separation — draconic strictly after
     // four ordinary species, with elf bridging — taken after
@@ -232,13 +232,38 @@ describe('time to tier, by species', () => {
     // slowest seed, which is `depthCeiling: 7` and `curiosity: 512` pulling
     // against each other under the new score.
     //
+    // **Rewritten a fourth time by `w80/research-cost-variation`**, which gave
+    // every node a price inside its tier's octave instead of one flat price per
+    // tier, so "cheapest first" stopped meaning "lowest node id first". The two
+    // columns below were both measured on this branch, on the same six seeds,
+    // with only `node.json` differing — the w17 column in the table above is
+    // from the build that wrote it and has since drifted, which is why it is not
+    // the comparison used here.
+    //
+    // | species | flat cost | priced |
+    // |---|---|---|
+    // | gnome    | [23, 25]  | **[22, 24]** |
+    // | dwarf    | [24, 29]  | **[23, 25]** |
+    // | orc      | [24, 31]  | **[23, 58]** |
+    // | human    | [30, 31]  | **[29, 30]** |
+    // | elf      | [47, 57]  | **[42, 44]** |
+    // | draconic | [26, 298] | **[24, 173]** |
+    //
+    // Four of the six **tightened** — elf's spread falls from eleven ticks to
+    // three and draconic's from 272 to 149 — and the one that widened is orc,
+    // which leaves the fast trio and becomes a second spanner. So the assertion
+    // that moved is `orc.high < elf.low`, and it moved because orc's
+    // `depthCeiling` is 3: tier 3 is orc's ceiling, and a priced surface makes
+    // *which* of the ceiling nodes is nearest a much stronger function of the
+    // seed than a flat one did.
+    //
     // **Task 9.9 wants four species separated by more than the cross-seed
-    // spread. This build separates three groups and not four species**, because
-    // gnome, dwarf and orc still overlap. Recorded rather than repaired: every
-    // species magnitude carries `tuningStatus: "untuned"`, no release before
-    // 0.5.0 may claim any of them is balanced, and inventing a species number to
-    // make a test go green is what `release-plan.md`'s measurement pivot exists
-    // to prevent.
+    // spread. This build separates two bands and leaves two spanners, so it is
+    // still not four species**, because gnome and dwarf overlap. Recorded rather
+    // than repaired: every species magnitude carries `tuningStatus: "untuned"`,
+    // no release before 0.5.0 may claim any of them is balanced, and inventing a
+    // species number to make a test go green is what `release-plan.md`'s
+    // measurement pivot exists to prevent.
     const interval = (name: string): { low: number; high: number } => {
       const column = tierThree.find((entry) => entry.name === name);
       if (column === undefined || column.observed.length === 0) {
@@ -253,25 +278,31 @@ describe('time to tier, by species', () => {
     const human = interval('human');
     const elf = interval('elf');
     const draconic = interval('draconic');
-    const fastTrio = [gnome, dwarf, orc];
+    const fastPair = [gnome, dwarf];
 
-    // What separates strictly, in every seed: the fast trio arrives before elf,
-    // and gnome arrives before human. Both are real statements about
+    // What separates strictly, in every seed: the fast **pair** arrives before
+    // elf, and gnome arrives before human. Both are real statements about
     // `curiosity` — gnome 1792, human 1152, elf 896 — now that curiosity is an
     // input to *which* node a mage reaches for and not only to how fast she
     // works on whichever one was cheapest.
-    for (const entry of fastTrio) expect(entry.high).toBeLessThan(elf.low);
+    for (const entry of fastPair) expect(entry.high).toBeLessThan(elf.low);
     expect(gnome.high).toBeLessThan(human.low);
 
-    // Draconic is the bridge now, and elf is not. It starts before human and
-    // ends long after elf, which is one species spanning the whole range rather
-    // than a slow band — asserted so that the day content gives it a band, this
-    // box is reopened.
+    // Draconic is a bridge, not a band. It starts before human and ends long
+    // after elf, which is one species spanning the whole range — asserted so
+    // that the day content gives it a band, this box is reopened.
     expect(draconic.low).toBeLessThan(human.low);
     expect(draconic.high).toBeGreaterThan(elf.high);
 
-    // Inside the fast trio nothing separates, which is why 9.9 stays unchecked:
-    // three groups is not four species.
+    // **Orc is the second bridge, and that is new.** It starts inside the fast
+    // pair and ends beyond elf's slowest seed. Asserted in the same shape as
+    // draconic's, and for the same reason: if a later build gives orc a band
+    // again, this fails and someone reads the table above.
+    expect(orc.low).toBeLessThanOrEqual(dwarf.high);
+    expect(orc.high).toBeGreaterThan(elf.low);
+
+    // Inside the fast pair nothing separates, which is why 9.9 stays unchecked:
+    // gnome and dwarf overlap, and two spanners are not bands.
     const overlaps = (a: { low: number; high: number }, b: { low: number; high: number }): boolean =>
       a.low <= b.high && b.low <= a.high;
     expect(overlaps(gnome, dwarf)).toBe(true);

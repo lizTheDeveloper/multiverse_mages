@@ -329,7 +329,17 @@ describe('contentRevision', () => {
     // what a digest over the union is supposed to produce, and it is the same
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of file names.
-    expect(registry.contentRevision).toBe('6973d2c55f6d7788bbaa6886e507bbde');
+    //
+    // **And a sixth, from `w80/research-cost-variation`.** Every one of the
+    // three hundred nodes' `researchCost` was `2048 << (tier - 1)` and nothing
+    // else, so the field carried no information `tier` did not already carry
+    // and `compareTargets`' cost comparison always tied — leaving node id, an
+    // interning artifact, as the whole of the ordering. `tools/w80/price.mjs`
+    // gives each node a price inside its tier's octave from what it already
+    // authors. A pure value edit over one file, and exactly the kind this pin
+    // exists to make visible: two universes disagreeing about what a node costs
+    // would research in different orders and hold different things.
+    expect(registry.contentRevision).toBe('b7775ab8cccdabc8e27b1a26e42ad676');
   });
 
   it('is stable across loads of identical content', () => {
