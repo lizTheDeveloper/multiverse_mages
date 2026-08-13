@@ -50,7 +50,7 @@
  * | `age` | age band × tier | §7 *"shaped by species, **age**, personality"* |
  * | `personality` | ambition and caution × tier | §7 *"…**personality**…"* |
  * | `role` | the node's authored effect primitives | §7 *"their assigned standing **role**"* |
- * | `emphasis` | the god's live `encourageResearch`, by cell | §4 *"the god… encourages research"* |
+ * | `emphasis` | the god's live `encourageResearch`, by cell | §7 *"…**encourage a research direction**…"* |
  *
  * The `effort` term is the old behaviour, kept and **demoted**: cheapest-first
  * was never wrong, it was merely the only thing being asked. Deleting it would
@@ -70,7 +70,8 @@
  *
  * ## The emphasis term is a verb moved, not a verb added
  *
- * `encourageResearch` is the god's only action that names a **cell** as a
+ * §7 lists the god's interventions and one of them is *"encourage a research
+ * direction"*. It is the only action in that list that names a **cell** as a
  * preference, and it used to be spent entirely on `research-rate`: an encouraged
  * cell was researched *faster* and never *chosen sooner*. So the one ordinal-
  * shaped thing the god can say was implemented as a scalar, and
@@ -119,9 +120,11 @@
  * ## Every magnitude is content, and none of it is tuned
  *
  * `autonomy-weight.json`. The loader checks the scalar set in both directions
- * and enforces the dominance invariant — the role bound is strictly below the
- * sum of the other five — so *"you set the role; they decide everything else"*
- * is arithmetic that fails a load rather than an intention that fails quietly.
+ * and enforces **two** dominance invariants — the role bound and the emphasis
+ * bound are each strictly below the sum of the five mage-owned bounds, and
+ * neither is checked against a sum that includes the other — so *"you set the
+ * role; they decide everything else. You never issue direct orders"* is
+ * arithmetic that fails a load rather than an intention that fails quietly.
  */
 
 import type { ContentId, Fp, SpeciesRecord } from '@mm/content';

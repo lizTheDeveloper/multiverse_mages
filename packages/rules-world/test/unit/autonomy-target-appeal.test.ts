@@ -288,9 +288,9 @@ describe("target selection is shaped by the god's emphasis", () => {
 
   it('cannot outvote a mage whose own terms all point the other way', () => {
     // The invariant, exercised rather than asserted about the table: an
-    // encouraged node that every mage-owned term dislikes still loses. Vision §4
-    // makes the god a legislator over what magic may exist, not a foreman over
-    // who studies what.
+    // encouraged node that every mage-owned term dislikes still loses. Vision §7:
+    // "You set the role; they decide everything else. You never issue direct
+    // orders."
     const encouraged = target(10, 5, 32768, {
       cellId: cell('rego-terram'),
       formId: form('terram'),

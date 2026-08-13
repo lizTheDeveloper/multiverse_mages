@@ -1,6 +1,6 @@
 /*
- * Multiverse Mages — the target-appeal weight table, and the one invariant that
- * keeps a role from becoming an order.
+ * Multiverse Mages — the target-appeal weight table, and the two invariants
+ * that keep a role and an encouragement from becoming orders.
  * Copyright (C) 2026 Ann Kelner
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -304,9 +304,10 @@ export function checkAutonomyWeights(
         '',
         `"target-bound-emphasis" is ${String(emphasisBound)} and the five mage-owned bounds sum ` +
           `to ${String(otherBounds)}. An encouragement must never be able to outvote everything a ` +
-          'mage knows about her own situation at once: vision §4 makes the god a legislator over ' +
-          'what magic may exist, not a foreman over who studies what, and an emphasis that ' +
-          'dominates the sum deletes the autonomy the whole design rests on.',
+          'mage knows about her own situation at once. Vision §7 is "You set the role; they ' +
+          'decide everything else. You never issue direct orders" — and an emphasis that ' +
+          'dominates the sum is a direct order arriving by tuning edit. It ' +
+          'deletes the autonomy the whole design rests on.',
       ),
     );
   }

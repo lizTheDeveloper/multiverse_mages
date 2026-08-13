@@ -148,8 +148,9 @@ export function godEffectHooks(deps: GodEffectDeps): GodEffectHooks {
     // clamps them once; this function's job is to say what the god contributed.
     //
     // Blessing only, now. An encouragement used to push `research-rate` for its cell
-    // from here, and it does not any more: vision §4's `encourageResearch` is
-    // the god's one *ordinal* verb — it names a cell as a preference — and
+    // from here, and it does not any more: vision §7's *"encourage a research
+    // direction"* is the god's one *ordinal* verb — it names a cell rather than a
+    // mage or an axis, so it is a preference — and
     // spending it on a speed left the queue's order identical in every universe,
     // which `strategy-dimensionality.md` measured as containment 1.000 for every
     // cross-strategy pair. It is now a term in `target-appeal.ts` instead, and

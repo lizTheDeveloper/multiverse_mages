@@ -2005,7 +2005,9 @@ a god actually spoke.
 
 Paired per-run Jaccard, run against the run at the same coordinates in the other arm.
 
-**C vs B — the preference term, isolated:**
+**C vs B — the preference term, isolated.** A dash is survival filtering, not missing data: a pair
+counts only where both sides were still running, and `uniform-random-legal` terminates at a mean of
+762 ticks so it has no t=960 sample.
 
 | strategy | t=240 | t=480 | t=960 | terminal | terminal Δnodes | ∪ C → ∪ B |
 |---|--:|--:|--:|--:|--:|--:|

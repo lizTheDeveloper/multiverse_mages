@@ -313,8 +313,8 @@ export interface WorldStepDeps {
    * Which cells the god has encouraged this tick, and how strongly, `fp`.
    *
    * Not a rate and not a bonus: it goes to the **outlook**, where
-   * `target-appeal.ts`'s emphasis term reads it, because vision §4's
-   * `encourageResearch` names a cell as a preference and its whole job is now to
+   * `target-appeal.ts`'s emphasis term reads it, because vision §7's
+   * *"encourage a research direction"* names a cell as a preference and its whole job is now to
    * change what a mage picks next. An absent hook is a world with no god, whose
    * mages therefore have no instruction — which is `NO_EMPHASIS` and not an
    * empty rate.
