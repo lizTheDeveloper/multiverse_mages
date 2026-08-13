@@ -4828,3 +4828,69 @@ nothing different if it had been run, because they inherit the same constant.*
 
 **That makes the species sweep the clear next experiment**, arrived at independently from the content
 side after W92 reached it from the instrument side.
+
+---
+
+## W94 — the merge stack, and the bug a union would have introduced
+
+*2026-08-13. Landing the queue rather than adding to it.*
+
+Ten PRs merged. The queue had reached fourteen `DIRTY` at once, which is what the per-PR baseline
+re-record produces: **every branch that re-records the three baselines conflicts with every other one
+that does, so the conflict count grows quadratically with the number in flight.** That is a cost of the
+policy, not a series of accidents, and it should be weighed before the next content change lands.
+
+The conflicts sorted into three kinds:
+
+| kind | branches | resolution |
+|---|---|---|
+| **content revision digest** | 68, 69, 79, 80 | union — run the test, read the real value, keep both rationales |
+| **`reference-universe.ts`** | 69, 72, 75 | union — additions on both sides |
+| **the three baselines** | 63, 68, 79 | re-record once from the merged tree |
+
+**The digest conflicts have a settled recipe by now**, written into the test's own comments over four
+successive collisions: neither side's literal survives, because each is a digest over a preimage the
+other does not contain, so the union is a value no tree has held before. **Guessing it is not an
+option; the test tells you.**
+
+### One "union" hid a real defect
+
+`w70/opening-square` and `w69/grant-budget` each added a reader of the founding node list, independently
+and in the same statement. Unioning them produced:
+
+```ts
+const seeded = content.foundingNodeIds.slice(0, options.foundingNodes);
+grantFoundingKnowledge(state, {
+  nodeIds: opening.foundingNodeIds.slice(0, options.foundingNodes),   // the square's list
+  nodeIds: seeded,                                                    // content's list
+});
+```
+
+TypeScript caught the duplicate key, but the *semantic* error was one layer down and would have
+survived any resolution that just picked one: **the grants would have come from the opening square
+while the budget's `seededNodes` counted `content`'s list.** The budget exists to stop the accrual
+reading a god's own grant as a discovery the mages made — so a mismatch would have **credited every
+universe with discoveries it never made, in exactly the amount the two lists differ**, and it would
+have read as an accrual bug rather than a merge one.
+
+Resolved to one list: the square supplies the founding nodes (a universe founded on a sub-rectangle
+must be seeded from inside it, or its first grants name cells it cannot legally use), and the budget
+counts those same nodes.
+
+**The general lesson: a conflict where both sides are "pure additions" is not automatically a union.**
+Two additions that read the same underlying thing are a disagreement wearing an addition's clothes, and
+the compiler only catches the subset that collide syntactically.
+
+### And two positional artefacts worth recognising on sight
+
+Git split a shared doc-comment opener across the markers twice, and one function's closing brace once.
+A correct union then looks like a syntax error — a comment body with no `/**`, a function with no `}` —
+which reads as a botched merge and is actually a well-formed one missing three characters. **Repair the
+joins; do not re-resolve the hunk.**
+
+### Landed
+
+`w73/pool-build-order`, `w61/castable-nodes-and-species-occupancy`, `w69/grant-budget`,
+`w26/marooning`, `w27/decision-space`, numeric integrity, the design language, the CI event fix, the
+gate split, and **the marginal-species test fix** — which was failing on *every* branch and gating
+changes with nothing to do with species.
