@@ -101,6 +101,344 @@
         "pairedIdentical": true,
         "coordinates": 4
       }
+    },
+    "curve": {
+      "archivist": {
+        "0": {
+          "nodesKnownMean": 51,
+          "everKnownMean": 51,
+          "closedCandidatesEmpty": 124,
+          "closedUnaffordable": 4183,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 0,
+          "grantsUsedMean": 0,
+          "grantsUsedMax": 0,
+          "grantSubmissions": 0,
+          "maskOpenTicks": 497,
+          "ticks": 4804,
+          "illegalActions": 2998,
+          "hashes": [
+            "4ea9c9d38a6f26fd",
+            "7482d8143e89458e",
+            "a18b5b95a7c40d56",
+            "b0e13f4825b1cd1a"
+          ]
+        },
+        "1": {
+          "nodesKnownMean": 51,
+          "everKnownMean": 51,
+          "closedCandidatesEmpty": 0,
+          "closedUnaffordable": 4307,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 0,
+          "grantsUsedMean": 0,
+          "grantsUsedMax": 0,
+          "grantSubmissions": 0,
+          "maskOpenTicks": 497,
+          "ticks": 4804,
+          "illegalActions": 2998,
+          "hashes": [
+            "0ea9db76a9e5cd6b",
+            "6c8bd873aab344c7",
+            "83a94cf5877fef8c",
+            "bb1f353e9d75047f"
+          ]
+        },
+        "2": {
+          "nodesKnownMean": 51,
+          "everKnownMean": 51,
+          "closedCandidatesEmpty": 0,
+          "closedUnaffordable": 4307,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 0,
+          "grantsUsedMean": 0,
+          "grantsUsedMax": 0,
+          "grantSubmissions": 0,
+          "maskOpenTicks": 497,
+          "ticks": 4804,
+          "illegalActions": 2998,
+          "hashes": [
+            "03b40687fa8b1cd8",
+            "2a2f809c002659ff",
+            "b029604fee1a53ec",
+            "dd31e3d157551bb4"
+          ]
+        },
+        "4": {
+          "nodesKnownMean": 51,
+          "everKnownMean": 51,
+          "closedCandidatesEmpty": 0,
+          "closedUnaffordable": 4307,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 0,
+          "grantsUsedMean": 0,
+          "grantsUsedMax": 0,
+          "grantSubmissions": 0,
+          "maskOpenTicks": 497,
+          "ticks": 4804,
+          "illegalActions": 2998,
+          "hashes": [
+            "133cabd771abcab2",
+            "39942ed0c68fb05e",
+            "ebcfe88b9dab624a",
+            "eeb3981d9ee76719"
+          ]
+        },
+        "4096": {
+          "nodesKnownMean": 51,
+          "everKnownMean": 51,
+          "closedCandidatesEmpty": 0,
+          "closedUnaffordable": 4307,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 0,
+          "grantsUsedMean": 0,
+          "grantsUsedMax": 0,
+          "grantSubmissions": 0,
+          "maskOpenTicks": 497,
+          "ticks": 4804,
+          "illegalActions": 2998,
+          "hashes": [
+            "31a92936dc55ed7e",
+            "5eb1acb84590b546",
+            "918378b0eca27f0d",
+            "9c600e730e0ef7ca"
+          ]
+        }
+      },
+      "narrow-depth": {
+        "0": {
+          "nodesKnownMean": 8,
+          "everKnownMean": 11.5,
+          "closedCandidatesEmpty": 875,
+          "closedUnaffordable": 0,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 0,
+          "grantsUsedMean": 0,
+          "grantsUsedMax": 0,
+          "grantSubmissions": 0,
+          "maskOpenTicks": 2578,
+          "ticks": 3453,
+          "illegalActions": 3418,
+          "hashes": [
+            "7a7c8a721c43639b",
+            "9b2957060e6933f6",
+            "b6f0193abf48eec7",
+            "bb621572f682d415"
+          ]
+        },
+        "1": {
+          "nodesKnownMean": 8,
+          "everKnownMean": 11.5,
+          "closedCandidatesEmpty": 707,
+          "closedUnaffordable": 116,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 0,
+          "grantsUsedMean": 0,
+          "grantsUsedMax": 0,
+          "grantSubmissions": 0,
+          "maskOpenTicks": 2630,
+          "ticks": 3453,
+          "illegalActions": 3418,
+          "hashes": [
+            "1cb3ee43980f634a",
+            "6629d3e411586b67",
+            "74c5b84897971524",
+            "ebef9c5cbc59b756"
+          ]
+        },
+        "2": {
+          "nodesKnownMean": 8,
+          "everKnownMean": 11.5,
+          "closedCandidatesEmpty": 707,
+          "closedUnaffordable": 116,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 0,
+          "grantsUsedMean": 0,
+          "grantsUsedMax": 0,
+          "grantSubmissions": 0,
+          "maskOpenTicks": 2630,
+          "ticks": 3453,
+          "illegalActions": 3418,
+          "hashes": [
+            "96e7cc3b6c3a0717",
+            "b62312adcbd471f9",
+            "d6cfdf41bdfa4254",
+            "f296a1766ed9fd25"
+          ]
+        },
+        "4": {
+          "nodesKnownMean": 8,
+          "everKnownMean": 11.5,
+          "closedCandidatesEmpty": 707,
+          "closedUnaffordable": 116,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 0,
+          "grantsUsedMean": 0,
+          "grantsUsedMax": 0,
+          "grantSubmissions": 0,
+          "maskOpenTicks": 2630,
+          "ticks": 3453,
+          "illegalActions": 3418,
+          "hashes": [
+            "0cdaa747d850f152",
+            "32af25ea55a4f0d1",
+            "56f9e784d3c12ee3",
+            "ec033af697d9057f"
+          ]
+        },
+        "4096": {
+          "nodesKnownMean": 8,
+          "everKnownMean": 11.5,
+          "closedCandidatesEmpty": 707,
+          "closedUnaffordable": 116,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 0,
+          "grantsUsedMean": 0,
+          "grantsUsedMax": 0,
+          "grantSubmissions": 0,
+          "maskOpenTicks": 2630,
+          "ticks": 3453,
+          "illegalActions": 3418,
+          "hashes": [
+            "37a2db94ba100b8b",
+            "584fa828ac35dbe6",
+            "a26ee865a7a61977",
+            "a6e0e49ddedffec5"
+          ]
+        }
+      },
+      "uniform-random-legal": {
+        "0": {
+          "nodesKnownMean": 50.75,
+          "everKnownMean": 50.75,
+          "closedCandidatesEmpty": 117,
+          "closedUnaffordable": 0,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 0,
+          "grantsUsedMean": 0,
+          "grantsUsedMax": 0,
+          "grantSubmissions": 232,
+          "maskOpenTicks": 2991,
+          "ticks": 3108,
+          "illegalActions": 2296,
+          "hashes": [
+            "0f6bcb11b96c6fc5",
+            "3134699d7b898dab",
+            "3a084a2e2b2f3243",
+            "9a198eab60b14f73"
+          ]
+        },
+        "1": {
+          "nodesKnownMean": 50.75,
+          "everKnownMean": 50.75,
+          "closedCandidatesEmpty": 20,
+          "closedUnaffordable": 60,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 1,
+          "grantsUsedMean": 0.25,
+          "grantsUsedMax": 1,
+          "grantSubmissions": 226,
+          "maskOpenTicks": 2842,
+          "ticks": 2922,
+          "illegalActions": 2166,
+          "hashes": [
+            "605b52459312cb85",
+            "6b8512eb0032e3a8",
+            "b6dea7c0d7bfe70b",
+            "bd6d591941c13060"
+          ]
+        },
+        "2": {
+          "nodesKnownMean": 50.75,
+          "everKnownMean": 50.75,
+          "closedCandidatesEmpty": 0,
+          "closedUnaffordable": 70,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 1,
+          "grantsUsedMean": 0.25,
+          "grantsUsedMax": 1,
+          "grantSubmissions": 234,
+          "maskOpenTicks": 2948,
+          "ticks": 3018,
+          "illegalActions": 2230,
+          "hashes": [
+            "1a9f150c6fd1ba62",
+            "2784b31e8461bdf8",
+            "59b44d2be09285b6",
+            "a4d365e1fa1e16fb"
+          ]
+        },
+        "4": {
+          "nodesKnownMean": 50.75,
+          "everKnownMean": 50.75,
+          "closedCandidatesEmpty": 0,
+          "closedUnaffordable": 70,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 1,
+          "grantsUsedMean": 0.25,
+          "grantsUsedMax": 1,
+          "grantSubmissions": 234,
+          "maskOpenTicks": 2948,
+          "ticks": 3018,
+          "illegalActions": 2230,
+          "hashes": [
+            "1e3864ad7f5392d0",
+            "4bd45c98c0586f7e",
+            "52009ea22544c73d",
+            "feed0b3c2d8fde64"
+          ]
+        },
+        "4096": {
+          "nodesKnownMean": 50.75,
+          "everKnownMean": 50.75,
+          "closedCandidatesEmpty": 0,
+          "closedUnaffordable": 70,
+          "n": 4,
+          "wins": 0,
+          "rate": 0,
+          "grantsUsedTotal": 1,
+          "grantsUsedMean": 0.25,
+          "grantsUsedMax": 1,
+          "grantSubmissions": 234,
+          "maskOpenTicks": 2948,
+          "ticks": 3018,
+          "illegalActions": 2230,
+          "hashes": [
+            "4a8cabda4fc6e470",
+            "5281268a2df03c04",
+            "9da03f40477bcd49",
+            "a9047c05729d578a"
+          ]
+        }
+      }
     }
   }
 }
