@@ -66,6 +66,7 @@
  *     node tools/w69/grant-budget.mjs --reach            # arm 1, cheap
  *     node tools/w69/grant-budget.mjs --control          # arm 2
  *     node tools/w69/grant-budget.mjs --curve            # arm 3
+ *     node tools/w69/grant-budget.mjs --zero             # arm 4
  *     node tools/w69/grant-budget.mjs --all --out balance/results-w69.json
  */
 
@@ -74,7 +75,10 @@ import { dirname } from 'node:path';
 
 import { defineWorld } from '../../packages/sim-core/dist/index.js';
 import {
+  EVER_KNOWN,
   GRANT_BUDGET,
+  KNOWLEDGE_INSTANCE,
+  collectRecords,
   componentOf,
   findUniverse,
   readRecord,
@@ -115,15 +119,25 @@ export const CELLS = Object.freeze([
 /**
  * The swept budget levels, both controls included.
  *
- * `0` is the pure-discovery control — the god may seed nothing and the universe
- * must grow entirely unaided. `4096` is today's behaviour. A range whose
- * endpoints are not controls cannot say whether the mechanic did anything, so
- * both ends are here and neither is negotiable.
+ * `0` means the god may make **no founding grant during the run**. It is not
+ * "pure discovery": the scenario's own tick-zero seeding is `foundingNodes`, a
+ * separate factor deliberately outside the budget, so a budget-0 universe still
+ * starts holding one or four seeded nodes. Arm 4 is the true zero.
+ *
+ * `4096` is today's behaviour. A range whose endpoints are not controls cannot
+ * say whether the mechanic did anything, so both ends are here.
  */
 export const BUDGET_LEVELS = Object.freeze([0, 1, 2, 4, 4096]);
 
 /** Every strategy that names action 8 in its preference list, plus the control pair. */
-export const GRANTING_STRATEGIES = Object.freeze(['archivist', 'narrow-depth']);
+export const GRANTING_STRATEGIES = Object.freeze([
+  'archivist',
+  'narrow-depth',
+  // The one strategy the smoke test observed actually landing a grant. It reaches
+  // action 8 by drawing uniformly over the legal set rather than by preferring it,
+  // which makes it the pool's only unbiased probe of whether the verb is reachable.
+  'uniform-random-legal',
+]);
 export const CONTROL_PAIR = Object.freeze(['permit-then-idle', 'permissive-breadth']);
 
 /** The whole pool, for the reach census. */
@@ -153,6 +167,8 @@ export function runOne(input) {
   // snapshot hash but not the state behind it, and `grantsUsed` is written by
   // the rules rather than reported by the episode.
   let ledger;
+  let nodesKnown = 0;
+  let everKnown = 0;
   const schema = defineWorld({
     components: simulation.schema.components,
     systems: [
@@ -160,6 +176,17 @@ export function runOne(input) {
       {
         name: 'w69-grant-budget-probe',
         run(ctx) {
+          // `nodesKnown` as the campaign counts it: distinct nodes with at least
+          // one surviving instance anywhere. Ever-known beside it, because the
+          // accrual reads ever-known and the two diverge exactly when the loss
+          // channel bites — which is a thing a budget curve has to be read against.
+          const distinct = new Set();
+          for (const { row } of collectRecords(ctx.state, KNOWLEDGE_INSTANCE)) {
+            distinct.add(row.nodeId);
+          }
+          nodesKnown = distinct.size;
+          everKnown = componentOf(ctx.state, EVER_KNOWN).size;
+
           const universe = findUniverse(ctx.state);
           if (universe === 0) return;
           if (!componentOf(ctx.state, GRANT_BUDGET).has(universe)) return;
@@ -179,11 +206,50 @@ export function runOne(input) {
 
   const raw = createSession({ scenario, agentSlotIndex: 0, strategyId });
   const session = adaptAgentSession(raw);
+
+  // Wrapping the policy is the only place that can separate the three things a
+  // zero-grant run could mean: the mask never opened action 8, or it opened and
+  // the strategy never chose it, or it chose it and the rules refused. Those
+  // call for three different conclusions about a budget, and `EpisodeAccounting`
+  // records rejections by action but not *submissions* by action, so a bot that
+  // never asks and a bot whose every ask is admitted-then-refused look identical
+  // in it.
+  const counters = {
+    maskOpenTicks: 0,
+    ticks: 0,
+    grantSubmissions: 0,
+    // Why the entry was clear, when it was. `candidatesEmpty` means the list had
+    // nothing in it — no grantable node, or an exhausted budget. `unaffordable`
+    // means the list was non-empty and `applyAffordability` cleared the entry
+    // because the favor pool could not pay the cheapest grant. The two call for
+    // opposite conclusions and would otherwise be one number.
+    closedCandidatesEmpty: 0,
+    closedUnaffordable: 0,
+  };
+  const policies = policiesForRun({
+    registry: BOT_POOL_REGISTRY,
+    strategies: [strategyId],
+    runSeed,
+  }).map((policy) => (observation, mask, slot) => {
+    counters.ticks += 1;
+    if (mask[8] === 1) {
+      counters.maskOpenTicks += 1;
+    } else if ((raw.candidates().get(8) ?? []).length === 0) {
+      counters.closedCandidatesEmpty += 1;
+    } else {
+      counters.closedUnaffordable += 1;
+    }
+    const chosen = policy(observation, mask, slot);
+    const action = typeof chosen === 'number' ? chosen : chosen?.action;
+    if (action === 8) counters.grantSubmissions += 1;
+    return chosen;
+  });
+
   const episode = runEpisode({
     session,
     runSeed,
     scenarioConfig: { worldTickCap, options },
-    policies: policiesForRun({ registry: BOT_POOL_REGISTRY, strategies: [strategyId], runSeed }),
+    policies,
     worldTickCap,
   });
 
@@ -200,29 +266,21 @@ export function runOne(input) {
     terminalReason: episode.terminalReason,
     ticksRun: episode.ticksRun,
     snapshotHash: raw.snapshotHash(),
-    rejections: accounting?.rejections ?? null,
-    grantSubmissions: submissionsOfAction(accounting, 8),
+    submitted: accounting?.submitted ?? null,
+    rejected: accounting?.rejected ?? null,
+    rejectedAsGrant: accounting?.rejectedByAction?.[8] ?? 0,
+    illegalActionCount: raw.illegalActionCount(),
+    ticks: counters.ticks,
+    maskOpenTicks: counters.maskOpenTicks,
+    closedCandidatesEmpty: counters.closedCandidatesEmpty,
+    closedUnaffordable: counters.closedUnaffordable,
+    grantSubmissions: counters.grantSubmissions,
+    nodesKnown,
+    everKnown,
     grantsUsed: budget?.grantsUsed ?? null,
     seededNodes: budget?.seededNodes ?? null,
     startingGrants: budget?.startingGrants ?? null,
   };
-}
-
-/**
- * Submissions of one action id, out of the episode's own accounting.
- *
- * Read defensively rather than assuming a shape: the breakdown is what separates
- * "this strategy never asked" from "this strategy asked and was refused", and
- * the two call for opposite conclusions about a budget.
- */
-function submissionsOfAction(accounting, actionId) {
-  if (accounting === undefined || accounting === null) return null;
-  const byAction = accounting.byAction ?? accounting.submissionsByAction;
-  if (byAction === undefined) return null;
-  if (Array.isArray(byAction)) return byAction[actionId] ?? 0;
-  const entry = byAction[actionId] ?? byAction[String(actionId)];
-  if (entry === undefined) return 0;
-  return typeof entry === 'number' ? entry : (entry.submitted ?? entry.count ?? 0);
 }
 
 /** Every run of one (strategy, budget) arm, over both cells. */
@@ -249,11 +307,17 @@ function runArm(content, strategyId, budgetStart, replicates, worldTickCap) {
 /** `ascended` is the terminal status the tournament scores a win on. */
 const isWin = (run) => run.terminalReason === 'ascensionApotheosis' || run.terminalReason === 'ascensionCanon';
 
+const mean = (values) => (values.length === 0 ? 0 : values.reduce((a, b) => a + b, 0) / values.length);
+
 function summarize(runs) {
   const wins = runs.filter(isWin).length;
   const grants = runs.map((run) => run.grantsUsed ?? 0);
   const total = grants.reduce((a, b) => a + b, 0);
   return {
+    nodesKnownMean: mean(runs.map((run) => run.nodesKnown ?? 0)),
+    everKnownMean: mean(runs.map((run) => run.everKnown ?? 0)),
+    closedCandidatesEmpty: runs.reduce((sum, run) => sum + (run.closedCandidatesEmpty ?? 0), 0),
+    closedUnaffordable: runs.reduce((sum, run) => sum + (run.closedUnaffordable ?? 0), 0),
     n: runs.length,
     wins,
     rate: runs.length === 0 ? 0 : wins / runs.length,
@@ -261,6 +325,9 @@ function summarize(runs) {
     grantsUsedMean: runs.length === 0 ? 0 : total / runs.length,
     grantsUsedMax: grants.length === 0 ? 0 : Math.max(...grants),
     grantSubmissions: runs.reduce((sum, run) => sum + (run.grantSubmissions ?? 0), 0),
+    maskOpenTicks: runs.reduce((sum, run) => sum + (run.maskOpenTicks ?? 0), 0),
+    ticks: runs.reduce((sum, run) => sum + (run.ticks ?? 0), 0),
+    illegalActions: runs.reduce((sum, run) => sum + (run.illegalActionCount ?? 0), 0),
     hashes: [...new Set(runs.map((run) => run.snapshotHash))].sort(),
   };
 }
@@ -293,15 +360,19 @@ function main() {
   if (all || args.reach === true) {
     process.stdout.write('\n== arm 1: reach — founding grants applied, by strategy ==\n');
     process.stdout.write('   (budget unbounded, so this is every grant each strategy wants)\n\n');
-    process.stdout.write(`   ${pad('strategy', 24)}${num('runs', 5)}${num('grants', 9)}${num('mean', 8)}${num('max', 6)}\n`);
+    process.stdout.write(
+      `   ${pad('strategy', 22)}${num('runs', 5)}${num('ticks', 8)}${num('mask open', 11)}` +
+        `${num('asked', 8)}${num('granted', 9)}${num('nodes', 8)}\n`,
+    );
     const reach = {};
     for (const strategyId of POOL) {
       const runs = runArm(content, strategyId, 4096, replicates, worldTickCap);
       const summary = summarize(runs);
       reach[strategyId] = summary;
       process.stdout.write(
-        `   ${pad(strategyId, 24)}${num(summary.n, 5)}${num(summary.grantsUsedTotal, 9)}` +
-          `${num(summary.grantsUsedMean.toFixed(2), 8)}${num(summary.grantsUsedMax, 6)}\n`,
+        `   ${pad(strategyId, 22)}${num(summary.n, 5)}${num(summary.ticks, 8)}` +
+          `${num(summary.maskOpenTicks, 11)}${num(summary.grantSubmissions, 8)}` +
+          `${num(summary.grantsUsedTotal, 9)}${num(summary.illegalActions, 9)}\n`,
       );
     }
     result.arms.reach = reach;
@@ -317,24 +388,40 @@ function main() {
   // Arm 2: the negative control at both endpoints.
   // -------------------------------------------------------------------------
   if (all || args.control === true) {
-    process.stdout.write('\n== arm 2: the negative control, budget 0 against unbounded ==\n\n');
+    process.stdout.write('\n== arm 2: the negative control, budget 0 against unbounded ==\n');
+    process.stdout.write(
+      '   Compared per coordinate, not by snapshot hash: the budget row is itself\n' +
+        '   inside the hashed state, so `startingGrants: 0` and `4096` differ as bytes\n' +
+        '   however identical the run. `deriveRunSeed` ignores the options, so the two\n' +
+        '   arms share a seed at every coordinate and the outcome tuple is comparable.\n\n',
+    );
     const control = {};
     for (const strategyId of CONTROL_PAIR) {
       control[strategyId] = {};
+      const byBudget = {};
       for (const budget of [0, 4096]) {
         const runs = runArm(content, strategyId, budget, replicates, worldTickCap);
+        byBudget[budget] = runs;
         const summary = summarize(runs);
         control[strategyId][budget] = summary;
         process.stdout.write(
           `   ${pad(strategyId, 22)} budget ${pad(budget, 6)} ` +
-            `wins ${num(summary.wins, 3)}/${num(summary.n, 3)}  grants ${num(summary.grantsUsedTotal, 4)}\n`,
+            `wins ${num(summary.wins, 3)}/${num(summary.n, 3)}  ` +
+            `nodes ${num(summary.nodesKnownMean.toFixed(1), 7)}  ` +
+            `everKnown ${num(summary.everKnownMean.toFixed(1), 7)}  ` +
+            `grants ${num(summary.grantsUsedTotal, 4)}\n`,
         );
       }
-      const zero = control[strategyId][0].hashes.join(',');
-      const open = control[strategyId][4096].hashes.join(',');
+      const tuple = (run) => `${run.ticksRun}/${run.terminalReason}/${run.nodesKnown}/${run.everKnown}`;
+      const zero = byBudget[0].map(tuple);
+      const open = byBudget[4096].map(tuple);
+      const identical = zero.length === open.length && zero.every((value, i) => value === open[i]);
+      control[strategyId].pairedIdentical = identical;
+      control[strategyId].coordinates = zero.length;
       process.stdout.write(
-        `   ${pad(strategyId, 22)} snapshot hashes identical across the two budgets: ` +
-          `${zero === open ? 'YES — the budget changed nothing' : 'NO'}\n\n`,
+        `   ${pad(strategyId, 22)} (ticksRun, terminalReason, nodesKnown, everKnown) identical at ` +
+          `${String(zero.length)}/${String(zero.length)} coordinates: ` +
+          `${identical ? 'YES — the budget changed nothing' : 'NO'}\n\n`,
       );
     }
     result.arms.control = control;
@@ -350,7 +437,8 @@ function main() {
       curve[strategyId] = {};
       process.stdout.write(`   ${strategyId}\n`);
       process.stdout.write(
-        `      ${pad('budget', 8)}${num('wins', 6)}${num('n', 5)}${num('rate', 8)}${num('grants', 9)}${num('distinct hashes', 17)}\n`,
+        `      ${pad('budget', 8)}${num('wins', 6)}${num('n', 5)}${num('rate', 8)}` +
+          `${num('grants', 9)}${num('nodes', 9)}${num('everKnown', 11)}\n`,
       );
       for (const budget of BUDGET_LEVELS) {
         const runs = runArm(content, strategyId, budget, replicates, worldTickCap);
@@ -358,12 +446,53 @@ function main() {
         curve[strategyId][budget] = summary;
         process.stdout.write(
           `      ${pad(budget, 8)}${num(summary.wins, 6)}${num(summary.n, 5)}` +
-            `${num(summary.rate.toFixed(3), 8)}${num(summary.grantsUsedTotal, 9)}${num(summary.hashes.length, 17)}\n`,
+            `${num(summary.rate.toFixed(3), 8)}${num(summary.grantsUsedTotal, 9)}` +
+            `${num(summary.nodesKnownMean.toFixed(1), 9)}${num(summary.everKnownMean.toFixed(1), 11)}\n`,
         );
       }
       process.stdout.write('\n');
     }
     result.arms.curve = curve;
+  }
+
+  // -------------------------------------------------------------------------
+  // Arm 4: the true zero — nothing seeded at founding and nothing grantable after.
+  // -------------------------------------------------------------------------
+  if (all || args.zero === true) {
+    process.stdout.write('\n== arm 4: the true zero — foundingNodes 0 and no grant budget ==\n');
+    process.stdout.write(
+      '   Arm 3\'s budget-0 level is not pure discovery: `foundingNodes` seeds the\n' +
+        '   universe at tick zero and is outside the budget by design. This arm turns\n' +
+        '   both off, which is the only configuration in which a universe holds nothing\n' +
+        '   a god put there.\n\n',
+    );
+    process.stdout.write(
+      `   ${pad('strategy', 22)}${pad('seeding', 26)}${num('wins', 6)}${num('n', 5)}${num('nodes', 9)}\n`,
+    );
+    const zero = {};
+    for (const strategyId of [...CONTROL_PAIR, ...GRANTING_STRATEGIES]) {
+      zero[strategyId] = {};
+      for (const [label, options] of [
+        ['foundingNodes 1, unbounded', { cohortSize: 4, foundingNodes: 1, grantBudgetStart: 4096 }],
+        ['foundingNodes 0, unbounded', { cohortSize: 4, foundingNodes: 0, grantBudgetStart: 4096 }],
+        ['foundingNodes 0, budget 0', { cohortSize: 4, foundingNodes: 0, grantBudgetStart: 0 }],
+      ]) {
+        const runs = [];
+        for (let replicateIndex = 0; replicateIndex < replicates; replicateIndex += 1) {
+          runs.push(
+            runOne({ content, strategyId, cellIndex: 0, replicateIndex, options, worldTickCap }),
+          );
+        }
+        const summary = summarize(runs);
+        zero[strategyId][label] = summary;
+        process.stdout.write(
+          `   ${pad(strategyId, 22)}${pad(label, 26)}${num(summary.wins, 6)}${num(summary.n, 5)}` +
+            `${num(summary.nodesKnownMean.toFixed(1), 9)}\n`,
+        );
+      }
+    }
+    result.arms.zero = zero;
+    process.stdout.write('\n');
   }
 
   if (typeof args.out === 'string') {
