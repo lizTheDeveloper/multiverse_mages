@@ -826,13 +826,90 @@ const WORSHIP_MAXIMIZER: StrategyDefinition = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Adversarial probes added by the W6 verification (branch
+// w6-verify/positive-achievement). These exist to falsify two of W6's claims and
+// are not part of the shipped pool's argument.
+// ---------------------------------------------------------------------------
+
+/**
+ * The honest idle-then-declare probe: do nothing, ever, and declare on the first
+ * round the mask permits it.
+ *
+ * W6 measures its exploit margin against `uniform-random-legal`, which is a
+ * *crippled* probe rather than an idle one: it submits actions 1–7 bare, and
+ * `CANDIDATE_SLOTS` covers only 8–14, so those submissions are refused and it
+ * effectively presses buttons 8–15 at random. A margin measured against it can
+ * say "this bot is broken" rather than "playing beats not playing". This one is
+ * the control that separates the two — its preference list is empty, so
+ * `policyFor` submits `DECLARE` when legal and `noop` otherwise, and nothing
+ * else ever.
+ */
+const IDLE_THEN_DECLARE: StrategyDefinition = {
+  strategyId: 'idle-then-declare',
+  version: 1,
+  hypothesis:
+    'The exploit probe W6\'s margin claims to be measured against. It plays nothing and takes the ' +
+    'summit the instant the mask opens it, so its ascension rate is exactly the rate at which the ' +
+    'win condition is reachable without playing. If it wins as often as the pool, the exploit ' +
+    'margin measures uniform-random-legal\'s parameter bug rather than the predicate.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'That is the definition of the probe. "Idle then declare" is one policy, and the declaration ' +
+      'has to be most-preferred or the measurement is of when a random draw happened to reach it.',
+  },
+  signatureActions: [GOD_ACTION.declareAscension],
+  preferences: () => [],
+};
+
+/**
+ * Permit the whole grid for the first stretch of the run, then idle.
+ *
+ * The degenerate-play probe. W6's predicates are anchored above the passive
+ * ceiling on the argument that clearing them requires "the god permitted an axis
+ * the universe did not start with" — which is a statement about the *ruleset*,
+ * not about anything the universe achieved. This bot funds nothing, encourages
+ * nothing, teaches nothing and blesses nobody; it presses two buttons for 140 of
+ * 2400 ticks and then does literally nothing for the remaining 2260.
+ */
+const PERMIT_THEN_IDLE: StrategyDefinition = {
+  strategyId: 'permit-then-idle',
+  version: 1,
+  hypothesis:
+    'Whether W6\'s "positive achievement" is an achievement or a ruleset edit. It opens the grid ' +
+    'with permitTechnique/permitForm alone for 140 rounds and then submits nothing at all for the ' +
+    'remaining 2260 ticks. If it clears the predicates at permissive-breadth\'s rate, then the ' +
+    'conjuncts read what the god permitted, not what the universe did — and the universe learns ' +
+    'the newly-permitted nodes on its own, exactly as it learns the original fifty-one.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'Symmetric with permissive-breadth, which it is the ablation of: same declaration policy, ' +
+      'every non-permit action removed. A difference in stance would be a second variable.',
+  },
+  signatureActions: [GOD_ACTION.permitTechnique, GOD_ACTION.permitForm],
+  preferences: ({ round }) =>
+    round >= 140
+      ? []
+      : [
+          { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
+          { action: GOD_ACTION.permitForm, parameter: form(round) },
+        ],
+};
+
 /**
  * The pool, in registration order.
  *
- * Eight, which is the capability spec's *"at least eight"*. Order is the order
- * the spec lists the roles in, not alphabetical: {@link botStrategyRegistry}
- * sorts the ids it publishes, and this array is what a reader compares against
- * the spec paragraph.
+ * Eight shipped strategies, which is the capability spec's *"at least eight"*.
+ * Order is the order the spec lists the roles in, not alphabetical:
+ * {@link botStrategyRegistry} sorts the ids it publishes, and this array is what
+ * a reader compares against the spec paragraph.
+ *
+ * The two verification probes are **appended, never inserted**, so that
+ * `round-robin` assignment — `strategies[replicateIndex % size]` over the *sweep
+ * file's* list, not this one — is unaffected for any sweep that does not name
+ * them. Every committed sweep names its own eight, so none of them moves.
  */
 export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   PASSIVE_CONTROL,
@@ -843,6 +920,8 @@ export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   ARCHIVIST,
   PORTAL_RUSH,
   WORSHIP_MAXIMIZER,
+  IDLE_THEN_DECLARE,
+  PERMIT_THEN_IDLE,
 ]);
 
 // ---------------------------------------------------------------------------

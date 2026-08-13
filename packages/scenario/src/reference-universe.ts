@@ -64,6 +64,7 @@ import type { EntityHandle, SimState, StepContext, WorldSchema } from '@mm/sim-c
 import { createState, rngFromRootSeed } from '@mm/sim-core';
 import type { Scenario, ScenarioConfig } from '@mm/agent-api';
 import {
+  GRANT_BUDGET,
   LIBRARY,
   LOCATION_KIND,
   MAGE,
@@ -72,10 +73,11 @@ import {
   UNIVERSITY,
   attachRecord,
   createUniverse,
+  findUniverse,
 } from '@mm/state';
 import { KnowledgeSubsystem, MASTERY_MAX } from '@mm/rules-magic';
 import { createMage } from '@mm/rules-world';
-import type { GodTickReport, WorldStepReport } from '@mm/coordination';
+import type { GodConstants, GodTickReport, WorldStepReport } from '@mm/coordination';
 import { defineWorldSimulation, resolveGodContent } from '@mm/coordination';
 
 import type { RulesetAxes } from './content-set.js';
@@ -160,15 +162,48 @@ export interface ReferenceOptions {
    * The one knob that moves what the universe *knows* at tick zero, and
    * therefore the only one that can move what it can teach — see limit 2 in the
    * module note.
+   *
+   * **Outside the grant budget, and counted against its accrual.** These are the
+   * scenario's own seeding, not the god's play, and folding them into the budget
+   * would make one factor silently clamp another — a cell asking for four
+   * founding nodes and a budget of two would run as a duplicate of the
+   * two-node cell while reporting itself as a distinct observation, which is the
+   * exact failure `readCount` refuses a mistyped level to prevent. They are
+   * recorded as `seededNodes` so that the accrual does not count a god's own
+   * gifts as the universe having discovered something.
    */
   readonly foundingNodes: number;
+  /**
+   * Founding grants the god may make, before anything is discovered.
+   *
+   * Absent means the shipped `founding-grant-budget-start`, which is the point:
+   * a sweep file that does not name this factor produces byte-identical runs to
+   * one written before the factor existed.
+   */
+  readonly grantBudgetStart?: number | undefined;
+  /** Self-discovered nodes that earn one further grant; `0` disables accrual. */
+  readonly grantAccrualNodes?: number | undefined;
+  /** Ceiling on grants ever authorized. */
+  readonly grantBudgetCap?: number | undefined;
 }
 
-/** The factor ids a sweep may name. Exactly the keys of {@link ReferenceOptions}. */
+/**
+ * The factor ids a sweep may name. Exactly the keys of {@link ReferenceOptions}.
+ *
+ * The three grant-budget ids are here so the budget is a **swept parameter**
+ * rather than a number somebody guessed. `worldDeps` resolves the god constants
+ * once per worker and shares the frozen struct across every run that worker
+ * executes, so a per-arm budget cannot come from content at read time; it is
+ * seeded into state at founding instead, from content by default and from these
+ * levels when a sweep names them.
+ */
 export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'cohortSize',
   'foundingMages',
   'foundingNodes',
+  'grantBudgetStart',
+  'grantAccrualNodes',
+  'grantBudgetCap',
 ]);
 
 /**
@@ -193,12 +228,40 @@ function readCount(config: ScenarioConfig, key: keyof ReferenceOptions, fallback
   return value;
 }
 
+/**
+ * One option that has no scenario-level default, because content holds it.
+ *
+ * Returns `undefined` for an absent key rather than a number, so that
+ * {@link buildReferenceState} can fall back to the god constants — the authority
+ * for every other magnitude the god has, and the one place a reader should look
+ * to find out what a budget is by default. A *present and wrong* value is
+ * refused exactly as {@link readCount} refuses one, and for the same reason.
+ */
+function readOptionalCount(
+  config: ScenarioConfig,
+  key: keyof ReferenceOptions,
+): number | undefined {
+  const value = config.options?.[key];
+  if (value === undefined) return undefined;
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+    throw new Error(
+      `Scenario option ${key} is ${JSON.stringify(value)}, which is not a non-negative integer. ` +
+        'A level the scenario cannot read would produce a cell identical to its neighbour and a ' +
+        'record claiming the two differ.',
+    );
+  }
+  return value;
+}
+
 /** The options a config names, with the documented defaults filled in. */
 export function referenceOptions(config: ScenarioConfig): ReferenceOptions {
   return {
     cohortSize: readCount(config, 'cohortSize', DEFAULT_COHORT_SIZE),
     foundingMages: readCount(config, 'foundingMages', DEFAULT_FOUNDING_MAGES),
     foundingNodes: readCount(config, 'foundingNodes', DEFAULT_FOUNDING_NODES),
+    grantBudgetStart: readOptionalCount(config, 'grantBudgetStart'),
+    grantAccrualNodes: readOptionalCount(config, 'grantAccrualNodes'),
+    grantBudgetCap: readOptionalCount(config, 'grantBudgetCap'),
   };
 }
 
@@ -334,13 +397,60 @@ export function buildReferenceState(input: {
     }
   }
 
+  const seeded = content.foundingNodeIds.slice(0, options.foundingNodes);
   grantFoundingKnowledge(state, {
     founders,
-    nodeIds: content.foundingNodeIds.slice(0, options.foundingNodes),
+    nodeIds: seeded,
     nodeCount: content.deps.catalog.nodeCount,
   });
 
+  attachGrantBudget(state, {
+    universe: findUniverse(state),
+    // `worldDeps` always supplies the god block; the optionality on `WorldStepDeps`
+    // is for callers that install no god systems at all, and such a caller has no
+    // budget to seed either.
+    constants: content.deps.god?.content.constants,
+    options,
+    // Distinct node ids, every one of them newly ever-known: the universe was
+    // created three statements ago and has never held anything.
+    seededNodes: new Set(seeded).size,
+  });
+
   return state;
+}
+
+/**
+ * Seeds §1.1's founding-grant budget, from content unless a sweep says otherwise.
+ *
+ * Written here rather than inside `createUniverse` because `@mm/state` has no
+ * edge to `@mm/content` and must not grow one: the universe row is a shape, and
+ * what a budget *is* by default is a god magnitude. This is the composition root
+ * and resolving content into state is exactly its job.
+ *
+ * `seededNodes` carries the tick-zero grants so the accrual cannot count them.
+ * Without it a cell running `foundingNodes: 4` would begin life already credited
+ * with four discoveries it did not make, and the richer cells of every sweep
+ * would quietly mint budget the poorer ones did not — a factor interaction
+ * nobody declared, in the direction that flatters the mechanic.
+ */
+function attachGrantBudget(
+  state: SimState,
+  input: {
+    readonly universe: EntityHandle;
+    readonly constants: GodConstants | undefined;
+    readonly options: ReferenceOptions;
+    readonly seededNodes: number;
+  },
+): void {
+  const { constants, options } = input;
+  if (input.universe === 0 || constants === undefined) return;
+  attachRecord(state, GRANT_BUDGET, input.universe, {
+    startingGrants: options.grantBudgetStart ?? constants.foundingGrantBudgetStart,
+    accrualNodes: options.grantAccrualNodes ?? constants.foundingGrantAccrualNodes,
+    cap: options.grantBudgetCap ?? constants.foundingGrantBudgetCap,
+    grantsUsed: 0,
+    seededNodes: input.seededNodes,
+  });
 }
 
 /**

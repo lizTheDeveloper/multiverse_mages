@@ -38,6 +38,7 @@ import {
   EVER_KNOWN,
   GOAL_COMMITMENT,
   GOD_STATE,
+  GRANT_BUDGET,
   GRIMOIRE,
   HOLDER_KIND,
   KNOWLEDGE_INSTANCE,
@@ -240,6 +241,17 @@ export function populatedWorld(): PopulatedWorld {
     libraryDependence: 192,
     nodesLost: 1,
     passed: 1,
+  });
+
+  // On the universe handle too, and for the same singleton reason as god-state:
+  // one universe, one budget. Every field distinct and none of them zero, so a
+  // round-trip that dropped or transposed one is visible.
+  attachRecord(state, GRANT_BUDGET, universe, {
+    startingGrants: 2,
+    accrualNodes: 8,
+    cap: 12,
+    grantsUsed: 1,
+    seededNodes: 3,
   });
 
   assertEveryWorldComponentPopulated(state);

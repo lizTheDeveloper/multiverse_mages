@@ -220,7 +220,16 @@ describe('contentRevision', () => {
     // reason the god tables are: two universes that disagreed about how long a
     // portal holds would fight two different battles while their revisions
     // agreed they were compatible. Nothing existing changed a byte.
-    expect(registry.contentRevision).toBe('2512ea02d2a7569d8d0bacc4c5a926ca');
+    //
+    // 2512ea02d2a7569d8d0bacc4c5a926ca -> cd47722ed6fa0a8b3627c6f63fded6f3,
+    // when the founding-grant budget added three god constants — the starting
+    // allowance, the self-discovered nodes that earn another grant, and the
+    // ceiling. In the preimage for the reason every other god constant is: two
+    // universes that disagreed about how many nodes a god may seed would be
+    // playing different games while their revisions agreed they were
+    // compatible. Nothing existing changed a byte, and all three ship at values
+    // no run can reach, so this revision plays identically to the last one.
+    expect(registry.contentRevision).toBe('cd47722ed6fa0a8b3627c6f63fded6f3');
   });
 
   it('is stable across loads of identical content', () => {

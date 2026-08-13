@@ -412,6 +412,70 @@ export interface EraEvaluationRecord {
 export const ERA_EVALUATION_FIELDS_MATCH: KeysMatch<EraEvaluationRecord, typeof ERA_EVALUATION> =
   true;
 
+/**
+ * The founding-grant budget (`contracts.md` §1.1, added by `w69/grant-budget`).
+ *
+ * God action 8 grants a **full instance at `grantMastery`** — the shape is
+ * unchanged and deliberately so. `setMastery`'s only non-test caller is the
+ * decay pass and it lowers, so a granted instance is currently the only source
+ * of knowledge above the teach threshold in the universe. Weakening the grant
+ * would delete the thing before its replacement exists. What this component
+ * limits is the **count**: grants become scarce rather than weak.
+ *
+ * ## Why the parameters live in state and not only in content
+ *
+ * `god-constant.json` is the authority for the *defaults*, exactly as it is for
+ * everything else the god does. But the balance harness has to vary a budget
+ * across the arms of one sweep, and `worldDeps` resolves the god constants
+ * **once per worker** and shares the frozen struct across every run that worker
+ * executes — so a per-run value cannot come from there. `edictBudget` on the
+ * universe row is the existing answer to exactly this shape of problem, and
+ * this row is that answer applied a second time: seeded at founding from
+ * content, overridable by a scenario option, read from state thereafter.
+ *
+ * ## The row hangs on the universe handle, and absence means unbounded
+ *
+ * Like the god-state row next door. **Absence means no budget is in force** —
+ * which is what a pre-`w69` save describes, and what every hand-built test world
+ * means, and is the behaviour every one of them was written against. A world
+ * that has never heard of a grant budget is not a world with a budget of zero.
+ *
+ * ## `seededNodes` is what makes the accrual honest
+ *
+ * The budget grows with **nodes the mages discovered for themselves**, which is
+ * the ever-known count less the nodes a god put there. Without `seededNodes` a
+ * god could seed a node, be credited with having discovered it, and earn its own
+ * next grant — the budget would be a loop that pays for itself. It counts the
+ * grants that introduced a node the universe had *never* held, which is why a
+ * granted-then-lost-then-regranted node is counted once: the second grant makes
+ * nothing newly ever-known.
+ */
+export const GRANT_BUDGET = {
+  name: 'grant-budget',
+  fields: {
+    startingGrants: 'u16',
+    accrualNodes: 'u16',
+    cap: 'u16',
+    grantsUsed: 'u16',
+    seededNodes: 'u16',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface GrantBudgetRecord {
+  /** Grants available before the universe has discovered anything. */
+  startingGrants: number;
+  /** Self-discovered nodes that earn one further grant. `0` disables accrual. */
+  accrualNodes: number;
+  /** Ceiling on `startingGrants + earned`. Never on what has already been spent. */
+  cap: number;
+  /** Grants applied so far, over the whole run. */
+  grantsUsed: number;
+  /** Ever-known nodes a god put there rather than the universe finding them. */
+  seededNodes: number;
+}
+
+export const GRANT_BUDGET_FIELDS_MATCH: KeysMatch<GrantBudgetRecord, typeof GRANT_BUDGET> = true;
+
 // ---------------------------------------------------------------------------
 // §1.2 Mage. §1.3 Populace cohort.
 // ---------------------------------------------------------------------------
@@ -933,6 +997,7 @@ export const WORLD_COMPONENTS = [
   BLESSING,
   UPHEAVAL,
   ERA_EVALUATION,
+  GRANT_BUDGET,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

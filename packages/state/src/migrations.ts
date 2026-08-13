@@ -85,6 +85,7 @@ import {
   ERA_EVALUATION,
   GOAL_COMMITMENT,
   GOD_STATE,
+  GRANT_BUDGET,
   UPHEAVAL,
 } from './components.js';
 
@@ -109,7 +110,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 4;
+export const WORLD_SCHEMA_VERSION = 5;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -133,6 +134,7 @@ export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   // not any row was written — and because it is the first of the four in
   // `WORLD_COMPONENTS`, so a partially-appended envelope reads as the older
   // revision and is completed rather than being read as current and left short.
+  if (carried.has(GRANT_BUDGET.name)) return 5;
   if (carried.has(GOD_STATE.name)) return 4;
   if (carried.has(EFFORT_PROGRESS.name)) return 3;
   if (carried.has(GOAL_COMMITMENT.name)) return 2;
@@ -260,11 +262,39 @@ export const addGodAgencyState: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 4 → 5: append an empty `grant-budget` section.
+ *
+ * Empty is the whole repair, and it is not the "nobody had one yet" argument the
+ * three steps above make — it is a stronger one. `foundingGrantsRemaining`
+ * reads an absent row as **unbounded**, so a revision-4 save restored into this
+ * build keeps making founding grants exactly as it did when it was written.
+ *
+ * Synthesising a row would be the destructive choice here, and uniquely so among
+ * the four steps. Whatever numbers it carried would be a budget the god never
+ * agreed to and never spent against: `grantsUsed` would read zero for a run that
+ * may have made thirty grants, so a restored save would be handed a fresh
+ * allowance, and a `cap` filled from *this build's* content would silently
+ * impose a limit on a run measured without one. A save that predates the budget
+ * has no budget, and that is representable.
+ */
+export const addGrantBudget: WorldSchemaMigration = {
+  from: 4,
+  to: 5,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(GRANT_BUDGET)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
   addEffortProgress,
   addGodAgencyState,
+  addGrantBudget,
 ];
 
 /**
