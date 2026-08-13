@@ -4025,3 +4025,81 @@ options was never a game at all.
   `main` by world year 160, and orc is `untuned` like all six species). Changing a species-ordering
   assertion while the species underneath it is being retuned would bake in a number nobody believes.
   **Leave it red with a comment naming the entanglement**, and resolve it in the species-tuning pass.
+
+---
+
+## W88 — the lifespan hypothesis is refuted, and practice closes publish-or-perish
+
+*2026-08-13, PR #54. Two ablations on one tree, 32 paired seeds.*
+
+**My hypothesis — that practice rewards long lifespans and starves the short-lived — is dead, and it
+dies on the first two rows:**
+
+| species | lifespan | control mean (sd) | with practice | delta |
+|---|---|---|---|---|
+| draconic | 18,000 | 10.72 (0.81) | 10.72 (0.81) | **0.00** |
+| elf | 8,400 | 8.72 (1.08) | 8.72 (1.08) | **0.00** |
+| gnome | 4,200 | 15.88 | 15.81 | −0.06 |
+| dwarf | 3,000 | 13.88 | 14.03 | +0.16 |
+| human | 960 | 10.66 | 9.09 | −1.56 |
+| orc | 720 | 1.22 (1.26) [0–5] | 1.19 | −0.03 |
+
+**Draconic and elf — the two *longest*-lived, where a mastery-compounding mechanic would show first —
+are identical across all 32 seeds, to the mage.** Neither promotes anybody within 1,200 ticks, so their
+rosters are founders and practice cannot touch them. A hypothesis that predicts its strongest effect
+exactly where the effect is provably zero is not a weak hypothesis; it is the wrong mechanism.
+
+**Orc is not deleted. Orc is already marginal on `main`** — mean **1.22 mages, and zero on 11 of 32
+seeds with no practice mechanic in the tree at all.** The 3→0 table I built the whole diagnosis on was
+**one draw.** At 2,400 ticks, human and orc read zero on 8 of 8 seeds on *both* arms. W74 suspected
+this, W76 measured it independently, and this is the third confirmation. It is a `main`-side finding.
+
+**The `permits()` gate is exonerated too.** Un-gating `resource-yield` over 1,200 ticks changes
+**`stone` and nothing else** — food, vellum, carrying capacity, population and every per-species entry
+are bit-identical, because every reachable `resource-yield` node routes to stone via `routeYieldByForm`.
+The gate never fed vellum and cannot have starved it.
+
+### What was really wrong: two dead signals, both prose claims nothing checked
+
+1. **`practisableBy` offered any node below `MASTERY_MAX`.** Decay puts every instance there within a
+   month, so **practice was feasible for every mage every tick, forever** — and a month at `fp(1023)`
+   bought **one point** back against the clamp.
+2. **`opportunityTerm` summed candidate + stale-holding opportunity to `256 + 288 = 544` against a bound
+   of `512`, so it clamped on *ordinary* input** — the exact outcome `STALE_HOLDING_CAP`'s own comment
+   claims the value was chosen to avoid. Pinned at 512, practice outranked `scribe`'s 256 ceiling and
+   ate the months that scribing needed.
+
+**Both are now pinned by tests (9 assertions), because both were comments asserting behaviour nothing
+verified.** That is W85's lesson arriving in a second package on the same day.
+
+### The asset is real — it is just not the one I was defending
+
+I asked that the species divergence be protected. **There is no species divergence.** What replaced it
+is better:
+
+| | control | as merged | **fixed** |
+|---|---|---|---|
+| last-window scribing zero on | 0/8 | **4/8** | **0/8** |
+| library depth, year 200 | 28.9 | 14.6 | **30.9** |
+| second-century lessons | 386 | 679 | **605** |
+
+**Practice roughly doubles second-century teaching** by carrying scholars back over the standing
+threshold — 7 of 8 seeds, with seed 589831 going from **8 lessons to 636**. *Publish-or-perish actually
+closes*: knowledge decays, teaching restores it, and the restoration is what keeps the second century
+alive. That is the mechanic the owner named and it now demonstrably works.
+
+The branch also retires **its own** headline claim: `referenceLibraryDepth` as "the most robust negative
+result" goes −3.02 SE → −1.68 SE and is inside tolerance. An agent disproving the finding it was hired
+to defend is the healthiest thing in this document.
+
+### Ruling on the two remaining red tests
+
+`loss-shock-recovery.test.ts`'s two failures both **require orc alive at one pinned seed.** Post-fix
+that seed reads 11 / 18 / 8 / 7 / 13 / **0**.
+
+**Do not make them green here.** They are not testing this branch; they are asserting that a species
+which is **zero on 34% of seeds on `main`** survives a cull at one seed. That is an assertion on noise,
+and satisfying it would be fitting to a single draw. **The test carries a `main`-side defect** — it
+encodes "all six species survive and recover measurably" against a build where two do not — and it
+should be made seed-robust on its own branch, together with the orc tuning. All six species are
+`untuned`; that is the pass where this gets resolved.
