@@ -3640,3 +3640,81 @@ Qwen also argued the god's sixteen verbs are *not* load-bearing for convergence,
 sweep ran `passive-control` and the verbs cannot create divergence when the underlying walk is
 one-dimensional. **That is consistent with everything measured here** — `permit-then-idle` beating
 `permissive-breadth` says the same thing from the other end.
+
+---
+
+## W81 — a fourth instrument that could not see, and worship finally depends on what magic is for
+
+*2026-08-13. From the daily-relevance work (PR #63).*
+
+### The fourth blind instrument
+
+**`defineWorldSimulation` never forwarded the ablation mask into the god deps, so `worship-yield` was
+not ablatable at all.** `winRateByPrimitive` would have reported it as contributing nothing — not
+because it contributes nothing, but because neutralising it did nothing.
+
+That is now **four** independent instances of the campaign's central failure, and they should be read
+as one sentence rather than four incidents:
+
+1. Ten of fifteen registered metrics had no production caller.
+2. Gate tolerances at ±118% of mean; 80 of 80 collapse-to-zero events inside them.
+3. All three balance gates resolve **zero raids** at every committed tick cap.
+4. The ablation mask never reached the god subsystem, so a whole primitive was un-ablatable.
+
+**The instrument not touching the thing is not an occasional defect in this project. It is the modal
+defect.** Every null result in this campaign predating these fixes should be treated as unmeasured
+rather than measured-and-flat, and re-run before anyone reasons from it.
+
+### The `permits()` bug is fixed, and cost less than I claimed
+
+`yieldSources` gated on instance count alone with no `permits()` call — a forbidden node kept paying
+worship. Fixed. **Its measured cost across 90 pool runs is zero**, because no shipped bot produces the
+sequence that would expose it: `denial-warden` interdicts from round one and strangles the research
+before any yield accrues. A purpose-written `lateWardenPolicy` shows the real cost —
+**−143 favor/tick, −4.6% of the run, about +12.6% for the 929 ticks the prohibition stood.**
+
+Worth keeping as a methodological note: **a bug with zero measured cost against the current bot pool is
+not a bug with zero cost.** It is a bug the pool cannot reach. The pool is not a proxy for the strategy
+space, and the honest way to price such a defect is a policy written to reach it.
+
+### Worship now depends on what magic is *for*
+
+`dailyRelevance` on all seventy cells scales each `worship-yield` magnitude **per magnitude, before
+stacking** — scaling the stacked total would scale the `1` in `(1 + Σ)` and turn a low-relevance cell
+into a penalty on the base rate. That distinction is the kind of thing that silently inverts a mechanic,
+and it was caught in design rather than in a baseline diff.
+
+The measurements answer the question W68 left open — whether kind matters at equal amount:
+
+| comparison | before | after |
+|---|---|---|
+| `daily` vs `spectacle` | +23.0% | **+48.8%** |
+| `creo-fatum` vs `creo-vim` (cap-free control) | +6.5% | **+15.6%** |
+
+**Relevance more than doubles both gaps**, and per-ruleset ablation ranges −11.2% (fate cells) to
+−26.6% (spectacle) — not a flat tax. Overall favor regeneration falls 12.26% on the shipped ruleset
+across 12 paired runs, every one negative, against a −13.4% prediction computed from content
+beforehand. **A prediction made before the measurement and then met is worth more than the measurement
+alone**, and this is the first time in the campaign anyone did that.
+
+**This closes the last of the three surviving research-dive items.** "Water and crops out-worship
+spectacular destruction" is implemented, and the ruleset is now coupled to devotion.
+
+### A correction to my own brief, and a caveat the author volunteered
+
+I told the agent to make the prestige→worship loop explicit. **That loop does not exist** — §1.1 makes
+`prestige` read-only during a run and it never touches worship — so `library-legacy` is built on library
+depth directly. My instruction described a mechanism I had not checked.
+
+And the snowball result carries its own caveat honestly: the compounding term adds +26.7%/+38.8% regen
+but **narrows** seed dispersion, the favor cap absorbing it. **The loop's reinvestment leg is unclosed —
+no bot buys libraries — so this measures seed luck, not agent runaway.** That is the right way to report
+a number whose generating mechanism is not fully wired.
+
+### And the gates confirm their own blindness
+
+Two of the three gates saw **literally nothing** (`no metric moved`, all deltas 0.00000). The one that
+plays god verbs moved **at most 0.38 SE against a tolerance of 3** — meaning **a 12–27% change in favor
+regeneration would have passed the gates untouched.** The gates are provenance here, not evidence; the
+evidence is a bespoke paired instrument. That is the correct division of labour and should be the
+default until the gates can see what they are gating.
