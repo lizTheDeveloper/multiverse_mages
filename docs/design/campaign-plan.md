@@ -4201,3 +4201,34 @@ claim."* `balance-ci-wiring.test.ts` failed three ways and was right to. Restore
 provenance loss.** The only reason this was caught is that someone had written a test asserting the
 disclaimer's presence. Every other regenerated artefact in this repo should be checked for the same
 class of loss.
+
+### And `archivist` answers the obvious objection from the opposite corner
+
+The sharpest available criticism of the ascension conjunct is *"`open-then-build` was written by the
+same workstream, so of course it passes."* `archivist` — **in the pool since the beginning, written by
+nobody for this** — settles it:
+
+| strategy | universities | nodes known | qualifies? |
+|---|---|---|---|
+| `permit-then-idle` | **1** | 261–269 | no |
+| `archivist` | **~1,300** | **51** | no |
+| `passive-control` | 1 | 51 | no |
+| **`open-then-build`** | 78–98 | 198–220 | **yes** |
+
+**Both single-axis maximisers fail.** Open the whole grid and build nothing — fail. Build **thirteen
+hundred universities** and open nothing — fail, pinned at the 51-node content ceiling. **Only the
+conjunction passes, and it passes with two orders of magnitude fewer universities than the strategy
+that fails.**
+
+That is the difference between a predicate and a counter. `ascension-institutions` is not a university
+race: `archivist` wins that race thirteen times over and still loses. **It requires the god to do a
+second thing while doing the first**, which is exactly the property no threshold over knowledge alone
+could have had, and what both earlier proposals were reaching for without finding.
+
+It also bounds the purpose-built-probe worry with evidence instead of argument.
+
+**Note what `archivist` incidentally proves about the content ceiling:** thirteen hundred universities
+buy **51 nodes** — the same 51 that `passive-control` reaches doing nothing at all. **Institutional
+capacity is not the binding constraint on knowledge; the content is.** That is a third independent
+confirmation of W87's finding, arriving from a strategy built years of campaign-time earlier for an
+entirely different purpose.
