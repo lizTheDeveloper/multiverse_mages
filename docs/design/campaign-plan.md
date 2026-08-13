@@ -3423,3 +3423,57 @@ of the gate: all eleven prototypes serve 200, every inline script parses (module
 modules), and every local asset reference resolves. That was checked with a static pass rather than a
 browser, because the browser extension is not connected in this session — so *rendering* is unverified
 even though *loading* is.
+
+---
+
+## W75 — the CI runner moves to `multiverse-games-hel1`, and my "wedged" diagnosis was wrong
+
+*2026-08-13. Corrected and acted on in the same pass.*
+
+**The runner was never wedged.** I reported it as such above; the evidence said otherwise once I could
+reach the host. Two `ci-check.sh` processes were running and progressing — one for `multiverse_mages`,
+one for `multiversecampus` — at **5:32 and 1:45 elapsed**. The lock in `webhook_receiver.py` is
+per-repo and its `finally: lock.release()` is correct, so nothing had leaked.
+
+**What was actually true is worse and more fixable: the two repositories were sharing a machine and
+starving each other.** `cto-tycoon-hel1` carries Coolify, the campus deploys and **102 containers**;
+at diagnosis it sat at **load 14.92 on 16 cores with 1 GB free of 30 GB**. Every balance sweep this
+campaign queued was competing with production merges on `themultiverse.school`. The queue was real and
+the runs were finishing; they were finishing slowly because the box was saturated by work that had no
+reason to share a machine with them.
+
+**The runner now serves `multiverse_mages` from `multiverse-games-hel1`** — 16 cores, 30 GB, Docker,
+54 days uptime, and nothing else contending. Within minutes of the cutover, campus load fell from
+**14.92 to 9.12** and the games box settled at **5.88**.
+
+**The migration reduced the secret surface from eighteen to two, and that is the durable win.** The
+campus runner holds Coolify, Neon, Matrix, LiveKit, SendGrid, preview-environment and Aethrix
+credentials — **eighteen environment secrets, every one of them for campus deploys.**
+`multiverse_mages` deploys nothing, so the new runner holds exactly two:
+
+- `CI_WEBHOOK_SECRET` — verifies GitHub's HMAC on the payload
+- `CI_GITHUB_TOKEN` — posts the commit status back
+
+**The divergence between the two runners is now a security property, not drift.** A future reader who
+"makes them match" would be undoing the point. That reasoning is recorded in the compose file on the
+box, where someone editing it will actually see it.
+
+**Hardening, because a plain-HTTP webhook port is otherwise open to the internet.** Port 9876 is
+restricted to GitHub's four published hook CIDRs (`192.30.252.0/22`, `185.199.108.0/22`,
+`140.82.112.0/20`, `143.55.64.0/20`) and dropped for everything else. The rules live in the
+**`DOCKER-USER`** chain, not in `ufw` — Docker publishes ports by writing its own iptables rules that
+bypass `ufw`'s INPUT chain entirely, so a `ufw` rule here would have silently not applied. Persisted
+to `/etc/iptables/rules.v4` with `netfilter-persistent` enabled, or it would evaporate on reboot.
+
+**One mistake worth recording, because it is a trap in the GitHub API.** `PATCH .../hooks/:id` with a
+partial `config` object **replaces the whole object** — the first cutover attempt silently cleared the
+webhook secret, leaving an endpoint that would have accepted unauthenticated payloads. Caught by
+reading the config back rather than trusting the 200. **Verify the secret is `PRESENT` after any hook
+edit**; the API will not warn you.
+
+**What has not changed, deliberately:** the fork-PR guard still refuses fork PRs. A runner holding a
+token that can write commit statuses is still a runner a fork must not be able to command, and the
+smaller secret surface does not change that. `ci/hetzner-lint` also keeps its status-context name
+despite no longer running on a box called hetzner — renaming it would require a branch-protection
+change and would invalidate every historical status. **The name is now wrong and the cost of fixing it
+is higher than the cost of documenting it.**
