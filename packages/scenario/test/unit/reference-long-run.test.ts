@@ -319,6 +319,21 @@ describe('two hundred world years of the reference universe', () => {
         'dead-`acquire`-hook shape this tripwire exists to catch',
     ).toBeGreaterThan(0);
 
+    // And teaching is the *normal* state rather than a couple of accidents:
+    // more than half the windows are non-empty. A majority rather than a
+    // count near the data — the ten runs measured above hold 8, 9 or 10
+    // non-empty windows, on both trees and every seed, so six is a structural
+    // claim with room in it rather than a threshold fitted to what was
+    // observed. Without it the two assertions above would be satisfied by
+    // teaching in window zero and once more in window seven, which is closer
+    // to the failure than to the behaviour.
+    const windowsWithTeaching = taught.filter((lessons) => lessons > 0).length;
+    expect(
+      windowsWithTeaching,
+      `teaching happened in only ${String(windowsWithTeaching)} of ` +
+        `${String(taught.length)} windows: ${taught.join(' / ')}`,
+    ).toBeGreaterThan(taught.length / 2);
+
     // Scribing dips hard in the middle of the run — the food-driven population
     // collapse still starves the *populace* that would otherwise staff a
     // scriptorium, and windows five and six (world years 80-120) scribe

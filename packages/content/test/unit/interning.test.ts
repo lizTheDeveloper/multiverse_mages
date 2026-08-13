@@ -278,8 +278,9 @@ describe('contentRevision', () => {
     // digest moving from d37624e3 to 2c67315a across this merge is therefore
     // the union arriving, not a disagreement being settled.
     //
-    // 2c67315ae04ee6c74dfa204474af4eb6 -> ba7be8d68b582e2985e0360bbc7e11b0, when this branch
-    // merged `main` and took `main`'s `max-summons-per-side`. On `main` that
+    // 2c67315ae04ee6c74dfa204474af4eb6 -> ba7be8d68b582e2985e0360bbc7e11b0,
+    // when this branch merged `main` and took `main`'s
+    // `max-summons-per-side`. On `main` that
     // edit reads `d37624e36be00f59cf21b87ff6eba144 ->
     // 6b18886a4b3a2803c0b1b92eb8f8fae8`: the cap came down from 16 to 8 to
     // agree with `primitive.json`'s `summon` cap, which is the same ceiling
