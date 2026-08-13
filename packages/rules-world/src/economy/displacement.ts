@@ -67,6 +67,17 @@ import type { ClampCounters } from '@mm/primitives';
 import { applyCap, multiplicativeOnRemainder } from '@mm/primitives';
 
 /**
+ * Half of `FP_ONE`, as a shift rather than a division.
+ *
+ * `FP_ONE / 2` is exact in a double and that is not the point: `CLAUDE.md`
+ * forbids floating-point arithmetic in the rules path categorically, because
+ * the constraint is only worth anything if nobody has to audit which divisions
+ * happen to be safe. `world-step.ts` makes the same argument at its own
+ * ceil-div.
+ */
+const HALF_FP: Fixed = FP_ONE >> 1;
+
+/**
  * The id displacement clamps are counted under.
  *
  * Not a primitive id — `ClampCounters` keys on strings and the registry is not
@@ -164,10 +175,10 @@ export function laborAfterDisplacement(laborers: number, fraction: Fixed): numbe
   }
   if (fraction <= 0) return laborers;
   const share = Math.min(fraction, FP_ONE);
-  // `+ FP_ONE / 2` before the floor is round-half-up, through the repository's
-  // one rounding helper. Both operands are non-negative here, so half-up and
+  // `+ HALF_FP` before the floor is round-half-up, through the repository's one
+  // rounding helper. Both operands are non-negative here, so half-up and
   // half-away-from-zero are the same rule and there is no sign asymmetry for
   // `contracts.md` §3 to object to.
-  const displacedCount = floorDiv(laborers * share + FP_ONE / 2, FP_ONE);
+  const displacedCount = floorDiv(laborers * share + HALF_FP, FP_ONE);
   return laborers - Math.min(laborers, displacedCount);
 }
