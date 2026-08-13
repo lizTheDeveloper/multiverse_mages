@@ -3951,3 +3951,77 @@ both compatible with "the game never runs it."** The `check:consumption` script 
 node-driven consumers. **There is no equivalent asking it for functions, components or constants**, and
 these five would all have been caught by one. That check is now the highest-value tooling item on the
 board, above any individual fix, because it converts a class of defect into a build failure.
+
+---
+
+## W87 — the container holds. There is one thing to put in it.
+
+*2026-08-13, PR #75. The teaching boundary lands, works, and produces the most useful null of the
+campaign.*
+
+`teachingRosterFor(mage)` groups living mages by `universityId`; `teachableTo` refuses a
+cross-institution pair. Decision and accrual walk the same list. `MAX_TEACHING_COUNTERPARTIES` now
+bounds **per institution** — filtering a universe-wide lowest-32 by affiliation would have handed any
+university whose mages sit above slot 32 an empty faculty, **and that emptiness would have read as a
+knowledge result.** There is a test for exactly that regression, which is the kind of care that makes
+the rest of the numbers trustworthy.
+
+### The result: universities still cannot diverge, and now we know why
+
+Dominant cells differ at **7/20 horizons before → 8/20 after**. Both academies still reach 49–51 of the
+51 reachable nodes.
+
+**After the fix they have no content channel between them at all** — teaching sealed, migration
+measured at **zero**, books shelve per-library, and knowledge capital was already own-university
+(`capital.depthFor(row.universityId)` — a suspected fourth leak that turns out not to exist).
+
+**They converge by content exhaustion, not by exchange.**
+
+That is the whole campaign in one sentence. The container holds; **there is one thing to put in it.**
+It also settles which of the two candidate causes of one-dimensionality is binding: not the plumbing,
+**the content**. Which makes W79 (`researchCost` flat across all 300 nodes) and W82 (the opening square)
+the load-bearing work, and demotes everything that moves knowledge *around* faster or slower.
+
+Channel dominance, measured: teaching was the dominant *content* channel (**−22% library depth when
+sealed**); migration contributes nothing; the scribe pool is throughput-only.
+
+### The ruling on unaffiliated mages, which is better than the question I asked
+
+**`0` is a container — the commons.** One uniform rule, *same id teaches same id*, and `0` is an id.
+
+Defended on measurement rather than taste: **every mage promoted after founding is created
+unaffiliated**, so at world year 200 **87 of 89 living mages have `universityId === 0`.** The strict
+reading — "unaffiliated mages can teach nobody" — would have been an off switch for teaching, not a
+boundary on it. I framed this as a design choice between two games; the data says one of the two
+options was never a game at all.
+
+### Three corrections to briefs I wrote
+
+1. **`affiliate` never fires. Not rarely — never, in any run.** It scores ≈640 against research's ≈832.
+   W68 routed cross-university transfer through that goal, and I recorded it as "already exists as a
+   goal." **It exists in code and not in behaviour**, which is exactly the distinction W85 was written
+   about, found again one day later in a claim of mine.
+2. **W68's "research creates instances at 256, so founding grants are the only teachable knowledge" is
+   false for the reference tradition.** It resolves **True Naming**, whose `acquire` hook sets
+   `instanceMastery: 1024` for *every* instance — so researched knowledge is immediately teachable and
+   chains losslessly. Measured: the commons holds **437 teachable instances it made itself**; the
+   academies hold 101 instances and **zero** teachable. **Consequence: `w53/practice` is not a hard
+   prerequisite for a nudge-shaped founding grant under True Naming**, which undoes the sequencing
+   argument I built the grant-budget brief on. The 93.4%-untEachable figure is a statement about *some*
+   traditions, not about the game.
+3. **My migration-homogenisation hypothesis was wrong** — I passed Qwen's `universityPreference`
+   analysis on as a live risk. **Nobody ever migrates**, so the rule that would homogenise never runs.
+
+### Two red tests, deliberately left, and my ruling
+
+- **`reference-long-run.test.ts:416`** — 140 books / **46** distinct nodes → 154 / **36**, tripping
+  `< 4×depth`. **This is the clearest single piece of evidence the boundary bites**: only affiliated
+  mages scribe, so sealing six founders off from the commons shelves fewer distinct nodes. The
+  assertion encoded a redundancy expectation from an unbounded-teaching world. **Update it, with the
+  old and new numbers and the mechanism written into the test**, exactly as the interning digests are
+  documented. Do not widen it silently and do not delete it.
+- **`reference-time-to-tier.test.ts:263`** — orc tier-3 `[24, 31]` → `[24, 52]`, crossing elf's low of
+  44. **Hold this one.** It is entangled with the orc problem (W74/W76: orc reaches zero cells on plain
+  `main` by world year 160, and orc is `untuned` like all six species). Changing a species-ordering
+  assertion while the species underneath it is being retuned would bake in a number nobody believes.
+  **Leave it red with a comment naming the entanglement**, and resolve it in the species-tuning pass.
