@@ -96,6 +96,7 @@ Every number here was produced by running it, not by reading the code.
 | Annihilation sentinel | Reference universe + all 10 strategies, 600 ticks, raids live | **One** site: `worship:laggedWorship`, persistence 0.131 — the site that already handles it |
 | Balance baselines | All three committed baselines | No `NaN` fossils; the one `null` is the designed `standardError === 0` sentinel, not a coerced `NaN` |
 | `applyDescriptor` | All five normalization rules, `NaN` and `±Infinity` | Floors to `min` under every rule; the historical `log-bucket` disagreement is fixed |
+| All three balance gates | `balance-gate`, `-horizon`, `-ascension` | Every metric `delta 0.00000` — the instruments are observation-only, and the baselines say so |
 
 **The rules path is clean.** That is a real result and it should be said plainly rather than buried:
 the campaign found no live contamination on `main`. What it found instead was that nothing would
@@ -145,8 +146,31 @@ on it.
    pre-release), not **C**, and it needs a cheaper sentinel — sampling, or a build flag — rather than
    a longer timeout.
 
-4. **`raid-engagement.test.ts` starves its runner.** It emitted `[vitest-worker]: Timeout calling
-   "onTaskUpdate"` before this campaign touched it, at 75 seconds and twelve green tests, because
-   `playOnce` steps 520 ticks synchronously. A test file that reports an error while reporting a
-   pass is the exact "feels like rigour" failure this document exists to argue against. Not fixed
-   here; the fix is periodic yields in `playOnce`, as `runLongReference` already does.
+4. **`npm run verify` is stochastically red, and not because of the code.** Vitest exits non-zero on
+   an unhandled error even when every test passes, and this suite produces
+   `[vitest-worker]: Timeout calling "onTaskUpdate"` — a worker doing unbroken synchronous work
+   cannot answer its runner's RPC, and a runner that has not heard from a worker treats it as dead.
+   Because `verify` chains with `&&`, that exit code means **the three balance gates never run at
+   all**, which is the part of the gate most worth having.
+
+   Measured, on an untouched `origin/main` checkout with no changes from this campaign: `npm test`
+   exits **1**, with 4,052 tests passed, 287 files passed, and **2 unhandled errors**. So this is
+   not a regression introduced here. It is a pre-existing, stochastic property of the suite — an
+   earlier run of the same untouched tree exited 0.
+
+   The cause is concentrated in a few files that step hundreds of world ticks synchronously:
+   `loss-shock-recovery.test.ts` at 205s, `reference-long-run.test.ts` at 185s, and
+   `reference-time-to-tier.test.ts` at 133s. The same contention intermittently pushes
+   `god-loop.test.ts` — 15s alone — past the 30s `testTimeout` under parallel load.
+
+   The fix is the device this repository already uses in `runLongReference` and
+   `assembled-run-values.test.ts`: hand the event loop back once a world year. It changes no number.
+   It is not applied here because those files belong to other workstreams in flight, and a
+   campaign about not claiming more than you check should not quietly rewrite three suites it did
+   not measure.
+
+   `vitest.config.ts` already contains the argument for doing it, written about a different
+   intermittent failure: *"A conformance suite that goes red for reasons unrelated to the code under
+   test is a suite people learn to re-run rather than read."* Every invariant in `invariants.md`
+   with cadence **C** depends on someone reading a red gate as information. This is the highest
+   priority item on this list, and it is not a numeric-integrity problem at all.
