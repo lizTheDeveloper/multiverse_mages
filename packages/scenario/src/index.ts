@@ -54,8 +54,14 @@ export {
   worldDeps,
 } from './content-set.js';
 
+export type { AnnihilationSite } from './annihilation.js';
+export { AnnihilationRecorder } from './annihilation.js';
+
 export type { CensusSample } from './census.js';
 export { censusLine, censusOf } from './census.js';
+
+export type { MasteryModelOptions } from './mastery-model.js';
+export { referenceMasteryModel } from './mastery-model.js';
 
 export type { ReferenceMeasure, RunMeasurement } from './measures.js';
 export {
@@ -108,3 +114,5 @@ export {
   timeToTierBySpecies,
   windowsOf,
 } from './long-run.js';
+
+export { speciesCellOccupancy } from './species-occupancy.js';

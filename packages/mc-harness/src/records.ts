@@ -42,7 +42,13 @@ import { TERMINAL_REASON } from '@mm/agent-api';
 import type { JsonValue } from './canonical.js';
 import { canonicalJson } from './canonical.js';
 import type { MetricEntries } from './metrics.js';
-import type { ArmContribution, FailureClass, Provenance, RunTask } from './protocol.js';
+import type {
+  ArmContribution,
+  CensusTracePoint,
+  FailureClass,
+  Provenance,
+  RunTask,
+} from './protocol.js';
 import type { IllegalActionAccounting, TerminalStatus } from './session.js';
 import type { RunCoordinates } from './seed.js';
 import { SEED_DERIVATION_VERSION, deriveRunSeed } from './seed.js';
@@ -108,6 +114,17 @@ export interface RunRecord {
    * described one. See {@link ArmContribution}.
    */
   readonly armContribution?: ArmContribution;
+  /**
+   * Cumulative favor spent by §4.2 action id. See {@link RunOutcome.godSpendByAction}.
+   *
+   * Additive and optional, so {@link RECORD_FORMAT_VERSION} does not move: a
+   * version 3 reader is not wrong about anything, and a record without the field
+   * is a record whose executor did not observe a god rather than a record whose
+   * god spent nothing. Absence and zero are different claims and stay different.
+   */
+  readonly godSpendByAction?: Readonly<Record<string, number>>;
+  /** This run's census trajectory. See {@link CensusTracePoint}. */
+  readonly censusTrace?: readonly CensusTracePoint[];
 }
 
 /** Wall-clock figures. Excluded from every reproducibility comparison (task 4.9). */
@@ -212,6 +229,8 @@ export function buildRunRecord(input: {
   readonly provenance: Provenance;
   readonly failure?: { readonly classification: FailureClass; readonly message: string };
   readonly armContribution?: ArmContribution;
+  readonly godSpendByAction?: Readonly<Record<string, number>>;
+  readonly censusTrace?: readonly CensusTracePoint[];
 }): RunRecord {
   const { task } = input;
   const derived = deriveRunSeed(task.coordinates);
@@ -267,6 +286,8 @@ export function buildRunRecord(input: {
     provenance: input.provenance,
     ...(input.failure === undefined ? {} : { failure: input.failure }),
     ...(input.armContribution === undefined ? {} : { armContribution: input.armContribution }),
+    ...(input.godSpendByAction === undefined ? {} : { godSpendByAction: input.godSpendByAction }),
+    ...(input.censusTrace === undefined ? {} : { censusTrace: input.censusTrace }),
   };
   return record;
 }

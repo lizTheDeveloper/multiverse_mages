@@ -329,7 +329,19 @@ describe('contentRevision', () => {
     // what a digest over the union is supposed to produce, and it is the same
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of file names.
-    expect(registry.contentRevision).toBe('6973d2c55f6d7788bbaa6886e507bbde');
+    //
+    // 6973d2c55f6d7788bbaa6886e507bbde -> 162f80bf169296d0e5fd516cc3c5257a,
+    // when the founding-grant budget added three god constants — the starting
+    // allowance, the self-discovered nodes that earn another grant, and the
+    // ceiling. In the preimage for the reason every other god constant is: two
+    // universes that disagreed about how many nodes a god may seed would be
+    // playing different games while their revisions agreed they were
+    // compatible. Nothing existing changed a byte, and all three ship at values
+    // no run can reach, so this revision plays identically to the last one —
+    // which is the opposite of the ascension-constant move above, and the
+    // difference is worth reading: that one changed when a run ends, this one
+    // changes nothing until a sweep names a level.
+    expect(registry.contentRevision).toBe('162f80bf169296d0e5fd516cc3c5257a');
   });
 
   it('is stable across loads of identical content', () => {
