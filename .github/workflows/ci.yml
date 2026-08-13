@@ -243,6 +243,14 @@ jobs:
     # to release time only, a regression would surface weeks after the commit
     # that caused it, with the bisect range to match.
     #
+    # Measured here on 2026-08-13: **35m09s**, against 830 s on an eight-core
+    # laptop — a hosted runner has fewer cores and `--workers 4` oversubscribes
+    # them. That is fine and is not a thing to optimise: nothing blocks on this
+    # job, and trimming `--workers` or the replicate count would buy minutes
+    # nobody is waiting for at the cost of the sensitivity the sweep exists for.
+    # If it ever needs to be fast, `docs/devops/sweep-fanout.md` is the lever —
+    # but read why that is wrong for a *required* gate before reaching for it.
+    #
     # ## Why it has no `continue-on-error`, unlike the two jobs below
     #
     # Those two are *expected* red and say so. This one is expected **green**, so

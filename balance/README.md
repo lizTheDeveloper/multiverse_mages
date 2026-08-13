@@ -179,7 +179,7 @@ So:
 |---|---|
 | `npm run verify` | five-year, twenty-year, agency. **~40 s of gates.** Both CI systems. |
 | `npm run verify:full` | the above **plus** the two-hundred-year gate. Nothing automated calls it. |
-| **Balance gate, two hundred world years** | its own parallel GitHub Actions job, **every commit**, **not required to merge**. |
+| **Balance gate, two hundred world years** | its own parallel GitHub Actions job, **every commit**, **not required to merge**. Measured 35m09s there on 2026-08-13. |
 | `docs/design/release-plan.md` | makes it **required at release**. |
 
 Three things this is *not*, because each is a way the arrangement could decay:
