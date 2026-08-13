@@ -32,6 +32,45 @@ So the direction of claims 1 and 2 was not a surprise by the time they were writ
 known, and is what the claims are actually for, is whether either survives at n=40 across all four
 positions, and whether `open-then-build` can clear a conjunct that nothing else in the pool can.
 
+## The ascension gate moved, and what moved it
+
+`balance/README.md` predicted this in as many words: *"when it lands **every number in that file
+should move**. That is the gate working, not a defect."* It did, and every one of the ten metrics
+stayed inside tolerance at k=3, the largest at **1.55 SE**:
+
+| metric | baseline | current | delta | SE |
+|---|---|---|---|---|
+| `referenceKnowledgeInstances` | 3266.59 | 4016.63 | **+750.03** | 1.55 |
+| `referencePopulation` | 15732.3 | 17866.4 | **+2134.16** | 1.48 |
+| `referencePopulationChange` | 15588.3 | 17722.4 | **+2134.16** | 1.48 |
+| `referenceNodesKnown` | 60.8750 | 69.0625 | **+8.19** | 0.73 |
+| `referenceNodesGained` | 58.3750 | 66.5625 | **+8.19** | 0.73 |
+| `referenceNodesGainedFinalQuarter` | 4.87500 | 3.21875 | **−1.66** | −0.78 |
+| `referenceGrimoires` | 283.563 | 255.219 | **−28.34** | −0.64 |
+| `referenceLibraryDepth` | 34.1250 | 37.5625 | **+3.44** | 0.52 |
+| `referenceLivingMages` | 459.875 | 461.563 | **+1.69** | 0.01 |
+| `referencePeakPopulation` | 29490.0 | 29490.0 | **0.00000** | 0.00 |
+
+**The mechanism is proven, not inferred.** The sweep round-robins eight strategies over 32 runs, so
+each gets four. In the paired re-run at these coordinates — same seeds, one constant apart —
+`snapshotHash` is **bit-identical across the two arms for all 40 paired runs each** of
+`passive-control`, `idle-then-declare`, `denial-warden`, `narrow-depth`, `portal-rush` and
+`worship-maximizer`. `snapshotHash` digests the whole simulation state, so a match means the two
+arms produced the same world at every tick, not merely the same aggregates. **The conjunct changes
+nothing for a universe that was never going to qualify.**
+
+What changed is `permissive-breadth`, which ascended 40/40 before and 0/40 after. Its four runs now
+play to the 2400-tick cap instead of terminating near tick 1094 — and **a longer run accumulates
+more of every stock**, which is the sign of every delta above. The two negative entries fit the same
+story rather than contradicting it: `referenceNodesGainedFinalQuarter` falls because a run that no
+longer ends early has a *later* final quarter, by then already at the content ceiling, and
+`referenceGrimoires` falls because the arms that keep running are the breadth-permitting ones whose
+mages research rather than copy. `referencePeakPopulation` — a **max** aggregation — moved by
+exactly zero, which is what should happen when the changed runs never held the maximum.
+
+**The direction is the point.** These numbers rose because a universe that used to win by editing
+the ruleset and then idling now keeps running instead of stopping at its own coronation.
+
 ## The notation, and the instrument it borrows from
 
 The records are written in the shape `w32/depth-language` defines — `claimId`, `form`, `subjects`,
