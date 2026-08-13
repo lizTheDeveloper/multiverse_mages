@@ -412,6 +412,15 @@ ranks them:
    universes on the same opening should walk different queues, the lever has to be something the two
    universes do not share.
 
+   **And the instrument has the same defect one level up.** No committed gate varies
+   `foundingSpeciesMask` or `tradition`, though both are registered factors: every universe in every
+   gate is founded with all six species under one tradition. So two of the five things that could
+   differ between universes are held constant *by the measurement*, and species affinity — the term
+   that does most of the ordering work in both arms here — is being averaged over an identical
+   founding mix in every run the gates take. A sweep that varies the founding mask is a cheaper
+   experiment than any content change, and this document's own arms would have found nothing
+   different if it had been run, because they inherit the same constant.
+
 ## Is the curve worth keeping? — a view, labelled as one, and since adopted
 
 The reason it was built is gone: measured above, it does not produce divergence, and it cannot,
