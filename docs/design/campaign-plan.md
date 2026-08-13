@@ -28,6 +28,71 @@ Magnitudes the spec leaves open go into validated content data as `tuningStatus:
 
 ---
 
+## Where this stands — read this first
+
+*Written 2026-08-13, after the day that answered the campaign's question. Everything below this
+section is the record in the order it was found, including the parts later shown wrong. That order is
+deliberate: the corrections are the document's value, and several of them correct claims made
+confidently here.*
+
+### The campaign asked why `permit-then-idle` wins. The answer is not a mechanism.
+
+**The measurement apparatus mostly did not run, and the part that ran could not fail.**
+
+- **10 of 15 registered metrics have never produced a number.** `collectRunMetrics` has no production
+  caller; nothing constructs a `RunTelemetry`. The four "dead constants" recorded below as separate
+  oddities were four symptoms of that one uncalled function.
+- **The gates that do run had tolerances of ±118% of mean**, from a standard error pooled over arms
+  spanning **294×**. Take every metric × every strategy and suppose that arm collapsed **to zero**:
+  **80 of 80 collapses sat inside tolerance.**
+- **Two of three gates play no god verb at all**, so no god-agency change could ever move them.
+
+Eight mechanics were declared null by that apparatus. Some of those nulls were the instrument.
+
+### And the win condition is a button on a passive clock
+
+**`passive-control` reaches `ascensionPath = apotheosis` at tick 960 in 8 of 8 runs.** It scores 0/80
+for one reason: its stance is `never`, so it never submits action 15. **`uniform-random-legal` holds
+the same 51 nodes and ascends 80/80 — because it draws the button.** Across 560 paired
+world-by-world comparisons there is no world where a designed strategy summited and the random bot did
+not.
+
+### Three things below are now known to be wrong
+
+- **"Seed beats strategy" was a measurement artifact.** The sweep's round-robin assignment gave each
+  strategy **disjoint replicate indexes**, so no two strategies ever played the same universe. Held
+  fixed, `nodesKnown` shows **η²(strategy) = 1.00** from tick 60, and cross-strategy Jaccard on a
+  shared seed is **0.23** against within-strategy cross-seed **0.89**. **Strategy dominates node
+  composition, and always did.**
+- **"Five independent confirmations of content exhaustion" is at most four.** A perfect prefix
+  structure *entails* containment 1.000 — arithmetic, not corroboration.
+- **Permits cost 96 favor, not 98,304.** `favorCost` is typed `Fp`; every figure quoted below in raw
+  integers is 1024× too large.
+
+### What is actually broken in the game, as distinct from the instrument
+
+- **Five of seven combat primitives cannot be cast.** `raid.ts:588` skips any node not carrying
+  `direct-damage`. `ward`, `concealment`, `summon`, `blink` and `knowledge-steal` are **0 castable**
+  across ~112 nodes; only 11 of 38 `area-denial` nodes ride in on damage's ticket. **`knowledge-steal`
+  never fires**, so a raid cannot be an attack on knowledge.
+- **Mastery only ever falls.** `setMastery` has one non-test caller — the decay pass — and it lowers.
+  Research creates instances at 256 against a 512 teach threshold and they can never climb, so every
+  teachable instance descends from a god grant at 1024. **93.4% of held knowledge cannot be taught.**
+- **No mage ever applies magic, and no mage ever chooses to teach.** Economic multipliers derive from
+  what mages *know*. `teach` was feasible on 2,628 evaluations and selected on **zero** — every lesson
+  happens because a *student* went looking.
+- **Nothing limits breadth.** All six species can staff **70 of 70** cells; every cell has a
+  prerequisite-free tier-1 node and the lowest depth ceiling is 3.
+
+### What is landing against it
+
+The effect pipeline is connected and causally proven (PR #42). `practice` exists. The gate tolerances,
+the metrics collector, the castability filter, the ascension predicates and a declared-primitive
+worship loop are all in flight. Where a mechanic below was declared null, **re-measure before believing
+it** — the instrument that judged it has changed.
+
+---
+
 ## The diagnosis, measured
 
 Around forty Monte Carlo sweeps produced one causal chain. Each link is measured, not argued.
