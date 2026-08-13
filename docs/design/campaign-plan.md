@@ -3559,3 +3559,84 @@ not merely "behind". At founding all six hold one cell each and **no two the sam
 - **`collectRunMetrics` still has no production caller on `main`** — the wiring is on `w62`, unmerged.
   So the new metric is registered, collected and tested but **will not appear in sweep records** until
   that lands.
+
+---
+
+## W79 — `researchCost` is a pure function of tier, so "cheapest first" means "lowest id first"
+
+*2026-08-13. Found by Qwen, asked what would still force sameness after the two known causes are fixed.
+Verified against `node.json` before acting, and it is exact.*
+
+**All 300 authored nodes carry exactly six distinct `researchCost` values, one per tier:**
+
+| tier | nodes | distinct costs | value |
+|---|---|---|---|
+| 1 | **70** | **1** | 2048 |
+| 2 | 71 | **1** | 4096 |
+| 3 | 78 | **1** | 8192 |
+| 4 | 65 | **1** | 16384 |
+| 5 | 15 | **1** | 32768 |
+| 6 | 1 | **1** | 65536 |
+
+**Not one node deviates.** `researchCost` carries no information beyond `tier`.
+
+`compareTargets` orders candidates **by cost, then by node id**. Within a tier every candidate ties on
+cost, so **the tiebreaker is the whole of the ordering**. "Cheapest first" is "lowest node id first"
+wearing a cost function's clothes, and node id is a content-interning artifact — it is not a design
+decision about anything.
+
+**Every universe's first seventy research acts are the same permutation of the same seventy doors, in
+an order decided by a hash-table ordering.** Then tier 2 unlocks behind tier 1 in each cell, at another
+flat cost, and the second wave is the same permutation again. The graph is seventy identical-cost
+chains rising in lockstep.
+
+### Why this is the sharpest explanation yet of W19's result
+
+W19 ran 9,600 runs over twelve horizons and found the strategy space **one-dimensional at every one**,
+including tick 30 where universes hold 31% of the reachable set. Its stated cause was a **value-blind
+acquirer**. That is right, and this is the layer underneath it: **even a value-aware acquirer would have
+nothing to value.** There is no cost signal distinguishing one cell's root from another's. Every cell
+is an equally cheap door.
+
+This reframes W17's value-sensitive acquirer, which the roadmap treats as the fix. **A better ordering
+function over a flat cost surface still produces one queue.** The acquirer and the content are two
+layers of the same problem and the content layer is underneath.
+
+### It is also the cheapest of the three known causes to fix
+
+**No rules code moves.** `researchCost` is authored data in `packages/content/data/node.json`. Varying
+it within a tier is a content edit, subject to the same discipline as any other: it changes
+`contentRevision`, and it **invalidates every committed balance baseline**, because the universal
+cheap-first walk is why `referenceNodesKnown` reaches 48 of 51 v1 nodes by year twenty.
+
+That cost is now much easier to pay than it was this morning: three other approved changes
+(`w69/grant-budget`, `w70/opening-square`, `w77/effect-displacement`) already invalidate the baselines,
+so this should ride with them rather than paying the re-baselining toll separately.
+
+### The measurement, which is cheap and should be taken first
+
+**Count the distinct orderings in which the seventy tier-1 nodes are first discovered across the
+sweep.** If the answer is one — or a small number determined only by which cells the god permitted —
+this is confirmed as a cause rather than merely a smell. Secondary: the standard deviation of per-cell
+discovery time should be near zero at tier 1 and rise only where prerequisite chains differ in length.
+
+### Qwen's other two, recorded with my own read
+
+- **Universities have no specialisation mechanism** — `universityPreference` judges every institution by
+  library depth alone, so mages migrate to the biggest pile, which then gets the next researcher.
+  Rich-get-richer on a single axis with no counterbalancing force. **This composes with S2's teaching
+  boundary in a way that matters: even once teaching is bounded and universities *could* hold different
+  knowledge, the migration rule still sends everyone to the same pile.** Fixing the boundary without
+  fixing the preference may produce no divergence at all — which the S2 agent has been told to report
+  honestly if it happens.
+- **Species traits shift goal scores by ~20–28% against a base appeal of 512 that is identical for
+  everyone.** Every species ranks research at or near the top; traits change *how eagerly* everyone
+  researches, not *what*. The depth ceiling gates tiers 5–6, which is **16 of 300 nodes, about 5% of
+  content**. Qwen flags this as partly speculative — derived from term bounds rather than measured
+  goal-selection frequencies — and names the ablation that would settle it. **Take the ablation before
+  believing the number.**
+
+Qwen also argued the god's sixteen verbs are *not* load-bearing for convergence, on the grounds that the
+sweep ran `passive-control` and the verbs cannot create divergence when the underlying walk is
+one-dimensional. **That is consistent with everything measured here** — `permit-then-idle` beating
+`permissive-breadth` says the same thing from the other end.
