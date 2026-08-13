@@ -2491,3 +2491,66 @@ Two readings the results table invites and W53 refused:
 - **`referenceNodesGainedFinalQuarter` +12.2%** moves the same direction as the horizon gate's
   +10.9%, but at 0.28 SE it carries no weight here. **Two same-signed observations, one significant:
   watched, not claimed.**
+
+---
+
+## The prototype was not disagreeing with the engine. It had a ×24 button on.
+
+The author noticed the raid prototype produces vivid, differentiated combat where the simulation
+produces direct-damage at 1.9% of hit points removed, and asked what the real system was getting
+wrong. W56 settled it, and the answer is a detail nobody would have guessed:
+
+> **`ui/raid/index.html`'s finding was measured at ×1 authored magnitudes. Its vivid combat is the
+> ×24 damage button it labels "not content".** The two implementations do not disagree — one has an
+> operator control, and the demo was running with it on.
+
+**And 1.9% is authoring, not a zeroed lookup.** Proved positively rather than assumed: direct-damage
+removes **454 raw per landing attempt across 1,462 attempts**, inside the authored 96–768 band. **A
+missed lookup produces exactly zero**, so 454 is proof the lookup resolves. The arithmetic sits in one
+node — `pm-the-empty-room` bolts fp(0.75) against a mage's fp(64) while its own field does fp(7.5),
+and `summon-damage` is fp(2) *per tick*.
+
+This matters beyond the one number. **"The prototype behaves better than the engine" was a real
+observation with two real causes, and neither was the one it suggested.**
+
+### The second cause is a live defect, and it is worse than the first
+
+> **`firstCastableNode` gates candidacy on `direct-damage`** (`raid.ts:588`). A node carrying only
+> `area-denial`, `blink`, `summon`, `ward` or `concealment` is **never cast**.
+
+And since **no shipped node carries both `summon` and `direct-damage`**, `summon` **cannot reach a
+battlefield at all.** Area-denial appears in the measurements only because 11 nodes happen to carry
+both primitives; it rides along on damage's ticket.
+
+The prototype's filter accepts `direct-damage`, `area-denial` **and** `blink`. The engine's does not.
+**That is the second divergence the author was seeing**, and it is not a display difference — it is a
+class of magic that cannot be cast.
+
+Two consequences worth stating: any measurement of control primitives to date has been taken through
+a filter that mostly excludes them, and `winRateByPrimitive`'s ablation cannot say anything about a
+primitive that never fires.
+
+### And `ward` is invisible to the instrument that ranks primitives
+
+There is no `applied(ward, …)` in `primitiveApplication`, so `ward` **contributes zero to what
+`winRateByPrimitive` reads while denying measurable action.** A primitive that works and reports
+nothing is the fifth instance of this project's recurring failure — a metric structurally incapable
+of seeing the thing it is named for.
+
+### The metrics that replace damage-as-the-measure
+
+`combatActionEconomy` **0.129** — combatant-ticks of enemy action denied over the combatant-ticks a
+raid *contained*, so a longer raid does not rank as more decided by combat. Three channels: removal
+(credited across sources by hp removed over a target's **whole life**, because killing-tick
+attribution is timing noise wearing a definition's clothes), **save** (a `ward` scaling a lethal tick
+survivable, or `concealment` making the finishing cast miss), and **decoy** (an attack spent on a
+summon). Summon kills earn nothing, or damage farms denial on free bodies.
+
+`combatThresholdEfficiency` **0.076** — removing over removing-plus-hurting attempts, with a field
+counted as *one* attempt for its whole life via a cast id.
+
+**The headline the old measure could not produce: a direct-damage cast removes a target 1.57% of the
+time; the field on the same node, 18.3%.**
+
+**Displacement is declared absent rather than zeroed** — `blink` moves only the caster and fields push
+nobody — which is the distinction four earlier metrics failed to make.
