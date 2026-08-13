@@ -106,7 +106,15 @@ describe('the set of functions that floor a live quantity to zero', () => {
       }
     });
 
-    const unregistered = recorder.siteNames().filter((site) => !REGISTERED.has(site));
+    const seen = recorder.siteNames();
+    const unregistered = seen.filter((site) => !REGISTERED.has(site));
+    // Both directions, because a registry that only grows is a registry that
+    // goes stale. If `laggedWorship` stops annihilating -- because its rate
+    // changed, or because the arm stopped reaching it -- the entry below is now
+    // describing something that does not happen, and the next reader will trust
+    // it. That is the same failure as an arm asserting cleanliness over a
+    // mechanic it never reached; see INV-39.
+    const registeredButUnseen = [...REGISTERED.keys()].filter((site) => !seen.includes(site));
     const detail = recorder
       .sites()
       .filter((row) => unregistered.includes(row.site))
@@ -119,6 +127,7 @@ describe('the set of functions that floor a live quantity to zero', () => {
 
     expect(detail, detail.join('\n')).toEqual([]);
     expect(unregistered).toEqual([]);
+    expect(registeredButUnseen).toEqual([]);
   });
 
   it('and the instrument that says so can be made to fail', () => {

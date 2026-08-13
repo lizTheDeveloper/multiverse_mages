@@ -52,12 +52,25 @@ const HORIZON = 520;
 const SEEDS: readonly number[] = Object.freeze([0x1234_5678, 0x0bad_c0de]);
 
 /**
- * The one seed the sentinel arm plays. One rather than all of {@link SEEDS},
- * because the sentinel routes every component write through a `Proxy` and the
- * cost is per-universe; the claim is about the raid code path, which one
- * resolved raid exercises as well as three do.
+ * The seed and horizon the sentinel arm plays, chosen to be the cheapest pair
+ * that still resolves a raid rather than the pair the rest of the file uses.
+ *
+ * The sentinel routes every component write through a `Proxy`, so its arm costs
+ * several times what an ordinary one does, and this suite is already the
+ * slowest in the repository. At {@link HORIZON} on this file's usual seed the
+ * arm added twenty-one seconds and pushed the whole run into
+ * `[vitest-worker]: Timeout calling "onTaskUpdate"` — which fails `npm run
+ * verify` outright, because vitest exits non-zero on an unhandled error even
+ * when every test passed.
+ *
+ * A scan of ten seeds at 240 ticks found `portal-rush` resolving raids on four
+ * of them; seed 99 resolves two, in under a third of the work. One resolved
+ * raid exercises the code path as well as three do, and the arm asserts the
+ * count, so a seed that stops raiding fails rather than quietly covering
+ * nothing.
  */
-const SEED_UNDER_SENTINEL = 0x1234_5678;
+const SEED_UNDER_SENTINEL = 99;
+const SENTINEL_HORIZON = 240;
 
 const content = referenceContent();
 
@@ -168,8 +181,10 @@ describe('a raid writes no non-finite value into state', () => {
     let resolved = 0;
     try {
       const run = referenceScenario(content, { raids: true });
-      let state = run.scenario.create(SEED_UNDER_SENTINEL, { worldTickCap: HORIZON });
-      for (let tick = 0; tick < HORIZON; tick += 1) {
+      let state = run.scenario.create(SEED_UNDER_SENTINEL, {
+        worldTickCap: SENTINEL_HORIZON,
+      });
+      for (let tick = 0; tick < SENTINEL_HORIZON; tick += 1) {
         state = step(state, [], rngFromRootSeed(state.rootSeed));
         // Once a world year, as the long run does.
         if (tick % 12 === 11) await yieldToRunner();
