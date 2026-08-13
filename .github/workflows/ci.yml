@@ -9,7 +9,7 @@ name: CI
 
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -35,15 +35,38 @@ on:
 # named `main` would land in this repository's `main` group and could cancel a
 # real `main` run, leaving a merge commit with no green on record. With it, forks
 # get their own groups and `main` runs serialise instead of superseding each
-# other. Cancellation only ever hits the *older* run in a group, so the newest
-# check run for a given name always belongs to the survivor and a cancelled
-# `Verify (pinned Node)` can never mask a newer green one.
+# other.
 #
-# `push:` stays at '**' on purpose. Narrowing it to main would delete CI for
-# every branch pushed before its PR exists, which is most of them here, and would
-# save nothing on the branches that do have one. `pull_request:` must never be
-# narrowed at all: fork PRs generate no push event, and this workflow is the only
-# gate that may safely see a fork.
+# **A cancelled run's checks DO mask a green one, and this comment used to claim
+# otherwise.** An earlier version asserted that "the newest check run for a given
+# name always belongs to the survivor". It does not: GitHub's `filter=latest` is
+# per check *suite*, and one commit on a PR branch produced *two* suites — one per
+# event. The cancelled suite's `Verify (pinned Node)` stays attached to the commit
+# and stays `required=true`, so branch protection sees a required check in
+# CANCELLED state and refuses the merge. Observed on PR #42 with both contexts
+# green:
+#
+#     CHECK Verify (pinned Node) CANCELLED required=true
+#     CHECK Verify (pinned Node) SUCCESS   required=true
+#
+# `--admin` is unavailable (ruleset `bypass_actors: []`), so the only recovery was
+# rerunning the required job inside the dead suite by hand. Every push to a PR
+# branch reproduced it.
+#
+# So `push:` is narrowed to `main`, which achieves what the cancellation was for
+# — the duplicate was measured at four jobs and 1655 s of compute to produce one
+# 443 s required status, 26 of the last 100 runs — *without* minting a cancelled
+# required check. One event per commit, one suite, nothing to mask.
+#
+# The cost is real and smaller than it looks: a branch pushed before its PR exists
+# now gets no Actions run. It already got no `ci/hetzner-lint` either — the
+# self-hosted receiver's `WATCHED_BRANCHES` is `{main, production}` — so that
+# window was never gated by anything, and it is exactly the window where a gate
+# has nothing to protect. Once the PR exists, `pull_request` fires on every push
+# and both systems run.
+#
+# `pull_request:` must never be narrowed at all: fork PRs generate no push event,
+# and this workflow is the only gate that may safely see a fork.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: ${{ (github.event.pull_request.head.repo.full_name || github.repository) != github.repository || (github.event.pull_request.head.ref || github.ref_name) != 'main' }}
