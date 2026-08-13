@@ -85,6 +85,7 @@ import {
   ERA_EVALUATION,
   GOAL_COMMITMENT,
   GOD_STATE,
+  GRANT_BUDGET,
   MATERIAL_STOCK,
   UNIVERSE,
   UPHEAVAL,
@@ -118,7 +119,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 5;
+export const WORLD_SCHEMA_VERSION = 6;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -136,6 +137,11 @@ export const WORLD_SCHEMA_VERSION = 5;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  // Revision 6's marker is `grant-budget`, and it is checked first because a
+  // revision-6 envelope also carries `material-stock` — newest marker wins, or
+  // every save written since the budget landed would be walked through a
+  // migration it has already had.
+  if (carried.has(GRANT_BUDGET.name)) return 6;
   // Revision 5's marker is the presence of `material-stock`. The *absence* of
   // `universe.materials` would be an equally true test and a worse one: it asks
   // a question about a field table rather than about a section, and a save
@@ -148,6 +154,7 @@ export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   // not any row was written — and because it is the first of the four in
   // `WORLD_COMPONENTS`, so a partially-appended envelope reads as the older
   // revision and is completed rather than being read as current and left short.
+  if (carried.has(GRANT_BUDGET.name)) return 5;
   if (carried.has(GOD_STATE.name)) return 4;
   if (carried.has(EFFORT_PROGRESS.name)) return 3;
   if (carried.has(GOAL_COMMITMENT.name)) return 2;
@@ -391,12 +398,45 @@ export const splitMaterialsByKind: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 5 → 6: append an empty `grant-budget` section.
+ *
+ * Empty is the whole repair, and it is not the "nobody had one yet" argument the
+ * steps above make — it is a stronger one. `foundingGrantsRemaining` reads an
+ * absent row as **unbounded**, so a revision-5 save restored into this build
+ * keeps making founding grants exactly as it did when it was written.
+ *
+ * Synthesising a row would be the destructive choice here, and it is the one
+ * place in this file where appending beats rewriting. `splitMaterialsByKind`
+ * above rewrites, and is right to: a save that recorded a materials total did
+ * record something, and the split is an honest reading of it. A save that
+ * predates the budget recorded nothing about it at all.
+ *
+ * Whatever numbers a synthesised row carried would be a budget the god never
+ * agreed to and never spent against: `grantsUsed` would read zero for a run that
+ * may have made thirty grants, so a restored save would be handed a fresh
+ * allowance, and a `cap` filled from *this build's* content would impose a limit
+ * on a run measured without one. A save that predates the budget has no budget,
+ * and that is representable.
+ */
+export const addGrantBudget: WorldSchemaMigration = {
+  from: 5,
+  to: 6,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(GRANT_BUDGET)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
   addEffortProgress,
   addGodAgencyState,
   splitMaterialsByKind,
+  addGrantBudget,
 ];
 
 /**
