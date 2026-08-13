@@ -25,7 +25,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 
-import { GRADE_SPAN, priceOf, tierBase } from './price.mjs';
+import { priceTable, tierBase } from './price.mjs';
 
 const NODE_PATH = 'packages/content/data/node.json';
 const CELL_PATH = 'packages/content/data/cell.json';
@@ -36,12 +36,11 @@ const cells = JSON.parse(readFileSync(CELL_PATH, 'utf8'));
 const cellOf = new Map(cells.map((cell) => [cell.id, cell]));
 const v1 = new Set(cells.filter((cell) => cell.v1 === true).map((cell) => cell.id));
 
-const priced = new Map();
-for (const node of nodes) {
+const priced = priceTable(nodes, (node) => {
   const cell = cellOf.get(node.cell);
   if (cell === undefined) throw new Error(`node "${node.id}" names unknown cell "${node.cell}"`);
-  priced.set(node.id, priceOf(node, cell));
-}
+  return cell;
+});
 
 let replaced = 0;
 const next = raw.replace(
@@ -72,23 +71,23 @@ function geomean(values) {
 }
 
 const tiers = [...new Set(nodes.map((node) => node.tier))].sort((a, b) => a - b);
-process.stdout.write('tier   n  distinct       min       max      base   geomean   drift\n');
+process.stdout.write('tier   n  distinct     datum       min       max      base   geomean   drift\n');
 for (const tier of tiers) {
-  const costs = nodes.filter((node) => node.tier === tier).map((node) => priced.get(node.id).cost);
+  const inTier = nodes.filter((node) => node.tier === tier);
+  const costs = inTier.map((node) => priced.get(node.id).cost);
   const base = tierBase(tier);
   const gm = geomean(costs);
   process.stdout.write(
     `${String(tier).padStart(4)} ${String(costs.length).padStart(3)} ` +
-      `${String(new Set(costs).size).padStart(9)} ${String(Math.min(...costs)).padStart(9)} ` +
+      `${String(new Set(costs).size).padStart(9)} ` +
+      `${priced.get(inTier[0].id).datum.toFixed(2).padStart(9)} ` +
+      `${String(Math.min(...costs)).padStart(9)} ` +
       `${String(Math.max(...costs)).padStart(9)} ${String(base).padStart(9)} ` +
-      `${gm.toFixed(0).padStart(9)} ${`${(((gm / base) - 1) * 100).toFixed(1)}%`.padStart(7)}\n`,
+      `${gm.toFixed(0).padStart(9)} ${`${(((gm / base) - 1) * 100).toFixed(2)}%`.padStart(7)}\n`,
   );
 }
 
-const rails = nodes.filter((node) => {
-  const { raw: rawGrade } = priced.get(node.id);
-  return rawGrade < 0 || rawGrade > GRADE_SPAN;
-});
+const rails = nodes.filter((node) => priced.get(node.id).clamped);
 process.stdout.write(`\nclamped to a rail: ${String(rails.length)}${rails.length > 0 ? ` (${rails.map((node) => node.id).join(', ')})` : ''}\n`);
 
 process.stdout.write('\nthe twelve v1 cells, tier-1 root, cheapest first:\n');
@@ -98,7 +97,7 @@ const roots = nodes
 for (const node of roots) {
   const { cost, grade, terms } = priced.get(node.id);
   process.stdout.write(
-    `${String(cost).padStart(5)}  g=${String(grade).padStart(2)}  ` +
+    `${String(cost).padStart(5)}  g=${String(grade).padStart(3)}  ` +
       `reach ${String(terms.reach).padStart(3)}  payload ${String(terms.payload).padStart(2)}  ` +
       `tech ${String(terms.technique).padStart(3)}  form ${String(terms.form).padStart(3)}  ` +
       `metis ${String(terms.metis).padStart(2)}  ${node.cell.padEnd(17)} ${node.id}\n`,

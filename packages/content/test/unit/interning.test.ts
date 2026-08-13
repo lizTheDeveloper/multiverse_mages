@@ -335,11 +335,13 @@ describe('contentRevision', () => {
     // else, so the field carried no information `tier` did not already carry
     // and `compareTargets`' cost comparison always tied — leaving node id, an
     // interning artifact, as the whole of the ordering. `tools/w80/price.mjs`
-    // gives each node a price inside its tier's octave from what it already
-    // authors. A pure value edit over one file, and exactly the kind this pin
-    // exists to make visible: two universes disagreeing about what a node costs
-    // would research in different orders and hold different things.
-    expect(registry.contentRevision).toBe('b7775ab8cccdabc8e27b1a26e42ad676');
+    // gives each node a price inside its tier's octave — scored against the mean
+    // grade of its own tier, so the per-tier geometric mean is exactly the old
+    // flat price and the ladder keeps doing the pacing on its own. A pure value
+    // edit over one file, and exactly the kind this pin exists to make visible:
+    // two universes disagreeing about what a node costs would research in
+    // different orders and hold different things.
+    expect(registry.contentRevision).toBe('de757d602173b6e6db296a37486891e0');
   });
 
   it('is stable across loads of identical content', () => {

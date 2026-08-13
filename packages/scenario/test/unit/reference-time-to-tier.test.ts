@@ -246,11 +246,11 @@ describe('time to tier, by species', () => {
     // | dwarf    | [24, 29]  | **[23, 25]** |
     // | orc      | [24, 31]  | **[23, 58]** |
     // | human    | [30, 31]  | **[29, 30]** |
-    // | elf      | [47, 57]  | **[42, 44]** |
-    // | draconic | [26, 298] | **[24, 173]** |
+    // | elf      | [47, 57]  | **[41, 44]** |
+    // | draconic | [26, 298] | **[24, 168]** |
     //
     // Four of the six **tightened** — elf's spread falls from eleven ticks to
-    // three and draconic's from 272 to 149 — and the one that widened is orc,
+    // three and draconic's from 272 to 144 — and the one that widened is orc,
     // which leaves the fast trio and becomes a second spanner. So the assertion
     // that moved is `orc.high < elf.low`, and it moved because orc's
     // `depthCeiling` is 3: tier 3 is orc's ceiling, and a priced surface makes

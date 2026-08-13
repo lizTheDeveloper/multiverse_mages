@@ -7,7 +7,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 **Build:** `w80/research-cost-variation`, branched from `main` at `a6b1da8`.
 **Instrument:** `tools/w80/` — an inert probe on the reference world schema recording the first world
-tick each node id appears in `KNOWLEDGE_INSTANCE`. **Two arms of 84 runs each**, seven scripted
+tick each node id appears in `KNOWLEDGE_INSTANCE`. **Three arms of 84 runs each** — flat, priced, and
+priced-renormalised — seven scripted
 strategies × two starting positions × six replicates, 2,400 world ticks, walking the **identical**
 coordinate grid (`rootSeed` 20260811, `sweepId` `w15-dimensionality-v1`, cells 0 and 3, replicates
 0–5) so the only difference between the arms is `packages/content/data/node.json`.
@@ -30,6 +31,12 @@ within-strategy diagonal rather than away from it; and the across-run standard d
 first-discovery time fell from **30.7 to 21.5 ticks**, meaning universes became *more* synchronised,
 not less. The effect is small at every reading and consistent in sign at all of them. **This is a
 null on the falsifying measurement, in the mildly adverse direction.**
+
+**The result survived renormalising the price levels.** A second priced arm, in which each tier's
+prices are scored against that tier's own mean grade so the per-tier geometric mean is *exactly* the
+old flat price, reproduces the first to within noise: 56 orderings again, cross-strategy containment
+0.8308 against 0.8299 at tick 240, tier-1 sd 21.3 against 21.5. Everything below reports the
+renormalised arm; the differences between the two priced arms are given where they exist.
 
 The mechanism is not mysterious and was predictable from the arithmetic: **a cost surface is a signal
 shared by every universe.** Replacing one deterministic tie-break (node id) with another
@@ -75,11 +82,40 @@ undercut a tier-1 node would make all four of those ambiguous about what they ar
 Overlapping bands are defensible and would give cost a louder voice; they are not worth making four
 other mechanisms lie to buy it.
 
-The band is **geometric-mean preserving**, so this is a change to the *order* and not to the *pace*:
-measured drift of the per-tier geometric mean is −0.6%, +0.4%, +1.9%, +3.9% at tiers 1–4 (251 of 300
-nodes, and 49 of the 51 v1 nodes), rising to +12.3% at tier 5 (15 nodes) and +41.4% at tier 6, whose
-single node clamps to the top rail. The deep drift is real and reported rather than corrected: it is
-the price terms correlating with depth, which is the claim working as intended.
+### A price is a relative standing, so it is scored against its tier
+
+The first version of this file summed the five terms into an absolute grade and priced straight off
+it, expecting the octave to be mean-preserving because the terms are roughly symmetric. **They are
+not.** Deep tiers are where the `creo`, `muto`, `vim` and universe-scoped content lives, so their
+grades skew dear: the per-tier geometric mean drifted −0.6% / +0.4% / +1.9% / +3.9% at tiers 1–4 but
+**+12.3% at tier 5 and +41.4% at tier 6**, and that was enough to move a pacing metric by 20%. A
+global change to how fast the late game runs had arrived as a side effect of a content judgement
+about individual nodes, and those are two decisions that one edit should not make.
+
+So the grade is not a price. It is scored against the **datum** — the mean grade of the node's own
+tier. `deviation = grade − datum(tier)`, clamped to ±32, and the price is `base(t) · 2^(deviation/64)`.
+Measured after the change: per-tier geometric mean drift is **−0.00% at every tier**, and **zero
+nodes clamp**. The ladder does the pacing on its own and every claim this file makes is a claim about
+ordering.
+
+#### What that costs an author, which is the part to read before authoring a node
+
+**Editing one node's grade moves every other price in its tier.** Give one tier-3 node a
+`universe`-scoped effect and its own price rises — and the datum rises with it, so the other
+twelve tier-3 nodes get *cheaper* without being touched. A one-node diff is a thirteen-price diff,
+and the first time it happens it will look like a bug.
+
+It is still the right property, because **the thing a price encodes here is relative standing, and
+relative standing is inherently a property of the set.** "This node is dear" is not a statement a node
+can make on its own; it means "dearer than its tier-mates". A formula that let a node price itself in
+isolation would be smuggling a claim about the whole tier's pace into what reads as a claim about one
+node — which is exactly the defect that made this rewrite necessary. The single-member tier proves it
+from the other end: `cv-the-made-vis` is the only tier-6 node, has nothing to be dearer than, and
+prices at exactly `base(6)`.
+
+The practical rule is short: **regenerate the tier, never hand-edit a price.** That is what
+`tools/w80/apply-price.mjs` does, and it is why the generator is committed beside the data rather than
+instead of it.
 
 The grade runs 0..64 from a centre of 32, in five named terms, reading **only fields the node already
 authors** — no node id, no hash of one, no randomness:
@@ -102,18 +138,18 @@ decided.
 
 | price | grade | cell | node |
 |--:|--:|---|---|
-| 1614 | 10 | `intellego-mentem` | `im-weigh-the-attention` |
-| 1649 | 12 | `intellego-limen` | `il-sense-the-seam` |
-| 1667 | 13 | `intellego-nomen` | `in-hear-the-name-spoken` |
-| 1798 | 20 | `perdo-terram` | `pt-crumble` |
-| 1838 | 22 | `intellego-terram` | `it-taste-the-soil` |
-| 1878 | 24 | `perdo-nomen` | `pn-mispronounce` |
-| 1919 | 26 | `rego-limen` | `rl-hold-the-door` |
-| 1961 | 28 | `perdo-mentem` | `pm-blunt-the-edge` |
-| 2004 | 30 | `perdo-limen` | `pl-fray-the-edge` |
-| 2026 | 31 | `rego-mentem` | `rm-hold-the-attention` |
-| 2139 | 36 | `rego-terram` | `rt-set-the-stone` |
-| 2282 | 42 | `rego-nomen` | `rn-call-by-name` |
+| 1624 | 10 | `intellego-mentem` | `im-weigh-the-attention` |
+| 1659 | 12 | `intellego-limen` | `il-sense-the-seam` |
+| 1677 | 13 | `intellego-nomen` | `in-hear-the-name-spoken` |
+| 1810 | 20 | `perdo-terram` | `pt-crumble` |
+| 1849 | 22 | `intellego-terram` | `it-taste-the-soil` |
+| 1890 | 24 | `perdo-nomen` | `pn-mispronounce` |
+| 1931 | 26 | `rego-limen` | `rl-hold-the-door` |
+| 1973 | 28 | `perdo-mentem` | `pm-blunt-the-edge` |
+| 2017 | 30 | `perdo-limen` | `pl-fray-the-edge` |
+| 2039 | 31 | `rego-mentem` | `rm-hold-the-attention` |
+| 2152 | 36 | `rego-terram` | `rt-set-the-stone` |
+| 2296 | 42 | `rego-nomen` | `rn-call-by-name` |
 
 ### The arithmetic that says why this could only ever be small
 
@@ -121,7 +157,7 @@ decided.
 tie-break — that part works completely. But `chooseTarget` is an argmax over `targetAppeal`, whose
 effort term is `-floorDiv(remainingCost, 64)` bounded at ±512, against affinity ±384, species ±384,
 role ±512, age ±256 and personality ±256. A full-band tier-1 spread of 1448→2896 is **22 fp** of
-effort term. The measured spread over the twelve enabled roots is 1614→2282, or **10 fp**.
+effort term. The measured spread over the twelve enabled roots is 1624→2296, or **10 fp**.
 
 **Content inside a non-overlapping band cannot outvote a mage's own preferences, and was never going
 to.** If content is meant to speak louder than a rounding error in this score, the dial is
@@ -162,10 +198,10 @@ Mean across-run standard deviation of the tick at which each node is first disco
 
 | tier | flat | priced |
 |---|--:|--:|
-| 1 | 30.7 | **21.5** |
-| 2 | 60.1 | **51.4** |
-| 3 | 101.3 | **83.4** |
-| 5 | 182.7 | 194.9 |
+| 1 | 30.7 | **21.3** |
+| 2 | 60.1 | **51.5** |
+| 3 | 101.3 | **78.8** |
+| 5 | 182.7 | 198.0 |
 
 The brief's secondary expectation was that tier-1 spread should be near zero under a flat surface and
 rise with variation. It was not near zero — the acquirer already spread it — and it fell.
@@ -183,23 +219,23 @@ hold a *different amount* of the same thing was not asked.
 
 | horizon | cross (flat) | cross (priced) | within (flat) | within (priced) | cross − within (flat → priced) |
 |--:|--:|--:|--:|--:|--:|
-| 240 | 0.8101 | **0.8299** | 0.9432 | 0.9499 | −0.1331 → **−0.1200** |
-| 480 | 0.8561 | **0.8771** | 0.9564 | 0.9632 | −0.1003 → **−0.0861** |
-| 720 | 0.8625 | **0.8997** | 0.9825 | 0.9863 | −0.1201 → **−0.0866** |
-| 960 | 0.8924 | **0.9243** | 0.9842 | 0.9886 | −0.0918 → **−0.0642** |
-| 1200 | 0.9516 | **0.9658** | 0.9827 | 0.9881 | −0.0311 → **−0.0222** |
-| 1440–2400 | 0.9903 | **0.9940** | 0.9825 | 0.9884 | +0.0078 → +0.0056 |
+| 240 | 0.8101 | **0.8308** | 0.9432 | 0.9520 | −0.1331 → **−0.1213** |
+| 480 | 0.8561 | **0.8772** | 0.9564 | 0.9633 | −0.1003 → **−0.0861** |
+| 720 | 0.8625 | **0.8982** | 0.9825 | 0.9884 | −0.1201 → **−0.0902** |
+| 960 | 0.8924 | **0.9220** | 0.9842 | 0.9905 | −0.0918 → **−0.0685** |
+| 1200 | 0.9516 | **0.9597** | 0.9827 | 0.9909 | −0.0311 → **−0.0311** |
+| 1440–2400 | 0.9903 | **0.9938** | 0.9825 | 0.9913 | +0.0078 → +0.0025 |
 
 And on the ever-known set, which reaches W19's short horizons:
 
 | horizon | cross (flat) | cross (priced) | cross − within (flat → priced) |
 |--:|--:|--:|--:|
-| 30 | 0.8063 | **0.8178** | −0.1261 → −0.1211 |
-| 60 | 0.7453 | **0.7809** | −0.2238 → −0.2011 |
-| 120 | 0.7582 | **0.8021** | −0.2206 → −0.1772 |
-| 240 | 0.8195 | **0.8342** | −0.1677 → −0.1517 |
-| 480 | 0.8564 | **0.8722** | −0.1400 → −0.1251 |
-| 960 | 0.8940 | **0.9198** | −0.1044 → −0.0788 |
+| 30 | 0.8063 | **0.8176** | −0.1261 → −0.1210 |
+| 60 | 0.7453 | **0.7829** | −0.2238 → −0.1983 |
+| 120 | 0.7582 | **0.8008** | −0.2206 → −0.1782 |
+| 240 | 0.8195 | **0.8351** | −0.1677 → −0.1527 |
+| 480 | 0.8564 | **0.8717** | −0.1400 → −0.1256 |
+| 960 | 0.8940 | **0.9173** | −0.1044 → −0.0808 |
 
 **Cross-strategy containment rose at every horizon. The gap to the within-strategy diagonal narrowed
 at every horizon.** The falsifier asked for cross-strategy containment to *fall* relative to the
@@ -216,6 +252,8 @@ The node discovered earliest in each run, over 84 runs:
 | 12 × `rt-set-the-stone` | **7** × `rt-set-the-stone` |
 | 3 × `iim-catch-the-painted-thing` | 5 × `iim-catch-the-painted-thing` |
 | 3 × other, incl. two ties | 2 × other |
+
+Identical in both priced arms, to the run.
 
 The tail thinned and the head did not move. `im-weigh-the-attention` is the cheapest of the twelve
 roots under the new curve — it is `intellego` (−10), `self`-scoped (−10) and `metis` (−4), so three
@@ -235,8 +273,8 @@ Both measured on this branch, six seeds, only `node.json` differing.
 | dwarf | [24, 29] | [23, 25] |
 | orc | [24, 31] | **[23, 58]** |
 | human | [30, 31] | [29, 30] |
-| elf | [47, 57] | **[42, 44]** |
-| draconic | [26, 298] | **[24, 173]** |
+| elf | [47, 57] | **[41, 44]** |
+| draconic | [26, 298] | **[24, 168]** |
 
 Four of six tightened, elf's spread from eleven ticks to three. Orc left the fast trio and became a
 second spanner alongside draconic, which is the one assertion in that test that had to be rewritten —
@@ -299,17 +337,50 @@ error"* — and the metric deltas beneath it are recorded here so the size of th
 
 | baseline | metrics outside tolerance |
 |---|---|
-| `balance-gate-v1` | `referenceKnowledgeInstances` 310.26 → 326.84 (+7.72 SE, tolerance 6.44) |
-| `balance-gate-horizon-v1` | `referenceKnowledgeInstances` 1003.9 → 1032.7 (+3.36 SE); `referenceNodesGainedFinalQuarter` 7.645 → 6.105 (**−14.53 SE**, tolerance 0.318) |
-| `balance-gate-ascension-v1` | invalidated by the same guard |
+| `balance-gate-v1` | `referenceKnowledgeInstances` 310.26 → 327.05 (+7.82 SE, tolerance 6.44) |
+| `balance-gate-horizon-v1` | `referenceKnowledgeInstances` 1003.9 → 1036.7 (+3.82 SE); `referenceNodesGainedFinalQuarter` 7.645 → 6.285 (**−12.83 SE**, tolerance 0.318) |
+| `balance-gate-ascension-v1` | invalidated by the same guard, no metric outside tolerance |
 
-`referenceNodesGainedFinalQuarter` is the largest single move in the tree: **research in the last
-fifty years of a two-hundred-year run falls by 20%.** That is the mean-preservation caveat arriving —
-the drift is +3.9% at tier 4 and +12.3% at tier 5, and the final quarter is where a universe is
-working at those depths.
+Everything else passed inside tolerance, including `referenceNodesKnown` (17.06 → 16.98),
+**`referenceNodesGained` over the whole run (39.345 → 39.600, +1.57 SE, passing)** and
+`referenceLivingMages` (38.95 → 38.94).
 
-Everything else in the primary gate passed inside tolerance, including `referenceNodesKnown`
-(17.06 → 16.95) and `referenceLivingMages` (38.95 → 38.94).
+## The pacing move is dispersion, not level — and renormalising cannot remove it
+
+Scoring each price against its tier's own datum was expected to collapse
+`referenceNodesGainedFinalQuarter` back toward its baseline. **It did not.** The metric moved from
+−1.54 to −1.36 against a tolerance of 0.318 — about **12%** of the effect, which is the level
+component, leaving the other 88% unexplained. The level drift was never what was doing it.
+
+First, a fact that reframes the metric: **`balance-gate-horizon-v1` caps runs at 240 world ticks.**
+Its "final quarter" is ticks 180–240 of a *twenty-year* run, not the tail of a two-hundred-year one.
+Cutting the arms' first 240 ticks into those quarters, `passive-control` only, 12 runs per arm:
+
+| quarter | flat: gained/run | mean cost gained | renormalised: gained/run | mean cost gained |
+|---|--:|--:|--:|--:|
+| Q1 0–60 | 15.33 | 4519 | 14.67 | 3955 |
+| Q2 60–120 | 9.83 | 7706 | **11.75** | 6808 |
+| Q3 120–180 | 6.83 | 5694 | **7.67** | 5295 |
+| Q4 180–240 | **8.00** | 9472 | **6.33** | **11604** |
+| **total** | **39.99** | | **40.42** | |
+
+**The total is unchanged and the shape is not.** Q2 and Q3 gain *more* than under the flat surface;
+Q4 gains 21% fewer nodes, and the ones it does gain are **23% dearer** (9472 → 11604). Nothing has
+slowed down. A universe works cheapest-first, so on a dispersed surface the cheap nodes are consumed
+early and the last window is left with the expensive tail — whereas on a flat surface every node still
+outstanding costs exactly what every node already finished cost, so the completion rate is flat across
+the run **by construction**.
+
+**That cannot be renormalised away, because it is the dispersion, and the dispersion is the entire
+change.** Any within-tier variation at any level produces it. The two priced arms agree on it almost
+exactly — Q4 gained 6.25 before renormalising and 6.33 after, at mean costs of 11699 and 11604 — which
+is the confirmation that shifting the levels moved this by nothing.
+
+The reading worth taking is about the metric rather than the content. **On a flat cost surface
+`referenceNodesGainedFinalQuarter` was measuring elapsed research capacity, because the marginal node
+was interchangeable with every other one.** On a priced surface it measures the residual tail, which
+is a harder and more informative quantity — but it is a *different* quantity, and its baseline has to
+move whatever else is decided about this branch.
 
 **No baseline has been regenerated and `npm run goldens:regen` has not been run** — the golden replay
 fixtures are built on synthetic schemas and carry no shipped content, so they are unaffected either
@@ -341,13 +412,15 @@ ranks them:
    universes on the same opening should walk different queues, the lever has to be something the two
    universes do not share.
 
-## Is the curve worth keeping? — a view, labelled as one
+## Is the curve worth keeping? — a view, labelled as one, and since adopted
 
 The reason it was built is gone: measured above, it does not produce divergence, and it cannot,
 because a shared constant is not a source of divergence. What remains is a narrower question the
 measurement does not answer, so this is judgement rather than evidence.
 
-**My view: keep the idea, renormalise the levels, and do not keep it as-is.**
+**My view was: keep the idea, renormalise the levels, and do not keep it as-is.** The renormalisation
+has since been adopted and is what every number above measures. The reasoning is left standing rather
+than rewritten, because the half of it that turned out to be wrong is worth keeping visible.
 
 Keep the idea, because the defect it fixes is real independently of containment. A field whose value
 is a pure function of another field carries no information, and the ordering it produced was
@@ -368,3 +441,14 @@ its tier-mates are authored, which is a genuine loss of locality — but the wit
 which is the entire claim, is preserved exactly, and pace is a global property that a content
 judgement about individual nodes should not be allowed to move as a by-product. **If the curve is
 kept, it should be kept with the per-tier mean pinned rather than approximately preserved.**
+
+### Where that reasoning was wrong, kept rather than deleted
+
+The recommendation was right and the diagnosis behind it was **12% right**. Pinning the per-tier mean
+took the level drift to exactly zero and moved the pacing metric by almost nothing, because the cause
+is dispersion rather than level — see the section above. That does not retract the change: a formula
+that silently sets the late game's pace is still worse than one that cannot, and scoring against the
+tier stands on its own argument. It does mean the honest one-line summary of this branch's pacing
+effect is **"a dispersed cost surface re-times research within a run and leaves the dear tail for
+last"**, which is a property of the idea rather than of this implementation of it, and would be true
+of any within-tier variation anyone proposes later.

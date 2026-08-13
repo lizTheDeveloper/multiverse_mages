@@ -40,11 +40,47 @@
  * give cost a louder voice; they are not worth making four other mechanisms
  * ambiguous to buy it.
  *
- * The band is **geometric-mean preserving**: `2^(g/64 - 1/2)` averages to 1
- * across a symmetric grade distribution, so the mean price per tier does not
- * move and this change is about *order*, not about *pace*. Anything the
- * measurement shows is therefore attributable to which door was opened first
- * rather than to research having become cheaper or dearer overall.
+ * ## A price is a *relative standing*, so it is measured against its tier
+ *
+ * The first version of this file summed the five terms into an absolute grade
+ * and priced straight off it, expecting the octave to be mean-preserving
+ * because the terms are roughly symmetric. **They are not, and the asymmetry
+ * cost 20% of the late game.** Deep tiers are where the `creo`, `muto`, `vim`
+ * and universe-scoped content lives, so their grades skew dear: the per-tier
+ * geometric mean drifted +12.3% at tier 5 and +41.4% at tier 6, and
+ * `referenceNodesGainedFinalQuarter` fell from 7.645 to 6.105 — a **global
+ * pacing change arriving as a side effect of a content judgement about
+ * individual nodes.** Those are two different decisions and one edit should not
+ * make both.
+ *
+ * So the grade is not a price. It is scored against the **datum**: the mean
+ * grade of the node's own tier. `deviation = grade - datum(tier)`, clamped to
+ * ±32, and the price is `base(t) · 2^(deviation/64)`. The per-tier geometric
+ * mean is then *exactly* `base(t)` rather than approximately, the ladder does
+ * the pacing on its own, and everything this file claims is a claim about
+ * ordering.
+ *
+ * ### The locality this costs, which an author will meet before this docstring
+ *
+ * **Editing one node's grade moves every other price in its tier.** Make one
+ * tier-3 node `universe`-scoped and its own price rises — and the datum rises
+ * with it, so the other twelve tier-3 nodes get *cheaper* without being
+ * touched. A diff of one node is a diff of thirteen prices. That is a real loss
+ * for whoever is authoring, and it will look like a bug the first time.
+ *
+ * It is nevertheless the right property, because **the thing a price is meant
+ * to encode here is relative standing, and relative standing is inherently a
+ * property of the set.** "This node is dear" is not a statement a node can make
+ * alone; it means "dearer than its tier-mates", and a formula that pretends
+ * otherwise is smuggling a claim about the tier's overall pace into what looks
+ * like a claim about one node. The tier with a single member proves the point
+ * from the other end: `cv-the-made-vis` is the only tier-6 node, has nothing to
+ * be dearer than, and prices at exactly `base(6)`.
+ *
+ * The practical consequence for an author is small and worth stating plainly:
+ * **regenerate the whole tier, never hand-edit one price**, which is what
+ * `apply-price.mjs` does and why the generated table is committed alongside the
+ * data rather than in place of it.
  *
  * ## The grade, in five named terms
  *
@@ -73,8 +109,9 @@
  *    price of that discount is paid elsewhere and on purpose: codification
  *    destroys metis, so a cheap door is also a leaky one.
  *
- * The grade is clamped to the band. A clamp is reported rather than hidden;
- * {@link report} prints how many nodes hit either rail.
+ * The **deviation** is clamped to the band, not the grade. A clamp is reported
+ * rather than hidden: `apply-price.mjs` prints how many nodes hit either rail
+ * and what the residual per-tier drift is once they have.
  */
 
 /** `target` → reach adjustment. */
@@ -125,21 +162,57 @@ export function gradeTerms(node, cell) {
   return { reach, payload: extra + persists, technique, form: formRank - 6, metis };
 }
 
-/** The clamped 0..64 grade. */
+/**
+ * The node's grade: the five terms summed onto the band's centre. Unbounded and
+ * **not a price** — it means nothing until it is read against its tier's datum.
+ */
 export function gradeOf(node, cell) {
   const terms = gradeTerms(node, cell);
-  const raw =
+  const grade =
     GRADE_CENTRE + terms.reach + terms.payload + terms.technique + terms.form + terms.metis;
-  return { raw, grade: Math.min(GRADE_SPAN, Math.max(0, raw)), terms };
+  return { grade, terms };
+}
+
+/** Mean grade per tier — the datum each node's price is a deviation from. */
+export function tierData(nodes, cellOf) {
+  const sums = new Map();
+  for (const node of nodes) {
+    const { grade } = gradeOf(node, cellOf(node));
+    const entry = sums.get(node.tier) ?? { total: 0, count: 0 };
+    sums.set(node.tier, { total: entry.total + grade, count: entry.count + 1 });
+  }
+  return new Map([...sums].map(([tier, entry]) => [tier, entry.total / entry.count]));
 }
 
 /**
- * The price. `Fp` at scale 1/1024 throughout — `tierBase` is already fixed
- * point (2048 is fp(2), not 2048 mage-months), and the multiplier is applied to
- * it, so the result is fixed point too and never needs a second scaling.
+ * Every node's price, keyed by node id.
+ *
+ * Takes the whole set rather than one node, which is the locality cost stated
+ * in this file's header made unavoidable in the signature: a price cannot be
+ * computed from a node alone, because it is a statement about that node's
+ * standing among its tier-mates.
+ *
+ * `Fp` at scale 1/1024 throughout — `tierBase` is already fixed point (2048 is
+ * fp(2), not 2048 mage-months) and the multiplier is applied to it, so the
+ * result is fixed point too and never needs a second scaling.
  */
-export function priceOf(node, cell) {
-  const { grade, raw, terms } = gradeOf(node, cell);
-  const cost = Math.round(tierBase(node.tier) * 2 ** ((grade - GRADE_CENTRE) / GRADE_SPAN));
-  return { cost, grade, raw, terms };
+export function priceTable(nodes, cellOf) {
+  const data = tierData(nodes, cellOf);
+  const table = new Map();
+  for (const node of nodes) {
+    const { grade, terms } = gradeOf(node, cellOf(node));
+    const datum = data.get(node.tier);
+    const raw = grade - datum;
+    const deviation = Math.min(GRADE_CENTRE, Math.max(-GRADE_CENTRE, raw));
+    table.set(node.id, {
+      cost: Math.round(tierBase(node.tier) * 2 ** (deviation / GRADE_SPAN)),
+      grade,
+      datum,
+      raw,
+      deviation,
+      clamped: raw !== deviation,
+      terms,
+    });
+  }
+  return table;
 }

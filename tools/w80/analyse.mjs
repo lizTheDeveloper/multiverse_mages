@@ -159,6 +159,31 @@ function report(arm) {
     );
   }
 
+  // `balance-gate-horizon-v1` caps runs at **240 world ticks**, so its
+  // `referenceNodesGainedFinalQuarter` is ticks 180-240 of a twenty-year run and
+  // not the tail of a two-hundred-year one. Quarters are cut to match, and to
+  // `passive-control` because that is the only strategy in that sweep's pool.
+  process.stdout.write('\nthe first 240 ticks in quarters, passive-control only — what the horizon\n');
+  process.stdout.write('gate\'s referenceNodesGainedFinalQuarter is reading:\n');
+  process.stdout.write('  quarter        gained/run   mean researchCost of what was gained\n');
+  const passive = runs.filter((run) => run.strategyId === 'passive-control');
+  for (const [index, label] of ['Q1 0-60', 'Q2 60-120', 'Q3 120-180', 'Q4 180-240'].entries()) {
+    const lo = index * 60;
+    const hi = (index + 1) * 60;
+    const picked = passive.flatMap((run) =>
+      run.discovered
+        .filter((entry) => entry.tick > lo && entry.tick <= hi)
+        .map((entry) => arm.byId.get(entry.nodeId)?.researchCost)
+        .filter((cost) => cost !== undefined),
+    );
+    process.stdout.write(
+      `  ${label.padEnd(14)} ${(picked.length / passive.length).toFixed(2).padStart(9)} ` +
+        `${(picked.length === 0 ? Number.NaN : picked.reduce((a, b) => a + b, 0) / picked.length)
+          .toFixed(0)
+          .padStart(14)}\n`,
+    );
+  }
+
   process.stdout.write('\ncontainment |A∩B|/min(|A|,|B|) at era horizons:\n');
   process.stdout.write('  horizon   n runs   cross-strategy   within-strategy   cross - within\n');
   const horizons = [240, 480, 720, 960, 1200, 1440, 1680, 1920, 2160, 2400];
