@@ -98,10 +98,28 @@ the same either way — **this gate is now less sensitive on four metrics than i
 regression in knowledge instances would need to be half again as large to trip it. That is a real
 cost of this change and it is not paid back by the reasoning above.
 
-The recourse, if a reviewer wants the sensitivity back: raise `replicates` in
-`balance-gate-ascension.sweep.json`. Standard error falls with the square root of the sample, so the
-tolerances tighten without touching `toleranceK` and without asking the gate to ignore anything.
-That is a sweep change rather than a rule change and is deliberately **not** made here.
+**The remedy, and why it is deferred — a decision on the record, not an omission.** The fix is to
+raise `replicates` in `balance-gate-ascension.sweep.json`: standard error falls with the square root
+of the sample, so tolerances tighten without touching `toleranceK` and without asking the gate to
+ignore anything. It is deliberately **not** done here, because four approved changes already
+invalidate every committed baseline:
+
+| change | what it moves |
+|---|---|
+| `w69/grant-budget` | founding grants become scarce — directly the surplus this branch measured |
+| `w70/opening-square` | a universe begins at 2×2 of the grid instead of twelve cells |
+| `w77/effect-displacement` | economy effects gain a cost term |
+| `w80/research-cost-variation` | `researchCost` stops being a pure function of tier |
+
+The last one bears hardest on exactly the four widened metrics. **All 300 nodes carry exactly six
+distinct `researchCost` values, one per tier, with not one node deviating** — so `compareTargets`
+ordering *"by cost then node id"* is, today, entirely the node-id tiebreak. Giving cost real variance
+changes the shape of the discovery curve, which is precisely what `referenceNodesKnown`,
+`referenceNodesGained`, `referenceKnowledgeInstances` and `referenceLibraryDepth` measure.
+
+So paying 32 minutes now to tighten tolerances on a baseline about to be replaced wholesale is the
+wrong order. **The replicate increase belongs in the re-baselining those four changes force**, where
+it costs one run instead of two.
 
 ## The notation, and the instrument it borrows from
 
@@ -312,6 +330,22 @@ not fix D3**, and saying so before the run is the difference between a limitatio
   one-line reordering of its preference list rather than any change to the rule. **That reordering
   is deliberately not made here**, because a strategy edited to pass a predicate committed in the
   same branch measures the edit, not the rule.
+
+  **And the defect is worse than this branch could see.** `permissive-breadth`'s role in the pool is
+  *"funds broadly"*, and it has **never founded a university in any run of any sweep ever taken** —
+  `fundUniversity` has sat behind the always-legal `permitTechnique` for its whole existence, so
+  `policyFor` never reached it. Every prior measurement of that strategy is a measurement of a god
+  that does not fund. It is fixed on `w73/pool-build-order` (PR #70), on its own branch for exactly
+  the reason given above.
+
+  **This is the qualification that matters most to the result below, so it is stated before the
+  numbers rather than after them: W63's conjunct must be re-measured against that fix, and the
+  reading "the only pool member that clears the conjunct is the one built to test it" may not
+  survive it.** If a `permissive-breadth` that actually funds clears the conjunct, then the
+  predicate discriminates between playing and not playing after all, and the pessimistic reading
+  here was an artefact of a broken preference list. If it still fails, the reading stands. **Neither
+  outcome is known on this branch, and the flattering version must not be left standing
+  unqualified.**
 
 - **A conjunct is not the same as a cost.** The honest reading of the above is that this change
   converts "the win condition reads the ruleset" into "the win condition reads the ruleset **and**

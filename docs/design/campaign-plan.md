@@ -2027,6 +2027,19 @@ all would notice, which is the measurement a tuner should start from; the consta
   Note the interaction: a smaller opening makes `permitTechnique`/`permitForm` more valuable, and if
   favor stays unbounded the god simply buys those too. **A smaller opening without a binding budget
   moves the free lunch rather than removing it.**
+- **`w73/pool-build-order`** — the reason this entry's 98-universities figure comes from a
+  purpose-built probe rather than from the strategy whose stated role is *"funds broadly"*.
+  `permissive-breadth` has **never founded a university in any run of any sweep ever taken**, because
+  `fundUniversity` sits behind the always-legal `permitTechnique` and `policyFor` never reaches it.
+  Every published number for that strategy describes a god that does not fund. The surplus recorded
+  above is therefore real but under-sampled: it is one strategy's reading, and the pool member that
+  should have corroborated it was structurally unable to.
+- **`w80/research-cost-variation`** — worth noting here because it is a second instance of the same
+  disease this entry describes, in a different currency. **All 300 nodes carry exactly six distinct
+  `researchCost` values, one per tier, with not one node deviating**, so `compareTargets`' documented
+  ordering *"by cost then node id"* is entirely the node-id tiebreak: a comparator whose first key is
+  constant is not a comparator. A cost that never varies is not a cost, in the same way that a favor
+  price that never binds is not a price.
 
 ### The falsifiable form
 
