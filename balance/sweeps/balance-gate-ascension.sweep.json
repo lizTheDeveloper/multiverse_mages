@@ -23,7 +23,7 @@
   },
   "termination": {
     "worldTickCap": 2400,
-    "perRunTimeoutMs": 600000
+    "perRunTimeoutMs": 1800000
   },
   "metrics": [
     "referenceGrimoires",

@@ -351,7 +351,19 @@ So the claim this directory can support is the first, and it is the one to quote
 > than 2.5–27 % at sweep level and 0.8–196 % per strategy arm, median 12 %. The 200-year gate
 > detects one larger than 5–27 % at sweep level and 0–424 % per arm, median 26 %. All four detect a
 > uniform change smaller than those figures with probability 0, at any sample size.**
+## Running a sweep on more cores than you have
 
+Every wall-clock figure in this file is a laptop or a four-core container, and the sample sizes it
+can afford are the reason `ascensionRate`'s 95% interval at 24 runs is nearly three times the §7
+band it is meant to sit inside. `packages/mc-harness/bin/run-sweep-distributed.mjs` fans a sweep out
+across many containers and writes **the same `.runs.ndjson` and `.summary.json`** — byte-identical
+to the local run, verified across five topologies — so `balance-gate.mjs`, `regenerate-baseline.mjs`
+and `tune-balance.mjs` read its output unchanged.
+
+Measured: the 2400-tick eight-strategy sweep at 1096 runs is 25 minutes locally and **85 seconds
+and $0.57** on 64 eight-core containers. `docs/devops/sweep-fanout.md` has the cost table, the
+byte-identity hashes, and what the thing refuses to do. **`bin/run-sweep.mjs` remains the default
+and needs no account anywhere.**
 ## Regenerating a baseline
 
 One sweep, one baseline, one command. Point `--sweep` and `--baseline` at the pair you mean; the
