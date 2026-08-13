@@ -163,6 +163,16 @@ export class ComponentStore<F extends ComponentFields> {
    * component replaces the array, and a reference captured beforehand would
    * keep writing into the abandoned buffer. Call {@link reserve} first if a
    * pass both adds and writes.
+   *
+   * **"Unchecked" includes NaN, and that is the expensive part.** {@link set}
+   * rejects a non-integer with a `TypeError`; a write through this array does
+   * not, because a typed array coerces silently — `new Int32Array(1)[0] = NaN`
+   * yields `0`. So a NaN that arrives here does not crash. It becomes a
+   * plausible zero, and the mechanic that produced it reads as one that
+   * contributed nothing, which is indistinguishable from a balance result. This
+   * method and {@link set} are the only two doors into component storage, so
+   * this is the *one* place where that can happen: a probe that wraps this
+   * return value covers the unchecked half of the write boundary completely.
    */
   field<K extends Extract<keyof F, string>>(name: K): ComponentFieldArray<F[K]> {
     const array = this.#arrays.get(name);
