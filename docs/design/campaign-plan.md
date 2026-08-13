@@ -3305,3 +3305,73 @@ simple and nobody has been running it — for each god verb, the fraction of leg
 declined for want of resource. Any verb sitting at zero over a full run is free, whatever its
 declared price says. `favorCost` being typed `Fp` makes this easy to get wrong in the reassuring
 direction: a price that looks like 98,304 is 96.
+
+---
+
+## W73 — the strategy that funds broadly has never funded anything
+
+*2026-08-13. Found as a side effect of the ascension conjunct; it is older than the conjunct and
+independent of it.*
+
+**`permissive-breadth` completed no university in any run of any sweep ever taken.** It ends every run
+at `unis=1` — the seeded academy — having founded none of its own.
+
+`fundUniversity` sat behind `permitTechnique` in its preference list. `policyFor` takes the first
+*legal* preference, `permitTechnique` is legal on every round, so slot 0 was never reached. The code
+carried a comment directly above the push saying *"Found until there is something to fund, then spread
+across what exists"* — **the order defeated the comment.**
+
+**Why it survived every sweep:** nothing read `universityCount` until the ascension conjunct did. A
+strategy that funds broadly and founds nothing still permits widely, so it still produced the wide
+ruleset its hypothesis is about, and every metric anyone was looking at moved. The defect was invisible
+to the measurements taken because none of them asked this question. That is the same failure shape as
+the ten uncollected metrics and the ±118% tolerances: **not a wrong answer, an unasked question.**
+
+Fixed on `w73/pool-build-order` (PR #70) with a regression test that asserts the preference *order*
+rather than a run outcome — an outcome assertion would go green the moment anything else caused a
+university to exist and would say nothing about why. Verified in both directions.
+
+**It landed on its own branch on purpose, and the reasoning is worth keeping.** The agent that found it
+identified the one-line fix and deliberately did not make it, because *a strategy edited to pass a
+predicate committed in the same branch measures the edit, not the rule.* That is exactly right, and it
+is the discipline this campaign has most often lacked.
+
+**What it means for the ascension result:** the conjunct drops `permissive-breadth` 30/30 → 0/8, and
+the honest reading was *"the ruleset-only exploit is closed, and the only pool member that clears the
+conjunct is the one built to test it."* With this fix, that reading needs re-measuring — the strategy
+may have been failing the conjunct for a reason that had nothing to do with the conjunct.
+
+---
+
+## W74 — orc may already be nearly extinct on `main`, and two branches found it independently
+
+*2026-08-13. A correction in progress, recorded before it resolves because the hypothesis I issued
+looks wrong.*
+
+I attributed orc's disappearance to `w53/practice`, on the reasoning that a retention mechanic rewards
+long lifespans and starves the two shortest-lived species. **An agent merging `main` into
+`w20/compositional-content` — the content graph, with no practice mechanic anywhere near it — reports
+`loss-shock-recovery` failing the same way, with orc dropping out of the sample entirely.**
+
+Two unrelated branches, same disappearance. That points at something shared: `main`, the merge, or the
+scenario path both exercise.
+
+**The measurement that discriminates, and the number that already suggests the answer:** on `main`
+plus the UI branch, orc measures `pre=3 killed=2`. Three mages — for the species with **the highest
+fertility in the game, 1536 against draconic's 96, a 16× spread.** If orc is already at 3 on clean
+`main`, then nothing is driving orc extinct; **orc is already marginal, and any content or economy
+change tips a 3 to a 0.** That is a different bug with a different owner, and a more valuable finding
+than a practice-specific fix.
+
+**The vellum hypothesis gains weight from both branches at once.** `reference-long-run.test.ts` fails
+on the practice tree with *"scribing died of the economy again — vellum ran out, not just food,"* and
+the content-graph branch also reports economic failure on its merged tree. If a shared materials
+collapse is starving the most populous species, that explains both branches — and explains why the
+*highest-fertility* species is the one that vanishes, because **high fertility is a liability when the
+binding constraint is materials per head rather than births.**
+
+**The two claims must be separated and only one is in doubt.** Human 16→5 against dwarf 18→23 on the
+same seed is real whatever drives it, and mechanic-driven species divergence remains the thing this
+campaign has failed to produce for weeks. If the extinction proves to be main-side, the divergence may
+still be practice's doing and is still the asset. **Do not let the extinction discredit the
+divergence.**
