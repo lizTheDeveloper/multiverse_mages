@@ -2554,3 +2554,51 @@ time; the field on the same node, 18.3%.**
 
 **Displacement is declared absent rather than zeroed** — `blink` moves only the caster and fields push
 nobody — which is the distinction four earlier metrics failed to make.
+
+### Verified, and larger than reported: five of seven combat primitives cannot be cast
+
+`packages/rules-raid/src/raid.ts:588`, verbatim:
+
+```ts
+if (!node.effects.some((effect) => effect.primitive === COMBAT_PRIMITIVES.directDamage)) {
+  continue;
+}
+```
+
+Counted against shipped content:
+
+| primitive | nodes carrying it | **castable** (also carry `direct-damage`) |
+|---|--:|--:|
+| `direct-damage` | 37 | 37 |
+| `area-denial` | 38 | **11** |
+| `ward` | 39 | **0** |
+| `concealment` | 48 | **0** |
+| `summon` | 10 | **0** |
+| `blink` | 9 | **0** |
+| `knowledge-steal` | 6 | **0** |
+
+`arbitration.ts` dispatches seven primitives. **Two can arrive.** Around 112 nodes carrying control
+magic are unreachable, and 27 of 38 area-denial nodes with them.
+
+**`knowledge-steal` is the one that matters most.** Six nodes, none castable. The entire design in
+which a raid is an attack on a rival's *knowledge* — looting minds, `Intellego Mentem` and
+`Rego Nomen` as the theft cells §5 gates theft behind — **cannot happen.** Not rarely: never.
+
+### It explains a finding nobody could explain
+
+W37 measured that **raids are decided by objective capture, not combat** — survival-regret zero on
+every seed — and left it as a tuning mystery. It is not tuning. **Five of seven combat primitives
+never fire**, so combat is `direct-damage` plus whatever area-denial rides in on damage's ticket, and
+`direct-damage` removes a target 1.57% of the time. Combat cannot decide a raid because most of
+combat is not in the raid.
+
+It also retroactively qualifies every control-primitive measurement this project holds. W38's
+*"area-denial 49.7%, summons + soldiers 48.4%"* was measured with summons that were **soldiers**,
+because summoned creatures cannot be summoned.
+
+**This is a one-line filter with a five-primitive blast radius**, and it is the first thing to fix
+when the freeze lifts. The fix itself needs care rather than deletion: the filter exists so a
+combatant does not stand in a field choosing a node that does nothing, and the comment four lines
+above says so — *"a refusal that costs a tick is a behavioural bug wearing a safety check's
+clothes."* The correct test is *does this node do anything in an engagement*, which is the seven
+`COMBAT_PRIMITIVES`, not the one.
