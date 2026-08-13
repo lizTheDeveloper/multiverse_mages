@@ -323,6 +323,22 @@ it wants the hand of whoever lands #42, who can see both sides. **It must not be
 green by someone who has not found the cause**, which is the third time that instruction would
 apply.
 
+### The three balance gates, and why they are red
+
+All three report `baseline-invalid`, and the gate states the cause in its own words:
+
+    provenance.contentHash is "ba7be8d68b582e2985e0360bbc7e11b0" and the baseline was
+    recorded at "2c67315ae04ee6c74dfa204474af4eb6". The gate compares two runs of one
+    build; across two builds a delta is not a regression, it is a category error.
+
+Measured on all three, each reporting that line and no other cause: `balance:gate` (200 runs,
+4.7 s), `balance:gate:horizon` (200 runs, 29.7 s), `balance:gate:ascension` (32 runs, 504.1 s).
+
+The baselines were taken from W29's side of the merge provisionally, and the merged tree's content
+revision is a third value because `main`'s `max-summons-per-side` edit joined it. The gate is not
+reporting a behaviour change; it is refusing to compare two builds, which is exactly what it should
+do.
+
 ### Randomness
 
 **No RNG draw was added, in any subsystem.** The probe is a read. `RNG_STREAM` is unchanged and
