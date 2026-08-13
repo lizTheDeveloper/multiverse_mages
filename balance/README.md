@@ -119,6 +119,113 @@ Where a metric has never varied at all its standard error is zero, so its tolera
 gate demands exact equality of it. That is deliberate and it is not softened. Bit-level change is
 what the golden replay fixtures catch; distributional movement beyond noise is what this catches.
 
+## What each gate can actually detect — the power table
+
+**Read this before believing any of the numbers above.** A tolerance is only meaningful next to the
+size of the thing it is measuring, and until 2026-08-12 nobody had divided one by the other. The
+table below is that division, computed from the committed baselines by
+`packages/mc-harness/test/unit/gate-power.test.ts`, which fails if any figure here drifts from the
+files.
+
+The right-hand column is the **minimum detectable effect (MDE)**: `tolerance ÷ |value|`, the
+smallest proportional change in that metric that the gate would report as `regressed`. Anything
+smaller passes.
+
+| metric | 5-year gate | 20-year gate | 200-year gate |
+|---|---|---|---|
+| `referenceGrimoires` | 5.2 % | 6.4 % | **117.7 %** |
+| `referenceKnowledgeInstances` | 2.0 % | 2.5 % | **47.5 %** |
+| `referenceLibraryDepth` | 12.5 % | 11.6 % | **40.9 %** |
+| `referenceLivingMages` | 0.8 % | 1.6 % | 16.7 % |
+| `referenceNodesGained` | 2.3 % | 1.2 % | **58.6 %** |
+| `referenceNodesGainedFinalQuarter` | — | 4.3 % | **135.7 %** |
+| `referenceNodesKnown` | 2.0 % | 1.1 % | **56.1 %** |
+| `referencePeakPopulation` | 0.0 % | 4.1 % | 7.9 % |
+| `referencePopulation` | 1.1 % | 1.8 % | **64.0 %** |
+| `referencePopulationChange` | 9.4 % | 5.6 % | **65.6 %** |
+| runs | 200 | 200 | 32 |
+
+Three things follow, and the third is the serious one.
+
+**The two `passive-control` gates are sharp.** Most of their MDEs are between 1 % and 12 %. A
+mechanic that moved `referenceNodesKnown` by 2 % at twenty years would fail the horizon gate. These
+two instruments work, and nothing below is an argument for changing them.
+
+**`referencePeakPopulation` on the five-year gate has an MDE of exactly zero** — its jackknife
+standard error is 0, because the peak is 216 in all 200 runs, so the gate demands exact equality.
+That is the estimator behaving as designed and it is the one line in the table that is gating
+perfectly.
+
+**The 200-year gate detects almost nothing.** Six of its ten metrics have an MDE above 40 %, and two
+are above 100 %: `referenceGrimoires` at **117.7 %** and `referenceNodesGainedFinalQuarter` at
+**135.7 %**. A mechanic that *doubled* grimoire output — every universe producing twice the books —
+would move that metric by 100 %, which is less than 117.7 %, and the gate would report `pass`.
+
+### Why the 200-year gate cannot see, and why it is not a sample-size problem
+
+Its 32 runs are eight strategies round-robin across four cells, and **the strategies' outcomes span
+up to 294×**. Measured over the committed 32 runs (which this branch re-executed and reproduced
+value-for-value against the committed baseline):
+
+| metric | narrowest arm | widest arm | spread |
+|---|---|---|---|
+| `referenceKnowledgeInstances` | `denial-warden` 19.3 | `permissive-breadth` 5652.0 | **294×** |
+| `referenceNodesGained` | `denial-warden` 0.75 | `permissive-breadth` 197.3 | **263×** |
+| `referenceNodesKnown` | `denial-warden` 3.25 | `permissive-breadth` 199.8 | **62×** |
+| `referenceGrimoires` | `narrow-depth` 15.0 | `archivist` 580.3 | **39×** |
+| `referenceLibraryDepth` | `denial-warden` 3.25 | `archivist` 48.5 | **15×** |
+
+The standard-error estimator stratifies on `cellIndex`. Strategy is not part of `cellIndex` — it is
+assigned by `assignStrategies(pool, cellIndex, replicateIndex)` from the *agent pool*, not from
+`factors` — so within a cell the estimator sees eight replicates that disagree enormously and
+records that disagreement as noise. **The tolerance is therefore a function of between-strategy
+variance rather than of run-to-run variance**, and it is between-strategy variance that a gate must
+hold constant, not tolerate.
+
+That is not a sample-size problem and adding replicates does not fix it: the between-arm spread is
+in the *population*, so more draws estimate it more precisely rather than shrinking it.
+
+### The consequence, stated as a counterfactual
+
+For each of the ten metrics and each of the eight strategies, suppose that strategy's contribution
+to that metric collapsed **to zero** — the arm stops discovering, stops scribing, stops growing
+entirely — and every other strategy is untouched. Recompute the sweep aggregate and compare it to
+the committed tolerance:
+
+> **80 of 80 (metric, strategy) total collapses are inside tolerance. The gate reports `pass` for
+> every one of them.**
+
+An entire strategy can stop working and the 200-year gate does not notice, because a mean over eight
+arms dilutes any one arm's move by a factor of eight, and the tolerance was already wider than the
+arm. This is the concrete form of "a mechanic could double knowledge output and the gate would
+pass", and it is worse than that phrasing suggests.
+
+### How to read "power" for a deterministic sweep
+
+The usual power statement — *"detects a change of X % with probability P at n runs"* — needs care
+here, because the sweep is bit-reproducible at a fixed root seed. Re-running an unchanged build
+gives a delta of exactly zero, so the **false-positive rate is 0 at any positive tolerance**, and no
+amount of tightening trades false negatives for false positives in the usual way. What the tolerance
+buys is entirely on the false-negative side.
+
+Two regimes, and the gate should be described in both:
+
+- **A change that scales a metric by a constant factor `c`** (every universe's grimoire count goes
+  up 30 %) moves the aggregate by exactly `(c−1)·value`, with no sampling error at all. The gate
+  detects it **with probability 1** when `|c−1| >` MDE and with **probability 0** when it is below.
+  For this regime the MDE column above *is* the power table, and P is a step function.
+- **A change whose per-run effect is heterogeneous** — mean `δ`, run-to-run spread `τ` — is detected
+  with probability `≈ Φ((|δ| − MDE·|value|)/(τ/√n))`. Here `n` matters, and the honest statement is
+  that `τ` has never been measured on this project, because measuring it requires two builds that
+  differ by a known mechanic change and nobody has recorded per-run pairs across one.
+
+So the claim this directory can support is the first one, and it is the one worth writing down:
+
+> **The five-year and twenty-year gates detect any uniform proportional change larger than 1–12 %
+> in their metrics, with probability 1. The 200-year gate, as committed at 32 runs, detects a
+> uniform proportional change only when it exceeds 8–136 % depending on the metric, and detects no
+> change confined to a single strategy arm at all.**
+
 ## Regenerating a baseline
 
 One sweep, one baseline, one command. Point `--sweep` and `--baseline` at the pair you mean; the
