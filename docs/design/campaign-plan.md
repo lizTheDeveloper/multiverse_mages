@@ -4733,3 +4733,39 @@ obstacle.
 **And it belongs behind the current re-baselining, not inside it.** Four approved changes already
 invalidate every baseline; a fifth that turns on an entire subsystem should land with its own diff and
 its own argument.
+
+### W90 addendum — `fp(512)` stays, and the argument against break-even is better than the question
+
+Asked whether saturation *should* be break-even, the author's answer is no, and I am adopting it.
+
+1. **The number that decides whether the cost binds is not the product of the caps.** It is where the
+   *marginal* caster turns negative — and that already happens at `fp(512)`: once `resource-yield`
+   saturates at about eleven instances, **every further caster adds displacement and no yield.**
+   **There is already an interior optimum in how many mages should know a displacing node**, which is
+   the mechanism S5 is reaching for. It does not require the caps to multiply to one.
+2. **`fp(768)` would make a successful universe's entire investment worth exactly nothing** —
+   research, teaching, upkeep, laborers, zero materials. *"That is not a trade-off, it is a trap that
+   springs only on success"*, and it reads as the game punishing you for playing it.
+3. **It permanently couples two separately-owned numbers.** A pair chosen so `4.0 × 0.25 = 1.0` is a
+   constraint every future retune of either has to preserve, forever, for no stated reason.
+
+**The better lever, which the branch's own significant result points at:** displacement is
+**universe-wide** while `resource-yield` is **routed by form** — a Terram spell displaces the labour
+that also grows the food, and **the v1 subset has no food magic at all.** So authoring displacement on
+more cells, or lowering the **yield** cap, moves where the decision sits. Raising the displacement cap
+mostly makes the far tail harsher without moving the decision.
+
+That is a sharper reading of "breadth must sometimes be wrong" than the break-even framing I offered,
+and it comes from the person who measured it.
+
+**PR #79 is green end to end** — 4,087 tests and all three gates PASS. The baseline re-record met every
+condition: own commit, provenance-not-metric-breach stated in the rationale, **no tolerance widened and
+no `--tolerance-k` passed**, verified by structured diff — the five-year file bit-identical on every
+value and tolerance, nine of ten two-hundred-year tolerances *narrowing*, and the single widener at
+**+0.7%** argued rather than glossed. The notes defect was fixed **at the source**, by re-passing all
+three notes as `--note` arguments so the command seals them into `contentHash` itself rather than being
+hand-patched around.
+
+And the rationale states something most would omit: **this file's tolerances are wide — 133.35 against
+a 99.41 delta — so "passed tolerance" is a weaker statement here than in the other two gates.** A
+number reported with its own weakness attached is worth more than one reported without.
