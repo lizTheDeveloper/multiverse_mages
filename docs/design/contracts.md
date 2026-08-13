@@ -163,8 +163,12 @@ The reasoning, in the order it forced the decision:
   smell"*: the mask says yes, `god-agency` refuses, and the disagreement reads as a confused agent
   rather than as a resource that ran out.
 - **The cost is a third schema revision**, repaired exactly as the two before it: world-schema
-  revision 5 appends an empty `grant-budget` section, and `sim-core`'s `SNAPSHOT_VERSION` again
-  does not move. `WORLD_SCHEMA_VERSION` is now **5**.
+  revision 6 appends an empty `grant-budget` section, and `sim-core`'s `SNAPSHOT_VERSION` again
+  does not move. `WORLD_SCHEMA_VERSION` is now **6** — revision 5 is `material-stock`, and
+  `grant-budget` is appended after it because section order in a snapshot is declaration order.
+  It is also the one place in `migrations.ts` where appending beats rewriting:
+  `splitMaterialsByKind` rewrites the universe layout and is right to, because a save that recorded
+  a materials total did record something. A save that predates the budget recorded nothing.
 - **What ships is inert.** All three constants ship at values no run can reach — the grid holds 300
   nodes and only prerequisite-free ones in permitted cells are grantable — so this build grants
   exactly as it always did and the mechanic is exercised only through the swept arms. The value
@@ -488,6 +492,11 @@ serialized into snapshots.
   "effects": [
     { "primitive": "direct-damage", "magnitude": 512, "target": "single", "durationTicks": 0 }
   ],
+  "knowledgeKind": "episteme",      // "episteme" | "metis". Authored, never derived: `metis` marks
+                                    // knowledge that codification destroys, so a cell's deep end is
+                                    // an authoring decision rather than a consequence of tier. The
+                                    // principle and every call in the shipped set are in
+                                    // docs/design/metis-authoring.md
   "tuningStatus": "untuned"         // "untuned" | "tuned". Same meaning as in §2.4: every magnitude
                                     // above is a placeholder awaiting the balance harness
 }
@@ -725,6 +734,53 @@ reason this file exists rather than a `const` block in `rules-raid`:
 - No radius may exceed `max-interaction-radius`, which is the spatial index's cell size. The index
   promises a radius query inspects at most nine cells; past that it silently stops finding
   combatants at the edge of an effect, which reads as balance rather than as a bug.
+
+**Every value here is untuned** and carries `tuningStatus` saying so.
+
+### 2.11 `autonomy-weight.json`
+
+```jsonc
+{
+  "id": "role-appeal-raider-direct-damage",
+  "value": 384,                  // fp; MAY be negative — a role can find a kind of magic distasteful
+  "unit": "fp",                  // fp | raw. `raw` is a divisor, never a magnitude
+  "role": "raider",              // optional; present exactly on a role-appeal row
+  "primitive": "direct-damage",  // optional; present exactly on a role-appeal row, and an id from §2.6
+  "gloss": "The raider's own primitive.",
+  "tuningStatus": "untuned"
+}
+```
+
+Every magnitude a mage's choice of **which node to work on** is made of: the six term weights, the
+six per-term bounds, the appeal ceiling, and the role × primitive table. Added by W17, and a
+deliberate extension of this section for the reason §2.8, §2.9 and §2.10 are — a number a balance
+sweep turns belongs in content and inside `contentRevision`.
+
+**Two kinds of record share the file.** A **scalar** declares neither `role` nor `primitive` and is
+read by name; the set of scalar ids is structural exactly as in §2.9, so the loader fails a set
+omitting a weight the rules read and equally one declaring a weight nothing reads. A **role-appeal
+row** declares both, names a role from §1.2 and a primitive from §2.6 — each cross-checked — and its
+`id` must be exactly `role-appeal-<role>-<primitive>`, so a row cannot say one thing to a reader and
+another to the loader.
+
+Why this file exists at all is §7's *"mages act on utility-scored goals shaped by species, age,
+personality, and their assigned standing role."* Goal selection was that from 0.4.0. **Target
+selection was not** — it ordered candidates by `remainingCost` then `nodeId`, and because v1
+`researchCost` is a pure function of tier that was one fixed queue every universe walked and stopped
+at a different point along. `docs/design/value-sensitive-acquirer.md` records the measurement.
+
+Two checks here are not tuning hygiene — they are the design pillar §7 states in prose:
+
+- `target-bound-role` must be **strictly below the sum of the other five term bounds**, so any
+  combination of effort, affinity, species, age and personality can outvote any role. That is *"you
+  set the role; they decide everything else"* as arithmetic. Without it, role-as-filter — which
+  `mages-and-species/design.md` rejects twice over — returns as a tuning edit nobody reviews.
+- No role-appeal row's magnitude may exceed `target-bound-role`. Clamping at lookup would leave an
+  out-of-range entry in the table looking authored while behaving as something else.
+
+`target-appeal-ceiling` must be at least the sum of all six bounds: a clamp that binds on an ordinary
+outlook flattens real differences into ties, and a score whose ceiling is reachable by summing its
+own bounds quietly stops discriminating at the top.
 
 **Every value here is untuned** and carries `tuningStatus` saying so.
 
@@ -1086,6 +1142,9 @@ unavailable status is an honest answer.
 | `illegalActionRate` | fraction of agent actions rejected by the mask; a spec-clarity smell |
 | `inboundRaidTempoLoss` | world ticks a universe spends frozen in engagement as a defender, as a fraction of elapsed multiverse time. **Must stay under its threshold** — this is the griefing guard |
 | `raidInitiationCost` | tempo an attacker forgoes per raid, for comparison against what they gain |
+| `speciesGridVersatility` | cells of the seventy a species can staff with a qualified researcher, over the full grid and over the permitted cells separately. **Flag above 80% coverage even when depth is low** — the hegemony guard, and a different question from depth |
+| `lossShockRecovery` | world ticks a species roster takes to regain its pre-shock headcount after a deterministic cull, per species, right-censored. Asserts that long-lived species recover *worse* rather than assuming fertility handles it |
+| `roleAssignmentDemographicCost` | fall in a species' share of the roster under role assignment into lossy roles, against a paired arm that assigned none. Makes action 10 a demographic lever with a price rather than a free choice |
 
 ---
 

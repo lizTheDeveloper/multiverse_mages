@@ -39,10 +39,11 @@ import {
   UNIVERSITY,
   componentOf,
 } from '@mm/state';
-import type { KnowledgeTarget, MageOutlook } from '@mm/rules-world';
+import type { KnowledgeTarget, MageOutlook, SpeciesAffinities } from '@mm/rules-world';
 import { ageInMonths, boundCandidates, gatherFrontier, normalizedAge } from '@mm/rules-world';
 
 import type { CoordinatingKnowledgeGateway } from './gateway.js';
+import type { NodeFacetResolver } from './node-facets.js';
 
 /** Everything an outlook needs beyond the mage's own row. */
 export interface OutlookDeps {
@@ -59,6 +60,18 @@ export interface OutlookDeps {
   readonly scribeThroughputOf: (universityId: Handle) => Fixed;
   /** The tier of a node, for the scribable list. */
   readonly tierOf: (nodeId: number) => number;
+  /** A node's cell, form and effect primitives, for the target utility score. */
+  readonly facetsOf: NodeFacetResolver;
+  /**
+   * A species' `affinities`, resolved onto interned ids.
+   *
+   * Supplied rather than computed per mage because it is a pure function of the
+   * species record and the registry, and there are six species and potentially
+   * thousands of mages. §6 counts *"technique/form affinities"* among the seven
+   * things a species is tuned on; this callback is how the first rule that ever
+   * read one gets to see it.
+   */
+  readonly affinitiesOf: (species: SpeciesRecord) => SpeciesAffinities;
   /**
    * The university this mage would rather be at, given the one she is at.
    *
@@ -94,6 +107,7 @@ export function buildOutlook(
   return {
     mage,
     species,
+    affinities: deps.affinitiesOf(species),
     personality: { curiosity: row.curiosity, ambition: row.ambition, caution: row.caution },
     roleId: row.roleId as MageRoleValue,
     normalizedAge: normalizedAge(ageInMonths(deps.worldTick, row.birthTick), lifespanMonths),
@@ -130,6 +144,7 @@ function teachableToMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
     if (teacher === mage) continue;
     const nodeId = deps.gateway.teachableTo(teacher, mage);
     if (nodeId === undefined || found.has(nodeId)) continue;
+    const facets = deps.facetsOf(nodeId);
     found.set(nodeId, {
       nodeId,
       tier: deps.tierOf(nodeId),
@@ -137,6 +152,9 @@ function teachableToMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
       // authors `teachCost` below `researchCost`), and what the utility-AI needs
       // here is the pair's cost rather than the learner's solo cost.
       remainingCost: deps.gateway.teachCostOf(nodeId),
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
     });
   }
   return [...found.values()];
@@ -149,16 +167,46 @@ function teachableByMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
     if (student === mage) continue;
     const nodeId = deps.gateway.teachableTo(mage, student);
     if (nodeId === undefined || found.has(nodeId)) continue;
+    const facets = deps.facetsOf(nodeId);
     found.set(nodeId, {
       nodeId,
       tier: deps.tierOf(nodeId),
       remainingCost: deps.gateway.teachCostOf(nodeId),
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
     });
   }
   return [...found.values()];
 }
 
-/** Nodes this mage holds that her tradition would let her commit to a book. */
+/**
+ * Nodes this mage holds that her tradition would let her commit to a book, and
+ * that the universe can pay the parchment for.
+ *
+ * ## The affordability filter is here, not at the goal's mask
+ *
+ * `isFeasible` masks `scribe` when the stock is below *"the cost of the cheapest
+ * available scribing"*, which is the right question for *may she scribe at all*
+ * and the wrong one for *what should she scribe*. The two were the same question
+ * only while the list was ordered by cost alone, because then the cheapest
+ * target was also the chosen one.
+ *
+ * `candidates.ts` now orders novel-before-cheap, for the reason recorded there,
+ * and that separates them: a mage could pass a mask on a cheap duplicate and
+ * then commit to a novel treatise she cannot afford, spending months against a
+ * requirement no tick can meet. Filtering here keeps the mask's promise and the
+ * choice the same promise — and it is also what vision §6a describes, in the
+ * clause materials exist for: *"a universe can be knowledge-rich and unable to
+ * write any of it down."* A book beyond the stock is not a cheaper option, it is
+ * not an option.
+ *
+ * The stock read is this tick's, before the work phase spends any of it, so two
+ * mages deciding in the same tick are quoted the same number. What one of them
+ * then takes is `contributeScribing`'s business, and a book that becomes
+ * unaffordable between the decision and the desk waits at its requirement rather
+ * than failing — which is the state the clause above is describing.
+ */
 function scribableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
   const found: KnowledgeTarget[] = [];
   const seen = new Set<number>();
@@ -166,7 +214,7 @@ function scribableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
     if (seen.has(nodeId)) continue;
     seen.add(nodeId);
     const target = deps.gateway.scribableBy(mage, nodeId);
-    if (target !== undefined) found.push(target);
+    if (target !== undefined && target.remainingCost <= deps.materials) found.push(target);
   }
   return found;
 }

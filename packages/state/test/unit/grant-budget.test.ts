@@ -65,7 +65,6 @@ function world(input: { budget?: Budget; everKnown?: number } = {}): {
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    materials: 0,
     prestige: 0,
     prestigeEarned: 0,
     terminalReason: 0,

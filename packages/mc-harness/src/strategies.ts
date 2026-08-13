@@ -736,6 +736,14 @@ const ARCHIVIST: StrategyDefinition = {
  */
 const PORTAL_RUSH: StrategyDefinition = {
   strategyId: 'portal-rush',
+  // 4: `assignRole` was added second in the preference list. This is the change
+  // the version field was written for: the entry below explains at length that
+  // `permitTechnique` sat unreachable behind a permanently masked `openPortal`,
+  // and the day `openPortal` became reachable — this one — the bot needed a
+  // raider to send through it. A portal-rush that opens portals and fields
+  // nobody is measuring the portal action, not the raid economy, and every
+  // number recorded under version 3 is a number about an empty battlefield.
+  //
   // 3: its one ruleset move, the tempo `permitTechnique`, became a 1-based id.
   //
   // Bumped even though a 96-run seed-matched A/B at 2400 ticks produced
@@ -746,7 +754,7 @@ const PORTAL_RUSH: StrategyDefinition = {
   // is all of them. The version is a claim about the definition, not about
   // whether this build happens to exercise it, and the day `openPortal` becomes
   // reachable this strategy names a different technique than it used to.
-  version: 3,
+  version: 4,
   hypothesis:
     'Whether reaching the portal early is worth the tempo it costs. It is the strategy the raid ' +
     'economy is supposed to reward, so it probes whether the multiverse is a strategic axis or a ' +
@@ -762,9 +770,23 @@ const PORTAL_RUSH: StrategyDefinition = {
       'the reason the whole field exists: it made portal-rush the only strategy that *looked* able ' +
       'to win while being one of the seven that could not.',
   },
-  signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.declareAscension],
+  signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.assignRole, GOD_ACTION.declareAscension],
   preferences: ({ round }) => [
     { action: GOD_ACTION.openPortal, parameter: rotate(GOD_ACTION.openPortal, round) },
+    // Somebody has to go through it. `rules-raid`'s `RAIDING_ROLES` is the
+    // `raider` role alone and `createMage` makes every mage a `researcher`, so
+    // a god who opens portals and never assigns a role sends an empty warband:
+    // the raid resolves on the first tick as a defender victory, nothing is
+    // looted, nothing is burned, and the strategy is passive-control paying
+    // favor for the privilege. Measured before this line existed — 337 raids
+    // across four runs and zero nodes taken from any of them.
+    //
+    // `assignRoleCandidates` lists every living mage against each role it does
+    // not hold, in handle then role order, so a rotating slot index reaches
+    // `raider` about one submission in three. That is the coarsest instrument
+    // the action space offers and it is enough: the point of this bot is that
+    // it raids, not that it fields an optimal warband.
+    { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round) },
     // Tempo while the portal is unreachable: push the deepest cell and permit
     // the technique that would open more of it.
     { action: GOD_ACTION.encourageResearch, parameter: 0 },
@@ -901,15 +923,15 @@ const PERMIT_THEN_IDLE: StrategyDefinition = {
 /**
  * The pool, in registration order.
  *
- * Eight shipped strategies, which is the capability spec's *"at least eight"*.
- * Order is the order the spec lists the roles in, not alphabetical:
- * {@link botStrategyRegistry} sorts the ids it publishes, and this array is what
- * a reader compares against the spec paragraph.
+ * Eight, which is the capability spec's *"at least eight"*. Order is the order
+ * the spec lists the roles in, not alphabetical: {@link botStrategyRegistry}
+ * sorts the ids it publishes, and this array is what a reader compares against
+ * the spec paragraph.
  *
- * The two verification probes are **appended, never inserted**, so that
+ * The two verification probes are appended rather than inserted so that
  * `round-robin` assignment — `strategies[replicateIndex % size]` over the *sweep
  * file's* list, not this one — is unaffected for any sweep that does not name
- * them. Every committed sweep names its own eight, so none of them moves.
+ * them.
  */
 export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   PASSIVE_CONTROL,
@@ -1142,19 +1164,46 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'the mask clears the action every tick. It is therefore permanently MASKED rather than inert, ' +
     'which makes portal-rush the one strategy whose defining action degeneracyOf reports as ' +
     'unreachable. Raids, and a second universe to point a portal at, land in 0.9.0.',
-  'ascension-is-passive':
-    'declareAscension is now gated: mask.ts clears it unless the god-state row\'s ascensionPath has ' +
-    'left ASCENSION_PATH.none, and the outcome system recomputes that every world tick so it can ' +
-    'lapse. What is *not* yet true is that eligibility measures play. Path A gates on world tick ' +
-    '>= ascension-min-tick (600) and worship tier >= ascension-tier-gate (4), and worship accrues ' +
-    'from mages, universities and populace whether or not the god acts — so the path opens by ' +
-    'passive accumulation around tick 700 in the reference universe, at the same 51 nodes known ' +
-    'that passive-control reaches doing nothing. Measured: at 2400 ticks the pool\'s winners ' +
-    'declare within a few dozen ticks of each other regardless of what they did beforehand. Until ' +
-    'the gate depends on something the god\'s play moves, a strategy\'s ascension timing is ' +
-    'evidence about the clock and not about the strategy. That is what W2 of the ascension-meta ' +
-    'campaign exists to change; delete this entry when it does.',
-  'noise-floor-submits-axis-actions-bare':
+  'five-strategies-are-one-universe':
+    'Ascension eligibility now reads play: Path A counts permitted cells standing at their floor ' +
+    'and Path B requires an era boundary to hold a canon of a stated size spread over a stated ' +
+    'number of cells, both anchored above what a universe reaches with no god action at all. The ' +
+    'entry that used to sit here said the opposite and has been deleted rather than edited, ' +
+    'because it told a reader not to run the experiment that found this one. What replaces it is ' +
+    'a limit of the POOL, not of the game. Measured over four factor cells at 2400 ticks, reading ' +
+    'the god tick report at every era boundary: passive-control, uniform-random-legal, archivist, ' +
+    'portal-rush and worship-maximizer all end at exactly (12 mastered cells, 51 nodes known, 12 ' +
+    'cells spanned). They submit different actions and produce the SAME universe. permissive-' +
+    'breadth reaches (15, 262, 70); narrow-depth and denial-warden reach (0, <=9, <=5), strictly ' +
+    'below the passive profile on every axis. So the pool holds three distinct achievement ' +
+    'profiles and its Pareto front is one point. Any predicate that refuses the exploit probe ' +
+    'refuses all five of its profile-mates, and any predicate that admits the two deniers admits ' +
+    'the passive profile too — which is why no setting of any ascension constant can make three ' +
+    'strategies win at materially different rates while the idle probe still loses. That is a ' +
+    'measurement of the strategy pool and of the two loops that would make the other strategies\' ' +
+    'actions matter: universities do not compound into a rate, and nothing is ever the last copy, ' +
+    'so libraryDependence is identically zero and redundancy buys nothing. Delete this entry when ' +
+    'a second strategy can produce a universe distinguishable from the one the god never touched. ' +
+    'W29 NOTE, NOT A RE-MEASUREMENT: the condition in that last sentence is now at least partly ' +
+    'met, and every number above was taken against a build where it could not be. Two universes ' +
+    'differing only in which forms they permit now produce economies that differ on every series ' +
+    'measured (tools/w29/two-universes.mjs, 200 ticks, seed 589825): food 321443 vs 468099, vellum ' +
+    '75733 vs 274403, months to raise a university 30 vs 42. The reason the five strategies ' +
+    'converged was that permitting a cell had no economic consequence; it now has one. Re-run the ' +
+    'four factor cells before quoting any figure in this entry.',
+  'universities-are-founded-and-never-finished':
+    'SUPERSEDED BY W29, kept because the measurement it records is still the measurement — what ' +
+    'changed underneath it is the mechanism. The clause "advanceConstruction in rules-world has ' +
+    'no caller outside it" was true when this was written and is FALSE now: the world loop grew a ' +
+    'construction phase, laborers raise buildings paid in stone, and build-rate multiplies the ' +
+    'progress. So a completed university is no longer god-attributable by construction. What ' +
+    'survives is the finding that made this entry worth writing: permissive-breadth lists ' +
+    'fundUniversity behind permitTechnique and never reaches it; archivist takes slot 0 every ' +
+    'round and founds hundreds. Those are facts about the strategies, not about construction, and ' +
+    'a Path A gate on completedUniversities is still inverted for that reason. Re-measure before ' +
+    'quoting any number here: every one of them was taken against a build where nothing a laborer ' +
+    'did could finish a site.',
+'noise-floor-submits-axis-actions-bare':
     'uniform-random-legal draws a parameter only when candidateSlotCount says the action has one, ' +
     'and CANDIDATE_SLOTS covers 8–14 alone — actions 1–7 are not §4.4 parameterized actions, so ' +
     'they carry no slot list and the floor submits them with no parameter at all. Every one is ' +

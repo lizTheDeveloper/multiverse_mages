@@ -1,0 +1,97 @@
+<!--
+  Multiverse Mages — the prototype index.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  A front door for ui/. Static, no build, no dependencies: it is a list of the
+  eleven prototypes and the question each one exists to answer, because a
+  prototype whose question nobody remembers is a demo.
+
+  Serve with `npm run ui`, then open /ui/.
+-->
+<meta charset="utf-8">
+<title>Multiverse Mages — interface prototypes</title>
+<style>
+  :root{
+    --ground:#ece7de; --panel:#f5f2eb; --sunk:#e2dcd0; --line:#c8c0b1;
+    --ink:#17191c; --soft:#55595f; --faint:#8a8d93;
+    --brass:#9a6b1f; --verdigris:#2f6f60;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+    --serif:"Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --ground:#0f1216; --panel:#171b21; --sunk:#1f242c; --line:#2c333d;
+    --ink:#dfe3e8; --soft:#99a1ac; --faint:#6a737f;
+    --brass:#c08a3e; --verdigris:#58a08d;}}
+  :root[data-theme="dark"]{
+    --ground:#0f1216; --panel:#171b21; --sunk:#1f242c; --line:#2c333d;
+    --ink:#dfe3e8; --soft:#99a1ac; --faint:#6a737f;
+    --brass:#c08a3e; --verdigris:#58a08d;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.6 var(--sans)}
+  .wrap{max-width:56rem;margin:0 auto;padding:3rem 1.5rem 5rem}
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--brass)}
+  h1{font:400 clamp(1.8rem,4vw,2.6rem)/1.1 var(--serif);margin:.3rem 0 .5rem;letter-spacing:-.01em}
+  .lede{color:var(--soft);max-width:60ch;margin:0 0 .6rem}
+  .lede em{color:var(--ink);font-style:italic}
+  .note{font-size:.85rem;color:var(--faint);max-width:60ch;margin:0 0 2rem}
+  h2{font:11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+     font-weight:500;margin:2.2rem 0 .8rem;padding-bottom:.35rem;border-bottom:1px solid var(--line)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15.5rem,1fr));gap:.75rem}
+  a.card{display:flex;flex-direction:column;gap:.35rem;padding:.9rem 1rem;text-decoration:none;color:inherit;
+     background:var(--panel);border:1px solid var(--line);border-radius:4px;transition:border-color .12s ease}
+  a.card:hover{border-color:var(--brass)}
+  a.card:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+  a.card b{font:400 1.1rem var(--serif);font-weight:400}
+  a.card .path{font:10px var(--mono);color:var(--faint);letter-spacing:.06em}
+  a.card p{margin:.15rem 0 0;font-size:.85rem;color:var(--soft)}
+  footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);color:var(--faint);font-size:.8rem}
+  code{font:12px var(--mono);color:var(--soft)}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages</div>
+  <h1>Interface prototypes</h1>
+  <p class="lede">Eleven static screens, each built to answer <em>one question</em> that could only be settled by operating something rather than arguing about it.</p>
+  <p class="note">Nothing here ships. None of it is imported by a package or covered by a test glob. Several of these contradicted the design that specified them, which is the whole reason they exist — the findings are collected in <code>docs/design/interface-findings.md</code>.</p>
+
+  <h2>The god's verbs</h2>
+  <div class="grid">
+    <a class="card" href="ruleset/"><b>The ruleset</b><span class="path">ruleset/</span>
+      <p>Does the grid read as nineteen switches with combinatorial consequences, or as seventy independent toggles?</p></a>
+    <a class="card" href="ruleset-symmetry/"><b>The ruleset as a symmetry</b><span class="path">ruleset-symmetry/</span>
+      <p>How unequal are those nineteen actually? Forbidding Intellego costs 102 nodes where the others cost about sixty.</p></a>
+    <a class="card" href="edicts/"><b>Eight exceptions</b><span class="path">edicts/</span>
+      <p>The edict budget is a slot, not a price. What does spending one of eight feel like?</p></a>
+    <a class="card" href="targets/"><b>Choosing who</b><span class="path">targets/</span>
+      <p>Six actions carry an entity handle. How does a person pick one mage out of thousands?</p></a>
+    <a class="card" href="commitments/"><b>Commitments</b><span class="path">commitments/</span>
+      <p>Which acts cannot be taken back, and does the interface make that legible before the click rather than after?</p></a>
+  </div>
+
+  <h2>The world</h2>
+  <div class="grid">
+    <a class="card" href="mage/"><b>The mage, up close</b><span class="path">mage/</span>
+      <p>Can a player be told <em>why</em> an autonomous mage chose what she chose, from state the core already has?</p></a>
+    <a class="card" href="knowledge/"><b>Where the knowledge is</b><span class="path">knowledge/</span>
+      <p>Four vessels, four ways to lose it. At the measured redundancy, how often is anything on its last copy?</p></a>
+    <a class="card" href="tempo/"><b>Tempo</b><span class="path">tempo/</span>
+      <p>What pacing does a world tick get, and which events may interrupt it? Speed decides what an event is.</p></a>
+    <a class="card" href="ascension/"><b>Ascension</b><span class="path">ascension/</span>
+      <p>A run ends gloriously or it stagnates. Can a player see which one they are heading for?</p></a>
+  </div>
+
+  <h2>Raids, and light</h2>
+  <div class="grid">
+    <a class="card" href="raid/"><b>Playing a raid</b><span class="path">raid/</span>
+      <p>Muster, contact, resolution — agency spends down as the fight goes on. Forbid a cell mid-raid and it locks until the end. You can rewind to look, never to act.</p></a>
+    <a class="card" href="glow/"><b>The god's light</b><span class="path">glow/</span>
+      <p>Cyan is the god's own light; the form hues stay the world's. Does that survive a vellum ground?</p></a>
+  </div>
+
+  <footer>
+    Served by <code>npm run ui</code> from the repository root. Each prototype states its own known costs in its header comment —
+    <code>ruleset/</code> reimplements <code>permits()</code> rather than importing it, which is the first thing to fix if any of this becomes the client.
+  </footer>
+</div>

@@ -27,6 +27,8 @@
     { "path": "./packages/scenario/tsconfig.test.json" },
     { "path": "./packages/gym-bridge" },
     { "path": "./packages/gym-bridge/tsconfig.test.json" },
+    { "path": "./packages/server" },
+    { "path": "./packages/server/tsconfig.test.json" },
     { "path": "./tsconfig.tools.json" }
   ]
 }

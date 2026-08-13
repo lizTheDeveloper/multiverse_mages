@@ -27,7 +27,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { ComponentFields, ComponentSpec, SnapshotEnvelope } from '@mm/sim-core';
+import type { ComponentFields, ComponentSpec, SnapshotComponent, SnapshotEnvelope } from '@mm/sim-core';
 import {
   SNAPSHOT_VERSION,
   decodeSnapshot,
@@ -45,12 +45,15 @@ import {
   GOD_STATE,
   GRANT_BUDGET,
   MAGE,
+  MATERIAL_STOCK,
+  UNIVERSE,
   UPHEAVAL,
   WORLD_SCHEMA_VERSION,
   addEffortProgress,
   addGoalCommitment,
   addGodAgencyState,
   addGrantBudget,
+  attachRecord,
   collectRecords,
   componentOf,
   defineWorldStateSchema,
@@ -59,6 +62,7 @@ import {
   loadWorldSnapshot,
   migrateWorldEnvelope,
   readRecord,
+  splitMaterialsByKind,
   worldSchemaVersionOf,
 } from '@mm/state';
 
@@ -77,28 +81,81 @@ function envelopeWithout(...names: readonly string[]): SnapshotEnvelope {
 /** The four sections `god-agency` appended, named once. */
 const GOD_SECTIONS = [GOD_STATE.name, BLESSING.name, UPHEAVAL.name, ERA_EVALUATION.name];
 
+/**
+ * A `materials` value to give a synthetic pre-revision-5 `universe` section.
+ * Not a multiple of three, so every fixture built from it exercises the
+ * remainder-to-food rule rather than dividing evenly by coincidence.
+ */
+const LEGACY_MATERIALS_VALUE = 1000;
+
+/**
+ * Rebuilds `envelope`'s `universe` section with an extra `materials` field
+ * appended, holding `value` in its one row.
+ *
+ * Every world-schema revision below 5 carried `materials` on `universe`. The
+ * *current* `UNIVERSE` component no longer declares that field at all —
+ * `components.ts` removed it rather than leaving it beside the three kinds
+ * nothing spends — so a fixture built by filtering the current schema's
+ * envelope, the way `envelopeWithout` does for every earlier revision, is a
+ * save `splitMaterialsByKind` cannot read: there is no `materials` column left
+ * for it to find. Revision 5 is the first step that rewrites a section instead
+ * of only appending one, and this is the one place that matters for a test
+ * fixture: it has to put the field back before the fixture can stand in for a
+ * real pre-revision-5 save.
+ */
+function withLegacyMaterialsField(
+  envelope: SnapshotEnvelope,
+  value: number = LEGACY_MATERIALS_VALUE,
+): SnapshotEnvelope {
+  const universe = envelope.components.find((component) => component.name === UNIVERSE.name);
+  if (universe === undefined) return envelope;
+
+  const width = universe.fields.length;
+  const rows = universe.slots.length;
+  const fields = [...universe.fields, { name: 'materials', kind: 'i32' as const }];
+  const values = new Uint32Array(rows * (width + 1));
+  for (let row = 0; row < rows; row += 1) {
+    for (let field = 0; field < width; field += 1) {
+      values[row * (width + 1) + field] = universe.values[row * width + field] as number;
+    }
+    values[row * (width + 1) + width] = value >>> 0;
+  }
+  const rewritten: SnapshotComponent = { name: universe.name, fields, slots: universe.slots, values };
+
+  return {
+    ...envelope,
+    components: envelope.components.map((component) =>
+      component.name === UNIVERSE.name ? rewritten : component,
+    ),
+  };
+}
+
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(
-    GOAL_COMMITMENT.name,
-    EFFORT_PROGRESS.name,
-    ...GOD_SECTIONS,
-    GRANT_BUDGET.name,
+  return withLegacyMaterialsField(
+    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name),
   );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(EFFORT_PROGRESS.name, ...GOD_SECTIONS, GRANT_BUDGET.name);
+  return withLegacyMaterialsField(
+    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name),
+  );
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(...GOD_SECTIONS, GRANT_BUDGET.name);
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name));
+}
+
+/** The world as the last build before the economy differentiated into kinds saw it. */
+function revisionFourEnvelope(materialsValue: number = LEGACY_MATERIALS_VALUE): SnapshotEnvelope {
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name), materialsValue);
 }
 
 /** The world as the last build whose founding grants were unlimited saw it. */
-function revisionFourEnvelope(): SnapshotEnvelope {
+function revisionFiveEnvelope(): SnapshotEnvelope {
   return envelopeWithout(GRANT_BUDGET.name);
 }
 
@@ -108,6 +165,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     expect(worldSchemaVersionOf(revisionTwoEnvelope())).toBe(2);
     expect(worldSchemaVersionOf(revisionThreeEnvelope())).toBe(3);
     expect(worldSchemaVersionOf(revisionFourEnvelope())).toBe(4);
+    expect(worldSchemaVersionOf(revisionFiveEnvelope())).toBe(5);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -120,7 +178,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(5);
+    expect(WORLD_SCHEMA_VERSION).toBe(6);
   });
 });
 
@@ -162,7 +220,14 @@ describe('migrating a revision-1 world snapshot forward', () => {
     expect(carried).toContain(GOAL_COMMITMENT.name);
     expect(carried).toContain(EFFORT_PROGRESS.name);
     for (const name of GOD_SECTIONS) expect(carried).toContain(name);
-    expect(carried).toContain(GRANT_BUDGET.name);
+    expect(carried).toContain(MATERIAL_STOCK.name);
+
+    // And the rewrite actually ran: `universe` no longer carries `materials`,
+    // which is the one part of this walk that is not "append an empty
+    // section" and therefore the one part a naive four-step loop could get
+    // wrong without any test noticing.
+    const universe = walked.components.find((component) => component.name === UNIVERSE.name);
+    expect(universe?.fields.map((field) => field.name)).not.toContain('materials');
   });
 
   it('returns an already-current envelope untouched, as the same object', () => {
@@ -256,12 +321,144 @@ describe('migrating a revision-3 world snapshot forward', () => {
     expect(componentOf(migrated, BLESSING).size).toBe(0);
     expect(componentOf(migrated, UPHEAVAL).size).toBe(0);
     expect(componentOf(migrated, ERA_EVALUATION).size).toBe(0);
+    // And the walk did not stop at revision 4: this save also carries a
+    // materials scalar the way every pre-revision-5 save did, and it is
+    // expected to come out the other side split into material-stock.
+    expect(componentOf(migrated, MATERIAL_STOCK).size).toBe(1);
   });
 });
 
-describe('migrating a revision-4 world snapshot forward', () => {
-  it('appends grant-budget as an empty section, in last position', () => {
+describe('migrating a revision-4 world snapshot forward (splitMaterialsByKind)', () => {
+  it('splits the one stock into thirds, remainder to food, and drops materials from universe', () => {
     const before = revisionFourEnvelope();
+    const after = splitMaterialsByKind.migrate(before);
+
+    expect(worldSchemaVersionOf(after)).toBe(5);
+
+    const universe = after.components.find((component) => component.name === UNIVERSE.name);
+    expect(universe?.fields.map((field) => field.name)).toEqual(Object.keys(UNIVERSE.fields));
+    expect(universe?.fields.map((field) => field.name)).not.toContain('materials');
+
+    const stock = after.components.find((component) => component.name === MATERIAL_STOCK.name);
+    expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    expect(stock?.slots).toEqual(universe?.slots);
+    // LEGACY_MATERIALS_VALUE is 1000, not a multiple of three: trunc(1000/3)
+    // is 333, so stone and vellum get 333 each and food takes the remainder
+    // -- 1000 - 333*2 = 334 -- per the field order MATERIAL_STOCK declares
+    // (food, stone, vellum).
+    expect(Array.from(stock?.values ?? [])).toEqual([334, 333, 333]);
+  });
+
+  it('leaves every other universe field exactly as the save had it, not merely correctly named', () => {
+    // The column drop is a per-row splice, and a splice is exactly the kind of
+    // arithmetic an off-by-one hides in silently: `fields` could be renamed
+    // correctly while a *value* one column over had shifted into the gap.
+    // Field names are checked above; this checks the numbers, row by row and
+    // field by field, against the untouched fixture.
+    const before = revisionFourEnvelope();
+    const beforeUniverse = before.components.find((component) => component.name === UNIVERSE.name);
+    if (beforeUniverse === undefined) throw new Error('fixture must carry a universe row');
+
+    const after = splitMaterialsByKind.migrate(before);
+    const afterUniverse = after.components.find((component) => component.name === UNIVERSE.name);
+    if (afterUniverse === undefined) throw new Error('migration dropped the universe row entirely');
+
+    // `withLegacyMaterialsField` always appends `materials` after the current
+    // schema's fields, so it is the last column here -- the width comparison
+    // below is what pins that down, rather than assuming it.
+    const width = beforeUniverse.fields.length;
+    expect(afterUniverse.fields.length).toBe(width - 1);
+
+    for (let row = 0; row < beforeUniverse.slots.length; row += 1) {
+      for (let field = 0; field < width - 1; field += 1) {
+        expect(
+          afterUniverse.values[row * (width - 1) + field],
+          `universe field "${String(afterUniverse.fields[field]?.name)}" at row ${String(row)} ` +
+            'changed value across a migration step that is documented to touch only `materials`',
+        ).toBe(beforeUniverse.values[row * width + field]);
+      }
+    }
+    expect(afterUniverse.slots).toEqual(beforeUniverse.slots);
+  });
+
+  it('splits a zero stock and a negative stock into non-negative thirds', () => {
+    // Zero is the boundary the truncating division sits on, and negative is
+    // the case `splitMaterialsByKind`'s own doc comment calls out: two's
+    // complement bits read back unsigned would turn a debt into two billion
+    // materials, so a negative stock has to clamp to zero rather than wrap.
+    for (const value of [0, -1, -500]) {
+      const after = splitMaterialsByKind.migrate(revisionFourEnvelope(value));
+      const stock = after.components.find((component) => component.name === MATERIAL_STOCK.name);
+      const [food, stone, vellum] = Array.from(stock?.values ?? []);
+      expect(food, `food from a stock of ${String(value)}`).toBe(0);
+      expect(stone, `stone from a stock of ${String(value)}`).toBe(0);
+      expect(vellum, `vellum from a stock of ${String(value)}`).toBe(0);
+    }
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionFourEnvelope();
+    expect(splitMaterialsByKind.migrate(before).version).toBe(before.version);
+    expect(splitMaterialsByKind.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionFourEnvelope();
+    const componentCount = before.components.length;
+    splitMaterialsByKind.migrate(before);
+    expect(before.components).toHaveLength(componentCount);
+    const universe = before.components.find((component) => component.name === UNIVERSE.name);
+    expect(universe?.fields.map((field) => field.name)).toContain('materials');
+  });
+
+  it('appends an empty material-stock section when there is no universe row at all', () => {
+    // The schema-declared-but-never-stepped case addGodAgencyState gives the
+    // same answer for: a universe entity that was never created has nothing to
+    // split, and the appended section is empty rather than synthesised.
+    const before = revisionFourEnvelope();
+    const withoutUniverse: SnapshotEnvelope = {
+      ...before,
+      components: before.components.filter((component) => component.name !== UNIVERSE.name),
+    };
+
+    const after = splitMaterialsByKind.migrate(withoutUniverse);
+    const appended = after.components[after.components.length - 1];
+    expect(appended?.name).toBe(MATERIAL_STOCK.name);
+    expect(appended?.slots.length).toBe(0);
+    expect(appended?.values.length).toBe(0);
+  });
+
+  it('refuses to migrate a universe section with no materials column', () => {
+    // The refusal the migration's own doc comment names: guessing which
+    // column held the economy is worse than refusing, because a wrong guess
+    // corrupts a save silently and a refusal corrupts nothing. `envelopeWithout`
+    // -- unlike every `revisionNEnvelope` helper above -- does *not* add the
+    // legacy `materials` field back, so its `universe` section is exactly what
+    // the current schema declares: no such column at all.
+    const before = envelopeWithout(MATERIAL_STOCK.name);
+    expect(() => splitMaterialsByKind.migrate(before)).toThrow(/must carry a "materials" field/u);
+
+    // And the message names what it *did* find, so a reader debugging a
+    // refused load sees the actual field list rather than only "not this
+    // one" -- the same reason `componentOf`'s field-mismatch error names both
+    // sides rather than only the one that failed.
+    const universe = before.components.find((component) => component.name === UNIVERSE.name);
+    for (const field of universe?.fields ?? []) {
+      expect(() => splitMaterialsByKind.migrate(before)).toThrow(new RegExp(field.name, 'u'));
+    }
+  });
+
+  it('carries a real save all the way through, via loadWorldSnapshot', () => {
+    const bytes = encodeSnapshot(revisionFourEnvelope());
+    const migrated = loadWorldSnapshot(bytes, defineWorldStateSchema());
+    const [row] = collectRecords(migrated, MATERIAL_STOCK);
+    expect(row?.row).toEqual({ food: 334, stone: 333, vellum: 333 });
+  });
+});
+
+describe('migrating a revision-5 world snapshot forward', () => {
+  it('appends grant-budget as an empty section, in last position', () => {
+    const before = revisionFiveEnvelope();
     const after = addGrantBudget.migrate(before);
 
     const appended = after.components[after.components.length - 1];
@@ -272,28 +469,32 @@ describe('migrating a revision-4 world snapshot forward', () => {
   });
 
   it('leaves the container format version exactly where it found it', () => {
-    const before = revisionFourEnvelope();
+    const before = revisionFiveEnvelope();
     expect(addGrantBudget.migrate(before).version).toBe(before.version);
     expect(addGrantBudget.migrate(before).version).toBe(SNAPSHOT_VERSION);
   });
 
   it('does not mutate the envelope it was given', () => {
-    const before = revisionFourEnvelope();
+    const before = revisionFiveEnvelope();
     const componentCount = before.components.length;
     addGrantBudget.migrate(before);
     expect(before.components).toHaveLength(componentCount);
   });
 
   it('restores a pre-budget save with no budget at all, which is unbounded', () => {
-    // Empty, and here the emptiness is load-bearing in a way the other three
-    // steps' is not: an absent row means *no budget in force*, so a save written
-    // when founding grants were unlimited keeps making them. A synthesised row
-    // would be worse than merely wrong — its `grantsUsed` would read zero for a
-    // run that may have granted thirty times, handing a restored save a fresh
-    // allowance, and its `cap` would come from this build's content and impose a
-    // limit on a run that was measured without one.
+    // Empty, and here the emptiness is load-bearing in a way the appending steps
+    // before it did not have to argue: an absent row means *no budget in force*,
+    // so a save written when founding grants were unlimited keeps making them.
+    // A synthesised row would be worse than merely wrong -- its `grantsUsed`
+    // would read zero for a run that may have granted thirty times, handing a
+    // restored save a fresh allowance, and its `cap` would come from this
+    // build's content and impose a limit on a run measured without one.
+    //
+    // This is also the step that contrasts with `splitMaterialsByKind`, which
+    // rewrites and is right to: a save that recorded a materials total did
+    // record something. A save that predates the budget recorded nothing.
     const migrated = loadWorldSnapshot(
-      encodeSnapshot(revisionFourEnvelope()),
+      encodeSnapshot(revisionFiveEnvelope()),
       defineWorldStateSchema(),
     );
     expect(componentOf(migrated, GRANT_BUDGET).size).toBe(0);
@@ -302,17 +503,16 @@ describe('migrating a revision-4 world snapshot forward', () => {
     );
   });
 
-  it('keeps the god state a revision-4 save did record', () => {
-    // The same "must not disturb its predecessor" check the revision-2 step
-    // gets, aimed one revision later: god-state is the section immediately
-    // before this one, and a repair that appended in the wrong place would line
-    // it up against the wrong layout.
-    const { universe } = populatedWorld();
+  it('keeps the material stock a revision-5 save did record', () => {
+    // The "must not disturb its predecessor" check, aimed one revision later:
+    // material-stock is the section immediately before this one, and a repair
+    // that appended in the wrong place would line it up against the wrong
+    // layout.
     const migrated = loadWorldSnapshot(
-      encodeSnapshot(revisionFourEnvelope()),
+      encodeSnapshot(revisionFiveEnvelope()),
       defineWorldStateSchema(),
     );
-    expect(componentOf(migrated, GOD_STATE).has(universe)).toBe(true);
+    expect(componentOf(migrated, MATERIAL_STOCK).size).toBeGreaterThan(0);
     expect(componentOf(migrated, GRANT_BUDGET).size).toBe(0);
   });
 });
@@ -331,7 +531,7 @@ describe('an older save loads into a current world', () => {
   });
 
   it('re-serializes to exactly the bytes a fresh save with neither makes', () => {
-    const { state, mage, effort } = populatedWorld();
+    const { state, universe, mage, effort } = populatedWorld();
     componentOf(state, GOAL_COMMITMENT).remove(mage);
     // The row, not the entity. Both sides of the comparison come from the same
     // fixture and therefore from the same entity table; destroying one here
@@ -345,16 +545,23 @@ describe('an older save loads into a current world', () => {
     // distinct layouts, and `componentOf` would try to infer one of them for
     // all four.
     const godSpecs: readonly ComponentSpec<ComponentFields>[] = [
+      GRANT_BUDGET,
       GOD_STATE,
       BLESSING,
       UPHEAVAL,
       ERA_EVALUATION,
-      GRANT_BUDGET,
     ];
     for (const spec of godSpecs) {
       const store = componentOf(state, spec);
       for (const { handle } of collectRecords(state, spec)) store.remove(handle);
     }
+    // And material-stock, to what the migration actually produces rather than
+    // to whatever `fixtures.ts` seeded: the revision-1 envelope's universe
+    // section carries `materials: LEGACY_MATERIALS_VALUE` (1000), and
+    // splitMaterialsByKind divides that into thirds with the remainder on
+    // food, not into the 500/250/150 split `populatedWorld()` seeds for its
+    // own, unrelated reasons.
+    attachRecord(state, MATERIAL_STOCK, universe, { food: 334, stone: 333, vellum: 333 });
 
     const migrated = loadWorldSnapshot(
       encodeSnapshot(revisionOneEnvelope()),
@@ -388,7 +595,8 @@ describe('an older save loads into a current world', () => {
       [encodeSnapshot(revisionOneEnvelope()), /goal-commitment/],
       [encodeSnapshot(revisionTwoEnvelope()), /effort-progress/],
       [encodeSnapshot(revisionThreeEnvelope()), /god-state/],
-      [encodeSnapshot(revisionFourEnvelope()), /grant-budget/],
+      [encodeSnapshot(revisionFourEnvelope()), /material-stock/],
+      [encodeSnapshot(revisionFiveEnvelope()), /grant-budget/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(

@@ -130,7 +130,6 @@ export const UNIVERSE = {
     favor: 'i32',
     worship: 'i32',
     worshipTier: 'u8',
-    materials: 'i32',
     prestige: 'i32',
     prestigeEarned: 'i32',
     terminalReason: 'u8',
@@ -154,7 +153,6 @@ export interface UniverseRecord {
   worship: Fp;
   /** Derived from worship by `god-agency`, cached here because nothing else can. */
   worshipTier: Enum8;
-  materials: Fp;
   /** Carried in from prior runs. **Read-only during a run.** */
   prestige: Fp;
   /** Written once at run end; the input to the next run's `prestige`. */
@@ -168,6 +166,66 @@ export interface UniverseRecord {
 }
 
 export const UNIVERSE_FIELDS_MATCH: KeysMatch<UniverseRecord, typeof UNIVERSE> = true;
+
+/**
+ * The physical economy, by kind — §6a's *materials*, which used to be one
+ * number on {@link UNIVERSE} and is now three.
+ *
+ * ## Why the scalar had to go rather than gain neighbours
+ *
+ * `materials: 'i32'` was a single stock with four claimants, and one number
+ * cannot express a shortage of **vellum** as distinct from a shortage of
+ * **food**. That is not a cosmetic loss. The economy's whole job is to create a
+ * bottleneck a spell can relieve, and a bottleneck nobody can name is one no
+ * ruleset can be chosen against: with one stock, permitting *Creo Herbam* and
+ * permitting *Rego Terram* are the same move, because both end up adding to the
+ * same integer. The grid is a materials taxonomy — `sound-design.md` §4.2 is
+ * literally titled *"Forms are materials"* — and the economy was not using it.
+ *
+ * The field was **removed** from `UNIVERSE` rather than left in place beside
+ * these three. A retained `materials` would have to be either a fourth stock
+ * nothing spends or a cached sum of the other three, and this codebase already
+ * has the argument about cached sums written down twice — §1.5's ban on derived
+ * node existence, and `counts.ts` refusing to memoize worship inputs. The
+ * moment one writer forgets the mirror, every consumer of the total is reading
+ * an economy that does not exist.
+ *
+ * ## Still one input, not four
+ *
+ * The `economy` spec says the economy tracks *"exactly three inputs — populace,
+ * materials, and knowledge-as-capital"* and MUST NOT introduce a fourth
+ * resource. `ECONOMIC_INPUTS` is unchanged and still has three entries. What
+ * changed is that the second of the three is a vector: the move a spreadsheet
+ * makes when one column becomes three, not the move it makes when a second
+ * sheet appears. Recorded as a delta in the spec rather than done quietly.
+ *
+ * ## One row, on the universe entity
+ *
+ * A component rather than three more `UNIVERSE` fields, because that is what
+ * the migration machinery can carry: `worldSchemaVersionOf` identifies a
+ * revision by *which components exist*, so an appended section is detectable and
+ * an added field is not.
+ */
+export const MATERIAL_STOCK = {
+  name: 'material-stock',
+  fields: {
+    food: 'i32',
+    stone: 'i32',
+    vellum: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface MaterialStockRecord {
+  /** Eaten by subsistence. Grain, meat, water — Herbam, Animal, Aquam. */
+  food: Fp;
+  /** Spent raising buildings. Quarry, kiln, bellows — Terram, Ignem, Auram. */
+  stone: Fp;
+  /** Spent scribing grimoires and keeping libraries. Parchment and paper — Animal, Herbam, Nomen. */
+  vellum: Fp;
+}
+
+export const MATERIAL_STOCK_FIELDS_MATCH: KeysMatch<MaterialStockRecord, typeof MATERIAL_STOCK> =
+  true;
 
 /**
  * One entry of §1.1's `edicts` array.
@@ -997,6 +1055,15 @@ export const WORLD_COMPONENTS = [
   BLESSING,
   UPHEAVAL,
   ERA_EVALUATION,
+  // Appended last, though it is universe state and reads as if it belongs
+  // beside `UNIVERSE`. Section order in a snapshot is this list's order, so a
+  // component inserted anywhere but the end lines every older save's sections
+  // up against the wrong layouts. "Append; do not reorder" is above, and it
+  // outranks reading nicely.
+  MATERIAL_STOCK,
+  // And the same argument again, one revision later: `grant-budget` arrived
+  // after `material-stock` and so goes after it, however much both of them
+  // read as if they belonged beside `UNIVERSE`.
   GRANT_BUDGET,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 

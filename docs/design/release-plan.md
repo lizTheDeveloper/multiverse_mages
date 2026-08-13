@@ -48,6 +48,41 @@ Three consequences, all deliberate:
 An even MINOR is therefore the honest answer to "is it safe to build on this?" — and the odd ones
 stop being a source of false confidence.
 
+#### What "the balance-baseline job passes" names, concretely
+
+Point 2 above is only enforceable if it names a command. It does:
+
+> **An even MINOR requires `npm run verify:full` green, on the commit being tagged.**
+
+`npm run verify` is *not* sufficient, and since 2026-08-13 it is deliberately not the same thing.
+The merge gate runs the five-year, twenty-year and agency sweeps — about forty seconds — and the
+**two-hundred-year gate is not among them**, because it costs 830 s on a quiet machine and 1154 s on
+a busy one, and the self-hosted runner serialises against a 2400 s timeout. Held in `verify` it made
+every unrelated pull request queue behind it; seven were stacked on that runner the day the split
+landed. `balance/README.md` has the measurements and `balance-ci-wiring.test.ts` asserts the split
+from both sides.
+
+That gate is the one that measures the **win condition** — 0 of 400 runs ascend at twenty world
+years and 46 of 64 at two hundred — so it is precisely the instrument that substantiates *"Monte
+Carlo baselines committed and green"*. It runs on every commit in its own parallel GitHub Actions
+job (**Balance gate, two hundred world years**) which is **not required to merge**, so a regression
+is visible immediately without blocking unrelated work.
+
+**Taking an even MINOR without that job green on the tagged commit is exactly the failure the parity
+scheme exists to prevent.** The release checklist is therefore:
+
+1. `npm run verify:full` green locally on the commit to be tagged, **or** the parallel
+   **Balance gate, two hundred world years** job green on that commit in Actions. Either is
+   sufficient; they run the same sweep against the same baseline.
+2. Every gate baseline in `balance/baselines/` regenerated *only* with a rationale, per
+   `balance/README.md`. A baseline regenerated to make a release go green is the thing the
+   `contentHash` exists to catch.
+3. The tag. An untagged release is not a rollback target.
+
+A note for whoever next changes what `verify` runs: the number of gates in it has already been
+wrong in three files' comments once. Say *which* gates run where rather than how many, so the
+sentence cannot rot the next time one moves.
+
 ---
 
 ## The measurement pivot

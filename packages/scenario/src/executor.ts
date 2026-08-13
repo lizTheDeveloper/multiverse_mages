@@ -37,6 +37,7 @@ import type {
   JsonValue,
   MechanicAvailability,
   Provenance,
+  RaidObservation,
   RunExecutor,
   RunOutcome,
   RunTask,
@@ -55,8 +56,9 @@ import type { CensusSample } from './census.js';
 import { censusOf } from './census.js';
 import type { RunMeasurement } from './measures.js';
 import { REFERENCE_METRIC_VERSIONS, collectReferenceMetrics } from './measures.js';
+import type { RaidRecord } from './raids.js';
 import type { ReferenceContent } from './reference-universe.js';
-import { referenceContent, referenceScenario } from './reference-universe.js';
+import { TRADITION_FACTOR_ID, referenceContent, referenceScenario } from './reference-universe.js';
 
 /**
  * The build every reference record claims to have run against.
@@ -84,16 +86,31 @@ export const CENSUS_INTERVAL_TICKS = 12;
  *
  * Checked against the tree rather than copied from a milestone plan:
  * `worldDeps` supplies `deps.god`, so `coordination`'s worship and favor systems
- * run every world tick and both `worship` and `prestigeCarryForward` are real;
- * `rules-raid` is a skeleton and nothing opens a portal, so `raidEngagement` is
- * not. The four raid-dependent metrics of §7 report `mechanic-absent` because of
- * that last `false`, and they will stop doing so on the commit that flips it and
- * on no other.
+ * run every world tick and both `worship` and `prestigeCarryForward` are real.
+ *
+ * **`raidEngagement` is this commit's flip, and it is honestly true.** `raids.ts`
+ * installs a system that opens portals — from the god's action 14 against a
+ * caller-supplied target list, and from an arrival process for inbound raids —
+ * drives `rules-raid`'s engine to termination, and writes the consequences back
+ * into world state through `applyRaidOutcome`. Mages die permanently, libraries
+ * burn, knowledge is stolen, and nodes leave the universe. The four
+ * raid-dependent metrics of §7 therefore stop reporting `mechanic-absent`; a run
+ * that happened to initiate none now reports `no-observations` instead, which is
+ * the distinction the flag exists to keep.
+ *
+ * A scenario built with `raids: false` is a different build and says so — see
+ * {@link executeReferenceRun}, which reports the flag off in that case.
  */
 const REFERENCE_MECHANICS: MechanicAvailability = Object.freeze({
   worship: true,
-  raidEngagement: false,
+  raidEngagement: true,
   prestigeCarryForward: true,
+});
+
+/** The same declaration, for a scenario built with raids switched off. */
+const RAIDLESS_MECHANICS: MechanicAvailability = Object.freeze({
+  ...REFERENCE_MECHANICS,
+  raidEngagement: false,
 });
 
 /** A session that keeps a census every {@link CENSUS_INTERVAL_TICKS} ticks. */
@@ -252,6 +269,69 @@ export interface ReferenceExecutorOptions {
   readonly content?: ReferenceContent;
   /** Ticks between census readings. Defaults to {@link CENSUS_INTERVAL_TICKS}. */
   readonly censusIntervalTicks?: number;
+  /**
+   * Whether portals open and raids resolve. Defaults to `true`.
+   *
+   * The A/B switch. `false` reproduces the pre-raid build exactly — no portal
+   * targets, so action 14 stays masked; no arrival roll, so no stream is
+   * touched — and the run then declares `raidEngagement: false` rather than
+   * reporting an empty raid list on a build that has the mechanic.
+   */
+  readonly raids?: boolean;
+}
+
+/**
+ * Content resolved per tradition, memoized for the life of the process.
+ *
+ * The tradition cannot ride in {@link ReferenceExecutorOptions.content} the way
+ * everything else does, because it is chosen by a *sweep level* and the content
+ * is resolved before any task is seen. Memoizing keeps the promise
+ * `makeReferenceExecutor` makes — that a worker pays for the three hundred
+ * nodes, the seventy-cell grid and the territory once rather than once per run —
+ * while letting a worker serve more than one tradition. Nothing in a
+ * `ReferenceContent` is written to, so sharing one across runs is the same claim
+ * the executor already makes.
+ */
+const CONTENT_BY_TRADITION = new Map<string, ReferenceContent>();
+
+/**
+ * The tradition level a task names, validated.
+ *
+ * Refuses a non-string for the reason `referenceOptions` refuses a mistyped
+ * count: a level the scenario cannot read would run the default and be recorded
+ * as the level that was asked for.
+ */
+function traditionOf(task: RunTask): string | undefined {
+  const level = task.levels[TRADITION_FACTOR_ID];
+  if (level === undefined) return undefined;
+  if (typeof level !== 'string') {
+    throw new Error(
+      `Factor ${TRADITION_FACTOR_ID} has level ${JSON.stringify(level)}, which is not a string. ` +
+        "A tradition is named by its `tradition.json` id — 'vancian-memorization', " +
+        "'true-naming', 'art-of-memory' — never by its interned number, which is assigned by " +
+        'sorting the ids and would move the day a tradition is added.',
+    );
+  }
+  return level;
+}
+
+/**
+ * The content one task runs against: the explicitly supplied set unless the task
+ * names a tradition, in which case the tradition wins.
+ *
+ * The precedence matters. `makeReferenceExecutor` pre-resolves content and hands
+ * it to every run, so a sweep declaring a `tradition` factor against a
+ * pre-resolved executor would otherwise have its levels silently ignored and
+ * every arm would measure the default tradition.
+ */
+function contentForTask(task: RunTask, options: ReferenceExecutorOptions): ReferenceContent {
+  const named = traditionOf(task);
+  if (named === undefined) return options.content ?? referenceContent();
+  const memoized = CONTENT_BY_TRADITION.get(named);
+  if (memoized !== undefined) return memoized;
+  const resolved = referenceContent(options.content?.registry, named);
+  CONTENT_BY_TRADITION.set(named, resolved);
+  return resolved;
 }
 
 /** One completed run, before it becomes a record. */
@@ -259,6 +339,27 @@ export interface ReferenceRunResult {
   readonly outcome: RunOutcome;
   /** Every census reading, ascending by world tick. Reporting only. */
   readonly samples: readonly CensusSample[];
+  /**
+   * Every raid the run resolved, in the shape §7's three run-scoped raid
+   * collectors read.
+   *
+   * `undefined` — never `[]` — when this build has no raid mechanic, because
+   * `collectRaidLengthDistribution` distinguishes *"raids do not exist"* from
+   * *"raids exist and this run had none"* on exactly that difference.
+   */
+  readonly raids: readonly RaidObservation[] | undefined;
+  /**
+   * The same raids, unreduced.
+   *
+   * §7's three run-scoped raid collectors read {@link RaidObservation} and no
+   * more, but that shape drops the two numbers this change is most often asked
+   * about — which side of the portal this universe was on, and what crossed it.
+   * Reporting only, never a metric input: a caller that wanted to invent a
+   * thirteenth §7 metric out of these would be inventing a metric.
+   */
+  readonly rawRaids: readonly RaidRecord[];
+  /** What this run declares it implements. Feeds every §7 availability check. */
+  readonly mechanics: MechanicAvailability;
 }
 
 /**
@@ -272,10 +373,16 @@ export function executeReferenceRun(
   task: RunTask,
   options: ReferenceExecutorOptions = {},
 ): ReferenceRunResult {
-  const content = options.content ?? referenceContent();
+  // The tradition is a *content* fact, so it is resolved before the scenario is
+  // built rather than read out of the options inside it, and it is memoized for
+  // the reason `referenceContent` is resolved once per process: a worker runs
+  // thousands of episodes and re-resolving the node graph for each is the
+  // dominant cost of a sweep. See `TRADITION_FACTOR_ID`.
+  const content = contentForTask(task, options);
   const interval = options.censusIntervalTicks ?? CENSUS_INTERVAL_TICKS;
 
-  const { scenario, lastGodReport } = referenceScenario(content);
+  const raiding = options.raids ?? true;
+  const { scenario, lastGodReport, raids } = referenceScenario(content, { raids: raiding });
   const strategyId = task.strategies[0];
   if (strategyId === undefined) {
     throw new Error(
@@ -311,8 +418,14 @@ export function executeReferenceRun(
     ticksRun: episode.ticksRun,
   };
 
+  const mechanics = raiding ? REFERENCE_MECHANICS : RAIDLESS_MECHANICS;
   return {
     samples: recorder.samples,
+    mechanics,
+    raids: raiding
+      ? raids().map((record) => raidObservationOf(record, lastGodReport()))
+      : undefined,
+    rawRaids: raiding ? [...raids()] : [],
     outcome: {
       status: episode.status,
       // §1.1's ending, carried through rather than re-derived from the status.
@@ -324,8 +437,46 @@ export function executeReferenceRun(
       metrics: collectReferenceMetrics(task.metrics, measurement),
       accounting: episode.accounting,
       provenance: referenceProvenance(content),
-      armContribution: armContributionOf(recorder.checkpoints, content),
+      armContribution: armContributionOf(recorder.checkpoints, content, mechanics),
     },
+  };
+}
+
+/**
+ * One raid, in the shape §7's collectors read.
+ *
+ * Two of the three fields are direct measurements and the third is a
+ * derivation, and the difference is stated because a reader of
+ * `raidInitiationCost` would otherwise take it for a measurement too.
+ *
+ * - `defenderFrozenWorldTicks` is **zero, measured**. `portals`' own spec says a
+ *   raid *"SHALL consume zero world ticks"* and *"both universes resume at the
+ *   world tick recorded at portal open"*, and this build honours that exactly:
+ *   the whole engagement runs inside one world tick. Vision §8's tempo cost is
+ *   relative to *uninvolved* universes — the third party who researches while
+ *   you fight — and `contracts.md` §1.1 puts one universe in a simulation
+ *   instance, so there is no third party here for it to be relative to. The
+ *   griefing guard cannot bite in a single-universe Monte Carlo, and reporting
+ *   a fabricated non-zero would be worse than reporting the zero.
+ * - `attackerTempoCostWorldTicks` is **derived**: the favor an attacker paid for
+ *   action 14, divided by the favor its universe regenerates in a world tick.
+ *   That is the world time the raid actually cost — the ticks the god must wait
+ *   before it can afford its next intervention — expressed in the unit §7 asks
+ *   for, and it uses no constant this change invented. It floors at zero when
+ *   regeneration is zero, which is the opening position of every run: a universe
+ *   that regenerates nothing cannot have forgone any, and dividing by it would
+ *   be an infinity in a metric.
+ */
+function raidObservationOf(record: RaidRecord, god: GodTickReport | undefined): RaidObservation {
+  const regenerated = god?.ledger.regenerated ?? 0;
+  return {
+    raidId: record.raidId,
+    raidSeed: record.raidSeed,
+    engagementTicks: record.engagementTicks,
+    initialPortalStabilityTicks: record.initialPortalStabilityTicks,
+    defenderFrozenWorldTicks: 0,
+    attackerTempoCostWorldTicks:
+      regenerated <= 0 ? 0 : Math.floor(record.attackerFavorCost / regenerated),
   };
 }
 
@@ -357,9 +508,10 @@ export function executeReferenceRun(
 function armContributionOf(
   checkpoints: readonly CheckpointSample[],
   content: ReferenceContent,
+  mechanics: MechanicAvailability,
 ): ArmContribution {
   return {
-    mechanics: REFERENCE_MECHANICS,
+    mechanics,
     checkpoints,
     prestigeCarryForwardMax: content.prestigeCap,
   };
@@ -374,9 +526,14 @@ function armContributionOf(
  * invariance test is what holds that claim up.
  */
 export function makeReferenceExecutor(options: ReferenceExecutorOptions = {}): RunExecutor {
-  const content = options.content ?? referenceContent();
+  // A caller's explicit content set is honoured and pins the tradition with it;
+  // an *absent* one is resolved per run, because `tradition` is a sweep factor
+  // and a content set closed over here would silently answer every level of it
+  // with the same tradition. The resolve-once property the note above claims is
+  // kept by `contentForTask`'s process-level cache — three entries at most, one
+  // per shipped tradition, rather than one per run.
   const resolved: ReferenceExecutorOptions = {
-    content,
+    ...(options.content === undefined ? {} : { content: options.content }),
     ...(options.censusIntervalTicks === undefined
       ? {}
       : { censusIntervalTicks: options.censusIntervalTicks }),

@@ -46,6 +46,7 @@ export {
   contributionFor,
   emitCapital,
   libraryContribution,
+  libraryRateMultiplier,
 } from './capital.js';
 
 export type { AdmissionOutcome } from './capacity.js';
@@ -64,11 +65,13 @@ export {
   readUniversity,
 } from './construction.js';
 
-export type { LibraryDepth, TierLookup } from './library.js';
+export type { LibraryDepth, LibraryDepthOptions, TierLookup } from './library.js';
 export {
   LIBRARY_UPKEEP_PER_INSTANCE,
   TIER_COUNT,
+  emptyLibraryDepth,
   libraryDepth,
+  libraryDepths,
   libraryUpkeep,
   relevantDepth,
 } from './library.js';

@@ -1,0 +1,31 @@
+{
+  "name": "@mm/server",
+  "version": "0.3.0",
+  "private": true,
+  "description": "The authoritative multiplayer server: match lifecycle, the canonical ordered action batch, the snapshot wire format, and desync detection via the snapshot hash — contracts.md §5 and §8.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "//": "contracts.md §5 grants this package one edge, to @mm/agent-api, and that is the whole dependency list — the same shape mc-harness has. It drives AgentSession and never reaches past it into sim-core, which is why adding it needed no new §5 deviation. It has zero third-party runtime dependencies deliberately: this is the package the AGPL network clause bears on most directly, and a source offer a stranger can act on is one whose transport is Node's own net module rather than a dependency tree. It is host-side — it owns sockets and reads a wall clock for tick pacing, which §8 makes the server's job — but the wall clock is confined to src/clock.ts and never reaches a rules computation. Nothing in this workspace imports it: §5 rule 2.",
+  "dependencies": {
+    "@mm/agent-api": "*"
+  },
+  "scripts": {
+    "build": "tsc --build"
+  }
+}

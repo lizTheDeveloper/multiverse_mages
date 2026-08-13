@@ -274,7 +274,7 @@ describe('the pairwise outcome matrix is reported whether or not anything domina
 });
 
 describe('a tournament runs end to end over the shipped pool', () => {
-  /** The whole registered pool. Kept to one world seed for speed. */
+  /** All eight, which is 56 ordered pairings. Kept to one world seed for speed. */
   const POOL = BOT_POOL.map((definition) => definition.strategyId);
 
   const fullPoolSpec = (overrides: Partial<SweepSpec> = {}): SweepSpec => ({
@@ -304,9 +304,9 @@ describe('a tournament runs end to end over the shipped pool', () => {
     // ends with a status from the recorded set. Nothing stalls, nothing raises.
     //
     // Derived from BOT_POOL rather than written as 112, because the count is
-    // `2 × k × (k − 1)` and the literal silently encoded k = 8. The two
-    // adversarial probes are appended to the pool; a literal here turns "the
-    // pool grew" into a failure that reads as a tournament defect.
+    // `2 × k × (k − 1)` and the literal silently encoded k = 8. The W6
+    // verification branch appends two adversarial probes; a literal here turns
+    // "the pool grew" into a failure that reads as a tournament defect.
     expect(result.records).toHaveLength(2 * POOL.length * (POOL.length - 1));
     for (const record of result.records) {
       expect(RECORDED_STATUSES).toContain(record.status);

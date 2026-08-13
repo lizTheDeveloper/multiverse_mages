@@ -67,7 +67,15 @@ observation, action space and legality mask), plus skeletons for the `rules-*` p
 effect pipeline, knowledge instances with decay, loss and 3× rediscovery, and the three v1
 traditions confined to their four hooks — plus `rules-world`'s species and mage layers. The whole
 grid is pre-authored: 300 nodes across all seventy cells, of which twelve cells are enabled.
-Next up is `mages-and-species` (0.4.0).
+
+Since then the task lists have run well ahead of the releases, and **a finished task list is not a
+shipped version.** Check with `openspec list` rather than this paragraph, but as of this commit:
+`mages-and-species` is 100/107 — tasks 8.1 and 8.2 were deliberately unchecked, so a lower number
+here is not a regression — `agent-interface` (91/91) and `gym-bridge` (76/76) are
+task-complete and unreleased, `god-agency` is 59/75 with its favor and worship systems installed
+into the world step, and `raid-engagement` is 67/92 with `packages/rules-raid` built but nothing in
+`scenario` opening a portal yet. `metis-knowledge` (1/51), `electron-client` and `pvp-server` are
+still proposals. The next release to cut is 0.4.0, `mages-and-species`.
 
 Four packages are **deviations from `contracts.md` §5 as originally drawn**, all recorded there with
 their reasoning: `state`, `primitives`, `coordination`, and `scenario`. §5 was written before anyone
@@ -79,7 +87,8 @@ imports it — and that is what makes its unusually wide edge list safe. Two fur
 `mages-and-species` expected to need. A third, from **§1.1**, is the `grant-budget` component: god
 action 8 is no longer unlimited, and an absent row means unbounded so that every older save and
 every hand-built test world keeps the behaviour it was written against. Each cost a world-schema
-revision — `WORLD_SCHEMA_VERSION` is now 5 — and none of them moved `sim-core`'s
+revision — `WORLD_SCHEMA_VERSION` is now 6, after `material-stock` took revision 5 — and none of
+them moved `sim-core`'s
 `SNAPSHOT_VERSION`, which is inside the hashed header and would break every golden fixture with a
 version error instead of a behaviour diff.
 

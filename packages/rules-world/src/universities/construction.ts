@@ -14,7 +14,7 @@
 import type { EntityHandle, Fixed, SimState } from '@mm/sim-core';
 import { FP_ONE, floorDiv, mul } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
-import type { ClampCounters } from '@mm/primitives';
+import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 import type { UniversityRecord } from '@mm/state';
 import { UNIVERSITY, attachRecord, readRecord } from '@mm/state';
@@ -147,6 +147,15 @@ export interface ConstructionInput {
   readonly buildRateBonuses: readonly Fixed[];
   /** Where a clamp of the `build-rate` cap is counted. */
   readonly counters?: ClampCounters | undefined;
+  /**
+   * §9's ablation mask, for the arm that neutralizes `build-rate`.
+   *
+   * The counterfactual a causal claim needs. Forbidding *Terram* removes this
+   * primitive **and** that form's `resource-yield`, so an outcome that changes
+   * when a cell is forbidden has two candidate causes. Neutralizing `build-rate`
+   * with the ruleset untouched leaves exactly one.
+   */
+  readonly ablation?: AblationMask | undefined;
 }
 
 /**
@@ -203,6 +212,7 @@ export function isComplete(university: UniversityRecord): boolean {
 export function buildRateMultiplier(input: ConstructionInput): Fixed {
   return stackMagnitudes(input.buildRate, input.buildRateBonuses, {
     ...(input.counters === undefined ? {} : { counters: input.counters }),
+    ...(input.ablation === undefined ? {} : { ablation: input.ablation }),
   }).value;
 }
 

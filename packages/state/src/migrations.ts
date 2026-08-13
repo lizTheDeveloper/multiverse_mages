@@ -77,7 +77,7 @@ import type {
   SimState,
   WorldSchema,
 } from '@mm/sim-core';
-import { decodeSnapshot, envelopeToState } from '@mm/sim-core';
+import { decodeSnapshot, envelopeToState, floorDiv } from '@mm/sim-core';
 
 import {
   BLESSING,
@@ -86,6 +86,8 @@ import {
   GOAL_COMMITMENT,
   GOD_STATE,
   GRANT_BUDGET,
+  MATERIAL_STOCK,
+  UNIVERSE,
   UPHEAVAL,
 } from './components.js';
 
@@ -98,6 +100,13 @@ import {
  * | 2        | `mages-and-species` | adds `goal-commitment` (`contracts.md` §1.2)  |
  * | 3        | `mages-and-species` | adds `effort-progress` (`contracts.md` §1.2)  |
  * | 4        | `god-agency`        | adds `god-state`, `blessing`, `upheaval`, `era-evaluation` (§1.1) |
+ * | 5        | `city-and-supply-chain` | adds `material-stock`; **removes** `universe.materials` |
+ *
+ * Revision 5 is the first step that does not only append. It splits the one
+ * `materials` scalar into three kinds and takes the old field out of the
+ * `universe` layout, because leaving it would leave a stock nothing spends
+ * beside three stocks everything does. See {@link splitMaterialsByKind} for the
+ * split rule and for why a section rewrite is safe here.
  *
  * Revision 4 adds four components in one step, where the two before it added
  * one each. That is not a loosening of the rule — it is what the rule is for.
@@ -110,7 +119,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 5;
+export const WORLD_SCHEMA_VERSION = 6;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -128,6 +137,17 @@ export const WORLD_SCHEMA_VERSION = 5;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  // Revision 6's marker is `grant-budget`, and it is checked first because a
+  // revision-6 envelope also carries `material-stock` — newest marker wins, or
+  // every save written since the budget landed would be walked through a
+  // migration it has already had.
+  if (carried.has(GRANT_BUDGET.name)) return 6;
+  // Revision 5's marker is the presence of `material-stock`. The *absence* of
+  // `universe.materials` would be an equally true test and a worse one: it asks
+  // a question about a field table rather than about a section, and a save
+  // half-way through an interrupted rewrite would answer it wrongly in the
+  // direction that skips the migration.
+  if (carried.has(MATERIAL_STOCK.name)) return 5;
   // `god-state` is revision 4's marker rather than one of the other three
   // because it is the one every stepped universe necessarily has a *section*
   // for — the section exists from the moment the schema declares it, whether or
@@ -263,24 +283,145 @@ export const addGodAgencyState: WorldSchemaMigration = {
 };
 
 /**
- * Revision 4 → 5: append an empty `grant-budget` section.
+ * Revision 4 → 5: split the one materials stock into three kinds, and take the
+ * old field out of the universe layout.
  *
- * Empty is the whole repair, and it is not the "nobody had one yet" argument the
- * three steps above make — it is a stronger one. `foundingGrantsRemaining`
- * reads an absent row as **unbounded**, so a revision-4 save restored into this
- * build keeps making founding grants exactly as it did when it was written.
+ * ## The first step that rewrites rather than appends
  *
- * Synthesising a row would be the destructive choice here, and uniquely so among
- * the four steps. Whatever numbers it carried would be a budget the god never
- * agreed to and never spent against: `grantsUsed` would read zero for a run that
- * may have made thirty grants, so a restored save would be handed a fresh
- * allowance, and a `cap` filled from *this build's* content would silently
- * impose a limit on a run measured without one. A save that predates the budget
- * has no budget, and that is representable.
+ * Every step before this one adds an empty section and leaves the rest of the
+ * envelope alone. This one cannot: `materials` was a field on `universe`, and a
+ * field that has moved has to be taken out of the layout it moved from or the
+ * component check refuses the restored state — {@link componentOf} compares the
+ * declared field list against the stored one and throws naming both.
+ *
+ * The rewrite is a column drop on a row-major table, which is why it is safe to
+ * do here at all. A `SnapshotComponent` carries its own field table inline, so
+ * the migration reads the position of `materials` out of the envelope rather
+ * than assuming one, and a save written by a build that ordered the fields
+ * differently still migrates correctly.
+ *
+ * ## The split rule, and why it is thirds
+ *
+ * A save written before kinds existed **recorded no information about which
+ * kind it held**. There is no honest way to recover a mix from a number that
+ * never had one, so the split does not pretend to: the stock is divided into
+ * equal thirds and the remainder — at most two `fp` units — goes to `food`,
+ * because subsistence is first in the consumption order and a rounding crumb
+ * should land where it is spent soonest.
+ *
+ * Two alternatives were considered and rejected for the same reason. Splitting
+ * by the *shipped* territory mix would bake this build's content into a
+ * migration, so a content retune would silently change what old saves are
+ * worth. Putting the whole stock in `food` would restore a universe that can
+ * eat forever and cannot write a page, which is a claim about a save nobody
+ * made.
+ *
+ * A universe with no `universe` row — a schema that was declared and never
+ * stepped — gets an empty `material-stock` section, which is the same answer
+ * {@link addGodAgencyState} gives for the same situation.
  */
-export const addGrantBudget: WorldSchemaMigration = {
+export const splitMaterialsByKind: WorldSchemaMigration = {
   from: 4,
   to: 5,
+  migrate(envelope) {
+    const universe = envelope.components.find((component) => component.name === UNIVERSE.name);
+    const stockFields = Object.keys(MATERIAL_STOCK.fields).map((name) => ({
+      name,
+      kind: MATERIAL_STOCK.fields[name as keyof typeof MATERIAL_STOCK.fields],
+    }));
+
+    if (universe === undefined) {
+      // No universe section at all. Nothing to split and nothing to rewrite;
+      // the appended section is empty, as it is for every save that predates a
+      // component it never wrote a row for.
+      return { ...envelope, components: [...envelope.components, emptySection(MATERIAL_STOCK)] };
+    }
+
+    const column = universe.fields.findIndex((field) => field.name === 'materials');
+    if (column < 0) {
+      throw new Error(
+        'a revision-4 snapshot must carry a "materials" field on its universe section, and this ' +
+          `one carries [${universe.fields.map((field) => field.name).join(', ')}]. Refusing to ` +
+          'migrate rather than guessing which column held the economy.',
+      );
+    }
+
+    const width = universe.fields.length;
+    const rows = universe.slots.length;
+    const stockValues = new Uint32Array(rows * stockFields.length);
+    const trimmed = new Uint32Array(rows * (width - 1));
+
+    for (let row = 0; row < rows; row += 1) {
+      // Two's-complement bits back into a signed magnitude: `i32` is how the
+      // field was declared, and reading it unsigned would turn a debt into two
+      // billion materials.
+      const total = Math.max(0, (universe.values[row * width + column] as number) | 0);
+      // Integer division. `Math.trunc(total / 3)` is float arithmetic, and this
+      // repository bans it in the rules path without exception — a migration is
+      // the last place to make one, because it runs once per player and its
+      // output is the save.
+      const each = floorDiv(total, 3);
+      const food = total - each * 2;
+      stockValues[row * 3] = food;
+      stockValues[row * 3 + 1] = each;
+      stockValues[row * 3 + 2] = each;
+
+      let write = row * (width - 1);
+      for (let field = 0; field < width; field += 1) {
+        if (field === column) continue;
+        trimmed[write] = universe.values[row * width + field] as number;
+        write += 1;
+      }
+    }
+
+    const rewritten: SnapshotComponent = {
+      name: universe.name,
+      fields: universe.fields.filter((_, index) => index !== column),
+      slots: universe.slots,
+      values: trimmed,
+    };
+
+    return {
+      ...envelope,
+      components: [
+        ...envelope.components.map((component) =>
+          component.name === UNIVERSE.name ? rewritten : component,
+        ),
+        {
+          name: MATERIAL_STOCK.name,
+          fields: stockFields,
+          slots: universe.slots,
+          values: stockValues,
+        },
+      ],
+    };
+  },
+};
+
+/**
+ * Revision 5 → 6: append an empty `grant-budget` section.
+ *
+ * Empty is the whole repair, and it is not the "nobody had one yet" argument the
+ * steps above make — it is a stronger one. `foundingGrantsRemaining` reads an
+ * absent row as **unbounded**, so a revision-5 save restored into this build
+ * keeps making founding grants exactly as it did when it was written.
+ *
+ * Synthesising a row would be the destructive choice here, and it is the one
+ * place in this file where appending beats rewriting. `splitMaterialsByKind`
+ * above rewrites, and is right to: a save that recorded a materials total did
+ * record something, and the split is an honest reading of it. A save that
+ * predates the budget recorded nothing about it at all.
+ *
+ * Whatever numbers a synthesised row carried would be a budget the god never
+ * agreed to and never spent against: `grantsUsed` would read zero for a run that
+ * may have made thirty grants, so a restored save would be handed a fresh
+ * allowance, and a `cap` filled from *this build's* content would impose a limit
+ * on a run measured without one. A save that predates the budget has no budget,
+ * and that is representable.
+ */
+export const addGrantBudget: WorldSchemaMigration = {
+  from: 5,
+  to: 6,
   migrate(envelope) {
     return {
       ...envelope,
@@ -294,6 +435,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
   addEffortProgress,
   addGodAgencyState,
+  splitMaterialsByKind,
   addGrantBudget,
 ];
 

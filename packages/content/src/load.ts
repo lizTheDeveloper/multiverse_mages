@@ -32,6 +32,7 @@
 
 import type { ContentDiagnostic, ContentDiagnosticCode } from './diagnostics.js';
 import { ContentValidationError, pointerAppend, sortDiagnostics } from './diagnostics.js';
+import { checkAutonomyWeights, isRoleAppeal } from './autonomy.js';
 import { checkGodConstants, checkGodCosts } from './god.js';
 import { checkRaidConstants } from './raid.js';
 import { HOOK_KINDS, HOOK_POINTS, checkHookParams, hookPointOwning, permittedKinds } from './hooks.js';
@@ -49,6 +50,7 @@ import type { RevisionEntry } from './revision.js';
 import type { ContentFileName, ContentSource } from './source.js';
 import { CONTENT_FILES, directorySource, shippedSchemaDirectory } from './source.js';
 import type {
+  AutonomyWeightRecord,
   CellRecord,
   ContentCounts,
   ContentId,
@@ -203,6 +205,7 @@ interface ParsedDocuments {
   readonly godCost: readonly GodCostRecord[];
   readonly godConstant: readonly GodConstantRecord[];
   readonly raidConstant: readonly RaidConstantRecord[];
+  readonly autonomyWeight: readonly AutonomyWeightRecord[];
 }
 
 let cachedSchemas: ReadonlyMap<ContentFileName, CompiledSchema> | undefined;
@@ -288,6 +291,7 @@ export function validateContent(source: ContentSource): ValidationResult {
     godCost: raw.get('god-cost.json') as readonly GodCostRecord[],
     godConstant: raw.get('god-constant.json') as readonly GodConstantRecord[],
     raidConstant: raw.get('raid-constant.json') as readonly RaidConstantRecord[],
+    autonomyWeight: raw.get('autonomy-weight.json') as readonly AutonomyWeightRecord[],
   };
 
   // ---- Phase 3: graph integrity. ----
@@ -357,6 +361,7 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   indexById(documents.godCost, 'god-cost.json', out);
   indexById(documents.godConstant, 'god-constant.json', out);
   indexById(documents.raidConstant, 'raid-constant.json', out);
+  indexById(documents.autonomyWeight, 'autonomy-weight.json', out);
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
@@ -371,7 +376,10 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   out.push(...checkGodConstants(documents.godConstant));
   // `raid-engagement`'s table. Two of its checks are not tuning hygiene but the
   // termination proof — see `raid.ts`.
-  out.push(...checkRaidConstants(documents.raidConstant));
+  out.push(...checkRaidConstants(documents.raidConstant, documents.primitive));
+  // `mage-autonomy`'s target-appeal table. Its dominance check is the §7 pillar
+  // rather than tuning hygiene — see `autonomy.ts`.
+  out.push(...checkAutonomyWeights(documents.autonomyWeight, documents.primitive));
 
   return out;
 }
@@ -1033,6 +1041,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const godCosts = internNamespace(documents.godCost);
   const godConstants = internNamespace(documents.godConstant);
   const raidConstants = internNamespace(documents.raidConstant);
+  const autonomyWeights = internNamespace(documents.autonomyWeight);
 
   const tables = new Map<ContentNamespace, ReadonlyMap<string, ContentId>>([
     ['technique', tableOf(techniques)],
@@ -1046,6 +1055,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     ['god-cost', tableOf(godCosts)],
     ['god-constant', tableOf(godConstants)],
     ['raid-constant', tableOf(raidConstants)],
+    ['autonomy-weight', tableOf(autonomyWeights)],
   ]);
   const reverse = new Map<ContentNamespace, ReadonlyMap<ContentId, string>>();
   for (const [namespace, table] of tables) {
@@ -1061,6 +1071,23 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const godConstantById = new Map(godConstants.map((entry) => [entry.record.id, entry.record.value]));
   const raidConstantById = new Map(
     raidConstants.map((entry) => [entry.record.id, entry.record.value]),
+  );
+  // Scalars and role-appeal rows are separated here rather than at every read.
+  // A role-appeal row is looked up by the pair it prices, never by its id, and
+  // a scalar lookup that could accidentally hit one would be a divisor read out
+  // of a table of appeals.
+  const autonomyWeightById = new Map(
+    autonomyWeights
+      .filter((entry) => !isRoleAppeal(entry.record))
+      .map((entry) => [entry.record.id, entry.record.value]),
+  );
+  const roleAppealByPair = new Map(
+    autonomyWeights
+      .filter((entry) => isRoleAppeal(entry.record))
+      .map((entry) => [
+        `${String(entry.record.role)} ${String(entry.record.primitive)}`,
+        entry.record.value,
+      ]),
   );
 
   const revisionEntries: RevisionEntry[] = [];
@@ -1080,6 +1107,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   append('god-cost', godCosts);
   append('god-constant', godConstants);
   append('raid-constant', raidConstants);
+  append('autonomy-weight', autonomyWeights);
 
   const counts: ContentCounts = {
     techniques: techniques.length,
@@ -1094,6 +1122,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     godCosts: godCosts.length,
     godConstants: godConstants.length,
     raidConstants: raidConstants.length,
+    autonomyWeights: autonomyWeights.length,
   };
 
   return {
@@ -1110,6 +1139,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     godCosts,
     godConstants,
     raidConstants,
+    autonomyWeights,
     intern(namespace, id) {
       return tables.get(namespace)?.get(id) ?? 0;
     },
@@ -1151,6 +1181,21 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
         );
       }
       return found;
+    },
+    autonomyWeight(id) {
+      const found = autonomyWeightById.get(id);
+      if (found === undefined) {
+        throw new Error(
+          `No autonomy weight named "${id}" is declared in autonomy-weight.json. The loader ` +
+            'checks the required set on every load, so this is a caller inventing a name — and ' +
+            'returning 0 would be a divisor of zero, or a whole input to a mage\'s choice ' +
+            'silently removed while she went on choosing plausibly.',
+        );
+      }
+      return found;
+    },
+    roleAppeal(role, primitiveId) {
+      return roleAppealByPair.get(`${role} ${primitiveId}`) ?? 0;
     },
   };
 }

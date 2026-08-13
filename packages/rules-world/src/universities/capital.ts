@@ -158,6 +158,33 @@ export function contributionFor(depth: LibraryDepth, depthCeiling: number): Fixe
   return libraryContribution(relevantDepth(depth, depthCeiling));
 }
 
+/**
+ * The whole of the loop's closing edge, in one call, for the coordinating layer.
+ *
+ * `capitalRateMultiplier` takes the contribution as a value so that a caller
+ * with a per-tick depth does not recount the shelves per mage. That leaves the
+ * *lookup* — {@link contributionFor} — as something a caller outside this module
+ * would otherwise have to perform, and `universities-capital-routing.test.ts`
+ * exists to say that nobody does: *"a second caller of the library contribution
+ * is a second opinion about what a library is worth, and only one of them goes
+ * through the capped accumulator."*
+ *
+ * So the loop calls this, and the lookup stays here. The `depth` argument is
+ * `undefined` for a mage with no institution behind her, which is the ordinary
+ * case for most of a universe's history and is not an error: an unaffiliated
+ * mage works at the rate her own month buys her.
+ */
+export function libraryRateMultiplier(
+  primitive: PrimitiveRecord,
+  nodeBonuses: readonly Fixed[],
+  depth: LibraryDepth | undefined,
+  depthCeiling: number,
+  counters?: ClampCounters,
+): CapitalRateOutcome {
+  const bonus = depth === undefined ? 0 : contributionFor(depth, depthCeiling);
+  return capitalRateMultiplier(primitive, nodeBonuses, bonus, counters);
+}
+
 /** What a capped rate evaluation produced, and whether the cap bound. */
 export interface CapitalRateOutcome {
   /** The `(1 + Σ)` multiplier, capped once. */

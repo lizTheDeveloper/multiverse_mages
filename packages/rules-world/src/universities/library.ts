@@ -104,32 +104,12 @@ export function libraryDepth(
   state: SimState,
   library: EntityHandle,
   tierOf: TierLookup,
+  options: LibraryDepthOptions = {},
 ): LibraryDepth {
-  const distinctByTier = emptyCounts();
-  const seen = new Set<ContentId>();
-  let instanceCount = 0;
-
+  const counter = new DepthCounter(tierOf, options.counts);
   for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
     if (row.locationKind !== LOCATION_KIND.library || row.locationId !== library) continue;
-    instanceCount += 1;
-    if (seen.has(row.nodeId)) continue;
-    seen.add(row.nodeId);
-
-    const tier = tierOf(row.nodeId);
-    if (!Number.isInteger(tier) || tier < 1 || tier > TIER_COUNT) {
-      throw new RangeError(
-        `node ${String(row.nodeId)} reports tier ${String(tier)}; contracts.md §2.3 fixes tiers ` +
-          `at 1..${String(TIER_COUNT)}`,
-      );
-    }
-    distinctByTier[tier - 1] = (distinctByTier[tier - 1] ?? 0) + 1;
-  }
-
-  const cumulativeByTier = emptyCounts();
-  let running = 0;
-  for (let index = 0; index < TIER_COUNT; index += 1) {
-    running += distinctByTier[index] ?? 0;
-    cumulativeByTier[index] = running;
+    counter.take(row.nodeId);
   }
 
   let grimoireCount = 0;
@@ -137,12 +117,139 @@ export function libraryDepth(
     if (row.holderKind === HOLDER_KIND.library && row.holderId === library) grimoireCount += 1;
   }
 
+  return counter.finish(grimoireCount);
+}
+
+/**
+ * What a library counts toward its depth, when not everything on the shelf does.
+ *
+ * `counts` exists for the ruleset gate `rules-magic`'s own `library-depth.ts`
+ * states and this package may not compute: *"A library full of interdicted
+ * books still stands, still holds every instance, and reports zero depth:
+ * forbidding a cell costs a university its research advantage immediately,
+ * while costing it no book at all."* So a rejected instance is left out of
+ * {@link LibraryDepth.distinctByTier} and stays in
+ * {@link LibraryDepth.instanceCount}, which is what makes an interdiction cost
+ * the *benefit* and none of the *upkeep*.
+ *
+ * The predicate is supplied rather than computed because `contracts.md` §5
+ * forbids this package from reaching into `rules-magic`, and legality is a
+ * question about the grid. Absent, every shelved instance counts, which is what
+ * every caller written before the gate existed asked for.
+ */
+export interface LibraryDepthOptions {
+  readonly counts?: (nodeId: ContentId) => boolean;
+}
+
+/**
+ * Every library's depth, from one pass over the instance component.
+ *
+ * The per-library {@link libraryDepth} is a scan of every knowledge instance in
+ * the universe, so asking it once per library is `libraries × instances` — and
+ * the world loop asks for all of them, every tick, for exactly the reason
+ * `library.ts` gives about relevance lookups: a cost proportional to how much
+ * is shelved is the opposite of what a library is for.
+ *
+ * Libraries with nothing shelved and no books are absent from the map rather
+ * than present at zero. A caller that wants "zero" for one of them says so; a
+ * map that carried an entry per handle would be a list of every library that
+ * has ever existed, which is not what any caller here is asking.
+ */
+export function libraryDepths(
+  state: SimState,
+  tierOf: TierLookup,
+  options: LibraryDepthOptions = {},
+): ReadonlyMap<EntityHandle, LibraryDepth> {
+  const counters = new Map<EntityHandle, DepthCounter>();
+  const counterFor = (library: EntityHandle): DepthCounter => {
+    const existing = counters.get(library);
+    if (existing !== undefined) return existing;
+    const created = new DepthCounter(tierOf, options.counts);
+    counters.set(library, created);
+    return created;
+  };
+
+  for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
+    if (row.locationKind !== LOCATION_KIND.library) continue;
+    counterFor(row.locationId as EntityHandle).take(row.nodeId);
+  }
+
+  const books = new Map<EntityHandle, number>();
+  for (const { row } of collectRecords(state, GRIMOIRE)) {
+    if (row.holderKind !== HOLDER_KIND.library) continue;
+    const library = row.holderId as EntityHandle;
+    books.set(library, (books.get(library) ?? 0) + 1);
+    counterFor(library);
+  }
+
+  const depths = new Map<EntityHandle, LibraryDepth>();
+  for (const [library, counter] of counters) {
+    depths.set(library, counter.finish(books.get(library) ?? 0));
+  }
+  return depths;
+}
+
+/**
+ * The per-tier tally behind both readings, so there is exactly one of it.
+ *
+ * Not exported. Two implementations of "what is on this shelf" that agreed
+ * today would be two that could disagree after a tuning pass, and the pass
+ * would look like a balance change.
+ */
+class DepthCounter {
+  readonly #tierOf: TierLookup;
+  readonly #counts: ((nodeId: ContentId) => boolean) | undefined;
+  readonly #distinctByTier = emptyCounts();
+  readonly #seen = new Set<ContentId>();
+  #instanceCount = 0;
+
+  constructor(tierOf: TierLookup, counts?: (nodeId: ContentId) => boolean) {
+    this.#tierOf = tierOf;
+    this.#counts = counts;
+  }
+
+  /** One shelved instance. Counted for upkeep always, for depth conditionally. */
+  take(nodeId: ContentId): void {
+    this.#instanceCount += 1;
+    if (this.#seen.has(nodeId)) return;
+    this.#seen.add(nodeId);
+    if (this.#counts !== undefined && !this.#counts(nodeId)) return;
+
+    const tier = this.#tierOf(nodeId);
+    if (!Number.isInteger(tier) || tier < 1 || tier > TIER_COUNT) {
+      throw new RangeError(
+        `node ${String(nodeId)} reports tier ${String(tier)}; contracts.md §2.3 fixes tiers ` +
+          `at 1..${String(TIER_COUNT)}`,
+      );
+    }
+    this.#distinctByTier[tier - 1] = (this.#distinctByTier[tier - 1] ?? 0) + 1;
+  }
+
+  finish(grimoireCount: number): LibraryDepth {
+    const cumulativeByTier = emptyCounts();
+    let running = 0;
+    for (let index = 0; index < TIER_COUNT; index += 1) {
+      running += this.#distinctByTier[index] ?? 0;
+      cumulativeByTier[index] = running;
+    }
+    return {
+      distinctByTier: this.#distinctByTier,
+      cumulativeByTier,
+      distinctNodes: running,
+      instanceCount: this.#instanceCount,
+      grimoireCount,
+    };
+  }
+}
+
+/** A library with nothing on its shelves, for a handle no instance names. */
+export function emptyLibraryDepth(): LibraryDepth {
   return {
-    distinctByTier,
-    cumulativeByTier,
-    distinctNodes: running,
-    instanceCount,
-    grimoireCount,
+    distinctByTier: emptyCounts(),
+    cumulativeByTier: emptyCounts(),
+    distinctNodes: 0,
+    instanceCount: 0,
+    grimoireCount: 0,
   };
 }
 

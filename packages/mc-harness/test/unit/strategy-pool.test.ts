@@ -254,7 +254,13 @@ describe('a blocked preference falls through (task 5.6)', () => {
       submissions.push(chosen.action);
     }
     expect(submissions).not.toContain(GOD_ACTION.openPortal);
-    expect(new Set(submissions)).toEqual(new Set([GOD_ACTION.encourageResearch]));
+    // `assignRole` and not `encourageResearch`, since portal-rush v4: a god who
+    // opens portals and assigns nobody sends an empty warband, because
+    // `RAIDING_ROLES` is the `raider` role alone and every mage is born a
+    // `researcher`. The fall-through is what is under test here and it is
+    // unchanged — the bot still declines to resubmit a masked action — but the
+    // action it falls through *to* is now the one it needs most.
+    expect(new Set(submissions)).toEqual(new Set([GOD_ACTION.assignRole]));
 
     // The control: with the portal open it does prefer it, so the fall-through
     // above is a fall-through and not a strategy that never wanted a portal.
@@ -269,8 +275,13 @@ describe('a blocked preference falls through (task 5.6)', () => {
 
 describe('degeneracy is declared rather than discovered', () => {
   it('names portal-rush\'s unreachable defining action without calling it degenerate', () => {
-    // The build the pool is specified against: everything legal except action
-    // 14, which has no candidates in a single-universe run.
+    // The build the pool *used* to be specified against: everything legal
+    // except action 14, which had no candidates because nothing supplied
+    // `portalTargets`. That is no longer this build — the reference scenario
+    // now names a roster of rivals and action 14 is reachable — but the mask is
+    // still the right instrument for the property under test, which is that
+    // `degeneracyOf` reports an unreachable signature action *without* calling
+    // the strategy degenerate when another signature action survives.
     const mask = fullMask();
     mask[GOD_ACTION.openPortal] = 0;
 
@@ -279,12 +290,13 @@ describe('degeneracy is declared rather than discovered', () => {
       .map((report) => report.strategyId);
     expect(degenerate).toEqual([]);
 
-    // Portal-rush is not fully degenerate only because `declareAscension` is
-    // also a signature action and is legal. Its *defining* action is not
-    // reachable, and the report says so channel by channel.
+    // Portal-rush is not fully degenerate because `assignRole` and
+    // `declareAscension` are also signature actions and both are legal. Its
+    // *defining* action is masked here, and the report says so channel by
+    // channel.
     const portal = degeneracyOf(BOT_POOL_REGISTRY.get('portal-rush') as StrategyDefinition, mask);
     expect(portal.unreachable).toEqual([GOD_ACTION.openPortal]);
-    expect(portal.reachable).toEqual([GOD_ACTION.declareAscension]);
+    expect(portal.reachable).toEqual([GOD_ACTION.assignRole, GOD_ACTION.declareAscension]);
   });
 
   it('reports every strategy but the passive control as degenerate under a full mask-out', () => {
@@ -292,10 +304,10 @@ describe('degeneracy is declared rather than discovered', () => {
     const degenerate = reports.filter((report) => report.degenerate).map((r) => r.strategyId);
     // Stated as the property rather than as the eight literal ids: a strategy is
     // degenerate under a noop-only mask exactly when it has a signature action
-    // to be denied. Written this way because the pool also carries the two
-    // adversarial probes, and the assertion is strictly stronger than the id
-    // list it replaces — it also fixes which strategies are *not* degenerate,
-    // and why.
+    // to be denied. Widened on the W6 verification branch, which appends two
+    // adversarial probes to BOT_POOL; the assertion is strictly stronger than
+    // the id list it replaces, because it also fixes which strategies are NOT
+    // degenerate and why.
     expect(degenerate.sort()).toEqual(
       BOT_POOL.filter((definition) => definition.signatureActions.length > 0)
         .map((definition) => definition.strategyId)
@@ -326,11 +338,18 @@ describe('degeneracy is declared rather than discovered', () => {
     // silent refusal found while fixing that one — the noise floor submits
     // actions 1–7 with no parameter at all — and it is recorded rather than
     // fixed, for the reason the entry gives.
+    // `ascension-is-passive` has expired: both paths now gate on a quantity the
+    // god's play produces, and the entry described a defect this build does not
+    // have. What replaced it is not the same claim rewritten -- it is a limit of
+    // the POOL rather than of the game, found by fixing the first one. Five of
+    // the eight strategies produce identical achievement vectors, so the pool's
+    // Pareto front is one point and no win condition can separate them.
     expect(Object.keys(POOL_BUILD_LIMITS).sort()).toEqual([
-      'ascension-is-passive',
+      'five-strategies-are-one-universe',
       'noise-floor-submits-axis-actions-bare',
       'open-portal',
       'starting-position-is-broke',
+      'universities-are-founded-and-never-finished',
     ]);
     for (const [key, text] of Object.entries(POOL_BUILD_LIMITS)) {
       expect(text.length, `${key} needs a reason, not a label`).toBeGreaterThan(80);
@@ -494,7 +513,13 @@ describe('three strategies diverge observably on the same run seed (task 5.10)',
     expect(observationDivergence(passive.final, archivist.final).blockNames).toContain(
       'institutions',
     );
-    expect(observationDivergence(passive.final, portal.final).blockNames).toContain('knowledge');
+    // `mages`, not `knowledge`. portal-rush v4 spends its rounds assigning
+    // roles and opening portals; what separates it from the passive control is
+    // who its mages *are* and what happened to them, and at this horizon the
+    // knowledge block has not moved apart yet. The 2400-tick sweep is where the
+    // knowledge difference shows up — nodes taken rather than derived — and a
+    // short divergence probe is the wrong instrument for it.
+    expect(observationDivergence(passive.final, portal.final).blockNames).toContain('mages');
   });
 
   it('reports identical observations as identical rather than as a small difference', () => {

@@ -18,6 +18,7 @@ import type { Handle, MageRoleValue } from '@mm/state';
 
 import type { KnowledgeTarget, MageHandle, UniversityHandle } from '../coordination.js';
 import type { Personality } from '../mages/personality.js';
+import type { SpeciesAffinities } from './target-appeal.js';
 
 /**
  * ## The point of gathering this first
@@ -65,6 +66,21 @@ export interface MageOutlook {
   readonly mage: MageHandle;
   /** Her species record, for the trait-driven scoring terms. */
   readonly species: SpeciesRecord;
+  /**
+   * Her species' `affinities`, resolved from author-facing strings onto
+   * interned cell and form ids.
+   *
+   * Beside {@link MageOutlook.species} rather than inside it because
+   * `SpeciesRecord` is `@mm/content`'s shape and its `affinities` are keyed by
+   * strings. Interning them per candidate per tick is the string hashing in the
+   * hot loop that `catalog.ts` refuses for prerequisites, and resolving them
+   * needs the registry, which the scoring path deliberately cannot reach.
+   *
+   * §6 lists *"technique/form affinities"* among the seven things a species is
+   * tuned on. Until this field existed it was the only one of the seven that no
+   * rule read.
+   */
+  readonly affinities: SpeciesAffinities;
   /** Her rolled personality, from her own component fields. */
   readonly personality: Personality;
   /** Her standing role. Only the god writes this; autonomy only reads it. */

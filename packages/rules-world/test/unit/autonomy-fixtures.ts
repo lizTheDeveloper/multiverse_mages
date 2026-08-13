@@ -30,7 +30,13 @@ import type { SpeciesRecord } from '@mm/content';
 import { MAGE_ROLE } from '@mm/state';
 import type { MageRoleValue } from '@mm/state';
 
-import type { KnowledgeTarget, MageOutlook } from '../../src/index.js';
+import type {
+  KnowledgeTarget,
+  MageOutlook,
+  SpeciesAffinities,
+  TargetAppealWeights,
+} from '../../src/index.js';
+import { readTargetAppeal, resolveSpeciesAffinities } from '../../src/index.js';
 
 import { shippedRegistry } from './mage-fixtures.js';
 
@@ -42,8 +48,10 @@ import { shippedRegistry } from './mage-fixtures.js';
  * that one test into three seconds of JSON schema validation, which is time
  * spent proving something no autonomy test is about.
  */
+const registry = shippedRegistry();
+
 const speciesById = new Map<string, SpeciesRecord>(
-  shippedRegistry().species.map((entry) => [entry.record.id, entry.record]),
+  registry.species.map((entry) => [entry.record.id, entry.record]),
 );
 
 /** One shipped species record, by id. */
@@ -53,9 +61,57 @@ export function speciesNamed(id: string): SpeciesRecord {
   return found;
 }
 
-/** A knowledge target, with everything the scoring path reads. */
-export function target(nodeId: number, tier = 1, remainingCost = 1024): KnowledgeTarget {
-  return { nodeId, tier, remainingCost };
+/**
+ * The target-appeal weights, read once from the shipped content.
+ *
+ * Read rather than hand-written for the same reason species are: a fabricated
+ * weight table would prove the score responds to its inputs and nothing about
+ * whether the shipped content differentiates anything.
+ */
+export const appealWeights: TargetAppealWeights = readTargetAppeal(registry);
+
+const affinityCache = new Map<string, SpeciesAffinities>();
+
+/**
+ * One species' resolved affinity table, by species id.
+ *
+ * Memoized for the reason {@link speciesNamed} is: `shippedRegistry()` parses
+ * and validates every content file on **every call**, and the stampede test
+ * builds one outlook per mage per tick for two hundred ticks. Resolving
+ * affinities uncached turned that test from milliseconds into a timeout —
+ * scoring is a pure function of a table that never changes, and paying for the
+ * table per mage is paying for it in the wrong place.
+ */
+export function affinitiesOf(id: string): SpeciesAffinities {
+  const cached = affinityCache.get(id);
+  if (cached !== undefined) return cached;
+  const resolved = resolveSpeciesAffinities(speciesNamed(id), registry);
+  affinityCache.set(id, resolved);
+  return resolved;
+}
+
+/**
+ * A knowledge target, with everything the scoring path reads.
+ *
+ * The three content-shaped fields default to "no cell, no form, no effects",
+ * which scores as neutral on the affinity and role terms — so a test that does
+ * not care about them gets a target that behaves exactly as it did before those
+ * terms existed.
+ */
+export function target(
+  nodeId: number,
+  tier = 1,
+  remainingCost = 1024,
+  facets: Partial<Pick<KnowledgeTarget, 'cellId' | 'formId' | 'primitives'>> = {},
+): KnowledgeTarget {
+  return {
+    nodeId,
+    tier,
+    remainingCost,
+    cellId: facets.cellId ?? 0,
+    formId: facets.formId ?? 0,
+    primitives: facets.primitives ?? [],
+  };
 }
 
 /**
@@ -70,6 +126,7 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
   const base: MageOutlook = {
     mage: 1,
     species: speciesNamed('human'),
+    affinities: affinitiesOf('human'),
     personality: { curiosity: 1024, ambition: 1024, caution: 1024 },
     roleId: MAGE_ROLE.researcher as MageRoleValue,
     // fp(512) — the middle of the prime band for every species, and the
