@@ -12,9 +12,8 @@
  */
 
 /**
- * `yieldSources` is the only place a node's authored `worship-yield` becomes a
- * number the favor economy reads, and it makes two claims this file exists to
- * hold it to.
+ * The favor economy's two multipliers, and the three claims this file exists to
+ * hold them to.
  *
  * 1. **A forbidden cell pays nothing.** It used to pay: the gate was the
  *    instance count alone, with no `permits()` anywhere in the function, so a
@@ -27,7 +26,14 @@
  *    crops out-yield spectacle, and the difference is the cell's authored share
  *    of ordinary life rather than the node's power.
  *
- * Both are asserted through a **stepped universe** rather than by calling the
+ * 3. **`library-legacy` is a second channel and neutralizes apart from the
+ *    first.** The two pull opposite ways on one quantity — relevance is bounded
+ *    by population share and damps §7's loop, library depth compounds and feeds
+ *    §6a's — and `winRateByPrimitive` neutralizes one primitive id, so two terms
+ *    sharing an id could not be told apart. Fusing them was the tempting
+ *    simplification and is the thing the last case in this file forbids.
+ *
+ * The first two are asserted through a **stepped universe** rather than by calling the
  * arithmetic, because both are claims about a wiring: the fix is one `permits`
  * call in one function, and a unit test of `favorRegeneration` would have gone
  * on passing with the defect in place — it did, for the whole time the defect

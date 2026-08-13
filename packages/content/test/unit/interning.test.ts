@@ -330,7 +330,7 @@ describe('contentRevision', () => {
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of file names.
     //
-    // 6973d2c55f6d7788bbaa6886e507bbde -> 947f84e5adc4572932b606e72d2c1e9a,
+    // 6973d2c55f6d7788bbaa6886e507bbde -> 0300687b08567c65a1b1ac31cf32e720,
     // when `dailyRelevance` was added to `cell.json` (§2.2) and authored for all
     // seventy cells in one pass — the share of ordinary people whose daily life
     // a cell touches, reasoned cell by cell in
@@ -347,6 +347,21 @@ describe('contentRevision', () => {
     // pay their gods different favor for identical play, and a raid arbitrated
     // by the host's ruleset would price the guest's magic by numbers the guest
     // never agreed to.
+    //
+    // 0300687b08567c65a1b1ac31cf32e720 -> 947f84e5adc4572932b606e72d2c1e9a,
+    // when `library-legacy` was declared in `primitive.json` and
+    // `legacy-yield-per-node` in `god-constant.json` — the compounding half of
+    // the opposed pair, a favor-regeneration multiplier whose magnitude is a
+    // count of distinct titles on a library shelf. Two file additions and no
+    // authoring pass, so unlike the entry above this one is mechanical: the
+    // constant is a first guess and says so.
+    //
+    // It belongs in the preimage for the same reason as the entry above and one
+    // more. `favorRegeneration` stacks it every tick, so two universes
+    // disagreeing about it pay their gods differently; and it is the only
+    // primitive no node carries, so a build that had the id and not the
+    // constant — or the constant at a different value — would run the channel
+    // at a rate nothing else in the content set could reveal.
     expect(registry.contentRevision).toBe('947f84e5adc4572932b606e72d2c1e9a');
   });
 
