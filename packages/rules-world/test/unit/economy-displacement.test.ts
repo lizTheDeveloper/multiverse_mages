@@ -97,12 +97,20 @@ describe('what displacement does to a headcount', () => {
     expect(laborAfterDisplacement(40, FP_ONE / 2)).toBe(20);
   });
 
-  it('floors the survivors rather than the displaced', () => {
-    // Three people and a one-per-cent share: flooring the displaced count would
-    // displace nobody and make the mechanism silently inert on small cohorts.
-    // Flooring the survivors takes one, which is the direction that keeps a
-    // share meaning something at every scale.
-    expect(laborAfterDisplacement(3, 10)).toBe(2);
+  it('rounds the displaced count to nearest, so a small share cannot empty a small cohort', () => {
+    // The populace is stored in decade-of-birth cohorts and the share is
+    // applied to each separately, so the rounding direction is a real term in
+    // the total and not a tidiness question. Rounding the displaced count *up*
+    // would make a one-per-cent spell take the whole of a cohort of one — and
+    // therefore make a run's food depend on how finely the populace happened to
+    // be split, which is an artifact of the entity store rather than a fact
+    // about the economy.
+    expect(laborAfterDisplacement(1, 10)).toBe(1);
+    expect(laborAfterDisplacement(3, 10)).toBe(3);
+    // Rounded, not floored: a share past a half of one person takes that
+    // person, so the mechanism is not inert on small cohorts either.
+    expect(laborAfterDisplacement(1, 512)).toBe(0);
+    expect(laborAfterDisplacement(10, 102)).toBe(9);
   });
 
   it('never returns more people than it was given, or fewer than none', () => {

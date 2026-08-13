@@ -135,14 +135,17 @@ export function stackDisplacedLabor(
 /**
  * How many of a cohort's laborers are left after displacement.
  *
- * Rounded so that the **survivors** are floored — the displaced count is
- * `ceil`-shaped — for one reason: a share of `fp(1)` against a cohort of three
- * would otherwise displace nobody, and a mechanism that does nothing at all
- * below some cohort size is one that reports differently on a large universe
- * and a small one for reasons that are not about the design. Flooring the
- * displaced count instead would also make a run's total depend on how the
- * populace happened to be split into cohorts, which is an artifact of the
- * entity store rather than a fact about the economy.
+ * The **displaced count is rounded to nearest**, and the choice matters more
+ * than a rounding choice usually does, because the populace is stored in
+ * decade-of-birth cohorts and a share is applied to each of them separately.
+ * Rounding the displaced count *up* — equivalently, flooring the survivors —
+ * makes any share at all take the whole of a one-person cohort, so a 2.5%
+ * spell empties a cohort of one and takes a fifth of a cohort of five. The
+ * error is one-sided, it grows with how finely the populace happens to be
+ * split, and it is largest in exactly the early game the balance harness
+ * cares most about. Rounding to nearest is unbiased at every cohort size and
+ * costs only that a share under a half displaces nobody from a cohort of one,
+ * which is the correct answer to "half a person".
  *
  * The displaced are **not** moved to another occupation and are not removed
  * from the populace. They are still counted, still fed, and still bear
@@ -160,6 +163,11 @@ export function laborAfterDisplacement(laborers: number, fraction: Fixed): numbe
     );
   }
   if (fraction <= 0) return laborers;
-  const surviving = FP_ONE - Math.min(fraction, FP_ONE);
-  return floorDiv(laborers * surviving, FP_ONE);
+  const share = Math.min(fraction, FP_ONE);
+  // `+ FP_ONE / 2` before the floor is round-half-up, through the repository's
+  // one rounding helper. Both operands are non-negative here, so half-up and
+  // half-away-from-zero are the same rule and there is no sign asymmetry for
+  // `contracts.md` §3 to object to.
+  const displacedCount = floorDiv(laborers * share + FP_ONE / 2, FP_ONE);
+  return laborers - Math.min(laborers, displacedCount);
 }

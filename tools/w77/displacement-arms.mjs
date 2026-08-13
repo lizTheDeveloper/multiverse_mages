@@ -147,34 +147,55 @@ const contents = {
   authored: referenceContent(),
   stripped: referenceContent(stripped.registry),
 };
+/**
+ * Three rulesets, and the third is the counterfactual the other two need.
+ *
+ * `no-terram` permits the whole v1 rectangle *except* the form that carries
+ * every `resource-yield` and `build-rate` effect in it. Without it the paired
+ * differences below measure only the cost of displacement and not the **net**
+ * worth of permitting the economy cells at all — which is the question S5's
+ * falsifying measurement is really asking.
+ */
 const rulesets = {
   'yield-max': ['intellego', 'rego'],
   breadth: ['intellego', 'perdo', 'rego'],
+  'no-terram': ['intellego', 'perdo', 'rego'],
 };
 const forms = {
   'yield-max': ['terram'],
   breadth: ['limen', 'mentem', 'nomen', 'terram'],
+  'no-terram': ['limen', 'mentem', 'nomen'],
 };
 
-/** The mean of one field across the seeds, rounded — every field is a count. */
-function meanOf(runs, field) {
-  return Math.round(runs.reduce((sum, r) => sum + r[field], 0) / runs.length);
+const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+/** The standard error of a mean. `NaN` below two samples, which is honest. */
+function se(xs) {
+  if (xs.length < 2) return Number.NaN;
+  const m = mean(xs);
+  return Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / (xs.length - 1) / xs.length);
 }
 
+const fmt = (x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : 'n/a');
+
 /**
- * Runs every seed for one arm and averages.
+ * Runs every seed for one arm and keeps **every run**, not just the average.
  *
  * Common random numbers: seed `s` is the same universe in all four arms, so a
- * between-arm difference is the arm and not the draw. Seeds are consecutive
- * from `LONG_RUN_SEED` rather than chosen, because a chosen seed is a chosen
- * result.
+ * between-arm difference at one seed is the arm and not the draw, and the
+ * paired differences below have the between-universe variance removed. Seeds
+ * are consecutive from `LONG_RUN_SEED` rather than chosen, because a chosen
+ * seed is a chosen result.
+ *
+ * Averaging before differencing is what makes a headline number with no error
+ * bars — `scripts/w13-paired.mjs` is the house style and this follows it.
  */
 function arm(content, axes) {
   const runs = [];
   for (let i = 0; i < SEEDS; i += 1) runs.push(run(content, axes, LONG_RUN_SEED + i));
-  const out = {};
-  for (const field of Object.keys(runs[0])) out[field] = meanOf(runs, field);
-  return out;
+  const summary = { runs };
+  for (const field of Object.keys(runs[0])) summary[field] = Math.round(mean(runs.map((r) => r[field])));
+  return summary;
 }
 
 const pad = (v, w = 13) => String(v).padStart(w);
@@ -197,14 +218,49 @@ for (const [contentName, content] of Object.entries(contents)) {
   }
 }
 
-console.log('\nyield-max minus breadth, on population — the domination this change is aimed at:');
+/**
+ * Paired differences, seed by seed.
+ *
+ * `left` and `right` ran the same seeds in the same order, so index `i` is one
+ * universe under two conditions and the difference is the condition.
+ */
+function paired(left, right, field) {
+  const deltas = left.runs.map((run, i) => run[field] - right.runs[i][field]);
+  return { mean: mean(deltas), se: se(deltas), n: deltas.length };
+}
+
+console.log('\n## Does the yield-maximising ruleset dominate on population?');
+console.log('   Paired over seeds: (yield-max − breadth), same universe both sides.\n');
 for (const contentName of Object.keys(contents)) {
-  const y = table[`${contentName}/yield-max`];
-  const b = table[`${contentName}/breadth`];
-  const delta = y.population - b.population;
-  const peak = y.peak - b.peak;
+  const d = paired(table[`${contentName}/yield-max`], table[`${contentName}/breadth`], 'population');
+  const ratio = Number.isFinite(d.se) && d.se > 0 ? d.mean / d.se : Number.NaN;
   console.log(
-    `  ${contentName.padEnd(10)} final ${delta > 0 ? '+' : ''}${delta} (${y.population} vs ${b.population}), ` +
-      `peak ${peak > 0 ? '+' : ''}${peak} (${y.peak} vs ${b.peak})`,
+    `  ${contentName.padEnd(10)} ${fmt(d.mean)} ± ${fmt(d.se)} people  (n = ${d.n}, ${fmt(ratio, 2)} SE)`,
   );
+}
+
+console.log('\n## Is permitting the economy cells still worth it?');
+console.log('   Paired over seeds: (breadth − no-terram), same universe both sides.\n');
+for (const contentName of Object.keys(contents)) {
+  for (const field of ['population', 'food', 'stone']) {
+    const d = paired(table[`${contentName}/breadth`], table[`${contentName}/no-terram`], field);
+    const base = mean(table[`${contentName}/no-terram`].runs.map((r) => r[field]));
+    const percent = base === 0 ? Number.NaN : (100 * d.mean) / base;
+    console.log(
+      `  ${contentName.padEnd(10)} ${field.padEnd(11)} ${fmt(d.mean)} ± ${fmt(d.se)}  (${fmt(percent, 2)}% of ${Math.round(base)})`,
+    );
+  }
+}
+
+console.log('\n## What displacement itself did, per ruleset');
+console.log('   Paired over seeds: (authored − stripped), same universe both sides.\n');
+for (const rulesetName of Object.keys(rulesets)) {
+  for (const field of ['population', 'food', 'stone']) {
+    const d = paired(table[`authored/${rulesetName}`], table[`stripped/${rulesetName}`], field);
+    const base = mean(table[`stripped/${rulesetName}`].runs.map((r) => r[field]));
+    const percent = base === 0 ? Number.NaN : (100 * d.mean) / base;
+    console.log(
+      `  ${rulesetName.padEnd(10)} ${field.padEnd(11)} ${fmt(d.mean)} ± ${fmt(d.se)}  (${fmt(percent, 2)}% of ${Math.round(base)})`,
+    );
+  }
 }
