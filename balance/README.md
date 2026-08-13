@@ -15,7 +15,7 @@ There are **four** of them, and they are four instruments rather than one instru
 | horizon | 60 ticks — **five** world years | 240 ticks — **twenty** world years | 240 ticks — **twenty** world years | 2400 ticks — **two hundred** world years |
 | pool | `passive-control`, fixed | `passive-control`, fixed | all eight, round-robin | all eight, round-robin |
 | runs | 4 cells × 50 = 200 | 4 cells × 50 = 200 | 4 cells × 16 = 64 | 4 cells × 16 = 64 |
-| wall clock | 4 s | 27 s | **10 s** | **830 s** |
+| wall clock | 4 s | 27 s | **10 s** | **830–1154 s** |
 | plays a god verb | **no** | **no** | yes | yes |
 | answers | *did anything move?* | *did the universe stop?* | *do the god's verbs still do anything?* | *can anyone still win?* |
 
@@ -151,10 +151,18 @@ failing test.
 
 ### The 200-year gate has become expensive
 
-Measured on the merged tree: **830 s** for its 64 runs, against 83 s for the same sweep a day
-earlier. The sweep did not change; the simulation got heavier — mean population went from 5,400 to
-15,764 and living mages from 70 to 468. Halving it back to 32 runs would cost about 415 s and give
-back every blind spot this section is about, so that is not the lever.
+Measured on the merged tree: **830 s** for its 64 runs on an otherwise-quiet eight-core machine,
+and **1154 s** for the same 64 runs an hour later while three sibling worktrees were running their
+own suites. Against 83 s for the same sweep a day earlier. The sweep did not change; the simulation
+got heavier — mean population went from 5,400 to 15,764 and living mages from 70 to 468.
+
+Those two figures, 830 and 1154, are the same instrument on the same build forty minutes apart, and
+they are worth putting beside the 892 s above: **a wall-clock number without its machine and its
+neighbours attached is not reproducible**, and this file has now been misled by that once. The CI
+figure to plan around is the *contended* one, because a runner that is busy is the normal case.
+
+Halving back to 32 runs would cost about 415 s and give back every blind spot this section is about,
+so that is not the lever.
 
 This document does not decide what to do about it, but it does state the options plainly, because a
 gate that takes fourteen minutes is the kind that gets deleted in a hurry by whoever is blocked:
@@ -229,7 +237,7 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 | `referencePopulationChange` | 9.2 % | 5.2 % | 8.8 % | 7.8 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
-| wall clock, 4 workers | 4 s | 27 s | **10 s** | **830 s** |
+| wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
 
 Both multi-strategy gates carry **80 further lines each**, one per `(metric, strategy)`. That is
 where their power actually lives; the column above is a summary of a mean taken over eight
@@ -416,7 +424,7 @@ if that ever stops being true.
 | world-tick cap | 60 (five world years) | 240 (twenty world years) | 240 (twenty world years) | 2400 (two hundred world years) | 240 (twenty world years) |
 | pool | `passive-control` | `passive-control` | all eight, round-robin | all eight, round-robin | `passive-control` |
 | metrics | 9 vital signs | 9 + `referenceNodesGainedFinalQuarter` | 10, × 8 arms = 90 lines | 10, × 8 arms = 90 lines | 9 + `referenceNodesGainedFinalQuarter` |
-| wall clock | 4 s | 27 s | 10 s | **830 s** | **3392 s measured** — see below |
+| wall clock | 4 s | 27 s | 10 s | **830–1154 s** | **3392 s measured** — see below |
 | committed baseline | yes | yes | yes | yes | **no**, and deliberately |
 | wired into CI | yes | yes | yes | yes | n/a |
 
