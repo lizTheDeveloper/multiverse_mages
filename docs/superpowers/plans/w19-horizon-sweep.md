@@ -145,14 +145,15 @@ Saturation first, because it is the variable that should explain everything else
 - [x] Arm C — Modal sweep files; **`runSeed` identical on 400/400 coordinates** at every horizon,
       coverage exactly 40 runs × 10 strategies, and the 2400 arm reproduces integration round 2's
       `ascensionRate` **0.1950**
-- [ ] Arm A — 7 horizons × 10 strategies × 40 runs
-- [ ] Second pass — 30/60/120/180/240, added because the first production numbers falsified the
-      brief's premise (see below)
-- [ ] Prefix cross-check: 2400 samples vs capped terminals
-- [ ] Arm B — gnome and human at every horizon
+- [x] Arm A — 7 horizons × 10 strategies × 40 runs, **2,800 runs**, coverage exact
+- [x] Second pass — 30/60/120/180/240, added because the first production numbers falsified the
+      brief's premise (see below). **2,000 runs.**
+- [x] Prefix cross-check: contained in **2,400 of 2,400** paired comparisons
+- [x] Arm B — gnome and human at every horizon, **1,728 runs**, with a within-species control
 - [x] Assert per-strategy coverage in every arm
-- [ ] Write `docs/design/horizon-sweep.md`
-- [ ] `npm run verify`, reported exactly. No golden fixture, no balance baseline regenerated.
+- [x] Write `docs/design/horizon-sweep.md`
+- [x] `npm run verify` — **EXIT=0**, 3,872 tests in 275 files, all three balance gates **PASS** with
+      delta **0.00000** on every metric. No golden fixture and no balance baseline regenerated.
 
 ## What changed after the pre-registration, and why
 
@@ -189,4 +190,5 @@ checking every one of those fields before skipping a job.
 
 ## Status
 
-In flight.
+Complete. **The verdict is negative and it is reported as such:** the strategy space does not open up
+before the content ceiling. See `docs/design/horizon-sweep.md`.

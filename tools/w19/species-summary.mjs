@@ -59,7 +59,16 @@ function containment(a, b) {
   return smaller === 0 ? Number.NaN : shared / smaller;
 }
 
-const mean = (xs) => (xs.length === 0 ? Number.NaN : xs.reduce((a, b) => a + b, 0) / xs.length);
+/**
+ * Mean over the finite values only. `containment` is NaN when one side holds no
+ * nodes at all — a real occurrence at short horizons and under a restrictive
+ * founding mix — and one such pair would otherwise turn the whole average into
+ * NaN, which reads as "not measured" rather than "one run held nothing".
+ */
+const mean = (xs) => {
+  const finite = xs.filter(Number.isFinite);
+  return finite.length === 0 ? Number.NaN : finite.reduce((a, b) => a + b, 0) / finite.length;
+};
 
 function main() {
   const root = process.argv[2] ?? '.w19/arm-b';
@@ -102,9 +111,12 @@ function main() {
         pairedContainment: {
           n: paired.length,
           mean: mean(paired.map(([g, h]) => containment(g.terminal.nodeIds, h.terminal.nodeIds))),
-          min: Math.min(
-            ...paired.map(([g, h]) => containment(g.terminal.nodeIds, h.terminal.nodeIds)),
-          ),
+          min: (() => {
+            const values = paired
+              .map(([g, h]) => containment(g.terminal.nodeIds, h.terminal.nodeIds))
+              .filter(Number.isFinite);
+            return values.length === 0 ? Number.NaN : Math.min(...values);
+          })(),
         },
         unionsIdentical: onlyGnome.length === 0 && onlyHuman.length === 0,
         onlyGnome,

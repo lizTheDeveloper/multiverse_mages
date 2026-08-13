@@ -9,8 +9,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 eight workstreams merged. **Role:** measurer. No constant, rule or magnitude was changed. No golden
 fixture and no balance baseline was regenerated.
 
-*(Composition numbers land when the local arms finish. Everything below the production-arm heading
-is measured and final.)*
+**The answer, first: no.** Twelve horizons from 30 to 2400 world ticks, 9,600 runs across two
+independent execution paths. The strategy space is **one-dimensional at every horizon measured**,
+including tick 30, where a universe holds **31%** of the reachable set and **not one run in 2,000**
+holds all of it. The horizon really is far too long — 2400 ticks is roughly four times what the
+content can fill — but shortening it buys no variety, because the variety was never there to catch
+earlier. **The flatness is in the content graph.**
 
 ## The question
 
@@ -130,8 +134,15 @@ Seven sweep files differing in `termination.worldTickCap` and in nothing else, r
    era boundary, and `ERA_TICKS` is **240**. Four consecutive passes cannot land before tick **960**.
    So **horizon 900 admits apotheosis only** — and measures **zero of 400**.
 
-**The first horizon at which any universe wins is 1200, and it wins by canon.** Apotheosis appears
-at 1800 (1 run) and 2400 (6 runs); at every shorter horizon it is zero. The 0.05–0.20 band §7 asks
+**On this arm the first horizon at which any universe wins is 1200, and it wins by canon.**
+Apotheosis appears at 1800 (1 run) and 2400 (6 runs); at every shorter horizon it is zero.
+
+**That is a fact about the starting position, not only about the constants** — and the composition
+arm, which starts from W15's two corner cells rather than the reference defaults, disagrees: there
+apotheosis is live from tick **670**, ten runs win at horizon **900**, and by 2400 it is 40 canon
+against 40 apotheosis. **Which ascension path is reachable depends on the founding cohort and
+grant.** Recorded for the author; both arms agree that nothing wins before 900 and that only the two
+ruleset editors ever win. The 0.05–0.20 band §7 asks
 for is met at 1200, 1800 and 2400 — and is *unreachable by construction* below 1200.
 
 ### Who wins, at every horizon where winning is possible
@@ -144,8 +155,11 @@ for is met at 1200, 1800 and 2400 — and is *unreachable by construction* below
 
 **A shorter horizon does not make the god's other verbs matter.** `permit-then-idle` — which presses
 `permitTechnique` and `permitForm` for 140 ticks and then submits an empty preference list forever —
-wins at least as often as `permissive-breadth` at every horizon, and eight of ten strategies win
-nothing at any horizon. The integration round's headline survives the horizon sweep intact.
+wins at least as often as `permissive-breadth` at every horizon **on this arm**, and eight of ten
+strategies win nothing at any horizon. On the composition arm the two are a statistical tie
+throughout (39/40 vs 38/40 at 1200, 4/40 vs 6/40 at 900 — inside each other's error at that n), which
+is the same answer: **doing nothing after the first 140 ticks costs nothing at any horizon.** The
+integration round's headline survives the horizon sweep intact.
 
 ## The decision rule, written down before the composition numbers were read
 
@@ -185,6 +199,303 @@ applies only to the first pass, whose sampling grid is 150. None of 30, 60, 120,
 multiple of 150, and the second pass has no 2400-tick run of its own. **The short horizons are
 validated by being explicit capped runs, which is the authoritative method in either case.**
 
+
+
+---
+
+# The composition measurement — 2,800 runs carrying node identity
+
+W15's probe, reused unchanged: an inert system appended to the world schema, reading
+`collectRecords(state, KNOWLEDGE_INSTANCE)`. **Re-validated on this tree** — a probed and an
+unprobed run agree on snapshot hash, terminal reason and tick count in **8 of 8** checks across four
+strategies and two starting cells.
+
+Ten strategies × two starting cells × 20 replicates = **400 runs per horizon**, seven horizons.
+Strategy is passed explicitly rather than dealt by index, so `strategies[replicateIndex % poolSize]`
+never runs; coverage is asserted anyway and is **exactly 40 runs × 10 strategies at every horizon**.
+`runSeed` is identical on all 400 coordinates at every horizon.
+
+## The prefix property, measured — the seven horizons are one set of universes
+
+| horizon | pairs | exactly equal | **contained** | node gap |
+|--:|--:|--:|--:|---|
+| 300 | 400 | 374 | **400** | 19×1, 6×2, 1×3 |
+| 450 | 400 | 378 | **400** | 22×1 |
+| 600 | 400 | 391 | **400** | 9×1 |
+| 900 | 400 | 396 | **400** | 4×1 |
+| 1200 | 400 | 400 | **400** | — |
+| 1800 | 400 | 400 | **400** | — |
+
+Equality was the wrong test. The probe sits at the **end** of the system list, so its sample at tick
+`H` is taken after tick `H` has run, while a run capped at `H` stops having run ticks `0 .. H-1` —
+the capped terminal is one tick behind. Stated as containment, the property holds in **2,400 of
+2,400** paired comparisons, and every gap is the one to three nodes acquired in that extra tick.
+
+So the horizons are not seven experiments. They are **one set of universes read at seven moments**.
+
+## 1. Saturation, first
+
+`|held ∩ V1| == 51`, with the fifty-one derived from content (`v1CellIds()` → 12 cells → 51 nodes,
+ids 97–112, 215–231, 274–291).
+
+| horizon | saturated runs | fraction | mean v1 coverage |
+|--:|--:|--:|--:|
+| 300 | 4/400 | **0.0100** | 35.9 |
+| 450 | 86/400 | **0.2150** | 38.2 |
+| 600 | 165/400 | **0.4125** | 39.0 |
+| 900 | 225/400 | **0.5625** | 40.1 |
+| 1200 | 231/400 | **0.5775** | 40.3 |
+| 1800 | 234/400 | **0.5850** | 40.4 |
+| 2400 | 236/400 | **0.5900** | 40.4 |
+
+**The pool fraction ceilings at 0.59 because four of the ten strategies can never saturate** — the
+two deniers shrink their own reachable set by edict, and the two ruleset editors leave v1 and hold
+only part of it. Among the six that can, saturation is essentially complete by 900:
+
+| strategy | 300 | 450 | 600 | 900 | 1200 | 2400 |
+|---|--:|--:|--:|--:|--:|--:|
+| `passive-control` | 1/40 | 16/40 | 29/40 | 38/40 | 39/40 | 40/40 |
+| `idle-then-declare` | 1/40 | 16/40 | 29/40 | 38/40 | 39/40 | 40/40 |
+| `worship-maximizer` | 0/40 | 15/40 | 31/40 | 40/40 | 40/40 | 40/40 |
+| `archivist` | 1/40 | 12/40 | 23/40 | 38/40 | 40/40 | 40/40 |
+| `uniform-random-legal` | 0/40 | 17/40 | 32/40 | 37/40 | 36/40 | 38/40 |
+| `portal-rush` | 1/40 | 10/40 | 21/40 | 34/40 | 37/40 | 38/40 |
+
+**Horizon 300 is the only one in this pass where the content is genuinely unexhausted** — 1% of runs
+hold everything. It is also where the universes already hold **48.5 of 51 on average**. The gap
+between "95% of the set" and "all of it" is the whole of the unexhausted window.
+
+## 2. Dimensionality, containment and prefix fidelity
+
+### The full ten-strategy pool
+
+| horizon | 80% | 95% | participation | between-strategy variance | containment mean | containment min | **within-strategy** | prefix fidelity |
+|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| 300 | 2 | 21 | **1.94** | 0.869 | 0.862 | 0.537 | 0.964 | **0.8970** |
+| 450 | 2 | 16 | **1.75** | 0.902 | 0.902 | 0.670 | 0.965 | **0.9214** |
+| 600 | 2 | 20 | **1.77** | 0.894 | 0.913 | 0.673 | 0.963 | **0.9276** |
+| 900 | 2 | 20 | **1.77** | 0.886 | 0.934 | 0.673 | 0.964 | **0.9278** |
+| 1200 | 2 | 19 | **1.74** | 0.891 | 0.941 | 0.667 | 0.962 | **0.9289** |
+| 1800 | 2 | 19 | **1.74** | 0.892 | 0.942 | 0.667 | 0.962 | **0.9292** |
+| 2400 | 2 | 19 | **1.74** | 0.892 | 0.942 | 0.667 | 0.962 | **0.9293** |
+
+### The eight strategies that stay inside v1
+
+| horizon | 80% | participation | containment **cross** | containment **within** | cross − within | prefix fidelity |
+|--:|--:|--:|--:|--:|--:|--:|
+| 300 | **1** | 1.46 | 0.9852 | 0.9649 | **+0.0203** | 0.9244 |
+| 450 | **1** | 1.33 | 0.9875 | 0.9676 | **+0.0199** | 0.9293 |
+| 600 | **1** | 1.26 | 0.9883 | 0.9696 | **+0.0188** | 0.9323 |
+| 900 | **1** | 1.22 | 0.9883 | 0.9696 | **+0.0187** | 0.9325 |
+| 1200 | **1** | 1.22 | 0.9881 | 0.9659 | **+0.0222** | 0.9318 |
+| 1800 | **1** | 1.21 | 0.9881 | 0.9659 | **+0.0222** | 0.9318 |
+| 2400 | **1** | 1.21 | 0.9881 | 0.9659 | **+0.0222** | 0.9318 |
+
+**The pre-registered discriminator fails at every horizon, and it fails in the wrong direction.**
+The rule was that a second dimension is real only if cross-strategy containment sits **below** the
+within-strategy diagonal. Measured, cross containment is **above** it at every horizon by +0.019 to
++0.022: **two different strategies' node sets overlap each other more than two seeds of the same
+strategy do.** The strategy label carries *less* compositional information than the seed.
+
+### The shape-only spectrum settles the "it opens up" reading
+
+Row-normalizing removes magnitude — *"how much a universe knows"* — and leaves composition:
+
+| horizon | 300 | 450 | 600 | 900 | 1200 | 1800 | 2400 |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| shape participation ratio, full pool | 3.31 | 3.22 | 3.24 | 3.30 | 3.31 | 3.31 | 3.30 |
+| shape participation ratio, inside v1 | 2.92 | 2.73 | 2.62 | 2.56 | 2.57 | 2.56 | 2.56 |
+
+**Flat.** Once magnitude is removed the effective dimensionality of composition is
+**indistinguishable between horizon 300 and horizon 2400** — 3.31 against 3.30 for the whole pool.
+The apparent rise in the raw participation ratio (1.74 → 1.94) is *breadth wearing composition's
+clothes*: at a short horizon strategies differ in **how much** they have got through the queue, not
+in **which** magic they hold.
+
+
+## 3. The second pass — 30 to 240 ticks, where the content really is unexhausted
+
+The brief's hypothesis wanted a horizon at which a universe holds *"roughly a third"* of the
+reachable set. That horizon exists — it is **30 ticks**, not 300.
+
+| horizon | mean v1 coverage | share of the 51 | saturated runs |
+|--:|--:|--:|--:|
+| 30 | 15.6 | **31%** | 0/400 |
+| 60 | 22.3 | 44% | 0/400 |
+| 120 | 29.2 | 57% | 0/400 |
+| 180 | 32.7 | 64% | 0/400 |
+| 240 | 34.0 | 67% | 0/400 |
+
+**Not one run in 2,000 holds the full set.** This is the window the hypothesis was about.
+
+## 4. The whole sweep, against the rule fixed in advance
+
+Twelve horizons, 4,800 composition runs. The two conditions the verdict was pre-committed to:
+**(1)** cross-strategy containment **below** the within-strategy diagonal, and **(2)** `betweenShare`
+staying high among the eight v1-bound strategies.
+
+| horizon | v1 coverage | **v1 betweenShare** | **cross** | **within** | **cross − within** | v1 PR | v1 shape PR | prefix fidelity |
+|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| 30 | 31% | **0.140** | 0.9664 | 0.8853 | **+0.0811** | 4.00 | 4.52 | 0.8329 |
+| 60 | 44% | **0.385** | 0.9759 | 0.9378 | **+0.0381** | 5.28 | 6.43 | 0.9120 |
+| 120 | 57% | **0.564** | 0.9765 | 0.9513 | **+0.0252** | 3.34 | 4.56 | 0.9214 |
+| 180 | 64% | **0.686** | 0.9807 | 0.9586 | **+0.0221** | 2.32 | 3.50 | 0.9207 |
+| 240 | 67% | **0.806** | 0.9820 | 0.9600 | **+0.0221** | 1.61 | 3.19 | 0.9190 |
+| 300 | 70% | 0.847 | 0.9852 | 0.9649 | **+0.0203** | 1.46 | 2.92 | 0.9244 |
+| 450 | 75% | 0.887 | 0.9875 | 0.9676 | **+0.0199** | 1.33 | 2.73 | 0.9293 |
+| 600 | 76% | 0.911 | 0.9883 | 0.9696 | **+0.0188** | 1.26 | 2.62 | 0.9323 |
+| 900 | 79% | 0.927 | 0.9883 | 0.9696 | **+0.0187** | 1.22 | 2.56 | 0.9325 |
+| 1200 | 79% | 0.928 | 0.9881 | 0.9659 | **+0.0222** | 1.22 | 2.57 | 0.9318 |
+| 1800 | 79% | 0.930 | 0.9881 | 0.9659 | **+0.0222** | 1.21 | 2.56 | 0.9318 |
+| 2400 | 79% | 0.931 | 0.9881 | 0.9659 | **+0.0222** | 1.21 | 2.56 | 0.9318 |
+
+**Condition 1 fails at all twelve horizons, and it fails in the wrong direction.** Cross-strategy
+containment is *above* the within-strategy diagonal everywhere — **two different strategies' node
+sets overlap each other more than two seeds of the same strategy do.** And the failure is **worst at
+the shortest horizon**: +0.0811 at tick 30 against +0.0222 at 2400. The strategy label carries less
+information about which magic a universe holds than the random seed does, and shortening the horizon
+makes that more true, not less.
+
+**Condition 2 fails wherever the content is unexhausted.** `betweenShare` inside v1 is **0.140 at
+tick 30** — **86% of compositional variance is within-strategy noise** — rising through 0.385 and
+0.564 to 0.931 by 2400.
+
+**The two failures are the same fact seen twice.** The participation ratio does rise at short
+horizons, 1.21 → 4.00, and taken alone that looks like the good news. It arrives in exact lockstep
+with `betweenShare` collapsing, 0.931 → 0.140. **The extra dimensions are the noise floor, not new
+axes of play** — which is precisely what the pre-registration named as the thing that must not be
+sold as a finding.
+
+Prefix fidelity confirms it independently: **0.9318 at 2400 and 0.9214 at 120**, where universes hold
+57% of the set. Only at tick 30 does it fall at all, to **0.8329** — still far above the **0.7** that
+W15 pre-registered as the level that would falsify the one-queue model.
+
+## 5. Species — no divergence before exhaustion, with a within-species control
+
+Gnome and human share `depthCeiling: 4`, so they are the pair whose divergence could not be
+explained by the ceiling. Reported as the symmetric difference between the two species' unions,
+**beside the same statistic computed within one species** by splitting its runs into two halves on
+replicate parity — because an across-species difference only means something if it exceeds the
+across-seed one.
+
+| horizon | strategy | across gnome↔human | within gnome | within human |
+|--:|---|--:|--:|--:|
+| 30 | `passive-control` | 9 | 0 | 1 |
+| 30 | `archivist` | 6 | 2 | 3 |
+| 60 | `passive-control` | 5 | 0 | 0 |
+| 120 | `passive-control` | 6 | **6** | 2 |
+| 180 | `passive-control` | 2 | 1 | 2 |
+| **240** | `passive-control` | **0** | 0 | 0 |
+| **240** | `archivist` | **0** | 0 | 0 |
+| 300–2400 | both | **0** | 0 | 0 |
+
+**From tick 240 onward the two species' unions are identical — zero nodes unique to either — at
+every horizon.** Below that the difference is 1–9 nodes against a within-species figure of 0–6: the
+same order of magnitude, and at horizon 120 `passive-control`'s across-species difference (6) is
+*exactly equal* to its within-gnome difference (6).
+
+At horizon 300 humans hold a mean of **37.7** nodes against gnomes' **45.2** — a 20% gap in count —
+while holding **the same 49-node union**. Species change how fast a universe walks the queue and how
+far it gets. They do not change the queue. **Shortening the horizon does not make species diverge;
+it only catches humans earlier on the same path.**
+
+The one place the unions differ durably is under `permissive-breadth`, outside v1 — and there the
+control disqualifies the reading too: at 2400 the **within-human** symmetric difference is **49**,
+as large as the across-species one. That is seed noise, not a niche. The CRN caveat W15 disclosed
+still applies: removing a species changes founding entity creation order and therefore every
+downstream draw, so two founding mixes at the same coordinates are not the same universe.
+
+---
+
+# The verdict
+
+**No. The strategy space does not open up before the content ceiling. It is one-dimensional at every
+horizon measured, including those where a universe holds a third of the reachable set.**
+
+This is the negative outcome the brief named, and it is reported without softening: **the flatness
+is in the content graph itself, and no mechanic that changes the pace of acquisition will fix it.**
+
+The evidence, in the order it should be read:
+
+1. **Saturation does not explain the flatness, because the flatness precedes saturation.** At tick 30
+   universes hold **31%** of the reachable set and not one run in 2,000 holds all of it — and the
+   strategy space is *no more* compositionally structured there than at 2400.
+2. **Cross-strategy containment exceeds the within-strategy diagonal at all twelve horizons**, by
+   +0.0203 at 300 and by **+0.0811 at 30**. Which magic a universe ends up holding is better
+   predicted by its random seed than by the strategy playing it, and shortening the horizon makes
+   that worse.
+3. **The apparent dimensionality gain at short horizons is the noise floor.** Participation ratio
+   rises 1.21 → 4.00 exactly as `betweenShare` collapses 0.931 → 0.140. At tick 30, **86% of
+   compositional variance is within-strategy.**
+4. **One fixed node ordering still predicts a run's held set from its count alone**: inside v1,
+   prefix fidelity is **0.9214 at tick 120** against 0.9318 at 2400, and never falls below **0.8329**.
+   *(Over the full ten-strategy pool it dips to 0.7616 at tick 30, where the permission axis and the
+   noise floor mix — still above the **0.7** W15 pre-registered as falsifying.)*
+5. **Species do not diverge before exhaustion.** Gnome and human hold identical unions from tick 240
+   up, and below that differ by no more than one species differs from itself across seeds.
+
+**The horizon is not the problem.** It is too long — 2400 ticks is roughly four times what the
+content can fill, and every previous campaign measurement was taken with the game long over — but
+shortening it buys no variety, because the variety was never there to be caught earlier. W15's
+mechanism explains exactly this: `compareTargets` orders candidates by `remainingCost` then
+`nodeId`, so **the acquirer is value-blind, and a value-blind acquirer walks one queue at every
+horizon.** A shorter horizon stops the walk sooner; it does not change the walk.
+
+## What this rules out, and what it leaves
+
+**Ruled out:** that the campaign's diversity results were an artifact of measuring at the ceiling.
+They were measured at the ceiling — that part of the brief's suspicion is correct and now
+quantified — but the ceiling was not what produced them. Re-running any earlier measurement at a
+shorter horizon will reproduce its finding.
+
+**Also ruled out by the same data:** that a shorter horizon makes the god's other verbs matter.
+`permit-then-idle` — which presses two buttons for 140 ticks and then does nothing forever — wins at
+**every horizon where winning is possible at all** (39/40, 39/40, 40/40 at 1200/1800/2400 on the
+composition arm), and eight of ten strategies win nothing at any horizon.
+
+**Left open, and pointed at by these numbers rather than settled by them:** the only lever that
+changes composition is the one that adds content — permitting cells. `permissive-breadth` and
+`permit-then-idle` are the sole strategies whose node sets are not nested inside everyone else's,
+and the sole strategies that ever win. **A game whose only compositional decision is "how much of
+the grid exists" has one decision, not a strategy space.** W17's value-sensitive acquirer is the
+change these numbers argue for: until the thing that chooses what to learn can see what a node is
+*worth*, ordering by cost will keep producing one queue, and every horizon will keep being a
+different stopping point on it.
+
+## Instrument and integrity, in one place
+
+| check | result |
+|---|---|
+| probe inertness on this tree | **8/8** agree on snapshot hash, terminal reason, tick count |
+| common random numbers, production arm | `runSeed` identical **400/400** at every one of 12 horizons |
+| common random numbers, composition arm | identical by construction; **400/400** verified pairwise |
+| strategy coverage | **exactly 40 runs × 10 strategies** at every horizon, both arms |
+| prefix property | contained in **2,400/2,400** paired comparisons |
+| 2400 arm vs `integration-round-2-results.md` | `ascensionRate` **0.1950**, reproduced exactly |
+| production runs | 4,800 (12 horizons × 400) |
+| composition runs | 4,800 (12 × 400) plus 1,728 species runs |
+| constants, rules, magnitudes changed | **none** |
+| golden fixtures regenerated | **none** |
+| balance baselines regenerated | **none** |
+| `npm run verify` | **EXIT=0** — 3,872 tests in 275 files |
+| all three balance gates | **PASS**, delta **0.00000** on every metric |
+
+Two production-code changes: **none**. Two tool changes, both additive: `--sample` on W15's
+`run-arm.mjs` (default identical, verified run-for-run) and `tools/w19/`.
+
+### Two defects in this workstream's own tooling, both mine, both recorded
+
+1. **`fan-out.mjs` calls `main()` at module scope**, and four analysis files imported a constant from
+   it — each silently launching a second 2,800-run sweep on load. Caught by the analysis processes
+   sitting at 0% CPU while forty-one workers fought over sixteen cores. Constants moved to
+   `horizons.mjs`; no data affected, because the duplicate workers write deterministic runs to the
+   same paths, and every completed file was validated field by field before being trusted.
+2. **A validation script hardcoded the first pass's sampling grid and deleted fifty valid
+   short-pass files** whose grid is 30. The pass was regenerated (165 s) and the script now takes the
+   grid as a parameter and does not delete unless asked. This is why the short-pass numbers above
+   come from a second execution; they are the same runs, since the runs are deterministic and the
+   seeds are unchanged.
+
 ## Status
 
-In flight — the composition arms are still running.
+Complete.
