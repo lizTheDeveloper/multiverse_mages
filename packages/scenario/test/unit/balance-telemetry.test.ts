@@ -59,11 +59,24 @@ const content = referenceContent();
 /**
  * Long enough that a raid lands on at least one arm, short enough for a gate.
  *
- * Three hundred is twenty-five world years and a multiple of the census
+ * Two hundred and forty is twenty world years and a multiple of the census
  * interval, so the terminal sample is a lattice sample and the inclusive-end
- * rule is actually exercised rather than trivially satisfied.
+ * rule is exercised rather than trivially satisfied. It is also the horizon the
+ * committed full sweep runs, so an arm here is an arm of the real experiment.
  */
-const HORIZON = 300;
+const HORIZON = 240;
+
+/**
+ * Generous, and deliberately so.
+ *
+ * Every test below steps a real universe, and `npm run verify` runs this file
+ * beside two hundred and eighty others on a machine whose cores are already
+ * spoken for. Three seconds of work in isolation is comfortably past vitest's
+ * 30-second default under that contention — and the failure it produces is a
+ * timeout naming a test that is not broken, which is the most expensive kind of
+ * red there is.
+ */
+const SLOW_TEST_MS = 180_000;
 
 /**
  * The **smaller** founding cohort, unlike `raid-engagement.test.ts`'s.
@@ -132,10 +145,19 @@ function play(seed: number, raids: boolean, telemetry: boolean, ticks = HORIZON)
   return arm;
 }
 
-const SEEDS: readonly number[] = Object.freeze([0x1234_5678, 0x5eed_0001]);
+/**
+ * Two seeds, and the first one raids inside the horizon.
+ *
+ * The arrival process is a `fp(0.0039)` chance a tick behind a sixty-tick
+ * cooldown, so whether a raid lands inside twenty world years is a property of
+ * the seed. The order matters: the assertions that need an arm which *did*
+ * something take `SEEDS[0]`, and picking a quiet seed for them would make a
+ * byte-identity claim about a universe where nothing happened.
+ */
+const SEEDS: readonly number[] = Object.freeze([0x0bad_c0de, 0x1234_5678]);
 
 describe('collecting §7 telemetry does not perturb the run', () => {
-  it.each(SEEDS)('leaves the snapshot hash byte-identical, seed %i, raids on', async (seed) => {
+  it.each(SEEDS)('leaves the snapshot hash byte-identical, seed %i, raids on', { timeout: SLOW_TEST_MS }, async (seed) => {
     const on = await play(seed, true, true);
     const off = await play(seed, true, false);
     expect(on.hash).toEqual(off.hash);
@@ -145,7 +167,7 @@ describe('collecting §7 telemetry does not perturb the run', () => {
     expect(on.raids).toEqual(off.raids);
   });
 
-  it('compares an arm that actually resolved a raid', async () => {
+  it('compares an arm that actually resolved a raid', { timeout: SLOW_TEST_MS }, async () => {
     // The assertion above is only worth its runtime if at least one arm did
     // something a recorder could have disturbed. One of the two seeds reaches
     // the arrival process within the horizon; naming it here keeps the other
@@ -153,12 +175,12 @@ describe('collecting §7 telemetry does not perturb the run', () => {
     expect((await play(SEEDS[0] as number, true, true)).raids).toBeGreaterThan(0);
   });
 
-  it('leaves the snapshot hash byte-identical with raids off', async () => {
+  it('leaves the snapshot hash byte-identical with raids off', { timeout: SLOW_TEST_MS }, async () => {
     const seed = SEEDS[0] as number;
     expect((await play(seed, false, true)).hash).toEqual((await play(seed, false, false)).hash);
   });
 
-  it('records nothing at all when the recorder is not installed', async () => {
+  it('records nothing at all when the recorder is not installed', { timeout: SLOW_TEST_MS }, async () => {
     // The positive control for the assertions above. Without it they would pass
     // just as happily against a recorder that was never wired in.
     const off = await play(SEEDS[0] as number, true, false);
@@ -172,13 +194,13 @@ describe('collecting §7 telemetry does not perturb the run', () => {
 describe('the census lands on the interval contracts.md §7 pins', () => {
   const arm = (): Promise<Arm> => play(SEEDS[0] as number, true, true);
 
-  it('samples every 12 world ticks from tick 0, inclusive of the last', async () => {
+  it('samples every 12 world ticks from tick 0, inclusive of the last', { timeout: SLOW_TEST_MS }, async () => {
     const expected: number[] = [];
     for (let tick = 0; tick <= HORIZON; tick += KNOWLEDGE_CENSUS_INTERVAL_TICKS) expected.push(tick);
     expect((await arm()).censusTicks).toEqual(expected);
   });
 
-  it('takes the terminal sample a system inside step cannot reach', async () => {
+  it('takes the terminal sample a system inside step cannot reach', { timeout: SLOW_TEST_MS }, async () => {
     // The last thing a system sees is the tick the final step *arrived* with.
     // `metrics-census.ts` is explicit that the sample at `ticksRun` is the one
     // that observes whatever the final step destroyed, so its absence would be
@@ -190,9 +212,11 @@ describe('the census lands on the interval contracts.md §7 pins', () => {
 /**
  * A sweep declaring the §7 per-run metrics alongside the vital signs.
  *
- * Four cells, two replicates and a 240-tick cap: small enough for a gate,
- * long enough that `raidLengthDistribution` and `timeToTierBySpecies` have
- * something to report.
+ * Four cells, one replicate and a 120-tick cap. Every assertion below is about
+ * whether an entry exists and whether it can move, and neither needs a long
+ * horizon — what the metrics come to at the horizon that matters is the full
+ * sweep's job, and paying for it twice here would make this file the reason
+ * another one times out.
  */
 function specFor(strategy: string): SweepSpec {
   return {
@@ -200,7 +224,7 @@ function specFor(strategy: string): SweepSpec {
     sweepId: `balance-telemetry-${strategy}`,
     replicates: 1,
     agentPool: { ...REFERENCE_SWEEP.agentPool, strategies: [strategy] },
-    termination: { ...REFERENCE_SWEEP.termination, worldTickCap: 240 },
+    termination: { ...REFERENCE_SWEEP.termination, worldTickCap: 120 },
     metrics: [...BALANCE_RUN_METRIC_IDS].sort(),
   };
 }
@@ -233,7 +257,7 @@ function valuesOf(records: readonly RunRecord[], metricId: string): number[] {
 }
 
 describe('the §7 per-run metrics reach a run record', () => {
-  const SWEEP_TIMEOUT_MS = 300_000;
+  const SWEEP_TIMEOUT_MS = SLOW_TEST_MS;
 
   it(
     'carries an entry for every declared §7 metric, with a status behind each',
