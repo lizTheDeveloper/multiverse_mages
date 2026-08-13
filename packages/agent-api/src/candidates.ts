@@ -56,7 +56,6 @@ import {
   ENCOURAGED_CELL,
   GRID_CELL_COUNT,
   KNOWLEDGE_INSTANCE,
-  LOCATION_KIND,
   MAGE,
   MAGE_ROLE,
   UNIVERSITY,
@@ -145,31 +144,62 @@ function livingMages(state: SimState): { handle: EntityHandle; vigor: number; ro
     .sort((a, b) => a.handle - b.handle);
 }
 
-/** Nodes each mage holds, by handle. §1.5: `mind` and `palace` locate by mage. */
-function knownNodesByMage(state: SimState): ReadonlyMap<number, ReadonlySet<number>> {
-  const known = new Map<number, Set<number>>();
-  for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
-    if (row.locationKind !== LOCATION_KIND.mind && row.locationKind !== LOCATION_KIND.palace) {
-      continue;
-    }
-    let set = known.get(row.locationId);
-    if (set === undefined) {
-      set = new Set<number>();
-      known.set(row.locationId, set);
-    }
-    set.add(row.nodeId);
-  }
-  return known;
+/**
+ * Nodes of which this universe currently holds **at least one instance**,
+ * anywhere.
+ *
+ * Every `locationKind`, deliberately: a mind, a palace, a grimoire and a
+ * library shelf are all places a node exists, and `@mm/state`'s
+ * `NodeExistenceIndex` — which is what `rules-magic` asks and therefore what
+ * the grant resolver asks — counts a row in each of them the same way. A set
+ * built from `mind` and `palace` alone would answer a different question than
+ * the rules answer, which is the whole defect this reader exists to close.
+ */
+function existingNodes(state: SimState): ReadonlySet<number> {
+  const existing = new Set<number>();
+  for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) existing.add(row.nodeId);
+  return existing;
 }
 
 /**
  * Action 8: `(mage, node)` pairs a god could found knowledge with.
  *
- * Restricted to **tier-1 nodes the mage does not already hold, in cells the
- * ruleset permits**. Tier 1 because "founding" knowledge is the seed a universe
- * starts from, and granting a tier-7 node to a fresh mage would let the god
- * skip the entire §6a knowledge-as-capital loop the game is about. Permitted
- * because §1.1 makes legality gate acquisition.
+ * Restricted to **tier-1 nodes of which the universe holds no instance at all,
+ * in cells the ruleset permits**. Tier 1 because "founding" knowledge is the
+ * seed a universe starts from, and granting a tier-7 node to a fresh mage would
+ * let the god skip the entire §6a knowledge-as-capital loop the game is about.
+ * Permitted because §1.1 makes legality gate acquisition.
+ *
+ * ## The no-instance condition is the rules' condition, not a stricter one
+ *
+ * `god-agency`'s `grantPlan` refuses any node with `instanceCount(nodeId) > 0`
+ * — *"teaching and scribing are the route to further copies"* — and this list
+ * used to exclude a node only when **the named mage** already held it. So the
+ * mask offered `(mage 4, node 12)` while node 12 sat in another mage's head,
+ * and the resolver refused it: an action a bot could legally submit that
+ * silently did nothing.
+ *
+ * It was not a rare corner. Measured on the reference universe at 2400 world
+ * ticks, `uniform-random-legal` submitted action 8 **177 times and landed 2**.
+ * The other 175 were mask-legal, favor-priced, and inert — and §7 calls a
+ * rejection reason that dominates a run *"a spec-clarity smell"* for precisely
+ * this shape. `mask.ts` states the boundary the two layers share: the readers
+ * must agree; the comparisons are one line each on both sides. This is that
+ * line, on this side.
+ *
+ * The per-mage exclusion is gone rather than kept alongside, because it is a
+ * strict subset: a node in a mage's mind is a node with an instance.
+ *
+ * ## Tier 1 still stands in for "no prerequisites"
+ *
+ * `grantPlan`'s other structural refusal is `node.prerequisites.length > 0`,
+ * and `CatalogueNode` carries no prerequisite count — the catalogue is a
+ * projection and §5 keeps `@mm/content` out of this package. Tier 1 is the
+ * proxy, and in the shipped content it is exact: all seventy tier-1 nodes are
+ * prerequisite-free and all seventy prerequisite-free nodes are tier 1.
+ * `content/test/unit/roots-are-tier-one.test.ts` pins that equivalence, so a
+ * content set that broke it fails there rather than reopening this hole
+ * quietly.
  *
  * Ordering: ascending mage handle, then ascending node id. Both are stable
  * identities, so the list is the same on every machine holding the same state.
@@ -179,18 +209,17 @@ function foundingKnowledgeCandidates(input: CandidateInput): Candidate[] {
   const universe = findUniverse(state);
   if (universe === 0) return [];
   const ruleset = readRulesetForObservation(state, universe);
-  const known = knownNodesByMage(state);
+  const existing = existingNodes(state);
 
   const grantable = catalogue.nodes
     .filter((node) => node.tier === 1)
+    .filter((node) => !existing.has(node.nodeId))
     .filter((node) => node.cellId >= 1 && node.cellId <= GRID_CELL_COUNT && permits(ruleset, node.cellId))
     .sort((a, b) => a.nodeId - b.nodeId);
 
   const found: Candidate[] = [];
   for (const mage of livingMages(state)) {
-    const held = known.get(mage.handle);
     for (const node of grantable) {
-      if (held?.has(node.nodeId) === true) continue;
       found.push({ params: [mage.handle, node.nodeId] });
       // Cut the search short at `k` rather than enumerating every mage against
       // every tier-1 node and then slicing. With three thousand mages and
