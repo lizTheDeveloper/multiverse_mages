@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
-  "contentHash": "8c545e4648e4bd0f03357cb38c064604d0e88ead85fdb5f052d3f999bea99741",
+  "contentHash": "7cdf5a470fd520f5ee233536bc2d24d9524fc389bc78c6bbb9392887ecba958b",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":96.3298283289909,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":288.9894849869727,"unit":"grimoires","value":1012.5625},
@@ -16,35 +16,34 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1127.4145738692434,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3382.2437216077305,"unit":"people","value":4715.3125}
   ],
   "notes": [
-    "NOT A BALANCE CLAIM. release-plan.md forbids one before 0.5.0, and 0.5.0 is the release that builds the instrument rather than one that tunes the game. This file records what this build did on 2026-08-11 and nothing more.",
-    "The universe these vital signs describe is still degenerate, and in ways POOL_BUILD_LIMITS in packages/mc-harness/src/strategies.ts enumerates: action 14 is permanently masked in a single-universe run; ascension eligibility opens by passive worship accrual rather than by play; uniform-random-legal submits actions 1-7 with no parameter at all, because those carry no candidate slot list, so seven of its fifteen verbs are refused inside the dispatch and the noise floor is close to a passive control; and the reference scenario starts with zero favor, so every strategy is a passive control until regeneration pays for its cheapest move. The 0-based axis rotation the superseded baseline listed here is fixed, and is why this file moved.",
-    "Tolerances here are wide on purpose and are not comparable to the other two gates'. The standard-error estimator stratifies on cellIndex, and within a cell of this sweep the eight replicates are eight different strategies rather than eight samples of one — so what it calls noise is mostly strategy effect. That is the price of an instrument that can see a win condition.",
-    "Every record now carries terminalReason (contracts.md §1.1), and the summary carries countsByTerminalReason beside countsByStatus, so route share is measured rather than inferred from tick clustering. On the 32 runs behind this file: 12 ascensionApotheosis, 12 ascensionCanon, 3 stagnation, 5 still running at the cap. ascensionRate is 0.75 and remains far above contracts.md §7's declared 0.05-0.20 band — a finding, not a target, and W2 of the ascension-meta campaign is what changes it."
+    "The mechanic is a grant-budget component on the universe handle plus a legality-mask edge. An absent row means unbounded, which is what every save and every hand-built test world written before it carries, so nothing that worked stops working. WORLD_SCHEMA_VERSION moved 4 to 5; sim-core's SNAPSHOT_VERSION did not move and no golden fixture diffs — goldens:regen was never run.",
+    "Measured separately in tools/w69: no strategy in this pool submits action 8 even with an unbounded budget. archivist sees the mask open on 497 of 4804 ticks and is closed by affordability on the other 4307; narrow-depth sees it open on 2630 of 3453 and asks zero times because an earlier preference is always legal. A budget cannot bind a verb nobody spends, which is why these deltas being exactly zero is expected rather than surprising.",
+    "Not a balance claim. release-plan.md forbids one before 0.5.0 and this file makes none: it is a measurement of one build, re-recorded because the content revision moved beneath it."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "2512ea02d2a7569d8d0bacc4c5a926ca",
+    "contentHash": "cd47722ed6fa0a8b3627c6f63fded6f3",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "The strategy pool's technique and form rotations are 1-based, which is what coordination's axisPlan has always required. No content constant moved and no rule changed. Before this, technique(round) = round % 5 and form(round) = round % 14 emitted 0 — an id axisPlan refuses — so one permitTechnique in five and one permitForm in fourteen was silently refused, and technique 5 and form 14 were never named by any strategy in any measurement ever taken. permissive-breadth, denial-warden and portal-rush therefore play differently and are at version 3; narrow-depth is unchanged, because its exceptFirst rotations already emitted 1..count-1 and had neither half of the defect. agent-api's gate now range-checks the two axis parameters and reports parameter-out-of-range, so the same mistake would be a counted rejection rather than a refusal only the core's own tally sees. This regeneration is NOT a fix for a red gate: the gate PASSED against the superseded baseline first, every metric inside 3 standard errors, largest movement referenceGrimoires at -2.14 SE. It is committed so the baseline describes the build that exists, and so that drift is not left for a later change to inherit.",
+  "rationale": "Provenance only. No rule changed and no metric moved for any run this sweep executes. contentRevision moved from 2512ea02d2a7569d8d0bacc4c5a926ca to cd47722ed6fa0a8b3627c6f63fded6f3 because the founding-grant budget added three god constants (founding-grant-budget-start, founding-grant-accrual-nodes, founding-grant-budget-cap), and the gate is right that a delta across two content revisions is a category error. It is also right that this one is not a behaviour change: this is the one gate of the three whose pool plays a god verb that grants, so its deltas are the ones worth reading, and run against the superseded baseline first every one of its ten metrics read delta 0.00000 at 0.00 SE — exactly zero, not merely inside tolerance. The three constants ship at values no run can reach, because the grid holds 300 nodes and only prerequisite-free ones in permitted cells are grantable, so god action 8 behaves at this build exactly as it always has and the budget is exercised only through swept arms that name it. Precedent for a provenance-only re-record: 0bf8437 and 7f46277.",
   "rootSeed": 20260811,
   "runCount": 32,
   "supersededDeltas": [
-    {"delta":-143.9375,"deltaInStandardErrors":-2.1421334716033136,"metricId":"referenceGrimoires","previousValue":1156.5,"value":1012.5625},
-    {"delta":-131.75,"deltaInStandardErrors":-0.5529257883647238,"metricId":"referenceKnowledgeInstances","previousValue":2157.125,"value":2025.375},
-    {"delta":-0.1875,"deltaInStandardErrors":-0.8596527976755033,"metricId":"referenceLibraryDepth","previousValue":2.40625,"value":2.21875},
-    {"delta":0.6875,"deltaInStandardErrors":0.17480541605926506,"metricId":"referenceLivingMages","previousValue":72.59375,"value":73.28125},
-    {"delta":-0.8125,"deltaInStandardErrors":-0.07440063597658726,"metricId":"referenceNodesGained","previousValue":56.84375,"value":56.03125},
-    {"delta":-0.125,"deltaInStandardErrors":-0.05634601269663663,"metricId":"referenceNodesGainedFinalQuarter","previousValue":4.34375,"value":4.21875},
-    {"delta":-0.8125,"deltaInStandardErrors":-0.07440063597658726,"metricId":"referenceNodesKnown","previousValue":59.34375,"value":58.53125},
-    {"delta":38,"deltaInStandardErrors":0.20976367086424014,"metricId":"referencePeakPopulation","previousValue":19302,"value":19340},
-    {"delta":-315.96875,"deltaInStandardErrors":-0.28021610106437334,"metricId":"referencePopulation","previousValue":5175.28125,"value":4859.3125},
-    {"delta":-315.96875,"deltaInStandardErrors":-0.28021610106437334,"metricId":"referencePopulationChange","previousValue":5031.28125,"value":4715.3125}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":1012.5625,"value":1012.5625},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":2025.375,"value":2025.375},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":2.21875,"value":2.21875},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":73.28125,"value":73.28125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":56.03125,"value":56.03125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":4.21875,"value":4.21875},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":58.53125,"value":58.53125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":19340,"value":19340},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":4859.3125,"value":4859.3125},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":4715.3125,"value":4715.3125}
   ],
-  "supersedes": "4b30d2be6b3898ffb1f957c858a700bef4ff8facd051c140740b557c0ce26f68",
+  "supersedes": "8c545e4648e4bd0f03357cb38c064604d0e88ead85fdb5f052d3f999bea99741",
   "sweepId": "balance-gate-ascension-v1",
   "toleranceK": 3
 }
