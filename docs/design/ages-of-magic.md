@@ -193,10 +193,47 @@ inconvenience to the dragon and **four reinforcements for the human** — mismat
 the student and *good* for the teacher, which is a tension worth having and is also how it actually
 works.
 
-**Still open:** whether discovery refreshes only the new node or also the prerequisites it was reached
-through. Refreshing the prerequisites is the version that makes the loop self-sustaining and is
-probably right; refreshing only the new node means the fundamentals depend entirely on teaching, which
-is a harsher and more interesting game. Making it a side effect is cheaper and means a
+### RULED: discovery refreshes only the new node — the frontier is detached from the base
+
+> *"I think it's detached. ML doesn't make you better at git or programming necessarily."*
+
+**Research refreshes what you researched and nothing underneath it.** A scholar working at the
+frontier keeps her standing *there* and lets everything she climbed through go stale.
+
+That is true to life and it is the harsher of the two readings, and taking it produces the trap the
+whole design needed:
+
+    publish at the frontier   ->  standing at the frontier maintained
+    stop teaching             ->  the fundamentals maroon underneath you
+                              ->  you can no longer teach them
+                              ->  and new research needs fresh fundamentals
+                              ->  so you can no longer extend your own specialty
+
+**A specialist who stops teaching eventually cannot advance her own subject.** Not through
+punishment, and not through a decay number someone tuned — through the same mechanism that produced
+the measured 93.4%, pointed at the person who is doing the most impressive work in the building.
+
+Three things fall out, and each one closes something that was open:
+
+**Knowledge does not decay uniformly. It decays by disuse**, and there are exactly two uses — teaching
+the fundamentals and researching the frontier. So a deep specialist has a sharp peak on a rotting
+base, and that shape is legible, drawable, and a genuinely alarming thing to watch happen to your best
+mage.
+
+**It is why a compound needs a university** rather than a prodigy, and it completes §3b's ruling.
+A compound is a pattern of overlapping *teachable* knowledge across a faculty; teachable means fresh;
+fresh means recently taught. **Only people who teach broadly keep enough cells live at once to hold up
+a third-age spell.** The specialist cannot be part of the overlap, however deep she goes — which is
+why the roster is the unit and the genius is not.
+
+**And it is why the college is the fast road** (§2a as amended). Not efficiency. A college is the only
+arrangement where enough people are teaching enough of the base, often enough, that somebody's
+fundamentals are always live. The master-and-apprentice road still works and is still fragile — one
+student, one subject, one death.
+
+The cost of specializing is now a mechanic rather than a flavour note, and it is charged in the
+currency the game is about: **you can be the best in the world at one thing and unable to teach
+anyone how to get there.** Making it a side effect is cheaper and means a
 working scholar is automatically a maintained one. Making it separate creates a fourth demand on a
 roster that already has three, which is either the best tension in the game or one too many.
 
