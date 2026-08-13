@@ -72,16 +72,32 @@ import {
 } from '../../src/index.js';
 
 /**
- * World ticks each arm below runs.
+ * World ticks the reference arm runs: twenty world years.
  *
- * Twenty world years. Long enough that founding grants have been taught out,
- * births have compounded, materials have been produced and spent, and the god
- * strategies have played their verbs many times over — which is what makes the
- * write boundary busy. The two-hundred-year horizon belongs to
- * `reference-long-run.test.ts`; this file is an invariant, not a measurement,
- * and an invariant that takes a minute is one that gets skipped.
+ * Long enough that founding grants have been taught out, births have
+ * compounded, and materials have been produced and spent. The two-hundred-year
+ * horizon belongs to `reference-long-run.test.ts`; this file is an invariant,
+ * not a measurement, and an invariant that takes a minute is one that gets
+ * skipped — or worse, one that starves the runner. See {@link ARM_TICKS}.
  */
 const TICKS = 240;
+
+/**
+ * World ticks *each strategy* runs, and why it is smaller.
+ *
+ * Eight arms is eight universes, and the sentinel makes every component write
+ * go through a `Proxy`, so the cost multiplies. At 240 ticks this file took 94
+ * seconds on CI and the run failed — not with a failing test, but with
+ * `[vitest-worker]: Timeout calling "onTaskUpdate"` and 3,800 tests green. A
+ * worker doing unbroken synchronous work cannot answer the runner's RPC, and a
+ * runner that has not heard from a worker treats it as dead.
+ *
+ * Sixty ticks is `balance-gate.sweep.json`'s own `worldTickCap`, and the god
+ * verbs this arm exists to exercise are played from the first tick — the edict
+ * budget is available immediately — so the coverage that matters survives the
+ * cut intact.
+ */
+const ARM_TICKS = 60;
 
 /** Renders a violation the way a reader needs it: which value, where, which door. */
 function describeViolation(violation: ComponentValueViolation): string {
@@ -102,14 +118,31 @@ function watching<T>(body: () => T): { result: T; violations: ComponentValueViol
   }
 }
 
+/**
+ * Hands the event loop back, so the vitest worker can answer its runner.
+ *
+ * The same device, and for the same reason, as the `await` inside
+ * `runLongReference`: *"a test runner that talks to its worker over an RPC
+ * channel treats a worker that has not answered in that long as a worker that
+ * has died."* It changes no number — the simulation between yields is
+ * unchanged and entirely synchronous.
+ */
+async function yieldToRunner(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
 describe('an assembled universe writes no non-finite value into state', () => {
   it(
     'runs the reference universe with zero non-integer writes at either door',
-    () => {
+    async () => {
       const content = referenceContent();
       const simulation = defineWorldSimulation(content.deps);
+      const violations: ComponentValueViolation[] = [];
+      const previous = installValueSentinel((violation) => violations.push(violation));
 
-      const { violations } = watching(() => {
+      try {
         let state = buildReferenceState({
           runSeed: LONG_RUN_SEED,
           options: LONG_RUN_OPTIONS,
@@ -118,9 +151,12 @@ describe('an assembled universe writes no non-finite value into state', () => {
         });
         for (let tick = 0; tick < TICKS; tick += 1) {
           state = step(state, [], rngFromRootSeed(state.rootSeed));
+          // Once a world year, as the long run does.
+          if (tick % 12 === 11) await yieldToRunner();
         }
-        return state;
-      });
+      } finally {
+        installValueSentinel(previous);
+      }
 
       expect(violations.map(describeViolation)).toEqual([]);
     },
@@ -129,7 +165,7 @@ describe('an assembled universe writes no non-finite value into state', () => {
 
   it(
     'stays clean under every shipped strategy, which is where the god verbs are played',
-    () => {
+    async () => {
       // The passive control plays nothing. A mechanic reached through a god verb
       // is only exercised — and a lookup on its path only attempted — when a
       // strategy actually presses the button, so the arms are the interesting
@@ -137,8 +173,11 @@ describe('an assembled universe writes no non-finite value into state', () => {
       const strategyIds = BOT_POOL.map((entry) => entry.strategyId);
       expect(strategyIds.length).toBeGreaterThan(1);
 
-      const { violations } = watching(() => {
-        strategyIds.forEach((strategyId, index) => {
+      const violations: ComponentValueViolation[] = [];
+      const previous = installValueSentinel((violation) => violations.push(violation));
+
+      try {
+        for (const [index, strategyId] of strategyIds.entries()) {
           executeReferenceRun({
             coordinates: {
               rootSeed: LONG_RUN_SEED,
@@ -149,16 +188,19 @@ describe('an assembled universe writes no non-finite value into state', () => {
             runSeed: LONG_RUN_SEED + index,
             levels: { cohortSize: 12, foundingNodes: 4 },
             strategies: [strategyId],
-            worldTickCap: TICKS,
+            worldTickCap: ARM_TICKS,
             metrics: [],
             ablatedPrimitives: [],
           });
-        });
-      });
+          await yieldToRunner();
+        }
+      } finally {
+        installValueSentinel(previous);
+      }
 
       expect(violations.map(describeViolation)).toEqual([]);
     },
-    240_000,
+    120_000,
   );
 });
 
