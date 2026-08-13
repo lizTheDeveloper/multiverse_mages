@@ -154,11 +154,15 @@ export function masteredCellCount(facts: ApotheosisFacts, copies: number): numbe
  * not.** Worship tier never was: it accrues from mages, universities and
  * populace whether or not the god acts. But the cell count turned out to read
  * the *ruleset* rather than the universe, because a permitted cell is driven to
- * its floor autonomously — measured at n=400, `permit-then-idle` presses
- * `permitTechnique` and `permitForm` for 140 of 2400 ticks, submits an empty
- * preference list for the remaining 2260, and wins **40 of 40**, beating
- * `permissive-breadth`'s 38 of 40 which does the same *and* funds, dispenses
- * and encourages. Every threshold over knowledge has that property, because the
+ * its floor autonomously — measured at n=400 in `integration-round-2-results.md`,
+ * `permit-then-idle` presses `permitTechnique` and `permitForm` for 140 of 2400
+ * ticks, submits an empty preference list for the remaining 2260, and wins
+ * **40 of 40**, beating `permissive-breadth`'s 38 of 40 which does the same
+ * *and* funds, dispenses and encourages. (W63's own paired arm, on different
+ * seeds, has `permissive-breadth` at 40 of 40 rather than 38; the two agree on
+ * the finding and disagree on one strategy's rate, and the committed figure is
+ * quoted here rather than restated as this branch's.)
+ * Every threshold over knowledge has that property, because the
  * universe exhausts whatever it is permitted; raising one moves the tick the
  * clock strikes and nothing else.
  *
