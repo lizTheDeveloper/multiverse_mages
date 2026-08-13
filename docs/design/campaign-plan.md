@@ -2743,3 +2743,78 @@ pre-shock roster as its first post-shock sample.
 
 A plausible zero, caught because it was implausible. That is the discipline the four dead constants
 needed and did not get.
+
+---
+
+# The random bot wins because it presses the button
+
+W58 ran both falsification tests. The results resolve the campaign and invert two of its headline
+findings.
+
+## Test 1 — a random bot ascends 80/80, on every starting position
+
+| strategy | asc/runs | rate | mean nodes |
+|---|---|--:|--:|
+| `passive-control` | 0/80 | 0.0000 | 51.0 |
+| **`uniform-random-legal`** | **80/80** | **1.0000** | 50.5 |
+| `permissive-breadth` | 80/80 | 1.0000 | 190.9 |
+| `archivist` | 79/80 | 0.9875 | 51.0 |
+| `narrow-depth` | 21/80 | 0.2625 | 7.7 |
+| `denial-warden` | 20/80 | 0.2500 | 3.1 |
+
+Across **560 paired world-by-world comparisons**, the number of worlds where a designed strategy
+summited and the random bot did not is **zero, in every row.**
+
+## And here is why
+
+> **`passive-control` reaches `ascensionPath = apotheosis` at tick 960 in 8 of 8 runs.** It scores
+> 0/80 for one reason: its stance is `never`, so **it never submits action 15.**
+>
+> **The random bot holds the same 51 nodes and wins 80/80 because it draws the button.**
+
+The win condition reads a clock that runs whether or not anyone plays. Everyone qualifies; only some
+*declare*. That is the whole result, and eight mechanics were built downstream of it.
+
+## Test 2 refutes *both* remaining explanations
+
+The simulation is **not** insensitive and the evaluator is **not** hiding a live signal. Instrumented
+before scoring, the arms diverge enormously and **never reconverge**:
+
+- `nodesKnown` **η²(strategy) = 1.00** from tick 60 onward
+- cross-strategy node-set Jaccard on a **shared seed: 0.23**, against within-strategy cross-seed **0.89**
+
+That is the **inverse** of the shape this document has cited for weeks.
+
+### Which means "seed beats strategy" was a measurement artifact
+
+The earlier sweep's **round-robin assignment gives each strategy disjoint replicate indexes, so no two
+strategies ever played the same universe.** It was comparing different worlds and reporting the
+difference as strategy-insensitivity. W19's twelve-horizon result, and every citation of it here,
+inherits that defect.
+
+**Strategy dominates node composition overwhelmingly.** It always did.
+
+## The one genuine null
+
+**Knowledge does not convert into population.** η²(strategy) **0.01–0.04** at every horizon while
+η²(seed) runs 0.6–1.0, on a channel demonstrably capable of differing. The god's play moves what a
+universe knows and does not move how many people it has.
+
+## Instrument findings that block anything quoted from before
+
+- **On `main` the exploit margin is still `ascensionRate − probeRate`** — confirmed empirically to 4dp.
+  `EXPLOIT_MARGIN_MIN` (0.05) equals `BAND.min` (0.05). **W18's repairs were never merged**; they
+  exist only on `w18/instrument-repair` and round-3.
+- **The −0.8214 this document quotes is not about `uniform-random-legal`.** It is round-3's
+  *"deliberate mean 0.1286 − worst probe 0.9500"*, and the winning probe there is
+  **`permit-then-idle` at 0.95** — while `uniform-random-legal` scores **0/40** on that tree.
+  **The exploit's identity reverses between trees.** The shape of the finding survives; every
+  specific number attached to it does not.
+- The probe still has **7 of 15 verbs inert**, so 1.0000 is a floor on *this* probe. It wins 80/80
+  anyway.
+- **Position dependence is real but belongs to someone else**: the probe is position-*independent*
+  (1.000 in all four cells); `narrow-depth` (0.000/0.000/0.900/0.150) and `denial-warden` are the
+  position-dependent ones. This refines a prior claim rather than confirming it.
+
+Every reported null was checked against the silent-zero confound per quantity, and none is a
+`NaN → 0`.
