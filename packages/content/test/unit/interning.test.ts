@@ -249,7 +249,16 @@ describe('contentRevision', () => {
     // revisions agreed they were compatible. Kept separate from the authoring
     // pass below on purpose, so the mechanical edit and the design judgements
     // are reviewable apart.
-    expect(registry.contentRevision).toBe('d97caaaa431191d5a8e3cc46b55be1f7');
+    //
+    // d97caaaa431191d5a8e3cc46b55be1f7 -> 5c319f8275e05ddef2a166dd7552942b,
+    // when twenty-nine of the three hundred were judged `metis` — the first
+    // authoring pass, reasoned node by node in
+    // `docs/design/metis-authoring.md`. A pure value edit, like the summons cap
+    // above and unlike the four file additions before it. It belongs in the
+    // preimage because two universes disagreeing about *which* knowledge can be
+    // written down would keep different libraries and lose different things,
+    // which is not a difference a compatibility check may shrug at.
+    expect(registry.contentRevision).toBe('5c319f8275e05ddef2a166dd7552942b');
   });
 
   it('is stable across loads of identical content', () => {
