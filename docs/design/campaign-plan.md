@@ -4769,3 +4769,62 @@ hand-patched around.
 And the rationale states something most would omit: **this file's tolerances are wide — 133.35 against
 a 99.41 delta — so "passed tolerance" is a weaker statement here than in the other two gates.** A
 number reported with its own weakness attached is worth more than one reported without.
+
+### W91 addendum 2 — the pacing change is the dispersion, and it cannot be renormalised away
+
+Renormalising each tier's grades against its own **datum** — the mean grade of that tier — did exactly
+what it was supposed to:
+
+| | before | after |
+|---|---|---|
+| per-tier geometric mean drift | −0.6 / +0.4 / +1.9 / +3.9 / **+12.3** / **+41.4%** | **−0.00% at every tier** |
+| nodes clamped to a rail | 1 | **0** |
+| tier-6's single node | 92,682 (top rail) | **65,536 = `base(6)` exactly** |
+
+That last row is the design argument in miniature: `cv-the-made-vis` **has nothing to be dearer than**,
+so it prices at the base.
+
+**And the pacing did not collapse.** `referenceNodesGainedFinalQuarter` went −1.54 → −1.36 against a
+tolerance of 0.318. **Twelve percent. So the level drift was never the cause**, and my approval of the
+renormalisation was right for a reason that was only 12% right.
+
+Cutting the arms to the metric's actual window — `balance-gate-horizon-v1` caps at **240 world ticks**,
+so "final quarter" is ticks 180–240 of a *twenty-year* run — shows what is really happening:
+
+| quarter | flat: gained | mean cost | renormalised: gained | mean cost |
+|---|--:|--:|--:|--:|
+| Q1 | 15.33 | 4,519 | 14.67 | 3,955 |
+| Q2 | 9.83 | 7,706 | **11.75** | 6,808 |
+| Q3 | 6.83 | 5,694 | **7.67** | 5,295 |
+| Q4 | **8.00** | 9,472 | **6.33** | **11,604** |
+| total | 39.99 | | **40.42** | |
+
+**Total unchanged; shape changed.** Q4 gains 21% fewer nodes and the ones it gains are 23% dearer.
+Nothing slowed down — **a universe works cheapest-first, so a dispersed surface consumes the cheap
+nodes early and leaves the dear tail for the last window.** On a flat surface every outstanding node
+costs exactly what every finished node cost, so the completion rate is flat *by construction*.
+
+**It is the dispersion, and the dispersion is the change.** It cannot be renormalised away, and **any
+within-tier variation anyone proposes later will produce it.** The two priced arms agree almost exactly
+(Q4 6.25 vs 6.33, mean cost 11,699 vs 11,604), which is the confirmation.
+
+### The reading that generalises: the metric changed meaning, not just value
+
+**On a flat cost surface, `referenceNodesGainedFinalQuarter` was measuring elapsed research capacity**,
+because the marginal node was interchangeable with every other. **On a priced surface it measures the
+residual tail** — harder and more informative, but *a different quantity*. So its baseline moves
+regardless of tuning.
+
+That is a fourth failure mode to add to the three already recorded: **a metric can keep its name and
+its formula while the thing it measures changes underneath it.** Nothing in the harness can detect
+that, and a baseline diff reads it as a behaviour change.
+
+### And it independently confirms W92
+
+**Species affinity is the term doing most of the ordering work in both arms** — and every gate run
+averages it over an identical founding mix. The agent's own conclusion: *a sweep that varies
+`foundingSpeciesMask` is a cheaper experiment than any content change, and my own arms would have found
+nothing different if it had been run, because they inherit the same constant.*
+
+**That makes the species sweep the clear next experiment**, arrived at independently from the content
+side after W92 reached it from the instrument side.
