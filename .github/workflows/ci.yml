@@ -107,6 +107,20 @@ jobs:
         # measurements, and horizon-gate.test.ts fails if this step goes missing.
         run: npm run balance:gate:horizon
 
+      - name: Balance regression gate (twenty world years, eight strategies)
+        # Same horizon as the step above and a different pool, which is the
+        # entire point. The two gates above run `passive-control` fixed, and
+        # `passive-control` declares an empty preference list — so between them
+        # their 400 runs submit no god intervention at all, and no change to any
+        # of the fifteen verbs in coordination/src/god/interventions.ts can move
+        # either of them by construction. That blind spot used to be covered
+        # only by the two-hundred-year gate below, the most expensive instrument
+        # here. This one covers it in about nine seconds. The single declared
+        # difference from the step above is the pool, so a divergence between
+        # them is attributable to god agency and to nothing else —
+        # horizon-gate.test.ts fails if that stops being true.
+        run: npm run balance:gate:agency
+
       - name: Balance regression gate (two hundred world years)
         # The third instrument, and the only one that can observe the win
         # condition. Measured: 0 of 400 runs ascended at twenty world years and
@@ -185,6 +199,20 @@ jobs:
         # blind spot the other does not cover — balance/README.md has the
         # measurements, and horizon-gate.test.ts fails if this step goes missing.
         run: npm run balance:gate:horizon
+
+      - name: Balance regression gate (twenty world years, eight strategies)
+        # Same horizon as the step above and a different pool, which is the
+        # entire point. The two gates above run `passive-control` fixed, and
+        # `passive-control` declares an empty preference list — so between them
+        # their 400 runs submit no god intervention at all, and no change to any
+        # of the fifteen verbs in coordination/src/god/interventions.ts can move
+        # either of them by construction. That blind spot used to be covered
+        # only by the two-hundred-year gate below, the most expensive instrument
+        # here. This one covers it in about nine seconds. The single declared
+        # difference from the step above is the pool, so a divergence between
+        # them is attributable to god agency and to nothing else —
+        # horizon-gate.test.ts fails if that stops being true.
+        run: npm run balance:gate:agency
 
       - name: Balance regression gate (two hundred world years)
         # The third instrument, and the only one that can observe the win

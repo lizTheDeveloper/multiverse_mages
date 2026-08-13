@@ -75,10 +75,34 @@
  * exactly two declared ways — 2400 ticks instead of 240, and the whole
  * eight-strategy pool round-robin instead of the passive control — and both
  * differences are asserted below rather than described, so that "we already
- * have a long gate" has to argue with a failing test. It is small: 32 runs,
- * four per strategy, with tolerances about a hundred times wider than the
- * horizon gate's. `balance/README.md` argues why that is the right trade and why
- * adding replicates would not fix it.
+ * have a long gate" has to argue with a failing test.
+ *
+ * ## This docstring used to end with a false sentence, and it cost a great deal
+ *
+ * It said the ascension gate's tolerances were wide because the estimator
+ * stratifies on `cellIndex` while the replicates within a cell are eight
+ * different strategies — **correct** — and then that *"adding replicates would
+ * not fix it"*. The diagnosis was right and the conclusion drawn from it was
+ * wrong, and the wrong half is the half that survived: it read as a reason to
+ * stop looking.
+ *
+ * What the tolerances actually were, measured before anyone divided one number
+ * by the other: **117.7 % of the metric's own mean on `referenceGrimoires` and
+ * 135.7 % on `referenceNodesGainedFinalQuarter`**. A mechanic that doubled
+ * grimoire output would have passed. Taking each of the ten metrics and each of
+ * the eight strategies and supposing that arm's contribution fell to zero,
+ * **80 of 80 collapses were inside tolerance.**
+ *
+ * It was fixable, and not by adding replicates alone. Strategy reaches a run
+ * through `agentPool` rather than through `factors`, so it was never part of
+ * `cellIndex` — and `standard-error.ts` had, the whole time, a docstring
+ * arguing exactly why it should be ("Cell membership is not random. Seeds
+ * are"). Stratifying on `(cellIndex, arm)` and gating each arm against its own
+ * committed value brought `referenceGrimoires` to 27.2 %. Replicates went 8 to
+ * 16 as a *consequence*: at 8 every `(cell, arm)` stratum held one run, so the
+ * corrected estimator would have produced a tolerance of zero everywhere.
+ *
+ * `balance/README.md` carries the full power table and the counterfactual.
  */
 
 import { readFileSync } from 'node:fs';
@@ -110,6 +134,7 @@ const TICKS_PER_YEAR = 12;
 const fast = readSweep('balance-gate.sweep.json');
 const horizon = readSweep('balance-gate-horizon.sweep.json');
 const ascension = readSweep('balance-gate-ascension.sweep.json');
+const agency = readSweep('balance-gate-agency.sweep.json');
 
 const scripts = (
   JSON.parse(readRepoFile('package.json')) as {
@@ -244,6 +269,73 @@ describe('the two-hundred-year gate is a third instrument, not a longer second o
   });
 });
 
+describe('the agency gate is the cheapest instrument that plays a god verb', () => {
+  it('runs the horizon gate’s tick cap, so the pool is the only difference', () => {
+    // The claim the gate is for: `balance-gate-horizon-v1` and
+    // `balance-gate-agency-v1` share their cells, their root seed and their
+    // horizon, and differ in the pool alone. That is what makes a divergence
+    // between them attributable to god agency rather than to time.
+    expect(agency.termination.worldTickCap).toBe(horizon.termination.worldTickCap);
+    expect(agency.rootSeed).toBe(horizon.rootSeed);
+    expect(agency.factors).toEqual(horizon.factors);
+  });
+
+  it('runs the whole scripted pool, which the horizon gate does not', () => {
+    // Without this the sweep is the horizon gate with extra runs, and the blind
+    // spot it exists to close is still open. `passive-control` declares an empty
+    // preference list, so a gate that ran it fixed would submit no intervention
+    // however many runs it did.
+    expect(horizon.agentPool.assignment).toBe('fixed');
+    expect(agency.agentPool.assignment).toBe('round-robin');
+    expect(agency.agentPool.strategies).toEqual(ascension.agentPool.strategies);
+    expect(agency.agentPool.strategies.length).toBe(8);
+    // Round-robin assigns `strategies[replicateIndex % size]`, so the replicate
+    // count must be a multiple of the pool size or some strategy gets an extra
+    // run in every cell — an imbalance that reads as a strategy effect.
+    expect(agency.replicates % agency.agentPool.strategies.length).toBe(0);
+  });
+
+  it('gives every (cell, arm) stratum more than one run', () => {
+    // The reason both multi-strategy sweeps run 16 replicates and not 8. The
+    // standard-error estimator stratifies on (cellIndex, arm); at one run per
+    // stratum there is no within-stratum spread to estimate, so every tolerance
+    // it derived would be zero and the gate would demand bit-equality of every
+    // line. This is the assertion that stops someone halving the replicates to
+    // buy back four seconds.
+    for (const sweep of [agency, ascension]) {
+      expect(sweep.replicates / sweep.agentPool.strategies.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('is bound to its tick cap and its pool by its own baseline', () => {
+    const loaded = loadBaseline(repoPath('balance/baselines/balance-gate-agency-v1.baseline.json'));
+    expect('baseline' in loaded, JSON.stringify(loaded)).toBe(true);
+    if (!('baseline' in loaded)) return;
+    expect(loaded.baseline.sweepId).toBe(agency.sweepId);
+    expect(loaded.baseline.configurationHash).toBe(
+      expandSweep(agency, REFERENCE_REGISTRIES).configurationHash,
+    );
+  });
+
+  it('gates each strategy arm separately, not only the pooled mean', () => {
+    // A mean over eight strategies dilutes any one arm's movement eightfold. On
+    // the superseded 32-run ascension baseline that was enough to hide all
+    // eighty (metric, arm) collapses to zero inside tolerance. Both
+    // multi-strategy gates therefore carry one line per (metric, arm).
+    for (const [file, sweep] of [
+      ['balance/baselines/balance-gate-agency-v1.baseline.json', agency],
+      ['balance/baselines/balance-gate-ascension-v1.baseline.json', ascension],
+    ] as const) {
+      const loaded = loadBaseline(repoPath(file));
+      if (!('baseline' in loaded)) throw new Error(`no baseline at ${file}`);
+      const armLines = loaded.baseline.metrics.filter((metric) => metric.metricId.includes('@'));
+      expect(armLines.length, file).toBe(
+        sweep.metrics.length * sweep.agentPool.strategies.length,
+      );
+    }
+  });
+});
+
 /**
  * The workflow's jobs, by name, as raw text.
  *
@@ -269,7 +361,12 @@ function actionsJobs(): ReadonlyMap<string, string> {
 }
 
 describe('every gate is wired into both CI systems (docs/devops/ci-and-deploy.md)', () => {
-  const gateScripts = ['balance:gate', 'balance:gate:horizon', 'balance:gate:ascension'] as const;
+  const gateScripts = [
+    'balance:gate',
+    'balance:gate:horizon',
+    'balance:gate:agency',
+    'balance:gate:ascension',
+  ] as const;
 
   it.each(gateScripts)('%s is an npm script that runs the gate entrypoint', (name) => {
     expect(scripts[name]).toContain('balance-gate.mjs');

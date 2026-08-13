@@ -7,21 +7,23 @@ Two kinds of file live here, and one command each.
 
 ## What the gates actually do
 
-There are **three** wired, and a fourth committed but not yet wired. They are four instruments
-rather than one instrument run four times.
+There are **four** of them, and they are four instruments rather than one instrument run four times.
 
-| | `npm run balance:gate` | `npm run balance:gate:horizon` | *(unwired)* | `npm run balance:gate:ascension` |
+| | `npm run balance:gate` | `npm run balance:gate:horizon` | `npm run balance:gate:agency` | `npm run balance:gate:ascension` |
 |---|---|---|---|---|
 | sweep | `balance-gate.sweep.json` | `balance-gate-horizon.sweep.json` | `balance-gate-agency.sweep.json` | `balance-gate-ascension.sweep.json` |
 | horizon | 60 ticks — **five** world years | 240 ticks — **twenty** world years | 240 ticks — **twenty** world years | 2400 ticks — **two hundred** world years |
 | pool | `passive-control`, fixed | `passive-control`, fixed | all eight, round-robin | all eight, round-robin |
 | runs | 4 cells × 50 = 200 | 4 cells × 50 = 200 | 4 cells × 16 = 64 | 4 cells × 16 = 64 |
-| wall clock | 4.3 s on 4 workers | 26.3 s on 4 workers | **8.9 s on 4 workers** | 83.5 s on 4 workers |
+| wall clock | 4 s | 27 s | **10 s** | **830 s** |
 | plays a god verb | **no** | **no** | yes | yes |
 | answers | *did anything move?* | *did the universe stop?* | *do the god's verbs still do anything?* | *can anyone still win?* |
 
-Wall-clock figures re-measured on 2026-08-12 on four workers of an eight-core machine; the two
-200-year sweeps changed size on that date and their old figures no longer describe them.
+Wall clock measured 2026-08-12 on four workers of an eight-core machine, against the merged tree.
+**The 200-year gate is now the whole cost of `verify`**, and that is new: the same sweep cost 83 s a
+day earlier, on a build with a quarter of the population and a seventh of the mages. See *"the
+200-year gate has become expensive"* below — it is a decision waiting to be made, and it is not
+this document's to make.
 
 Each runs its sweep against the reference universe, compares every metric to its own committed
 baseline, and exits non-zero if anything is out of place. All three are part of `npm run verify`, so
@@ -123,32 +125,49 @@ twenty years in, and the twenty-year gate cannot see any of it because it never 
 
 `balance-gate-agency.sweep.json` is the horizon gate's tick cap with the ascension gate's pool — the
 **single** declared difference from `balance-gate-horizon-v1` is the pool, so a divergence between
-the two is attributable to god agency and to nothing else. It costs **8.9 seconds** on four
-workers: a third of the twenty-year gate, and a ninth of the 200-year one.
+the two is attributable to god agency and to nothing else. It costs **10 seconds** on four
+workers: a third of the twenty-year gate, and **one eighty-third** of the 200-year one.
 
-So the honest answer to *"is the ascension gate the only thing that can ever see this, and does it
-cost 892 seconds?"* is **no, on both halves**:
+So the answer to *"is the ascension gate the only thing that can ever see a god verb, and does that
+sensitivity cost 892 seconds?"* is **no to the first half, and the second half needs restating**:
 
-- A gate sensitive to god verbs costs about **nine seconds**, not fifteen minutes. What is expensive
-  about the ascension gate is the 2400-tick horizon, and the horizon buys the *win condition* — 0
-  of 400 runs ascend at 240 ticks and 46 of 64 at 2400 — not god sensitivity.
-- The **892 s** figure comes from `practice-results.md` on `origin/w53/practice`, measured on a
-  contended container. The same 32-run sweep takes **71 s** here and the 64-run version **83 s**.
-  892 s is a fact about that afternoon's machine, not about the instrument, and it should not be
-  used to argue the project cannot afford to check itself.
+- **God sensitivity costs about ten seconds.** It does not need the long horizon at all. What the
+  2400-tick horizon uniquely buys is the *win condition* — 0 of 400 runs ascend at 240 ticks, 46 of
+  64 at 2400 — and that is a different question from whether the verbs do anything.
+- **The 892 s figure was misleading when it was quoted and is roughly right now, for a different
+  reason.** It comes from `practice-results.md` on `origin/w53/practice`, measured on a contended
+  container: on that build the same 32-run sweep took **71 s** here, so 892 s described the machine
+  rather than the instrument. But on the merged tree the sweep genuinely costs **830 s** for 64
+  runs, because the simulation got heavier — not because the measurement was bad. Both statements
+  are true and they are about different things, which is exactly why a wall-clock figure needs its
+  build and its machine attached or it will be re-quoted forever as a property of the sweep.
 
-**The agency gate is committed — sweep and baseline — but not wired.** Wiring it needs one script in
-`package.json` and one step per full-suite job in `.github/workflows/ci.yml`, both of which are
-frozen to this branch pending PR #42. Until then it runs by hand:
+It is wired like the other three: `npm run balance:gate:agency`, part of `npm run verify`, named by
+hand as a step in both full-suite GitHub Actions jobs, and reached by the self-hosted runner through
+`verify`. `balance-ci-wiring.test.ts` asserts all four of those for all four gates, and
+`horizon-gate.test.ts` asserts that its horizon matches the twenty-year gate's and its pool matches
+the two-hundred-year gate's — so "the agency gate is just the horizon gate" has to argue with a
+failing test.
 
-    node packages/mc-harness/bin/balance-gate.mjs \
-      --scenario ./packages/scenario/bin/scenario.mjs \
-      --sweep    ./balance/sweeps/balance-gate-agency.sweep.json \
-      --baseline ./balance/baselines/balance-gate-agency-v1.baseline.json \
-      --workers  4
+### The 200-year gate has become expensive
 
-`packages/mc-harness/test/unit/gate-power.test.ts` gates its baseline's power whether or not CI runs
-the sweep, so the file cannot rot into a measurement of a build nobody has.
+Measured on the merged tree: **830 s** for its 64 runs, against 83 s for the same sweep a day
+earlier. The sweep did not change; the simulation got heavier — mean population went from 5,400 to
+15,764 and living mages from 70 to 468. Halving it back to 32 runs would cost about 415 s and give
+back every blind spot this section is about, so that is not the lever.
+
+This document does not decide what to do about it, but it does state the options plainly, because a
+gate that takes fourteen minutes is the kind that gets deleted in a hurry by whoever is blocked:
+
+- **Keep it on every push.** `verify` then costs about fifteen minutes, nearly all of it here.
+- **Move it to per-release** and keep the other three on every push. The agency gate already covers
+  god-verb sensitivity for 10 s; what the 200-year horizon uniquely buys is the **win condition** —
+  0 of 400 runs ascend at 240 ticks — which is a per-release question more than a per-commit one.
+- **Fan it out.** `bin/run-sweep-distributed.mjs` writes byte-identical output; the section below
+  reports 1096 runs of this exact sweep in 85 s and $0.57 on 64 containers.
+
+The measurement is the contribution here. The choice is a project decision with a cost attached to
+it, and it should be made by someone who owns the CI budget rather than settled by a default.
 
 The gate fails on any of these, and reports `baseline-invalid` rather than a delta for the last
 four:
@@ -189,66 +208,64 @@ what the golden replay fixtures catch; distributional movement beyond noise is w
 
 **Read this before believing any number in this directory.** A tolerance is only meaningful next to
 the size of the thing it is measuring, and until 2026-08-12 nobody had divided one by the other.
-The table below is that division, and
-`packages/mc-harness/test/unit/gate-power.test.ts` parses it back out of this file and recomputes
-every cell from the committed baselines, so it cannot go stale the way the `ctx.actions` note
-further down this file did.
+The table below is that division, and `packages/mc-harness/test/unit/gate-power.test.ts` parses it
+back out of this file and recomputes every cell from the committed baselines, so it cannot go stale
+the way the `ctx.actions` note further down this file did.
 
 Each cell is the **minimum detectable effect (MDE)**: `tolerance ÷ |value|`, the smallest
 proportional change in that metric the gate would report as `regressed`. Anything smaller passes.
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 5.2 % | 6.4 % | 12.4 % | 27.2 % |
-| `referenceKnowledgeInstances` | 2.0 % | 2.5 % | 4.7 % | 7.2 % |
-| `referenceLibraryDepth` | 12.5 % | 11.6 % | 26.7 % | 12.2 % |
-| `referenceLivingMages` | 0.8 % | 1.6 % | 2.5 % | 10.1 % |
-| `referenceNodesGained` | 2.3 % | 1.2 % | 2.8 % | 5.7 % |
-| `referenceNodesGainedFinalQuarter` | — | 4.3 % | 14.2 % | 14.2 % |
-| `referenceNodesKnown` | 2.0 % | 1.1 % | 2.6 % | 5.5 % |
-| `referencePeakPopulation` | 0.0 % | 4.1 % | 8.3 % | 5.0 % |
-| `referencePopulation` | 1.1 % | 1.8 % | 2.9 % | 20.7 % |
-| `referencePopulationChange` | 9.4 % | 5.6 % | 9.1 % | 21.2 % |
+| `referenceGrimoires` | 5.4 % | 6.9 % | 12.0 % | 17.7 % |
+| `referenceKnowledgeInstances` | 2.1 % | 2.6 % | 5.7 % | 6.5 % |
+| `referenceLibraryDepth` | 12.4 % | 12.3 % | 22.5 % | 18.0 % |
+| `referenceLivingMages` | 0.8 % | 1.6 % | 3.0 % | 5.4 % |
+| `referenceNodesGained` | 2.3 % | 1.2 % | 2.9 % | 1.9 % |
+| `referenceNodesGainedFinalQuarter` | — | 4.2 % | 13.1 % | 8.9 % |
+| `referenceNodesKnown` | 1.9 % | 1.2 % | 2.7 % | 1.8 % |
+| `referencePeakPopulation` | 0.0 % | 5.1 % | 21.3 % | 4.2 % |
+| `referencePopulation` | 1.0 % | 1.7 % | 2.8 % | 7.7 % |
+| `referencePopulationChange` | 9.2 % | 5.2 % | 8.8 % | 7.8 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
-| wall clock, 4 workers | 4.3 s | 26.3 s | **8.9 s** | 83.5 s |
+| wall clock, 4 workers | 4 s | 27 s | **10 s** | **830 s** |
 
-Three things follow.
+Both multi-strategy gates carry **80 further lines each**, one per `(metric, strategy)`. That is
+where their power actually lives; the column above is a summary of a mean taken over eight
+strategies that do very different things. Agency arm lines: median MDE 13.4 %, 78 of 80 below
+100 %. Ascension arm lines: median 14.1 %, 73 of 80 below 100 %.
 
-**`referencePeakPopulation` on the five-year gate has an MDE of exactly zero.** Its jackknife
-standard error is 0, because the peak is 216 in all 200 runs, so the gate demands exact equality.
-That is the estimator behaving as designed, and it is the one line in the table gating perfectly.
+`referencePeakPopulation` on the five-year gate has an MDE of exactly zero — its jackknife standard
+error is 0, because the peak is 216 in all 200 runs, so the gate demands exact equality. That is the
+estimator behaving as designed and it is the one line gating perfectly.
 
-**The two multi-strategy gates carry 80 further lines each**, one per `(metric, strategy)` — see
-below. Those are where their power actually lives; the sweep-level column above is a summary of a
-mean taken over eight strategies that do very different things.
+### What this looked like before 2026-08-12, and why
 
-**The 200-year gate is still the bluntest instrument here**, and that is now a statement about its
-64 runs rather than about its statistics.
+The 200-year gate was incapable of detecting almost anything. Both columns below are the **same
+build** — the merged tree — so the difference is the statistic and nothing else:
 
-### What this table looked like before 2026-08-12, and why
-
-The 200-year gate was, as committed, incapable of detecting almost anything:
-
-| metric | MDE, as committed | MDE, now |
+| metric | MDE before | MDE now |
 |---|---|---|
-| `referenceGrimoires` | **117.7 %** | 27.2 % |
-| `referenceNodesGainedFinalQuarter` | **135.7 %** | 14.2 % |
-| `referencePopulationChange` | 65.6 % | 21.2 % |
-| `referencePopulation` | 64.0 % | 20.7 % |
-| `referenceNodesGained` | 58.6 % | 5.7 % |
-| `referenceNodesKnown` | 56.1 % | 5.5 % |
-| `referenceKnowledgeInstances` | 47.5 % | 7.2 % |
-| `referenceLibraryDepth` | 40.9 % | 12.2 % |
-| `referenceLivingMages` | 16.7 % | 10.1 % |
-| `referencePeakPopulation` | 7.9 % | 5.0 % |
+| `referenceNodesGainedFinalQuarter` | **131.5 %** | 8.9 % |
+| `referenceLivingMages` | **115.2 %** | 5.4 % |
+| `referenceLibraryDepth` | 58.5 % | 18.0 % |
+| `referenceNodesGained` | 57.3 % | 1.9 % |
+| `referenceNodesKnown` | 54.9 % | 1.8 % |
+| `referenceGrimoires` | 47.0 % | 17.7 % |
+| `referenceKnowledgeInstances` | 44.6 % | 6.5 % |
+| `referencePopulationChange` | 27.7 % | 7.8 % |
+| `referencePopulation` | 27.5 % | 7.7 % |
+| `referencePeakPopulation` | 19.5 % | 4.2 % |
 
-An MDE of 117.7 % means a mechanic that **doubled** grimoire output would have moved the metric by
-100 %, which is less than the tolerance, and the gate would have reported `pass`.
+An MDE above 100 % means a mechanic that **doubled** the metric would move it by less than the
+tolerance, and the gate would report `pass`. Two lines were over that mark. On the build this
+project was running a day earlier the worst two were `referenceGrimoires` at **117.7 %** and
+`referenceNodesGainedFinalQuarter` at **135.7 %** — the defect is a property of the statistic, not
+of any one build, and it followed the build wherever it went.
 
 The cause was not the sample size. The 32 runs were eight strategies round-robin across four cells,
-and **the strategies' outcomes span up to 294×** — measured over exactly those 32 runs, which this
-branch re-executed and reproduced value-for-value against the committed baseline:
+and **the strategies' outcomes span up to 294×**:
 
 | metric | narrowest arm | widest arm | spread |
 |---|---|---|---|
@@ -256,19 +273,19 @@ branch re-executed and reproduced value-for-value against the committed baseline
 | `referenceNodesGained` | `denial-warden` 0.75 | `permissive-breadth` 197.3 | **263×** |
 | `referenceNodesKnown` | `denial-warden` 3.25 | `permissive-breadth` 199.8 | **62×** |
 | `referenceGrimoires` | `narrow-depth` 15.0 | `archivist` 580.3 | **39×** |
-| `referenceLibraryDepth` | `denial-warden` 3.25 | `archivist` 48.5 | **15×** |
 
 The standard-error estimator stratified on `cellIndex`, and **strategy is not part of `cellIndex`**.
 It arrives through `agentPool`, not through `factors`: `assignStrategies` hands run *r* of a cell
-the strategy `strategies[r % 8]`, which is as deliberate and as reproducible as any factor level.
-So the estimator saw eight replicates per cell disagreeing enormously and recorded that
-disagreement as noise. The tolerance was a function of **between-strategy variance** rather than of
-run-to-run variance — and between-strategy variance is the thing a regression gate must hold
-constant, not tolerate.
+the strategy `strategies[r % 8]`, which is as deliberate and as reproducible as any factor level. So
+the estimator saw eight replicates per cell disagreeing enormously and recorded that disagreement as
+noise. The tolerance was a function of **between-strategy variance** rather than of run-to-run
+variance — and between-strategy variance is the thing a regression gate must hold constant, not
+tolerate.
 
-This is the same mistake `standard-error.ts` already rejects, one layer down. Its own docstring
-says *"Cell membership is not random. Seeds are"*, which is exactly the argument for stratifying on
-the arm as well.
+**The pooling was never a decision; it was a blind spot.** `standard-error.ts` had, the whole time, a
+docstring arguing exactly why it should not happen — *"Cell membership is not random. Seeds are"* —
+sitting above code that stratified on half the design. A correct comment above code that does not
+follow it is the most instructive shape of defect this project keeps producing.
 
 ### The consequence, as a counterfactual
 
@@ -288,42 +305,35 @@ would pass", and it is worse than that phrasing suggests.
 Three things, none of which touches the simulation:
 
 1. **The estimator stratifies on `(cellIndex, arm)`.** Not a new statistic — the existing one,
-   applied to the whole design instead of half of it. It shrank the 200-year gate's standard errors
-   by between 1.2× and 6.8×, and it changes **nothing** for a single-strategy sweep, which is why
-   `balance-gate-v1` and `balance-gate-horizon-v1` keep the numbers they were committed with and
-   were not regenerated.
+   applied to the whole design instead of half of it. It changes **nothing** for a single-strategy
+   sweep, which is why `balance-gate-v1` and `balance-gate-horizon-v1` keep the numbers they were
+   committed with and were not regenerated.
 2. **Every multi-strategy gate gates each arm separately**, under ids like
    `referenceGrimoires@archivist`. This is the half that fixes the counterfactual above: a change
    confined to one strategy is now compared against that strategy's own committed value, at that
    strategy's own noise level, instead of being divided by eight first.
-3. **The 200-year sweep runs 16 replicates instead of 8.** At 8, round-robin over 8 strategies put
-   exactly one run in every `(cell, arm)` stratum, every within-stratum variance was 0, and a
-   corrected estimator would have produced a tolerance of **0** on every line — a gate demanding
-   bit-equality of 90 numbers, which is a golden fixture wearing a gate's clothes. 16 is the
-   smallest multiple of the pool size that gives each arm a spread of its own. All 32 original runs
-   are byte-identical in the new 64: same root seed, same sweep id, replicates 0–7 carried over and
-   verified record-for-record.
+3. **Both multi-strategy sweeps run 16 replicates rather than 8.** At 8, round-robin over 8
+   strategies put exactly one run in every `(cell, arm)` stratum, every within-stratum variance was
+   0, and a corrected estimator would have produced a tolerance of **0** on every line — a gate
+   demanding bit-equality of 90 numbers, which is a golden fixture wearing a gate's clothes. 16 is
+   the smallest multiple of the pool size that gives each arm a spread of its own.
 
 **Tolerances were not tightened by hand, and `toleranceK` is still 3.** Tightening until something
 fails trades false negatives for false positives and produces a gate people learn to ignore, which
 is worse than a blunt one — a blunt gate at least fails honestly when it fails. Every number above
-moved because the *estimator* was corrected, not because a threshold was chosen to make a test go
-red.
+moved because the *estimator* was corrected.
 
-### The fourteen arm lines that are still blind
+### The nine arm lines that are still blind
 
-Of the 160 arm lines across the two multi-strategy gates, **14 still have a tolerance wider than
+Of the 160 arm lines across the two multi-strategy gates, **9 still have a tolerance wider than
 their own value.** They are named individually in `gate-power.test.ts`, which fails if the set
 changes in either direction.
 
-Every one is an arm whose value sits near zero: `referenceNodesGained@denial-warden` is 0.25 nodes
-in two hundred years, so a tolerance of about one node is 424 % of it. That is a fact about the
-strategy — `denial-warden` really does suppress discovery to nearly nothing — and not a slack
-tolerance. A gate cannot usefully police a *proportional* change in a quantity that is already
-almost zero, and more replicates buy only √n against it.
-
-They are listed rather than thresholded so that nobody reads "the gate was fixed" as "the gate sees
-everything".
+Seven of the nine are `denial-warden`, whose whole purpose is to suppress discovery to nearly
+nothing: an arm that gains a fraction of a node has no meaningful *proportional* tolerance, because
+the denominator is almost zero. That is a fact about the strategy, not a slack tolerance, and more
+replicates buy only √n against it. They are listed rather than thresholded so that nobody reads
+"the gate was fixed" as "the gate sees everything".
 
 ### How to read "power" for a deterministic sweep
 
@@ -347,10 +357,11 @@ Two regimes:
 So the claim this directory can support is the first, and it is the one to quote:
 
 > **The five-year and twenty-year gates detect any uniform proportional change larger than
-> 1–12 % of a metric's value, with probability 1. The twenty-year agency gate detects one larger
-> than 2.5–27 % at sweep level and 0.8–196 % per strategy arm, median 12 %. The 200-year gate
-> detects one larger than 5–27 % at sweep level and 0–424 % per arm, median 26 %. All four detect a
-> uniform change smaller than those figures with probability 0, at any sample size.**
+> 0.8–12.4 % of a metric's value, with probability 1. The twenty-year agency gate detects one larger
+> than 2.7–22.5 % at sweep level and 0.8–217 % per strategy arm, median 13.4 %. The 200-year gate
+> detects one larger than 1.8–18.0 % at sweep level and 0–300 % per arm, median 14.1 %. All four
+> detect a uniform change smaller than those figures with probability 0, at any sample size.**
+
 ## Running a sweep on more cores than you have
 
 Every wall-clock figure in this file is a laptop or a four-core container, and the sample sizes it
@@ -405,9 +416,9 @@ if that ever stops being true.
 | world-tick cap | 60 (five world years) | 240 (twenty world years) | 240 (twenty world years) | 2400 (two hundred world years) | 240 (twenty world years) |
 | pool | `passive-control` | `passive-control` | all eight, round-robin | all eight, round-robin | `passive-control` |
 | metrics | 9 vital signs | 9 + `referenceNodesGainedFinalQuarter` | 10, × 8 arms = 90 lines | 10, × 8 arms = 90 lines | 9 + `referenceNodesGainedFinalQuarter` |
-| wall clock | 4.3 s | 26.3 s | 8.9 s | 83.5 s | **3392 s measured** — see below |
+| wall clock | 4 s | 27 s | 10 s | **830 s** | **3392 s measured** — see below |
 | committed baseline | yes | yes | yes | yes | **no**, and deliberately |
-| wired into CI | yes | yes | **not yet** — see above | yes | n/a |
+| wired into CI | yes | yes | yes | yes | n/a |
 
 All four gate sweeps are sized to run on every push. That is the whole design constraint: a gate
 that takes ten minutes gets deleted, and a gate that never runs is worse than none. Their resulting

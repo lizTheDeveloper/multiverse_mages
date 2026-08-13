@@ -70,36 +70,32 @@ const GATES = [
  *
  * Committed as a list rather than tolerated by a threshold, because the honest
  * description of this instrument is "it can see everything except these
- * fourteen things" and a threshold would let a fifteenth join them in silence.
+ * nine things" and a threshold would let a tenth join them in silence.
  * Growing the list is a build failure; shrinking it is a build failure too,
  * because a line that has become sharp is a change in what the gate can see and
  * belongs in a rationale.
  *
- * Every entry is an arm whose value sits near zero — `denial-warden` gains a
- * quarter of a node in two hundred years, so a tolerance of one node is 424 % of
- * it. That is a fact about the strategy, not a slack tolerance: the gate cannot
+ * Every entry is an arm whose value sits near zero. `denial-warden` suppresses
+ * discovery to almost nothing, so seven of the nine are its lines and a
+ * tolerance of a fraction of a node is a large multiple of the fraction of a
+ * node it gains. That is a fact about the strategy, not a slack tolerance: the gate cannot
  * usefully police a proportional change in a quantity that is already almost
  * nothing, and widening the sample buys only √n against it. They are listed so
  * that nobody reads "the gate is fixed" as "the gate sees everything".
  */
 const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   'balance/baselines/balance-gate-agency-v1.baseline.json': [
-    'referenceLibraryDepth@portal-rush',
     'referenceNodesGained@denial-warden',
+    'referenceNodesKnown@denial-warden',
   ],
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
-    'referenceGrimoires@narrow-depth',
-    'referenceGrimoires@permissive-breadth',
-    'referenceGrimoires@portal-rush',
+    'referenceGrimoires@denial-warden',
+    'referenceKnowledgeInstances@denial-warden',
+    'referenceLibraryDepth@denial-warden',
     'referenceNodesGained@denial-warden',
-    'referenceNodesGainedFinalQuarter@archivist',
-    'referenceNodesGainedFinalQuarter@portal-rush',
-    'referenceNodesGainedFinalQuarter@uniform-random-legal',
-    'referenceNodesGainedFinalQuarter@worship-maximizer',
-    'referencePeakPopulation@denial-warden',
-    'referencePeakPopulation@permissive-breadth',
-    'referencePopulation@permissive-breadth',
-    'referencePopulationChange@permissive-breadth',
+    'referenceNodesGainedFinalQuarter@narrow-depth',
+    'referenceNodesGainedFinalQuarter@passive-control',
+    'referenceNodesKnown@denial-warden',
   ],
   'balance/baselines/balance-gate-v1.baseline.json': [],
   'balance/baselines/balance-gate-horizon-v1.baseline.json': [],
@@ -136,10 +132,21 @@ function publishedTable(): Map<string, readonly (number | null)[]> {
   const heading = '## What each gate can actually detect — the power table';
   const start = prose.indexOf(heading);
   expect(start, `${heading} is missing from balance/README.md`).toBeGreaterThanOrEqual(0);
-  const section = prose.slice(start, prose.indexOf('\nThree things follow', start));
 
+  // The **first** markdown table after the heading, and only that one. Bounded
+  // by the table itself rather than by a sentence that follows it: this parser
+  // used to slice up to a fixed phrase, and rewording the prose silently widened
+  // it to the whole file, so it began matching the arm-spread table and the §7
+  // metric table too. A delimiter that a copy-edit can move is not a delimiter.
   const rows = new Map<string, (number | null)[]>();
-  for (const line of section.split('\n')) {
+  let started = false;
+  for (const line of prose.slice(start).split('\n')) {
+    const isRow = line.trimStart().startsWith('|');
+    if (!isRow) {
+      if (started) break;
+      continue;
+    }
+    started = true;
     const match = /^\|\s*`([A-Za-z]+)`\s*\|(.+)\|\s*$/.exec(line);
     if (match === null) continue;
     const cells = (match[2] as string).split('|').map((cell) => cell.replaceAll('*', '').trim());
@@ -148,6 +155,7 @@ function publishedTable(): Map<string, readonly (number | null)[]> {
       cells.map((cell) => (cell === '—' ? null : Number.parseFloat(cell.replace('%', '').trim()))),
     );
   }
+  expect(started, 'no table found under the power-table heading').toBe(true);
   expect(rows.size, 'no metric rows parsed out of the power table').toBeGreaterThan(0);
   return rows;
 }

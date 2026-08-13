@@ -40,7 +40,7 @@ npm ci
 
 # --- Does this commit need the Monte Carlo sweeps? -------------------------
 #
-# The three balance gates are the expensive part of `verify` by a wide margin,
+# The four balance gates are the expensive part of `verify` by a wide margin,
 # and they are the reason a docs-only pull request sits behind a queue on the
 # single self-hosted runner. A change that touches no code cannot move a
 # balance number.
@@ -56,7 +56,7 @@ npm ci
 #      vitest include, so a `ui/`-only diff cannot change what the simulation
 #      does. It is NOT unwatched — `packages/content/test/unit/ui-theme.test.ts`
 #      reads every prototype and asserts the shared palette, and that test still
-#      runs here, because what is skipped is the three Monte Carlo sweeps and
+#      runs here, because what is skipped is the four Monte Carlo sweeps and
 #      nothing else. A prototype that drifts still fails; it just no longer
 #      spends five hundred seconds proving a stylesheet did not move a
 #      balance number.
@@ -86,7 +86,7 @@ if git rev-parse --verify --quiet "$base" >/dev/null 2>&1; then
 fi
 
 if [ "$docs_only" -eq 1 ]; then
-  echo "=== docs-only diff against ${base}: skipping the three balance sweeps ==="
+  echo "=== docs-only diff against ${base}: skipping the four balance sweeps ==="
   echo "Changed paths:"
   echo "$changed" | sed 's/^/  /'
   echo "Everything else in \`verify\` still runs. To force the full gate, unset"
