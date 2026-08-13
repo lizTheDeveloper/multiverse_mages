@@ -189,16 +189,19 @@ export function runOne(input) {
   const { content, economic, strategyId, coordinates, options = {}, worldTickCap, probe = true } = input;
 
   const runSeed = deriveRunSeed(coordinates);
-  let report;
-  const simulation = defineWorldSimulation(content.deps, (r) => {
-    report = r;
-  });
+  // `defineWorldSimulation` takes deps and nothing else — it installs its own
+  // `onReport` and hands the result back through `lastReport()`. Passing a
+  // second argument here silently did nothing, and the agreement check below
+  // reported "clean" for every run because `report` was permanently undefined.
+  // A vacuous check is worse than no check, so this reads the accessor.
+  const simulation = defineWorldSimulation(content.deps);
 
   let appliedUseInstanceTicks = 0;
   let reportedEconomicNodeTicks = 0;
   let ticksWithAnyApplication = 0;
   let ticksObserved = 0;
   let disagreements = 0;
+  let ticksWithoutReport = 0;
   const holderTotals = new Map();
   const formTotals = new Map();
   let peakHolders = 0;
@@ -223,7 +226,10 @@ export function runOne(input) {
               // The production path's own count, for the agreement check. It is
               // per contribution rather than per instance, so it is >= ours when
               // a node carries both economic primitives; never <.
-              if (report !== undefined) {
+              const report = simulation.lastReport();
+              if (report === undefined) {
+                ticksWithoutReport += 1;
+              } else {
                 reportedEconomicNodeTicks += report.economicNodes;
                 if (report.economicNodes < used.instances) disagreements += 1;
               }
@@ -265,6 +271,7 @@ export function runOne(input) {
     reportedEconomicNodeTicks,
     ticksWithAnyApplication,
     disagreements,
+    ticksWithoutReport,
     peakHolders,
     distinctHolders: holderTotals.size,
     byForm: Object.fromEntries([...formTotals].sort((a, b) => b[1] - a[1])),
@@ -407,10 +414,41 @@ function main() {
         `${num((acc.holders / acc.n).toFixed(1), 9)}  ${topForms}\n`,
     );
   }
-  const totalDisagreements = [...byStrategy.values()].reduce((a, b) => a + b.disagreements, 0);
+  // Agreement with the production path.
+  //
+  // Two known, expected asymmetries, neither of which is a predicate mismatch:
+  //
+  // 1. The world report counts **contributions**, one per (instance, economic
+  //    primitive), while the probe counts **instances**. A node carrying both
+  //    `resource-yield` and `build-rate` is two contributions and one instance,
+  //    so the report is systematically the larger.
+  // 2. `universeEconomyBonuses` runs in phase 1, before mortality, work,
+  //    autonomy and decay; the probe runs after all of them. So the probe sees
+  //    the state at the *end* of the tick and the report describes its
+  //    *beginning*. An instance gained this tick is in the probe's count and not
+  //    the report's.
+  //
+  // Both push in opposite directions and neither is corrected here, because
+  // correcting them would mean the probe re-deriving the phase order — the
+  // second private rule this whole file exists to avoid. What is reported is the
+  // ratio, and how often the report came in below the probe, which is the only
+  // direction (2) can produce.
+  const totalDisagreements = runs.reduce((a, r) => a + r.disagreements, 0);
+  const totalUnreported = runs.reduce((a, r) => a + r.ticksWithoutReport, 0);
+  const totalObserved = runs.reduce((a, r) => a + r.ticksObserved, 0);
+  const probeTotal = runs.reduce((a, r) => a + r.appliedUseInstanceTicks, 0);
+  const reportTotal = runs.reduce((a, r) => a + r.reportedEconomicNodeTicks, 0);
   process.stdout.write(
-    `\nagreement with the production path: ${totalDisagreements === 0 ? 'clean' : `${String(totalDisagreements)} tick(s) where the world report counted FEWER contributions than the probe counted instances`}\n`,
+    `\nagreement with the production path\n` +
+      `  ticks carrying a world report : ${String(totalObserved - totalUnreported)}/${String(totalObserved)}\n` +
+      `  probe instance-ticks          : ${String(probeTotal)}\n` +
+      `  report contribution-ticks     : ${String(reportTotal)}\n` +
+      `  report / probe                : ${(reportTotal / Math.max(probeTotal, 1)).toFixed(4)}\n` +
+      `  ticks where report < probe    : ${String(totalDisagreements)} (${((totalDisagreements / Math.max(totalObserved, 1)) * 100).toFixed(2)}%)\n`,
   );
+  if (totalUnreported === totalObserved) {
+    process.stdout.write('THE AGREEMENT CHECK DID NOT RUN — no tick carried a report.\n');
+  }
 
   if (out !== undefined) {
     mkdirSync(dirname(out), { recursive: true });
