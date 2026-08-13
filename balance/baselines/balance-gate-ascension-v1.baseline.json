@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "da7ead15d2b5cf529ab669787d76d3759a834158d02c30900071b97af9eb56a8",
-  "contentHash": "7cdf5a470fd520f5ee233536bc2d24d9524fc389bc78c6bbb9392887ecba958b",
+  "contentHash": "e90da1370bf166f3aaa6423d63ae57069385ad6ff88c90850550e88b12df0a0d",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":32,"standardError":96.3298283289909,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":288.9894849869727,"unit":"grimoires","value":1012.5625},
@@ -16,9 +16,12 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":32,"standardError":1127.4145738692434,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3382.2437216077305,"unit":"people","value":4715.3125}
   ],
   "notes": [
-    "The mechanic is a grant-budget component on the universe handle plus a legality-mask edge. An absent row means unbounded, which is what every save and every hand-built test world written before it carries, so nothing that worked stops working. WORLD_SCHEMA_VERSION moved 4 to 5; sim-core's SNAPSHOT_VERSION did not move and no golden fixture diffs — goldens:regen was never run.",
-    "Measured separately in tools/w69: no strategy in this pool submits action 8 even with an unbounded budget. archivist sees the mask open on 497 of 4804 ticks and is closed by affordability on the other 4307; narrow-depth sees it open on 2630 of 3453 and asks zero times because an earlier preference is always legal. A budget cannot bind a verb nobody spends, which is why these deltas being exactly zero is expected rather than surprising.",
-    "Not a balance claim. release-plan.md forbids one before 0.5.0 and this file makes none: it is a measurement of one build, re-recorded because the content revision moved beneath it."
+    "The mechanic is a grant-budget component on the universe handle plus a legality-mask edge. An absent row means unbounded, which is what every save and every hand-built test world written before it carries, so nothing that worked stops working. The three constants also ship at values no run can reach, because the grid holds 300 nodes and only prerequisite-free ones in permitted cells are grantable. WORLD_SCHEMA_VERSION moved 4 to 5; sim-core's SNAPSHOT_VERSION did not move and no golden fixture diffs — goldens:regen was never run.",
+    "Measured in tools/w69 over four full 2400-tick runs per strategy: archivist sees action 8 masked for affordability on 4307 of 4804 ticks and for an empty candidate list on zero of them; denial-warden is closed by an empty list on 3508 ticks, having forbidden the grid; narrow-depth sees it legal on 76 percent of its ticks and asks zero times, because encourageResearch sits ahead of it and policyFor takes the first legal preference. Only uniform-random-legal ever grants, and it landed 1 grant from 234 submissions.",
+    "NOT A BALANCE CLAIM. release-plan.md forbids one before 0.5.0, and 0.5.0 is the release that builds the instrument rather than one that tunes the game. This file records what this build did on 2026-08-13 and nothing more.",
+    "The universe these vital signs describe is still degenerate, and in ways POOL_BUILD_LIMITS in packages/mc-harness/src/strategies.ts enumerates: action 14 is permanently masked in a single-universe run; ascension eligibility opens by passive worship accrual rather than by play; uniform-random-legal submits actions 1-7 with no parameter at all, because those carry no candidate slot list, so seven of its fifteen verbs are refused inside the dispatch and the noise floor is close to a passive control; and the reference scenario starts with zero favor, so every strategy is a passive control until regeneration pays for its cheapest move. To that list this revision adds a measured one: no strategy in the pool submits god action 8 at all, even at an unbounded budget, so the founding-grant verb is inert in every measurement this file contains.",
+    "Tolerances here are wide on purpose and are not comparable to the other two gates'. The standard-error estimator stratifies on cellIndex, and within a cell of this sweep the eight replicates are eight different strategies rather than eight samples of one — so what it calls noise is mostly strategy effect. That is the price of an instrument that can see a win condition.",
+    "Every record now carries terminalReason (contracts.md §1.1), and the summary carries countsByTerminalReason beside countsByStatus, so route share is measured rather than inferred from tick clustering. On the 32 runs behind this file: 12 ascensionApotheosis, 12 ascensionCanon, 3 stagnation, 5 still running at the cap. ascensionRate is 0.75 and remains far above contracts.md §7's declared 0.05-0.20 band — a finding, not a target, and W2 of the ascension-meta campaign is what changes it."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -28,7 +31,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Provenance only. No rule changed and no metric moved for any run this sweep executes. contentRevision moved from 2512ea02d2a7569d8d0bacc4c5a926ca to cd47722ed6fa0a8b3627c6f63fded6f3 because the founding-grant budget added three god constants (founding-grant-budget-start, founding-grant-accrual-nodes, founding-grant-budget-cap), and the gate is right that a delta across two content revisions is a category error. It is also right that this one is not a behaviour change: this is the one gate of the three whose pool plays a god verb that grants, so its deltas are the ones worth reading, and run against the superseded baseline first every one of its ten metrics read delta 0.00000 at 0.00 SE — exactly zero, not merely inside tolerance. The three constants ship at values no run can reach, because the grid holds 300 nodes and only prerequisite-free ones in permitted cells are grantable, so god action 8 behaves at this build exactly as it always has and the budget is exercised only through swept arms that name it. Precedent for a provenance-only re-record: 0bf8437 and 7f46277.",
+  "rationale": "Provenance only. No rule changed and no metric moved for any run this sweep executes: run against the superseded baseline first, every metric read delta 0.00000 at 0.00 SE — exactly zero, not merely inside a three-sigma tolerance. contentRevision moved from 2512ea02d2a7569d8d0bacc4c5a926ca to cd47722ed6fa0a8b3627c6f63fded6f3 because the founding-grant budget added three god constants (founding-grant-budget-start, founding-grant-accrual-nodes, founding-grant-budget-cap), and the gate is right that a delta across two content revisions is a category error. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0. The universe remains degenerate in known ways, and one of them is now measured rather than suspected — no strategy in the pool submits god action 8 even at an unbounded budget, so the founding-grant budget this revision adds cannot reach any metric here, which is why these deltas being exactly zero is expected rather than reassuring. Precedent for a provenance-only re-record: 0bf8437 and 7f46277.",
   "rootSeed": 20260811,
   "runCount": 32,
   "supersededDeltas": [
@@ -43,7 +46,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":4859.3125,"value":4859.3125},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":4715.3125,"value":4715.3125}
   ],
-  "supersedes": "8c545e4648e4bd0f03357cb38c064604d0e88ead85fdb5f052d3f999bea99741",
+  "supersedes": "7cdf5a470fd520f5ee233536bc2d24d9524fc389bc78c6bbb9392887ecba958b",
   "sweepId": "balance-gate-ascension-v1",
   "toleranceK": 3
 }
