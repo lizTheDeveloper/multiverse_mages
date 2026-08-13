@@ -249,9 +249,14 @@ Patient Lesson, Kindle Devotion, The Shared Mind*: a classroom and a congregatio
 a real share of a population and nothing like all of it. 448 — squarely mid-table, below every
 water, crop and road cell and well above the mage-facing ones.
 
-The consequence is stated rather than hidden: **the shipped reference universe's worship-yield falls
-to roughly 44% of what it was**, because 448/1024 is what its only carrying cell now contributes.
-That is a large committed-baseline movement produced by an authoring judgement, and it is the
+The consequence is stated rather than hidden, and in both of the two numbers a reader will want,
+because quoting only the first invites reading it as "favor halves". `rego-mentem` carries
+`fp(192)` and `fp(128)`, so its stacked contribution falls from `fp(320)` to
+`mul(192, 448) + mul(128, 448) = 84 + 56 = fp(140)` — **44% of what it was**. What the economy
+actually multiplies by is `(1 + Σ)`, which falls from **1.3125× to 1.1367×**: a **13.4% cut in the
+reference universe's favor regeneration rate**, not a 56% one.
+
+That is still a large committed-baseline movement produced by an authoring judgement, and it is the
 strongest argument in the file for `tuningStatus: "untuned"` meaning what it says.
 
 ### 6. `creo-aquam` — **1024**, and whether a ceiling is legitimate

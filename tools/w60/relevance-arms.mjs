@@ -157,6 +157,13 @@ function registryOf(relevance) {
   return loadContent(memorySource(files, `w60-${relevance}`));
 }
 
+/** One interned cell id by name, refusing an id the registry lacks. */
+function registryCellId(registry, cellName) {
+  const found = registry.cells.find((entry) => entry.record.id === cellName)?.contentId;
+  if (found === undefined) throw new Error(`no cell "${cellName}" in the registry`);
+  return found;
+}
+
 /** Interned cell ids for a named ruleset, refusing an id the registry lacks. */
 function dispensedCellIds(registry, rulesetId) {
   const wanted = RULESETS[rulesetId];
@@ -296,12 +303,22 @@ function main() {
     }
   }
 
-  // The late warden: `creo-fatum` dispensed at tick zero, then interdicted from
-  // world year 100 onward. Nothing in the bot pool produces this sequence, and
-  // it is the only sequence in which the missing `permits()` check was ever
+  // The late warden: `rego-mentem` left alone until world year 100 and
+  // interdicted from then on. Nothing in the bot pool produces this sequence,
+  // and it is the only sequence in which the missing `permits()` check was ever
   // observable, so it is written rather than hoped for.
+  //
+  // **No dispensation, and that is not a simplification.** The first version of
+  // this arm dispensed `creo-fatum` at tick zero and interdicted the same cell
+  // at 1200 — and `edictPlan` refuses an edict naming a cell that already
+  // carries one, because §1.1 forbids a cell holding both. The interdiction
+  // would have been rejected in silence and the arm would have measured
+  // nothing. `rego-mentem` is permitted by the v1 axes rather than by an edict,
+  // so the interdiction lands; and it is the cell every passive run already
+  // holds two carriers in well before round 1200, which is what makes the
+  // instances exist to be wrongly paid for.
   const wardenRuns = [];
-  const wardenCell = dispensedCellIds(contents[regimes[0]].registry, 'creo-fatum')[0];
+  const wardenCell = registryCellId(contents[regimes[0]].registry, 'rego-mentem');
   for (const regime of regimes) {
     for (const cell of CELLS) {
       for (let replicateIndex = 0; replicateIndex < replicates; replicateIndex += 1) {
@@ -316,7 +333,7 @@ function main() {
           },
           options: cell.options,
           worldTickCap,
-          dispensations: [wardenCell],
+          dispensations: [],
           policy: lateWardenPolicy(wardenCell, LATE_WARDEN_NOT_BEFORE),
         });
         wardenRuns.push({ ...run, regime });
@@ -480,7 +497,7 @@ function report(payload) {
 
   if (wardenRuns.length > 0) {
     push(
-      `## Q3b — the late warden: \`creo-fatum\` dispensed at tick 0, interdicted from round ` +
+      `## Q3b — the late warden: \`rego-mentem\` interdicted from round ` +
         `${String(lateWardenNotBefore)}`,
     );
     push('');
