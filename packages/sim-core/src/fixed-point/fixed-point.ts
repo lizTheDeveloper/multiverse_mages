@@ -53,7 +53,29 @@ function assertFixed(value: Fixed, role: string): void {
   }
 }
 
+/**
+ * Output check for the scaling helpers.
+ *
+ * `Number.isInteger` first, and it is not redundant with the range comparison.
+ * `NaN < FP_MIN` and `NaN > FP_MAX` are *both* false, so a range-only check
+ * waves NaN through as a valid `Fixed` — and a NaN written to an `i32` column
+ * becomes `0`, which is indistinguishable from "this effect contributed
+ * nothing". A guard that cannot fire on the failure it exists to catch is worse
+ * than no guard, because it is why nobody looks here.
+ *
+ * `assertFixed` has always rejected NaN this way; the operand checks on `mul`,
+ * `div`, and `lerp` mean no NaN can currently reach this function. That is a
+ * property of today's call sites, not of this function, and it is exactly the
+ * sort of property that stops holding without anyone noticing.
+ */
 function assertRepresentable(value: number, operation: string): Fixed {
+  if (!Number.isInteger(value)) {
+    throw new RangeError(
+      `${operation} produced a non-integer fixed-point value: ${String(value)}. ` +
+        'The rules path is integer-only; a NaN or fractional result here means an ' +
+        'unguarded value reached the arithmetic.',
+    );
+  }
   if (value < FP_MIN || value > FP_MAX) {
     throw new RangeError(
       `${operation} overflowed the fixed-point domain: ${String(value)} is outside ` +
