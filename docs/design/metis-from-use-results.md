@@ -17,9 +17,12 @@ that measurement. It was run before any accrual code was written, and it says st
 
 ## 0. The one-sentence result
 
-Under W29's wire, magic reaches the economy by **being known**, not by being **used** — so
-`permit-then-idle`, the bot the mechanic was aimed at, is the single **largest** applier of magic in
-the pool. Accrual on this hook would not fail to penalise the idle bot. It would **reward** it.
+Under W29's wire, magic reaches the economy by **being known**, not by being **used**. So
+`permit-then-idle` applies magic at **1.0001×** the rate of `permissive-breadth`, the active bot it
+is the ablation of, and **877×** the rate of `denial-warden`, the bot that uses its verbs hardest.
+
+Accrual on this hook would not fail to penalise the idle bot. It would rank the pool by how little
+the god interferes.
 
 ## 1. How the measurement works
 
@@ -36,12 +39,31 @@ Those are `gatherEffects`' four gates plus `universe-effects.ts`'s two filters. 
 rather than called because accrual needs the **holder** — `row.locationId`, the mage's
 `EntityHandle` — and `EffectSourceInstance` drops it at `packages/coordination/src/universe-effects.ts:250`.
 
-Two checks stop the restatement from being a private rule:
+Two checks stop the restatement from being a private rule.
 
-- **Agreement.** The probe compares its own per-tick instance count against the world report's
-  `economicNodes` every tick. Reported, not assumed.
-- **Inertness.** `--check-inert` runs a probed and an unprobed episode at the same coordinates and
-  compares snapshot hash, terminal reason and tick count. Four of four byte-identical.
+**Agreement.** The probe compares its own per-tick instance count against the world report's
+`economicNodes`. Across all five arms at 600 ticks: **5904 of 5904 ticks carried a report**,
+report/probe = **1.1265**, and the report came in below the probe on **7.86%** of ticks. Both
+deviations are expected and neither is a predicate mismatch:
+
+- the report counts **contributions** — one per (instance, economic primitive) — where the probe
+  counts **instances**, and the shipped content carries 92 economic effects across 74 nodes, a ratio
+  of 1.243, which brackets the observed 1.13 from above;
+- `universeEconomyBonuses` runs in **phase 1**, before mortality, work, autonomy and decay, while the
+  probe runs after all of them. So the probe sees the end of the tick and the report describes its
+  beginning, and an instance gained this tick appears in one and not the other. That is the only
+  direction that can produce report < probe, which is the 7.86%.
+
+This check was **wrong in its first form and reported "clean" for every run** because
+`defineWorldSimulation` takes deps and nothing else, so the `onReport` callback passed to it was
+silently dropped and the comparison never evaluated. It now reads `lastReport()` and reports its own
+coverage, because a vacuous check is worse than no check — it is the one that gets quoted. The
+applied-use figures were unaffected: the probe derives them without reading the report at all, and
+they are byte-identical either side of the fix.
+
+**Inertness.** `--check-inert` runs a probed and an unprobed episode at the same coordinates and
+compares snapshot hash, terminal reason and tick count. **Ten of ten byte-identical**, all five arms
+at both cells.
 
 Arms are matched-seed: the same `(rootSeed, sweepId, cellIndex, replicateIndex)` grid for every
 strategy, with the strategy supplied out of band. This is deliberate — a committed sweep's
@@ -53,7 +75,46 @@ cell 3 (`cohortSize 12`, `foundingNodes 4`). Root seed `20260811`, matching the 
 
 ## 2. Q1 — how much magic an idle universe applies
 
-<!--NUMBERS-Q1-->
+Five strategies, three replicates at each of two starting cells, 2400-tick cap. `use/tick` is
+`appliedUseInstanceTicks` divided by ticks observed, which is the only like-for-like column — the
+ascending arms terminate around tick 1100 and the others run the full 2400.
+
+| strategy | mean ticks | **use/tick** | ticks with any application | distinct holders | form mix |
+|---|---:|---:|---:|---:|---|
+| `passive-control` | 2400 | **21.11** | 98.8% | 143 | Terram 100% |
+| `permit-then-idle` | 1082 | **118.78** | 98.6% | 92 | Animal 18, Aquam 18, Terram 17, Auram 17, Herbam 16, Ignem 12, Corpus 1 |
+| `permissive-breadth` | 1122 | **118.77** | 99.1% | 92 | Terram 18, Aquam 18, Animal 17, Herbam 16, Auram 16, Ignem 12, Corpus 1 |
+| `denial-warden` | 1768 | **0.14** | 1.6% | 7 | Terram 100% |
+| `archivist` | 2400 | **379.22** | 99.2% | 3529 | Terram 100% |
+
+**Yes, and a great deal.** A universe with zero god input applies magic economically on **98.8% of
+ticks** — 21.11 contributing instances every tick, across 143 distinct mages over a run. It is not a
+trickle. Application is the normal state of a universe nobody is playing.
+
+Four ratios, all matched-seed:
+
+    permit-then-idle / permissive-breadth  =  1.0001
+    permit-then-idle / passive-control     =  5.63
+    permit-then-idle / denial-warden       =  877
+    archivist        / permit-then-idle    =  3.19
+
+**The first ratio is the whole result.** `permit-then-idle` is the ablation of `permissive-breadth` —
+the same opening, with every action after round 140 replaced by nothing. On this hook the two are
+**indistinguishable to four significant figures.** 2260 ticks of doing nothing cost the idle bot
+0.01% of its applied use.
+
+The mechanic's claim is that the idle bot *"accumulates none."* It accumulates **the same amount as
+the bot that plays**.
+
+And the other three ratios say the hook is worse than merely inert. It is **anti-correlated with
+playing**:
+
+- `denial-warden` — the god that uses its verbs hardest, interdicting cells — accrues **877× less**
+  than the god that does nothing.
+- `archivist` accrues **3.19× more** than either permit-everything bot, at 3529 holders against 92,
+  because it maximises mage count and every mage is a passive applier.
+
+A mētis mechanic on this hook would rank the pool almost exactly by how little the god interferes.
 
 ## 3. Q2 — whether `permit-then-idle`'s advantage moves
 
@@ -96,7 +157,27 @@ to key on the work, and the work is not in the predicate.
 
 What *does* diverge is the **ruleset**, and that is measurable:
 
-<!--NUMBERS-Q3-->
+Form mix splits the pool cleanly in two, and the line it splits on is **whether the god opened the
+grid** — not what the universe did with it.
+
+- `passive-control`, `denial-warden` and `archivist`: **Terram 100%**.
+- `permit-then-idle` and `permissive-breadth`: seven forms, near-uniform — Animal/Aquam/Terram 17–18%
+  each, Herbam and Auram 16–17%, Ignem 12%, Corpus 1%.
+
+The 100%-Terram arms are all bottlenecked by §5c's founding ruleset: the twelve cells permitted at
+founding hold 8 of the 74 economic nodes and every one is Terram. `archivist` is the informative
+case — it accrues **more applied use than anybody** (379/tick) and its form mix is **identical to the
+do-nothing arm's**, because it spends its verbs on scribing rather than on permitting. Volume and
+composition are set by two different things, and neither of them is the work.
+
+The two permit-everything arms then converge on each other — the near-uniform mix is just *what the
+grid contains* once the gate is open, and the divergence between them is inside the noise. **Two
+universes that both permit everything accumulate the same mētis regardless of what they do.**
+
+So there is real differentiation available here, and it is the wrong differentiation. It tracks the
+**ruleset**, which is what `permits()` already reports and what W28's regime work already measures.
+The claim §11c makes — that the divergence should come *"from what a universe actually does"*, the
+way W24's siting produced divergence in materials — is not delivered by this hook and cannot be.
 
 ## 5. Why it comes out this way — three structural facts
 
