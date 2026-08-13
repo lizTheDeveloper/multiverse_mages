@@ -271,9 +271,24 @@ describe('the docs-only sweep skip cannot silently exempt code', () => {
     const runner = read('scripts/ci-check.sh');
     // A denylist of code paths would exempt any new top-level directory the day
     // someone adds one. The case arm must therefore name what IS docs.
-    expect(runner).toContain('docs/*|openspec/*|.claude/*|*.md|LICENSE');
+    expect(runner).toContain('docs/*|openspec/*|.claude/*|ui/*|*.md|LICENSE');
     expect(runner).toContain('docs_only=0; break');
   });
+
+  it.each(['packages/', 'scripts/', 'balance/', '.github/', 'package.json', 'tsconfig'])(
+    'never exempts %s from the sweeps',
+    (path) => {
+      // Pinning the arm's exact text catches a widening, but only if someone
+      // reads the diff. These assert the property the arm exists to have, so a
+      // future edit that adds a genuinely dangerous path fails by name rather
+      // than by string mismatch. `ui/` is on the list because it is in no
+      // tsconfig, no eslint glob and no vitest include — but `ui-theme.test.ts`
+      // still reads it, and the tests are not what gets skipped.
+      const arm = /^\s*docs\/\*\|.*\)\s*;;/m.exec(read('scripts/ci-check.sh'))?.[0] ?? '';
+      expect(arm, 'the allowlist arm was not found — has it been rewritten?').not.toBe('');
+      expect(arm, `${path} must never be sweep-exempt`).not.toContain(path);
+    },
+  );
 
   it('fails closed: docs_only starts at 0 and is only ever raised inside a successful diff', () => {
     const runner = read('scripts/ci-check.sh');
