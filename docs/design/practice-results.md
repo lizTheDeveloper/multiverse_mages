@@ -517,7 +517,7 @@ measurement says species tuning is not the binding constraint and retuning to ma
 one seed would be fitting to the noise this document just characterised. No baseline was regenerated.
 `tools/w53/species-collapse.mjs` is the instrument every number above came from.
 
-### The three balance gates, re-measured after the fix
+### The balance gates, re-measured after the fix
 
 Same three gates, same command, same **un-regenerated** baselines. All three still open with
 `baseline-invalid` — the content hash moved when this branch merged `main`, which predates anything
@@ -542,6 +542,11 @@ roughly 60–70% recovered.
 | `referenceLibraryDepth` | 18.64 | 13.95 (−6.2 SE, regressed) | **16.60 (−2.68 SE, now passes)** |
 | `referenceNodesGainedFinalQuarter` | 7.645 | 8.480 (+7.9 SE, regressed) | **8.080 (+4.10 SE, still regressed)** |
 | `referenceGrimoires` | 321.5 | 299.9 (−2.9 SE) | **310.2 (−1.54 SE)** |
+
+`balance:gate:ascension` — **not yet re-measured.** It ran 892 s when this branch first recorded it
+and had not returned when this section was written; the as-merged figure it carries is a 59% fall in
+library depth, which is the one number here the fix has not been shown to move. Stated as an open
+gap rather than left as an unmarked absence.
 
 The two that remain say the same thing they said before, at a third of the size: practice still buys
 its months from research and scribing, so a universe holds fewer *copies* at two centuries, and it
