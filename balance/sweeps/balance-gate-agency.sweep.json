@@ -1,5 +1,5 @@
 {
-  "sweepId": "balance-gate-ascension-v1",
+  "sweepId": "balance-gate-agency-v1",
   "kind": "gate",
   "rootSeed": 20260811,
   "factors": [
@@ -22,8 +22,8 @@
     "slots": 1
   },
   "termination": {
-    "worldTickCap": 2400,
-    "perRunTimeoutMs": 600000
+    "worldTickCap": 240,
+    "perRunTimeoutMs": 60000
   },
   "metrics": [
     "referenceGrimoires",

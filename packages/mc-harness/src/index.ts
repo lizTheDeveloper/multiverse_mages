@@ -331,6 +331,14 @@ export { DEFAULT_OUTPUT_MODE, describeSweep, reproduceCommand, runSweepCommand }
 export type { SweepFileResult } from './sweep-file.js';
 export { parseSweepFile, readSweepFile } from './sweep-file.js';
 
+export type { ArmScopedRun, ScopedMetricId } from './arm-scope.js';
+export {
+  ARM_SCOPE_SEPARATOR,
+  armScopedMetricId,
+  distinctStrategyKeys,
+  parseMetricScope,
+  strategyKeyOf,
+} from './arm-scope.js';
 export type { StandardErrorEstimate, StandardErrorMethod } from './standard-error.js';
 export { STANDARD_ERROR_METHOD, standardErrorOf } from './standard-error.js';
 

@@ -41,7 +41,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parseBaseline } from '@mm/mc-harness';
+import { ARM_SCOPE_SEPARATOR, parseBaseline } from '@mm/mc-harness';
 import type { Baseline } from '@mm/mc-harness';
 import { describe, expect, it } from 'vitest';
 
@@ -61,8 +61,54 @@ function baselineAt(relative: string): Baseline {
 const GATES = [
   { column: '5-year gate', file: 'balance/baselines/balance-gate-v1.baseline.json' },
   { column: '20-year gate', file: 'balance/baselines/balance-gate-horizon-v1.baseline.json' },
+  { column: '20-year agency gate', file: 'balance/baselines/balance-gate-agency-v1.baseline.json' },
   { column: '200-year gate', file: 'balance/baselines/balance-gate-ascension-v1.baseline.json' },
 ] as const;
+
+/**
+ * The arm lines whose tolerance still exceeds their own value, by name.
+ *
+ * Committed as a list rather than tolerated by a threshold, because the honest
+ * description of this instrument is "it can see everything except these
+ * fourteen things" and a threshold would let a fifteenth join them in silence.
+ * Growing the list is a build failure; shrinking it is a build failure too,
+ * because a line that has become sharp is a change in what the gate can see and
+ * belongs in a rationale.
+ *
+ * Every entry is an arm whose value sits near zero — `denial-warden` gains a
+ * quarter of a node in two hundred years, so a tolerance of one node is 424 % of
+ * it. That is a fact about the strategy, not a slack tolerance: the gate cannot
+ * usefully police a proportional change in a quantity that is already almost
+ * nothing, and widening the sample buys only √n against it. They are listed so
+ * that nobody reads "the gate is fixed" as "the gate sees everything".
+ */
+const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
+  'balance/baselines/balance-gate-agency-v1.baseline.json': [
+    'referenceLibraryDepth@portal-rush',
+    'referenceNodesGained@denial-warden',
+  ],
+  'balance/baselines/balance-gate-ascension-v1.baseline.json': [
+    'referenceGrimoires@narrow-depth',
+    'referenceGrimoires@permissive-breadth',
+    'referenceGrimoires@portal-rush',
+    'referenceNodesGained@denial-warden',
+    'referenceNodesGainedFinalQuarter@archivist',
+    'referenceNodesGainedFinalQuarter@portal-rush',
+    'referenceNodesGainedFinalQuarter@uniform-random-legal',
+    'referenceNodesGainedFinalQuarter@worship-maximizer',
+    'referencePeakPopulation@denial-warden',
+    'referencePeakPopulation@permissive-breadth',
+    'referencePopulation@permissive-breadth',
+    'referencePopulationChange@permissive-breadth',
+  ],
+  'balance/baselines/balance-gate-v1.baseline.json': [],
+  'balance/baselines/balance-gate-horizon-v1.baseline.json': [],
+};
+
+/** A baseline's sweep-level lines: the ones the published table has a row for. */
+function sweepLevel(baseline: Baseline): Baseline['metrics'] {
+  return baseline.metrics.filter((metric) => !metric.metricId.includes(ARM_SCOPE_SEPARATOR));
+}
 
 /**
  * The minimum detectable effect of one baseline line, as a percentage.
@@ -110,8 +156,10 @@ describe('the power table in balance/README.md is derived from the committed bas
   const table = publishedTable();
   const baselines = GATES.map((gate) => baselineAt(gate.file));
 
-  it('publishes one row per metric that any gate gates', () => {
-    const gated = new Set(baselines.flatMap((b) => b.metrics.map((metric) => metric.metricId)));
+  it('publishes one row per metric that any gate gates at sweep level', () => {
+    const gated = new Set(
+      baselines.flatMap((baseline) => sweepLevel(baseline).map((metric) => metric.metricId)),
+    );
     expect([...table.keys()].sort()).toEqual([...gated].sort());
   });
 
@@ -156,22 +204,81 @@ describe('the power table in balance/README.md is derived from the committed bas
 
 describe('no gated metric may be blind to a change that doubles it', () => {
   it.each(GATES.map((gate) => [gate.column, gate.file] as const))(
-    '%s keeps every minimum detectable effect below 100 %%',
+    '%s keeps every sweep-level minimum detectable effect below 100 %%',
     (column, file) => {
-      const baseline = baselineAt(file);
       const blind: string[] = [];
-      for (const entry of baseline.metrics) {
+      for (const entry of sweepLevel(baselineAt(file))) {
         if (entry.status !== 'measured' || entry.value === 0) continue;
         const mde = (entry.tolerance / Math.abs(entry.value)) * 100;
         if (mde >= 100) blind.push(`${entry.metricId} at ${mde.toFixed(1)} %`);
       }
       expect(
         blind,
-        `${column} gates ${String(blind.length)} metric(s) whose tolerance exceeds their own ` +
-          'value, so the metric could double, or fall to zero, and the gate would report pass. ' +
-          'A line like that is not gating anything. Widen the sample or narrow the population it ' +
-          'is taken over — do not widen the tolerance further, and do not delete the metric.',
+        `${column} gates ${String(blind.length)} sweep-level metric(s) whose tolerance exceeds ` +
+          'their own value, so the metric could double, or fall to zero, and the gate would ' +
+          'report pass. A line like that is not gating anything. Narrow the population the ' +
+          'spread is taken over, or add replicates — do not widen the tolerance further, and do ' +
+          'not delete the metric.',
       ).toEqual([]);
     },
   );
+
+  it.each(GATES.map((gate) => [gate.column, gate.file] as const))(
+    '%s has exactly the arm lines it is committed to being blind to',
+    (column, file) => {
+      const blind = baselineAt(file)
+        .metrics.filter((entry) => entry.metricId.includes(ARM_SCOPE_SEPARATOR))
+        .filter(
+          (entry) =>
+            entry.status === 'measured' &&
+            entry.value !== 0 &&
+            entry.tolerance / Math.abs(entry.value) >= 1,
+        )
+        .map((entry) => entry.metricId)
+        .sort();
+      expect(
+        blind,
+        `${column}: the set of arm lines whose tolerance exceeds their own value has changed. ` +
+          'Growing it means the gate went blind somewhere new. Shrinking it means it can see ' +
+          'something it could not, which is equally a change in the instrument. Either way the ' +
+          'new set belongs in BLIND_ARM_LINES with the regeneration that produced it.',
+      ).toEqual([...(BLIND_ARM_LINES[file] ?? [])].sort());
+    },
+  );
+});
+
+describe('the two gates that play a god verb are the ones with arm lines', () => {
+  it('gives every multi-strategy gate one line per (metric, arm)', () => {
+    // The whole point of the arm lines: a sweep-level mean over eight strategies
+    // dilutes any one arm's movement eightfold, and on the superseded 32-run
+    // ascension baseline all eighty arms could have fallen to zero inside
+    // tolerance. A multi-strategy gate that grew back to sweep-level lines only
+    // would be that defect returning.
+    for (const file of [
+      'balance/baselines/balance-gate-agency-v1.baseline.json',
+      'balance/baselines/balance-gate-ascension-v1.baseline.json',
+    ]) {
+      const baseline = baselineAt(file);
+      const armLines = baseline.metrics.filter((metric) =>
+        metric.metricId.includes(ARM_SCOPE_SEPARATOR),
+      );
+      expect(armLines.length, file).toBe(sweepLevel(baseline).length * 8);
+    }
+  });
+
+  it('leaves the single-strategy gates with no arm lines at all', () => {
+    // One arm is not an arm structure, it is the sweep. Duplicating every line
+    // under `@passive-control` would double both baselines to say one thing
+    // twice, and would have forced a regeneration of two files this work does
+    // not touch.
+    for (const file of [
+      'balance/baselines/balance-gate-v1.baseline.json',
+      'balance/baselines/balance-gate-horizon-v1.baseline.json',
+    ]) {
+      const armLines = baselineAt(file).metrics.filter((metric) =>
+        metric.metricId.includes(ARM_SCOPE_SEPARATOR),
+      );
+      expect(armLines, file).toEqual([]);
+    }
+  });
 });
