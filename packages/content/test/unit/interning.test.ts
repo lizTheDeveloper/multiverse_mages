@@ -329,7 +329,20 @@ describe('contentRevision', () => {
     // what a digest over the union is supposed to produce, and it is the same
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of file names.
-    expect(registry.contentRevision).toBe('6973d2c55f6d7788bbaa6886e507bbde');
+    // `6973d2c55f6d7788bbaa6886e507bbde -> 5ab771101485e49068f7f94648fa2bc3`
+    // gave five effects on the four `rego-terram` nodes an optional
+    // `displacement` — the first cost any effect in the shipped set has ever
+    // carried. Every other effect in `node.json` is untouched and the field is
+    // absent from all of them, which is the whole design: absence means "pure
+    // bonus", the reading three hundred nodes were authored under.
+    //
+    // It belongs in the preimage for the plainest possible reason: it changes
+    // what a universe *produces*. Two universes agreeing on their revisions
+    // while one of them empties its fields when a mage learns to quarry
+    // without hands would not be running the same economy, and the raid
+    // arbitration that reads the host's ruleset would be arbitrating between
+    // two different games.
+    expect(registry.contentRevision).toBe('5ab771101485e49068f7f94648fa2bc3');
   });
 
   it('is stable across loads of identical content', () => {

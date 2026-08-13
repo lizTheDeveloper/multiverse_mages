@@ -59,7 +59,18 @@
         "primitive": { "$ref": "#/$defs/contentId" },
         "magnitude": { "type": "integer", "minimum": 1, "maximum": 1073741823 },
         "target": { "type": "string", "enum": ["self", "single", "area", "side", "universe"] },
-        "durationTicks": { "type": "integer", "minimum": 0, "maximum": 1073741823 }
+        "durationTicks": { "type": "integer", "minimum": 0, "maximum": 1073741823 },
+        "displacement": { "$ref": "#/$defs/displacement" }
+      }
+    },
+    "displacement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "fraction"],
+      "description": "Optional. What the effect costs the universe in the role that used to do the work by hand: a spell that quarries stone makes quarrymen redundant. Absent on every effect that is a pure bonus, which is every effect authored before this field existed, and absence means exactly what it always meant. `fraction` is fixed point at scale 1024 and is the share of the role one contributing instance removes; the shares of several instances stack multiplicative-on-remainder in @mm/primitives, so they compose toward the cap without ever reaching it, and the combined share is clamped by DISPLACED_LABOR_CAP. Authoring it above fp(1023) is refused here rather than absorbed by that clamp: a single instance abolishing an entire occupation is malformed content, not a strong effect.",
+      "properties": {
+        "role": { "type": "string", "enum": ["laborer"] },
+        "fraction": { "type": "integer", "minimum": 1, "maximum": 1023 }
       }
     },
     "contentId": {

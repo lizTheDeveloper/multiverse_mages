@@ -425,6 +425,49 @@ describe('shipped content', () => {
     });
   });
 
+  it('authors displacement only where a v1 universe can measure it', () => {
+    // The field is optional and the rule for using it is a content judgement,
+    // so it is asserted here rather than in the schema: displacement is only
+    // authored on effects the twelve enabled cells can actually deliver, and
+    // only at `target: "universe"`, because a cost with no consumer is a cost
+    // that reads as balance and measures nothing.
+    //
+    // The episodes that argue for displacement hardest — food and labour magic
+    // in *Creo* over *Herbam* and *Aquam* — are deliberately **not** authored.
+    // The v1 subset has neither that technique nor those forms, so a cost
+    // written there could not be measured, tuned, or falsified before the grid
+    // opens.
+    const v1Cells = new Set(
+      registry.cells.filter((entry) => entry.record.v1 === true).map((entry) => entry.record.id),
+    );
+    const displacing = registry.nodes.filter((entry) =>
+      entry.record.effects.some((effect) => effect.displacement !== undefined),
+    );
+
+    expect(displacing.length).toBeGreaterThan(0);
+    for (const node of displacing) {
+      expect(v1Cells.has(node.record.cell)).toBe(true);
+      for (const effect of node.record.effects) {
+        if (effect.displacement === undefined) continue;
+        expect(effect.target).toBe('universe');
+        expect(effect.displacement.role).toBe('laborer');
+        expect(effect.displacement.fraction).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('leaves the overwhelming majority of effects the pure bonuses they were authored as', () => {
+    // The migration that was explicitly not wanted: three hundred nodes were
+    // authored under "an effect has no cost field", and all but a handful still
+    // are. If this ratio ever inverts it should be a decision somebody made,
+    // not a drift nobody noticed.
+    const effects = registry.nodes.flatMap((entry) => entry.record.effects);
+    const withCost = effects.filter((effect) => effect.displacement !== undefined);
+
+    expect(effects.length).toBeGreaterThan(300);
+    expect(withCost.length).toBeLessThan(effects.length / 20);
+  });
+
   it('keeps classical labels off the mechanical path', () => {
     // The labels exist and are non-empty somewhere, so the assertion that they
     // are display-only is about something rather than vacuous.

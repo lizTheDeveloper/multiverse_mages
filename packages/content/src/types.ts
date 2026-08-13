@@ -134,11 +134,43 @@ export interface CellRecord {
 
 export type EffectTarget = 'self' | 'single' | 'area' | 'side' | 'universe';
 
+/**
+ * The occupation a displacing effect empties.
+ *
+ * One member, and the narrowness is the point: `laborer` is the only role the
+ * v1 economy pays in materials, so it is the only one whose removal is
+ * measurable. Widening this to `scribe` or `student` is a rules change — some
+ * consumer has to know what removing them costs — and not a content edit, which
+ * is why it is an enum rather than a free `contentId`.
+ */
+export type DisplacedRole = 'laborer';
+
+/**
+ * What an effect costs the universe in the work it replaces
+ * (`contracts.md` §2.3).
+ *
+ * Optional, and absent on every effect authored before it existed. Its absence
+ * is not a zero to be substituted somewhere — an effect without it is a pure
+ * bonus and takes exactly the path it always took.
+ */
+export interface EffectDisplacement {
+  readonly role: DisplacedRole;
+  /**
+   * The share of that role one contributing instance removes, `fp`.
+   *
+   * `fp(51)` is five per cent. Shares stack multiplicative-on-remainder, so
+   * neither several instances nor several nodes can abolish the occupation.
+   */
+  readonly fraction: Fp;
+}
+
 export interface EffectRecord {
   readonly primitive: string;
   readonly magnitude: Fp;
   readonly target: EffectTarget;
   readonly durationTicks: number;
+  /** Optional cost term (`contracts.md` §2.3). Absent means a pure bonus. */
+  readonly displacement?: EffectDisplacement;
 }
 
 export type TuningStatus = 'untuned' | 'tuned';
