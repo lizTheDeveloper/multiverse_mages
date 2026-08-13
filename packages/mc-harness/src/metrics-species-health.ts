@@ -46,10 +46,13 @@
 
 import type { MetricDetail, MetricEntry } from './metrics.js';
 import { UNAVAILABLE_REASON } from './metrics.js';
+import { gini } from './metrics-gini.js';
 import type {
   RoleDemographySample,
   RosterSample,
   RunTelemetry,
+  SpeciesCellOccupancy,
+  SpeciesCellOccupancySample,
   SpeciesGridReach,
   SpeciesVersatilitySample,
 } from './metrics-telemetry.js';
@@ -214,6 +217,180 @@ export function collectSpeciesGridVersatility(telemetry: RunTelemetry): MetricEn
 
   return measured(best.staffableFraction, detail);
 }
+
+/* ------------------------------------------------------------------------- *
+ * speciesCellOccupancy
+ * ------------------------------------------------------------------------- */
+
+/**
+ * What one species' realised occupancy looks like, next to its share.
+ *
+ * `occupiedFraction` is over the **full seventy**, and `occupiedEnabledFraction`
+ * over the cells the ruleset permitted. Both are reported because they answer
+ * different questions and the second one is the one that moves: a god that
+ * permits twelve cells cannot produce occupancy above twelve however capable its
+ * species are, so a full-grid fraction alone reads as universal incapacity when
+ * it is a ruleset.
+ */
+export interface SpeciesOccupancyFinding {
+  readonly speciesId: string;
+  readonly occupiedCells: number;
+  readonly occupiedEnabledCells: number;
+  readonly livingMages: number;
+  readonly nodesHeld: number;
+  readonly occupiedFraction: number;
+  readonly occupiedEnabledFraction: number;
+  /** This species' share of all per-species occupied-cell counts, `0..1`. */
+  readonly shareOfOccupancy: number;
+  /** Which cells, by interned id, ascending. See {@link SpeciesCellOccupancy}. */
+  readonly occupiedCellIds: readonly number[];
+  /**
+   * Cells this species occupies that **no other species does**.
+   *
+   * The quantity a count cannot show. Two species each holding twelve cells
+   * look identical until you ask whether they are the same twelve, and a
+   * roster splitting into non-overlapping specialisms is a different thing
+   * from a roster collapsing onto one species — the Gini scalar reads the
+   * second and is blind to the first.
+   */
+  readonly soleOccupantCells: number;
+}
+
+function occupancyFinding(
+  entry: SpeciesCellOccupancy,
+  sample: SpeciesCellOccupancySample,
+  totalOccupied: number,
+  occupantsByCell: ReadonlyMap<number, number>,
+): SpeciesOccupancyFinding {
+  let sole = 0;
+  for (const cellId of entry.occupiedCellIds) {
+    if ((occupantsByCell.get(cellId) ?? 0) === 1) sole += 1;
+  }
+  return {
+    occupiedCellIds: entry.occupiedCellIds,
+    soleOccupantCells: sole,
+    speciesId: entry.speciesId,
+    occupiedCells: entry.occupiedCells,
+    occupiedEnabledCells: entry.occupiedEnabledCells,
+    livingMages: entry.livingMages,
+    nodesHeld: entry.nodesHeld,
+    occupiedFraction: sample.gridCells === 0 ? 0 : entry.occupiedCells / sample.gridCells,
+    occupiedEnabledFraction:
+      sample.enabledCells === 0 ? 0 : entry.occupiedEnabledCells / sample.enabledCells,
+    shareOfOccupancy: totalOccupied === 0 ? 0 : entry.occupiedCells / totalOccupied,
+  };
+}
+
+/**
+ * Realised per-species grid occupancy, and how concentrated it is.
+ *
+ * ## The scalar is the concentration, not the coverage
+ *
+ * The Gini coefficient over the per-species occupied-cell counts, so that *"one
+ * species can staff everything"* is a number rather than an impression. A
+ * maximum coverage fraction would have been the obvious scalar and it is the
+ * wrong one here: `speciesGridVersatility` already reports a maximum, and the
+ * question this metric was added to answer is about the **spread** across
+ * species. Both readings are in the detail, so nothing is lost by choosing.
+ *
+ * Zero is therefore *"every species occupies the same number of cells"*, which
+ * is what the shipped content is expected to produce, and a rising value is a
+ * roster collapsing onto one species. The direction is worth stating because a
+ * Gini of 0 is the *healthy* end here and reads like a null result.
+ *
+ * ## It asserts no target
+ *
+ * All six species carry `"tuningStatus": "untuned"`, and the detail says so by
+ * carrying `tuningStatus` through from content rather than by a comment. The
+ * metric exists to make that tuning measurable; it is not a claim about what the
+ * spread ought to be, and no gate reads it yet.
+ *
+ * ## Three absences, kept apart
+ *
+ * No sample is `no-observations` — the executor did not report. A sample whose
+ * species list is empty is also `no-observations`. **A sample in which every
+ * species is present and every count is zero is `measured`**, because a world in
+ * which no mage holds anything is a real and alarming observation, and reporting
+ * it as an absence is the trap this module's opening note names.
+ */
+export function collectSpeciesCellOccupancy(telemetry: RunTelemetry): MetricEntry {
+  const sample = telemetry.speciesCellOccupancy;
+  if (sample === undefined) {
+    return unavailable(UNAVAILABLE_REASON.noObservations, {
+      reason:
+        'the executor supplied no species cell occupancy. Species traits and the seventy-cell ' +
+        'grid have both shipped, so this is a run that did not report, not a mechanic that is ' +
+        'absent.',
+    });
+  }
+  if (sample.species.length === 0) {
+    return unavailable(UNAVAILABLE_REASON.noObservations, {
+      gridCells: sample.gridCells,
+      enabledCells: sample.enabledCells,
+      reason: 'the sample declares no species.',
+    });
+  }
+
+  const counts = sample.species.map((entry) => entry.occupiedCells);
+  const totalOccupied = counts.reduce((a, b) => a + b, 0);
+
+  // How many species hold each cell. The denominator of "who else is in here",
+  // and the input to both the sole-occupant count and the unoccupied set.
+  const occupantsByCell = new Map<number, number>();
+  for (const entry of sample.species) {
+    for (const cellId of entry.occupiedCellIds) {
+      occupantsByCell.set(cellId, (occupantsByCell.get(cellId) ?? 0) + 1);
+    }
+  }
+
+  const findings = sample.species.map((entry) =>
+    occupancyFinding(entry, sample, totalOccupied, occupantsByCell),
+  );
+  const spread = gini(counts);
+  if (spread.coefficient === null) {
+    // Unreachable given the empty-species guard above, and kept because
+    // `gini` returns `null` for an empty sample by contract and a `??  0`
+    // here would turn a future contract change into a silent measured zero.
+    return unavailable(UNAVAILABLE_REASON.noObservations, {
+      reason: 'the Gini estimator reported no sample, which means the species list was empty.',
+    });
+  }
+
+  const maximum = findings.reduce((a, b) => (b.occupiedCells > a.occupiedCells ? b : a));
+  const minimum = findings.reduce((a, b) => (b.occupiedCells < a.occupiedCells ? b : a));
+
+  const detail: MetricDetail = {
+    gridCells: sample.gridCells,
+    enabledCells: sample.enabledCells,
+    worldTick: sample.worldTick,
+    occupancyDefinition: OCCUPANCY_DEFINITION,
+    scalar: 'Gini coefficient over per-species occupied-cell counts; 0 is even, 1 is one species',
+    totalOccupiedCellSlots: totalOccupied,
+    maxOccupiedCells: maximum.occupiedCells,
+    maxOccupiedSpecies: maximum.speciesId,
+    minOccupiedCells: minimum.occupiedCells,
+    minOccupiedSpecies: minimum.speciesId,
+    // The flat case is named rather than left to be inferred from a zero. If
+    // every species occupies the same cells, the spread is uninformative and
+    // the interesting number is the level, not the concentration.
+    everySpeciesEqual: new Set(counts).size === 1,
+    everySpeciesZero: totalOccupied === 0,
+    // Cells at least one species occupies, and cells exactly one does. The
+    // second is the specialisation figure the scalar cannot carry: a roster
+    // dividing the grid between species and a roster with one species doing
+    // everything both raise concentration, and only this tells them apart.
+    cellsOccupiedByAnySpecies: occupantsByCell.size,
+    cellsWithASoleOccupant: [...occupantsByCell.values()].filter((count) => count === 1).length,
+    species: findings.map((finding) => ({ ...finding })),
+  };
+
+  return measured(spread.coefficient, detail);
+}
+
+/** What "occupies a cell" was pinned to mean, carried into every record. */
+export const OCCUPANCY_DEFINITION =
+  'a living mage of the species holds a knowledge instance of some node in the cell, at location ' +
+  'kind mind; library and grimoire copies are excluded';
 
 /* ------------------------------------------------------------------------- *
  * lossShockRecovery

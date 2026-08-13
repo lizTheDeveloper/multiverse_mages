@@ -83,7 +83,12 @@ export {
   stateToEnvelope,
 } from './snapshot/snapshot.js';
 
-export { floorDiv } from './fixed-point/divide.js';
+export type { AnnihilationSentinel, FixedPointAnnihilation } from './fixed-point/divide.js';
+export {
+  annihilationSentinelInstalled,
+  floorDiv,
+  installAnnihilationSentinel,
+} from './fixed-point/divide.js';
 
 export type { Fixed } from './fixed-point/fixed-point.js';
 export {
