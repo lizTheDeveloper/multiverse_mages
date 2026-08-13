@@ -304,15 +304,33 @@ export interface GatewayDeps {
 }
 
 /**
- * The mages a teachability scan will consider as counterparties.
+ * The mages a teachability scan will consider as counterparties, **per
+ * institution**.
  *
  * Teaching is a pair, so the natural question — "who could teach me anything?"
  * — is quadratic in the mage population. Bounded here, in ascending slot order,
  * for the reason the frontier scan is bounded: a per-tick cost that grows with
  * a number the design does not control is a performance regression discovered
  * in a 200-year run rather than in review. **Untuned.**
+ *
+ * ## Why the bound is per-institution and not per-universe
+ *
+ * It used to bound one universe-wide list, and that was worse than no bound for
+ * the purpose the boundary now serves: *the teaching pool was the 32 lowest
+ * handles in the universe*, an arbitrary set with no institutional meaning.
+ * Filtering that list by affiliation afterwards would have been worse still — a
+ * university whose mages all sit above slot 32 would have an empty faculty for
+ * reasons no rule states, and the emptiness would look like a knowledge result.
+ *
+ * So {@link CoordinatingKnowledgeGateway.teachingRosterFor} builds one bounded
+ * list *per university*, from the same single pass. The cost a single mage pays
+ * is unchanged — at most this many counterparties — and the bound now truncates
+ * a set that means something.
  */
 export const MAX_TEACHING_COUNTERPARTIES = 32;
+
+/** The empty roster, shared, so a lookup miss allocates nothing. */
+const NO_COUNTERPARTIES: readonly MageHandle[] = Object.freeze([]);
 
 /**
  * Satisfies `@mm/rules-world`'s port out of `@mm/rules-magic`.
@@ -324,7 +342,9 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   readonly #deps: GatewayDeps;
 
   /** Memoized for this phase. See the module note on staleness. */
-  #roster: readonly MageHandle[] | undefined;
+  #rosters: Map<Handle, MageHandle[]> | undefined;
+  /** A mage's affiliation, resolved once per mage per phase. See {@link #universityOf}. */
+  readonly #affiliations = new Map<MageHandle, Handle>();
   readonly #rates = new Map<MageHandle, MageRates | undefined>();
   /** Every mage's held nodes and mastery, from one pass. See {@link #holdings}. */
   #heldByMage: Map<MageHandle, Map<ContentId, Fp>> | undefined;
@@ -506,9 +526,15 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * The lowest such node id, which is a total order over the teacher's holdings
    * and depends on nothing but the content set. Ascending slot order over her
    * instances would depend on the destroy history instead.
+   *
+   * **Lowest, not most valuable**, and that is deliberately left alone here: a
+   * value-blind acquirer and a boundary-free teaching pool are two separate
+   * causes of the campaign's one-queue result, and this change fixes the second
+   * only. The ordering is `w17`'s.
    */
   teachableTo(teacher: MageHandle, student: MageHandle): ContentId | undefined {
     if (teacher === student) return undefined;
+    if (!this.#sharesInstitution(teacher, student)) return undefined;
     const rates = this.#ratesOf(student);
     if (rates === undefined) return undefined;
 
@@ -581,20 +607,26 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * Lowest handle rather than any other order, because a handle is a total order
    * that depends on nothing but the state, and the roster it walks is already
    * bounded by {@link MAX_TEACHING_COUNTERPARTIES}.
+   *
+   * **Her own institution's roster**, which is the boundary — see
+   * {@link teachingRosterFor}. Decision and accrual walk the same list on
+   * purpose: the outlook builder scores `teach` off this same roster, and a mage
+   * who committed six months to teaching and then found no student would be
+   * paying for a counterparty the two scans disagreed about.
    */
   studentFor(teacher: MageHandle, nodeId: ContentId): MageHandle | undefined {
     if (!this.canTeach(teacher, nodeId)) return undefined;
-    for (const student of this.livingMages()) {
+    for (const student of this.teachingRosterFor(teacher)) {
       if (student === teacher) continue;
       if (this.#admitsLesson(student, nodeId)) return student;
     }
     return undefined;
   }
 
-  /** The lowest-handle living mage who could teach this student `nodeId`. */
+  /** The lowest-handle co-affiliate who could teach this student `nodeId`. */
   teacherFor(student: MageHandle, nodeId: ContentId): MageHandle | undefined {
     if (!this.#admitsLesson(student, nodeId)) return undefined;
-    for (const teacher of this.livingMages()) {
+    for (const teacher of this.teachingRosterFor(student)) {
       if (teacher === student) continue;
       if (this.canTeach(teacher, nodeId)) return teacher;
     }
@@ -928,25 +960,110 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   }
 
   /**
-   * The living mages a teachability scan may consider, ascending by slot and
-   * bounded by {@link MAX_TEACHING_COUNTERPARTIES}.
+   * The living mages a teachability scan may consider **for this mage**:
+   * everyone sharing her affiliation, ascending by slot, bounded by
+   * {@link MAX_TEACHING_COUNTERPARTIES}.
    *
-   * Here rather than in `rules-world` because the bound is a property of this
-   * scan, and because the roster read is a state read the autonomy layer is
-   * deliberately kept away from.
+   * ## The institutional boundary, and it lives here
+   *
+   * This is the one hole in a container that otherwise works. `universityId`
+   * already decides which library a mage's books are shelved into
+   * ({@link #shelfFor}), how many scribe-months she can draw on, and whether she
+   * would rather be somewhere else — and it decided nothing at all about who
+   * could teach her. Knowledge was therefore universally available inside the
+   * arbitrary lowest-32, which is why W24 could site two universities with
+   * genuinely different capabilities and watch their knowledge refuse to
+   * diverge: *siting can only matter if what a site holds can differ.*
+   *
+   * Cross-institution transfer is not forbidden, it is **routed**: a mage who
+   * wants what another university knows adopts `affiliate`, which already exists
+   * (`rules-world/src/autonomy/affiliation.ts`) and completes in one tick with
+   * no travel state, so no position model is smuggled in behind a teaching rule.
+   *
+   * ## `universityId === 0` is a container too — the commons
+   *
+   * The rule is uniform: *same id teaches same id*, and `0` is an id. So the
+   * unaffiliated form one open pool rather than a crowd of hermits. Two reasons,
+   * and the second is the one that decides it.
+   *
+   * The design reason: episode 38's travelling educator is a diffusion mechanism
+   * *in tension with* institutional concentration, and it needs somewhere to
+   * live. The commons is that somewhere — knowledge moves freely in it, and does
+   * not cross into a university without someone joining one.
+   *
+   * The mechanical reason: a special case here would be an asymmetry no rule
+   * states, and asymmetries in a predicate that gates a whole mechanic are how
+   * a boundary becomes a bug. `#sharesInstitution` is one comparison, and it is
+   * the only place affiliation gates teaching.
+   *
+   * **What the strict alternative would have cost, measured rather than
+   * argued:** every mage promoted after founding is created unaffiliated
+   * (`world-step.ts`'s promotion phase passes no university), so a strict rule
+   * would put 87 of 89 living mages at world year 200 in a pool of one. That is
+   * not a boundary, it is an off switch, and it would have made the divergence
+   * measurement a measurement of the affiliation pipeline instead.
    */
-  livingMages(): readonly MageHandle[] {
-    if (this.#roster !== undefined) return this.#roster;
+  teachingRosterFor(mage: MageHandle): readonly MageHandle[] {
+    return this.#rosterOf(this.#universityOf(mage));
+  }
+
+  /** The bounded roster of one institution, `0` included. */
+  #rosterOf(university: Handle): readonly MageHandle[] {
+    return this.#byUniversity().get(university) ?? NO_COUNTERPARTIES;
+  }
+
+  /**
+   * Living mages grouped by affiliation, from one pass, each group bounded.
+   *
+   * One pass rather than one per mage, for the reason every other index on this
+   * class is memoized: the outlook phase asks per mage, and re-walking `MAGE`
+   * per question would put back the `mages × mages` scan the bound exists to
+   * avoid. A gateway is a view of one phase, so the grouping cannot go stale
+   * inside one — see the module note.
+   */
+  #byUniversity(): Map<Handle, MageHandle[]> {
+    if (this.#rosters !== undefined) return this.#rosters;
     const store = componentOf(this.#deps.state, MAGE);
     const alive = store.field('alive');
-    const found: MageHandle[] = [];
+    const universities = store.field('universityId');
+    const found = new Map<Handle, MageHandle[]>();
     store.forEach((row, handle) => {
-      if (found.length >= MAX_TEACHING_COUNTERPARTIES) return;
       if ((alive[row] as number) === 0) return;
-      found.push(handle as Handle);
+      const university = universities[row] as Handle;
+      let roster = found.get(university);
+      if (roster === undefined) {
+        roster = [];
+        found.set(university, roster);
+      }
+      if (roster.length >= MAX_TEACHING_COUNTERPARTIES) return;
+      roster.push(handle as Handle);
     });
-    this.#roster = found;
+    this.#rosters = found;
     return found;
+  }
+
+  /**
+   * Whether a pair share an institution, which is the whole boundary.
+   *
+   * Asked at the pair rather than trusted to the roster walk, because
+   * {@link teachableTo} is on the `rules-world` port and a caller with two
+   * handles must not be able to reach past the rule by not having gone through
+   * {@link teachingRosterFor}.
+   */
+  #sharesInstitution(a: MageHandle, b: MageHandle): boolean {
+    return this.#universityOf(a) === this.#universityOf(b);
+  }
+
+  /** A mage's affiliation, or `0` — unaffiliated, and for a row that is gone. */
+  #universityOf(mage: MageHandle): Handle {
+    const cached = this.#affiliations.get(mage);
+    if (cached !== undefined) return cached;
+    const store = componentOf(this.#deps.state, MAGE);
+    const university = store.has(mage as EntityHandle)
+      ? store.get(mage as EntityHandle, 'universityId')
+      : 0;
+    this.#affiliations.set(mage, university);
+    return university;
   }
 
   /**

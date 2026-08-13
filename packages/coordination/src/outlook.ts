@@ -132,15 +132,22 @@ export function buildOutlook(
 }
 
 /**
- * Nodes a living, willing holder could teach this mage.
+ * Nodes a living, willing holder **inside her own institution** could teach this
+ * mage.
  *
  * The counterparty scan is the gateway's, and bounded there. Each answer is one
  * node — the lowest the pair admits — so the list is at most one entry per
  * counterparty, ascending by node id after the caller's sort.
+ *
+ * `teachingRosterFor` rather than a universe-wide roster: this is the *decision*
+ * half of the boundary and `studentFor` is the accrual half, and the two must
+ * walk the same list or a mage commits to a lesson nobody turns up for. See
+ * `gateway.ts`'s `teachingRosterFor` for why the container is the right scope
+ * and why `0` is one of the containers.
  */
 function teachableToMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
   const found = new Map<number, KnowledgeTarget>();
-  for (const teacher of deps.gateway.livingMages()) {
+  for (const teacher of deps.gateway.teachingRosterFor(mage)) {
     if (teacher === mage) continue;
     const nodeId = deps.gateway.teachableTo(teacher, mage);
     if (nodeId === undefined || found.has(nodeId)) continue;
@@ -160,10 +167,10 @@ function teachableToMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
   return [...found.values()];
 }
 
-/** Nodes this mage could pass to a student who can receive them. */
+/** Nodes this mage could pass to a co-affiliated student who can receive them. */
 function teachableByMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
   const found = new Map<number, KnowledgeTarget>();
-  for (const student of deps.gateway.livingMages()) {
+  for (const student of deps.gateway.teachingRosterFor(mage)) {
     if (student === mage) continue;
     const nodeId = deps.gateway.teachableTo(mage, student);
     if (nodeId === undefined || found.has(nodeId)) continue;
