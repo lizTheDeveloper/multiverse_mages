@@ -181,6 +181,141 @@ export interface RaidObservation {
   readonly attackerTempoCostWorldTicks: number;
 }
 
+/**
+ * One species' reach across the seventy-cell grid, as content alone determines
+ * it.
+ *
+ * Supplied by the executor rather than computed here, and the reason is the
+ * package boundary: `mc-harness` depends on `@mm/agent-api` and nothing else,
+ * so it cannot read `@mm/content`'s species records or the node catalogue. The
+ * derivation therefore lives where the content does and arrives as a
+ * measurement, the same way `speciesIds` does.
+ *
+ * Every field is a **cell count**, never a fraction — the denominators (70 and
+ * 12) are pinned constants of the metric, and carrying a pre-divided ratio here
+ * would put the arithmetic on the far side of the boundary from the definition
+ * that names it.
+ */
+export interface SpeciesGridReach {
+  readonly speciesId: string;
+  /** The species `depthCeiling`, carried so a reader can see what produced the counts. */
+  readonly depthCeiling: number;
+  /** Cells the species can staff, over the full seventy. */
+  readonly staffableCells: number;
+  /** Of those, the ones the ruleset currently permits. */
+  readonly staffableEnabledCells: number;
+  /** Cells whose deepest node the species can reach — the *depth* question, for contrast. */
+  readonly exhaustibleCells: number;
+  /** Of those, the ones the ruleset currently permits. */
+  readonly exhaustibleEnabledCells: number;
+  /**
+   * World ticks a node stays transmissible in this species' hands, starting
+   * from full mastery: `floor((MASTERY_MAX − TEACH_THRESHOLD) /
+   * masteryDecayPerTick(retention))`.
+   *
+   * **This is the quantity that actually separates the species**, and it exists
+   * because nothing in the rules path ever *raises* mastery. `setMastery` has
+   * one non-test caller, `decay.ts`, and it only lowers. Researched knowledge is
+   * born at `DEFAULT_INITIAL_MASTERY` (256), below the 512 teach threshold, and
+   * can never climb to it; every teachable instance descends from a god grant at
+   * 1024 and is sliding back down. So breadth is not limited by what a species
+   * can learn, it is limited by how long it can still pass on what it was given
+   * — and that window runs from 32 ticks to 102 across the shipped six.
+   *
+   * `0` would mean a species that cannot teach a granted node even once.
+   */
+  readonly teachableWindowTicks: number;
+  /**
+   * Authored affinity entries naming a form no currently permitted cell uses.
+   *
+   * Zero is the healthy answer. A positive count is authored content that
+   * cannot influence anything in this ruleset.
+   */
+  readonly inertAffinityEntries: number;
+  /** Authored affinity entries that a permitted cell does use. */
+  readonly liveAffinityEntries: number;
+}
+
+/**
+ * The whole grid-reach measurement, plus the denominators it was taken against.
+ *
+ * The denominators travel with the counts because a coverage number read
+ * against the wrong grid size is wrong in a way that still looks plausible.
+ */
+export interface SpeciesVersatilitySample {
+  /** Cells in the full grid. `contracts.md` §2.2's seventy. */
+  readonly gridCells: number;
+  /** Cells the seeded ruleset permits. Twelve, in the v1 content. */
+  readonly enabledCells: number;
+  /** One entry per species the content declares, in content order. */
+  readonly species: readonly SpeciesGridReach[];
+}
+
+/** One species' roster at one world tick, for the loss-shock recovery curve. */
+export interface RosterSample {
+  readonly worldTick: number;
+  /** Living mages per species, aligned with {@link RunTelemetry.speciesIds}. */
+  readonly livingMagesBySpecies: readonly number[];
+  /** Total populace per species, aligned the same way. */
+  readonly populationBySpecies: readonly number[];
+  /**
+   * Distinct nodes held in a mind by at least one living mage of the species.
+   *
+   * The second half of the recovery question: a roster that returns to its
+   * pre-shock headcount while the knowledge those mages carried does not come
+   * back has not recovered, and a headcount series alone would report that it
+   * had.
+   */
+  readonly nodesHeldBySpecies: readonly number[];
+}
+
+/**
+ * A deterministic mage cull applied to one run, and the series either side of
+ * it.
+ *
+ * **`undefined` on an ordinary run**, which is the whole point: a run that was
+ * never shocked has no recovery time, and reporting `0` for it would read as
+ * instantaneous recovery. The collector answers `no-observations`.
+ */
+export interface LossShockSample {
+  /** The world tick the cull was applied at. */
+  readonly shockTick: number;
+  /** The fraction of living mages culled, at `fp` scale (1/1024). */
+  readonly shockFractionFp: number;
+  /** Living mages per species immediately before the cull. */
+  readonly preShockBySpecies: readonly number[];
+  /** Living mages per species immediately after it. */
+  readonly postShockBySpecies: readonly number[];
+  /** Distinct nodes held in a mind per species immediately before the cull. */
+  readonly preShockNodesBySpecies: readonly number[];
+  /** Roster samples, ascending by tick, spanning the shock. */
+  readonly samples: readonly RosterSample[];
+}
+
+/**
+ * What role assignment cost, over a run that made assignments and one that did
+ * not.
+ *
+ * The paired shape is deliberate. A species' share of the roster falling over a
+ * run is not evidence that role assignment caused it — long-lived species drift
+ * for reasons that have nothing to do with the god — so the quantity with
+ * meaning is the *difference* against a run that assigned nothing, and a
+ * telemetry channel that carried only the treated side would invite the
+ * single-arm reading.
+ */
+export interface RoleDemographySample {
+  /** Roles assigned during the run, by role id, in the treated arm. */
+  readonly assignmentsByRoleId: Readonly<Record<string, number>>;
+  /** Mages lost to a lossy role's exposure, per species, in the treated arm. */
+  readonly roleAttributedDeathsBySpecies: readonly number[];
+  /** Roster share at run end, per species, `fp` scale, treated arm. */
+  readonly finalShareFpBySpecies: readonly number[];
+  /** The same shares from the paired control run, which assigned no roles. */
+  readonly controlFinalShareFpBySpecies: readonly number[];
+  /** Roster samples from the treated arm, ascending by tick. */
+  readonly samples: readonly RosterSample[];
+}
+
 /** Everything a per-run collector may read. */
 export interface RunTelemetry {
   readonly coordinates: RunCoordinates;
@@ -225,6 +360,19 @@ export interface RunTelemetry {
    * second tally that disagreed with the session's would be undiscoverable.
    */
   readonly submittedByActionId?: Readonly<Record<string, number>>;
+  /**
+   * The content-derived grid reach of every species, or absent when the
+   * executor did not supply it.
+   *
+   * Absent is `no-observations`, never `mechanic-absent`: species traits and the
+   * seventy-cell grid have both shipped, so a missing sample is a run that did
+   * not report one, not a mechanic that does not exist.
+   */
+  readonly speciesVersatility?: SpeciesVersatilitySample;
+  /** The loss shock this run was subjected to, or absent on an unshocked run. */
+  readonly lossShock?: LossShockSample;
+  /** The role-assignment demography pair, or absent when the run made no assignments. */
+  readonly roleDemography?: RoleDemographySample;
 }
 
 /** One run, as an arm-scoped collector sees it. */
