@@ -222,7 +222,115 @@ anyone has paid the bill. It is now recorded in `contracts.md` §6.
 
 ## 5. The containment curve by square size
 
-*(Section filled from the sweep; see `tools/w70/analyse.mjs`.)*
+480 runs: five arms × eight strategies × two starting positions × six replicates, 1,200 world ticks,
+every arm on the **identical** coordinate grid with the square supplied out of band. The seeded arms
+are nested by construction — at one coordinate the 1×1 square is inside the 2×2 is inside the 3×3 —
+so size is the only factor that moves between them. No run failed and no arm has an empty node set.
+
+### 5a. The curve
+
+Terminal horizon. `cross` is mean pairwise containment `|A∩B| / min(|A|,|B|)` between two
+*strategies* at **one coordinate**; `within` is the same statistic between two *coordinates* at one
+strategy — W15's diagonal. **`cross − within` positive is W15's signature of a one-dimensional
+space**: the strategy label explains less about composition than the seed does.
+
+| arm | cross-strategy | within-strategy | cross − within | distinct nodes reached\* |
+|---|--:|--:|--:|--:|
+| **`v1-3x4`** (today) | 0.928 | **0.980** | **−0.052** | **51 of 300** |
+| `seeded-1x1` | 0.989 | 0.176 | +0.813 | 28 of 300 |
+| `seeded-2x2` | 0.956 | 0.174 | +0.782 | 120 of 300 |
+| `seeded-3x3` | 0.941 | 0.250 | +0.691 | 194 of 300 |
+| `seeded-3x4` | 0.944 | 0.277 | +0.667 | **236 of 300** |
+
+\* union of terminal node sets over all twelve universes and seven strategies, **excluding
+`permissive-breadth`** — see §5c for why it is excluded and why that is itself a finding.
+
+The curve is flat between 1×1 and 2×2 (0.176 → 0.174) and then rises: **2×2 is not measurably more
+divergent than 1×1, and every step above it costs divergence.** Read as "what square size buys a
+second dimension", the answer is that *any* seeded square buys essentially all of it, and larger
+squares give some back.
+
+### 5b. The sharpest single number
+
+Same size, same seeds, same strategies. Only the *method of choosing the square* differs:
+
+- **`v1-3x4` reaches 51 of 300 nodes.** Across twelve universes and seven strategies, the content
+  set is the same 51 nodes every time. This is W15's finding reproduced exactly on the current
+  build: not "strategies converge", but **there was only ever one content set to converge on**.
+- **`seeded-3x4` reaches 236 of 300.**
+
+Per strategy, the within-strategy diagonal makes the same point with no averaging:
+
+| strategy | `v1-3x4` | `seeded-1x1` | `seeded-2x2` | `seeded-3x3` | `seeded-3x4` |
+|---|--:|--:|--:|--:|--:|
+| `archivist` | **1.000** | 0.061 | 0.064 | 0.150 | 0.190 |
+| `passive-control` | **1.000** | 0.061 | 0.064 | 0.150 | 0.190 |
+| `portal-rush` | **1.000** | 0.061 | 0.064 | 0.150 | 0.188 |
+| `uniform-random-legal` | **1.000** | 0.061 | 0.064 | 0.148 | 0.190 |
+| `worship-maximizer` | **1.000** | 0.061 | 0.064 | 0.150 | 0.190 |
+| `denial-warden` | **1.000** | 0.061 | 0.042 | 0.127 | 0.157 |
+| `narrow-depth` | 0.852 | 0.061 | 0.040 | 0.130 | 0.120 |
+| `permissive-breadth` | 0.988 | **0.985** | **0.990** | **0.992** | **0.993** |
+
+Six of eight strategies hold **literally the identical node set in all twelve universes** under
+today's opening. Under a seeded square the same six hold sets with 4–19% overlap. Counting distinct
+terminal compositions for `passive-control` over the twelve coordinates: **1 under `v1-3x4`**, 9
+under `seeded-1x1`, and **12 of 12** under every larger seeded square.
+
+### 5c. What this does and does not prove — and the one strategy that ignores the square
+
+**It proves a second dimension in the *content* space, keyed by whoever chooses the square.** It
+does **not** prove a second *strategic* dimension. Cross-strategy containment stays at 0.93–0.99 in
+every arm, including the seeded ones: **at a fixed square, strategies are still one queue walked to
+different depths.** That is the honest headline, and it matches the plan's own framing of
+seed-chosen — *"divergence across a sweep without relying on the strategy to produce it."* Whether
+different squares make different strategies *win* is a strategy × square interaction on outcomes,
+which this probe reads no signal for and which is the obvious follow-up.
+
+**`permissive-breadth` is unmoved by the opening square, in every arm, and that is a pricing
+finding.** It holds ~200 nodes and a within-strategy diagonal of 0.985–0.993 whether it opens on 1
+cell or 12, because its whole strategy is to permit every technique and every form immediately. The
+cost of doing so, from `god-cost.json`: `permit-technique` is `fp(8192)` and `permit-form` is
+`fp(4096)`, so **going from a 1×1 opening to the entire seventy-cell grid costs 4 × 8 + 13 × 4 = 84
+favor**, once, forever. At that price the opening square is a *starting position*, not a
+constraint.
+
+That is not an argument against the mechanic — six of eight strategies respect it and diverge
+sharply — but it is the measurement that says what has to happen next: **the square is only as real
+as the price of leaving it**, and `permit-technique` / `permit-form` are both flagged
+`"tuningStatus": "untuned"`. This is the natural companion to W69's founding-grant budget, which
+makes *seeding* scarce; nothing yet makes *expanding* scarce.
+
+### 5d. Stability across horizons
+
+`cross − within` at 240 / 480 / 960 / 1,440 ticks:
+
+| arm | 240 | 480 | 960 | 1440 |
+|---|--:|--:|--:|--:|
+| `v1-3x4` | −0.139 | −0.102 | −0.064 | −0.052 |
+| `seeded-1x1` | +0.810 | +0.804 | +0.804 | +0.813 |
+| `seeded-2x2` | +0.723 | +0.745 | +0.777 | +0.782 |
+| `seeded-3x3` | +0.619 | +0.649 | +0.687 | +0.691 |
+| `seeded-3x4` | +0.592 | +0.625 | +0.664 | +0.667 |
+
+The sign is stable at every horizon and every arm — the control negative, every seeded arm strongly
+positive. W19 swept twelve horizons from tick 30 to 2,400 and found one dimension at all of them;
+this is the first thing that moves the statistic at all of them.
+
+### 5e. Playability
+
+`seeded-1x1` is the only arm that looks unplayable, and it says so in two ways: it holds a mean of
+3.4 terminal nodes for the strategies that respect it, and **27 of its 96 runs terminated in
+stagnation** (reason 3) against 11 for the control and 6 for `seeded-3x4`. Combined with §3b's
+result that **no 1×1 opening can ever open a portal**, 1×1 is a degenerate control rather than a
+candidate.
+
+`seeded-2x2` stagnates 17 of 96 — worse than the control but not pathological — and buys no more
+divergence than 1×1. **On this measurement 3×3 is the best-supported recommendation**: it retains
+most of the divergence (`within` 0.250 against 0.174), stagnates no more than today's opening (8 of
+96 against 11), reaches 194 of 300 nodes, and 6.4% of its squares can raid against 1.4% of 2×2's.
+That said, the raid gate is a *content placement* problem (§3b, finding 2) and fixing it — putting
+portal nodes in more than one cell — would change this recommendation, which is the honest caveat.
 
 ---
 
