@@ -739,6 +739,7 @@ all of them.
 | `research-rate` | multiplier on research progress | world | additive into `(1 + Σ)`, cap `fp(4096)` |
 | `teach-rate` | multiplier on teaching throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` |
 | `scribe-rate` | multiplier on scribing throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` |
+| `practice-rate` | multiplier on practice progress | world | additive into `(1 + Σ)`, cap `fp(4096)` |
 | `lifespan` | additive months | world | additive, cap `+50%` of species base. **Recomputed from active effects at each hazard evaluation, never accumulated into a stored field** — which is also why mortality is a per-tick hazard rather than a death date rolled at birth |
 | `fertility` | multiplier on cohort birth rate | world | additive into `(1 + Σ)`, cap `fp(3072)` |
 | `worship-yield` | multiplier on favor regeneration | world | additive into `(1 + Σ)`, cap `fp(2048)` |

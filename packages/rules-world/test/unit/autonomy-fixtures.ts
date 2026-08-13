@@ -165,6 +165,10 @@ export function richOutlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     teachableToMe: [target(31)],
     teachableByMe: [target(41)],
     scribableTargets: [target(51, 1, 512)],
+    // A node she holds and has let go stale. `richOutlook` is "everything is
+    // available", and after W53 that includes having something to keep sharp.
+    practiceTargets: [target(61)],
+    staleHoldings: 1,
     materials: 4096,
     scribeThroughput: 1024,
     betterAffiliationAvailable: true,

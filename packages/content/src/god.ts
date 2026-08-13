@@ -71,6 +71,7 @@ export const REQUIRED_GOD_CONSTANTS: readonly string[] = Object.freeze([
   'ascension-tier-gate',
   'bless-duration-ticks',
   'bless-lifespan-months',
+  'bless-practice-rate',
   'bless-research-rate',
   'bless-teach-rate',
   'encourage-decay-per-tick',

@@ -25,6 +25,7 @@ import { MAGE_ROLE } from '@mm/state';
 
 import {
   GOAL,
+  GOAL_COUNT,
   GoalHistogram,
   MONOCULTURE_SHARE,
   MONOCULTURE_SUSTAINED_TICKS,
@@ -153,6 +154,11 @@ describe('a monoculture is visible as a number', () => {
 
 describe('the histogram is small enough not to need a flag', () => {
   it('is bounded by species × roles × goals', () => {
-    expect(histogramCellCount(6, 4)).toBe(6 * 4 * 9);
+    // Ten goals since W53 appended `practice`. Written as `GOAL_COUNT` rather
+    // than as a literal, because the bound is a claim about the shape of the
+    // histogram and not about how many goals happen to exist today — and the
+    // pin that a goal count may not change silently is `goal-registry.test.ts`'s
+    // job, stated there once.
+    expect(histogramCellCount(6, 4)).toBe(6 * 4 * GOAL_COUNT);
   });
 });

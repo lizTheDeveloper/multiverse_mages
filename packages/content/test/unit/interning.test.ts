@@ -297,7 +297,14 @@ describe('contentRevision', () => {
     // cap — and this tree is the first one holding both. A fourth value is
     // what a digest over the union is supposed to produce; a merge that kept
     // either side's literal would be asserting a revision no tree has.
-    expect(registry.contentRevision).toBe('ba7be8d68b582e2985e0360bbc7e11b0');
+    // ba7be8d68b582e2985e0360bbc7e11b0 -> b418fc0278d53ccfd12dc16facef97b8,
+    // when W53 added the `practice-rate` primitive, the `bless-practice-rate`
+    // god constant, and the two `rego-mentem` nodes that grant the primitive.
+    // Three value edits and no new file, so the preimage is the same shape and
+    // the digest moving is the whole of what a digest is for: a universe that
+    // does not know `practice-rate` exists cannot restore mastery, and would
+    // run a visibly different economy while claiming to be compatible.
+    expect(registry.contentRevision).toBe('b418fc0278d53ccfd12dc16facef97b8');
   });
 
   it('is stable across loads of identical content', () => {

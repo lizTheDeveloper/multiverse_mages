@@ -122,13 +122,18 @@ describe('idle is id zero and is the goal nothing can remove', () => {
 });
 
 describe('goals that need a node say so once', () => {
-  it('lists exactly the five target-taking goals', () => {
+  it('lists exactly the six target-taking goals', () => {
     expect([...GOALS_NEEDING_A_TARGET]).toEqual([
       GOAL.researchNode,
       GOAL.rediscoverNode,
       GOAL.seekTeaching,
       GOAL.teach,
       GOAL.scribe,
+      // Practice is pointed at a node she already holds, which is the one thing
+      // that makes it different from every other entry here: the other five name
+      // a node she is trying to get, and this one names a node she is trying to
+      // keep.
+      GOAL.practice,
     ]);
   });
 

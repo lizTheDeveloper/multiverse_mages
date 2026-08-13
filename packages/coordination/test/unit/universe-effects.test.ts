@@ -36,6 +36,22 @@
  * a message that names what went missing, rather than silently asserting
  * against whatever the renamed node happens to be.
  *
+ * ## W53 added a third gate to `resource-yield`, and it is a practitioner
+ *
+ * The two gates above answer *is it castable* and *is it permitted*. Neither
+ * answers *is anybody casting it*, and W49 measured what that omission cost: an
+ * idle god's universe applied magic to its economy at 1.0001x the rate of a god
+ * that funded universities and encouraged research, because application was
+ * passive. So a `resource-yield` contribution now also requires the holder to be
+ * committed to `GOAL.practice` on that node.
+ *
+ * `stateHolding` writes that commitment by default, because every positive case
+ * in this file is about the *other two* gates and would otherwise be testing the
+ * new one by accident. The case that is about the new gate says so.
+ *
+ * `build-rate` is deliberately not gated — see `universe-effects.ts` — and the
+ * discriminating test below is the pin on that asymmetry.
+ *
  * ## The failure this file exists to catch
  *
  * `universe-effects.ts`'s module note is explicit that an *earlier draft*
@@ -63,6 +79,7 @@ import {
   defineWorldStateSchema,
 } from '@mm/state';
 import { MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
+import { GOAL, writeCommitment } from '@mm/rules-world';
 
 import type { UniverseEconomyBonuses, UniverseEffectIndex } from '../../src/index.js';
 import { universeEconomyBonuses, universeEffectIndex } from '../../src/index.js';
@@ -144,17 +161,31 @@ function stateHolding(
   locationKind: number,
   mastery: number,
   rootSeed: number,
-): { state: SimState; instance: EntityHandle } {
+  options: { practising?: boolean } = {},
+): { state: SimState; instance: EntityHandle; holder: EntityHandle } {
   const state = bareState(rootSeed);
   const instance = state.entities.create();
+  const holder = state.entities.create();
   attachRecord(state, KNOWLEDGE_INSTANCE, instance, {
     nodeId,
     locationKind,
-    locationId: state.entities.create(),
+    locationId: holder,
     acquiredTick: 0,
     mastery,
   });
-  return { state, instance };
+  // The practitioner gate, satisfied by default. See the module note: the other
+  // cases in this file are about the castable and permitted gates, and a fixture
+  // that failed the practitioner gate would make every one of them pass for the
+  // wrong reason.
+  if (options.practising !== false) {
+    writeCommitment(state, holder, {
+      goalId: GOAL.practice,
+      targetNodeId: nodeId,
+      adoptedTick: 0,
+      score: 0,
+    });
+  }
+  return { state, instance, holder };
 }
 
 /** `universeEconomyBonuses`, with the shipped content and a caller-supplied ruleset. */
@@ -312,5 +343,116 @@ describe('resource-yield is routed by the node\'s form, and the routing discrimi
     expect(terram.resourceYield.food).toEqual([]);
     expect(herbam.resourceYield.food.length).toBeGreaterThan(0);
     expect(herbam.resourceYield.stone).toEqual([]);
+  });
+});
+
+/**
+ * The third gate, and the one primitive that does not have it.
+ *
+ * `AQUAM_NODE` carries **both** economic primitives at `target: "universe"`,
+ * which is what makes the asymmetry testable on a single instance: one holder,
+ * one node, one tick, and the two primitives answer differently.
+ */
+const AQUAM_NODE = 'caq-turn-the-channel';
+
+describe('resource-yield needs a practitioner; build-rate does not', () => {
+  it('yields nothing from a castable, permitted node nobody is practising', () => {
+    // The instance is held at a mind, above the activation threshold, in a
+    // permitted cell — every gate the 0.4.x economy had. Before W53 this was a
+    // full contribution, and that is precisely why `permit-then-idle` scored
+    // 1.0001x `permissive-breadth`: a universe that does nothing still holds
+    // knowledge, and holding was the whole test.
+    const { state } = stateHolding(
+      nodeContentId(AQUAM_NODE),
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c001,
+      { practising: false },
+    );
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    expect(bonuses.practisedInstances).toBe(0);
+    expect(bonuses.resourceYield.food).toEqual([]);
+    expect(bonuses.resourceYield.stone).toEqual([]);
+    expect(bonuses.resourceYield.vellum).toEqual([]);
+  });
+
+  it('still lets that same node reach construction, because build-rate is the control', () => {
+    const { state } = stateHolding(
+      nodeContentId(AQUAM_NODE),
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c002,
+      { practising: false },
+    );
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    // One primitive moves per change, so the delta is attributable. A run where
+    // both went dark would be two balance movements measured as one.
+    expect(bonuses.buildRate.length).toBeGreaterThan(0);
+  });
+
+  it('yields from the same node the moment its holder commits to practising it', () => {
+    const { state } = stateHolding(
+      nodeContentId(AQUAM_NODE),
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c003,
+    );
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    expect(bonuses.practisedInstances).toBe(1);
+    // Aquam routes wholly to food (`form.json`), so this is where it lands.
+    expect(bonuses.resourceYield.food.length).toBeGreaterThan(0);
+  });
+
+  it('is keyed on the node, not on the goal: practising something else yields nothing', () => {
+    // The sharpest form of "work performed". A mage practising her Terram is
+    // not thereby irrigating, and a gate that only asked "is she practising
+    // anything" would have made the target node decorative.
+    const nodeId = nodeContentId(AQUAM_NODE);
+    const { state, holder } = stateHolding(
+      nodeId,
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c004,
+      { practising: false },
+    );
+    writeCommitment(state, holder, {
+      goalId: GOAL.practice,
+      targetNodeId: nodeContentId(TERRAM_NODE),
+      adoptedTick: 0,
+      score: 0,
+    });
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    expect(bonuses.practisedInstances).toBe(0);
+    expect(bonuses.resourceYield.food).toEqual([]);
+  });
+
+  it('is keyed on the goal, not on the target: researching that node yields nothing', () => {
+    const nodeId = nodeContentId(AQUAM_NODE);
+    const { state, holder } = stateHolding(
+      nodeId,
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c005,
+      { practising: false },
+    );
+    writeCommitment(state, holder, {
+      goalId: GOAL.researchNode,
+      targetNodeId: nodeId,
+      adoptedTick: 0,
+      score: 0,
+    });
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    expect(bonuses.practisedInstances).toBe(0);
+    expect(bonuses.resourceYield.food).toEqual([]);
   });
 });
