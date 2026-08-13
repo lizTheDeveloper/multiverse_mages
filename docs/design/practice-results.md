@@ -228,11 +228,37 @@ instances can pass the gate in any tick, and only if that one happens to be an e
 
 It shows up downstream. `reference-long-run` task 9.8 measures the reference universe's library at
 world year 200: **159 books against 17 distinct nodes**, where it was **157 against 48** before the
-gate. The book count survives and the *breadth* collapses — less `resource-yield` is less `vellum`,
-and scribes go on copying what the shelf already holds. That test's books-to-depth bound has been
+gate. The book count survives and the *breadth* collapses. That test's books-to-depth bound has been
 **withdrawn rather than widened**, because widening it to fit 9.4-books-per-node would assert that
 9.4 is fine, and the comment it would have replaced named ten as the point at which the brake is
 gone.
+
+> **Correction, W53 follow-up: the breadth collapse is not the gate's, and the sentence that said it
+> was has been struck.** This paragraph originally read *"less `resource-yield` is less `vellum`, and
+> scribes go on copying what the shelf already holds."* That is a causal claim and it is false. The
+> ablation is one line — pass the ungated instance list to the second `gatherEffects` call in
+> `universe-effects.ts`, which is exactly `main`'s behaviour — and over 1,200 ticks of the reference
+> universe it changes **`stone` and nothing else**. `producedByKind.food`, `producedByKind.vellum`,
+> `remainingByKind.vellum`, the carrying capacity, the population and the whole per-species mage
+> table are **bit-identical** with the gate and without it. Every `resource-yield` node reachable in
+> this content set routes to `stone` through `routeYieldByForm`, so vellum has no magical source to
+> lose; the gate cannot have starved a channel it never fed.
+>
+> What collapses the breadth is the **practice goal competing for the month** — the other half of
+> this branch. Measured against a practice-free control on 32 paired seeds at 1,200 ticks: library
+> depth **−6.31 distinct nodes** (sd 12.05, *t* = −2.96, down on 20 seeds, tied on 3, up on 9) at an
+> **unchanged** book count (134.8 both arms). Months that would have gone to research and
+> rediscovery — the only two operations that add a *distinct* node — went to maintenance instead.
+>
+> Two figures in the paragraph above should also not be quoted as a trend, because both are single
+> seeds at `LONG_RUN_SEED` and this quantity's seed spread is enormous. Main-equivalent library depth
+> at 1,200 ticks runs **3 to 45** across 32 seeds (mean 22.5, sd 14.1); mean books-per-node is
+> **10.9**, not the 3.3 the 9.8 comment recorded. The *paired* delta is the number with a
+> denominator; the point ratios are not.
+>
+> The follow-up below still stands on its own merits — a freshness window is a better gate than a
+> tick-sharp one — but it must not be sold as the fix for a breadth collapse it would not touch. The
+> fix for that is in `practisableBy` and `opportunityTerm`; see *The practice goal took the month*.
 
 ### The recommended follow-up, named so it is not re-derived
 
@@ -362,3 +388,131 @@ The claims it deliberately does **not** make:
 > points the other way.
 
 > That publish-or-perish is closed. It moved 0.8 to 2.5 points on four arms and remains at 85%.
+
+---
+
+## The practice goal took the month, and two defects made it take too much
+
+Merging `main` into this branch turned three tests red. The brief that arrived with them proposed
+that **practice rewards long lifespans** — a species that lives 18,000 months compounds mastery,
+one that lives 720 dies before practice pays off — which would explain the direction of the species
+table exactly. It is refuted, and what replaced it is smaller, sharper and fixable.
+
+### The two ablations, and what each one exonerates
+
+This branch ships **two** mechanics, and a test that fails on the merged tree could be either. So
+each was removed in turn from the same tree and the reference long run re-measured.
+
+**Ablation 1 — un-gate `resource-yield`.** One line: the ungated instance list to the second
+`gatherEffects` call in `universe-effects.ts`, which is `main`'s behaviour exactly. Over 1,200 ticks
+it changes **`stone` and nothing else**. `producedByKind.food`, `producedByKind.vellum`,
+`remainingByKind.vellum`, `carryingCapacity`, `population`, and every entry of the per-species mage
+table are **bit-identical** with the gate and without it. Every `resource-yield` node reachable in
+this content set routes to `stone` through `routeYieldByForm`. The gate is exonerated for all three
+failures, and the breadth-collapse attribution recorded earlier in this document is struck above.
+
+**Ablation 2 — make `GOAL.practice` infeasible.** At `LONG_RUN_SEED` this reproduces `main`'s
+per-species mage table exactly — draconic 11, dwarf 18, elf 8, gnome 10, human 16, orc 3, against
+the branch's 11 / 23 / 8 / 12 / 5 / 0. So the practice goal is the proximate cause of *that seed's*
+numbers. Which is not the same as being the cause of anything.
+
+### The species collapse is not this branch's, and the lifespan hypothesis is refuted
+
+Both arms were then run at **32 paired seeds**, 1,200 ticks, mage roster read at the horizon the
+loss-shock test samples.
+
+| species | lifespan | main-equivalent, mean (sd) [range] | with practice, mean (sd) | paired delta | *t* |
+|---|---|---|---|---|---|
+| draconic | 18,000 | 10.72 (0.81) [9–12] | 10.72 (0.81) | **0.00** | — |
+| elf | 8,400 | 8.72 (1.08) [6–10] | 8.72 (1.08) | **0.00** | — |
+| gnome | 4,200 | 15.88 (4.25) [8–24] | 15.81 (5.73) | −0.06 | −0.07 |
+| dwarf | 3,000 | 13.88 (3.45) [7–21] | 14.03 (3.81) | +0.16 | 0.21 |
+| human | 960 | 10.66 (6.49) [1–38] | 9.09 (4.84) | −1.56 | −1.33 |
+| orc | 720 | 1.22 (1.26) [0–5] | 1.19 (1.38) | −0.03 | −0.14 |
+
+**The lifespan hypothesis dies on the first two rows.** Draconic and elf — the two *longest*-lived
+species, the ones that should compound mastery hardest — are **identical in every one of the 32
+seeds, to the mage**. Practice does not touch them at all, because within 1,200 ticks neither
+species promotes anybody: their mage rosters are their founders, and founders neither die nor are
+replaced. A mechanic that rewarded long lifespans would show up here first and shows up here not at
+all.
+
+**And orc is not driven extinct, because orc is already marginal on `main`.** Its mean roster at
+this horizon is **1.22 mages without practice**, and it is at **zero on 11 of 32 seeds** with no
+practice mechanic anywhere in the tree — 13 of 32 with it. `orc < 2` on 21 of 32 seeds either way.
+The single-seed table the brief was built from — orc 3 → 0, human 16 → 5 — is one draw from a
+distribution whose paired delta is −0.03 mages with a *t* of −0.14. Nothing in the six rows above is
+distinguishable from zero.
+
+Two of the three test failures are therefore **not this branch's**:
+
+- `loss-shock-recovery.test.ts:175`, `expect(shockedSpecies).toHaveLength(6)`, requires every species
+  to have lost at least one mage to a half-the-roster cull — i.e. **orc must hold ≥ 2 living mages at
+  tick 1200**. That is a coin flip on `main`.
+- `loss-shock-recovery.test.ts:216`, `expect(censored).toContain('orc')`, requires orc to hold ≥ 1.
+
+Neither assertion has been touched. They are correct claims about what a healthy universe should
+look like; what they have caught is that orc is not viable in the reference universe on either tree,
+and any content or economy change tips a 3 to a 0. **This is a `main`-side finding and is reported,
+not absorbed.** Pushed a horizon further it stops being marginal and becomes flat: at **2,400 ticks,
+human and orc are at zero mages on 8 of 8 seeds on both arms**. The two shortest-lived species do not
+survive two centuries of the reference universe at all, with or without anything this branch does.
+
+### The one real regression, and the two defects behind it
+
+`reference-long-run.test.ts:349` — *"scribing died of the economy again"* — **is** this branch's.
+That assertion was written by `w29` as a deliberate tripwire, in a comment that says so: *"A future
+change that drives vellum to zero for good should fail this loudly rather than have the suite quietly
+keep asserting the old 'dies forever' shape."* It fired correctly.
+
+Measured over 8 seeds at the 2,400-tick horizon, scribing in the final 20-year window:
+
+| arm | last-window books, by seed | zero on |
+|---|---|---|
+| main-equivalent | 5 / 25 / 6 / 28 / 25 / 9 / 19 / 6 | 0 of 8 |
+| this branch, as merged | 0 / 18 / 0 / 21 / 21 / 0 / 22 / 0 | **4 of 8** |
+
+The mechanism is month competition, and two separate defects made it far stronger than intended.
+
+**Defect 1 — candidacy never empties, and its far end is nearly free of value.**
+`practisableBy` offered any held node below `MASTERY_MAX`. `MASTERY_DECAY_PER_TICK` takes a point off
+every held instance every month, so that condition is satisfied by every instance in the universe
+within a month of acquiring it: `practice` was feasible for every mage on every tick, forever. Worse,
+a mage practising a node at `fp(1023)` pays a full month and `practice`'s clamp returns her **one**
+point — up to 128× the price of the same month spent by a scholar who has actually fallen out of
+standing. Candidacy now stops at `DEFAULT_TEACH_THRESHOLD`, making practice a hysteresis loop around
+teaching standing rather than a permanent top-up.
+
+**Defect 2 — the opportunity term double-counted and saturated its own clamp.** It read
+`candidateOpportunity(practiceTargets.length) + min(staleHoldings, 3) x 96`. Four candidates and
+three stale holdings give `256 + 288 = 544` against a `TERM_BOUND.opportunity` of **512** — so on
+ordinary inputs, not extreme ones, the term clamped, which is precisely the dead signal
+`STALE_HOLDING_CAP`'s own comment claimed it had been chosen to avoid. Pinned at 512, `practice`
+carried the largest opportunity any goal can carry, against `scribe`'s ceiling of 256: a `+256`
+advantage that swamps the `−64` its base appeal was given to keep it modest. And after defect 1 was
+fixed the two counts became the *same set* — `practiceTargets` is the truncated stale holdings — so
+the first term was a duplicate as well as an overflow. It is gone. What remains peaks at 288.
+
+### What the fix costs and buys, measured
+
+8 paired seeds, 2,400 ticks, against the same practice-free control.
+
+| measurement | main-equivalent | branch as merged | **branch fixed** |
+|---|---|---|---|
+| last-window scribing zero on | 0 of 8 | 4 of 8 | **0 of 8** |
+| library depth at year 200, mean | 28.9 | 14.6 | **30.9** |
+| second-century lessons taught, mean | 386 | 679 | **605** |
+
+The tripwire is green on every seed. Library breadth is restored past the control rather than to it.
+And **the asset survives**: practice roughly doubles teaching in the second century by carrying
+scholars back over the threshold they need in order to supervise anybody, and the fix keeps 57% of
+that 76% gain — elevated on 7 of 8 seeds. Two of those seeds are worth naming, because on
+main-equivalent their second-century teaching is 8 lessons (seed 589831) and 134 (seed 589828); with
+practice they are 636 and 895. Publish-or-perish closes, which is what the goal was built for.
+
+### What was not done, and why
+
+No assertion was edited. No species constant was retuned — `species.json` is untouched, because the
+measurement says species tuning is not the binding constraint and retuning to make orc non-zero at
+one seed would be fitting to the noise this document just characterised. No baseline was regenerated.
+`tools/w53/species-collapse.mjs` is the instrument every number above came from.

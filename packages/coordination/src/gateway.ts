@@ -146,7 +146,6 @@ import type {
 } from '@mm/rules-magic';
 import {
   DEFAULT_TEACH_THRESHOLD,
-  MASTERY_MAX,
   disownGrimoire,
   isRediscovery,
   practice,
@@ -840,21 +839,69 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   }
 
   /**
-   * A node this mage holds and could keep sharp, or `undefined`.
+   * A node this mage holds and **has lost teaching standing in**, or
+   * `undefined`.
    *
-   * The three conditions are `practice`'s own refusals — permitted cell, held
-   * instance, below full mastery — asked here so that the utility-AI never
-   * commits a month to a project that can never complete. `remainingCost` is the
-   * months still owed **after** what she has already banked, because the outlook
-   * quotes it to `target-appeal.ts`' effort term and a mage two months from
-   * finishing should read as cheaper than one who has not started.
+   * Two of the three conditions are `practice`'s own refusals — permitted cell,
+   * held instance — asked here so that the utility-AI never commits a month to a
+   * project that can never complete. `remainingCost` is the months still owed
+   * **after** what she has already banked, because the outlook quotes it to
+   * `target-appeal.ts`' effort term and a mage two months from finishing should
+   * read as cheaper than one who has not started.
+   *
+   * ## The third condition is `DEFAULT_TEACH_THRESHOLD`, not `MASTERY_MAX`
+   *
+   * The rule refuses only at full mastery, and offering candidates on that gate
+   * was measured to be wrong in two directions at once.
+   *
+   * **It never empties.** `MASTERY_DECAY_PER_TICK` takes a point off every held
+   * instance every month, so *below full mastery* is a condition every instance
+   * in the universe satisfies within a month of acquiring it. A goal that is
+   * feasible for every mage on every tick forever is not a goal that competes
+   * for the month; it is one that wins the month by default, and the appeal
+   * terms behind it — `GOAL_BASE_APPEAL`, `OPPORTUNITY_PER_STALE_HOLDING` — were
+   * written for a candidate list that could be empty.
+   *
+   * **And its far end is nearly free of value.** A mage practising a node at
+   * `fp(1023)` pays a whole month and `practice`'s clamp gives her back **one**
+   * point. The quantum is `PRACTICE_MASTERY_RESTORE`; what she banks is
+   * `min(before + quantum, MASTERY_MAX) - before`. Every month spent in the top
+   * eighth of the scale is a month bought at up to 128× the price of the same
+   * month spent by a scholar who has fallen out of standing.
+   *
+   * `DEFAULT_TEACH_THRESHOLD` is the line that already means something here: it
+   * is what {@link staleHoldings} counts against, what `canTeach` reads, and
+   * what `ages-of-magic.md` §2c's *"faculty who have not had a new result in
+   * twenty years"* have fallen below. Gating candidacy on it makes practice a
+   * **hysteresis loop around teaching standing** — she drops below, she
+   * practises back over, she stops and goes back to the frontier — which is the
+   * publish-or-perish loop the goal was built for and *not* a permanent
+   * top-up.
+   *
+   * ## Why this is narrower than `isPractisable`, deliberately
+   *
+   * `rules-magic`' `isPractisable` still mirrors `practice`'s refusals exactly
+   * and is right to: it answers *would the rule refuse this*. This answers
+   * *should autonomy be offered this*, and the two are allowed to differ in one
+   * direction only — never offer what the rule would refuse. Offering **less**
+   * than the rule accepts is already the case here (`MAX_CANDIDATE_TARGETS`
+   * truncates the list), and this is the same asymmetry with a reason attached.
+   *
+   * ## What it was measured to cost and buy
+   *
+   * On thirty-two paired seeds of the reference long run, gating at
+   * `MASTERY_MAX` cut library **breadth** by 6.3 distinct nodes against a
+   * practice-free control (`t = -2.96`) while leaving the book count unchanged —
+   * the same volume of copies spread over fewer subjects — and killed the last
+   * scribing window outright on four of eight seeds at the two-century horizon.
+   * `docs/design/practice-results.md` records both series and the control.
    */
   practisableBy(mage: MageHandle, nodeId: ContentId): KnowledgeTarget | undefined {
     const node = this.#deps.catalog.node(nodeId);
     if (node === undefined) return undefined;
     if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return undefined;
     const mastery = this.#holdings(mage).get(nodeId);
-    if (mastery === undefined || mastery >= MASTERY_MAX) return undefined;
+    if (mastery === undefined || mastery >= DEFAULT_TEACH_THRESHOLD) return undefined;
 
     const required = practiceRequirement(node);
     // The banked months, when there is a ledger to ask. A query-only gateway —

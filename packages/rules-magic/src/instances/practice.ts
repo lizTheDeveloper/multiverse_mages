@@ -234,13 +234,26 @@ export function practice(inputs: PracticeInputs): PracticeOutcome {
 }
 
 /**
- * Whether a node is worth practising for this subject right now.
+ * Whether {@link practice} would refuse this subject on this node right now.
  *
- * The outlook builder's gate, kept beside the refusal it mirrors so the two
- * cannot drift: a candidate this returns `false` for is one `practice` would
- * refuse, and offering it would let a mage commit a month to a project that can
- * never complete — the "career quietly evaporates" failure `feasibility.ts`
- * rejects by name.
+ * Kept beside the refusal it mirrors so the two cannot drift: a candidate this
+ * returns `false` for is one `practice` would refuse, and offering it would let
+ * a mage commit a month to a project that can never complete — the "career
+ * quietly evaporates" failure `feasibility.ts` rejects by name.
+ *
+ * **It is not the autonomy gate, and the first draft of this comment said it
+ * was.** The list the utility-AI actually scores is built by `coordination`'s
+ * `practisableBy`, which is deliberately *narrower*: it stops at
+ * {@link DEFAULT_TEACH_THRESHOLD} rather than at {@link MASTERY_MAX}, because
+ * decay puts every held instance below full mastery within a month and a goal
+ * that is feasible for everyone forever does not compete for the month, it wins
+ * it by default. The reasoning and the measurement are on that method.
+ *
+ * The two are allowed to differ in exactly one direction — never offer what the
+ * rule would refuse — and this is the same asymmetry `MAX_CANDIDATE_TARGETS`
+ * already introduces by truncating the list. What this function answers is
+ * *would the rule refuse it*, which is a question about `practice` and stays
+ * here.
  */
 export function isPractisable(
   knowledge: KnowledgeSubsystem,

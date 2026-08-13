@@ -412,12 +412,30 @@ describe('two hundred world years of the reference universe', () => {
     // *"with headroom, not doubled reflexively"*, and a comment observing it
     // was *"nowhere near the 'ten would mean it is gone' ceiling"*.
     //
-    // W53 gated `resource-yield` on a practitioner. Measured here: **159 books
-    // against 17 distinct nodes, roughly 9.4** — at the ceiling that comment
-    // named, from the other side. The mechanism is not mysterious: an economy
-    // that only pays out while somebody is casting produces less `vellum`, and
-    // less `vellum` is fewer books; scribes go on copying what the shelf
-    // already has, so the count holds while the *breadth* collapses.
+    // W53 measured here: **159 books against 17 distinct nodes, roughly 9.4** —
+    // at the ceiling that comment named, from the other side. The count holds
+    // while the *breadth* collapses.
+    //
+    // **The first draft of this comment named the wrong cause, and the
+    // correction is worth more than the number.** It said the `resource-yield`
+    // practitioner gate did it: *"an economy that only pays out while somebody
+    // is casting produces less `vellum`, and less `vellum` is fewer books."*
+    // Ablating that gate — the ungated instance list to the second
+    // `gatherEffects` call, i.e. `main`'s behaviour exactly — changes `stone`
+    // and **nothing else**: food, vellum, population, carrying capacity and the
+    // per-species mage table are bit-identical over 1,200 ticks. Every
+    // `resource-yield` node in this content set routes to `stone`, so the gate
+    // never fed vellum and cannot have starved it.
+    //
+    // What did it is the **practice goal taking the month** from research and
+    // rediscovery, the only two operations that add a *distinct* node. Against a
+    // practice-free control on 32 paired seeds: depth −6.31 (t = −2.96) at an
+    // unchanged book count. Both halves of the fix are in
+    // `docs/design/practice-results.md`.
+    //
+    // And 3.3 was itself one seed: main-equivalent books-per-node averages 10.9
+    // across 32 seeds at this horizon, with depth running 3 to 45. This ratio is
+    // not a trend and this bound is not coming back on one run's evidence.
     //
     // Widening the bound to `10 x depth` would make it pass and would assert
     // that 9.4 is fine, which is exactly the claim nobody has established. So
