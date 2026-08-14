@@ -5048,3 +5048,81 @@ joins; do not re-resolve the hunk.**
 `w26/marooning`, `w27/decision-space`, numeric integrity, the design language, the CI event fix, the
 gate split, and **the marginal-species test fix** — which was failing on *every* branch and gating
 changes with nothing to do with species.
+
+---
+
+## W95 — the vision audit checked, one claim corrected, and its first finding is the sharpest thing on the board
+
+*2026-08-13. Both load-bearing claims re-verified against `origin/main` before acting, per the rule
+this document has now learned three times.*
+
+### Finding 1 stands, and it is more important than it reads
+
+`packages/rules-world/src/autonomy/feasibility.ts`, on `main` today:
+
+```ts
+case GOAL.scribe: {
+  ...
+  const target = cheapest(outlook.scribableTargets);
+```
+
+**Every scribe in every university copies the cheapest thing available.** That is why the reference
+run's library holds **two distinct nodes against 1,263 books.**
+
+**And it is a different call site from the one W91 was about.** `w7/knowledge-capital` replaced
+*research target selection* with a utility argmax — which is why W79's flat-cost inference was stale.
+**It did not touch scribing.** So the flat-surface, cheapest-first, everyone-walks-one-queue behaviour
+W79 wrongly attributed to research **is alive and well in the library**, one function over.
+
+That reconciles two results that looked contradictory: discovery *has* diversified (62 distinct tier-1
+orderings across 84 runs), and libraries still have not. **Mages now find different things and then all
+write down the same one.**
+
+**What follows, and this is why it is the sharpest item available:**
+
+- **The raid has nothing to steal.** Tonight's raid design makes a library the objective — the raider
+  physically carries out grimoire rows. If every library holds the same two nodes, *there is nothing in
+  any library the raider does not already have.* The most evocative mechanic in the design is looting a
+  sorted list of the cheapest thing everyone knows.
+- **It is the missing half of W87.** The teaching boundary sealed knowledge between institutions and
+  universities still converged. Of course they did: even with no channel between them, both libraries
+  are filled by the same rule from the same cheap end.
+- **The fix is small and is not a balance number.** Scribe selection needs a reason to copy something
+  other than the cheapest — rarity, the last surviving copy, what *this* library lacks, what a mage was
+  asked for. **`libraryDependence` already measures the fraction of nodes down to a single instance**,
+  so the instrument for "the last copy" exists.
+
+**Libraries differing is the precondition for four separate mechanics** — raids worth running,
+university specialisation, W24's siting tradeoff, and the teaching boundary paying off.
+
+### Finding 2's supporting claim is wrong, in exactly the way mine was
+
+The audit states `advanceConstruction` has *"zero production callers; it is defined, exported,
+mentioned in one comment, and invoked nowhere outside its own tests."*
+
+**On `origin/main` it is called at `packages/coordination/src/world-step.ts:1148`**, via
+`advanceUniversities`, and has been since `9a3b6b5` (Aug 12).
+
+This is **the third independent instance of the same mistake in one day** — W85 made it about
+`advanceConstruction` and `applyLibraryUpkeep`, W91's premise made it about `compareTargets`, and now
+the audit makes it about `advanceConstruction` again. Every one came from reading a working tree rather
+than a ref. **The rule is in CLAUDE.md now and it plainly needs to be: a finding about code is a
+finding about a ref.**
+
+**The observation the claim was supporting may still hold** — 88 living mages against a populace of
+18,713, pinned at the founding academy's 64 seats from world year thirty — but its *cause* is not a
+missing function. `foundUniversity` is a god action, and the reference run takes no god actions. That
+is a different problem with a different fix, and it is already recorded: **W83 found the verb is not
+unreachable but unchosen.**
+
+### Finding 3 is a real asymmetry and worth keeping
+
+`packages/content/src/god.ts` refuses to load content where permitting and forbidding cost different
+favor, citing pillar 1's symmetry. But the *total* price is asymmetric by construction:
+`interventions.ts` exempts permitting from the worship shock, and `decay.ts` charges only forbidding
+with irreversible mastery loss — in a comment describing itself as *"the whole mechanism by which
+forbidding a cell actually costs a civilization something."*
+
+**A content check enforcing symmetry on the one term that is symmetric, while two other terms are not,
+is a guard that reads as a guarantee and is not one.** Whether the asymmetry is right is a design
+question; that the check implies otherwise is a defect either way.
