@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "5e9fd738a3a1f4b7933b7f99a765f17cfc1c59c376312eeef75050f32022151e",
+  "contentHash": "543b97aa5d4c903c0e6f9e1b0cf0fda5d8098d6b63c71c0f4cf503be48d76091",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":7.143616709614083,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":21.43085012884225,"unit":"grimoires","value":323.895},
@@ -20,28 +20,28 @@
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "d4e3047657b4fa8a1a74e1d52f9f5c86",
-    "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
+    "contentHash": "b63bd615c1877925b36c7b3eb7812731",
+    "metricDefinitionVersions": {"ascensionRate":1,"capitalSnowball":1,"combatActionEconomy":1,"combatThresholdEfficiency":1,"illegalActionRate":1,"inboundRaidTempoLoss":1,"knowledgeHalfLife":1,"libraryDependence":1,"lossShockRecovery":1,"prestigeAdvantage":2,"raidInitiationCost":1,"raidLengthDistribution":1,"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1,"roleAssignmentDemographicCost":1,"speciesCellOccupancy":1,"speciesGridVersatility":1,"timeToTierBySpecies":1,"winRateByPrimitive":2,"worshipSnowball":2},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "w107 added GOAL.applyMagic: a mage may spend the month casting one resource-yield node she holds at the world, which costs her that month and her rations and puts materials into the stocks. contentRevision moved 162f80bf169296d0e5fd516cc3c5257a -> d4e3047657b4fa8a1a74e1d52f9f5c86 because autonomy-weight.json gained apply-output-per-month (fp 64) and apply-ration-per-month (fp 4), so the gate refuses on provenance before it reads a metric. UNLIKE THE LAST THREE RE-RECORDS, METRICS MOVED, AND ON PURPOSE. A month spent applying is a month not spent studying, so the knowledge series fall and no population series does: at the five-year gate referenceNodesKnown -1.17 (-10.6 SE), referenceKnowledgeInstances -33.14 (-15.4 SE), referenceLibraryDepth -1.465 (-6.7 SE), while referencePopulation, referencePeakPopulation and referenceGrimoires all pass. The horizon gate shows the same shape and moves referenceNodesGainedFinalQuarter UP +0.685 (+6.5 SE) -- universes are still learning at the end of a run that used to have plateaued. That trade is the mechanism, not a regression, and the numbers are why this file is re-recorded rather than its tolerances widened. NO NEW RNG STREAM was added (goal selection reuses stream 7 keyed per mage, so contracts.md 6 re-baseline event is avoided), NO WORLD SCHEMA REVISION was needed, and NO GOLDEN FIXTURE WAS REGENERATED. This file is a measurement, not a balance claim: release-plan.md forbids a balance claim before 0.5.0. Both magnitudes ship tuningStatus untuned and are the first two numbers a sweep should move. Record: balance/results-w107-apply-before.txt and balance/results-w107-apply-after.txt.",
+  "rationale": "Provenance only, and the numbers did not move. contentRevision goes d4e3047657b4fa8a1a74e1d52f9f5c86 -> b63bd615c1877925b36c7b3eb7812731 on merging origin/main into w109/alliances: the union of apply-magic two autonomy-weight scalars and this branch seventeenth god cost, action 16 inviteScholar. gate.ts refuses a cross-build comparison before it reads a metric, so this file had to be re-recorded whether or not anything moved. NOTHING MOVED: regenerate-baseline.mjs printed \"no metric moved\", supersededDeltas is a column of zeros, and every metric row here is byte-identical to the file it supersedes. Why nothing moved, measured three ways. First, auditPool on this tree, with action 16 forced into every audited set and each run checked against an untouched one by snapshotHash so the instrument is known not to have disturbed the run, reports action 16 legal on 0 of 60 and 0 of 240 ticks for all fourteen pool strategies, including uniform-random-legal, the only gate strategy that samples the legal set and therefore the only one a widened mask could move. It first becomes legal at world tick 276 under passive play, which is past both gate horizons and is the number to check before lengthening one. Second, forcing invitableSpecies empty, so action 16 can never have a candidate, reproduces the agency gate byte for byte across all 90 comparisons. Third, running these gates on clean origin/main at 7694528 in a separate worktree reproduces every comparison in them. NO RNG STREAM was added, NO WORLD SCHEMA REVISION was needed, and NO GOLDEN FIXTURE WAS REGENERATED. This file is a measurement, not a balance claim: release-plan.md forbids a balance claim before 0.5.0, and nothing here claims the universe is balanced. It remains degenerate in the ways the note below records.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":2.394999999999982,"deltaInStandardErrors":0.32622230428789645,"metricId":"referenceGrimoires","previousValue":321.5,"value":323.895},
-    {"delta":-52.33999999999992,"deltaInStandardErrors":-6.111457264474756,"metricId":"referenceKnowledgeInstances","previousValue":1003.91,"value":951.57},
-    {"delta":-2.539999999999999,"deltaInStandardErrors":-3.3323558439026955,"metricId":"referenceLibraryDepth","previousValue":18.64,"value":16.1},
-    {"delta":-0.0049999999999954525,"deltaInStandardErrors":-0.025199100912095974,"metricId":"referenceLivingMages","previousValue":37.72,"value":37.715},
-    {"delta":-1.1799999999999997,"deltaInStandardErrors":-7.28502989293819,"metricId":"referenceNodesGained","previousValue":39.345,"value":38.165},
-    {"delta":0.6850000000000005,"deltaInStandardErrors":6.463667243189575,"metricId":"referenceNodesGainedFinalQuarter","previousValue":7.645,"value":8.33},
-    {"delta":-1.1799999999999997,"deltaInStandardErrors":-7.28502989293819,"metricId":"referenceNodesKnown","previousValue":41.845,"value":40.665},
-    {"delta":9,"deltaInStandardErrors":1.5075376884422051,"metricId":"referencePeakPopulation","previousValue":353,"value":362},
-    {"delta":0.11499999999998067,"deltaInStandardErrors":0.09719169441782521,"metricId":"referencePopulation","previousValue":212.175,"value":212.29},
-    {"delta":0.1150000000000091,"deltaInStandardErrors":0.09719169441784924,"metricId":"referencePopulationChange","previousValue":68.175,"value":68.29}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":323.895,"value":323.895},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":951.57,"value":951.57},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":16.1,"value":16.1},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":37.715,"value":37.715},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":38.165,"value":38.165},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":8.33,"value":8.33},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":40.665,"value":40.665},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":362,"value":362},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":212.29,"value":212.29},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":68.29,"value":68.29}
   ],
-  "supersedes": "819705b03416e268d81f47a8607b825f4c3de4cc658842e4444b5849bef2340c",
+  "supersedes": "5e9fd738a3a1f4b7933b7f99a765f17cfc1c59c376312eeef75050f32022151e",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }
