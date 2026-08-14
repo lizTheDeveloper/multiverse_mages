@@ -7379,3 +7379,49 @@ re-allocation.**
 
 That is the useful kind of blocked: it converts the re-baseline from a judgement about balance into a
 mechanical consequence of entity numbering. Still not taken unattended. 4,411/4,411 tests pass.
+
+## W151 — the W146 prediction held, and it confirms three other PRs for free
+
+```
+Balance gate for balance-gate-ascension-v1: PASS (tolerance k = 3 standard errors).
+  pass  referenceGrimoires                     delta 0.00000 (0.00 SE)
+  pass  referenceGrimoires@archivist           delta 0.00000 (0.00 SE)
+  pass  referenceGrimoires@denial-warden       delta 0.00000 (0.00 SE)
+  pass  referenceGrimoires@narrow-depth        delta 0.00000 (0.00 SE)
+  pass  referenceGrimoires@passive-control     delta 0.00000 (0.00 SE)
+  pass  referenceGrimoires@permissive-breadth  delta 0.00000 (0.00 SE)
+  pass  referenceGrimoires@portal-rush         delta 0.00000 (0.00 SE)
+  pass  referenceGrimoires@uniform-random-legal delta 0.00000 (0.00 SE)
+  pass  referenceGrimoires@worship-maximizer   delta 0.00000 (0.00 SE)
+  pass  referenceKnowledgeInstances            delta 0.00000 (0.00 SE)
+  ...
+```
+
+**`main`'s 200-year gate is green for the first time in this campaign's record**, and #132 is what did
+it. The gate had been failing on `baseline-invalid` — `contentHash 162f80bf… ≠ d4e30476…` — since
+#127 landed its behaviour four minutes and forty-three seconds ahead of the baseline that measured it.
+
+### The part that is worth more than the prediction
+
+**Every row is `0.00000`.** Not "inside tolerance" — *identical*. That is a much stronger statement
+than the gate needed to make, and it independently confirms something three separate PRs claimed
+about themselves:
+
+- **#136** (the ablation mask reaching the simulation) reported *"all three balance gates pass with
+  every delta exactly `0.00000`"*.
+- **#133** (god constants) reported the 400-tick snapshot hash byte-identical with and without the
+  branch.
+- **#118** (the QD search) is harness-only and should touch nothing.
+
+All three landed between `d4e30476` — the content hash #132's baseline was recorded against — and
+`5a1ce6c`, where this gate ran. **If any of them had moved the simulation, a 200-year, 64-run gate
+across nine strategy arms would not come back at exactly zero on every row.** Three self-reported
+no-behaviour-change claims, verified at once by an instrument none of their authors controlled.
+
+**This is what the gate is for**, and it is the first time tonight it has been able to say anything
+at all: for four merges it was structurally refusing to compare, and before that its runs were being
+cancelled in the queue (W136) so it never ran. A gate that cannot run is not a gate, and a gate
+refusing to compare across builds is not a regression — **both of those look like red and neither is
+a finding.** The distinction cost this campaign several hours to learn.
+
+Written before the run finished (W146), including what would disprove it. Nothing did.
