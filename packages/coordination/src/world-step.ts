@@ -180,6 +180,8 @@ import {
 
 import type { UniverseEconomyBonuses, UniverseEffectIndex } from './universe-effects.js';
 import { NO_ECONOMY_BONUSES, universeEconomyBonuses } from './universe-effects.js';
+import type { AcademicEffectIndex, AcademicRateBonuses } from './academic-effects.js';
+import { NO_ACADEMIC_BONUSES, academicRateBonuses } from './academic-effects.js';
 import type { LibraryCapital } from './capital.js';
 import { libraryCapital } from './capital.js';
 import { EffortLedger } from './effort-store.js';
@@ -287,6 +289,21 @@ export interface WorldStepDeps {
    * a thing a test can assert against rather than a silent degradation.
    */
   readonly universeEffects?: UniverseEffectIndex | undefined;
+  /**
+   * Every node's personally-targeted academic effect, precomputed from content.
+   *
+   * The companion wire to `universeEffects`, and the one that took longer to
+   * notice because its primitives were not *unconsumed* — they were consumed by
+   * the god and by nobody else. `academic-effects.ts` is the long version;
+   * the short one is that a blessing could make a mage research faster and
+   * a lifetime of scholarship could not.
+   *
+   * Optional for the same reason `universeEffects` is: a caller building a world
+   * for a knowledge test need not supply one, and when it is absent every rate is
+   * exactly the god-and-library-only rate this change replaced — a thing a test
+   * can assert against rather than a silent degradation.
+   */
+  readonly academicEffects?: AcademicEffectIndex | undefined;
   /**
    * What a month of applied magic makes and what it eats, read from content.
    *
@@ -737,6 +754,20 @@ export function worldSystem(
       // The opening stone is read before production because a crew is hired at
       // the start of the month out of what is already in the yard, not out of
       // what the quarry will deliver by the end of it.
+      // And what it is worth to the scholars themselves. Read here rather than
+      // in the work phase because the ruleset is here: the permission gate is
+      // re-asked every tick, so an interdiction switches a scholar's own
+      // acceleration off without destroying what she knows — the same
+      // application-time reading `universe-effects.ts` argues for at length.
+      const academic: AcademicRateBonuses =
+        deps.academicEffects === undefined
+          ? NO_ACADEMIC_BONUSES
+          : academicRateBonuses(state, {
+              index: deps.academicEffects,
+              cells: deps.cells,
+              ruleset,
+            });
+
       const labour = planConstructionLabour(
         state,
         cohorts,
@@ -878,7 +909,15 @@ export function worldSystem(
       const promoted = promoteMaturedStudents(state, cohorts, { rng, worldTick, deps });
 
       // ---- 5. Work -----------------------------------------------------------
-      const work = spendTheMonth(state, gatewayFor(), deps, worldTick, capital, rateClamps);
+      const work = spendTheMonth(
+        state,
+        gatewayFor(),
+        deps,
+        worldTick,
+        capital,
+        rateClamps,
+        academic,
+      );
 
       // ---- 5a. What the mages who cast at the world made ----------------------
       // Banked through the phase and settled once, so that a mage adding vellum
@@ -1524,6 +1563,7 @@ function spendTheMonth(
   worldTick: number,
   capital: LibraryCapital,
   rateClamps: ClampCounters,
+  academic: AcademicRateBonuses,
 ): WorkPhaseOutcome {
   // The `alive` column and the handle, rather than a `MageRecord` per mage: the
   // two fields below are all this phase reads, and `collectRecords` builds an
@@ -1548,7 +1588,17 @@ function spendTheMonth(
     // without touching anything, and a tally taken on the way out would count
     // exactly the goals that are working and miss exactly the ones that are not.
     monthsByGoal[commitment.goalId] = (monthsByGoal[commitment.goalId] ?? 0) + 1;
-    const cast = workOne(state, handle, commitment, gateway, deps, worldTick, capital, rateClamps);
+    const cast = workOne(
+      state,
+      handle,
+      commitment,
+      gateway,
+      deps,
+      worldTick,
+      capital,
+      rateClamps,
+      academic,
+    );
     if (cast === undefined) return;
     applyingMages += 1;
     for (const kind of MATERIAL_KINDS) applied[kind] += cast[kind];
@@ -1607,6 +1657,7 @@ function workOne(
   worldTick: number,
   capital: LibraryCapital,
   rateClamps: ClampCounters,
+  academic: AcademicRateBonuses,
 ): MaterialAmounts | undefined {
   const nodeId = commitment.targetNodeId;
   if (nodeId === 0) return undefined;
@@ -1628,14 +1679,38 @@ function workOne(
   /**
    * The stacked, capped multiplier for one primitive on this mage this month.
    *
-   * The god's magnitudes and the library's contribution go into one array and
-   * through `stackMagnitudes` once, so `contracts.md` §3's `(1 + Σ)` rule and
-   * its `fp(4096)` cap apply to their sum. That is the whole of the bound on
-   * the §6a loop, and it is a contract already committed rather than a second
-   * cap invented for the occasion.
+   * The god's magnitudes, **the mage's own castable knowledge**, and the
+   * library's contribution go into one array and through `stackMagnitudes`
+   * once, so `contracts.md` §3's `(1 + Σ)` rule and its `fp(4096)` cap apply to
+   * their sum. That is the whole of the bound on the §6a loop, and it is a
+   * contract already committed rather than a second cap invented for the
+   * occasion.
+   *
+   * The mask reaches `stackMagnitudes` through the same call, which is the only
+   * place §9 permits it to be applied. Before `academic-effects.ts` there was
+   * nothing here for a mask naming one of these three rates to neutralize, so
+   * the omission cost nothing; it would cost a false negative now.
    */
   const rate = (primitive: PrimitiveRecord, bonuses: readonly Fixed[]): Fixed =>
-    libraryRateMultiplier(primitive, bonuses, shelves, ceiling, rateClamps).multiplier;
+    libraryRateMultiplier(primitive, bonuses, shelves, ceiling, rateClamps, deps.ablation)
+      .multiplier;
+
+  /**
+   * The god's magnitudes and the mage's own, in one array for one accumulator.
+   *
+   * Concatenated rather than stacked: combining two sources of one primitive is
+   * `stackMagnitudes`' job and `BAN_INLINE_PRIMITIVE_STACKING` says so. An
+   * empty result is an unblessed mage who knows nothing relevant, which is most
+   * of a young universe, and `rate` then returns the identity.
+   */
+  const withKnown = (
+    godBonuses: readonly Fixed[],
+    known: readonly Fixed[],
+  ): readonly Fixed[] => {
+    if (known.length === 0) return godBonuses;
+    if (godBonuses.length === 0) return known;
+    return [...godBonuses, ...known];
+  };
 
   switch (commitment.goalId) {
     case GOAL.researchNode:
@@ -1655,7 +1730,10 @@ function workOne(
         MAGE_MONTHS_PER_TICK,
         rate(
           deps.primitives.researchRate,
-          deps.researchBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
+          withKnown(
+            deps.researchBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
+            academic.researchRate(mage),
+          ),
         ),
       );
       return undefined;
@@ -1675,7 +1753,10 @@ function workOne(
             MAGE_MONTHS_PER_TICK,
             rate(
               deps.primitives.teachRate,
-              deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+              withKnown(
+                deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+                academic.teachRate(mage),
+              ),
             ),
           ),
         );
@@ -1693,7 +1774,10 @@ function workOne(
             MAGE_MONTHS_PER_TICK,
             rate(
               deps.primitives.teachRate,
-              deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+              withKnown(
+                deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+                academic.teachRate(mage),
+              ),
             ),
           ),
         );
@@ -1708,7 +1792,10 @@ function workOne(
       gateway.contributeScribing(
         mage,
         nodeId,
-        mul(MAGE_MONTHS_PER_TICK, rate(deps.primitives.scribeRate, NO_BONUSES)),
+        mul(
+          MAGE_MONTHS_PER_TICK,
+          rate(deps.primitives.scribeRate, academic.scribeRate(mage)),
+        ),
       );
       return undefined;
     case GOAL.applyMagic: {
