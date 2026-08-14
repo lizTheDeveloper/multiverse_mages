@@ -71,55 +71,74 @@ have is exactly a difference an institution can hold.**
    run and there is no inter-realm channel at all. **The rule makes single-species universes weak by
    design and the escape hatch is unbuilt** — so these land together or the game is six ways to lose.
 
-## Resolved: two, and it is a divine capacity
+## Resolved: one species, and portal magic is the way out
 
-*Owner, 2026-08-13, closing the question this section previously left open.*
+*Owner, 2026-08-13, superseding the two-species reading above.*
 
-**A universe founds with two species, and the limit is the god's — not the world's.** You can support
-two until people start worshipping you. **Species capacity is a function of worship.**
+**A universe founds with one species.** To get another, it needs an **alliance**. To get an alliance,
+it needs **portal magic**.
 
-That is a better answer than either of the ones I had, and the reason is that it makes the limit
-**diegetic and dynamic instead of arbitrary and fixed.** "Two species per planet" is a rule a player
-obeys. "I can only hold up two peoples until enough of them believe in me" is a rule a player *feels*,
-and it grows.
+That last link is the one that matters, because it turns a measured curiosity into the game's central
+constraint.
 
-### Why it fits what is already built
+### Portal magic stops being a raid feature
 
-Worship is the project's most complete economic loop and its least load-bearing one. `god-constant.json`
-implements it as **three saturating classes — mage, university, populace — each with a per-head rate
-and a half-cap**, and `favor-cap-base`'s own gloss says what it currently buys: the cap *"converts a
-worship lead from power into tempo — a high-worship god cannot do more things, only sooner."*
+Today `portal` is what you use to go and take things. Under this rule it is **how a civilisation stops
+being alone** — the prerequisite for every academic your own species cannot produce, for every
+cross-species affinity `ages-of-magic.md` caps at 1.15, and for the whole trade in scholars.
 
-**Worship currently buys speed. Under this rule it also buys breadth.** That is the first structural
-thing worship has ever done, and it arrives without a new resource, a new curve, or a new verb — the
-accrual, the classes and the caps all already exist and are already measured.
+**A universe without portal magic is a universe that will only ever have its founding species.**
 
-It also composes with W81's daily-relevance work, which made worship depend on *what magic is for*: a
-god whose permitted cells serve daily life accrues faster, and therefore reaches a third species
-sooner. **What you allow decides who you can hold.**
+### Which makes a measured fact into an existential one
 
-### What it implies
+W82 measured the reachability of `portal` across openings, and recorded it as a raid concern:
 
-1. **The founding mask admits exactly two**, and a mask of one or three-plus is refused at scenario
-   build — the way a mask of none already is.
-2. **Capacity is read, not stored.** A god's supportable species count is derived from worship at the
-   tick it is asked, like every other derived quantity; a stored count would rot the way a stored null
-   bar would.
-3. **Crossing a threshold is an event worth surfacing.** Reaching the worship to hold a third people is
-   exactly the kind of thing the interface prototypes exist to make legible, and it is a better use of
-   an event feed than most of what is currently in one.
-4. **The species arms become pair arms.** Six species give **fifteen** legal openings rather than six —
-   which is a wider starting-position space than the singles, and it answers what the singles cannot:
-   **whether two weak species together beat one strong one.** That is the question alliances exist to
-   pose, and now it is also the question the *opening* poses.
+> Both `portal` nodes sit in `rego-limen` behind an `intellego-limen` prerequisite. **0 of 70 possible
+> 1×1 openings and 13 of 910 2×2 openings can ever raid.**
 
-### The threshold is a swept parameter, not a guess
+Under one-species founding, reread that: **almost no opening can ever acquire a second species.** The
+overwhelming majority of starting positions are permanently, structurally alone — not badly balanced,
+*sealed*.
 
-**How much worship buys the third species is exactly the kind of scalar this project has been wrong
-about before.** Sweep it — with "never reachable" and "reachable by tick 100" as the two controls —
-and let the curve say. A threshold nobody can reach makes the rule a two-species cap with extra steps;
-one reached immediately makes it decoration.
+**That is the sharpest content-placement finding this project has, and it changes what has to be
+fixed.** It is no longer "raids are hard to reach." It is: **the entire mid-game pivot hangs off two
+nodes in one cell.**
 
-**And the alliance channel still does not exist**, so the note above stands: this makes two-species
-universes the ceiling until alliances are built, and the two land together or the rule is a
-restriction with no escape.
+Three ways out, and they are not equivalent:
+
+1. **Author `portal` effects into more cells.** Cheapest, and it is data. It also weakens the identity
+   of `rego-limen` as *the* threshold cell, which may be worth keeping.
+2. **Guarantee portal reachability in the opening.** Every legal opening includes a path to a portal
+   node — a constraint on square selection rather than on content. Preserves the cell's identity and
+   makes the guarantee explicit.
+3. **Accept sealed universes as a legitimate outcome** — some worlds never meet anyone. **Honest, and
+   the most interesting of the three**, but it needs the sealed path to be *playable* rather than just
+   losing, and today a single-species universe ascends between 0/100 and 20/100.
+
+**Option 2 is the recommendation** — the guarantee is checkable, the cell keeps its meaning, and it
+does not require judging 300 nodes.
+
+### Alliances do not exist, and that is the build
+
+Stated plainly because it is the whole cost of this design:
+
+- **There is no alliance verb.** The god's sixteen actions do not include one.
+- **There is no inter-realm channel at all.** `contracts.md` §1.1 puts **one universe per simulation
+  instance**, which is the same constraint that made `openPortal` unreachable for most of this
+  campaign.
+- **`affiliate` never fires in any run** — the goal that would move a mage between institutions is
+  scored ≈640 against research's ≈832 and has never been chosen.
+
+**So this rule makes one-species universes the permanent state until three things are built**:
+portal reachability, an alliance verb, and a second universe to ally *with*. The rule is right and the
+escape hatch is unbuilt, and they have to land together or the game is one way to be alone.
+
+### What is now free to be measured
+
+The species arms become **six legal openings** rather than a sweep of an exotic factor, and their
+spread is the real starting-position space: **0/100 to 20/100 ascension**, with `elf` matching the
+old illegal all-six control while knowing 19.4 fewer nodes.
+
+**Do not read `draconic` never ascending as a species that needs buffing.** Under this rule it is a
+species that needs *allies*, and whether that is a fair trade is the question the alliance mechanic
+exists to answer.
