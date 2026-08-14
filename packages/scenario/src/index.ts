@@ -74,8 +74,17 @@ export {
   collectReferenceMetrics,
 } from './measures.js';
 
+export {
+  AXIS_PRICE_ACTION_IDS,
+  AXIS_PRICE_IDENTITY,
+  appliedAxisPriceScale,
+  axisPriceUnder,
+  withAxisPriceScale,
+} from './axis-price.js';
+
 export type { ReferenceContent, ReferenceOptions, ReferenceRun } from './reference-universe.js';
 export {
+  AXIS_PRICE_FACTOR_ID,
   REFERENCE_FACTOR_IDS,
   REFERENCE_SCENARIO_ID,
   TRADITION_FACTOR_ID,
