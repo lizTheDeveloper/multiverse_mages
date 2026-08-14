@@ -6464,10 +6464,14 @@ What is established statically, and what an agent is now proving by execution:
 - `ablation.ts:299` is the only place `one-sided` is constructed, and `runner.ts` uses
   `spec.ablation.primitives` **only to label arm metrics**.
 
-If that holds, every ablation arm ever run was its own control, and **`winRateByPrimitive` — a
-registered §7 metric whose whole definition is to ablate a primitive and measure the resulting win
-rate — has been comparing a run against an identical run.** Structurally incapable of moving: the
-fifth instance of the pattern, and the most expensive, because this one is a *balance* metric.
+If that holds, every ablation arm ever run was its own control.
+
+**[CORRECTED by W134 — read that entry, not this paragraph.]** I wrote here that
+`winRateByPrimitive` "has been comparing a run against an identical run" and called it the fifth
+instance of a metric structurally incapable of moving. **The measurement says the first half is
+right and the second half is wrong.** The metric returns `no-observations`, not a number — so unlike
+the four metrics found earlier, it never published a healthy constant. It was honest about knowing
+nothing. The defect is real but different, and W134 states it correctly.
 
 **Stated carefully, because it touches something the owner defended.** The owner's account of
 `winRateByPrimitive` — that it ablates each primitive and measures win rate — is a correct
@@ -6708,3 +6712,66 @@ ready":
 Both are the same lesson as W120 and W130 in a smaller costume: **a checker that silently reports the
 negative case is indistinguishable from a checker that works.** Neither bug threw. Both were caught
 only by cross-checking the tool's answer against the thing it was measuring.
+
+## W134 — the ablation mask never reached the simulation. Proved by execution, and there are three breaks, not one
+
+W127's claim, settled the way this repository requires — by running it, not by reading it. The probe
+went into `stackMagnitudes`, the single choke point that `BAN_INLINE_PRIMITIVE_STACKING` forces every
+stacked magnitude through, over a 300-tick reference universe:
+
+| | stack calls | saw a mask | vs control |
+| --- | ---: | ---: | --- |
+| before, control `[]` | 70,462 | 0 | — |
+| before, arm `['resource-yield']` | 70,462 | **0** | **byte-identical** |
+| after, control `[]` | 70,462 | 0 | — |
+| after, arm `['resource-yield']` | 70,430 | **8,962** | **differs** |
+
+And the post-fix control census is identical field-for-field to the pre-fix control, which is what
+makes the treatment a treatment.
+
+### Three links dropped it, and my guess named none of them
+
+I briefed that `createScenario` taking no parameters was the structural cause. **That is the
+gym-bridge entry, not the sweep path.** The real breaks:
+
+- **A — fixed.** `executeReferenceRun` in `scenario/src/executor.ts` receives the whole `RunTask` and
+  simply never reads `ablatedPrimitives`.
+- **B — reported, not fixed.** `scheduleAblation` / `ablationArms` / `armSpec` have **no non-test
+  caller**. Confirmed through the real CLI: a `one-sided` sweep produces one arm and 2 runs, where
+  arm scheduling would give three arms and 6 runs. **There is no control arm at all.**
+- **C — reported, not fixed.** Only three `world-step.ts` sites forward `deps.ablation`. Measured at
+  240 ticks, `resource-yield` neutralizes 6,717 magnitudes while `research-rate`, `teach-rate`,
+  `scribe-rate`, `fertility` and `lifespan` neutralize **zero** — and `arbitration.ts` passes `{}`, so
+  **no combat primitive is ablatable at all.**
+
+B and C were deliberately left: B changes the CLI's output shape, touches baselined paths, and its
+mirrored-pair design assumes two slots while the executor is hard-wired single-slot. That is a
+design decision, not a small diff.
+
+### The correction I owe on `winRateByPrimitive`
+
+W127 called this the fifth instance of "a metric structurally incapable of moving." **That
+overstated it, and the distinction matters.** `winRateByPrimitive` returns `no-observations` — it
+never published a number at all, and the four metrics found earlier published healthy constants.
+**A metric that says "I know nothing" is not the same failure as one that says "everything is fine."**
+
+What *is* true, and is bad enough: its stated reason for the empty result — *"The arms were
+scheduled"* — is false, and had an arm ever been scheduled, both arms would have been the same
+universe. That is verbatim the condition its own `disprovedBy` names. **After this PR it is still
+`no-observations`**; what changed is that ablation is now *reachable*. Producing a number needs B,
+`ablationPlay` reporting, and C extended into combat.
+
+### The test, and why it is not the test that already existed
+
+`ablation-reaches-the-world-loop.test.ts` never inspects a mask or a task field — `ablation-scheduling.test.ts`
+does exactly that and **was green throughout**. The new one runs two universes and compares what they
+*became*, asserts the direction of the loss so an inverted identity fails, and catches a mask leaking
+into shared content. **Negative control: revert the executor hunk and three of five fail.**
+
+One implementation note worth keeping: the mask is per-**scenario**, not per-`ReferenceContent`.
+Content is memoized for a worker's lifetime, so folding the mask there would have ablated every run
+scheduled afterwards. Empty stays strictly `undefined` rather than `NO_ABLATION`, so the control keeps
+the identical branch.
+
+`npm run verify` exits 0 — 4,367 tests — and all three balance gates pass with **every delta exactly
+`0.00000`**, bit-identical rather than merely within tolerance. Reachability improves 123 → 121.
