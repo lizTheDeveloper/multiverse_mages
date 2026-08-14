@@ -329,6 +329,19 @@ describe('contentRevision', () => {
     // what a digest over the union is supposed to produce, and it is the same
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of file names.
+    //
+    // 6973d2c55f6d7788bbaa6886e507bbde -> 162f80bf169296d0e5fd516cc3c5257a,
+    // when the founding-grant budget added three god constants — the starting
+    // allowance, the self-discovered nodes that earn another grant, and the
+    // ceiling. In the preimage for the reason every other god constant is: two
+    // universes that disagreed about how many nodes a god may seed would be
+    // playing different games while their revisions agreed they were
+    // compatible. Nothing existing changed a byte, and all three ship at values
+    // no run can reach, so this revision plays identically to the last one —
+    // which is the opposite of the ascension-constant move above, and the
+    // difference is worth reading: that one changed when a run ends, this one
+    // changes nothing until a sweep names a level.
+    //
     // `6973d2c55f6d7788bbaa6886e507bbde -> 5ab771101485e49068f7f94648fa2bc3`
     // gave five effects on the four `rego-terram` nodes an optional
     // `displacement` — the first cost any effect in the shipped set has ever
@@ -342,7 +355,11 @@ describe('contentRevision', () => {
     // without hands would not be running the same economy, and the raid
     // arbitration that reads the host's ruleset would be arbitrating between
     // two different games.
-    expect(registry.contentRevision).toBe('5ab771101485e49068f7f94648fa2bc3');
+    //
+    // And once more: the first tree holding main's revision together with the
+    // optional displacement term on an effect. Neither literal is a digest
+    // over a preimage containing both.
+    expect(registry.contentRevision).toBe('b6a577ddbb1777bd581eeaf05e937ff4');
   });
 
   it('is stable across loads of identical content', () => {
