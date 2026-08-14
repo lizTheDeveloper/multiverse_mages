@@ -950,11 +950,30 @@ and each is a deliberate follow-up, not an oversight:
   world-time only"* and has scenarios refusing blessing and ascension mid-raid. Those two remain
   correct under this amendment; the technique and form scenarios do not.
 
-**Unmasking these four is a behaviour change, not a documentation change.** It widens the legal
-action set inside every engagement, which moves what any agent can do and therefore what every
-committed balance baseline measured. It should land as its own change with its own re-baselining,
-and until it does, this table describes the rule and `mask.ts` describes today's behaviour. A reader
-who needs to know which is live should read the code.
+**Unmasking these four costs nothing to run, and that is measured rather than assumed.** The first
+draft of this note claimed the change would move every committed balance baseline. It would not.
+`legalityMask` was instrumented and four strategies were run for 600 world ticks on seed 20260813:
+
+| strategy | raids | engagement ticks | mask evaluated in engagement |
+|---|---|---|---|
+| `passive-control` | 2 | 159 | **0** |
+| `uniform-random-legal` | 7 | 440 | **0** |
+| `portal-rush` | 9 | 489 | **0** |
+| `denial-warden` | 1 | 65 | **0** |
+
+**The engagement branch of `legalityMask` is unreachable in the current architecture.** A raid
+resolves atomically inside a single world step: `rules-raid`'s `runRaid(raid)` takes a `Raid` and
+nothing else, loops to termination, and returns before the agent is asked for another action. The
+clock genuinely enters engagement mode — `enterEngagement` is called on both participants — but no
+observation is ever taken while it is there, so the mask is never computed and the god is never
+offered the choice.
+
+So the mask is not what stops a god acting mid-raid. **Nothing asks.** Changing the four entries
+would be a no-op against every baseline, and it would also not deliver the design: what
+`raid-engagement.md` §2 describes — verbs whose agency decays across three phases, a mid-raid forbid
+the player later regrets — requires the engagement loop to yield to the agent between ticks, which
+is a change to `runRaid`'s shape rather than to a mask. That is the real prerequisite, and it is
+larger than this table.
 
 - **The raid verb set is not in this table.** `raid-engagement.md` §3 gives raids *"their own verbs,
   live only inside an engagement, distinct from §4's world-time verbs"*, with the defender spending

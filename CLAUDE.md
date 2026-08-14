@@ -188,6 +188,25 @@ shared checkout is frequently *not* on `main`, and a grep run in it describes wh
 happens to be sitting on. Two separate wrong findings in one session came from this, both stated
 confidently, one of them contradicting an earlier correct entry in the same document.
 
+## Check, do not ask
+
+**If a question can be answered by running something, run it.** Do not ask which of two options is
+better when the difference is measurable — measure it, then present the numbers and a
+recommendation. A question that could have been a measurement wastes a round trip and usually gets a
+guess back.
+
+**If one option obviously collapses and the other does not, just take the one that works** and say
+why. Asking is for decisions that are genuinely the author's: a rule the spec is silent on, a
+tradeoff between two things that both work, anything that changes the design rather than discovers
+it.
+
+This has already paid twice in one session. "Unmasking four actions during engagement moves every
+balance baseline" was asserted from reading the code and was false — instrumenting the mask and
+running four strategies showed the engagement branch is evaluated **zero** times, because raids
+resolve inside one world step and nothing asks the agent. And a contrast claim of "about four
+percent of luminance" measured 1.01:1. Both were confident, both were wrong, and both cost one
+command to check.
+
 ## Conventions
 
 - Commits are authored with the repo owner's git identity (`lizTheDeveloper`), not an inferred one.

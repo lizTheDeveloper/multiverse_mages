@@ -298,13 +298,22 @@ and says nothing about edicts, so actions 5–7 stay masked with the gap recorde
 set it describes has no action ids in §4.2 at all, with a note that Vis collides with
 `mages-and-species`'s economy requirement forbidding a fourth resource.
 
-**Still open in code**, which is why this is not simply resolved: `agent-api/src/mask.ts` returns
-`[1, 0, 0, …]` from one early return in engagement mode and quotes the repealed paragraph verbatim;
-the released `observation-action-space` spec still requires the old rule; `interventions` still says
-every intervention is world-time only. Unmasking four actions widens the legal action set inside
-every engagement, so it moves what every committed baseline measured — it needs its own change with
-its own re-baselining, not a ride-along on a documentation edit. Until then `ui/raid/`'s premise is
-sound against the contract and still unbuildable against the code.
+**Still open in code, but not for the reason the amendment first gave.** `agent-api/src/mask.ts`
+returns `[1, 0, 0, …]` in engagement mode, and the first draft of this entry said unmasking four
+actions would move every committed baseline. Instrumenting `legalityMask` and running four
+strategies for 600 ticks says otherwise: `passive-control` 2 raids / 159 engagement ticks,
+`uniform-random-legal` 7 / 440, `portal-rush` 9 / 489, `denial-warden` 1 / 65 — and the mask was
+evaluated in engagement **zero times in all four**.
+
+The branch is unreachable. A raid resolves atomically inside one world step: `runRaid(raid)` takes a
+`Raid` and nothing else, loops to termination and returns before the agent is asked again. The clock
+does enter engagement mode; nothing observes while it is there.
+
+**So the mask never stopped the god acting mid-raid — nothing asks.** That relocates the finding
+rather than closing it. `ui/raid/`'s premise, and `raid-engagement.md`'s three phases of decaying
+agency, need the engagement loop to yield to the agent between ticks. That is a change to
+`runRaid`'s shape, and it is the real prerequisite for a playable raid; the mask entries are
+downstream bookkeeping that can follow it cheaply.
 
 ### 5.2 Cost per tick of effect is the comparison nobody can make — **open**
 
