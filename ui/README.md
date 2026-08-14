@@ -108,12 +108,18 @@ coming off it. Both resolve from the same `--ctl-charged-*` and `--glow-charged`
 prototype writes one rule and gets the right treatment in either theme.
 
 Measured across all eleven prototypes **and `index.html`** in both themes, on `ui-visual-pass`
-(2026-08-14), by computing the ratio for every text node against its nearest opaque background:
-**no text below its WCAG threshold**, with one deliberate exception — `console/`'s zero-count and
-outside-the-ruleset cells set `color: transparent`, because an empty cell and a cell holding zero
-are drawn as different things on purpose.
+(2026-08-14), by computing the ratio for every text node against its nearest opaque background, in
+each page's default state *and* after visiting every `aria-pressed` toggle on it: **no measurable
+text below its WCAG threshold.** Two things are outside "measurable", both named by the sweep rather
+than folded into a pass:
 
-**Two of those states are not the default one, and that is where the worst two failures were.**
+- `console/`'s zero-count and outside-the-ruleset cells set `color: transparent`, deliberately —
+  an empty cell and a cell holding zero are drawn as different things.
+- Four button labels sit on a `linear-gradient` fill, which no computed-style sweep can measure
+  (see below). Those were measured by hand against their declared stops: 5.87, 6.62, 7.30, 7.95,
+  8.07, 9.81, 14.41, 15.41.
+
+**The two worst failures were not in any page's default state.**
 A sweep that loads each page and measures cannot see a control that is masked on load. `ascension/`'s
 declare button paints its live treatment in only two of four world states, and
 `ruleset-symmetry/`'s commit button is `[disabled]` and flat-filled until a change is staged. Both
@@ -133,7 +139,7 @@ front door was the page the discipline did not cover**: `ui-theme.test.ts` itera
 so a file at the top level is invisible to it, and `index.html` declares its own small palette
 rather than loading `theme.css`. Its `--faint` measured **2.70:1 on vellum and 3.91:1 on ink** —
 carrying the lede, every section heading, every card path and the footer — and its `--brass` ran
-3.79:1 as 11px text on paper. The fourth was a specificity collision: `console/`'s
+3.79:1 as 11px text on paper. The last was a specificity collision: `console/`'s
 `.clockbar button[aria-pressed="true"]` also matched the shared theme control mounted inside that
 bar, painting `--god` on `--ctl-charged-bg`, so **the selected theme button measured 1.28:1 and
 only on vellum**.
