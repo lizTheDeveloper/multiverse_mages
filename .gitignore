@@ -50,3 +50,8 @@ ui/lattices.html
 
 # W49 measurement scratch; the committed copies live in balance/
 .w49/
+
+# W117 regenerates these from balance/w99/w99-runs.csv in one command
+# (scripts/w99-csv-to-records.mjs). Committing them would duplicate the
+# committed CSV in a second format that could then drift from it.
+balance/w99/records/

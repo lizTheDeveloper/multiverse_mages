@@ -366,7 +366,18 @@ describe('contentRevision', () => {
     //
     // Union again: main's revision together with this branch's metis-from-use
     // content. Neither literal is a digest over a preimage holding both.
-    expect(registry.contentRevision).toBe('162f80bf169296d0e5fd516cc3c5257a');
+    //
+    // 162f80bf169296d0e5fd516cc3c5257a -> d4e3047657b4fa8a1a74e1d52f9f5c86,
+    // when `apply-magic` added two scalars to `autonomy-weight.json` — what a
+    // mage-month of applied magic makes, and what she eats while she makes it.
+    // In the preimage for the reason the god constants are: the two numbers
+    // decide how much of a universe's economy comes out of its mages rather than
+    // its fields, so two universes disagreeing about them would keep different
+    // populations while their revisions agreed they were compatible. Unlike the
+    // grant-budget move above, this one **does** change every run: applying
+    // magic is a goal a mage will choose, so a tick's materials and a tick's
+    // goal histogram both move from the first month.
+    expect(registry.contentRevision).toBe('d4e3047657b4fa8a1a74e1d52f9f5c86');
   });
 
   it('is stable across loads of identical content', () => {

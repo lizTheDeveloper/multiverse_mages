@@ -122,7 +122,7 @@ import { TIME_MODE } from '@mm/sim-core';
 import type { CellResolver, ConsumptionRecorder, EffectSourceInstance } from '@mm/rules-magic';
 import { gatherEffects } from '@mm/rules-magic';
 import type { MaterialAmounts, MaterialKind } from '@mm/rules-world';
-import { MATERIAL_KINDS, routeYieldByForm, zeroAmounts } from '@mm/rules-world';
+import { MATERIAL_KINDS, formRoutesToMaterials, routeYieldByForm, zeroAmounts } from '@mm/rules-world';
 import type { Ruleset } from '@mm/state';
 import { KNOWLEDGE_INSTANCE, collectRecords } from '@mm/state';
 
@@ -143,6 +143,33 @@ export interface UniverseEffectIndex {
   formOf(nodeId: ContentId): FormRecord | undefined;
   /** How many nodes carry a universe-scoped economic effect at all. For diagnostics. */
   readonly weightedNodeCount: number;
+  /**
+   * What a mage gets for spending a month casting this node at the world, or
+   * `undefined` if she would get nothing.
+   *
+   * `undefined` covers three different nothings and deliberately collapses them,
+   * because a mage cannot spend a month on any of them: the node carries no
+   * `resource-yield` effect at `target: "universe"`; the content set does not
+   * declare it; or its form's `yieldWeights` are all zero, which `kinds.ts`
+   * makes the intended reading of a form whose material is not a material.
+   * Shadow magic feeds nobody, and a mage should not be able to commit a career
+   * to finding that out.
+   *
+   * This is a projection of the **authored** content and asks nothing about
+   * knowledge or permission — `castableNodes` is the gateway's half, and the
+   * two are composed by whoever builds an outlook.
+   */
+  appliedYieldOf(nodeId: ContentId): AppliedNodeYield | undefined;
+  /** How many nodes are applicable at all, ignoring ruleset and knowledge. */
+  readonly applicableNodeCount: number;
+}
+
+/** One node's authored answer to *"what does casting this at the world make?"* */
+export interface AppliedNodeYield {
+  /** The node's form. Decides which kinds the output lands in. */
+  readonly form: FormRecord;
+  /** Its authored `resource-yield` magnitudes at `target: "universe"`, `fp`. */
+  readonly magnitudes: readonly Fixed[];
 }
 
 /**
@@ -175,6 +202,7 @@ export function universeEffectIndex(
   }
 
   const forms = new Map<ContentId, FormRecord>();
+  const applicable = new Map<ContentId, AppliedNodeYield>();
   let weightedNodeCount = 0;
   // Per-primitive, because the consumption recorder asks a per-primitive
   // question and `weightedNodeCount` deliberately does not: a node weighted
@@ -192,6 +220,18 @@ export function universeEffectIndex(
     if (economic.size > 0) weightedNodeCount += 1;
     for (const primitive of economic) {
       contributingNodes.set(primitive, (contributingNodes.get(primitive) ?? 0) + 1);
+    }
+
+    // The applied channel spends `resource-yield` alone. `build-rate` is a rate
+    // on somebody else's construction, not a quantity of anything a mage can
+    // hand over at the end of a month, and inventing a material reading of it
+    // here would be this module authoring a semantics §3 did not give it.
+    if (form === undefined || !formRoutesToMaterials(form)) continue;
+    const magnitudes = node.record.effects
+      .filter((effect) => effect.target === 'universe' && effect.primitive === 'resource-yield')
+      .map((effect) => effect.magnitude);
+    if (magnitudes.length > 0) {
+      applicable.set(node.contentId, { form, magnitudes: Object.freeze(magnitudes) });
     }
   }
 
@@ -215,7 +255,13 @@ export function universeEffectIndex(
     }
   }
 
-  return { registry, formOf: (nodeId) => forms.get(nodeId), weightedNodeCount };
+  return {
+    registry,
+    formOf: (nodeId) => forms.get(nodeId),
+    weightedNodeCount,
+    appliedYieldOf: (nodeId) => applicable.get(nodeId),
+    applicableNodeCount: applicable.size,
+  };
 }
 
 /** What the world loop hands to production and construction this tick. */
