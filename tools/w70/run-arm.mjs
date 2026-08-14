@@ -75,13 +75,22 @@ export const CELLS = Object.freeze([
   { cellIndex: 3, options: { cohortSize: 12, foundingNodes: 4 } },
 ]);
 
-/** The five arms. `undefined` counts mean the v1 rectangle — today's universe. */
+/**
+ * The five arms. `undefined` counts mean the v1 rectangle — today's universe.
+ *
+ * **`openingSquareSeeded: 1` is carried explicitly on every seeded arm**, and
+ * it is not decoration. The default answer to "who chooses the square" is now
+ * the god (`reference-universe.ts`), so an arm that named only a size would
+ * quietly become a *standard* opening and W82's numbers would no longer be
+ * reproducible from this file. The flag is what keeps these arms the arms W82
+ * ran.
+ */
 export const ARMS = Object.freeze([
   { id: 'v1-3x4', options: {} },
-  { id: 'seeded-1x1', options: { openingTechniqueCount: 1, openingFormCount: 1 } },
-  { id: 'seeded-2x2', options: { openingTechniqueCount: 2, openingFormCount: 2 } },
-  { id: 'seeded-3x3', options: { openingTechniqueCount: 3, openingFormCount: 3 } },
-  { id: 'seeded-3x4', options: { openingTechniqueCount: 3, openingFormCount: 4 } },
+  { id: 'seeded-1x1', options: { openingTechniqueCount: 1, openingFormCount: 1, openingSquareSeeded: 1 } },
+  { id: 'seeded-2x2', options: { openingTechniqueCount: 2, openingFormCount: 2, openingSquareSeeded: 1 } },
+  { id: 'seeded-3x3', options: { openingTechniqueCount: 3, openingFormCount: 3, openingSquareSeeded: 1 } },
+  { id: 'seeded-3x4', options: { openingTechniqueCount: 3, openingFormCount: 4, openingSquareSeeded: 1 } },
 ]);
 
 /**
