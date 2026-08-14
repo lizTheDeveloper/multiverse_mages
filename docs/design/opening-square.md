@@ -502,14 +502,26 @@ Ascending content order makes the arms `intellego` → `+perdo` → `+rego` over
 
 Two consequences that must lead any reading of the arms below, not surface as mysteries:
 
-- **No arm below 3×3 can raid.** The only `portal` node in shipped content is `rl-open-the-portal`
-  in `rego-limen`, and `rego` is the third technique in content order. This is a genuine consequence
-  of a narrow opening, not an artefact of the ordering: W82's static audit found 0 of 70 possible
-  1×1 openings and 13 of 910 2×2 openings can ever raid.
-- **`foundingNodes` silently clamps.** Every cell holds exactly one prerequisite-free node, so a
-  1×2 square offers two founding candidates to a sweep asking for four. `buildReferenceState` deals
-  what exists. W83 measured founding knowledge at about **1%** of outcome, which is the size of this
-  confound.
+- **No arm below 3×3 can raid.** Both nodes carrying the `portal` primitive — `rl-open-the-portal`
+  and `rl-the-standing-gate`, selected by `effects[].primitive`, not by id — sit in `rego-limen`,
+  and `rego` is the third technique in content order. This is a genuine consequence of a narrow
+  opening, not an artefact of the ordering: W82's static audit found 0 of 70 possible 1×1 openings
+  and 13 of 910 2×2 openings can ever raid.
+- **`foundingNodes` clamps, and it is a confound the arms must be read against.** Every cell holds
+  exactly one prerequisite-free node, so a 1×2 square offers **two** candidates to a sweep asking
+  for six; `buildReferenceState` deals what exists. Founding grants are not a marginal channel on
+  the passive path — `reference-universe.ts`'s limit 2 makes them the **only** knowledge that can
+  ever be taught — so an arm with a smaller endowment differs from the control in two ways at once.
+
+  | | 1×2 | 1×3 | 2×2 | 2×3 | 3×4 |
+  |---|--:|--:|--:|--:|--:|
+  | founding candidates | 2 | 3 | 4 | 6 | 12 |
+  | dealt at `foundingNodes: 6` (§10c) | 2 | 3 | 4 | **6** | **6** |
+  | dealt at `foundingNodes: 4` (§10d) | 2 | 3 | **4** | **4** | **4** |
+
+  **The endowment-matched comparisons are therefore 2×3 against 3×4 in §10c, and 2×2, 2×3 and 3×4
+  against each other in §10d.** Those carry the headline on their own; the arms below them cannot
+  separate square size from endowment size and are reported as suggestive, not as evidence.
 
 ### 10c. Differentiation — `species-separation.mjs`, 12 seed sets × 6 seeds, tier 3, 720 ticks
 
@@ -517,6 +529,10 @@ Two consequences that must lead any reading of the arms below, not surface as my
 reproduces the committed docstring in `reference-time-to-tier.test.ts` exactly — gnome `[24,25]`,
 dwarf `[25,30]`, orc `[32,51]`, human `[30,31]`, draconic `[25,301]` — so the instrument is sound
 before any arm is read.
+
+**Read the 2×3 column against the control first.** Those two deal the identical six founding nodes,
+so the difference between them is the square and nothing else. 1×2, 1×3 and 2×2 additionally carry a
+smaller endowment (2, 3 and 4 nodes) and are shown for shape, not as evidence.
 
 **Rates, not verdicts.** A verdict is a function of how many sets were run; a rate is not.
 
@@ -555,11 +571,22 @@ under #137. The rows that *are* clean are gnome, human, dwarf and elf, and elf c
 **54.8 ± 0.3 in the control against 50.8–51.5 ± 0.4–0.8 in every narrow arm, six to eight standard
 errors apart.**
 
+**The clean pair, stated on its own:** 2×3 against 3×4, six founding nodes each, common seeds.
+`elf` 50.8 ± 0.5 against **54.8 ± 0.3** — about seven standard errors. `orc` 39.3 ± 1.7 against
+**34.2 ± 0.8**, with **zero** censoring on either side. `dwarf < elf` 11/12 against **12/12** and
+`human < elf` 11/12 against **12/12**. Two established pairs against **four**. Every one of those is
+a square effect with the endowment held equal.
+
 ### 10d. Width — the quality-diversity archive, 12 strategies × 4 seeds, 1,200 ticks
 
 `--ticks 1200`, above `ascension-min-tick` 600, so the horizon guard is respected and ascension is
 reachable. One arm per invocation at a fixed `--search-seed`, one level per factor, so all five arms
-run on the **same** universes.
+run on the **same** universes — checked from the records rather than argued from the seed
+derivation: `allocate-concentrate` carries `runSeed 2725566061` in the 1×2, 2×3 and control record
+files alike.
+
+At `foundingNodes: 4` the endowment is equal across **2×2, 2×3 and 3×4** (four nodes each); 1×2 and
+1×3 deal two and three.
 
 | arm | archive width | margin over null | ascended | mean nodes known across the pool |
 |---|--:|--:|--:|--:|
@@ -603,7 +630,10 @@ once**; this is that price paid, measured on the god's square rather than the se
 
 - On the passive universe — which is every balance baseline, every separation reading and every
   golden fixture — the square is a hard ceiling on content and it **reduces** species
-  differentiation: four established pairs at 3×4, two at every narrower size, monotone in between.
+  differentiation: **four** established pairs at 3×4 and **two** at every narrower size, including
+  the endowment-matched 2×3. The count is flat across the narrow sizes and then steps at the full
+  rectangle rather than falling smoothly, which is the sharper claim: among small squares, size
+  barely matters; the shipped twelve differ in kind.
 - On a god who permits, it is gone inside 1,200 ticks for the price of 84 favor, and the arms differ
   by about 1.5%.
 
