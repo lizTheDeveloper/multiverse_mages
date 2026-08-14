@@ -8174,3 +8174,69 @@ Two shared additions did most of the work and are worth knowing about: `.mm-essa
 eleven pages had a 700 px essay column beside 600 px of empty screen**, and `.mm-scroll`, because
 capped lists were slicing rows mid-sentence. `ruleset/` got 20 px **taller** — the line that now says
 how many nodes you cannot see.
+
+## W164 — the raid page could read the recording today and would get zeros forever
+
+The `raid/` finding from W163, chased to the bottom. It is not "the reference run has no raids", and it
+is not sampling luck.
+
+**The page's own source strip was telling the reader something false.** Both `shared/README.md` and
+`WHY_ABSENT.engagement` — *which renders on the page* — said *"the reference run never enters
+engagement mode, so there is no raid in it to draw."* **The second clause is wrong:**
+
+- The recorder builds the scenario with **`{ raids: true }`**, and the run behind `ui/session.json`
+  returns **one `RaidRecord`, at world tick 226.**
+- The engagement block (`offset: 336, size: 64`) is **zero in all 25,664 readings across 401 frames**,
+  and the clock's engagement flag is set in **none** of them.
+
+### The structural reason, which is stronger than any sample
+
+`AgentSession` alternates `observe()` / `submit()`, and **`submit()` runs a whole world step
+synchronously.** The recorder's loop is `record(); for(…){ submit(noop); record(); }`. **So no consumer
+can sample mid-engagement** — the raid opens and resolves entirely inside one `submit()`, between two
+observations. A longer recording or a different seed changes nothing.
+
+That is the same fact as *"raids resolve inside one world step"* and *"no raider has ever come home"*,
+arriving from a third direction: **the observation boundary cannot see an engagement, by construction.**
+Whether it should is an `agent-interface` decision, not a UI one.
+
+### And the thing #145 added is the thing a session client cannot render
+
+**`RaidRecord.actionEconomy` is not on the observation layout at all.** It is a `scenario` run-record
+field consumed by `mc-harness` — confirmed present on the tick-226 record and absent from `layout.ts`.
+
+**The one thing a raid surface gained this week is the one thing a session client cannot show.** That
+is not a defect in #145, which put it where the metrics needed it. It is a statement about where the
+§4.1 observation vector stops, and it should be read alongside the §7 finding that **no committed
+baseline holds a value for a single one of the eighteen metrics**: the two instruments that are meant
+to make raids legible — the observation vector and the metric registry — are each, in a different way,
+not carrying the raid.
+
+### The blind spot is closed, with three negative controls
+
+`ui-theme.test.ts` now sweeps the eleven directories **and `ui/index.html`**, reporting paths so a
+failure reads `ui/index.html` rather than `ui//`. The front door is held to the undeclared-token and
+theme-control checks and **exempt from the stylesheet-link check by path, in a named set with the
+reason beside it** — plus a fourth assertion that holds the exemption list to paths that exist.
+
+| control | result |
+| --- | --- |
+| `var(--totally-undeclared)` in `ui/index.html` | × names the token |
+| remove the `mountThemeControl` import | × names the missing control |
+| exempt a nonexistent path | × `ui/renamed-away.html is exempted but is not a page this sweep visits` |
+
+**A widened sweep that cannot fail on the file it was widened for is worse than the narrow one**,
+because it claims coverage. This one was made to fail three ways before being believed.
+
+### Two self-corrections, and an environment note worth keeping
+
+It had asserted *"no recording of any length or seed would fill those 64 channels"* — **a universal it
+had inferred rather than measured**, in text a reader acts on — and replaced it with the structural
+reason above. And `shared/README.md` had begun claiming all six findings were tracked in
+`interface-findings.md` when one was not; it now says so.
+
+**Environment:** three of four full local runs failed on the *same* unrelated test —
+`god-loop.test.ts > records one evaluation per era boundary crossed` — always
+`Test timed out in 30000ms`, never an assertion, and **5.7 s in isolation on the same tree.** About 5×
+headroom clean and none under this box's contention. Fine in CI, marginal on a shared dev machine, and
+**very easy to misread as a real defect.**
