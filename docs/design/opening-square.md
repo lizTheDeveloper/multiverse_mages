@@ -382,3 +382,81 @@ What it **does not** deliver, and should not be claimed to:
 
 **The honest summary: the opening square is the first age's floor, and compounds are the second and
 third ages' ceiling. They are complementary, not the same rule.**
+
+---
+
+## 9. The #137 companion question, measured
+
+**Measured 2026-08-14 on `06abf3e`** — this branch merged up to `origin/main` at `5a1ce6c`. #137
+(*enable all seventy cells*) is **not** in this tree, and `packages/content/data/cell.json` was not
+touched to fake it. Where a counterfactual was needed it was computed by flagging every cell `v1`
+**in memory**, against the shipped registry, which is what #137 does to the same field.
+
+#137's reviewer note asks whether the opening square restores three effects that #137 breaks. The
+answer for all three, as this branch stands, is **no — and the reason is one line.**
+
+### 9a. The default opening is still derived from the `v1` flag, so #137 widens it
+
+`resolveOpeningSquare` returns `content.axes` unchanged whenever both counts are zero, which is the
+default, every committed sweep and every shipped path. `content.axes` is `v1RulesetAxes(registry)`,
+which ORs the axes of cells flagged `"v1": true` — **the same field #137 sets on all seventy.**
+
+| `v1RulesetAxes` | techniques | forms | cells open |
+|---|--:|--:|--:|
+| `cell.json` as shipped (main) | 3 `[1,3,4]` | 4 `[7,8,12,13]` | **12** |
+| all seventy flagged `v1` (#137) | 5 `[0..4]` | 14 `[0..13]` | **70** |
+
+So **#72 merged on top of #137 opens the whole grid on the default path**, exactly as #137 alone
+does. The change supplies the *mechanism* for a narrow opening — `explicitOpeningAxes` names a
+square by content id and never reads `v1` — but **nothing on the default path calls it.** Making #72
+the companion #137 needs is a further edit: the reference universe must name its opening square
+outright instead of deriving it from the enabled set.
+
+### 9b. Looting cannot be restored by an opening square at all
+
+`shelveForeignBooks` picks its shelf with `entry.record.v1 === true` — the **content** flag. An
+opening square sets `permittedTechniques` / `permittedForms` on the `UNIVERSE` component. These are
+different gates, and no square of any size moves the first.
+
+| non-`v1` nodes available to shelve | count |
+|---|--:|
+| `cell.json` as shipped (main) | **249 of 300** |
+| all seventy flagged `v1` (#137) | **0 of 300** → `foreign.length === 0` → early return |
+
+`raid-constant.json`'s gloss describes the *god's* gate; the code reads the *content* gate. They
+coincided while exactly twelve cells were enabled. **Re-keying `shelveForeignBooks` onto the raiding
+universe's ruleset is a prerequisite for #137, and it is only meaningful once 9a is also done** —
+under #137 *without* a narrowed opening the universe permits all seventy cells, so a ruleset-keyed
+predicate is empty too.
+
+### 9c. `build-rate` — measured, and it does **not** reproduce the reported collapse
+
+A `5 × 14` opening square produces the *identical* `RulesetAxes` #137 gives the player's universe
+(9a), and nothing on the player's path reads `cell.v1` other than `v1RulesetAxes` — so it is an exact
+stand-in **for the player's universe only**. Definition: the distinct magnitudes on
+`universeEconomyBonuses(state, …).buildRate` at the final probed tick — literally what construction
+is handed — unioned over 8 strategies × 2 starting positions, 1,200 ticks, common random numbers.
+
+| arm | magnitudes reaching construction | effect lines |
+|---|---|--:|
+| `v1-3x4` (main today) | `{96,128,192,256,384,640}` | 507 |
+| `full-5x14` (#137 stand-in) | `{96,128,192,256,384,448}` | **873** |
+| `seeded-3x4` | `{96,128,192,256,384,640}` | 475 |
+| `seeded-2x2` | `{96,128,192,256,384}` | 118 |
+
+Widening the opening **increased** the number of `build-rate` effect lines reaching construction, from
+507 to 873, and left the distinct-magnitude count at six. Content agrees that widening can only add:
+the twelve `v1` cells hold `build-rate` magnitudes `{128,192,256,384,640}`, the whole grid holds
+`{96,128,192,256,384,448,640}`.
+
+**This does not reproduce #137's reported `{128,192,256,384}` → `{128,192}`**, and the discrepancy is
+not resolved here. The reported set is a strict subset of what the twelve `v1` cells hold, so it is
+plausibly a single arm rather than a pool union. **Reconciling it needs #137 in the tree and its own
+measurement script; do not treat the table above as a refutation of that one.**
+
+### 9d. `portal-rush` — **not measurable on this branch**
+
+The `5 × 14` stand-in is exact for the player's universe and **not** for the rival's: both
+`raiderNodeCandidates` and `shelveForeignBooks` key on `cell.v1`, which the stand-in does not move.
+A raid number taken here would be measuring a different configuration than the one that regressed, so
+none is reported.
