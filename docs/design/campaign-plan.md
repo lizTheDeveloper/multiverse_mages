@@ -5225,3 +5225,38 @@ the god-constant count, the metric count, the baselines, and this.
 
 **The general rule, now earned five times: when both sides of a conflict assert a count or a hash, ask
 the tree.** Neither literal describes a tree holding both.
+
+### W94 addendum 2 — the baseline stack, and two things that only a whole-object assertion catches
+
+All five baseline-conflicting branches are merged with `main`. The re-record is **not** uniform, and
+the difference is worth knowing before the next one:
+
+| branch | content revision after merge | re-record needed? |
+|---|---|---|
+| `w60/daily-relevance` | new | yes — 3 fast gates + ascension |
+| `w63/ascension-requires-play` | new | yes |
+| `w77/effect-displacement` | new | yes |
+| `w52/emphasis-reorders` | new | yes |
+| **`w49/metis-from-use`** | **`162f80bf` — identical to `main`** | **no** |
+
+**`w49`'s content changes were already on `main`**, so `main`'s baselines describe its tree exactly.
+Both fast gates PASS against them unchanged. **That was confirmed by running the gates, not inferred
+from the matching hash** — the hash says the *inputs* match, and the gate says the *outputs* do.
+
+### Two failures that a per-key assertion would have hidden
+
+**1. A regex over conflict markers silently ate two keys.** Git split `shipped-content.test.ts`'s
+counts block so that `raidConstants` and `autonomyWeights` sat *outside* the markers. A substitution
+that replaced the marked region dropped both. The test caught it — *"expected 11 keys to equal 9"* —
+**only because it compares whole objects with `toEqual`.** A suite asserting each count separately
+would have passed while asserting nothing about the two that vanished.
+
+**2. And one of those keys was a real change, not provenance.** `autonomyWeights` is **38** on this
+branch against `main`'s 36, because the god's emphasis became a *preference the outlook weighs* rather
+than a *rate it multiplies* — and a preference needs a weight to be weighed against. Had the key
+stayed dropped, the branch would have merged with the count silently unasserted.
+
+**The recipe, now stable across seven applications:** take `main`'s baselines wholesale rather than
+hand-merging numbers; resolve every count and digest by **asking the tree**; re-record from the merged
+tree with the notes *and* the rationale re-passed, since the regenerator replaces both wholesale; and
+run the gates rather than reasoning about whether they would pass.
