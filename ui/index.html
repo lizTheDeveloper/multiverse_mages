@@ -5,7 +5,9 @@
 
   A front door for ui/. Static, no build, no dependencies: it is a list of the
   eleven prototypes and the question each one exists to answer, because a
-  prototype whose question nobody remembers is a demo.
+  prototype whose question nobody remembers is a demo. Plus one page that is
+  not a prototype — the design dashboard, which asks nothing and reports the
+  campaign's own state instead.
 
   Serve with `npm run ui`, then open /ui/.
 -->
@@ -53,7 +55,7 @@
 <div class="wrap">
   <div class="eyebrow">Multiverse Mages</div>
   <h1>Interface prototypes</h1>
-  <p class="lede">Eleven static screens, each built to answer <em>one question</em> that could only be settled by operating something rather than arguing about it.</p>
+  <p class="lede">Eleven static screens, each built to answer <em>one question</em> that could only be settled by operating something rather than arguing about it — and one instrument, which answers none and reports where the design actually stands.</p>
   <p class="note">They all read one recorded universe through <code>shared/session.js</code>, and each says at the top which run it is reading — or which capability the read path does not carry, and why. Nothing here ships. None of it is imported by a package or covered by a test glob. Several of these contradicted the design that specified them, which is the whole reason they exist — the findings are collected in <code>docs/design/interface-findings.md</code>.</p>
 
   <h2>The god's verbs</h2>
@@ -94,6 +96,12 @@
   <div class="grid">
     <a class="card" href="console/"><b>The console</b><span class="path">console/</span>
       <p>Not a twelfth direction — the composition. Every surface the read path can feed, from one frame of one recorded universe, against one clock. The gaps line up next to the things that work.</p></a>
+  </div>
+
+  <h2>Not a prototype — an instrument</h2>
+  <div class="grid">
+    <a class="card" href="design-dashboard/"><b>The design dashboard</b><span class="path">design-dashboard/</span>
+      <p>Not a screen of the game at all. The campaign's own state in one page — the grid, primitive consumption, the species table, the §7 metrics, what the committed baselines measured, and what nothing in this repository can currently tell you.</p></a>
   </div>
 
   <footer>
