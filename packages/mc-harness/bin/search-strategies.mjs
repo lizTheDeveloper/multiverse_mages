@@ -275,7 +275,19 @@ async function main() {
     process.stdout.write('[search] WARNING: flat -- no wrong answers, so no right ones\n');
   }
   if (archive.shape === 'dead') {
-    process.stdout.write('[search] WARNING: dead -- nothing beats doing nothing\n');
+    // `dead` is ambiguous, and the ambiguity is the whole trap. It means either
+    // "no strategy beats doing nothing" or "the run ended before anyone could
+    // win". The `--ticks` guard above rules out the second only at the hard
+    // floor; ascension has been *observed* at 2,400 ticks (elf, 20/100) and not
+    // at 600, so a cap between the two can still produce a `dead` archive that
+    // is a fact about the horizon. Print the cap beside the verdict so the two
+    // readings cannot be confused by anyone who did not run the command.
+    process.stdout.write(
+      `[search] WARNING: dead -- no cell beat the null ladder at --ticks ${String(args.ticks)}. ` +
+        `Zero runs ascended. ascension-min-tick is ${ascensionMinTick} and ascension has been ` +
+        'observed at 2400; below that, `dead` is a fact about the horizon and not about the ' +
+        'strategies.\n',
+    );
   }
   for (const cell of archive.cells) {
     process.stdout.write(
