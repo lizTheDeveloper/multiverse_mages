@@ -1,0 +1,243 @@
+{
+  "spec": {
+    "name": "species-and-staff",
+    "axes": [
+      "speciesMix",
+      "staffSize",
+      "roleMix"
+    ],
+    "ticks": 120,
+    "capacity": 40
+  },
+  "digest": {
+    "runs": 1680,
+    "crossSize": 1680,
+    "stride": 1,
+    "columns": {
+      "adds.demand.0": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "adds.demand.1": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "adds.demand.2": {
+        "min": 40,
+        "max": 40,
+        "sum": 67200,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "adds.demand.3": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "adds.demand.4": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "adds.instancesDegraded": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "adds.scribeMonthsFinal": {
+        "min": 240,
+        "max": 2960,
+        "sum": 2808000,
+        "distinct": 30,
+        "minAt": "speciesMix=orc staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human+elf+dwarf+gnome staffSize=0 roleMix=teaching-school"
+      },
+      "adds.scribeMonthsTotal": {
+        "min": 26640,
+        "max": 343360,
+        "sum": 321564000,
+        "distinct": 48,
+        "minAt": "speciesMix=orc staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human+elf+dwarf+gnome staffSize=0 roleMix=teaching-school"
+      },
+      "adds.seatsRefused": {
+        "min": 440,
+        "max": 440,
+        "sum": 739200,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "adds.shelfReplacementCost": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "adds.stoneConsumed": {
+        "min": 1368,
+        "max": 4096,
+        "sum": 3751560,
+        "distinct": 36,
+        "minAt": "speciesMix=orc staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=draconic staffSize=0 roleMix=teaching-school"
+      },
+      "adds.studentsAdmitted": {
+        "min": 40,
+        "max": 40,
+        "sum": 67200,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "adds.vellumShortfall": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "adds.vellumUpkeepPaid": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "contains.buildProgress": {
+        "min": 1024,
+        "max": 1024,
+        "sum": 1720320,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "contains.complete": {
+        "min": 1,
+        "max": 1,
+        "sum": 1680,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "contains.completedOnTick": {
+        "min": 3,
+        "max": 26,
+        "sum": 11070,
+        "distinct": 11,
+        "minAt": "speciesMix=human+elf+dwarf+orc staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=draconic staffSize=0 roleMix=teaching-school"
+      },
+      "contains.designedCapacity": {
+        "min": 40,
+        "max": 40,
+        "sum": 67200,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "contains.distinctNodes": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "contains.dominantCell": {
+        "min": 0,
+        "max": 66,
+        "sum": 92400,
+        "distinct": 2,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=1 roleMix=teaching-school"
+      },
+      "contains.effectiveCapacity": {
+        "min": 40,
+        "max": 40,
+        "sum": 67200,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "contains.grimoireCount": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "contains.hosted": {
+        "min": 40,
+        "max": 40,
+        "sum": 67200,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "contains.instanceCount": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=0 roleMix=teaching-school"
+      },
+      "contains.profileCells": {
+        "min": 0,
+        "max": 4,
+        "sum": 2520,
+        "distinct": 4,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=16 roleMix=teaching-school"
+      },
+      "contains.residentMages": {
+        "min": 0,
+        "max": 16,
+        "sum": 8680,
+        "distinct": 6,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human staffSize=16 roleMix=teaching-school"
+      },
+      "contains.staffCohorts": {
+        "min": 1,
+        "max": 4,
+        "sum": 4680,
+        "distinct": 4,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human+elf+dwarf+draconic staffSize=0 roleMix=teaching-school"
+      },
+      "contains.staffHeadcount": {
+        "min": 40,
+        "max": 160,
+        "sum": 187200,
+        "distinct": 4,
+        "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
+        "maxAt": "speciesMix=human+elf+dwarf+draconic staffSize=0 roleMix=teaching-school"
+      }
+    }
+  }
+}

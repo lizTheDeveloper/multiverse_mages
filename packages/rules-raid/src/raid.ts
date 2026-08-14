@@ -65,6 +65,7 @@ import {
   nextBounded,
   rngFromRootSeed,
 } from '@mm/sim-core';
+import type { AblationMask } from '@mm/primitives';
 import { ClampCounters } from '@mm/primitives';
 import type { Engagement, Handle, RaidSideValue, RulesetSnapshot } from '@mm/state';
 import {
@@ -82,7 +83,7 @@ import { MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
 
 import type { TargetSettlement } from './action-economy.js';
 import { ActionEconomyLedger, COMBAT_SOURCE } from './action-economy.js';
-import type { ArbitrationFaults, HeldInstance } from './arbitration.js';
+import type { ArbitrationFaults, CombatEffectIndex, HeldInstance } from './arbitration.js';
 import { COMBAT_PRIMITIVES, CastArbiter, summonCount } from './arbitration.js';
 import type { CombatantBrief, SideRoster } from './combatants.js';
 import { emptyRoster, sideHasSummonRoom, spawnCombatant } from './combatants.js';
@@ -202,9 +203,24 @@ export interface OpenPortalOptions {
   readonly host: RaidParticipant;
   readonly registry: ContentRegistry;
   readonly grid: MagicGrid;
+  /**
+   * The composition root's fetch of every combat primitive's node effects.
+   *
+   * Required rather than derivable from `registry`, and the reason is in
+   * {@link combatEffectIndex}: the fetch is what registers a consumer, and an
+   * engine that could quietly build its own index would let the wire from the
+   * composition root be deleted with nothing failing.
+   */
+  readonly combat: CombatEffectIndex;
   readonly tuning: RaidTuning;
   /** Derived at portal open by the caller; the raid's whole randomness. */
   readonly raidSeed: number;
+  /**
+   * §9's mask for this arm, or absent for a control run. Reaches
+   * `@mm/primitives` only through {@link CastArbiter}, which is the one place
+   * in this package a node becomes a number.
+   */
+  readonly ablation?: AblationMask | undefined;
   readonly faults?: RaidFaults;
 }
 
@@ -248,8 +264,10 @@ export function openPortal(options: OpenPortalOptions): Raid {
     hostRuleset: host.ruleset,
     grid,
     registry,
+    combat: options.combat,
     tuning,
     counters,
+    ...(options.ablation === undefined ? {} : { ablation: options.ablation }),
     faults: options.faults ?? {},
   });
 

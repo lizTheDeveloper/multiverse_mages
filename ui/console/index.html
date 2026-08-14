@@ -59,9 +59,14 @@
   .clockbar .of { color: var(--faint); }
   .clockbar .st { padding: .12rem .4rem; border: 1px solid var(--edge); border-radius: 2px; color: var(--soft); }
   .clockbar .spacer { flex: 1 }
-  .clockbar button { font: 11px var(--mono); padding: .3rem .6rem; border: 1px solid var(--edge);
+  .clockbar > button { font: 11px var(--mono); padding: .3rem .6rem; border: 1px solid var(--edge);
     border-radius: 3px; background: var(--plate); color: var(--soft); cursor: pointer; }
-  .clockbar button[aria-pressed="true"] { border-color: var(--god); color: var(--god); }
+  /* Child combinator, not descendant: the shared theme control mounts inside
+     .clockbar, and this rule was overriding .mm-theme's pressed state — same
+     specificity, later stylesheet — painting --god on --ctl-charged-bg. The
+     selected theme button measured 1.28:1 on vellum, i.e. invisible, and only
+     on vellum, which is why nobody saw it. */
+  .clockbar > button[aria-pressed="true"] { border-color: var(--god); color: var(--god); }
 
   /* ------------------------------------------------------------- the panes */
   .panes { display: grid; grid-template-columns: minmax(17rem, 20rem) minmax(20rem, 1fr) minmax(17rem, 22rem);
@@ -73,7 +78,10 @@
   .pane > h2 { margin: 0; padding: .55rem .7rem; border-bottom: 1px solid var(--edge);
     font: 10px var(--mono); letter-spacing: .13em; text-transform: uppercase; color: var(--faint);
     font-weight: 500; display: flex; align-items: baseline; gap: .5rem; }
-  .pane > h2 .s { margin-left: auto; color: var(--rule-hi); }
+  /* --rule-hi is a rule colour, and as 10px text it measured 1.91:1 on ink and
+     2.13:1 on vellum. These spans carry which contract section a pane answers,
+     which is information, so they take the text token for quiet text. */
+  .pane > h2 .s { margin-left: auto; color: var(--faint); }
   .pane .body { padding: .7rem; display: flex; flex-direction: column; gap: .7rem; }
   .pane .absent { padding: .7rem; font: italic 12.5px/1.55 var(--serif); color: var(--soft);
     border-left: 2px solid var(--warn); background: var(--sunk); margin: .7rem; }

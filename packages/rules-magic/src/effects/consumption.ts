@@ -78,15 +78,29 @@
  * magnitudes and handed them to the world loop*. Reads in a package nothing
  * assembles never register, because nothing calls them.
  *
- * That distinction is not hypothetical. `@mm/rules-raid` contains a complete,
- * careful node-effect consumption path — `arbitration.ts` dispatches
- * `direct-damage`, `ward`, `area-denial`, `blink`, `summon`, `concealment` and
- * `knowledge-steal` straight off `requireRegistryNode(...).effects` — and **no
- * package depends on `@mm/rules-raid`**. Not `scenario`, not `coordination`,
- * not the harness. Those seven consumers are real code on an orphaned branch of
- * the graph, and counting them would report seven primitives as reachable by
- * knowledge in a simulation that cannot reach them at all. The recorder gets
- * this right for free, by construction rather than by a rule someone wrote.
+ * That distinction was not hypothetical, and the history is worth keeping
+ * because it shows the mechanism working and then being overtaken. When this
+ * file was written `@mm/rules-raid` held a complete, careful node-effect
+ * consumption path — `arbitration.ts` dispatching `direct-damage`, `ward`,
+ * `area-denial`, `blink`, `summon`, `concealment` and `knowledge-steal` — and
+ * **no package depended on `@mm/rules-raid`**. Seven real consumers on an
+ * orphaned branch of the graph, which the recorder correctly declined to count.
+ *
+ * `packages/scenario` then grew `raids.ts`, and the branch stopped being
+ * orphaned: `@mm/rules-raid` is a dependency of the composition root and its
+ * raid system is installed in the reference world loop by default. The seven
+ * consumers stayed unregistered anyway, for a second and narrower reason —
+ * arbitration read `node.effects` directly instead of asking through
+ * {@link nodeEffectRecords}, so the fetch the recorder watches never happened.
+ * w18-combat closed that: the index is built once at the composition root, by
+ * `combatEffectIndex` in `arbitration.ts`, and handed to the arbiter as a
+ * required constructor argument. The check now sees them.
+ *
+ * The green it produces is exactly as strong as `portal`'s, and no stronger:
+ * both say *the assembled simulation fetched these node magnitudes and holds
+ * them*. Neither opens a portal, so neither is evidence that a raid happened.
+ * That evidence is a measurement, and it lives in
+ * `packages/rules-raid/test/unit/combat-knowledge.test.ts`.
  *
  * ## Node-driven and non-node-driven are not the same coverage
  *
@@ -137,7 +151,7 @@
  * `coverage.ts` rather than restated, so the two checks cannot drift apart.
  */
 
-import type { ContentId, ContentRegistry, Fp } from '@mm/content';
+import type { ContentId, ContentRegistry, EffectRecord, Fp } from '@mm/content';
 
 import { PRIMITIVE_COVERAGE_EXCLUSIONS } from './coverage.js';
 
@@ -232,11 +246,53 @@ export function nodeEffectMagnitudes(
   recorder: ConsumptionRecorder,
 ): Map<ContentId, readonly Fp[]> {
   const found = new Map<ContentId, readonly Fp[]>();
+  for (const [nodeId, effects] of nodeEffectRecords(registry, primitiveId, consumer, recorder)) {
+    found.set(
+      nodeId,
+      Object.freeze(effects.map((effect) => effect.magnitude)),
+    );
+  }
+  return found;
+}
+
+/**
+ * The same fetch, and the same registration, keeping the **whole** authored
+ * effect rather than its magnitude.
+ *
+ * Exists because one primitive needs a second field. `area-denial` is authored
+ * with a `durationTicks` — *"a field with no declared duration lasts the tick it
+ * was cast in"* is `rules-raid`'s reading of a zero, and how many engagement
+ * ticks a field persists is not recoverable from its magnitude. A consumer of
+ * `area-denial` therefore cannot be built over {@link nodeEffectMagnitudes}, and
+ * the two ways out of that were both worse than adding this:
+ *
+ * - fetch the magnitudes through the recorded call and read the durations
+ *   straight off `registry.nodes` beside it — two reads of one authored effect,
+ *   which is exactly the drift `rules-raid`'s conformance test exists to catch;
+ * - drop the duration and give every field one tick — a silent content change
+ *   wearing a refactor's clothes.
+ *
+ * {@link nodeEffectMagnitudes} is implemented over this one, so there is a
+ * single walk of the registry and a single registration shape. A caller that
+ * wants magnitudes should still use that function: narrower is better, and the
+ * effect record carries a `target` this project deliberately reads in very few
+ * places.
+ *
+ * @param registry - Loaded, validated content.
+ * @param primitiveId - The primitive whose effects are wanted.
+ * @param consumer - Where these effects are applied, as `package/file.symbol`.
+ * @param recorder - Records the fetch. Required, for the reason above.
+ */
+export function nodeEffectRecords(
+  registry: ContentRegistry,
+  primitiveId: string,
+  consumer: string,
+  recorder: ConsumptionRecorder,
+): Map<ContentId, readonly EffectRecord[]> {
+  const found = new Map<ContentId, readonly EffectRecord[]>();
   for (const entry of registry.nodes) {
-    const magnitudes = entry.record.effects
-      .filter((effect) => effect.primitive === primitiveId)
-      .map((effect) => effect.magnitude);
-    if (magnitudes.length > 0) found.set(entry.contentId, Object.freeze(magnitudes));
+    const effects = entry.record.effects.filter((effect) => effect.primitive === primitiveId);
+    if (effects.length > 0) found.set(entry.contentId, Object.freeze(effects));
   }
   recorder.register({ primitiveId, consumer, kind: 'node', nodeCount: found.size });
   return found;

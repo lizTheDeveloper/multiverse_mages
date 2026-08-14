@@ -107,7 +107,14 @@
   .commit{display:flex;gap:.5rem;margin-top:.2rem}
   .commit button{flex:1;font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:.55rem .7rem;
     border-radius:3px;cursor:pointer}
-  .commit .go{border:1px solid var(--god);color:var(--ctl-charged-fg);
+  /* --ground, not --ctl-charged-fg. On ink those two tokens are the same
+     colour as the top of this button's own fill — #6FF0FA label on a
+     #6FF0FA-to-#12B8C6 gradient, measured 1.00:1, i.e. the word "Commit" is
+     literally not there. Dark only, and only once a change is staged, since
+     the button is [disabled] and flat-filled otherwise: two reasons a sweep of
+     each page's default state could not see it. --ground inverts with the fill
+     and holds against both stops in both themes, worst case 7.86:1. */
+  .commit .go{border:1px solid var(--god);color:var(--ground);
     background:linear-gradient(180deg,var(--god-lit),var(--god));
     box-shadow:0 0 22px -5px color-mix(in srgb,var(--god) 80%,transparent)}
   .commit .go[disabled]{background:transparent;color:var(--faint);border-color:var(--edge);box-shadow:none;cursor:not-allowed}
@@ -139,7 +146,7 @@
   <div class="axes" id="axes"></div>
   <div class="dirs" id="dirs"></div>
 
-  <div class="note">
+  <div class="note mm-essay">
     <h2>What operating these settles</h2>
     <p><b class="hot">The denial play is invisible in a grid and obvious in a ledger.</b> Vision §3 says
     prohibiting is a real strategic option rather than a penalty, and the reason is that a cell you permit
