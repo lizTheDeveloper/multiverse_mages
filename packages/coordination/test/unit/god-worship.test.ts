@@ -52,7 +52,7 @@ import {
   worshipTierOf,
 } from '../../src/index.js';
 
-import { constants } from './god-fixtures.js';
+import { constants, worshipMax } from './god-fixtures.js';
 
 const C = constants();
 
@@ -109,7 +109,7 @@ describe('sat() is the saturation the spec describes, and nothing else', () => {
 
 describe('the worship ceiling is a property of the formula, not a clamp', () => {
   it('declares a maximum equal to the sum of the three caps', () => {
-    expect(C.worshipMax).toBe(C.worshipMageCap + C.worshipUniversityCap + C.worshipPopulaceCap);
+    expect(worshipMax()).toBe(C.worshipMageCap + C.worshipUniversityCap + C.worshipPopulaceCap);
   });
 
   it('stays strictly below that maximum with a million of every source', () => {
@@ -122,7 +122,7 @@ describe('the worship ceiling is a property of the formula, not a clamp', () => 
       },
       C,
     );
-    expect(target.target).toBeLessThan(C.worshipMax);
+    expect(target.target).toBeLessThan(worshipMax());
     // Each class strictly below its own cap too. Were the ceiling a
     // post-hoc `Math.min` on the sum, this is where it would show: an
     // individual class would reach its cap exactly.
@@ -340,7 +340,7 @@ describe('tiers are geometric, and the budget they grant is bounded', () => {
     }
     // Past the last threshold the tier does not keep climbing — the observation
     // vector's ruleset block is sized on the budget the top tier grants.
-    expect(worshipTierOf(C.worshipMax, C)).toBe(C.worshipTierCount);
+    expect(worshipTierOf(worshipMax(), C)).toBe(C.worshipTierCount);
   });
 
   it('never issues a budget above EDICT_BUDGET_MAX, whatever the tier', () => {
