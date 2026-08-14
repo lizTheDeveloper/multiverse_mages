@@ -514,6 +514,29 @@ export interface RunTelemetry {
   readonly roleDemography?: RoleDemographySample;
 }
 
+/**
+ * The three fields every raid-scoped run collector reads, and no more.
+ *
+ * Named and narrowed rather than taking the whole {@link RunTelemetry}, so that
+ * the three signatures in `metrics-collectors.ts` state their own input
+ * instead of implying they read a species list and a tier-reach table they
+ * never touch. That is the documented contract: whatever a raid collector
+ * comes to report, it reports it out of *"were there raids, how many, and how
+ * long did the run last"* and nothing else, and widening one of them is
+ * therefore a visible change to a signature rather than a silent new read.
+ *
+ * It also keeps the collectors callable by anything that can honestly answer
+ * those three questions without fabricating the rest — a test harness holding
+ * a fixed raid log, say — rather than only by the full run telemetry the
+ * reference executor assembles.
+ *
+ * Contravariance is what keeps this free: a function taking this slice still
+ * satisfies {@link BalanceMetricDefinition.collectRun}'s `RunTelemetry`
+ * parameter, so the §7 registry is unchanged and every existing caller passing
+ * full telemetry still compiles.
+ */
+export type RaidRunSlice = Pick<RunTelemetry, 'mechanics' | 'raids' | 'ticksRun'>;
+
 /** One run, as an arm-scoped collector sees it. */
 export interface ArmRunSummary {
   readonly coordinates: RunCoordinates;

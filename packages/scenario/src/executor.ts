@@ -60,6 +60,8 @@ import {
   runEpisode,
 } from '@mm/mc-harness';
 
+import type { ActionEconomyReport } from '@mm/rules-raid';
+
 import type { CensusSample } from './census.js';
 import { censusOf } from './census.js';
 import type { RunMeasurement } from './measures.js';
@@ -696,25 +698,72 @@ function raidObservationOf(record: RaidRecord, god: GodTickReport | undefined): 
     attackerTempoCostWorldTicks:
       regenerated <= 0 ? 0 : Math.floor(record.attackerFavorCost / regenerated),
 
-    // The action-economy fields, declared absent rather than reported as zero.
+    // The action-economy fields, now measured rather than declared absent.
     //
-    // `RaidRecord` carries no combat instrumentation: this executor observes a
-    // raid's shape — how long it ran, what the portal cost — and not what
-    // happened inside it. Emitting empty sources with a zero denominator would
-    // make "no instrumentation" and "no combat" the same observation, which is
-    // the confusion `unimplementedCombatChannels` exists to end, and it is the
-    // fifth instance of a metric reading as a healthy constant while being
-    // structurally incapable of moving.
+    // They used to read `combatSources: []`, a zero denominator, and
+    // `['removal', 'save', 'decoy', 'displacement']` — three of those four
+    // channels named as unimplemented *in this executor* while `rules-raid`
+    // implemented all three. That was honest at the time and it was expensive:
+    // it made `combatActionEconomy` and `combatThresholdEfficiency` two of the
+    // six §7 metrics with no committed measurement, and it made every sweep arm
+    // ablating a combat primitive report a null for a live wire.
     //
-    // So every channel §3 permits is named here as unimplemented *in this
-    // executor*. The engine may implement them — `rules-raid` does — but
-    // nothing carries them across this boundary yet, and a reader of the metric
-    // needs to know which of those two statements the zero is.
-    combatSources: [],
-    totalCombatantTicks: 0,
-    worldScaleRemovals: 0,
-    summonsRemoved: 0,
-    unimplementedCombatChannels: ['removal', 'save', 'decoy', 'displacement'],
+    // Only `displacement` is genuinely absent, and the list is no longer
+    // written here — it is `rules-raid`'s own `UNIMPLEMENTED_CHANNELS`, carried
+    // through the record, so the declaration and the engine cannot drift apart.
+    ...combatObservationOf(record.actionEconomy),
+  };
+}
+
+/**
+ * `ActionEconomyReport` in the shape §7's two combat collectors read.
+ *
+ * A regrouping and nothing else. Every number here is a sum of numbers
+ * `rules-raid` computed: the per-side pairs are added, because the metric pools
+ * both sides and a raid-relative pair has no meaning to a collector that does
+ * not know which side this universe was on. **No division happens here** —
+ * `combatActionEconomy`'s scalar is a rate and its denominator is a pinned
+ * constant of the metric, so normalising on this side of the boundary would put
+ * the arithmetic somewhere other than the definition that names it.
+ *
+ * The three tables are keyed independently by `rules-raid` — a source can have
+ * attempts and no denial, or denial credited by a removal it did not attempt
+ * this raid — so the row set is their union, ascending, and a source missing
+ * from one table contributes zero rather than dropping the row.
+ */
+function combatObservationOf(
+  report: ActionEconomyReport,
+): Pick<
+  RaidObservation,
+  | 'combatSources'
+  | 'totalCombatantTicks'
+  | 'worldScaleRemovals'
+  | 'summonsRemoved'
+  | 'unimplementedCombatChannels'
+> {
+  const denied = new Map(report.deniedTicks);
+  const hp = new Map(report.hpRemoved);
+  const attempts = new Map(report.attempts);
+  const sources = [...new Set([...denied.keys(), ...hp.keys(), ...attempts.keys()])].sort();
+
+  return {
+    combatSources: sources.map((source) => {
+      const deniedPair = denied.get(source) ?? [0, 0];
+      const hpPair = hp.get(source) ?? [0, 0];
+      const counts = attempts.get(source) ?? { removing: 0, hurting: 0, spent: 0 };
+      return {
+        source,
+        deniedCombatantTicks: deniedPair[0] + deniedPair[1],
+        hitPointsRemoved: hpPair[0] + hpPair[1],
+        removingAttempts: counts.removing,
+        hurtingAttempts: counts.hurting,
+        spentAttempts: counts.spent,
+      };
+    }),
+    totalCombatantTicks: report.totalCombatantTicks,
+    worldScaleRemovals: report.removals[0] + report.removals[1],
+    summonsRemoved: report.summonsRemoved[0] + report.summonsRemoved[1],
+    unimplementedCombatChannels: report.unimplementedChannels,
   };
 }
 

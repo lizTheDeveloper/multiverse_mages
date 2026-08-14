@@ -76,6 +76,29 @@
  * and the marginal seed buys less than it costs in a suite that already carries
  * two two-hundred-year runs; the eighth seed's orc is the finding, and it is
  * recorded above rather than re-measured on every push.
+ *
+ * ## Six seeds was the right budget and the wrong *shape* — read this before
+ * adding a claim here
+ *
+ * **Added 2026-08-14, on `main` at `cc20d54`.** The paragraph above is about how
+ * *many* runs to buy. It never asked the other question: how much does an answer
+ * move when you buy six **different** runs? Four of the eight interval claims
+ * this file used to assert did not survive that, and one of them —
+ * `human.high < orc.low` — survived in **one seed set out of sixteen**, the one
+ * it was measured on.
+ *
+ * The statistic is why, and it is worth understanding before writing another
+ * assertion here. `[min, max]` non-overlap **has no standard error**, because a
+ * range is not a mean; and it is **not stable in `n`**, because a range can only
+ * grow as seeds are added — so non-overlap gets strictly easier the fewer seeds
+ * you take, and two honest readings at different seed counts are not comparable.
+ * Nothing that can be computed from one seed set fixes either property.
+ *
+ * So: this file may assert a separation **only** while
+ * `species-separation-spread.test.ts` shows it surviving every seed set, and
+ * that sibling holds the rate for every claim, live and retired. Adding an
+ * assertion here without a row there is adding a claim with no spread behind it,
+ * and the sibling's tripwire will fail if you try.
  */
 
 import { referenceContent, runLongReference, timeToTierBySpecies } from '@mm/scenario';
@@ -200,7 +223,55 @@ describe('time to tier, by species', () => {
     }
   });
 
-  it('separates three groups and not four species, and 9.9 is where it was', () => {
+  it('asserts only the separations that survive a re-roll of the seeds', () => {
+    // **Retitled and cut down on 2026-08-14, on `main` at `cc20d54`.** It used
+    // to be called *"separates four of six, and 9.9 is closer than it has ever
+    // been"*, and four of the eight interval claims below it were true only of
+    // the six seeds in `SEEDS`.
+    //
+    // ## Why the statistic underneath could not have caught that
+    //
+    // Everything here is read off `[min, max]` over one fixed seed list, and a
+    // separation is claimed when two such intervals do not overlap. That test
+    // **gets strictly easier the fewer seeds you take** — a range can only grow
+    // as seeds are added — and it has no standard error, because a range is not
+    // a mean. So it cannot distinguish "these species differ" from "these six
+    // seeds happened not to cross", and no amount of care in reading it would
+    // have.
+    //
+    // The missing measurement is a *second* seed set, and then a third:
+    // `species-separation-spread.test.ts` next door takes K independent sets of
+    // six and reports how many each claim survives. Measured there at twelve
+    // sets, tier 3, 720 ticks:
+    //
+    // | claim | held in | kept? |
+    // |---|---:|---|
+    // | `gnome.high < elf.low`      | **12/12** | kept |
+    // | `dwarf.high < elf.low`      | **12/12** | kept |
+    // | `gnome.high < human.low`    | **12/12** | kept |
+    // | `draconic.high > elf.high`  | **12/12** | kept |
+    // | `orc.high < elf.low`        | 11/12 | **retired** |
+    // | `overlaps(gnome, dwarf)`    | 7/12  | **retired** |
+    // | `draconic.low < human.low`  | 5/12  | **retired** |
+    // | `human.high < orc.low`      | **0/12** | **retired** |
+    //
+    // `human.high < orc.low` is the sharp one. It is #127's *"9.9 is one species
+    // closer than it has ever been"*, **retracted by its own author after a
+    // re-roll**, and it stayed green here for as long as it did because this
+    // file runs on the one seed set it was measured on. Widening to four
+    // consecutive-integer seed sets as well found it holding in **one of sixteen
+    // sets** — that one. A green test asserting something false is worse than a
+    // red one.
+    //
+    // The other three are retired rather than weakened, and none of the four
+    // that reproduce was touched. A claim that holds in 11 of 12 sets is a real
+    // effect and still not something *this* file may assert, because this file
+    // has one seed set and cannot state a rate. It states rates next door.
+    //
+    // **Nothing was tuned to make this pass.** Every species magnitude still
+    // carries `tuningStatus: "untuned"`, no `balance/` baseline moved, and no
+    // content file was edited. Four assertions were deleted because they were
+    // not true of anything except their own seeds.
     // **Rewritten three times, and this time the direction reversed back.** The
     // previous version recorded a single separation — draconic strictly after
     // four ordinary species, with elf bridging — taken after
@@ -249,76 +320,74 @@ describe('time to tier, by species', () => {
 
     const gnome = interval('gnome');
     const dwarf = interval('dwarf');
-    const orc = interval('orc');
     const human = interval('human');
     const elf = interval('elf');
     const draconic = interval('draconic');
-    const fastTrio = [gnome, dwarf, orc];
+    // `orc` is deliberately not bound. Both claims that read it — `orc.high <
+    // elf.low` at 11/12 and `human.high < orc.low` at 0/12 — are retired, and
+    // leaving the binding would invite the next author to reach for it.
+    const beforeElf = [gnome, dwarf];
 
-    // What separates strictly, in every seed: the fast trio arrives before elf,
-    // and gnome arrives before human. Both are real statements about
-    // `curiosity` — gnome 1792, human 1152, elf 896 — now that curiosity is an
-    // input to *which* node a mage reaches for and not only to how fast she
-    // works on whichever one was cheapest.
-    for (const entry of fastTrio) expect(entry.high).toBeLessThan(elf.low);
+    // What separates strictly in **every one of twelve** independent seed sets:
+    // gnome and dwarf arrive before elf, and gnome arrives before human. Both
+    // are real statements about `curiosity` — gnome 1792, human 1152, elf 896 —
+    // now that curiosity is an input to *which* node a mage reaches for and not
+    // only to how fast she works on whichever one was cheapest.
+    //
+    // Orc is no longer in this group. It is faster than elf on average by 26.7
+    // standard errors and its interval still overlaps elf's in one set of
+    // twelve, which is a fact this file has no way to write down.
+    for (const entry of beforeElf) expect(entry.high).toBeLessThan(elf.low);
     expect(gnome.high).toBeLessThan(human.low);
 
-    // Draconic is the bridge now, and elf is not. It starts before human and
-    // ends long after elf, which is one species spanning the whole range rather
-    // than a slow band — asserted so that the day content gives it a band, this
-    // box is reopened.
-    expect(draconic.low).toBeLessThan(human.low);
+    // Draconic ends long after elf, in every set of twelve. That it *starts*
+    // before human — the other half of the old "draconic is the bridge" claim —
+    // held in five sets of twelve and is retired: draconic's arrival is wide
+    // enough to straddle the horizon, its `min` endpoint travels 114 ticks
+    // between seed sets, and it is censored in 17 of 72 runs. Nothing about
+    // where draconic *starts* is measurable at 720 ticks.
     expect(draconic.high).toBeGreaterThan(elf.high);
 
-    // **The trio is a trio again, and the `apply-magic` split did not survive a
-    // re-roll.** Re-measured on the merge of `main` (5a1ce6c) into
-    // `w108/university-fidelity`, 2026-08-14.
+    // **The trio is a pair now, and `apply-magic` is what broke it up.**
     //
-    // Measured, tier 3, in ticks, across the three builds:
+    // Measured, tier 3, in ticks, this build against the one before the goal
+    // existed:
     //
-    // | species | before `apply-magic` | `main` with `apply-magic` | merged with staffing |
-    // |---|---|---|---|
-    // | gnome    | [24, 25]  | [24, 25]   | [24, 25] |
-    // | dwarf    | [25, 30]  | [25, 30]   | [25, 34] |
-    // | orc      | [21, 27]  | **[32, 51]** | **[25, 40]** |
-    // | human    | [30, 31]  | [30, 31]   | [29, 31] |
-    // | elf      | [53, 60]  | [53, 60]   | [53, 60] |
-    // | draconic | [26, 380] | [25, 301]  | [27, 246] |
+    // | species | before | with `apply-magic` |
+    // |---|---|---|
+    // | gnome    | [24, 25] | [24, 25] |
+    // | dwarf    | [25, 30] | [25, 30] |
+    // | orc      | [21, 27] | **[32, 51]** |
+    // | human    | [30, 31] | [30, 31] |
+    // | elf      | [53, 60] | [53, 60] |
+    // | draconic | [26, 380] | [25, 301] |
     //
-    // `main` recorded that `apply-magic` had pushed orc clear of the pair and
-    // called it *"9.9 is one species closer than it has ever been"*. **That did
-    // not hold.** This branch changes nothing about orc, `laborAffinity` or the
-    // applied channel; `UNIVERSITY_STAFF` link rows are entities, `contracts.md`
-    // §6 splits the RNG per entity handle, and creating them re-rolls every
-    // handle-keyed draw in the run. Orc's interval came back down to [25, 40]
-    // and overlaps both gnome and dwarf again.
+    // Only orc moved, and it moved because `speciesTerm` reads `laborAffinity`
+    // for this goal and orc's is the highest in the content set at `fp(1536)`,
+    // against the lowest `curiosity` but draconic's at `fp(384)`. An orc mage
+    // therefore likes applied work about as much as a gnome likes research, and
+    // she spends months on it that she used to spend reaching tier 3. That is
+    // the seventh species trait finding a rule to read it, and it is the first
+    // time a species' *economic* disposition has changed how deep it gets.
     //
-    // The mechanism `main` described is still real — `speciesTerm` does read
-    // `laborAffinity`, orc's is the highest in the content set at `fp(1536)`,
-    // and an orc mage does spend months on applied work. What is *not* real is
-    // the separation: an effect that a pure re-roll of handle-keyed draws can
-    // erase was inside the cross-seed spread all along, and 32 seeds of one
-    // arrangement was not enough to see it. **This is the strongest evidence in
-    // the suite that a species-separation claim needs more seeds than task 9.9
-    // has been giving it.**
+    // **The "9.9 is one species closer" paragraph that stood here is deleted,
+    // and so are the three assertions under it.** It read orc as newly separated
+    // from human and from elf on the strength of `[32, 51]` against human's
+    // `[30, 31]`. Twelve fresh seed sets put orc's fastest arrival between 24
+    // and 30 and human's slowest between 30 and 35: they overlap every time.
     //
-    // So the count goes back to three groups and not four species: a fast trio
-    // that overlaps internally, human, and elf, with draconic spanning. Recorded
-    // rather than repaired — every species magnitude is `tuningStatus:
-    // "untuned"`, and inventing one to make a test go green is what the
-    // measurement pivot exists to prevent.
-    const overlaps = (a: { low: number; high: number }, b: { low: number; high: number }): boolean =>
-      a.low <= b.high && b.low <= a.high;
-    // The trio overlaps pairwise, which is the "three groups, not four species"
-    // claim stated as the thing that would have to stop being true for task 9.9
-    // to advance. Asserted over all three pairs rather than the single
-    // gnome/dwarf pair `main` left, so that whichever member separates first
-    // fails this loudly instead of sliding past a narrower assertion.
-    expect(overlaps(gnome, dwarf)).toBe(true);
-    expect(overlaps(dwarf, orc)).toBe(true);
-    expect(overlaps(gnome, orc)).toBe(true);
-    // And the trio is still strictly ahead of elf, which is the separation that
-    // has survived every build so far — including this re-roll.
-    expect(orc.high).toBeLessThan(elf.low);
+    // The `overlaps(gnome, dwarf)` assertion went with them, and it is
+    // worth naming why, because it is the one that looks harmless. **A claim
+    // that two species are indistinguishable is exactly as seed-dependent as a
+    // claim that they can be told apart.** It held in 7 sets of 12.
+    //
+    // What is left is four assertions, each of which survived twelve re-rolls.
+    // Task 9.9 wants four *species* separated by more than the cross-seed
+    // spread; what reproduces is `gnome < human < elf` with `dwarf < elf`
+    // alongside — three species in a chain, not four — so **9.9 is unmet, and
+    // measuring it properly moved it further away rather than closer.** Recorded
+    // rather than repaired: every species magnitude carries
+    // `tuningStatus: "untuned"`, and inventing one to make a test go green is
+    // what `release-plan.md`'s measurement pivot exists to prevent.
   });
 });
