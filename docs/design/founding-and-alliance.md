@@ -71,19 +71,55 @@ have is exactly a difference an institution can hold.**
    run and there is no inter-realm channel at all. **The rule makes single-species universes weak by
    design and the escape hatch is unbuilt** — so these land together or the game is six ways to lose.
 
-## The open question the owner left
+## Resolved: two, and it is a divine capacity
 
-*"You shouldn't be able to start with more than two species that are on one planet."*
+*Owner, 2026-08-13, closing the question this section previously left open.*
 
-**One or two?** The stated rule is one species with allies; the aside allows two. They are different
-games:
+**A universe founds with two species, and the limit is the god's — not the world's.** You can support
+two until people start worshipping you. **Species capacity is a function of worship.**
 
-- **One** makes every alliance a first alliance, and makes the second species a genuine event.
-- **Two** gives a universe an internal partner from tick zero — a domestic teaching pair — and makes
-  alliances about the *third* species onward.
+That is a better answer than either of the ones I had, and the reason is that it makes the limit
+**diegetic and dynamic instead of arbitrary and fixed.** "Two species per planet" is a rule a player
+obeys. "I can only hold up two peoples until enough of them believe in me" is a rule a player *feels*,
+and it grows.
 
-**Two is the safer starting point** and it is measurable: the sweep already has single-species arms,
-and pair arms are 15 more cells. **Do not guess.** This is the same shape as the grant budget and the
-opening square, and the same rule applies — sweep it, with both ends as controls, and let the curve
-decide. The pairs also answer something the singles cannot: whether two *weak* species together beat
-one strong one, which is the whole question alliances exist to pose.
+### Why it fits what is already built
+
+Worship is the project's most complete economic loop and its least load-bearing one. `god-constant.json`
+implements it as **three saturating classes — mage, university, populace — each with a per-head rate
+and a half-cap**, and `favor-cap-base`'s own gloss says what it currently buys: the cap *"converts a
+worship lead from power into tempo — a high-worship god cannot do more things, only sooner."*
+
+**Worship currently buys speed. Under this rule it also buys breadth.** That is the first structural
+thing worship has ever done, and it arrives without a new resource, a new curve, or a new verb — the
+accrual, the classes and the caps all already exist and are already measured.
+
+It also composes with W81's daily-relevance work, which made worship depend on *what magic is for*: a
+god whose permitted cells serve daily life accrues faster, and therefore reaches a third species
+sooner. **What you allow decides who you can hold.**
+
+### What it implies
+
+1. **The founding mask admits exactly two**, and a mask of one or three-plus is refused at scenario
+   build — the way a mask of none already is.
+2. **Capacity is read, not stored.** A god's supportable species count is derived from worship at the
+   tick it is asked, like every other derived quantity; a stored count would rot the way a stored null
+   bar would.
+3. **Crossing a threshold is an event worth surfacing.** Reaching the worship to hold a third people is
+   exactly the kind of thing the interface prototypes exist to make legible, and it is a better use of
+   an event feed than most of what is currently in one.
+4. **The species arms become pair arms.** Six species give **fifteen** legal openings rather than six —
+   which is a wider starting-position space than the singles, and it answers what the singles cannot:
+   **whether two weak species together beat one strong one.** That is the question alliances exist to
+   pose, and now it is also the question the *opening* poses.
+
+### The threshold is a swept parameter, not a guess
+
+**How much worship buys the third species is exactly the kind of scalar this project has been wrong
+about before.** Sweep it — with "never reachable" and "reachable by tick 100" as the two controls —
+and let the curve say. A threshold nobody can reach makes the rule a two-species cap with extra steps;
+one reached immediately makes it decoration.
+
+**And the alliance channel still does not exist**, so the note above stands: this makes two-species
+universes the ceiling until alliances are built, and the two land together or the rule is a
+restriction with no escape.
