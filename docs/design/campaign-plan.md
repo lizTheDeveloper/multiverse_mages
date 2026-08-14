@@ -7841,3 +7841,34 @@ sets `RunTelemetry.roleDemography`**, so it reports `no-observations` regardless
 **Next named step, and it is content plus strategy rather than code:** put a combat node in a
 combatant's hands in at least one shipped strategy, then the pool fix, then the metrics can speak.
 A tripwire now pins zero-attempts and **fails the day a strategy fields an armed combatant**.
+
+## W158 — I committed to the wrong branch, and the mechanism is one character
+
+The decision brief's second half landed on **`plan-w18`** and was pushed there.
+
+**The chain:** I removed the `decisions` worktree in my own disk cleanup, because it was clean and
+fully pushed and therefore met every safety condition. Later I ran a multi-command block starting
+`cd .claude/worktrees/decisions`. **That `cd` failed, and the block kept going** — so the merge, the
+append, the commit and the push all ran in the **shared checkout, which sits on `plan-w18`**.
+
+**The defect is that `cd X` on its own line does not stop a block; `cd X || exit 1` does.** Every one
+of tonight's *scripts* has the guard — `cd /Users/.../multiverse_mages || exit 1` is the first line of
+`serial-merge.sh` and the Monitor command. The **inline** blocks did not, and that is where it bit.
+
+Second time this campaign has paid for the shared checkout being on `plan-w18` — the first cost five
+plan commits landing in a 1,224-line variant of this very file. `CLAUDE.md` warns about it in two
+separate places. **Knowing the rule did not help, because the failure was mechanical rather than a
+lapse of attention.**
+
+**Fix, and it is not a resolution to be careful:** any multi-command block that starts with `cd` must
+be `cd <dir> || exit 1`. And a worktree cleanup should be treated as invalidating every path a later
+command might assume — the cleanup that created this precondition was correct on its own terms and
+still set the trap.
+
+**What was done about it.** Restoring `plan-w18` to its prior sha was the clean fix and was correctly
+blocked — force-pushing is destructive and the classifier said so. So the doc commit was **reverted**;
+the file is gone from that branch. The **merge of `origin/main` was deliberately left**: reverting a
+merge commit poisons future merges of the same content for whoever owns the branch, and bringing a
+stale branch current is benign where a stray decision brief is not. Net effect on `plan-w18`: current
+with `main`, otherwise unchanged. The content was then re-applied on `docs/baseline-decisions`, with
+the misfire recorded in the commit message rather than hidden.
