@@ -625,3 +625,62 @@ reduces to a scalar nobody can defend is a swept parameter, with both degenerate
 0% (no inheritance at all, so a restart is only allies and no knowledge) and 100% (a survivor people
 hands over entire disciplines). **The curve between those decides whether the mechanic is a warm
 detail or the dominant strategy**, and a flat curve would mean it is neither.
+
+---
+
+## Ascending as dragons in the sixth age is a different brag from dragons in the first
+
+*Owner, 2026-08-13. This is about how achievement is **recorded**, and it means prestige cannot be one
+number.*
+
+**The same ending is not the same accomplishment.** Draconic, alone, in a first age — no allies, no
+inherited magic, no survivors to teach you fire, and a grid nobody has ever mapped — is a *completely*
+different feat from draconic in a sixth age, where three peoples already live in the world and one of
+them will hand you the practical cells for nothing.
+
+**Both are "ascended as draconic". Only one is hard.**
+
+### Which means prestige must be a tuple, not a scalar
+
+**A single accumulating score destroys the information that makes the achievement worth having.** If
+the sixth age pays more because you got further, the hard runs are worth less than the easy ones. If it
+pays less, the meta-progression punishes engagement. **Neither is right, because the two runs are not
+on one axis at all.**
+
+**Record the conditions with the result:**
+
+    ascended · draconic · age 1 · alone · at peak
+    ascended · draconic · age 6 · three allied peoples · after peak
+
+**These are different categories, not different scores.** It is speedrun taxonomy, and it is the
+correct model: nobody asks whether a glitchless any% is *better* than a 100% run, because the category
+*is* the claim.
+
+### Why the first age becomes the purest run, which inverts the usual roguelike
+
+Most roguelikes make later runs stronger. **This one makes later runs easier and less impressive**,
+and the design should say so plainly rather than pretending otherwise:
+
+- **Age 1 is the hardest the game will ever be** — no peoples, no Old Magic, no map, and *also* no Old
+  Gods, since nothing has been left undefeated yet.
+- **Age 6 is friendlier and more crowded** — allies from tick zero, inherited practical cells, a grid
+  the player has personally seen five times, **and everything you failed to finish, waiting.**
+
+**So difficulty does not rise or fall monotonically. It changes shape.** Later ages are easier to
+*survive* and harder to *finish cleanly*, because your unfinished business compounds while your
+advantages plateau. That is a much better curve than either direction alone, and — as with the two
+accumulations — **it needs no constant tuned to produce it.**
+
+### And it is exactly the right kind of nerd bait
+
+**"Ascended as draconic, first age, alone, at peak" is a sentence a player wants to be able to say**,
+and the only reason it means anything is that every clause in it is a constraint that was real.
+
+That is the whole argument for recording conditions rather than collapsing them: **the brag is the
+data structure.** A scalar prestige number is a leaderboard; a tuple is a story with a shape other
+players can recognise and chase.
+
+**Open:** whether the *game* should reward the harder categories, or merely record them. **I lean
+record-only** — the moment a category pays better, players optimise for the category rather than
+playing, and *"do the hard thing because it is hard"* is a stronger motivation than a multiplier. But
+that is taste, and it is exactly the kind of thing that should be argued rather than assumed.
