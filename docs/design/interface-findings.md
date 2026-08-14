@@ -47,6 +47,14 @@ slots stratified per criterion so that each reserves capacity. §4.4 requires ne
 Six of the sixteen actions carry an entity handle, so this affects grant-founding-knowledge, bless,
 assign-role, fund-university, encourage-research and open-portal.
 
+**Amended after wiring `ui/targets/` to a real session.** The eight slots above were this prototype's
+own constant, not the shipped one: `CANDIDATE_SLOTS` pins 16 for grant-founding-knowledge, 32 for
+bless and assign-role, 16 for encourage-research and 8 for the rest. The saturation mechanism is
+unchanged — one criterion taking a whole list does not care how long the list is — but the number of
+mages it takes to get there is four times what the prototype showed, and the reference run never
+reaches it. What the real lists *do* show at every tick is 1.8 below, which is a different defect in
+the same structure.
+
 *Lands in: `contracts.md` §4.4, and the `agent-api` spec that implements it.*
 
 ### 1.2 Pinning *k* is a joint human/RL decision — **open**
@@ -102,6 +110,111 @@ interface's own comment describes the masked list as *"for attributing a stall"*
 to a **player** needs the reason, not the count.
 
 *Lands in: `rules-world`'s autonomy layer to retain it, `agent-interface` to expose it.*
+
+---
+
+### 1.6 The legality mask is one bit, and the interface needs three states — **defect**
+
+Found by wiring `ui/glow/` to a recorded session rather than to its own timer.
+
+The light system distinguishes **charged** (do it now), **latent** (the god could, but not this tick)
+and **denied** (masked — something else has to change first). §4.2 gives one bit for all three.
+`mask.ts` masks an action *"whose cost exceeds the current favor pool"* with the same zero it uses for
+an action that is structurally impossible, and the two are opposite instructions to a player: *wait*
+versus *change something*.
+
+Measured over the reference run, seed 20260813:
+
+| Tick | Dark | Why |
+|---|---|---|
+| 0 | 15 of 16 | fourteen because favor is 0; `declareAscension` because it is free and the world is not ready |
+| 20 | 3 | `revokeEdict` — affordable, and there are no edicts to revoke |
+| 20–400 | | `changeTradition` — 64 favor against a cap of 40, so *permanently* unaffordable at worship tier 2 |
+
+Three unrelated situations, one bit. A player told "not now" fourteen times at tick 0 has no way to
+learn that waiting fixes all fourteen, and no way to learn that waiting will never fix
+`changeTradition`.
+
+The only way to separate them from outside is to price the action, and pricing is a rule §5 forbids
+the client to hold. `ui/shared/session.js` isolates that in one function named `reconstructedCharge`,
+and every control it touches is marked **†** on the page so a reader can see which lights are the
+contract talking and which are the client guessing. **That marker is the finding made visible, not a
+fix.** The fix is a reason channel on the mask — one small enum per action, `unaffordable` /
+`impossible` / `spent` — which costs nothing to add now and is a format change after policies train
+against it.
+
+*Lands in: `contracts.md` §4.2 and `agent-api`'s mask.*
+
+### 1.7 The session drops the integer observation — **defect**
+
+`AgentView` carries two observations: `raw: Int32Array`, which `view.ts`'s own comment calls **"the
+reproducible artefact"**, and the normalized `Float64Array` that §4.1 pins as the export.
+**`AgentSession.observe()` returns only the normalized one.** Every consumer that is not already
+holding a `SimState` — a client, a viewer, a recorder, a debugger — reads `0.3125` where the world
+holds `40.0` favor.
+
+Nothing displayable survives that. A meter can be drawn from a ratio; *"40 favor, and the thing you
+want costs 64"* cannot.
+
+Today it is recoverable: every descriptor in the layout is `ratio` or `flag`, both exact ratios of a
+divisor the package exports, so `scripts/record-session.mjs` reconstructs the integers and
+`packages/agent-api/test/unit/normalization-inversion.test.ts` pins that it can. **That test is a
+tripwire, not a solution.** `NORMALIZATION_RULES` also declares `log-bucket` and `bounded`, and one
+channel adopting either makes every reconstruction silently lossy — in a renderer, months later,
+looking exactly like a rendering bug. Saturation is already unrecoverable, which is why the recorder
+writes the saturated slot indices per frame instead of pretending.
+
+Exposing `raw` on the session is a one-line addition now and a client-wide correctness problem later.
+
+*Lands in: `agent-api`'s session surface.*
+
+### 1.8 Candidate lists are shorter than their declared *k*, and the length moves — **defect**
+
+`CANDIDATE_SLOTS` pins 32 slots for `blessMage`. The reference run returns **6** at tick 0 and 16–20
+thereafter. Six of the seven parameterized actions never fill their list at any tick:
+
+| Action | Declared *k* | Lengths seen over 400 ticks |
+|---|---|---|
+| `grantFoundingKnowledge` | 16 | 16 |
+| `blessMage` | 32 | 6, 16, 17, 18, 19, 20 |
+| `assignRole` | 32 | 18, 32 |
+| `fundUniversity` | 8 | 2 |
+| `encourageResearch` | 16 | 12 |
+| `changeTradition` | 8 | 2 |
+| `openPortal` | 8 | 3 |
+
+`candidates.ts` states both rules seven lines apart. Its header: the length *"comes from
+`CANDIDATE_SLOTS` and never from how many candidates were found — a list that shrank when mages died
+would make slot 5 mean a different mage every tick, which is the exact thing a policy cannot learn
+against."* Its `truncate`: *"Never pads — an absent slot is illegal."* The measured behaviour is the
+second, and `gate.ts` handles the consequence as an ordinary `empty-slot` rejection.
+
+The cost is not the truncation, which is sound; it is that **nothing says how many slots are real.**
+The mask is one bit per *action*, not per slot. A policy network discovers the end of a list by
+submitting into it and spending an illegal action; a human interface renders a menu whose length
+changes under the cursor. Either pad to *k* with an explicit empty marker, or publish the live length
+alongside the list — but the file should stop asserting both.
+
+*Lands in: `contracts.md` §4.4 and `agent-api`'s `candidates.ts` — at minimum the contradicting
+comment, which is currently the only statement of intent anyone has.*
+
+### 1.9 A frame is a state, so there are no events — **open**
+
+Every prototype about *change* — `tempo/`, `ascension/`, `knowledge/`, and everything
+`sound-design.md` §10 specifies — needs to know what just happened. The read path emits states. A view
+wanting events has to diff two frames itself, and a diff cannot distinguish a last-instance loss from
+an ordinary one, which is the distinction §6.5 is built on.
+
+The reference run makes the cost concrete: **the Human species is alive at tick 273 and extinct at
+tick 274.** Nothing on the read path announces it. Only a consumer already diffing the mage block
+across exactly those two frames could infer it, and it would learn *"a count went to zero"* rather
+than *"a species ended"*.
+
+This is filed as open rather than defect because §4.3's outcome record may be the right home and
+nobody has looked. It is the same shape as 1.5 — a mask that says which, never why — and probably
+wants the same answer.
+
+*Lands in: `contracts.md` §4.3, or a side channel beside the candidate lists.*
 
 ---
 
@@ -429,6 +542,9 @@ any of the individual fixes.
 | A cue note that over-explained | The 300-character `post` cap in the audio schema — three times, each producing a shorter and better sentence |
 | A denied state dimmed by eye | A contrast measurement, twice: "about four percent of luminance" was one percent, and an opacity dim measured 2.4:1 |
 | A front door committed without its page | `readFileSync` throwing `ENOENT`, in a link test written for an entirely different purpose |
+| A candidate-list saturation figure argued from an invented *k* of 8 | Wiring `ui/targets/` to a real session, where the shipped constant is 32 |
+| "The observation carries integers" — it does not; the session returns floats | Printing a favor meter and reading `0.3125` |
+| A recorder header claiming it stored the raw vector | Checking what `session.observe()` actually returns before writing the comment |
 
 **The common property is that each ran without being asked.** None required a person to suspect the
 specific failure — which matters here more than usual, because this work ran across two sessions that

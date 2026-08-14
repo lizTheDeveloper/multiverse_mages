@@ -26,9 +26,14 @@
 
   Serve with `npm run ui`, then open /ui/glow/ and use the theme control.
 
-  KNOWN COST: this reimplements nothing. The controls are inert demonstrations
-  of state; favor regenerates on a timer purely so charge, latency and denial
-  can be seen moving. ui/ruleset/ is where legality actually runs.
+  KNOWN COST: the page is now fed from a real recorded session, and feeding it
+  cost a rule. The five states include *latent* (the god could, but not now) and
+  *denied* (masked), and contracts.md §4.2 gives one bit for both — mask.ts
+  masks an unaffordable action with the same zero it uses for an impossible one.
+  Separating them needs the action's price, and pricing is a rule the client is
+  not allowed to hold. So the reconstruction is isolated in one function named
+  after what it does wrong, ui/shared/session.js's reconstructedCharge, and
+  every control it touches is marked. The fix is a reason channel on the mask.
 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -88,6 +93,15 @@
   .rowlab { font: 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
   .verbs { display: flex; gap: .5rem; flex-wrap: wrap; }
 
+  /* A control whose state the read path did not supply. The client had to price
+     the action to tell latent from denied, and a reader is entitled to know
+     which of these lights is the contract talking and which is us guessing. */
+  .ctl[data-recon="true"] { position: relative; }
+  .ctl[data-recon="true"]::after { content: "†"; position: absolute; top: 1px; right: 3px;
+    font-size: 10px; color: var(--warn); }
+  .reconkey { font: 11px var(--mono); color: var(--faint); margin-top: .1rem; }
+  .reconkey b { color: var(--warn); }
+
   .cells { display: flex; gap: .4rem; flex-wrap: wrap; }
   .cellchip { font: 10px var(--mono); letter-spacing: .07em; text-transform: uppercase; padding: .42rem .55rem;
     border-radius: 3px; border: 1px solid currentColor; }
@@ -126,8 +140,12 @@
     <span id="themehost"></span>
     <span class="now">showing <b id="nowv">—</b></span>
     <span class="spacer"></span>
-    <span class="k">click a charged control</span>
+    <span class="k"><label for="tick">tick</label></span>
+    <input id="tick" type="range" min="0" max="0" value="0" step="1" style="flex:0 1 16rem">
+    <span class="now"><b id="tickv">0</b> / <span id="tickmax">0</span></span>
   </div>
+
+  <div id="srchost" style="margin:-.8rem 0 1.6rem"></div>
 
   <div class="taxo">
     <div class="tx"><div class="demo d-latent">latent</div><div class="n">Latent</div>
@@ -148,21 +166,18 @@
       <div class="favor">
         <span class="pulse" title="worship"></span>
         <span class="k">favor</span>
-        <span class="track"><span class="fill" id="fill" style="width:64%"></span></span>
-        <span class="v" id="favv">32 / 50</span>
+        <span class="track"><span class="fill" id="fill" style="width:0%"></span></span>
+        <span class="v" id="favv">—</span>
       </div>
       <div>
-        <div class="rowlab" style="margin-bottom:.45rem">Spend it — the flare decays, because interventions resolve on the tick they are issued</div>
+        <div class="rowlab" style="margin-bottom:.45rem">The god's sixteen verbs, lit by the legality mask this tick — hover for what the mask actually said</div>
         <div class="verbs" id="verbs"></div>
+        <div class="reconkey"><b>†</b> the mask said only <em>no</em>. Latent and denied were told
+          apart by pricing the action here, which §5 says the client may not do.</div>
       </div>
       <div>
         <div class="rowlab" style="margin-bottom:.45rem">What the world holds — form hues, never cyan</div>
-        <div class="cells">
-          <span class="cellchip c-nomen"  data-live="true">rego nomen</span>
-          <span class="cellchip c-mentem" data-live="true">intellego mentem</span>
-          <span class="cellchip c-limen"  data-live="true">rego limen</span>
-          <span class="cellchip c-terram" data-live="false">perdo terram</span>
-        </div>
+        <div class="cells" id="cells"></div>
       </div>
     </div>
     <div class="measured" id="measured"></div>
@@ -202,50 +217,109 @@
 
 <script type="module">
 import { mountThemeControl, resolved } from '../shared/theme.js';
+import { mountSourceNote, openSession, reconstructedCharge } from '../shared/session.js';
 
-const VERBS = [
-  { label: 'Assign role',      cost: 1  },
-  { label: 'Bless',            cost: 6  },
-  { label: 'Fund university',  cost: 9  },
-  { label: 'Grant founding',   cost: 14 },
-];
-const favor = { cur: 32, max: 50 };
-const verbs = document.getElementById('verbs');
-const fill = document.getElementById('fill');
-const favv = document.getElementById('favv');
-
-const paint = () => {
-  fill.style.width = `${(favor.cur / favor.max) * 100}%`;
-  favv.textContent = `${favor.cur} / ${favor.max}`;
-  for (const b of verbs.children) {
-    const cost = Number(b.dataset.cost);
-    b.dataset.s = b.dataset.masked === 'true' ? 'denied' : favor.cur >= cost ? 'charged' : 'latent';
-    b.disabled = b.dataset.s !== 'charged';
-    b.title = b.dataset.masked === 'true' ? 'masked by the legality mask'
-      : favor.cur >= cost ? `costs ${cost} favor` : `needs ${cost} favor`;
-  }
+/* The five states are demonstrated by the specimens above, which are static
+   because a legend has to show every state whether or not the world is in it.
+   Everything below is the same rule applied to a real recorded universe, which
+   is a harder test: the world only offers the states it happens to be in. */
+const els = {
+  verbs: document.getElementById('verbs'),
+  cells: document.getElementById('cells'),
+  fill: document.getElementById('fill'),
+  favv: document.getElementById('favv'),
+  tick: document.getElementById('tick'),
+  tickv: document.getElementById('tickv'),
+  tickmax: document.getElementById('tickmax'),
 };
 
-for (const v of VERBS) {
-  const b = document.createElement('button');
-  b.className = 'ctl'; b.type = 'button';
-  b.dataset.cost = String(v.cost); b.dataset.masked = 'false';
-  b.textContent = v.label;
-  b.addEventListener('click', () => {
-    favor.cur = Math.max(0, favor.cur - v.cost);
-    b.classList.remove('touched'); void b.offsetWidth; b.classList.add('touched');
-    paint();
-  });
-  verbs.append(b);
-}
-const masked = document.createElement('button');
-masked.className = 'ctl'; masked.type = 'button';
-masked.dataset.cost = '0'; masked.dataset.masked = 'true';
-masked.textContent = 'Open portal';
-masked.title = 'masked: no living mage holds the portal primitive';
-verbs.append(masked);
+/* Four form hues are declared in shared/theme.css, which is exactly the four
+   forms v1 enables. A form the theme has no token for falls back to the ink,
+   which reads as "the world holds this and the palette has not met it yet"
+   rather than as a mis-coloured chip. */
+const FORM_TOKEN = { limen: 'c-limen', mentem: 'c-mentem', nomen: 'c-nomen', terram: 'c-terram' };
 
-setInterval(() => { favor.cur = Math.min(favor.max, favor.cur + 1); paint(); }, 1400);
+const session = await openSession({ recording: '../session.json' }).catch(() => null);
+mountSourceNote(document.getElementById('srchost'), session, ['actionMask', 'maskReason']);
+
+if (session !== null) {
+  els.tick.max = String(session.frameCount - 1);
+  els.tickmax.textContent = String(session.frameCount - 1);
+  els.tick.addEventListener('input', () => paint(Number(els.tick.value)));
+
+  /* One button per action, built once. The state is repainted per tick; the
+     nodes are not rebuilt, so a control keeps its identity as it lights and
+     goes out — which is the whole thing being demonstrated. */
+  for (const a of session.frame(0).actions()) {
+    const b = document.createElement('button');
+    b.className = 'ctl';
+    b.type = 'button';
+    b.dataset.id = String(a.id);
+    b.textContent = a.name.replace(/([a-z])([A-Z])/gu, '$1 $2').toLowerCase();
+    b.addEventListener('click', () => {
+      if (b.dataset.s !== 'charged') return;
+      b.classList.remove('touched');
+      void b.offsetWidth;
+      b.classList.add('touched');
+    });
+    els.verbs.append(b);
+  }
+  paint(session.frameCount - 1);
+  els.tick.value = String(session.frameCount - 1);
+}
+
+function paint(at) {
+  const f = session.frame(at);
+  const { favor } = f.resources();
+  els.tickv.textContent = String(f.clock().worldTick);
+
+  /* The meter's ceiling is the highest favor this run ever reached. A meter
+     needs a maximum and the read path has no favorCap channel — §1.1 makes the
+     cap rise with worship tier, so even a constant would be wrong later. Naming
+     the run's own peak is at least a number this page can defend. */
+  const peak = Math.max(1, ...Array.from({ length: session.frameCount }, (_, i) =>
+    session.frame(i).resources().favor));
+  els.fill.style.width = `${(favor / peak) * 100}%`;
+  els.favv.textContent = `${favor.toFixed(1)} / ${peak.toFixed(0)}`;
+
+  for (const b of els.verbs.children) {
+    const id = Number(b.dataset.id);
+    const { state, reconstructed, needs } = reconstructedCharge(f, session, id);
+    b.dataset.s = state;
+    b.dataset.recon = String(reconstructed);
+    b.disabled = state !== 'charged';
+    b.title =
+      state === 'charged'
+        ? `legal this tick — costs ${(session.actionCost(id) ?? 0) / 1024} favor`
+        : reconstructed
+          ? state === 'latent'
+            ? `masked. The mask does not say why; priced client-side, it needs ${needs} favor and you hold ${favor.toFixed(1)}.`
+            : 'masked, and affordable — so something structural is in the way. The mask does not say what.'
+          : 'masked, and the read path carries no price for this action.';
+  }
+
+  els.cells.replaceChildren();
+  for (const c of f.knowledge()) {
+    if (!c.live && c.form === undefined) continue;
+    const known = c.live;
+    if (!known && !isV1(c)) continue;
+    const chip = document.createElement('span');
+    chip.className = `cellchip ${FORM_TOKEN[c.form] ?? ''}`;
+    chip.dataset.live = String(known);
+    chip.textContent = `${c.technique} ${c.form}`;
+    chip.title = known
+      ? `${c.nodesKnown} nodes known, deepest tier ${c.deepestTier}, ${c.redundancy} instances`
+      : 'enabled by the ruleset, and nobody in this universe knows anything in it';
+    els.cells.append(chip);
+  }
+}
+
+/* The v1 rectangle, so a dark chip means "enabled and empty" rather than "one
+   of the fifty-eight cells this release does not turn on at all". */
+const V1 = { techniques: ['intellego', 'perdo', 'rego'], forms: ['limen', 'mentem', 'nomen', 'terram'] };
+function isV1(c) {
+  return V1.techniques.includes(c.technique) && V1.forms.includes(c.form);
+}
 
 /* The page measures itself in whichever theme is showing, because a
    hand-written contrast number is one that was true once — and this one has to

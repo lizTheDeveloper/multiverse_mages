@@ -18,12 +18,19 @@ whether knowledge loss lands off the beat before 520 assets were generated again
 | [`tempo/`](tempo/) | What wall-clock pacing does a world tick get, and which events are allowed to interrupt? One question, because speed decides what an event is. |
 | [`raid/`](raid/) | Muster, contact, resolution — agency spends down as the fight goes on. What is a player *doing*, what does each cast cost them in secrets, and can you look back at what happened without stopping the clock? |
 | [`glow/`](glow/) | Cyan is the god's own light and the form hues stay the world's. Does that rule survive a vellum ground, or does light force the client dark? |
+| [`console/`](console/) | Not a twelfth direction — the composition. Do the surfaces hold together as one screen against one clock, and where does the read path stop being able to feed them? |
 
 ## What these found
 
-`docs/design/interface-findings.md` consolidates it: eighteen findings, each with what was found, how,
-its status (open / defect / resolved / blocked) and **where it lands**. Most are not client problems —
-the majority have to be settled in `agent-interface` at 0.5.0 or they become a retrofit at 0.13.0.
+`docs/design/interface-findings.md` consolidates it: twenty-two findings, each with what was found,
+how, its status (open / defect / resolved / blocked) and **where it lands**. Most are not client
+problems — the majority have to be settled in `agent-interface` at 0.5.0 or they become a retrofit at
+0.13.0.
+
+Four of them, and one correction to an earlier one, came from wiring the prototypes to a real
+session rather than to their own invented data. That is written up in
+[`shared/README.md`](shared/README.md), which also maps which prototype can be fed today and which
+cannot.
 
 ## Coverage against the action space
 
@@ -70,7 +77,20 @@ unlinked prototype is invisible.
     npm run ui        # serves the repository root on :8200
 
 Then open `http://localhost:8200/ui/ruleset/`. They are static files, so any static server works;
-the script exists so nobody has to remember the flags.
+the script exists so nobody has to remember the flags. Serve them rather than opening the files
+directly — the recording is fetched, and `file://` will not.
+
+## Where the data comes from
+
+`ui/session.json` is a real `AgentSession` driven over the reference scenario for 400 ticks, written
+by `npm run ui:record` and read through [`shared/session.js`](shared/session.js). Every prototype
+carries a strip at the top saying which run it is reading, or — for the parts the read path does not
+carry — which capability is missing and why.
+
+It is **committed, and treated as a golden**: regenerate only by explicit command, and a diff is a
+claim that behaviour changed on purpose. `packages/scenario/test/unit/ui-recording.test.ts` re-runs
+the recorder and compares, so a stale recording is a red test rather than a prototype quietly showing
+last month's universe.
 
 ## Light and dark
 
@@ -94,6 +114,9 @@ Measured across all eleven prototypes in both themes: **no text below WCAG 4.5:1
 
 - **Load real content.** `ruleset/content.json` is generated from `packages/content/data`, so a
   prototype is never arguing from invented numbers.
+- **Read a real session.** Through `shared/session.js`, which decodes and computes nothing. The one
+  exception — telling *unaffordable* apart from *impossible*, which §4.2's single mask bit cannot —
+  is isolated in a function named after what it does wrong, and every control it touches is marked.
 - **Synthesise audio live.** Per `docs/design/sound-design.md` §0.8's synthesised tier, so a
   prototype runs from a static file with nothing to fetch.
 
