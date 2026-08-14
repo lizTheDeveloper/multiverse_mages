@@ -28,9 +28,35 @@
  * (everybody dies, nothing is ever learned, the population flatlines) is visible
  * in the record rather than inferred from its absence.
  *
- * Each id is prefixed `reference` for a reason that is not cosmetic: a metric
- * registry whose ids collide with §7's would let a sweep declare `nodesKnown`
- * and be validated against a definition nobody wrote.
+ * Each vital sign's id is prefixed `reference` for a reason that is not
+ * cosmetic: a metric registry whose ids collide with §7's would let a sweep
+ * declare `nodesKnown` and be validated against a definition nobody wrote.
+ *
+ * ## The three raid metrics, which are §7's and keep §7's ids
+ *
+ * At the end of the table sit `raidLengthDistribution`, `inboundRaidTempoLoss`
+ * and `raidInitiationCost`, and they break the prefix rule deliberately. They
+ * are **not** re-definitions: the {@link MetricDefinition} is looked up out of
+ * `BALANCE_METRIC_REGISTRY` by id and the collector is §7's own, so the hazard
+ * the prefix guards against — an id validated against a definition nobody
+ * wrote — is not merely avoided but inverted. Writing a second definition here
+ * is what would have been dangerous; `metrics-definition-version.test.ts` pins a
+ * digest per id precisely to catch a drifted duplicate.
+ *
+ * They are here because this is the only door. `collectRunMetrics` — §7's
+ * per-run collection path — has **no production caller**: `buildRunRecord`
+ * refuses any key the sweep did not declare, a sweep declares
+ * {@link REFERENCE_METRIC_IDS}, and those derive from this table. So a §7
+ * per-run metric that is not in this array is not merely unmeasured, it is
+ * unreachable, which is why `raid-engagement`'s two headline metrics had never
+ * appeared in a run record despite having collectors, definitions, pinned
+ * constants and tests.
+ *
+ * Unlike every vital sign above them these three are **mechanic-gated**, so they
+ * are built as {@link ReferenceMeasure} objects rather than through `measure()`:
+ * a build with `raids: false` must report `mechanic-absent` and a build with
+ * raids that initiated none must report `no-observations`, and collapsing those
+ * two is the confusion §7's reason codes exist to end.
  *
  * ## The collector table is the registry
  *
@@ -40,7 +66,13 @@
  * `records.ts` then rejects at the end of a long sweep instead of at its start.
  */
 
-import type { MetricDefinition, MetricEntry } from '@mm/mc-harness';
+import type { MechanicAvailability, MetricDefinition, MetricEntry, RaidObservation } from '@mm/mc-harness';
+import {
+  BALANCE_METRIC_REGISTRY,
+  collectInboundRaidTempoLoss,
+  collectRaidInitiationCost,
+  collectRaidLengthDistribution,
+} from '@mm/mc-harness';
 
 import type { CensusSample } from './census.js';
 
@@ -54,7 +86,55 @@ export interface RunMeasurement {
   readonly samples: readonly CensusSample[];
   /** World ticks the episode actually advanced. */
   readonly ticksRun: number;
+  /**
+   * What this build declares it implements. Feeds the raid measures' gate.
+   *
+   * Supplied rather than assumed, because a scenario built with `raids: false`
+   * is a different build and the metrics must say so rather than report a zero.
+   */
+  readonly mechanics: MechanicAvailability;
+  /**
+   * Every raid the run resolved, or `undefined` when the build has no raid
+   * mechanic at all.
+   *
+   * `undefined` and `[]` are two different answers and no collector may collapse
+   * them: the first is *"raids do not exist here"*, the second is *"raids exist
+   * and this run initiated none"*. Threading the distinction all the way from
+   * the executor is what keeps that true at the far end.
+   */
+  readonly raids: readonly RaidObservation[] | undefined;
 }
+
+/**
+ * The §7 definition behind an id, or a loud failure.
+ *
+ * Looked up rather than restated. A definition written out again here would be a
+ * second source of truth for a metric whose `definitionVersion` is digest-pinned
+ * in `mc-harness`, and the two would drift silently in the direction of whichever
+ * one somebody edited.
+ */
+function balanceDefinition(id: string): MetricDefinition {
+  const found = BALANCE_METRIC_REGISTRY.definitions.find((entry) => entry.id === id);
+  if (found === undefined) {
+    throw new Error(
+      `contracts.md §7 defines no metric ${id}, so the reference scenario cannot collect one. ` +
+        'This is a typo in a metric id, not a missing mechanic.',
+    );
+  }
+  return found;
+}
+
+/**
+ * A §7 per-run metric, collected by §7's own collector over this run.
+ *
+ * {@link RunMeasurement} carries `mechanics`, `raids` and `ticksRun`, which is
+ * exactly `RaidRunSlice` — so the run is handed to the collector as it stands,
+ * with nothing invented to satisfy a signature.
+ */
+const raidMeasure = (
+  id: string,
+  collect: (run: RunMeasurement) => MetricEntry,
+): ReferenceMeasure => ({ definition: balanceDefinition(id), collect });
 
 /** A metric definition and the collector behind it. */
 export interface ReferenceMeasure {
@@ -177,6 +257,12 @@ export const REFERENCE_MEASURES: readonly ReferenceMeasure[] = Object.freeze([
   measure('referencePeakPopulation', 'people', 'max', (run) =>
     run.samples.reduce((peak, sample) => Math.max(peak, sample.population), 0),
   ),
+
+  // §7's three run-scoped raid metrics, keeping §7's ids and §7's collectors.
+  // See the module header for why they are here and why they are not prefixed.
+  raidMeasure('raidLengthDistribution', collectRaidLengthDistribution),
+  raidMeasure('inboundRaidTempoLoss', collectInboundRaidTempoLoss),
+  raidMeasure('raidInitiationCost', collectRaidInitiationCost),
 ]);
 
 /** Every reference metric id, ascending. What a sweep file may name. */

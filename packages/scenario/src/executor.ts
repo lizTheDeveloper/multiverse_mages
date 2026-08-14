@@ -496,20 +496,29 @@ export function executeReferenceRun(
 
   const last = recorder.takeNow();
   const first = recorder.samples[0] ?? last;
+
+  const mechanics = raiding ? REFERENCE_MECHANICS : RAIDLESS_MECHANICS;
+  // Reduced once and used twice — as the result's own reporting field and as the
+  // raid measures' input. Mapping it a second time inside the measurement would
+  // let the metrics and the report disagree about the same raids.
+  const observations = raiding
+    ? raids().map((record) => raidObservationOf(record, lastGodReport()))
+    : undefined;
+
   const measurement: RunMeasurement = {
     first,
     last,
     samples: recorder.samples,
     ticksRun: episode.ticksRun,
+    mechanics,
+    // `undefined` on a raidless build, never `[]`. See `RunMeasurement.raids`.
+    raids: observations,
   };
 
-  const mechanics = raiding ? REFERENCE_MECHANICS : RAIDLESS_MECHANICS;
   return {
     samples: recorder.samples,
     mechanics,
-    raids: raiding
-      ? raids().map((record) => raidObservationOf(record, lastGodReport()))
-      : undefined,
+    raids: observations,
     rawRaids: raiding ? [...raids()] : [],
     outcome: {
       status: episode.status,
