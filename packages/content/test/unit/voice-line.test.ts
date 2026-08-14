@@ -78,7 +78,17 @@ describe('voice line banks', () => {
     // No line-count floor here, unlike the species banks above: the shipped
     // counts (6/5/5/4) faithfully reflect §8.10's own enumerated lines, and a
     // floor pinned to today's count would just be re-deriving that number.
-    const expectedRoles = ['scribe', 'student', 'laborer', 'soldier'].sort();
+    // Listed rather than imported from `state`'s OCCUPATION enum, which would
+    // keep them in step automatically: contracts §5 runs that dependency the
+    // other way — `state` depends on `content` — so importing it here inverts
+    // a module boundary, and the tests would pass only because vitest aliases
+    // the workspace.
+    //
+    // The cost of a literal list is real and was paid: `idle` was the fifth
+    // occupation for as long as the enum has existed and had no bank at all,
+    // because a four-name list here never objected. This comment is the thing
+    // that must be read when a sixth occupation is added.
+    const expectedRoles = ['scribe', 'student', 'laborer', 'soldier', 'idle'].sort();
     expect(populaceBanks.map((b) => b.speaker).sort()).toEqual(expectedRoles);
     for (const bank of populaceBanks) {
       expect(bank.lines.length, `${bank.speaker} bank size`).toBeGreaterThan(0);

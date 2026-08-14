@@ -1125,7 +1125,7 @@
     "id": "bank-scribe",
     "speaker": "scribe",
     "speakerKind": "populace",
-    "voiceId": "XrExE9yKIg1WjnnlVkGX",
+    "voiceId": "yZ3w1DL4ZAxIdOscv2t8",
     "voicePrompt": "Tired, patient, mid-range, talking while doing something else with their hands.",
     "lines": [
       {
@@ -1170,7 +1170,7 @@
     "id": "bank-student",
     "speaker": "student",
     "speakerKind": "populace",
-    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "voiceId": "chcMmmtY1cmQh2ye1oXi",
     "voicePrompt": "Young, eager, slightly too loud, checking whether that was right.",
     "lines": [
       {
@@ -1209,7 +1209,7 @@
     "id": "bank-laborer",
     "speaker": "laborer",
     "speakerKind": "populace",
-    "voiceId": "iP95p4xoKVk53GoZ742B",
+    "voiceId": "nDJIICjR9zfJExIFeSCN",
     "voicePrompt": "Practical, level, unhurried. Talking over noise.",
     "lines": [
       {
@@ -1273,6 +1273,51 @@
         "id": "soldier-selection-4",
         "tier": "selection",
         "text": "Mages go through the portal. I stay this side. Things come back.",
+        "about": ""
+      }
+    ]
+  },
+  {
+    "id": "bank-idle",
+    "speaker": "idle",
+    "speakerKind": "populace",
+    "voiceId": "XrExE9yKIg1WjnnlVkGX",
+    "voicePrompt": "Level, unhurried, entirely without self-pity. Someone with nothing to do who would rather be doing something, being decent about it. Observant — they have had months to watch and nobody has asked them anything.",
+    "lines": [
+      {
+        "id": "idle-selection-1",
+        "tier": "selection",
+        "text": "Three months of thoughts and nobody to give them to. Start anywhere.",
+        "about": ""
+      },
+      {
+        "id": "idle-selection-2",
+        "tier": "selection",
+        "text": "No vellum came. I've sharpened every knife in the hall. Twice.",
+        "about": ""
+      },
+      {
+        "id": "idle-selection-3",
+        "tier": "selection",
+        "text": "First light, every day. The carts have to come sometime.",
+        "about": ""
+      },
+      {
+        "id": "idle-selection-4",
+        "tier": "selection",
+        "text": "Two of the mages count their steps across the yard. Every time.",
+        "about": ""
+      },
+      {
+        "id": "idle-selection-5",
+        "tier": "selection",
+        "text": "The scaffolding's been up since spring. Holding nothing. Holding it perfectly.",
+        "about": ""
+      },
+      {
+        "id": "idle-selection-6",
+        "tier": "selection",
+        "text": "I've counted every mage through that portal. Nobody asked me to. The numbers don't match.",
         "about": ""
       }
     ]
