@@ -188,6 +188,18 @@ shared checkout is frequently *not* on `main`, and a grep run in it describes wh
 happens to be sitting on. Two separate wrong findings in one session came from this, both stated
 confidently, one of them contradicting an earlier correct entry in the same document.
 
+**A document is not a ref for the code it describes.** `docs/` is full of measurements, and a
+measurement is a statement about the tree it was taken on. `vision-audit.md` asserted *"2 distinct
+nodes across 1,308 books"* in the present tense and tagged it `[executed]` — while a test file on the
+same commit carried the same figure under the header *"This bullet list is a historical record, not the
+current measurement"*, and `vision.md` marked it fixed. **Two documents on `main` contradicting each
+other, and the misleading one was the one people read.** It cost two agents a full investigation each.
+
+So: **re-verify a documented claim against the code before acting on it**, and treat mismatched line
+numbers as the cheapest available signal that a row has rotted. When you write a measurement into
+`docs/`, date it and name the ref it was taken on — an undated measurement in the present tense will be
+read as current for as long as it survives.
+
 ## Check, do not ask
 
 **If a question can be answered by running something, run it.** Do not ask which of two options is

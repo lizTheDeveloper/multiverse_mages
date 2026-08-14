@@ -1203,6 +1203,16 @@ the capability that owns the mechanic owns its *threshold value* — `worshipSno
 to `raid-engagement`. A definition without a threshold is unfalsifiable; a threshold without a
 pinned definition is unmeasurable.
 
+**Two combat metrics measure what a node buys, not what it does.** `winRateByPrimitive` and
+`RaidOutcome.primitiveApplication` both describe combat in units of *magnitude put on the field*,
+and measured raids say that is the wrong quantity: over twenty seeds the share of hit points removed
+ran roughly half to `area-denial`, roughly half to summons and soldier detachments, and under two
+percent to cast `direct-damage`, while survival-regret measured zero on every seed because the
+raider took the objectives and left. What a combat node is *for* is enemy action that does not
+happen, so `combatActionEconomy` measures that directly and `combatThresholdEfficiency` asks how
+often a source crosses the threshold from hurting to removing. Damage is still reported — inside
+both metrics' details — and is no longer primary.
+
 **A metric whose mechanic does not yet exist reports `{status: "unavailable", reason:
 "mechanic-absent"}`.** It is never absent from the output. This is what lets `0.5.0` claim that
 every metric is reported two milestones before raids exist: a missing key is a harness failure, an
@@ -1226,6 +1236,8 @@ unavailable status is an honest answer.
 | `speciesCellOccupancy` | cells of the seventy a species **actually occupies** — a living mage of that species holding a knowledge instance of some node in the cell, in a mind — over the full grid and over the permitted cells separately, with *which* cells carried beside the count. The scalar is the Gini coefficient across species, so "one species staffs everything" is a number; 0 is an even spread. The outcome counterpart to `speciesGridVersatility`'s capability, and the observation its falsification test is stated over |
 | `lossShockRecovery` | world ticks a species roster takes to regain its pre-shock headcount after a deterministic cull, per species, right-censored. Asserts that long-lived species recover *worse* rather than assuming fertility handles it |
 | `roleAssignmentDemographicCost` | fall in a species' share of the roster under role assignment into lossy roles, against a paired arm that assigned none. Makes action 10 a demographic lever with a price rather than a free choice |
+| `combatActionEconomy` | combatant-ticks of enemy action a combat primitive denies, over the combatant-ticks a raid contains — **the primary measure for combat nodes**; damage is secondary |
+| `combatThresholdEfficiency` | of the combat attempts that landed, the fraction that removed a target rather than merely hurting one |
 
 ---
 
