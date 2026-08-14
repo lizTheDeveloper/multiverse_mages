@@ -43,8 +43,8 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { MetricEntry, RunTask } from '@mm/mc-harness';
-import { UNAVAILABLE_REASON } from '@mm/mc-harness';
+import type { BalanceMetricDefinition, MetricEntry, RunTask } from '@mm/mc-harness';
+import { BALANCE_METRIC_REGISTRY, UNAVAILABLE_REASON } from '@mm/mc-harness';
 import {
   BALANCE_RUN_METRIC_IDS,
   REFERENCE_METRIC_IDS,
@@ -55,6 +55,17 @@ import {
 
 /** The three run-scoped raid metrics of `contracts.md` §7. */
 const RAID_METRIC_IDS = ['raidLengthDistribution', 'inboundRaidTempoLoss', 'raidInitiationCost'];
+
+/**
+ * The two that read what happened *inside* a raid rather than its shape.
+ *
+ * Separate from {@link RAID_METRIC_IDS} because until `RaidRecord` carried
+ * `actionEconomy` these two could not reach `measured` from this executor at
+ * all: `raidObservationOf` wrote `combatSources: []` and a zero denominator into
+ * every observation, so `collectCombatActionEconomy` divided nothing by nothing
+ * and reported `no-observations` on every run that ever raided.
+ */
+const COMBAT_METRIC_IDS = ['combatActionEconomy', 'combatThresholdEfficiency'];
 
 /**
  * World ticks a portal-rushing god needs before it can afford to open one.
@@ -86,7 +97,7 @@ function task(worldTickCap: number): RunTask {
     // record carries only what its task declared. The vital signs come along
     // so this file also proves the two halves of `collectDeclaredMetrics`
     // reach one record together rather than one displacing the other.
-    metrics: [...REFERENCE_METRIC_IDS, ...RAID_METRIC_IDS],
+    metrics: [...REFERENCE_METRIC_IDS, ...RAID_METRIC_IDS, ...COMBAT_METRIC_IDS],
     ablatedPrimitives: [],
   };
 }
@@ -211,6 +222,117 @@ describe('a run that raids measures it', { timeout: 120_000 }, () => {
     expect(result.rawRaids).toHaveLength(result.raids?.length ?? 0);
     expect(result.raids?.map((raid) => raid.engagementTicks)).toEqual(
       result.rawRaids.map((raid) => raid.engagementTicks),
+    );
+  });
+});
+
+/**
+ * **The combat instrumentation, from `RaidOutcome` to the run record.**
+ *
+ * `rules-raid` has computed an `ActionEconomyReport` for every raid since #128,
+ * and `RaidObservation` has declared the five fields that report it for just as
+ * long. Between them `RaidRecord` dropped it, and the consequence was measured
+ * rather than argued: with `portal-rush` fielding real combatants, **ablating
+ * six of the seven combat primitives moved the raid log on none of four seeds.**
+ * The mask was live; the record was blind. `scripts/w144-ablation-visibility.mjs`
+ * is that measurement, re-runnable.
+ *
+ * These assertions are the ones that were structurally impossible before, and
+ * the last of them is a tripwire rather than a result.
+ */
+describe('a raid reports what happened inside it, not only its shape', { timeout: 120_000 }, () => {
+  it('measures combatActionEconomy over a real denominator', () => {
+    const result = executeReferenceRun(task(RAIDING_HORIZON), { content });
+    const economy = measured(result.outcome.metrics, 'combatActionEconomy');
+
+    // The assertion that could not hold before. `collectCombatActionEconomy`
+    // returns `no-observations` when the pooled `totalCombatantTicks` is zero,
+    // with the reason *"every raid resolved on the tick it opened"* — which was
+    // false on every raid this executor has ever produced. A hardcoded zero does
+    // not merely withhold a measurement; it supplies a wrong explanation for
+    // withholding it.
+    expect(economy.detail?.totalCombatantTicks).toBeGreaterThan(0);
+    expect(economy.detail?.raidCount).toBe(result.raids?.length);
+  });
+
+  it('declares only the channel the engine really lacks', () => {
+    const result = executeReferenceRun(task(RAIDING_HORIZON), { content });
+    const economy = measured(result.outcome.metrics, 'combatActionEconomy');
+
+    // The executor used to name `removal`, `save` and `decoy` as unimplemented
+    // *in this executor* while `rules-raid` implemented all three, so the
+    // observed list disagreed with the metric's own pinned constant. It is no
+    // longer written here at all: it is `UNIMPLEMENTED_CHANNELS`, carried
+    // through the record, which is what keeps the two from drifting again.
+    const pinned = (
+      BALANCE_METRIC_REGISTRY.balance('combatActionEconomy') as BalanceMetricDefinition
+    ).pinnedConstants;
+    expect(economy.detail?.unimplementedChannels).toEqual(['displacement']);
+    expect(economy.detail?.unimplementedChannels).toEqual(pinned.unimplementedChannels);
+  });
+
+  it('loses nothing crossing the boundary: the observation is the report, folded', () => {
+    const result = executeReferenceRun(task(RAIDING_HORIZON), { content });
+    const observations = result.raids ?? [];
+    expect(observations.length).toBeGreaterThan(0);
+
+    // Not a data-structure test: both sides of this comparison come from the
+    // same real run, and the left one is what §7's collectors actually read. A
+    // regrouping that silently dropped a source or a side would pass every
+    // assertion above it and fail here.
+    observations.forEach((observation, at) => {
+      const record = result.rawRaids[at];
+      if (record === undefined) throw new Error(`no raw record for observation ${String(at)}`);
+      const report = record.actionEconomy;
+
+      expect(observation.totalCombatantTicks).toBe(report.totalCombatantTicks);
+      expect(observation.worldScaleRemovals).toBe(report.removals[0] + report.removals[1]);
+      expect(observation.summonsRemoved).toBe(report.summonsRemoved[0] + report.summonsRemoved[1]);
+      expect(observation.unimplementedCombatChannels).toEqual(report.unimplementedChannels);
+
+      const expected = [
+        ...new Set([
+          ...report.deniedTicks.map(([source]) => source),
+          ...report.hpRemoved.map(([source]) => source),
+          ...report.attempts.map(([source]) => source),
+        ]),
+      ].sort();
+      expect(observation.combatSources.map((row) => row.source)).toEqual(expected);
+
+      for (const row of observation.combatSources) {
+        const denied = report.deniedTicks.find(([source]) => source === row.source)?.[1] ?? [0, 0];
+        const hp = report.hpRemoved.find(([source]) => source === row.source)?.[1] ?? [0, 0];
+        expect(row.deniedCombatantTicks).toBe(denied[0] + denied[1]);
+        expect(row.hitPointsRemoved).toBe(hp[0] + hp[1]);
+      }
+    });
+  });
+
+  it('finds no combat attempt at all — and that is now a reported zero', () => {
+    const result = executeReferenceRun(task(RAIDING_HORIZON), { content });
+    let attempts = 0;
+    for (const observation of result.raids ?? []) {
+      for (const row of observation.combatSources) {
+        attempts += row.removingAttempts + row.hurtingAttempts + row.spentAttempts;
+      }
+    }
+
+    // **A tripwire, not a result.** Surveyed across all eight shipped strategies
+    // at two seeds each — 61 raids, 80,615 combatant-ticks — the reference
+    // scenario begins *zero* combat attempts. The cause is `chooseIntent`'s
+    // priority order: theft outranks casting, and no shipped strategy grants a
+    // raider a combat node, so `firstCastableNode` returns nothing on every tick
+    // of every raid. That, and not the mask, is why an arm ablating one of the
+    // six cast-borne primitives still differences to zero here.
+    //
+    // When a strategy starts fielding an armed combatant this assertion fails,
+    // and the ablation arms in `combat-ablation-reaches-a-raid.test.ts` become
+    // writable for the first time. It is deliberately the thing that breaks.
+    expect(attempts).toBe(0);
+    // …which is why the companion metric is honestly unavailable rather than a
+    // ratio invented over an empty denominator.
+    expect(unavailable(result.outcome.metrics, 'combatThresholdEfficiency').reason).toBe(
+      UNAVAILABLE_REASON.noObservations,
     );
   });
 });
