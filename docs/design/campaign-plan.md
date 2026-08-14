@@ -7315,3 +7315,67 @@ The procedure, now sent to the other agent merging right now: after merging `ori
 again, check whether `main` moved, and **diff the merged tree against `origin/main` for the paths you
 did not intend to touch** — `balance/**`, `ui/session.json`, `packages/content/data/**`. Anything
 differing there that you did not author is this failure.
+
+## W149 — a species separation that did not survive a re-roll, and what that costs W143
+
+Found on #125, in a file **nobody flagged as conflicting**: `reference-time-to-tier.test.ts` broke.
+
+**#127's claim that *"9.9 is one species closer than it has ever been"* did not survive a pure
+re-roll.** Orc went `[32,51]` → `[25,40]` and folded back into the trio. The mechanism is real; **the
+separation was inside the cross-seed spread.**
+
+### This lands on something I reported as a headline
+
+W143 records that #140 *"separates four species strictly — gnome < dwarf < human < elf"*, and I
+called it the most decision-relevant result of the campaign. **That claim is now on notice.** It is
+the same kind of claim, measured the same way, and the failure mode has just been demonstrated on a
+neighbour: a strict ordering observed on one seed set can be **entirely inside the spread across seed
+sets**, and a strict ordering is exactly the statistic most likely to look clean by chance, because
+it only requires the point estimates not to cross.
+
+I am not claiming #140's result is wrong — I have no measurement that says so. **What is wrong is
+reporting either as established without a cross-seed spread beside it.** The correct form of the
+claim is *"separates four species on this seed set; spread not yet measured"*, and the same goes for
+the contrast I drew against #137. The direction of the contrast may well hold — #140's behaviour
+deltas (research +30.4%, scribe +32.1%) are far outside noise, and it is the *ordering* that is
+fragile, not the effect.
+
+**Before 0.5.0 this needs a rule**: any claim of the form *"species A separates from species B"* is
+reported with the spread across seed sets, or it is not reported. `9.9` is a *balance* task, and a
+balance claim that a re-roll can erase is not a claim.
+
+## W150 — #125's three conflicts, and the one that had to be resolved as "neither"
+
+- **`world-step.ts`** — kept **both sides** (staffing and #127's apply-magic write disjoint report
+  fields). The danger was not the conflict but the **auto-merged** region: `main`'s
+  `...(deps.universeEffects === undefined ? {} : {...})` spread is optional, so dropping it would have
+  **typechecked while silently masking apply-magic for every mage.** Verified in both directions.
+- **`loss-shock-recovery.test.ts`** — kept **main's**. Both sides had independently written the same
+  fix for the same hole; main's guards both short-lived species where the branch guarded only orc.
+- **`species-occupancy.test.ts`** — kept **neither**. Taking main's hunk verbatim would have asserted
+  `human` **twice, at 12 and at 9**, because the branch's lines below the conflict auto-merged
+  cleanly. Everything re-measured: `12/12/12/11/11/9`, spread `0.0473`. The branch's *"the shape got
+  cleaner"* claim did not survive.
+
+Two answers, both reported without flattering them:
+
+- **`UNIVERSITY_STAFF` has a production caller now** (`assignStaff` + `staffingIndex`). Reachability
+  goes **120 → 121** — the `components.ts:786` row is gone and **two new test-only exports took its
+  place**. Reported as a wash rather than a win.
+- **`scribingQueueDepth` is still `0`** at `world-step.ts:774`, **explicitly out of scope** because
+  fixing it moves baselines — now with corroboration. Books per 20-year window:
+  `633 / 209 / 44 / 6 / 0 / 0 / 5 / 6 / 9 / 7`. **A scriptorium that stops after one century.**
+
+And another dead safety net, the eighth instance of the pattern: **`staffCohortsOf`'s `isLive`
+parameter is never supplied by any caller**, so a documented guard is inert in every build.
+
+### Blocked, and correctly
+
+`balance:gate:agency` regresses **7 rows against `toleranceK = 3`**; the other two gates pass, so it
+scopes to one baseline file. The agent ran the **discriminating control** — keep the link entities,
+revert only the scribing rule — and it **reproduces the treatment exactly, metric for metric**. So
+none of the movement comes from universities owning their staff; **all of it is entity-handle
+re-allocation.**
+
+That is the useful kind of blocked: it converts the re-baseline from a judgement about balance into a
+mechanical consequence of entity numbering. Still not taken unattended. 4,411/4,411 tests pass.
