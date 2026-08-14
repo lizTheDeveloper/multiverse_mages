@@ -225,3 +225,72 @@ ending available to anyone.
    between is a starting condition they inherit. **Between is much easier to balance.**
 4. **And what happens in the last age?** If the final world is unwinnable, it is a cutscene. **It should
    be the hardest one that can still be won** — which is a sweep, not a decision.
+
+---
+
+## Body-shaping, and the ElfQuest reading of the whole arc
+
+*Owner:* **"The elves in ElfQuest had spaceships. And could shape their bodies."**
+
+**Both halves are load-bearing, and together they describe this design better than anything written
+above.**
+
+### The spaceship half: the deepest magic is indistinguishable from technology
+
+ElfQuest's elves arrive in a ship, and their descendants know Recognition and shaping and that the
+elders remembered more. **The ship is not a genre violation — it is the reveal that the fantasy was
+always downstream of something else**, seen from the far end of a long decline.
+
+**That is exactly the arc this design has been building without naming it**: magic recedes, knowledge
+is lost, later peoples inherit fragments they can use but cannot explain. **The Wolfriders do not know
+what a ship is.**
+
+**So the game should not be shy at the top of the grid.** Tier 6 holds one node. If the deepest magic
+is where the world's own parameters become editable, **it should read as technology** — the Box of
+Ascendance can be a machine, and the Undying Lands can be somewhere you *go*.
+
+**And it is the theme exactly.** *"Help humanity understand how hard it is to produce complex
+technology"* — **ElfQuest is that story told backwards**, and both directions are the same story.
+
+### The body-shaping half: what you do when you cannot fix the world
+
+**This is the sharper of the two.** ElfQuest's elves shape flesh — their own and others' — and they do
+it because they are strangers in a world that was not made for them.
+
+**That is the desperate inverse of every world-shaping verb above.** Spawn Mountain, Create Ocean,
+Create Biome: *change the world to suit your people.* **Body-shaping is: you cannot change the world,
+so change your people to endure it.**
+
+Which lands precisely on the arc:
+
+    the sun ages · magic recedes · the world thins
+        → you cannot stop it
+        → you can still change what your people are
+
+**So `Alter Species` is not only a power move — it is a survival move**, and it belongs in the same
+family as the last-ditch ascension tactics: **the thing you reach for when the ordinary paths are
+closing.** A people reshaped to survive a hotter sun is a very different ending from a people who
+ascended, and both are better than dying.
+
+**It also gives the two verbs a natural difficulty ordering.** Reshaping the world is what a strong god
+does; reshaping a people is what a *desperate* one does — and a player who is doing the second has told
+you something about their run without saying it.
+
+### And body-shaping is inherently dual-use, which is where the dark magic lives
+
+**ElfQuest is clear-eyed about this**: the same power heals and horrifies, and the difference is
+entirely in who is doing it and to whom. Winnowill and a healer are the same magic.
+
+**That is the best available home for the forbidden axis.** The forbidden-magic spec needed *"something
+dark and twisted"* to be a thing a mage *does* rather than a flavour, and it noted that the game
+currently has no way for a mage to do anything to the world at all.
+
+**Body-shaping is a thing a mage does to a person**, and it is dark or not depending entirely on
+consent and purpose — which means **the same node is a blessing or an atrocity by context**, not by
+authoring. That is a far more interesting mechanic than a `forbidden: true` flag, and it is the first
+proposal here where the *fiction* supplies the moral distinction the *data* cannot.
+
+**Open, and it is the one I would most want measured:** whether a mage-scoped body-shaping magic and a
+species-scoped one are the same mechanic at two scales — **`Shapeshift` and `Alter Species` as one
+tier-progression rather than two verbs** — which would be tidy, and would mean the deepest form of a
+healer's art is the power to change what a people is.
