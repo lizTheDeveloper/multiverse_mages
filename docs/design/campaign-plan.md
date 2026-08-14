@@ -28,6 +28,166 @@ Magnitudes the spec leaves open go into validated content data as `tuningStatus:
 
 ---
 
+## The answer, found 2026-08-13
+
+*This section replaced an earlier "where this stands" that led with a diagnosis three times
+superseded. Everything below is the record in the order it was found, corrections included. Read this,
+then jump to W85–W88 for the current front.*
+
+### Why every universe looks the same
+
+**Not the plumbing. The content.**
+
+The campaign spent weeks on mechanisms that move knowledge around — teaching, migration, libraries,
+acquisition order. The teaching boundary shipped (W87) and settled it: with teaching sealed between
+institutions, **migration measured at zero**, books shelving per-library and knowledge capital already
+own-university, two academies **still reach 49–51 of the same 51 nodes.** They have no channel between
+them at all and end up identical anyway.
+
+**They converge by content exhaustion, not by exchange. The container holds; there is one thing to put
+in it.**
+
+**One fact about the content explains it, and it is cheap to fix because it is data:**
+
+**Every universe opens on the same twelve cells**, reaching **51 of 300 nodes** (W82). A seeded opening
+square of the *same size* reaches **236**, and takes within-strategy containment from 0.980 to 0.250.
+Opening all seventy cells is what makes the teaching boundary work at all (W87): with 300 nodes
+available, two academies without a boundary re-homogenise 0.641 → 0.927, and with one they do not,
+0.590 → 0.684.
+
+*(An earlier version of this section named a second fact — that `researchCost` is a pure function of
+tier, so ordering was entirely a node-id tiebreak. **That is refuted; see W91.** The cost table is flat
+exactly as described, but `compareTargets` stopped deciding target selection on 2026-08-11, two days
+before the claim was written. **Pricing the nodes was measured and made containment slightly worse.**)*
+
+**And W19's one-dimensionality result must be read with its date attached.** It was true of the build it
+ran on. On current `main`, cross-strategy containment sits **below** the within-strategy diagonal at
+every horizon — the sign is reversed.
+
+### The two failure shapes that hid it
+
+**The instrument does not touch the thing** — five instances (W81): ten of fifteen metrics with no
+production caller; gate tolerances at ±118% of mean with 80 of 80 collapse-to-zero events passing; all
+three gates resolving **zero raids**; the ablation mask never reaching the god subsystem; and a
+regenerator silently eating a provenance disclaimer.
+
+**The simulation does not touch the mechanic** — **115 findings**, now measured by a real check rather
+than by anecdote (W89). `@mm/rules-raid` is a package **nothing depends on**, 75 exports collapsed.
+**Two of the four licensed tradition hooks — `castPolicy` and `costPolicy` — have no simulation path**,
+because they are read only by that package. University **admissions and specialisation** are built and
+unwired. `UNIVERSITY_STAFF` is declared and never read, so every university draws from one global
+scribe pool. The whole prestige cluster is unreachable.
+
+*(W85 originally listed `advanceConstruction` and `applyLibraryUpkeep` here. **That was my error** —
+I verified in a checkout sitting on the wrong branch. Both are wired on `main`. See W89.)*
+
+**Together: "the symbol exists" and "a test covers it" are both compatible with "the game never runs
+it."** `check:consumption` asks this for primitives. Nothing asked it for functions, components or
+constants — `w86/reachability` is building that gate, and it is worth more than any single fix on this
+board.
+
+### What is fixed
+
+- **The founding complaint is closed** (W84). `permit-then-idle` — permit the grid for 140 ticks, then
+  submit nothing for 2260 — goes **40/40 → 0/40**, while `open-then-build` holds 40/40. **320 of 400
+  paired runs bit-identical**: exactly the 80 runs of the two ruleset-only strategies changed.
+- **Publish-or-perish closes** (W88). Practice roughly doubles second-century teaching and returns
+  library depth from 14.6 to 30.9.
+- **Worship depends on what magic is for** (W81). `daily` vs `spectacle` goes +23.0% → +48.8%, against
+  a −13.4% overall effect predicted from content *before* the measurement was run.
+- **Two combat primitives now cast** (W76): `area-denial` 0 → 10,182 applications, `blink` 0 → 284.
+
+### Claims in this document now known false
+
+- ~~The win condition is a button on a passive clock~~ — `ceb1492` closed it; the defect is one step over.
+- ~~Practice drives orcs extinct~~ — orc is already marginal on `main`: mean 1.22 mages, **zero on 11 of
+  32 seeds** with no practice in the tree.
+- ~~Library maintenance is already built~~ — built, and never called.
+- ~~Grants are the only teachable knowledge~~ — false under True Naming, which sets every instance to 1024.
+- ~~`affiliate` is the existing door for cross-university transfer~~ — it never fires, in any run.
+- ~~Seed beats strategy~~ — an artifact of round-robin assignment giving strategies disjoint replicates.
+- ~~Permits cost 98,304 favor~~ — 96. `favorCost` is typed `Fp`.
+
+---
+
+## Where this stands — the earlier summary, superseded 2026-08-13
+
+*Written 2026-08-13, after the day that answered the campaign's question. Everything below this
+section is the record in the order it was found, including the parts later shown wrong. That order is
+deliberate: the corrections are the document's value, and several of them correct claims made
+confidently here.*
+
+### The campaign asked why `permit-then-idle` wins. The answer is not a mechanism.
+
+**The measurement apparatus mostly did not run, and the part that ran could not fail.**
+
+- **10 of 15 registered metrics have never produced a number.** `collectRunMetrics` has no production
+  caller; nothing constructs a `RunTelemetry`. The four "dead constants" recorded below as separate
+  oddities were four symptoms of that one uncalled function.
+- **The gates that do run had tolerances of ±118% of mean**, from a standard error pooled over arms
+  spanning **294×**. Take every metric × every strategy and suppose that arm collapsed **to zero**:
+  **80 of 80 collapses sat inside tolerance.**
+- **Two of three gates play no god verb at all**, so no god-agency change could ever move them.
+
+Eight mechanics were declared null by that apparatus. Some of those nulls were the instrument.
+
+### And the win condition reads the ruleset, not play
+
+**`permit-then-idle` wins 40/40** by permitting the grid for 140 of 2400 ticks and then submitting
+**nothing at all** for the remaining 2260. It beats `permissive-breadth` (38/40), which does the same
+permitting *and* funds, blesses and encourages. **The idle bot beats the active one**, and what
+separates them is not play — it is which cells were opened in the first 6% of the run.
+
+*Corrected 2026-08-13.* An earlier version of this section said the win condition was a button on a
+passive clock — that `passive-control` reached apotheosis at tick 960 in 8 of 8 runs and scored 0
+only because its stance is `never`, and that `uniform-random-legal` ascended 80/80 by drawing the
+button. **That was true when measured and is now stale.** `ceb1492` (W6, *"both paths must read an
+achievement, not an absence"*) closed it. Direct re-measurement finds **0 of 4 qualify** with
+`ascensionFirstMetTick = 0`, and the committed n=400 record agrees: `idle-then-declare` and
+`uniform-random-legal` both ascend **0/40**, not 80/80. `balance/README.md`'s passage about the
+27-of-32 rate being *"a statement about a clock, not about play"* describes the pre-W6 build and
+should be read with that date attached.
+
+The defect survived the correction; only its mechanism changed. It is no longer that a bot can win
+without pressing the button — it is that a bot can win **by pressing only the ruleset buttons and
+then nothing else.**
+
+### Three things below are now known to be wrong
+
+- **"Seed beats strategy" was a measurement artifact.** The sweep's round-robin assignment gave each
+  strategy **disjoint replicate indexes**, so no two strategies ever played the same universe. Held
+  fixed, `nodesKnown` shows **η²(strategy) = 1.00** from tick 60, and cross-strategy Jaccard on a
+  shared seed is **0.23** against within-strategy cross-seed **0.89**. **Strategy dominates node
+  composition, and always did.**
+- **"Five independent confirmations of content exhaustion" is at most four.** A perfect prefix
+  structure *entails* containment 1.000 — arithmetic, not corroboration.
+- **Permits cost 96 favor, not 98,304.** `favorCost` is typed `Fp`; every figure quoted below in raw
+  integers is 1024× too large.
+
+### What is actually broken in the game, as distinct from the instrument
+
+- **Five of seven combat primitives cannot be cast.** `raid.ts:588` skips any node not carrying
+  `direct-damage`. `ward`, `concealment`, `summon`, `blink` and `knowledge-steal` are **0 castable**
+  across ~112 nodes; only 11 of 38 `area-denial` nodes ride in on damage's ticket. **`knowledge-steal`
+  never fires**, so a raid cannot be an attack on knowledge.
+- **Mastery only ever falls.** `setMastery` has one non-test caller — the decay pass — and it lowers.
+  Research creates instances at 256 against a 512 teach threshold and they can never climb, so every
+  teachable instance descends from a god grant at 1024. **93.4% of held knowledge cannot be taught.**
+- **No mage ever applies magic, and no mage ever chooses to teach.** Economic multipliers derive from
+  what mages *know*. `teach` was feasible on 2,628 evaluations and selected on **zero** — every lesson
+  happens because a *student* went looking.
+- **Nothing limits breadth.** All six species can staff **70 of 70** cells; every cell has a
+  prerequisite-free tier-1 node and the lowest depth ceiling is 3.
+
+### What is landing against it
+
+The effect pipeline is connected and causally proven (PR #42). `practice` exists. The gate tolerances,
+the metrics collector, the castability filter, the ascension predicates and a declared-primitive
+worship loop are all in flight. Where a mechanic below was declared null, **re-measure before believing
+it** — the instrument that judged it has changed.
+
+---
+
 ## The diagnosis, measured
 
 Around forty Monte Carlo sweeps produced one causal chain. Each link is measured, not argued.
@@ -1964,3 +2124,3104 @@ pointed at a run.
 
 **No mechanism code, content or golden fixture was touched by W46.** The deliverable is the tool and
 this section.
+
+## Vision audit: three implications that gut things designed the same night
+
+A systematic scan is running separately. These three came from reading §13's own text, and each was
+verified in the code before being claimed. All three are **implications**, not omissions: the vision
+records the fact, and nobody followed it through to what it means.
+
+### 1. Every library holds the same two nodes, so the raid has nothing to steal
+
+§13 records it against itself, inside a question it declares **resolved**:
+
+> *"Emergent specialization needs libraries that differ, and in the reference run they do not: one
+> university, and its shelf holds **two distinct nodes against 1,263 books**, because the scribable
+> list is ordered by cost and every scribe copies the cheapest thing available."*
+
+Verified — `packages/rules-world/src/autonomy/feasibility.ts:112`:
+
+    const target = cheapest(outlook.scribableTargets);
+
+One line, and it is the whole mechanism.
+
+**What nobody drew out.** Tonight's raid design makes libraries the objective: a university's library
+building contains exactly the grimoire rows whose location is that library, and the raider physically
+carries out the books. **If every library holds the same two nodes, there is nothing in any library
+that the raider does not already have.** The most evocative mechanic in the design is stealing a
+sorted list of the cheapest thing everyone already knows.
+
+It also means §13's *"resolved: specialization is emergent"* is resolved in principle and
+**unfalsifiable in practice** — §13 says as much, in a sentence added so nobody would read *resolved*
+as *demonstrated*, and then the raid design was written against the resolved version anyway.
+
+The fix is small and it is not a balance number: scribe selection needs a reason to copy something
+other than the cheapest — rarity, the last copy, what the library lacks, what a mage was asked for.
+Any of those makes libraries differ, and libraries differing is the precondition for four separate
+mechanics.
+
+### 2. Nothing ever founds a second university, so the roster has nothing to allocate
+
+§13 again, on what bounds a mature universe:
+
+> *"No second university is ever founded because founding one is a god action and the reference run
+> receives zero player input. So a 'mature universe' at this build is a universe whose mage roster is
+> capped by an institution the player never built."*
+
+88 living mages against a populace of 18,713, held at exactly the founding academy's **64 student
+seats** from world year thirty onward. And `advanceConstruction` — the function that would advance a
+new university's build — has **zero production callers**; it is defined, exported, mentioned in one
+comment, and invoked nowhere outside its own tests.
+
+**What nobody drew out**, and it lands on two things built this week:
+
+- Tonight's **stationed set** — teaching, researching and defending are one roster — is stated as the
+  tightest coupling in the design. With **one** university there is no siting decision, no
+  concentration risk, and no question of which campus to defend. The tension is real and currently
+  has nowhere to happen.
+- **W24 measured a genuine tradeoff between a river-delta and a highland-waste academy** — 818
+  population and library depth 22 against 1,002 and 19, histories separating at tick 157. W24 flagged
+  that siting is a *scenario* decision rather than a *play* decision. This is worse than that: a
+  player cannot exercise it **even in principle**, because exercising it requires founding a second
+  university and nothing in the tree completes one.
+
+### 3. Pillar 1 promises symmetry the implementation does not keep
+
+The first design pillar:
+
+> *"Rules-setting is the core verb. The most interesting decision in the game is which magic exists in
+> your universe — because that choice is **symmetric** and permanent-feeling."*
+
+`packages/content/src/god.ts:191–206` enforces the symmetry it can see: content fails to load if
+permitting and forbidding cost different favor, citing this pillar. But W30 found the *total* price
+asymmetric by construction — `interventions.ts:390–393` exempts permitting from the worship shock
+outright, and `decay.ts:74–77` charges only forbidding with irreversible mastery loss, in a comment
+calling itself *"the whole mechanism by which forbidding a cell actually costs a civilization
+something."*
+
+**So the favor price is symmetric by enforced invariant and everything else is asymmetric against
+denial.** The pillar is not merely unmet; there is a loader invariant standing guard over the one
+axis where it holds, which is the most convincing possible way to not notice the others.
+
+That matters more after tonight than before it: the raid design leans hard on denial being a peer
+strategy — forbid Perdo to save the library, forbid Fatum and swear off your own escape — and every
+one of those plays is charged twice under the current implementation.
+
+---
+
+## W41's vision audit: the four that change what we do next
+
+Full report from W41; `docs/design/vision-audit.md` (831 lines, branch `w12/vision-audit`, unmerged
+and **cited by nothing**) already did deliverable 1 a day earlier. That is the fourth time this
+project has paid for the same finding. **Merge it.**
+
+### 1. §6's species differentiator is authored and read by nothing
+
+`species.json` carries per-form affinities for five of six species — draconic `ignem: 1792`,
+`vim: 1536`, `nomen: 1280`; dwarf `terram: 1536`; elf `herbam: 1536`. The only reader in the tree is
+`packages/content/src/load.ts:938`, **the key validator** — it checks the keys are spellable and never
+touches the values.
+
+**D7 — *varying the founding species mix changes which strategy wins* — has failed for five sweeps
+while §6's own differentiation mechanism sat authored and unread.** Two external reviewers
+independently prescribed exactly this mechanism, and the campaign's own enumeration of species traits
+omits `affinities` entirely. This is the cheapest large win available: the content exists, the spec
+wants it, nothing has to be designed.
+
+### 2. Both documents written last night are tradition-blind, and §4a says the tradition *is* the universe
+
+`grep -i tradition` over `raid-engagement.md` and `ages-of-magic.md` returns **nothing**. Both are
+written as though every universe were the reference one. Under **Art of Memory** — a shipped v1
+tradition — three things break:
+
+- **The progression spine is foreclosed.** `ages-of-magic.md` §3 says the third age is reachable
+  *"only across generations… only through records"*. Art of Memory has no records:
+  `scribing.ts:76` sets `keepsWrittenCopies: false`. Measured: **zero grimoires across 96 runs, library
+  depth 0.0, 17.2 nodes known against Vancian's 65.8.** The tradition chosen at run start silently
+  decides whether the mid and late game exist — and forecloses them for exactly the short-lived
+  species that most need them.
+- **The raid's objective is an empty room.** Palace-held knowledge is unburnable and unlootable by
+  construction (`consequences.ts:176-180`). The floor plan draws a library with nothing in it. This
+  stacks on the two-distinct-nodes finding: there, libraries hold two things; here, none.
+- **Exposure's strength is set by the *defender's* tradition and the design assumes it constant.** A
+  witness runs their **own** home hooks (§4a). Against True Naming, witnessed knowledge is born at
+  `instanceMastery: 1024` — full, teachable, permanent. Against Art of Memory it lands in a palace and
+  dies with the witness. The self-limiting bound on repeat raiding varies from near-total to
+  near-zero along an axis the document never names.
+
+### 3. Compounds collide with §3, and the collision inverts the progression curve
+
+`arbitration.ts:421` is structurally single-cell — `permits(hostRuleset, grid.cellOf(nodeId))`, and
+`cellOf` returns one cell. If a compound is legal only when the host permits **every** cell in its
+set, then:
+
+**The deeper your magic, the less of it you can carry through a portal.** Third-age magic becomes a
+home-defence technology, which is the exact inverse of the curve `ages-of-magic.md` builds.
+
+And two things follow that nobody priced:
+
+- **One interdiction denies a family.** §4 justifies the small edict budget on interface and
+  action-space grounds — never on power, because at the time one edict could only ever be worth one
+  cell. Under compounds it is worth every compound containing that cell.
+- **The budget grows with the leader**: `edictBudget = 1 + worshipTier`, capped at 8. The player with
+  the most worship holds the most single-cell vetoes precisely when rivals' magic spans the most
+  cells. Composed with the mid-raid lock, one irreversible interdiction can delete a raider's whole
+  third-age repertoire in a single action.
+
+`ages-of-magic.md` §5 lists four things to settle. **None of them is §3.** It should be question zero.
+
+### 4. Three tasks are checked `[x]` and the wiring is absent
+
+Worse than an unwritten plan, because it is the state nobody re-checks. All three in
+`mages-and-species/tasks.md`, in front of 0.4.0:
+
+- **7.5** *"Route the library contribution into the shared (1 + Σ) accumulator"* —
+  `capitalRateMultiplier` has no non-test caller; `gateway.ts:578` passes `NEUTRAL_RATE` and says so.
+  The spec it claims to satisfy is a **shipped requirement**, so §6a's second compounding loop is an
+  agreed acceptance criterion that was never met and nothing tested.
+- **8.1** *"capped resource-yield stacking"* — stacking is real; `world-step.ts:637` hardcodes
+  `resourceYieldBonuses: []`. This is the path of §4's own worked example about *Rego Terram*.
+- **8.2** four materials claimants — `libraryUpkeep: 0`, `construction: 0`, and both
+  `applyLibraryUpkeep` and `advanceConstruction` have no non-test callers.
+
+### And one that is uncomfortable rather than actionable
+
+§11: *"Shipping the client first would make human playtesters the primary balance signal by default,
+**which is the exact outcome the balance-first methodology exists to avoid**."*
+
+`raid-engagement.md` Part II opens *"Author's direction, after playing the prototype"* and then rules
+raid locations, floor plans, portal placement, rewind and target suggestion. The prototype animates a
+**synthetic trace generated in the page**, and the same document names the hazard: *"a raid view that
+animates plausible-looking magic unconnected to what the engine decided is worse than no raid view,
+because it will be believed."*
+
+In fairness the prototypes are honestly labelled and §11's rationale is about *balance* signal rather
+than feel. But the machine signal it defers to is currently measuring a disconnected pipeline, so
+there was no rival signal in the room. Recorded because it is exactly the failure mode §11 predicted,
+arriving by a route §11 did not.
+
+---
+
+## The regime failure is a V8 TurboFan miscompilation, not our code
+
+W28's four magic regimes measured well and `npm run test` failed with
+`No implementation for "acquire" kind "true-name"` — for a kind that is implemented. I hypothesised
+cross-contaminated content interning under a shared vitest worker. **That was wrong, and the
+refutation is the model to copy:** a contaminated intern table would throw `hooksOf`'s *"No loaded
+tradition has id N"*, not `unimplementedKind`. The throw site is a two-case `switch` on a plain
+string with no table lookup anywhere on the path. A hypothesis that predicts the wrong error is
+refuted whatever else is true.
+
+### The evidence
+
+A **cold-path** probe in the `default:` arm — cold precisely so it cannot perturb timing the way
+per-call logging did, which is what made the bug vanish for the previous agent:
+
+    seen "true-name", typeof "string", length 9,
+    codePoints [116,114,117,101,45,110,97,109,101], ctor "String",
+    seenIsTrueName TRUE, rereadSameAsSeen TRUE,
+    coldSwitchOnSeen "true-name", coldSwitchOnReread "true-name"
+
+**The operand compares `===` equal to a case literal, and an identical switch in a cold function
+dispatches it correctly, while the hot switch takes `default`.** Source hex-dumped (plain ASCII,
+hyphen `0x2d`); esbuild's transform dumped (a plain string switch). Both eliminated.
+
+| configuration | result |
+|---|---|
+| Node 22, CI ubuntu x64 (our `.nvmrc` pin) | **FAIL**, 6 of 6 runs |
+| **Node 24, the "Next Node major" job, same commit** | **PASS** — 275 files, 3,904 tests, *and* all three balance gates and the goldens |
+| base branch, Node 22 | PASS |
+| Node 22 local, `--no-turbofan` | PASS |
+| Node 22 local, `--no-maglev` | FAIL |
+
+TurboFan is necessary and sufficient; Maglev is not involved.
+
+### Why W28 triggers a bug it did not cause
+
+W28 changes **no code on that path**. It changes the *workload*: seven traditions instead of three
+widens the action space, and `researchCost` re-enters `applyAcquire` per candidate node per mage per
+tick — **~33 million calls per run**. That volume tiers the site up into TurboFan. The hot path is a
+real separate defect, already flagged; it is what makes the engine bug *reachable*, not its cause.
+
+### The fix, and its blocking dependency
+
+**Move the Node pin to 24** — `.nvmrc`, `package.json` `engines`, and bump the non-blocking job to 26.
+The evidence is direct rather than inferred: that job is already green end-to-end on the failing
+commit.
+
+**Node 24 must be installed on `cto-tycoon-hel1` first.** `scripts/ci-check.sh:30-33` compares the
+runner's Node major against `.nvmrc` and `FATAL`s on a mismatch — deliberately, with the comment *"fix
+the runner image rather than relaxing this check"*. Flip the pin before the runner has 24 and
+`ci/hetzner-lint` goes red on **every branch**.
+
+### Why no source workaround was applied, which was the right call
+
+No rewrite of that switch is *provably* correct; `store.ts`, `cast.ts` and `cost.ts` carry the
+identical pattern, so a local fix relocates the exposure rather than removing it; and validating one
+empirically is epistemically adjacent to retrying until green — the exact thing this campaign's rules
+forbid. A standalone upstream reproducer was attempted and failed, because the isolating loop was
+optimised away.
+
+**Methodological note worth keeping:** every passing configuration in the tier matrix also runs 3–4×
+slower, which is the same perturbation class as the instrumentation that hid the bug. That is why the
+**Node 24 CI run** is the load-bearing evidence — it is full-speed and fully optimised, and it passes.
+
+---
+
+## THE WIRE IS CONNECTED, AND IT IS CAUSALLY PROVEN
+
+W29 landed `packages/coordination/src/universe-effects.ts` with `npm run verify` green — 278 files,
+3,934 tests, all three balance gates, no golden touched.
+
+### The proof, which is the deliverable and not the wire
+
+The external review's demand was five links under fixed seeds, with **step five the one that makes it
+proof rather than a demo**. `packages/scenario/test/unit/causal-chain-build-rate.test.ts`, 8 tests:
+
+| | Terram permitted | Terram forbidden | **`build-rate` ablated** |
+|---|--:|--:|--:|
+| months to open a university | **40** | 98 | 98 |
+| stone spent | 1,912 | 3,104 | 3,104 |
+| contributions reaching construction | 38 | 0 | **38** |
+| Terram instances held | 178 | 0 | **178** |
+
+**The ablated arm is the whole argument.** Same ruleset, same 178 instances held, all 38
+contributions still gathered — and the buildings go up at the unaided rate anyway. Forbidding a cell
+removes three things at once; ablating the primitive removes exactly one. That isolates *the effect*
+from *the permission*, which no measurement in this campaign had done before.
+
+### What it moved
+
+Two universes identical but for permitted forms, 200 ticks, seed 589825: **5 of 5 economic series
+differ.** The granary universe makes 468,099 food to the quarry's 321,443, and 274,403 vellum to
+75,733; the quarry raises a university in **30 months against the granary's 42**.
+
+Against the same universe with the wire pulled out: `resource-yield` **+214% to +294%**, and
+`build-rate` cuts time-to-build **57%** and stone-per-building **32%**.
+
+### It took the review note, and the consequence is the design working
+
+An earlier draft gated on **presence** — an instance exists. I flagged that it diverged from
+`gatherEffects`'s mastery threshold and would make retention, decay and marooning inert *on the new
+path*. It rewrote to call `gatherEffects` and inherit the shipped location, mastery and dormancy
+gates, citing `magic-primitives`: *"a shelf full of `research-rate` grimoires that nobody has read is
+exactly as magical as a shelf."*
+
+> **The economy now depends on living casters. Kill the mages and the harvest falls though every book
+> survives.**
+
+That is §5's individuated, mortal knowledge reaching the economy for the first time.
+
+### Against the pre-registration
+
+The prediction, written before any of this: **D5/D7-class results should move; D2 and D6 should not,
+until permit opportunity cost lands.** W29 did not run the eight-strategy sweep, so **D2 and D6 remain
+untested** — the prediction is not yet confirmed or refuted and must not be reported as either. What
+is confirmed is the mechanism the prediction depended on.
+
+### Three defects found by building it
+
+A **Zeno stall** — crew size floored to zero as the backlog shrank and every site froze at 1002/1024
+forever. A **stale-handle crash** — construction held cohort handles across the populace phase, and
+the entity store's generation check turned a silent misattribution into a loud refusal. And
+**unpayable labour** — crews sized from backlog alone, now bounded by affordable stone.
+
+### The baseline movement to look at
+
+One regeneration with a rationale. At 5 and 20 years **no metric moved**. At 200 years
+`referenceLivingMages` 105 → 461 and `referenceLibraryDepth` 9.9 → 31.1 (construction working), and
+**`referencePeakPopulation` 50,080 → 29,489, −156 SE** — flagged by W29 itself as the number most
+worth an author's eye. Two documented, untuned decisions cause it: `K` reads food alone, and laborers
+on sites do not farm.
+
+Also raised the ascension sweep's `perRunTimeoutMs` from 600s to 1800s: one archivist run now takes
+**305s measured**, against a cap sized for a build whose universities never completed.
+
+---
+
+## Correction: affinities were already wired, and this document is what said otherwise
+
+W41's audit reported that `species.json`'s affinities are read only by `load.ts:938`, the key
+validator. **That is false on `main`.** W20 already shipped the mechanism: `affinities` is one of
+`packages/rules-world/src/autonomy/target-appeal.ts`'s six target-selection terms, wired end to end
+through `scenario/content-set.ts` → `coordination/outlook.ts` → `affinityTerm` → `chooseTarget`, with
+its divisor and `fp(384)` bound authored in `autonomy-weight.json`.
+
+**The artefact that misled the audit is this file.** Its enumeration of species traits omits
+`affinities`, and two external reviewers independently prescribed a mechanism that had already
+landed, because they were reading the enumeration rather than the code. That omission is corrected
+here rather than silently repaired, because the failure mode — *a summary of the code being trusted
+over the code* — is one this campaign has now committed at least three times.
+
+The placement W20 chose is also better than the one I recommended. Affinity applies to **target
+appeal**, whose divisor is orthogonal to tier — which is exactly the property that lets it **reorder**
+`compareTargets`' queue rather than move a species faster along it. Research cost, which I suggested,
+would have reached the same content through a second channel and double-applied it.
+
+### The measurement nobody had taken
+
+72 runs, same species and same seeds, affinities authored against every table emptied:
+
+- **It moves sets, not counts.** Dwarf run 0/1 ends at **29 nodes with affinity on and 37 with it
+  off** — Jaccard 0.610, with **4 nodes unique to the affine arm and 12 unique to the ablated one.**
+  That is the *opposite* of the "speed, not shape" signature: the ablated arm is larger, and the
+  affine arm holds nodes the larger one lacks.
+- **It almost never survives to terminal**, for the reason this campaign already knows: any universe
+  that lives exhausts all 51 v1 nodes, and reordering a fully-walked queue cannot change its union.
+  Draconic, dwarf and elf all reach 51/51 on both sides. **Orc is the only exception, at Jaccard
+  0.720 — and only because orc universes collapse before exhausting.**
+- Negative control passes exactly: gnome and human are identical on both sides at every horizon in
+  all twelve run pairs.
+
+### The finding that reframes five sweeps
+
+**7 of 11 authored affinity entries name forms no enabled cell uses** — `ignem` ×2, `vim` ×2,
+`herbam`, `imaginem`, `corpus`. And:
+
+> **Gnome and human are the two species with zero live entries.**
+
+They are also exactly the pair W15, W19 and W20 are all measured on.
+
+So W15's *"identical 49 nodes"*, W19's *"no divergence at any horizon"* and every species claim
+resting on that pair were measured on **the one pair of species whose differentiating trait the v1
+grid cannot read.** The result was true and the framing was not: it is evidence that gnome and human
+do not differ *under v1's enabled rectangle*, not that species do not differ.
+
+(The brief I wrote claimed *no* affinity form is enabled. That is wrong in the useful direction —
+`mentem`, `nomen` and `terram` are all live. The problem is narrower and worse: it is live for the
+species nobody measures.)
+
+### Magnitudes, read for the first time
+
+- The only authored value reaching the `fp(384)` bound is draconic's `ignem` **1792** — a **dark**
+  form. Live entries use at most two-thirds of the available axis.
+- Elf `mentem`, draconic `nomen` and orc `terram` are all **1280** — three species sharing an
+  identical magnitude and differing only in which column it sits in.
+- §6 promises *"technique/form affinities"* and `load.ts` accepts only form and cell keys, so
+  `{"rego": 1536}` cannot be authored. **Whole technique rows are unexpressible**, and half the
+  promise has never been buildable.
+
+### Two harness bugs found in passing, both of which have bitten before
+
+**Species intern alphabetically, not in `species.json` order** — so `foundingSpeciesMask` bit 0 is
+**draconic**, not human. That cost one wrong arm before it was caught, and any earlier work that
+assumed file order was measuring a different species than it reported.
+
+**`contentRevision` sits inside the hashed header**, so snapshot-hash comparison is useless as an
+inertness check across a content ablation — the hash moves because the content moved, whatever the
+behaviour did.
+
+---
+
+## The root under the root cause: this game has no concept of a mage *doing* anything
+
+W49 was sent to build mētis accrual from applied use, with one gating question to answer first:
+**does an idle god's universe apply magic to its economy anyway?** If it does, the mechanic is
+decoration. The answer came back in an hour and it is worse than a null:
+
+> **"No mage in this game ever applies magic to anything."**
+
+Three facts, each verified:
+
+- **Application is passive.** `universeEconomyBonuses` reads `KNOWLEDGE_INSTANCE` every tick and
+  derives its multipliers from what mages **know**. Not from what they do.
+- **The autonomy goal registry has nine entries and none of them is an applied-use activity.** A mage
+  can research, teach, scribe, and so on — she cannot *work*.
+- **The economy's labour is populace cohorts, not mages.** The people who farm and quarry are not the
+  people who know magic.
+- Measured: the zero-god-input arm applies magic on **96.7% of ticks**, because *knowing is applying*.
+
+**So there is no distinction between having knowledge and using it**, and every mechanic that depends
+on that distinction is unbuildable as specified — mētis from use most obviously, but also
+publish-or-perish's *"practice is an operation somebody has to perform"*, and `ages-of-magic.md`'s
+whole account of a working mage whose fundamentals stay fresh through use.
+
+### This is a better explanation of the negative control than any we have had
+
+The campaign has spent forty sweeps asking why `permit-then-idle` wins. Here is the structural answer:
+
+> **If magic is a passive property of what a universe knows, then acquiring knowledge is the only
+> verb that exists, and the god's only lever on it is permitting more.** Which is exactly, and
+> exclusively, what `permit-then-idle` does.
+
+Every other god verb — fund, bless, encourage, grant, assign — tries to influence *how* a universe
+practises. There is no practice to influence.
+
+### And the economy wire rewards the idle bot more than anyone
+
+The sharpest finding in the report, and it inverts the reason the wire was built:
+
+> **The only god lever on the economic path is the permit gate, and it points the wrong way.** The
+> twelve founding-permitted cells hold **8 of the 74 economic nodes** — all Terram. Opening the grid
+> multiplies reachable economic content **ninefold**, and opening the grid is the one thing
+> `permit-then-idle` does.
+
+W29's wire was built to give the god's verbs marginal value. Measured against this, it gives the
+*permit* verb ninefold value and the other nine verbs none — which is the negative control's thesis
+with a larger number attached.
+
+**This does not make the wire wrong.** Connecting authored effects to the world was necessary and its
+causal proof stands. It means the wire alone cannot produce the result it was aimed at, and nobody
+had measured which verb it actually pays.
+
+### What follows
+
+**Mētis-from-use is blocked on a prerequisite nobody had named: application must become an
+activity.** A mage must be able to *work* — to spend her time applying a cell to a site — and that
+work must be distinguishable from merely holding the node. Until then there is no "use" for use-based
+mechanics to accrue from, and the cheapest wrong move would be to accrue mētis from *knowing*, which
+would reward the idle bot a third time.
+
+That is a significant piece of design, not a fix, and it is now the highest-value open question in
+the project. It also reframes several things already ruled:
+
+- **`encourageResearch` reordering the queue** (W52, in flight) becomes more important, not less —
+  it is currently the *only* proposal that gives a god verb a non-permit lever.
+- **The stationed set's three-way tension** (`ages-of-magic.md` §2b) assumes mages allocate their
+  hours between teaching, researching and defending. Two of those three exist.
+- **Territory and siting** produce different materials, and W24 measured real divergence — but no mage
+  is standing in the delta making it happen.
+
+W49 also found and fixed a defect in its own instrument: `defineWorldSimulation` takes one argument,
+so its `onReport` callback was silently dropped and the agreement check was printing *"clean"* without
+ever evaluating. It reported this rather than quietly repairing it, and confirmed the applied-use
+figures were unchanged by the fix.
+
+### The numbers, and a correction to the negative control itself
+
+W49 ran the gate and did not build. Five strategies, matched seeds, applied use normalised per tick:
+
+| strategy | mean ticks | use/tick | ticks applying | form mix |
+|---|--:|--:|--:|---|
+| `passive-control` | 2400 | 21.11 | 98.8% | Terram 100% |
+| `permit-then-idle` | 1082 | **118.78** | 98.6% | seven forms |
+| `permissive-breadth` | 1122 | **118.77** | 99.1% | seven forms |
+| `denial-warden` | 1768 | **0.14** | 1.6% | Terram 100% |
+| `archivist` | 2400 | 379.22 | 99.2% | Terram 100% |
+
+**`permit-then-idle` / `permissive-breadth` = 1.0001.** Idle is the *ablation* of breadth — same
+opening, every action after round 140 replaced by nothing — and **2,260 ticks of doing nothing cost it
+0.01% of its applied use.** §11c predicted it would accumulate none.
+
+Worse, **the hook is anti-correlated with playing**: `denial-warden`, the god using its verbs hardest,
+accrues **877× less** than the god doing nothing. And `archivist` has the pool's largest volume with
+**the same 100%-Terram mix as the do-nothing arm**, because it spends its verbs on scribing rather
+than permitting. Volume and composition are set by two different things and **neither of them is
+work.**
+
+**Correction to a figure this document has used repeatedly.** `balance/results-integration-r2.txt`
+records **`permit-then-idle` at 40/40**; the **38/40** quoted here and in several agent briefs is
+`permissive-breadth`. The idle bot is not matching the active one — **it is beating it.**
+
+### The recommendation, which is the thing to build next
+
+> **Build `practice` as a tenth autonomy goal.** It competes for a mage's month, restores mastery —
+> closing `ages-of-magic.md` §2c's publish-or-perish loop — and is what `resource-yield` should gate
+> on, so the economy reads **work performed** rather than **knowledge held**.
+
+The game named this operation itself and then never built it. `decay.ts:115`: *"Nothing in this
+subsystem restores mastery; **practice does, and practice is an operation somebody has to perform.**"*
+It is a `mages-and-species` change, not a `knowledge-model` one.
+
+**The battle half may survive the gate that killed this one**, for a reason worth stating: a raid
+**is** an act, with a roster of who was there and who came home. The attribution the economy lacks is
+already present. Prefer a mastery term over its own node, survivors only, and run the same shaped
+measurement before believing it.
+
+### Four stale facts, flagged and not fixed
+
+`CLAUDE.md` says `WORLD_SCHEMA_VERSION` is **3**; the code says **5**. *"`gatherEffects` has no
+production caller"* is stale in **five places** now that #42 has landed it. And `content-set.ts`'s
+consumption note is stale in the *other* direction, which may make the consumption report understate
+what is actually wired.
+
+---
+
+## No mage ever chooses to teach
+
+W47, instrumenting the empty teaching window on the merged economy tree, measured this and it is the
+most consequential thing in its report:
+
+> **`teach` is feasible on 2,628 evaluations in the window and selected on none.** Over two
+> centuries, on either tree, **no mage ever chooses to teach — every lesson happens because a student
+> went looking.**
+
+Teaching in this game is entirely student-pull. The `teach` goal exists, is scored, is feasible, and
+loses every time. That single fact runs underneath a large part of the design written this week:
+
+- **`ages-of-magic.md` §2b's stationed set** — the tension between teaching, researching and
+  defending — assumes a mage *chooses* to teach. She never does.
+- **§2c's publish-or-perish loop** has teaching keeping a scholar's fundamentals fresh. If teaching is
+  only ever student-initiated, a scholar cannot elect to maintain herself; she can only be found.
+- **The college** (§2, §2a) is an arrangement for teaching to happen. Its faculty do not teach — they
+  are taught *at*.
+
+W47 handed it forward rather than fixing it, correctly: it belongs to `mage-autonomy` and touching
+goal scoring inside a merge PR has baseline consequences. Alongside it, `affiliate` holds **76 of 90**
+mages by world year 200 (69 of 83 on main) — the emergent monoculture the goal histogram was built to
+expose, visible as a number for the first time.
+
+### And the tripwire it was blocking was never a property of the build
+
+`reference-long-run` 9.5 asserted a lesson in *every* 20-year window. W47 ruled out three
+explanations by measurement rather than argument — not the economy (261 research projects complete in
+the same empty window), not crowd-out (`teachableToMe` is empty on **all 21,471** mage-evaluations,
+so `seek-teaching` is masked infeasible rather than out-scored), not the threshold (`fp(512)`
+untouched, and the supply wave crosses it nine windows in ten).
+
+**Teaching's supply oscillates, and the horizon ends inside a trough.** Across five run seeds, **three
+of five have an empty window on `main` too — where the assertion is green.** It was measuring a wave
+at one phase. Replaced with three claims that hold on every seed on both trees: teaching starts, it
+is not confined to the founding-grant era, and it happens in more than half the windows.
+
+The instrument reproduced main's own committed claim exactly — main's baseline note says the thinnest
+window holds 16, and it measured 16 — which forecloses *"the probe is wrong."*
+
+---
+
+## The CI ceiling is now the binding constraint, and it needs the owner
+
+`npm run verify` on the economy branch is **11m59s**, of which the ascension gate is **565.4s — 79%**.
+The self-hosted runner's timeout is **600s**. Its history on that branch: timed out, failed mid-test,
+timed out. Every other branch passes, so this is specific to what the tree costs.
+
+**The sequencing point is the actionable part:** verify is over budget *because of what the branch
+does* — a universe 2.6× the population, now fighting raids. **The moment #42 merges, `main` inherits
+that cost and `ci/hetzner-lint` should begin timing out repo-wide.**
+
+So the decision is not "retry". It is:
+
+> **Raise the timeout in `/opt/ci-runner/webhook_receiver.py` before merging #42, or accept a red
+> required check on `main`.**
+
+That receiver is shared with `themultiverse.school` and the docs require owner sign-off, so it is not
+an agent's call. W47 correctly refused the two tempting alternatives: it did not touch
+`scripts/ci-check.sh` (which must stay equivalent to `verify`), and it did not trim the ascension
+sweep, because 32 runs is already `balance/README.md`'s argued minimum and **shrinking a gate to fit
+CI is tuning the instrument.**
+
+### Freezing main
+
+W47 merged main twice during one CI cycle and main moved twice more, most recently taking
+`knowledgeKind` onto all 300 nodes. The gate treats `provenance.contentHash` as block-level
+invalidation, so each round costs a **full baseline regeneration (~15 min) even when no metric
+moves** — and that buys nothing while the runner ceiling stands, because merge freshness is not what
+is failing.
+
+**Main is therefore frozen to non-`packages/` changes until #42 lands.** Docs, `ui/` and tooling may
+continue; anything touching the simulation waits. This is my call as delegated author and is the
+cheapest way to stop paying a regeneration per cycle for a race nobody can win.
+
+### Two false statements withdrawn from the superseded baseline notes
+
+Found while writing their replacements, and both matter beyond this PR: the notes called all three
+sweeps **100% `passive-control`** (the ascension sweep round-robins all eight strategies), and said
+**nothing in `packages/scenario` opens a portal** — `raidEngagement` is `false` on main and `true` on
+the branch, so **raids firing is part of this merge's delta** and was never isolated from the economy
+wire.
+
+---
+
+## `practice` is built. Eighth null on the bot — and the first mechanic to move the thing it was *for*.
+
+W53 built the operation `decay.ts` named about itself and nobody wrote: a tenth autonomy goal that
+accrues mage-months against a tier-scaled requirement and restores mastery. **`decay.ts` is
+untouched** — relaxing its monotonicity clamp is what reopens the re-permitted-fragment exploit it
+documents — and a forbidden cell **refuses** practice, closing the same door from the other side.
+Zero new RNG draws: `practice()` takes no `rng` and displaces no baseline's stream sequence.
+
+Publish-or-perish enters as **candidate ordering, not a weight** — practice targets sort
+*stalest-first*, deliberately bypassing `boundCandidates`, whose novel-before-cheap comparator is
+exactly wrong for a node you are **keeping** rather than acquiring.
+
+### The three answers
+
+**Q1 — does applied use separate `permit-then-idle` from `permissive-breadth`? No.** All three
+comparisons sit inside one standard error of zero (+0.20, −0.25, +0.99 SE). **Eighth mechanic aimed at
+that bot; eighth null.**
+
+W53 initially wrote up a 2.05× ratio as a real inverted separation **and retracted it**, because the
+per-run values are `0, 0, 53, 117, 418, 1381, 2308, 3280` — a point ratio that does not survive its
+own spread. That retraction is worth more than the finding would have been.
+
+**The sharper result is why it failed:** gating `resource-yield` on being *committed to practice on
+that node this tick* removes **99.2–99.6% of the economy's magical contribution**, leaving a quantity
+too sparse to compare gods by. The mechanism is right and the gate is too sharp. W53's own named
+follow-up is the fix: a **freshness window** (`lastPracticedTick`) rather than a tick-sharp test,
+traded away to land the measurement.
+
+**Q2 — the teachable fraction moves, weakly but on every arm.** Below-threshold share falls 0.8–2.5
+points at 1.2–2.1 SE; this tree's like-for-like goes **87.8% → 85.3%**. At unit scale it is louder: a
+standard universe's twenty-year mastery ceiling went **256 → 1019**, and it teaches **3 lessons where
+it taught 0.** Publish-or-perish is closing.
+
+**And the number I did not expect:** `referenceNodesGainedFinalQuarter` **+10.9%**. That is
+`ages-of-magic.md` §2c's *"fresh fundamentals inform research at the frontier"* arriving as a
+measurement, from a mechanic built for a different reason.
+
+**Q3 — `denial-warden` is unchanged**, 207× → 230× behind the god doing nothing.
+
+### Q3 is a flaw in my design, not in this build
+
+W53 names it structurally and it is correct: **practice is refused in forbidden cells, so any
+applied-use currency is anti-correlated with denial.** A denial strategy cannot accrue what it
+refuses to permit.
+
+That is a finding about `raid-engagement.md` §11c — the mētis-from-use section I wrote — not about
+`practice`. §11c argued applied use would attack `permit-then-idle` structurally. It does something
+worse: it **punishes the denial play**, which vision §2's first pillar insists must be a peer
+strategy. An applied-use currency is a permissiveness tax wearing a different name.
+
+Any use-based mechanic therefore needs an answer for what a denier accrues, and the honest candidates
+are narrow: practice on the cells you *do* permit counting for more, or denial buying a different
+currency entirely. **Unresolved, and it should block the battle half of §11c until it is.**
+
+### Discipline worth copying
+
+Three withdrawals rather than three widenings: the 2.05× retracted; `denial-warden`'s gated figure
+(*"7 zeros and a 4"*) withdrawn as unquotable; and 9.8's books-to-depth bound **withdrawn, not
+widened**, at 159 books / 17 nodes against 157 / 48. `balance:gate:ascension` was still running at the
+end and is recorded as **a named gap rather than a promise.**
+
+### The ascension gate finished, and it upgrades the negative result
+
+`referenceLibraryDepth` **34.13 → 14.03, −58.9% at −3.02 SE** — the only metric clearing this gate's
+tolerance. It is the same metric that regressed on both faster gates (−23%, −25%) and the same
+collapse `reference-long-run` 9.8 sees at two centuries (**48 → 17 distinct nodes**).
+
+**Three gates and a long run now agree: the library stops broadening under the practice gate.** That
+is the most robust result this change produced, and it is negative. Practice targets sort
+stalest-first, so a mage maintains what she holds instead of acquiring what she lacks — the library
+deepens on fewer things. That is a real design tradeoff rather than a tuning error, and it should be
+decided rather than smoothed: **publish-or-perish and library breadth are in tension, and this is the
+first measurement of the exchange rate.**
+
+Two readings the results table invites and W53 refused:
+
+- **`referenceGrimoires` falls 38% and passes.** It passes because the ascension sweep's spread
+  absorbs it — tolerances run to **±33 on a value of 60, and ±1456 on 3267**. *"Nine of ten pass"* is
+  a fact about the tolerances, not about the build, and the doc says so in the same breath as the
+  table.
+- **`referenceNodesGainedFinalQuarter` +12.2%** moves the same direction as the horizon gate's
+  +10.9%, but at 0.28 SE it carries no weight here. **Two same-signed observations, one significant:
+  watched, not claimed.**
+
+---
+
+## The prototype was not disagreeing with the engine. It had a ×24 button on.
+
+The author noticed the raid prototype produces vivid, differentiated combat where the simulation
+produces direct-damage at 1.9% of hit points removed, and asked what the real system was getting
+wrong. W56 settled it, and the answer is a detail nobody would have guessed:
+
+> **`ui/raid/index.html`'s finding was measured at ×1 authored magnitudes. Its vivid combat is the
+> ×24 damage button it labels "not content".** The two implementations do not disagree — one has an
+> operator control, and the demo was running with it on.
+
+**And 1.9% is authoring, not a zeroed lookup.** Proved positively rather than assumed: direct-damage
+removes **454 raw per landing attempt across 1,462 attempts**, inside the authored 96–768 band. **A
+missed lookup produces exactly zero**, so 454 is proof the lookup resolves. The arithmetic sits in one
+node — `pm-the-empty-room` bolts fp(0.75) against a mage's fp(64) while its own field does fp(7.5),
+and `summon-damage` is fp(2) *per tick*.
+
+This matters beyond the one number. **"The prototype behaves better than the engine" was a real
+observation with two real causes, and neither was the one it suggested.**
+
+### The second cause is a live defect, and it is worse than the first
+
+> **`firstCastableNode` gates candidacy on `direct-damage`** (`raid.ts:588`). A node carrying only
+> `area-denial`, `blink`, `summon`, `ward` or `concealment` is **never cast**.
+
+And since **no shipped node carries both `summon` and `direct-damage`**, `summon` **cannot reach a
+battlefield at all.** Area-denial appears in the measurements only because 11 nodes happen to carry
+both primitives; it rides along on damage's ticket.
+
+The prototype's filter accepts `direct-damage`, `area-denial` **and** `blink`. The engine's does not.
+**That is the second divergence the author was seeing**, and it is not a display difference — it is a
+class of magic that cannot be cast.
+
+Two consequences worth stating: any measurement of control primitives to date has been taken through
+a filter that mostly excludes them, and `winRateByPrimitive`'s ablation cannot say anything about a
+primitive that never fires.
+
+### And `ward` is invisible to the instrument that ranks primitives
+
+There is no `applied(ward, …)` in `primitiveApplication`, so `ward` **contributes zero to what
+`winRateByPrimitive` reads while denying measurable action.** A primitive that works and reports
+nothing is the fifth instance of this project's recurring failure — a metric structurally incapable
+of seeing the thing it is named for.
+
+### The metrics that replace damage-as-the-measure
+
+`combatActionEconomy` **0.129** — combatant-ticks of enemy action denied over the combatant-ticks a
+raid *contained*, so a longer raid does not rank as more decided by combat. Three channels: removal
+(credited across sources by hp removed over a target's **whole life**, because killing-tick
+attribution is timing noise wearing a definition's clothes), **save** (a `ward` scaling a lethal tick
+survivable, or `concealment` making the finishing cast miss), and **decoy** (an attack spent on a
+summon). Summon kills earn nothing, or damage farms denial on free bodies.
+
+`combatThresholdEfficiency` **0.076** — removing over removing-plus-hurting attempts, with a field
+counted as *one* attempt for its whole life via a cast id.
+
+**The headline the old measure could not produce: a direct-damage cast removes a target 1.57% of the
+time; the field on the same node, 18.3%.**
+
+**Displacement is declared absent rather than zeroed** — `blink` moves only the caster and fields push
+nobody — which is the distinction four earlier metrics failed to make.
+
+### Verified, and larger than reported: five of seven combat primitives cannot be cast
+
+`packages/rules-raid/src/raid.ts:588`, verbatim:
+
+```ts
+if (!node.effects.some((effect) => effect.primitive === COMBAT_PRIMITIVES.directDamage)) {
+  continue;
+}
+```
+
+Counted against shipped content:
+
+| primitive | nodes carrying it | **castable** (also carry `direct-damage`) |
+|---|--:|--:|
+| `direct-damage` | 37 | 37 |
+| `area-denial` | 38 | **11** |
+| `ward` | 39 | **0** |
+| `concealment` | 48 | **0** |
+| `summon` | 10 | **0** |
+| `blink` | 9 | **0** |
+| `knowledge-steal` | 6 | **0** |
+
+`arbitration.ts` dispatches seven primitives. **Two can arrive.** Around 112 nodes carrying control
+magic are unreachable, and 27 of 38 area-denial nodes with them.
+
+**`knowledge-steal` is the one that matters most.** Six nodes, none castable. The entire design in
+which a raid is an attack on a rival's *knowledge* — looting minds, `Intellego Mentem` and
+`Rego Nomen` as the theft cells §5 gates theft behind — **cannot happen.** Not rarely: never.
+
+### It explains a finding nobody could explain
+
+W37 measured that **raids are decided by objective capture, not combat** — survival-regret zero on
+every seed — and left it as a tuning mystery. It is not tuning. **Five of seven combat primitives
+never fire**, so combat is `direct-damage` plus whatever area-denial rides in on damage's ticket, and
+`direct-damage` removes a target 1.57% of the time. Combat cannot decide a raid because most of
+combat is not in the raid.
+
+It also retroactively qualifies every control-primitive measurement this project holds. W38's
+*"area-denial 49.7%, summons + soldiers 48.4%"* was measured with summons that were **soldiers**,
+because summoned creatures cannot be summoned.
+
+**This is a one-line filter with a five-primitive blast radius**, and it is the first thing to fix
+when the freeze lifts. The fix itself needs care rather than deletion: the filter exists so a
+combatant does not stand in a field choosing a node that does nothing, and the comment four lines
+above says so — *"a refusal that costs a tick is a behavioural bug wearing a safety check's
+clothes."* The correct test is *does this node do anything in an engagement*, which is the seven
+`COMBAT_PRIMITIVES`, not the one.
+
+---
+
+## No NaN contamination — and two findings that matter more than the one we were hunting
+
+**Verdict: clean, and negative-controlled.** Zero non-integer values crossed into state across a
+2,400-tick reference run and eight strategy arms — **74,859,594** writes through the unchecked door
+and **12,789,123** through the checked one. The probe was **proven able to fire first** (2 of 2
+injected NaNs caught, one per door), and the run's snapshot hash matched the committed
+`6ed339c6d1dea724` exactly, so the instrument did not perturb what it measured.
+
+A state *sweep* can never work, which is worth recording: **by read time a NaN is already `0`.** The
+check watches values **as written**, at the only two doors.
+
+### The specimen for "how did 3,900 tests miss this"
+
+`packages/rules-world/test/unit/economy-materials.test.ts:37` declares its helper with:
+
+    resourceYieldBonuses: readonly number[] = []
+
+Two tests pass a non-empty list and prove `resourceYieldMultiplier` stacks correctly. **Not one test
+of `materialsProduced` overrides that default — and the default is character-for-character the `[]`
+that `world-step.ts:772` passes in production.**
+
+> **The suite verified the function and never the wiring.** The test's own convenience default *is*
+> the production defect.
+
+Same shape for `assertRepresentable`: it had tests, they asserted out-of-range rejection, and none
+ever handed it a NaN. This is the whole answer to the author's question, and it is a category of test
+the project lacked rather than carelessness in the ones it has.
+
+### FINDING 1 — the balance gates cannot see a doubling
+
+Two of the three gates play **no god verbs at all** (`worldTickCap` 60 and 240, `passive-control`
+only). The third pools all eight arms — **whose outcomes span 40×** — into one mean, with tolerance
+set at 3× that pooled standard error:
+
+> **±118% of mean for `referenceGrimoires`. ±136% for `referenceNodesGainedFinalQuarter`.**
+>
+> **A mechanic could double knowledge output and the gate would pass.**
+
+This is a better explanation of eight null results than any mechanism theory. The instrument that
+declared them null has tolerances wider than the effects being looked for, and two thirds of it never
+exercises the verbs under test. **Every null this campaign has recorded needs re-reading against
+that**, and no baseline cut before it is fixed can mean what §11's parity rule claims an even MINOR
+means.
+
+### FINDING 2 — the float ban does not cover `packages/coordination/src`
+
+`CLAUDE.md`'s first non-negotiable constraint is no floating point in the rules path. **eslint's
+`RULES_SRC` omits `packages/coordination/src` while `check-purity.mjs` treats it as rules path** — so
+the two disagree about what the rule covers, and four raw-division sites sit in the gap:
+`god/ascension.ts:336,337` and `god/interventions.ts:441,798`.
+
+### The 1.9% question, answered a second way and agreeing
+
+Independently of W56's ×24 discovery, W55 reached the same verdict by arithmetic: `CastArbiter#effectsOf`
+uses `requireRegistryNode`, **which throws on a miss**, and compares strings on both sides — no
+mismatch is possible. And the numbers predict the result without any measurement: direct-damage is
+fp(276) **once per cast** behind an evasion roll, 0.42% of max HP, while `summon-damage` is fp(2048)
+**per tick per summon** up to eight. **One summon out-damages an entire cast 7.4× in a single tick.**
+
+Two agents, two methods, same answer. That is the strongest form of confirmation this campaign gets.
+
+### Scope, stated rather than implied
+
+The clean bill covers the reference run and all eight arms. It does **not** cover `rules-raid`'s
+engagement path, because nothing opens a portal at this build and **no engagement tick ever ran.**
+
+---
+
+## Ten of fifteen metrics have never run. The four dead constants were not accidents.
+
+W57, while building species metrics, found the general mechanism:
+
+> **`collectRunMetrics` has no production caller anywhere.** Nothing constructs a `RunTelemetry`;
+> `KnowledgeCensus` is never instantiated. **Ten of the fifteen registered metrics are per-run and
+> are therefore all structurally incapable of moving in a real sweep.**
+
+Baselines gate only `scenario`'s ten `reference*` vital signs. Everything else in the registry is
+decoration.
+
+**Put beside W55's finding, the measurement apparatus is comprehensively broken:**
+
+- **10 of 15 metrics are never collected.**
+- The few that are get tolerances of **±118% of mean**, set at 3× a standard error pooled over arms
+  spanning 40×.
+- **Two of three gates play no god verb at all.**
+
+That is a complete explanation of eight consecutive null results, and it is not a mechanism theory.
+**We have been measuring with an instrument that mostly does not run, and grading it against
+tolerances that cannot fail.** `libraryDependence` pinned at 0, `capitalSnowball`'s byte-identical
+checkpoints, `referenceLibraryDepth` at 1.00 and the coverage gate were four visible symptoms of one
+structural fact.
+
+## Nothing in the rules path ever raises mastery
+
+Found while trying to gate "qualified" on teachability:
+
+> **`setMastery` has one non-test caller — the decay pass — and it only lowers.**
+
+Research creates instances at **256**, below the **512** teach threshold, and **they can never
+climb.** Every teachable instance in the game descends from a god grant at 1024, sliding toward a
+retention floor that is also below 512 **for all six species**.
+
+So `ages-of-magic.md` §2c's publish-or-perish is not merely missing its *publish* half — the arrow
+only points down, by construction, everywhere. W53's `practice` is the fix and it is unmerged.
+
+This also makes the **teachable window** the real species discriminator: gnome **32** ticks against
+dwarf and draconic **102**.
+
+## The three species claims, measured
+
+**Claim 1 — versatility hegemony — refuted, and what replaces it is worse.** All six species staff
+**70 of 70** cells and 12 of 12; all six trip an 80% flag. Every cell has a prerequisite-free tier-1
+node and the lowest depth ceiling is 3, so **cell entry is free for everyone and nothing limits
+breadth at all.** The contrast vector confirms the derivation reads content correctly: elf and
+draconic are exactly top on `exhaustibleCells` at 70/70, against orc's **2**.
+
+**Claim 2 — long-lived brittleness — half supported, mechanism refuted.** Elf and draconic never
+recover, so losses do compound. But *"human and orc get absorbed"* is **false** — both are censored
+too, despite human having the highest mage-production rate and orc the shortest maturity lag. Only
+gnome (72 ticks) and dwarf (372) recover. **Recovery is not fertility-limited**: student demand *is*
+university capacity, and the carrying-capacity brake is one scalar shared across all species.
+Retuning `fertility` would move a number that is not the binding constraint.
+
+**Claim 3 — role assignment as a demographic lever — refuted, and reported `mechanic-absent` rather
+than 0.** `roleId` never enters the mortality hazard; `perTickHazard` reads age, birth tick and
+effective lifespan and nothing else. The only role-to-death pathway is raid combatant eligibility,
+and `raidEngagement` is false. **The price is undefined, not zero. The lever does not exist yet.**
+
+### And it caught itself falling into this project's own trap
+
+Its first shock run returned `recoveryTicks: 0` for all six species. The cause was its own sampling
+window — the shock-tick observation is recorded *before* the cull, so the collector received the
+pre-shock roster as its first post-shock sample.
+
+> *"Six species reporting instant recovery after losing half their mages was the tell."*
+
+A plausible zero, caught because it was implausible. That is the discipline the four dead constants
+needed and did not get.
+
+---
+
+# The random bot wins because it presses the button
+
+W58 ran both falsification tests. The results resolve the campaign and invert two of its headline
+findings.
+
+## Test 1 — a random bot ascends 80/80, on every starting position
+
+| strategy | asc/runs | rate | mean nodes |
+|---|---|--:|--:|
+| `passive-control` | 0/80 | 0.0000 | 51.0 |
+| **`uniform-random-legal`** | **80/80** | **1.0000** | 50.5 |
+| `permissive-breadth` | 80/80 | 1.0000 | 190.9 |
+| `archivist` | 79/80 | 0.9875 | 51.0 |
+| `narrow-depth` | 21/80 | 0.2625 | 7.7 |
+| `denial-warden` | 20/80 | 0.2500 | 3.1 |
+
+Across **560 paired world-by-world comparisons**, the number of worlds where a designed strategy
+summited and the random bot did not is **zero, in every row.**
+
+## And here is why
+
+> **`passive-control` reaches `ascensionPath = apotheosis` at tick 960 in 8 of 8 runs.** It scores
+> 0/80 for one reason: its stance is `never`, so **it never submits action 15.**
+>
+> **The random bot holds the same 51 nodes and wins 80/80 because it draws the button.**
+
+The win condition reads a clock that runs whether or not anyone plays. Everyone qualifies; only some
+*declare*. That is the whole result, and eight mechanics were built downstream of it.
+
+## Test 2 refutes *both* remaining explanations
+
+The simulation is **not** insensitive and the evaluator is **not** hiding a live signal. Instrumented
+before scoring, the arms diverge enormously and **never reconverge**:
+
+- `nodesKnown` **η²(strategy) = 1.00** from tick 60 onward
+- cross-strategy node-set Jaccard on a **shared seed: 0.23**, against within-strategy cross-seed **0.89**
+
+That is the **inverse** of the shape this document has cited for weeks.
+
+### Which means "seed beats strategy" was a measurement artifact
+
+The earlier sweep's **round-robin assignment gives each strategy disjoint replicate indexes, so no two
+strategies ever played the same universe.** It was comparing different worlds and reporting the
+difference as strategy-insensitivity. W19's twelve-horizon result, and every citation of it here,
+inherits that defect.
+
+**Strategy dominates node composition overwhelmingly.** It always did.
+
+## The one genuine null
+
+**Knowledge does not convert into population.** η²(strategy) **0.01–0.04** at every horizon while
+η²(seed) runs 0.6–1.0, on a channel demonstrably capable of differing. The god's play moves what a
+universe knows and does not move how many people it has.
+
+## Instrument findings that block anything quoted from before
+
+- **On `main` the exploit margin is still `ascensionRate − probeRate`** — confirmed empirically to 4dp.
+  `EXPLOIT_MARGIN_MIN` (0.05) equals `BAND.min` (0.05). **W18's repairs were never merged**; they
+  exist only on `w18/instrument-repair` and round-3.
+- **The −0.8214 this document quotes is not about `uniform-random-legal`.** It is round-3's
+  *"deliberate mean 0.1286 − worst probe 0.9500"*, and the winning probe there is
+  **`permit-then-idle` at 0.95** — while `uniform-random-legal` scores **0/40** on that tree.
+  **The exploit's identity reverses between trees.** The shape of the finding survives; every
+  specific number attached to it does not.
+- The probe still has **7 of 15 verbs inert**, so 1.0000 is a floor on *this* probe. It wins 80/80
+  anyway.
+- **Position dependence is real but belongs to someone else**: the probe is position-*independent*
+  (1.000 in all four cells); `narrow-depth` (0.000/0.000/0.900/0.150) and `denial-warden` are the
+  position-dependent ones. This refines a prior claim rather than confirming it.
+
+Every reported null was checked against the silent-zero confound per quantity, and none is a
+`NaN → 0`.
+
+---
+
+## W66 — the research guide, spot-checked against `packages/`, and four of five items withdrawn
+
+*2026-08-13. A review pass over the five research-dive items I had queued. It refutes items I had
+already dispatched agents on, including one I had called the cheap one.*
+
+**The general lesson, which matters more than any single item: the guide was briefed on
+`vision.md`, which describes intent, and not on the code, which is well ahead of it.** So it
+systematically over-recommends things that already exist. The hit rate on "already built" is high
+enough that any entry must be spot-checked against `packages/` before acting. I did not do that
+before dispatching, and it cost two agent-runs.
+
+### Item 1 — combat primitives are measured wrong. **Withdrawn, and the fix would have been a regression.**
+
+`winRateByPrimitive` (`packages/mc-harness/src/ablation.ts`) does not score combat nodes by damage.
+It ablates each primitive and measures the win rate of the arm retaining it against the arm where
+it is neutralised, over **mirrored paired seeds** with a **Wilson score interval**. That is
+outcome-based by construction: if `direct-damage` contributes less to winning than `area-denial`
+does, the ablation says so without anyone deciding in advance that control matters more. Bolting a
+damage-output metric onto that is a regression, not a fix.
+
+The mirroring is the tell that this was thought through. `ablation.ts` states that an unmirrored
+measurement would report side 0's structural advantage as the primitive's contribution — "quietly,
+as a number near 50% that drifts."
+
+The timing argument was backwards as well. It said land this *before* the baselines are committed.
+**The baselines are committed already.**
+
+**What survives is narrow and real:** ablation measures a primitive's *presence*, not its *tuning*.
+The 300 nodes carry **37 `direct-damage` effects spanning magnitudes 96 to 768 — an 8× spread** —
+and whether a given node's magnitude clears a kill threshold is invisible to a presence/absence
+experiment. That is a question about node tuning *inside* one primitive, not a flaw in how the
+harness values combat. PR #57's `combatActionEconomy` is a legitimate second view but is a
+**secondary diagnostic beside the ablation, not a replacement**, and no gate should be built on it
+until it has been checked against what the ablation already reports. Its PR body has been corrected.
+
+### Item 2 — species insights. **Holds, and is the best-timed thing on the list.**
+
+All six species carry `"tuningStatus": "untuned"` in `packages/content/data/species.json`. This work
+is genuinely ahead of the campaign.
+
+- **Versatility hegemony is a real registry gap.** Twelve metrics, and none measures how many cells
+  a species can staff; `grep` for `coverage` or `hegemony` returns zero. The tuner scores strategy
+  variety, but that is concentration *across strategies*, not across *species capability* — a
+  different question. **Now the highest-priority open item**, dispatched.
+- **Long-lived brittleness is weaker than billed**, because the data already encodes it hard:
+  fertility runs **96 (draconic) to 1536 (orc), a 16× spread**, against lifespans of 18000 vs 720
+  months. The asymmetry probably already emerges. This wants a **balance assertion, not a mechanic.**
+
+### Item 3 — tie worship to daily relevance. **Half-anticipated; the surviving half is real and is not cheap.**
+
+`god-constant.json` already implements worship as three saturating classes — mage, university,
+populace — each with a per-head rate and a half-cap. And the design has already *rejected* "worship
+equals power": `favor-cap-base`'s gloss says the cap "converts a worship lead from power into tempo
+— a high-worship god cannot do more things, only sooner." There is even a documented
+`worshipSnowball` retune order across four constants.
+
+**What genuinely is not there: worship is completely independent of which cells you permit.**
+Nothing connects the ruleset to devotion, so "water and crops out-worship spectacular destruction"
+is unimplemented. But it couples the ruleset into a loop that already has a tuned anti-snowball
+retune order, so it is a bigger change than I described it as.
+
+### Item 4 — forbidding Intellego costs counter-intelligence. **Does not map. Withdrawn.**
+
+I called this the cheap one. It is the opposite. `concealment` exists, but as a **raid-scale** combat
+primitive — a probability of evading targeting, stacked multiplicatively in
+`packages/rules-raid/src/arbitration.ts`. **There is no world-scale screening concept for it to
+modify.** "Forbidding Intellego leaves hostile concealment unopposed" would require inventing a new
+world-scale subsystem, which the insight does not justify. The agent was stopped and re-pointed at
+item 2.
+
+### Item 5 — make the university prestige loop explicit. **Already done, better than proposed.**
+
+`capitalSnowball` measures the Gini of library-held nodes at five checkpoints; `libraryDependence`
+measures the fraction of nodes down to a single surviving instance; `prestigeAdvantage` and
+`prestige-per-worship-tier` both exist. The compounding loop is instrumented. I was recommending
+building something that is built.
+
+### Revised ranking, replacing the one above
+
+1. **Species cell-coverage metric** — a real gap in the registry, and species tuning is the live work.
+2. **Node-level damage-threshold tuning** — the surviving fragment of item 1: ablation cannot see
+   magnitude tuning within a primitive, against an 8× spread over 37 damage effects.
+3. **Ruleset-to-worship coupling** — genuinely absent, genuinely interesting, not cheap.
+4. Everything else — already implemented to a higher standard than the guide proposes, or needing
+   new subsystems the insight does not justify.
+
+### An aside the CI queue handed over for free
+
+`check:consumption` fails identically on all six open PRs in ~25s. That is not six regressions and
+not a broken check: **the condition is true on `main`.** Two of sixteen primitives have a
+node-driven consumer — `portal` (2 nodes) and `worship-yield` (11 nodes). The other twelve, including
+every combat primitive, cannot be moved by anything the academics know. The check is non-blocking and
+is working exactly as designed; it is the clearest single statement of the gap the campaign is
+closing. It also independently confirms the "two, not one" correction recorded above.
+
+---
+
+## W68 — the teaching leak, investigated on request, and three measurements that turn out to name one mechanism
+
+*2026-08-13. From the grungeon-master digest (eps 13/14/27/29/33/36/38/41/43). The item asked for
+an investigation; here it is, with one correction that makes the fix substantially cheaper.*
+
+### The finding holds. `studentFor` and `teacherFor` scan every living mage in the universe.
+
+`packages/coordination/src/gateway.ts:501` and `:513` both iterate `this.livingMages()` with **no
+affiliation test and no proximity test**, returning the lowest-handle counterparty. `outlook.ts:104–105`
+feeds `teachableToMe` / `teachableByMe` from that unfiltered scan. There is no institutional boundary
+on teaching. Confirmed.
+
+### The correction: a university *is* a container — just not for teaching.
+
+The item says "a university is not a container for anything." That is too strong, and the difference
+is the whole cost estimate. `universityId` has **41 read sites**, and three of them are real containers
+already:
+
+| what `universityId` gates | where | works? |
+|---|---|---|
+| **which library your books are shelved into** | `gateway.ts:912` → `#libraryOf` → `#shelfFor` | **yes** |
+| **scribe-months available to you** | `outlook.ts:59, 109` `scribeThroughputOf` | **yes** |
+| **whether you'd rather be elsewhere** | `outlook.ts:92, 110` `preferredUniversityFor` | **yes** |
+| **who can teach you** | `gateway.ts:501, 513` | **no — leaks universe-wide** |
+
+So the container exists, is load-bearing, and has exactly one hole in it. Scoping teaching to
+co-affiliates is **plugging a hole in a working boundary**, not building a boundary. The item's own
+suggested route — cross-university transfer through `affiliate`, which already exists as a goal — is
+therefore the right one, and `preferredUniversityFor` is already the machinery that would move mages
+between containers.
+
+### Three independent measurements name this one mechanism
+
+This is the part that was not visible from any single workstream:
+
+- **W24's siting result had nothing to bite on.** The item's diagnosis — *sites differ, libraries
+  can't* — is right, and now has a mechanism: books are shelved per-university (that boundary works),
+  but the knowledge that produces the books is universally available (this one does not). Siting can
+  only matter if what a site holds can diverge.
+- **W19's horizon sweep, 9,600 runs over twelve horizons, found the strategy space one-dimensional at
+  every horizon** — including tick 30, where universes hold 31% of the reachable set. Its own
+  explanation: `compareTargets` orders candidates by cost then node id, so *"a value-blind acquirer
+  walks one queue at any horizon over any set."* Cross-strategy containment sits **above** the
+  within-strategy diagonal at all twelve horizons, worst at the shortest.
+- **`studentFor` returns the lowest-handle student and `teachableTo` returns the cheapest node.** The
+  docstring says so and gives a defensible reason for each (a handle is a total order depending on
+  nothing but state). Locally correct, globally the same queue.
+
+**One queue, walked by everyone, with no container to hold a difference in.** That is why seed beats
+strategy on node composition even though strategy dominates node *count* (η² = 1.00 from tick 60):
+strategies differ in how much they acquire and not in what, because there is only one "what" to walk.
+
+### Consequences for the roadmap
+
+W19's conclusion — that no pacing change and no mechanic altering acquisition difficulty will produce
+a second dimension, because the ordering is value-blind — is **correct but incomplete**. Value-blind
+ordering and boundary-free teaching are two separate causes of the same one-queue result, and fixing
+either alone leaves the other. W17's value-sensitive acquirer makes the queue *ordered differently*;
+scoping teaching makes there be *more than one queue*. **Both are needed and neither substitutes.**
+
+### The proposed measurement has no instrument yet
+
+`universityProfile` exists only in `packages/rules-world/test/unit/universities-library.test.ts` — it
+is a test helper, not a registered metric. "Dominant cells differ between two universities on the same
+seed" is the right check and cannot currently be run in a sweep. That is a small, well-defined gap and
+should be closed before the mechanic changes, so the before-figure exists.
+
+### Items 1, 5, 9 and 43 from the same digest — triaged, not yet actioned
+
+- **Ep 13/29, founding knowledge is blueprint-shaped.** Confirmed at
+  `interventions.ts:624`: `createInstance` at `constants.grantMastery`, a full instance in a mind.
+  **And it is worse than the item knows** — `setMastery`'s only non-test caller is the decay pass in
+  `decay.ts:213`, and it lowers. **Mastery can only ever fall.** Research creates instances at 256
+  against a 512 teach threshold, so founding grants at 1024 are the *only* source of teachable
+  knowledge in the universe, which is why 93.4% of held knowledge cannot be taught. Making the grant
+  nudge-shaped **without landing `practice` first would remove the only source of teachable knowledge
+  there is.** `w53/practice` is therefore a hard prerequisite, not a parallel track. Sequenced.
+- **Ep 41, universities have one growth axis.** Holds. A second axis — coordinated non-magical
+  throughput — would give `laborAffinity` (orc 1536, dwarf 1280) something to do; it currently sits in
+  the same category the species `affinities` field sat in before W20 wired it. Queued behind the
+  teaching boundary, because a second axis for a container that cannot hold a difference is a second
+  axis on nothing.
+- **Ep 36, portal security as a materials drain.** Holds, and is the cleanest available instance of
+  the "permission should be necessary but not sufficient" shape that two external reviewers converged
+  on independently in round 3. `portal` is one of only **two** primitives with a node-driven consumer,
+  so it is also one of the few places where a drain would actually be reachable from what mages know.
+- **Ep 43, maintenance. Already built — recording it so nobody re-proposes it.**
+  `LIBRARY_UPKEEP_PER_INSTANCE` in `library.ts` plus `applyLibraryUpkeep` at `capital.ts:271` degrade
+  instances on unpaid materials, and W7 measured it flipping narrow-depth from 12/12 to 0/12. The
+  unbuilt half is the material axis: `GrimoireRecord.durability` (`components.ts:735`) is written from
+  `scribeAffinity` and was read by nothing until W8's looting. A material tag on grimoires now
+  multiplies a live axis instead of adding a dead one.
+
+**The general lesson from the previous digest still applies and applied again here:** every one of
+these needed checking against `packages/` before acting. Two of the six were already built, one was
+sharper than stated, and one would have been actively destructive if landed in the order proposed.
+
+### The founding-grant budget — decision, 2026-08-13
+
+**Grants stay full instances. What changes is that you only get two at first, and more accrue.**
+
+This is the owner's call and it is better than the nudge-shaped grant the digest proposed, for a
+reason the digest could not have known: the nudge shape achieves "necessary but not sufficient" by
+weakening *what* a grant is, and a grant at mastery 1024 is currently the **only** source of
+teachable knowledge in the universe. Weakening it removes the thing before its replacement exists.
+
+A **budget** achieves the same design goal by making grants *scarce* instead of *weak*:
+
+- permission is still necessary and no longer sufficient — you cannot seed the whole grid, so what
+  you seed is a commitment and the rest has to be discovered;
+- specialisation is sharp from the founding, which is ep 29's point, because two grants force a
+  choice where nineteen did not;
+- the valuable import is a direction rather than a destination, which is ep 13's point, because two
+  nodes cannot be a curriculum;
+- and **nothing that currently works stops working**, because a granted instance is still a granted
+  instance. `practice` stops being a hard prerequisite and becomes an independent improvement.
+
+**What accrues is the open sub-question.** It should be something the universe *does*, not something
+the god spends, or the budget becomes a second favor pool with extra steps. The candidates worth
+measuring, in preference order:
+
+1. **Nodes the mages discovered for themselves** — the god earns the right to seed more by the
+   universe having demonstrated it can grow without seeding. Reads directly off knowledge instances,
+   needs no new state, and makes the early game teach the loop it wants you to trust.
+2. **Universities founded and still standing** — ties the budget to the institution, which is where
+   ep 41's second growth axis and the teaching boundary both land.
+3. **Worship**, only if it can be made ruleset-sensitive first — otherwise it is the favor pool again.
+
+**Measurement, unchanged from the digest and now actually runnable:** `permit-then-idle` stops
+matching `permissive-breadth`'s 231-node profile. That pair is the campaign's negative control and its
+sharpest single number — the idle bot currently scores **40/40** against the active bot's 38/40. If a
+grant budget does not move it, the budget is not doing the work.
+
+### The 2×2 opening — decision, 2026-08-13
+
+**A universe does not begin with the grid. It begins with a 2×2 square of it, and techniques and
+forms are themselves discovered.**
+
+Today v1 enables twelve cells — `{intellego, perdo, rego} × {limen, mentem, nomen, terram}`, a 3×4
+block — and enables them *at the start*, for everyone, identically. The opening becomes **2 techniques
+× 2 forms = 4 cells**, chosen at founding, and the rest of the grid is reached by discovering
+techniques and forms rather than by being handed them.
+
+**This is the structural answer to the one-dimensionality W19 measured over 9,600 runs.** That sweep
+found the strategy space one-dimensional at *every* horizon from tick 30 to 2400, and its explanation
+was that a value-blind acquirer walks one queue. But there was a deeper reason it could only ever find
+one queue: **every universe was walking the same content set.** Cross-strategy containment sat above
+the within-strategy diagonal at all twelve horizons — which is what "there is only one thing to
+discover, and strategies differ only in how fast" looks like when you measure it.
+
+Different opening squares are **different content sets from tick 0**. Two universes that begin at
+`{intellego, perdo} × {mentem, nomen}` and `{rego, creo} × {terram, limen}` do not have a queue in
+common to walk. That is a second dimension obtained structurally rather than by tuning, and it is the
+one thing on the list that no acquirer change and no pacing change could have produced.
+
+**How it composes with the other two fixes, which is the point:**
+
+| fix | what it does to the queue |
+|---|---|
+| **2×2 opening** | there is more than one queue, and yours is not mine |
+| **grant budget (2 grants)** | you cannot seed your whole square — inside 4 cells, 2 grants is a sharp commitment |
+| **teaching boundary** | two universities in *the same* universe can hold different parts of one square |
+
+Each is necessary. The budget without the square is a sharp commitment to a shared destination; the
+square without the budget lets you seed all four cells and skip the discovery the square exists to
+force; the boundary without either has nothing to hold apart. **Together they are the first design in
+this campaign that makes "which magic does your universe have" a question with more than one answer.**
+
+**This is also what `docs/design/ages-of-magic.md` was describing without a mechanism.** Ages governed
+by the interactions of two, with the interactions of three taking time to develop, is exactly a grid
+that opens 2×2 and grows — the early game is raw and new because you genuinely hold four cells, and the
+late game has fully developed colleges because by then the square has grown and the prerequisites are
+reachable. The doc had the fiction and the pacing; this is the rule underneath it.
+
+**Open questions, to settle with measurement rather than argument:**
+
+1. **Who chooses the opening square — god, seed, or species?** God-chosen makes it the first and most
+   path-dependent decision in the game, which is ep 29's argument. Seed-chosen guarantees divergence
+   across a sweep without relying on the strategy to produce it, which is what the measurement needs.
+   These are not exclusive: seed-chosen for the harness, god-chosen for play, is a legitimate answer if
+   the scenario layer can express both.
+2. **Must the square stay contiguous as it grows?** A 2×2 that grows to a 2×3 and then a 3×3 is a
+   different game from one that adds arbitrary cells — contiguity is what makes a technique or form
+   an *axis* rather than a token.
+3. **Do the twelve currently-enabled cells survive as a "standard opening"?** The 51 authored nodes in
+   those cells are the only content that has ever been measured. A 2×2 elsewhere on the grid draws on
+   the other 249 nodes, which are authored but unexercised — expect them to be wrong in ways the
+   enabled twelve are not.
+4. **What does this do to the balance baselines?** All of them. Every committed baseline was measured
+   against a 12-cell opening. This is the largest behavioural change proposed in the campaign and it
+   invalidates the lot; that is a cost to plan for, not a reason to avoid it.
+
+### On guessing at numbers — a standing rule, recorded because it keeps coming up
+
+The owner's response to being asked for a grant budget was *"idk what the right budget is, I am
+guessing."* That is the correct answer, and the correct response to it is **not to guess better.**
+
+This project has a Monte Carlo harness, paired seeds, common random numbers, mirrored ablation and a
+strategy pool. **A number nobody can defend should be a swept parameter, not a chosen constant.** The
+rule, for this campaign and after it:
+
+> When a design decision reduces to a scalar and no one can say why it should take a particular value,
+> the deliverable is the **curve**, not the value. Sweep it, with both degenerate ends as controls, and
+> let the recommended value fall out of the measurement.
+
+For the grant budget that means sweeping 0 (pure discovery, no grants) through unlimited (today's
+behaviour) with 1, 2 and 4 between. **Both endpoints must be in the sweep**, because a range whose ends
+are not controls cannot say whether the mechanic did anything. A flat curve is a real finding: it would
+mean grants are not the binding constraint and the budget is theatre.
+
+This is also the honest reading of why so much of this campaign produced null results. Eight mechanics
+were declared null by an apparatus that mostly did not run — but several of the *design* decisions
+underneath them were single guessed constants that nobody swept, and a guessed constant that happens to
+sit in a flat region of its own curve is indistinguishable from a mechanic that does nothing. **The
+instrument was one failure; unswept scalars are the other, and this one is ours.**
+
+The same rule applies to the 2×2 opening: **the square size is a parameter too.** 2×2 is the owner's
+intuition and deserves the same treatment as the budget — sweep 1×1, 2×2, 3×3 and the full 3×4 that
+v1 currently ships, and report what square size actually buys a second dimension. It may be that 2×2
+is too tight to be playable, or that 3×3 is enough; neither is knowable by argument.
+
+---
+
+## W71 — practice changes which species survive, and that is both the result and the problem
+
+*2026-08-13. Isolated while merging `main` into `w53/practice`. Three tests fail on the merged tree
+and pass on `main`; they are reporting a real change, not flake.*
+
+`w53/practice` adds a `practice-rate` primitive so mages can restore mastery. Before it, `setMastery`
+had one non-test caller — the decay pass — and it only ever lowered.
+
+Same test, same seed, the two trees:
+
+| species | lifespan (months) | on `main` (pre / killed) | on `w53/practice` |
+|---|---|---|---|
+| human | 720 | **16 / 7** | **5 / 1** |
+| orc | 720 | **3 / 2** | **absent — no row at all** |
+| dwarf | 3,600 | 18 / 10 | 23 / 14 |
+| gnome | 2,400 | 10 / 6 | 12 / 6 |
+| elf | 8,400 | 8 / 4 | 8 / 4 |
+| draconic | 18,000 | 11 / 4 | 11 / 4 |
+
+**The direction is exactly what a retention mechanic predicts.** If you keep what you learn, a species
+that lives 18,000 months compounds mastery and one that lives 720 dies before practice pays off. The
+two shortest-lived species collapse; the longer-lived ones grow or hold.
+
+**This is simultaneously the best and the worst news on the branch.** Species differentiation that
+*emerges from a mechanic* rather than from tuned constants is precisely what this campaign has failed
+to produce for weeks — W19 found the strategy space one-dimensional across 9,600 runs, and all six
+species can staff 70 of 70 cells. A mechanic that makes species genuinely different is the goal.
+**But driving a playable species to zero is not differentiation, it is deletion.**
+
+Orc going extinct is doubly surprising: **orc fertility is 1536, the highest of the six**, against
+draconic's 96 — a 16× spread. A species with the best fertility in the game reaching zero says the
+lifespan channel is overwhelming the fertility channel rather than trading against it.
+
+**The third failure may be the primary one and is not yet ruled out.** `reference-long-run.test.ts`
+fails with *"scribing died of the economy again — vellum ran out, not just food."* More retained
+mastery means more scribing means more vellum drawn, and a materials collapse would hit the most
+populous species hardest — which would make the population table a *symptom* of an economic failure
+rather than a lifespan effect. Those are very different fixes and the two hypotheses have not yet been
+discriminated. Under investigation.
+
+**Recorded now rather than after the fix, because the shape of the finding matters more than its
+resolution:** this is the first time in the campaign that a mechanic produced species divergence
+without anyone tuning a species constant to produce it. Whatever the fix turns out to be, it must keep
+that and lose the extinction. All six species carry `"tuningStatus": "untuned"`, so retuning is
+legitimate — but the differentiation is the asset here, not the accident.
+
+---
+
+## W72 — favor is not a binding constraint anywhere, and a converter with no input
+
+*2026-08-13. Surfaced as a caveat on the ascension work; it is larger than the work it was a caveat on.*
+
+**`open-then-build` founds 98 universities against a threshold of 2, with zero rejections and 4.7M
+favor left unspent.** The god sits at its favor cap, so the purchase is free.
+
+In Machinations terms this is a **converter with no input constraint**. Founding a university is
+supposed to be a decision — a thing you can do instead of something else. It is currently a button
+that always works, ninety-eight times, while the resource that nominally prices it accumulates unspent
+in the millions. There is no shortage, so there is no decision, so the verb carries no information
+about what kind of god you are.
+
+**This is the same disease as the two mechanics now in flight, showing up in a third place:**
+
+| where | the free thing |
+|---|---|
+| **founding knowledge** | grants are unlimited; a full instance at mastery 1024, as often as you like |
+| **the opening ruleset** | twelve cells, enabled at the start, identically, for everyone |
+| **founding universities** | 98 for the price of nothing, against a threshold of 2 |
+
+The founding-grant budget (`w69/grant-budget`) and the 2×2 opening (`w70/opening-square`) treat the
+first two. **Nothing yet treats the third**, and it is arguably the cheapest of the three to fix,
+because the price already exists and simply never binds.
+
+**Why this matters more than a tuning note:** it explains why the ascension conjunct is, in its
+author's own honest phrase, *"a placement fix, not an economic one."* Requiring universities before
+ascension converts "reads the ruleset" into "reads the ruleset **and** one button nobody pressed."
+Strictly better, and not deep — because the button is free. **If founding a university were actually
+priced, the same conjunct would be an economic fix.** The mechanism is sound; it is resting on an
+economy that does not push back.
+
+The general form, worth stating once so it can be checked against every future verb: **a cost that
+never binds is not a cost, and a verb whose cost never binds is not a choice.** The measurement is
+simple and nobody has been running it — for each god verb, the fraction of legal invocations that were
+declined for want of resource. Any verb sitting at zero over a full run is free, whatever its
+declared price says. `favorCost` being typed `Fp` makes this easy to get wrong in the reassuring
+direction: a price that looks like 98,304 is 96.
+
+---
+
+## W73 — the strategy that funds broadly has never funded anything
+
+*2026-08-13. Found as a side effect of the ascension conjunct; it is older than the conjunct and
+independent of it.*
+
+**`permissive-breadth` completed no university in any run of any sweep ever taken.** It ends every run
+at `unis=1` — the seeded academy — having founded none of its own.
+
+`fundUniversity` sat behind `permitTechnique` in its preference list. `policyFor` takes the first
+*legal* preference, `permitTechnique` is legal on every round, so slot 0 was never reached. The code
+carried a comment directly above the push saying *"Found until there is something to fund, then spread
+across what exists"* — **the order defeated the comment.**
+
+**Why it survived every sweep:** nothing read `universityCount` until the ascension conjunct did. A
+strategy that funds broadly and founds nothing still permits widely, so it still produced the wide
+ruleset its hypothesis is about, and every metric anyone was looking at moved. The defect was invisible
+to the measurements taken because none of them asked this question. That is the same failure shape as
+the ten uncollected metrics and the ±118% tolerances: **not a wrong answer, an unasked question.**
+
+Fixed on `w73/pool-build-order` (PR #70) with a regression test that asserts the preference *order*
+rather than a run outcome — an outcome assertion would go green the moment anything else caused a
+university to exist and would say nothing about why. Verified in both directions.
+
+**It landed on its own branch on purpose, and the reasoning is worth keeping.** The agent that found it
+identified the one-line fix and deliberately did not make it, because *a strategy edited to pass a
+predicate committed in the same branch measures the edit, not the rule.* That is exactly right, and it
+is the discipline this campaign has most often lacked.
+
+**What it means for the ascension result:** the conjunct drops `permissive-breadth` 30/30 → 0/8, and
+the honest reading was *"the ruleset-only exploit is closed, and the only pool member that clears the
+conjunct is the one built to test it."* With this fix, that reading needs re-measuring — the strategy
+may have been failing the conjunct for a reason that had nothing to do with the conjunct.
+
+---
+
+## W74 — orc may already be nearly extinct on `main`, and two branches found it independently
+
+*2026-08-13. A correction in progress, recorded before it resolves because the hypothesis I issued
+looks wrong.*
+
+I attributed orc's disappearance to `w53/practice`, on the reasoning that a retention mechanic rewards
+long lifespans and starves the two shortest-lived species. **An agent merging `main` into
+`w20/compositional-content` — the content graph, with no practice mechanic anywhere near it — reports
+`loss-shock-recovery` failing the same way, with orc dropping out of the sample entirely.**
+
+Two unrelated branches, same disappearance. That points at something shared: `main`, the merge, or the
+scenario path both exercise.
+
+**The measurement that discriminates, and the number that already suggests the answer:** on `main`
+plus the UI branch, orc measures `pre=3 killed=2`. Three mages — for the species with **the highest
+fertility in the game, 1536 against draconic's 96, a 16× spread.** If orc is already at 3 on clean
+`main`, then nothing is driving orc extinct; **orc is already marginal, and any content or economy
+change tips a 3 to a 0.** That is a different bug with a different owner, and a more valuable finding
+than a practice-specific fix.
+
+**The vellum hypothesis gains weight from both branches at once.** `reference-long-run.test.ts` fails
+on the practice tree with *"scribing died of the economy again — vellum ran out, not just food,"* and
+the content-graph branch also reports economic failure on its merged tree. If a shared materials
+collapse is starving the most populous species, that explains both branches — and explains why the
+*highest-fertility* species is the one that vanishes, because **high fertility is a liability when the
+binding constraint is materials per head rather than births.**
+
+**The two claims must be separated and only one is in doubt.** Human 16→5 against dwarf 18→23 on the
+same seed is real whatever drives it, and mechanic-driven species divergence remains the thing this
+campaign has failed to produce for weeks. If the extinction proves to be main-side, the divergence may
+still be practice's doing and is still the asset. **Do not let the extinction discredit the
+divergence.**
+
+---
+
+## BLOCKER — the self-hosted runner is wedged, and it needs a human
+
+*2026-08-13 08:02Z. Recorded as a blocker rather than a note, because nothing merges until it clears.*
+
+**Ten open PRs are stacked behind `ci/hetzner-lint`, and not one status has resolved in eighty
+minutes.** Every commit on `main` since `fa99353` also reads `pending`.
+
+| PR | queued since | waiting |
+|---|---|---|
+| #64 | 06:43Z | **1h 19m** |
+| #65, #66 | 06:50Z | 1h 12m |
+| #67 | 07:17Z | 45m |
+| #37 | 07:24Z | 38m |
+| #61, #63, #68, #69, #70 | 07:44–08:00Z | — |
+
+**This is wedged, not merely slow.** `verify` runs about twenty minutes and the receiver's timeout is
+2400 s, so a serial queue should have produced three or four completions in eighty minutes. It has
+produced none, and the oldest entry has now exceeded the timeout without the timeout firing. The last
+runs to complete were at 06:47–06:48Z, which is when PRs #58 #59 #60 #62 merged.
+
+**What is needed, and why I could not do it:** the fix is on the runner host — inspect the receiver
+process, clear whatever run is holding the lock, restart the container. `docs/devops/ci-and-deploy.md`
+documents no remote re-trigger or cancel path, and the status is written by the receiver rather than
+by GitHub, so there is nothing to re-request from this side. **My SSH to the host was blocked by
+policy**, which is the correct outcome — an agent should not be restarting a production container that
+also runs `themultiverse.school` on its own initiative.
+
+**What I deliberately did not do.** Making `ci/hetzner-lint` non-required would clear the queue in one
+command. It is also exactly the "obvious cleanup that is a security regression" CLAUDE.md warns about:
+the self-hosted runner is the credentialed half of a two-gate design, and weakening it to unblock a
+backlog is how that design gets lost. **A blocked queue is a worse outcome than a slow one and a much
+better outcome than an ungated `main`.**
+
+**A contributing cause worth fixing regardless:** `main`'s own merge commits queue on the same
+serialised runner and compete with PR checks, so every merge makes the backlog longer. PR #62 (merged)
+addressed one-event-per-commit; PR #61 — **which is itself in this queue** — moves the 200-year
+horizon gate off `verify` onto a parallel non-required Actions job and would cut each run from ~20
+minutes to a few. **The fix for the queue is stuck in the queue**, which is as close to deadlock as
+this setup produces.
+
+**Meanwhile, work that does not need CI has continued**, and the demo is verified sound independently
+of the gate: all eleven prototypes serve 200, every inline script parses (module blocks parsed as
+modules), and every local asset reference resolves. That was checked with a static pass rather than a
+browser, because the browser extension is not connected in this session — so *rendering* is unverified
+even though *loading* is.
+
+---
+
+## W75 — the CI runner moves to `multiverse-games-hel1`, and my "wedged" diagnosis was wrong
+
+*2026-08-13. Corrected and acted on in the same pass.*
+
+**The runner was never wedged.** I reported it as such above; the evidence said otherwise once I could
+reach the host. Two `ci-check.sh` processes were running and progressing — one for `multiverse_mages`,
+one for `multiversecampus` — at **5:32 and 1:45 elapsed**. The lock in `webhook_receiver.py` is
+per-repo and its `finally: lock.release()` is correct, so nothing had leaked.
+
+**What was actually true is worse and more fixable: the two repositories were sharing a machine and
+starving each other.** `cto-tycoon-hel1` carries Coolify, the campus deploys and **102 containers**;
+at diagnosis it sat at **load 14.92 on 16 cores with 1 GB free of 30 GB**. Every balance sweep this
+campaign queued was competing with production merges on `themultiverse.school`. The queue was real and
+the runs were finishing; they were finishing slowly because the box was saturated by work that had no
+reason to share a machine with them.
+
+**The runner now serves `multiverse_mages` from `multiverse-games-hel1`** — 16 cores, 30 GB, Docker,
+54 days uptime, and nothing else contending. Within minutes of the cutover, campus load fell from
+**14.92 to 9.12** and the games box settled at **5.88**.
+
+**The migration reduced the secret surface from eighteen to two, and that is the durable win.** The
+campus runner holds Coolify, Neon, Matrix, LiveKit, SendGrid, preview-environment and Aethrix
+credentials — **eighteen environment secrets, every one of them for campus deploys.**
+`multiverse_mages` deploys nothing, so the new runner holds exactly two:
+
+- `CI_WEBHOOK_SECRET` — verifies GitHub's HMAC on the payload
+- `CI_GITHUB_TOKEN` — posts the commit status back
+
+**The divergence between the two runners is now a security property, not drift.** A future reader who
+"makes them match" would be undoing the point. That reasoning is recorded in the compose file on the
+box, where someone editing it will actually see it.
+
+**Hardening, because a plain-HTTP webhook port is otherwise open to the internet.** Port 9876 is
+restricted to GitHub's four published hook CIDRs (`192.30.252.0/22`, `185.199.108.0/22`,
+`140.82.112.0/20`, `143.55.64.0/20`) and dropped for everything else. The rules live in the
+**`DOCKER-USER`** chain, not in `ufw` — Docker publishes ports by writing its own iptables rules that
+bypass `ufw`'s INPUT chain entirely, so a `ufw` rule here would have silently not applied. Persisted
+to `/etc/iptables/rules.v4` with `netfilter-persistent` enabled, or it would evaporate on reboot.
+
+**One mistake worth recording, because it is a trap in the GitHub API.** `PATCH .../hooks/:id` with a
+partial `config` object **replaces the whole object** — the first cutover attempt silently cleared the
+webhook secret, leaving an endpoint that would have accepted unauthenticated payloads. Caught by
+reading the config back rather than trusting the 200. **Verify the secret is `PRESENT` after any hook
+edit**; the API will not warn you.
+
+**What has not changed, deliberately:** the fork-PR guard still refuses fork PRs. A runner holding a
+token that can write commit statuses is still a runner a fork must not be able to command, and the
+smaller secret surface does not change that. `ci/hetzner-lint` also keeps its status-context name
+despite no longer running on a box called hetzner — renaming it would require a branch-protection
+change and would invalidate every historical status. **The name is now wrong and the cost of fixing it
+is higher than the cost of documenting it.**
+
+---
+
+## W76 — the balance gates resolve zero raids, and the species collapse is not practice's fault
+
+*2026-08-13. Two findings from the castability work, either of which would have justified the branch.*
+
+### The gates are structurally blind to `rules-raid`
+
+**All three balance gates resolve zero raids at every committed tick cap — 60, 240 and 2400 —
+measured directly.** `packages/rules-raid` is 4,525 lines across 16 files, and not one committed gate
+exercises any of it.
+
+This belongs beside the ten uncollected metrics and the ±118% tolerances as a **third** instance of the
+same failure: the instrument does not touch the thing. It also explains a long-standing puzzle — every
+raid mechanic this campaign has measured came back null, and a gate that resolves no raids cannot
+report otherwise. **Re-measure anything raid-shaped that was declared null before believing it.**
+
+### Five of seven combat primitives were 0-castable; two now cast
+
+`firstCastableNode` filtered cast candidates on `direct-damage` alone. The safety check was correct;
+its test was too narrow by four primitives. Over 48 raids with identical warbands and seeds, a
+permit-all host and the Vancian hook:
+
+| primitive | before | after |
+|---|---|---|
+| `area-denial` | **0** | **10,182** applications |
+| `blink` | **0** | **284** |
+| `direct-damage` | 6,724 | 6,741 |
+| `summon` / `ward` / `portal` | 0 | 0 |
+
+**`ward` and `concealment` remain 0-castable on purpose** — §3 gives each a stacking rule and no
+trigger, so there is nothing to cast. That is a content gap, not a filter bug, and stating which is
+which is the point.
+
+**Two further defects found and deliberately not fixed**, so each gets its own argument:
+
+1. **`summon` is still 0** because Vancian readies the four lowest-**id** legal nodes and
+   `rn-call-by-name` is fifth. A `knowledge-steal` node also burns a slot for an intent that never
+   fires.
+2. **Ascending-id selection shadows everything above the lowest damage node.** Under the `standard`
+   cast hook only `direct-damage` ever lands — `true-naming` measures area-denial 0, blink 0,
+   direct-damage 16,788. **The filter was one of two causes and the smaller one.**
+
+### The species collapse reproduces on plain `main`, so `w53/practice` is exonerated
+
+`speciesCellOccupancy`, reference universe, seed 589825, **no actions taken at all**:
+
+| world year | draconic | dwarf | elf | gnome | human | orc | Gini |
+|---|---|---|---|---|---|---|---|
+| 0 | 1 | 1 | 1 | 1 | 1 | 1 | 0.0000 |
+| 40–80 | 12 | 12 | 12 | 12 | 12 | 12 | 0.0000 |
+| 100 | 12 | 12 | 12 | 12 | 12 | **1** | 0.1503 |
+| 160–200 | 12 | 12 | 12 | 12 | **0** | **0** | 0.3333 |
+
+**Orc (720 months) and human (960) — the two shortest-lived — die in lifespan order, on `main`, with
+no species constant touched and no god acting.** W74 suspected this and it is now measured: practice
+did not cause the collapse, and W20's independent sighting of the same orc dropout was the same
+underlying fact. **The extinction is a `main` defect with its own owner.**
+
+The divergence claim survives intact and separate, as W74 insisted it must.
+
+### And realised occupancy is capped at twelve, not seventy
+
+**No species can occupy a cell its universe forbids.** The 70/70 figure everyone has been quoting —
+including me, repeatedly — is *capability*; this is *outcome*, and outcome is bounded by the ruleset at
+**12**. That materially strengthens the case for the 2×2 opening: the thing that limits what a species
+actually does is already the ruleset, and today the ruleset is the same twelve cells for everyone.
+
+Carrying **which** cells rather than only how many paid off immediately: at year 20 gnome is four cells
+short, and the four are *Perdo Mentem, Perdo Terram, Perdo Limen and Rego Terram* — "behind in Perdo",
+not merely "behind". At founding all six hold one cell each and **no two the same**, which a bare
+`1,1,1,1,1,1` cannot distinguish from six species crowded into one cell.
+
+### Corrections to briefs I issued
+
+- **The registry was 15 metrics on `main`, not 12.** I gave the wrong count twice.
+- **`VERSATILITY_HEGEMONY_FRACTION` already existed**, having arrived with #59. My claim that `grep`
+  for coverage or hegemony returned nothing was true when made and stale when I repeated it.
+- **`collectRunMetrics` still has no production caller on `main`** — the wiring is on `w62`, unmerged.
+  So the new metric is registered, collected and tested but **will not appear in sweep records** until
+  that lands.
+
+---
+
+## W79 — `researchCost` is a pure function of tier, so "cheapest first" means "lowest id first"
+
+*2026-08-13. Found by Qwen, asked what would still force sameness after the two known causes are fixed.
+Verified against `node.json` before acting, and it is exact.*
+
+**All 300 authored nodes carry exactly six distinct `researchCost` values, one per tier:**
+
+| tier | nodes | distinct costs | value |
+|---|---|---|---|
+| 1 | **70** | **1** | 2048 |
+| 2 | 71 | **1** | 4096 |
+| 3 | 78 | **1** | 8192 |
+| 4 | 65 | **1** | 16384 |
+| 5 | 15 | **1** | 32768 |
+| 6 | 1 | **1** | 65536 |
+
+**Not one node deviates.** `researchCost` carries no information beyond `tier`.
+
+`compareTargets` orders candidates **by cost, then by node id**. Within a tier every candidate ties on
+cost, so **the tiebreaker is the whole of the ordering**. "Cheapest first" is "lowest node id first"
+wearing a cost function's clothes, and node id is a content-interning artifact — it is not a design
+decision about anything.
+
+**Every universe's first seventy research acts are the same permutation of the same seventy doors, in
+an order decided by a hash-table ordering.** Then tier 2 unlocks behind tier 1 in each cell, at another
+flat cost, and the second wave is the same permutation again. The graph is seventy identical-cost
+chains rising in lockstep.
+
+### Why this is the sharpest explanation yet of W19's result
+
+W19 ran 9,600 runs over twelve horizons and found the strategy space **one-dimensional at every one**,
+including tick 30 where universes hold 31% of the reachable set. Its stated cause was a **value-blind
+acquirer**. That is right, and this is the layer underneath it: **even a value-aware acquirer would have
+nothing to value.** There is no cost signal distinguishing one cell's root from another's. Every cell
+is an equally cheap door.
+
+This reframes W17's value-sensitive acquirer, which the roadmap treats as the fix. **A better ordering
+function over a flat cost surface still produces one queue.** The acquirer and the content are two
+layers of the same problem and the content layer is underneath.
+
+### It is also the cheapest of the three known causes to fix
+
+**No rules code moves.** `researchCost` is authored data in `packages/content/data/node.json`. Varying
+it within a tier is a content edit, subject to the same discipline as any other: it changes
+`contentRevision`, and it **invalidates every committed balance baseline**, because the universal
+cheap-first walk is why `referenceNodesKnown` reaches 48 of 51 v1 nodes by year twenty.
+
+That cost is now much easier to pay than it was this morning: three other approved changes
+(`w69/grant-budget`, `w70/opening-square`, `w77/effect-displacement`) already invalidate the baselines,
+so this should ride with them rather than paying the re-baselining toll separately.
+
+### The measurement, which is cheap and should be taken first
+
+**Count the distinct orderings in which the seventy tier-1 nodes are first discovered across the
+sweep.** If the answer is one — or a small number determined only by which cells the god permitted —
+this is confirmed as a cause rather than merely a smell. Secondary: the standard deviation of per-cell
+discovery time should be near zero at tier 1 and rise only where prerequisite chains differ in length.
+
+### Qwen's other two, recorded with my own read
+
+- **Universities have no specialisation mechanism** — `universityPreference` judges every institution by
+  library depth alone, so mages migrate to the biggest pile, which then gets the next researcher.
+  Rich-get-richer on a single axis with no counterbalancing force. **This composes with S2's teaching
+  boundary in a way that matters: even once teaching is bounded and universities *could* hold different
+  knowledge, the migration rule still sends everyone to the same pile.** Fixing the boundary without
+  fixing the preference may produce no divergence at all — which the S2 agent has been told to report
+  honestly if it happens.
+- **Species traits shift goal scores by ~20–28% against a base appeal of 512 that is identical for
+  everyone.** Every species ranks research at or near the top; traits change *how eagerly* everyone
+  researches, not *what*. The depth ceiling gates tiers 5–6, which is **16 of 300 nodes, about 5% of
+  content**. Qwen flags this as partly speculative — derived from term bounds rather than measured
+  goal-selection frequencies — and names the ablation that would settle it. **Take the ablation before
+  believing the number.**
+
+Qwen also argued the god's sixteen verbs are *not* load-bearing for convergence, on the grounds that the
+sweep ran `passive-control` and the verbs cannot create divergence when the underlying walk is
+one-dimensional. **That is consistent with everything measured here** — `permit-then-idle` beating
+`permissive-breadth` says the same thing from the other end.
+
+---
+
+## W81 — a fourth instrument that could not see, and worship finally depends on what magic is for
+
+*2026-08-13. From the daily-relevance work (PR #63).*
+
+### The fourth blind instrument
+
+**`defineWorldSimulation` never forwarded the ablation mask into the god deps, so `worship-yield` was
+not ablatable at all.** `winRateByPrimitive` would have reported it as contributing nothing — not
+because it contributes nothing, but because neutralising it did nothing.
+
+That is now **four** independent instances of the campaign's central failure, and they should be read
+as one sentence rather than four incidents:
+
+1. Ten of fifteen registered metrics had no production caller.
+2. Gate tolerances at ±118% of mean; 80 of 80 collapse-to-zero events inside them.
+3. All three balance gates resolve **zero raids** at every committed tick cap.
+4. The ablation mask never reached the god subsystem, so a whole primitive was un-ablatable.
+
+**The instrument not touching the thing is not an occasional defect in this project. It is the modal
+defect.** Every null result in this campaign predating these fixes should be treated as unmeasured
+rather than measured-and-flat, and re-run before anyone reasons from it.
+
+### The `permits()` bug is fixed, and cost less than I claimed
+
+`yieldSources` gated on instance count alone with no `permits()` call — a forbidden node kept paying
+worship. Fixed. **Its measured cost across 90 pool runs is zero**, because no shipped bot produces the
+sequence that would expose it: `denial-warden` interdicts from round one and strangles the research
+before any yield accrues. A purpose-written `lateWardenPolicy` shows the real cost —
+**−143 favor/tick, −4.6% of the run, about +12.6% for the 929 ticks the prohibition stood.**
+
+Worth keeping as a methodological note: **a bug with zero measured cost against the current bot pool is
+not a bug with zero cost.** It is a bug the pool cannot reach. The pool is not a proxy for the strategy
+space, and the honest way to price such a defect is a policy written to reach it.
+
+### Worship now depends on what magic is *for*
+
+`dailyRelevance` on all seventy cells scales each `worship-yield` magnitude **per magnitude, before
+stacking** — scaling the stacked total would scale the `1` in `(1 + Σ)` and turn a low-relevance cell
+into a penalty on the base rate. That distinction is the kind of thing that silently inverts a mechanic,
+and it was caught in design rather than in a baseline diff.
+
+The measurements answer the question W68 left open — whether kind matters at equal amount:
+
+| comparison | before | after |
+|---|---|---|
+| `daily` vs `spectacle` | +23.0% | **+48.8%** |
+| `creo-fatum` vs `creo-vim` (cap-free control) | +6.5% | **+15.6%** |
+
+**Relevance more than doubles both gaps**, and per-ruleset ablation ranges −11.2% (fate cells) to
+−26.6% (spectacle) — not a flat tax. Overall favor regeneration falls 12.26% on the shipped ruleset
+across 12 paired runs, every one negative, against a −13.4% prediction computed from content
+beforehand. **A prediction made before the measurement and then met is worth more than the measurement
+alone**, and this is the first time in the campaign anyone did that.
+
+**This closes the last of the three surviving research-dive items.** "Water and crops out-worship
+spectacular destruction" is implemented, and the ruleset is now coupled to devotion.
+
+### A correction to my own brief, and a caveat the author volunteered
+
+I told the agent to make the prestige→worship loop explicit. **That loop does not exist** — §1.1 makes
+`prestige` read-only during a run and it never touches worship — so `library-legacy` is built on library
+depth directly. My instruction described a mechanism I had not checked.
+
+And the snowball result carries its own caveat honestly: the compounding term adds +26.7%/+38.8% regen
+but **narrows** seed dispersion, the favor cap absorbing it. **The loop's reinvestment leg is unclosed —
+no bot buys libraries — so this measures seed luck, not agent runaway.** That is the right way to report
+a number whose generating mechanism is not fully wired.
+
+### And the gates confirm their own blindness
+
+Two of the three gates saw **literally nothing** (`no metric moved`, all deltas 0.00000). The one that
+plays god verbs moved **at most 0.38 SE against a tolerance of 3** — meaning **a 12–27% change in favor
+regeneration would have passed the gates untouched.** The gates are provenance here, not evidence; the
+evidence is a bespoke paired instrument. That is the correct division of labour and should be the
+default until the gates can see what they are gating.
+
+---
+
+## W82 — the opening square works, buys a content dimension not a strategic one, and costs 84 favor
+
+*2026-08-13, PR #72. 480 runs, five arms, common random numbers.*
+
+| arm | cross | within | cross − within | distinct nodes reached |
+|---|--:|--:|--:|--:|
+| **`v1-3x4`** (control) | 0.928 | **0.980** | **−0.052** | **51 of 300** |
+| `seeded-1x1` | 0.989 | 0.176 | +0.813 | 28 |
+| `seeded-2x2` | 0.956 | 0.174 | +0.782 | 120 |
+| `seeded-3x3` | 0.941 | 0.250 | +0.691 | 194 |
+| `seeded-3x4` | 0.944 | 0.277 | +0.667 | **236 of 300** |
+
+Sign stable at every horizon from 240 to 1440.
+
+**Sharpest number: same size, same seeds, same strategies — the authored square reaches 51 of 300
+nodes; a seeded 3×4 reaches 236.** Six of eight strategies today hold the *literally identical* node
+set in all twelve universes (within-strategy containment **1.000**); under a seeded square, 4–19%
+overlap.
+
+### The honest headline, narrower than I would have written
+
+**This is a second dimension in the *content* space, keyed by whoever chooses the square. Cross-strategy
+containment stays 0.93–0.99 in every arm — at a fixed square, strategies are still one queue.** Nobody
+should sell it as a second *strategic* dimension; that needs a strategy×square interaction measurement
+this probe cannot see. The agent wrote that qualification itself, ahead of its favourable numbers,
+which is why the favourable numbers are worth having.
+
+### Two rulings
+
+**3×3, not 2×2.** `2×2` buys nothing over `1×1` (within 0.174 vs 0.176) and `1×1` is unplayable. `3×3`
+reaches 194 nodes against `2×2`'s 120 while holding within-containment at 0.250. The owner offered 2×2
+as a guess and opened it to measurement; **the measurement says 3×3 and the measurement wins.** That is
+what the sweep-don't-guess rule was written for.
+
+**The square must be priced, or it is not a constraint.** `permissive-breadth` is unmoved in every arm
+because **going from 1×1 to the whole grid costs 84 favor, once.** At that price the square is a
+starting position, not a limit — the same disease as W72's free universities and W83's unlimited
+grants, in a third currency. `permit-technique` and `permit-form` are both `untuned`; pricing them is
+the companion to the grant budget and should land with it.
+
+### Three findings from the 249 unexercised nodes, any one of which justifies the branch
+
+1. **Raiding hangs off two nodes in one cell.** Both `portal` nodes sit in `rego-limen` behind an
+   `intellego-limen` prerequisite. **0 of 70 possible 1×1 openings and 13 of 910 2×2 openings can ever
+   raid.** PvP is the vision's core and it depends on one cell pair. This alone makes 3×3 the floor.
+2. **`fertility` and `lifespan` have zero v1 nodes** — all live in Creo/Corpus/Animal/Fatum cells, every
+   one disabled. **This completely explains the campaign's one surviving null.** Knowledge does not
+   convert into population because *no node in the twelve enabled cells touches population at all.* Not
+   a balance problem and not a mechanism problem — a content-placement fact, invisible for the whole
+   campaign because nobody asked which cells the relevant primitives lived in.
+3. **The fixed-point trap is latent in `lifespan`.** Magnitudes authored 18–480, declared
+   `additive-months`, which as `Fp` are **0.017–0.47 months**. Inert today because nothing consumes
+   them; it will read as a balance bug the day the consumer is wired. **Third appearance of the 1024×
+   error this campaign** — twice shipped, once caught. That rate justifies a lint rule, not more care.
+
+Also **36 cross-cell prerequisite edges, 24 into `intellego-*`.** 80% of 2×2 and 92% of 3×3 squares
+contain unreachable nodes, and the loader's `v1-unreachable-prerequisite` diagnostic has no general
+version. Any square-based opening needs one.
+
+### The v1 twelve were chosen with care
+
+The shipped rectangle is one of only **126 of 10,010** possible 3×4 squares that are both
+prerequisite-closed *and* raid-capable — but ranks **175th by reachable primitives**.
+`{intellego, muto, rego} × {aquam, fatum, limen, nomen}` is closed, raid-capable, and reaches all 16.
+Defensible and improvable, which is a better position than either extreme.
+
+**A structural cost to know before the next subsystem lands:** all three gates refused on
+`provenance.rngRegistryHash` alone, because `gate.ts` hashes the whole `RNG_STREAM` table and this
+appends stream 12. **Twenty-nine metrics across three gates all pass at delta exactly `0.00000`**, and
+16 paired runs agree on snapshot hash, terminal reason and tick count. Recorded in `contracts.md` §6:
+**any future RNG subsystem addition forces a re-baseline event, however provably inert.**
+
+---
+
+## W83 — the grant budget is inert, and the reason is better than the mechanic
+
+*2026-08-13, PR #74.*
+
+Built, correct, swept rather than guessed, and **measurably does nothing**:
+
+| bot | budget 0 | unbounded |
+|---|---|---|
+| `permit-then-idle` | 213.3 nodes | 213.3 — identical at 4/4 coordinates |
+| `permissive-breadth` | 205.5 | 205.5 — identical at 4/4 |
+
+**The verb is not unreachable. It is unchosen.**
+
+- `archivist` — blocked by **affordability** on 4307 of 4804 ticks, and by an empty candidate list on
+  **zero**. That refutes the agent's own starting assumption that the grantable set empties.
+- `denial-warden` — empty candidate list, 3508 ticks.
+- `narrow-depth` — sees action 8 **legal on 76% of ticks and asks zero times**, because
+  `encourageResearch` sits ahead of it in the preference list.
+
+**That last is W73's disease again**, where `fundUniversity` sat behind an always-legal
+`permitTechnique`. Two of eight strategies now found never to exercise a verb they nominally use,
+because preference-list order silently shadows it. **This is a class of defect, not two incidents.**
+The pool needs a systematic check: per strategy, per verb in `signatureActions`, ticks-legal against
+times-submitted. Any verb legal often and submitted never is shadowed.
+
+**Founding knowledge is worth about 1% of outcome.** Remove all of it — `foundingNodes: 0`, budget 0 —
+and `permit-then-idle` goes 194.5 → 193.5 nodes. **Rationing a 1% channel cannot make seeding a felt
+commitment**, whatever the budget.
+
+**A pre-existing mask/rules mismatch, correctly left unfixed:** `uniform-random-legal` submitted action
+8 **234 times and landed 1**. `foundingKnowledgeCandidates` excludes a node only when *this mage* holds
+it; `grantPlan` refuses any node with an instance *anywhere*. The one-line fix changes that bot's
+action sequence and would move all three gates, so it needs its own PR and baseline argument.
+
+### Corrections to my own briefs
+
+- **CLAUDE.md said `WORLD_SCHEMA_VERSION` was 3. It was already 4**, and I repeated the stale number to
+  two agents. Now 5, recorded in `contracts.md` §1.1 — not §1.2, because the component hangs on the
+  universe handle beside `godState`.
+- **The headline measurement I specified was null by construction.** Neither control bot names action 8
+  in its preference list, so no budget could have moved that pair. I specified a measurement without
+  checking whether the thing measured was reachable — **the campaign's modal defect, committed by me,
+  inside a brief warning about it.**
+
+---
+
+## W84 — the ruleset-only exploit is closed
+
+*2026-08-13, PR #68, at 806 of 880 runs with the decisive numbers settled.*
+
+| strategy | before | after |
+|---|---|---|
+| **`permit-then-idle`** | **40/40** | **0/37** |
+| **`permissive-breadth`** | **40/40** | **0/37** |
+| `open-then-build` | 40/40 | **40/40** |
+| `passive-control` | 0/40 | 0/40 |
+| `idle-then-declare` | 0/40 | 0/40 |
+
+**The bot that permitted the grid for 140 ticks and then submitted nothing for 2260 no longer wins, and
+a bot that builds still does.** That is the campaign's founding complaint, closed.
+
+The mechanism is proven rather than inferred: by `snapshotHash`, **all 40 paired runs each of six
+strategies are bit-identical across the two arms.** The conjunct changes nothing for a universe that
+was never going to qualify, so the deltas are attributable to the four `permissive-breadth` runs that
+now play to the cap instead of stopping at tick 1094. `referencePeakPopulation`, a max aggregation,
+moved by **exactly zero** — the changed runs never held the maximum.
+
+**Two qualifications that must travel with the result:**
+
+- **`permissive-breadth` falling to 0/37 is partly W73's bug, not the conjunct's doing.** It ends every
+  run at `unis=1` because it never founds a university. If a `permissive-breadth` that actually funds
+  clears the conjunct, then the predicate discriminates playing from not-playing after all and the
+  pessimistic reading was an artefact. **Re-measure against PR #70 before quoting this.**
+- **Four tolerances widened** — `referenceKnowledgeInstances` 1455.70 → 2235.54, `referenceNodesKnown`
+  33.44 → 45.05, `referenceLibraryDepth` 19.95 → 24.30. **No tolerance was set**: `toleranceK` stayed 3
+  and six others narrowed in the same pass, so this is grown variance from runs no longer terminating
+  early. **The gate is nonetheless less sensitive on those four**, the remedy is replicates, and it is
+  deferred into the re-baselining that W80/W82/W74/W77 already force.
+
+---
+
+## W85 — three university subsystems are built, tested, and never invoked. And I recorded one of them as working.
+
+*2026-08-13. Found by Codex, asked to hunt for code reachable in principle and never reached in
+practice. Every finding verified with one grep before recording.*
+
+`world-step.ts:578–586` supplies the materials consumer **zero for three of its four demands**:
+
+```
+libraryUpkeep: 0,
+scribing:      0,   // legitimately zero — already paid at the desk in phase 5
+construction:  0,
+```
+
+Only `scribing: 0` is justified, and the comment says why. The other two are not zero because the
+demand is zero. **They are zero because the functions that would compute them are never called.**
+
+| function | production callers | consequence |
+|---|---|---|
+| `advanceConstruction` (`construction.ts:219`) | **none — definition only** | `BUILD_PROGRESS_PER_LABOR_MONTH`, `MATERIALS_PER_LABOR_MONTH`, `laborAffinity` and the whole `build-rate` primitive have **no simulation path** |
+| `applyLibraryUpkeep` (`capital.ts:271`) | **none — definition only** | libraries are **free** and cannot degrade from insolvency |
+| `UNIVERSITY_STAFF` (`components.ts:664`) | **declared and exported, never read or written** | every university draws from **the same global scribe pool** |
+
+### The correction: I recorded the upkeep mechanic as already built
+
+In W68 I wrote, triaging the grungeon digest: *"Ep 43, maintenance. **Already built** — recording it
+so nobody re-proposes it. `LIBRARY_UPKEEP_PER_INSTANCE` plus `applyLibraryUpkeep` at `capital.ts:271`
+degrade instances on unpaid materials, and W7 measured it flipping narrow-depth from 12/12 to 0/12."**
+
+**The function exists. The constant exists. The production loop never calls it.** W7's measurement must
+have run through a test harness or a modified loop, not the shipped one. So the item is *implemented*
+and *not in the game*, which is the worst of both states — it reads as done to anyone grepping for the
+symbol, and it does nothing to anyone playing.
+
+I made that entry to stop the item being re-proposed. **It should be re-proposed**, and the work is
+smaller than the original suggestion: not "build maintenance" but "call the maintenance that exists."
+
+### These three explain findings I had recorded as separate mysteries
+
+- **W72: `open-then-build` founds 98 universities against a threshold of 2, zero rejections, 4.7M favor
+  unspent.** Of course it does — **construction never binds**, because `advanceConstruction` is never
+  called. I diagnosed that as a favor-pricing problem. Favor pricing is real, but the nearer cause is
+  that the *build* half of building a university does not run.
+- **Qwen's "universities have no specialisation mechanism", and S2's teaching boundary.** Even with
+  teaching scoped to co-affiliates, **all universities share one global scribe pool** — the world loop
+  counts every scribe cohort for whichever university it is evaluating, and the code's own comment
+  concedes it: *"Taking the whole scribe population."* An institution that cannot own its staff is not
+  much of an institution, and this is a second reason the boundary alone may produce no divergence.
+- **S4/ep41's "second growth axis: coordinated non-magical throughput"**, which I queued as new design
+  work needing `laborAffinity` to be given meaning. **`laborAffinity` already has meaning — it feeds
+  `advanceConstruction`.** The axis is built. Nothing calls it.
+
+### And two more, on prestige
+
+`executor.ts:96` declares `prestigeCarryForward: true` and comments call the carry-forward "real".
+**No production caller invokes `carriedPrestige` or `legacyGrant`**, and every reference state begins
+`prestige: 0`, so the terminating universe writes `prestigeEarned` into the void. Two authored
+constants — `legacy-archive-max-tier` and `legacy-reference-tick` — are resolved and never consumed.
+
+Consequently the prestige metric's honest-looking `no observations` status is **concealing a missing
+mechanism rather than an unscheduled matchup**. Even with a pair scheduler there is no way to seed the
+high-prestige side. The collector distinguishes "mechanic exists, arm has no pairs" from "mechanic
+absent" and lands on the wrong side of its own distinction.
+
+### The pattern this completes
+
+The campaign's modal defect was *the instrument does not touch the thing* — four instances, recorded in
+W81. **This is the same shape one level down: the simulation does not touch the mechanic.** Five more
+instances, all in `packages` rather than in the harness.
+
+The general lesson is now specific enough to act on: **"the symbol exists" and "a test covers it" are
+both compatible with "the game never runs it."** The `check:consumption` script asks this question for
+*primitives* and is the reason `portal` and `worship-yield` are known to be the only two with
+node-driven consumers. **There is no equivalent asking it for functions, components or constants**, and
+these five would all have been caught by one. That check is now the highest-value tooling item on the
+board, above any individual fix, because it converts a class of defect into a build failure.
+
+---
+
+## W87 — the container holds. There is one thing to put in it.
+
+*2026-08-13, PR #75. The teaching boundary lands, works, and produces the most useful null of the
+campaign.*
+
+`teachingRosterFor(mage)` groups living mages by `universityId`; `teachableTo` refuses a
+cross-institution pair. Decision and accrual walk the same list. `MAX_TEACHING_COUNTERPARTIES` now
+bounds **per institution** — filtering a universe-wide lowest-32 by affiliation would have handed any
+university whose mages sit above slot 32 an empty faculty, **and that emptiness would have read as a
+knowledge result.** There is a test for exactly that regression, which is the kind of care that makes
+the rest of the numbers trustworthy.
+
+### The result: universities still cannot diverge, and now we know why
+
+Dominant cells differ at **7/20 horizons before → 8/20 after**. Both academies still reach 49–51 of the
+51 reachable nodes.
+
+**After the fix they have no content channel between them at all** — teaching sealed, migration
+measured at **zero**, books shelve per-library, and knowledge capital was already own-university
+(`capital.depthFor(row.universityId)` — a suspected fourth leak that turns out not to exist).
+
+**They converge by content exhaustion, not by exchange.**
+
+That is the whole campaign in one sentence. The container holds; **there is one thing to put in it.**
+It also settles which of the two candidate causes of one-dimensionality is binding: not the plumbing,
+**the content**. Which makes W79 (`researchCost` flat across all 300 nodes) and W82 (the opening square)
+the load-bearing work, and demotes everything that moves knowledge *around* faster or slower.
+
+Channel dominance, measured: teaching was the dominant *content* channel (**−22% library depth when
+sealed**); migration contributes nothing; the scribe pool is throughput-only.
+
+### The ruling on unaffiliated mages, which is better than the question I asked
+
+**`0` is a container — the commons.** One uniform rule, *same id teaches same id*, and `0` is an id.
+
+Defended on measurement rather than taste: **every mage promoted after founding is created
+unaffiliated**, so at world year 200 **87 of 89 living mages have `universityId === 0`.** The strict
+reading — "unaffiliated mages can teach nobody" — would have been an off switch for teaching, not a
+boundary on it. I framed this as a design choice between two games; the data says one of the two
+options was never a game at all.
+
+### Three corrections to briefs I wrote
+
+1. **`affiliate` never fires. Not rarely — never, in any run.** It scores ≈640 against research's ≈832.
+   W68 routed cross-university transfer through that goal, and I recorded it as "already exists as a
+   goal." **It exists in code and not in behaviour**, which is exactly the distinction W85 was written
+   about, found again one day later in a claim of mine.
+2. **W68's "research creates instances at 256, so founding grants are the only teachable knowledge" is
+   false for the reference tradition.** It resolves **True Naming**, whose `acquire` hook sets
+   `instanceMastery: 1024` for *every* instance — so researched knowledge is immediately teachable and
+   chains losslessly. Measured: the commons holds **437 teachable instances it made itself**; the
+   academies hold 101 instances and **zero** teachable. **Consequence: `w53/practice` is not a hard
+   prerequisite for a nudge-shaped founding grant under True Naming**, which undoes the sequencing
+   argument I built the grant-budget brief on. The 93.4%-untEachable figure is a statement about *some*
+   traditions, not about the game.
+3. **My migration-homogenisation hypothesis was wrong** — I passed Qwen's `universityPreference`
+   analysis on as a live risk. **Nobody ever migrates**, so the rule that would homogenise never runs.
+
+### Two red tests, deliberately left, and my ruling
+
+- **`reference-long-run.test.ts:416`** — 140 books / **46** distinct nodes → 154 / **36**, tripping
+  `< 4×depth`. **This is the clearest single piece of evidence the boundary bites**: only affiliated
+  mages scribe, so sealing six founders off from the commons shelves fewer distinct nodes. The
+  assertion encoded a redundancy expectation from an unbounded-teaching world. **Update it, with the
+  old and new numbers and the mechanism written into the test**, exactly as the interning digests are
+  documented. Do not widen it silently and do not delete it.
+- **`reference-time-to-tier.test.ts:263`** — orc tier-3 `[24, 31]` → `[24, 52]`, crossing elf's low of
+  44. **Hold this one.** It is entangled with the orc problem (W74/W76: orc reaches zero cells on plain
+  `main` by world year 160, and orc is `untuned` like all six species). Changing a species-ordering
+  assertion while the species underneath it is being retuned would bake in a number nobody believes.
+  **Leave it red with a comment naming the entanglement**, and resolve it in the species-tuning pass.
+
+---
+
+## W88 — the lifespan hypothesis is refuted, and practice closes publish-or-perish
+
+*2026-08-13, PR #54. Two ablations on one tree, 32 paired seeds.*
+
+**My hypothesis — that practice rewards long lifespans and starves the short-lived — is dead, and it
+dies on the first two rows:**
+
+| species | lifespan | control mean (sd) | with practice | delta |
+|---|---|---|---|---|
+| draconic | 18,000 | 10.72 (0.81) | 10.72 (0.81) | **0.00** |
+| elf | 8,400 | 8.72 (1.08) | 8.72 (1.08) | **0.00** |
+| gnome | 4,200 | 15.88 | 15.81 | −0.06 |
+| dwarf | 3,000 | 13.88 | 14.03 | +0.16 |
+| human | 960 | 10.66 | 9.09 | −1.56 |
+| orc | 720 | 1.22 (1.26) [0–5] | 1.19 | −0.03 |
+
+**Draconic and elf — the two *longest*-lived, where a mastery-compounding mechanic would show first —
+are identical across all 32 seeds, to the mage.** Neither promotes anybody within 1,200 ticks, so their
+rosters are founders and practice cannot touch them. A hypothesis that predicts its strongest effect
+exactly where the effect is provably zero is not a weak hypothesis; it is the wrong mechanism.
+
+**Orc is not deleted. Orc is already marginal on `main`** — mean **1.22 mages, and zero on 11 of 32
+seeds with no practice mechanic in the tree at all.** The 3→0 table I built the whole diagnosis on was
+**one draw.** At 2,400 ticks, human and orc read zero on 8 of 8 seeds on *both* arms. W74 suspected
+this, W76 measured it independently, and this is the third confirmation. It is a `main`-side finding.
+
+**The `permits()` gate is exonerated too.** Un-gating `resource-yield` over 1,200 ticks changes
+**`stone` and nothing else** — food, vellum, carrying capacity, population and every per-species entry
+are bit-identical, because every reachable `resource-yield` node routes to stone via `routeYieldByForm`.
+The gate never fed vellum and cannot have starved it.
+
+### What was really wrong: two dead signals, both prose claims nothing checked
+
+1. **`practisableBy` offered any node below `MASTERY_MAX`.** Decay puts every instance there within a
+   month, so **practice was feasible for every mage every tick, forever** — and a month at `fp(1023)`
+   bought **one point** back against the clamp.
+2. **`opportunityTerm` summed candidate + stale-holding opportunity to `256 + 288 = 544` against a bound
+   of `512`, so it clamped on *ordinary* input** — the exact outcome `STALE_HOLDING_CAP`'s own comment
+   claims the value was chosen to avoid. Pinned at 512, practice outranked `scribe`'s 256 ceiling and
+   ate the months that scribing needed.
+
+**Both are now pinned by tests (9 assertions), because both were comments asserting behaviour nothing
+verified.** That is W85's lesson arriving in a second package on the same day.
+
+### The asset is real — it is just not the one I was defending
+
+I asked that the species divergence be protected. **There is no species divergence.** What replaced it
+is better:
+
+| | control | as merged | **fixed** |
+|---|---|---|---|
+| last-window scribing zero on | 0/8 | **4/8** | **0/8** |
+| library depth, year 200 | 28.9 | 14.6 | **30.9** |
+| second-century lessons | 386 | 679 | **605** |
+
+**Practice roughly doubles second-century teaching** by carrying scholars back over the standing
+threshold — 7 of 8 seeds, with seed 589831 going from **8 lessons to 636**. *Publish-or-perish actually
+closes*: knowledge decays, teaching restores it, and the restoration is what keeps the second century
+alive. That is the mechanic the owner named and it now demonstrably works.
+
+The branch also retires **its own** headline claim: `referenceLibraryDepth` as "the most robust negative
+result" goes −3.02 SE → −1.68 SE and is inside tolerance. An agent disproving the finding it was hired
+to defend is the healthiest thing in this document.
+
+### Ruling on the two remaining red tests
+
+`loss-shock-recovery.test.ts`'s two failures both **require orc alive at one pinned seed.** Post-fix
+that seed reads 11 / 18 / 8 / 7 / 13 / **0**.
+
+**Do not make them green here.** They are not testing this branch; they are asserting that a species
+which is **zero on 34% of seeds on `main`** survives a cull at one seed. That is an assertion on noise,
+and satisfying it would be fitting to a single draw. **The test carries a `main`-side defect** — it
+encodes "all six species survive and recover measurably" against a build where two do not — and it
+should be made seed-robust on its own branch, together with the orc tuning. All six species are
+`untuned`; that is the pass where this gets resolved.
+
+### W84, at full n — 320 of 400 paired runs are bit-identical
+
+| strategy | before | after | bit-identical |
+|---|---|---|---|
+| **`permit-then-idle`** | **40/40** | **0/40** | 0 of 40 |
+| **`permissive-breadth`** | **40/40** | **0/40** | 0 of 40 |
+| **`open-then-build`** | 40/40 | **40/40** | 40 of 40 |
+| the other seven | 0/40 | 0/40 | 40 of 40 each |
+
+**Exactly the 80 runs of the two strategies that used to win by editing the ruleset changed. Nothing
+else did.** A conjunct reaching a universe it should not touch would show as a differing hash on a
+strategy that never qualified; none does, and there are zero discordant pairs in the after-only
+direction. All four pre-registered claims hold, and `procedure`, `refutedBy`, `hypothesis` and
+`pinnedConstants` are **byte-identical to the pre-registration commit** — only the verdict fields were
+added. Pre-registration is worth nothing if the claims can move afterwards, and here they demonstrably
+did not.
+
+**A defect the tooling introduced and a test caught:** the baseline regeneration command **replaces
+`notes` wholesale**, so all three regenerated baselines had silently dropped the standing disclaimer
+*"no release before 0.5.0 may claim this is balanced — this file is a measurement and not a balance
+claim."* `balance-ci-wiring.test.ts` failed three ways and was right to. Restored and re-sealed through
+`baselineContentHash` rather than hand-edited, with no metric value, tolerance or `toleranceK` changed.
+
+**Worth generalising: a regenerator that rewrites a field it was not asked to change is a silent
+provenance loss.** The only reason this was caught is that someone had written a test asserting the
+disclaimer's presence. Every other regenerated artefact in this repo should be checked for the same
+class of loss.
+
+### And `archivist` answers the obvious objection from the opposite corner
+
+The sharpest available criticism of the ascension conjunct is *"`open-then-build` was written by the
+same workstream, so of course it passes."* `archivist` — **in the pool since the beginning, written by
+nobody for this** — settles it:
+
+| strategy | universities | nodes known | qualifies? |
+|---|---|---|---|
+| `permit-then-idle` | **1** | 261–269 | no |
+| `archivist` | **~1,300** | **51** | no |
+| `passive-control` | 1 | 51 | no |
+| **`open-then-build`** | 78–98 | 198–220 | **yes** |
+
+**Both single-axis maximisers fail.** Open the whole grid and build nothing — fail. Build **thirteen
+hundred universities** and open nothing — fail, pinned at the 51-node content ceiling. **Only the
+conjunction passes, and it passes with two orders of magnitude fewer universities than the strategy
+that fails.**
+
+That is the difference between a predicate and a counter. `ascension-institutions` is not a university
+race: `archivist` wins that race thirteen times over and still loses. **It requires the god to do a
+second thing while doing the first**, which is exactly the property no threshold over knowledge alone
+could have had, and what both earlier proposals were reaching for without finding.
+
+It also bounds the purpose-built-probe worry with evidence instead of argument.
+
+**Note what `archivist` incidentally proves about the content ceiling:** thirteen hundred universities
+buy **51 nodes** — the same 51 that `passive-control` reaches doing nothing at all. **Institutional
+capacity is not the binding constraint on knowledge; the content is.** That is a third independent
+confirmation of W87's finding, arriving from a strategy built years of campaign-time earlier for an
+entirely different purpose.
+
+---
+
+## W89 — W85 is half wrong, I verified against the wrong branch, and the real count is 115
+
+*2026-08-13, PR #77. A correction, and the check that makes this class of error impossible to repeat.*
+
+### The correction
+
+**W85 claimed `advanceConstruction` and `applyLibraryUpkeep` have no production callers. Both are
+wired on `main`, and have been for days.**
+
+| symbol | wired in | when |
+|---|---|---|
+| `applyLibraryUpkeep` | `ef3bba9` — `world-step.ts` via `degradeUnkeptLibraries` | Aug 11 |
+| `advanceConstruction` | `9a3b6b5` (w29) — `world-step.ts` via `advanceUniversities` | Aug 12 |
+
+On `main`, `world-step.ts` reads `libraryUpkeep: upkeepOwed` and `construction: construction.stoneOwed`.
+The literal zeroes I quoted are on the **`knowledge-model`** branch, which is what the shared checkout
+happened to be sitting on.
+
+**I verified Codex's findings by running greps in the shared checkout without checking which branch it
+was on.** That is the second time in one session the shared checkout's branch has produced a wrong
+result — the first sent five plan commits to a 1,224-line variant of this file. **CLAUDE.md's worktree
+rule exists for exactly this, and I broke it twice while instructing other agents to follow it.**
+
+The lesson is narrower and more useful than "use worktrees": **a finding about what the code does is a
+finding about a specific ref, and it is worth nothing without one.** Every entry in this document that
+reports code state should name the ref it was read at. Most do not, including several of mine.
+
+It also cost real work: W68 recorded library upkeep as *"already built — recorded so nobody
+re-proposes it"*, W85 then recorded it as *"built and never called"*, and both were written about
+different branches. **The first entry was right.**
+
+Two of W85's five stand: `UNIVERSITY_STAFF` is still declared and never read or written, and the
+prestige cluster is still unreachable.
+
+### The check, and the number
+
+`scripts/check-reachability.mjs` — **115 findings.**
+
+| category | count |
+|---|---|
+| packages nothing depends on | **1 — `@mm/rules-raid`, 75 exports** |
+| exported values with no production caller | 94 |
+| called only by symbols that are themselves unreached | 10 |
+| components declared and never read or written | 1 |
+| constants resolved and never read | 3 |
+| constants read only by unreached code | 6 |
+
+**It parses TypeScript rather than grepping, and that is the point.** `world-step.ts` discussed
+`advanceConstruction` in prose before anything called it, and `mc-harness/src/strategies.ts` quotes the
+W85 finding **inside a string literal**. A grep-based check would have been fooled by both — as I was.
+Comments, string literals, import/re-export specifiers and `typeof` references are excluded; a caller
+in the same file counts, because an earlier draft flagged `worldSystem` — the loop of the entire game —
+as unreached.
+
+**Non-blocking, and the count is the argument.** 115 is far too many to hold inside `verify`; a gate
+that cannot merge is a gate nobody sees. Wired exactly as `check:consumption` is — its own script,
+absent from `verify` and `verify:nosweeps`, its own `continue-on-error` Actions job. **That absence is
+what keeps `scripts/ci-check.sh` equivalent to `verify`.** The flip condition is written at the flip
+point: *under ten, reached by wiring or deleting, **never by lengthening the exclusions list**.*
+
+### Three findings beyond W85, hand-verified, any of which is worse than what W85 got wrong
+
+1. **Two of the four licensed tradition hooks have no simulation path.** `acquirePolicy` and
+   `storePolicy` are read by `scenario`. **`castPolicy` and `costPolicy` are read only by
+   `@mm/rules-raid` — the package nothing depends on.** CLAUDE.md names those four hooks as the one
+   licensed exception to content-lives-in-data. **Half of the exception does not run.**
+2. **University admissions and specialisation are built and unwired** — `admitStudents`,
+   `AdmissionRefusals`, `effectiveCapacity`, `universityProfile`, `dominantCell`. Universities are
+   created directly by the god intervention path and **never through `createUniversity`**.
+3. **`worship-max` is resolved into `GodConstants` and never read off it** — `worship.ts` recomputes
+   the sum instead.
+
+Also confirmed dead on `main`: `stackContributions` (independently corroborating `consumption.ts`'s own
+claim), `loadWorldSnapshot`/`migrateWorldEnvelope` (**nothing loads a save**), `replay`,
+`speciesRediscoveryMultiplier`, `applyWard`, `traitValueOf`/`advantageOf`/`SPECIES_FP_TRAITS`.
+
+### And a third reason the teaching boundary may show nothing
+
+W87 found universities converge by content exhaustion with no channel between them. Two more channels
+turn out not to exist in the way that matters: **the global scribe pool is still live on `main`**
+(`world-step.ts:1735–1769`, `scribeThroughputFor`, whose own comment concedes *"Taking the whole scribe
+population is the honest placeholder"*), **and the specialisation mechanism itself — `universityProfile`
+and `dominantCell` — is built and never called.** Scoping teaching to co-affiliates changes little if
+every university draws from one staff pool and none of them has a profile in the loop.
+
+### W87, refined — the boundary is a prerequisite, not a substitute
+
+*A cheap follow-up changed the conclusion, and it is the difference between "this mechanic does
+nothing" and "this mechanic is waiting for something."*
+
+Opening all 70 cells (300 authored nodes) and measuring Jaccard overlap between two academies' held
+node sets — the only figure comparable across arms, since the boundary lowers both totals:
+
+| world year | 51 nodes, off | 51 nodes, **on** | 300 nodes, off | 300 nodes, **on** |
+|---:|---:|---:|---:|---:|
+| 50 | 0.796 | 0.714 | 0.641 | 0.590 |
+| 100 | 0.922 | 0.882 | 0.681 | 0.639 |
+| 150 | 0.961 | 0.961 | 0.805 | **0.596** |
+| 200 | 0.961 | 0.961 | 0.927 | **0.684** |
+
+**Without the boundary, two academies in a large content set re-homogenise as the run goes on**
+(0.641 → 0.927). **With it, they do not** (0.590 → 0.684).
+
+Under exhaustion the same mechanic buys only a mid-game wobble that is then erased — both 51-node arms
+pin at **0.961 from year 150, identical to three decimals**.
+
+**So the exhaustion diagnosis is now a result obtained by manipulating the content set, not an inference
+from the absence of a channel.** And the reading of W87 changes with it: **the teaching boundary is a
+prerequisite whose value is unlocked by the content work, not a substitute for it.** `w80`
+(`researchCost` variation) and `w72` (the opening square) build the world in which it pays.
+
+One seed, and 249 of the 300 nodes have never been exercised. **A direction, not a magnitude.**
+
+### An incident: `git stash` is repo-global and unsafe here
+
+An agent's `git stash push` failed silently, and the following `git stash pop` **popped a different
+agent's stash** — `WIP on demo/shell` — leaving conflicted `ui/` files in a worktree that had nothing
+to do with the UI. **This is precisely the hazard CLAUDE.md's worktree section warns about**, and it
+happened anyway, because the warning names the danger without naming the safe alternative.
+
+It was caught by a smell test rather than by tooling: a control run came back **byte-identical to the
+treated run**, which was implausible. No work was lost — a conflicted `pop` does not drop, and both
+stashes remained listed — and the contaminated arm was discarded and re-run rather than reported.
+
+**The safe equivalent, now recorded in CLAUDE.md: swap files with `git show <ref>:<path> > <path>`,
+which touches no index and is not repo-global.** A `git stash` with an explicit pathspec is *still*
+repo-global and still unsafe in a checkout other agents share.
+
+Two process notes worth keeping:
+
+- **The agent found the contamination by disbelieving a result that was too clean.** Byte-identical
+  control and treatment is a signal, not a convenience, and treating it as one is what kept the number
+  honest.
+- **It also re-measured the unaffected numbers rather than asserting they were unaffected** — 1,210
+  lessons and overlap 0.961 reproduce exactly on the clean tree. "That part was probably fine" is not
+  a measurement.
+
+---
+
+## W90 — displacement lands, and the falsifying measurement I specified was unreachable
+
+*2026-08-13, PR #79. S5 implemented; its stated falsifier turns out not to exist.*
+
+An effect gains an optional `displacement: { role, fraction }` — `role` a one-member occupation enum
+(`laborer`, the only v1 role paid in materials), `fraction` an `Fp` share **one contributing instance**
+removes, per-instance like the magnitude beside it. Absence is never read as zero (tested with
+`'displacement' in contribution`). Shares fold through `@mm/primitives`' own `multiplicativeOnRemainder`
+and clamp through `applyCap`, so the stacking arithmetic is not bypassed.
+
+**Deliberately not a new primitive** (that is A5, refused) and **not a god constant** (that is w69's
+surface). Five effects on four `rego-terram` nodes — **Rego, not Intellego, because knowing where the
+seam is does not dig it.**
+
+### S5's falsifier had a false premise, and I did not check it
+
+S5 says displacement is confirmed when *"a resource-yield-maximising strategy stops dominating on
+population."* **On `main`, it never dominated: +91.4 ± 135.1, 0.68 SE — null.**
+
+Population is set by land carrying capacity, and `subsistenceShortfallShare` sits near **fp(1000) in
+every arm, including the untouched one.** The penalty channel is already saturated, so food barely moves
+the headcount. *"Stops dominating"* is not a thing that can be observed on this build.
+
+**This is the second time in one night that a measurement I specified was null by construction.** The
+grant-budget brief named a control pair in which neither bot ever submits the action being budgeted.
+Both times I wrote the brief; both times the agent discovered the defect by trying to take the
+measurement. **Checking that a measurement can move before demanding that it move is precisely the
+discipline this campaign exists to enforce**, and the orchestrator has now failed it twice while issuing
+briefs about it.
+
+### What displacement actually does, which is the result S5 was reaching for
+
+**Permitting the economy cells stops being free** — 8 CRN seeds, 2400 ticks, paired per seed:
+
+| breadth − no-terram | before | after |
+|---|---|---|
+| population | −88.8 ± 113.0 (null) | **−396.4 ± 122.3 (−3.2 SE)** |
+| food | +32,799 ± 29,430 (null) | **−618,517 ± 32,122 (−39.7%)** |
+| stone | +2,127,957 (+276%) | +827,429 (+107%) |
+
+`no-terram` moves by **exactly 0.0 ± 0.0** between content sets — a clean control, and the reason the
+rest of the table is believable.
+
+### The honest limit, volunteered rather than buried
+
+**The ceiling pins.** Mean share runs fp 220–385 against ticks at 512, so at scale the pair reads
+**4× output against half the workforce — net 2×.** No longer a *pure* bonus; still a bonus. If
+saturation should be break-even, the cap wants fp(768), not fp(512). Left unchanged deliberately, and
+flagged so whoever tunes it next knows whether fp(512) was a half-measure or a first guess.
+
+### And a directional movement that passes tolerance but is real
+
+The **ascension gate** — the only committed gate running strategies for 2400 ticks — moves
+`referenceGrimoires` **−99.41 (−35%, −2.24 SE)**. Inside tolerance, and a genuine behavioural claim:
+**displacement costs a third of the books.** `balance-gate` reads exactly 0.00000 on every metric and
+`horizon` moves `referenceGrimoires` −0.92 (−0.13 SE) — the known gate blindness, confirmed a second
+time from an independent direction.
+
+### A spec that four branches cite existed only in a working tree
+
+`grungeon-master-suggestions.md` was **untracked**. It has been the working spec for
+`w77/effect-displacement`, `w78/teaching-boundary` and the triage of S4, S6, S8 and S11 — and the agent
+implementing S5 had to be told its contents second-hand, then reported it missing.
+
+**An unversioned spec is worse than none**: agents cite section numbers a reviewer cannot look up, and
+the S5 that PR #79 implements would have had no readable referent in the history. Committed on
+`docs/stash-hazard` (PR #78), with its own status line saying nothing in it is approved and `vision.md`
+remains the vision of record.
+
+The same agent also reported `§W72` as existing in no committed copy. **It exists** — line 3345 of this
+file, on `pm/campaign-plan`, not on `main`. My brief cited a section without citing a ref. **A finding
+about a document is a finding about a ref, exactly as a finding about code is.**
+
+---
+
+## W91 — W79 is refuted, W19 is reversed, and pricing the nodes made it slightly worse
+
+*2026-08-13, PR #80. The strongest correction in this document, because it retires a claim this file
+carried at the very top.*
+
+### The facts in W79 are exact. Its conclusion was two days stale.
+
+The cost table is precisely as reported — 70/71/78/65/15/1 nodes at 2048/4096/8192/16384/32768/65536,
+**zero deviations.** But the inference from it — *"every universe walks the same seventy doors in the
+same order"* — **was already false on `main` when it was written.**
+
+`1acf8e5` (`w7/knowledge-capital`, merged **2026-08-11**, two days before W79) replaced target
+selection with an **argmax over a six-term utility score**. `compareTargets` still exists, still sorts
+cheapest-then-id, and **no longer decides anything.**
+
+The code says so itself, in `packages/content/src/autonomy.ts`:
+
+> Before it, `compareTargets` ordered a mage's candidate nodes by `remainingCost` and then by `nodeId`
+> — and in the v1 content set `researchCost` is a pure function of tier with no within-tier variation,
+> so that was exactly *"tier, then node id"*, one fixed total order shared by every mage of every
+> species in every universe.
+
+**W79 rediscovered a known fact whose fix had already landed, and then misattributed a live symptom to
+it.** Vision §7 had specified the remedy — *"mages act on utility-scored goals shaped by species, age,
+personality, and their assigned standing role"* — and w7 built it. The answer was never to vary the
+cost; it was to stop letting cost be the primary key.
+
+### W19 is reversed on current `main`
+
+Measured over 84 runs (7 strategies × 2 openings × 6 replicates, 2,400 ticks):
+
+| | W19 (older build) | current `main` |
+|---|---|---|
+| distinct tier-1 discovery orderings | effectively one | **62 of 84 runs** (63 tie-grouped) |
+| cross − within containment | **above** the diagonal at all 12 horizons | **below** at every horizon: −0.133 @240 → −0.031 @1200 |
+| tier-1 first-discovery sd | near zero | **30.7 ticks** |
+
+**I quoted W19's 9,600 runs repeatedly as current evidence.** It was measured on a build whose
+acquisition path has since been replaced. **A measurement is a statement about a ref, and this is the
+third time tonight that has bitten** — the same lesson as `advanceConstruction` and `§W72`, now
+applied to a headline result rather than a code fact.
+
+### Phase 2 is a null, in the mildly adverse direction
+
+| | flat | priced |
+|---|--:|--:|
+| distinct tier-1 orderings | **62** | **56** |
+| cross-strategy containment @240/480/960 | 0.810/0.856/0.892 | **0.830/0.877/0.924** |
+| cross − within @240/480/960 | −0.133/−0.100/−0.092 | −0.120/−0.086/−0.064 |
+| tier-1 first-discovery sd | 30.7 | **21.5** |
+
+Containment **rose** and the gap to the diagonal **narrowed**, consistent in sign across all seventeen
+horizon readings (nested on the same 84 runs — one experiment, not seventeen confirmations). The first
+door was `im-weigh-the-attention` in 42 of 84 runs in **both** arms; only the tail thinned.
+
+**The mechanism is arithmetic, and it generalises:** a cost surface is **shared by every universe**, so
+it can only reweight terms that already differ between them. Inside a non-overlapping band it does that
+at **10 fp against appeal bounds of 256–512.** The price fully replaces the id tiebreak in
+`compareTargets` — which works perfectly — and never reaches the argmax.
+
+**A shared constant cannot be a source of divergence.** That is worth carrying forward to every
+remaining proposal: only things that *differ between universes* — the opening square, the seed, the
+species mix, what a god actually did — can make universes differ.
+
+### What survives, precisely
+
+- **W87 stands.** It was measured on current `main`, and its all-cells arm manipulates the content set
+  directly rather than inferring from an absent channel.
+- **W82 stands.** Seeded squares differ *between universes*, which is exactly the property W91 shows a
+  shared cost surface lacks.
+- **"Content is the binding constraint" stands, on W87 and W82** — not on W79, which is withdrawn, and
+  not on W19, which is dated.
+
+The arms here are *"fixed opening, varied strategies"*, and cross-strategy containment did not fall.
+**Caveat the agent volunteered: they measure the v1 square, 51 of 300 nodes.** All 300 are priced, so
+re-running inside a `w72` seeded square (194 nodes) is the experiment this one could not be. Also
+`archivist` is absent from both arms (~15× slower per tick) — symmetric, so scope not result, but the
+knowledge-hoarder is in no containment figure here.
+
+### The cost curve, and the decision left open
+
+**A node's price is what it commands and where on the grid it sits** — five terms from authored fields
+only (reach, payload, technique, form, metis), no node id, no hash, no randomness. Non-overlapping
+bands `[base/√2, base·√2]`, because `speciesTargetTerm`, `ageTargetTerm` and `withinDepthCeiling` all
+pay or gate per tier and overlap would make four mechanisms ambiguous. Geometric-mean preserving; all
+twelve enabled roots distinct.
+
+**Baselines invalidated**, and one delta is large: `referenceNodesGainedFinalQuarter` **7.645 → 6.105,
+−14.53 SE — research in the last fifty years falls 20%**, the tier-4/5 mean drift arriving. Nothing
+regenerated.
+
+**Ruling on `loss-shock-recovery`, left failing:** orc has **0 living mages at the cull tick** where it
+had 3 (human went 16 → 32). Two readings — the curve harms the weakest species (`depthCeiling` 3, two
+exhaustible cells), or orc was marginal at three and any perturbation re-rolls it. **One seed cannot
+separate them. Run 3–4 seeds and report; do not tune the curve to resurrect orc.** Editing the
+assertion would hide a species going to zero, and the agent was right to refuse.
+
+---
+
+## W92 — the gates hold constant the two factors most likely to make universes differ
+
+*2026-08-13. A direct consequence of W91's rule, checked immediately because the rule makes it
+checkable.*
+
+W91 established: **a shared constant cannot be a source of divergence. Only things that differ between
+universes can make universes differ.** Applied to the instrument rather than the game, that is a
+question with a one-command answer — *which factors do the gates actually vary?*
+
+`REFERENCE_FACTOR_IDS` offers five: `cohortSize`, `foundingMages`, `foundingNodes`,
+**`foundingSpeciesMask`**, and **`tradition`**.
+
+| sweep | factors varied |
+|---|---|
+| `balance-gate` | `cohortSize`, `foundingNodes` |
+| `balance-gate-horizon` | `cohortSize`, `foundingNodes` |
+| `balance-gate-ascension` | `cohortSize`, `foundingNodes` |
+| `balance-full` | `cohortSize`, `foundingMages`, `foundingNodes` |
+
+**Not one committed gate varies species or tradition.** `DEFAULT_FOUNDING_SPECIES_MASK = 0`, and zero
+means *every species*. So every universe in every gate is founded with **all six species** and governed
+by **the same tradition**.
+
+Those are, on the face of it, the two most game-shaping factors available — *which peoples exist* and
+*what magic fundamentally is* — and they are the two the instrument pins.
+
+### Why this matters more than a coverage gap
+
+**Tradition is not a flavour setting.** The reference tradition is True Naming, whose `acquire` hook
+sets `instanceMastery: 1024` on **every** instance — so in every gate run, researched knowledge is
+immediately teachable and chains losslessly. Under a different tradition it is not. This is exactly the
+mechanism that made my *"grants are the only teachable knowledge"* claim false (W87): the 93.4%
+figure was a statement about *some* traditions, and **the gates only ever run one.**
+
+Three v1 traditions exist and are confined to four hooks — `acquire`, `store`, `cast`, `cost` — which
+CLAUDE.md names as the one licensed exception to content-lives-in-data. **Two of those four hooks have
+no simulation path at all** (W89: `castPolicy` and `costPolicy` are read only by `@mm/rules-raid`, a
+package nothing depends on). So of the design's single licensed extension mechanism: half does not run,
+and the half that does is never varied by any gate.
+
+**Species are pinned in the same way.** All six can staff all 70 cells, all six are `"tuningStatus":
+"untuned"`, and the gates never ask what a universe of only gnomes or only orcs does. Three
+`integration-r2-species-*` sweeps exist and do vary the mask — but they are not gates, so nothing
+regression-tests the answer.
+
+### This is the same failure shape, applied to itself
+
+W81 recorded five instances of *the instrument does not touch the thing*, W89 five of *the simulation
+does not touch the mechanic*. **This is a third: the instrument holds constant the thing it exists to
+vary.** A gate over a world where every universe has the same peoples and the same magic cannot report
+that peoples or magic matter — and every "species make no difference" result in this campaign was
+measured under exactly that constraint.
+
+### What to do, in order
+
+1. **Add `tradition` to the ascension gate first.** It is the only committed gate that runs strategies
+   for 2400 ticks, tradition is already a registered factor requiring no new machinery, and the
+   True-Naming-only assumption has already produced one wrong claim in this document.
+2. **Then `foundingSpeciesMask`**, single-species arms included, so "all six can staff 70 cells" is
+   tested against "this universe only has orcs" rather than assumed equivalent to it.
+3. **Expect the cost.** More arms mean more runs, and the ascension gate is already the expensive one.
+   It is also the one whose pooled standard error the W59 work stratified precisely so arms spanning
+   294× stop reading as noise — **that fix is what makes adding arms affordable**, and this is the
+   first thing to spend it on.
+
+**Do not add either as a gate until the current re-baselining settles.** Four approved changes already
+invalidate every baseline; adding factors mid-flight would make the resulting diff uninterpretable.
+
+### W91 addendum — the orc question settled as far as five seeds can settle it, and the curve renormalised
+
+**Orc pre-shock roster, seeds 589825–589829, both content sets, everything else held:**
+
+| | by seed | mean | zero |
+|---|---|--:|--:|
+| flat | 3 1 0 1 4 | 1.8 | 1/5 |
+| priced | 0 0 0 2 3 | 1.0 | 3/5 |
+
+Paired difference **−0.8 mages, SE 0.66, t = −1.2 on 4 df** — not distinguishable from zero. The
+32-seed reading of plain `main` (mean 1.22, zero on 11 of 32) sits **between** the two arms, and every
+other species is flat across them.
+
+**Verdict: ambiguous, leaning noise**, in the agent's own framing — *five seeds cannot exclude a real
+effect of under one mage, and what is established is that the single-seed 3 → 0 is not evidence of
+one.* That distinction is the whole difference between a measurement and a story. **The curve was not
+tuned to resurrect orc**, and both assertions stay red with the distribution recorded beside them.
+
+### The curve is kept and renormalised, on the author's recommendation
+
+**Keep the idea; renormalise the levels.** The defect survives the null: *a field whose value is a pure
+function of another field carries no information*, and the ordering it produced was alphabetical.
+`im-weigh-the-attention` leading 42 of 84 runs is **a fact about a hash table** under the flat surface
+and **a fact about a design claim** under the priced one — and only one of those is a thing a person
+can argue with.
+
+But not as authored, because of a number nobody asked for: **`referenceNodesGainedFinalQuarter` falls
+20%**, which is tier-5 (+12.3%) and tier-6 (+41.4%) drift — **sixteen nodes moving late-game pace as a
+by-product of price terms correlating with depth.** The claim was about *which node inside a tier is
+dearer*, and it survives untouched if each tier's grades are recentred on their own mean before the
+octave is applied.
+
+**A global pacing change arriving as a side effect of a content judgement about individual nodes is two
+decisions made by one edit.** The cost of separating them is locality — a node's absolute price will
+depend on how its tier-mates are authored — and that is a worse property for an author and a better one
+for a design, because relative standing within a tier is inherently a property of the set.
+
+---
+
+## A note on process, since three of these arrived tonight
+
+**The scratchpad directory is shared between concurrent agents, and it has now cost work twice.** One
+agent's PR body was overwritten at a shared path by a third agent's file and briefly published to a
+live PR; another lost `/tmp/pr-body.md` mid-edit and recovered by pulling the live body back with
+`gh pr view`. **Use a session-scoped or task-scoped filename**, and if a PR body must be staged, treat
+the live PR as the source of truth rather than the file.
+
+This belongs beside the two hazards already recorded in CLAUDE.md — `git stash` being repo-global
+across worktrees, and the shared checkout frequently not being on `main`. **All three are the same
+class: a resource that looks local and is not.**
+
+---
+
+## W93 — raids are 4,525 lines that nothing imports, and the fix for it has been sitting in a PR since the session opened
+
+*2026-08-13. Found by following W89's "package nothing depends on" finding to its conclusion.*
+
+**On `main`, `@mm/rules-raid` has zero dependents.** No `package.json` declares it. **No source file
+in any package imports it.** Every reference to it outside its own directory — in `agent-api`,
+`content`, `coordination`, `mc-harness`, `primitives` — is **a comment or a string literal.**
+
+The code says so plainly. `packages/mc-harness/src/metrics-collectors.ts`:
+
+> `reasonDetail: 'no raid mechanic in this build; rules-raid is a skeleton.'`
+
+**Universes raiding each other through portals, arbitrated by the host's ruleset, is the vision's core
+and the whole premise of live PvP.** It is built — sixteen files, 4,525 lines, arbitration, combat,
+action economy, an engagement view — and on `main` it is unreachable.
+
+### Consequences that were recorded as separate findings
+
+- **The three balance gates resolve zero raids** (W76). Of course they do; the package is not linked.
+- **Two of the four licensed tradition hooks have no simulation path** (W89). `castPolicy` and
+  `costPolicy` are read *only* by `rules-raid`. CLAUDE.md names those four hooks as the **one licensed
+  exception** to content-lives-in-data — and half of the exception hangs off a package nothing imports.
+- **Every raid mechanic this campaign measured came back null.** That is not a finding about raids.
+
+### The fix exists and has never landed
+
+`babe2d8` — *"build(scenario): declare the rules-raid edge that was already licensed"* — is **not on
+`main`.** It lives on `integration/campaign-round-3`, which is **PR #26: 208 files, +28,774/−571,
+nineteen conflicts, `DIRTY` since before this session started.**
+
+**This is the first defect reported to me in this session** — *"`@mm/rules-raid` is imported by
+`packages/scenario/src` and declared in neither its `package.json` nor its `tsconfig`"* — and the
+reason it reads as fixed is that the import was never on `main` either. The whole edge is on the
+integration branch. **The defect and its fix are both somewhere other than where I looked.**
+
+### What to do, and what not to
+
+**Do not land PR #26 to get this.** 28,774 lines across 208 files with nineteen conflicts, much of it
+superseded by work that landed tonight, is not a reviewable change and re-baselining it would be
+uninterpretable.
+
+**Extract the edge instead** — the `scenario` → `rules-raid` dependency, its `package.json` and
+`tsconfig` declarations, and the minimum needed to open one portal — as its own small PR. That is a
+change a person can read, and its baseline movement is a change a person can argue with.
+
+Expect that movement to be large: **a build where raids resolve is a different game from one where
+they cannot**, and every committed baseline was measured on the latter. That is the point, not an
+obstacle.
+
+**And it belongs behind the current re-baselining, not inside it.** Four approved changes already
+invalidate every baseline; a fifth that turns on an entire subsystem should land with its own diff and
+its own argument.
+
+### W90 addendum — `fp(512)` stays, and the argument against break-even is better than the question
+
+Asked whether saturation *should* be break-even, the author's answer is no, and I am adopting it.
+
+1. **The number that decides whether the cost binds is not the product of the caps.** It is where the
+   *marginal* caster turns negative — and that already happens at `fp(512)`: once `resource-yield`
+   saturates at about eleven instances, **every further caster adds displacement and no yield.**
+   **There is already an interior optimum in how many mages should know a displacing node**, which is
+   the mechanism S5 is reaching for. It does not require the caps to multiply to one.
+2. **`fp(768)` would make a successful universe's entire investment worth exactly nothing** —
+   research, teaching, upkeep, laborers, zero materials. *"That is not a trade-off, it is a trap that
+   springs only on success"*, and it reads as the game punishing you for playing it.
+3. **It permanently couples two separately-owned numbers.** A pair chosen so `4.0 × 0.25 = 1.0` is a
+   constraint every future retune of either has to preserve, forever, for no stated reason.
+
+**The better lever, which the branch's own significant result points at:** displacement is
+**universe-wide** while `resource-yield` is **routed by form** — a Terram spell displaces the labour
+that also grows the food, and **the v1 subset has no food magic at all.** So authoring displacement on
+more cells, or lowering the **yield** cap, moves where the decision sits. Raising the displacement cap
+mostly makes the far tail harsher without moving the decision.
+
+That is a sharper reading of "breadth must sometimes be wrong" than the break-even framing I offered,
+and it comes from the person who measured it.
+
+**PR #79 is green end to end** — 4,087 tests and all three gates PASS. The baseline re-record met every
+condition: own commit, provenance-not-metric-breach stated in the rationale, **no tolerance widened and
+no `--tolerance-k` passed**, verified by structured diff — the five-year file bit-identical on every
+value and tolerance, nine of ten two-hundred-year tolerances *narrowing*, and the single widener at
+**+0.7%** argued rather than glossed. The notes defect was fixed **at the source**, by re-passing all
+three notes as `--note` arguments so the command seals them into `contentHash` itself rather than being
+hand-patched around.
+
+And the rationale states something most would omit: **this file's tolerances are wide — 133.35 against
+a 99.41 delta — so "passed tolerance" is a weaker statement here than in the other two gates.** A
+number reported with its own weakness attached is worth more than one reported without.
+
+### W91 addendum 2 — the pacing change is the dispersion, and it cannot be renormalised away
+
+Renormalising each tier's grades against its own **datum** — the mean grade of that tier — did exactly
+what it was supposed to:
+
+| | before | after |
+|---|---|---|
+| per-tier geometric mean drift | −0.6 / +0.4 / +1.9 / +3.9 / **+12.3** / **+41.4%** | **−0.00% at every tier** |
+| nodes clamped to a rail | 1 | **0** |
+| tier-6's single node | 92,682 (top rail) | **65,536 = `base(6)` exactly** |
+
+That last row is the design argument in miniature: `cv-the-made-vis` **has nothing to be dearer than**,
+so it prices at the base.
+
+**And the pacing did not collapse.** `referenceNodesGainedFinalQuarter` went −1.54 → −1.36 against a
+tolerance of 0.318. **Twelve percent. So the level drift was never the cause**, and my approval of the
+renormalisation was right for a reason that was only 12% right.
+
+Cutting the arms to the metric's actual window — `balance-gate-horizon-v1` caps at **240 world ticks**,
+so "final quarter" is ticks 180–240 of a *twenty-year* run — shows what is really happening:
+
+| quarter | flat: gained | mean cost | renormalised: gained | mean cost |
+|---|--:|--:|--:|--:|
+| Q1 | 15.33 | 4,519 | 14.67 | 3,955 |
+| Q2 | 9.83 | 7,706 | **11.75** | 6,808 |
+| Q3 | 6.83 | 5,694 | **7.67** | 5,295 |
+| Q4 | **8.00** | 9,472 | **6.33** | **11,604** |
+| total | 39.99 | | **40.42** | |
+
+**Total unchanged; shape changed.** Q4 gains 21% fewer nodes and the ones it gains are 23% dearer.
+Nothing slowed down — **a universe works cheapest-first, so a dispersed surface consumes the cheap
+nodes early and leaves the dear tail for the last window.** On a flat surface every outstanding node
+costs exactly what every finished node cost, so the completion rate is flat *by construction*.
+
+**It is the dispersion, and the dispersion is the change.** It cannot be renormalised away, and **any
+within-tier variation anyone proposes later will produce it.** The two priced arms agree almost exactly
+(Q4 6.25 vs 6.33, mean cost 11,699 vs 11,604), which is the confirmation.
+
+### The reading that generalises: the metric changed meaning, not just value
+
+**On a flat cost surface, `referenceNodesGainedFinalQuarter` was measuring elapsed research capacity**,
+because the marginal node was interchangeable with every other. **On a priced surface it measures the
+residual tail** — harder and more informative, but *a different quantity*. So its baseline moves
+regardless of tuning.
+
+That is a fourth failure mode to add to the three already recorded: **a metric can keep its name and
+its formula while the thing it measures changes underneath it.** Nothing in the harness can detect
+that, and a baseline diff reads it as a behaviour change.
+
+### And it independently confirms W92
+
+**Species affinity is the term doing most of the ordering work in both arms** — and every gate run
+averages it over an identical founding mix. The agent's own conclusion: *a sweep that varies
+`foundingSpeciesMask` is a cheaper experiment than any content change, and my own arms would have found
+nothing different if it had been run, because they inherit the same constant.*
+
+**That makes the species sweep the clear next experiment**, arrived at independently from the content
+side after W92 reached it from the instrument side.
+
+---
+
+## W94 — the merge stack, and the bug a union would have introduced
+
+*2026-08-13. Landing the queue rather than adding to it.*
+
+Ten PRs merged. The queue had reached fourteen `DIRTY` at once, which is what the per-PR baseline
+re-record produces: **every branch that re-records the three baselines conflicts with every other one
+that does, so the conflict count grows quadratically with the number in flight.** That is a cost of the
+policy, not a series of accidents, and it should be weighed before the next content change lands.
+
+The conflicts sorted into three kinds:
+
+| kind | branches | resolution |
+|---|---|---|
+| **content revision digest** | 68, 69, 79, 80 | union — run the test, read the real value, keep both rationales |
+| **`reference-universe.ts`** | 69, 72, 75 | union — additions on both sides |
+| **the three baselines** | 63, 68, 79 | re-record once from the merged tree |
+
+**The digest conflicts have a settled recipe by now**, written into the test's own comments over four
+successive collisions: neither side's literal survives, because each is a digest over a preimage the
+other does not contain, so the union is a value no tree has held before. **Guessing it is not an
+option; the test tells you.**
+
+### One "union" hid a real defect
+
+`w70/opening-square` and `w69/grant-budget` each added a reader of the founding node list, independently
+and in the same statement. Unioning them produced:
+
+```ts
+const seeded = content.foundingNodeIds.slice(0, options.foundingNodes);
+grantFoundingKnowledge(state, {
+  nodeIds: opening.foundingNodeIds.slice(0, options.foundingNodes),   // the square's list
+  nodeIds: seeded,                                                    // content's list
+});
+```
+
+TypeScript caught the duplicate key, but the *semantic* error was one layer down and would have
+survived any resolution that just picked one: **the grants would have come from the opening square
+while the budget's `seededNodes` counted `content`'s list.** The budget exists to stop the accrual
+reading a god's own grant as a discovery the mages made — so a mismatch would have **credited every
+universe with discoveries it never made, in exactly the amount the two lists differ**, and it would
+have read as an accrual bug rather than a merge one.
+
+Resolved to one list: the square supplies the founding nodes (a universe founded on a sub-rectangle
+must be seeded from inside it, or its first grants name cells it cannot legally use), and the budget
+counts those same nodes.
+
+**The general lesson: a conflict where both sides are "pure additions" is not automatically a union.**
+Two additions that read the same underlying thing are a disagreement wearing an addition's clothes, and
+the compiler only catches the subset that collide syntactically.
+
+### And two positional artefacts worth recognising on sight
+
+Git split a shared doc-comment opener across the markers twice, and one function's closing brace once.
+A correct union then looks like a syntax error — a comment body with no `/**`, a function with no `}` —
+which reads as a botched merge and is actually a well-formed one missing three characters. **Repair the
+joins; do not re-resolve the hunk.**
+
+### Landed
+
+`w73/pool-build-order`, `w61/castable-nodes-and-species-occupancy`, `w69/grant-budget`,
+`w26/marooning`, `w27/decision-space`, numeric integrity, the design language, the CI event fix, the
+gate split, and **the marginal-species test fix** — which was failing on *every* branch and gating
+changes with nothing to do with species.
+
+---
+
+## W95 — the vision audit checked, one claim corrected, and its first finding is the sharpest thing on the board
+
+*2026-08-13. Both load-bearing claims re-verified against `origin/main` before acting, per the rule
+this document has now learned three times.*
+
+### Finding 1 stands, and it is more important than it reads
+
+`packages/rules-world/src/autonomy/feasibility.ts`, on `main` today:
+
+```ts
+case GOAL.scribe: {
+  ...
+  const target = cheapest(outlook.scribableTargets);
+```
+
+**Every scribe in every university copies the cheapest thing available.** That is why the reference
+run's library holds **two distinct nodes against 1,263 books.**
+
+**And it is a different call site from the one W91 was about.** `w7/knowledge-capital` replaced
+*research target selection* with a utility argmax — which is why W79's flat-cost inference was stale.
+**It did not touch scribing.** So the flat-surface, cheapest-first, everyone-walks-one-queue behaviour
+W79 wrongly attributed to research **is alive and well in the library**, one function over.
+
+That reconciles two results that looked contradictory: discovery *has* diversified (62 distinct tier-1
+orderings across 84 runs), and libraries still have not. **Mages now find different things and then all
+write down the same one.**
+
+**What follows, and this is why it is the sharpest item available:**
+
+- **The raid has nothing to steal.** Tonight's raid design makes a library the objective — the raider
+  physically carries out grimoire rows. If every library holds the same two nodes, *there is nothing in
+  any library the raider does not already have.* The most evocative mechanic in the design is looting a
+  sorted list of the cheapest thing everyone knows.
+- **It is the missing half of W87.** The teaching boundary sealed knowledge between institutions and
+  universities still converged. Of course they did: even with no channel between them, both libraries
+  are filled by the same rule from the same cheap end.
+- **The fix is small and is not a balance number.** Scribe selection needs a reason to copy something
+  other than the cheapest — rarity, the last surviving copy, what *this* library lacks, what a mage was
+  asked for. **`libraryDependence` already measures the fraction of nodes down to a single instance**,
+  so the instrument for "the last copy" exists.
+
+**Libraries differing is the precondition for four separate mechanics** — raids worth running,
+university specialisation, W24's siting tradeoff, and the teaching boundary paying off.
+
+### Finding 2's supporting claim is wrong, in exactly the way mine was
+
+The audit states `advanceConstruction` has *"zero production callers; it is defined, exported,
+mentioned in one comment, and invoked nowhere outside its own tests."*
+
+**On `origin/main` it is called at `packages/coordination/src/world-step.ts:1148`**, via
+`advanceUniversities`, and has been since `9a3b6b5` (Aug 12).
+
+This is **the third independent instance of the same mistake in one day** — W85 made it about
+`advanceConstruction` and `applyLibraryUpkeep`, W91's premise made it about `compareTargets`, and now
+the audit makes it about `advanceConstruction` again. Every one came from reading a working tree rather
+than a ref. **The rule is in CLAUDE.md now and it plainly needs to be: a finding about code is a
+finding about a ref.**
+
+**The observation the claim was supporting may still hold** — 88 living mages against a populace of
+18,713, pinned at the founding academy's 64 seats from world year thirty — but its *cause* is not a
+missing function. `foundUniversity` is a god action, and the reference run takes no god actions. That
+is a different problem with a different fix, and it is already recorded: **W83 found the verb is not
+unreachable but unchosen.**
+
+### Finding 3 is a real asymmetry and worth keeping
+
+`packages/content/src/god.ts` refuses to load content where permitting and forbidding cost different
+favor, citing pillar 1's symmetry. But the *total* price is asymmetric by construction:
+`interventions.ts` exempts permitting from the worship shock, and `decay.ts` charges only forbidding
+with irreversible mastery loss — in a comment describing itself as *"the whole mechanism by which
+forbidding a cell actually costs a civilization something."*
+
+**A content check enforcing symmetry on the one term that is symmetric, while two other terms are not,
+is a guard that reads as a guarantee and is not one.** Whether the asymmetry is right is a design
+question; that the check implies otherwise is a defect either way.
+
+---
+
+## W97 — W95 was wrong, its source is a committed doc, and the real defect is elsewhere
+
+*2026-08-13. The fourth stale-reference error of the day, and the first whose source is a file on `main`.*
+
+**W95 called scribe selection "the sharpest thing on the board." It was already fixed.**
+
+- `cheapest(outlook.scribableTargets)` in `feasibility.ts` is the **affordability gate**, implementing
+  `openspec/changes/mages-and-species/specs/mage-autonomy/spec.md:44` verbatim. **It never picks what
+  gets written.**
+- Selection is `chooseTarget` → `compareAppeal`, a **six-term utility argmax** covering all five
+  target-taking goals *including* scribe.
+- **`w7` did touch scribing.** Its merge commit is titled *"the novelty tie-break and the utility score,
+  kept apart"*, and it added **`compareNovelty`**, partitioning novel-before-held off a `libraryHolds`
+  flag. The code explicitly refuses the redesign W95 proposed: folding novelty into the weighted sum
+  *"has only two outcomes: a bound small enough to be outvoted, which restores the
+  1,263-books-two-nodes defect, or a bound large enough to dominate, which is a lexicographic prefix
+  wearing a magnitude's clothes."*
+
+**Re-measured on `origin/main`, 200 world years, five seeds: mean 34.6 distinct nodes per library**
+(46/39/48/6/34) against a claimed 2. **Cross-seed Jaccard 0.125–0.958** — libraries diverge between
+universes, seed 589825 holds nine nodes 589826 lacks, and **raids have something to steal.**
+
+### The source was a committed document, which is new and worse
+
+The 1,308-books figure came from `docs/design/vision-audit.md`, which asserts it in the **present
+tense** and tags it **`[executed]`**. Meanwhile `packages/scenario/test/unit/reference-long-run.test.ts`
+carries the same figure under the header *"This bullet list is a historical record, not the current
+measurement"*, naming `w7` as the fix, and `vision.md` marks it fixed in the past tense.
+
+**Two documents on `main` contradicted each other and the misleading one is the one people read.** It
+also cites line numbers that no longer match their files — the cheapest available rot signal, and
+nothing was checking it. Corrected in PR #86: three rows struck through rather than deleted, plus a
+banner saying what the file is.
+
+**Four instances in one day** — `advanceConstruction`, `compareTargets`, the audit's repeat of
+`advanceConstruction`, and now this. The first three were working-tree errors; **this one would have
+survived the CLAUDE.md rule**, because the reader *did* check a ref — the ref just had a stale document
+on it. So the rule needs its second half: **a document is not a ref for the code it describes.**
+
+### The real defect the probe found
+
+Seed 589828 reproduces the symptom on **~1 seed in 5**, with identical selection inputs:
+
+| | 589825 | 589828 |
+|---|--:|--:|
+| nodes known anywhere | 51 | 51 |
+| mages affiliated to the university | 2 | 2 |
+| nodes known **by affiliated mages** | 51 | 51 |
+| books written | 140 | **212** |
+| **distinct nodes shelved** | **46** | **6** |
+
+**More books written, and 45 of 51 known nodes never reach a shelf.** Affiliation and knowledge are
+ruled out as the differentiator, which is what makes this worth chasing.
+
+Leading hypothesis: the `remainingCost <= materials` filter. When vellum is tight the *affordable*
+candidate set collapses to cheap nodes, and because **novelty is a preference and not a filter**, a
+scribe writes a duplicate rather than nothing. **That is a materials-supply interaction, not a
+selection defect** — and W95's proposed fix would not have touched it.
+
+### And an oddity worth its own look
+
+**107 living mages and only 2 affiliated to the university** — in both runs. Every mage promoted after
+founding is created unaffiliated (W87), `affiliate` never fires in any run (W87), and the academy holds
+64 student seats. So the institution that teaching, scribing, siting and specialisation all hang off is
+staffed by **two people out of a hundred**, permanently.
+
+### W94 addendum — a merge that caught a compile-level gap neither branch had alone
+
+`w56/combat-evaluator` widened `RaidObservation` with five action-economy fields and supplied them
+**only in test fixtures**. `main`, meanwhile, grew a **production** builder — `raidObservationOf` in
+`scenario/src/executor.ts`. Neither side was wrong on its own; together they did not compile.
+
+**Git did not flag it, because it was not a conflict.** Both files auto-merged cleanly and the type
+error appeared afterwards. That is the merge doing the job a merge is for, and it is the argument
+against the tempting shortcut of resolving conflicts and pushing without a typecheck.
+
+**Resolved by supplying the fields honestly rather than with zeroes.** The executor observes a raid's
+*shape* — how long it ran, what the portal cost — and not what happens inside it, so it names every
+denial channel as unimplemented **in this executor**. That is exactly what
+`unimplementedCombatChannels` was added for; the field's own doc says a declared list *"is how the
+fifth is avoided."*
+
+**Emitting empty sources against a zero denominator would have made "no instrumentation" and "no
+combat" the same observation** — a channel structurally incapable of moving, which is a failure this
+project has already shipped four times. The fix took the same number of lines and says a different
+thing.
+
+Four other conflicts on the same branch were mechanical, and one is worth the recipe: the metric count
+read `fourteen` on one side and `sixteen` on the other. **Neither is right, and the answer is not
+arithmetic on the two literals** — counting the list gives **eighteen**, main's sixteen plus this
+branch's two combat metrics. That is the fifth distinct place today where a merge wanted a number that
+had to be *measured from the tree* rather than reconciled between two claims: content revision digests,
+the god-constant count, the metric count, the baselines, and this.
+
+**The general rule, now earned five times: when both sides of a conflict assert a count or a hash, ask
+the tree.** Neither literal describes a tree holding both.

@@ -467,6 +467,23 @@ export class CastArbiter {
     return floorDiv(rawDamage * (FP_ONE - ward), FP_ONE);
   }
 
+  /**
+   * The same ward multiply as {@link applyWardOnce}, **without** the clamp
+   * counters. For observation only.
+   *
+   * `action-economy.ts` has to ask what a tick would have done to a combatant
+   * had `concealment` not evaded a cast, or had the ward not been there. That is
+   * one more evaluation of the identical formula, and routing it through
+   * {@link applyWardOnce} would increment `ClampCounters` a second time for the
+   * same tick — moving `RaidOutcome.capClamps`, which is a behaviour change
+   * dressed as a measurement. A measurement that perturbs what it measures is
+   * the one thing this file may not ship.
+   */
+  observeWardApplication(rawDamage: Fixed, wardSources: readonly Fixed[]): Fixed {
+    const ward = stackMagnitudes(this.#primitive(COMBAT_PRIMITIVES.ward), wardSources, {}).value;
+    return floorDiv(rawDamage * (FP_ONE - ward), FP_ONE);
+  }
+
   /** The effective, capped value of one primitive's sources. */
   #stack(primitiveId: string, magnitudes: readonly Fixed[]): Fixed {
     return stackMagnitudes(

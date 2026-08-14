@@ -43,7 +43,7 @@ directions it offers, so "is this covered?" is a question with an answer rather 
 | 11 | fund / found university | `commitments/` | 3 — price, horizon, reach |
 | 12 | encourage research | `commitments/` | 3 — same three |
 | 13 | change tradition | `commitments/` | 3 — and only `reach` shows it is structurally unavailable rather than expensive |
-| 14 | open portal | `commitments/`, `raid/` | 3 for the decision, 3 for watching it |
+| 14 | open portal | `commitments/`, `raid/` | 3 for the decision, 3 for watching it — and see `raid/`: `raid-engagement.md` repeals the total action mask, which `contracts.md` §4.2 still enforces |
 | 15 | declare ascension | `ascension/` | 3 — button, ladders, reckoning |
 
 Surfaces that are not actions, and still need directions:
