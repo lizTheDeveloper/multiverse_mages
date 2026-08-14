@@ -417,16 +417,29 @@ Three unrelated situations, one bit, and they are opposite instructions to a pla
 something*, and *never*. A player told "not now" fourteen times at tick 0 cannot learn that waiting
 fixes all fourteen — nor that waiting will never fix `changeTradition`.
 
-**So the single deny sound in §2.2 is currently correct only because the read path cannot support
-more, which is not the same as one meaning being right.** If the mask gains the reason channel their
-finding proposes — `unaffordable` / `impossible` / `spent` — the deny cue should split *with it*,
-and by the same rule this section already established: **layer, do not add a click.** The six are a
-closed set. An unaffordable deny already has its layer specified in §7's *"deny plus one strained
-pulse — the sub attempting its cycle and not completing"*; a structurally-impossible deny is the
-bare click; a spent-this-tick deny wants the third.
+**And this document already decided the distinction it cannot currently reach.** §7 does not merely
+provide a convenient layer — it states the finding outright, months before the measurement that
+confirmed it:
 
-Decide it before 520 assets exist rather than after. That is the UI session's argument and it is
-correct: a layer added to a recorded bank is a re-render of every deny in it.
+> **Insufficient favor** is deny (§2.2) plus one strained pulse — the sub attempting its cycle and
+> not completing it. *Distinct from ordinary illegality, because "not allowed" and "not yet
+> affordable" are different problems with different fixes.*
+
+So the correct reading is not *"a measurement suggests the deny cue should split."* It is **a cue
+this document specified cannot be built, because the read path collapses the two problems §7 names
+into one bit.** The single deny sound is currently correct only in the sense that nothing else is
+reachable — which is not the same as one meaning being right.
+
+`ui/glow/` reached the same split independently on the visual side. **Two layers, specified
+separately, blocked on one missing bit** — which is a stronger argument for the reason channel than
+either surface makes alone.
+
+The remaining shape follows the rule this section already set — **layer, do not add a click**, the
+six being a closed set. §7 has the unaffordable layer. A structurally-impossible deny is the bare
+click. A spent-this-tick deny would want the third.
+
+Decide it before 520 assets exist rather than after: a layer added to a recorded bank is a re-render
+of every deny in it.
 
 **Salience parity (§0.3) says the same thing from the visual side.** `ui/glow/` could not draw the
 distinction without reconstructing it client-side, and pricing is a rule §5 forbids the client to
@@ -926,9 +939,28 @@ nothing to be built from.
 
 The UI session files it as *open* rather than as a defect because §4.3's outcome record may be the
 right home and nobody has looked. That is the correct posture and this document should not
-pre-empt it. What this section can say is what the audio layer needs from whatever answer arrives:
-**an event needs a class and a "was this the last one" bit**, and the second cannot be reconstructed
-downstream from any number of frames.
+pre-empt it.
+
+**Where the fix lands is not here, and that matters more than it sounds.** `contracts.md` §4.3
+currently specifies the outcome record as *"terminal flag, terminal reason, era, and the
+balance-metric deltas since the previous step"* — and says nothing about events. Checked on `main`.
+The requirement above therefore has **no written home in the document an implementer of
+`agent-interface` would actually open**. Nobody building the read path at 0.5.0 reads the audio
+specification, so a requirement recorded only here is a requirement discovered at 0.13.0, when the
+client is being built and the format is fixed.
+
+**Neither this document nor `interface-findings.md` has the standing to amend §4.3.** Adding a
+requirement to the contract of record is a design decision, not a finding, and both documents are
+records of measurement. The UI session flagged the same gap as *unwritten and unauthorized* rather
+than closing it quietly, which is right. **This is the author's call, and it is the one open item in
+this section that has a deadline attached** — the format is cheap to change now and expensive after
+policies train against it.
+
+What this section can say is what the audio layer needs from whatever answer arrives:
+**an event needs a class and a "was this the last one" bit** — and the second cannot be
+reconstructed downstream from any number of frames, because *the frame that would show the last
+instance is the frame where the count is already zero*. Not expensive to emit; impossible to
+derive.
 
 **This sound is exposed to a balance number nobody has fixed yet.** Everything above assumes loss
 is rare enough that an arrhythmic, untuned, un-aggregated event can carry it. That assumption is
