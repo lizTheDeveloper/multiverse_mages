@@ -20,6 +20,29 @@ whether knowledge loss lands off the beat before 520 assets were generated again
 | [`glow/`](glow/) | Cyan is the god's own light and the form hues stay the world's. Does that rule survive a vellum ground, or does light force the client dark? |
 | [`console/`](console/) | Not a twelfth direction — the composition. Do the surfaces hold together as one screen against one clock, and where does the read path stop being able to feed them? |
 
+## Not a prototype: [`design-dashboard/`](design-dashboard/)
+
+The eleven above each ask one interface question. **This one asks nothing.** It is an instrument for
+reading the campaign's own state — the seventy-cell grid and which twelve are enabled, primitive
+consumption, the species table and the tensions in it, the `contracts.md` §7 metric registry and
+which of those metrics has ever been measured, what the four committed baselines actually hold,
+`check:reachability`'s findings, and the design decisions waiting on the owner.
+
+It reads one file, `design-dashboard/data.json`, written by:
+
+    npm run ui:dashboard
+
+**Generated, committed, and pinned** — the same treatment `session.json` gets, and
+`packages/content/test/unit/design-dashboard-payload.test.ts` re-runs the generator and compares.
+The payload takes **no clock reading and makes no `git` call**, deliberately: that is what makes the
+pin a check rather than a guaranteed failure, and it is why the page can say it is a statement about
+whatever commit you are reading it on. Figures lifted from a document carry that document's own
+stated date and ref and are labelled historical.
+
+It counts as a prototype for `ui-index.test.ts` and `ui-theme.test.ts` — both sweep every directory
+here — so it is linked from the index and uses `shared/theme.css` like everything else. It is not
+counted as one anywhere a *direction* is being counted.
+
 ## What these found
 
 `docs/design/interface-findings.md` consolidates it: twenty-three findings, each with what was found,
@@ -67,7 +90,8 @@ Surfaces that are not actions, and still need directions:
 the read path cannot answer, and it found five things, which is a different job from comparing layouts.
 Anyone picking a mage-panel design should treat it as one candidate, not as a decision.
 
-**Start at [`index.html`](index.html)** — it lists all eleven with the question each answers. A test
+**Start at [`index.html`](index.html)** — it lists all eleven with the question each answers, plus
+the dashboard. A test
 asserts that index links only to prototypes that exist and links to every one of them, in both
 directions, because a front door pointing at a missing page is worse than no front door and an
 unlinked prototype is invisible.
@@ -148,6 +172,10 @@ only on vellum**.
 silently. It does not measure contrast — that needs a browser, and this repository has no browser
 dependency — so the numbers above are a statement about the ref they were taken on and want
 re-measuring when colour moves.
+
+`design-dashboard/` is **not** in the measurement above: it was built after that sweep ran, against
+the same tokens and screenshotted in both themes, which is a weaker claim and is stated as one. The
+token guards in `ui-theme.test.ts` *do* cover it; the contrast numbers do not.
 
 ## What they are allowed to do
 
