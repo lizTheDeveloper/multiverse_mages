@@ -539,6 +539,50 @@ function sampleIn(set: SeedSetSample, speciesId: string): SpeciesSetSample | und
   return set.species.find((entry) => entry.speciesId === speciesId);
 }
 
+/** How often an arbitrary claim about the six-seed intervals came out true. */
+export interface ClaimRate {
+  /** Sets in which the claim was true. */
+  readonly held: number;
+  /** Sets in which it could be evaluated at all — nothing it reads was censored. */
+  readonly comparable: number;
+  /** Sets it could not be evaluated in, because the claim read a censored cell. */
+  readonly unevaluable: number;
+}
+
+/**
+ * The reproduction rate of **any** claim a reader can write about the six-seed
+ * intervals, not only a strict `faster < slower`.
+ *
+ * {@link separationOf} answers one shape of question and the sibling file asks
+ * four: `a.high < b.low`, `a.low < b.low`, `a.high > b.high`, and *"these two
+ * overlap"*. Generalising is cheaper than adding a comparator per shape, and it
+ * means the audit can cover a file rather than a subset of it — which is the
+ * failure this whole module exists to stop, committed one level up.
+ *
+ * The predicate receives a lookup for the set and returns `undefined` when the
+ * claim cannot be judged there, which is how a censored cell stays distinct from
+ * a false one. A censored cell counted as `false` would report a claim as
+ * unreproducible when the truth is that the horizon cut it off.
+ */
+export function claimRate(
+  report: SeparationReport,
+  predicate: (of: (speciesId: string) => SpeciesSetSample | undefined) => boolean | undefined,
+): ClaimRate {
+  let held = 0;
+  let comparable = 0;
+  let unevaluable = 0;
+  for (const set of report.sets) {
+    const verdict = predicate((speciesId) => sampleIn(set, speciesId));
+    if (verdict === undefined) {
+      unevaluable += 1;
+      continue;
+    }
+    comparable += 1;
+    if (verdict) held += 1;
+  }
+  return Object.freeze({ held, comparable, unevaluable });
+}
+
 /**
  * Judges one ordered pair: does `faster` arrive before `slower`, and by how
  * many standard errors?

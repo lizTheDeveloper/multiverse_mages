@@ -140,6 +140,7 @@ export { speciesCellOccupancy } from './species-occupancy.js';
 
 export type {
   ChainVerdict,
+  ClaimRate,
   PairSeparation,
   SeedSetInput,
   SeedSetSample,
@@ -162,6 +163,7 @@ export {
   SEPARATION_ROOT_SWEEP_ID,
   SEPARATION_RUN_SWEEP_ID,
   chainVerdictOf,
+  claimRate,
   formatPairSeparation,
   formatSeparationReport,
   measureSeedSet,

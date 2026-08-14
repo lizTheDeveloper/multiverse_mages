@@ -5,25 +5,56 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # The cross-seed spread on a species separation
 
-**Measured 2026-08-14.** **Refs:** `main` at `cc20d54`, and
-`w18/academic-primitive-consumers` at `1ae52c3` — PR #140, unmerged, measured at its own head
-rather than merged with `main`, because #140's numbers were taken there and merging would have
-changed the treatment. **Instrument:** `packages/scenario/src/species-separation.ts`, driven by
+**Measured 2026-08-14.** **Refs, all three measured at their own head and none merged with each
+other:**
+
+| ref | commit | what it is |
+| --- | --- | --- |
+| `main` | `cc20d54` | the control |
+| `w18/academic-primitive-consumers` | `1ae52c3` | PR #140 — node-driven academic rates |
+| `w115/enable-all-cells` | `d6c32d0` | PR #137 — all seventy grid cells enabled |
+
+The two branches were measured **unmerged**, because their own published numbers were taken there
+and merging would have changed the treatment. **Instrument:**
+`packages/scenario/src/species-separation.ts`, driven by
 `packages/scenario/bin/species-separation.mjs`, at its default design — 12 independent seed sets of
 6 seeds, tier 3, 720 world ticks, `LONG_RUN_OPTIONS`. 72 runs per ref per tier. **Nothing under
 `balance/` was read, written, or regenerated, and `goldens:regen` was not run.**
 
-Every number here is a statement about those two refs on that date. Re-measure before quoting it.
+Every number here is a statement about those refs on that date. Re-measure before quoting it.
 
-## The one-paragraph answer
+## The negative result, stated directly
 
-**Task 9.9 is unmet on both refs, and it was unmet by more than anybody had measured.** Four
-species-pair relations separate robustly on `main` and the *same four* separate on `w18` — the
-branch did not change which pairs are distinguishable, only how fast every species is. Of the five
-strict separations `reference-time-to-tier.test.ts` asserts on `main`, **two do not reproduce on a
-fresh set of seeds**, and one of those two — `human < orc` — reproduces in exactly **one of sixteen**
-seed sets: the one it was measured on. #140's `gnome < dwarf < human < elf` chain survives a re-roll
-in **1 of 12** sets on the branch that claimed it and **0 of 12** on `main`.
+**Task 9.9 — *"at least four species differ by more than the observed cross-seed spread"* — is
+UNMET, on all three refs. Neither #140 nor #137 moved it. Measured properly it is further from met
+than the repository believed, not closer.**
+
+That sentence is the finding. Everything below is the evidence, and the tables should not be read as
+implying it — it is stated here because a reader who takes only one thing from this document should
+take that one.
+
+The four supporting facts, each measured rather than argued:
+
+1. **What actually separates on `main` is three species in a chain, not four.** Four pair relations
+   survive twelve independent re-rolls of the seeds: `gnome < human`, `gnome < elf`, `dwarf < elf`,
+   `human < elf`. As a graph that is `gnome → human → elf` with `dwarf → elf` alongside. 9.9 wants
+   four *species* ordered; this is three, plus a fourth ordered against only one of them.
+2. **#140 changed how fast every species is and did not change which pairs are distinguishable.**
+   The same four relations, before and after. Its published `gnome < dwarf < human < elf` chain
+   survives a re-roll in **1 of 12** sets on its own branch and **0 of 12** on `main`.
+3. **#137 does not improve differentiation either, and at this horizon it destroys the
+   measurement.** Every species becomes roughly twenty times slower to tier 3, and human is censored
+   in **51 of 72 runs**. See the section on it: the honest reading is that 720 ticks is no longer a
+   valid horizon for that ruleset, not that #137 separated or failed to separate anything.
+4. **Four of the eight interval claims `reference-time-to-tier.test.ts` asserted were true only of
+   its own six seeds**, including one — `human < orc` — that held in **one seed set out of sixteen**.
+   They have been retired. The four that survive twelve re-rolls were left untouched.
+
+**Draconic is not a species this horizon can say anything about.** It is censored in 17 of 72 runs
+on `main`, its `max` endpoint travels **425 ticks** between seed sets, and its between-set standard
+deviation is 75 ticks against a mean of 209. Any interval printed for draconic is partly a statement
+about where the run was stopped. Someone will otherwise trip over this: it is the widest column in
+every table below and it looks like a finding.
 
 ## How separation is measured today, and on how many seeds
 
@@ -97,10 +128,49 @@ a *mean* rather than about an extremum. Both are reported and they are not inter
 published claim of the form "these intervals do not overlap" must be judged against the endpoints,
 and only a claim about mean arrival may be judged against the SE.
 
-## Every seed-dependent claim `main` asserts, re-rolled
+## Every seed-dependent claim `main` asserted, re-rolled — and four were retired
 
-`reference-time-to-tier.test.ts` asserts five strict separations and one *non*-separation. Twelve
-sets, tier 3:
+**The first pass of this audit counted only `a.high < b.low` claims and reported "three of six".
+That was itself an incomplete audit, and it missed `draconic.low < human.low`.** Every interval
+claim in the file was then re-measured with `claimRate`, which takes an arbitrary predicate rather
+than one comparator shape. Eight distinct claims, twelve sets, tier 3 — **four do not reproduce**:
+
+| claim | held in | kept? |
+| --- | ---: | --- |
+| `gnome.high < elf.low` | **12/12** | kept |
+| `dwarf.high < elf.low` | **12/12** | kept |
+| `gnome.high < human.low` | **12/12** | kept |
+| `draconic.high > elf.high` | **12/12** | kept |
+| `orc.high < elf.low` | 11/12 | **retired** |
+| `overlaps(gnome, dwarf) === true` | 7/12 | **retired** |
+| `draconic.low < human.low` | 5/12 | **retired** |
+| `human.high < orc.low` | **0/12** | **retired** |
+
+All four were removed from `reference-time-to-tier.test.ts` on 2026-08-14, and none of the four that
+reproduce was weakened. **A green test asserting something false is worse than a red one**, and
+`human.high < orc.low` was the sharpest instance: #127's *"9.9 is one species closer than it has
+ever been"*, retracted by its own author after a re-roll, and still green here because this file
+runs on the one seed set it was true of.
+
+`orc.high < elf.low` is retired despite holding in 11 of 12 sets, and that is not a demotion of the
+effect: orc really is faster than elf, by 26.7 standard errors. It is a statement about the *file* —
+one seed set cannot express "11 of 12", so the rate lives in
+`species-separation-spread.test.ts` and the assertion does not live here at all.
+
+`overlaps(gnome, dwarf) === true` is the one that looks harmless, and it is the reason the audit had
+to cover the whole file: **a claim that two species are indistinguishable is exactly as
+seed-dependent as a claim that they can be told apart.**
+
+`draconic.low < human.low` is the one the narrower audit missed, and it is really the draconic
+censoring problem wearing an assertion. Draconic's `min` endpoint travels 114 ticks between seed
+sets. Nothing about where draconic *starts* is measurable at 720 ticks.
+
+The exact source text of all four is pinned in the guard test, so re-adding one fails there — naming
+the rate that retired it — rather than passing here on a lucky seed list.
+
+### The paired gaps behind the five strict separations
+
+Twelve sets, tier 3:
 
 | separation | asserted as | strict in | paired gap | verdict |
 | --- | --- | ---: | ---: | --- |
@@ -109,18 +179,6 @@ sets, tier 3:
 | dwarf < elf | `fastTrio.high < elf.low` | **12/12** | 27.1 ± 0.4 ticks = 62.2 SE | **established** |
 | orc < elf | `orc.high < elf.low` | 11/12 | 20.6 ± 0.8 ticks = 26.7 SE | inconclusive |
 | human < orc | `human.high < orc.low` | **0/12** | 4.3 ± 0.8 ticks = 5.4 SE | **refuted** |
-
-And the claim that points the other way:
-
-| claim | asserted as | holds in |
-| --- | --- | ---: |
-| gnome and dwarf are indistinguishable | `overlaps(gnome, dwarf) === true` | **7/12** |
-
-That one is worth naming separately: **a claim that two species *cannot* be told apart is exactly as
-seed-dependent as a claim that they can.** Non-overlap is the complement of `gnome.high < dwarf.low`
-for this pair — dwarf never precedes gnome in any set and neither is ever censored — so the
-assertion is false in five of twelve sets. Three of that file's six seed-read claims do not
-reproduce, not two.
 
 `human < orc` is #127's *"9.9 is one species closer than it has ever been"*. That finding was
 reported as retracted after a re-roll — and **the assertion is still on `main`.** It is not merely
@@ -204,6 +262,50 @@ species faster and left the separable structure exactly where it was.
 1.4 ticks), because orc speeds up more than elf does and the two intervals close. That is reported,
 not judged — it is a consequence of a change whose purpose was elsewhere.
 
+## #137, all seventy cells: it does not separate species, and it breaks the horizon
+
+`w115/enable-all-cells` at `d6c32d0`, same instrument, same design — 12 sets, tier 3, 720 ticks.
+
+**The headline is not a separation result. It is that 720 ticks is no longer a valid horizon for
+this ruleset, so most numbers taken there are statements about censoring.**
+
+| species | grand mean | on `main` | censored, of 72 runs |
+| --- | ---: | ---: | ---: |
+| gnome | 526.6 | 24.3 | 0 |
+| dwarf | 527.2 | 27.7 | 0 |
+| draconic | 576.6 | 209.0 | 20 |
+| orc | 582.5 | 34.2 | 11 |
+| elf | 667.0 | 54.8 | 24 |
+| human | 674.6 | 29.9 | **51** |
+
+Every species is roughly **twenty times slower** to tier 3 — unsurprising with 70 cells enabled
+instead of 12 — and the horizon does not move with it. **Human reaches tier 3 inside 720 ticks in 21
+of 72 runs.** In two whole seed sets it never does, so those sets drop out of every comparison that
+reads it, and in the ten that remain human's observed arrivals are a survivorship sample: the runs
+where it happened to arrive in time. Its mean is therefore biased *downward*, and the true gap
+between human and the fast species is larger than the table shows.
+
+With that caveat stated, what the measurement can and cannot support:
+
+- **It does not support any claim that #137 improves species differentiation.** Of `main`'s four
+  robust relations, two survive here (`gnome < human` and `dwarf < human`, both 10/10 over the ten
+  evaluable sets), `gnome < elf` and `dwarf < elf` fall to **8/12**, and `human < elf` **reverses** —
+  elf now arrives *before* human on average, at −1.2 SE. Directionally that is fewer robust
+  relations, not more, which is consistent with #137's own report of the occupancy Gini falling.
+- **It does not support the opposite claim either, at this horizon.** The two relations that survive
+  are exactly the two that read the most heavily censored species, so they are the two least
+  trustworthy numbers in the table. Reporting "#137 has two robust separations" would be reporting
+  an artefact of where the run was stopped.
+- **`gnome < dwarf` is refuted outright at 0/12** with a paired gap of 0.7 ± 0.5 ticks. Those two
+  species are indistinguishable under this ruleset, and that one is not a censoring artefact —
+  neither species is censored in any run.
+
+**What this costs to answer properly:** a horizon long enough to uncensor human under 70 cells, so
+of the order of 2,400 ticks — roughly ten seconds a run rather than three, or about 20 minutes for
+12 sets. That was not spent. The finding recorded here is the one that does not need it: **#137 did
+not move task 9.9, and any species-differentiation number taken on it at 720 ticks needs re-taking
+at a longer horizon before it means anything.**
+
 ## Tier 2, briefly
 
 Tier 2 is measured because `reference-time-to-tier.test.ts` takes one of its assertions there and
@@ -255,7 +357,12 @@ the answer to the question the project cares about changes. It also counts the s
 the sibling file asserts, so that a new one cannot be added without a row saying how many re-rolls
 it survives.
 
-**No assertion in `reference-time-to-tier.test.ts` was changed.** Those numbers are correct about
-the seeds they were taken at, and rewriting them would be a behaviour claim rather than a
-measurement. That `human < orc` is asserted there and reproduces in one seed set of sixteen is
-recorded here and in the guard's docstring, and is the owner's call to act on.
+**Four assertions in `reference-time-to-tier.test.ts` were retired on 2026-08-14** — the four in the
+audit table above that do not survive a re-roll — and **the four that do were left exactly as they
+were.** Nothing was tuned to make anything pass: no species magnitude, no cost, no content file and
+no `balance/` baseline was touched, and `goldens:regen` was not run. The deletions are deletions of
+claims that were not true of anything except their own seeds.
+
+The file's module docstring now says why its own statistic could not have caught that — `[min, max]`
+non-overlap has no standard error and is not stable in `n`, so it gets strictly easier the fewer
+seeds you take — and points at the guard for the rate of every claim, live and retired.

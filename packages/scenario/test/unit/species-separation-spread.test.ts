@@ -39,8 +39,9 @@
  *
  * ## What was found, on `main` at `cc20d54`, 2026-08-14
  *
- * Twelve independent seed sets of six seeds, tier 3, 720 ticks. Two of the five
- * separations `reference-time-to-tier.test.ts` asserts **do not reproduce**:
+ * Twelve independent seed sets of six seeds, tier 3, 720 ticks. The five strict
+ * `faster < slower` separations `reference-time-to-tier.test.ts` used to assert,
+ * with the paired gap behind each:
  *
  * ```text
  *  gnome < human   strict in 12/12 sets     gap  5.6 ± 0.1 ticks  =  70.5 SE
@@ -50,14 +51,37 @@
  *  human < orc     strict in  0/12 sets     gap  4.3 ± 0.8 ticks  =   5.4 SE
  * ```
  *
- * There is a **third** seed-dependent claim in that file and it points the other
- * way: `expect(overlaps(gnome, dwarf)).toBe(true)` asserts that two species are
- * *indistinguishable*. Non-overlap is the complement of `gnome.high < dwarf.low`
- * here — dwarf never precedes gnome in any set, and neither is ever censored —
- * so the overlap holds in **7 of 12** sets and fails in five. A claim that two
- * species cannot be told apart is as seed-dependent as a claim that they can,
- * and it is asserted here so that the audit covers the file rather than only its
- * separations.
+ * ## The audit is of the whole file, and it found four, not two
+ *
+ * Counting only `a.high < b.low` claims missed two more of the same family, so
+ * every interval claim in that file was re-measured with {@link claimRate}.
+ * Eight distinct claims; **four do not reproduce**:
+ *
+ * ```text
+ *  gnome.high < elf.low        12/12   kept
+ *  dwarf.high < elf.low        12/12   kept
+ *  gnome.high < human.low      12/12   kept
+ *  draconic.high > elf.high    12/12   kept
+ *  orc.high   < elf.low        11/12   retired
+ *  overlaps(gnome, dwarf)       7/12   retired
+ *  draconic.low < human.low     5/12   retired
+ *  human.high < orc.low         0/12   retired
+ * ```
+ *
+ * The overlap one is worth naming because it looks harmless: it asserts that two
+ * species are *indistinguishable*, and **a claim that two species cannot be told
+ * apart is exactly as seed-dependent as a claim that they can.** Non-overlap is
+ * the complement of `gnome.high < dwarf.low` for this pair — dwarf never
+ * precedes gnome and neither is ever censored — so it is false in five sets.
+ *
+ * `draconic.low < human.low` is the one a narrower audit missed. Draconic's
+ * `min` endpoint travels 114 ticks between seed sets and it is censored in 17 of
+ * 72 runs: **nothing about where draconic starts is measurable at this
+ * horizon.**
+ *
+ * All four were retired from that file on 2026-08-14, and their exact source
+ * text is pinned in {@link RETIRED_ASSERTIONS} so that re-adding one fails here
+ * rather than passing there. The four that reproduce were not touched.
  *
  * `human < orc` is #127's finding, still asserted next door. Widening the search
  * to four *consecutive-integer* seed sets cut the same way as the committed one
@@ -139,21 +163,61 @@ const CLAIMED_SEPARATIONS: readonly {
   readonly faster: string;
   readonly slower: string;
   readonly assertedAs: string;
+  readonly status: 'asserted' | 'retired';
   readonly verdict: SeparationVerdict;
 }[] = [
-  { faster: 'gnome', slower: 'elf', assertedAs: 'fastTrio.high < elf.low', verdict: 'established' },
-  { faster: 'dwarf', slower: 'elf', assertedAs: 'fastTrio.high < elf.low', verdict: 'established' },
-  // Strict in 11 of 12 sets at the bin's default design — real, and not
-  // reproducible enough to call established. It fails in exactly the sets where
-  // elf's own interval reaches down to 45.
-  { faster: 'orc', slower: 'elf', assertedAs: 'orc.high < elf.low', verdict: 'inconclusive' },
+  {
+    faster: 'gnome',
+    slower: 'elf',
+    assertedAs: 'beforeElf.high < elf.low',
+    status: 'asserted',
+    verdict: 'established',
+  },
+  {
+    faster: 'dwarf',
+    slower: 'elf',
+    assertedAs: 'beforeElf.high < elf.low',
+    status: 'asserted',
+    verdict: 'established',
+  },
   {
     faster: 'gnome',
     slower: 'human',
     assertedAs: 'gnome.high < human.low',
+    status: 'asserted',
     verdict: 'established',
   },
-  { faster: 'human', slower: 'orc', assertedAs: 'human.high < orc.low', verdict: 'refuted' },
+  // Strict in 11 of 12 sets at the bin's default design — a real effect, and not
+  // reproducible enough for a file with one seed set to assert. It fails in
+  // exactly the sets where elf's own interval reaches down to 45.
+  {
+    faster: 'orc',
+    slower: 'elf',
+    assertedAs: 'orc.high < elf.low — retired 2026-08-14',
+    status: 'retired',
+    verdict: 'inconclusive',
+  },
+  {
+    faster: 'human',
+    slower: 'orc',
+    assertedAs: 'human.high < orc.low — retired 2026-08-14',
+    status: 'retired',
+    verdict: 'refuted',
+  },
+];
+
+/**
+ * The exact assertion text of every retired claim, so that re-adding one fails
+ * here rather than passing next door.
+ *
+ * A deleted assertion leaves no trace, and the next author to read a promising
+ * six-seed table will write the same line again. This is the trace.
+ */
+const RETIRED_ASSERTIONS: readonly { readonly source: string; readonly heldIn: string }[] = [
+  { source: 'expect(human.high).toBeLessThan(orc.low)', heldIn: '0/12 sets' },
+  { source: 'expect(orc.high).toBeLessThan(elf.low)', heldIn: '11/12 sets' },
+  { source: 'expect(draconic.low).toBeLessThan(human.low)', heldIn: '5/12 sets' },
+  { source: 'expect(overlaps(gnome, dwarf)).toBe(true)', heldIn: '7/12 sets' },
 ];
 
 /** #140's claim, judged here because it is the reason this file exists. */
@@ -221,7 +285,7 @@ describe('every strict separation this repository asserts, re-rolled', () => {
   });
 
   it.each(CLAIMED_SEPARATIONS)(
-    '$faster < $slower ($assertedAs) is $verdict across seed sets',
+    '$faster < $slower ($status: $assertedAs) is $verdict across seed sets',
     ({ faster, slower, verdict }) => {
       const pair = separationOf(report, faster, slower);
       const measured = verdictOf(pair);
@@ -276,12 +340,37 @@ describe('every strict separation this repository asserts, re-rolled', () => {
       'reference-time-to-tier.test.ts changed how many strict separations it asserts. Add or ' +
         'remove the matching row in CLAIMED_SEPARATIONS so that every separation this ' +
         'repository publishes carries the number of seed sets it survives.',
-    ).toBe(4);
-    // Four `toBeLessThan` sites, five claims: the `fastTrio` loop is one site
-    // and three separations.
-    expect(sibling).toContain('for (const entry of fastTrio) expect(entry.high)');
-    expect(CLAIMED_SEPARATIONS).toHaveLength(5);
+    ).toBe(2);
+    // **Two sites, three asserted separations, and it was four sites and five
+    // before 2026-08-14.** The loop over `beforeElf` is one site and two
+    // separations; `orc` was dropped from it when `orc < elf` was retired at
+    // 11/12. The count is the tripwire and the two lines below say which two
+    // sites it is, so that swapping one claim for another cannot keep the count.
+    expect(sibling).toContain('for (const entry of beforeElf) expect(entry.high)');
+    expect(sibling).toContain('expect(gnome.high).toBeLessThan(human.low)');
+    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(3);
   });
+
+  it.each(RETIRED_ASSERTIONS)(
+    'keeps $source out of the sibling file — it held in only $heldIn',
+    ({ source, heldIn }) => {
+      // Deleting an assertion leaves no trace, and the next author to read a
+      // promising six-seed table will write the same line again. This is the
+      // trace: re-adding one of these fails here, naming the rate that retired
+      // it, instead of passing next door on the one seed set it was true of.
+      const sibling = readFileSync(
+        fileURLToPath(new URL('./reference-time-to-tier.test.ts', import.meta.url)),
+        'utf8',
+      );
+      expect(
+        sibling.includes(source),
+        `${source} is back in reference-time-to-tier.test.ts. It held in ${heldIn} when it was ` +
+          'retired on 2026-08-14. If a change has made it reproduce, re-measure with ' +
+          '`node packages/scenario/bin/species-separation.mjs --sets 12` and move this row into ' +
+          'CLAIMED_SEPARATIONS with its new rate — do not simply re-assert it.',
+      ).toBe(false);
+    },
+  );
 });
 
 describe("#140's four-species chain", () => {
