@@ -6834,3 +6834,45 @@ ablation mask threaded and never delivered. **A rule with no live check is a com
 Concretely, for the rest of this campaign: before starting any background loop, `pgrep` for the
 previous one, and when writing down a prohibition, immediately check whether the prohibited thing is
 currently running.
+
+## W136 — correcting W135: main's runs were cancelled *in the queue*, and the balance gate is why
+
+W135 said the cancellations were GitHub killing an older run when a newer push landed. **That is
+wrong in a way worth fixing, because the real mechanism suggests a real fix.**
+
+`ci.yml:70-72` sets a per-branch concurrency group with
+
+```yaml
+cancel-in-progress: ${{ ... || (github.event.pull_request.head.ref || github.ref_name) != 'main' }}
+```
+
+— i.e. **false for `main`, deliberately**, so a run on `main` is never killed mid-flight. So nothing
+cancelled a *running* verification. What happened instead: GitHub keeps **only one pending run per
+concurrency group**, so each queued run for `main` was cancelled by the *next* queued run, **without
+ever having executed**. `72d9538`, `fbb9dcb` and `14155e7` were never verified at all — not
+interrupted, never started.
+
+Same conclusion as W135 — `main` went unverified for hours — but the cause is throughput, not
+interruption.
+
+### The throughput number, which is the actionable part
+
+`e73bea9`'s run: `Verify (pinned Node)` **succeeded** at 09:34. The run is *still* `in_progress`
+forty minutes later, because **`Balance gate, two hundred world years` is in the same run**, and it
+takes ~30–40 minutes. `384a2a5` has been `pending` that whole time, queued behind it.
+
+So `main`'s effective verification cadence is **one commit per ~40 minutes**, set by a job that is
+explicitly *"not required to merge"*. Merge faster than that and every intermediate commit is
+cancelled in the queue unverified. The auto-drainer merged every five minutes.
+
+**Recommendation for the owner:** move the 200-year balance gate out of `main`'s concurrency group —
+its own workflow, or `concurrency: gate-${{ github.sha }}` — so `Verify` on `main` is bounded by
+`Verify`, not by a non-blocking 40-minute measurement. This is a `docs/devops/ci-and-deploy.md`
+change and a branch-protection-adjacent decision, so it is not being made unattended. It is the
+single change that would make "is `main` green?" answerable at merge speed.
+
+Until then the gated chains are correct but slow by construction: **one merge per balance-gate
+cycle**, which is the honest price of knowing.
+
+*(The chains already gate on the `Verify` **job**, not the run's overall status, which is why they
+read `e73bea9` as green at 02:43 while its balance gate was still running. That part was right.)*
