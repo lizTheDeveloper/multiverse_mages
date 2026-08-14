@@ -104,10 +104,35 @@ by the university's dominant cell makes it a consequence of play. **Weighted is 
 it rewards building the right institution — but a lottery is more likely *fun*, and this project has
 no measurement of fun. Sweep the weighting, with pure-random and pure-deterministic as the ends.
 
-**What exactly does the student open?** A whole cell is the strong reading and matches "a new kind of
-science." A single deep node is the weak one and matches today's grant. **The strong reading is the
-one that makes worship buy width**, which is the point of this document — but it is also a much larger
-grant, and `w69`'s budget arithmetic assumes the weak one.
+**What exactly does the student open?** *Resolved by the owner, and the answer is better than either
+option here was.*
+
+**One node — but a node of a kind that has not been done before.** A new type of magic, a new
+technique, a new material, a school nobody has founded. **The foundational-ness is not in the size of
+the grant. It is in whether that kind of thing has ever existed here.**
+
+That is a *derived* property, not an authored one, which is the same discipline this project already
+applies to age and to era: **a grant is foundational if it is unprecedented, and ordinary if it is
+not.** Grant a node in a cell your mages already work and you have helped a student. Grant the first
+node of a technique nobody has used and that student founded a discipline.
+
+Three things fall out of it, all good:
+
+- **`w69`'s budget arithmetic survives unchanged.** One grant is still one node. The scarcity, the
+  accrual, the mask edge and the swept constants all stand.
+- **The mechanism already half-exists.** `compareNovelty` reads a `libraryHolds` flag to prefer
+  copying what a library lacks, and `w69`'s accrual already tracks `everKnown` against `seededNodes`
+  precisely so a god's own grant is not counted as a discovery. **Both are the same question —
+  *has this been seen before?* — asked at different scopes.**
+- **And it matches how a science is actually founded.** The first paper in a field is foundational
+  because it is *first*, not because it is long. A god does not hand down a discipline; a god hands a
+  student one unprecedented thing, and the discipline is what the civilisation builds on it.
+
+**What remains to define is the equivalence class** — *what counts as "of a kind not done before"*:
+cell, technique, form, material, or some conjunction. **That is a real design question and it decides
+how often a grant is foundational**, so it should be measured rather than picked: a class so narrow
+that every grant is foundational makes the distinction meaningless, and one so wide that none ever is
+makes it decoration.
 
 ## What this does to forbidding, which is the late game
 
