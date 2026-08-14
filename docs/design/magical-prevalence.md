@@ -204,6 +204,54 @@ The obvious failure mode to design against: a university with *nothing* to teach
 students instantly, which would make a bare founding a mage factory. Whether the floor is a minimum
 tenure, a minimum node count, or something else is not decided here.
 
+## The content is over-weighted to battle tech, and here is the measurement
+
+> *"Some of these would be great new tech, right? It's one of those things that upgrades your
+> capabilities and improves your universe — and it's not like a battle tech. Need more of that."*
+
+Counted from `node.json` and `cell.json` on `main` at `7694528`:
+
+| category | primitives | authored effects | inside the v1 rectangle |
+| --- | ---: | ---: | ---: |
+| **combat** | **7** | **187** | **33** |
+| economic | 3 | 103 | 12 |
+| academic | 3 | 93 | 16 |
+| **demographic** | 2 | 22 | **0** |
+| traversal | 1 | 2 | 2 |
+
+**Seven of sixteen primitives are combat, and they carry 46% of every authored effect in the game.**
+Against that, *"upgrades your capabilities and improves your universe"* has three economic and three
+academic primitives, and the two most obviously civilisational ones — `fertility` and `lifespan` —
+carry **22 authored effects with no node-driven consumer at all** and **zero presence in the enabled
+twelve**.
+
+So the observation is right and it is worse than it looks: the game is not merely light on civil tech,
+**its two purest civil primitives are the only two in the whole registry that nothing reads.** A god
+who wants to make their people more numerous or longer-lived is authoring against a wall.
+
+And there is **no primitive at all** for institutional capacity — the thing administrative golems
+would move. That is a gap in the registry, not just in the content.
+
+### Where the room is
+
+Three of these need no new primitive, only a consumer:
+
+- **`fertility`** (5 authored effects, 0 in v1, no consumer) — population is the input to *everything*
+  in the prevalence pipeline above. Magic that makes a people more numerous makes every latent mage
+  count larger.
+- **`lifespan`** (17 authored, 0 in v1, no consumer) — and this one is sharp, because a longer-lived
+  mage is more teaching generations before the telephone problem takes the knowledge. It is civil tech
+  that directly counters knowledge loss.
+- **`build-rate`** already works but **stops mattering entirely** under seventy open cells — the
+  magnitudes reaching construction fall from `{128,192,256,384}` to `{128,192}` because nobody gets
+  deep enough into *Rego Terram*.
+
+And at least one wants a new primitive: **institutional capacity**, which golems, larger classes, and
+plausibly library shelving all move.
+
+**The cheapest real win here is `lifespan` and `fertility` getting consumers**, because the effects are
+already authored and the pipeline that would use them is the one being designed on this page.
+
 ## What this bears on
 
 - **Task 9.9, species differentiation** — unmet on every ref tested, with two approaches tried and
