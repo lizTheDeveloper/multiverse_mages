@@ -281,6 +281,44 @@ implementation is `agent-interface` at 0.5.0 and is not yet scheduled.*
 
 ---
 
+### 1.10 The session is narrower than the package behind it — **defect**
+
+Three findings above are the same finding, and none of us saw it until the third one:
+
+| Projection | Computed and exported by `agent-api` | On `AgentSession` |
+|---|---|---|
+| `AgentView.raw` — the integer observation | yes | no (§1.7) |
+| `ExplainProjection` — why a mage acted | yes | no (§1.4) |
+| `KnowledgeCensus` — where knowledge physically is | yes | no |
+
+`AgentSession` offers `reset`, `observe`, `legalActions`, `candidates`, `submit`, `status`,
+`outcome`, `accounting`, `illegalActionCount`, `rng`, `snapshotHash`. It is the only door a client
+has, and it is narrower than the package it wraps.
+
+The census is the one that makes the pattern impossible to miss, because it carries almost exactly
+what two other findings were about to demand as new contract requirements. Run against the reference
+scenario at tick 0 it returns `whereKept {mind: 1, grimoire: 0, library: 0, palace: 0}` and
+`fragileNodeIds [99]`, and per node a `distinctLocations` count whose own documentation makes the
+argument: *"forty copies in one library is one fire from loss, and three copies in one mage's palace
+is one funeral from it."* The opt-in per-instance path adds `locationKind`, `marooned`, `condemned`
+and `ticksToUnteachable` — which is §2.1's mastery trajectory, filed as unpublished, sitting in an
+exported function.
+
+**Every finding here phrased as "the read path does not carry X" should be re-read as "the session
+does not expose X."** That is a much cheaper fix than any of the contract changes those findings
+were heading toward, and §4.3's amendment was narrowed on the strength of it.
+
+**How it was missed, twice.** Both times the evidence was a file read that was locally correct and
+globally misleading: `observation.ts` genuinely never writes a vessel, `view.ts` genuinely hands the
+session a normalized vector. Neither file says what else the package exports. What caught it was
+running `knowledgeCensus` against a real state — the same method that caught §1.9's overclaim one
+finding earlier.
+
+*Lands in: `agent-api`'s session surface. Not `contracts.md` — the contract already permits these
+projections; the session simply does not offer them.*
+
+---
+
 ## 2. Findings that land in the rules packages
 
 ### 2.1 Mastery trajectory is not published — **open**

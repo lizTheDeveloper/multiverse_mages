@@ -22,7 +22,7 @@ whether knowledge loss lands off the beat before 520 assets were generated again
 
 ## What these found
 
-`docs/design/interface-findings.md` consolidates it: twenty-two findings, each with what was found,
+`docs/design/interface-findings.md` consolidates it: twenty-three findings, each with what was found,
 how, its status (open / defect / resolved / blocked) and **where it lands**. Most are not client
 problems — the majority have to be settled in `agent-interface` at 0.5.0 or they become a retrofit at
 0.13.0.
