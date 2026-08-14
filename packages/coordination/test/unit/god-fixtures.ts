@@ -65,6 +65,25 @@ export function costs(): GodContent['costs'] {
   return godContent().costs;
 }
 
+/**
+ * The authored `worship-max`, read from `god-constant.json` directly.
+ *
+ * It is the one required god constant with **no field on `GodConstants`** — see
+ * `resolveGodConstants` for the argument, which is that the ceiling is an
+ * identity the content loader checks rather than a number the rules path
+ * applies, and that a field would only ever be read in order to clamp.
+ *
+ * The tests that assert the ceiling still need the authored value, and this is
+ * where they get it. Reading it from the registry rather than from a literal
+ * keeps requirement 1 of this suite's ceiling argument intact: the bound is
+ * asserted *against a constant read from content*, never against anything the
+ * formula computes, so a bound that moved with its own inputs could not satisfy
+ * it.
+ */
+export function worshipMax(): Fixed {
+  return registry().godConstant('worship-max');
+}
+
 function primitiveNamed(id: string): PrimitiveRecord {
   const found = registry().primitives.find((entry) => entry.record.id === id);
   if (found === undefined) throw new Error(`no "${id}" primitive in the shipped registry`);
