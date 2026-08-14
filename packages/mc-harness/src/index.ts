@@ -459,3 +459,24 @@ export {
   scoreBalance,
   varietyOf,
 } from './tuner.js';
+
+export type {
+  Archive,
+  ArchiveCell,
+  BehaviourAxis,
+  CandidateOutcome,
+  CellStatus,
+  NullOutcomes,
+  NullRung,
+} from './quality-diversity.js';
+export {
+  CELL_STATUS,
+  MAX_ELITE_ILLEGAL_RATE,
+  NULL_LADDER,
+  NULL_RUNG,
+  binOf,
+  clearsLadder,
+  coordinateOf,
+  foldArchive,
+  nullBarOf,
+} from './quality-diversity.js';
