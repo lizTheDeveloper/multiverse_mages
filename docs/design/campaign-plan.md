@@ -6059,3 +6059,86 @@ monotonic twice; **soften it wherever it is quoted.**
 `completeAffiliation`, and the two defects (`ACTION_ID_MAX` making the action silently free, and an
 optimistic mask costing the policy its entire turn) were both found by measuring rather than by the
 green suite.
+
+## W116 — the reachability check has been red on `main`, and it is naming the prestige loop
+
+The two **non-blocking** GitHub Actions checks — `Rules-path reachability` and `Primitive
+consumption` — are red on `main` and have been. `Verify` is green, `ci/hetzner-lint` is green, and
+these two are advisory, so nothing stopped. That is exactly the arrangement that lets a finding sit
+for a week.
+
+`check:reachability` on `main` (run 31776458213):
+
+```
+Symbols registered in a schema list and touched by nothing:
+  packages/state/src/components.ts:786  UNIVERSITY_STAFF
+
+God constants resolved into GodConstants and never read off it (3):
+  worship-max, legacy-archive-max-tier, legacy-reference-tick
+
+God constants read only by unreached code (6):
+  prestige-retention          — read by carriedPrestige
+  legacy-archive-nodes        — read by legacyGrant
+  legacy-headstart-fraction   — read by legacyGrant
+  legacy-baseline-favor       — read by legacyGrant
+  legacy-baseline-materials   — read by legacyGrant
+  legacy-baseline-populace    — read by legacyGrant
+```
+
+**Read that second block against the decisions of the last day.** `carriedPrestige` is prestige
+carried across a run — the axis the whole multiplayer structure hangs on, because prestige is the
+matchmaking tier. `legacyGrant` is the restart: *A New God Of Magic Is Born*, new race, old race
+still around, Old Magic from The Last Age taught for free. **Both are built, both are tested, and
+neither has ever run.** The seam the owner spent an evening designing already exists in the code as
+six constants nothing reads.
+
+This is the fourth instance of the same shape — `advanceConstruction`, `applyLibraryUpkeep`,
+`UNIVERSITY_STAFF`, and now `carriedPrestige`/`legacyGrant`. The check's own closing line is the
+right summary of why it exists: *"'The symbol exists' and 'a test covers it' are both compatible with
+'the game never runs it.'"*
+
+**The check must not be made blocking until it is green**, and it must not be made green by
+declaring exclusions. An agent is on the nine constants now, told in as many words not to reach for
+`DECLARED_EXCLUSIONS`. `UNIVERSITY_STAFF` is deliberately out of its scope — the affiliation agent
+owns university staffing this round, and two agents in one file is how a merge eats a change.
+
+## W117 — the search reported `DEAD`, and it was a finding about the flag
+
+`Verify` was red on PR #118 for thirteen lint errors, all in `bin/search-strategies.mjs`. Fixing
+them turned up something worse than lint.
+
+Four of the thirteen were unused symbols: `mutateOrder`, `rng`, `rounds`, `REPEATABLE`. They were
+the remains of a mutation loop that was never finished — `mutateOrder` drew two indices and **never
+swapped them**, and `--rounds` was parsed and thrown away. Meanwhile the module header said, in the
+present tense, *"It mutates preference orders."* So the script read to anyone opening it as a
+quality-diversity loop that had run, when it has only ever evaluated the authored pool once.
+
+The width it reports is the width of the **authored** pool. That is a floor on the meta's width, not
+a measurement of it. The header says so now, and there is no `--rounds` flag rather than a dead one:
+an option that is parsed and ignored reads as a loop that ran.
+
+Then the smoke run walked into the trap this campaign has already published twice:
+
+```
+$ ... --seeds 4 --ticks 200
+[search] SHAPE DEAD   width 0   not-worth-playing 5   margin-over-null 0
+[search] WARNING: dead -- nothing beats doing nothing
+```
+
+`ascension-min-tick` is **600**. At 200 ticks no run can ascend, so every cell reports `asc 0/N` and
+the archive comes back `dead` — and `dead` reads as a verdict on the strategies. It is a verdict on
+the flag. Same error as `ascensionRate` probed at 240 ticks; same error as three of four sweeps
+capping below the win condition.
+
+So the script now refuses it, reading the floor out of `god-constant.json` rather than carrying a
+copy that can rot away from it:
+
+```
+Error: --ticks 200 is below ascension-min-tick 600: no run could ascend, so every cell
+would read `not-worth-playing` for a reason that is not about the strategy.
+```
+
+**The general rule, third time it has cost something: a measurement whose horizon ends before the
+win condition opens is not a weak measurement, it is a different one.** Every probe in this
+repository that can be short-circuited that way should refuse the flag rather than report the
+number.
