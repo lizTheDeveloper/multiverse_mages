@@ -5789,3 +5789,56 @@ lands.
 
 **Both passed the test suite.** The agent's own note is the lesson: *caught only because I measured
 rather than trusted the green tests.*
+
+### W114, corrected — the patch is *targeted*, and that rescues the claim
+
+*2026-08-14, same branch, with the orc arms in. **I published the pessimistic reading above before
+this number existed; it is superseded.***
+
+| species | without the verb | with it |
+|---|--:|--:|
+| **orc** | **47/100** | **48/100** |
+| **draconic** | **0/100** | **14/100** |
+
+**The mechanic does nothing for orc and is transformative for draconic.** It is a demographic patch —
+that part stands — **but a targeted one**, and the target is exactly the species the design says it is
+for.
+
+**And the reason is structural rather than tuned.** Orc matures at **168 months** and breeds at
+**1,536**. Draconic matures at **3,600 months against a 2,400-tick horizon** — so **draconic cannot
+promote a single new mage inside a run.** Its founding cohort is its entire mage population, forever.
+
+**So "dragons have to make friends" holds as an asymmetry**, even though the mechanism is headcount
+rather than imported curiosity. **That is a sharper and more defensible claim than the one the
+experiment set out to test**: not *"dragons need other kinds of people"* but *"dragons are the only
+people who cannot make more of themselves in time, and everyone else can."*
+
+**What I wrote above — that an invited scholar is "a warm body with a different label" — is still
+true and no longer damning.** A warm body is precisely what draconic cannot manufacture and orc has in
+abundance. The design wanted *difference* to matter and got *scarcity* mattering instead, and scarcity
+is the better mechanic because it is asymmetric by construction.
+
+**The open item is unchanged and now clearer**: nothing rewards *foreignness*. The 1.15 cross-species
+affinity cap remains unwired. **If difference is to matter as well as scarcity, that is the thing to
+wire** — and it would be additive to a mechanic that already works rather than a rescue of one that
+does not.
+
+### And the agent falsified its own earlier claim
+
+It had reported that 9 of 10 strategies were bit-identical and `uniform-random-legal` moved. **That
+measurement was taken on the buggy intermediate build**, where the optimistic mask made action 16
+spuriously legal — and `uniform-random-legal` samples the legal set. With the gate in the mask, a
+paired re-run is **bit-identical across all ten strategies**: 83 stagnated, 17 truncated, 26.88 nodes,
+4.26 living mages, before and after.
+
+**The append is behaviourally inert, and the mask fix removed a moved baseline as a side effect.**
+
+**`ci/hetzner-lint` then failed, correctly.** The seventeenth god-cost record moves `contentRevision`,
+and all four gates refused cross-build comparison as *"a category error"* — while every metric passed
+at `delta 0.00000` regardless. So the branch joins the re-baseline stack **carrying the weakest
+possible claim**: `supersededDeltas` is a column of zeros across **109 metric rows**, including every
+per-strategy arm of the agency gate.
+
+**And the prior `notes` were carried forward verbatim rather than left to the tool** — they record a
+still-true measurement (no pool strategy submits god action 8) that a regeneration would otherwise have
+silently deleted. **That is the notes-replacement defect, avoided by someone who knew about it.**
