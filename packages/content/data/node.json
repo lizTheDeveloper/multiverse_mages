@@ -447,7 +447,7 @@
     "id": "cc-the-long-tenure",
     "cell": "creo-corpus",
     "name": "The Long Tenure",
-    "gloss": "Twenty more years of working life for everyone who holds it. It sits at tier 3 deliberately, so that orcs — depth ceiling 3, and the shortest-lived of the six — can reach the one working that answers what is actually wrong with them.",
+    "gloss": "Twenty more years of working life for everyone who holds it. It sits at tier 3 deliberately, so that orcs \u2014 depth ceiling 3, and the shortest-lived of the six \u2014 can reach the one working that answers what is actually wrong with them.",
     "tier": 3,
     "prerequisites": [
       "cc-the-mended-decade"
@@ -981,7 +981,7 @@
     "id": "cim-the-perfect-forgery",
     "cell": "creo-imaginem",
     "name": "The Perfect Forgery",
-    "gloss": "An image of a grimoire, accurate down to the name on every page. It reads correctly and teaches correctly, and it stops doing either on the day the mage who cast it dies — which no catalogue records.",
+    "gloss": "An image of a grimoire, accurate down to the name on every page. It reads correctly and teaches correctly, and it stops doing either on the day the mage who cast it dies \u2014 which no catalogue records.",
     "tier": 4,
     "prerequisites": [
       "cim-the-absent-scholar",
@@ -1058,7 +1058,7 @@
     "id": "cl-the-made-door",
     "cell": "creo-limen",
     "name": "The Made Door",
-    "gloss": "Put a door in a wall that had none, and a corridor behind it the building did not have room for. Declares no portal effect and never will: making a threshold is not opening one, and the raid gate stays in Rego Limen (contracts.md §8).",
+    "gloss": "Put a door in a wall that had none, and a corridor behind it the building did not have room for. Declares no portal effect and never will: making a threshold is not opening one, and the raid gate stays in Rego Limen (contracts.md \u00a78).",
     "tier": 3,
     "prerequisites": [
       "cl-draw-the-circle",
@@ -1242,7 +1242,7 @@
     "id": "cn-name-the-unnamed",
     "cell": "creo-nomen",
     "name": "Name the Unnamed",
-    "gloss": "Make a true name for something that has never had one — a new working, a made beast, a hall that was grown rather than built. The name is correct, which is not the same as it being deserved.",
+    "gloss": "Make a true name for something that has never had one \u2014 a new working, a made beast, a hall that was grown rather than built. The name is correct, which is not the same as it being deserved.",
     "tier": 2,
     "prerequisites": [
       "cn-give-the-use-name"
@@ -1694,7 +1694,7 @@
     "id": "ian-number-the-herd",
     "cell": "intellego-animal",
     "name": "Number the Herd",
-    "gloss": "Know how many, of what ages, and which of them will not see the winter — without penning a single animal to be looked at. Herders who have it stop losing the whole beast to find out it was sick.",
+    "gloss": "Know how many, of what ages, and which of them will not see the winter \u2014 without penning a single animal to be looked at. Herders who have it stop losing the whole beast to find out it was sick.",
     "tier": 2,
     "prerequisites": [
       "ian-cut-the-sign"
@@ -1748,7 +1748,7 @@
     "id": "ian-the-beasts-own-eye",
     "cell": "intellego-animal",
     "name": "The Beast's Own Eye",
-    "gloss": "Borrow what an animal is looking at, from wherever it happens to be standing. A scholar whose watchmen are all crows is difficult to surprise, and impossible to catch listening — nothing she posted can be questioned afterwards.",
+    "gloss": "Borrow what an animal is looking at, from wherever it happens to be standing. A scholar whose watchmen are all crows is difficult to surprise, and impossible to catch listening \u2014 nothing she posted can be questioned afterwards.",
     "tier": 4,
     "prerequisites": [
       "ian-chart-the-migration",
@@ -1861,7 +1861,7 @@
     "id": "iaq-fathom-the-watershed",
     "cell": "intellego-aquam",
     "name": "Fathom the Watershed",
-    "gloss": "Hold every water of a country in one perception at once — springs, seeps, the river's bad years, the marsh that used to be a lake. Mills get sited on this, and so do the arguments about who owns the rain.",
+    "gloss": "Hold every water of a country in one perception at once \u2014 springs, seeps, the river's bad years, the marsh that used to be a lake. Mills get sited on this, and so do the arguments about who owns the rain.",
     "tier": 4,
     "prerequisites": [
       "iaq-trace-the-current"
@@ -2073,7 +2073,7 @@
     "id": "ic-tell-the-hour-of-a-body",
     "cell": "intellego-corpus",
     "name": "Tell the Hour of a Body",
-    "gloss": "Say how long this body has, from the body alone. It is not fate — Fatum reads the hour that was appointed; this reads only the hour the flesh is already walking toward, which is why it can be argued with.",
+    "gloss": "Say how long this body has, from the body alone. It is not fate \u2014 Fatum reads the hour that was appointed; this reads only the hour the flesh is already walking toward, which is why it can be argued with.",
     "tier": 4,
     "prerequisites": [
       "ic-listen-at-the-ribs"
@@ -2210,7 +2210,7 @@
     "id": "if-the-thread-fate-set-down",
     "cell": "intellego-fatum",
     "name": "The Thread Fate Set Down",
-    "gloss": "Perceive your own thread so exactly that you can tell the moment fate puts it down to attend to someone else — and live in those moments. Nothing that works by destiny can find a mage who is not currently being tracked by it. Archmages who hold it tend to have no recorded death.",
+    "gloss": "Perceive your own thread so exactly that you can tell the moment fate puts it down to attend to someone else \u2014 and live in those moments. Nothing that works by destiny can find a mage who is not currently being tracked by it. Archmages who hold it tend to have no recorded death.",
     "tier": 5,
     "prerequisites": [
       "if-the-appointed-hour"
@@ -2268,7 +2268,7 @@
     "id": "ih-question-the-orchard",
     "cell": "intellego-herbam",
     "name": "Question the Orchard",
-    "gloss": "Put the question to the trees themselves — what they are short of, what they are hoarding, which of them is dying quietly and taking the row with it.",
+    "gloss": "Put the question to the trees themselves \u2014 what they are short of, what they are hoarding, which of them is dying quietly and taking the row with it.",
     "tier": 2,
     "prerequisites": [
       "ih-sight-the-blight"
@@ -2587,7 +2587,7 @@
     "id": "il-count-the-doors",
     "cell": "intellego-limen",
     "name": "Count the Doors",
-    "gloss": "Enumerate every threshold in a place at once — its gates, its grave-lines, the seams nobody built on purpose.",
+    "gloss": "Enumerate every threshold in a place at once \u2014 its gates, its grave-lines, the seams nobody built on purpose.",
     "tier": 2,
     "prerequisites": [
       "il-sense-the-seam"
@@ -2942,7 +2942,7 @@
     "id": "it-read-the-fault",
     "cell": "intellego-terram",
     "name": "Read the Fault",
-    "gloss": "See where the ground intends to fail. Knowing where a wall cannot stand is the cheapest possible way to learn where it can — and it sits at tier 3 deliberately, so that orcs, whose depth ceiling is 3, can reach a build-rate working at all.",
+    "gloss": "See where the ground intends to fail. Knowing where a wall cannot stand is the cheapest possible way to learn where it can \u2014 and it sits at tier 3 deliberately, so that orcs, whose depth ceiling is 3, can reach a build-rate working at all.",
     "tier": 3,
     "prerequisites": [
       "it-survey-the-strata",
@@ -3044,7 +3044,7 @@
     "id": "iu-the-unlit-line",
     "cell": "intellego-umbra",
     "name": "The Unlit Line",
-    "gloss": "Perceive, continuously and without effort, which line through a room no eye is currently on — and be on it. Nothing about the mage is hidden. She is simply never where the looking is happening.",
+    "gloss": "Perceive, continuously and without effort, which line through a room no eye is currently on \u2014 and be on it. Nothing about the mage is hidden. She is simply never where the looking is happening.",
     "tier": 4,
     "prerequisites": [
       "iu-look-along-the-shadow"
@@ -3146,7 +3146,7 @@
     "id": "iv-the-residue-in-the-room",
     "cell": "intellego-vim",
     "name": "The Residue in the Room",
-    "gloss": "Perceive what was cast in a place after the casting is over — a day after, in a still room, three weeks. Most of what a university knows about its neighbours was picked up off a floor.",
+    "gloss": "Perceive what was cast in a place after the casting is over \u2014 a day after, in a still room, three weeks. Most of what a university knows about its neighbours was picked up off a floor.",
     "tier": 3,
     "prerequisites": [
       "iv-price-the-working"
@@ -3306,7 +3306,7 @@
     "id": "maq-sweeten-the-cistern",
     "cell": "muto-aquam",
     "name": "Sweeten the Cistern",
-    "gloss": "Turn foul water into water. Not clean water — water, which is a lower standard than the phrase suggests and has founded more towns than any other working in the cell.",
+    "gloss": "Turn foul water into water. Not clean water \u2014 water, which is a lower standard than the phrase suggests and has founded more towns than any other working in the cell.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -4106,7 +4106,7 @@
     "id": "ml-the-door-that-was-a-window",
     "cell": "muto-limen",
     "name": "The Door That Was a Window",
-    "gloss": "Change a threshold's kind rather than its state. Declares no portal effect and never will: opening onto another sky is Rego Limen, and contracts.md §8 keeps it there on purpose.",
+    "gloss": "Change a threshold's kind rather than its state. Declares no portal effect and never will: opening onto another sky is Rego Limen, and contracts.md \u00a78 keeps it there on purpose.",
     "tier": 2,
     "prerequisites": [
       "ml-change-what-the-wall-means"
@@ -4660,7 +4660,7 @@
     "id": "mv-convert-the-form",
     "cell": "muto-vim",
     "name": "Convert the Form",
-    "gloss": "Change what a working is about without changing what it does — Ignem to Aquam and back again. The grid is not a filing system for scholars; this is the working that proves it.",
+    "gloss": "Change what a working is about without changing what it does \u2014 Ignem to Aquam and back again. The grid is not a filing system for scholars; this is the working that proves it.",
     "tier": 2,
     "prerequisites": [
       "mv-turn-the-working"
@@ -4797,7 +4797,7 @@
     "id": "pan-nothing-takes-the-scent",
     "cell": "perdo-animal",
     "name": "Nothing Takes the Scent",
-    "gloss": "Unmake what you left in the air behind you. The hounds are not confused — a confused hound casts about. These sit down.",
+    "gloss": "Unmake what you left in the air behind you. The hounds are not confused \u2014 a confused hound casts about. These sit down.",
     "tier": 2,
     "prerequisites": [
       "pan-founder-the-horse"
@@ -4845,7 +4845,7 @@
     "id": "pan-nothing-answers-the-horn",
     "cell": "perdo-animal",
     "name": "Nothing Answers the Horn",
-    "gloss": "Unmake what was called. Warhorses, hounds, the summoned things a Nomen mage keeps on a name — all of it goes, and the field is very quiet, and the horn is blown twice more before anyone stops.",
+    "gloss": "Unmake what was called. Warhorses, hounds, the summoned things a Nomen mage keeps on a name \u2014 all of it goes, and the field is very quiet, and the horn is blown twice more before anyone stops.",
     "tier": 4,
     "prerequisites": [
       "pan-empty-the-pasture"
@@ -4976,7 +4976,7 @@
     "id": "pau-take-the-breath",
     "cell": "perdo-auram",
     "name": "Take the Breath",
-    "gloss": "Unmake the air a body has already drawn. She does not gasp — there is nothing left to gasp with — and it is the surprise on the face that wardens remember afterwards.",
+    "gloss": "Unmake the air a body has already drawn. She does not gasp \u2014 there is nothing left to gasp with \u2014 and it is the surprise on the face that wardens remember afterwards.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -5443,7 +5443,7 @@
     "id": "pig-the-unburnt-library",
     "cell": "perdo-ignem",
     "name": "The Unburnt Library",
-    "gloss": "Unmake a fire that is already in the stacks. Perdo is how a library is saved rather less often than it is how one is lost, and it is the same working either way — the same training, the same hour of practice, different people holding it.",
+    "gloss": "Unmake a fire that is already in the stacks. Perdo is how a library is saved rather less often than it is how one is lost, and it is the same working either way \u2014 the same training, the same hour of practice, different people holding it.",
     "tier": 3,
     "prerequisites": [
       "pig-snuff"
@@ -5592,7 +5592,7 @@
     "id": "pl-fray-the-edge",
     "cell": "perdo-limen",
     "name": "Fray the Edge",
-    "gloss": "Wear at a boundary until it stops being certain about where it is. Contains no portal-stability effect, and may never gain one (contracts.md §1.6).",
+    "gloss": "Wear at a boundary until it stops being certain about where it is. Contains no portal-stability effect, and may never gain one (contracts.md \u00a71.6).",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -5764,7 +5764,7 @@
     "id": "pm-unmake-the-mind",
     "cell": "perdo-mentem",
     "name": "Unmake the Mind",
-    "gloss": "Not kill. Unmake — the body walks out of the hall and the scholar does not. This is the working the vision's flagship interdiction forbids by name: Mentem is open to my scholars, but none shall unmake a mind.",
+    "gloss": "Not kill. Unmake \u2014 the body walks out of the hall and the scholar does not. This is the working the vision's flagship interdiction forbids by name: Mentem is open to my scholars, but none shall unmake a mind.",
     "tier": 4,
     "prerequisites": [
       "pm-scatter-the-lesson"
@@ -6084,7 +6084,7 @@
     "id": "pu-make-sure",
     "cell": "perdo-umbra",
     "name": "Make Sure",
-    "gloss": "A scholar who dies holding something nobody else holds leaves a shade that still, faintly, holds it — enough for a patient Intellego man and a long night in the right graveyard. This unmakes the shade. Whoever commissions it is not being cruel. She is making sure.",
+    "gloss": "A scholar who dies holding something nobody else holds leaves a shade that still, faintly, holds it \u2014 enough for a patient Intellego man and a long night in the right graveyard. This unmakes the shade. Whoever commissions it is not being cruel. She is making sure.",
     "tier": 4,
     "prerequisites": [
       "pu-nothing-casts-here",
@@ -6156,7 +6156,7 @@
     "id": "pv-where-nothing-takes",
     "cell": "perdo-vim",
     "name": "Where Nothing Takes",
-    "gloss": "Unmake, over a stretch of ground, the willingness of workings to hold at all — your own among them. It declares no portal-stability effect and never will (contracts.md §1.6). The cell stops at three nodes on purpose: further down, unmaking magic stops being a spell and starts being a rule, and rules belong to the god.",
+    "gloss": "Unmake, over a stretch of ground, the willingness of workings to hold at all \u2014 your own among them. It declares no portal-stability effect and never will (contracts.md \u00a71.6). The cell stops at three nodes on purpose: further down, unmaking magic stops being a spell and starts being a rule, and rules belong to the god.",
     "tier": 3,
     "prerequisites": [
       "pv-the-unfinished-sentence",
@@ -6508,7 +6508,7 @@
     "id": "rc-still-the-limb",
     "cell": "rego-corpus",
     "name": "Still the Limb",
-    "gloss": "Hold a body to its stance, one part at a time — usually your own. Flesh that has been told not to give does not give, and the surgeons found this useful a long time before the duellists did.",
+    "gloss": "Hold a body to its stance, one part at a time \u2014 usually your own. Flesh that has been told not to give does not give, and the surgeons found this useful a long time before the duellists did.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -7144,7 +7144,7 @@
     "id": "rl-open-the-portal",
     "cell": "rego-limen",
     "name": "Open the Portal",
-    "gloss": "Hold a threshold open onto a sky that is not yours. Everything the multiverse does to a universe begins here, which is why contracts.md §8 requires this cell in every v1 build.",
+    "gloss": "Hold a threshold open onto a sky that is not yours. Everything the multiverse does to a universe begins here, which is why contracts.md \u00a78 requires this cell in every v1 build.",
     "tier": 4,
     "prerequisites": [
       "rl-step-across",
@@ -7170,7 +7170,7 @@
     "id": "rl-the-standing-gate",
     "cell": "rego-limen",
     "name": "The Standing Gate",
-    "gloss": "A portal that does not have to be argued into existence each time. Declares no portal-stability effect and never will: the raid's termination guarantee is a proof, not an observation (contracts.md §1.6).",
+    "gloss": "A portal that does not have to be argued into existence each time. Declares no portal-stability effect and never will: the raid's termination guarantee is a proof, not an observation (contracts.md \u00a71.6).",
     "tier": 5,
     "prerequisites": [
       "rl-open-the-portal"
@@ -7356,12 +7356,21 @@
     "name": "Keep the Name Close",
     "gloss": "Hold your own name in your own keeping, so that it does not answer when someone else uses it. Taught in the same term as Compel by Name, by professors who consider that an ethics curriculum.",
     "tier": 2,
-    "prerequisites": ["rn-call-by-name"],
+    "prerequisites": [
+      "rn-call-by-name"
+    ],
     "researchCost": 4096,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
-    "effects": [{ "primitive": "concealment", "magnitude": 160, "target": "self", "durationTicks": 0 }],
+    "effects": [
+      {
+        "primitive": "concealment",
+        "magnitude": 160,
+        "target": "self",
+        "durationTicks": 0
+      }
+    ],
     "knowledgeKind": "episteme",
     "tuningStatus": "untuned"
   },
@@ -7369,7 +7378,7 @@
     "id": "rn-compel-by-name",
     "cell": "rego-nomen",
     "name": "Compel by Name",
-    "gloss": "Hold a mage by her name and take what she knows out through it. The second theft vector, and the one that leaves a mark — which is why a universe may want to close exactly one of the two.",
+    "gloss": "Hold a mage by her name and take what she knows out through it. The second theft vector, and the one that leaves a mark \u2014 which is why a universe may want to close exactly one of the two.",
     "tier": 3,
     "prerequisites": [
       "rn-call-by-name"
@@ -7446,7 +7455,7 @@
     "id": "rt-raise-the-course",
     "cell": "rego-terram",
     "name": "Raise the Course",
-    "gloss": "Lay a whole course of a wall as one working. This is vision §4's worked example: earth magic building universities faster is a number here, not a special case in code.",
+    "gloss": "Lay a whole course of a wall as one working. This is vision \u00a74's worked example: earth magic building universities faster is a number here, not a special case in code.",
     "tier": 2,
     "prerequisites": [
       "rt-set-the-stone"
@@ -7749,6 +7758,1224 @@
         "magnitude": 192,
         "target": "area",
         "durationTicks": 40
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "rig-the-kept-fire",
+    "cell": "rego-ignem",
+    "name": "The Kept Fire",
+    "gloss": "A fire lit at the founding and never since allowed out. While it burns the whole university reads faster by it, and it burns only as long as somebody is in the room. Every treatise on it spends more pages on the roster than on the working. Nothing in the discipline can relight one.",
+    "tier": 5,
+    "prerequisites": [
+      "rig-the-walled-fire"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "research-rate",
+        "magnitude": 576,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "build-rate",
+        "magnitude": 192,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "mim-the-universe-as-it-is-told",
+    "cell": "muto-imaginem",
+    "name": "The Universe as It Is Told",
+    "gloss": "Change not the working but the account of it, until a thing that took thirty years to derive can be taught in a season. The students are not lying when they say they know it. They have been given a true thing shaped wrongly, and the shape holds until something pushes on it.",
+    "tier": 5,
+    "prerequisites": [
+      "mim-the-image-that-argues-back"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "teach-rate",
+        "magnitude": 768,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "research-rate",
+        "magnitude": 256,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ph-the-ledger-fire",
+    "cell": "perdo-herbam",
+    "name": "The Ledger Fire",
+    "gloss": "Unmake a plant backwards along its own growing, so the wood was never cut \u2014 and neither was anything made from it. Vellum is a plant that has been through some hands. The working cannot be told whose, and universities that hold it keep the instruction in stone.",
+    "tier": 5,
+    "prerequisites": [
+      "ph-the-shelves-give-way"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "direct-damage",
+        "magnitude": 704,
+        "target": "area",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "area-denial",
+        "magnitude": 256,
+        "target": "area",
+        "durationTicks": 60
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "iaq-the-draught-of-common-knowledge",
+    "cell": "intellego-aquam",
+    "name": "The Draught of Common Knowledge",
+    "gloss": "A city's water made to carry a thin shared remembering, so that what one scholar works out is by evening faintly known at every well. It cannot be written down; it is not in anyone in particular. A single bad season in the watershed takes all of it at once, and has.",
+    "tier": 5,
+    "prerequisites": [
+      "iaq-fathom-the-watershed"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "teach-rate",
+        "magnitude": 896,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "research-rate",
+        "magnitude": 320,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "metis",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "pv-the-ash-of-the-art",
+    "cell": "perdo-vim",
+    "name": "The Ash of the Art",
+    "gloss": "Unmake magic in a place so completely that the place will not hold magic again. No aura, no working, no scholar's frontier \u2014 permanently, and the discipline has never found the way back. A defender who uses it keeps the country and loses what the country was for.",
+    "tier": 5,
+    "prerequisites": [
+      "pv-where-nothing-takes"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "area-denial",
+        "magnitude": 896,
+        "target": "area",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "ward",
+        "magnitude": 384,
+        "target": "area",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "it-the-long-survey",
+    "cell": "intellego-terram",
+    "name": "The Long Survey",
+    "gloss": "Bedrock keeps the pressure of every working ever cast on it. Read the stone deeply enough and you read a civilization's whole practice, including the parts it lost and the parts it hid. The reading runs both ways and does not stop running when you do.",
+    "tier": 5,
+    "prerequisites": [
+      "it-find-the-deep-seam",
+      "it-read-the-fault"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "research-rate",
+        "magnitude": 640,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "knowledge-steal",
+        "magnitude": 384,
+        "target": "area",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "pn-the-name-you-gave-up",
+    "cell": "perdo-nomen",
+    "name": "The Name You Gave Up",
+    "gloss": "Unmake your own true name. Nothing that works by naming can find you afterwards, and nothing that works by naming can help you either \u2014 you cannot be taught, because a lesson is addressed, and you cannot be healed, because a body is called back by what it is called. Archmages who do this finish alone.",
+    "tier": 5,
+    "prerequisites": [
+      "pn-the-nameless"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "concealment",
+        "magnitude": 896,
+        "target": "self",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "ward",
+        "magnitude": 512,
+        "target": "self",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cig-the-light-with-no-source",
+    "cell": "creo-ignem",
+    "name": "The Light With No Source",
+    "gloss": "Light thrown by nothing at all. The working is a claim about causation, and a mage who has made it cannot afterwards make the opposite one \u2014 the shadow cast by nothing stops being available to her, permanently and for the same reason.",
+    "tier": 5,
+    "prerequisites": [
+      "cig-the-standing-furnace"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "direct-damage",
+        "magnitude": 640,
+        "target": "area",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "ward",
+        "magnitude": 320,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "research-rate",
+        "magnitude": 192,
+        "target": "self",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cu-the-shadow-with-no-body",
+    "cell": "creo-umbra",
+    "name": "The Shadow With No Body",
+    "gloss": "A shadow cast by nothing at all. The mirror of the light with no source, and mutually exclusive with it in one mage for the reason that makes them a pair: a scholar cannot hold both accounts of what throws a thing. A civilization can. That is what a civilization is for.",
+    "tier": 5,
+    "prerequisites": [
+      "cu-the-unlit-hall"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "concealment",
+        "magnitude": 640,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "area-denial",
+        "magnitude": 320,
+        "target": "area",
+        "durationTicks": 60
+      },
+      {
+        "primitive": "research-rate",
+        "magnitude": 192,
+        "target": "self",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cv-the-twelve-handed-working",
+    "cell": "creo-vim",
+    "name": "The Twelve-Handed Working",
+    "gloss": "Not castable by fewer than twelve, and not by twelve of one school. The hands must disagree \u2014 the working is held open by the tension between accounts that exclude one another, and closes the moment any one of them is missing. Losing a single caster does not slow it. It ends it.",
+    "tier": 7,
+    "prerequisites": [
+      "cv-the-made-vis"
+    ],
+    "researchCost": 131072,
+    "teachCost": 32768,
+    "scribeCost": 65536,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "research-rate",
+        "magnitude": 1024,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "ward",
+        "magnitude": 768,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "worship-yield",
+        "magnitude": 512,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cc-the-archivist-that-is-not-a-person",
+    "cell": "creo-corpus",
+    "name": "The Archivist That Is Not a Person",
+    "gloss": "Build a mind whose only appetite is to hold. It does not burn, does not die, does not forget, and does not think: what it keeps can be read back word-perfect and can never be built upon, because nothing in it is understood. Universities that field one stop losing knowledge and stop deriving it.",
+    "tier": 6,
+    "prerequisites": [
+      "cc-the-unfinished-death"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "summon",
+        "magnitude": 2048,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "scribe-rate",
+        "magnitude": 640,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "ward",
+        "magnitude": 256,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cau-the-weather-that-is-argued-with",
+    "cell": "creo-auram",
+    "name": "The Weather That Is Argued With",
+    "gloss": "Not weather made \u2014 weather negotiated with what was going to happen. Every mild season is borrowed against one that is not, and the ledger is legible: a scholar can say what is owed and roughly when, and can never say no to it. Civilizations run the debt for a century and settle it in an afternoon.",
+    "tier": 5,
+    "prerequisites": [
+      "cau-keep-the-sky",
+      "cau-the-borrowed-season"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "resource-yield",
+        "magnitude": 768,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "area-denial",
+        "magnitude": 448,
+        "target": "area",
+        "durationTicks": 40
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "mc-the-long-now",
+    "cell": "muto-corpus",
+    "name": "The Long Now",
+    "gloss": "The body continues and the person does not. She researches for four hundred years and cannot tell you what she found last spring, cannot teach, cannot stand as anyone's prerequisite, cannot be anybody's teacher or anybody's student. The most productive scholar a university will ever hold, and not a colleague.",
+    "tier": 6,
+    "prerequisites": [
+      "mc-the-shape-that-holds"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "lifespan",
+        "magnitude": 512,
+        "target": "self",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "research-rate",
+        "magnitude": 896,
+        "target": "self",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "can-the-thing-that-breeds-true",
+    "cell": "creo-animal",
+    "name": "The Thing That Breeds True",
+    "gloss": "Beyond the made beast: a creature conjured out of no living lineage that nonetheless has one, and will have descendants nobody authored. Four generations in, the country has animals in it that no working made and no working can unmake, and the practical literature turns abruptly into theology.",
+    "tier": 5,
+    "prerequisites": [
+      "can-the-made-beast"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "summon",
+        "magnitude": 2560,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "fertility",
+        "magnitude": 384,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "resource-yield",
+        "magnitude": 256,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "mu-the-servant-of-cast-shade",
+    "cell": "muto-umbra",
+    "name": "The Servant of Cast Shade",
+    "gloss": "Give a shadow enough weight to carry, then enough to be sent. It works in any light and stops existing in none, which makes it the only labour a university can field that costs nothing to keep and cannot be relied on past dusk. Orders given to it are obeyed exactly and never understood.",
+    "tier": 5,
+    "prerequisites": [
+      "mu-give-the-shade-weight",
+      "mu-trade-shadows"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "summon",
+        "magnitude": 2304,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "build-rate",
+        "magnitude": 384,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "concealment",
+        "magnitude": 192,
+        "target": "side",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cim-the-servant-made-of-seeing",
+    "cell": "creo-imaginem",
+    "name": "The Servant Made of Seeing",
+    "gloss": "A creature whose whole substance is the fact of being looked at. It is exactly as strong as the attention on it: overwhelming in a crowded hall, gone in an empty corridor, and it cannot be sent anywhere nobody is. Field commanders have lost campaigns learning what that sentence forbids.",
+    "tier": 5,
+    "prerequisites": [
+      "cim-the-perfect-forgery",
+      "cim-the-crowded-hall"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "summon",
+        "magnitude": 2560,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "concealment",
+        "magnitude": 320,
+        "target": "side",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cig-the-thing-that-is-only-burning",
+    "cell": "creo-ignem",
+    "name": "The Thing That Is Only Burning",
+    "gloss": "Not a creature that burns \u2014 a creature that is the burning, given a shape and a direction and nothing else. It has no body to wound and no interior to compel, and it stops when the fuel does. Universities that field one budget for the fuel in the same ledger line as the casualties.",
+    "tier": 5,
+    "prerequisites": [
+      "cig-the-uncontained-hour",
+      "cig-the-standing-furnace"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "summon",
+        "magnitude": 2816,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "direct-damage",
+        "magnitude": 512,
+        "target": "area",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ct-the-body-of-quarried-stone",
+    "cell": "creo-terram",
+    "name": "The Body of Quarried Stone",
+    "gloss": "A servant with no soft part anywhere in it, cut from the vein rather than made. It is slower than the thing it replaces and outlasts the university that made it; the recorded difficulty is never combat and always storage, because a stopped one is a wall in the wrong place forever.",
+    "tier": 5,
+    "prerequisites": [
+      "ct-the-raised-bastion",
+      "ct-the-conjured-vein"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "summon",
+        "magnitude": 2304,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "build-rate",
+        "magnitude": 512,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "ward",
+        "magnitude": 256,
+        "target": "side",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cv-the-thing-made-of-raw-magic",
+    "cell": "creo-vim",
+    "name": "The Thing Made of Raw Magic",
+    "gloss": "A creature with no form at all \u2014 vis given a boundary and an errand. Every other summoning names what the thing is made of; this one refuses the question, and the refusal is why it can go where matter is forbidden and why nobody has ever written down what it looks like.",
+    "tier": 6,
+    "prerequisites": [
+      "cv-the-made-vis"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "summon",
+        "magnitude": 3072,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "blink",
+        "magnitude": 2048,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "ward",
+        "magnitude": 384,
+        "target": "side",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cf-the-servant-of-a-later-hour",
+    "cell": "creo-fatum",
+    "name": "The Servant of a Later Hour",
+    "gloss": "Summon a thing out of a fate that has not happened yet, on the understanding that it must be returned there. It works flawlessly and it knows how the season ends. Everything it does is already accounted for somewhere, including the part where you asked, and the fee is collected on time.",
+    "tier": 6,
+    "prerequisites": [
+      "cf-write-the-ending"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "summon",
+        "magnitude": 3072,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "concealment",
+        "magnitude": 448,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "worship-yield",
+        "magnitude": 256,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "rn-the-thing-called-from-outside",
+    "cell": "rego-nomen",
+    "name": "The Thing Called From Outside",
+    "gloss": "Speak a true name that belongs to nothing in this universe and wait to see what answers to it. Six of the recorded attempts produced a servant. The literature is unanimous that the interesting question is not what arrives but what the name was doing unattached, and unanimous that nobody should look.",
+    "tier": 6,
+    "prerequisites": [
+      "rn-the-bound-servant"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "summon",
+        "magnitude": 3328,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "knowledge-steal",
+        "magnitude": 512,
+        "target": "single",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "ward",
+        "magnitude": 256,
+        "target": "self",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "mt-the-ore-that-was-never-mined",
+    "cell": "muto-terram",
+    "name": "The Ore That Was Never Mined",
+    "gloss": "Turn poor rock into a metal the country has no seam of and no word for. It behaves like iron in every respect a smith can test and in one respect he cannot: it remembers the working that made it, and a building raised from it is holding a spell up rather than standing.",
+    "tier": 5,
+    "prerequisites": [
+      "mt-turn-the-ground-under-them",
+      "mt-the-stone-that-was-sand"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "resource-yield",
+        "magnitude": 640,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "build-rate",
+        "magnitude": 512,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ch-the-page-that-does-not-take-fire",
+    "cell": "creo-herbam",
+    "name": "The Page That Does Not Take Fire",
+    "gloss": "Vellum grown rather than scraped, out of a plant with no interest in burning. A library bound in it survives the thing libraries do not survive. It costs four times the ordinary sheet and every archivist who has priced the difference has arrived at the same answer.",
+    "tier": 5,
+    "prerequisites": [
+      "ch-paper-without-rags",
+      "ch-the-grown-hall"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "scribe-rate",
+        "magnitude": 512,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "ward",
+        "magnitude": 640,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "mn-the-substance-of-the-word",
+    "cell": "muto-nomen",
+    "name": "The Substance of the Word",
+    "gloss": "Make a true name into a material and build with it. What is raised this way cannot be described by anyone who does not hold the name, which is not concealment \u2014 it is a hole in every account of the country, including the ones its own scribes write.",
+    "tier": 6,
+    "prerequisites": [
+      "mn-the-second-true-name"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "concealment",
+        "magnitude": 768,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "build-rate",
+        "magnitude": 448,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "scribe-rate",
+        "magnitude": 256,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "mf-the-material-of-what-nearly-happened",
+    "cell": "muto-fatum",
+    "name": "The Material of What Nearly Happened",
+    "gloss": "Harvest the substance of outcomes that came close and did not land. It is abundant, free, and lying everywhere in a country that has had a hard century \u2014 which is the whole difficulty, because a prosperous universe has almost none of it and cannot buy any.",
+    "tier": 6,
+    "prerequisites": [
+      "mf-the-fate-that-was-yours"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "resource-yield",
+        "magnitude": 896,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "research-rate",
+        "magnitude": 384,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ml-the-hall-larger-than-its-walls",
+    "cell": "muto-limen",
+    "name": "The Hall Larger Than Its Walls",
+    "gloss": "A room whose inside has stopped agreeing with its outside. The library that fits in the gatehouse, the seven floors above a two-floor facade. It is the cheapest building a university will ever raise and the only one where a stranger with a measuring line is a security incident.",
+    "tier": 5,
+    "prerequisites": [
+      "ml-which-side-the-courtyard-is-on",
+      "ml-the-seam-made-a-hinge"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "build-rate",
+        "magnitude": 768,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "concealment",
+        "magnitude": 448,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "rl-the-corridor-that-is-shorter-inside",
+    "cell": "rego-limen",
+    "name": "The Corridor That Is Shorter Inside",
+    "gloss": "Hold two distant places at one wall and walk between them. Not a portal \u2014 a piece of architecture, permanent, load-bearing, and impossible to draw on a plan that also shows the country. Every campaign map of a university that has one is wrong, including the defender's.",
+    "tier": 6,
+    "prerequisites": [
+      "rl-the-standing-gate"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "blink",
+        "magnitude": 4096,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "build-rate",
+        "magnitude": 384,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "ward",
+        "magnitude": 384,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "cl-the-building-with-no-outside",
+    "cell": "creo-limen",
+    "name": "The Building With No Outside",
+    "gloss": "Raise a structure that is nowhere in particular and reachable from wherever you left the door. Nothing can besiege it, nothing can burn it, and nothing that is in it is in your universe \u2014 which is discovered, always late, to include the scholars.",
+    "tier": 6,
+    "prerequisites": [
+      "cl-the-threshold-that-was-always-there"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "ward",
+        "magnitude": 1024,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "concealment",
+        "magnitude": 640,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "build-rate",
+        "magnitude": 256,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "il-the-plan-that-holds-the-whole-building",
+    "cell": "intellego-limen",
+    "name": "The Plan That Holds the Whole Building",
+    "gloss": "Hold in one attention a structure whose parts do not fit together in any order. Nobody can build the impossible hall who cannot first hold it, and holding it is the documented reason three of the four recorded architects finished their careers early and indoors.",
+    "tier": 5,
+    "prerequisites": [
+      "il-stand-in-the-doorway"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "research-rate",
+        "magnitude": 512,
+        "target": "self",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "build-rate",
+        "magnitude": 384,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "il-the-near-shore",
+    "cell": "intellego-limen",
+    "name": "The Near Shore",
+    "gloss": "Find the universes that are nearly this one. They are populated by your own kind, keep libraries you could read on sight, and are near for exactly that reason: distance across the multiverse is measured in unlikeness, and the first crossing is always the smallest one available.",
+    "tier": 4,
+    "prerequisites": [
+      "il-read-the-binding"
+    ],
+    "researchCost": 16384,
+    "teachCost": 4096,
+    "scribeCost": 8192,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      {
+        "primitive": "research-rate",
+        "magnitude": 256,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "concealment",
+        "magnitude": 192,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "rl-the-crossing-to-a-kindred-house",
+    "cell": "rego-limen",
+    "name": "The Crossing to a Kindred House",
+    "gloss": "Open on a universe that is not yours and is recognisably a cousin \u2014 a different founding, a different tradition, a people you can still bargain with. Everything about the working is the same as opening on your own kind except the cost, which is not.",
+    "tier": 5,
+    "prerequisites": [
+      "rl-open-the-portal",
+      "il-the-near-shore"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "portal",
+        "magnitude": 640,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "blink",
+        "magnitude": 1024,
+        "target": "self",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "rl-the-long-crossing",
+    "cell": "rego-limen",
+    "name": "The Long Crossing",
+    "gloss": "Reach a universe with nothing in common with yours: not your species, not your tradition, not your account of what magic is. Everything past this point on the ladder costs more than the last and returns things worth more than the last, and there is no shortcut inward.",
+    "tier": 6,
+    "prerequisites": [
+      "rl-the-crossing-to-a-kindred-house"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "portal",
+        "magnitude": 896,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "blink",
+        "magnitude": 2048,
+        "target": "self",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "ward",
+        "magnitude": 256,
+        "target": "self",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "il-the-far-and-unlike",
+    "cell": "intellego-limen",
+    "name": "The Far and Unlike",
+    "gloss": "Perceive the universes at the far end of unlikeness, where the resident magic does not decompose into technique and form and the residents do not decompose into individuals. Nothing on this reading is reachable by a universe that has not already ascended once. It is a list of destinations, and it is why you would go again.",
+    "tier": 7,
+    "prerequisites": [
+      "rl-the-long-crossing"
+    ],
+    "researchCost": 131072,
+    "teachCost": 32768,
+    "scribeCost": 65536,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "research-rate",
+        "magnitude": 768,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "concealment",
+        "magnitude": 384,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "knowledge-steal",
+        "magnitude": 256,
+        "target": "area",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "rm-the-standing-consensus",
+    "cell": "rego-mentem",
+    "name": "The Standing Consensus",
+    "gloss": "Hold a faculty in one attention permanently rather than for a working. Everything any of them learns, all of them know within the hour, and there is no longer a question any one of them can be asked alone. A university that does this stops needing a library and stops being able to disagree with itself.",
+    "tier": 5,
+    "prerequisites": [
+      "rm-the-shared-mind"
+    ],
+    "researchCost": 32768,
+    "teachCost": 8192,
+    "scribeCost": 16384,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "teach-rate",
+        "magnitude": 896,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "research-rate",
+        "magnitude": 448,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "im-the-one-attention",
+    "cell": "intellego-mentem",
+    "name": "The One Attention",
+    "gloss": "Not a shared mind but a single one, wearing however many bodies are currently available. It cannot be taught, because there is nobody to teach; it cannot be raided for knowledge, because knowing is not stored anywhere; and it ends completely and at once, the way a person does.",
+    "tier": 6,
+    "prerequisites": [
+      "im-open-the-locked-room",
+      "rm-the-standing-consensus"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "research-rate",
+        "magnitude": 1024,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "concealment",
+        "magnitude": 512,
+        "target": "universe",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "metis",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "pm-the-broken-consensus",
+    "cell": "perdo-mentem",
+    "name": "The Broken Consensus",
+    "gloss": "Against an ordinary university this kills one scholar. Against one held in a single attention it takes the attention, and every body it was wearing stops at once in whatever it was doing. The recorded objection to fielding it is not moral and is about what happens to the country afterwards.",
+    "tier": 6,
+    "prerequisites": [
+      "pm-the-empty-room"
+    ],
+    "researchCost": 65536,
+    "teachCost": 16384,
+    "scribeCost": 32768,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "direct-damage",
+        "magnitude": 1024,
+        "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "area-denial",
+        "magnitude": 384,
+        "target": "area",
+        "durationTicks": 60
+      }
+    ],
+    "knowledgeKind": "episteme",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "mm-the-mind-that-holds-a-civilization",
+    "cell": "muto-mentem",
+    "name": "The Mind That Holds a Civilization",
+    "gloss": "Make one mind wide enough to be the whole institution: every node the universe holds, held at once, in something that is still recognisably somebody. The summit of the memory road and the last version of the oldest mistake, which is keeping the only copy somewhere that can die.",
+    "tier": 7,
+    "prerequisites": [
+      "mm-the-mind-made-a-library",
+      "im-the-one-attention"
+    ],
+    "researchCost": 131072,
+    "teachCost": 32768,
+    "scribeCost": 65536,
+    "rediscoveryMultiplier": 8192,
+    "effects": [
+      {
+        "primitive": "research-rate",
+        "magnitude": 1024,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "teach-rate",
+        "magnitude": 768,
+        "target": "universe",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "scribe-rate",
+        "magnitude": 384,
+        "target": "universe",
+        "durationTicks": 0
       }
     ],
     "knowledgeKind": "episteme",
