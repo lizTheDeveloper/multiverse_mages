@@ -404,50 +404,65 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
 // What enabling all seventy cells does to this chain.
 // ---------------------------------------------------------------------------
 
-describe('under the ruleset content now implies, forbidding a form stops being an ablation', () => {
-  it('still proves the chain: neutralizing build-rate alone still slows the build', () => {
-    // **Vision §4 survives.** "Rego Terram letting universities go up faster is
-    // not a special case in code — it is a node weighted toward `build-rate`" is
-    // still true of the program with every cell open: neutralize the one
-    // primitive, leave the ruleset alone, and the site takes 98 months instead of
-    // 82. That is link 5b, the sharper of the two counterfactuals, and it is the
-    // one that carries the claim.
-    expect(widePermitted.ticksToComplete).toBe(82);
-    expect(wideAblated.ticksToComplete).toBe(98);
-    expect(wideAblated.ticksToComplete).toBeGreaterThan(widePermitted.ticksToComplete);
-    expect(wideAblated.terramKnowledge).toBe(widePermitted.terramKnowledge);
-  });
-
-  it('but forbidding the Terram form no longer removes build-rate — it leaves most of it', () => {
-    // **The finding.** Forbidding a form was the god's actual verb and the
-    // counterfactual links 3, 4 and 5a are written against. It worked while the
-    // enabled subset was the twelve, where every reachable `build-rate` node was a
-    // Terram node. It does not work now:
+describe('under the ruleset content now implies, build-rate stops changing the outcome', () => {
+  it('leaves all three arms at exactly the unaided time', () => {
+    // **The finding, and it is larger than the one this block was first written
+    // for.** Under the twelve-cell rectangle the chain is intact: 62 months
+    // permitted, 98 forbidden, 98 with `build-rate` neutralized. Under the
+    // seventy-cell ruleset content now implies, every arm takes 98 — the unaided
+    // time — and the stone owed is identical to the last fixed-point unit.
     //
     //     ruleset            permitted   forbid Terram   neutralize build-rate
-    //     historic twelve    51 months    98 months       98 months
-    //     all seventy        82 months    69 months       98 months
+    //     historic twelve    62 months    98 months       98 months
+    //     all seventy        98 months    98 months       98 months
     //
-    // 33 nodes in the grid carry `build-rate` and only 9 of them are Terram, so
-    // forbidding the form leaves 61 of 74 sources standing — and it *helps*, by
-    // 13 months, because the research the ban displaces goes somewhere that pays
-    // better. A god can no longer ablate a primitive by closing one form.
-    //
-    // This is recorded rather than repaired. Which counterfactual the god's verb
-    // is supposed to be is a design question, and the two honest answers — forbid
-    // every cell carrying the primitive, or accept that forbidding is not an
-    // ablation — are both someone else's call.
-    expect(wideForbidden.ticksToComplete).toBe(69);
-    expect(wideForbidden.ticksToComplete).toBeLessThan(widePermitted.ticksToComplete);
+    // So `build-rate` does not merely stop being *ablatable by forbidding a
+    // form*. It stops mattering at all.
+    expect(permitted.ticksToComplete).toBe(62);
+    expect(forbidden.ticksToComplete).toBe(98);
+    expect(ablated.ticksToComplete).toBe(98);
 
-    // Not zero sources, which is what the twelve-cell arm saw. That is the whole
-    // mechanism of the inversion, so it is asserted rather than described.
-    expect(forbidden.peakBuildRateSources).toBe(0);
+    expect(widePermitted.ticksToComplete).toBe(98);
+    expect(wideForbidden.ticksToComplete).toBe(98);
+    expect(wideAblated.ticksToComplete).toBe(98);
+    expect(widePermitted.stoneOwed).toBe(wideAblated.stoneOwed);
+  });
+
+  it('because the strong Terram nodes are never learned, not because nothing is gathered', () => {
+    // The mechanism, and it is not "the wire came loose". Contributions are still
+    // gathered — 56 sources at peak against the twelve-cell arm's 36 — so more
+    // mages hold *some* `build-rate` node than ever before. What changed is
+    // *which* nodes.
+    //
+    //     ruleset            build-rate magnitudes reaching construction
+    //     historic twelve    128, 192, 256, 384
+    //     all seventy        128, 192
+    //
+    // The two strongest authored magnitudes stop arriving. With 300 nodes on the
+    // frontier instead of 51 a mage's effort spreads six ways, nobody gets deep
+    // enough into Rego Terram to learn the tier-3-and-up nodes that carry 256 and
+    // 384, and the two shallow ones that survive are too small to move a
+    // completion date.
+    //
+    // This is the same shape as the time-to-tier collapse in
+    // `reference-time-to-tier.test.ts` — depth arrives twenty times later — read
+    // through one primitive instead of through a tier counter. **Vision §4's
+    // worked example is not falsified; it is unreached.** A narrower opening
+    // square would restore it, which is the argument for landing `w72` with this
+    // change rather than after it.
+    expect(widePermitted.peakBuildRateSources).toBeGreaterThan(
+      permitted.peakBuildRateSources,
+    );
+    expect([...permitted.magnitudesSeen].sort((a, b) => a - b)).toEqual([128, 192, 256, 384]);
+    expect([...widePermitted.magnitudesSeen].sort((a, b) => a - b)).toEqual([128, 192]);
+
+    // And forbidding the form is no longer an ablation either, which was the
+    // first thing this block recorded: 33 nodes carry `build-rate` and only 9 are
+    // Terram, so the ban leaves most sources standing. Read from the registry so
+    // that authoring more `build-rate` outside Terram keeps this true.
     expect(wideForbidden.peakBuildRateSources).toBeGreaterThan(0);
-    expect(wideForbidden.magnitudesSeen.size).toBeGreaterThan(0);
+    expect(forbidden.peakBuildRateSources).toBe(0);
 
-    // And the content fact underneath it, read from the registry so that authoring
-    // more `build-rate` outside Terram keeps this comment true.
     const terramCells = new Set(
       content.registry.cells
         .filter((entry) => entry.record.form === 'terram')

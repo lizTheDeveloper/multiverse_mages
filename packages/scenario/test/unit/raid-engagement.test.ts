@@ -218,34 +218,32 @@ describe('a reference universe is raided', () => {
     expect(played.raids.every((raid) => !raid.outbound)).toBe(true);
   });
 
-  // ### FAILING ON PURPOSE — enabling all seventy cells, and what it exposed here
+  // ### This assertion passes, and it is not measuring what it says.
   //
-  // Left red rather than adjusted, because both honest repairs are someone else's
-  // call and a green test would hide the finding. Measured on this branch at
-  // HORIZON=520, raids-on minus raids-off instances, six seeds:
+  // Measured on this branch at HORIZON=520, raids-on minus raids-off instances,
+  // six seeds:
   //
-  //     0x12345678  -68     0x63       -171
-  //     0x0badc0de  +67     0x7        -137
-  //     0x5eed0001  +33     0x1e240    +304
+  //     0x12345678  -55     0x63       -193
+  //     0x0badc0de -226     0x7         -84
+  //     0x5eed0001  +42     0x1e240    +241
   //
-  // Raids reduce instances on 3 of 6 seeds and the deltas sum to +28. This is a
-  // coin flip: the arms diverge in their RNG trajectory the moment a raid lands,
-  // and with 300 nodes reachable instead of 51 that divergence is far larger than
-  // anything a raid removes.
+  // Raids reduce instances on 4 of 6, which is better than the coin flip this
+  // read before the branch was rebased — but it is still a comparison between
+  // two RNG trajectories that diverge the moment a raid lands, and with 300
+  // nodes reachable instead of 51 that divergence is larger than anything a raid
+  // removes.
   //
   // And it removes nothing. Every raid in both arms reports
   // `nodesLostLocally: 0` and `localCasualties: 0`, and the raid log names
   // `unimplementedCombatChannels: ["removal","save","decoy","displacement"]`.
   // **That is true on `main` too** — checked by restoring `main`'s cell.json and
-  // load.ts and re-running — so this assertion has never been measuring
-  // destruction. It measured trajectory divergence, and passed while the world
-  // was small enough for the sign to be stable.
+  // load.ts and re-running — so this assertion has never measured destruction on
+  // any build. It measures trajectory divergence, and it happens to have the
+  // right sign at this seed.
   //
-  // So the assertion is false as written and was always weakly founded. Restoring
-  // it green would mean asserting the coin flip; deleting it would drop a §8
-  // claim nobody has replaced. The repair is to assert `nodesLostLocally` once
+  // Left green and left alone: the repair is to assert `nodesLostLocally` once
   // `removal` is implemented, which is a raid-engagement task and not a content
-  // one.
+  // one, and widening it here would only make a differently-wrong assertion.
   it('destroys knowledge instances that would otherwise have survived', () => {
     const seed = 0x0bad_c0de;
     expect(play(seed, true).instances).toBeLessThan(play(seed, false).instances);
@@ -333,7 +331,8 @@ describe('looting reaches what research cannot', () => {
   //    **1 raid, inbound, 0 looted** here. The strategy still submits action 14
   //    on every one of its 400 rounds; 242 of them are now rejected
   //    (`accounting.byActionId[14] = 242`). Whatever gates action 14 is
-  //    responding to the wider ruleset, and that is un-diagnosed.
+  //    responding to the wider ruleset, and that is un-diagnosed. The figures are
+  //    re-measured after the rebase onto `apply-magic` and are unchanged.
   //
   // Left red. Asserting zero outbound raids would turn a tripwire into a
   // description, and this is the strongest single argument that a narrow opening
