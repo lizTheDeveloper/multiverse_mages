@@ -100,3 +100,84 @@ measured rather than assumed.
    the forbidden-magic spec would welcome.
 4. **What does it cost?** Swept, with both ends as controls: free, so every god reshapes everything;
    and unaffordable, so the verbs are decoration.
+
+---
+
+## The cosmological scale: the sun ages, and the ages are why
+
+*Owner, 2026-08-13:* **"Change The Age Of The Sun, Lengthen The Day — these things should happen as
+ages wear on."**
+
+**This is the layer above world-shaping, and it changes what an *age* is.**
+
+Until now an age was a counter: age 1, age 6, more peoples, more Old Gods. **Under this, the world you
+inherit is physically older.** The sun has aged. The days are longer. **Age six is not the same world
+with more history — it is a different world, and it is running down.**
+
+### It makes "before the sun swallows the earth" literal
+
+That phrase was used to explain why draconic slowness is fatal — *"in order to ascend before the sun
+swallows the earth they need to make friends."* **It was a metaphor for the run horizon. It should be
+the mechanism.**
+
+- **The sun ages across generations**, not within a run.
+- **Each age is shorter, or harsher, or both** — a later world has less time and less margin.
+- **And there is a last age.** The sun does eventually swallow the earth, and **no further ages
+  happen.**
+
+**That is a terminus the design did not have.** The run loop as written could cycle forever; this gives
+the whole thing an end, and therefore a shape.
+
+### Why this is the right escalation, and why it is not just difficulty
+
+**It escalates the *world*, not the enemy.** The Old Gods accumulate because of what you failed to do;
+the sun ages regardless. **One is authored by the player and one is not**, and a meta-progression needs
+both — otherwise a perfect player faces a static universe forever.
+
+**And it composes with the two accumulations already recorded**, giving three forces with different
+authors:
+
+| force | author | direction |
+|---|---|---|
+| **peoples** | you, by raising them | friendlier |
+| **Old Gods** | you, by failing to finish them | more dangerous |
+| **the sun** | nobody | less time |
+
+**Three forces, two of them yours.** The third is what makes the first two matter — a world with
+infinite time does not care how many allies you have.
+
+### Mechanically it is a clock the simulation already has
+
+`ERA_TICKS` is 240 and `sim-core` runs a **dual-scale clock**. The pieces for "an age is shorter than
+the one before it" exist; what is missing is that **the age's parameters are currently constants rather
+than a function of which age it is.**
+
+**`Lengthen The Day` is the fine-grained version of the same idea** and it is the more interesting one
+mechanically, because day length is *work per tick* — how much a mage gets done, how much a labourer
+produces. **A longer day is not merely flavour: it changes every rate in the economy at once**, which
+is a single lever with enormous reach and therefore one to be very careful with.
+
+### The tension worth building on
+
+**A god can shape the world; a god cannot stop the sun.**
+
+**That is the right division and it should be enforced.** The world-shaping verbs above — mountains,
+oceans, biomes, even altering a people — are all *within* an age. The cosmological scale is the thing a
+god of magic **is not** in charge of, and the game is better for having a limit its most powerful verb
+cannot reach.
+
+**It also gives the last-ditch tactics their true stakes.** *A Portal To The Undying Lands* is not an
+escape from a bad run — **it is an escape from a dying world**, and in a late age it may be the only
+ending available to anyone.
+
+### Open
+
+1. **Does the sun age per generation, or per generation *survived*?** If a fast clean ascension ages it
+   less, the player is racing the cosmos rather than the clock — **which is much more interesting**, and
+   makes the peak-timing constraint cosmological rather than merely local.
+2. **How many ages are there?** A known number is a campaign; an unknown one is dread. **Both are
+   defensible and they are different games.**
+3. **Does day length change within a run or only between?** Within is a live pressure a player watches;
+   between is a starting condition they inherit. **Between is much easier to balance.**
+4. **And what happens in the last age?** If the final world is unwinnable, it is a cutscene. **It should
+   be the hardest one that can still be won** — which is a sweep, not a decision.
