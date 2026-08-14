@@ -137,7 +137,9 @@ Corroborating evidence, from running the gate: `node scripts/check-primitive-con
 that of sixteen primitives, only `portal` and `worship-yield` are reachable from authored nodes.
 **Every engagement primitive — `direct-damage`, `ward`, `area-denial`, `blink`, `summon`,
 `knowledge-steal` — is in the FAIL list, because the package that would consume them is orphaned.**
-(That check is *not* in `npm run verify`; it is an aspirational gate that currently fails on `main`.)
+(That check is *not* in `npm run verify`. It runs in CI as an explicitly **non-blocking** job, and it
+fails there today — on this docs-only PR as much as on `main`, which is how you can tell it is
+reporting the state of the tree rather than anything a branch did to it.)
 
 **The flow-field cache assumes terrain never changes.** `TerrainNavigator.#fields` memoises one
 `Int32Array` per goal cell, justified in the header by *"terrain never changes"*. A mid-raid
@@ -215,9 +217,15 @@ authored cells hold more.
 
 ## Question 2 — the `teach=false` / `scroll=false` paradigms
 
-**Eleven paradigms are `allowsTeaching: false`:** `pact`, `emotional`, `ferromancy`, `luck`,
-`silence`, `paradox`, `age`, `escalation`, `corruption_crown`, `talent`, `wild`. All eleven are also
-`allowsScrolls: false`. There is no paradigm in `mvee` that can be scribed but not taught.
+**Eleven paradigms in the five JSON data files are `allowsTeaching: false`:** `pact`, `emotional`,
+`ferromancy`, `luck`, `silence`, `paradox`, `age`, `escalation`, `corruption_crown`, `talent`, `wild`.
+Counting the TypeScript-only definitions too the figure is **sixteen**, adding `null`, `anti`,
+`rational`, `divine_monopoly` and `hemomancy`.
+
+**All sixteen are also `allowsScrolls: false`, and the converse never occurs: there is no paradigm in
+`mvee` that can be scribed but not taught.** The reverse pairing does exist — `tech_supremacy`,
+`threshold` and `breath` are all teachable but unscribable — which is the asymmetry worth keeping,
+because it says storage is downstream of transmission rather than parallel to it.
 
 **What they would do to Mages is the most valuable experiment in this document, and it is nearly
 free.** The tradition sweep found that under standard-acquire traditions a universe ends 2400 ticks
@@ -305,7 +313,7 @@ interest.
 
 | | |
 |---|---|
-| **what it is** | Three of the nine TypeScript-only paradigms in `NullParadigms.ts`. `null` — magic does not exist (`incompatible`). `dead` — magic existed and has drained away (`absorbs`; foreign magic is quickly drained). `anti` — magic is actively opposed (`hostile`). |
+| **what it is** | Three of the nine TypeScript-only paradigms in `NullParadigms.ts`. `null` — magic does not exist (`incompatible`, teach and scrolls both false). `dead` — magic existed and has drained away (`absorbs`, and pointedly **teach and scrolls both `true`**, commented *"old scrolls exist, just don't work"*). `anti` — magic is actively opposed (`hostile`, teach and scrolls both false). |
 | **hooks** | None. These are **cell-set configurations**, which is to say they are the god's ruleset with nothing or almost nothing enabled. |
 | **cost** | **`null` is data-only and nearly zero** — a content set with no `v1: true` cells. `dead` is a small code change. `anti` wants an ambient drain (its source has `regenRate: -0.1`) and is more. |
 | **what it unlocks** | The control condition. Every balance claim the project makes is a claim about a universe with twelve enabled cells and no comparison. A `null` run is the null hypothesis, and it is free. **This is the item most likely to be skipped and least likely to be regretted.** `dead` is the sharpest of the three and deserves its own sentence: *"spellbooks contain valid formulas for power that no longer flows."* **Mages can express that today** — knowledge instances and effect magnitudes are already separate, so a universe where research, teaching and scribing all work and every effect yields zero is reachable. It is the cleanest possible test of whether the knowledge economy is load-bearing or decorative. |
