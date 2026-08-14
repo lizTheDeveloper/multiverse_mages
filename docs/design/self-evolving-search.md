@@ -233,3 +233,57 @@ modal defect; step 2 answers the cheapest unrun question on the board.
   not reproducible and none of its claims survive a re-run. Note that appending an RNG stream forces a
   re-baseline event — `contracts.md` §6 records this — so the loop's streams should be allocated once,
   up front, rather than per experiment.
+
+---
+
+## The general rule: every number that should be figured out is a search space
+
+*Owner, 2026-08-13. The widest statement of what the search is for, recorded separately because it
+covers decisions nobody currently thinks of as search.*
+
+**If a number has to be figured out, do not figure it out. Search it.**
+
+This project has already been wrong in both directions:
+
+- **A guessed scalar sitting in a flat region of its own curve is indistinguishable from a mechanic
+  that does nothing.** Much of the campaign's null-result history is that shape.
+- **And a scalar defended by argument is worse than one defended by a curve**, because the argument
+  survives the evidence. `researchCost` being a pure function of tier read as a deliberate ladder for
+  as long as nobody measured what it bought.
+
+> **Whenever a design decision reduces to a number nobody can defend from first principles, the
+> deliverable is the curve, not the value.** Sweep it with **both degenerate ends as controls** — the
+> value at which the mechanic does nothing, and the value at which it dominates — and let the
+> measurement pick. **A flat curve is a real finding**: the mechanic is theatre and the number was
+> never the constraint.
+
+### What this covers that is not currently called search
+
+| decision | the space | state |
+|---|---|---|
+| worship → grid width threshold | when the second cell unlocks | open |
+| how random "a random student" is | lottery ↔ pure aptitude weighting | open |
+| concentration-buys-depth | flat ↔ spreading never correct | open |
+| displacement cap | `fp(512)` ↔ break-even | **argued, held, never swept** |
+| opening square size | 1×1 ↔ full grid | swept, **3×3 ruled** |
+| founding grant budget | 0 ↔ unlimited | swept, **curve flat — mechanic inert** |
+| species at founding | 1 ↔ 6 | swept, **one ruled** |
+| foundational equivalence class | cell ↔ technique ↔ form | **cell, ruled by the owner** |
+| every `tuningStatus: "untuned"` constant | six species, seventy `dailyRelevance` values, 73 god constants | **hundreds, untouched** |
+
+**The last row is the point.** Hundreds of untuned constants, each one a number somebody will
+eventually be tempted to argue about — against a tuner that **already exists**. `tune-balance.mjs`
+does coordinate descent over god constants scoring band × variety, and it has been hand-run and never
+wired to anything.
+
+### Two guards, both learned expensively
+
+**A number cannot be searched if the metric it moves cannot move.** That is stage 0 and it is not
+optional: **16 of 28 registered metrics are quarantined**, and an optimiser pointed at any of them
+runs forever reporting progress.
+
+**And a shared constant cannot be a source of divergence.** Pricing all 300 nodes moved containment
+*the wrong way* — 10 fp against appeal bounds of 256–512 — because a cost surface is shared by every
+universe and can only reweight terms that already differ between them. **Search a shared constant for
+tuning; search a per-universe factor for variety.** They are different searches and conflating them
+wastes both.
