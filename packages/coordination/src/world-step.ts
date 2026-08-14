@@ -202,10 +202,12 @@ const FP_ONE = FP_UNIT;
  *
  * What scales it is every source of `research-rate`, `teach-rate` and
  * `scribe-rate` there is, stacked once into `(1 + Σ)` and clamped once at
- * `fp(4096)` — a blessing, an encouragement, and, since this change, the depth
- * of the library the mage works in (vision §6a). A mage's `vigor` and a
- * professor's teaching load are still absent, and still belong to mechanisms
- * that are not built.
+ * `fp(4096)` — a blessing, an encouragement, the depth of the library the mage
+ * works in (vision §6a), and **what the mage herself knows**
+ * (`academic-effects.ts`). The last of those is the newest and was the longest
+ * missing: until it arrived a god could bless a mage into productivity and a
+ * century of scholarship could not. A mage's `vigor` and a professor's teaching
+ * load are still absent, and still belong to mechanisms that are not built.
  */
 const MAGE_MONTHS_PER_TICK: Fixed = FP_ONE;
 
@@ -323,6 +325,8 @@ export interface WorldStepDeps {
    * library's contribution is a bonus into the *same* `(1 + Σ)` accumulator as
    * every node-sourced and god-sourced bonus, so this file has to hold the
    * registry records that declare how that accumulator stacks and where it caps.
+   * *"Node-sourced"* was aspirational when that sentence was written and is
+   * literally true since `academic-effects.ts`.
    * Before the loop, the two were held only by `god/effects.ts`, which stacked
    * its own sources and handed back a finished multiplier — and a finished
    * multiplier is exactly what cannot be added to.
@@ -371,14 +375,16 @@ export interface WorldStepDeps {
    * multiplier*, which was correct while the god was the only source: one
    * accumulator, one cap, one answer.
    *
-   * A library is a second source of the same primitives. Multiplying a stacked
-   * god multiplier by a stacked library multiplier would be two `(1 + Σ)`
-   * channels and two `fp(4096)` caps on one quantity, which
+   * A library is a second source of the same primitives, and the mage's own
+   * castable knowledge is a **third** ({@link WorldStepDeps.academicEffects}).
+   * Multiplying a stacked god multiplier by a stacked library multiplier would
+   * be two `(1 + Σ)` channels and two `fp(4096)` caps on one quantity, which
    * `mages-and-species/design.md` rejects by name: *"two caps on the same
    * quantity is how a rate ends up at 4.0 × 2.0 without anyone deciding it
-   * should be 8.0."* So the god hands over its magnitudes, the library's
-   * contribution joins them in one array, and `libraryRateMultiplier` stacks and
-   * clamps the lot exactly once.
+   * should be 8.0."* Three sources make the argument three times over. So the
+   * god hands over its magnitudes, the library's contribution and the mage's
+   * node-sourced magnitudes join them in one array, and `libraryRateMultiplier`
+   * stacks and clamps the lot exactly once.
    *
    * An empty array is an unaffected mage, so a world with no god is a world
    * where every month is a month.
@@ -1658,6 +1664,12 @@ function workOne(
       // The ceiling gating it is the **author's**, not the reader's: the mage at
       // the desk is the one the library is helping, and she cannot copy out of a
       // book she could not read.
+      //
+      // No god hook here, and that is not an omission: no god action contributes
+      // `scribe-rate`. This line passed a literal `NO_BONUSES` until W18, so the
+      // primitive stacked to the identity every tick and neither node nor god
+      // could move it — `content-set.ts` recorded that as a deliberate
+      // non-registration, and it is now the mage's own knowledge that fills it.
       gateway.contributeScribing(
         mage,
         nodeId,
