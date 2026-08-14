@@ -1,42 +1,7 @@
 [
   {
-    "id": "maren-kell",
-    "name": "Maren Kell",
-    "species": "human",
-    "voiceId": "7DTpboyigwqXiCkvQjMX",
-    "ageBracket": "middle",
-    "note": "Adjunct. Three papers in progress, two of them the same paper.",
-    "look": "harried scholar, ink-stained fingers, short dark hair, tired eyes, plain grey robe",
-    "assets": {
-      "portrait": {
-        "path": "assets/portraits/maren-kell.png",
-        "inputHash": "0c030e5b"
-      }
-    }
-  },
-  {
-    "id": "sirivel",
-    "name": "Sirivel",
-    "species": "elf",
-    "voiceId": "pFZP5JQG7iQjIQuC4Bku",
-    "ageBracket": "old",
-    "note": "Has been mid-thought since a spring. Not this one.",
-    "look": "serene long-faced elf, silver hair, very still expression, pale green robe",
-    "assets": {
-      "portrait": {
-        "path": "assets/portraits/sirivel.png",
-        "inputHash": "15f6075b"
-      }
-    }
-  },
-  {
     "id": "brenna-stonecourt",
-    "name": "Brenna Stonecourt",
-    "species": "dwarf",
-    "voiceId": "rZcizibcb1rTBqSwSjpY",
-    "ageBracket": "middle",
-    "note": "Thirty years ago Brenna countersigned Requisition Twelve refusing lamp oil to the east vault during a shortage; the copyist worked by candle, sixty volumes burned, the refusal is filed in Brenna's own hand, and blank forms have lived in that coat pocket ever since.",
-    "look": "stern dwarf archivist, braided grey beard, spectacles, brown leather apron over dark tunic",
+    "history": "Thirty years ago Brenna countersigned Requisition Twelve refusing lamp oil to the east vault during a shortage; the copyist worked by candle, sixty volumes burned, the refusal is filed in Brenna's own hand, and blank forms have lived in that coat pocket ever since.",
     "lines": [
       {
         "id": "brenna-selection-1",
@@ -68,22 +33,11 @@
         "tier": "death",
         "text": "Leave the refusal filed. Under my name. Someone after me should be able to look it up."
       }
-    ],
-    "assets": {
-      "portrait": {
-        "path": "assets/portraits/brenna-stonecourt.png",
-        "inputHash": "e968db47"
-      }
-    }
+    ]
   },
   {
     "id": "vashtareth",
-    "name": "Vashtareth",
-    "species": "draconic",
-    "voiceId": "uVKHymY7OYMd6OailpG5",
-    "ageBracket": "old",
-    "note": "Vashtareth was mid-lesson, teaching a node to a younger draconic student, when the god before this one closed the axis it depended on and the lesson stopped being possible in the middle of a word; Vashtareth has taught no one in the four centuries since.",
-    "look": "ancient draconic scholar, dark bronze scales, heavy brow, deep-set amber eyes, black robe",
+    "history": "Vashtareth was mid-lesson, teaching a node to a younger draconic student, when the god before this one closed the axis it depended on and the lesson stopped being possible in the middle of a word; Vashtareth has taught no one in the four centuries since.",
     "lines": [
       {
         "id": "vashtareth-selection-1",
@@ -115,22 +69,11 @@
         "tier": "death",
         "text": "There are two. I taught neither of them."
       }
-    ],
-    "assets": {
-      "portrait": {
-        "path": "assets/portraits/vashtareth.png",
-        "inputHash": "578c5748"
-      }
-    }
+    ]
   },
   {
     "id": "pib-quillory",
-    "name": "Pib Quillory",
-    "species": "gnome",
-    "voiceId": "OTMqA7lryJHXgAnPIQYt",
-    "ageBracket": "young",
-    "note": "Pib has derived the same node six times and never once written it down; the index carries six entries for it, every one credited to Quillory in an archivist's hand Pib does not recognise, and Pib is delighted by that hand every single time.",
-    "look": "bright-eyed gnome, wild hair, delighted expression, patched blue coat covered in pockets",
+    "history": "Pib has derived the same node six times and never once written it down; the index carries six entries for it, every one credited to Quillory in an archivist's hand Pib does not recognise, and Pib is delighted by that hand every single time.",
     "lines": [
       {
         "id": "pib-selection-1",
@@ -162,22 +105,11 @@
         "tier": "death",
         "text": "Oh— oh, it was the same one. Every time. All six, the same one, and it was new every time, and that's— that's the loveliest thing I've ever—"
       }
-    ],
-    "assets": {
-      "portrait": {
-        "path": "assets/portraits/pib-quillory.png",
-        "inputHash": "9a64c62a"
-      }
-    }
+    ]
   },
   {
     "id": "durga-ashfall",
-    "name": "Durga Ashfall",
-    "species": "orc",
-    "voiceId": "DUAKkudcC2PI6KEqJ60K",
-    "ageBracket": "middle",
-    "note": "Durga raised the north vault and holds its stonework ward — learned in order to build it, never scribed, because nobody catalogues a builder — while the founding tablet credits the archmage who signed the requisition, so Durga cut a name into the ninth course of the inner wall and plastered over it.",
-    "look": "broad orc builder, tusks, close-cropped hair, stone dust on a heavy canvas smock",
+    "history": "Durga raised the north vault and holds its stonework ward — learned in order to build it, never scribed, because nobody catalogues a builder — while the founding tablet credits the archmage who signed the requisition, so Durga cut a name into the ninth course of the inner wall and plastered over it.",
     "lines": [
       {
         "id": "durga-selection-1",
@@ -209,12 +141,6 @@
         "tier": "death",
         "text": "Ninth course. Behind the plaster. ...Leave it."
       }
-    ],
-    "assets": {
-      "portrait": {
-        "path": "assets/portraits/durga-ashfall.png",
-        "inputHash": "a6339be5"
-      }
-    }
+    ]
   }
 ]

@@ -30,6 +30,14 @@
   .stat b{color:var(--verdigris)}
   .stat .warn{color:var(--ember)}
   .spacer{flex:1}
+  .poolbar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;padding:.5rem 1rem;border-bottom:1px solid var(--line);background:var(--panel)}
+  .poolbar input{width:14rem}
+  .poolbar input#p-label{width:10rem}
+  .poolbar select{width:auto}
+  #poolview{padding:.6rem 1rem;border-bottom:1px solid var(--line);background:var(--sunk);display:flex;flex-wrap:wrap;gap:.4rem}
+  .chip{display:flex;gap:.4rem;align-items:center;font:11px var(--mono);border:1px solid var(--line);border-radius:3px;padding:.25rem .5rem;background:var(--panel)}
+  .chip .g{color:var(--brass)}
+  .chip button{padding:0 .3rem;font-size:11px;line-height:1.4}
   main{flex:1;display:grid;grid-template-columns:17rem 1fr;min-height:0}
   #list{border-right:1px solid var(--line);overflow-y:auto;background:var(--panel)}
   .row{padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent);display:flex;gap:.5rem;align-items:center}
@@ -69,6 +77,8 @@
   .msg[data-bad="true"]{color:var(--ember)}
   .lines{max-height:11rem;overflow-y:auto;border:1px solid var(--line);border-radius:3px;background:var(--panel);padding:.5rem .65rem;font-size:.85rem;color:var(--soft);display:flex;flex-direction:column;gap:.25rem}
   .lines b{color:var(--ink);font-weight:400;font-family:var(--serif)}
+  .lines .own{font:9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--brass);vertical-align:.1em}
+  .lines .sep{font:10px var(--mono);color:var(--faint);text-align:center;padding:.4rem 0;border-top:1px solid var(--line);margin-top:.3rem}
   .empty{color:var(--faint);padding:2.5rem;text-align:center}
 </style>
 
@@ -79,6 +89,23 @@
   <span class="stat" id="keys">—</span>
   <button id="new">+ New character</button>
 </header>
+
+<div class="poolbar">
+  <span class="stat">Add voice</span>
+  <input id="p-id" placeholder="paste a voice id" spellcheck="false">
+  <select id="p-species"></select>
+  <select id="p-gender">
+    <option value="female">female</option>
+    <option value="male">male</option>
+    <option value="neutral">neutral</option>
+  </select>
+  <input id="p-label" placeholder="label (optional)">
+  <button id="p-add">Verify &amp; add</button>
+  <span class="msg" id="p-msg"></span>
+  <span class="spacer"></span>
+  <button id="p-show">Pool …</button>
+</div>
+<div id="poolview" hidden></div>
 
 <main>
   <div id="list"></div>
@@ -112,6 +139,7 @@
       row.addEventListener('click', () => { current = c; previews = []; render(); });
       list.append(row);
     }
+    renderPool();
     renderEdit();
   }
 
@@ -120,7 +148,8 @@
     if (!current) { el.innerHTML = '<div class="empty">Select a character, or make one.</div>'; return; }
     const c = current;
     const speciesOpts = data.species.map((s) => `<option value="${s.id}"${s.id === c.species ? ' selected' : ''}>${s.name}</option>`).join('');
-    const voiceOpts = (data.pool[c.species] ?? []).map((v) => `<option value="${v}"${v === c.voiceId ? ' selected' : ''}>${v}</option>`).join('');
+    const voiceOpts = (data.pool[c.species] ?? [])
+      .map((v) => `<option value="${v.voiceId}">${v.gender} — ${v.label ?? v.voiceId}</option>`).join('');
     const ageOpts = ['young', 'middle', 'old'].map((a) => `<option value="${a}"${a === c.ageBracket ? ' selected' : ''}>${a}</option>`).join('');
 
     el.innerHTML = `
@@ -159,10 +188,15 @@
         <span class="msg" id="smsg"></span>
       </div>`;
 
-    const lines = (data.lines[c.species] ?? []).slice(0, 40);
-    $('lines').innerHTML = lines.length
-      ? lines.map((l) => `<div><b>${l.text}</b></div>`).join('')
-      : '<span>No lines for that species.</span>';
+    // A persona's own lines first, marked, then the species bank it falls back
+    // to. Showing only the species bank hid the fact that four characters had
+    // overrides at all.
+    const own = c.lines ?? [];
+    const bank = (data.lines[c.species] ?? []).slice(0, 30);
+    $('lines').innerHTML =
+      (own.length ? own.map((l) => `<div><span class="own">${l.tier}</span> <b>${l.text}</b></div>`).join('') : '')
+      + (own.length ? '<div class="sep">— falls back to the species bank —</div>' : '')
+      + (bank.length ? bank.map((l) => `<div>${l.text}</div>`).join('') : '<span>No lines for that species.</span>');
 
     const assets = $('assets');
     assets.replaceChildren();
@@ -251,6 +285,56 @@
       current = null; await load();
     });
   }
+
+  function renderPool() {
+    const sel = $('p-species');
+    if (!sel.options.length) {
+      sel.innerHTML = data.species.map((s) => `<option value="${s.id}">${s.name}</option>`).join('');
+    }
+    const view = $('poolview');
+    if (view.hidden) return;
+    view.replaceChildren();
+    for (const v of data.registry ?? []) {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.innerHTML = `<b>${v.species}</b> <span class="g">${v.gender}</span> ${v.label ?? v.voiceId}`;
+      const play = document.createElement('button');
+      play.textContent = '▶';
+      play.title = 'hear it';
+      play.addEventListener('click', async () => {
+        play.disabled = true;
+        const r = await (await fetch('/api/voice/sample', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ voiceId: v.voiceId, species: v.species }) })).json();
+        if (r.ok) { audio.src = `data:audio/mpeg;base64,${r.audio}`; void audio.play(); }
+        play.disabled = false;
+      });
+      const rm = document.createElement('button');
+      rm.textContent = '×';
+      rm.title = 'remove from pool';
+      rm.addEventListener('click', async () => {
+        await fetch('/api/voice/remove', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ voiceId: v.voiceId, species: v.species }) });
+        await load();
+      });
+      chip.append(play, rm);
+      view.append(chip);
+    }
+  }
+
+  $('p-show').addEventListener('click', () => {
+    const view = $('poolview');
+    view.hidden = !view.hidden;
+    renderPool();
+  });
+
+  $('p-add').addEventListener('click', async () => {
+    const msg = $('p-msg'); msg.textContent = 'verifying…'; delete msg.dataset.bad;
+    const r = await (await fetch('/api/voice/add', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ voiceId: $('p-id').value.trim(), species: $('p-species').value, gender: $('p-gender').value, label: $('p-label').value.trim() }),
+    })).json();
+    msg.textContent = r.ok ? 'added' : r.error;
+    msg.dataset.bad = String(!r.ok);
+    if (r.ok) { $('p-id').value = ''; $('p-label').value = ''; await load(); }
+  });
 
   $('new').addEventListener('click', () => {
     current = { id: '', name: '', species: data.species[0]?.id ?? 'human', voiceId: '', assets: {}, stale: [] };

@@ -17,6 +17,14 @@ export interface CharacterAsset {
   readonly inputHash: string;
 }
 
+/** One line spoken by a specific character, overriding its species bank. */
+export interface CharacterLine {
+  readonly id: string;
+  readonly tier: string;
+  readonly text: string;
+  readonly about?: string;
+}
+
 /** One named individual. See `character.ts` for why this is renderer-only. */
 export interface CharacterRecord {
   readonly id: string;
@@ -35,5 +43,14 @@ export interface CharacterRecord {
    * image model as costume direction.
    */
   readonly look?: string;
+  /**
+   * Lines that override the species bank for this character.
+   *
+   * Most characters have none and speak their species' bank unchanged. An
+   * override is for a persona whose specific history the joke depends on — and
+   * it must still read as its species' register (§8.1a), or the character stops
+   * sounding like what it is.
+   */
+  readonly lines?: readonly CharacterLine[];
   readonly assets: Readonly<Record<string, CharacterAsset>>;
 }

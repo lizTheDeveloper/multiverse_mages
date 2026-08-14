@@ -19,6 +19,8 @@
  * surfaced per-mage, which is why every species bank must carry exactly one.
  */
 
+import { readFileSync } from 'node:fs';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -163,6 +165,27 @@ describe('voice line banks', () => {
     for (const bank of banks) {
       for (const line of bank.lines) {
         expect(gendered.test(line.text), `${line.id}: ${line.text}`).toBe(false);
+      }
+    }
+  });
+
+  it('holds character override lines to the same rules as bank lines', () => {
+    // A persona overrides its species bank, so an override that breaks a rule
+    // the banks enforce would reintroduce the defect one layer down — which is
+    // exactly how the gendered pronouns survived §8.9 for a week.
+    const characters = JSON.parse(
+      readFileSync(new URL('../../data/character/character.json', import.meta.url), 'utf8'),
+    ) as { id: string; species: string; lines?: { id: string; tier: string; text: string }[] }[];
+    const gendered = /\b(she|he|her|his|him|hers)\b/iu;
+    const tiers = new Set(banks.flatMap((b) => b.lines.map((l) => l.tier)));
+    const seen = new Set(banks.flatMap((b) => b.lines.map((l) => l.id)));
+    for (const character of characters) {
+      for (const line of character.lines ?? []) {
+        expect(gendered.test(line.text), `${line.id}: ${line.text}`).toBe(false);
+        expect(tiers.has(line.tier), `${line.id} unknown tier ${line.tier}`).toBe(true);
+        expect(line.text.length, `${line.id} too long`).toBeLessThanOrEqual(300);
+        expect(seen.has(line.id), `${line.id} collides with a bank line id`).toBe(false);
+        seen.add(line.id);
       }
     }
   });

@@ -33,6 +33,7 @@ import process from 'node:process';
 import { assetInputHash, assetKinds, isStale } from '../packages/content/dist/character.js';
 
 const CHARACTERS = 'packages/content/data/character/character.json';
+const VOICE_POOL = 'packages/content/data/character/voice-pool.json';
 const VOICE_LINES = 'packages/content/data/audio/voice-line.json';
 const SPECIES = 'packages/content/data/species.json';
 const PORTRAITS = 'assets/portraits';
@@ -60,17 +61,17 @@ function state() {
   const characters = read(CHARACTERS);
   const banks = read(VOICE_LINES);
   const species = read(SPECIES).map((s) => ({ id: s.id, name: s.name }));
-  // The voice pool per species: the species' own cast voice plus any voice
-  // already assigned to one of its characters. New ones join by being used.
+  // The pool is a registry, not a derivation. It used to be inferred from the
+  // voices characters already used, which meant a new voice was invisible until
+  // it had already been assigned to somebody — you could not pick from a pool
+  // you could not see.
+  const registry = existsSync(VOICE_POOL) ? read(VOICE_POOL) : [];
   const pool = {};
   for (const s of species) {
-    const bank = banks.find((b) => b.speaker === s.id && b.speakerKind === 'species');
-    pool[s.id] = [...new Set([
-      ...(bank ? [bank.voiceId] : []),
-      ...characters.filter((c) => c.species === s.id).map((c) => c.voiceId),
-    ])];
+    pool[s.id] = registry.filter((v) => v.species === s.id);
   }
   return {
+    registry,
     characters: characters.map((c) => ({
       ...c,
       stale: assetKinds().filter((k) => isStale(c, k)),
@@ -118,6 +119,8 @@ async function keepVoice(generatedVoiceId, name, description) {
   if (!res.ok) return { ok: false, error: redact(await res.text()).slice(0, 300) };
   const data = await res.json();
   return { ok: true, voiceId: data.voice_id };
+  // The caller adds it to the pool via /api/voice/add, so a designed voice and
+  // a pasted one enter by the same door and get the same probe.
 }
 
 /** Confirms a voice id actually synthesises, which a lookup cannot tell you. */
@@ -195,6 +198,50 @@ createServer(async (req, res) => {
     const { id } = await body(req);
     save(read(CHARACTERS).filter((c) => c.id !== id));
     json(res, 200, { ok: true });
+    return;
+  }
+  if (path === '/api/voice/add' && req.method === 'POST') {
+    const { voiceId, species, gender, label } = await body(req);
+    const id = String(voiceId ?? '').trim();
+    if (!id) { json(res, 400, { ok: false, error: 'no voice id' }); return; }
+    // Probe before admitting it. A voice id that does not synthesise is worse
+    // in a registry than absent — it looks available and fails at record time,
+    // and /v1/voices gives a false negative for shared-library voices, so this
+    // is the only check that answers the question.
+    const probed = await probeVoice(id);
+    if (!probed.ok) { json(res, 200, { ok: false, error: `does not synthesise: ${probed.error}` }); return; }
+    const registry = existsSync(VOICE_POOL) ? read(VOICE_POOL) : [];
+    if (registry.some((v) => v.voiceId === id && v.species === species)) {
+      json(res, 200, { ok: false, error: 'already in the pool for that species' });
+      return;
+    }
+    registry.push({ voiceId: id, species, gender: gender ?? 'neutral', ...(label ? { label } : {}) });
+    writeFileSync(VOICE_POOL, `${JSON.stringify(registry, null, 2)}\n`);
+    json(res, 200, { ok: true });
+    return;
+  }
+  if (path === '/api/voice/remove' && req.method === 'POST') {
+    const { voiceId, species } = await body(req);
+    const registry = existsSync(VOICE_POOL) ? read(VOICE_POOL) : [];
+    writeFileSync(VOICE_POOL, `${JSON.stringify(registry.filter((v) => !(v.voiceId === voiceId && v.species === species)), null, 2)}\n`);
+    json(res, 200, { ok: true });
+    return;
+  }
+  if (path === '/api/voice/sample' && req.method === 'POST') {
+    const { voiceId, species } = await body(req);
+    if (!EL_KEY) { json(res, 200, { ok: false, error: 'ELEVENLABS_API_KEY is not set' }); return; }
+    // Sample with that species' own line, so the pool is auditioned on the
+    // material it will actually have to carry.
+    const banks = read(VOICE_LINES);
+    const bank = banks.find((b) => b.speaker === species && b.speakerKind === 'species');
+    const text = bank?.lines[0]?.text ?? 'Three copies. One to use, one to lose, and one nobody touches.';
+    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: 'POST',
+      headers: { 'xi-api-key': EL_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2' }),
+    });
+    if (!r.ok) { json(res, 200, { ok: false, error: redact(await r.text()).slice(0, 200) }); return; }
+    json(res, 200, { ok: true, audio: Buffer.from(await r.arrayBuffer()).toString('base64') });
     return;
   }
   if (path === '/api/voice/design' && req.method === 'POST') {

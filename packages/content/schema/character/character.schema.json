@@ -55,6 +55,14 @@
           "maxLength": 300,
           "description": "Visual description for the art generator, and ONLY that. Distinct from `note`, which is flavour prose for a reader — the first portrait generated came back as Santa Claus because a note about requisition forms in a coat pocket was fed to the generator as costume."
         },
+        "lines": {
+          "type": "array",
+          "maxItems": 40,
+          "description": "Lines that override the species bank for THIS character. A character with no lines speaks its species' bank unchanged — which is correct for most of them. Overriding is for a persona whose specific history the line depends on, and a line here must still read as its species' register (sound-design §8.1a) or the character stops sounding like what it is.",
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
         "assets": {
           "type": "object",
           "additionalProperties": false,
@@ -98,6 +106,44 @@
       "type": "string",
       "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
       "maxLength": 64
+    },
+    "line": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "tier",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/contentId"
+        },
+        "tier": {
+          "enum": [
+            "selection",
+            "acknowledgement",
+            "annoyance-polite",
+            "annoyance-irritated",
+            "annoyance-cracking",
+            "annoyance-unhinged",
+            "breakthrough",
+            "blessed",
+            "death",
+            "last-copy",
+            "cross-species"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "about": {
+          "type": "string",
+          "maxLength": 64
+        }
+      }
     }
   }
 }
