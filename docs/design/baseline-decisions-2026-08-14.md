@@ -87,12 +87,18 @@ that is a control someone actually ran.
 - Gate movement: `referenceNodesGained` and `referenceNodesKnown` **+44.54 SE**,
   `referenceKnowledgeInstances` +29.13 SE — with **population flat at +0.04 SE as a control**, which
   is what says this is the intended channel and not a population artifact.
-- **One claim on this PR is on notice.** It reports `reference-time-to-tier` separating four species
-  strictly. A neighbouring claim of the same shape (#127's orc separation) **vanished on a re-roll**,
-  so the ordering has not been established. The *effect sizes* are far outside noise; it is the
-  *ordering* that is unverified. A measurement of the cross-seed spread is in progress.
-- *Recommendation:* accept on the effect sizes. Do not quote the four-species ordering until the
-  spread lands.
+- **Its species claim is now REFUTED, and this replaces the "on notice" wording that was here
+  earlier.** Measured in #143 over 12 independent seed sets: the four-species chain
+  `gnome < dwarf < human < elf` holds in **1 of 12**. Links: `gnome < dwarf` 4/12, `dwarf < human`
+  3/12, `human < elf` 12/12. On `main` the chain holds **0/12**, and its one robust link was
+  **already established on `main` at 64.7 SE**. The branch also *loses* `orc < elf`, 11/12 → 0/12.
+- It is **not a measurement error** — #140's published table reproduces to the tick, as does
+  `main`'s. The same four relations separate robustly before and after. **Task 9.9 is unmet on both
+  refs and this branch did not move it.**
+- *Recommendation:* **accept, on the effect sizes only.** Research +30.6%, nodes retained +39.4%,
+  grimoires +43.4%, population flat at +0.04 SE as a control — those are far outside noise and they
+  are about *knowledge*, which is what the change is for. **Do not quote the four-species ordering at
+  all.**
 
 ### #137 — all seventy cells  ·  *hold*
 
@@ -107,11 +113,41 @@ that is a control someone actually ran.
 - **#72 does not fix this**, contrary to what was said earlier and since measured:
   `resolveOpeningSquare`'s default returns `v1RulesetAxes(registry)` — the same flag — so #72 on top
   of #137 opens the whole grid too. `explicitOpeningAxes` exists and **has no caller**.
-- *Recommendation:* **hold.** This is the one change that made the stated goal worse, and the companion
-  that was supposed to rescue it does not, as shipped. What it needs is `explicitOpeningAxes` wired
-  into the reference default — a design decision, not a merge.
+- **And it is worse than "made the metrics worse" — measured in #143 at `d6c32d0`, it destroys the
+  measurement.** At 720 ticks every species is **~20× slower** to tier 3 and **human is censored in
+  51 of 72 runs** (two whole seed sets never reach it). `gnome < elf` and `dwarf < elf` fall to 8/12,
+  **`human < elf` reverses**, and `gnome < dwarf` is refuted outright at 0/12 — that one clean of
+  censoring. Two relations survive at 10/10 and **must not be read as robust separations**: they are
+  precisely the two reading the most censored species, so they are an artefact of where the run
+  stopped.
+- **Most numbers taken on this branch at this horizon are about truncation, not about species.**
+  Uncensoring human would need ~2,400 ticks — about 20 minutes for twelve seed sets, and nobody has
+  paid it.
+- *Recommendation:* **hold.** It is the one change that made the stated goal worse; the companion that
+  was supposed to rescue it does not, as shipped; and its own measurements are not trustworthy at the
+  horizon anyone has run it at. What it needs is `explicitOpeningAxes` wired into the reference
+  default — a design decision, not a merge.
 
 ---
+
+## Landed since this page was written, and it changes one premise
+
+**#144 — the combat primitives.** `check:consumption` **10 → 3**; all seven combat primitives closed,
+leaving exactly #140's three. **109 of 109 baseline rows byte-identical**, measured against a second
+worktree at pristine `origin/main` rather than argued. No baseline decision required.
+
+**But read its headline before trusting any earlier consumption number**, including ones on this page.
+Measured on unmodified `main` *before any change*: a warband holding four v1 `direct-damage` nodes put
+**85,056 fp** on the field against a tier-matched academic warband's **0**. Combat magic already
+worked. `check:consumption` reported **seven live consumers as absent** because `arbitration.ts` read
+`registry.nodes` directly and the composition root's recorder never saw it.
+
+So the check was blind, not the game — and it is the check I trusted most, because it was red and its
+framing was well argued. **A confidently-wrong instrument reads exactly like a finding.**
+
+One consequence to weigh: **`check:consumption` is not in `npm run verify`**, so nothing keeps those
+seven closed. Adding it would turn `main` red while #140's three are outstanding, so the sequencing is
+yours.
 
 ## Not a baseline decision, but the throughput blocker
 
