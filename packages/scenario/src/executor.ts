@@ -742,6 +742,13 @@ export function makeReferenceExecutor(options: ReferenceExecutorOptions = {}): R
     ...(options.censusIntervalTicks === undefined
       ? {}
       : { censusIntervalTicks: options.censusIntervalTicks }),
+    // `raids` was declared on the options type and silently dropped here, so
+    // every caller that passed it got the default and every raid measurement
+    // taken through this factory was taken on one arm. A metric-reachability
+    // probe found it: with the switch actually forwarded, raids move four of
+    // thirteen metrics — they were never inert, only unreachable through the
+    // factory the whole pipeline uses.
+    ...(options.raids === undefined ? {} : { raids: options.raids }),
   };
   return (task: RunTask): RunOutcome => executeReferenceRun(task, resolved).outcome;
 }
