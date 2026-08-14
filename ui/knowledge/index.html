@@ -138,6 +138,8 @@
   and <code>libraryDependence</code> is the set of nodes surviving on exactly one instance. Move the
   redundancy slider: that number is what decides whether any of this matters.</p>
 
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
   <div class="bar">
     <span class="k">mean copies per node</span>
     <input id="red" type="range" min="1" max="60" step="1" value="4">
@@ -345,4 +347,13 @@ render();
 <script type="module">
   import { floatThemeControl } from '../shared/theme.js';
   floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['knowledgeAggregates', 'individualMages', 'eventDeltas']);
 </script>

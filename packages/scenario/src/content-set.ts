@@ -62,6 +62,7 @@ import {
 } from '@mm/rules-magic';
 import type { SpeciesAffinities } from '@mm/rules-world';
 import {
+  readApplicationWeights,
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
@@ -396,6 +397,14 @@ export function worldDeps(
   // `coordination/universe-effects.ts` — and the measurement that says it is
   // real rather than plumbed is in the W29 commit: resource-yield moved yields
   // +214% to +294%, and build-rate cut time-to-build by 57%.
+  //
+  // w107 gave `resource-yield` a **second** node-driven consumer, and the two
+  // are different mechanisms rather than one written twice. W29's is *ambient*:
+  // a castable, permitted node raises what every laborer cohort produces, and it
+  // costs the mage who knows it nothing. `GOAL.applyMagic` is the other: she
+  // spends the month casting one node she holds, and the materials are hers.
+  // Both reach the loop through `universeEffects`, whose index is built from the
+  // registry directly, so neither adds a registration here.
 
   return {
     speciesOf,
@@ -410,6 +419,7 @@ export function worldDeps(
       return resolved;
     },
     appeal: readTargetAppeal(registry),
+    application: readApplicationWeights(registry),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),

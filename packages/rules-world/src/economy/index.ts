@@ -34,6 +34,20 @@
  * Every magnitude is **untuned** (`docs/design/release-plan.md`).
  */
 
+export type {
+  ApplicationInput,
+  ApplicationWeightSource,
+  ApplicationWeights,
+} from './application.js';
+export {
+  APPLICATION_TUNING_STATUS,
+  REQUIRED_APPLICATION_WEIGHTS,
+  appliedYield,
+  applicationRations,
+  formRoutesToMaterials,
+  readApplicationWeights,
+} from './application.js';
+
 export type { BirthInput, CapacityInput, TerritoryExtent } from './carrying-capacity.js';
 export {
   BIRTHS_PER_MEMBER,

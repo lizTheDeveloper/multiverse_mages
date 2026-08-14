@@ -118,6 +118,8 @@
   otherwise forbidden and an interdiction one whose axes are both permitted, so <b>an edict that would
   change nothing is masked rather than merely wasteful</b>. Click a cell in direction C to issue or revoke.</p>
 
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
   <div class="bar">
     <span class="k">technique</span>
     <button class="pick" type="button" data-ax="intellego" aria-pressed="true">intellego</button>
@@ -294,4 +296,13 @@ render();
 <script type="module">
   import { floatThemeControl } from '../shared/theme.js';
   floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['ruleset']);
 </script>

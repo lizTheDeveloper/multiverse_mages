@@ -126,6 +126,7 @@ import { decayHeldKnowledge } from '@mm/rules-magic';
 import type { AblationMask, RediscoveryClampCounter } from '@mm/primitives';
 import { ClampCounters, createRediscoveryClampCounter } from '@mm/primitives';
 import type {
+  ApplicationWeights,
   CapitalEmission,
   CohortDemography,
   MageGoalCommitment,
@@ -144,6 +145,8 @@ import {
   MATERIALS_PER_LABOR_MONTH,
   MATERIAL_KINDS,
   advanceConstruction,
+  appliedYield,
+  applicationRations,
   applyLibraryUpkeep,
   assignStaff,
   staffingIndex,
@@ -276,6 +279,15 @@ export interface WorldStepDeps {
    * a thing a test can assert against rather than a silent degradation.
    */
   readonly universeEffects?: UniverseEffectIndex | undefined;
+  /**
+   * What a month of applied magic makes and what it eats, read from content.
+   *
+   * Two scalars out of `autonomy-weight.json`. Required rather than defaulted,
+   * for the reason {@link WorldStepDeps.appeal} is: a default would have to be a
+   * literal, and a universe running on numbers nobody authored passes every test
+   * that supplied one.
+   */
+  readonly application: ApplicationWeights;
   /**
    * §9's ablation mask, neutralizing at most one primitive across the world loop.
    *
@@ -466,6 +478,23 @@ export interface WorldStepReport {
   readonly grimoiresScribed: number;
   /** Materials those books cost, deducted at the desk. `fp`. */
   readonly materialsScribed: Fixed;
+  /**
+   * Materials the mages who cast at the world made this tick, `fp`.
+   *
+   * The series that says whether the applied channel is *running*, as distinct
+   * from whether anything downstream moved. `economicNodes` next door does the
+   * same job for the ambient multiplier, and it exists for the reason stated
+   * there: *"the economy did not move" and "nothing reached it" look identical
+   * in every other series*, and the whole history of this seam is a number
+   * nobody noticed was zero for three releases.
+   */
+  readonly materialsApplied: Fixed;
+  /** The same, split by kind, so a stone universe reads apart from a fed one. */
+  readonly appliedByKind: MaterialAmounts;
+  /** Mages who spent this month applying magic rather than studying it. */
+  readonly magesApplying: number;
+  /** Food those mages ate, `fp`. Part of this tick's subsistence claim. */
+  readonly applicationRations: Fixed;
   /** Projects with progress banked at the end of the tick, finished or not. */
   readonly effortsInFlight: number;
   /**
@@ -789,6 +818,21 @@ export function worldSystem(
       // ---- 5. Work -----------------------------------------------------------
       const work = spendTheMonth(state, gatewayFor(), deps, worldTick, capital, rateClamps);
 
+      // ---- 5a. What the mages who cast at the world made ----------------------
+      // Banked through the phase and settled once, so that a mage adding vellum
+      // cannot change what a scribe visited later in the same walk could afford.
+      // Added to the stock **here**, before births read it, because that is the
+      // whole point: `carryingCapacity` and `subsistenceShortfallShare` both read
+      // `stock.food` in phase 8, and a harvest that landed after them would be a
+      // harvest nobody could eat until next month.
+      //
+      // Production in phase 1 is not the place for it either. That phase is
+      // laborers on land and runs before anybody has spent a month; applied
+      // magic is a month, and a month has to be spent before it has made
+      // anything.
+      const applicationRationsOwed = applicationRations(work.applyingMages, deps.application);
+      for (const kind of MATERIAL_KINDS) stock[kind] += work.applied[kind];
+
       // ---- 6. Autonomy -------------------------------------------------------
       // What a mage believes the treasury holds when she chooses a goal. Every
       // kind summed, because a goal is scored against "can this universe afford
@@ -825,6 +869,12 @@ export function worldSystem(
             facetsOf: deps.facets,
             affinitiesOf: deps.affinitiesOf,
             preferredUniversityFor,
+            // The authored half of applicability. Absent on a build with no
+            // economy index, which makes `apply-magic` masked for every mage —
+            // the same inert world such a build already had.
+            ...(deps.universeEffects === undefined
+              ? {}
+              : { universeEffects: deps.universeEffects }),
           });
         },
       });
@@ -853,7 +903,14 @@ export function worldSystem(
       // number no rule outside this line reads — or reordering consumption
       // ahead of birth, which would charge subsistence for a population and
       // then let that population grow inside the same tick.
-      const subsistenceThisTick = subsistenceDemand(cohorts.totalCount());
+      // Populace *and* the mages who spent the month casting. `application.ts`
+      // says why the rations join the subsistence claim rather than becoming a
+      // fifth claimant, and this is the line where it matters most: a mage who
+      // makes food is now in both the numerator and the denominator of the
+      // shortfall, so applied food is a channel that can move carrying capacity
+      // and applied stone is not one that can move it for free.
+      const subsistenceThisTick =
+        subsistenceDemand(cohorts.totalCount()) + applicationRationsOwed;
       const subsistenceShortfallShare =
         subsistenceThisTick <= 0
           ? 0
@@ -902,7 +959,14 @@ export function worldSystem(
 
       // ---- 9. Consumption, then the invariant ---------------------------------
       const consumption = consumeMaterials(stock, {
-        subsistence: subsistenceDemand(cohorts.totalCount()),
+        // `cohorts.totalCount()` **re-read**, not `subsistenceThisTick` reused,
+        // and the difference is one tick's newborns. Phase 8 computes its figure
+        // before `deliverBirths` because the birth brake cannot be charged for a
+        // population that does not exist yet; this claim is settled afterwards
+        // and has always charged for the babies. Reusing the phase-8 number here
+        // would be tidier to read and would quietly stop feeding every child born
+        // this month — a second behaviour change riding along with this one.
+        subsistence: subsistenceDemand(cohorts.totalCount()) + applicationRationsOwed,
         // Brake 4, charged once. The same figure the work phase reserved out of
         // the scribes' stock at the top of the tick, so the priority order is
         // honoured by a claimant paid out of order and by one paid in it.
@@ -963,6 +1027,10 @@ export function worldSystem(
         staffAssigned: staffing.assigned.length,
         staffPruned: staffing.pruned,
         universitiesUnstaffed: staffing.unstaffed,
+        materialsApplied: totalAmount(work.applied),
+        appliedByKind: work.applied,
+        magesApplying: work.applyingMages,
+        applicationRations: applicationRationsOwed,
         effortsInFlight: efforts.size,
         libraryUpkeepOwed: upkeepOwed,
         libraryUpkeepPaid: consumption.spent.libraryUpkeep,
@@ -1342,6 +1410,18 @@ interface WorkPhaseOutcome {
   readonly researchCompleted: number;
   readonly lessonsTaught: number;
   readonly grimoiresScribed: number;
+  /**
+   * What the mages who cast at the world this month made, by kind, `fp`.
+   *
+   * Returned rather than added to the stock inside the walk, and the difference
+   * is a determinism one. Scribing spends out of `stock.vellum` *during* this
+   * phase, so a mage who added vellum mid-walk would change what every scribe
+   * visited after her could afford — a real behaviour, keyed on slot order, that
+   * nobody chose. The basket is banked and settled once the phase is over.
+   */
+  readonly applied: MaterialAmounts;
+  /** Mages who spent the month applying magic. What the rations are owed for. */
+  readonly applyingMages: number;
 }
 
 /**
@@ -1387,11 +1467,16 @@ function spendTheMonth(
   // disturbed by what it does.
   const mages = componentOf(state, MAGE);
   const alive = mages.field('alive');
+  const applied = zeroAmounts();
+  let applyingMages = 0;
   mages.forEach((row, handle) => {
     if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
     if (commitment === undefined) return;
-    workOne(state, handle, commitment, gateway, deps, worldTick, capital, rateClamps);
+    const cast = workOne(state, handle, commitment, gateway, deps, worldTick, capital, rateClamps);
+    if (cast === undefined) return;
+    applyingMages += 1;
+    for (const kind of MATERIAL_KINDS) applied[kind] += cast[kind];
   });
 
   const completedBy = new Set<Handle>();
@@ -1405,7 +1490,14 @@ function spendTheMonth(
     else if (done.kind === EFFORT_KIND.teaching) lessonsTaught += 1;
     else grimoiresScribed += 1;
   }
-  return { completedBy, researchCompleted, lessonsTaught, grimoiresScribed };
+  return {
+    completedBy,
+    researchCompleted,
+    lessonsTaught,
+    grimoiresScribed,
+    applied,
+    applyingMages,
+  };
 }
 
 /**
@@ -1417,6 +1509,18 @@ function spendTheMonth(
  * through `completeAffiliation` rather than by accumulating months. A mage whose
  * committed goal needs a counterparty and has none this tick also spends
  * nothing; the feasibility mask moves her on at her next evaluation.
+ *
+ * `apply-magic` is the one arm that does not accrue anything, and that is what
+ * makes it a different kind of goal rather than a fifth kind of project. There
+ * is no `EFFORT_PROGRESS` row and no completion: a month of casting delivers a
+ * month of materials and the world has them. She is never *finished* applying
+ * magic, which is why `select.ts` never sees her commitment complete and the
+ * ordinary evaluation schedule is the only thing that moves her off it.
+ *
+ * @returns The materials one applying mage made, or `undefined` for every other
+ * goal. `undefined` rather than a zero basket, because the caller counts the
+ * mages who applied and a mage who cast a node into a form that routes nowhere
+ * would otherwise be indistinguishable from one who researched.
  */
 function workOne(
   state: SimState,
@@ -1427,9 +1531,9 @@ function workOne(
   worldTick: number,
   capital: LibraryCapital,
   rateClamps: ClampCounters,
-): void {
+): MaterialAmounts | undefined {
   const nodeId = commitment.targetNodeId;
-  if (nodeId === 0) return;
+  if (nodeId === 0) return undefined;
 
   // Vision §6a, arriving as arithmetic: *"a university's output scales with the
   // depth of its library."* The mage's own shelves and her own species ceiling —
@@ -1478,7 +1582,7 @@ function workOne(
           deps.researchBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
         ),
       );
-      return;
+      return undefined;
     case GOAL.teach: {
       const student = gateway.studentFor(mage, nodeId);
       if (student !== undefined) {
@@ -1500,7 +1604,7 @@ function workOne(
           ),
         );
       }
-      return;
+      return undefined;
     }
     case GOAL.seekTeaching: {
       const teacher = gateway.teacherFor(mage, nodeId);
@@ -1518,7 +1622,7 @@ function workOne(
           ),
         );
       }
-      return;
+      return undefined;
     }
     case GOAL.scribe:
       // The `universities` requirement names three rates and this is the third.
@@ -1530,9 +1634,37 @@ function workOne(
         nodeId,
         mul(MAGE_MONTHS_PER_TICK, rate(deps.primitives.scribeRate, NO_BONUSES)),
       );
-      return;
+      return undefined;
+    case GOAL.applyMagic: {
+      // Both gates re-asked **at work time**, exactly as `universe-effects.ts`
+      // re-asks them per tick rather than trusting the moment of acquisition. A
+      // month is long enough for a god to interdict a cell or for the node to
+      // decay below the activation threshold, and a mage who lost the ability to
+      // cast during the month spends nothing rather than harvesting from a spell
+      // she can no longer perform. She is not moved off the goal here — the
+      // feasibility mask does that at her next evaluation, which is where every
+      // other goal's "the world changed underneath me" is handled too.
+      const authored = deps.universeEffects?.appliedYieldOf(nodeId);
+      if (authored === undefined) return undefined;
+      if (!gateway.castableNodes(mage).includes(nodeId)) return undefined;
+      // The library does **not** multiply this. §6a's loop is about the rates at
+      // which a mage learns, teaches and copies — `libraryRateMultiplier` is
+      // named for exactly those three — and a deep shelf making the harvest
+      // larger would be a fourth reading of the capital term that no balance
+      // assertion is written over. The only multiplier on applied work is the
+      // node's own, which is what `resource-yield` means.
+      return appliedYield({
+        weights: deps.application,
+        months: MAGE_MONTHS_PER_TICK,
+        form: authored.form,
+        resourceYield: deps.primitives.resourceYield,
+        magnitudes: authored.magnitudes,
+        counters: rateClamps,
+        ...(deps.ablation === undefined ? {} : { ablation: deps.ablation }),
+      });
+    }
     default:
-      return;
+      return undefined;
   }
 }
 

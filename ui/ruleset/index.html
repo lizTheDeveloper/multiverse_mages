@@ -85,6 +85,7 @@
     <div class="eyebrow">Multiverse Mages · design pillar #1 · vision §4</div>
     <h1>What magic is possible at all</h1>
     <p class="lede">Nineteen switches — five techniques, fourteen forms. A cell exists only if <em>both</em> its axes are permitted. Edicts buy single-cell exceptions, and the budget is small on purpose.</p>
+    <p class="lede">The switches open on a <em>real</em> universe's ruleset, read from a recorded session, so the first thing you see is the twelve-cell rectangle v1 actually enables rather than all seventy at once.</p>
   </header>
 
   <div class="bar">
@@ -96,6 +97,8 @@
     <button id="reset">Reset ruleset</button>
     <span class="hint">click an axis to permit · click a cell for an edict</span>
   </div>
+
+  <div id="srchost" style="margin:0 0 1rem"></div>
 
   <div class="grid" id="grid"></div>
 
@@ -115,16 +118,51 @@
 </div>
 
 <script type="module">
+import { mountSourceNote, openSession } from '../shared/session.js';
+
 const DATA = await (await fetch('./content.json')).json();
 const EDICT_BUDGET_MAX = 8; // packages/state/src/enums.ts
 
+/**
+ * The grid opens on the reference universe's actual ruleset rather than on
+ * everything-permitted.
+ *
+ * This page used to start with all seventy cells live, which made the first
+ * thing anyone saw a position no universe is ever in: v1 enables twelve. The
+ * ruleset block is nineteen flags, so it is the one part of a universe this
+ * page can adopt exactly, and starting there means the first click is a change
+ * to a real position instead of a change away from a hypothetical one.
+ *
+ * The sandbox below is still a sandbox — it recomputes legality client-side,
+ * which this file's header already records as its standing cost. What the
+ * session supplies is the starting position, not the rule.
+ */
+const session = await openSession({ recording: '../session.json' }).catch(() => null);
+const seeded = session === null ? null : session.frame(0).ruleset();
+
 const state = {
-  technique: new Set(DATA.techniques.map(t => t.id)),
-  form: new Set(DATA.forms.map(f => f.id)),
+  technique: new Set(
+    seeded === null
+      ? DATA.techniques.map((t) => t.id)
+      : seeded.techniques.filter((t) => t.permitted).map((t) => t.id),
+  ),
+  form: new Set(
+    seeded === null
+      ? DATA.forms.map((f) => f.id)
+      : seeded.forms.filter((f) => f.permitted).map((f) => f.id),
+  ),
   edicts: new Map(),            // cellId -> 'dispensation' | 'interdiction'
   selected: 'rego-limen',
   sound: false,
 };
+if (seeded !== null) {
+  for (const e of seeded.edicts) {
+    if (!e.empty && e.cell !== undefined) {
+      state.edicts.set(e.cell.id, e.kindName);
+    }
+  }
+}
+mountSourceNote(document.getElementById('srchost'), session, ['ruleset']);
 
 // ---- audio: synthesised, nothing loaded ----
 let ctx = null, bus = null;
@@ -391,16 +429,33 @@ document.getElementById('sound').addEventListener('click', async (ev) => {
   sfx('permit'); // an audible confirmation, so "on" is never a claim you cannot check
 });
 document.getElementById('reset').addEventListener('click', () => {
-  state.technique = new Set(DATA.techniques.map((t) => t.id));
-  state.form = new Set(DATA.forms.map((f) => f.id));
+  // Back to the recorded universe, not to everything-permitted. Reset means
+  // "undo what I did", and what you did was change a real position.
+  state.technique = new Set(
+    seeded === null
+      ? DATA.techniques.map((t) => t.id)
+      : seeded.techniques.filter((t) => t.permitted).map((t) => t.id),
+  );
+  state.form = new Set(
+    seeded === null
+      ? DATA.forms.map((f) => f.id)
+      : seeded.forms.filter((f) => f.permitted).map((f) => f.id),
+  );
   state.edicts.clear();
-  note('Ruleset reset — everything permitted.');
+  note(seeded === null ? 'Ruleset reset — everything permitted.' : 'Back to the recorded ruleset.');
   paint(); renderDetail();
 });
 
 build();
 renderDetail();
-note('Every technique and form permitted. 70 cells live, 300 nodes reachable.');
+if (seeded === null) {
+  note('Every technique and form permitted. 70 cells live, 300 nodes reachable.');
+} else {
+  const t = seeded.techniques.filter((x) => x.permitted).length;
+  const f = seeded.forms.filter((x) => x.permitted).length;
+  note(`Seeded from the recorded universe — <b>${t}</b> techniques and <b>${f}</b> forms permitted, `
+    + `which is the v1 rectangle. Fifty-eight of the seventy cells are dark because nothing turns them on.`);
+}
 </script>
 
 <script type="module">

@@ -225,8 +225,10 @@ describe('recovery, per species', () => {
    * draconic's 3.20e-4) and orc the shortest maturity lag at 168 months — and
    * neither recovers either. Both are censored alongside the long-lived pair.
    *
-   * What does recover is gnome and dwarf, which are neither the most fertile nor
-   * the shortest-lived. So recovery is not rate-limited by fertility at all:
+   * What recovers is dwarf — and gnome did too until `apply-magic` shipped and
+   * the goal drew months away from the roster's rebuild. Neither is the most
+   * fertile nor the shortest-lived. So recovery is not rate-limited by fertility
+   * at all:
    * student demand *is* university capacity (`populace/demand.ts`), the
    * carrying-capacity brake is one scalar shared across every species, and the
    * roster refills against seats rather than against births.
@@ -267,41 +269,33 @@ describe('recovery, per species', () => {
     // Something recovers, so the censoring above is a finding and not a run
     // that simply ended too early for anybody.
     expect(species.length).toBeGreaterThan(0);
-    const recoverers = species.map((row) => String(row['speciesId']));
-    // The recoverers do not include human, which is half of the refutation and
-    // the half that does not depend on anyone being alive to refute.
-    expect(recoverers).not.toContain('human');
-
-    // **Orc is gated on `present`, exactly as `censored` is gated above, and
-    // for the reason that block already states.**
+    // Absent species are filtered out here for exactly the reason the block
+    // above filters them out of the `censored` check, and the guard was
+    // one-sided until `apply-magic` shipped and this seed's orc roster reached
+    // the shock tick empty.
     //
-    // It says it plainly: orc reads a mean of 1.22 living mages over 32 seeds
-    // and *zero on eleven of them*, and "a species with nobody alive is neither
-    // censored nor recovered; it is absent". That gate was applied to
-    // `censored` and not to this line, which left a hole — because `species`
-    // here is filtered on `censored === false`, and a species with no roster at
-    // the cull tick is not censored. It goes `preShock 0 → killed 0 →
-    // postShock 0` and is recorded with a *finite* `recoveryTicks`, since
-    // recovering from nothing to nothing is instant. So an **extinct** orc
-    // population enters `recoverers` and refutes a claim about recovery by
-    // never having been at risk of anything.
+    // A species at zero is scored as recovering in twelve ticks — nought is
+    // trivially back to nought — and that reads in `recoverers` as the very
+    // outcome this test exists to refute. It is not one. `preShock: 0,
+    // postShock: 0` is a species that was never there, and the refutation is a
+    // claim about species that were: **the two shortest-lived species that had
+    // a roster do not recover.** Symmetrical with the `censored` guard, and
+    // stated rather than left to whoever next reads a green test and a zero.
     //
-    // That is what happens on `w108/university-fidelity`: orc has no roster at
-    // the cull tick at this seed, which the sibling test prints as `species
-    // with no roster at the cull tick: orc`. Nothing about orc's tuning changed
-    // on that branch. The staffing rule it wires is a provable no-op in a
-    // one-university reference run — 142 books over 36 ticks on both builds —
-    // and the run diverges only because `UNIVERSITY_STAFF` link rows are
-    // entities and `contracts.md` §6 splits the RNG per entity handle, so every
-    // handle-keyed draw is re-rolled. A control build that creates the links
-    // and keeps the old global-pool scribing reproduces this branch byte for
-    // byte.
-    //
-    // Nothing is weakened. The claim is stated over the species it can be
-    // stated over, which is what the paragraph above already decided for the
-    // other half of the same sentence.
-    if (present.has('orc')) {
-      expect(recoverers).not.toContain('orc');
+    // **Both sides of the `w108` merge wrote this same guard, independently and
+    // for different runs.** `w108/university-fidelity` hit an empty orc roster
+    // because `UNIVERSITY_STAFF` link rows are entities and `contracts.md` §6
+    // splits the RNG per entity handle, so creating them re-rolls every
+    // handle-keyed draw in the run; `main` hit it because `apply-magic` shipped
+    // and moved orc's months. That two unrelated changes both landed on the
+    // same hole is the argument for the general guard kept here rather than the
+    // one-species version the branch wrote — the hole is structural, not a
+    // property of either change.
+    const recoverers = species
+      .map((row) => String(row['speciesId']))
+      .filter((speciesId) => present.has(speciesId));
+    for (const shortLived of ['human', 'orc']) {
+      if (present.has(shortLived)) expect(recoverers).not.toContain(shortLived);
     }
   });
 });

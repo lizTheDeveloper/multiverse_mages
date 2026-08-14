@@ -63,7 +63,8 @@ export interface GodConstants {
   readonly worshipPopulacePerHead: Fp;
   readonly worshipPopulaceCap: Fp;
   readonly worshipPopulaceHalf: Fp;
-  readonly worshipMax: Fp;
+  // `worship-max` is deliberately **not** a field here. See the note on
+  // `resolveGodConstants` below before adding one back.
   readonly worshipLagRise: Fp;
   readonly worshipLagFall: Fp;
   readonly worshipTierBase: Fp;
@@ -140,6 +141,33 @@ export interface GodConstants {
   readonly legacyArchiveNodes: number;
   readonly legacyArchiveMaxTier: number;
   readonly legacyHeadstartFraction: Fp;
+  /**
+   * The world tick the three `legacyBaseline*` values below are measured at.
+   *
+   * **Provenance, not an input.** No formula reads it: `legacyGrant` scales the
+   * baselines by a fraction and never asks when they were taken. It is here so
+   * that the numbers beside it are falsifiable — a baseline without the tick it
+   * was measured at is a magnitude nobody can reproduce or disprove.
+   *
+   * It is also **staged ahead of a consumer that is named in content**. All
+   * three baselines carry glosses disowning themselves — *"Placeholder for the
+   * median unaided universe's ... A measurement that has not been taken: the
+   * first prestigeAdvantage sweep replaces it"* — and this is the tick that
+   * sweep has to read them at. Today two of the three are not measurements at
+   * all: `legacy-baseline-materials` is `1024000`, which is `scenario`'s
+   * `STARTING_MATERIALS` exactly, and `legacy-baseline-populace` is `72`, which
+   * is its founding population exactly (4 per cohort × 6 species × 3
+   * occupations). They are the starting position wearing the name of a tick-120
+   * median.
+   *
+   * So the owed work is a measurement, and this constant is the half of it that
+   * can be authored in advance. It is not deleted, for two reasons: dropping it
+   * from `god-constant.json` would move `contentRevision`, which sits inside
+   * every snapshot; and dropping only the field here — leaving the constant
+   * required and consumed by nothing — would take the finding off
+   * `check:reachability`'s report without changing anything true about the
+   * repository, which is the silence that check is written to refuse.
+   */
   readonly legacyReferenceTick: number;
   readonly legacyBaselineFavor: Fp;
   readonly legacyBaselineMaterials: Fp;
@@ -155,7 +183,39 @@ export interface GodContent {
 /** The highest action id `contracts.md` §4.2 declares. */
 const ACTION_ID_MAX = 15;
 
-/** Reads the whole constant set out of a loaded registry. */
+/**
+ * Reads the whole constant set out of a loaded registry.
+ *
+ * ## Why `worship-max` is resolved into nothing
+ *
+ * It is the one required god constant with no field on {@link GodConstants},
+ * and the omission is load-bearing rather than an oversight.
+ *
+ * `worship-max` is a **claim about the formula, checked at load** — `god.ts`
+ * refuses any content set where it is not exactly
+ * `worship-mage-cap + worship-university-cap + worship-populace-cap`. It is not
+ * a clamp, and `worship.ts` says at length why it must never become one: every
+ * source class saturates strictly below its own cap, so their sum is strictly
+ * below the ceiling for every finite input, and a `Math.min` on the result
+ * *"would make that identity untestable, because the clamp would hide a broken
+ * one."*
+ *
+ * Measured on the shipped content rather than argued: with 10⁸ mages, 10⁸
+ * universities and 10⁸ people — nine orders of magnitude past anything carrying
+ * capacity permits — the worship target is **9,213 against a ceiling of 9,216**,
+ * 99.97% of it, with each class still strictly under its own cap. There is no
+ * runaway to bound.
+ *
+ * So a field here would be a number the rules path reads in order to enforce
+ * something already true by construction. It carried one anyway until
+ * `check:reachability` pointed out that nothing read it, which is exactly the
+ * signal that check exists to give. **Adding it back means adding a clamp**, and
+ * that is a regression with a paper trail, not a cleanup.
+ *
+ * The constant stays required, stays in `god-constant.json`, and keeps its
+ * reader: the loader. Deleting it from content would move `contentRevision`, and
+ * `contentRevision` sits in every snapshot.
+ */
 export function resolveGodConstants(registry: ContentRegistry): GodConstants {
   const value = (id: string): number => registry.godConstant(id);
   return Object.freeze({
@@ -169,7 +229,8 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     worshipPopulacePerHead: value('worship-populace-per-head'),
     worshipPopulaceCap: value('worship-populace-cap'),
     worshipPopulaceHalf: value('worship-populace-half'),
-    worshipMax: value('worship-max'),
+    // No `worshipMax`. See the note above — the ceiling is an identity the
+    // content loader checks, not a number the rules path applies.
     worshipLagRise: value('worship-lag-rise'),
     worshipLagFall: value('worship-lag-fall'),
     worshipTierBase: value('worship-tier-base'),
