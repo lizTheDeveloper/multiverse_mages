@@ -10,6 +10,13 @@ coverage/
 # agent worktrees
 .claude/worktrees/
 
+# Agent-local tooling config. A coding agent run inside this repo may write its
+# own skills or session state here; none of it is project source, and a `git add
+# -A` in a worktree will otherwise sweep it into a commit. Caught exactly that
+# way once.
+.qwen/
+.codex/
+
 # secrets — never commit; this repo is public
 .env
 .env.*
@@ -31,6 +38,8 @@ __pycache__/
 # W17 measurement output. Same reason .w15/ is ignored: a sweep writes tens of
 # thousands of lines of JSON per arm and none of it is source.
 .w17/
+# W46's affinity-ablation arms. Same reason.
+.w46/
 
 # The generated lattice report, regenerated with scripts/content-graph.mjs.
 # Named exactly rather than globbed: `ui/*.html` also matched ui/index.html, and

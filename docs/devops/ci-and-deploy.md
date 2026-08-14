@@ -41,34 +41,31 @@ Flow for a push to `main` or a same-repo PR:
 1. GitHub posts to the receiver on the runner host, HMAC-signed with `CI_WEBHOOK_SECRET`. The
    endpoint is deliberately not written down here — see "What this file does not record" below.
 2. The receiver clones or updates the repo under `/repo/lizTheDeveloper_multiverse_mages`.
-3. `detect_ci_script` finds `scripts/ci-check.sh` and runs it, with a **600-second timeout**.
+3. `detect_ci_script` finds `scripts/ci-check.sh` and runs it, with a **2400-second timeout**
+   (`CI_RUN_TIMEOUT_S` in `webhook_receiver.py`).
+
+   **Raised from 600s on 2026-08-13, and the reason is worth keeping.** `npm run verify` grew past
+   ten minutes when the economy wire landed — the ascension balance gate alone measures **565–892s**,
+   the whole gate is ~12 minutes locally and ~24 on GitHub's runners — so the check began timing out
+   on green trees. A red that says nothing about the commit is worse than no check.
+
+   Two things about that ceiling that are easy to get wrong:
+
+   - **This receiver is shared with `themultiverse.school`**, so the ceiling is not per-repo. Raising
+     it is safe for both, since it only ever permits a longer run.
+   - **Runs here are serialised**, so the cost of a higher ceiling is that a *wedged* run occupies
+     the queue for forty minutes instead of ten. The bound exists so a hung process cannot hold it
+     forever; it is not there to make CI fast.
+
+   The two tempting alternatives are both worse. Editing `scripts/ci-check.sh` to run less breaks the
+   rule that it must stay equivalent to `npm run verify`. Trimming the ascension sweep to fit is
+   **tuning the instrument** — 32 runs is already `balance/README.md`'s argued minimum.
 4. It posts a commit status under the context **`ci/hetzner-lint`** — that exact string is what the
    branch-protection ruleset requires, so renaming it silently disarms branch protection.
 
 `scripts/ci-check.sh` must stay equivalent to `npm run verify`. If they drift, a commit can pass
 locally and fail on the runner, or worse, the reverse.
 
-## The third Actions job: primitive consumption, non-blocking
-
-`npm run check:consumption` assembles a real universe through `@mm/scenario`'s composition root and
-asks, per primitive, whether an authored node effect reaches anything the simulation applies. It is
-the missing half of `check:coverage`, which only asks whether content *authors* the primitive.
-
-It runs as its own Actions job — `Primitive consumption (non-blocking)`, `continue-on-error: true`
-— and is **not** in `npm run verify`, so `scripts/ci-check.sh` does not run it either and the two
-gates stay equivalent.
-
-The reason is that **red is the correct current answer.** When the job was split out, 2 of 14
-primitives were reachable from authored nodes, 2 were declared exclusions, and 12 had no
-node-driven consumer at all. Holding that inside `verify` meant the pull request carrying the check
-could not merge until the separate pull request carrying the fix did — a gate nobody can see is not
-a gate. This is the same reasoning, and the same mechanism, as `Next Node major (non-blocking)`.
-
-**The condition for making it blocking again** is written at the flip point in `ci.yml` and repeated
-here so it is not only in a workflow comment: *every primitive has a node-driven consumer, or the
-remaining ones are declared exclusions.* Declared exclusions are `fertility` and `lifespan`, in
-`packages/rules-magic/src/effects/consumption.ts`. Lengthening that list to go green is the exact
-failure the check exists to catch; the number in the FAIL line going down is the progress.
 ## One Actions run per commit, and why the concurrency key looks like that
 
 `Verify (pinned Node)` costs 443 s and **94 % of that is load-bearing** — there is nothing to win by
@@ -125,6 +122,28 @@ a queued job whose SHA is no longer its branch tip would cut that queue by rough
 concurrency key cut on Actions. It is not done here because it needs production access to
 `cto-tycoon-hel1` and the receiver is **shared with `themultiverse.school`**, so a change there
 affects another repository and wants owner sign-off.
+
+## The third Actions job: primitive consumption, non-blocking
+
+`npm run check:consumption` assembles a real universe through `@mm/scenario`'s composition root and
+asks, per primitive, whether an authored node effect reaches anything the simulation applies. It is
+the missing half of `check:coverage`, which only asks whether content *authors* the primitive.
+
+It runs as its own Actions job — `Primitive consumption (non-blocking)`, `continue-on-error: true`
+— and is **not** in `npm run verify`, so `scripts/ci-check.sh` does not run it either and the two
+gates stay equivalent.
+
+The reason is that **red is the correct current answer.** When the job was split out, 2 of 14
+primitives were reachable from authored nodes, 2 were declared exclusions, and 12 had no
+node-driven consumer at all. Holding that inside `verify` meant the pull request carrying the check
+could not merge until the separate pull request carrying the fix did — a gate nobody can see is not
+a gate. This is the same reasoning, and the same mechanism, as `Next Node major (non-blocking)`.
+
+**The condition for making it blocking again** is written at the flip point in `ci.yml` and repeated
+here so it is not only in a workflow comment: *every primitive has a node-driven consumer, or the
+remaining ones are declared exclusions.* Declared exclusions are `fertility` and `lifespan`, in
+`packages/rules-magic/src/effects/consumption.ts`. Lengthening that list to go green is the exact
+failure the check exists to catch; the number in the FAIL line going down is the progress.
 
 ## The balance regression gates
 
@@ -330,3 +349,57 @@ detail lives in comments in `/opt/ci-runner` on the box, which is not public.
 Golden fixtures deserve a specific mention. `npm run goldens:regen` is never run to make a test
 pass — a fixture diff is a claim that behaviour changed on purpose. CI cannot detect intent, so
 that rule is enforced by review, which is why the PR requirement is not optional.
+
+## Known issue: the queue runs superseded commits (2026-08-13)
+
+**Symptom.** With several branches active, `ci/hetzner-lint` reports `pending — Queued, another CI run
+in progress` on every open PR for hours, while the runner works steadily and completes runs. Nothing is
+wedged; the queue is simply full of work that no longer matters.
+
+**Cause.** `run_ci` serialises per repository. A push while a run is in flight blocks a thread on
+`lock.acquire()` until its turn comes. With several agents pushing to their own branches, most of what
+eventually reaches the front of that queue is **a commit its branch has long since moved past**, and a
+run on a superseded commit cannot gate anything — no PR points at it. Measured on 2026-08-13:
+**43 queued threads against 7 completions.**
+
+**Fix, not yet applied.** Skip a queued run whose commit is no longer the head of its ref. In
+`/opt/ci-runner/webhook_receiver.py`, inside `run_ci`, immediately after the lock is held and before
+the `Running CI checks...` status is posted:
+
+```python
+if is_superseded(repo_full_name, sha, ref):
+    print(f"[ci] Superseded {sha[:8]} ({branch}) -- branch has moved on, skipping")
+    post_commit_status(repo_full_name, sha, "success",
+                       "Superseded -- a newer commit is the branch head")
+    return
+```
+
+with a helper that reads `GET /repos/{repo}/git/{ref}` and compares `object.sha`.
+
+Three properties that matter, and are easy to get wrong:
+
+- **The check must come *after* the lock, not before.** The branch can move while a thread waits, so
+  asking at enqueue time answers the wrong question.
+- **It must fail open.** Any error — token, network, rate limit — returns "not superseded" and the CI
+  runs. **A missed run is a broken gate; a redundant run is only slow.**
+- **Only `refs/heads/*`.** Anything else is never treated as superseded.
+
+Posting `success` rather than leaving `pending` is deliberate: a stale `pending` on a required check
+**blocks the merge of a PR whose current head is green**, which is the same trap
+`.github/workflows/ci.yml` documents for cancelled Actions runs.
+
+**Applying it needs a person.** Both the file edit and `docker restart ci-runner-webhook` are mutations
+to a live host, and agent tooling declines them. Back up first — the existing convention is
+`webhook_receiver.py.bak-before-<change>-<date>` — then:
+
+    ssh games
+    # edit /opt/ci-runner/webhook_receiver.py
+    python3 -c 'import ast; ast.parse(open("/opt/ci-runner/webhook_receiver.py").read())'
+    cd /opt/ci-runner && docker compose up -d --build
+
+The script is **baked into the image, not bind-mounted**, so a plain `docker restart` picks up no edit
+— it must be rebuilt. There is no systemd unit.
+
+**Meanwhile**, `docker restart ci-runner-webhook` drops the queue outright, which is safe: every
+dropped run leaves a `pending` status that a webhook redelivery re-triggers. Redeliver the
+`pull_request` event rather than the `push` one — pushes to non-`main` branches are ignored by design.

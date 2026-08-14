@@ -32,6 +32,7 @@ import type { GodTickReport } from '@mm/coordination';
 import type {
   AgentSession,
   ArmContribution,
+  CensusTracePoint,
   CheckpointSample,
   IllegalActionAccounting,
   JsonValue,
@@ -120,9 +121,44 @@ interface CensusRecorder<TConfig> {
   readonly samples: readonly CensusSample[];
   /** The snowball checkpoints this run reached, ascending by world tick. */
   readonly checkpoints: readonly CheckpointSample[];
+  /**
+   * This run's census readings at {@link CENSUS_TRACE_TICKS}, ascending.
+   *
+   * A trajectory rather than an ending. The terminal reading answers *"where did
+   * this universe finish"*; it cannot distinguish *"the effect was real and the
+   * ceiling absorbed it"* from *"the effect was never there"*, and this campaign
+   * has needed that distinction repeatedly.
+   */
+  readonly trace: readonly CensusTracePoint[];
+  /**
+   * Cumulative favor the god **spent**, by §4.2 action id.
+   *
+   * Read off the favor ledger, which `coordination` deliberately does not store
+   * in world state — *"a projection inside a snapshot is inside every hash, at
+   * which point two peers can desync over a number no rule reads."* That
+   * prohibition is why the accumulation is here, in the measurement layer, and
+   * not a component. Nothing in the rules path reads this and nothing can.
+   *
+   * Applied spend only: the resolver folds a cost in *after* the deduction
+   * succeeds, so a refused or unaffordable action contributes nothing.
+   */
+  readonly godSpendByAction: Readonly<Record<string, number>>;
   /** Takes a reading now, whatever the interval says. */
   takeNow(): CensusSample;
 }
+
+/**
+ * The world ticks a census trace point is kept at.
+ *
+ * All multiples of {@link CENSUS_INTERVAL_TICKS}, so each is a reading the
+ * recorder already takes rather than an interpolation between two. 600 is
+ * `ascension-min-tick` — the last tick every run is guaranteed to reach,
+ * whatever it does afterwards — which is what makes it the honest common
+ * comparison point between two arms that terminate at different times.
+ */
+export const CENSUS_TRACE_TICKS: readonly number[] = Object.freeze([
+  144, 300, 600, 900, 1200, 1800, 2400,
+]);
 
 /**
  * Wraps a session so that driving it records the universe's vital signs.
@@ -142,7 +178,46 @@ function recordingSession<TConfig>(
   const checkpoints: CheckpointSample[] = [];
   const checkpointTicks = new Set(SNOWBALL_CHECKPOINT_TICKS);
   const checkpointsTaken = new Set<number>();
+  const trace: CensusTracePoint[] = [];
+  const traceTicks = new Set(CENSUS_TRACE_TICKS);
+  const traceTaken = new Set<number>();
+  const godSpendByAction: Record<string, number> = {};
+  let lastLedgerTick = -1;
   let lastRecordedTick = -1;
+
+  /**
+   * Folds one completed tick's applied spend into the run total.
+   *
+   * Deduplicated on the ledger's own world tick rather than on the observation's
+   * because the report lags the observation by one tick — the same lag
+   * {@link checkpoint} documents — and because `observe()` may be called more
+   * than once within a tick when an episode runs more than one agent slot.
+   * Keying on the quantity's own timestamp makes both cases correct without the
+   * caller having to know about either.
+   */
+  const accumulateSpend = (): void => {
+    const report = godReport();
+    if (report === undefined || report.ledger.worldTick <= lastLedgerTick) return;
+    lastLedgerTick = report.ledger.worldTick;
+    for (const [actionId, amount] of Object.entries(report.ledger.spentByAction)) {
+      godSpendByAction[actionId] = (godSpendByAction[actionId] ?? 0) + amount;
+    }
+  };
+
+  /** Keeps this reading if it lands on a pinned trace tick, once. */
+  const traceOf = (sample: CensusSample): void => {
+    if (!traceTicks.has(sample.worldTick) || traceTaken.has(sample.worldTick)) return;
+    traceTaken.add(sample.worldTick);
+    trace.push({
+      worldTick: sample.worldTick,
+      nodesKnown: sample.nodesKnown,
+      knowledgeInstances: sample.knowledgeInstances,
+      libraryDepth: sample.libraryDepth,
+      livingMages: sample.livingMages,
+      population: sample.population,
+      grimoires: sample.grimoires,
+    });
+  };
 
   const record = (sample: CensusSample): CensusSample => {
     if (sample.worldTick !== lastRecordedTick) {
@@ -190,12 +265,16 @@ function recordingSession<TConfig>(
   const takeNow = (): CensusSample => {
     const sample = record(censusOf(inner.observe()));
     checkpoint(sample);
+    traceOf(sample);
+    accumulateSpend();
     return sample;
   };
 
   return {
     samples,
     checkpoints,
+    trace,
+    godSpendByAction,
     takeNow,
     session: {
       reset(runSeed: number, scenarioConfig: TConfig): void {
@@ -203,6 +282,10 @@ function recordingSession<TConfig>(
         samples.length = 0;
         checkpoints.length = 0;
         checkpointsTaken.clear();
+        trace.length = 0;
+        traceTaken.clear();
+        for (const key of Object.keys(godSpendByAction)) delete godSpendByAction[key];
+        lastLedgerTick = -1;
         lastRecordedTick = -1;
         takeNow();
       },
@@ -211,6 +294,8 @@ function recordingSession<TConfig>(
         const sample = censusOf(observation);
         if (sample.worldTick % intervalTicks === 0) record(sample);
         checkpoint(sample);
+        traceOf(sample);
+        accumulateSpend();
         return observation;
       },
       legalActions: () => inner.legalActions(),
@@ -438,6 +523,8 @@ export function executeReferenceRun(
       accounting: episode.accounting,
       provenance: referenceProvenance(content),
       armContribution: armContributionOf(recorder.checkpoints, content, mechanics),
+      godSpendByAction: { ...recorder.godSpendByAction },
+      censusTrace: [...recorder.trace],
     },
   };
 }
@@ -477,6 +564,26 @@ function raidObservationOf(record: RaidRecord, god: GodTickReport | undefined): 
     defenderFrozenWorldTicks: 0,
     attackerTempoCostWorldTicks:
       regenerated <= 0 ? 0 : Math.floor(record.attackerFavorCost / regenerated),
+
+    // The action-economy fields, declared absent rather than reported as zero.
+    //
+    // `RaidRecord` carries no combat instrumentation: this executor observes a
+    // raid's shape — how long it ran, what the portal cost — and not what
+    // happened inside it. Emitting empty sources with a zero denominator would
+    // make "no instrumentation" and "no combat" the same observation, which is
+    // the confusion `unimplementedCombatChannels` exists to end, and it is the
+    // fifth instance of a metric reading as a healthy constant while being
+    // structurally incapable of moving.
+    //
+    // So every channel §3 permits is named here as unimplemented *in this
+    // executor*. The engine may implement them — `rules-raid` does — but
+    // nothing carries them across this boundary yet, and a reader of the metric
+    // needs to know which of those two statements the zero is.
+    combatSources: [],
+    totalCombatantTicks: 0,
+    worldScaleRemovals: 0,
+    summonsRemoved: 0,
+    unimplementedCombatChannels: ['removal', 'save', 'decoy', 'displacement'],
   };
 }
 

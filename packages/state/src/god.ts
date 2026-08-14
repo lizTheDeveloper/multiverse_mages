@@ -43,9 +43,19 @@
  */
 
 import type { EntityHandle, SimState } from '@mm/sim-core';
+import { floorDiv } from '@mm/sim-core';
 
-import { BLESSING, ENCOURAGED_CELL, GOD_STATE, UPHEAVAL, AXIS_CHANGE_COUNTER } from './components.js';
-import type { GodStateRecord } from './components.js';
+import {
+  BLESSING,
+  ENCOURAGED_CELL,
+  EVER_KNOWN,
+  GOD_STATE,
+  GRANT_BUDGET,
+  UPHEAVAL,
+  AXIS_CHANGE_COUNTER,
+  componentOf,
+} from './components.js';
+import type { GodStateRecord, GrantBudgetRecord } from './components.js';
 import { collectRecords, readRecord } from './records.js';
 
 /** A god-state row with every counter at zero: what a universe starts from. */
@@ -80,6 +90,78 @@ export function readGodState(
 /** The god-state row, or a zeroed one. For readers that do not care which. */
 export function godStateOrEmpty(state: SimState, universe: EntityHandle): GodStateRecord {
   return readGodState(state, universe) ?? EMPTY_GOD_STATE;
+}
+
+// ---------------------------------------------------------------------------
+// The founding-grant budget.
+// ---------------------------------------------------------------------------
+
+/** The grant-budget row, or `undefined` for a universe carrying no budget. */
+export function readGrantBudget(
+  state: SimState,
+  universe: EntityHandle,
+): GrantBudgetRecord | undefined {
+  const store = state.component(GRANT_BUDGET.name);
+  if (!store.has(universe)) return undefined;
+  return readRecord(state, GRANT_BUDGET, universe);
+}
+
+/**
+ * Nodes this universe found without a god putting them there.
+ *
+ * Ever-known rather than currently-held, because the budget is a reward for
+ * having demonstrated that the universe can grow unaided, and a node discovered
+ * and then lost was still discovered. Losing it is the loss model's business and
+ * clawing the budget back for it would price discovery on how long the finding
+ * survived — which would make the safest research the research nobody does.
+ *
+ * Floored at zero. `seededNodes` cannot exceed the ever-known count by any route
+ * the writers take, but a hand-edited save is not a reason to return a negative
+ * budget input.
+ */
+export function selfDiscoveredNodes(state: SimState, universe: EntityHandle): number {
+  const everKnown = componentOf(state, EVER_KNOWN).size;
+  const seeded = readGrantBudget(state, universe)?.seededNodes ?? 0;
+  return Math.max(0, everKnown - seeded);
+}
+
+/**
+ * Founding grants this god may still make.
+ *
+ * `Number.POSITIVE_INFINITY` when the universe carries no budget row, which is
+ * every world built before this component existed and every hand-built test
+ * world. Infinity rather than a large integer so that the "no budget in force"
+ * case is impossible to mistake for a budget that merely happens to be generous,
+ * and so that no arithmetic below can overflow it back into a limit.
+ *
+ * The accrual, in the order the terms are defended:
+ *
+ * - `earned = floor(selfDiscovered / accrualNodes)` — the universe buys the
+ *   right to be seeded again by growing on its own. `accrualNodes` of `0` means
+ *   *no accrual*, not a division by zero: a fixed allowance is a legitimate arm
+ *   of the experiment and it is the one the sweep needs at its lower end.
+ * - `min(start + earned, cap)` — the ceiling is on what may ever be **granted**,
+ *   not on what may be **held**, so a god who spends nothing does not stop
+ *   earning and a god who spends everything is not refunded.
+ * - `- grantsUsed`, floored at zero, because a save whose cap was retuned
+ *   downward mid-run should refuse further grants rather than report a debt.
+ */
+export function foundingGrantsRemaining(state: SimState, universe: EntityHandle): number {
+  const row = readGrantBudget(state, universe);
+  if (row === undefined) return Number.POSITIVE_INFINITY;
+  // `floorDiv` rather than `Math.floor(a / b)`: float division is banned in the
+  // rules path, and the ban is not pedantry here — these are counts today and a
+  // reader copying the shape into a fixed-point quantity would inherit a defect
+  // that only appears at magnitudes no test reaches.
+  const earned =
+    row.accrualNodes === 0 ? 0 : floorDiv(selfDiscoveredNodes(state, universe), row.accrualNodes);
+  const authorized = Math.min(row.startingGrants + earned, row.cap);
+  return Math.max(0, authorized - row.grantsUsed);
+}
+
+/** Whether a founding grant is still within budget. The mask and the rules both ask. */
+export function canGrantFoundingKnowledge(state: SimState, universe: EntityHandle): boolean {
+  return foundingGrantsRemaining(state, universe) > 0;
 }
 
 /** One blessing in force, with the handle its row hangs on — the blessed mage. */

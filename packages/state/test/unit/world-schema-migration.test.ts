@@ -43,6 +43,7 @@ import {
   ERA_EVALUATION,
   GOAL_COMMITMENT,
   GOD_STATE,
+  GRANT_BUDGET,
   MAGE,
   MATERIAL_STOCK,
   UNIVERSE,
@@ -51,10 +52,13 @@ import {
   addEffortProgress,
   addGoalCommitment,
   addGodAgencyState,
+  addGrantBudget,
   attachRecord,
   collectRecords,
   componentOf,
   defineWorldStateSchema,
+  findUniverse,
+  foundingGrantsRemaining,
   loadWorldSnapshot,
   migrateWorldEnvelope,
   readRecord,
@@ -129,25 +133,30 @@ function withLegacyMaterialsField(
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS),
+    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name),
   );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS),
+    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name),
   );
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS));
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name));
 }
 
 /** The world as the last build before the economy differentiated into kinds saw it. */
 function revisionFourEnvelope(materialsValue: number = LEGACY_MATERIALS_VALUE): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name), materialsValue);
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name), materialsValue);
+}
+
+/** The world as the last build whose founding grants were unlimited saw it. */
+function revisionFiveEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(GRANT_BUDGET.name);
 }
 
 describe('the world-schema revision is read off the snapshot itself', () => {
@@ -155,6 +164,8 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     expect(worldSchemaVersionOf(revisionOneEnvelope())).toBe(1);
     expect(worldSchemaVersionOf(revisionTwoEnvelope())).toBe(2);
     expect(worldSchemaVersionOf(revisionThreeEnvelope())).toBe(3);
+    expect(worldSchemaVersionOf(revisionFourEnvelope())).toBe(4);
+    expect(worldSchemaVersionOf(revisionFiveEnvelope())).toBe(5);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -167,7 +178,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(5);
+    expect(WORLD_SCHEMA_VERSION).toBe(6);
   });
 });
 
@@ -445,6 +456,67 @@ describe('migrating a revision-4 world snapshot forward (splitMaterialsByKind)',
   });
 });
 
+describe('migrating a revision-5 world snapshot forward', () => {
+  it('appends grant-budget as an empty section, in last position', () => {
+    const before = revisionFiveEnvelope();
+    const after = addGrantBudget.migrate(before);
+
+    const appended = after.components[after.components.length - 1];
+    expect(appended?.name).toBe(GRANT_BUDGET.name);
+    expect(appended?.slots.length).toBe(0);
+    expect(appended?.values.length).toBe(0);
+    expect(appended?.fields.map((field) => field.name)).toEqual(Object.keys(GRANT_BUDGET.fields));
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionFiveEnvelope();
+    expect(addGrantBudget.migrate(before).version).toBe(before.version);
+    expect(addGrantBudget.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionFiveEnvelope();
+    const componentCount = before.components.length;
+    addGrantBudget.migrate(before);
+    expect(before.components).toHaveLength(componentCount);
+  });
+
+  it('restores a pre-budget save with no budget at all, which is unbounded', () => {
+    // Empty, and here the emptiness is load-bearing in a way the appending steps
+    // before it did not have to argue: an absent row means *no budget in force*,
+    // so a save written when founding grants were unlimited keeps making them.
+    // A synthesised row would be worse than merely wrong -- its `grantsUsed`
+    // would read zero for a run that may have granted thirty times, handing a
+    // restored save a fresh allowance, and its `cap` would come from this
+    // build's content and impose a limit on a run measured without one.
+    //
+    // This is also the step that contrasts with `splitMaterialsByKind`, which
+    // rewrites and is right to: a save that recorded a materials total did
+    // record something. A save that predates the budget recorded nothing.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionFiveEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, GRANT_BUDGET).size).toBe(0);
+    expect(foundingGrantsRemaining(migrated, findUniverse(migrated))).toBe(
+      Number.POSITIVE_INFINITY,
+    );
+  });
+
+  it('keeps the material stock a revision-5 save did record', () => {
+    // The "must not disturb its predecessor" check, aimed one revision later:
+    // material-stock is the section immediately before this one, and a repair
+    // that appended in the wrong place would line it up against the wrong
+    // layout.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionFiveEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, MATERIAL_STOCK).size).toBeGreaterThan(0);
+    expect(componentOf(migrated, GRANT_BUDGET).size).toBe(0);
+  });
+});
+
 describe('an older save loads into a current world', () => {
   it('loads, and nobody in it is committed to anything or part-way through anything', () => {
     const bytes = encodeSnapshot(revisionOneEnvelope());
@@ -473,6 +545,7 @@ describe('an older save loads into a current world', () => {
     // distinct layouts, and `componentOf` would try to infer one of them for
     // all four.
     const godSpecs: readonly ComponentSpec<ComponentFields>[] = [
+      GRANT_BUDGET,
       GOD_STATE,
       BLESSING,
       UPHEAVAL,
@@ -523,6 +596,7 @@ describe('an older save loads into a current world', () => {
       [encodeSnapshot(revisionTwoEnvelope()), /effort-progress/],
       [encodeSnapshot(revisionThreeEnvelope()), /god-state/],
       [encodeSnapshot(revisionFourEnvelope()), /material-stock/],
+      [encodeSnapshot(revisionFiveEnvelope()), /grant-budget/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(

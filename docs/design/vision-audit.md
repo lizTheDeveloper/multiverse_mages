@@ -1,8 +1,51 @@
 # Vision audit — what of `vision.md` is actually wired
 
+> ## ⚠️ Staleness warning, added 2026-08-13
+>
+> **This document has generated at least two confidently-wrong findings by being read as current.**
+> Every row is a measurement of the tree it was taken on, and several of its `[executed]` rows describe
+> code that has since changed — in one case citing line numbers (`candidates.ts:82`,
+> `feasibility.ts:79`) that no longer match the files.
+>
+> Three rows are retracted inline below. They are struck through rather than deleted, because the
+> retraction is the useful part: each was true when measured, and each was repeated downstream as
+> though it were true now.
+>
+> **Two docs on `main` contradicted each other.** `packages/scenario/test/unit/reference-long-run.test.ts`
+> carries the same 1,308-books figure under the header *"This bullet list is a historical record, not
+> the current measurement"*, naming `w7` as the fix — and `vision.md` marks it fixed in the past tense.
+> This file asserted it in the present tense and tagged it `[executed]`, and this file is the one people
+> read.
+>
+> **Before acting on any row here, re-verify against a ref** — `git show origin/main:<path>` — and check
+> the cited line numbers still point at what the row claims. A finding about code is a finding about a
+> ref.
+
+
 *Workstream W12. Audited commit **`6e5ecee`** (`origin/main`, 2026-08-11). Branch
 `w12/vision-audit`. Audit only: nothing under `packages/` was changed, no baseline and no golden
 fixture was regenerated.*
+
+> **Stale about the vision's text, not about the code — noted 2026-08-12 (W48).** This audit is a
+> measurement of `vision.md` **as it read at `6e5ecee`**, and `vision.md` was amended the next day
+> by W25's spec refresh and by the raid-engagement design, both landed in the same PR as this note.
+> Four places therefore audit sentences that no longer exist:
+>
+> - **§11 — the finding was applied.** The Status column now carries task counts rather than
+>   *"not started"*, so the three `contradicted` verdicts below describe a superseded table. The
+>   counts here (`102/107` for `mages-and-species`, and the rest) were correct at `6e5ecee`; two of
+>   `mages-and-species`'s boxes were deliberately unchecked afterwards and it now reads 100/107.
+> - **§13 — partially closed.** W25 struck one open question — *"Which 3 techniques × 4 forms make
+>   the v1 subset?"*, answered in 0.3.0 and then outgrown — and added six new ones.
+> - **§3 — the row auditing *"Rules changes are a world-time action. Nothing … can be altered once
+>   a raid has begun"* audits a rule that has been repealed.** See `raid-engagement.md`. Its
+>   *evidence* is still accurate; the claim it is evidence about is gone.
+> - **§12 — the row on grid cells beyond the v1 subset** audits a line that has since been struck
+>   as in-scope.
+>
+> **Nothing here about reachability has been superseded.** `REFERENCE_MECHANICS.raidEngagement` is
+> still `false` on `main` and nothing opens a portal, so every `implemented-unreached` verdict below
+> still holds against the tree. Findings are not rewritten; this note is the only addition.
 
 `CLAUDE.md` states the standard this document exists to enforce: *"Work that isn't traceable to a
 section there is scope creep; sections that never ship are unmet promises."* This is the list of
@@ -302,12 +345,12 @@ caller outside `packages/rules-world/test/`, and `portalTargets` is supplied by 
 | Gnome — "**discovery** and *rediscovery* bonuses" | 6 | half stubbed | `rediscoveryAffinity` 1792 is wired (`world-step.ts:980` → `gateway.ts:420,579` → `research.ts:221`, applied as a divisor). There is **no separate discovery-bonus field**; the vision names two bonuses and the content carries one. [read] |
 | Gnome — the rediscovery bonus in practice | 6 | wired, and never exercised by gnomes | The divisor is applied on a reachable path, so the row is `wired` — but there are **zero living gnome mages at tick 2400**, deepest tier 0. The species that owns the mechanic is extinct before it can use it. [executed] |
 | Orc — "Low magical aptitude … high fertility" | 6 | wired | mageAptitude 192 (lowest) → `mages/promotion.ts:97`; fertility 1536 (highest). Zero living orc mages at tick 2400. [executed] |
-| Orc — "high build-rate" | 6 | implemented-unreached | `laborAffinity` 1536 splits in two. The materials half is wired (`world-step.ts:633` → `economy/materials.ts:93`). The construction half is not: `advanceConstruction` multiplies by `laborAffinity` and has no non-test caller, and `world-step.ts:585` hardcodes `construction: 0` in the consumption breakdown. [read] |
+| Orc — "high build-rate" | 6 | implemented-unreached | `laborAffinity` 1536 splits in two. The materials half is wired (`world-step.ts:633` → `economy/materials.ts:93`). ~~The construction half is not: `advanceConstruction` … has no non-test caller, and `world-step.ts:585` hardcodes `construction: 0`.~~ **STALE, retracted 2026-08-13**: both were wired on `main` on 2026-08-11/12; `world-step.ts` now passes `construction: construction.stoneOwed`. [retracted] |
 | Orc — "martial capability" | 6 | absent, by recorded decision | `contracts.md:478` states it outright: *"a `martialAffinity` field is the obvious way to encode it. It is not here because soldier effectiveness is only observable inside a raid."* A documented deviation, not an oversight — but §6's table still reads as a present-tense claim. [read] |
 | "Universities are generic capacity; specialization is emergent" — no declared field | 6 | wired | `packages/rules-world/test/unit/universities-no-specialization.test.ts` is a source scan for banned field names, run under `npm run verify`; `agent-api/src/layout.ts:595` confirms exactly four institution slots. [read] |
-| specialization actually emerging | 6 | implemented-unreached, and degenerate | `universityProfile`/`dominantCell` (`universities/profile.ts:79,128`) — the function that derives what a university is good at — has no non-test caller. And there is nothing to derive: `compareTargets` (`autonomy/candidates.ts:82`) sorts strictly ascending by remaining cost and `cheapest()` (`autonomy/feasibility.ts:79`) always commits to the minimum, so every scribe copies the same cheapest node. **Measured: 2 distinct nodes across 1,308 books.** [executed] |
+| specialization actually emerging | 6 | implemented-unreached; **the "nothing to derive" half is STALE — see the correction below** | `universityProfile`/`dominantCell` (`universities/profile.ts`) still has no non-test caller, and that half stands. ~~And there is nothing to derive: every scribe copies the same cheapest node, 2 distinct nodes across 1,308 books.~~ **Retracted 2026-08-13.** `w7/knowledge-capital` (`1acf8e5`, *"the novelty tie-break and the utility score, kept apart"*) replaced selection with `chooseTarget` → `compareAppeal`, a six-term utility argmax, and added `compareNovelty` (`autonomy/candidates.ts`) partitioning novel-before-held off a `libraryHolds` flag. `cheapest()` in `feasibility.ts` is the **affordability gate** — it implements `mage-autonomy/spec.md:44` verbatim — and never picks what is written. Re-measured live over 200 world years on five seeds: **mean 34.6 distinct nodes per library** (46/39/48/6/34), not 2. [executed, then retracted] |
 | **scribes** "copy grimoires" | 6 | wired, and unable to regrow | 1,308 books written by 17 scribes. But the labour market's demand for scribes is hardcoded — `scribingQueueDepth: 0` (`world-step.ts:474`) — so the scribe cohort can only shrink from its seed, never be replenished by need. [executed] |
-| **laborers** "build universities" | 6 | implemented-unreached | `advanceConstruction` has no caller outside `packages/rules-world/test/`. 83 laborers alive at tick 2400 and no construction in 200 years. [executed] |
+| **laborers** "build universities" | 6 | **STALE — retracted 2026-08-13** | ~~`advanceConstruction` has no caller outside `packages/rules-world/test/`.~~ It is called at `packages/coordination/src/world-step.ts:1148` via `advanceUniversities`, and has been since `9a3b6b5` (2026-08-12). The observation it supported may still hold — one university, 64 seats — but its cause is that `foundUniversity` is a **god action the reference run never takes**, not a missing function. [retracted] |
 | **students** "become the next generation of mages" | 6 | wired | `promoteMaturedStudents` (`world-step.ts:877`) gates on `maturityMonths` and promotes `floor(count × mageAptitude / fp(1024))`; 217 promotions in the reference run, and the student cohort sits at exactly the academy's 64 seats. [executed] |
 | **soldiers** "fight in raids without magic" | 6 | implemented-unreached, and the headcount is zero | `rules-raid/src/combatants.ts:89` handles soldier cohorts as combatants. In a normal run there are no soldiers at all: `standingSoldierTarget: 0` (`world-step.ts:476`) and `soldier` is excluded from `SEEDED_OCCUPATIONS` (`reference-universe.ts:133`). **Measured: 0 soldiers at tick 2400.** [executed] |
 | "A universe of pure archmages does not function" | 6 | absent | No population-mix cap, ratio or penalty exists. Worse, mages are invisible to the economy entirely: `subsistenceDemand(cohorts.totalCount())` (`world-step.ts:434,553`) sums only `POPULACE_COHORT`, so a mage eats nothing. The only friction is rate-limiting (aptitude and 64 seats), never a ratio penalty. [read] |

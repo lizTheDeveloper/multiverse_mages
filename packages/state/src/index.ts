@@ -103,6 +103,7 @@ export type {
   Fp,
   GoalCommitmentRecord,
   GodStateRecord,
+  GrantBudgetRecord,
   GrimoireRecord,
   Handle,
   KeysMatch,
@@ -132,6 +133,7 @@ export {
   EVER_KNOWN,
   GOAL_COMMITMENT,
   GOD_STATE,
+  GRANT_BUDGET,
   GRIMOIRE,
   KNOWLEDGE_INSTANCE,
   LIBRARY,
@@ -160,6 +162,7 @@ export {
   addEffortProgress,
   addGoalCommitment,
   addGodAgencyState,
+  addGrantBudget,
   splitMaterialsByKind,
   loadWorldSnapshot,
   migrateWorldEnvelope,
@@ -196,9 +199,13 @@ export {
   activeEncouragements,
   activeUpheavals,
   axisChangeCount,
+  canGrantFoundingKnowledge,
+  foundingGrantsRemaining,
   godStateOrEmpty,
   isBlessed,
   readGodState,
+  readGrantBudget,
+  selfDiscoveredNodes,
 } from './god.js';
 
 export { NodeExistenceIndex } from './node-index.js';

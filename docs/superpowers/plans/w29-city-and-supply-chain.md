@@ -211,6 +211,24 @@ project before: six mechanics built inside a loop whose middle was never connect
 | `build-rate` sources reaching construction | 38 | 0 | **38** |
 | Terram instances held | 178 | 0 | **178** |
 
+**Re-measured after merging `main` at `f97cc76`** (PR #46's frontier-predicate fix, and the
+`max-summons-per-side` value edit). Every figure moved and the chain did not:
+
+| | Terram permitted | Terram forbidden | `build-rate` ablated |
+|---|---|---|---|
+| months to open the academy | **43** | 98 | 98 |
+| stone spent building it | **2,120** | 3,104 | 3,104 |
+| `build-rate` sources reaching construction | 34 | 0 | **34** |
+| Terram instances held | 195 | 0 | **195** |
+
+The ablated arm still holds every instance and gathers every contribution and still opens at the
+unaided 98 months, which is the property the test asserts; the assertions are relational for exactly
+this reason, so the merge moved the numbers without moving the claim. The permitted arm is three
+months slower and 208 stone dearer than it was before the merge because goal selection changed
+upstream of it — `main` no longer files a node the universe currently holds as a lost art — and the
+Terram holding is 17 instances higher for the same reason. The prose below quotes the pre-merge
+figures and is left as the record of what was measured when the chain was first proved.
+
 1. **Legalizing the cell increases its use** — 178 Terram instances held against 0.
 2. **Use produces attributable contributions** — magnitudes 128, 192, 256 and 384 reach
    construction, and every one is a magnitude a shipped node declares. Attribution, not presence: a
