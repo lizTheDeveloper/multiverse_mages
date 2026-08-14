@@ -5464,3 +5464,90 @@ Those are different diagnoses and only a laddered floor separates them.
    path B at 960 — so this horizon sees the win condition but only just, and the late-game phase is
    thin. **The phase weighting (late 3 : mid 2 : early 1) has not yet been exercised on a run long
    enough to have a real late game.**
+
+---
+
+## W105 — the game's premise is true under one tradition of three, and no metric can see it
+
+*2026-08-13, PR #119. n=100/arm, CRN verified, 1,000 run records committed so this one can be bisected.*
+
+### Tradition
+
+| tradition | hooks | ascended | nodes known | library depth | **teachable instances** |
+|---|---|---|--:|--:|--:|
+| `true-naming` *(status quo)* | `true-name`/`standard` | 20/100 | 73.47 | 39.78 | **78.9** |
+| `vancian` *(standard-hook control)* | `standard`/`standard` | 20/100 | 76.62 | 27.00 | **0.0** |
+| `art-of-memory` | `standard`/`palace` | **0/100** | 21.36 | **0.00** | **0.0** |
+
+**84.3% of post-founding arrivals are teachable under True Naming. 0.09% under Vancian. 0.47% under
+the Art of Memory.** Under both standard-acquire traditions the universe ends 2400 ticks with **zero
+teachable instances and every node untransmittable**, in all eight seeds — teaching totals **4.1
+lessons**, all in the first quarter.
+
+**And the sharpest part: True Naming and Vancian are identical on ascension rate, on the winner set,
+and on nodes known — and differ absolutely on whether any knowledge can move.**
+
+*"A real-time strategy game in which autonomous mage academics discover, teach, record, and lose it"*
+is the project's own first sentence. **It is true under one of three shipped traditions**, and the two
+where it is false score the same as the one where it is true.
+
+**No committed metric can see the difference.** `census.ts` decodes from the observation vector, whose
+knowledge block has **no mastery channel**. `knowledgeCensus` already computes teachability; nothing
+carries it into a run record. **That is the twelfth instance of the campaign's modal defect and the
+most consequential: the instrument cannot see the premise.**
+
+### Species
+
+| founding mix | ascended | nodes known | library depth | living mages |
+|---|--:|--:|--:|--:|
+| **all six** *(control)* | 20/100 | 73.41 | 37.71 | 324.30 |
+| elf | 20/100 | 54.03 | 12.10 | 2.84 |
+| gnome | 17/100 | 56.63 | 10.10 | 30.28 |
+| human | 6/100 | 39.62 | 0.52 | 174.68 |
+| dwarf | 2/100 | 30.30 | 6.59 | 29.56 |
+| orc | 2/100 | 15.78 | 0.38 | 138.14 |
+| draconic | **0/100** | 26.88 | 3.10 | 4.26 |
+
+Containment ratio above 1 on **all six** measures (1.03–1.80), so this is a factor and not seed noise.
+**34 of 36 paired cells negative at >3 paired SE: founding with all six beats founding with any one.**
+
+**The mix decides the *rate* — 1.000 to 0.000 — and never the *winner*.** Two strategies ascend or
+nobody does, under all seven mixes. And `elf`-only ascends at exactly the control's rate while knowing
+**19.4 fewer nodes**, which is a different way to win rather than a worse one.
+
+Two arms nobody had ever run: **draconic-only never ascends** at 4.26 living mages, and **human-only
+holds more instances than the six-species control while knowing half as many distinct nodes** — copies
+without breadth.
+
+### Four published results are now tradition- or species-specific
+
+1. **`release-plan.md:314–316` is a 0.4.0 release claim and it is inverted**, not merely mis-scoped:
+   *"nothing a mage works out for herself is ever teachable; knowledge spreads only from founding
+   grants."* False under True Naming — **5,074 arrivals per run, 4,280 teachable** — which is what
+   everything was measured under.
+2. **`species-versatility.ts:45–55`**, the rationale under the shipped `teachableWindowTicks` field
+   pinned in `metric-constants.md`. The arithmetic is fine; the sentence beneath it is a Vancian
+   statement.
+3. **`tradition-sweep.md`'s headline inverted.** Recomputed on its own 8-strategy pool:
+   0.6875 / 0.6979 / **0.1250** then; **0.1250 / 0.1250 / 0.0000** now. The Art of Memory was the only
+   tradition in §7's band and **now ascends never**, while the other two moved into the band beneath
+   it. `ages-of-magic.md` quotes the old 0.125 as current fact.
+4. **Every per-species reading in this document is all-six-only.**
+
+### Two corrections to me, and the second is sharper than the finding
+
+- **`loss-shock-recovery`'s assertions are not red on `main`.** PR #81 — my own fix — made them
+  conditional and all seven tests pass. I briefed two agents afterwards telling them the tests were
+  deliberately red. **I did not check that my own fix had landed.**
+- **Orc's "1.22 living mages" is orc *inside the all-six universe*, not an orc-only universe.** An
+  orc-only universe reaches **138.14 living mages** and ascends twice in a hundred. I quoted 1.22
+  repeatedly as a statement about orcs. **Conflating the two is the all-six-only error itself**, made
+  by the person who wrote up the all-six-only error.
+
+### And both prior measurements of these factors are dead
+
+`results-integration-r2.txt` and `docs/design/tradition-sweep.md` **do not reproduce on `main`** — 83
+commits have touched `packages/` since, and both point at scratchpad paths that no longer exist, so
+neither can be bisected. **This run committed its 1,000 records (380 KB) so that it can be**, and every
+table recomputes from the CSV without re-running anything. That is the difference between a
+measurement and an anecdote, and it is worth the 380 KB.
