@@ -117,6 +117,42 @@ function terramBit(): number {
 }
 
 /**
+ * The twelve-cell ruleset this chain was originally measured against, and why it
+ * is still here now that content enables all seventy.
+ *
+ * Links 3, 4 and 5a compare *permitted* against *forbid the Terram form*, and
+ * that comparison is only a counterfactual for `build-rate` while Terram is where
+ * most of the reachable `build-rate` is. Under the twelve it was: 5 of the
+ * enabled nodes carrying `build-rate` were Terram nodes, out of 5 in the subset —
+ * all of them. Under all seventy, 33 nodes carry `build-rate` and only 9 are
+ * Terram, so forbidding the form leaves 61 of 74 sources standing and the arm
+ * stops isolating anything. Measured, not argued: see the seventy-cell
+ * describe block at the bottom of this file.
+ *
+ * So the chain's three middle links are asserted against a *stated* ruleset
+ * rather than against whatever content happens to enable, which is what they
+ * always meant. Written as axis names and resolved through the registry, in the
+ * discipline {@link terramBit} follows.
+ */
+const HISTORIC_TECHNIQUES: readonly string[] = ['intellego', 'perdo', 'rego'];
+const HISTORIC_FORMS: readonly string[] = ['limen', 'mentem', 'nomen', 'terram'];
+
+function maskOf(
+  axis: readonly { readonly record: { readonly id: string; readonly bit: number } }[],
+  chosen: readonly string[],
+): number {
+  let mask = 0;
+  for (const id of chosen) {
+    const entry = axis.find((candidate) => candidate.record.id === id);
+    if (entry === undefined) {
+      throw new Error(`the shipped registry declares no axis "${id}"; this test names it by id`);
+    }
+    mask |= 1 << entry.record.bit;
+  }
+  return mask;
+}
+
+/**
  * Every `build-rate` magnitude the shipped content declares on a Terram node at
  * `target: "universe"`.
  *
@@ -188,6 +224,12 @@ interface Arm {
   readonly forbidTerram?: boolean;
   /** Neutralize one primitive across the world loop. */
   readonly ablation?: AblationMask;
+  /**
+   * Narrow the ruleset to {@link HISTORIC_TECHNIQUES} × {@link HISTORIC_FORMS}
+   * before anything else. Applied first, so `forbidTerram` still subtracts from
+   * whatever this leaves.
+   */
+  readonly historicRectangle?: boolean;
 }
 
 function runArm(arm: Arm): ArmResult {
@@ -204,6 +246,10 @@ function runArm(arm: Arm): ArmResult {
 
   const universes = componentOf(state, UNIVERSE);
   const universe = findUniverse(state);
+  if (arm.historicRectangle === true) {
+    universes.set(universe, 'permittedTechniques', maskOf(content.registry.techniques, HISTORIC_TECHNIQUES));
+    universes.set(universe, 'permittedForms', maskOf(content.registry.forms, HISTORIC_FORMS));
+  }
   if (arm.forbidTerram === true) {
     const permitted = universes.get(universe, 'permittedForms');
     universes.set(universe, 'permittedForms', permitted & ~(1 << terramBit()));
@@ -248,11 +294,22 @@ function runArm(arm: Arm): ArmResult {
 // The arms. Computed once: each is a 180-tick run of the full world loop.
 // ---------------------------------------------------------------------------
 
-const permitted = runArm({});
-const forbidden = runArm({ forbidTerram: true });
-const ablated = runArm({ ablation: neutralizing('build-rate') });
+const permitted = runArm({ historicRectangle: true });
+const forbidden = runArm({ forbidTerram: true, historicRectangle: true });
+const ablated = runArm({ ablation: neutralizing('build-rate'), historicRectangle: true });
+
+// The same three arms with the ruleset content now implies — all seventy cells —
+// so that what widening the grid did to this chain is a measurement in this file
+// rather than a surprise in someone's next run.
+const widePermitted = runArm({});
+const wideForbidden = runArm({ forbidTerram: true });
+const wideAblated = runArm({ ablation: neutralizing('build-rate') });
 
 describe('the causal chain for build-rate, end to end at one seed', () => {
+  // Measured on the twelve-cell rectangle. See HISTORIC_TECHNIQUES for why the
+  // ruleset is stated here rather than read from whatever content enables, and the
+  // last describe block in this file for what the seventy-cell ruleset does to
+  // links 3, 4 and 5a.
   it('link 1 — legalizing Terram increases how much Terram magic the academics hold', () => {
     // The first link, and the one most often assumed rather than checked. If
     // forbidding a form did not change what mages *learn*, then everything
@@ -329,10 +386,78 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
   it('is a deterministic function of its seed', () => {
     // The whole file is a claim about one seed. A claim about one seed that does
     // not reproduce is a claim about nothing.
-    const again = runArm({});
+    const again = runArm({ historicRectangle: true });
     expect(again.ticksToComplete).toBe(permitted.ticksToComplete);
     expect(again.stoneOwed).toBe(permitted.stoneOwed);
     expect(again.terramKnowledge).toBe(permitted.terramKnowledge);
+
+    // Both rulesets, because the file now measures two and a determinism claim
+    // about one of them is a claim about half the file.
+    const wideAgain = runArm({});
+    expect(wideAgain.ticksToComplete).toBe(widePermitted.ticksToComplete);
+    expect(wideAgain.stoneOwed).toBe(widePermitted.stoneOwed);
+    expect(wideAgain.terramKnowledge).toBe(widePermitted.terramKnowledge);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// What enabling all seventy cells does to this chain.
+// ---------------------------------------------------------------------------
+
+describe('under the ruleset content now implies, forbidding a form stops being an ablation', () => {
+  it('still proves the chain: neutralizing build-rate alone still slows the build', () => {
+    // **Vision §4 survives.** "Rego Terram letting universities go up faster is
+    // not a special case in code — it is a node weighted toward `build-rate`" is
+    // still true of the program with every cell open: neutralize the one
+    // primitive, leave the ruleset alone, and the site takes 98 months instead of
+    // 82. That is link 5b, the sharper of the two counterfactuals, and it is the
+    // one that carries the claim.
+    expect(widePermitted.ticksToComplete).toBe(82);
+    expect(wideAblated.ticksToComplete).toBe(98);
+    expect(wideAblated.ticksToComplete).toBeGreaterThan(widePermitted.ticksToComplete);
+    expect(wideAblated.terramKnowledge).toBe(widePermitted.terramKnowledge);
+  });
+
+  it('but forbidding the Terram form no longer removes build-rate — it leaves most of it', () => {
+    // **The finding.** Forbidding a form was the god's actual verb and the
+    // counterfactual links 3, 4 and 5a are written against. It worked while the
+    // enabled subset was the twelve, where every reachable `build-rate` node was a
+    // Terram node. It does not work now:
+    //
+    //     ruleset            permitted   forbid Terram   neutralize build-rate
+    //     historic twelve    51 months    98 months       98 months
+    //     all seventy        82 months    69 months       98 months
+    //
+    // 33 nodes in the grid carry `build-rate` and only 9 of them are Terram, so
+    // forbidding the form leaves 61 of 74 sources standing — and it *helps*, by
+    // 13 months, because the research the ban displaces goes somewhere that pays
+    // better. A god can no longer ablate a primitive by closing one form.
+    //
+    // This is recorded rather than repaired. Which counterfactual the god's verb
+    // is supposed to be is a design question, and the two honest answers — forbid
+    // every cell carrying the primitive, or accept that forbidding is not an
+    // ablation — are both someone else's call.
+    expect(wideForbidden.ticksToComplete).toBe(69);
+    expect(wideForbidden.ticksToComplete).toBeLessThan(widePermitted.ticksToComplete);
+
+    // Not zero sources, which is what the twelve-cell arm saw. That is the whole
+    // mechanism of the inversion, so it is asserted rather than described.
+    expect(forbidden.peakBuildRateSources).toBe(0);
+    expect(wideForbidden.peakBuildRateSources).toBeGreaterThan(0);
+    expect(wideForbidden.magnitudesSeen.size).toBeGreaterThan(0);
+
+    // And the content fact underneath it, read from the registry so that authoring
+    // more `build-rate` outside Terram keeps this comment true.
+    const terramCells = new Set(
+      content.registry.cells
+        .filter((entry) => entry.record.form === 'terram')
+        .map((entry) => entry.record.id),
+    );
+    const carriers = content.registry.nodes.filter((entry) =>
+      entry.record.effects.some((effect) => effect.primitive === 'build-rate'),
+    );
+    expect(carriers).toHaveLength(33);
+    expect(carriers.filter((entry) => terramCells.has(entry.record.cell))).toHaveLength(9);
   });
 });
 
