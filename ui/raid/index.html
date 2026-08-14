@@ -664,6 +664,8 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
     </div>
   </header>
 
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
   <div class="rail" id="rail">
     <div class="ph" data-phase="muster">
       <div class="top"><span class="nm">Muster</span><span class="agency">agency: full</span></div>
@@ -2935,3 +2937,12 @@ requestAnimationFrame(frame);
 </script>
 </body>
 </html>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['engagement', 'eventDeltas']);
+</script>
