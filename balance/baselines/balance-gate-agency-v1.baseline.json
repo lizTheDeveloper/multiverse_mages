@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "1b73f7e27b0bf2eb582d9094c5747ebd29663c6f5991847ea2178fccd3304b28",
-  "contentHash": "f63d7ee2a793b222cd3a5270cdbc98f3b4183a2a7e60a749a9e5b4f62b1c09d2",
+  "contentHash": "6c510a29eb8d34ea7bf9c7a57b64567a1eb8577563ddeff1bab72ff583e0ace6",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":64,"standardError":10.678633017619811,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":32.035899052859435,"unit":"grimoires","value":267.09375},
@@ -108,7 +108,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Provenance only: god action 16 added a seventeenth god-cost record, which moves contentRevision 162f80bf -> 87fdff6c and makes the gate refuse the old baseline as a cross-build comparison, correctly, since a delta across two content revisions is a category error rather than a regression. Behaviour is unchanged: every metric of every gate reported delta 0.00000 against the superseded baseline before this regeneration, regenerate-baseline.mjs printed 'no metric moved' for all three, and a paired re-run of the draconic species sweep is bit-identical across all ten pool strategies. Nothing here is a claim that behaviour moved. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0.",
+  "rationale": "Provenance only: god action 16 added a seventeenth god-cost record, which moves contentRevision 162f80bf -> 87fdff6c and makes the gate refuse the old baseline as a cross-build comparison, correctly, since a delta across two content revisions is a category error rather than a regression. Behaviour is unchanged: every metric of every gate reported delta 0.00000 against the superseded baseline before this regeneration, regenerate-baseline.mjs printed 'no metric moved' for all three, and a paired re-run of the draconic species sweep is bit-identical across all ten pool strategies. Nothing here is a claim that behaviour moved. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0. The universe remains degenerate in known ways and this branch measured a further one, which conditions every number in this file: scribeThroughputFor returns zero for a mage whose universityId is 0 and completeAffiliation has no production caller, so no mage a universe promotes for itself is ever affiliated. Measured over 100 runs per arm, 162 living human mages produce 0.05 grimoires while 4.3 living draconic mages -- whose single founder is affiliated and lives 18,000 months -- produce 76. Scribing tracks affiliated mages and not mages, so any gate metric that reads a library is reading the founding cohort.",
   "rootSeed": 20260811,
   "runCount": 64,
   "supersededDeltas": [
@@ -203,7 +203,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange@uniform-random-legal","previousValue":63.5,"value":63.5},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange@worship-maximizer","previousValue":66,"value":66}
   ],
-  "supersedes": "837129a86ce4db5f6c96eb2c8ec8f09cd8742ca622e1aed4fd10f5e5952d469e",
+  "supersedes": "f63d7ee2a793b222cd3a5270cdbc98f3b4183a2a7e60a749a9e5b4f62b1c09d2",
   "sweepId": "balance-gate-agency-v1",
   "toleranceK": 3
 }
