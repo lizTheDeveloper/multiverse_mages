@@ -28,6 +28,7 @@
     "@mm/coordination": "*",
     "@mm/mc-harness": "*",
     "@mm/rules-magic": "*",
+    "@mm/rules-raid": "*",
     "@mm/rules-world": "*",
     "@mm/sim-core": "*",
     "@mm/state": "*"
