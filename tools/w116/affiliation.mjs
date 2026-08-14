@@ -56,10 +56,11 @@ import { dirname } from 'node:path';
 
 import { defineWorld } from '../../packages/sim-core/dist/index.js';
 import {
+  GRIMOIRE,
   KNOWLEDGE_INSTANCE,
-  LOCATION_KIND,
   MAGE,
   collectRecords,
+  componentOf,
 } from '../../packages/state/dist/index.js';
 import { createSession } from '../../packages/agent-api/dist/index.js';
 import {
@@ -124,11 +125,16 @@ export function runOne({ content, strategyId, cellIndex, replicateIndex, options
             living += 1;
             if (row.universityId !== 0) affiliated += 1;
           }
-          let grimoires = 0;
+          // The `GRIMOIRE` component, not knowledge instances at a grimoire
+          // location. A book is its own entity — `contracts.md` §1.5, one node
+          // per grimoire with a durability and a holder — and `census.ts`
+          // counts the same thing through the observation block. Counting
+          // instances by `locationKind` instead reports zero in every arm,
+          // which is a plausible-looking answer to a different question.
+          const grimoires = componentOf(ctx.state, GRIMOIRE).size;
           const distinct = new Set();
           for (const { row } of collectRecords(ctx.state, KNOWLEDGE_INSTANCE)) {
             distinct.add(row.nodeId);
-            if (row.locationKind === LOCATION_KIND.grimoire) grimoires += 1;
           }
           observed = { living, affiliated, grimoires, nodesKnown: distinct.size };
         },
