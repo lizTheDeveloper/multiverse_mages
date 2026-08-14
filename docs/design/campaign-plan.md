@@ -6943,3 +6943,85 @@ unattended automation I built and then forgot was running. Merging a CI-semantic
 in the same session, hours after that lesson, would be the same mistake wearing a better argument.
 The gated chains work correctly without it — only slowly, at one merge per balance-gate cycle, which
 is the honest price of knowing.
+
+## W139 — the affiliation defect is fixed, and it is the largest single movement of the campaign
+
+PR #134. The founding complaint — *107 living mages, 2 affiliated* — is closed.
+
+**Affiliated share, paired seeds, BEFORE measured in a separate worktree at `main` e2a15cf:**
+
+| arm | before | after |
+| --- | ---: | ---: |
+| all-six, 200 y | **0.0077** (343.6 living / 2.65 affiliated) | **0.7226** (325.5 / 235.2) |
+| human, 200 y | **0.0003** (167 living / 0.05 affiliated) | **0.9991** (168 of 168) |
+
+Every single-species arm reaches 1.000 except gnome — 0.44 at 20 y, 0.22 at 200 y — which is exactly
+the tail the score analysis predicted before the run, and a unit test now asserts it.
+
+**Grimoires per living mage:** `balance-gate-v1` (5 y) **2.34 → 10.28**, `referenceGrimoires`
+90.97 → 400.09 (**+340%**), library depth 5.28 → 9.66.
+
+**The best result is the one nobody asked for.** `referenceNodesGainedFinalQuarter` on the agency gate
+goes 5.125 → 6.234, and the two arms that were **forgetting faster than they learned** (−4.875,
+−3.250) are now near flat. **That is the loss channel damped for the first time in this campaign.**
+
+### The design call, and why the obvious version was not enough
+
+Affiliation is priced as a **capability gate**, not an activity: it produces nothing and unlocks two
+of nine goals. Base appeal 256 → 512 (level with research), and the opportunity term splits — 512 for
+a first affiliation, **64** for a transfer, with ambition applying only to transfers.
+
+**That alone did not work.** The default role is `researcher`, and a human researcher still preferred
+research in 6 of 9 age×personality cells. The fix is the role column, and it is mechanically true
+rather than a fudge: `libraryRateMultiplier` scales research, teaching and scribing by *the mage's
+own* library depth, and `capital.depthFor(0)` is nothing — **an unaffiliated mage of any role works at
+the unmultiplied rate forever.** `affiliate` was the table's only all-zero column for a non-`idle`
+goal.
+
+### Two silent no-ops avoided, both proved by removal
+
+`workOne` returns before its switch when `targetNodeId === 0`, so the call had to come from
+`spendTheMonth` via a new `settleAffiliations`; and `readRecord` hands back a **detached** record, so
+`changeAffiliation`'s field write would have landed in a copy — the handle is written through
+`mages.set`, mirroring `killTheDead`. Both are the shape that would have shipped looking finished.
+The two new tests were checked by deleting the call and watching them fail.
+
+### What it costs, and it is the owner's call
+
+**All three committed gates fail**, each reporting `baseline-invalid` because `contentHash` moved with
+the two new weights. **Nine pinned test observations moved** across seven files. `goldens:regen` was
+never run and no baseline was regenerated — reported, as required.
+
+At 200 years the picture is genuinely **mixed** and should not be smoothed: human, orc, gnome and
+all-six rise (all inside SE), but **dwarf falls 79%** (242.5 → 51.8, ~4 SE) with its population
+doubling, elf −43%, draconic −28%. The author's own hypothesis — unproven, and flagged as such — is
+`applyLibraryUpkeep`, which is **newly reached rather than newly written**, because this is the first
+build to keep a library deep enough to owe upkeep it cannot pay.
+
+### Two findings handed over rather than fixed
+
+- **Land #125 (`w108`) first.** It touches `world-step.ts`, moves two of the same baselines, and its
+  `UNIVERSITY_STAFF` work was bounded by this very defect — so its effect size needs re-measuring
+  after this anyway.
+- **`scribingQueueDepth: 0` is hardcoded** in `world-step.ts`. Scribe demand is permanently zero, so a
+  universe's only scribes are the ones its founding seeded — traced, 3 cohorts at tick 60 → 0 by tick
+  600. That plausibly caps the ceiling this change is now pushing against. Named, not fixed.
+
+And a documentation-rot flag worth acting on: `balance/results-w99-species-arms.md` is headed *"on main
+at e2a15cf"* and **disagrees with a direct measurement of that commit.**
+
+## W140 — the gate check reaches `main` (#139), and reads both halves open on different branches
+
+`scripts/w117-gate-check.sh` was written after #131 was cut and never reached `main` — so the one
+artifact that answers *"may we measure yet?"* lived only on a branch, which is the same
+built-but-unreachable shape as everything else this campaign has found. PR #139 cherry-picks it over.
+
+Run just now against all three refs, and **only the conjunction opens**:
+
+```
+origin/main                        A=12  B=0   GATE SHUT   exit 42
+origin/w116/complete-affiliation   A=12  B=1   GATE SHUT   exit 42
+origin/w115/enable-all-cells       A=70  B=0   GATE SHUT   exit 42
+```
+
+Both halves now exist. Neither is on `main`.
