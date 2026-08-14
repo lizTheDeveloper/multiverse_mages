@@ -18,7 +18,22 @@ Nothing here has been regenerated. Every number below was *reported* by the bran
 Each of these fails a gate for a reason that is **structural, not behavioural**, and the evidence for
 that is a control someone actually ran.
 
-### #72 — the opening square
+### #72 — the opening square  ·  **LANDED 2026-08-14 as `672066f`. Kept for the record; not a pending decision.**
+
+**Corrections to what this section said while it was pending, both found in the merge:**
+
+- It said *"every metric passes at delta `0.00000`."* True against **pristine `origin/main`** — 109 of
+  109 rows byte-identical, reproduced in a second detached worktree. **Not** true against the
+  superseded files: **92 of 109**, with 73 of 90 on the agency gate.
+- The 17 that differ are **`main`'s own drift.** `main`'s committed agency baseline was already 17 rows
+  stale against `main`'s head before anyone touched this branch, passing within tolerance at largest
+  −1.44 SE. **The next branch that has to refresh a hash will hit the same 17 rows and it will look
+  like theirs.**
+- A **fourth** file had to change: `balance/README.md`. `gate-power.test.ts` recomputes every
+  power-table cell from the committed baselines, so derived data is bound to them by a test. That is
+  the tripwire working, not a second re-baseline.
+
+**Original entry, unedited:**
 
 - `verify:nosweeps` **exit 0, 4,402/4,402**.
 - All three gates fail on **one line each**: `provenance.rngRegistryHash`. **Every metric passes at

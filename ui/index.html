@@ -16,19 +16,19 @@
 <style>
   :root{
     --ground:#ece7de; --panel:#f5f2eb; --sunk:#e2dcd0; --line:#c8c0b1;
-    --ink:#17191c; --soft:#55595f; --faint:#8a8d93;
-    --brass:#9a6b1f; --verdigris:#2f6f60;
+    --ink:#17191c; --soft:#55595f; --faint:#62666d;
+    --brass:#83591a; --verdigris:#2f6f60;
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
     --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
     --serif:"Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
   }
   @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
     --ground:#0f1216; --panel:#171b21; --sunk:#1f242c; --line:#2c333d;
-    --ink:#dfe3e8; --soft:#99a1ac; --faint:#6a737f;
+    --ink:#dfe3e8; --soft:#99a1ac; --faint:#7f8894;
     --brass:#c08a3e; --verdigris:#58a08d;}}
   :root[data-theme="dark"]{
     --ground:#0f1216; --panel:#171b21; --sunk:#1f242c; --line:#2c333d;
-    --ink:#dfe3e8; --soft:#99a1ac; --faint:#6a737f;
+    --ink:#dfe3e8; --soft:#99a1ac; --faint:#7f8894;
     --brass:#c08a3e; --verdigris:#58a08d;}
   *{box-sizing:border-box}
   body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.6 var(--sans)}
@@ -50,7 +50,22 @@
   a.card p{margin:.15rem 0 0;font-size:.85rem;color:var(--soft)}
   footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);color:var(--faint);font-size:.8rem}
   code{font:12px var(--mono);color:var(--soft)}
+  /* The theme control, restated in this page's own tokens. The front door
+     deliberately does not load shared/theme.css — it declares its own small
+     palette and has no prototype chrome — but it was the one page that ignored
+     the remembered choice, so picking "light" in a prototype and clicking back
+     landed on a dark index. The control and the storage key are shared; only
+     these four rules are local. */
+  .themebar{position:absolute;top:1.1rem;right:1.5rem}
+  .mm-theme{display:inline-flex;gap:2px;padding:2px;border:1px solid var(--line);
+    border-radius:4px;background:var(--panel)}
+  .mm-theme button{font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;
+    padding:.3rem .5rem;border:0;border-radius:2px;background:transparent;color:var(--faint);cursor:pointer}
+  .mm-theme button[aria-pressed="true"]{color:var(--ground);background:var(--brass)}
+  .mm-theme button:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
 </style>
+
+<div class="themebar" id="themebar"></div>
 
 <div class="wrap">
   <div class="eyebrow">Multiverse Mages</div>
@@ -109,3 +124,11 @@
     <code>ruleset/</code> reimplements <code>permits()</code> rather than importing it, which is the first thing to fix if any of this becomes the client.
   </footer>
 </div>
+
+<script type="module">
+  // Uses `src`, never `href`: ui-index.test.ts reads every href on this page as
+  // a prototype directory and asserts an index.html behind it, so a stylesheet
+  // link here would fail the suite. The script tag is invisible to that regex.
+  import { mountThemeControl } from './shared/theme.js';
+  mountThemeControl(document.getElementById('themebar'));
+</script>

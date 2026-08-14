@@ -257,13 +257,13 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 5.6 % | 6.6 % | 11.8 % | 16.2 % |
+| `referenceGrimoires` | 5.6 % | 6.6 % | 12.3 % | 16.2 % |
 | `referenceKnowledgeInstances` | 2.2 % | 2.5 % | 5.0 % | 7.2 % |
 | `referenceLibraryDepth` | 16.5 % | 14.3 % | 25.9 % | 17.5 % |
 | `referenceLivingMages` | 0.8 % | 1.6 % | 3.7 % | 6.1 % |
-| `referenceNodesGained` | 2.9 % | 1.4 % | 2.5 % | 2.8 % |
+| `referenceNodesGained` | 2.9 % | 1.4 % | 2.3 % | 2.8 % |
 | `referenceNodesGainedFinalQuarter` | — | 3.8 % | 11.6 % | 26.4 % |
-| `referenceNodesKnown` | 2.4 % | 1.3 % | 2.3 % | 2.7 % |
+| `referenceNodesKnown` | 2.4 % | 1.3 % | 2.1 % | 2.7 % |
 | `referencePeakPopulation` | 0.0 % | 5.8 % | 22.8 % | 1.4 % |
 | `referencePopulation` | 1.0 % | 1.7 % | 3.5 % | 8.1 % |
 | `referencePopulationChange` | 8.7 % | 5.3 % | 11.0 % | 8.2 % |
