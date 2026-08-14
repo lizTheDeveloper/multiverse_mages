@@ -151,6 +151,36 @@ identity — gnomes find things fastest and can teach them to the fewest people 
 kind of per-species plurality task 9.9 has failed twice to produce by tuning rates. It comes for free
 from numbers already shipped.
 
+### Capacity is a base, not a ceiling — and that is where humans win
+
+> *"Humans, once they build a big university system, can accommodate larger class sizes. Like, when
+> you have administrative golems — aka AIs — you can manage more students at a time."*
+
+So `12 × retention / 1024` is a **starting point**, and the interesting quantity is how it *grows*.
+That turns a static species table into three distinct strategic identities:
+
+| species | shape |
+| --- | --- |
+| **dwarf** | starts large (18) on memory, and grows least — the advantage is innate and already spent |
+| **gnome** | starts smallest (6) but finds things fastest — teaches few people a great deal |
+| **human** | starts at the baseline (12) and **scales through administration** — the only one whose capacity is a *build order* |
+
+**That is per-species plurality of exactly the kind task 9.9 has failed twice to produce**, and it is
+better than what either failed attempt tried, because it differentiates on **trajectory** rather than
+on a rate. A species that is worse at tick zero and better at tick two thousand is a strategy; a
+species with a 1.2× multiplier is a stat.
+
+**Administrative golems are a discoverable technology, not a species trait.** That matters: it means
+the human advantage is *available* rather than granted, it gives the god something to permit and fund,
+and it is a natural home for grid cells that currently do nothing — a golem is plausibly *Rego* over
+*Terram* or *Imaginem*, both of which have authored nodes and no consumer.
+
+Design questions left open, all the author's: whether golems are a node effect on a new
+`class-capacity` primitive or a modifier on an existing one; whether the scaling is per university or
+universe-wide; and whether other species can build them at all, or merely build them worse. **"Humans
+scale, dwarves start ahead" is a much sharper claim if the other species can also try and do it
+badly.**
+
 ## Graduation: a student until the university has nothing left to teach
 
 > *"They're students until they learn everything that the university they enrolled in can teach them."*
