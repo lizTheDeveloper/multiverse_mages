@@ -113,10 +113,21 @@ describe('god-driven consumption is recorded, and does not count', () => {
     const report = checkPrimitiveConsumption(registry, recorder);
     const consumed = report.consumed.map((entry) => entry.primitiveId);
 
-    // The failure this whole check exists to prevent: `research-rate` is stacked
-    // every tick from blessing constants, and counting that as coverage would
-    // report the pipeline connected while no mage's knowledge moved a rate.
-    expect(consumed).not.toContain('research-rate');
+    // The failure this whole check exists to prevent: `lifespan` is stacked every
+    // tick from blessing and curse constants, and counting that as coverage would
+    // report the pipeline connected while no mage's knowledge moved it.
+    //
+    // **This assertion used to name `research-rate`, and the swap is the point of
+    // W18 rather than a weakening of the test.** `research-rate` was the original
+    // worked example precisely because it was the loudest case: consumed every
+    // tick, by the god, and by nothing a scholar could learn. It now has a
+    // node-driven consumer — `coordination/academic-effects.academicRateBonuses`
+    // — so it belongs in `consumed`, and asserting otherwise would be asserting
+    // the defect. `lifespan` is the surviving god-only primitive and carries the
+    // same shape: `state`'s blessing rows move it and `node.json` never does.
+    expect(consumed).not.toContain('lifespan');
+    // And the swap is only honest if the primitive that moved really did move.
+    expect(consumed).toContain('research-rate');
   });
 
   it('explains itself in the report rather than leaving a reader guessing', () => {
@@ -124,8 +135,29 @@ describe('god-driven consumption is recorded, and does not count', () => {
     const text = formatPrimitiveConsumptionReport(checkPrimitiveConsumption(registry, recorder));
 
     expect(text).toContain('Consumed, but never from node effects');
-    expect(text).toContain('coordination/god/effects.researchMultiplierFor');
+    expect(text).toContain('coordination/god/effects.lifespanEffectsFor');
   });
+
+  it.each(['research-rate', 'scribe-rate', 'teach-rate'])(
+    'moves %s into the consumed set once knowledge can reach it',
+    (primitiveId) => {
+      const { recorder, registry } = recorded();
+      const report = checkPrimitiveConsumption(registry, recorder);
+      const entry = report.consumed.find((row) => row.primitiveId === primitiveId);
+
+      // Registered from the line that reads the authored magnitudes, so a
+      // registration cannot outlive the fetch it describes.
+      expect(entry?.consumers).toContain('coordination/academic-effects.academicRateBonuses');
+      expect(entry?.nodeCount).toBeGreaterThan(0);
+
+      // And the god's explanatory line drops away, which is this check's own
+      // design rather than a loss: `nonNode` is filtered to primitives nothing
+      // node-driven reached, because its only job is to explain why a primitive
+      // that is plainly in use is nonetheless unreachable by an academic. Once it
+      // *is* reachable there is nothing left to explain.
+      expect(report.nonNode.map((row) => row.primitiveId)).not.toContain(primitiveId);
+    },
+  );
 });
 
 describe('the check is wired in as a non-blocking Actions job, not as part of verify', () => {

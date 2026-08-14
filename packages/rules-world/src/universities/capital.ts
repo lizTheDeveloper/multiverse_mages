@@ -15,7 +15,7 @@
 import type { EntityHandle, Fixed } from '@mm/sim-core';
 import { floorDiv } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
-import type { ClampCounters } from '@mm/primitives';
+import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
 import type { LibraryDepth } from './library.js';
@@ -180,9 +180,10 @@ export function libraryRateMultiplier(
   depth: LibraryDepth | undefined,
   depthCeiling: number,
   counters?: ClampCounters,
+  ablation?: AblationMask,
 ): CapitalRateOutcome {
   const bonus = depth === undefined ? 0 : contributionFor(depth, depthCeiling);
-  return capitalRateMultiplier(primitive, nodeBonuses, bonus, counters);
+  return capitalRateMultiplier(primitive, nodeBonuses, bonus, counters, ablation);
 }
 
 /** What a capped rate evaluation produced, and whether the cap bound. */
@@ -204,18 +205,31 @@ export interface CapitalRateOutcome {
  * @param contribution - The library's contribution, from
  * {@link contributionFor}. Passed as a value rather than computed here so that
  * a caller with a cached-per-tick depth does not recount the shelves per mage.
+ * @param ablation - §9's mask. Absent is the control arm, which is what every
+ * ordinary run uses.
+ *
+ * ## The mask was missing here until the academic primitives had node sources
+ *
+ * `stackMagnitudes` is the single place a mask is applied, and this function is
+ * the only route by which the three academic rates reach it. Until
+ * `coordination/academic-effects.ts` existed, `nodeBonuses` carried only the
+ * god's constants and an arm naming `research-rate` had nothing to neutralize,
+ * so the omission was invisible. It is not invisible now: a sweep arm
+ * neutralizing one of these three would otherwise report *no effect* while the
+ * effect ran at full strength, which is a false causal claim rather than a
+ * missing one.
  */
 export function capitalRateMultiplier(
   primitive: PrimitiveRecord,
   nodeBonuses: readonly Fixed[],
   contribution: Fixed,
   counters?: ClampCounters,
+  ablation?: AblationMask,
 ): CapitalRateOutcome {
-  const outcome = stackMagnitudes(
-    primitive,
-    [...nodeBonuses, contribution],
-    counters === undefined ? {} : { counters },
-  );
+  const outcome = stackMagnitudes(primitive, [...nodeBonuses, contribution], {
+    ...(counters === undefined ? {} : { counters }),
+    ...(ablation === undefined ? {} : { ablation }),
+  });
   return { multiplier: outcome.value, clamped: outcome.clamped, contribution };
 }
 
