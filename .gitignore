@@ -40,6 +40,8 @@ __pycache__/
 .w17/
 # W46's affinity-ablation arms. Same reason.
 .w46/
+# W70's opening-square size sweep. Same reason: 480 runs of node-id sets.
+.w70/
 
 # The generated lattice report, regenerated with scripts/content-graph.mjs.
 # Named exactly rather than globbed: `ui/*.html` also matched ui/index.html, and
