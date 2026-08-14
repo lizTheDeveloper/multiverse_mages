@@ -123,19 +123,26 @@ describe('the mocked world covers the whole input surface', () => {
 
 describe('what a sweep found that nobody had written down', () => {
   /**
-   * **Library depth does not increase with staff, at any rate.**
+   * **No function in `packages/rules-world/src/universities/` can add a node to
+   * a library** — and the flat line below is that fact, not a tuning accident.
    *
-   * The brief's worked question — *"does library depth increase with professor
-   * count, and at what rate"* — has the answer **zero**, and it is structural
-   * rather than a tuning accident. A university's shelf grows when a book is
-   * scribed onto it, and minting a book is `rules-magic`'s
-   * `instances/scribing.ts`, which `contracts.md` §5 forbids `rules-world` from
-   * importing. So no function in `packages/rules-world/src/universities/` can
-   * add a node to a library. `scribingThroughput` computes the *rate* and
-   * nothing this side of the boundary consumes it.
+   * State the claim in that order, because the two phrasings are not equally
+   * defensible. The *verifiable* one is about the seam: a shelf grows when a
+   * book is scribed onto it, minting a book is `rules-magic`'s
+   * `instances/scribing.ts`, and `contracts.md` §5 forbids `rules-world` from
+   * importing it. `scribingThroughput` computes the rate; nothing on this side
+   * of the boundary consumes it. Grep the package and there is no writer.
    *
-   * This test fails the day a shelf grows from staff, which is the day
-   * somebody wires the two halves together.
+   * The *consequence* is what this test measures — the brief's worked question,
+   * *"does library depth increase with professor count, and at what rate"*,
+   * answered **zero**. And a fair reviewer will note that {@link runLab} shelves
+   * a node only through an explicit `shelve` action, so the flat line would
+   * appear here even if the production wiring existed. That is why the seam is
+   * the claim and the measurement is the corroboration, rather than the other
+   * way round.
+   *
+   * This test fails the day a shelf grows from staff, which is the day somebody
+   * wires the two halves together.
    */
   it('reports the same library depth for sixteen mages as for none', () => {
     const depths = ALL_AXES.staffSize.points.map(
@@ -290,10 +297,21 @@ describe('the goldens, played in', () => {
       spec: Parameters<typeof runSweep>[0];
       digest: ReturnType<typeof sweepDigest>;
     };
-    // **`runSweep(fixture.spec)`, not a spec looked up by name.** The fixture
-    // carries the spec it was recorded at, so a sweep whose definition changed
-    // fails here instead of silently comparing a different sweep to an old
-    // digest — which is the "aggregator that locates input by shape" failure.
+    // **Two assertions, and the first one is the one that is easy to omit.**
+    //
+    // The digest is replayed from `fixture.spec` — the spec the golden was
+    // *recorded at* — so a sweep is always compared against itself. That is
+    // right, and on its own it leaves a hole: change `COMMITTED_SWEEPS`
+    // underneath — 120 ticks to 240, or drop `life-stages`'s `stride: 3` — and
+    // this test stays green while the committed definition and its golden drift
+    // apart. The fixture would then be a well-formed record of a sweep nobody
+    // runs, which is exactly `CLAUDE.md`'s "aggregator that locates input by
+    // shape rather than by name".
+    //
+    // So the spec is pinned first, and the digest second.
+    const committed = COMMITTED_SWEEPS.find((spec) => spec.name === fixture.spec.name);
+    expect(committed, `no committed sweep named "${fixture.spec.name}"`).toBeDefined();
+    expect(fixture.spec).toEqual(committed);
     expect(sweepDigest(runSweep(fixture.spec))).toEqual(fixture.digest);
   });
 
