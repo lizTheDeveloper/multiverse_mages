@@ -48,6 +48,8 @@ export {
   seededOpeningAxes,
   shippedContent,
   speciesTable,
+  standardOpeningAxes,
+  standardOpeningOrder,
   storeHookOf,
   traditionIdNamed,
   v1RulesetAxes,

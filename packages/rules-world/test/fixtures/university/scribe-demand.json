@@ -1,0 +1,243 @@
+{
+  "spec": {
+    "name": "scribe-demand",
+    "axes": [
+      "scribeQueue",
+      "staffSize",
+      "stage"
+    ],
+    "ticks": 120,
+    "capacity": 40
+  },
+  "digest": {
+    "runs": 36,
+    "crossSize": 36,
+    "stride": 1,
+    "columns": {
+      "adds.demand.0": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "adds.demand.1": {
+        "min": 0,
+        "max": 32,
+        "sum": 186,
+        "distinct": 6,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=books-awaiting staffSize=16 stage=early"
+      },
+      "adds.demand.2": {
+        "min": 40,
+        "max": 40,
+        "sum": 1440,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "adds.demand.3": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "adds.demand.4": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "adds.instancesDegraded": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "adds.scribeMonthsFinal": {
+        "min": 640,
+        "max": 20837,
+        "sum": 308868,
+        "distinct": 3,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=late"
+      },
+      "adds.scribeMonthsTotal": {
+        "min": 68480,
+        "max": 2500440,
+        "sum": 36964320,
+        "distinct": 3,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=late"
+      },
+      "adds.seatsRefused": {
+        "min": 440,
+        "max": 440,
+        "sum": 15840,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "adds.shelfReplacementCost": {
+        "min": 0,
+        "max": 713728,
+        "sum": 10911744,
+        "distinct": 3,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=late"
+      },
+      "adds.stoneConsumed": {
+        "min": 0,
+        "max": 2048,
+        "sum": 24576,
+        "distinct": 2,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=mid",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "adds.studentsAdmitted": {
+        "min": 40,
+        "max": 40,
+        "sum": 1440,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "adds.vellumShortfall": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "adds.vellumUpkeepPaid": {
+        "min": 0,
+        "max": 38400,
+        "sum": 576000,
+        "distinct": 3,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=late"
+      },
+      "contains.buildProgress": {
+        "min": 1024,
+        "max": 1024,
+        "sum": 36864,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "contains.complete": {
+        "min": 1,
+        "max": 1,
+        "sum": 36,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "contains.completedOnTick": {
+        "min": 0,
+        "max": 13,
+        "sum": 156,
+        "distinct": 2,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=mid",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "contains.designedCapacity": {
+        "min": 40,
+        "max": 40,
+        "sum": 1440,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "contains.distinctNodes": {
+        "min": 0,
+        "max": 160,
+        "sum": 2400,
+        "distinct": 3,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=late"
+      },
+      "contains.dominantCell": {
+        "min": 0,
+        "max": 66,
+        "sum": 684,
+        "distinct": 3,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=1 stage=early"
+      },
+      "contains.effectiveCapacity": {
+        "min": 40,
+        "max": 40,
+        "sum": 1440,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "contains.grimoireCount": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "contains.hosted": {
+        "min": 40,
+        "max": 40,
+        "sum": 1440,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "contains.instanceCount": {
+        "min": 0,
+        "max": 160,
+        "sum": 2400,
+        "distinct": 3,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=late"
+      },
+      "contains.profileCells": {
+        "min": 0,
+        "max": 42,
+        "sum": 618,
+        "distinct": 12,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=16 stage=late"
+      },
+      "contains.residentMages": {
+        "min": 0,
+        "max": 16,
+        "sum": 186,
+        "distinct": 6,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=16 stage=early"
+      },
+      "contains.staffCohorts": {
+        "min": 1,
+        "max": 1,
+        "sum": 36,
+        "distinct": 1,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=early"
+      },
+      "contains.staffHeadcount": {
+        "min": 40,
+        "max": 800,
+        "sum": 12480,
+        "distinct": 3,
+        "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
+        "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=late"
+      }
+    }
+  }
+}

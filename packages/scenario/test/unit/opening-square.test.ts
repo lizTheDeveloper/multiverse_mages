@@ -40,6 +40,8 @@ import {
   referenceContent,
   referenceScenario,
   seededOpeningAxes,
+  standardOpeningAxes,
+  standardOpeningOrder,
   v1RulesetAxes,
 } from '@mm/scenario';
 import { describe, expect, it } from 'vitest';
@@ -122,7 +124,14 @@ describe('drawing the square disturbs no other subsystem', () => {
     // And the universe built on it is the same universe. If the opening-square
     // draw shared a stream with anything else, these two would differ in their
     // founders while agreeing on their grid.
-    const seeded = build({ openingTechniqueCount: 2, openingFormCount: 2 });
+    // `openingSquareSeeded: 1` because the default answer to "who chooses" is
+    // now the god; without it this builds the *standard* square and the two
+    // sides of the comparison would be two different squares.
+    const seeded = build({
+      openingTechniqueCount: 2,
+      openingFormCount: 2,
+      openingSquareSeeded: 1,
+    });
     const viaContent = referenceScenario({ ...content, axes: named, foundingNodeIds: foundingCandidates(registry, named) })
       .scenario.create(SEED, { worldTickCap: 12, options: { ...BASE } });
     expect(snapshotHash(viaContent)).toBe(snapshotHash(seeded));
@@ -218,5 +227,76 @@ describe('what a universe opens on is what permits() says it opens on', () => {
     expect(() =>
       build({ openingTechniqueCount: 1, openingFormCount: 1, foundingNodes: 4 }),
     ).not.toThrow();
+  });
+});
+
+/**
+ * The god's square — the default since the opening was wired in.
+ *
+ * The claim that matters here is claim 1 from the module header restated at a
+ * different size: **the standard opening at the v1 rectangle's own size is the
+ * v1 rectangle**. If it ever stops being, the full-size arm of a size sweep
+ * stops being a control and every comparison in that sweep silently acquires a
+ * second difference.
+ */
+describe("the god's square is the default, and its full size is today's universe", () => {
+  const v1TechniqueCount = new Set(
+    registry.cells.filter((entry) => entry.record.v1 === true).map((entry) => entry.record.technique),
+  ).size;
+  const v1FormCount = new Set(
+    registry.cells.filter((entry) => entry.record.v1 === true).map((entry) => entry.record.form),
+  ).size;
+
+  it('at the v1 rectangle size is the v1 rectangle, mask for mask', () => {
+    expect(
+      standardOpeningAxes(registry, {
+        techniqueCount: v1TechniqueCount,
+        formCount: v1FormCount,
+      }),
+    ).toEqual(v1RulesetAxes(registry));
+  });
+
+  it('at the v1 rectangle size builds the identical universe, hash for hash', () => {
+    const named = build({
+      openingTechniqueCount: v1TechniqueCount,
+      openingFormCount: v1FormCount,
+    });
+    expect(snapshotHash(named)).toBe(snapshotHash(build({})));
+  });
+
+  it('is explicitOpeningAxes underneath — the play verb, not a second one', () => {
+    const order = standardOpeningOrder(registry);
+    expect(standardOpeningAxes(registry, { techniqueCount: 2, formCount: 3 })).toEqual(
+      explicitOpeningAxes(registry, order.techniqueIds.slice(0, 2), order.formIds.slice(0, 3)),
+    );
+  });
+
+  it('draws nothing, so two seeds open on the same square', () => {
+    const one = build({ openingTechniqueCount: 2, openingFormCount: 2 }, SEED);
+    const two = build({ openingTechniqueCount: 2, openingFormCount: 2 }, 0x5150_0001);
+    expect(openCells(one)).toEqual(openCells(two));
+  });
+
+  it('nests, so a size sweep varies size alone', () => {
+    const smaller = standardOpeningAxes(registry, { techniqueCount: 1, formCount: 2 });
+    const larger = standardOpeningAxes(registry, { techniqueCount: 2, formCount: 3 });
+    expect(smaller.permittedTechniques & larger.permittedTechniques).toBe(
+      smaller.permittedTechniques,
+    );
+    expect(smaller.permittedForms & larger.permittedForms).toBe(smaller.permittedForms);
+  });
+
+  it('puts the v1 rectangle first in its order, and every other axis after it', () => {
+    const order = standardOpeningOrder(registry);
+    const v1Techniques = new Set(
+      registry.cells
+        .filter((entry) => entry.record.v1 === true)
+        .map((entry) => entry.record.technique),
+    );
+    expect(order.techniqueIds.slice(0, v1Techniques.size).every((id) => v1Techniques.has(id))).toBe(
+      true,
+    );
+    expect(order.techniqueIds).toHaveLength(registry.techniques.length);
+    expect(order.formIds).toHaveLength(registry.forms.length);
   });
 });

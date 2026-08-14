@@ -285,6 +285,9 @@ export function buildRival(input: {
       foundingSpeciesMask: 0,
       openingTechniqueCount: 0,
       openingFormCount: 0,
+      // Unread with no counts, and pinned anyway so that a later default flip
+      // cannot move a rival nobody meant to move.
+      openingSquareSeeded: 0,
     },
     content,
     schema: input.schema,

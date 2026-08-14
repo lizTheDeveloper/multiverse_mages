@@ -128,6 +128,7 @@ export const LONG_RUN_OPTIONS: ReferenceOptions = Object.freeze({
   // different game.
   openingTechniqueCount: 0,
   openingFormCount: 0,
+  openingSquareSeeded: 0,
   // Every species founds the long run, which is what it has always done and what
   // task 9.9's per-species time-to-tier measurement requires.
   foundingSpeciesMask: 0,

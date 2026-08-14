@@ -345,6 +345,82 @@ export function explicitOpeningAxes(
 }
 
 /**
+ * The order a god's opening square grows in, when nobody names one.
+ *
+ * **The v1 rectangle's own axes first, ascending by content id, then every
+ * remaining axis ascending.** Two properties follow from that ordering and both
+ * are load-bearing:
+ *
+ * 1. **The prefix at the v1 rectangle's own size *is* the v1 rectangle**, so
+ *    the largest standard opening is today's universe and a size sweep has a
+ *    real control rather than a re-implementation of one. Asserted in
+ *    `test/unit/opening-square.test.ts` against {@link v1RulesetAxes} rather
+ *    than argued from this comment.
+ * 2. **Smaller openings nest inside larger ones**, so a sweep over sizes varies
+ *    size alone — the same property {@link seededOpeningAxes} buys by drawing a
+ *    whole permutation and slicing it.
+ *
+ * Ascending content id is a **reproducible** order, not a ranking: nothing here
+ * claims `intellego` is the technique a god should take first. It is the same
+ * order {@link foundingCandidates} deals in, and for the same reason — a
+ * starting position that depended on file order would not be reproducible from
+ * its own description.
+ */
+export function standardOpeningOrder(registry: ContentRegistry): {
+  readonly techniqueIds: readonly string[];
+  readonly formIds: readonly string[];
+} {
+  const order = (
+    all: readonly string[],
+    inRectangle: ReadonlySet<string>,
+  ): readonly string[] => {
+    const ascending = [...all].sort();
+    return Object.freeze([
+      ...ascending.filter((id) => inRectangle.has(id)),
+      ...ascending.filter((id) => !inRectangle.has(id)),
+    ]);
+  };
+  const v1Cells = registry.cells.filter((entry) => entry.record.v1 === true);
+  return {
+    techniqueIds: order(
+      registry.techniques.map((entry) => entry.record.id),
+      new Set(v1Cells.map((entry) => entry.record.technique)),
+    ),
+    formIds: order(
+      registry.forms.map((entry) => entry.record.id),
+      new Set(v1Cells.map((entry) => entry.record.form)),
+    ),
+  };
+}
+
+/**
+ * The opening square a god takes when she has not named one herself.
+ *
+ * **The default answer to "who chooses the opening square" is the god, not the
+ * RNG.** A size is a choice a sweep or a client can express as two integers;
+ * {@link standardOpeningOrder} turns it into named axes, and
+ * {@link explicitOpeningAxes} — the play verb — turns those into the masks
+ * `permits()` reads. Nothing here draws, so a standard opening adds no RNG
+ * stream and forces no re-baseline event.
+ *
+ * A god who wants a *different* square of the same size calls
+ * {@link explicitOpeningAxes} directly. This function is the default, not the
+ * only shape a square comes in.
+ */
+export function standardOpeningAxes(
+  registry: ContentRegistry,
+  size: OpeningSquareSize,
+): RulesetAxes {
+  assertSquareFits(registry, size);
+  const { techniqueIds, formIds } = standardOpeningOrder(registry);
+  return explicitOpeningAxes(
+    registry,
+    techniqueIds.slice(0, size.techniqueCount),
+    formIds.slice(0, size.formCount),
+  );
+}
+
+/**
  * The opening square, in the shape `permits()` takes.
  *
  * **Membership in the square is asked of the one arbitration function and

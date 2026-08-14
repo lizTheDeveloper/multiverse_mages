@@ -255,6 +255,27 @@ positive control — an input it must accept — and prefer a third exit for *"t
 folding that into *"the answer is no"*. `scripts/w117-gate-check.sh` does this: `0` open, `42` shut,
 `1` broken probe.
 
+## A clean `git diff` over a stale `dist` is not a clean tree
+
+`bin/` entry points and the harness workers import from **`dist`**, not from source. So restoring a
+source file makes `git diff` come back clean while **every one of those entry points is still running
+the old build.**
+
+That cost a full re-measurement: after an ablated source file was restored, `git diff` was clean, and a
+`ui/session.json` recording plus an audit pass were both taken against the stale build. It was caught
+only because `verify:nosweeps` runs `tsc --build`, after which the UI test disagreed with the file that
+had just been committed.
+
+**`git diff --quiet` is a statement about source, not about the build.** After restoring or swapping
+any file that a `bin/` script or a worker reads through `dist` — and `git show <ref>:<path> > <path>`
+is exactly that manoeuvre — **rebuild before measuring**:
+
+    npx tsc --build
+
+Same family as the `node_modules` note above, from the other direction: there, an unbuilt worktree
+reports the whole repository broken; here, a stale build reports a measurement that is quietly about
+different code.
+
 ## `cd <dir> || exit 1`, in every multi-command block
 
 A `cd` that fails **does not stop the block that follows it**. The rest runs in whatever directory the
