@@ -119,7 +119,7 @@
 import type { ContentId, ContentRegistry, FormRecord } from '@mm/content';
 import type { Fixed, SimState } from '@mm/sim-core';
 import { TIME_MODE } from '@mm/sim-core';
-import type { CellResolver, EffectSourceInstance } from '@mm/rules-magic';
+import type { CellResolver, ConsumptionRecorder, EffectSourceInstance } from '@mm/rules-magic';
 import { gatherEffects } from '@mm/rules-magic';
 import type { MaterialAmounts, MaterialKind } from '@mm/rules-world';
 import { MATERIAL_KINDS, formRoutesToMaterials, routeYieldByForm, zeroAmounts } from '@mm/rules-world';
@@ -190,7 +190,10 @@ const ECONOMIC_PRIMITIVES = new Set(['resource-yield', 'build-rate']);
  * technique and form. Resolving it once here keeps the per-tick path free of
  * string interning.
  */
-export function universeEffectIndex(registry: ContentRegistry): UniverseEffectIndex {
+export function universeEffectIndex(
+  registry: ContentRegistry,
+  recorder?: ConsumptionRecorder,
+): UniverseEffectIndex {
   const formById = new Map(registry.forms.map((form) => [form.contentId, form.record]));
   const formByCell = new Map<ContentId, FormRecord>();
   for (const cell of registry.cells) {
@@ -201,16 +204,24 @@ export function universeEffectIndex(registry: ContentRegistry): UniverseEffectIn
   const forms = new Map<ContentId, FormRecord>();
   const applicable = new Map<ContentId, AppliedNodeYield>();
   let weightedNodeCount = 0;
+  // Per-primitive, because the consumption recorder asks a per-primitive
+  // question and `weightedNodeCount` deliberately does not: a node weighted
+  // toward both counts once there and once for each primitive here.
+  const contributingNodes = new Map<string, number>();
   for (const node of registry.nodes) {
     const form = formByCell.get(registry.intern('cell', node.record.cell));
     if (form !== undefined) forms.set(node.contentId, form);
-    if (
-      node.record.effects.some(
-        (effect) => effect.target === 'universe' && ECONOMIC_PRIMITIVES.has(effect.primitive),
-      )
-    ) {
-      weightedNodeCount += 1;
+
+    const economic = new Set(
+      node.record.effects
+        .filter((effect) => effect.target === 'universe' && ECONOMIC_PRIMITIVES.has(effect.primitive))
+        .map((effect) => effect.primitive),
+    );
+    if (economic.size > 0) weightedNodeCount += 1;
+    for (const primitive of economic) {
+      contributingNodes.set(primitive, (contributingNodes.get(primitive) ?? 0) + 1);
     }
+
     // The applied channel spends `resource-yield` alone. `build-rate` is a rate
     // on somebody else's construction, not a quantity of anything a mage can
     // hand over at the end of a month, and inventing a material reading of it
@@ -221,6 +232,26 @@ export function universeEffectIndex(registry: ContentRegistry): UniverseEffectIn
       .map((effect) => effect.magnitude);
     if (magnitudes.length > 0) {
       applicable.set(node.contentId, { form, magnitudes: Object.freeze(magnitudes) });
+    }
+  }
+
+  // Registered here rather than at the composition root, because this is the
+  // line that actually reads the magnitudes. A registration made anywhere else
+  // would be a declaration that happens to be true today; made here it cannot
+  // drift from the fetch it describes.
+  //
+  // The count is of nodes whose effect is `target: "universe"` — not of every
+  // node mentioning the primitive — because a combat-targeted `resource-yield`
+  // effect never reaches the economy and counting it would overstate what
+  // knowledge can move.
+  if (recorder !== undefined) {
+    for (const primitive of [...ECONOMIC_PRIMITIVES].sort()) {
+      recorder.register({
+        primitiveId: primitive,
+        consumer: 'coordination/universe-effects.universeEconomyBonuses',
+        kind: 'node',
+        nodeCount: contributingNodes.get(primitive) ?? 0,
+      });
     }
   }
 

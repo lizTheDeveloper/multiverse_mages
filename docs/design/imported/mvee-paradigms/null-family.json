@@ -1,0 +1,30 @@
+{
+  "//": "Hand-transcribed from mvee's NullParadigms.ts, which defines these in TypeScript rather than JSON. Only fields verified by reading the source are recorded; see PROVENANCE.md for line numbers. Anything absent here was not checked, not confirmed empty.",
+  "null": {
+    "id": "null",
+    "name": "Null Magic",
+    "description": "Magic does not exist in this universe",
+    "sourceRef": "packages/magic/src/NullParadigms.ts:25",
+    "sources": [],
+    "costs": [],
+    "channels": [],
+    "foreignMagicPolicy": "incompatible",
+    "note": "Visitors from magical universes find their powers inert. In Mages this is a content set with no v1 cells enabled."
+  },
+  "dead": {
+    "id": "dead",
+    "name": "Dead Magic",
+    "description": "Magic once existed but has been exhausted or destroyed",
+    "sourceRef": "packages/magic/src/NullParadigms.ts:79",
+    "foreignMagicPolicy": "absorbs",
+    "note": "'Spellbooks contain valid formulas for power that no longer flows.' Knowledge survives and yields nothing — the one member of this family Mages' knowledge model could express directly, since instances and effect magnitudes are already separate."
+  },
+  "anti": {
+    "id": "anti",
+    "name": "Anti-Magic",
+    "description": "An active force suppresses and negates all magic",
+    "sourceRef": "packages/magic/src/NullParadigms.ts:166",
+    "foreignMagicPolicy": "hostile",
+    "note": "Its source has regenRate -0.1 — a negative regeneration, i.e. an ambient drain. Needs a decay term Mages does not have; the cheapest arm of this family is 'null', not this one."
+  }
+}

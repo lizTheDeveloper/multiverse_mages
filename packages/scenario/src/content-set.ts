@@ -383,21 +383,28 @@ export function worldDeps(
     'fertility',
     'rules-world/economy/carrying-capacity (species.fertility)',
   );
-  // `scribe-rate` is deliberately *not* registered: `world-step.ts` still passes
-  // `scribeRateBonuses: []` — a literal empty source list — so it stacks to the
-  // identity every tick and nothing, node or god, can move it. Registering it as
-  // a consumer of anything would be a claim this file cannot support; it belongs
-  // in the failure list, and it is there.
+  // `scribe-rate` is deliberately *not* registered. Its primitive record is
+  // handed to the loop, but `world-step.ts` passes `NO_BONUSES` — a literal
+  // empty source list — so it stacks to the identity every tick and nothing,
+  // node or god, can move it. Registering it would be a claim this file cannot
+  // support; it belongs in the failure list, and it is there.
   //
-  // `resource-yield` used to be in that sentence and is not any more. It now has
-  // **two** node-driven consumers, and they are different mechanisms rather than
-  // one written twice: `universe-effects.ts` gathers it into the ambient
-  // multiplier on every laborer cohort, and `world-step.ts`'s `apply-magic` arm
-  // spends one node's magnitudes on the month a mage chose to cast it. Both go
-  // through `gatherEffects`' gates or the gateway's copy of them, and neither is
-  // registered here because both reach the loop through `universeEffects`, whose
-  // index is built from the registry directly rather than through
-  // `nodeEffectMagnitudes`.
+  // `resource-yield` used to be in that sentence and no longer is. W29 wired
+  // the economy: `world-step.ts` now passes `economy.resourceYield` and
+  // `economy.buildRate` from `universeEconomyBonuses`, which gathers
+  // `target: "universe"` node effects gated on the node being *known* and its
+  // cell *permitted*. Both register from that fetch site — see
+  // `coordination/universe-effects.ts` — and the measurement that says it is
+  // real rather than plumbed is in the W29 commit: resource-yield moved yields
+  // +214% to +294%, and build-rate cut time-to-build by 57%.
+  //
+  // w107 gave `resource-yield` a **second** node-driven consumer, and the two
+  // are different mechanisms rather than one written twice. W29's is *ambient*:
+  // a castable, permitted node raises what every laborer cohort produces, and it
+  // costs the mage who knows it nothing. `GOAL.applyMagic` is the other: she
+  // spends the month casting one node she holds, and the materials are hers.
+  // Both reach the loop through `universeEffects`, whose index is built from the
+  // registry directly, so neither adds a registration here.
 
   return {
     speciesOf,
@@ -423,7 +430,7 @@ export function worldDeps(
     // root, because it is a pure projection of the content set — see
     // `universe-effects.ts`, which explains at length what was not connected
     // before it existed.
-    universeEffects: universeEffectIndex(registry),
+    universeEffects: universeEffectIndex(registry, recorder),
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),
