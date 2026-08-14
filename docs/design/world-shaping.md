@@ -157,14 +157,58 @@ mechanically, because day length is *work per tick* — how much a mage gets don
 produces. **A longer day is not merely flavour: it changes every rate in the economy at once**, which
 is a single lever with enormous reach and therefore one to be very careful with.
 
-### The tension worth building on
+### No — the sun is reachable too, and that is the actual principle
 
-**A god can shape the world; a god cannot stop the sun.**
+*I wrote here that a god can shape the world and cannot stop the sun, and called it the right division.
+The owner rejects it, and the rejection is a much stronger design law:*
 
-**That is the right division and it should be enforced.** The world-shaping verbs above — mountains,
-oceans, biomes, even altering a people — are all *within* an age. The cosmological scale is the thing a
-god of magic **is not** in charge of, and the game is better for having a limit its most powerful verb
-cannot reach.
+> **"They should be magically doable. Anything the game can do, magic can do."**
+
+**There is no engine-only layer.** Every state change the simulation is capable of performing is, in
+principle, achievable by magic. **The sun's age is a variable, so some sufficiently deep magic can
+change it.** Day length likewise. Territories, species, bodies, the shape of space — **if the code can
+do it, a node can cause it.**
+
+**That is a closure property, and it is the best design constraint in this document**, because:
+
+- **It forbids the cheap move.** *"And this part is just the engine"* is how a game accumulates
+  arbitrary walls, and the answer to *"why can't I do that?"* becomes *"because we didn't implement
+  it"* rather than something in the fiction.
+- **It gives the deep grid a purpose.** Tier 5 has fifteen nodes and **tier 6 has exactly one.** If the
+  top of the grid is where cosmological magic lives, then depth means something specific — **the
+  deepest cells are where the world's own parameters become editable**, and the ceiling stops being an
+  abstract number.
+- **And it makes `depthCeiling` a real species trait.** Draconic reaches 7 and orc reaches 3. Under
+  this, that is not "dragons learn more" — it is **"only dragons can reach the magic that touches the
+  sun."** Which is a much better reason for the trait to exist, and it gives the hardest species the
+  most cosmological ceiling, which is the right shape.
+
+### It is also checkable, which makes it an invariant rather than a slogan
+
+`scripts/check-primitive-consumption.mjs` asks: *for each primitive, is there a path from an authored
+node effect to something the simulation applies?* **This principle is the same question asked from the
+other end:**
+
+> **For every state mutation the engine performs, is there some authored node that could cause it?**
+
+**That is a real check and this project already has the machinery to write it.** Anything the
+simulation changes that no node can reach is either **a gap in the content** or **a place where the
+engine is doing something the fiction cannot explain** — and both are worth knowing about.
+
+It would have caught things this campaign found by hand: `fertility` and `lifespan` have **zero nodes
+in the enabled cells**, so population is a thing the engine changes and magic cannot. **Under this
+principle that is a defect, not a content-placement note.**
+
+### What survives of the tension
+
+The interesting limit is not *what* a god can reach but *what it costs and how deep it lies.* **The
+sun should be reachable and nearly unreachable** — the deepest cell of the deepest technique, requiring
+a species that can get there, in a world with enough magic left to power it.
+
+**A god who can age the sun has earned a very great deal**, and in a late age, when magic is receding,
+**it may be exactly the thing that is no longer possible.** That is a far better constraint than a
+declared boundary: not *"you may not"*, but *"there is not enough magic left in the world for that
+any more."*
 
 **It also gives the last-ditch tactics their true stakes.** *A Portal To The Undying Lands* is not an
 escape from a bad run — **it is an escape from a dying world**, and in a late age it may be the only
