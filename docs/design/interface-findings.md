@@ -212,39 +212,52 @@ made before deeper tiers exist.
 
 ---
 
-## 4. Findings blocked on a balance number
+## 4. Findings that were blocked, and are now answered
 
-### 4.1 The interruption policy is downstream of the loss rate — **blocked**
+*Updated after W8. Both of these were filed as "cannot move until a balance number exists". The
+number exists. It is worse than the version that was feared, and the cause is not the one either
+prototype guessed.*
 
-`ui/tempo/` prototypes three ways to pace the world and surface events. Which one is correct depends
-entirely on how often a last copy dies:
+### 4.1 The loss channel fires and removes nothing — **answered**
 
-- under roughly **one a year**, halting the world on loss is the best moment in the game
-- past roughly **three a year** it is a nuisance, and that direction collapses into a conventional
-  speed-control-plus-feed with extra steps
+`ui/tempo/` and `ui/knowledge/` were both built around how often a last copy dies, and both said the
+question could not be settled. W8 settled it, and the mechanism was never the problem:
 
-The campaign measured roughly **55 copies per node**, which puts it near never — while the same
-campaign is actively trying to make loss bite. **The feed cannot be designed until that lands.**
+- **Raids fire.** `rules-raid` engages, and `contracts.md` needed no change for it.
+- **Books burn.** Grimoires fell **1232 → 354** for `passive-control` in a raid season.
+- **Nothing was lost.** Instances held flat and **`nodesLost` is 0.00 for six of eight strategies**,
+  because at **50–80 copies per node** a whole library is held fifty other places.
+- **`libraryDependence` sits at 0.**
 
-### 4.2 The knowledge browser is a design problem at intended balance, not current balance — **blocked**
+> **Concentration, not the absence of a mechanism, is the remaining problem.**
 
-`ui/knowledge/` measures the same exposure from the other side. `libraryDependence` — nodes surviving
-on exactly one instance — comes out at:
+That sentence is the correction. Both prototypes assumed loss was rare because the *rate* was
+untuned; it is rare because copies are spread so widely that destroying any particular one changes
+nothing. A UI change cannot touch that, and neither can a decay constant — it is a question about
+how knowledge concentrates.
 
-| Mean copies per node | 1 | 4 | 12 | 30 | 55 |
-|---|---|---|---|---|---|
-| Nodes on a single copy | 51 | 7 | 1 | 0 | 0 |
+**What it does to each prototype**, and none of it invalidates the direction work:
 
-At the measured redundancy it is **empty**: nothing is ever at risk, and the risk-sorted direction has
-nothing to sort. Building the browser against today's numbers produces a screen that looks calm and
-correct and is wrong the moment loss starts working.
+- `ui/knowledge/`'s risk view has nothing to sort, and now has a named reason rather than a slider
+  position. Its own on-screen note said the browser is *"not a design problem at current balance,
+  it is one at intended balance"* — that reading holds and is now measured rather than predicted.
+- `ui/tempo/`'s halt-on-loss direction never fires, so the choice between it and a conventional feed
+  cannot be made by playing. It stays open, blocked on concentration rather than on a rate.
+- `ui/mage/`'s twelve-month countdown describes a mage holding a sole copy. **With
+  `libraryDependence` at 0, no such mage currently exists in a run.** The arithmetic is still right
+  and the read-path gap it found (§2.1) is still real; the scenario is aspirational until
+  concentration changes.
 
-### 4.3 Loss is a property of redundancy, not population — **resolved**
+### 4.2 `knowledgeHalfLife` cannot be computed — **defect**
 
-Recorded because it was got wrong first. More mages means more deaths *and* more copies, so a loss
-rate expressed per-thousand-mages is wrong. `sound-design.md` §0.4 now states it in those terms.
+`sound-design.md` §10 item 5 asks for knowledge half-life on the client's read path, so the ambient
+bed can detune as a civilization loses knowledge faster than it makes it. W8 found the metric cannot
+be produced at all: its §7 collector needs a census carrying **node-id lists**, and the reference
+executor's census carries **aggregate counts**.
 
----
+So a documented audio behaviour and a documented balance metric both depend on a number nothing
+currently emits. Named in the campaign rather than papered over, and repeated here because the
+client is the third consumer and would have discovered it last.
 
 ## 5. Findings that are nobody's package
 
@@ -260,6 +273,25 @@ nothing on a battlefield can express it, and `ui/commitments/`, where the cost t
 universes you are not looking at.
 
 If the client omits it, the player cannot price a raid while the harness scores them on exactly that.
+
+### 5.1a The vision permits mid-raid rule changes and the contract still forbids them — **defect**
+
+`raid-engagement.md` repeals `vision.md` §3's frozen-policy sentence, and vision §3 on `main` now
+reads *"Rules changes may be made during a raid, and every change locks until the raid ends."*
+
+**`contracts.md` §4.2 still says the opposite**, verbatim: *"Every action except no-op is masked
+during engagement."* So does `god-agency`'s `interventions` spec, whose first requirement is *"Every
+intervention is world-time only"* and which masks all fifteen non-noop actions whenever
+`clock.mode == engagement`.
+
+W8's note that *"`contracts.md` needed no change"* was about §1.1 and the one-universe rule, not
+about §4.2. The two documents now disagree about whether the game's most interesting moment has any
+verbs in it.
+
+This is not a documentation tidy. `contracts.md` is what every implementation reads, and the mask is
+enforced in one place on purpose; while §4.2 stands, the raid design the vision now describes cannot
+be built, and `ui/raid/`'s premise — verbs whose agency decays across three phases — is unbuildable
+against the contract as written.
 
 ### 5.2 Cost per tick of effect is the comparison nobody can make — **open**
 
