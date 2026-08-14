@@ -16,33 +16,40 @@
  *
  *     node packages/mc-harness/bin/search-strategies.mjs \
  *       --scenario ./packages/scenario/bin/scenario.mjs \
- *       --rounds 4 --seeds 8 --ticks 600 --out ./balance/search/archive.json
+ *       --seeds 8 --ticks 600 --out ./balance/search/archive.json
  *
  * ## What this does and does not decide
  *
- * It mutates preference orders, evaluates candidates and the four nulls over
- * **the same seeds**, and folds the results into a behaviour archive whose
- * score is the number of cells that beat doing nothing. It writes an archive
- * and a leaderboard. **It does not commit, and it must not**: baseline
- * conflicts grow quadratically with branches in flight, and a merge on this
- * repository has already caught a compile-level defect that git did not flag
- * because it was not a conflict. The output is evidence.
+ * It evaluates the scripted pool and the four nulls over **the same seeds**,
+ * and folds the results into a behaviour archive whose score is the number of
+ * cells that beat doing nothing. It writes an archive and a leaderboard. **It
+ * does not commit, and it must not**: baseline conflicts grow quadratically
+ * with branches in flight, and a merge on this repository has already caught a
+ * compile-level defect that git did not flag because it was not a conflict.
+ * The output is evidence.
  *
- * ## Determinism
+ * ## What it does not do yet: mutate
  *
- * Mutation draws come from a seeded generator supplied on the command line, so
- * a round is reproducible from `--search-seed` alone. Nothing here touches the
- * simulation's streams: a strategy is chosen *outside* the simulation and
- * handed in, exactly as the scripted pool already is.
+ * This is the *evaluation half* of a quality-diversity loop. The archive, the
+ * axes, the null ladder and the shape verdict are live; the generator that
+ * proposes new preference orders and re-seeds from the archive's elites is
+ * not. So the width reported here is the width of the **authored** pool, which
+ * is a floor on the meta's width and not a measurement of it. There is no
+ * `--rounds` flag, and there is deliberately no dead one: an option that is
+ * parsed and ignored reads as a loop that ran.
+ *
+ * `--search-seed` is live and is the *sweep's* root seed, not a mutation seed.
+ * When mutation lands its draws must come from a separate generator, not from
+ * the simulation's streams — adding a stream there forces a re-baseline event
+ * (`contracts.md` §6), and the search must be free to change how it explores
+ * without invalidating every committed measurement.
  */
 
 import { spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import process from 'node:process';
-import { pathToFileURL } from 'node:url';
-
-const REPEATABLE = new Set([]);
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 function parse(argv) {
   const args = {};
@@ -57,40 +64,38 @@ function parse(argv) {
   return args;
 }
 
-/**
- * A small deterministic generator for mutation choices.
- *
- * Deliberately not the simulation's PRNG: adding a stream there forces a
- * re-baseline event (`contracts.md` §6), and the search must be free to change
- * how it explores without invalidating every committed measurement.
- */
-function searchRng(seed) {
-  let state = seed >>> 0;
-  return () => {
-    state = (state * 1664525 + 1013904223) >>> 0;
-    return state / 0x100000000;
-  };
-}
-
-/** Reorder a preference list — the whole genome, for now. */
-function mutateOrder(order, rng) {
-  const next = [...order];
-  const i = Math.floor(rng() * next.length);
-  const j = Math.floor(rng() * next.length);
-  const a = next[i];
-  const b = next[j];
-  if (a === undefined || b === undefined) return next;
-  next[i] = b;
-  next[j] = a;
-  return next;
-}
-
 async function main() {
   const args = parse(process.argv.slice(2));
-  const rounds = Number(args.rounds ?? 3);
   const seeds = Number(args.seeds ?? 8);
   const out = args.out ?? './balance/search/archive.json';
+  // The sweep's root seed. `seed.ts` derives every run's seed from it, so this
+  // one number fixes the whole evaluation: same flag, same forty-eight worlds.
   const searchSeed = Number(args['search-seed'] ?? 20260813);
+
+  // A tick cap below `ascension-min-tick` measures content, not play.
+  //
+  // Every cell would report `asc 0/N`, the archive would come back `dead`, and
+  // the verdict would read as a finding about the strategies when it is a
+  // finding about the flag. This campaign has already published two wrong
+  // conclusions from probes that ended before the win condition opened, so the
+  // floor is read out of the content that defines it rather than written here
+  // as a number that can rot away from it.
+  const ascensionMinTick = Number(
+    JSON.parse(
+      readFileSync(
+        join(dirname(fileURLToPath(import.meta.url)), '../../content/data/god-constant.json'),
+        'utf8',
+      ),
+    )
+      .find((entry) => entry.id === 'ascension-min-tick').value,
+  );
+  if (Number(args.ticks ?? 0) < ascensionMinTick) {
+    throw new Error(
+      `--ticks ${String(args.ticks)} is below ascension-min-tick ${ascensionMinTick}: no run could ` +
+        'ascend, so every cell would read `not-worth-playing` for a reason that is not about the ' +
+        'strategy. Raise --ticks, or change the constant and say why.',
+    );
+  }
 
   const harness = await import('../dist/index.js');
   const { BOT_POOL, NULL_LADDER, foldArchive } = harness;
@@ -98,8 +103,8 @@ async function main() {
   const nullIds = new Set(NULL_LADDER.map((entry) => entry.strategyId));
   const seedStrategies = BOT_POOL.filter((entry) => !nullIds.has(entry.strategyId));
 
-  console.log(`[search] pool ${BOT_POOL.length}, nulls ${nullIds.size}, seeds ${seeds}`);
-  console.log(`[search] ladder: ${NULL_LADDER.map((e) => e.strategyId).join(' -> ')}`);
+  process.stdout.write(`${`[search] pool ${BOT_POOL.length}, nulls ${nullIds.size}, seeds ${seeds}`}\n`);
+  process.stdout.write(`${`[search] ladder: ${NULL_LADDER.map((e) => e.strategyId).join(' -> ')}`}\n`);
 
   // The axes. Every one is an existing metric, and every one is an axis on
   // which two strategies can genuinely be *different* rather than better.
@@ -116,8 +121,6 @@ async function main() {
     // same nodes by funding versus by permitting are not one way to play.
     { id: 'spendConcentration', edges: [256, 512, 768] },
   ];
-
-  const rng = searchRng(searchSeed);
 
   // Every candidate and every null is evaluated under ONE sweep id.
   //
@@ -179,7 +182,7 @@ async function main() {
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(sweepPath, `${JSON.stringify(sweep, null, 2)}\n`);
 
-  console.log(`[search] evaluating ${allStrategies.length} strategies x ${seeds} replicates`);
+  process.stdout.write(`${`[search] evaluating ${allStrategies.length} strategies x ${seeds} replicates`}\n`);
   await new Promise((resolve, reject) => {
     const child = spawn(
       process.execPath,
@@ -260,30 +263,34 @@ async function main() {
   };
   writeFileSync(out, `${JSON.stringify(payload, null, 2)}\n`);
 
-  console.log(`[search] wrote ${out}`);
-  console.log(
+  process.stdout.write(`[search] wrote ${out}\n`);
+  process.stdout.write(
     `[search] SHAPE ${archive.shape.toUpperCase()}   width ${archive.width}` +
     `   not-worth-playing ${archive.reachableNotWorthPlaying}` +
-    `   margin-over-null ${archive.marginOverNull}`,
+    `   margin-over-null ${archive.marginOverNull}\n`,
   );
   // Target is WIDE. `flat` means everything works, which is not balance -- it
   // is an absence of consequence, and it is the state this project started in.
-  if (archive.shape === 'flat') console.log('[search] WARNING: flat -- no wrong answers, so no right ones');
-  if (archive.shape === 'dead') console.log('[search] WARNING: dead -- nothing beats doing nothing');
+  if (archive.shape === 'flat') {
+    process.stdout.write('[search] WARNING: flat -- no wrong answers, so no right ones\n');
+  }
+  if (archive.shape === 'dead') {
+    process.stdout.write('[search] WARNING: dead -- nothing beats doing nothing\n');
+  }
   for (const cell of archive.cells) {
-    console.log(
+    process.stdout.write(
       `  ${cell.status === 'occupied' ? 'OCCUPIED ' : 'not-worth'} ${cell.elite.strategyId.padEnd(22)}` +
       ` asc ${String(cell.elite.ascended).padStart(3)}/${cell.elite.runs}` +
       ` bar ${String(cell.nullBar).padStart(3)}` +
       (cell.failedRung ? ` (lost to rung ${cell.failedRung})` : '') +
-      `  ${cell.coordinate}`,
+      `  ${cell.coordinate}\n`,
     );
   }
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   main().catch((error) => {
-    console.error(error);
+    process.stderr.write(`${String(error?.stack ?? error)}\n`);
     process.exitCode = 1;
   });
 }
