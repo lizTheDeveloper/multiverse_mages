@@ -5719,3 +5719,73 @@ that counted an extinct species among the recovered was wrong before anyone touc
 its own diff and reported `ACTION_ID_MAX` reading 15 in both places with an empty diff for `god/`,
 `content/` and `agent-api/` — **not on that seam.** Checking that a warning does not apply is as useful
 as heeding one.
+
+---
+
+## W114 — dragons need bodies, not friends. The mechanic works and the claim does not.
+
+*2026-08-14, PR #126. The discriminator I asked for came back against the design.*
+
+| arm | ascends |
+|---|--:|
+| draconic, shipped game | **0/100** — paired arms **bit-identical**, every delta `+0.00 ±0.00` |
+| draconic, downstream of the portal gate, with invitation | **14/100** |
+| draconic, downstream of the gate, **no invitation** (holds portal magic all run) | **0/100** |
+| **draconic, six founders, no invitation — matched headcount** | **15/100** |
+
+**The last row is the finding.** Six draconic founders reach **15/100** against the invitation's
+**14/100**, at the same earliest ascension tick. **The control was advantaged and only tied**, which
+makes the direction robust rather than marginal.
+
+**So "dragons have to make friends" is currently false as implemented.** The alliance is a
+**demographic patch**: dragons need *bodies*, not *other kinds of people*. The mechanic works — the
+arms are real, the seeded-node hypothesis is dead (the no-invitation control at the same gate ascends
+zero), and the effect is large — but **it is not the effect the design claims.**
+
+### Two halves of the design proved, one refuted
+
+- **"Must still fail without allies" — proved by identity, not statistics.** In the shipped game the
+  gate never opens, so `alliance-seeker` degrades *exactly* to its control: bit-identical runs.
+- **"Must be able to ascend with allies" — proved.** 0 → 14/100, Enduring Canon, earliest tick 1682.
+- **"Because they import curiosity" — refuted.** Headcount explains it.
+
+### Why the design still wants something here, and what it would have to be
+
+**Nothing in the simulation currently rewards *difference*.** Cross-species affinity — `ages-of-magic.md`'s
+1.15 cap for training with another species — is authored and is not wired to any of this. **A mechanic
+that pays for foreignness would be the thing that makes the claim true**, and it does not exist.
+
+**Until then, an invited scholar is a warm body with a different label.** That is worth saying plainly
+before anyone builds the alliance UI around a fiction the simulation does not implement.
+
+### And the gate excludes exactly the species it exists to rescue
+
+**The portal gate is a curiosity gate in disguise**, and its asymmetry is inverted:
+
+| species | curiosity | reaches action 14 |
+|---|--:|--:|
+| gnome | 1792 | 17/100 |
+| elf | 896 | 16/100 |
+| dwarf | 512 | 3/100 |
+| **orc** | 384 | **0/100** |
+| **draconic** | 256 | **0/100** |
+
+**The two species the mechanic exists to rescue are the two it excludes.** Kept literal and reported
+rather than patched, because it is a content-placement fact about where the portal nodes sit and it
+should be fixed there.
+
+**And orc ascends 47/100 at the same instrument with no invitation at all** — a species gap large
+enough to matter on its own, and a warning about the immigration-free hazard before the seeker arm even
+lands.
+
+### Two defects, both found by measuring rather than by trusting green tests
+
+1. **`ACTION_ID_MAX` was duplicated** — a literal in `coordination/src/god/constants.ts` and another in
+   `@mm/content`. Only one moved when the action space grew, so the cost table was built one entry
+   short and **the new god action was silently free**: mask affordability passes, resolver charges
+   nothing, nothing looks wrong.
+2. **An optimistic mask cost the strategy its entire turn, every turn** — library depth **2.51 against
+   13.64**, and it invited nobody.
+
+**Both passed the test suite.** The agent's own note is the lesson: *caught only because I measured
+rather than trusted the green tests.*
