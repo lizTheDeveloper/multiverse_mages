@@ -6060,7 +6060,7 @@ monotonic twice; **soften it wherever it is quoted.**
 optimistic mask costing the policy its entire turn) were both found by measuring rather than by the
 green suite.
 
-## W116 — the reachability check has been red on `main`, and it is naming the prestige loop
+## W118 — the reachability check has been red on `main`, and it is naming the prestige loop
 
 The two **non-blocking** GitHub Actions checks — `Rules-path reachability` and `Primitive
 consumption` — are red on `main` and have been. `Verify` is green, `ci/hetzner-lint` is green, and
@@ -6102,7 +6102,7 @@ declaring exclusions. An agent is on the nine constants now, told in as many wor
 `DECLARED_EXCLUSIONS`. `UNIVERSITY_STAFF` is deliberately out of its scope — the affiliation agent
 owns university staffing this round, and two agents in one file is how a merge eats a change.
 
-## W117 — the search reported `DEAD`, and it was a finding about the flag
+## W119 — the search reported `DEAD`, and it was a finding about the flag
 
 `Verify` was red on PR #118 for thirteen lint errors, all in `bin/search-strategies.mjs`. Fixing
 them turned up something worse than lint.
