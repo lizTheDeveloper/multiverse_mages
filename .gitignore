@@ -62,3 +62,4 @@ ui/lattices.html
 # (scripts/w99-csv-to-records.mjs). Committing them would duplicate the
 # committed CSV in a second format that could then drift from it.
 balance/w99/records/
+.w158post/

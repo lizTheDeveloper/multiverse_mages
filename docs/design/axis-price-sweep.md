@@ -7,6 +7,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 **Build:** `w-god-price` off `origin/main` (`5fbdd40`), reference-universe-v1, scenario build
 `0.3.0`. Measured 2026-08-14.
+**`main` moved during the measurement** — it gained the university staffing layer, the
+`openingSquareSeeded` option and `SeedSetInput.options` between `5fbdd40` and the merge. The 384-run
+table below is a statement about `5fbdd40`. A 36-run confirmation slice was re-run **after** merging
+`origin/main` and is reported at the end; it reproduces the headline pattern.
 **Instrument:** `tools/w158/run-arm.mjs` and `tools/w158/analyse.mjs`, over the shared W15
 composition probe. Eight prices × two openings × four strategies × two starting cells, paired
 within seed, 2400 world ticks. A twelve-strategy pilot at the shipped price selected the four.
@@ -276,12 +280,12 @@ Two consequences worth recording:
 
 - **The censoring check the brief asked for is not applicable here.** Censoring is invariant with the
   price for the same reason the arrivals are.
-- **`species-separation.mjs` cannot vary the opening square either.** `LONG_RUN_OPTIONS` hardcodes
-  `openingTechniqueCount: 0` and `measureSeedSet` never passes `options` to `runLongReference`. Any
-  earlier separation figure quoted *at a 1×2 opening* — the 65-of-72 draconic censoring from #156,
-  for instance — came from a path this binary does not have. Whoever needs that comparison next has
-  to plumb `options` through `SeedSetInput` first; it is two lines and it is not done here, because
-  doing it silently would produce numbers that look like this tool's and are not.
+- **The opening square *is* variable here, and the price still is not.** `SeedSetInput.options`
+  landed on `main` while this branch was measuring (it is what #156's 1×2 separation figures — the
+  65-of-72 draconic censoring — were taken through). So the instrument can compare openings. It
+  still cannot compare *prices*, and no amount of plumbing will change that while `runLongReference`
+  submits an empty action list every tick. The invariance above was re-measured after merging
+  `origin/main` and reproduced: `1024 === 8192: true`, `1024 === 16384: true`.
 
 ---
 
@@ -295,6 +299,29 @@ or golden fixture has a reason to change, and `git status` is clean of them.
 `ui/session.json`'s `snapshotHash` is unmoved for the same reason and was not re-recorded.
 
 `npm run verify` is green on this branch, including the three balance gates.
+
+## Confirmation after merging `origin/main`
+
+The 384-run table was taken at `5fbdd40`. `main` gained the university staffing layer and two
+scenario options while it ran, so a 24-run slice — two strategies × three prices × two openings ×
+two cells × one replicate — was re-run on the **merged** tree.
+
+| strategy | price | gap (nodes) | narrow axes | wide axes |
+|---|--:|--:|---|---|
+| `permissive-breadth` | 1× | −2.5 ±1.5 | 5.0×14.0 | 5.0×14.0 |
+| `permissive-breadth` | 5× | **+2.5 ±1.5** | **5.0×14.0** | **5.0×14.0** |
+| `permissive-breadth` | 16× | −3.0 ±2.0 | 1.0×14.0 | 3.0×4.0 |
+| `permit-then-idle` | 1× | −4.5 ±2.5 | 5.0×14.0 | 5.0×14.0 |
+| `permit-then-idle` | 5× | **+98.5 ±13.5** | 1.5×13.5 | 4.5×13.5 |
+| `permit-then-idle` | 16× | +44.0 ±0.0 | **1.0×2.0** | **3.0×4.0** |
+
+Every headline reproduces. `permissive-breadth` still holds the whole grid at 5× from both openings;
+`permit-then-idle` still collapses to a one-technique strip; at 16× the verb is gone and both arms
+end exactly where they were founded. n = 2 per cell, so read the axis columns and not the standard
+errors — and note that `permissive-breadth`'s 16× *wide* arm ended at 3.0×4.0 here against 3.0×14.0
+in the 384-run table, which is the run-to-run variation in whether a universe reaches worship tier 5
+at all. That variation is itself the point: at 16× a form permit costs 64 favor against a 60-favor
+cap below tier 5, so whether the verb exists is decided by the worship curve rather than by the god.
 
 ## What was not measured
 
