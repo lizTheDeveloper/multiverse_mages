@@ -7660,3 +7660,60 @@ raid instrumentation #144 built and report casualties, nodes lost and nodes gain
 combatants, the reference universe's emptiness is a property of *passive-control* and the gates that
 use it, and the fix is which strategy the reference arm runs. If it does not, the gap is real and
 larger.
+
+## W156 — `portal-rush` fields combatants. W153's paraphrase was wrong, and W155 was right to hold.
+
+Measured: 4 seeds × 1200 ticks, roles sampled by a read-only observer spliced immediately **before**
+the `raids` system, so the figures are the *deployed roster*, not the survivors. The observer was
+proved inert — identical snapshot hash and raid log with and without it.
+
+| arm | action 10 applied | raids | outbound | casualties | nodes gained |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `passive-control` | **0** | 17 | 0 | **0** | **0** |
+| `portal-rush` | **949** | 94 | 86 | **118** | **40** |
+| `archivist` | 58 | 17 | 0 | 0 | 0 |
+| `uniform-random-legal` | 387 | 52 | 41 | 48 | 32 |
+
+Thirty of `portal-rush`'s outbound raids end `defender/sideEliminated` — a whole warband dead — and
+fifty-five end `attacker/objectivesResolved`.
+
+**So "nobody sends a mage to the raid" was false**, as W155 suspected. #144's finding is a property of
+the **reference arm's passive strategy**, and its `play()` passes `[]` to `step` — **no god agent at
+all** — which `passive-control` happens to reproduce. Its `expect(wardens).toBe(0)` therefore *cannot*
+fire "the day a strategy assigns one", because no strategy runs in that file.
+
+**Three of twelve strategies submit `assignRole`**, from `@mm/scenario`'s own `auditPool()` rather
+than from a grep — and one of the three, `uniform-random-legal`, reaches it **by drawing**, which no
+grep could ever have found. That is the fourth time tonight a grep would have produced a confident
+wrong answer, and the reason W155 refused to spend an agent on my paraphrase.
+
+### The agent corrected itself mid-task, and the correction is the finding
+
+It first wrote up "ablating six of seven combat primitives moves nothing even in `portal-rush`" as a
+**null result**, then retracted it in a follow-up: #144's own body says the ablated raid *"resolves on
+the identical engagement tick, seed by seed"*, and **`RaidRecord` carries no damage ledger and only
+*local-side* casualties.** So it is an **instrument gap, not a finding about the engine.**
+
+**Concrete next step, and it is code:** put `RaidOutcome.primitiveApplication` — or the opposing
+side's casualties — on `RaidRecord`. Until then **any sweep arm ablating one of those six reports a
+null for a live wire**, which is precisely the failure #136 fixed one layer up.
+
+### Six §7 metrics have no committed measurement at all
+
+**`balance-full.sweep.json` is the only sweep declaring any raid or combat metric** —
+`combatActionEconomy`, `combatThresholdEfficiency`, `inboundRaidTempoLoss`, `raidInitiationCost`,
+`raidLengthDistribution`, `roleAssignmentDemographicCost` — **and its pool is `["passive-control"]`
+alone**, the one arm just measured at zero outbound raids and zero casualties. The two sweeps carrying
+the eight-strategy round-robin declare **no** raid metric. And `balance-full` has **no committed
+baseline and no caller**.
+
+So those six are not mismeasured. They are **unmeasured**, by a sweep whose pool cannot produce the
+thing they measure. The pool fix is one line — **but it must follow the `RaidRecord` field**, or it
+will faithfully record more nulls.
+
+And a documentation-rot flag, the fourth tonight: **`balance/README.md`'s five-sweep table gives
+`balance-full` a 240-tick cap and 10 metrics; the sweep file says 1200 and 23.**
+
+Not afforded, and named: a `uniform-random-legal` ablation arm (32 runs/arm on a shared machine), and
+diagnosing whether the six primitives are **cast-but-invisible** or **never cast** — which needs the
+`RaidRecord` change first.
