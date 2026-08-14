@@ -6013,3 +6013,49 @@ balance claims before then), then one requiring it to **acknowledge known degene
 **All three were satisfied truthfully rather than worded around** — and the degeneracy acknowledgement
 is where the affiliation defect got recorded, which is exactly the field it exists for. `supersededDeltas`
 is **109 zeros.**
+
+### W114 final — the portal gate is a *depth* gate, not a placement gate
+
+*2026-08-14, PR #126 complete. One correction that changes the recommended fix.*
+
+**I recorded twice that the portal nodes are unreachable because of where they sit.** That is wrong in
+a way that matters:
+
+> **Both `portal` nodes sit in `rego-limen` at tier 4–5 behind a seven-node closure. Both cells are
+> v1-enabled, so the chain is *permitted from tick zero* and simply never climbed.**
+
+**Nothing is forbidden. The chain is legal and seven nodes deep**, and the species term
+(`floor((curiosity − 1024)/8) × tier`, pinned at −384 from tier 4 up) means incurious species never
+climb that far.
+
+**So "guarantee portal reachability in every legal opening" — which I recommended — would not help.**
+The cells are already open. The fix is about **depth and appeal**, not placement: either the portal
+chain is shorter, or reaching tier 4–5 stops being gated on curiosity, or portal nodes exist at a
+shallower tier.
+
+| species | curiosity | reaches gate | ascended |
+|---|--:|--:|--:|
+| gnome | 1792 | 17 | 17 |
+| human | 1152 | 14 | 6 |
+| **elf** | 896 | **16** | 20 |
+| dwarf | 512 | 3 | 2 |
+| orc | 384 | **0** | 2 |
+| draconic | 256 | **0** | 0 |
+
+**And it is a trend, not strict monotonicity** — elf outreaches human on lower curiosity. I stated
+monotonic twice; **soften it wherever it is quoted.**
+
+**Two further corrections to things I briefed:**
+
+- **Fertility is a dead lever at this horizon.** Draconic maturity is **3,600 months against a
+  2,400-tick run** — *no draconic born in a run can ever become a mage in it.* And **elf ascends 20/100
+  on 2.84 living mages** against draconic's 4.26, so population is not the binding term. **My
+  instruction to consider a modest fertility raise was wrong**, and the agent was right to refuse it.
+- **The verb's precondition is what separates alliance from immigration**: *no living mage of that
+  species already here.* That is a better rule than anything in my brief, and it is why orc — with five
+  other species available — still invited in only 4 runs of 100.
+
+**Everything else stands as recorded**: human +15 against draconic's +14, the mechanism is
+`completeAffiliation`, and the two defects (`ACTION_ID_MAX` making the action silently free, and an
+optimistic mask costing the policy its entire turn) were both found by measuring rather than by the
+green suite.
