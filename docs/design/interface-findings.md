@@ -26,6 +26,30 @@ Each finding carries a **status**:
 
 And a **lands in**, naming the package or document that owns it.
 
+### Provenance of the numbers
+
+`CLAUDE.md`: *"an undated measurement in the present tense will be read as current for as long as it
+survives."* Everything below is a measurement, and most of it is written in the present tense, so
+here is the ref it was taken on.
+
+**Findings 1.6–1.10, the amendment to 1.1, and §8.1** were measured on **2026-08-14** at
+`14baa59`, against the reference scenario at **seed 20260813**, 400 ticks — snapshot hash
+`efeff5e8c0427c4e`, observation layout digest `46182c35d829b205`. Reproduce with:
+
+    npm run ui:record        # writes ui/session.json; the same file these were read from
+
+That recording is committed and `packages/scenario/test/unit/ui-recording.test.ts` re-runs the
+recorder and compares frames, so **any of these numbers going stale is a red test rather than a
+silently wrong document** — which is the one protection the earlier findings here do not have. It
+has held byte-identical across three `main` merges so far, including the §4.3 amendment.
+
+The claims that are *not* covered by that test are the ones read out of source rather than out of a
+run — `CANDIDATE_SLOTS` pinning 32, the ninety-three authored effects, the `ECONOMIC_PRIMITIVES` set
+with two members. Those were checked by hand on the same ref and nothing re-checks them. Treat a
+mismatched line number as the cheapest signal that one has rotted.
+
+Findings 1.1–1.5 and §§2–7 predate this note and carry no ref. That is a gap, not a convention.
+
 ---
 
 ## 1. Findings that land in `agent-interface` (0.5.0)
