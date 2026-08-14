@@ -6259,3 +6259,41 @@ ever read. The parent does not forward signals to the child it spawns. Anything 
 
 **The standing rule for the rest of this campaign: count the concurrent verifies before spawning an
 agent.** Sixteen cores is roughly two full verifies at a time, not seven.
+
+## W123 — `main` was red on Verify, and both PRs that caused it were green
+
+```
+FAIL packages/scenario/test/unit/ui-recording.test.ts
+  > ui/session.json > is byte-for-byte what `npm run ui:record` produces today
+-   "snapshotHash": "efeff5e8c0427c4e",
++   "snapshotHash": "f6974848cef4578c",
+```
+
+`main` is protected on `Verify`, so **nothing could merge** while this stood. It stood through
+four merges.
+
+**A semantic merge conflict, and neither PR did anything wrong.** #121 added `ui/session.json`
+*and* the test that pins it byte-for-byte, recorded against a base that did not contain #127. #127
+— *"a mage can work a cell she knows, not only hold one"* — merged first and changed what the
+simulation does. #121's recording was stale before it landed. Both passed `Verify` individually,
+and **GitHub never re-ran #121 against the newer base, because "require branches to be up to date
+before merging" is not enabled.**
+
+That setting is the finding, not the fixture. This class of break is invisible to per-PR CI by
+construction: two green diffs, one red merge. With twenty-one PRs open against a moving `main` it
+will happen again, and it is the second instance in one night — #132 exists because #127's
+ascension baseline missed the same merge by **four minutes and forty-three seconds**.
+
+Fixed in PR #135. The re-record was verified rather than trusted: `npm run ui:record` on 474ccdf
+reproduces the file byte-for-byte, and only `snapshotHash` and `frames` move — `layout`, `actions`,
+`content`, `seed`, `ticks`, `tickCap`, `scenarioId`, the layout digest and the action-space size
+are all identical. **The diff carries the claim it is supposed to carry**: behaviour changed on
+purpose, in #127. Nothing was regenerated to make a test go quiet, and no balance baseline was
+touched.
+
+**Told all seven agents not to fix it** — seven agents each independently re-recording
+`ui/session.json` is a worse outcome than the red. Each was also told the converse, which is the
+part that matters going forward: *their* changes will move `snapshotHash` legitimately, and when
+that happens they must re-record and say so, **but must not** run `goldens:regen` or regenerate a
+balance baseline. A change that makes magic do something and quietly re-baselines everything is
+indistinguishable from one that broke the simulation.
