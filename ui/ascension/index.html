@@ -72,6 +72,19 @@
   .dhead .letter{font:700 13px var(--mono);color:var(--summit)}
   .dhead .name{font:400 1.06rem var(--serif)}
   .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  /* Was 22rem, which is a floor no column's content reaches in three of the
+     four world states: A and C sat at 352px against 95-112px and 61px of
+     content, i.e. 240px and 291px of empty panel with the footnote pinned
+     under it, which reads as a pane that failed to render. Measured, per state,
+     as A/B/C box heights:
+         0     112/341/61   95/404/413   112/419/61   95/356/413
+        13rem  208/341/208  208/404/413  208/419/208  208/356/413
+        22rem  352/352/352  352/404/413  352/419/352  352/356/413
+     13rem is the value that pins A in all four — it is min-height-bound in
+     every state — and halves the void. It does not pin C: C moves 208<->413
+     where 22rem moved it 352<->413. That is the trade, and it is deliberate.
+     The void is on screen the moment the page loads; the jump only happens on
+     a state button the reader just pressed, and nothing above the panels moves. */
   .dbody{padding:.85rem .9rem;display:flex;flex-direction:column;gap:.7rem;min-height:13rem}
   .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
 

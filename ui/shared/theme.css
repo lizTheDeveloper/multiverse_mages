@@ -304,6 +304,14 @@ code, .mono { font-family: var(--mono); }
  * to cover. The fade is therefore unconditional, which is its one dishonesty.
  *
  * A region on a surface other than `--panel` sets `--scroll-bg` itself.
+ *
+ * **Apply it only where the list is long enough for the cut to be the
+ * problem.** CSS cannot ask whether there is anything past the edge, so the
+ * fade paints over a short list too. Tried on `raid/`'s exposure lists and cast
+ * log — three regions whose reference state is a two-line "nothing has happened
+ * yet" — it faded the second line of that message to near-invisible, i.e. it
+ * made an empty state harder to read in order to fix a problem those regions do
+ * not have. Reverted there.
  */
 .mm-scroll {
   overflow-y: auto;

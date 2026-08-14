@@ -548,7 +548,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 
 /* ---- the log. Three columns, and the third one wraps: the detail is the
        thing worth reading and the old nowrap table pushed it off the side. ---- */
-.log{--scroll-bg:var(--sunk);overflow-y:auto;background:var(--sunk);border-top:1px solid var(--line)}
+.log{overflow-y:auto;background:var(--sunk);border-top:1px solid var(--line)}
 .log table{border-collapse:collapse;width:100%;table-layout:fixed}
 .log td{
   font:10px var(--mono);line-height:1.5;padding:.28rem .35rem;
@@ -832,18 +832,18 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
             <div class="tally" id="tally"></div>
             <div class="ledblk">
               <span class="lab">Observed — what they have taught you</span>
-              <div class="expolist mm-scroll" id="expolist"></div>
+              <div class="expolist" id="expolist"></div>
             </div>
             <div class="ledblk">
               <span class="lab">Taken out through the portal</span>
-              <div class="expolist lootlist mm-scroll" id="lootlist"></div>
+              <div class="expolist lootlist" id="lootlist"></div>
             </div>
             <div class="outcome" id="outcome" hidden><span class="h">Termination</span><span id="outcome-t"></span></div>
           </div>
         </section>
         <section class="card logcard">
           <h2>Cast log <span class="side">who · what · what it did</span></h2>
-          <div class="log mm-scroll" id="logwrap"><table><tbody id="log"><tr><td class="empty" colspan="3">Nothing cast yet. The portal is open; contact has not happened.</td></tr></tbody></table></div>
+          <div class="log" id="logwrap"><table><tbody id="log"><tr><td class="empty" colspan="3">Nothing cast yet. The portal is open; contact has not happened.</td></tr></tbody></table></div>
         </section>
       </div>
     </div>

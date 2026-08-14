@@ -246,7 +246,7 @@ let seed = 8675309;
 const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
 const pick = (a) => a[Math.floor(rnd() * a.length)];
 
-const state = { running: true, pop: 240, tick: 0, speed: { a: 1, b: 1 }, halted: false, unread: 0, halts: 0 };
+const state = { running: true, pop: 240, tick: 0, speed: { a: 1, b: 1 }, halted: false, unread: 0, halts: 0, absorbed: 0 };
 const feeds = { a: [], b: [], c: [] };
 const rates = {};
 
@@ -358,8 +358,14 @@ function step(manual = false) {
     push('a', ev);
     if (manual || true) push('c', ev);
     const cls = CLASSES.find(c => c.id === ev.cls);
-    // B only keeps a line for classes under their density threshold
+    // B only keeps a line for classes under their density threshold. The count
+    // of what it drops is kept here, monotonically, and NOT derived by
+    // subtracting the two feed lengths: both are ring buffers capped at 60, so
+    // A saturates while B does not, and the difference falls back towards zero
+    // exactly as the density rule starts absorbing the most. That is an
+    // instrument that reads zero when the answer is largest.
     if (rates[ev.cls] < cls.threshold) push('b', ev);
+    else state.absorbed += 1;
     if (ev.cls === 'loss') {
       state.halts += 1;
       state.halted = true;
@@ -387,13 +393,13 @@ function paint() {
     // failed to render, when what it was actually showing is the density rule
     // working: the routine classes crossed their threshold and became the rate
     // bars above, so there is nothing left to print. Absence is reported.
-    const absorbed = key === 'b' ? feeds.a.length - feeds.b.length : 0;
+    const absorbed = key === 'b' ? state.absorbed : 0;
     root.querySelector('[data-feed]').innerHTML = feeds[key].map(ev =>
       `<div class="ev ${ev.tone}"><span class="t">t${ev.tick}</span><span>${ev.text}</span></div>`).join('')
       + (absorbed > 0
         ? `<div class="ev absorbed"><span class="t">—</span><span>${absorbed} routine
-             ${absorbed === 1 ? 'line is' : 'lines are'} not printed here: their classes are over the
-             density threshold and are the rate bars above. This space is the rule working.</span></div>`
+             ${absorbed === 1 ? 'line has' : 'lines have'} been absorbed since t0: their classes are over
+             the density threshold and are the rate bars above. This space is the rule working.</span></div>`
         : '')
       + (feeds[key].length === 0 && absorbed === 0
         ? '<div class="ev absorbed"><span class="t">—</span><span>Nothing has happened yet.</span></div>'
