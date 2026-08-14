@@ -1,0 +1,43 @@
+W107 — apply-magic arms, 2400 ticks, 8 seed(s) from 589825
+
+ruleset        population      peak pop     food made    stone made       applied      applying         built         mages subs.short fp
+-----------------------------------------------------------------------------------------------------------------------------------------
+yield-max           18883         18883       1560549       1918212             0             0             0            88     473 (984)
+breadth             18791         18792       1590057       2898672             0             0             0            94     471 (983)
+no-terram           18880         18883       1557258        770715             0             0             0            92     471 (983)
+food-max            20503         20511       6217313       2023162             0             0             0            90     310 (878)
+no-food             18901         18902       1570349        776839             0             0             0            93     467 (983)
+
+## Does the yield-maximising ruleset dominate?
+   Paired over seeds: (yield-max − breadth), same universe both sides.
+
+  population  91.4 ± 135.1  (n = 8, 0.68 SE, 0.49% of 18791)
+  peak        91.5 ± 135.7  (n = 8, 0.67 SE, 0.49% of 18792)
+  food        -29508.9 ± 39820.3  (n = 8, -0.74 SE, -1.86% of 1590057)
+  stone       -980460.1 ± 125143.7  (n = 8, -7.83 SE, -33.82% of 2898672)
+
+## Is permitting the economy cells worth it at all?
+   Paired over seeds: (breadth − no-terram), same universe both sides.
+
+  population  -88.8 ± 113.0  (n = 8, -0.79 SE, -0.47% of 18880)
+  peak        -91.0 ± 113.1  (n = 8, -0.80 SE, -0.48% of 18883)
+  food        32799.3 ± 29429.9  (n = 8, 1.11 SE, 2.11% of 1557258)
+  stone       2127957.4 ± 85342.7  (n = 8, 24.93 SE, 276.10% of 770715)
+
+## Yield-maximising against a ruleset that ignores the economy
+   Paired over seeds: (yield-max − no-terram), same universe both sides.
+
+  population  2.6 ± 117.1  (n = 8, 0.02 SE, 0.01% of 18880)
+  peak        0.5 ± 116.4  (n = 8, 0.00 SE, 0.00% of 18883)
+  food        3290.4 ± 33105.3  (n = 8, 0.10 SE, 0.21% of 1557258)
+  stone       1147497.3 ± 90340.6  (n = 8, 12.70 SE, 148.89% of 770715)
+
+## A ruleset that can actually make food, against one that cannot
+   Paired over seeds: (food-max − no-food), same three techniques both sides.
+
+  population  1602.0 ± 166.7  (n = 8, 9.61 SE, 8.48% of 18901)
+  peak        1609.0 ± 162.8  (n = 8, 9.89 SE, 8.51% of 18902)
+  food        4646963.5 ± 141268.1  (n = 8, 32.89 SE, 295.92% of 1570349)
+  stone       1246323.4 ± 74208.3  (n = 8, 16.79 SE, 160.44% of 776839)
+  vellum      2739813.4 ± 99978.2  (n = 8, 27.40 SE, 281.12% of 974596)
+  applied     0.0 ± 0.0  (n = 8, n/a SE, n/a% of 0)

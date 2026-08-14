@@ -409,11 +409,21 @@ describe('two hundred world years of the reference universe', () => {
     // upkeep for the same pool. Decoupled from food, scribing now has more
     // headroom and duplicates accumulate faster before upkeep's per-instance
     // cost catches them — measured at 157 books against 48 distinct nodes,
-    // roughly 3.3 books per node. Still comfortably "biting" (nowhere near the
-    // "ten would mean it is gone" ceiling the original comment named), so the
-    // bound below is widened to fit the new measurement with headroom, not
-    // doubled reflexively.
-    expect(last?.grimoires ?? 0).toBeLessThan(4 * (last?.libraryDepth ?? 1));
+    // roughly 3.3 books per node.
+    //
+    // `apply-magic` moved it again, to **186 books against 43 nodes — 4.33** —
+    // and the direction is the goal doing what it is for rather than a
+    // regression. A month spent casting at the world is a month not spent
+    // researching, so the universe reaches five fewer distinct nodes; the
+    // scribes are unaffected (applied Terram work makes stone, and a scribe is
+    // paid in vellum), so the same scribing capacity now has a smaller distinct
+    // set to write and copies it more often. Fewer nodes and the same books is
+    // exactly a higher ratio.
+    //
+    // Widened to 5 to fit the new measurement with headroom, not doubled
+    // reflexively — still well under the "ten would mean it is gone" ceiling the
+    // original comment named.
+    expect(last?.grimoires ?? 0).toBeLessThan(5 * (last?.libraryDepth ?? 1));
 
     // The replacement for "it falls": it does not, anywhere in the run.
     // Walked tick by tick rather than compared as peak-vs-last, for the same

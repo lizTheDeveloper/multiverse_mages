@@ -62,6 +62,7 @@ import {
 } from '@mm/rules-magic';
 import type { SpeciesAffinities } from '@mm/rules-world';
 import {
+  readApplicationWeights,
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
@@ -382,12 +383,21 @@ export function worldDeps(
     'fertility',
     'rules-world/economy/carrying-capacity (species.fertility)',
   );
-  // `resource-yield` and `scribe-rate` are deliberately *not* registered. Their
-  // primitive records are handed to the loop, but `world-step.ts` passes
-  // `resourceYieldBonuses: []` and `scribeRateBonuses: []` — literal empty source
-  // lists — so both stack to the identity every tick and nothing, node or god,
-  // can move them. Registering them as consumers of anything would be a claim
-  // this file cannot support; they belong in the failure list, and they are there.
+  // `scribe-rate` is deliberately *not* registered: `world-step.ts` still passes
+  // `scribeRateBonuses: []` — a literal empty source list — so it stacks to the
+  // identity every tick and nothing, node or god, can move it. Registering it as
+  // a consumer of anything would be a claim this file cannot support; it belongs
+  // in the failure list, and it is there.
+  //
+  // `resource-yield` used to be in that sentence and is not any more. It now has
+  // **two** node-driven consumers, and they are different mechanisms rather than
+  // one written twice: `universe-effects.ts` gathers it into the ambient
+  // multiplier on every laborer cohort, and `world-step.ts`'s `apply-magic` arm
+  // spends one node's magnitudes on the month a mage chose to cast it. Both go
+  // through `gatherEffects`' gates or the gateway's copy of them, and neither is
+  // registered here because both reach the loop through `universeEffects`, whose
+  // index is built from the registry directly rather than through
+  // `nodeEffectMagnitudes`.
 
   return {
     speciesOf,
@@ -402,6 +412,7 @@ export function worldDeps(
       return resolved;
     },
     appeal: readTargetAppeal(registry),
+    application: readApplicationWeights(registry),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),

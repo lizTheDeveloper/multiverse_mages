@@ -200,7 +200,7 @@ describe('time to tier, by species', () => {
     }
   });
 
-  it('separates three bands of six, and 9.9 is closer than it has ever been', () => {
+  it('separates four of six, and 9.9 is closer than it has ever been', () => {
     // **Rewritten three times, and this time the direction reversed back.** The
     // previous version recorded a single separation — draconic strictly after
     // four ordinary species, with elf bridging — taken after
@@ -270,12 +270,43 @@ describe('time to tier, by species', () => {
     expect(draconic.low).toBeLessThan(human.low);
     expect(draconic.high).toBeGreaterThan(elf.high);
 
-    // Inside the fast trio nothing separates, which is why 9.9 stays unchecked:
-    // three groups is not four species.
+    // **The trio is a pair now, and `apply-magic` is what broke it up.**
+    //
+    // Measured, tier 3, in ticks, this build against the one before the goal
+    // existed:
+    //
+    // | species | before | with `apply-magic` |
+    // |---|---|---|
+    // | gnome    | [24, 25] | [24, 25] |
+    // | dwarf    | [25, 30] | [25, 30] |
+    // | orc      | [21, 27] | **[32, 51]** |
+    // | human    | [30, 31] | [30, 31] |
+    // | elf      | [53, 60] | [53, 60] |
+    // | draconic | [26, 380] | [25, 301] |
+    //
+    // Only orc moved, and it moved because `speciesTerm` reads `laborAffinity`
+    // for this goal and orc's is the highest in the content set at `fp(1536)`,
+    // against the lowest `curiosity` but draconic's at `fp(384)`. An orc mage
+    // therefore likes applied work about as much as a gnome likes research, and
+    // she spends months on it that she used to spend reaching tier 3. That is
+    // the seventh species trait finding a rule to read it, and it is the first
+    // time a species' *economic* disposition has changed how deep it gets.
+    //
+    // **9.9 is one species closer than it has ever been.** Human, orc and elf
+    // now separate strictly from each other and from the pair; only gnome and
+    // dwarf still overlap. Task 9.9 wants four species separated by more than
+    // the cross-seed spread and this build separates three plus a pair — still
+    // not four, still recorded rather than repaired, because every species
+    // magnitude is `tuningStatus: "untuned"` and inventing one to make a test go
+    // green is what the measurement pivot exists to prevent.
     const overlaps = (a: { low: number; high: number }, b: { low: number; high: number }): boolean =>
       a.low <= b.high && b.low <= a.high;
     expect(overlaps(gnome, dwarf)).toBe(true);
-    expect(overlaps(dwarf, orc)).toBe(true);
-    expect(overlaps(gnome, orc)).toBe(true);
+    // Orc is strictly after human, and human strictly after nobody: the pair
+    // still brackets it. Asserted in the direction that now holds, so the day a
+    // tuning pass folds orc back into the pair this fails loudly rather than
+    // the suite quietly keeping the old "three groups" claim.
+    expect(human.high).toBeLessThan(orc.low);
+    expect(orc.high).toBeLessThan(elf.low);
   });
 });

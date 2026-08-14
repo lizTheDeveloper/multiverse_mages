@@ -46,6 +46,7 @@ import {
 } from '@mm/rules-magic';
 import type { TargetAppealWeights } from '@mm/rules-world';
 import {
+  readApplicationWeights,
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
@@ -137,6 +138,10 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     facets: nodeFacets(),
     affinitiesOf: (species) => resolveSpeciesAffinities(species, registry()),
     appeal: appealWeights(),
+    // Shipped, like every other magnitude here. `apply-magic` is nonetheless
+    // masked for every mage in this fixture, because applicability also needs
+    // `universeEffects` and that is deliberately absent — see the note below.
+    application: readApplicationWeights(registry()),
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
     territory: territoryExtent(registry().territories.map((entry) => entry.record)),
