@@ -96,6 +96,7 @@ import {
   scribingTraditionId,
   shippedContent,
   speciesTable,
+  standardOpeningAxes,
   traditionIdNamed,
   v1RulesetAxes,
   worldDeps,
@@ -172,6 +173,16 @@ const DEFAULT_FOUNDING_SPECIES_MASK = 0;
  * the default moves with it, and no sweep file has to be edited.
  */
 const DEFAULT_OPENING_AXIS_COUNT = 0;
+
+/**
+ * Who chooses the opening square when a sweep does not say.
+ *
+ * Zero: **the god chooses**. The owner's sentence is that the square "shouldn't
+ * be hard-coded — that's for the player to decide", and a default of "the RNG
+ * decides" would be the same abdication in a different direction. A seeded
+ * square is still one flag away, and W82's arms take it.
+ */
+const DEFAULT_OPENING_SQUARE_SEEDED = 0;
 
 /**
  * The occupations a founding population is seeded into.
@@ -260,6 +271,25 @@ export interface ReferenceOptions {
   /** Forms the universe is founded holding, or `0` for the v1 rectangle. */
   readonly openingFormCount: number;
   /**
+   * Who chooses the square: `0` the god, non-zero the universe's own seed.
+   *
+   * **Zero is the default because the choice is the player's.** A size names a
+   * square through `standardOpeningAxes` — content order, no draw — so two
+   * universes at one size open on the same content and a size sweep varies size
+   * alone. That is the arm a differentiation measurement wants: the alternative
+   * moves *which* square as well as how big it is, and the two effects cannot
+   * then be separated at any sample size.
+   *
+   * Non-zero is W82's arm: `seededOpeningAxes` draws the square from
+   * `RNG_STREAM.openingSquare`, so every seed in a sweep opens on different
+   * content. That is what a *content-dimensionality* measurement wants and it
+   * is why the path is kept rather than replaced.
+   *
+   * Read only when both counts are non-zero. With no counts there is no square
+   * to choose and the universe takes the v1 rectangle either way.
+   */
+  readonly openingSquareSeeded: number;
+  /**
    * Founding grants the god may make, before anything is discovered.
    *
    * Absent means the shipped `founding-grant-budget-start`, which is the point:
@@ -295,6 +325,7 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'foundingSpeciesMask',
   'openingTechniqueCount',
   'openingFormCount',
+  'openingSquareSeeded',
   'tradition',
   'grantBudgetStart',
   'grantAccrualNodes',
@@ -376,6 +407,7 @@ export function referenceOptions(config: ScenarioConfig): ReferenceOptions {
     foundingSpeciesMask: readCount(config, 'foundingSpeciesMask', DEFAULT_FOUNDING_SPECIES_MASK),
     openingTechniqueCount: readCount(config, 'openingTechniqueCount', DEFAULT_OPENING_AXIS_COUNT),
     openingFormCount: readCount(config, 'openingFormCount', DEFAULT_OPENING_AXIS_COUNT),
+    openingSquareSeeded: readCount(config, 'openingSquareSeeded', DEFAULT_OPENING_SQUARE_SEEDED),
     grantBudgetStart: readOptionalCount(config, 'grantBudgetStart'),
     grantAccrualNodes: readOptionalCount(config, 'grantAccrualNodes'),
     grantBudgetCap: readOptionalCount(config, 'grantBudgetCap'),
@@ -455,11 +487,20 @@ export function referenceContent(
  * mask all agree by construction rather than by three code paths staying in
  * step.
  *
- * **The god-chosen and seed-chosen openings are the same shape.** A sweep asks
- * for a size and gets a square drawn from its own seed; a game asks for named
- * techniques and forms through `explicitOpeningAxes` and gets a square it
- * chose. Both arrive here as a {@link RulesetAxes}, so the scenario layer
- * expresses both without a mode flag reaching the rules path.
+ * **The god-chosen and seed-chosen openings are the same shape.** A size names
+ * a square through `standardOpeningAxes`, which resolves it to content ids and
+ * hands them to `explicitOpeningAxes` — the play verb, and now the default
+ * path; `openingSquareSeeded` asks for W82's drawn square instead. Both arrive
+ * here as a {@link RulesetAxes}, so the scenario layer expresses both without a
+ * mode flag reaching the rules path.
+ *
+ * **Three sizes, three code paths, and the largest two agree by construction.**
+ * No counts is `v1RulesetAxes`; the counts of the v1 rectangle itself is
+ * `standardOpeningAxes` of the same size, and the two produce identical masks
+ * because the standard order puts the rectangle's own axes first. That is
+ * asserted in `test/unit/opening-square.test.ts`, which is what makes the
+ * full-size arm of a sweep a control rather than a second implementation of
+ * one.
  */
 function resolveOpeningSquare(
   content: ReferenceContent,
@@ -482,11 +523,15 @@ function resolveOpeningSquare(
         'Give both counts, or neither for the v1 rectangle.',
     );
   }
-  const axes = seededOpeningAxes(
-    content.registry,
-    { techniqueCount: openingTechniqueCount, formCount: openingFormCount },
-    rng.stream(RNG_STREAM.openingSquare),
-  );
+  const size = { techniqueCount: openingTechniqueCount, formCount: openingFormCount };
+  // The god's square draws nothing. That is the whole reason the default is
+  // this branch and not the other one: a standard opening touches no RNG
+  // stream, so it can never re-roll a subsystem and can never force the
+  // re-baseline event `contracts.md` §6 records against stream additions.
+  const axes =
+    options.openingSquareSeeded === 0
+      ? standardOpeningAxes(content.registry, size)
+      : seededOpeningAxes(content.registry, size, rng.stream(RNG_STREAM.openingSquare));
   return { axes, foundingNodeIds: foundingCandidates(content.registry, axes) };
 }
 

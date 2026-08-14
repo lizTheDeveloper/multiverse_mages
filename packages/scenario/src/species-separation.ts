@@ -93,7 +93,7 @@
 
 import { deriveRunSeed } from '@mm/mc-harness';
 
-import type { ReferenceContent } from './reference-universe.js';
+import type { ReferenceContent, ReferenceOptions } from './reference-universe.js';
 import { referenceContent } from './reference-universe.js';
 import type { LongRunResult } from './long-run.js';
 import { runLongReference, timeToTierBySpecies } from './long-run.js';
@@ -395,6 +395,15 @@ export interface SeedSetInput {
   readonly tier: number;
   readonly ticks?: number;
   readonly content?: ReferenceContent;
+  /**
+   * The founding options, or absent for `LONG_RUN_OPTIONS`.
+   *
+   * Present so that an **opening square** can be measured with this instrument
+   * rather than only with a containment probe. Absent is byte-identical to the
+   * behaviour before this field existed, which is what keeps the published
+   * readings and the calibration set comparable.
+   */
+  readonly options?: ReferenceOptions;
   /** Called after each run, so a long measurement can say where it is. */
   readonly onRun?: (runSeed: number, index: number, total: number) => void;
 }
@@ -415,7 +424,12 @@ export async function measureSeedSet(input: SeedSetInput): Promise<SeedSetSample
   const columns: (number | undefined)[][] = [];
 
   for (const [index, runSeed] of input.runSeeds.entries()) {
-    const result: LongRunResult = await runLongReference({ runSeed, ticks, content });
+    const result: LongRunResult = await runLongReference({
+      runSeed,
+      ticks,
+      content,
+      ...(input.options === undefined ? {} : { options: input.options }),
+    });
     columns.push([...timeToTierBySpecies(result, input.tier)]);
     input.onRun?.(runSeed, index, input.runSeeds.length);
   }
@@ -450,6 +464,8 @@ export interface SeparationInput {
   readonly seedsPerSet?: number;
   readonly ticks?: number;
   readonly content?: ReferenceContent;
+  /** The founding options every run in every set is built with. */
+  readonly options?: ReferenceOptions;
   /** Called after each set, so a long measurement can say where it is. */
   readonly onSet?: (sample: SeedSetSample, index: number, total: number) => void;
 }
@@ -516,6 +532,7 @@ export async function measureSpeciesSeparation(
       tier,
       ticks,
       content,
+      ...(input.options === undefined ? {} : { options: input.options }),
     });
     sets.push(sample);
     input.onSet?.(sample, index, setCount);

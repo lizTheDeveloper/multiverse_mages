@@ -25,6 +25,8 @@
  * | `--seeds-per-set N` | 6 | **leave this alone** — see `SEEDS_PER_SET`. |
  * | `--tier N` | 3 | the tier arrivals are measured at |
  * | `--ticks N` | 720 | horizon, in world ticks |
+ * | `--opening TxF` | — | the opening square, e.g. `2x3`. Absent is the v1 rectangle. |
+ * | `--opening-seeded` | — | draw the square from each universe's seed instead |
  * | `--chain a,b,c` | `gnome,dwarf,human,elf` | the claimed ordering to judge |
  * | `--pair a,b` | — | repeatable; judges one ordered pair |
  * | `--no-legacy` | — | skip the calibration set |
@@ -46,6 +48,7 @@
 import process from 'node:process';
 
 import {
+  LONG_RUN_OPTIONS,
   LEGACY_SEED_SET,
   SEPARATION_HORIZON_TICKS,
   chainVerdictOf,
@@ -104,6 +107,37 @@ const ticks = integer(options, 'ticks', SEPARATION_HORIZON_TICKS);
 const content = referenceContent();
 const known = separationSpeciesIds(content);
 
+/**
+ * The opening square this measurement is taken under.
+ *
+ * Absent leaves `options` undefined, and an undefined `options` is the exact
+ * call the published readings and the calibration set were taken with — not an
+ * equal-looking reconstruction of it. That distinction is the reason this is
+ * built as an override rather than as a set of defaults written out here.
+ */
+function openingOptions() {
+  const raw = options.get('opening')?.[0];
+  if (raw === undefined || raw === '') return undefined;
+  const match = /^(\d+)x(\d+)$/.exec(raw.trim());
+  if (match === null) {
+    throw new RangeError(`--opening must look like 2x3, received ${raw}`);
+  }
+  return {
+    ...LONG_RUN_OPTIONS,
+    openingTechniqueCount: Number(match[1]),
+    openingFormCount: Number(match[2]),
+    openingSquareSeeded: options.has('opening-seeded') ? 1 : 0,
+  };
+}
+
+const opening = openingOptions();
+const openingLabel = opening === undefined ? 'v1 rectangle' : (options.get('opening')?.[0] ?? '');
+if (opening !== undefined) {
+  process.stderr.write(
+    `opening square ${openingLabel}, ${opening.openingSquareSeeded === 0 ? 'god-chosen' : 'seed-drawn'}\n`,
+  );
+}
+
 const chain = (options.get('chain')?.[0] ?? DEFAULT_CHAIN.join(',')).split(',').filter(Boolean);
 assertKnownSpecies(chain, known);
 const pairs = (options.get('pair') ?? []).map((raw) => raw.split(',').filter(Boolean));
@@ -122,9 +156,14 @@ if (!options.has('no-legacy')) {
     tier,
     ticks,
     content,
+    // Deliberately **not** given `--opening`: the calibration set is the
+    // positive control for the instrument, and a control run under a different
+    // opening square could no longer be compared against the committed
+    // docstring. It calibrates the measurement, not the arm.
   });
   say(
-    `calibration — the six seeds reference-time-to-tier.test.ts has always used, tier ${tier}:`,
+    `calibration — the six seeds reference-time-to-tier.test.ts has always used, tier ${tier}` +
+      ` (always the v1 rectangle, whatever --opening says):`,
   );
   for (const sample of legacy.species) {
     say(
@@ -146,6 +185,7 @@ const report = await measureSpeciesSeparation({
   seedsPerSet,
   ticks,
   content,
+  ...(opening === undefined ? {} : { options: opening }),
   onSet: (_sample, index, total) => {
     const elapsed = Math.round((Date.now() - started) / 1000);
     process.stderr.write(`  set ${index + 1}/${total} done (${elapsed}s elapsed)\n`);
@@ -153,7 +193,7 @@ const report = await measureSpeciesSeparation({
 });
 
 if (options.has('json')) {
-  process.stdout.write(`${JSON.stringify({ report, chain }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ report, chain, opening: openingLabel }, null, 2)}\n`);
   process.exit(0);
 }
 
