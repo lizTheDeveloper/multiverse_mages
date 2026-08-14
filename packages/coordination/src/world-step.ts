@@ -652,6 +652,13 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
   // a second place the two could disagree about which tick a count belongs to.
   const god = godSystems({
     ...deps.god,
+    // §9's mask, forwarded from the world deps rather than plumbed a second
+    // time. Until this line the two favor-regeneration channels — `worship-yield`
+    // and `library-legacy` — were the only `stackMagnitudes` calls in the
+    // assembled simulation the mask never reached, so `winRateByPrimitive`
+    // would have reported both as contributing nothing while they were quietly
+    // multiplying every tick's regeneration.
+    ...(deps.ablation === undefined ? {} : { ablation: deps.ablation }),
     nodesLostThisTick: (worldTick) => (last?.worldTick === worldTick ? last.nodesLost : 0),
   });
   return {

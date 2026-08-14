@@ -52,11 +52,11 @@
  */
 
 import type { ComponentSpec, EntityHandle, SimState, System } from '@mm/sim-core';
-import { FP_ONE, TIME_MODE, eraOf } from '@mm/sim-core';
+import { FP_ONE, TIME_MODE, eraOf, mul } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
-import type { ClampCounters } from '@mm/primitives';
+import type { AblationMask, ClampCounters } from '@mm/primitives';
 import {
   ASCENSION_PATH,
   BLESSING,
@@ -96,7 +96,7 @@ import {
   stepStagnation,
 } from './ascension.js';
 import type { GodContent } from './constants.js';
-import type { FavorLedgerEntry } from './favor.js';
+import type { FavorLedgerEntry, LegacyChannel } from './favor.js';
 import { applyRegeneration, favorRegeneration, ledgerBalances } from './favor.js';
 import { godState, writeGodState } from './god-state.js';
 import type { InterventionReport } from './interventions.js';
@@ -120,6 +120,38 @@ export interface GodDeps {
    * `stackMagnitudes` is the only thing permitted to apply it.
    */
   readonly worshipYieldNodes: ReadonlyMap<number, readonly Fixed[]>;
+  /**
+   * Each cell's `dailyRelevance`, `fp` — the share of ordinary people whose
+   * daily life the cell touches (`contracts.md` §2.2).
+   *
+   * Every `worship-yield` magnitude is multiplied by its own cell's value
+   * before it enters the stack, so a god is paid for magic her subjects live
+   * inside rather than for magic that impresses them.
+   *
+   * A **missing** cell reads as `fp(1024)` — the identity — rather than as
+   * zero. A partial map is a composition defect, and the failure it should
+   * produce is "nothing changed", not "this universe silently stopped being
+   * worshipped": the second is a balance mystery and the first is a diff.
+   */
+  readonly cellRelevance: ReadonlyMap<number, Fixed>;
+  /**
+   * The `library-legacy` registry record — the compounding half of the pair.
+   *
+   * Optional, and absent means the channel does not run at all rather than runs
+   * at zero. A build whose content predates the primitive should behave exactly
+   * as it did, and `stackMagnitudes` on an empty source list would still be a
+   * behaviour change waiting to be mistaken for a tuning one.
+   */
+  readonly libraryLegacy?: PrimitiveRecord;
+  /**
+   * §9's ablation mask, neutralizing at most one primitive.
+   *
+   * Forwarded by `defineWorldSimulation` from the world deps. Both favor
+   * channels stack through it, which is what makes each of them a thing
+   * `winRateByPrimitive` can turn down independently — the whole reason
+   * `library-legacy` is a declared primitive rather than an emergent term.
+   */
+  readonly ablation?: AblationMask;
   /** Node ids carrying the `portal` primitive. */
   readonly portalNodes: ReadonlySet<number>;
   /** Where `worship-yield` cap clamps are counted, when a caller keeps counters. */
@@ -365,6 +397,13 @@ function outcomeSystem(
       const knowledge = deps.knowledgeFor(state);
       let god = godState(state, universe);
 
+      // Read once, used twice: `yieldSources` at step 5 and `qualifyingPath` at
+      // step 7. Hoisted above the regeneration because worship-yield is now
+      // gated on the ruleset, and a second `readRulesetForObservation` would
+      // walk every edict again per tick for an answer that cannot have changed
+      // — nothing between these two points issues or revokes one.
+      const ruleset = readRulesetForObservation(state, universe);
+
       // ---- 1–3. Worship ------------------------------------------------------
       const sources = worshipSources(state, ctx.tick);
       const target = worshipTarget(sources, constants);
@@ -390,9 +429,11 @@ function outcomeSystem(
       const regenerated = favorRegeneration(
         worship,
         constants,
-        yieldSources(knowledge, deps),
+        yieldSources(knowledge, deps, (cellId) => permits(ruleset, cellId)),
         deps.worshipYield,
         deps.clampCounters,
+        legacyChannel(state, deps, constants),
+        deps.ablation,
       );
       const outcome = applyRegeneration(opening, regenerated, favorCap);
       universeStore.set(universe, 'favor', outcome.favor);
@@ -433,7 +474,6 @@ function outcomeSystem(
 
       // ---- 7. Ascension eligibility, recomputed so it can lapse ---------------
       deepest ??= deepestNodesByCell(deps.catalog, (nodeId) => deps.cells.cellOf(nodeId));
-      const ruleset = readRulesetForObservation(state, universe);
       const apotheosisFacts = {
         heldByLivingMage: nodesHeldByLivingMages(state),
         instanceCount: (nodeId: number) => knowledge.instanceCount(nodeId),
@@ -645,14 +685,89 @@ function tierOf(worship: Fixed, constants: GodContent['constants']): number {
  * be the §6a knowledge loop feeding the §7 worship loop through a door the cap
  * cannot close, since the cap bounds the stack and not the number of sources
  * feeding it.
+ *
+ * **A forbidden cell pays nothing.** This used to gate on the instance count
+ * alone, which meant a node whose cell the god had interdicted — or whose axis
+ * she had never permitted — went on regenerating favor for as long as one copy
+ * of it survived anywhere. That is a defect on its own terms: §1.1 makes
+ * `permits()` the single question *may this magic exist here*, and a ruleset
+ * that cannot stop a spell from being worshipped is not a ruleset. It is also
+ * exactly backwards for `dailyRelevance`, whose claim is that *what* a god
+ * allows decides what she is paid — a claim that is empty if forbidding
+ * something costs her nothing. The gate is the cell's rather than the
+ * instance's, because worship is paid for magic that exists in the world and
+ * not for a book: a book whose subject is outlawed is a book nobody may
+ * practise from.
+ *
+ * **Each magnitude is scaled by its own cell's `dailyRelevance` before it
+ * enters the list** — never by scaling the stacked total. `worship-yield`
+ * stacks additively into `(1 + Σ)`, so multiplying the stacked value would
+ * scale the `1` as well, and a low-relevance cell would become a *penalty* on
+ * the base regeneration rate instead of a small contribution to it. Per
+ * magnitude is also the only order in which two cells of different relevance
+ * can each contribute their own share of one stack, which is the whole
+ * mechanic. Stacking itself stays `stackMagnitudes`'s alone to perform, exactly
+ * as the note on `worshipYieldNodes` requires.
+ *
+ * `mul` floors, as everywhere in the rules path. At the shipped magnitudes that
+ * costs at most one `fp` unit per source, and it costs it in the direction of
+ * the god earning slightly less — the direction an unproven multiplier should
+ * err in. **No randomness is drawn here and none should be:** relevance is a
+ * multiply, and a draw would make every committed balance baseline in the
+ * repository rot for a term that has no distribution.
  */
-function yieldSources(knowledge: KnowledgeSubsystem, deps: GodDeps): Fixed[] {
+function yieldSources(
+  knowledge: KnowledgeSubsystem,
+  deps: GodDeps,
+  permitsCell: (cellId: number) => boolean,
+): Fixed[] {
   if (deps.worshipYieldNodes.size === 0) return [];
   const found: Fixed[] = [];
   for (const [nodeId, magnitudes] of deps.worshipYieldNodes) {
-    if (knowledge.instanceCount(nodeId) > 0) found.push(...magnitudes);
+    if (knowledge.instanceCount(nodeId) === 0) continue;
+    const cellId = deps.cells.cellOf(nodeId);
+    if (!permitsCell(cellId)) continue;
+    const relevance = deps.cellRelevance.get(cellId) ?? FP_ONE;
+    for (const magnitude of magnitudes) found.push(mul(magnitude, relevance));
   }
   return found;
+}
+
+/**
+ * The `library-legacy` sources for this tick, or `undefined` if the channel is
+ * not installed.
+ *
+ * **Distinct nodes on a shelf, not instances.** Ten copies of one treatise are
+ * redundancy against loss — which §6a already rewards through the loss rules —
+ * and paying for them here would make transcription a favor pump. The quantity
+ * this term is about is how much a civilization *knows and has written down*,
+ * and that is a count of titles.
+ *
+ * Counted from `KNOWLEDGE_INSTANCE` rather than through `rules-world`'s
+ * `libraryDepth`, which is a per-library `fp` weighted by tier and would make
+ * this term a second reading of a number already tuned for a different job. The
+ * pass is one sweep of a component this system walks twice already.
+ *
+ * A single magnitude, not one per node: the channel is
+ * `additive-into-multiplier` and `depth × perNode` is exactly what a list of
+ * `depth` copies of `perNode` would stack to, without asking `stackMagnitudes`
+ * to walk a list that grows with the library. The cap still binds — it binds on
+ * the stacked value, and there is only one source to stack.
+ */
+function legacyChannel(
+  state: SimState,
+  deps: GodDeps,
+  constants: GodContent['constants'],
+): LegacyChannel | undefined {
+  const primitive = deps.libraryLegacy;
+  if (primitive === undefined || constants.legacyYieldPerNode <= 0) return undefined;
+  const shelved = new Set<number>();
+  for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
+    if (row.locationKind !== LOCATION_KIND.library) continue;
+    shelved.add(row.nodeId);
+  }
+  if (shelved.size === 0) return undefined;
+  return { primitive, magnitudes: [shelved.size * constants.legacyYieldPerNode] };
 }
 
 function nodesHeldByLivingMages(state: SimState): ReadonlySet<number> {

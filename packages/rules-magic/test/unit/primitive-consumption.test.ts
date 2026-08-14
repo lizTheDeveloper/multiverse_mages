@@ -389,16 +389,13 @@ describe('the two checks share one exclusion list', () => {
   });
 
   it('states the exclusions in the formatted report, so a reader sees the gap', () => {
-    // The shared list is empty since all seventy cells were enabled, so this
-    // reads in two halves for the reason the coverage test's twin does: the line
-    // must still be printed when there is no gap, and the names must still appear
-    // when there is one.
+    // The shared list holds exactly `library-legacy` on this branch — see the
+    // coverage test's twin for why it is one entry and not three or none.
     const { recorder, registry } = fullyConsumed();
     const shipped = formatPrimitiveConsumptionReport(
       checkPrimitiveConsumption(registry, recorder),
     );
-    expect(shipped).toContain('Declared exclusions:');
-    expect(shipped).not.toMatch(/Declared exclusions: \w/u);
+    expect(shipped).toContain('Declared exclusions: library-legacy');
 
     const withGap = formatPrimitiveConsumptionReport(
       checkPrimitiveConsumption(registry, recorder, ['fertility', 'lifespan']),

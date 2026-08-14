@@ -127,6 +127,26 @@ export interface CellRecord {
   readonly form: string;
   /** Display only. No rule may read these (`contracts.md` §2.2). */
   readonly classicalLabels: readonly string[];
+  /**
+   * The share of ordinary people whose daily life this cell touches, `fp`.
+   *
+   * `fp(1024)` is everyone — water, healing, bread — and `fp(64)` is a cell
+   * only mages can perceive. It scales every `worship-yield` magnitude a node
+   * in the cell carries, so a god is paid for the magic her subjects live
+   * inside rather than for the magic that impresses them.
+   *
+   * **Bounded by population share, not by power**, which is the point: it is
+   * the one term in the favor economy that cannot be grown by playing well, so
+   * the §7 worship → favor → permits → worship loop has a ceiling that is a
+   * property of the ruleset rather than of the run.
+   *
+   * Authored, never derived. The reasoning behind all seventy calls, and the
+   * ten hardest of them, is in `docs/design/daily-relevance-authoring.md`.
+   */
+  readonly dailyRelevance: Fp;
+  /** Why {@link dailyRelevance} is what it is. Never read by a rule. */
+  readonly relevanceGloss: string;
+  readonly tuningStatus: TuningStatus;
   readonly nodes: readonly string[];
   readonly v1?: boolean;
   readonly edicts?: readonly EdictKind[];

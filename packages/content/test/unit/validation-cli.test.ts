@@ -198,8 +198,10 @@ describe('validation reports every violation in a run', () => {
     expect(code).toBe(0);
     expect(output.errors).toEqual([]);
     expect(output.lines.join('\n')).toContain(
+      // Union of #137 and #63: seventy cells flagged v1 *and* the seventeenth
+      // primitive. Neither side's literal describes this tree.
       'OK — 5 techniques, 14 forms, 70 cells (70 flagged v1), 300 nodes, 6 species, ' +
-        '3 traditions, 16 primitives',
+        '3 traditions, 17 primitives',
     );
     expect(output.lines.join('\n')).toMatch(/contentRevision [0-9a-f]{32}/u);
   });

@@ -414,7 +414,13 @@ describe('contentRevision', () => {
     // both edit `node.json` and the two edits auto-merged with no conflict;
     // `check:content` re-validated the result — 300 nodes, no duplicate id, no
     // orphaned effect — before this literal was recorded.
-    expect(registry.contentRevision).toBe('1102b84cf04262520a2ab2e1cccefc8e');
+    //
+    // 1102b84cf04262520a2ab2e1cccefc8e -> 1f82f6ff1f0a96206680f232600932d9, when
+    // #63's `dailyRelevance` / `relevanceGloss` per cell and its seventeenth
+    // primitive `library-legacy` joined the union. Seventy `dailyRelevance`
+    // calls are in the preimage for the plainest reason in this list: each one
+    // multiplies every `worship-yield` magnitude a node in that cell carries.
+    expect(registry.contentRevision).toBe('1f82f6ff1f0a96206680f232600932d9');
   });
 
   it('is stable across loads of identical content', () => {

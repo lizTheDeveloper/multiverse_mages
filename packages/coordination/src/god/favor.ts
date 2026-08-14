@@ -41,7 +41,7 @@
  * player earned and delete it for a reason they could not have anticipated, and
  * would do it silently.
  *
- * ## `worship-yield` multiplies the rate and never the cap
+ * ## Two multipliers on the rate, and neither on the cap
  *
  * The one licensed multiplier on regeneration, stacked additively into
  * `(1 + Σ)` and capped at `fp(2048)` by `contracts.md` §3, through the shared
@@ -53,7 +53,7 @@
 import type { PrimitiveRecord } from '@mm/content';
 import type { Fixed } from '@mm/sim-core';
 import { FP_ONE, floorDiv, mul } from '@mm/sim-core';
-import type { ClampCounters } from '@mm/primitives';
+import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
 import type { GodConstants, GodCosts } from './constants.js';
@@ -83,15 +83,44 @@ export function favorRegeneration(
   yieldSources: readonly Fixed[],
   primitive: PrimitiveRecord,
   counters?: ClampCounters,
+  legacy?: LegacyChannel,
+  ablation?: AblationMask,
 ): Fixed {
   const raw = constants.favorRegenBase + mul(Math.max(worship, 0), constants.favorPerWorship);
-  if (yieldSources.length === 0) return raw;
-  const stacked = stackMagnitudes(
-    primitive,
-    yieldSources,
-    counters === undefined ? {} : { counters },
-  );
-  return mul(raw, stacked.value);
+  const options = {
+    ...(counters === undefined ? {} : { counters }),
+    ...(ablation === undefined ? {} : { ablation }),
+  };
+  let value = raw;
+  if (yieldSources.length > 0) {
+    value = mul(value, stackMagnitudes(primitive, yieldSources, options).value);
+  }
+  if (legacy !== undefined && legacy.magnitudes.length > 0) {
+    value = mul(value, stackMagnitudes(legacy.primitive, legacy.magnitudes, options).value);
+  }
+  return value;
+}
+
+/**
+ * The `library-legacy` channel: what an accumulated library is worth per tick.
+ *
+ * **A second registry record and a second `stackMagnitudes` call, deliberately
+ * not folded into the first.** Both channels are `additive-into-multiplier` and
+ * both multiply regeneration, so summing their magnitudes into one stack would
+ * produce almost the same number and destroy the only property either of them
+ * was built for: `winRateByPrimitive` neutralises **one primitive id**, and two
+ * terms sharing an id cannot be ablated apart. §6a's runaway-leader risk is a
+ * question about which of two opposed loops dominates — `dailyRelevance` damps,
+ * library depth compounds — and a fused multiplier answers it with one number
+ * that can only be turned off entirely.
+ *
+ * They also cap separately, which matters more than it reads: a shared cap would
+ * let a deep library eat the headroom that `worship-yield` needs, so a god with
+ * a large archive would stop being paid for what her magic *does*.
+ */
+export interface LegacyChannel {
+  readonly primitive: PrimitiveRecord;
+  readonly magnitudes: readonly Fixed[];
 }
 
 /** What one tick of regeneration did to the pool. */

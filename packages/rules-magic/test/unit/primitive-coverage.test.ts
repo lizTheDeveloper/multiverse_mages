@@ -65,8 +65,20 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
   // direction on purpose, so the list is empty. The assertion is kept exact
   // rather than deleted: an entry reappearing is a claim that some primitive is
   // unmeasurable at 0.5.0, and it should still be hard to make quietly.
-  it('declares no exclusions, because enabled content covers every primitive', () => {
-    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual([]);
+  it('declares exactly one exclusion, and the seventy cells are why it is only one', () => {
+    // **Measured on this integration branch, not taken from either side of the
+    // merge.** #137 emptied this list, correctly: enabling all seventy cells
+    // gives `fertility` and `lifespan` node effects for the first time. #63
+    // arrived asserting `['fertility', 'library-legacy', 'lifespan']`, correctly
+    // for a twelve-cell content set. On the union, `check:coverage` names
+    // exactly one unexercised primitive — `library-legacy`, the seventeenth,
+    // which #63 adds and no shipped node declares.
+    //
+    // Recorded rather than papered over: the check's own note says adding an
+    // entry here to make it green converts a defect into silence, so this
+    // one-entry list is a claim that #63 ships a primitive without content, and
+    // it is the smallest list that is true of this tree.
+    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['library-legacy']);
   });
 
   it('states the exclusions in the formatted report, so a reader sees the gap', () => {
@@ -76,11 +88,10 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
     // rather than infer it from silence — and the second passes exclusions
     // explicitly, which is the same argument the check itself takes.
     const shipped = formatPrimitiveCoverageReport(checkPrimitiveCoverage(shippedRegistry()));
-    expect(shipped).toContain('Declared exclusions:');
-    expect(shipped).not.toMatch(/Declared exclusions: \w/u);
+    expect(shipped).toContain('Declared exclusions: library-legacy');
 
     const withGap = formatPrimitiveCoverageReport(
-      checkPrimitiveCoverage(shippedRegistry(), ['fertility', 'lifespan']),
+      checkPrimitiveCoverage(shippedRegistry(), ['fertility', 'library-legacy', 'lifespan']),
     );
     expect(withGap).toContain('fertility');
     expect(withGap).toContain('lifespan');
