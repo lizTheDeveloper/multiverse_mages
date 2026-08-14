@@ -1015,14 +1015,9 @@ that occurred during the step. Each entry carries at minimum:
 - **a class**, from a closed enumeration, so a consumer can apply a per-class rule to it;
 - **the entity or content it concerns**, at the granularity the thing itself has — a node id, a mage
   handle, a cell id — not the aggregate the observation buckets it into;
-- **whether the event *ended* that thing**: this step took the last instance of a node, the last
-  member of a species, the last mage who could teach a tier. This is a **transition, not a
-  property** — the distinction matters and is easy to lose. `agent-api`'s knowledge census already
-  answers *which nodes stand at one copy right now*; nothing answers *which node went from one to
-  zero in this step*. Every field of that census is a stock at a `worldTick`; it carries no delta,
-  no "since last", no per-tick count. A consumer can only turn the first into the second by holding
-  the previous census and differencing it, which is the reconstruction this amendment exists to
-  stop asking of everyone.
+- **whether the event *ended* that thing** — this step took the last instance of a node, the last
+  member of a species, the last mage who could teach a tier. A **transition, not a property**; the
+  difference is argued below and is the whole of what this field adds.
 
 The class enumeration, the wire format and the per-class payload are **not fixed here**. They belong
 to `agent-interface` at 0.5.0, in the same way §4.4 fixes that candidate lists are slot-indexed and
@@ -1078,10 +1073,14 @@ the session to expose a projection that already exists**, which is an `agent-api
 rather than a change to this contract. What remains genuinely absent, and what the requirement above
 is therefore *for*, is narrower and worth stating exactly:
 
-- **Terminality as a transition.** Struck from the ask as a *property* and kept as an *event*, on
-  the distinction drawn above: the census says which nodes stand at one copy, never which one just
-  reached zero. This is the narrowest field here and the one most likely to be dropped as redundant
-  by someone who has read the census and not the difference.
+- **Terminality as a transition.** Struck as a *property*, kept as an *event*. `fragileNodeIds` is
+  a **stock** — the nodes standing at one copy at this tick. The cue fires on a **flow** — the node
+  that went from one to zero *in this step*. Every field of that census is a stock at a
+  `worldTick`: no delta, no "since last", no per-tick count anywhere in the type. Turning the first
+  into the second means holding the previous census and differencing it, which is frame-diffing one
+  projection over, discarding the same causation. This is the narrowest field in the amendment and
+  the one most likely to be struck later as redundant by someone who has read the census and not
+  the difference.
 - **Causation.** Nothing links a death to the loss it caused. Two censuses a step apart show both;
   neither says one followed from the other.
 - **Per-step counts by class.** §0.4's threshold needs to know how many events of a class fell in
