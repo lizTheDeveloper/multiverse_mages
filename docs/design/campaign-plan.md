@@ -4074,7 +4074,7 @@ version. Any square-based opening needs one.
 
 The shipped rectangle is one of only **126 of 10,010** possible 3×4 squares that are both
 prerequisite-closed *and* raid-capable — but ranks **175th by reachable primitives**.
-`{intellego, muto, rego} × {aquam, fatum, limen, nomen}` is closed, raid-capable, and reaches all 16.
+`{intellego, perdo, rego} × {limen, mentem, nomen, terram} *(corrected 2026-08-14: W82 recorded the wrong rectangle; the tree's twelve v1 cells are these)*` is closed, raid-capable, and reaches all 16.
 Defensible and improvable, which is a better position than either extreme.
 
 **A structural cost to know before the next subsystem lands:** all three gates refused on
@@ -8240,3 +8240,76 @@ reason above. And `shared/README.md` had begun claiming all six findings were tr
 `Test timed out in 30000ms`, never an assertion, and **5.7 s in isolation on the same tree.** About 5×
 headroom clean and none under this box's contention. Fine in CI, marginal on a shared dev machine, and
 **very easy to misread as a real defect.**
+
+## W165 — the opening square is a real choice, and a god who spends erases it
+
+PR #156. `explicitOpeningAxes` has a caller and it is the **default** path.
+`standardOpeningOrder` orders the v1 rectangle's own axes first, `standardOpeningAxes` takes a
+size-prefix, and `resolveOpeningSquare` branches on a new `openingSquareSeeded` option defaulting to
+**0 = the god chooses.** Both instruments learned `--opening TxF`.
+
+**Correction to my brief:** `openingTechniqueCount` / `openingFormCount` were **already declared
+factors on `main`**. What was missing was a caller and a sweep, not the factors.
+
+**Nothing moved, and that is the correct result.** `ui/session.json` byte-identical, `snapshotHash`
+still `f6974848cef4578c`, all three gates **PASS at 109/109 rows, delta exactly `0.00000`.** No file
+regenerated. The god's square draws nothing, so no new RNG stream and **no seventh baseline decision.**
+
+### The measurement, and it does not support the hypothesis
+
+Passive strategies reach exactly **7 / 12 / 16 / 25 / 51** nodes across 1×2 → 3×4 — matching an
+independent static content audit of prerequisite-reachable counts, which is the kind of agreement that
+makes a number believable.
+
+**But four of twelve strategies erase the square entirely.** `permit-then-idle` reaches **196 nodes
+from a two-cell opening against 199 from twelve** — **1.5% less from a content set seven times
+smaller.** That is W82's *"84 favor, once"* being paid, and it means the opening square is a speed bump
+for anyone who spends.
+
+**And differentiation falls rather than rises: 4 established pairs at 3×4, 2 at every narrower size** —
+flat, then stepping. The owner's hypothesis was that a 1×2 start would *give* meaningful
+differentiation. **Measured, it takes some away.** The only pair carrying a narrow size is the
+endowment-matched one (2×3 vs 3×4, six founding nodes each): elf 50.8 ± 0.5 vs 54.8 ± 0.3 (~7 SE), orc
+39.3 ± 1.7 vs 34.2 ± 0.8, zero censoring.
+
+**The recommendation is therefore: keep the default at the full v1 rectangle, and price
+`permit-technique` / `permit-form`.** Pricing is what turns the square from a speed bump into a
+decision. That is a much sharper answer than "pick 1×2", and it is the third time this campaign has
+found that **a lever exists and costs too little to matter.**
+
+Checked before quoting, and worth copying: **censoring first.** Draconic is **65 of 72 censored at
+1×2** against 17 at 3×4 — so the narrow-arm species figures are truncation, not species, and were not
+quoted as separations. And **looting is untouched**, exactly as flagged in the brief:
+`shelveForeignBooks` selects on `record.v1`, the content flag, while this wiring moves only the ruleset
+masks.
+
+## W166 — the campaign plan has not been on `main` since W97
+
+Found by the same agent, checking a reference I gave it: ***"W159 does not exist in
+`campaign-plan.md` on any ref."***
+
+It was right, and the reason is worse than a typo:
+
+```
+main                 highest entry: ## W97
+pm/campaign-plan     highest entry: ## W164     101 commits ahead
+last merged PR for the branch: #76
+```
+
+**W98 through W164 — sixty-seven entries, essentially this entire campaign — exist only on an unmerged
+branch.** Every agent briefed with *"read W159"* or *"see the campaign plan"* has been pointed at
+something not in the tree they were given. Several of them said so; I read it as their error.
+
+**This is the ninth instance of the campaign's own signature defect, and it is mine.** Written,
+committed, pushed, and unreachable — the master record of a campaign about things that are built and
+never reached. `advanceConstruction`, `applyLibraryUpkeep`, `UNIVERSITY_STAFF`, `carriedPrestige`,
+`legacyGrant`, the ablation mask, `explicitOpeningAxes`, `staffCohortsOf`'s `isLive`, `arbitration.ts`'s
+recorder — and the document describing all nine.
+
+Opening a PR to merge it. **And the lesson generalises past this branch:** a long-lived documentation
+branch is a place where writing feels like publishing and is not. If it is worth telling an agent to
+read, it has to be on the ref the agent is given.
+
+The same agent also caught that **W82 names the wrong v1 rectangle** — `{intellego, muto, rego} ×
+{aquam, fatum, limen, nomen}` where the tree holds `{intellego, perdo, rego} × {limen, mentem, nomen,
+terram}`. Corrected in place.
