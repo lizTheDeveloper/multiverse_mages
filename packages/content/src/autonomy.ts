@@ -96,6 +96,12 @@ export const REQUIRED_AUTONOMY_WEIGHTS = [
   // scalars would be a second place to forget.
   'apply-output-per-month',
   'apply-ration-per-month',
+  // Goal selection, not target selection. Every other scalar here answers
+  // *which node*; these two answer *whether to join an institution at all*, and
+  // they are two rather than one because `completeAffiliation` and
+  // `changeAffiliation` are two functions. See `terms.ts`.
+  'goal-affiliate-first-opportunity',
+  'goal-affiliate-transfer-opportunity',
 ] as const;
 
 /** The scalar ids that must be at least 1, because they are divisors. */
@@ -209,9 +215,10 @@ export function checkAutonomyWeights(
     out.push(
       problem(
         '',
-        `weight "${id}" is not declared, and target selection reads it by name. An absent weight ` +
-          'would arrive in the score as 0 — a divisor of zero, or a bound that silences a whole ' +
-          'term, either of which is a plausible-looking answer to a question nobody asked.',
+        `weight "${id}" is not declared, and the autonomy scoring path reads it by name. An ` +
+          'absent weight would arrive in the score as 0 — a divisor of zero, or a bound that ' +
+          'silences a whole term, either of which is a plausible-looking answer to a question ' +
+          'nobody asked.',
       ),
     );
   }
@@ -228,6 +235,26 @@ export function checkAutonomyWeights(
   }
 
   const value = (id: string): number | undefined => byId.get(id)?.value;
+
+  // The design statement the two weights exist to make, as a check rather than
+  // as a gloss: getting a first university is a near-necessity and moving
+  // between universities is a preference. Authored the other way round they
+  // would produce a population that churns between institutions and never joins
+  // one, which reads in a metric as affiliation working.
+  const first = value('goal-affiliate-first-opportunity');
+  const transfer = value('goal-affiliate-transfer-opportunity');
+  if (first !== undefined && transfer !== undefined && first <= transfer) {
+    out.push(
+      problem(
+        '',
+        `"goal-affiliate-first-opportunity" is ${String(first)} and ` +
+          `"goal-affiliate-transfer-opportunity" is ${String(transfer)}. The first must be ` +
+          'strictly the larger: an unaffiliated mage may neither scribe nor ward, so her first ' +
+          'affiliation unlocks two goals, while a transfer only trades one library for a deeper ' +
+          'one.',
+      ),
+    );
+  }
 
   for (const id of DIVISOR_IDS) {
     const divisor = value(id);

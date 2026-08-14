@@ -39,7 +39,30 @@ import type { MageOutlook } from './outlook.js';
  * {@link changeAffiliation} writes exactly one field, and `roles.ts` explains
  * why that is enforced there rather than trusted here. This function adds only
  * the choice of destination.
+ *
+ * ## Why the outlook is a `Pick` and not a `MageOutlook`
+ *
+ * The caller is the **work phase**, which runs before the autonomy phase and
+ * builds no outlooks: `spendTheMonth` walks a slot-ordered roster reading two
+ * columns, and constructing the frontier scan a full `MageOutlook` needs — for
+ * every mage, every tick, to answer a question about one field — is the
+ * unbounded work the outlook shape exists to bound. Two fields are all this
+ * function has ever read, and `universityPreference` produces both from one
+ * scan of the shelves. Naming exactly those two is what lets the phase that has
+ * them call this without pretending to be a phase that does not.
  */
+
+/**
+ * The part of a {@link MageOutlook} affiliation is decided from.
+ *
+ * Both fields come from `universityPreference`, and they are a pair: the
+ * boolean is `preferred !== current`, computed once so that no second
+ * computation can disagree with it.
+ */
+export type AffiliationPreference = Pick<
+  MageOutlook,
+  'betterAffiliationAvailable' | 'preferredUniversity'
+>;
 
 /**
  * Applies a completed `affiliate` goal.
@@ -55,7 +78,10 @@ import type { MageOutlook } from './outlook.js';
  * nothing rather than an error — the universe may have lost the university she
  * was aiming at while she was deciding.
  */
-export function completeAffiliation(mage: MageRecord, outlook: MageOutlook): UniversityHandle {
+export function completeAffiliation(
+  mage: MageRecord,
+  outlook: AffiliationPreference,
+): UniversityHandle {
   const destination = outlook.betterAffiliationAvailable ? outlook.preferredUniversity : mage.universityId;
   changeAffiliation(mage, destination);
   return destination;

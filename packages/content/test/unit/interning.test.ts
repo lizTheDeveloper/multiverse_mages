@@ -377,7 +377,27 @@ describe('contentRevision', () => {
     // grant-budget move above, this one **does** change every run: applying
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
-    expect(registry.contentRevision).toBe('d4e3047657b4fa8a1a74e1d52f9f5c86');
+    // 162f80bf169296d0e5fd516cc3c5257a -> b37b15fc7f882af127057304f72a7522,
+    // when `affiliate` stopped being priced with one number. Two autonomy
+    // weights were added — the opportunity a mage with no university sees in
+    // getting one, and the much smaller opportunity a mage who has one sees in
+    // moving to a deeper one. In the preimage for the plainest possible reason:
+    // they change which goal a mage picks, and two universes that disagreed
+    // about whether their mages join institutions would not be playing the same
+    // game for five minutes. Unlike the god constants above, this one **does**
+    // change every run from its first year, and the balance baselines it moves
+    // are reported in the change that added it rather than regenerated.
+    //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 + b37b15fc7f882af127057304f72a7522 ->
+    // f49b406d509a1d0e0ed4e152f7b90fb5, on `integration/ui-and-subsystems`.
+    // **Union again, and neither literal above is a competing claim about this
+    // tree.** `main` reached this merge asserting d4e3047 — `apply-magic`'s two
+    // scalars without the affiliation pair — and #134 asserted b37b15f — the
+    // affiliation pair without `apply-magic`'s. This tree's preimage strictly
+    // contains both, so it hashes to neither, exactly as the three-branch
+    // paragraph above describes. Measured with `npm run check:content` on the
+    // merged tree rather than guessed.
+    expect(registry.contentRevision).toBe('f49b406d509a1d0e0ed4e152f7b90fb5');
   });
 
   it('is stable across loads of identical content', () => {
