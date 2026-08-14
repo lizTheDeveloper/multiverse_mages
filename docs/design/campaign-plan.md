@@ -6414,3 +6414,67 @@ living mage — which the all-six mix supplies only after an extinction.
 So the ascension gate is red on `baseline-invalid`, **not** on tolerance. That distinction is the
 whole decision: a structural refusal to compare across content hashes is not evidence that balance
 regressed.
+
+## W126 — applied magic works; the arms that measured it could not make food
+
+`GOAL.applyMagic` merged as #127. Before it a mage had nine goals and **not one was "use magic"** —
+she could hold a node her whole life and never work it. Now she can spend a month casting a
+`resource-yield` node she holds *at the world*: it costs her the month and her rations, and puts
+materials into the stocks. Her food is joined to the **subsistence** claim rather than made a fifth
+claimant, so a casting mage's dinner is priced as a dinner and she appears in both halves of
+`subsistenceShortfallShare`.
+
+**The stated claim stayed null, and now there is a reason rather than a shrug.** Yield-max minus
+breadth population went **+91.4 ± 135.1 (0.68 SE) → +115.4 ± 143.6 (0.80 SE)** — still nothing. The
+instrument is right: it reproduced W90's number exactly on `main` before the change.
+
+The reason is content, and it is the same finding as W115 in a different costume:
+
+- **Of 59 authored `resource-yield` effects, exactly five sit in a v1-enabled cell — and all five
+  route to stone.** `terram` is the only material-bearing form among the twelve.
+- **And stone buys nothing.** Measured over 1,200 ticks with zero god actions:
+  `constructionStoneOwed 0`, `universitiesCompleted 0`. Construction is *not* inert — it has
+  production callers — but **founding a site is a god action**, so a universe left alone never
+  converts stone into anything.
+
+**W90's measurement was null by construction of its arms.** Not a weak effect; an arm that could not
+express one.
+
+On arms that *can* make food, the mechanism is large and unambiguous: food-max minus no-food
+population **+1602 ± 167 (9.6 SE) → +2199 ± 103 (21.5 SE)**. The claim was already true before the
+change; applied magic makes a real effect substantially bigger.
+
+`check:consumption` stays **10 → 10**, and that is the correct result: `resource-yield` was already
+counted as consumed. The gap #127 closed was never "nothing reads this primitive", it was **"holding
+a node and working it are the same thing."** The three academic primitives and the seven combat ones
+are untouched and still open.
+
+## W127 — the ablation mask may never reach the simulation, which would hollow out a §7 metric
+
+Reported alongside W126 and severe enough to prove separately: **nothing sets `deps.ablation`.**
+
+What is established statically, and what an agent is now proving by execution:
+
+- `packages/scenario/bin/scenario.mjs` is the module every runner loads, and its entry is
+  `export const createScenario = () => referenceScenario().scenario;` — **it takes no parameters**,
+  and the file never mentions ablation.
+- `world-step.ts` *reads* `deps.ablation` in three places.
+- The only non-test `src` sites that *set* an ablation block — `scenario/src/sweep.ts:156` and
+  `mc-harness/src/tournament.ts:207` — both set `{ mode: 'none', primitives: [] }`.
+- `ablation.ts:299` is the only place `one-sided` is constructed, and `runner.ts` uses
+  `spec.ablation.primitives` **only to label arm metrics**.
+
+If that holds, every ablation arm ever run was its own control, and **`winRateByPrimitive` — a
+registered §7 metric whose whole definition is to ablate a primitive and measure the resulting win
+rate — has been comparing a run against an identical run.** Structurally incapable of moving: the
+fifth instance of the pattern, and the most expensive, because this one is a *balance* metric.
+
+**Stated carefully, because it touches something the owner defended.** The owner's account of
+`winRateByPrimitive` — that it ablates each primitive and measures win rate — is a correct
+description of what the metric *is defined to do*, and the definition is fine. The defect is in the
+plumbing beneath it. Both are true at once, and the design is not the thing that failed.
+
+Not yet proven. `CLAUDE.md`'s rule applies to me as much as to anyone: **an absence claim cannot be
+proven by reading files.** The agent is instrumenting the seam, declaring `mode: 'one-sided'`, and
+counting how many world steps actually see a non-empty mask. If that count is not zero, this entry
+is wrong and should be struck.
