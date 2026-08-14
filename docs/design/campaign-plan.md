@@ -7872,3 +7872,57 @@ merge commit poisons future merges of the same content for whoever owns the bran
 stale branch current is benign where a stray decision brief is not. Net effect on `plan-w18`: current
 with `main`, otherwise unchanged. The content was then re-applied on `docs/baseline-decisions`, with
 the misfire recorded in the commit message rather than hidden.
+
+## W159 — three design decisions from the owner, recorded before they get lost in a chat log
+
+### 1. The opening square is a **player choice**, not a constant
+
+> *"The 1x2 space shouldn't be hard-coded. That's for the player to decide."*
+
+This changes what the square sweep is *for*. It is **not** "find the right number and freeze it." It is
+**"verify the choice space is meaningful"** — that a 1×2 opening and a 2×3 opening lead to genuinely
+different games, and that the god's first decision matters. That is the width question the
+quality-diversity archive (#118) already exists to answer, pointed at a new axis.
+
+`explicitOpeningAxes` — which #72 supplies and **nothing calls** — is therefore not a harness
+convenience. **It is the player-facing verb**, and wiring it into the reference default is the work
+that makes the whole design real.
+
+### 2. Scribing: the **telephone problem**
+
+> *"Scribing queue depth — we have to allow however long. But here's the thing about scribes: it's the
+> telephone problem. Information that is not perfectly preserved is completely lost after a certain
+> number of generations."*
+
+Two separate instructions, and the second is a **new mechanic**:
+
+- **`scribingQueueDepth` must not be hardcoded** — currently `0` at `world-step.ts:774`, which makes
+  scribe demand permanently zero and is why the measured scriptorium stops after one century
+  (`633 / 209 / 44 / 6 / 0 / 0 / 5 / 6 / 9 / 7` books per 20-year window). Unbounded, or bounded by
+  something real.
+- **A copy of a copy loses fidelity, and after N generations the knowledge is gone.** This is
+  *distinct* from decay: decay is a node fading in a mind or a shelf; this is **drift accumulating
+  along a chain of transcriptions**, so a library that only ever copies from itself dies of its own
+  success. It gives scribing from a **living holder** a real advantage over scribing from a grimoire,
+  and it makes an unbroken teaching lineage worth something the archive cannot replace.
+
+It is adjacent to `metis-knowledge` (1/51, proposed) — that spec is about knowledge codification
+*destroys*; this is about knowledge codification *degrades*. **They are different mechanics and should
+not be merged into one.**
+
+### 3. The sequence, in the owner's order
+
+> *"We should definitely sweep after we land 72 before anything else. Then we gotta check v1 versus
+> all nodes, and then we gotta get universities actually working."*
+
+1. **Land #72.** In flight; needs the `rngRegistryHash` re-record the owner authorised.
+2. **Wire `explicitOpeningAxes` into the reference default**, then **sweep the opening square** — 1×2,
+   1×3, 2×2, 2×3, 3×4 — measured for differentiation with `species-separation.mjs` and for width with
+   the QD archive. *Before anything else.*
+3. **v1 (twelve cells) versus all nodes (seventy)**, both with a narrow start, baselined against each
+   other. This is #137's question asked properly: not *"is a wide grid better"* but *"does a wide grid
+   with a narrow opening beat a narrow grid with a narrow opening."*
+4. **Universities actually working** — the exhaustive evaluation harness, already in flight.
+
+**Nothing about differentiation gets decided before step 2 finishes.** Both previous attempts (#137,
+#140) were measured against a fixed twelve-cell start, which the sweep is about to make a variable.
