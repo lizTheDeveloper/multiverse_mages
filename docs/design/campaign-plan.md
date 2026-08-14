@@ -6533,3 +6533,53 @@ Enabling *"require branches to be up to date"* is the real fix for W123. It is a
 change to a protected repository, `CLAUDE.md` requires reading `docs/devops/ci-and-deploy.md` first,
 and — tactically — switching it on **right now** would require rebasing all twenty-one open PRs
 before any could merge, with nobody awake to do it. Right fix, wrong hour.
+
+## W129 — 49 of the v1 rectangle's authored effects are inert, and the academic three are not content-starved
+
+Counted directly from `node.json` and `cell.json` on `w100` at 474ccdf. The twelve v1 cells are the
+`intellego`/`perdo`/`rego` × `mentem`/`terram`/`limen`/`nomen` rectangle, holding 51 of 300 nodes.
+
+**The counter agrees with CI's**, which is why I trust it: my per-primitive totals for the four
+primitives `check:consumption` reports as working — `build-rate` 33, `portal` 2, `resource-yield` 59,
+`worship-yield` 11 — match its numbers exactly.
+
+| primitive | authored | **in v1** | node-driven consumer? |
+| --- | ---: | ---: | --- |
+| direct-damage | 37 | **11** | **no** |
+| research-rate | 55 | **7** | **no** — god constants only |
+| area-denial | 38 | **6** | **no** |
+| resource-yield | 59 | 5 | yes |
+| concealment | 48 | **5** | **no** |
+| build-rate | 33 | 5 | yes |
+| teach-rate | 19 | **5** | **no** — god constants only |
+| scribe-rate | 19 | **4** | **no** — god constants only |
+| knowledge-steal | 6 | **4** | **no** |
+| ward | 39 | **3** | **no** |
+| worship-yield | 11 | 2 | yes |
+| summon | 10 | **2** | **no** |
+| blink | 9 | **2** | **no** |
+| portal | 2 | 2 | yes |
+| lifespan | 17 | 0 | excluded |
+| fertility | 5 | 0 | excluded |
+
+**Fourteen of the twelve-cell rectangle's effects work. Forty-nine do not.** Thirty-three combat,
+sixteen academic.
+
+### This corrects the read I was carrying
+
+W126 concluded *content is the binding constraint* — five `resource-yield` effects in v1, all routing
+to stone. **That is true of `resource-yield` and false as a general statement.** `research-rate` is
+the **second most represented primitive inside the rectangle**, with seven v1 effects. `teach-rate`
+has five and `scribe-rate` four.
+
+So the academic three are not content-starved. They are **consumer-starved**: sixteen authored v1
+effects that a mage can learn, hold and work, and which move nothing, because the only consumers are
+god blessing and encouragement constants. A god can bless a mage into productivity; a century of
+scholarship cannot.
+
+**That makes the academic three the largest unlock available without opening a single cell** —
+sixteen already-authored, already-reachable effects that begin working the moment a node-driven
+consumer exists. `w115/enable-all-cells` is the bigger unlock, but it is also the bigger blast radius:
+it moves the content hash and therefore every baseline. This one does not touch content at all.
+
+`direct-damage` at eleven is larger still, and it belongs to `w106/raid-fidelity` (#122).
