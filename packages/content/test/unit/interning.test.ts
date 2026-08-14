@@ -377,7 +377,25 @@ describe('contentRevision', () => {
     // grant-budget move above, this one **does** change every run: applying
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
-    expect(registry.contentRevision).toBe('d4e3047657b4fa8a1a74e1d52f9f5c86');
+    //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> 84f506e5a7d2aae79fc51fdb4a8374b3,
+    // when `"v1": true` was flagged onto the fifty-eight cell records that
+    // lacked it, opening the whole seventy-cell grid and taking the reachable
+    // catalog from 51 nodes to 300. This is a *pure flag* edit — fifty-eight
+    // added keys, no node, effect, primitive or constant touched — and it is
+    // nonetheless the largest behavioural revision in this list, which is
+    // exactly the case the preimage is designed to catch. Two universes
+    // disagreeing about which cells carry content would run different catalogs,
+    // hold different knowledge and lose different things, while a check that
+    // hashed only values a rule reads would call them compatible.
+    //
+    // The measured consequence, so a reader can price it: primitive coverage
+    // moves from 14 of 16 primitives over 51 nodes to 16 of 16 over 300, and
+    // eleven of the eleven authored species affinities become live where four
+    // were. All three committed balance baselines are recorded against an
+    // earlier revision and the gate refuses to compare across a revision
+    // boundary, by design; re-baselining is a separate, deliberate act.
+    expect(registry.contentRevision).toBe('84f506e5a7d2aae79fc51fdb4a8374b3');
   });
 
   it('is stable across loads of identical content', () => {
