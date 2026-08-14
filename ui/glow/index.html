@@ -239,6 +239,18 @@ const els = {
    rather than as a mis-coloured chip. */
 const FORM_TOKEN = { limen: 'c-limen', mentem: 'c-mentem', nomen: 'c-nomen', terram: 'c-terram' };
 
+/* The v1 rectangle, so a dark chip means "enabled and empty" rather than "one
+   of the fifty-eight cells this release does not turn on at all".
+
+   Declared here rather than beside its helper at the bottom of the file: this
+   module calls paint() during evaluation, and a `const` further down is still
+   in its temporal dead zone when it does. The function hoists; the binding does
+   not. That threw `Cannot access 'V1' before initialization` on every load, in
+   both themes, and was invisible to a Node test that imported the decoder
+   without running the page. */
+const V1 = { techniques: ['intellego', 'perdo', 'rego'], forms: ['limen', 'mentem', 'nomen', 'terram'] };
+const isV1 = (c) => V1.techniques.includes(c.technique) && V1.forms.includes(c.form);
+
 const session = await openSession({ recording: '../session.json' }).catch(() => null);
 mountSourceNote(document.getElementById('srchost'), session, ['actionMask', 'maskReason']);
 
@@ -269,6 +281,9 @@ if (session !== null) {
 }
 
 function paint(at) {
+  if (!Number.isInteger(at)) {
+    throw new TypeError(`paint() needs a tick index and got ${String(at)}.`);
+  }
   const f = session.frame(at);
   const { favor } = f.resources();
   els.tickv.textContent = String(f.clock().worldTick);
@@ -314,12 +329,6 @@ function paint(at) {
   }
 }
 
-/* The v1 rectangle, so a dark chip means "enabled and empty" rather than "one
-   of the fifty-eight cells this release does not turn on at all". */
-const V1 = { techniques: ['intellego', 'perdo', 'rego'], forms: ['limen', 'mentem', 'nomen', 'terram'] };
-function isV1(c) {
-  return V1.techniques.includes(c.technique) && V1.forms.includes(c.form);
-}
 
 /* The page measures itself in whichever theme is showing, because a
    hand-written contrast number is one that was true once — and this one has to
@@ -366,7 +375,6 @@ function measure() {
 }
 
 mountThemeControl(document.getElementById('themehost'), () => requestAnimationFrame(measure));
-paint();
 requestAnimationFrame(measure);
 setInterval(measure, 1500);
 </script>
