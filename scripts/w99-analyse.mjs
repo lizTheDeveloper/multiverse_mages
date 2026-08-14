@@ -250,8 +250,8 @@ console.log(
   const strategies = [...new Set(arms.flatMap((arm) => arm.runs.map((run) => run.strategies[0])))].sort();
   for (const [id, name] of METRICS) {
     console.log(`\n### ${name}\n`);
-    console.log('| strategy | sd_between | sd_within | ratio | arm means (low → high) |');
-    console.log('|---|---|---|---|---|');
+    console.log('| strategy | sd_between | sd_within | ratio | F | arm means (low → high) |');
+    console.log('|---|---|---|---|---|---|');
     const ratios = [];
     for (const strategy of strategies) {
       const perArm = arms.map((arm) => ({
@@ -275,6 +275,18 @@ console.log(
       const sdWithin = df === 0 ? 0 : Math.sqrt(ss / df);
       const ratio = sdWithin === 0 ? (sdBetween === 0 ? 0 : Infinity) : sdBetween / sdWithin;
       ratios.push(ratio);
+      // The one-way ANOVA statistic beside the raw ratio. `ratio` compares a
+      // spread of *means* with a spread of *runs*, which is the containment
+      // question — can you tell the arms apart by looking at one universe. `F`
+      // asks the weaker and more usual question, whether the means themselves
+      // are distinguishable at this sample size, and is larger by about n.
+      const nHarmonic = perArm.reduce((a, e) => a + e.values.length, 0) / perArm.length;
+      const f =
+        sdWithin === 0
+          ? sdBetween === 0
+            ? 0 // Every run of every arm agreed. No spread of either kind, not an infinity.
+            : Infinity
+          : (nHarmonic * sdBetween ** 2) / sdWithin ** 2;
       const ordered = perArm
         .map((entry, i) => ({ label: entry.label, mean: means[i] }))
         .sort((a, b) => a.mean - b.mean)
@@ -282,7 +294,8 @@ console.log(
         .join(', ');
       console.log(
         `| ${strategy} | ${sdBetween.toFixed(2)} | ${sdWithin.toFixed(2)} | ` +
-          `**${Number.isFinite(ratio) ? ratio.toFixed(2) : '∞'}** | ${ordered} |`,
+          `**${Number.isFinite(ratio) ? ratio.toFixed(2) : '∞'}** | ` +
+          `${Number.isFinite(f) ? f.toFixed(1) : '∞'} | ${ordered} |`,
       );
     }
     const finite = ratios.filter((r) => Number.isFinite(r));

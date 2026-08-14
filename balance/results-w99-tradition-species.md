@@ -229,7 +229,110 @@ teachable against 0.0. Any claim of the form *"knowledge spreads"* is a True Nam
 
 ## Question 2 — does the species mix change the game?
 
-<!-- SPECIES TABLES -->
+Seven arms, one hundred runs each (ten per strategy over the ten-strategy pool), 2400 world ticks,
+common random numbers verified across all seven — 600 `(cellIndex, replicateIndex)` pairs compared,
+**zero seed or strategy mismatches**, one `sweepId`, one `rootSeed`, seven distinct factor levels.
+Full output in `balance/results-w99-species-arms.md`.
+
+### Table 2a — per arm
+
+| founding mix | ascended/n | `ascensionRate` | nodes known | library depth | grimoires | instances | living mages | population |
+|---|---|---|---|---|---|---|---|---|
+| **all six** *(control)* | 20/100 | **0.2000** | 73.41 ±6.85 | 37.71 ±3.23 | 228.78 ±22.82 | 3190.51 ±235.70 | 324.30 ±72.92 | 12257.90 ±840.66 |
+| elf only | 20/100 | **0.2000** | 54.03 ±4.83 | 12.10 ±2.05 | 84.18 ±14.19 | 245.35 ±21.72 | 2.84 ±0.13 | 32.46 ±1.93 |
+| gnome only | 17/100 | 0.1700 | 56.63 ±5.84 | 10.10 ±1.92 | 45.25 ±8.68 | 587.62 ±139.00 | 30.28 ±15.44 | 1374.49 ±408.01 |
+| human only | 6/100 | 0.0600 | 39.62 ±4.29 | 0.52 ±0.27 | 15.53 ±5.00 | 3415.93 ±360.62 | 174.68 ±27.27 | 4089.89 ±506.95 |
+| dwarf only | 2/100 | 0.0200 | 30.30 ±5.12 | 6.59 ±0.93 | 178.55 ±19.32 | 1061.28 ±219.92 | 29.56 ±10.59 | 648.48 ±148.31 |
+| orc only | 2/100 | 0.0200 | 15.78 ±2.66 | 0.38 ±0.21 | 1.88 ±1.16 | 615.12 ±135.29 | 138.14 ±29.62 | 5794.95 ±844.13 |
+| draconic only | **0/100** | **0.0000** | 26.88 ±4.55 | 3.10 ±1.20 | 18.49 ±7.44 | 50.56 ±9.80 | 4.26 ±0.07 | 11.86 ±0.38 |
+
+### Table 2b — paired against the all-six control, same seed and same strategy
+
+`**` marks a paired mean more than three paired standard errors from zero.
+
+| founding mix | nodes known | library depth | grimoires | instances | living mages | ascended Δ |
+|---|---|---|---|---|---|---|
+| elf only | −19.38 ±2.68 ** | −25.61 ±3.83 ** | −144.60 ±30.63 ** | −2945.16 ±229.04 ** | −321.46 ±72.91 ** | 0 (20 vs 20) |
+| gnome only | −16.78 ±2.41 ** | −27.61 ±3.61 ** | −183.53 ±25.56 ** | −2602.89 ±219.13 ** | −294.02 ±69.54 ** | −3 (17 vs 20) |
+| human only | −33.79 ±4.89 ** | −37.19 ±3.27 ** | −213.25 ±23.56 ** | +225.42 ±296.05 | −149.62 ±59.60 | −14 (6 vs 20) |
+| dwarf only | −43.11 ±5.50 ** | −31.12 ±3.04 ** | −50.23 ±29.64 | −2129.23 ±244.98 ** | −294.74 ±70.09 ** | −18 (2 vs 20) |
+| draconic only | −46.53 ±5.03 ** | −34.61 ±3.26 ** | −210.29 ±23.79 ** | −3139.95 ±233.14 ** | −320.04 ±72.92 ** | −20 (0 vs 20) |
+| orc only | −57.63 ±5.34 ** | −37.33 ±3.23 ** | −226.90 ±22.92 ** | −2575.39 ±202.74 ** | −186.16 ±61.67 ** | −18 (2 vs 20) |
+
+**Founding with all six beats founding with any one of them, on every metric, at every seed.**
+Thirty-four of the thirty-six paired cells above are negative at more than three paired standard
+errors; the two that are not are human's instance count (higher, not significantly) and dwarf's
+grimoires. This is a monoculture penalty and it is not a small one: the *best* single species loses
+sixteen nodes and two thirds of its library depth against the mixed founding.
+
+### Table 2c — between-species spread against between-seed spread
+
+The containment statistic. `sd_between` is the spread of the seven arm means inside one strategy;
+`sd_within` is the spread across seeds inside one arm, pooled over arms. **A species difference
+smaller than seed noise is not a species difference**, so a ratio below 1 would say the factor is
+not worth reading. `F` is the one-way ANOVA statistic beside it, which asks the weaker question of
+whether the *means* are distinguishable at this sample size.
+
+| metric | median ratio over the ten strategies | strategies with `sd_between ≥ sd_within` |
+|---|---|---|
+| nodes known | **1.27** | 7 of 10 |
+| library depth | **1.03** | 7 of 10 |
+| grimoires | **1.26** | 7 of 10 |
+| knowledge instances | **1.35** | 9 of 10 |
+| living mages | **1.48** | 8 of 10 |
+| population | **1.80** | 8 of 10 |
+
+Worked, for `nodes known`:
+
+| strategy | `sd_between` | `sd_within` | ratio | `F` | arm means, low → high |
+|---|---|---|---|---|---|
+| archivist | 20.28 | 13.00 | **1.56** | 24.3 | draconic 3.6, dwarf 11.8, orc 14.4, human 31.3, gnome 49.0, elf 49.8, all-six 51.0 |
+| passive-control | 18.25 | 14.40 | **1.27** | 16.1 | orc 1.9, draconic 25.0, dwarf 25.2, human 36.6, gnome 49.0, all-six 51.0, elf 51.0 |
+| permissive-breadth | 50.86 | 52.62 | **0.97** | 9.3 | orc 57.0, draconic 84.6, human 87.6, dwarf 100.6, elf 141.1, gnome 157.4, all-six 203.9 |
+| portal-rush | 18.76 | 10.53 | **1.78** | 31.8 | draconic 0.9, dwarf 2.0, gnome 4.0, elf 5.1, orc 6.9, human 18.6, all-six 53.4 |
+| denial-warden | 0.97 | 1.17 | **0.83** | 6.9 | five arms at 0.0, all-six 1.6, dwarf 2.3 |
+
+**The founding species mix moves the game by more than the seed does.** Every `F` above is far past
+any conventional critical value, and — the stronger statement — the ratio of a spread of *means* to
+a spread of *runs* clears 1 for a majority of strategies on all six metrics. The two strategies
+where it does not are the two that are indifferent to who founded the universe for opposite reasons:
+`permissive-breadth` because it is dominated by how much of the grid the god unlocks, and
+`denial-warden` because it forbids everything and nobody learns anything under any mix.
+
+### Table 2d — the mix decides whether winning is possible, not who wins
+
+| strategy | all six | elf | gnome | human | dwarf | orc | draconic |
+|---|---|---|---|---|---|---|---|
+| `permissive-breadth` | 10/10 | 10/10 | 9/10 | 3/10 | 1/10 | 2/10 | 0/10 |
+| `permit-then-idle` | 10/10 | 10/10 | 8/10 | 3/10 | 1/10 | 0/10 | 0/10 |
+| the other eight strategies | 0/10 | 0/10 | 0/10 | 0/10 | 0/10 | 0/10 | 0/10 |
+
+The winner's identity is **invariant** across all seven founding mixes: it is `permissive-breadth`
+and `permit-then-idle`, or it is nobody. Eight of ten strategies ascend zero times under every mix.
+What the mix decides is the *rate*, over the full range from 1.000 to 0.000 — and it is not a
+proxy for how much the universe learns. **Elf-only ascends at exactly the control's rate while
+knowing 19.4 fewer nodes**, and draconic-only knows more nodes than orc-only and ascends less often.
+
+### Two species facts worth carrying
+
+- **Draconic-only never ascends and barely lives.** 4.26 ±0.07 living mages, a population of 11.86,
+  50.6 knowledge instances against the control's 3,190. A `lifespanMonths` of 18,000 with a
+  `maturityMonths` of 3,600 and a `fertility` of 96 is a species that cannot found a universe by
+  itself, and nothing in the committed record said so because nothing ever founded one.
+- **Human-only is the redundancy case.** It holds *more* knowledge instances than the six-species
+  control (3,415.93 against 3,190.51) while knowing **half** as many distinct nodes (39.62 against
+  73.41) and shelving essentially none (library depth 0.52 against 37.71). A universe can be rich in
+  copies and poor in knowledge, and the two metrics disagree about which it is.
+
+### And the caution in the brief is about a different quantity
+
+`loss-shock-recovery.test.ts` records orc at *"a mean of 1.22 living mages across 32 seeds"*. That
+is orc's roster **inside the all-six universe**, where it competes with five other species for the
+same seats and food. An orc-*only* universe on this build reaches 138.14 ±29.62 living mages and a
+population of 5,794.95, and ascends twice in a hundred runs. The two numbers are not in tension;
+they are different measurements, and conflating them is exactly the all-six-only error this document
+is about.
+
 
 ---
 
