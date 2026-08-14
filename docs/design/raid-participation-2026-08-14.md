@@ -49,7 +49,10 @@ log.
 not a property of the game, and its `expect(wardens).toBe(0)` cannot fire "the day a strategy assigns
 one", because no strategy runs in that file.
 
-## 3. Fielding combatants does not make the primitives measurable
+## 3. Six of the seven primitives are unobservable through `RaidRecord`
+
+**This section is an instrument finding, not a null result about the engine.** Read the reconciliation
+at the end of it before quoting the table.
 
 Seed-matched control vs `ablationMaskFor([p])` within each arm, comparing whole raid logs — seeds
 moved, of four:
@@ -60,19 +63,30 @@ moved, of four:
 | `portal-rush` | 0 | 0 | 0 | 0 | 0 | 0 | **4** |
 | `archivist` | 0 | 0 | 0 | 0 | 0 | 0 | **3** |
 
-`knowledge-steal` is the positive control: the mask reaches the arbiter and the log can register a
-change. The combatants are armed — 25–29 distinct combat-primitive nodes held in mind per run,
-essentially the whole v1 combat repertoire, and every fielded warden and raider holds some.
+`knowledge-steal` moving proves the mask reaches the arbiter. It does **not** prove the log is
+sensitive to a magnitude: theft changes intent scoring and therefore control flow, which the record can
+see.
 
-**Leading explanation, named rather than proven: the record, not the engine.** `scenario`'s
-`RaidRecord` carries only local-side outcomes and drops `RaidOutcome.primitiveApplication`, which is
-the field that exists to say how much of each primitive each side put on the field. On an outbound raid
-our raiders' damage lands on the rival, and nothing in the record is a function of rival casualties.
-Second candidate, not excluded: the castable-node mask or the mastery threshold means those held nodes
-are never cast.
+**The reconciliation is in #144's own body.** Its isolation harness measures `direct-damage` at
+2105.6 ± 127.2 fp on the field, collapsing to 0.0 under ablation, and states that *"the raid resolves
+on the identical engagement tick, seed by seed"*. A `RaidRecord` is `raidId, raidSeed, worldTick,
+outbound, engagementTicks, initialPortalStabilityTicks, victor, reason, localCasualties,
+nodesLostLocally, nodesGainedLocally, attackerFavorCost, forbiddenCastsBlocked` — no damage ledger, and
+`localCasualties` is local-side only, so on an outbound raid the rival's dead are dropped. A primitive
+can therefore be applied at full strength and move nothing this probe reads.
 
-Next step, cheap and unblocking: put `primitiveApplication` — or at minimum the opposing side's
-casualties — on `RaidRecord`.
+So: **what was measured** is that six of seven combat primitives are unobservable through
+`RaidRecord`, in every arm, including arms with 56 raider-carrying outbound raids and 118 casualties.
+**What was not measured** is whether they are applied; #144's isolation harness already says they are
+and this probe cannot contradict it.
+
+Next step, cheap and unblocking: put `RaidOutcome.primitiveApplication` — or at minimum the opposing
+side's casualties — on `RaidRecord`. Until it exists, any sweep arm that ablates one of these six will
+report a null for a live wire: the same false-negative shape #144 closed at the `stackMagnitudes` call
+sites, one layer further out.
+
+The combatants are armed, which is the other half of this: 25–29 distinct combat-primitive nodes held
+in mind per run, and every fielded warden and raider holds some.
 
 `nodesLostLocally` reading zero everywhere is **not** evidence of anything: `raids.ts` only sets it on
 an inbound raid and `outcome.ts` defines it as nodes the host has no remaining instance of at all,
@@ -93,6 +107,12 @@ which in a universe of 26–622 mages is a very high bar.
 So the raid and combat metrics have **no committed measurement at all**, and the one sweep that would
 produce one is configured with the arm that fields no combatants. Fixing the pool is one line — but it
 should follow §3, or the sweep will faithfully record another set of nulls.
+
+Counting note: **159 of 300** authored nodes carry at least one of the seven magnitude combat
+primitives — `direct-damage` 37, `area-denial` 38, `concealment` 48, `ward` 39, `summon` 10, `blink` 9,
+`knowledge-steal` 6, matching #144's authored table exactly. `COMBAT_PRIMITIVES` has an eighth member,
+the `portal` presence gate, carried by 2 nodes; an earlier draft of this note counted all eight and
+said 160.
 
 Unrelated drift found while checking this: `balance/README.md`'s five-sweep table gives `balance-full`
 a tick cap of 240 and "9 + `referenceNodesGainedFinalQuarter`" metrics, while the sweep file on this
