@@ -146,7 +146,7 @@ import {
   advanceConstruction,
   applyLibraryUpkeep,
   assignStaff,
-  staffCohortsOf,
+  staffingIndex,
   assertMaterialsNonNegative,
   carryingCapacity,
   clearCommitment,
@@ -769,6 +769,10 @@ export function worldSystem(
           .map((handle) => ({ cohort: handle, count: cohorts.countOf(handle) })),
         (handle) => cohorts.isLive(handle),
       );
+      // One pass over the link component for the whole tick. Phase 5 asks for a
+      // university's scribes once per mage, and `mages × links` is the cost
+      // shape `libraryDepths` exists to collapse — see `staffingIndex`.
+      const staffedBy = staffingIndex(state, (handle) => cohorts.isLive(handle));
 
       // ---- 3. Mage mortality, and what a death costs -----------------------
       const mortality = killTheDead(state, {
@@ -816,7 +820,7 @@ export function worldSystem(
               lifespanMonths(state, handle, record, species, deps),
             materials: stockAtDecisionTime,
             scribeThroughputOf: (universityId) =>
-              scribeThroughputFor(state, universityId, cohorts, deps),
+              scribeThroughputFor(state, universityId, staffedBy, cohorts, deps),
             tierOf: (nodeId) => deps.catalog.node(nodeId)?.tier ?? 1,
             facetsOf: deps.facets,
             affinitiesOf: deps.affinitiesOf,
@@ -1819,6 +1823,7 @@ function completedCapacity(state: SimState): number {
 function scribeThroughputFor(
   state: SimState,
   universityId: Handle,
+  staffedBy: ReadonlyMap<EntityHandle, readonly EntityHandle[]>,
   cohorts: CohortStore,
   deps: WorldStepDeps,
 ): Fixed {
@@ -1828,9 +1833,9 @@ function scribeThroughputFor(
 
   let scribes = 0;
   let affinity = 0;
-  for (const cohort of staffCohortsOf(state, universityId as EntityHandle, (handle) =>
-    cohorts.isLive(handle),
-  )) {
+  // Absent from the index means nobody on staff, which `staffingIndex`
+  // documents and `scribingThroughput` already answers with a supported zero.
+  for (const cohort of staffedBy.get(universityId as EntityHandle) ?? []) {
     const key = cohorts.keyOf(cohort);
     if (key.occupation !== OCCUPATION.scribe) continue;
     const species = deps.speciesOf(key.speciesId);

@@ -85,6 +85,42 @@ export function staffLinks(state: SimState): readonly StaffLink[] {
 }
 
 /**
+ * Every university's staff, from one pass over the link component.
+ *
+ * The per-university {@link staffCohortsOf} is a scan of every link in the
+ * world, so asking it once per mage per tick is `mages × links` — the same
+ * shape `libraryDepths` exists to collapse, and for the same reason: a cost
+ * proportional to how much a civilisation has built is the opposite of what
+ * building is for. The world loop builds this once, after the staffing phase
+ * has settled the links, and reads it for the rest of the tick.
+ *
+ * Universities with nobody on staff are **absent** rather than present at
+ * empty, exactly as `libraryDepths` omits an empty library: a map with an entry
+ * per handle would be a list of every university that has ever existed, which
+ * is not what any caller is asking. A caller that wants the empty answer for
+ * one of them says so with `?? []`.
+ *
+ * Each list is ascending by cohort handle, and dead cohorts are filtered by the
+ * same `isLive` the per-university reader takes.
+ */
+export function staffingIndex(
+  state: SimState,
+  isLive?: (cohort: EntityHandle) => boolean,
+): ReadonlyMap<EntityHandle, readonly EntityHandle[]> {
+  const index = new Map<EntityHandle, EntityHandle[]>();
+  for (const { row } of collectRecords(state, UNIVERSITY_STAFF)) {
+    const cohort = row.cohortId as EntityHandle;
+    if (isLive !== undefined && !isLive(cohort)) continue;
+    const university = row.universityId as EntityHandle;
+    const existing = index.get(university);
+    if (existing === undefined) index.set(university, [cohort]);
+    else existing.push(cohort);
+  }
+  for (const cohorts of index.values()) cohorts.sort((a, b) => a - b);
+  return index;
+}
+
+/**
  * The cohorts staffing one university, ascending by cohort handle.
  *
  * @param isLive - Whether a cohort handle still names a cohort. Supplied

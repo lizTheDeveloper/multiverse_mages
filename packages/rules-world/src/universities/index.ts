@@ -88,6 +88,7 @@ export {
   pruneStaffLinks,
   staffCohortsOf,
   staffLinks,
+  staffingIndex,
   staffUniversity,
   universityOf,
   unstaffUniversity,
