@@ -70,3 +70,86 @@ built rather than during.
 
 **None of these should be guessed.** The design documents from today are usable as a menu; the frame
 is the owner's to set.
+
+---
+
+## Resolved: prestige is matchmaking, not power
+
+*Owner, 2026-08-14, answering the four questions above.*
+
+> **"Prestige as the tier-gating thing. It keeps people who have just joined away from people who have
+> been working on their universe for a long time, and gives people who are maybe worse at the game a
+> leg up. Cap-size multiverses of 12 to 24 players. If not enough humans join within a certain time, AI
+> players — and a few extra AI as filler. That allows us to have prestige and skill gating."**
+
+**This answers every open question, and it retires the worry the design documents were circling.**
+
+### Prestige stops being a progression problem
+
+I spent several documents worrying that a meta-progression which accumulates advantage is either power
+creep or a punishment. **Prestige-as-matchmaking has neither failure mode**, because it confers no
+in-game power at all — it decides **who you are playing against.**
+
+- **A veteran's advantage is their skill**, not their carried-over stats.
+- **A weaker player's "leg up" is not being matched against a stronger one** — which is a leg up that
+  costs the design nothing and inflates nothing.
+- **And the tuple survives, now doing real work.** *"Ascended · draconic · age 1 · alone · at peak"* is
+  a matchmaking signal as well as a brag: what you have *done* is what you are *bracketed by*. A scalar
+  would have collapsed exactly the information a bracket needs.
+
+### A "multiverse" is a match: 12–24 gods, capped
+
+**That is the structural answer the campaign has needed all along.** `contracts.md` §1.1 puts **one
+universe per simulation instance**, and that single constraint has blocked raids, alliances,
+`openPortal` and the entire multiverse premise for the whole campaign.
+
+**A multiverse is 12–24 universes in one instance.** Not two, not unbounded — a **capped shard**, which
+is a well-understood thing to build and to reason about, and which makes the Portal Rule finally
+operational: a raid crosses between two universes *in the same instance*, arbitrated by the host's
+ruleset.
+
+**The two-gods-in-one-world idea from the ElfQuest reading is a special case of this, not an
+alternative to it** — and the cap is what makes it affordable.
+
+### And the bot pool is the AI player roster
+
+**This is the part that changes what tonight's work was for.**
+
+*"If not enough human players join within a certain amount of time, we can use AI players, and a few
+extra AI as filler."*
+
+**The strategy pool is not a test harness. It is the shipped opponent roster.** `passive-control`,
+`permissive-breadth`, `allocate-concentrate`, `archivist`, `denial-warden`, `narrow-depth`,
+`portal-rush`, `worship-maximizer`, `alliance-seeker` — **those are AI players**, and every measurement
+taken of them is a measurement of an opponent a human will actually face.
+
+That reframes several things at once:
+
+- **The quality-diversity archive is a roster-design tool.** Its elites are candidate bots, and
+  **`WIDTH` is how many genuinely different opponents exist.** A flat meta is not merely a balance
+  problem — it means every AI opponent plays the same.
+- **`META_SHAPE` is exactly right for this.** The owner's target — *"many things should work, many
+  things should not"* — describes a roster where some bots are strong and some are weak, which is what
+  filler *should* look like.
+- **And the null ladder is a floor on AI quality.** A bot that loses to `passive-control` is not filler,
+  it is an insult. **`reachable-not-worth-playing` is the discard pile for opponent design.**
+- **The shadowing class matters much more now.** `permissive-breadth` never founding a university, and
+  `narrow-depth` never asking for a grant, are not measurement curiosities — **they are AI opponents
+  visibly failing to play their own stated strategy**, in front of a human.
+
+### What this means for the documents flagged above
+
+| document | verdict, revised |
+|---|---|
+| economy, divine attention, founding, forbidding | **survive**, as before |
+| **prestige / the unlock web** | **survives** — as matchmaking and as cosmetic-or-roster unlocks, not as power |
+| **Old Gods** | **survives, rescoped** — an NPC pressure inside a match, or a season theme; **not** carried personal difficulty |
+| **the sun ageing across ages** | **survives if "age" means season** — a shard-wide clock all 12–24 players share |
+| **peoples accumulating across runs** | **needs re-siting** — in a shared shard, the peoples in the world are *other players'*, which is better and is what alliances already are |
+
+### What is now the open question, and it is smaller
+
+**How long is a match, and what does a player do while their universe simulates centuries?** 2,400
+ticks is not a session. Either the shard runs at a coarser grain than the sim, or a player's attention
+is intermittent and the game is partly asynchronous. **That is the last structural unknown**, and it
+is a scheduling question rather than a design one.
