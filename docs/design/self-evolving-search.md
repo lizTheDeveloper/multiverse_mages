@@ -60,6 +60,65 @@ way* at 10 fp against appeal bounds of 256–512. Therefore:
 
 ---
 
+## The third guard: **playing must beat not playing**
+
+This is the requirement the campaign kept rediscovering as a defect rather than stating as a rule, and
+it belongs above every other objective. **Not as a statistical control — as the game's design
+condition.** If doing nothing scores as well as playing, there is no game, whatever the archive says.
+
+It is not one null. It is a **ladder of four**, and each rung answers a different question. All four
+already exist in the pool:
+
+| rung | strategy | the question it answers |
+|---|---|---|
+| 1 | `passive-control` — submits nothing, ever | **Does acting beat not acting?** |
+| 2 | `permit-then-idle` — sets the ruleset, then nothing for the rest of the run | **Is the ruleset the whole game?** |
+| 3 | `uniform-random-legal` — draws a legal action at random | **Does skill exist, or only tempo?** |
+| 4 | `idle-then-declare` — does nothing but presses the win button | **Is the win condition a button?** |
+
+**Every one of these has beaten a designed strategy at some point in this campaign**, and each time it
+was found by accident:
+
+- `permit-then-idle` won **40/40** by permitting the grid for 140 of 2400 ticks and submitting nothing
+  for the remaining 2260 — beating `permissive-breadth`, which also funds, blesses and encourages.
+- `passive-control` reaches **51 nodes doing nothing at all**; `archivist` builds **~1,300
+  universities** and reaches the same 51.
+- `uniform-random-legal` once ascended **80/80** against designed strategies at 0/80, because it drew
+  the button they never pressed.
+
+**So the floor is not a formality. It is the thing that has actually been failing.**
+
+### How it enters the loop
+
+**An elite must beat the null ladder on its own cell's descriptor before that cell counts as
+occupied.** Concretely:
+
+- The **four nulls run in every round**, against the same content and the same seeds as the candidates.
+  They are **never** a stored constant — as content and mechanics change, doing-nothing's score changes
+  with them, and a fixed baseline number would rot exactly the way this project's stale documents did.
+- Comparison is **paired, under common random numbers, on the same seeds.** Not aggregate against
+  aggregate. The campaign's "seed beats strategy" result was an artifact of round-robin assignment
+  giving strategies disjoint replicate indexes, so no two ever played the same universe; held fixed,
+  strategy dominance was **η² = 1.00 from tick 60**.
+- **A cell reached only by strategies that lose to the ladder is recorded as
+  `reachable-not-worth-playing` rather than counted as width.** The information is kept — reachability
+  is a fact about the action space — but it does not inflate the score. This is the one place the
+  earlier "keep a strategy that wins badly in an empty cell" rule is overridden, and it should be.
+- **Report which rung killed it.** Losing to rung 1 and losing to rung 3 are different diagnoses: the
+  first says the verbs do nothing, the second says they do something a coin could do.
+
+### And the same rule applies to the design space, not only the strategy space
+
+A content or constant change is promoted only if it **widens the gap between playing and not playing**.
+A change that raises every strategy's score equally, nulls included, has changed the scale and not the
+game — and `favor-cap-base`'s own gloss already says the equivalent about worship: the cap *"converts a
+worship lead from power into tempo — a high-worship god cannot do more things, only sooner."*
+
+**The single most useful number this loop can publish is the margin between the best elite and the best
+null.** If that margin is not growing, nothing else in the archive matters.
+
+---
+
 ## Connection 1 — hypotheses generated from the registries, not hand-written
 
 A hypothesis is a **cell in the cross-product of the factor registry and the metric registry**, and
