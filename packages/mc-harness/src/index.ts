@@ -98,6 +98,7 @@ export type {
   RaidCombatSource,
   LossShockSample,
   RaidObservation,
+  RaidRunSlice,
   RoleDemographySample,
   RosterSample,
   SpeciesCellOccupancy,

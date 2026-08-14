@@ -514,6 +514,23 @@ export interface RunTelemetry {
   readonly roleDemography?: RoleDemographySample;
 }
 
+/**
+ * The three fields every raid-scoped run collector reads, and no more.
+ *
+ * Named and narrowed rather than taking the whole {@link RunTelemetry}, because
+ * a caller that can honestly answer *"were there raids, and how long did the run
+ * last"* should not have to fabricate a species list and a tier-reach table to
+ * ask a raid question. `packages/scenario`'s reference executor is exactly that
+ * caller: it observes raids and world ticks, and inventing the other fields to
+ * satisfy a signature would put fiction into a measurement path.
+ *
+ * Contravariance is what keeps this free: a function taking this slice still
+ * satisfies {@link BalanceMetricDefinition.collectRun}'s `RunTelemetry`
+ * parameter, so the §7 registry is unchanged and every existing caller passing
+ * full telemetry still compiles.
+ */
+export type RaidRunSlice = Pick<RunTelemetry, 'mechanics' | 'raids' | 'ticksRun'>;
+
 /** One run, as an arm-scoped collector sees it. */
 export interface ArmRunSummary {
   readonly coordinates: RunCoordinates;
