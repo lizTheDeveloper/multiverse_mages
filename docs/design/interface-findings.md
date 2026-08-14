@@ -274,7 +274,7 @@ universes you are not looking at.
 
 If the client omits it, the player cannot price a raid while the harness scores them on exactly that.
 
-### 5.1a The vision permits mid-raid rule changes and the contract still forbids them — **defect**
+### 5.1a The vision permits mid-raid rule changes and the contract now agrees — **resolved on paper, open in code**
 
 `raid-engagement.md` repeals `vision.md` §3's frozen-policy sentence, and vision §3 on `main` now
 reads *"Rules changes may be made during a raid, and every change locks until the raid ends."*
@@ -288,10 +288,32 @@ W8's note that *"`contracts.md` needed no change"* was about §1.1 and the one-u
 about §4.2. The two documents now disagree about whether the game's most interesting moment has any
 verbs in it.
 
-This is not a documentation tidy. `contracts.md` is what every implementation reads, and the mask is
-enforced in one place on purpose; while §4.2 stands, the raid design the vision now describes cannot
-be built, and `ui/raid/`'s premise — verbs whose agency decays across three phases — is unbuildable
-against the contract as written.
+**Amended.** §4.2 now carries a per-action table: permit technique and form are legal during an
+engagement and lock; forbid is legal for the defender only and locks; edicts and everything else stay
+masked. Forbidding is defender-only per `raid-engagement.md` §6.2, because under §3 the host's
+ruleset governs and an attacker forbidding their own cells would change nothing.
+
+**Two silences were made visible rather than filled.** The raid document names *"forbid and permit"*
+and says nothing about edicts, so actions 5–7 stay masked with the gap recorded; and the raid verb
+set it describes has no action ids in §4.2 at all, with a note that Vis collides with
+`mages-and-species`'s economy requirement forbidding a fourth resource.
+
+**Still open in code, but not for the reason the amendment first gave.** `agent-api/src/mask.ts`
+returns `[1, 0, 0, …]` in engagement mode, and the first draft of this entry said unmasking four
+actions would move every committed baseline. Instrumenting `legalityMask` and running four
+strategies for 600 ticks says otherwise: `passive-control` 2 raids / 159 engagement ticks,
+`uniform-random-legal` 7 / 440, `portal-rush` 9 / 489, `denial-warden` 1 / 65 — and the mask was
+evaluated in engagement **zero times in all four**.
+
+The branch is unreachable. A raid resolves atomically inside one world step: `runRaid(raid)` takes a
+`Raid` and nothing else, loops to termination and returns before the agent is asked again. The clock
+does enter engagement mode; nothing observes while it is there.
+
+**So the mask never stopped the god acting mid-raid — nothing asks.** That relocates the finding
+rather than closing it. `ui/raid/`'s premise, and `raid-engagement.md`'s three phases of decaying
+agency, need the engagement loop to yield to the agent between ticks. That is a change to
+`runRaid`'s shape, and it is the real prerequisite for a playable raid; the mask entries are
+downstream bookkeeping that can follow it cheaply.
 
 ### 5.2 Cost per tick of effect is the comparison nobody can make — **open**
 
