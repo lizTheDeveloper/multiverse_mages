@@ -85,6 +85,7 @@ export type { AudioFileName, AudioValidationResult } from './audio.js';
 export type {
   AudioCueRecord,
   AudioCueKind,
+  AudioProduction,
   AudioBand,
   AudioGridPosition,
   VoiceLineRecord,
@@ -106,6 +107,14 @@ export {
   checkGodConstants,
   checkGodCosts,
 } from './god.js';
+
+export type { AutonomyRoleName } from './autonomy.js';
+export {
+  AUTONOMY_ROLE_IDS,
+  REQUIRED_AUTONOMY_WEIGHTS,
+  checkAutonomyWeights,
+  isRoleAppeal,
+} from './autonomy.js';
 
 export {
   MAX_ENGAGEMENT_TICKS,

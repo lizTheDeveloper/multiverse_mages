@@ -82,7 +82,7 @@ export {
   worshipShareOfRegeneration,
 } from './favor.js';
 
-export type { GodEffectDeps, GodEffectHooks, GodEffectPrimitives } from './effects.js';
+export type { GodEffectDeps, GodEffectHooks } from './effects.js';
 export { godEffectHooks } from './effects.js';
 
 export type { InterventionDeps, InterventionReport } from './interventions.js';
@@ -91,6 +91,7 @@ export { ACTION, emphasisAt, resolveInterventions } from './interventions.js';
 export type {
   ApotheosisFacts,
   DeepestByCell,
+  EraBoundaryFacts,
   LegacyChannel,
   LegacyGrant,
   PrestigeInputs,
@@ -103,9 +104,12 @@ export {
   canonSatisfied,
   carriedPrestige,
   deepestNodesByCell,
+  eraBoundaryPassed,
   legacyBudget,
   legacyGrant,
   libraryDependence,
+  lossAllowance,
+  masteredCellCount,
   prestigeEarned,
   qualifyingPath,
   stepStagnation,

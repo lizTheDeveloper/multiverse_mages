@@ -33,47 +33,53 @@
  * ## Existing primitives only
  *
  * A blessing contributes to `research-rate`, `teach-rate` and `lifespan`; an
- * encouragement contributes to `research-rate` for one cell. All four go
- * through `stackMagnitudes`, so they share the `(1 + Σ)` channel and the cap
- * with every other source. That is what keeps a blessing visible to
+ * encouragement contributes to `research-rate` for one cell. All four are
+ * **magnitudes**, handed to a caller that puts them through `stackMagnitudes`
+ * alongside every other source of the same primitive — a library's contribution
+ * above all — so they share one `(1 + Σ)` channel and one cap with it. That is
+ * what keeps a blessing visible to
  * `winRateByPrimitive`'s ablation runs: an effect with its own private
  * multiplier is an effect the sweep cannot attribute, which is the exact hole
  * vision §4a's four-hook cap exists to prevent on the tradition side.
  */
 
-import type { PrimitiveRecord } from '@mm/content';
 import type { Fixed, SimState } from '@mm/sim-core';
-import { FP_ONE, fromInt } from '@mm/sim-core';
-import { stackMagnitudes } from '@mm/primitives';
+import { fromInt } from '@mm/sim-core';
 import type { CellResolver } from '@mm/rules-magic';
 import { activeBlessings, activeEncouragements } from '@mm/state';
 
 import type { GodConstants } from './constants.js';
 import { emphasisAt } from './interventions.js';
 
-/** The primitives a god effect contributes through. All three already exist. */
-export interface GodEffectPrimitives {
-  readonly researchRate: PrimitiveRecord;
-  readonly teachRate: PrimitiveRecord;
-  readonly lifespan: PrimitiveRecord;
-}
-
-/** What {@link godEffectHooks} needs. */
+/**
+ * What {@link godEffectHooks} needs.
+ *
+ * **No primitive records.** It used to take three, because it stacked its own
+ * sources and handed back a finished multiplier. Since vision §6a's library
+ * became a second source of `research-rate` and `teach-rate`, every hook here
+ * returns unstacked magnitudes and the *caller* owns the one `(1 + Σ)` channel
+ * and the one cap — so the registry records moved to `WorldStepDeps.primitives`
+ * with them. Keeping them here as well would be a dep nothing reads, which in
+ * this codebase is how a tuning knob comes to do nothing.
+ */
 export interface GodEffectDeps {
   readonly constants: GodConstants;
-  readonly primitives: GodEffectPrimitives;
   readonly cells: CellResolver;
 }
 
 /** The three callbacks `WorldStepDeps` takes. */
 export interface GodEffectHooks {
-  readonly researchMultiplierFor: (
+  readonly researchBonusesFor: (
     state: SimState,
     worldTick: number,
     mage: number,
     nodeId: number,
-  ) => Fixed;
-  readonly teachMultiplierFor: (state: SimState, worldTick: number, mage: number) => Fixed;
+  ) => readonly Fixed[];
+  readonly teachBonusesFor: (
+    state: SimState,
+    worldTick: number,
+    mage: number,
+  ) => readonly Fixed[];
   readonly lifespanEffectsFor: (
     state: SimState,
     worldTick: number,
@@ -116,23 +122,25 @@ export function godEffectHooks(deps: GodEffectDeps): GodEffectHooks {
   };
 
   return {
-    researchMultiplierFor: (state, worldTick, mage, nodeId) => {
+    // Magnitudes, unstacked. These used to hand back a stacked, capped
+    // multiplier, which was right while a blessing was the only source of
+    // `research-rate` in the loop. Vision §6a's library is a second source of
+    // the same primitive, and two stacked multipliers multiplied together are
+    // two `(1 + Σ)` channels and two `fp(4096)` caps on one quantity — the
+    // *"4.0 × 2.0 without anyone deciding it should be 8.0"* that
+    // `mages-and-species/design.md` rejects. The caller sums the sources and
+    // clamps them once; this function's job is to say what the god contributed.
+    researchBonusesFor: (state, worldTick, mage, nodeId) => {
       const effects = effectsFor(state, worldTick);
       const sources: Fixed[] = [];
       if (effects.blessed.has(mage)) sources.push(deps.constants.blessResearchRate);
       const emphasis = effects.emphasis.get(deps.cells.cellOf(nodeId));
       if (emphasis !== undefined && emphasis > 0) sources.push(emphasis);
-      // `fp(1024)` for an unaffected mage — a month is a month — rather than
-      // routing an empty list through the stacker, which would answer the same
-      // and pay for a call per mage per tick to do it.
-      if (sources.length === 0) return FP_ONE;
-      return stackMagnitudes(deps.primitives.researchRate, sources).value;
+      return sources;
     },
 
-    teachMultiplierFor: (state, worldTick, mage) =>
-      effectsFor(state, worldTick).blessed.has(mage)
-        ? stackMagnitudes(deps.primitives.teachRate, [deps.constants.blessTeachRate]).value
-        : FP_ONE,
+    teachBonusesFor: (state, worldTick, mage) =>
+      effectsFor(state, worldTick).blessed.has(mage) ? [deps.constants.blessTeachRate] : [],
 
     // `lifespan` is `additive` in months rather than a multiplier, so this hands
     // back magnitudes for `effectiveLifespan` to stack rather than a stacked

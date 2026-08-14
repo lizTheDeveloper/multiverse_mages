@@ -26,13 +26,13 @@ import type { AudioCueRecord, VoiceLineBankRecord } from '@mm/content';
 
 const cues: AudioCueRecord[] = [
   {
-    id: 'click-tick', kind: 'click', band: 'presence', grid: 'unquantized',
+    id: 'click-tick', kind: 'click', production: 'synthesised', band: 'presence', grid: 'unquantized',
     durationMs: 4, levelDbTenths: -300, variants: 5, pitchJitterCents: 15,
     prompt: 'A single fingernail tapping once on glazed ceramic',
     post: '', subject: 'hover', source: '2', densityThreshold: 0,
   },
   {
-    id: 'envelope-creo', kind: 'technique-envelope', band: 'low-mid', grid: 'unquantized',
+    id: 'envelope-creo', kind: 'technique-envelope', production: 'granular', band: 'low-mid', grid: 'unquantized',
     durationMs: 1500, levelDbTenths: -160, variants: 4, pitchJitterCents: 0,
     prompt: '', post: 'assembled', subject: 'creo', source: '4.1', densityThreshold: 0,
   },

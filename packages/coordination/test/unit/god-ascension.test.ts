@@ -56,7 +56,21 @@ import {
 
 import { constants } from './god-fixtures.js';
 
-const C = constants();
+/**
+ * The shipped constants, with Path A's cell gate held at **1**.
+ *
+ * Every Path A test below asserts the *structure* of the conjunction — that the
+ * copy count, the permit, the tier gate and "deepest in its cell" each refuse on
+ * their own — against a two-cell synthetic catalog. `ascension-summit-cells`
+ * ships at 18 because a universe the god never touches masters all twelve cells
+ * of the v1 rectangle, so a two-cell fixture cannot reach it and every assertion
+ * here would pass for the one reason that has nothing to do with what it names.
+ *
+ * Held at the identity value rather than raised, because "the shipped gate is
+ * 18" is a magnitude and `god-ascension-achievement.test.ts` is where it is
+ * asserted. This file is about the predicate's shape.
+ */
+const C = { ...constants(), ascensionSummitCells: 1 };
 
 /** A god-state row with the named fields moved off zero. */
 function god(overrides: Partial<GodStateRecord> = {}): GodStateRecord {

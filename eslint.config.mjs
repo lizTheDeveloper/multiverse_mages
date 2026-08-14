@@ -343,9 +343,23 @@ export default tseslint.config(
   },
 
   {
-    // Repo tooling is allowed to touch the filesystem and the clock.
-    files: ['*.mjs', '*.ts', 'scripts/**/*.mjs'],
+    // Repo tooling is allowed to touch the filesystem and the clock. `tools/` is
+    // here for the same reason `scripts/` is: measurement harnesses that read
+    // argv, write result files and print tables are host-side by definition, and
+    // the determinism obligation on them is to run the core faithfully rather
+    // than to be pure themselves.
+    files: ['*.mjs', '*.ts', 'scripts/**/*.mjs', 'tools/**/*.mjs'],
     languageOptions: { globals: globals.nodeBuiltin },
+  },
+
+  {
+    // ---- ui/ prototypes: browser code, and part of no build. ----
+    // These run in a page, so `document`, `window` and `localStorage` are the
+    // ambient globals rather than node's. Nothing here is imported by a package
+    // and nothing is in a tsconfig; the tests that check these files read them
+    // as text. This block therefore supplies globals and relaxes no rule.
+    files: ['ui/**/*.js'],
+    languageOptions: { globals: globals.browser, sourceType: 'module' },
   },
 
   {

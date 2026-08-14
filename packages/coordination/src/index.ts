@@ -61,6 +61,9 @@
  *   `@mm/sim-core`'s and is not reimplemented here.
  */
 
+export type { LibraryCapital, LibraryCapitalDeps } from './capital.js';
+export { libraryCapital } from './capital.js';
+
 export type { EffortKey, EffortRow } from './effort-store.js';
 export { EffortLedger, MAX_EFFORTS_PER_MAGE } from './effort-store.js';
 
@@ -81,6 +84,9 @@ export {
   isHeldAtMind,
 } from './gateway.js';
 
+export type { NodeFacetResolver, NodeFacets } from './node-facets.js';
+export { UNKNOWN_NODE_FACETS, nodeFacetsFrom } from './node-facets.js';
+
 export type { OutlookDeps } from './outlook.js';
 export { buildOutlook, universityPreference } from './outlook.js';
 
@@ -92,6 +98,36 @@ export { buildOutlook, universityPreference } from './outlook.js';
  * this package rather than in `rules-world`.
  */
 export * from './god/index.js';
+
+/**
+ * `@mm/primitives`' ablation mask, re-exported.
+ *
+ * `WorldStepDeps.ablation` is a field of this package's own interface, and
+ * `contracts.md` §5 grants `scenario` an edge to `coordination` and none to
+ * `primitives`. Without this, a composition root — or the causal-chain test that
+ * proves a world-scale primitive can be ablated at all — could name the field
+ * and could not construct a value for it, which is a configuration surface with
+ * a hole in it.
+ *
+ * Re-exported rather than reimplemented, so there is still exactly one
+ * definition of what neutralizing a primitive means. `ablation.ts` owns the
+ * rule; this is only a door into it for the packages §5 puts on the other side
+ * of the wall.
+ */
+export type { AblationMask } from '@mm/primitives';
+export { NO_ABLATION, neutralizing } from '@mm/primitives';
+
+export type {
+  UniverseEconomyBonuses,
+  UniverseEconomyDeps,
+  UniverseEffectIndex,
+} from './universe-effects.js';
+export {
+  NO_ECONOMY_BONUSES,
+  summedYield,
+  universeEconomyBonuses,
+  universeEffectIndex,
+} from './universe-effects.js';
 
 export type { WorldSimulation, WorldStepDeps, WorldStepReport } from './world-step.js';
 export { defineWorldSimulation, worldSystem } from './world-step.js';

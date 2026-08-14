@@ -33,7 +33,7 @@ import { GOAL_COMMITMENT, MAGE, attachRecord, componentOf, defineWorldStateSchem
 import { GOAL, clearCommitment, hasCommitment, readCommitment, stepMageAutonomy, writeCommitment } from '../../src/index.js';
 import type { MageGoalCommitment } from '../../src/index.js';
 
-import { outlook, richOutlook } from './autonomy-fixtures.js';
+import { appealWeights, outlook, richOutlook } from './autonomy-fixtures.js';
 import { mageRow, stepRng } from './mage-fixtures.js';
 
 const ROOT_SEED = 0x600d_5eed;
@@ -113,6 +113,7 @@ describe('a commitment lives in state, not beside it', () => {
 
     const restored = deserializeState(serializeState(state), defineWorldStateSchema());
     const report = stepMageAutonomy({
+      appeal: appealWeights,
       state: restored,
       worldTick: 43,
       rng: stepRng(ROOT_SEED, 43),
@@ -152,6 +153,7 @@ describe('one tick of autonomy over the whole roster', () => {
     componentOf(state, MAGE).set(mages[1] as number, 'alive', 0);
 
     const report = stepMageAutonomy({
+      appeal: appealWeights,
       state,
       worldTick: 12,
       rng: stepRng(ROOT_SEED, 12),
@@ -167,6 +169,7 @@ describe('one tick of autonomy over the whole roster', () => {
   it('skips a mage the caller cannot describe, rather than inventing an outlook', () => {
     const { state, mages } = worldWithMages(2);
     const report = stepMageAutonomy({
+      appeal: appealWeights,
       state,
       worldTick: 12,
       rng: stepRng(ROOT_SEED, 12),
@@ -183,6 +186,7 @@ describe('one tick of autonomy over the whole roster', () => {
       const { state } = worldWithMages(6);
       for (let tick = 0; tick < 24; tick += 1) {
         stepMageAutonomy({
+      appeal: appealWeights,
           state,
           worldTick: tick,
           rng: stepRng(ROOT_SEED, tick),

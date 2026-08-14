@@ -181,6 +181,209 @@ export interface RaidObservation {
   readonly attackerTempoCostWorldTicks: number;
 }
 
+/**
+ * One species' reach across the seventy-cell grid, as content alone determines
+ * it.
+ *
+ * Supplied by the executor rather than computed here, and the reason is the
+ * package boundary: `mc-harness` depends on `@mm/agent-api` and nothing else,
+ * so it cannot read `@mm/content`'s species records or the node catalogue. The
+ * derivation therefore lives where the content does and arrives as a
+ * measurement, the same way `speciesIds` does.
+ *
+ * Every field is a **cell count**, never a fraction — the denominators (70 and
+ * 12) are pinned constants of the metric, and carrying a pre-divided ratio here
+ * would put the arithmetic on the far side of the boundary from the definition
+ * that names it.
+ */
+export interface SpeciesGridReach {
+  readonly speciesId: string;
+  /** The species `depthCeiling`, carried so a reader can see what produced the counts. */
+  readonly depthCeiling: number;
+  /** Cells the species can staff, over the full seventy. */
+  readonly staffableCells: number;
+  /** Of those, the ones the ruleset currently permits. */
+  readonly staffableEnabledCells: number;
+  /** Cells whose deepest node the species can reach — the *depth* question, for contrast. */
+  readonly exhaustibleCells: number;
+  /** Of those, the ones the ruleset currently permits. */
+  readonly exhaustibleEnabledCells: number;
+  /**
+   * World ticks a node stays transmissible in this species' hands, starting
+   * from full mastery: `floor((MASTERY_MAX − TEACH_THRESHOLD) /
+   * masteryDecayPerTick(retention))`.
+   *
+   * **This is the quantity that actually separates the species**, and it exists
+   * because nothing in the rules path ever *raises* mastery. `setMastery` has
+   * one non-test caller, `decay.ts`, and it only lowers. Researched knowledge is
+   * born at `DEFAULT_INITIAL_MASTERY` (256), below the 512 teach threshold, and
+   * can never climb to it; every teachable instance descends from a god grant at
+   * 1024 and is sliding back down. So breadth is not limited by what a species
+   * can learn, it is limited by how long it can still pass on what it was given
+   * — and that window runs from 32 ticks to 102 across the shipped six.
+   *
+   * `0` would mean a species that cannot teach a granted node even once.
+   */
+  readonly teachableWindowTicks: number;
+  /**
+   * Authored affinity entries naming a form no currently permitted cell uses.
+   *
+   * Zero is the healthy answer. A positive count is authored content that
+   * cannot influence anything in this ruleset.
+   */
+  readonly inertAffinityEntries: number;
+  /** Authored affinity entries that a permitted cell does use. */
+  readonly liveAffinityEntries: number;
+}
+
+/**
+ * The whole grid-reach measurement, plus the denominators it was taken against.
+ *
+ * The denominators travel with the counts because a coverage number read
+ * against the wrong grid size is wrong in a way that still looks plausible.
+ */
+export interface SpeciesVersatilitySample {
+  /** Cells in the full grid. `contracts.md` §2.2's seventy. */
+  readonly gridCells: number;
+  /** Cells the seeded ruleset permits. Twelve, in the v1 content. */
+  readonly enabledCells: number;
+  /** One entry per species the content declares, in content order. */
+  readonly species: readonly SpeciesGridReach[];
+}
+
+/**
+ * One species' **realised** occupancy of the grid at run end.
+ *
+ * The counterpart to {@link SpeciesGridReach}, and the difference is the whole
+ * reason both exist. `SpeciesGridReach` is *capability*, derived from content:
+ * which cells a species **could** staff given its `depthCeiling` and the
+ * prerequisite closure. This is *outcome*, read off world state: which cells a
+ * species **did** occupy, meaning at least one living mage of that species holds
+ * a knowledge instance of a node in that cell, in a mind.
+ *
+ * `speciesGridVersatility`'s own falsification test is stated over exactly this
+ * quantity — *"the predicted-staffable set must be a superset of the
+ * observed-staffed set"* — and until this channel existed there was no observed
+ * set to check it against.
+ */
+export interface SpeciesCellOccupancy {
+  readonly speciesId: string;
+  /**
+   * Cells this species occupies, over the full seventy.
+   *
+   * A cell is occupied when a **living** mage of the species holds an instance
+   * of one of its nodes at location kind `mind`. Library copies are excluded on
+   * purpose: `contracts.md` §1.5 makes a shelved book exactly as magical as a
+   * shelf, and a species whose only claim on a cell is a book somebody else can
+   * read is not staffing it.
+   */
+  readonly occupiedCells: number;
+  /** Of those, the ones the ruleset currently permits. */
+  readonly occupiedEnabledCells: number;
+  /** Living mages of this species, so a zero can be read as "none alive". */
+  readonly livingMages: number;
+  /** Distinct nodes held in a mind by a living mage of the species. */
+  readonly nodesHeld: number;
+  /**
+   * **Which** cells, by interned cell id, ascending.
+   *
+   * Not a nicety. Merging `main` into `w53/practice` produced the campaign's
+   * first mechanic-driven species divergence — two short-lived species collapse
+   * and one goes extinct — and a count alone would have shown nothing, because
+   * two species can hold twelve cells each and hold *different* twelve. The ids
+   * are what make "these two species stopped overlapping" visible in a record
+   * somebody reads later, without a second run.
+   *
+   * Ascending rather than in discovery order: a record whose array order
+   * depends on entity-creation history is a record two machines disagree about.
+   */
+  readonly occupiedCellIds: readonly number[];
+}
+
+/**
+ * Realised per-species grid occupancy for one run, with its denominators.
+ *
+ * Carries the denominators rather than letting the collector assume seventy and
+ * twelve: `enabledCells` is whatever `permits()` accepted for the ruleset this
+ * run actually played, and a hardcoded twelve would silently misreport every
+ * run whose god forbade or dispensed anything.
+ */
+export interface SpeciesCellOccupancySample {
+  /** Cells in the full grid. `contracts.md` §2.2's seventy. */
+  readonly gridCells: number;
+  /** Cells the ruleset permitted at the moment of the reading. */
+  readonly enabledCells: number;
+  /** The world tick the reading was taken at. */
+  readonly worldTick: number;
+  /** One entry per species the content declares, in content order. */
+  readonly species: readonly SpeciesCellOccupancy[];
+}
+
+/** One species' roster at one world tick, for the loss-shock recovery curve. */
+export interface RosterSample {
+  readonly worldTick: number;
+  /** Living mages per species, aligned with {@link RunTelemetry.speciesIds}. */
+  readonly livingMagesBySpecies: readonly number[];
+  /** Total populace per species, aligned the same way. */
+  readonly populationBySpecies: readonly number[];
+  /**
+   * Distinct nodes held in a mind by at least one living mage of the species.
+   *
+   * The second half of the recovery question: a roster that returns to its
+   * pre-shock headcount while the knowledge those mages carried does not come
+   * back has not recovered, and a headcount series alone would report that it
+   * had.
+   */
+  readonly nodesHeldBySpecies: readonly number[];
+}
+
+/**
+ * A deterministic mage cull applied to one run, and the series either side of
+ * it.
+ *
+ * **`undefined` on an ordinary run**, which is the whole point: a run that was
+ * never shocked has no recovery time, and reporting `0` for it would read as
+ * instantaneous recovery. The collector answers `no-observations`.
+ */
+export interface LossShockSample {
+  /** The world tick the cull was applied at. */
+  readonly shockTick: number;
+  /** The fraction of living mages culled, at `fp` scale (1/1024). */
+  readonly shockFractionFp: number;
+  /** Living mages per species immediately before the cull. */
+  readonly preShockBySpecies: readonly number[];
+  /** Living mages per species immediately after it. */
+  readonly postShockBySpecies: readonly number[];
+  /** Distinct nodes held in a mind per species immediately before the cull. */
+  readonly preShockNodesBySpecies: readonly number[];
+  /** Roster samples, ascending by tick, spanning the shock. */
+  readonly samples: readonly RosterSample[];
+}
+
+/**
+ * What role assignment cost, over a run that made assignments and one that did
+ * not.
+ *
+ * The paired shape is deliberate. A species' share of the roster falling over a
+ * run is not evidence that role assignment caused it — long-lived species drift
+ * for reasons that have nothing to do with the god — so the quantity with
+ * meaning is the *difference* against a run that assigned nothing, and a
+ * telemetry channel that carried only the treated side would invite the
+ * single-arm reading.
+ */
+export interface RoleDemographySample {
+  /** Roles assigned during the run, by role id, in the treated arm. */
+  readonly assignmentsByRoleId: Readonly<Record<string, number>>;
+  /** Mages lost to a lossy role's exposure, per species, in the treated arm. */
+  readonly roleAttributedDeathsBySpecies: readonly number[];
+  /** Roster share at run end, per species, `fp` scale, treated arm. */
+  readonly finalShareFpBySpecies: readonly number[];
+  /** The same shares from the paired control run, which assigned no roles. */
+  readonly controlFinalShareFpBySpecies: readonly number[];
+  /** Roster samples from the treated arm, ascending by tick. */
+  readonly samples: readonly RosterSample[];
+}
+
 /** Everything a per-run collector may read. */
 export interface RunTelemetry {
   readonly coordinates: RunCoordinates;
@@ -225,6 +428,28 @@ export interface RunTelemetry {
    * second tally that disagreed with the session's would be undiscoverable.
    */
   readonly submittedByActionId?: Readonly<Record<string, number>>;
+  /**
+   * The content-derived grid reach of every species, or absent when the
+   * executor did not supply it.
+   *
+   * Absent is `no-observations`, never `mechanic-absent`: species traits and the
+   * seventy-cell grid have both shipped, so a missing sample is a run that did
+   * not report one, not a mechanic that does not exist.
+   */
+  readonly speciesVersatility?: SpeciesVersatilitySample;
+  /**
+   * The realised per-species grid occupancy at run end, or absent when the
+   * executor did not supply it.
+   *
+   * Absent is `no-observations` for the same reason {@link speciesVersatility}'s
+   * is: species and the grid have both shipped, so a missing sample is a run
+   * that did not report one rather than a mechanic that does not exist.
+   */
+  readonly speciesCellOccupancy?: SpeciesCellOccupancySample;
+  /** The loss shock this run was subjected to, or absent on an unshocked run. */
+  readonly lossShock?: LossShockSample;
+  /** The role-assignment demography pair, or absent when the run made no assignments. */
+  readonly roleDemography?: RoleDemographySample;
 }
 
 /** One run, as an arm-scoped collector sees it. */

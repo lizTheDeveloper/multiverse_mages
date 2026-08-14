@@ -115,6 +115,66 @@ describe('a reference run is a pure function of its seed and config', () => {
   });
 });
 
+/**
+ * `foundingSpeciesMask` — the instrument W15 needed and the scenario did not
+ * have.
+ *
+ * There was no founding-mix knob at all, so the campaign's D7 — *"varying the
+ * founding species mix changes which strategy wins"* — could not be measured
+ * even in principle. The first assertion is the one that matters most: the
+ * default builds the **byte-identical** universe the scenario built before the
+ * option existed, so nothing already measured moves.
+ */
+describe('the founding species mask selects who founds the universe', () => {
+  const MASK_CONFIG = { worldTickCap: 4, options: { cohortSize: 4, foundingNodes: 4 } } as const;
+
+  it('changes nothing when it is absent', () => {
+    const before = referenceScenario(content).scenario.create(0x0005_0010, MASK_CONFIG);
+    const explicit = referenceScenario(content).scenario.create(0x0005_0010, {
+      ...MASK_CONFIG,
+      options: { ...MASK_CONFIG.options, foundingSpeciesMask: 0 },
+    });
+    expect(snapshotHash(explicit)).toBe(snapshotHash(before));
+  });
+
+  it('seeds only the species whose bits are set', () => {
+    const registry = shippedContent();
+    const speciesCount = registry.species.length;
+    expect(speciesCount).toBeGreaterThan(1);
+
+    // Three seeded occupations per selected species, at this cohort size, plus
+    // one founding mage each. Both counts are read out of the §4.1 observation
+    // through the census rather than off the state.
+    for (const [mask, selected] of [
+      [0b1, 1],
+      [0b11, 2],
+      [(1 << speciesCount) - 1, speciesCount],
+    ] as const) {
+      const run = executeReferenceRun(
+        {
+          ...task(0, 0),
+          worldTickCap: 12,
+          levels: { cohortSize: 4, foundingSpeciesMask: mask },
+        },
+        { content, censusIntervalTicks: 12 },
+      );
+      const first = run.samples[0];
+      expect(first?.population, `mask ${String(mask)} population`).toBe(selected * 3 * 4);
+      expect(first?.livingMages, `mask ${String(mask)} mages`).toBe(selected);
+    }
+  });
+
+  it('refuses a mask that selects nobody rather than running an empty universe', () => {
+    const registry = shippedContent();
+    expect(() =>
+      referenceScenario(content).scenario.create(0x0005_0011, {
+        ...MASK_CONFIG,
+        options: { ...MASK_CONFIG.options, foundingSpeciesMask: 1 << registry.species.length },
+      }),
+    ).toThrow(/selects none of the/);
+  });
+});
+
 describe('the universe does something when it is stepped', () => {
   it('grows, promotes, researches, and writes it down', () => {
     const run = executeReferenceRun(task(3, 0), { content, censusIntervalTicks: 6 });

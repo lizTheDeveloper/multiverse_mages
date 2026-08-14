@@ -328,6 +328,12 @@ Every authored species trait is currently a **rate or a scalar**: lifespan, curi
 retention, fertility, scribe affinity, rediscovery affinity. Only `depthCeiling` is structural, and
 it caps rather than redirects.
 
+> **Corrected by W46.** This list is missing `affinities` — §6's *"technique/form affinities"*, a
+> sparse per-form table, which is neither a rate nor a scalar and is the one authored trait that can
+> point two species at different *columns* of the grid. It was authored the whole time. The omission
+> here is the artefact that sent a workstream to build a mechanism W20 had already shipped, so the
+> list is left standing with this note rather than silently repaired.
+
 That is a direct problem for **D9**. If species differ only in speed, no amount of balance work
 produces more than one viable playstyle per species, because there is only one shape of play to be
 fast or slow at. The fix both reviewers point to is the same: **species must interact with the
@@ -1167,6 +1173,17 @@ ruleset. They are separate gates, and conflating them was implicit in the go-wid
 
 ## The root cause, found twice independently and verified directly
 
+> **Correction, 2026-08-12 (W48).** Everything in this section is still true of `main` and is on
+> its way to being false. Re-checked today: `gatherEffects` still has zero production callers on
+> `main` — every hit outside `rules-magic/src/effects` is in `test/` or `dist/`. On
+> `w29/city-and-supply-chain`, **PR #42 (open, not merged)**,
+> `packages/coordination/src/universe-effects.ts:254` calls `gatherEffects` over the universe's
+> knowledge instances. That also settles the presence-versus-`gatherEffects` fork this section
+> ends on: W29 did not keep a second implementation, it calls the one carrying the adversarial
+> test. The original text is kept because the diagnosis is the document's value; read it as *the
+> state at the time the campaign was run*, and read every baseline taken before #42 merges as a
+> measurement of a favor trickle.
+
 Two workstreams that were not talking to each other — W30 (hard-SF projection of the magic rules)
 and W29 (city and supply chain) — arrived at the same finding from opposite ends. I verified all
 three legs of it myself against the tree rather than taking either agent's word:
@@ -1482,6 +1499,16 @@ nobody has watched fail is not a check", and provides a directory argument so th
 exercised by hand. It was watched failing on the case it models. It models the wrong case.
 
 ### The missing gate, specified
+
+> **Correction, 2026-08-12 (W48): this gate is built.** `scripts/check-primitive-consumption.mjs`
+> and `npm run check:consumption` exist on `main`, and the specification below was followed rather
+> than approximated — it builds a real universe through `@mm/scenario`'s composition root with a
+> recorder threaded through it, registers a primitive only when the assembled simulation asks for
+> its magnitudes, and its own header says why grep cannot do the job. One thing landed differently
+> and deliberately: it is **not** in `verify`. `.github/workflows/ci.yml` runs it as a separate
+> job, *Primitive consumption (non-blocking)*, which is **expected to be red** until the effect
+> pipeline is wired, so that a red check is information rather than a broken gate. The specification
+> below is left as written; it is what was built against.
 
 A **consumption** check to sit beside the coverage check, in `verify`, failing loudly:
 
@@ -1935,6 +1962,12 @@ measurement from any level metric and nothing currently collects it.
 
 ### W19's final numbers answer Codex's attribution question — and the answer is "graph topology, and that is real"
 
+> **Correction, 2026-08-12 (W48).** The closing sentence of this subsection — *"the effect pipeline
+> has still never run"* — is true of `main` today and is the specific thing PR #42
+> (`w29/city-and-supply-chain`, open) exists to change; see the dated note on *The root cause*
+> above. Nothing else here is affected: the attribution result is about graph topology and does not
+> depend on the pipeline's state.
+
 W19 committed its decision rule before seeing the data, then measured the **old** content at every
 horizon from 300 to 2400:
 
@@ -1970,6 +2003,127 @@ delete unless asked. Recorded because a workstream that reports its own destroye
 than one that quietly regenerates it.
 
 ---
+
+## W46: the affinity term is live, it moves node sets, and it is pointed at seven dark forms
+
+W46 was commissioned on a finding that was already stale — *"`species.json` carries per-form
+affinities for five of six species and the only reader in the tree is the key validator,
+`packages/content/src/load.ts`"*. That was true when the brief was written and is **false on
+`main`**: W20 landed `affinities` as one of `target-appeal.ts`'s six terms, wired
+`content-set.ts → outlook.ts → chooseTarget`, with its divisor and bound in `autonomy-weight.json`.
+No mechanism was needed and none was built. What was missing is the measurement, and this is it.
+
+**Recorded as a coordination fact as much as a technical one.** Two external reviewers independently
+prescribed this mechanism; the campaign's own enumeration of species traits (this document, *"Every
+authored species trait is currently a rate or a scalar"*) still omits `affinities`; and a workstream
+was dispatched to build a thing that had shipped. The enumeration is the artefact that misled both.
+
+### Four of six species have a live affinity in v1. Gnome and human are the two that do not.
+
+| species | authored | live inside the v1 rectangle | appeal term |
+|---|---|---|--:|
+| human | — | — | 0 |
+| gnome | `imaginem` 1408, `vim` 1280 | **none** | 0 |
+| elf | `herbam` 1536, `mentem` 1280 | `mentem` 1280 | +128 |
+| draconic | `ignem` 1792, `vim` 1536, `nomen` 1280 | `nomen` 1280 | +128 |
+| orc | `terram` 1280, `corpus` 1280 | `terram` 1280 | +128 |
+| dwarf | `terram` 1536, `ignem` 1152 | `terram` 1536 | **+256** |
+
+The v1 rectangle is `{intellego, perdo, rego} × {limen, mentem, nomen, terram}`. **Seven of the
+eleven authored affinity entries name a form no enabled cell uses** — `ignem` twice, `vim` twice,
+`herbam`, `imaginem`, `corpus`. The brief's claim that *none* of the affinity forms is enabled is
+wrong in the useful direction: `mentem`, `nomen` and `terram` all are.
+
+**The consequence is precise and nobody had stated it.** Gnome and human are exactly the pair W15
+measured, W19 re-measured five ways, and W20's headline is quoted on — and they are exactly the two
+species for which the affinity term is arithmetically zero. Whatever produced W20's *Jaccard 0.57*,
+it was not this term acting on either of those two species **directly** — an arm with a mixed
+founding population could still carry an indirect effect, since another species' affinity-driven
+choices move the shared library and the pool of teachable nodes.
+
+### The measurement: a content ablation, not a species comparison
+
+`tools/w46/affinity-arms.mjs`. Same species, same seeds, same two W15 starting positions,
+`passive-control`, 2,400 ticks, 3 replicates × 2 cells per arm, six species, affinities authored
+versus every species' table emptied — 72 runs. Node sets are read at the source of truth
+(`collectRecords(state, KNOWLEDGE_INSTANCE)`) through W15's inert probe, sampled every 240 ticks.
+
+Every horizon row is **paired and survival-filtered**: a run pair counts only where both sides were
+still running, so a set difference is never a difference in how long two universes lasted. The
+agreement check is the node set and the tick count, **not** the snapshot hash — `contentRevision` is
+inside the hashed header, so an ablation changes every hash by construction and the hash answers
+"same content", not "same run".
+
+**The negative control passes exactly.** Gnome and human — no live affinity — are identical on both
+sides at *every* horizon and in *every* one of their twelve run pairs: Jaccard 1.000, identical
+means, identical tick counts. The harness moves nothing on its own.
+
+| species | horizon | n | on ∪ | off ∪ | uniq on | uniq off | union J | **mean per-run J** |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|
+| dwarf | 240 | 6 | 37 | 35 | 3 | 1 | 0.895 | **0.808** |
+| dwarf | 720 | 6 | 49 | 47 | 2 | 0 | 0.959 | 0.947 |
+| dwarf | terminal | 6 | 51 | 51 | 0 | 0 | 1.000 | 0.870 |
+| elf | 240 | 6 | 42 | 43 | 1 | 2 | 0.932 | **0.878** |
+| elf | terminal | 6 | 51 | 51 | 0 | 0 | 1.000 | 0.993 |
+| draconic | 240 | 6 | 16 | 17 | 0 | 1 | 0.941 | **0.902** |
+| draconic | 480 | 6 | 24 | 25 | 1 | 2 | 0.885 | 0.885 |
+| draconic | terminal | 6 | 51 | 51 | 0 | 0 | 1.000 | 1.000 |
+| orc | 720 | 4 | 24 | 25 | 3 | 4 | 0.750 | 0.643 |
+| orc | terminal | 6 | 22 | 21 | **4** | **3** | **0.720** | 0.786 |
+| gnome | every | 6 | 49 | 49 | 0 | 0 | 1.000 | 1.000 |
+| human | every | 6 | 49 | 49 | 0 | 0 | 1.000 | 1.000 |
+
+### The answer, in one sentence each
+
+**Does the affinity term move node sets? Yes — and it moves *sets*, not only counts.** Dwarf run
+0/1 ends holding 29 nodes with affinities on and 37 with them off, Jaccard 0.610, **4 nodes unique
+to the affine run and 12 to the ablated one**. Run 0/0: 16 against 11, five nodes held only when
+the dwarf's `terram` 1536 was live. This is not the "speed, not shape" signature — the ablated arm
+is *larger* and the affine arm holds nodes it does not.
+
+**Does the difference survive to the end of a run? Almost never, and the reason is the old one.**
+Any universe that survives exhausts all 51 v1 nodes, and a term that reorders a queue cannot change
+the union of a queue that gets fully walked. Draconic, dwarf and elf all reach 51/51 on both sides.
+The one exception is **orc**, whose universes collapse before exhausting: it keeps a terminal union
+difference of Jaccard 0.720 with four nodes unique to each side. *The mechanism is real; the content
+ceiling hides it wherever the universe lives long enough to hit the ceiling.*
+
+**And W15's original result reproduces exactly.** Under single-species founding with
+`passive-control`, gnome and human reach the **identical 49 nodes** — union Jaccard 1.000 at every
+horizon from 480 on. That is now explained rather than merely observed: neither species has an
+affinity the v1 grid can read.
+
+### Where the authored magnitudes look wrong now that they are live
+
+They have never been exercised, so this is the first reading anyone has taken of them.
+
+- **The biggest numbers are all dark.** `boundTerm` caps the affinity term at `fp(384)` and the only
+  authored value that reaches it is draconic's `ignem` 1792 — a disabled form. Every *live* entry
+  lands at +128 or +256, so the term never uses more than two-thirds of the axis it was given, and
+  three of the four live entries sit at exactly one third of it.
+- **Three species share one magnitude.** Elf `mentem`, draconic `nomen` and orc `terram` are all
+  1280, so their affinity terms are the identical +128 and differ only in *which* column they point
+  at. Only dwarf's 1536 differs in strength. That is defensible and it is almost certainly accident
+  rather than design.
+- **Orc is the species the term does most for and the one least able to use it.** Its terminal
+  divergence is the largest measured, and it is an artefact of orc universes dying — `mageAptitude`
+  448 and the collapse visible in the run table. A trait whose clearest signal comes from the arm
+  that goes extinct is a trait waiting for a fair test.
+- **`vision.md` §6 says "technique/form affinities" and no technique-keyed affinity can be
+  authored.** `load.ts` accepts a form id or a cell id; there is no `{"rego": 1536}`. A cell key
+  expresses one intersection, so what is missing is a whole technique row. Not fixed here — it is a
+  content-schema change — but the vision promises an axis the schema cannot express.
+
+### Caveats, stated because the arms are narrow
+
+Single-species founding, one strategy (`passive-control`, the only one that leaves the god silent),
+three replicates per cell. It isolates the term cleanly and says nothing about a mixed founding
+population, which is what **D7** actually varies. The obvious next arm is W20's structure re-run with
+the affinity term ablated through `TargetAppealOptions.ablate`, which exists and has never been
+pointed at a run.
+
+**No mechanism code, content or golden fixture was touched by W46.** The deliverable is the tool and
+this section.
 
 ## Vision audit: three implications that gut things designed the same night
 

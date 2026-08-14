@@ -125,6 +125,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'god-cost',
     'god-constant',
     'raid-constant',
+    'autonomy-weight',
   ] as const).map(
     (name) => ({
       constraint: `${name}.schema.json#/$defs/contentId minLength`,
@@ -145,9 +146,11 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
   // something" stays true as written.
   ...[
     'cell.schema.json#/$defs/cell/properties/edicts/items',
+    'node.schema.json#/$defs/node/properties/knowledgeKind',
     'node.schema.json#/$defs/node/properties/tuningStatus',
     'node.schema.json#/$defs/effect/properties/target',
     'species.schema.json#/$defs/species/properties/tuningStatus',
+    'form.schema.json#/$defs/form/properties/tuningStatus',
     'territory.schema.json#/$defs/territory/properties/tuningStatus',
     'primitive.schema.json#/$defs/primitive/properties/scale',
     'primitive.schema.json#/$defs/primitive/properties/stacking',
@@ -157,6 +160,9 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'god-constant.schema.json#/$defs/godConstant/properties/tuningStatus',
     'raid-constant.schema.json#/$defs/raidConstant/properties/unit',
     'raid-constant.schema.json#/$defs/raidConstant/properties/tuningStatus',
+    'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/unit',
+    'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/role',
+    'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/tuningStatus',
   ].map((pointer) => ({
     constraint: `${pointer} type`,
     why:

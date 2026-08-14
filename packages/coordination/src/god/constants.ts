@@ -92,6 +92,12 @@ export interface GodConstants {
   readonly encourageDecayPerTick: Fp;
   readonly encourageMaxCells: number;
   readonly grantMastery: Fp;
+  /** Founding grants available before the universe has discovered anything. */
+  readonly foundingGrantBudgetStart: number;
+  /** Self-discovered nodes that earn one further grant. `0` disables accrual. */
+  readonly foundingGrantAccrualNodes: number;
+  /** Ceiling on grants ever authorized — the allowance plus everything accrued. */
+  readonly foundingGrantBudgetCap: number;
   readonly fundProgress: Fp;
   readonly foundUniversityCapacity: number;
 
@@ -101,6 +107,16 @@ export interface GodConstants {
   readonly ascensionEraCount: number;
   readonly ascensionDependenceMax: Fp;
   readonly ascensionLossMax: number;
+  /** Permitted cells that must stand at their floor for Path A. */
+  readonly ascensionSummitCells: number;
+  /** Surviving instances a mastered cell's deepest node needs. */
+  readonly ascensionSummitCopies: number;
+  /** Nodes a passing era boundary must hold. */
+  readonly ascensionCanonBreadth: number;
+  /** Distinct cells a passing era boundary must hold nodes in. */
+  readonly ascensionCanonCells: number;
+  /** Share of the canon a passing era may lose, fp. Floored by `ascensionLossMax`. */
+  readonly ascensionLossFraction: Fp;
 
   // Stagnation.
   readonly stagnationMagelessTicks: number;
@@ -179,6 +195,9 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     encourageDecayPerTick: value('encourage-decay-per-tick'),
     encourageMaxCells: value('encourage-max-cells'),
     grantMastery: value('grant-mastery'),
+    foundingGrantBudgetStart: value('founding-grant-budget-start'),
+    foundingGrantAccrualNodes: value('founding-grant-accrual-nodes'),
+    foundingGrantBudgetCap: value('founding-grant-budget-cap'),
     fundProgress: value('fund-progress'),
     foundUniversityCapacity: value('found-university-capacity'),
 
@@ -187,6 +206,11 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     ascensionEraCount: value('ascension-era-count'),
     ascensionDependenceMax: value('ascension-dependence-max'),
     ascensionLossMax: value('ascension-loss-max'),
+    ascensionSummitCells: value('ascension-summit-cells'),
+    ascensionSummitCopies: value('ascension-summit-copies'),
+    ascensionCanonBreadth: value('ascension-canon-breadth'),
+    ascensionCanonCells: value('ascension-canon-cells'),
+    ascensionLossFraction: value('ascension-loss-fraction'),
 
     stagnationMagelessTicks: value('stagnation-mageless-ticks'),
     stagnationWorshipFloor: value('stagnation-worship-floor'),

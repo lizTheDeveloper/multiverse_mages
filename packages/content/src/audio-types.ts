@@ -41,9 +41,24 @@ export type AudioGridPosition =
   | 'off-grid'
   | 'unquantized';
 
+/**
+ * How a cue is produced (sound-design.md §0.8).
+ *
+ * `synthesised` — generated at runtime from hashed parameters; no shipped asset
+ * is required, and any rendered take is only grain source.
+ * `granular` — rendered takes are grain material the client recombines per
+ * event, so **every** take is kept. Choosing one would discard the variation
+ * that is the entire reason this tier exists.
+ * `rendered` — played back whole, so exactly one take is chosen. Sameness is
+ * part of the weight for the handful of ceremonial sounds in this tier.
+ */
+export type AudioProduction = 'synthesised' | 'granular' | 'rendered';
+
 export interface AudioCueRecord {
   readonly id: string;
   readonly kind: AudioCueKind;
+  /** Which §0.8 production tier this cue belongs to. */
+  readonly production: AudioProduction;
   readonly band: AudioBand;
   readonly grid: AudioGridPosition;
   /** Nominal length in milliseconds. */

@@ -47,11 +47,39 @@ import type { SpeciesRecord } from '@mm/content';
  *
  * ## Discovery and rediscovery are separated here
  *
- * `everKnown` decides which of the two lists a target lands in — a node this
- * universe has held before is a rediscovery, whatever the individual mage
- * knows. That is `contracts.md` §1.5's persisted record, and it is the input
- * that makes `rediscover-node` a distinct goal id rather than a flavour of
- * research.
+ * `KnowledgeGateway.rediscovery` decides which of the two lists a target lands
+ * in — a node this universe held once and has since *lost* is a rediscovery,
+ * whatever the individual mage knows. That is the input that makes
+ * `rediscover-node` a distinct goal id rather than a flavour of research.
+ *
+ * ## It used to ask `everKnown`, and that was the wrong half of §1.5
+ *
+ * The persisted ever-known mark is set by `createInstance` and never cleared,
+ * so it is true of every node anybody here has ever learned, including the ones
+ * still standing. Bucketing on it filed *held* nodes as rediscoveries, which is
+ * the same skew the research quote carried until `isRediscovery` replaced it
+ * there — except that here it moved a target between two goal ids rather than
+ * between two prices, so nothing in the cost path could see it.
+ *
+ * ## What it was worth, measured rather than argued
+ *
+ * Bucketing is not scoring, so the effect is indirect — `rediscover-node` is a
+ * separate goal id with its own appeal terms and its own commitment, and a mage
+ * who files a held node under it is choosing from the wrong list all the way
+ * down. It is not small. Lessons taught per 20-year window over the reference
+ * two hundred years, before and after:
+ *
+ * ```
+ * before  867 513 60  83  38   2 265 323 340 314
+ * after   446 337 34 112 113  16  51 588 323 124
+ * ```
+ *
+ * The total falls and the *thinnest window rises*, from 2 to 16, which is the
+ * direction that matters: `reference-long-run.test.ts` asserts teaching in every
+ * window, and the run it was asserting over was one bad tick away from a hole.
+ * On a tree carrying the economy wire the same correction lifts windows that had
+ * gone to nothing — `7 2 0` becomes `261 533 146` — while research over the last
+ * forty years rises from 176 completions to 487.
  */
 
 /**
@@ -71,17 +99,61 @@ export function withinDepthCeiling(target: KnowledgeTarget, species: SpeciesReco
 }
 
 /**
- * Orders candidates cheapest first, breaking ties on node id.
+ * Orders candidates **novel first**, then cheapest, breaking ties on node id.
  *
  * A total order that depends on nothing but the targets themselves. Ordering by
  * the gateway's own return order would make selection depend on how
  * `rules-magic` happens to walk its index — the same class of divergence
  * `reallocation.ts` avoids by sorting cohorts on their key rather than on their
  * entity slot.
+ *
+ * ## Why novelty outranks cost, and only for scribing
+ *
+ * Cost alone is a total order over *content*, so the cheapest scribable node is
+ * the cheapest for every scribe in every century, and a universe writes the same
+ * book forever. That is not a hypothesis: the reference run ends with **1,263
+ * grimoires holding two distinct nodes** (vision §13; `mages-and-species` task
+ * 9.8), and vision §6a's capital loop reads *depth* — distinct nodes — so its
+ * input was pinned at two and could not compound.
+ *
+ * `libraryHolds` is set only by the scribing scan, so this tie-break is inert
+ * for research and teaching candidates and their ordering is unchanged. It is a
+ * *preference*, not a filter: a second copy is still selected when it is the
+ * only thing on the list, which is what keeps §5's redundancy against loss
+ * reachable.
  */
 export function compareTargets(a: KnowledgeTarget, b: KnowledgeTarget): number {
+  const novelty = compareNovelty(a, b);
+  if (novelty !== 0) return novelty;
   if (a.remainingCost !== b.remainingCost) return a.remainingCost - b.remainingCost;
   return a.nodeId - b.nodeId;
+}
+
+/**
+ * Orders a novel node ahead of one the shelf already holds. `0` when neither is
+ * a scribing candidate, which is every research and teaching target.
+ *
+ * ## Why this is a separate axis from the target utility score, and stays one
+ *
+ * `target-appeal.ts` scores a candidate on six bounded, additive terms and
+ * `chooseTarget` takes the argmax. Novelty is not one of those terms and must
+ * not become one. It is a **binary fact about redundancy** on exactly one goal,
+ * where the six are **magnitudes about value** on all five target-taking goals,
+ * and folding a binary into a bounded sum has only two outcomes: a bound small
+ * enough to be outvoted, which restores the 1,263-books-two-nodes defect the
+ * measurement above records, or a bound large enough to dominate, which is a
+ * lexicographic prefix wearing a magnitude's clothes and lying about it in the
+ * ablation report.
+ *
+ * So the two are composed rather than merged: novelty partitions the candidate
+ * list, and the utility score decides inside the partition. Exported for
+ * `compareAppeal`, which is the only other place that has to know the order the
+ * two mechanisms apply in.
+ */
+export function compareNovelty(a: KnowledgeTarget, b: KnowledgeTarget): number {
+  const aHolds = a.libraryHolds === true ? 1 : 0;
+  const bHolds = b.libraryHolds === true ? 1 : 0;
+  return aHolds - bHolds;
 }
 
 /** A frontier split into what has never been known here and what has been lost. */
@@ -119,7 +191,7 @@ export function gatherFrontier(
   const discovery: KnowledgeTarget[] = [];
   const rediscovery: KnowledgeTarget[] = [];
   for (const target of eligible) {
-    const bucket = gateway.everKnown(target.nodeId) ? rediscovery : discovery;
+    const bucket = gateway.rediscovery(target.nodeId) ? rediscovery : discovery;
     if (bucket.length < limit) bucket.push(target);
   }
   return { discovery, rediscovery };

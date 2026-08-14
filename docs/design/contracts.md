@@ -89,6 +89,7 @@ state would have no mechanism preventing mid-raid rule changes at all.
 | `upheavals` | array of `{factor, expiryTick}` | worship shocks in force. An entity per shock, because two forbiddings can overlap and the combined factor is the shared multiplicative-on-remainder arithmetic over both |
 | `eraEvaluations` | array of `{era, libraryDependence, nodesLost, passed}` | what each era boundary found. `libraryDependence` at era 2 is not recoverable from state at era 4, so the Enduring Canon ascension path cannot be decided without retaining these |
 | `godState` | singleton, below | counters, high-water marks, and cached derivations that one tick of state cannot see |
+| `grantBudget` | singleton, below | the founding-grant allowance and its ledger. **Absent means unbounded** |
 | `ascended` | `bool` | terminal flag |
 
 **`godState` — one row beside the universe, not fifteen more universe fields.** Widening the
@@ -114,6 +115,65 @@ pre-`god-agency` save describes.
 | `goodEraRun` | `uint16` | consecutive passing era boundaries |
 | `overBudgetEdicts` | `uint8` | edicts in force beyond the current budget. **Reported, never auto-revoked** |
 | `terminalTick` | `int32` | world tick the run ended on, `0` while running |
+
+**`grantBudget` — the founding-grant allowance, and a deviation from this document as originally
+drawn.** It is the sixth overall, after `state`, `primitives`, `coordination` and `scenario` in §5
+and the goal commitment and effort progress in §1.2, and it is recorded here for the reason those
+are: a reader planning against §1.1 as written would find action 8 unlimited, and it is not.
+
+| Field | Type | Notes |
+|---|---|---|
+| `startingGrants` | `uint16` | founding grants available before the universe has discovered anything |
+| `accrualNodes` | `uint16` | self-discovered nodes that earn one further grant. `0` means a fixed allowance, not a division by zero |
+| `cap` | `uint16` | ceiling on `startingGrants + earned`. A ceiling on what may be **granted**, never on what is held |
+| `grantsUsed` | `uint16` | grants applied so far, over the run |
+| `seededNodes` | `uint16` | ever-known nodes a god put there rather than the universe finding them |
+
+`foundingGrantsRemaining = max(0, min(startingGrants + floor((everKnown − seededNodes) / accrualNodes), cap) − grantsUsed)`.
+
+The reasoning, in the order it forced the decision:
+
+- **Grants are made scarce, not weak, and the distinction is load-bearing.** `setMastery`'s only
+  non-test caller is the decay pass and it lowers, so an instance granted at `grantMastery` is
+  currently the universe's **only** source of knowledge above the teach threshold. A nudge-shaped
+  grant would achieve "permission is necessary but not sufficient" by deleting that source before
+  its replacement exists. Limiting the *count* achieves the same design goal and nothing that works
+  today stops working.
+- **Absence means unbounded, and that is a decision rather than a default.** Every pre-`w69` save
+  and every hand-built test world carries no row, and all of them were written against unlimited
+  grants. Reading an absent row as a budget of zero would switch founding grants off for all of
+  them at once, silently. This is also why the revision-4 → 5 migration appends an **empty**
+  section rather than synthesising one: a synthesised row's `grantsUsed` would read zero for a run
+  that may have granted thirty times, handing a restored save a fresh allowance, and its `cap`
+  would come from the restoring build's content and impose a limit on a run measured without one.
+- **The parameters live in state and not only in content, because a sweep has to vary them.**
+  `god-constant.json` is the authority for the defaults and nothing may hardcode them. But
+  `worldDeps` resolves the god constants **once per worker** and shares the frozen struct across
+  every run that worker executes, so two arms of one sweep could never disagree about a budget read
+  from there. Seeding it into state at founding is the same shape `edictBudget` already has, and it
+  is what makes the budget a swept parameter rather than a number somebody guessed.
+- **`seededNodes` is what stops the budget paying for itself.** The accrual counts nodes the mages
+  discovered for themselves — ever-known less the nodes a god seeded. Without the subtraction a
+  grant makes a node ever-known, the accrual reads that as a discovery, and a budget of one with an
+  accrual of one is a budget of infinity. It counts the scenario's tick-zero seeding too, so a cell
+  running `foundingNodes: 4` does not begin life credited with four discoveries it did not make.
+- **The mask closes when the budget is spent**, through `agent-api`'s candidate list rather than
+  through a second copy of the rule — exactly as `canIssueEdict` gates actions 5 and 6. An action a
+  bot can submit but which reliably does nothing is what `illegalActionRate` calls *"a spec-clarity
+  smell"*: the mask says yes, `god-agency` refuses, and the disagreement reads as a confused agent
+  rather than as a resource that ran out.
+- **The cost is a third schema revision**, repaired exactly as the two before it: world-schema
+  revision 6 appends an empty `grant-budget` section, and `sim-core`'s `SNAPSHOT_VERSION` again
+  does not move. `WORLD_SCHEMA_VERSION` is now **6** — revision 5 is `material-stock`, and
+  `grant-budget` is appended after it because section order in a snapshot is declaration order.
+  It is also the one place in `migrations.ts` where appending beats rewriting:
+  `splitMaterialsByKind` rewrites the universe layout and is right to, because a save that recorded
+  a materials total did record something. A save that predates the budget recorded nothing.
+- **What ships is inert.** All three constants ship at values no run can reach — the grid holds 300
+  nodes and only prerequisite-free ones in permitted cells are grantable — so this build grants
+  exactly as it always did and the mechanic is exercised only through the swept arms. The value
+  that eventually ships falls out of a measured curve rather than out of a guess, which is what the
+  harness is for.
 
 **A terminated universe is frozen in its component rows, and not in its clock.** `god-agency`'s
 ascension spec asks that *"no world tick may further alter the universe's state"* and that a
@@ -432,6 +492,11 @@ serialized into snapshots.
   "effects": [
     { "primitive": "direct-damage", "magnitude": 512, "target": "single", "durationTicks": 0 }
   ],
+  "knowledgeKind": "episteme",      // "episteme" | "metis". Authored, never derived: `metis` marks
+                                    // knowledge that codification destroys, so a cell's deep end is
+                                    // an authoring decision rather than a consequence of tier. The
+                                    // principle and every call in the shipped set are in
+                                    // docs/design/metis-authoring.md
   "tuningStatus": "untuned"         // "untuned" | "tuned". Same meaning as in §2.4: every magnitude
                                     // above is a placeholder awaiting the balance harness
 }
@@ -669,6 +734,53 @@ reason this file exists rather than a `const` block in `rules-raid`:
 - No radius may exceed `max-interaction-radius`, which is the spatial index's cell size. The index
   promises a radius query inspects at most nine cells; past that it silently stops finding
   combatants at the edge of an effect, which reads as balance rather than as a bug.
+
+**Every value here is untuned** and carries `tuningStatus` saying so.
+
+### 2.11 `autonomy-weight.json`
+
+```jsonc
+{
+  "id": "role-appeal-raider-direct-damage",
+  "value": 384,                  // fp; MAY be negative — a role can find a kind of magic distasteful
+  "unit": "fp",                  // fp | raw. `raw` is a divisor, never a magnitude
+  "role": "raider",              // optional; present exactly on a role-appeal row
+  "primitive": "direct-damage",  // optional; present exactly on a role-appeal row, and an id from §2.6
+  "gloss": "The raider's own primitive.",
+  "tuningStatus": "untuned"
+}
+```
+
+Every magnitude a mage's choice of **which node to work on** is made of: the six term weights, the
+six per-term bounds, the appeal ceiling, and the role × primitive table. Added by W17, and a
+deliberate extension of this section for the reason §2.8, §2.9 and §2.10 are — a number a balance
+sweep turns belongs in content and inside `contentRevision`.
+
+**Two kinds of record share the file.** A **scalar** declares neither `role` nor `primitive` and is
+read by name; the set of scalar ids is structural exactly as in §2.9, so the loader fails a set
+omitting a weight the rules read and equally one declaring a weight nothing reads. A **role-appeal
+row** declares both, names a role from §1.2 and a primitive from §2.6 — each cross-checked — and its
+`id` must be exactly `role-appeal-<role>-<primitive>`, so a row cannot say one thing to a reader and
+another to the loader.
+
+Why this file exists at all is §7's *"mages act on utility-scored goals shaped by species, age,
+personality, and their assigned standing role."* Goal selection was that from 0.4.0. **Target
+selection was not** — it ordered candidates by `remainingCost` then `nodeId`, and because v1
+`researchCost` is a pure function of tier that was one fixed queue every universe walked and stopped
+at a different point along. `docs/design/value-sensitive-acquirer.md` records the measurement.
+
+Two checks here are not tuning hygiene — they are the design pillar §7 states in prose:
+
+- `target-bound-role` must be **strictly below the sum of the other five term bounds**, so any
+  combination of effort, affinity, species, age and personality can outvote any role. That is *"you
+  set the role; they decide everything else"* as arithmetic. Without it, role-as-filter — which
+  `mages-and-species/design.md` rejects twice over — returns as a tuning edit nobody reviews.
+- No role-appeal row's magnitude may exceed `target-bound-role`. Clamping at lookup would leave an
+  out-of-range entry in the table looking authored while behaving as something else.
+
+`target-appeal-ceiling` must be at least the sum of all six bounds: a clamp that binds on an ordinary
+outlook flattens real differences into ties, and a score whose ceiling is reachable by summing its
+own bounds quietly stops discriminating at the top.
 
 **Every value here is untuned** and carries `tuningStatus` saying so.
 
@@ -1030,6 +1142,10 @@ unavailable status is an honest answer.
 | `illegalActionRate` | fraction of agent actions rejected by the mask; a spec-clarity smell |
 | `inboundRaidTempoLoss` | world ticks a universe spends frozen in engagement as a defender, as a fraction of elapsed multiverse time. **Must stay under its threshold** — this is the griefing guard |
 | `raidInitiationCost` | tempo an attacker forgoes per raid, for comparison against what they gain |
+| `speciesGridVersatility` | cells of the seventy a species can staff with a qualified researcher, over the full grid and over the permitted cells separately. **Flag above 80% coverage even when depth is low** — the hegemony guard, and a different question from depth |
+| `speciesCellOccupancy` | cells of the seventy a species **actually occupies** — a living mage of that species holding a knowledge instance of some node in the cell, in a mind — over the full grid and over the permitted cells separately, with *which* cells carried beside the count. The scalar is the Gini coefficient across species, so "one species staffs everything" is a number; 0 is an even spread. The outcome counterpart to `speciesGridVersatility`'s capability, and the observation its falsification test is stated over |
+| `lossShockRecovery` | world ticks a species roster takes to regain its pre-shock headcount after a deterministic cull, per species, right-censored. Asserts that long-lived species recover *worse* rather than assuming fertility handles it |
+| `roleAssignmentDemographicCost` | fall in a species' share of the roster under role assignment into lossy roles, against a paired arm that assigned none. Makes action 10 a demographic lever with a price rather than a free choice |
 
 ---
 

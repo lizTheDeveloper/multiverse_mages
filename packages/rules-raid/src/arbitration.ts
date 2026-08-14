@@ -116,6 +116,50 @@ const NO_EFFECTS: CastEffects = Object.freeze({
   knowledgeSteal: Object.freeze([]),
 });
 
+/**
+ * What a cast of one node would put on the battlefield, as node selection needs
+ * to know it.
+ *
+ * **Derived from {@link CastArbiter}'s `#effectsOf` and from nothing else.** The
+ * selector and the applier answering the same question from two different reads
+ * of `node.effects` is exactly the drift this package's conformance test exists
+ * to prevent: a selector that believes a node does something the applier will
+ * not apply produces a combatant who declares a cast every tick and changes
+ * nothing.
+ */
+export interface CastProfile {
+  /**
+   * Whether a resolved cast places at least one effect.
+   *
+   * False for the two **passive** primitives — `ward` and `concealment` are read
+   * once at portal open by {@link CastArbiter.passiveDefences} and have no cast
+   * form, because §3 gives both a stacking rule and no trigger. False for
+   * `knowledge-steal`, which the theft intent owns and `resolveOneCast` does not
+   * apply. False for `portal`, which is a presence gate on raiding rather than
+   * something a combatant releases in a field. A node carrying only those is
+   * **not castable**, and making it castable would be the behavioural bug rather
+   * than the fix.
+   */
+  readonly placesEffects: boolean;
+  /**
+   * Whether resolution needs an acquired target.
+   *
+   * `direct-damage` is the only effect that cannot be placed without one. An
+   * area-denial field falls where the caster stands, a blink runs toward the
+   * portal, and a summon needs no geometry at all.
+   */
+  readonly requiresTarget: boolean;
+  /**
+   * Whether summoning is the *only* thing it would place.
+   *
+   * A summon over the per-side cap is a no-op and the cost is still charged, so
+   * a summon-only node held by a side at its cap spends vigor every tick and
+   * changes nothing. Selection asks this so that it can decline — the same
+   * reason the other three filters exist.
+   */
+  readonly summonOnly: boolean;
+}
+
 /** Why a cast produced nothing. `''` means it resolved. */
 export type CastRefusal =
   | ''
@@ -180,6 +224,7 @@ export class CastArbiter {
   readonly #tuning: { readonly castVigorBase: Fixed; readonly castVigorPerTier: Fixed };
   readonly #counters: ClampCounters | undefined;
   readonly #faults: ArbitrationFaults;
+  readonly #castProfiles = new Map<ContentId, CastProfile>();
   #forbiddenCastsBlocked = 0;
 
   constructor(options: {
@@ -338,6 +383,35 @@ export class CastArbiter {
    * `@mm/primitives`' guarantee and not this file's: a control run and its
    * paired ablation run leave the stream in the same place.
    */
+  /**
+   * What a cast of this node would put on the field. Memoised per raid.
+   *
+   * Memoised because node selection asks this of every held node of every
+   * combatant on every tick, and `#effectsOf` allocates. The cache is keyed on a
+   * node id and the answer depends on nothing else — not on the ruleset, not on
+   * the tick — so a per-raid arbiter is exactly the right lifetime for it.
+   */
+  castProfile(nodeId: ContentId): CastProfile {
+    const cached = this.#castProfiles.get(nodeId);
+    if (cached !== undefined) return cached;
+    const effects = this.#effectsOf(nodeId);
+    const profile: CastProfile = Object.freeze({
+      placesEffects:
+        effects.directDamage.length > 0 ||
+        effects.areaDenial.length > 0 ||
+        effects.blink.length > 0 ||
+        effects.summon.length > 0,
+      requiresTarget: effects.directDamage.length > 0,
+      summonOnly:
+        effects.summon.length > 0 &&
+        effects.directDamage.length === 0 &&
+        effects.areaDenial.length === 0 &&
+        effects.blink.length === 0,
+    });
+    this.#castProfiles.set(nodeId, profile);
+    return profile;
+  }
+
   evades(concealment: Fixed, stream: RngStream): boolean {
     return rollStackedProbability(
       this.#primitive(COMBAT_PRIMITIVES.concealment),

@@ -82,6 +82,50 @@ export interface KnowledgeTarget {
    * and lost.
    */
   readonly remainingCost: Fixed;
+  /**
+   * The interned cell the node sits in, and the cell's form.
+   *
+   * Both, because a species `affinities` key may be either
+   * (`load.ts`'s `checkSpecies`), and the cell key is the finer authored claim.
+   * They are here rather than fetched per candidate for the reason this whole
+   * type exists: `outlook.ts` records that scoring *"needs a cost and depth
+   * gating needs a tier, and nothing on this side of the port may need more"*
+   * — the moment scoring needed more, the port had to carry it, because the
+   * alternative is a second gateway question per candidate, which is exactly
+   * the unbounded scan the port was shaped to prevent.
+   */
+  readonly cellId: ContentId;
+  readonly formId: ContentId;
+  /**
+   * The node's authored effect primitives, interned.
+   *
+   * What the node is *for* — the only statement in the content set about that —
+   * and therefore the only thing a standing role can have an opinion about.
+   * Magnitudes are deliberately absent: a role's preference is over kinds of
+   * magic, not over how much of one, and carrying the magnitudes would invite a
+   * selector that reimplements the effect pipeline.
+   */
+  readonly primitives: readonly ContentId[];
+  /**
+   * Whether this mage's library already holds a copy of the node.
+   *
+   * **Set by the scribing candidate scan and by nothing else.** Research and
+   * teaching targets leave it absent, which reads as `false`, so their ordering
+   * is untouched by the tie-break {@link compareTargets} applies to it.
+   *
+   * It exists because `vision.md` §6a scales a university's output with *depth*
+   * — distinct nodes — while `library.ts` charges upkeep on *instances*, and the
+   * cost-ordered candidate list could see neither. The measured consequence,
+   * recorded in vision §13, `mages-and-species` task 9.8, and the rationale on
+   * the committed balance baseline alike: **1,263 books and two distinct
+   * nodes**, because the cheapest scribable node is the cheapest for everybody
+   * forever. A loop whose input cannot move is not a compounding loop.
+   *
+   * Not a ban on a second copy, deliberately. Redundancy is what §5's loss
+   * channel is defeated by and it is the archivist's whole thesis; what this
+   * makes it is *second choice* rather than free.
+   */
+  readonly libraryHolds?: boolean;
 }
 
 /**
@@ -99,11 +143,20 @@ export interface KnowledgeGateway {
   instanceCount(nodeId: ContentId): number;
 
   /**
-   * Whether this universe has *ever* known the node — the persisted record §1.5
-   * says instances alone cannot reconstruct, and the input that decides whether
-   * a research target is a discovery or a rediscovery.
+   * Whether re-deriving this node would be a *rediscovery* — the input that
+   * decides whether a research target is a discovery or a rediscovery.
+   *
+   * This used to be `everKnown`, the raw §1.5 persisted mark, and that was the
+   * wrong question asked of the right record. The mark is set when an instance
+   * is created and never cleared, so it is true of every node anybody here has
+   * ever learned, *including the ones still on the shelf*. Rediscovery is the
+   * narrower fact: known once and now gone. `rules-magic` states it as
+   * `wasEverKnown && !exists` and prices it at three times, and the
+   * implementation calls that function rather than restating it, so the
+   * predicate that quotes a cost, the predicate that charges it, and the
+   * predicate that sorts a mage's options are one predicate.
    */
-  everKnown(nodeId: ContentId): boolean;
+  rediscovery(nodeId: ContentId): boolean;
 
   /** Whether a mage holds an instance of a node in mind or memory palace. */
   knows(mage: MageHandle, nodeId: ContentId): boolean;
