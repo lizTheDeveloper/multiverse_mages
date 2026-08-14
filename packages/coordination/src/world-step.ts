@@ -128,10 +128,10 @@ import { ClampCounters, createRediscoveryClampCounter } from '@mm/primitives';
 import type {
   CapitalEmission,
   CohortDemography,
+  GoalAppealWeights,
   MageGoalCommitment,
   MaterialAmounts,
   MaterialKind,
-  GoalAppealWeights,
   ScaleFreeHazard,
   SpeciesAffinities,
   StepRng,
