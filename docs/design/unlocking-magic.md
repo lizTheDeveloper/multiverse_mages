@@ -128,11 +128,29 @@ Three things fall out of it, all good:
   because it is *first*, not because it is long. A god does not hand down a discipline; a god hands a
   student one unprecedented thing, and the discipline is what the civilisation builds on it.
 
-**What remains to define is the equivalence class** — *what counts as "of a kind not done before"*:
-cell, technique, form, material, or some conjunction. **That is a real design question and it decides
-how often a grant is foundational**, so it should be measured rather than picked: a class so narrow
-that every grant is foundational makes the distinction meaningless, and one so wide that none ever is
-makes it decoration.
+**And the equivalence class is the cell.** *Owner, 2026-08-13, in the voice the discovery should
+have:*
+
+> *"We never knew we could do magic with stone before."*
+> *"We never knew that we could learn the name of the mind."* — **takes a prodigy.**
+
+The first is a **form** arriving; the second is `intellego × mentem` — **a technique and a form
+together.** Both name the same unit, and it is the one the game is already built on: **a cell of the
+seventy-cell grid.** A grant is foundational when it is the **first node held in a cell this universe
+has never held anything in.**
+
+Which means the design needs no new vocabulary at all. **Seventy cells are seventy possible
+foundational discoveries**, a 3×3 opening starts holding nine, and the other sixty-one are the entire
+arc of a civilisation's magical history.
+
+**Keep those two sentences.** They are not flavour text decorating a mechanic — they are the mechanic
+stated in the only voice that makes it legible, and they tell the interface exactly what to say. A
+notification reading *"foundational knowledge granted: rn-call-by-name"* is a log line. *"We never knew
+that we could learn the name of the mind"* is the moment the game exists to produce.
+
+**And "takes a prodigy" is the constraint, not decoration.** The student is the scarce thing. A
+civilisation that never produced the right person never learns that stone can be worked, however much
+worship it accrued.
 
 ## What this does to forbidding, which is the late game
 
