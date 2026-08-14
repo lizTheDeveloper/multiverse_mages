@@ -102,11 +102,40 @@ describe('voice line banks', () => {
     // comedic register distinct. Two banks sharing a voice would collapse two
     // registers into one performance, which is the failure this whole design
     // exists to avoid — and it is invisible until someone listens.
-    const voices = banks.map((bank) => bank.voiceId);
     for (const bank of banks) {
       expect(bank.voiceId, `${bank.speaker} has no voice assigned`).not.toBe('');
     }
-    expect(new Set(voices).size, 'two banks share a voice').toBe(voices.length);
+    // Uniqueness applies to distinct *performers*, not to every bank. A
+    // `populace-flavour` bank is the same species heard in a different job, so
+    // it deliberately reuses that species' voice — a dwarf who lays stone
+    // should sound like a dwarf. Requiring a unique voice there would mean
+    // inventing six more voices nobody chose, to say the opposite of what the
+    // content means.
+    const cast = banks.filter((b) => b.speakerKind !== 'populace-flavour').map((b) => b.voiceId);
+    expect(new Set(cast).size, 'two cast banks share a voice').toBe(cast.length);
+    for (const bank of banks.filter((b) => b.speakerKind === 'populace-flavour')) {
+      const species = banks.find((b) => b.speaker === bank.speaker && b.speakerKind === 'species');
+      expect(species, `${bank.speaker} flavour bank has no species bank`).toBeDefined();
+      expect(bank.voiceId, `${bank.speaker} flavour must reuse its species voice`).toBe(species?.voiceId);
+    }
+  });
+
+  it('gives every species a flavour line for every occupation', () => {
+    // contracts §1.3 keys a populace cohort by species AND occupation, so a
+    // dwarf laborer and an orc laborer are different cohorts. Without this,
+    // every non-mage of every species says the same five lines — which is what
+    // shipped until someone noticed that not all laborers are human.
+    const roles = ['scribe', 'student', 'laborer', 'soldier', 'idle'].sort();
+    const flavour = banks.filter((b) => b.speakerKind === 'populace-flavour');
+    const species = banks.filter((b) => b.speakerKind === 'species').map((b) => b.speaker).sort();
+    expect(flavour.map((b) => b.speaker).sort()).toEqual(species);
+    for (const bank of flavour) {
+      const covered = bank.lines.map((l) => l.about).sort();
+      expect(covered, `${bank.speaker} occupation coverage`).toEqual(roles);
+      for (const line of bank.lines) {
+        expect(line.tier, `${line.id} tier`).toBe('flavour');
+      }
+    }
   });
 
   it('has no duplicate line ids across all banks', () => {

@@ -1170,7 +1170,7 @@
     "id": "bank-student",
     "speaker": "student",
     "speakerKind": "populace",
-    "voiceId": "chcMmmtY1cmQh2ye1oXi",
+    "voiceId": "nDJIICjR9zfJExIFeSCN",
     "voicePrompt": "Young, eager, slightly too loud, checking whether that was right.",
     "lines": [
       {
@@ -1209,7 +1209,7 @@
     "id": "bank-laborer",
     "speaker": "laborer",
     "speakerKind": "populace",
-    "voiceId": "nDJIICjR9zfJExIFeSCN",
+    "voiceId": "chcMmmtY1cmQh2ye1oXi",
     "voicePrompt": "Practical, level, unhurried. Talking over noise.",
     "lines": [
       {
@@ -1319,6 +1319,240 @@
         "tier": "selection",
         "text": "I've counted every mage through that portal. Nobody asked me to. The numbers don't match.",
         "about": ""
+      }
+    ]
+  },
+  {
+    "id": "bank-human-flavour",
+    "speaker": "human",
+    "speakerKind": "populace-flavour",
+    "voiceId": "7DTpboyigwqXiCkvQjMX",
+    "voicePrompt": "Mid-thirties, quick and slightly breathless, warm, always sounds like they are already late. Neutral accent. Reads sincerely, never for laughs.",
+    "lines": [
+      {
+        "id": "human-laborer-1",
+        "tier": "flavour",
+        "text": "Won't see the roof on. Did the sums at lunch. Grandchildren, maybe.",
+        "about": "laborer"
+      },
+      {
+        "id": "human-scribe-1",
+        "tier": "flavour",
+        "text": "Twelve pages a day, thirty years. I know which books I'll never reach.",
+        "about": "scribe"
+      },
+      {
+        "id": "human-student-1",
+        "tier": "flavour",
+        "text": "Nineteen. The reading list is forty years. Checked twice. I'll read faster.",
+        "about": "student"
+      },
+      {
+        "id": "human-soldier-1",
+        "tier": "flavour",
+        "text": "Ran the odds on tonight. Not good. Fine. I wanted the number.",
+        "about": "soldier"
+      },
+      {
+        "id": "human-idle-1",
+        "tier": "flavour",
+        "text": "Added up the days. Not many, against eighty years. Felt like all of them.",
+        "about": "idle"
+      }
+    ]
+  },
+  {
+    "id": "bank-elf-flavour",
+    "speaker": "elf",
+    "speakerKind": "populace-flavour",
+    "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+    "voicePrompt": "Age indeterminate, very slow, quiet, never raises volume, leaves long gaps between clauses. Utterly unhurried. Faintly amused at nothing in particular.",
+    "lines": [
+      {
+        "id": "elf-laborer-1",
+        "tier": "flavour",
+        "text": "The beams want another eighty years in the ground. I planted them. We're ahead.",
+        "about": "laborer"
+      },
+      {
+        "id": "elf-scribe-1",
+        "tier": "flavour",
+        "text": "Same book since before the archmage was born. I'm nearly at the middle.",
+        "about": "scribe"
+      },
+      {
+        "id": "elf-student-1",
+        "tier": "flavour",
+        "text": "Don't test me yet. I've only been studying it forty years.",
+        "about": "student"
+      },
+      {
+        "id": "elf-soldier-1",
+        "tier": "flavour",
+        "text": "Three hundred years on this gate. Ten of them were interesting.",
+        "about": "soldier"
+      },
+      {
+        "id": "elf-idle-1",
+        "tier": "flavour",
+        "text": "No work this decade. I've been watching the river take the bank — a finger a year. I'll mention it when it's a valley.",
+        "about": "idle"
+      }
+    ]
+  },
+  {
+    "id": "bank-dwarf-flavour",
+    "speaker": "dwarf",
+    "speakerKind": "populace-flavour",
+    "voiceId": "rZcizibcb1rTBqSwSjpY",
+    "voicePrompt": "Dry, precise, mid-range, the cadence of someone reading a catalogue number aloud. Certain. Not unkind.",
+    "lines": [
+      {
+        "id": "dwarf-laborer-1",
+        "tier": "flavour",
+        "text": "There's a certificate for the foundation. Buried with it. Someone in four hundred years has a good day.",
+        "about": "laborer"
+      },
+      {
+        "id": "dwarf-scribe-1",
+        "tier": "flavour",
+        "text": "He's wrong on page nine. I copy it wrong. The margin's mine.",
+        "about": "scribe"
+      },
+      {
+        "id": "dwarf-student-1",
+        "tier": "flavour",
+        "text": "Did I pass? ...I've a Notice of Failure ready. Form Nine. Better it's mine.",
+        "about": "student"
+      },
+      {
+        "id": "dwarf-soldier-1",
+        "tier": "flavour",
+        "text": "One commendation in two hundred years. Wrong name on it. I've never said. He stood where I stood.",
+        "about": "soldier"
+      },
+      {
+        "id": "dwarf-idle-1",
+        "tier": "flavour",
+        "text": "Nothing again today. I write that down too. Someone will want to know when it started.",
+        "about": "idle"
+      }
+    ]
+  },
+  {
+    "id": "bank-draconic-flavour",
+    "speaker": "draconic",
+    "speakerKind": "populace-flavour",
+    "voiceId": "uVKHymY7OYMd6OailpG5",
+    "voicePrompt": "Enormous and quiet. Extremely slow. Low fundamental with a lot of chest. Never shouts, never needs to. Occasional, unexpected sadness.",
+    "lines": [
+      {
+        "id": "draconic-laborer-1",
+        "tier": "flavour",
+        "text": "I have outlived four crews on this wall. Lift.",
+        "about": "laborer"
+      },
+      {
+        "id": "draconic-scribe-1",
+        "tier": "flavour",
+        "text": "I knew the man who wrote this. He was wrong here. I copy it as he wrote it.",
+        "about": "scribe"
+      },
+      {
+        "id": "draconic-student-1",
+        "tier": "flavour",
+        "text": "I knew this once. I let it go. The professor is thirty. She teaches it well.",
+        "about": "student"
+      },
+      {
+        "id": "draconic-soldier-1",
+        "tier": "flavour",
+        "text": "I will take the night. All of it. I have stood longer ones.",
+        "about": "soldier"
+      },
+      {
+        "id": "draconic-idle-1",
+        "tier": "flavour",
+        "text": "The others are counting the days. I know how many there are.",
+        "about": "idle"
+      }
+    ]
+  },
+  {
+    "id": "bank-gnome-flavour",
+    "speaker": "gnome",
+    "speakerKind": "populace-flavour",
+    "voiceId": "OTMqA7lryJHXgAnPIQYt",
+    "voicePrompt": "Fast, bright, interrupts itself constantly, genuinely delighted by everything. Trails off mid-sentence and starts a new one.",
+    "lines": [
+      {
+        "id": "gnome-laborer-1",
+        "tier": "flavour",
+        "text": "Forty-one braces, not forty. I worked out why once— gone. Still forty-one.",
+        "about": "laborer"
+      },
+      {
+        "id": "gnome-scribe-1",
+        "tier": "flavour",
+        "text": "Gone before the quill lands— so I can't improve it. That's why I'm accurate.",
+        "about": "scribe"
+      },
+      {
+        "id": "gnome-student-1",
+        "tier": "flavour",
+        "text": "Third time in this lecture. Loved it all three— no. Don't tell her. Don't.",
+        "about": "student"
+      },
+      {
+        "id": "gnome-soldier-1",
+        "tier": "flavour",
+        "text": "Forgot which door. Not how— never how. Nothing's come through this one.",
+        "about": "soldier"
+      },
+      {
+        "id": "gnome-idle-1",
+        "tier": "flavour",
+        "text": "Four hundred ideas since spring. I'd tell you one if I had one.",
+        "about": "idle"
+      }
+    ]
+  },
+  {
+    "id": "bank-orc-flavour",
+    "speaker": "orc",
+    "speakerKind": "populace-flavour",
+    "voiceId": "DUAKkudcC2PI6KEqJ60K",
+    "voicePrompt": "Warm, blunt, unbothered. Working-voice — the sound of someone talking while carrying something. Quietly amused by everyone else.",
+    "lines": [
+      {
+        "id": "orc-laborer-1",
+        "tier": "flavour",
+        "text": "Won't see this one finished. Nor did the one who trained me. Still gets finished.",
+        "about": "laborer"
+      },
+      {
+        "id": "orc-scribe-1",
+        "tier": "flavour",
+        "text": "I mixed this ink. I built the desk. The words are his.",
+        "about": "scribe"
+      },
+      {
+        "id": "orc-student-1",
+        "tier": "flavour",
+        "text": "Tell me twice and I've got it for life. Is that quick enough?",
+        "about": "student"
+      },
+      {
+        "id": "orc-soldier-1",
+        "tier": "flavour",
+        "text": "I built this wall. I know where it's thin. That's why I'm here.",
+        "about": "soldier"
+      },
+      {
+        "id": "orc-idle-1",
+        "tier": "flavour",
+        "text": "Nothing to build today. So I've been looking. That gate's dropped a finger's width.",
+        "about": "idle"
       }
     ]
   }
