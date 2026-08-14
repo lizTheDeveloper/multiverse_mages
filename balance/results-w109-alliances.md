@@ -64,8 +64,10 @@ which requires holding portal magic — against species curiosity:
 | orc | 384 | **0** | 2 |
 | draconic | 256 | **0** | 0 |
 
-**The gate admits the curious and excludes the incurious, and the incurious are the
-two species the mechanic exists to rescue.** That asymmetry is inverted with respect
+Human (curiosity 1152) is absent from that table — its arm was not taken — so the
+ordering is a trend and not a demonstration of strict monotonicity. The load-bearing
+half needs no ordering: **the two least curious species never reach the gate, and they
+are exactly the two the mechanic exists to rescue.** That asymmetry is inverted with respect
 to the design intent. It is a fact about where the portal nodes sit in the grid, and
 per the brief it is reported rather than patched: the gate stays literal.
 

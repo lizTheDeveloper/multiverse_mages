@@ -230,10 +230,15 @@ export interface ReferenceOptions {
    * that carries the `portal` primitive, and both such nodes sit at tier 4 and
    * 5 of a seven-node chain across `rego-limen` and `intellego-limen`. Measured
    * over a hundred runs per species on this build, how often a universe ever
-   * reaches that gate is *monotonic in species curiosity* — gnome 17, elf 16,
-   * dwarf 3, orc 0, draconic 0. So the gate is a curiosity gate in disguise,
-   * and the two species it shuts out are exactly the two the alliance mechanic
-   * exists to rescue.
+   * reaches that gate tracks species curiosity — gnome (1792) 17 runs, elf
+   * (896) 16, dwarf (512) 3, orc (384) 0, draconic (256) 0. Five of the six
+   * species; human is not in that list and its rank is unmeasured, so read the
+   * ordering as a trend rather than as a proof of strict monotonicity.
+   *
+   * The load-bearing half needs no ordering at all: **the two least curious
+   * species never reach the gate, and they are exactly the two the alliance
+   * mechanic exists to rescue.** So the gate is a curiosity gate in disguise,
+   * and its asymmetry runs opposite to the design intent.
    *
    * That is a finding about where the portal nodes sit in the grid, and it is
    * reported rather than patched. But it also makes the mechanic unmeasurable
