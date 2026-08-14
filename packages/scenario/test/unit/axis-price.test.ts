@@ -64,34 +64,41 @@ describe('the axis-price factor', () => {
   it('charges the resolver and the mask the identical price', () => {
     for (const scale of [2048, 4096, 8192, 16384]) {
       const content = referenceContent(undefined, undefined, scale);
+      // The resolver's table and the mask's, read separately on purpose: a scale
+      // that reached one and not the other is the drift this test exists for.
+      const resolver = content.deps.god?.content.costs.byAction;
+      const mask = content.catalogue.costs?.byAction;
+      expect(resolver).toBeDefined();
+      expect(mask).toBeDefined();
       for (const actionId of AXIS_PRICE_ACTION_IDS) {
-        const expected = Math.floor(
-          (shipped.registry.godCost(actionId)!.favorCost * scale) / AXIS_PRICE_IDENTITY,
-        );
-        expect(content.deps.god.content.costs.byAction[actionId]).toBe(expected);
-        expect(content.catalogue.costs.byAction[actionId]).toBe(expected);
+        const base = shipped.registry.godCost(actionId)?.favorCost ?? 0;
+        const expected = Math.floor((base * scale) / AXIS_PRICE_IDENTITY);
+        expect(resolver?.[actionId]).toBe(expected);
+        expect(mask?.[actionId]).toBe(expected);
         expect(axisPriceUnder(shipped.registry, actionId, scale)).toBe(expected);
       }
     }
   });
 
   it('moves no price but the four axis actions', () => {
-    const content = referenceContent(undefined, undefined, 8192);
+    const costs = referenceContent(undefined, undefined, 8192).catalogue.costs;
+    const base = shipped.catalogue.costs;
+    expect(costs).toBeDefined();
+    expect(base).toBeDefined();
     for (let actionId = 0; actionId <= 15; actionId += 1) {
       if (AXIS_PRICE_ACTION_IDS.includes(actionId)) continue;
-      expect(content.catalogue.costs.byAction[actionId]).toBe(
-        shipped.catalogue.costs.byAction[actionId],
-      );
+      expect(costs?.byAction[actionId]).toBe(base?.byAction[actionId]);
     }
-    expect(content.catalogue.costs.foundUniversity).toBe(shipped.catalogue.costs.foundUniversity);
+    expect(costs?.foundUniversity).toBe(base?.foundUniversity);
   });
 
   it('keeps permitting and forbidding the same price, and a technique twice a form', () => {
     for (const scale of [2048, 5120, 8192]) {
-      const { byAction } = referenceContent(undefined, undefined, scale).catalogue.costs;
-      expect(byAction[1]).toBe(byAction[2]);
-      expect(byAction[3]).toBe(byAction[4]);
-      expect(byAction[1]).toBe(byAction[3]! * 2);
+      const byAction = referenceContent(undefined, undefined, scale).catalogue.costs?.byAction;
+      expect(byAction).toBeDefined();
+      expect(byAction?.[1]).toBe(byAction?.[2]);
+      expect(byAction?.[3]).toBe(byAction?.[4]);
+      expect(byAction?.[1]).toBe((byAction?.[3] ?? 0) * 2);
     }
   });
 
