@@ -949,18 +949,32 @@ The requirement above therefore has **no written home in the document an impleme
 specification, so a requirement recorded only here is a requirement discovered at 0.13.0, when the
 client is being built and the format is fixed.
 
-**Neither this document nor `interface-findings.md` has the standing to amend §4.3.** Adding a
+**Resolved: §4.3 has been amended, and this section no longer has to carry the requirement alone.**
+Neither this document nor `interface-findings.md` had the standing to make that change — adding a
 requirement to the contract of record is a design decision, not a finding, and both documents are
-records of measurement. The UI session flagged the same gap as *unwritten and unauthorized* rather
-than closing it quietly, which is right. **This is the author's call, and it is the one open item in
-this section that has a deadline attached** — the format is cheap to change now and expensive after
-policies train against it.
+records of measurement. It was flagged as the author's call and the author made it. `contracts.md`
+§4.3 now requires an event record alongside each observation, carrying a class, the entity or
+content at its own granularity, and whether the event was terminal for that thing. The class
+enumeration and the wire format are left to `agent-interface` at 0.5.0, which is where they belong.
 
-What this section can say is what the audio layer needs from whatever answer arrives:
-**an event needs a class and a "was this the last one" bit** — and the second cannot be
-reconstructed downstream from any number of frames, because *the frame that would show the last
-instance is the frame where the count is already zero*. Not expensive to emit; impossible to
-derive.
+What the audio layer needs from that answer, restated here because §4.3 fixes the shape and this
+section is where the consequences land: **an event needs a class and a "was this the last one"
+bit** — the class so §0.4's density threshold has something to count, and the terminality bit
+because §6.5's cue is built on it.
+
+**One sentence that used to stand here was wrong, and is worth recording rather than deleting.** It
+claimed the terminality bit could not be reconstructed downstream from any number of frames, because
+the frame showing the last instance is the frame where the count is already zero. That is false, and
+the UI session refuted it by trying: `nodesKnown` comes from `count(instances) > 0`, so a decrement
+*is* a node leaving the universe, visible to anyone holding two frames. It happens once in the
+reference run, at tick 274, in the same step as the last Human death.
+
+The requirement survives in weaker and truer form, and §4.3 states it that way. A frame diff recovers
+that *something* ended; it cannot recover **which node** (the block is per cell), **which vessel** —
+mind, palace, grimoire and library are the four sounds this section is built on, and the observation
+has no vessel channel at all — or **whether the loss followed from the death**, which is the link the
+pause expresses. Aggregates are not merely coarse here; they discard the causation the cue is made
+of.
 
 **This sound is exposed to a balance number nobody has fixed yet.** Everything above assumes loss
 is rare enough that an arrhythmic, untuned, un-aggregated event can carry it. That assumption is

@@ -1005,6 +1005,65 @@ reason, era, and the balance-metric deltas since the previous step. The `agent-a
   not end. One agent plays both scales — which is exactly what the fixed-shape observation with its
   zero-filled engagement block exists to support.
 
+**Amendment: the outcome record must also carry events.** The record above answers *what is true
+now* and *what moved since the last step*. Three specified consumers need a third thing — *what
+happened* — and none of them can be built without it.
+
+An **event record** accompanies each observation: a list, possibly empty, of the discrete things
+that occurred during the step. Each entry carries at minimum:
+
+- **a class**, from a closed enumeration, so a consumer can apply a per-class rule to it;
+- **the entity or content it concerns**, at the granularity the thing itself has — a node id, a mage
+  handle, a cell id — not the aggregate the observation buckets it into;
+- **whether it was terminal for that thing**: the last instance of a node, the last member of a
+  species, the last mage who could teach a tier. This is the field the consumers are actually
+  waiting on.
+
+The class enumeration, the wire format and the per-class payload are **not fixed here**. They belong
+to `agent-interface` at 0.5.0, in the same way §4.4 fixes that candidate lists are slot-indexed and
+leaves `k` to a per-action constant. What this section fixes is that the events exist, that they are
+emitted alongside the observation rather than on request, and that terminality is carried rather
+than left to be inferred.
+
+**Why inference does not serve, stated carefully, because the first version of this argument was
+wrong.** It is tempting to claim the last-instance bit cannot be reconstructed downstream. It can be,
+partially: §4.1's `nodesKnown` channel is derived from `count(instances) > 0`, so a decrement is a
+node leaving the universe, and a consumer holding two consecutive frames will see it. In the
+reference run it happens once, at tick 274 — `perdo-mentem`, `nodesKnown` 3 → 2, instances 10 → 7 —
+in the same step that the last Human dies. The claim of impossibility was refuted by the first
+attempt to derive it.
+
+What a frame diff genuinely cannot recover is everything that makes the event *usable*:
+
+- **Identity.** The knowledge block is per cell. Three instances went and one node ended; whether
+  that was one node held in three places or three unrelated losses, one of which happened to be a
+  last copy, the aggregate does not distinguish.
+- **Vessel.** A node can be lost from a mind, a memory palace, a grimoire or a library, and vision
+  §5 makes those four different kinds of loss. The observation has no vessel channel at all, so this
+  one is not merely coarse — it is absent.
+- **Causation.** A diff of two frames says a death and a loss both fell in the same interval. It
+  cannot say the loss followed from the death. `sound-design.md` §6.5 builds its cue on precisely
+  that link — a death mark, a pause, then loss, where *"the pause between the two is the sound of
+  finding out"* — and a consumer that cannot attribute the loss cannot place the pause.
+- **Anything that nets.** A count cannot distinguish a step with one gain and one loss from a step
+  with neither. This has not been observed; it is a property of counting and does not need to be.
+
+So the requirement is not that the information is unobtainable. It is that recovering it from
+aggregates costs every consumer the same reconstruction, each of them differently wrong, to
+approximate something the core knows exactly at the moment it happens.
+
+**Three consumers, one capability, and they should be answered together.** `sound-design.md` §0.4's
+density rule needs an events-per-tick count *per class* to decide whether a class plays as discrete
+sounds or as a continuous texture, and forbids any class being discrete without a stated threshold.
+§6.5 needs the terminality bit and the vessel, and pins loss at a threshold of 1 so that it is never
+aggregated away. §10 needs classified per-tick events to build an arrangement at all. An answer
+shaped for any one of these alone will be relitigated by the other two.
+
+*This amendment states a requirement and deliberately does not design the schema. The cost of
+deciding it late is the reason it is written now: the format is cheap to change before policies and
+committed baselines depend on it, and a format change after that is a retrofit with a version bump
+attached.*
+
 ### 4.4 Parameterized actions and the explain channel
 
 Actions 8–14 carry entity handles drawn from a set that changes every tick, and a flat discrete mask
