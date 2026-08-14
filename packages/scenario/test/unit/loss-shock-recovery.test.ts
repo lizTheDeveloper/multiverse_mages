@@ -185,7 +185,30 @@ describe('recovery, per species', () => {
     // the simulation at all tripped it — which is a test reporting its own
     // fragility, not a regression.
     const withRoster = detail.species.filter((row) => (row['preShock'] as number) > 0);
-    expect(shockedSpecies).toHaveLength(withRoster.length);
+    // Every species the cull *reached* is one that had a roster — the direction
+    // that says the cull is not inventing losses. The converse does not hold and
+    // is no longer asserted: `everyKth: 2` takes every second mage off a roster
+    // ordered by handle, so a species holding a single mage in an unlucky parity
+    // loses nobody at all.
+    //
+    // **This is the third time orc has broken this test's shape, and W18 is the
+    // third branch to be blamed for it.** The two comments above record the first
+    // two: `toHaveLength(speciesIds.length)` was false whenever orc rolled zero,
+    // and the `censored` check was false for the same reason. On `main` this seed
+    // reaches the cull with orc at `preShock: 0`; with the academic rates wired,
+    // the universe is productive enough that orc reaches it holding **one** mage,
+    // which the parity then skips — so `withRoster` is six and `shockedSpecies`
+    // is five. Orc going from extinct to marginal is not a regression, and an
+    // assertion that reads it as one is measuring orc's tuning rather than the
+    // shock.
+    expect(shockedSpecies.length).toBeGreaterThan(0);
+    expect(shockedSpecies.length).toBeLessThanOrEqual(withRoster.length);
+    const spared = withRoster
+      .filter((row) => (row['killed'] as number) === 0)
+      .map((row) => String(row['speciesId']));
+    if (spared.length > 0) {
+      console.log(`species with a roster the cull did not reach: ${spared.join(', ')}`);
+    }
 
     // And the fact the old assertion was accidentally carrying: name any
     // species that had nobody to lose. This is the signal worth keeping — a
@@ -243,9 +266,16 @@ describe('recovery, per species', () => {
     const species = (detail['species'] as Record<string, unknown>[]).filter(
       (row) => row['censored'] === false,
     );
+    // Species the cull actually took mages from. Was `preShock > 0` — "had a
+    // roster" — and that is one condition too weak: a species that lost nobody
+    // has nothing to recover from, is trivially back where it started, and would
+    // read in `recoverers` as the very outcome this test exists to refute. Same
+    // argument the `preShock: 0` comment below already makes for absent species,
+    // applied to the case the cull's parity skipped. See the note in the first
+    // test for why orc keeps arriving at this boundary.
     const present = new Set(
       (detail['species'] as Record<string, unknown>[])
-        .filter((row) => (row['preShock'] as number) > 0)
+        .filter((row) => (row['killed'] as number) > 0)
         .map((row) => String(row['speciesId'])),
     );
 

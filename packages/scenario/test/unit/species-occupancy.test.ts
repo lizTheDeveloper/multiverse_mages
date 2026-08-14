@@ -162,31 +162,49 @@ describe('twenty world years in', () => {
     }
   });
 
-  it('has three species at the ruleset ceiling and three below it', () => {
-    // **Orc dropped from 12 to 11 when `apply-magic` shipped, and it is the
-    // only entry that moved.** `speciesTerm` reads `laborAffinity` for that
-    // goal and orc's is the highest in the content set at `fp(1536)`, so an orc
-    // mage spends months applying magic that she used to spend reaching into a
-    // twelfth cell. That is a species behaving like its own traits say it
-    // should, and it costs it a cell of breadth — which is the trade the goal
-    // is supposed to create and the reason this pin is re-recorded rather than
-    // widened.
+  it('has four species at the ruleset ceiling and two below it', () => {
+    // **Every species gained breadth when W18 wired the academic rates, and the
+    // laggards gained most.** Measured at this horizon, before -> after:
+    // draconic 10 -> 11, dwarf 12 -> 12, elf 10 -> 11, gnome 8 -> 9,
+    // human 12 -> 12, orc 11 -> 12. Three species at the ceiling became four.
+    //
+    // The mechanism is the one `academic-effects.ts` describes: a mage who holds
+    // `research-rate` nodes finishes more projects per century, and a project
+    // finished in a cell she had not entered is a cell occupied. The two species
+    // already at 12 could not gain — the v1 ruleset permits twelve cells and no
+    // more — so the effect shows up entirely in the ones that were behind, which
+    // is why the spread below flattens rather than widens.
+    //
+    // The pin is **re-recorded, not widened**, for the reason the `apply-magic`
+    // note this replaces gave: the point of the metric is that these numbers
+    // move, and a range assertion would let them move to anything.
     expect(bySpecies('dwarf').occupiedCells).toBe(12);
     expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(11);
-    expect(bySpecies('draconic').occupiedCells).toBe(10);
-    expect(bySpecies('elf').occupiedCells).toBe(10);
-    expect(bySpecies('gnome').occupiedCells).toBe(8);
+    expect(bySpecies('orc').occupiedCells).toBe(12);
+    expect(bySpecies('draconic').occupiedCells).toBe(11);
+    expect(bySpecies('elf').occupiedCells).toBe(11);
+    expect(bySpecies('gnome').occupiedCells).toBe(9);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0714 at this horizon, down from 0.0729 before `apply-magic`: one orc
-    // cell fewer makes the occupancy spread very slightly flatter. Pinned to
-    // four places: the point of the metric is that this number moves, and a
-    // test that only asserted "greater than zero" would let it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0714, 4);
+    // 0.0473 at this horizon, down from 0.0714 before W18 — a third of the
+    // spread gone, and in the direction the occupancy pin above explains: the
+    // two species already at the ruleset ceiling could not gain, the four behind
+    // them all did, so wiring the academic rates makes the grid *more* evenly
+    // held rather than less.
+    //
+    // Worth stating plainly because it cuts against the reflex reading. A
+    // mechanism that rewards knowing more sounds like a rich-get-richer term,
+    // and §7's `capitalSnowball` exists to catch exactly that. Here it is not
+    // one, and the reason is the ceiling: twelve cells is a hard cap that the
+    // leaders had already reached.
+    //
+    // Pinned to four places for the reason the previous note gave: the point of
+    // the metric is that this number moves, and a test that only asserted
+    // "greater than zero" would let it move to anything.
+    expect((entry as { value: number }).value).toBeCloseTo(0.0473, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -201,11 +219,18 @@ describe('twenty world years in', () => {
   });
 
   it('names which cells each species is missing, not just how many', () => {
-    // **The reading a count cannot give.** Gnome is four cells short at this
-    // horizon and the four have a shape: no Perdo Mentem, Terram or Limen, and
-    // no Rego Terram. A count of 8 says "behind"; this says "behind in Perdo",
-    // which is the difference between a species that is slow and a species that
-    // is locked out of a technique.
+    // **The reading a count cannot give.** Gnome is three cells short at this
+    // horizon and the three have a shape: no Perdo Mentem, Terram or Limen. A
+    // count of 9 says "behind"; this says "behind in Perdo", which is the
+    // difference between a species that is slow and a species that is locked out
+    // of a technique.
+    //
+    // W18 took `rego-terram` off this list — gnome reached it at 9 cells where
+    // it had not at 8 — and left the Perdo shape completely intact. That is the
+    // more interesting half of the result: faster research buys a species
+    // *breadth*, and it does not buy it the technique its affinities are worst
+    // at. A wire that had simply made everyone better at everything would have
+    // dissolved this shape, and it did not.
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
@@ -213,7 +238,6 @@ describe('twenty world years in', () => {
       'perdo-limen',
       'perdo-mentem',
       'perdo-terram',
-      'rego-terram',
     ]);
   });
 

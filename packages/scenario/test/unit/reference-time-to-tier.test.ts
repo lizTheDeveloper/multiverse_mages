@@ -200,7 +200,7 @@ describe('time to tier, by species', () => {
     }
   });
 
-  it('separates four of six, and 9.9 is closer than it has ever been', () => {
+  it('separates four species strictly, which is what 9.9 asks for', () => {
     // **Rewritten three times, and this time the direction reversed back.** The
     // previous version recorded a single separation — draconic strictly after
     // four ordinary species, with elf bridging — taken after
@@ -253,60 +253,62 @@ describe('time to tier, by species', () => {
     const human = interval('human');
     const elf = interval('elf');
     const draconic = interval('draconic');
-    const fastTrio = [gnome, dwarf, orc];
 
-    // What separates strictly, in every seed: the fast trio arrives before elf,
-    // and gnome arrives before human. Both are real statements about
-    // `curiosity` — gnome 1792, human 1152, elf 896 — now that curiosity is an
-    // input to *which* node a mage reaches for and not only to how fast she
-    // works on whichever one was cheapest.
-    for (const entry of fastTrio) expect(entry.high).toBeLessThan(elf.low);
-    expect(gnome.high).toBeLessThan(human.low);
+    // **W18 wired the academic rates, every species got faster, and the ordering
+    // it produced is the first that satisfies task 9.9.**
+    //
+    // Measured, tier 3, in ticks over the same 6 seeds, before -> after:
+    //
+    // | species | with `apply-magic` | with W18 |
+    // |---|---|---|
+    // | gnome    | [24, 25]  | **[20, 20]** |
+    // | dwarf    | [25, 30]  | **[22, 23]** |
+    // | human    | [30, 31]  | **[24, 26]** |
+    // | orc      | [32, 51]  | **[24, 41]** |
+    // | elf      | [53, 60]  | **[37, 42]** |
+    // | draconic | [25, 301] | **[22, 419]** |
+    //
+    // Everything moved, which is what a rate that had no node-driven source
+    // acquiring one should do, and the *order* barely moved with it: gnome still
+    // first, elf still last, draconic still spanning. What changed is that the
+    // bands stopped overlapping.
+    //
+    // **Task 9.9 asks for four species separated by more than the cross-seed
+    // spread, and this build has them**: gnome, dwarf, human and elf form a
+    // strict chain, each one's slowest seed arriving before the next one's
+    // fastest. Every previous build separated *groups* — "the fast trio", "the
+    // pair" — and this file has carried a "still not four" note since it was
+    // written.
+    //
+    // Two caveats, stated because the claim is checkable and should stay that
+    // way. Six seeds is a small n and these are ranges rather than intervals with
+    // an error term, so the chain is a statement about these seeds. And it is a
+    // *separation*, not a balance claim: every species magnitude is still
+    // `tuningStatus: "untuned"` and `release-plan.md` forbids calling any of them
+    // balanced before 0.5.0.
+    const chain = [gnome, dwarf, human, elf];
+    const names = ['gnome', 'dwarf', 'human', 'elf'];
+    for (let index = 0; index + 1 < chain.length; index += 1) {
+      const earlier = chain[index] as { low: number; high: number };
+      const later = chain[index + 1] as { low: number; high: number };
+      expect(
+        `${String(names[index])}<${String(names[index + 1])}:${String(earlier.high < later.low)}`,
+      ).toBe(`${String(names[index])}<${String(names[index + 1])}:true`);
+    }
 
-    // Draconic is the bridge now, and elf is not. It starts before human and
-    // ends long after elf, which is one species spanning the whole range rather
-    // than a slow band — asserted so that the day content gives it a band, this
-    // box is reopened.
+    // Draconic is still the bridge, and still the reason "four of six" is not
+    // "six of six": it starts inside the fast pair and ends five times beyond
+    // elf, which is one species spanning the whole range rather than a band.
     expect(draconic.low).toBeLessThan(human.low);
     expect(draconic.high).toBeGreaterThan(elf.high);
 
-    // **The trio is a pair now, and `apply-magic` is what broke it up.**
-    //
-    // Measured, tier 3, in ticks, this build against the one before the goal
-    // existed:
-    //
-    // | species | before | with `apply-magic` |
-    // |---|---|---|
-    // | gnome    | [24, 25] | [24, 25] |
-    // | dwarf    | [25, 30] | [25, 30] |
-    // | orc      | [21, 27] | **[32, 51]** |
-    // | human    | [30, 31] | [30, 31] |
-    // | elf      | [53, 60] | [53, 60] |
-    // | draconic | [26, 380] | [25, 301] |
-    //
-    // Only orc moved, and it moved because `speciesTerm` reads `laborAffinity`
-    // for this goal and orc's is the highest in the content set at `fp(1536)`,
-    // against the lowest `curiosity` but draconic's at `fp(384)`. An orc mage
-    // therefore likes applied work about as much as a gnome likes research, and
-    // she spends months on it that she used to spend reaching tier 3. That is
-    // the seventh species trait finding a rule to read it, and it is the first
-    // time a species' *economic* disposition has changed how deep it gets.
-    //
-    // **9.9 is one species closer than it has ever been.** Human, orc and elf
-    // now separate strictly from each other and from the pair; only gnome and
-    // dwarf still overlap. Task 9.9 wants four species separated by more than
-    // the cross-seed spread and this build separates three plus a pair — still
-    // not four, still recorded rather than repaired, because every species
-    // magnitude is `tuningStatus: "untuned"` and inventing one to make a test go
-    // green is what the measurement pivot exists to prevent.
+    // Orc is the other one, and it is the same orc the loss-shock file keeps
+    // tripping over: [24, 41] overlaps both human and elf, so it is not in the
+    // chain. It is nonetheless the species W18 helped most at its best seed —
+    // 32 -> 24 ticks — and its spread is what keeps it out, not its speed.
     const overlaps = (a: { low: number; high: number }, b: { low: number; high: number }): boolean =>
       a.low <= b.high && b.low <= a.high;
-    expect(overlaps(gnome, dwarf)).toBe(true);
-    // Orc is strictly after human, and human strictly after nobody: the pair
-    // still brackets it. Asserted in the direction that now holds, so the day a
-    // tuning pass folds orc back into the pair this fails loudly rather than
-    // the suite quietly keeping the old "three groups" claim.
-    expect(human.high).toBeLessThan(orc.low);
-    expect(orc.high).toBeLessThan(elf.low);
+    expect(overlaps(orc, human)).toBe(true);
+    expect(overlaps(orc, elf)).toBe(true);
   });
 });
