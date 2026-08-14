@@ -220,7 +220,12 @@ describe('the set of functions that floor a live quantity to zero', () => {
     // and the *instrument* costs the other 9x. 180 s leaves room for a loaded
     // machine without leaving room for a regression: if this arm needs more, the
     // frontier scan is doing something new and that is the thing to look at.
-  }, 180_000);
+    //
+    // 180 s was the first budget and it was not enough: the same arm takes 234 s
+    // inside a full `npm run verify`, where every other worker is competing for
+    // the same cores. 600 s is four times the standalone cost and two and a half
+    // times the contended one.
+  }, 600_000);
 
   it('and the instrument that says so can be made to fail', () => {
     // The half that usually gets skipped. A recorder that never fires would
