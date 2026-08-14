@@ -684,3 +684,78 @@ players can recognise and chase.
 record-only** — the moment a category pays better, players optimise for the category rather than
 playing, and *"do the hard thing because it is hard"* is a stronger motivation than a multiplier. But
 that is taste, and it is exactly the kind of thing that should be argued rather than assumed.
+
+---
+
+## This is how ages and worlds work, and why magic actually leaves
+
+*Owner, 2026-08-13, grounding the whole arc:*
+
+> **"I think that's how Ages and Worlds work in most fantasy — a world with many peoples, their gods
+> living, then dying as their people lose their appreciation for miracles. See also: human
+> civilizations."**
+
+**This is the thematic spine, and it supplies a mechanism the decay spec was missing.**
+
+### Magic leaves the world through indifference, not entropy
+
+I had written *"The World Begins To Decay and Magic Leaves The World"* as pressure — a clock that runs.
+**The owner's framing is causal and much better: the god fades because the people stop being amazed.**
+
+That is not a timer. **It is the worship loop running backwards**, and every term already exists:
+
+- **Worship accrues from mages, universities and populace** — three saturating classes with per-head
+  rates.
+- **`dailyRelevance` scales it per cell by what the magic is *for*** — `daily` versus `spectacle`,
+  +23.0% → **+48.8%**.
+- **So a world that stops finding magic remarkable stops paying worship**, and a god without worship
+  cannot unlock, cannot suppress, and cannot act.
+
+**The decline is caused by the same thing that caused the rise, pointed the other way** — and it means
+a god's death is *earned by the shape of what they permitted*, not scheduled.
+
+**A god of spectacle burns bright and is forgotten.** A god of fire and bread stays relevant and lasts,
+because people keep needing bread. **That is the strongest possible argument for the daily-relevance
+mechanic, and it is now load-bearing four separate times.**
+
+### The uncomfortable version, which is the good one
+
+**The god that lasts is not the impressive one.** A god whose magic became ordinary — water, crops,
+warmth, light — is a god nobody marvels at *and cannot do without.* A god of wonders is adored and
+then obsolete.
+
+**That is a genuinely interesting thing for a strategy game to make you choose between**, and it is
+the same trade the divine-attention dial already poses — strong on two, or weak on five — arriving
+from the other end and agreeing with itself.
+
+### "See also: human civilizations"
+
+**This is the theme stated plainly, and it is the reason the project exists.**
+
+The design is a model of how hard it is to produce complex technology. **The other half of that model
+is how easily it is lost** — and human history is unambiguous about which is more common:
+
+- **Knowledge held by too few people dies with them.**
+- **Institutions that stop being funded stop teaching.**
+- **Techniques that stop being practised stop being reproducible**, and the fact that a thing was once
+  done is no guarantee anyone can still do it.
+- **And a civilisation rarely notices the moment it stopped being able to do something.**
+
+**Every one of those is already a mechanic here.** `libraryDependence` measures knowledge down to a
+single surviving copy. Library upkeep degrades instances on unpaid materials. Mastery decays without
+teaching. **The simulation was already about this; the ages framing is what makes it legible as a
+story rather than a set of decay constants.**
+
+**A player should finish a run understanding, in their hands rather than in an argument, why the fall
+of a civilisation is mostly *forgetting* — and why it does not feel like anything while it is
+happening.** That is the design target, and it is worth more than any balance number.
+
+### What this changes concretely
+
+1. **Decay must be caused, not scheduled.** Whatever implements *"magic leaves the world"* should read
+   worship and relevance, not a tick count. **A timer would say the wrong thing about why worlds end.**
+2. **The god's own mortality is the pressure**, and it is legible — a player can watch their worship
+   thin and know exactly which cells stopped mattering.
+3. **And the last-ditch tactics get their justification.** *Prophecies from a lost age* and *secret
+   texts the ancient masters used* are what a civilisation reaches for **when it can no longer do what
+   its ancestors did** — which is the most human thing in the entire design.
