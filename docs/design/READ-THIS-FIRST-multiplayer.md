@@ -201,3 +201,58 @@ Two things follow, and both are about tonight's findings rather than new work:
 is a tier assignment. A bot that beats `passive-control` and loses to `permit-then-idle` is a low-tier
 opponent with a legible weakness; one that clears all four is top-tier. **The rung diagnosis stops being
 a debugging aid and becomes the ladder's rungs.**
+
+### There is always a bigger god — difficulty is capability, not just skill
+
+*Owner:* **"So you need more bots. There's always a bigger god though — with more powers and more
+shit."**
+
+**Both halves, and the second one answers the first better than adding bots would.**
+
+**More bots is a roster problem.** The archive addresses it: cells give variety, `marginOverNull` sorts
+tiers, and `foldArchive` will hold as many elites as the search finds. **But a roster built only from
+*better play* tops out** — there is a ceiling on how well a strategy can play a fixed verb set, and past
+it every high-tier bot is the same bot playing slightly faster.
+
+**A bigger god has more verbs.** That is a different axis entirely, and it does not top out:
+
+| tier | the opponent | why it is harder |
+|---|---|---|
+| low | fewer verbs, played competently | you can see everything it might do |
+| high | more verbs, played competently | **you cannot** |
+
+**And the design already has the verb ladder authored** — it just has not been read as one:
+
+- **sixteen god actions today** — permit, forbid, grant, bless, found, fund, encourage, portal, ascend
+- **world-shaping** — Create Biome, Spawn Mountain, Create Ocean, Alter Species, Shapeshift
+- **cosmological** — Change the Age of the Sun, Lengthen the Day
+- **and *"anything the game can do, magic can do"***, which means the ladder has **no declared top**
+
+**So "there's always a bigger god" is not flavour. It is the difficulty curve**, and it is unbounded by
+construction because the closure principle refuses a ceiling.
+
+### Why this is better than harder bots
+
+**A bot that plays your verbs better than you is frustrating. A god that has verbs you do not is
+awe-inspiring** — and the second is the feeling this game is for. *"Ancient old ones"* is the owner's
+own phrase, and an ancient old one should not merely out-micro you: **it should do something you did not
+know was possible.**
+
+It also makes the ladder **legible in the fiction rather than as a number.** You do not face difficulty
+7; you face something that can age the sun. **A player who loses to that has learned what the next tier
+is**, which is a much better teaching signal than a defeat screen.
+
+### Three consequences, all cheap
+
+- **`ACTION_SPACE_SIZE` becomes tier-dependent**, and the legality mask is already the place that
+  expresses it — a verb a god has not earned is simply masked, which is machinery that exists and is
+  tested.
+- **The prestige tuple gains a use beyond matchmaking**: what you have done decides **which verbs you
+  bring**, which is the unlock web arriving as capability rather than as cosmetics.
+- **And it explains why high tiers are sparse and mostly AI, benignly.** The few humans that far up are
+  playing against gods with the full verb set — **which is the intended experience, not a staffing
+  compromise.**
+
+**The one guard**: a bigger god must be *beatable by a smaller one*, or the ladder is a wall. **That is
+exactly what the null ladder and `marginOverNull` measure**, and it is the first time those instruments
+have had a shipping consequence rather than a balance one.
