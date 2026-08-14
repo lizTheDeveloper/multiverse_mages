@@ -8456,3 +8456,70 @@ Pricing attacks the same problem from the **cost** side; anti-requisites attacks
 has been told, and told not to abandon its measurement.
 
 The branch is **52 commits behind `main`** and conflicts on `interning.test.ts`.
+
+## W169 — no flat price binds the opening square, and the reason is arithmetic rather than tuning
+
+PR #159, the owner's *"price the permit verbs first"* decision executed. **The answer is negative and
+it is the useful kind**: not *"we picked the wrong number"* but *"a one-time toll is the wrong
+instrument."*
+
+### What the verbs cost today
+
+`god-cost.json`, read through `Fp` at 1/1024:
+
+| action | id | raw | favor |
+| --- | --: | --: | --: |
+| `permit-technique` | 1 | 8192 | **8** |
+| `forbid-technique` | 2 | 8192 | **8** |
+| `permit-form` | 3 | 4096 | **4** |
+| `forbid-form` | 4 | 4096 | **4** |
+
+All four `untuned`. **And flat.** `interventionCost` is `base × hysteresis / fp(1024) × tier`, with
+`tier` 1 for everything but a founding grant, so **nothing makes the second permit cost more than the
+first.** The one escalator, `hysteresisMultiplier`, keeps its counter **per axis bit** and decrements
+it every 60 ticks — it prices flipping *the same* technique twice, which is the portal-raid line it
+was built to close. **Permitting fourteen different forms costs base, fourteen times over.**
+
+Permit and forbid are equal by **enforced invariant** (`symmetric(1, 2, …)`), so any repricing moves
+all four together.
+
+### The sweep, and the finding
+
+384 runs: four strategies × **eight prices (1× to 16×)** × two openings × two starting cells × three
+replicates, paired within seed, plus a twelve-strategy pilot.
+
+**No price in the range binds**, and above 16× both verbs are already past the cap at every tier. The
+stated reason is the one worth keeping: **a one-time toll is arithmetically incapable of binding
+against a 70-favor ceiling on a 2400-tick horizon.** The god has more favour than the toll can ever
+consume, so the size of the toll is not the variable.
+
+This is what I asked for and did not expect to get: I briefed *"if the verbs are mispriced in a way a
+single number cannot fix — flat where it needs to scale — say that, it is a more useful finding than
+any value you could pick."* It is, and it is measured rather than argued.
+
+**And it converges with a direction already in this file.** The plan records the author's *"the switch
+prices stay roughly where they are"* and that repricing was superseded by **drains**. This supports
+that conclusion **with a harder reason than the drains argument had** — and the `axisPriceScale` factor
+it adds is exactly the control arm a recurring-upkeep proposal will need.
+
+### Two findings nobody was looking for
+
+- **`uniform-random-legal` cannot permit at all.** It submits actions 1–7 bare while `CANDIDATE_SLOTS`
+  covers only 8–14, so **its permit submissions are refused before any price is consulted.** Every
+  measurement that treated it as a permissive arm was measuring something else.
+- **The executor's content memo is now keyed on (tradition, price).** Keyed on tradition alone, a
+  worker serving two price arms would have served the second one the first one's content — and **every
+  number would have been plausible and wrong.** Caught before sweeping, not after.
+
+And it caught itself: reachability reported **131** findings with a helper it had added that nothing
+called, and **130** without. The helper is deleted, so the branch adds none. **An agent finding its own
+built-and-never-reached symbol, mid-task, is new.**
+
+### Where this leaves the two levers
+
+- **Cost side: a flat toll cannot work.** The next instrument is recurring — upkeep, not entry.
+- **Content side: anti-requisites already works** (W168), taking `permissive-breadth` from +33.1 nodes
+  over passive control to +2.9 from one authored pair.
+
+**So the opposing term the campaign wanted is a content term, not a price**, and the pricing sweep's
+value is that it closes the other door with a reason rather than leaving it open as an untried idea.
