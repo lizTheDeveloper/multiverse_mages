@@ -268,17 +268,16 @@ Filed as **open** rather than defect because §4.3's outcome record may be the r
 has looked — the audio session independently reached the same conclusion and filed it the same way.
 It is the same shape as 1.5 — a mask that says which, never why — and probably wants the same answer.
 
-**On where this is written down.** `sound-design.md` §6.5 records it at the cue it breaks, which is
-right: a reader of that cue needs to know it cannot be built yet. But that is the *consequence*, and
-nobody implementing `agent-interface` at 0.5.0 reads the audio document. The fix lands in
-`contracts.md` §4.3, and §4.3 currently says nothing about it. **That amendment has not been made and
-is not made here** — adding a requirement to the contract of record is a design decision, not a
-finding, and this document does not have the standing to make one. The requirement above is written
-to be transcribable, so that when it is authorized the amendment is a copy rather than a fresh
-argument.
+**Where this is written down — now settled.** `sound-design.md` §6.5 records it at the cue it breaks,
+which is right for the consequence, but nobody implementing `agent-interface` at 0.5.0 reads the
+audio document. The fix lands in `contracts.md` §4.3, which said nothing about it. That amendment
+was flagged here as unwritten and unauthorized, was authorized, and has been made: **§4.3 now
+requires an event record alongside each observation**, carrying a class, the entity or content at
+its own granularity, and whether the event was terminal for that thing — with the class enumeration
+and wire format left to `agent-interface`, the same division §4.4 uses for candidate lists.
 
-*Lands in: `contracts.md` §4.3, or a side channel beside the candidate lists. Recorded at the
-consequence in `sound-design.md` §6.5; the contract amendment is unwritten and unauthorized.*
+*Lands in: `contracts.md` §4.3 — **amended**. Consequence recorded at `sound-design.md` §6.5;
+implementation is `agent-interface` at 0.5.0 and is not yet scheduled.*
 
 ---
 
