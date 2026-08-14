@@ -39,7 +39,11 @@ Every number below is read off run records. Nothing under `balance/` was regener
    `species-separation.mjs` runs `runLongReference`, which submits **no god actions, ever**
    (`long-run.ts`, task 9.1's *"zero player input"*). Its output is byte-identical at 1×, 8× and
    16×. No god-action factor can move it.
-5. **This strengthens the "add drains, do not cut" direction rather than competing with it.** The
+5. **One authored exclusion pair does what no price in this range could.** `anti-requisites`
+   measures `permissive-breadth` losing 40% of its knowledge from a single `creo-ignem` ⊥
+   `creo-umbra` edge, with the other seven strategies byte-identical — while no price up to 7×
+   moves that strategy at all. The lever was probably never the cost. See below.
+6. **This strengthens the "add drains, do not cut" direction rather than competing with it.** The
    campaign plan already reached that conclusion from Machinations' vocabulary and Cook's power
    matching. This adds a harder reason: a one-time toll cannot be made to bind against a pool
    ceiling smaller than the thing being bought, at *any* price, because the ceiling clips the
@@ -299,6 +303,49 @@ or golden fixture has a reason to change, and `git status` is clean of them.
 `ui/session.json`'s `snapshotHash` is unmoved for the same reason and was not re-recorded.
 
 `npm run verify` is green on this branch, including the three balance gates.
+
+## Against the content-side answer: `anti-requisites`
+
+A branch measuring the *other* attack on the same problem exists and was pointed out while this
+sweep ran. `anti-requisites` gives `cell.json` an optional `excludes` array — one cell excludes
+another, symmetrically, with a `reason` and a `resolution` (`refused`, or `destructive`, which
+destroys every instance of the excluded school that mage holds). **One pair ships**: `creo-ignem`
+⊥ `creo-umbra`, `destructive`.
+
+On the agency gate at 2400 ticks, `referenceNodesKnown`:
+
+| strategy | before | after | delta |
+|---|--:|--:|--:|
+| `permissive-breadth` | 75.25 | 45.00 | **−30.25 (−26.1 SE)** |
+| the other seven | | | **0.00, byte-identical** |
+
+The dominant strategy's lead over the passive control falls from **+33.1 nodes to +2.9**.
+
+**The two are not directly comparable as numbers** — that is a gate metric over eight strategies,
+this is distinct-node containment over four — and no claim here rests on subtracting one from the
+other. What *is* comparable is which lever moves `permissive-breadth`, because it is the strategy
+both instruments identify as the one that erases every choice:
+
+- **Eight prices, up to seven times the shipped cost, move it by nothing.** It ends holding the
+  whole 5×14 grid from both openings at every price through 7×, gap inside ±6 nodes.
+- **One authored exclusion pair takes 40% of its knowledge** and leaves the other seven strategies
+  untouched to the last decimal.
+
+That is the honest reading of this sweep and it should be stated in the direction that costs
+something: **the lever was probably never the cost.** Permitting everything being *cheap* is not
+what makes permitting everything dominant — permitting everything *working* is. A price can only
+make the door narrower; an exclusion makes the room behind two doors smaller than the sum of them.
+
+It also explains why the price lever fails the way it does. Raising a toll is an undirected
+instrument: at 8× and 16× it finally moves `permissive-breadth`, and it does so by deleting the
+technique verb for every strategy at once, `permit-then-idle` and `allocate-concentrate` included.
+The exclusion pair is a *directed* one — it costs exactly the strategy that takes everything and
+nothing to the strategies that do not.
+
+**Nothing from that branch is merged or built on here**, and no exclusion pair is authored in this
+one. It is 52 commits behind `main` and conflicts on `interning.test.ts`; landing it is separate
+work. This section exists because a negative result about pricing is only useful next to what the
+alternative measured.
 
 ## Confirmation after merging `origin/main`
 
