@@ -30,7 +30,12 @@
  */
 
 import type { SweepRegistries, SweepSpec } from '@mm/mc-harness';
-import { BOT_POOL_REGISTRY, factorRegistry, metricRegistry } from '@mm/mc-harness';
+import {
+  BALANCE_METRIC_REGISTRY,
+  BOT_POOL_REGISTRY,
+  factorRegistry,
+  metricRegistry,
+} from '@mm/mc-harness';
 
 import { REFERENCE_MEASURES, REFERENCE_METRIC_IDS } from './measures.js';
 import { REFERENCE_FACTOR_IDS } from './reference-universe.js';
@@ -43,7 +48,21 @@ import { REFERENCE_FACTOR_IDS } from './reference-universe.js';
  * once per run, rather than once before dispatch.
  */
 export const REFERENCE_REGISTRIES: SweepRegistries = {
-  metrics: metricRegistry(REFERENCE_MEASURES.map((entry) => entry.definition)),
+  // The ten reference vital signs **and** the eighteen §7 metrics.
+  //
+  // It was the ten alone, and that is why no sweep could ever declare a raid
+  // metric: `raidLengthDistribution` and `raidInitiationCost` are registered in
+  // `mc-harness` and were not in the registry a sweep is validated against, so
+  // naming one failed before dispatch with "not in the metric registry".
+  //
+  // Raids were resolving the whole time — `executor.ts` reads
+  // `options.raids ?? true` — so every sweep this project has run has run raids
+  // it could not see. Not an uncollected metric: an *undeclarable* one, which
+  // is a fourth way for a measurement to be silently absent.
+  metrics: metricRegistry([
+    ...REFERENCE_MEASURES.map((entry) => entry.definition),
+    ...BALANCE_METRIC_REGISTRY.definitions,
+  ]),
   strategies: BOT_POOL_REGISTRY,
   factors: factorRegistry(REFERENCE_FACTOR_IDS),
 };

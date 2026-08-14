@@ -152,7 +152,24 @@ async function main() {
     replicates: seeds * allStrategies.length,
     agentPool: { strategies: allStrategies, assignment: 'round-robin', slots: 1 },
     termination: { worldTickCap: Number(args.ticks ?? 600), perRunTimeoutMs: 120000 },
-    metrics: ['referenceNodesKnown', 'referenceLibraryDepth', 'referenceGrimoires'],
+    metrics: [
+      'referenceNodesKnown',
+      'referenceLibraryDepth',
+      'referenceGrimoires',
+      // Raid metrics are NOT declared here, and the reason is worth recording.
+      //
+      // Raids resolve by default -- `executor.ts` reads `options.raids ?? true`
+      // -- and the sweep registry now accepts `raidLengthDistribution` and
+      // `raidInitiationCost`, because REFERENCE_REGISTRIES was extended to
+      // carry the eighteen §7 metrics rather than only the ten vital signs.
+      //
+      // Declaring them still fails every run: "The reference scenario defines
+      // no metric raidInitiationCost." The chain is registry -> executor
+      // measures -> run record, and only the first link is fixed. The record
+      // carries no raid field at all, so a raid cannot reach a descriptor.
+      //
+      // Restore these two lines the moment the executor defines them.
+    ],
     ablation: { mode: 'none', primitives: [] },
     failureThreshold: 0,
   };
