@@ -6142,3 +6142,38 @@ would read `not-worth-playing` for a reason that is not about the strategy.
 win condition opens is not a weak measurement, it is a different one.** Every probe in this
 repository that can be short-circuited that way should refuse the flag rather than report the
 number.
+
+## W120 — two runs into one directory folded into one archive, and nothing said so
+
+Found while smoke-testing the fix in W119, from a single loose thread: `--seeds 8`
+printed `asc 0/12`.
+
+`search-strategies.mjs` wrote its per-run records to `<out-dir>/records` and folded
+**every** `.ndjson` it found there. The directory was flat and shared, so a second
+invocation with the same `--out` folded in the first invocation's records. The
+`--seeds 8` archive had eaten the `--seeds 4` run that preceded it — **at a different
+`--ticks`** — so every descriptor and every ascension rate in it was a mixture of two
+horizons, 4 + 8 = 12.
+
+**Nothing failed.** The archive was well-formed. Every number in it was plausible. The
+only symptom was a denominator that did not match the flag, and the only reason anyone
+looked at the denominator was that an advisor asked what `N` in `asc a/N` counts before
+quoting a rate. Removing the contamination changed the verdict's not-worth-playing count
+from 5 to 6 on otherwise identical parameters — so it was not a cosmetic mix.
+
+Fixed: the records directory is named for the whole experiment
+(`<sweepId>-seed<n>-n<seeds>-t<ticks>`) and the run **refuses** to add to a directory
+that already holds records. The archive now also carries its `runId` and its `ticks`, so
+a file on disk names the horizon it was taken at rather than leaving a reader to infer
+it from a filename.
+
+**The general lesson, which is the third variant of the same one this campaign has
+recorded**: an aggregator that globs a directory has no way to distinguish *this* run's
+output from *any* run's output. `regenerate-baseline`, `run-sweep` and anything else
+that reads `readdirSync(...).filter(endsWith('.ndjson'))` should be checked for the same
+shape. A number that is plausible, well-formed and silently wrong is more expensive than
+a crash, and this one survived three separate invocations without a single warning.
+
+**And the denominator rule**: before quoting a rate, check what its denominator counts.
+`orc 1.22 living mages` was misquoted once already for the same reason — a number read
+without its scope.
