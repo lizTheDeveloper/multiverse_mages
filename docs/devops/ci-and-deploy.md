@@ -41,13 +41,19 @@ because that exact string is what the branch protection rule requires and renami
 every open PR unmergeable until the rule is edited to match. So the name records where the runner
 *was*, and this paragraph is the only thing that says where it *is*.
 
-**A copy is still running on `cto-tycoon-hel1`.** Both boxes have `/opt/ci-runner` and both have a
-live `webhook_receiver.py` process. Two receivers answering for one repository would post to the
-same commit status context and serialise against separate locks, which is the sort of thing that
-looks like a stuck queue. Whichever one is not receiving GitHub's webhook should be stopped
-deliberately rather than left as a spare — verified on 2026-08-13 by comparing deploy dates:
-`games` carries files from that morning, `hetzner`'s are from June and July with
-`.bak-before-node22` beside them.
+**There are two receivers, and that is correct.** `cto-tycoon-hel1` runs the same
+`webhook_receiver.py` for **`themultiverse.school`**, and it stays there — its log is school builds
+and school staging deploys, with no `multiverse_mages` traffic. This repository's webhook goes to
+`multiverse-games-hel1`; the school's goes to `cto-tycoon-hel1`. One receiver per repository, on the
+box that repository deploys to.
+
+Do not "consolidate" them and do not stop one because the other exists — an earlier draft of this
+page called the second one a duplicate and suggested stopping whichever was not receiving this
+repo's webhook, which would have taken down the school's CI. Check which repository a receiver is
+serving before touching it:
+
+    ssh hetzner 'docker logs --tail 20 ci-runner-webhook'   # expect themultiverse.school
+    ssh games   'docker logs --tail 20 ci-runner-webhook'   # expect multiverse_mages
 
 **Serialisation is by design, and reads as a stall.** The receiver holds a per-repository
 `threading.Lock`, so a second push while a run is in flight gets a `pending` status reading
