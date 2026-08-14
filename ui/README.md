@@ -113,7 +113,22 @@ Measured across all eleven prototypes **and `index.html`** in both themes, on `u
 outside-the-ruleset cells set `color: transparent`, because an empty cell and a cell holding zero
 are drawn as different things on purpose.
 
-Getting there fixed four failures that had gone unmeasured, three of them on `index.html`. **The
+**Two of those states are not the default one, and that is where the worst two failures were.**
+A sweep that loads each page and measures cannot see a control that is masked on load. `ascension/`'s
+declare button paints its live treatment in only two of four world states, and
+`ruleset-symmetry/`'s commit button is `[disabled]` and flat-filled until a change is staged. Both
+set `color: var(--ctl-charged-fg)` over a saturated `linear-gradient`, and on ink that token is
+**the same colour as the top stop of the fill**: the word "Commit" measured **1.00:1** against its
+own button, and "Declare ascension" **1.47:1**. Both now take `--ground`, which inverts with the
+fill — worst case 5.87:1 across all four stops in both themes.
+
+Neither is visible to a computed-style sweep either: an element filled with a gradient has
+`backgroundColor: rgba(0,0,0,0)`, so walking up for an opaque ancestor finds the panel *behind* the
+button and reports a ratio against a surface the text is not on. The first widened sweep produced
+four confident false failures that way. A checker that cannot see its input has to say so rather
+than fold it into "fails".
+
+Getting there fixed six failures that had gone unmeasured, three of them on `index.html`. **The
 front door was the page the discipline did not cover**: `ui-theme.test.ts` iterates *directories*,
 so a file at the top level is invisible to it, and `index.html` declares its own small palette
 rather than loading `theme.css`. Its `--faint` measured **2.70:1 on vellum and 3.91:1 on ink** —

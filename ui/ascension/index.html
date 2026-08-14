@@ -93,7 +93,13 @@
     border-radius:3px;width:100%;cursor:pointer;transition:box-shadow 180ms ease,background 180ms ease,
     border-color 180ms ease,color 180ms ease}
   .declare[data-s="masked"]{border:1px dashed var(--rule-hi);background:transparent;color:var(--ctl-denied-fg);cursor:not-allowed}
-  .declare[data-s="open"]{border:1px solid var(--summit);color:var(--ctl-charged-fg);
+  /* --ground, not --ctl-charged-fg. The charged foreground is the god's cyan on
+     ink, and this button's fill is the summit's gold: the label measured
+     1.47:1 against the darker gradient stop, i.e. unreadable, and only in the
+     dark theme and only in the two states where the button is actually live —
+     which is why a sweep of each page's default state never saw it. --ground
+     inverts with the fill and holds in both: 9.5:1 on ink, 6.7:1 on vellum. */
+  .declare[data-s="open"]{border:1px solid var(--summit);color:var(--ground);
     background:linear-gradient(180deg,var(--summit-lit),var(--summit));
     box-shadow:0 0 0 1px color-mix(in srgb,var(--summit) 40%,transparent),
                0 0 34px -4px color-mix(in srgb,var(--summit) 85%,transparent)}
