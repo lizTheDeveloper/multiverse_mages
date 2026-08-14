@@ -58,6 +58,8 @@ export { AnnihilationRecorder } from './annihilation.js';
 export type { CensusSample } from './census.js';
 export { censusLine, censusOf } from './census.js';
 
+export type { BalanceRunTelemetry } from './balance-telemetry.js';
+export { BalanceTelemetryRecorder, balanceTelemetrySystem } from './balance-telemetry.js';
 export type { MasteryModelOptions } from './mastery-model.js';
 export { referenceMasteryModel } from './mastery-model.js';
 
@@ -85,12 +87,18 @@ export type { ReferenceExecutorOptions, ReferenceRunResult } from './executor.js
 export {
   CENSUS_INTERVAL_TICKS,
   SCENARIO_BUILD_VERSION,
+  collectDeclaredMetrics,
   executeReferenceRun,
   makeReferenceExecutor,
   referenceProvenance,
 } from './executor.js';
 
-export { REFERENCE_REGISTRIES, REFERENCE_SWEEP } from './sweep.js';
+export {
+  BALANCE_RUN_METRIC_DEFINITIONS,
+  BALANCE_RUN_METRIC_IDS,
+  REFERENCE_REGISTRIES,
+  REFERENCE_SWEEP,
+} from './sweep.js';
 
 export type {
   LongRunOptions,
