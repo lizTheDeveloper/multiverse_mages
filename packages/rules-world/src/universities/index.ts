@@ -81,3 +81,14 @@ export { dominantCell, universityProfile } from './profile.js';
 
 export type { ScribingInput } from './scribing.js';
 export { SCRIBE_MONTHS_PER_SCRIBE, scribeRateMultiplier, scribingThroughput } from './scribing.js';
+
+export type { StaffAssignment, StaffCandidate, StaffLink } from './staff.js';
+export {
+  assignStaff,
+  pruneStaffLinks,
+  staffCohortsOf,
+  staffLinks,
+  staffUniversity,
+  universityOf,
+  unstaffUniversity,
+} from './staff.js';
