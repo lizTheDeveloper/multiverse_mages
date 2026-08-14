@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "1b73f7e27b0bf2eb582d9094c5747ebd29663c6f5991847ea2178fccd3304b28",
-  "contentHash": "01b153ba8ea2b2903fcdb01937b328d26082aa53a068044ba0af4f0f147eb609",
+  "contentHash": "1895ecbced1939ed698cd457da701d0d87aaeb0bc9520ec2c0daff5e6b2bfd05",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":64,"standardError":10.678633017619811,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":32.035899052859435,"unit":"grimoires","value":267.09375},
@@ -97,17 +97,18 @@
   ],
   "notes": [
     "The mechanic is a grant-budget component on the universe handle plus a legality-mask edge. An absent row means unbounded, which is what every save and every hand-built test world written before it carries, so nothing that worked stops working. The three constants also ship at values no run can reach, because the grid holds 300 nodes and only prerequisite-free ones in permitted cells are grantable. WORLD_SCHEMA_VERSION moved 5 to 6 -- material-stock holds revision 5 -- and sim-core's SNAPSHOT_VERSION did not move; no golden fixture diffs and goldens:regen was never run.",
-    "Measured in tools/w69 over four full 2400-tick runs per strategy: archivist sees action 8 masked for affordability on 4307 of 4804 ticks and for an empty candidate list on zero of them; denial-warden is closed by an empty list on 3508 ticks, having forbidden the grid; narrow-depth sees it legal on 76 percent of its ticks and asks zero times, because encourageResearch sits ahead of it and policyFor takes the first legal preference. Only uniform-random-legal ever grants, and it landed 1 grant from 234 submissions -- the other 233 were admitted by the mask and refused by the rules, because foundingKnowledgeCandidates excludes a node only when this mage holds it while grantPlan refuses any node with an instance anywhere."
+    "Measured in tools/w69 over four full 2400-tick runs per strategy: archivist sees action 8 masked for affordability on 4307 of 4804 ticks and for an empty candidate list on zero of them; denial-warden is closed by an empty list on 3508 ticks, having forbidden the grid; narrow-depth sees it legal on 76 percent of its ticks and asks zero times, because encourageResearch sits ahead of it and policyFor takes the first legal preference. Only uniform-random-legal ever grants, and it landed 1 grant from 234 submissions -- the other 233 were admitted by the mask and refused by the rules, because foundingKnowledgeCandidates excludes a node only when this mage holds it while grantPlan refuses any node with an instance anywhere.",
+    "Read supersededDeltas: it is a column of zeros. If any entry is non-zero, this regeneration was wrong and should be rejected. The notes above are carried forward verbatim from the superseded file: they record measurements about this sweep that are still true, and a regeneration that dropped them would quietly delete the reason a later reader trusts these numbers."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "162f80bf169296d0e5fd516cc3c5257a",
-    "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
+    "contentHash": "87fdff6cbf4414b584fef95bf9d4916a",
+    "metricDefinitionVersions": {"ascensionRate":1,"capitalSnowball":1,"combatActionEconomy":1,"combatThresholdEfficiency":1,"illegalActionRate":1,"inboundRaidTempoLoss":1,"knowledgeHalfLife":1,"libraryDependence":1,"lossShockRecovery":1,"prestigeAdvantage":2,"raidInitiationCost":1,"raidLengthDistribution":1,"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1,"roleAssignmentDemographicCost":1,"speciesCellOccupancy":1,"speciesGridVersatility":1,"timeToTierBySpecies":1,"winRateByPrimitive":2,"worshipSnowball":2},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Provenance only, re-recorded once from the merged tree. No rule changed and no metric moved for any run this sweep executes. contentRevision moved to 162f80bf169296d0e5fd516cc3c5257a because the founding-grant budget added three god constants (founding-grant-budget-start, founding-grant-accrual-nodes, founding-grant-budget-cap) on top of the five this branch merged from main, and the gate is right that a delta across two content revisions is a category error. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0. The universe remains degenerate in known ways, and one of them is now measured rather than suspected: no strategy in the pool submits god action 8 even at an unbounded budget, so the founding-grant budget this revision adds cannot reach any metric here, and these deltas are exactly zero for a reason rather than reassuringly. This is the regenerate-once-from-the-merged-tree pattern of d5a3357, 6180b65 and d1d3140.",
+  "rationale": "Provenance only: god action 16 added a seventeenth god-cost record, which moves contentRevision 162f80bf -> 87fdff6c and makes the gate refuse the old baseline as a cross-build comparison. Behaviour is unchanged - every metric of every gate reported delta 0.00000 against the superseded baseline before this regeneration, and a paired re-run of the draconic species sweep is bit-identical across all ten pool strategies. Nothing here is a claim that behaviour moved.",
   "rootSeed": 20260811,
   "runCount": 64,
   "supersededDeltas": [
@@ -202,7 +203,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange@uniform-random-legal","previousValue":63.5,"value":63.5},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange@worship-maximizer","previousValue":66,"value":66}
   ],
-  "supersedes": "b488d1f93fc5bb8b1f0097f7e519e1dfaf56cc482150516bd1041fc502a78178",
+  "supersedes": "01b153ba8ea2b2903fcdb01937b328d26082aa53a068044ba0af4f0f147eb609",
   "sweepId": "balance-gate-agency-v1",
   "toleranceK": 3
 }

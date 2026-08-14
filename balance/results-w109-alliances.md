@@ -175,13 +175,24 @@ the gate in 0/100 runs, exactly as draconic does — so these are gated arms too
 - **`contentRevision` moves**, `162f80bf…` → `87fdff6c…`, because the seventeenth god
   cost is in the preimage. The digest is over parsed values, not file bytes. Every
   existing price is byte-identical.
-- **One committed baseline moves, and only one arm of it.** Re-running the draconic
-  species sweep on the post-append build against the pre-append build: **9 of 10
-  strategies are bit-identical, and all 10 runs of `uniform-random-legal` differ.**
-  That strategy samples the legality mask uniformly and the mask is now 17 wide
-  instead of 16, so it is the strategy following its own definition into a wider
-  space rather than a rules change. Arm means move within noise
-  (26.88 → 26.90 nodes, 4.26 → 4.27 living mages) and ascension stays 0/100.
+- **The append is behaviourally inert, and the route to that sentence is worth
+  keeping.** An intermediate build of this branch *was* not inert: re-running the
+  draconic species sweep then showed 9 of 10 strategies bit-identical and **all 10
+  runs of `uniform-random-legal` differing**, because that strategy samples the
+  legality mask and the mask had grown a spuriously-legal seventeenth entry. That
+  was the optimistic-mask defect in §9 wearing a second hat. With the gate in the
+  mask, action 16 is illegal until a universe holds portal magic, the legal set is
+  therefore exactly what it was, and **all 10 of 10 strategies are bit-identical**:
+  83 stagnated and 17 truncated, before and after, 26.88 nodes and 4.26 living mages
+  either way.
+- **The committed balance baselines are re-recorded for provenance, and for nothing
+  else.** All four gates fail on `baseline-invalid` — the gate refuses to compare
+  across two `contentHash` values, correctly calling it *"a category error"* — while
+  **every metric in every gate reports `delta 0.00000`**, including each
+  per-strategy arm of the agency gate. So this branch does join the re-baseline
+  stack, and it joins it carrying the weakest possible claim: the numbers are
+  unchanged and only the stamp moved. `supersededDeltas` in each regenerated file
+  is a column of zeros, which is the check a reviewer should apply.
 - The pre-append baseline arms reproduce `balance/w99/` **exactly** — draconic
   0/100 at 26.88 nodes and 4.26 living mages, elf 20/100 at 2.84 — so the W99
   baseline has not moved underneath this branch.
