@@ -812,6 +812,11 @@ export function referenceScenario(
       schema: simulation.schema,
       onRaid: (record) => records.push(record),
       raidsSoFar: () => records,
+      // Per run, exactly like the mask handed to `defineWorldSimulation` above.
+      // Without this line the world loop is ablatable and raids are not, so an
+      // arm neutralizing a combat primitive would neutralize nothing and report
+      // a null result for a wire that was live the whole time.
+      ...(options.ablation === undefined ? {} : { ablation: options.ablation }),
     }),
   ]);
 

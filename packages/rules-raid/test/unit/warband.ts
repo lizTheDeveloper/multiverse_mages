@@ -53,6 +53,7 @@
  */
 
 import type { ContentId } from '@mm/content';
+import type { AblationMask } from '@mm/primitives';
 import type { EntityHandle, SimState } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { Handle, RaidSideValue, RulesetSnapshot } from '@mm/state';
@@ -79,6 +80,7 @@ import {
   addMage,
   addSoldiers,
   addUniversity,
+  combat,
   emptyWorld,
   grid,
   knowledgeFor,
@@ -194,6 +196,16 @@ export interface WarbandOptions {
   readonly hostTradition?: string;
   readonly seed?: number;
   readonly tuningOverride?: Partial<RaidTuning>;
+  /**
+   * §9's mask for this raid, or absent for a control run.
+   *
+   * Here so a test can run the *same* warband twice — identical mages,
+   * identical knowledge, identical seed — and differ in nothing but whether one
+   * primitive is neutralized. That is the only arm that attributes an outcome
+   * to a primitive rather than to a loadout, and before the mask was threaded
+   * through `openPortal` it could not be written at all.
+   */
+  readonly ablation?: AblationMask;
 }
 
 /** A named mage, before the portal opened. */
@@ -293,8 +305,10 @@ export function resolveWarband(options: WarbandOptions): WarbandResult {
     host: participant(hostWorld, hostKnowledge, hostSnapshot, hostSnapshot.traditionId),
     registry,
     grid,
+    combat,
     tuning: { ...tuning, ...options.tuningOverride },
     raidSeed: options.seed ?? 0x5eed_1234,
+    ...(options.ablation === undefined ? {} : { ablation: options.ablation }),
   });
   deployRaid(raid);
 
