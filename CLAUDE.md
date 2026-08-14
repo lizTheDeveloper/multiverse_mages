@@ -109,8 +109,10 @@ The short version, because the obvious "cleanup" here is a security regression:
 - **GitHub Actions** (`.github/workflows/ci.yml`) is free and unmetered — this repo is public — and
   runs in a sandbox holding no credentials. It is the **only** gate that safely sees fork PRs.
 - **The self-hosted runner** (`scripts/ci-check.sh`, status context `ci/hetzner-lint`) runs on
-  `cto-tycoon-hel1` in a process holding Coolify, Neon, GitHub and Matrix tokens. It therefore
-  **refuses fork PRs outright**, and must keep doing so.
+  `multiverse-games-hel1` (SSH alias `games`) in a process holding Coolify, Neon, GitHub and Matrix
+  tokens. It therefore **refuses fork PRs outright**, and must keep doing so. It moved off
+  `cto-tycoon-hel1` on 2026-08-13; the status context keeps the old name because branch protection
+  requires that exact string.
 
 Neither can do the other's job. Do not delete the Actions workflow to "move CI off GitHub", and do
 not relax the fork guard to make a fork PR go green. `scripts/ci-check.sh` must stay equivalent to
