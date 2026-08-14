@@ -1,7 +1,9 @@
 # Who fields a combatant, and why the combat primitives still measure nothing
 
-**Measured 2026-08-14 on `combat-primitive-consumption` at `6c1b376` with `origin/main` `0dbf94c`
-merged in** (that merge is `CLAUDE.md` only — no `packages/` change). Four seeds
+**Measured 2026-08-14 on `combat-primitive-consumption` at `6c1b376` with then-`origin/main` `0dbf94c`
+merged in** (that merge is `CLAUDE.md` only — no `packages/` change). #144 has since merged as
+`b02892b`, and `git diff origin/main HEAD` on the measurement branch is exactly the four added
+harness/doc files — so this **is** a measurement of `origin/main`. Four seeds
 (`0x0badc0de, 0x00abcdef, 0x12345678, 0x00041000`), 1200 world ticks, reference scenario with raids
 on, driven through `policyFor` → `runEpisode`. Harness: branch `measure/assign-role-combatants`,
 `packages/scenario/test/unit/tmp-*.test.ts` — temporary, not merged.
