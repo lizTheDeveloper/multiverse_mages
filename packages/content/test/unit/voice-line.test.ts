@@ -138,6 +138,35 @@ describe('voice line banks', () => {
     }
   });
 
+  it('gives every species a line about every other species', () => {
+    // The funniest material in the game is the species being funny at each
+    // other, and the matrix was 11 of 30 ordered pairs — draconic had none at
+    // all, because its one candidate line named no species and was re-tiered.
+    // A patchy matrix is invisible in play: you simply never hear the pair.
+    const speciesIds = banks.filter((b) => b.speakerKind === 'species').map((b) => b.speaker);
+    for (const bank of banks.filter((b) => b.speakerKind === 'species')) {
+      const targets = new Set(bank.lines.filter((l) => l.tier === 'cross-species').map((l) => l.about));
+      for (const other of speciesIds.filter((id) => id !== bank.speaker)) {
+        expect(targets.has(other), `${bank.speaker} says nothing about ${other}`).toBe(true);
+      }
+      expect(targets.has(bank.speaker), `${bank.speaker} talks about itself`).toBe(false);
+    }
+  });
+
+  it('never hardcodes a gendered pronoun in any line', () => {
+    // A bark fires while a SPECIFIC mage is on screen, and any mage of any
+    // species may be of any gender — so a baked-in pronoun misgenders the
+    // character being pointed at about half the time. Fifteen shipped lines
+    // did this before a subagent noticed while writing new ones; the rule was
+    // stated in §8.9 and enforced nowhere.
+    const gendered = /\b(she|he|her|his|him|hers)\b/iu;
+    for (const bank of banks) {
+      for (const line of bank.lines) {
+        expect(gendered.test(line.text), `${line.id}: ${line.text}`).toBe(false);
+      }
+    }
+  });
+
   it('has no duplicate line ids across all banks', () => {
     const ids = banks.flatMap((b) => b.lines.map((l) => l.id));
     expect(new Set(ids).size).toBe(ids.length);
