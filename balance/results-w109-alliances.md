@@ -59,15 +59,27 @@ which requires holding portal magic — against species curiosity:
 | species | curiosity | runs reaching the gate | ascended |
 |---|--:|--:|--:|
 | gnome | 1792 | 17 | 17 |
+| human | 1152 | 14 | 6 |
 | elf | 896 | 16 | 20 |
 | dwarf | 512 | 3 | 2 |
 | orc | 384 | **0** | 2 |
 | draconic | 256 | **0** | 0 |
 
-Human (curiosity 1152) is absent from that table — its arm was not taken — so the
-ordering is a trend and not a demonstration of strict monotonicity. The load-bearing
-half needs no ordering: **the two least curious species never reach the gate, and they
-are exactly the two the mechanic exists to rescue.** That asymmetry is inverted with respect
+**It is a trend and not strict monotonicity** — elf, at curiosity 896, reaches the gate
+more often than human at 1152. The load-bearing half needs no ordering at all: **the two
+least curious species never reach the gate in a hundred runs each, and they are exactly
+the two the mechanic exists to rescue.**
+
+One provenance note on that table. Five of the six arms reproduce `balance/w99/`
+*exactly* — draconic 26.88 nodes and 4.26 living mages, elf 54.03 and 2.84, and so on.
+**Human does not**: 40.92 nodes against 39.62, 188.10 living mages against 174.68, with
+2 of 100 runs ending in a different terminal state. That is not this branch: `w99` was
+recorded on `main` at `e2a15cf` and this branch is based on `ebe4fb4`, eighteen commits
+later, and human is the most populous arm and so the most sensitive to anything in
+between. The figure this table quotes is stable across both builds of this branch —
+14 runs reaching the gate, before and after the mask fix — but a reader comparing
+human's *other* columns against `w99` should expect the gap and should not attribute it
+to action 16. That asymmetry is inverted with respect
 to the design intent. It is a fact about where the portal nodes sit in the grid, and
 per the brief it is reported rather than patched: the gate stays literal.
 

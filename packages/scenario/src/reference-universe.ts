@@ -230,10 +230,10 @@ export interface ReferenceOptions {
    * that carries the `portal` primitive, and both such nodes sit at tier 4 and
    * 5 of a seven-node chain across `rego-limen` and `intellego-limen`. Measured
    * over a hundred runs per species on this build, how often a universe ever
-   * reaches that gate tracks species curiosity — gnome (1792) 17 runs, elf
-   * (896) 16, dwarf (512) 3, orc (384) 0, draconic (256) 0. Five of the six
-   * species; human is not in that list and its rank is unmeasured, so read the
-   * ordering as a trend rather than as a proof of strict monotonicity.
+   * reaches that gate tracks species curiosity — gnome (1792) 17 runs, human
+   * (1152) 14, elf (896) 16, dwarf (512) 3, orc (384) 0, draconic (256) 0. A
+   * trend and **not** strict monotonicity: elf outreaches human from lower
+   * curiosity.
    *
    * The load-bearing half needs no ordering at all: **the two least curious
    * species never reach the gate, and they are exactly the two the alliance
