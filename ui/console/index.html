@@ -1,0 +1,472 @@
+<!doctype html>
+<!--
+  Multiverse Mages — the console.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  The other eleven pages each answer one question about one surface. This one
+  asks whether they compose: a single universe, a single clock, and every
+  surface that the read path can actually feed, drawn side by side from one
+  frame.
+
+  It is deliberately NOT a twelfth direction. Nothing here is invented — if a
+  pane cannot be fed it says so and says why, sourced from capabilities()
+  rather than from prose. The value of the page is that the gaps line up
+  visibly next to the things that work.
+
+  THE SPINE. The strip along the top is the whole run at once — favor, live
+  cells and living mages across 400 ticks, with the current tick as a plumb
+  line. It exists because of finding 1.9: the read path emits states and no
+  events, so the only way to see that the Human species ended at tick 273 is to
+  plot the run and look. A client that only ever showed you "now" would never
+  have told you.
+
+  Serve with `npm run ui`, then open /ui/console/.
+
+  KNOWN COST: the same one ui/glow/ carries and for the same reason — telling
+  *unaffordable* apart from *impossible* needs the action's price, which §4.2's
+  single mask bit does not carry and §5 says the client may not compute. Every
+  control that relied on it is marked †.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — the console</title>
+<link rel="stylesheet" href="../shared/theme.css">
+
+<style>
+  .wrap { max-width: 96rem; margin: 0 auto; padding: 1.6rem 1.25rem 4rem; }
+  .eyebrow { font: 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--god); }
+  h1 { font: 400 clamp(1.6rem, 3.2vw, 2.3rem)/1.08 var(--serif); margin: .3rem 0 .45rem; letter-spacing: -.015em; }
+  .lede { color: var(--soft); max-width: 68ch; margin: 0 0 .4rem; }
+  .lede b { color: var(--god); font-weight: 600; }
+  .lede em { color: var(--ink); font-style: italic; }
+  code { font: 12px var(--mono); color: var(--ink); }
+
+  /* ------------------------------------------------------------ the spine */
+  .spine { position: relative; margin: 1.3rem 0 .35rem; border: 1px solid var(--edge);
+    border-radius: 4px; background: var(--panel); overflow: hidden; }
+  .spine canvas { display: block; width: 100%; height: 108px; cursor: ew-resize; }
+  .spine .legend { display: flex; gap: 1rem; flex-wrap: wrap; padding: .4rem .7rem;
+    border-top: 1px solid var(--edge); font: 10px var(--mono); letter-spacing: .09em;
+    text-transform: uppercase; color: var(--faint); background: var(--sunk); }
+  .spine .legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle;
+    margin-right: .35rem; }
+  .spine .legend b { color: var(--soft); font-weight: 500; }
+
+  .clockbar { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin: .55rem 0 1.2rem;
+    font: 11px var(--mono); color: var(--faint); }
+  .clockbar .tick { font: 400 1.9rem/1 var(--serif); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .clockbar .of { color: var(--faint); }
+  .clockbar .st { padding: .12rem .4rem; border: 1px solid var(--edge); border-radius: 2px; color: var(--soft); }
+  .clockbar .spacer { flex: 1 }
+  .clockbar button { font: 11px var(--mono); padding: .3rem .6rem; border: 1px solid var(--edge);
+    border-radius: 3px; background: var(--plate); color: var(--soft); cursor: pointer; }
+  .clockbar button[aria-pressed="true"] { border-color: var(--god); color: var(--god); }
+
+  /* ------------------------------------------------------------- the panes */
+  .panes { display: grid; grid-template-columns: minmax(17rem, 20rem) minmax(20rem, 1fr) minmax(17rem, 22rem);
+    gap: .8rem; align-items: start; }
+  @media (max-width: 78rem) { .panes { grid-template-columns: 1fr 1fr } }
+  @media (max-width: 52rem) { .panes { grid-template-columns: 1fr } }
+
+  .pane { border: 1px solid var(--edge); border-radius: 4px; background: var(--panel); overflow: hidden; }
+  .pane > h2 { margin: 0; padding: .55rem .7rem; border-bottom: 1px solid var(--edge);
+    font: 10px var(--mono); letter-spacing: .13em; text-transform: uppercase; color: var(--faint);
+    font-weight: 500; display: flex; align-items: baseline; gap: .5rem; }
+  .pane > h2 .s { margin-left: auto; color: var(--rule-hi); }
+  .pane .body { padding: .7rem; display: flex; flex-direction: column; gap: .7rem; }
+  .pane .absent { padding: .7rem; font: italic 12.5px/1.55 var(--serif); color: var(--soft);
+    border-left: 2px solid var(--warn); background: var(--sunk); margin: .7rem; }
+
+  /* resources */
+  .res { display: grid; grid-template-columns: auto 1fr auto; gap: .3rem .55rem; align-items: center;
+    font: 11px var(--mono); }
+  .res .k { color: var(--faint); letter-spacing: .09em; text-transform: uppercase; }
+  .res .track { height: 5px; border-radius: 3px; background: var(--sunk); position: relative; overflow: hidden; }
+  .res .track i { position: absolute; inset: 0 auto 0 0; background: var(--god); box-shadow: var(--glow-soft); }
+  .res .v { color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; min-width: 4.2rem; }
+
+  /* the sixteen verbs */
+  .verbs { display: flex; flex-direction: column; gap: .28rem; }
+  .verbs .v { display: grid; grid-template-columns: 1.4rem 1fr auto; gap: .45rem; align-items: center;
+    padding: .3rem .45rem; border: 1px solid transparent; border-radius: 3px;
+    font: 11px var(--mono); color: var(--ctl-latent-fg); cursor: default; }
+  .verbs .v .n { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .verbs .v .c { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .verbs .v[data-s="charged"] { border-color: var(--ctl-charged-border); background: var(--ctl-charged-bg);
+    color: var(--ctl-charged-fg); box-shadow: var(--glow-charged); }
+  .verbs .v[data-s="charged"] .n, .verbs .v[data-s="charged"] .c { color: var(--ctl-charged-fg); opacity: .85 }
+  .verbs .v[data-s="denied"] { border: 1px dashed var(--ctl-denied-border); color: var(--ctl-denied-fg); }
+  .verbs .v[data-s="latent"] { border: 1px solid var(--ctl-latent-border); }
+  .verbs .v[data-sel="true"] { outline: 2px solid var(--god); outline-offset: 1px; }
+  .verbs .v[data-k="true"] { cursor: pointer; }
+  .verbs .v[data-recon="true"] .n::after { content: "†"; color: var(--warn); margin-left: .15rem; }
+
+  /* the seventy cells */
+  .grid70 { display: grid; grid-template-columns: 5.5rem repeat(14, 1fr); gap: 2px; font: 9px var(--mono); }
+  .grid70 .h { color: var(--faint); letter-spacing: .04em; text-transform: uppercase;
+    writing-mode: vertical-rl; transform: rotate(180deg); justify-self: center; padding-bottom: .2rem; }
+  .grid70 .rl { color: var(--faint); letter-spacing: .06em; text-transform: uppercase;
+    align-self: center; text-align: right; padding-right: .3rem; }
+  .grid70 .c { aspect-ratio: 1; border-radius: 2px; border: 1px solid var(--edge);
+    background: var(--sunk); display: flex; align-items: center; justify-content: center;
+    color: var(--faint); font-size: 8px; }
+  .grid70 .c[data-off="true"] { border-style: dotted; background: transparent; color: transparent; }
+  .grid70 .c[data-live="true"] { border-color: currentColor; color: var(--ink);
+    background: color-mix(in srgb, currentColor 18%, transparent); }
+  .f-limen { color: var(--limen) } .f-mentem { color: var(--mentem) }
+  .f-nomen { color: var(--nomen) } .f-terram { color: var(--terram) }
+  .gridkey { font: 10px var(--mono); color: var(--faint); line-height: 1.6; }
+
+  /* population */
+  .pop { display: grid; grid-template-columns: 4.6rem repeat(8, 1fr); gap: 2px; font: 9px var(--mono); }
+  .pop .rl { color: var(--soft); align-self: center; text-align: right; padding-right: .3rem; font-size: 10px; }
+  .pop .h { color: var(--faint); text-align: center; }
+  .pop .c { aspect-ratio: 1; border-radius: 2px; background: var(--sunk); border: 1px solid var(--edge);
+    display: flex; align-items: center; justify-content: center; color: var(--ink); font-size: 9px;
+    font-variant-numeric: tabular-nums; }
+  .pop .c[data-n="0"] { color: transparent; background: transparent; border-style: dotted; }
+  .pop .gone { color: var(--loss); }
+
+  /* candidates */
+  .cands { display: flex; flex-direction: column; gap: 2px; font: 10.5px var(--mono); }
+  .cands .row { display: grid; grid-template-columns: 1.5rem 1fr; gap: .45rem; padding: .22rem .4rem;
+    background: var(--sunk); border-radius: 2px; font-variant-numeric: tabular-nums; }
+  .cands .row .ix { color: var(--faint); }
+  .cands .row .p { color: var(--ink); }
+  .cands .more { padding: .22rem .4rem; color: var(--faint); }
+
+  footer { margin-top: 2.2rem; padding-top: .9rem; border-top: 1px solid var(--edge);
+    color: var(--faint); font: 11px var(--mono); line-height: 1.8; }
+  footer a { color: var(--god); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages · the surfaces, composed · contracts §4</div>
+  <h1>One universe, one clock</h1>
+  <p class="lede">The eleven prototypes each answer one question about one surface. This asks whether
+  they <em>compose</em> — every pane the read path can feed, drawn from a single frame of a single
+  recorded universe, against a single clock.</p>
+  <p class="lede"><b>Scrub the spine.</b> It is the whole four-hundred-tick run at once, and it is here
+  because the read path emits states and no events: the only way to see that a species ended is to
+  plot the run and look at it.</p>
+
+  <div id="srchost" style="margin:1.1rem 0 0"></div>
+
+  <div class="spine">
+    <canvas id="spine" width="1800" height="216" aria-label="Favor, live cells and living mages across the run"></canvas>
+    <div class="legend">
+      <span><i style="background:var(--god)"></i><b>favor</b></span>
+      <span><i style="background:var(--mentem)"></i><b>live cells</b></span>
+      <span><i style="background:var(--warn)"></i><b>mages living</b></span>
+      <span><i style="background:var(--loss)"></i><b>a species ends</b></span>
+      <span class="spacer"></span>
+    </div>
+  </div>
+
+  <div class="clockbar">
+    <span class="tick" id="tickv">—</span>
+    <span class="of">of <b id="tickmax">—</b> · era <b id="erav">—</b></span>
+    <span class="st" id="statusv">—</span>
+    <span class="spacer"></span>
+    <button type="button" id="play" aria-pressed="false">▶ play</button>
+    <span id="themehost"></span>
+  </div>
+
+  <div class="panes">
+    <div class="pane">
+      <h2>The god's hand <span class="s">§4.1 · §4.2</span></h2>
+      <div class="body">
+        <div class="res" id="res"></div>
+        <div class="verbs" id="verbs"></div>
+        <div class="gridkey"><b style="color:var(--warn)">†</b> the mask said only <em>no</em>. Latent
+          and denied were told apart by pricing the action here, which §5 says the client may not do.</div>
+      </div>
+    </div>
+
+    <div class="pane">
+      <h2>What the world knows <span class="s">seventy cells</span></h2>
+      <div class="body">
+        <div class="grid70" id="grid70"></div>
+        <div class="gridkey" id="gridkey"></div>
+      </div>
+    </div>
+
+    <div class="pane">
+      <h2>Who is alive <span class="s">species × deepest tier</span></h2>
+      <div class="body">
+        <div class="pop" id="pop"></div>
+        <div class="gridkey" id="popkey"></div>
+      </div>
+      <h2 style="border-top:1px solid var(--edge)">The chosen verb's candidates <span class="s">§4.4</span></h2>
+      <div class="body">
+        <div class="cands" id="cands"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Composed from <code>ui/session.json</code> through <code>ui/shared/session.js</code> — decoding only.
+    The per-surface studies are at <a href="../">ui/</a>; what wiring them found is in
+    <a href="../shared/README.md">shared/README.md</a>.<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+</div>
+
+<script type="module">
+import { mountThemeControl } from '../shared/theme.js';
+import { mountSourceNote, openSession, reconstructedCharge } from '../shared/session.js';
+
+const session = await openSession({ recording: '../session.json' }).catch(() => null);
+mountSourceNote(document.getElementById('srchost'), session,
+  ['resources', 'ruleset', 'knowledgeAggregates', 'mageBuckets', 'candidates', 'eventDeltas']);
+
+const el = (id) => document.getElementById(id);
+const state = { at: 0, verb: 9, playing: false };
+
+if (session === null) {
+  document.querySelector('.panes').innerHTML =
+    '<p class="lede">No recording loaded — run <code>npm run ui</code> and open this over http.</p>';
+} else {
+  state.at = session.frameCount - 1;
+  boot();
+}
+
+function boot() {
+  /* One pass over the run, kept because every pane wants a denominator and the
+     read path publishes no ceilings: §1.1 makes favorCap rise with worship
+     tier, so even a constant would be wrong later. The run's own peak is at
+     least a number this page can defend. */
+  const series = Array.from({ length: session.frameCount }, (_, i) => {
+    const f = session.frame(i);
+    const buckets = f.mageBuckets();
+    return {
+      favor: f.resources().favor,
+      cells: f.knowledge().filter((c) => c.live).length,
+      mages: buckets.reduce((n, m) => n + m.living, 0),
+      alive: buckets.map((m) => m.living > 0),
+    };
+  });
+  const peak = {
+    favor: Math.max(1, ...series.map((s) => s.favor)),
+    cells: Math.max(1, ...series.map((s) => s.cells)),
+    mages: Math.max(1, ...series.map((s) => s.mages)),
+  };
+  /* The ticks at which a species count reaches zero for good. Derived here
+     rather than read, because nothing emits it — which is the finding the
+     spine exists to make visible. */
+  const endings = [];
+  for (let s = 0; s < 6; s += 1) {
+    for (let i = 1; i < series.length; i += 1) {
+      if (series[i - 1].alive[s] && !series[i].alive[s]) {
+        endings.push({ at: i, name: session.frame(i).mageBuckets()[s].name });
+      }
+    }
+  }
+
+  const canvas = el('spine');
+  const ctx = canvas.getContext('2d');
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  function drawSpine() {
+    const w = canvas.width;
+    const h = canvas.height;
+    const pad = 12;
+    ctx.clearRect(0, 0, w, h);
+    const x = (i) => pad + (i / (series.length - 1)) * (w - pad * 2);
+    const y = (v, max) => h - pad - (v / max) * (h - pad * 2);
+
+    // A species ending, drawn first so the lines cross it rather than hide it.
+    ctx.strokeStyle = css('--loss');
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    for (const e of endings) {
+      ctx.beginPath();
+      ctx.moveTo(x(e.at), pad);
+      ctx.lineTo(x(e.at), h - pad);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    const line = (key, max, colour, width) => {
+      ctx.strokeStyle = colour;
+      ctx.lineWidth = width;
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      series.forEach((s, i) => (i === 0 ? ctx.moveTo(x(i), y(s[key], max)) : ctx.lineTo(x(i), y(s[key], max))));
+      ctx.stroke();
+    };
+    line('favor', peak.favor, css('--god'), 3);
+    line('cells', peak.cells, css('--mentem'), 3);
+    line('mages', peak.mages, css('--warn'), 3);
+
+    // The plumb line: where you are.
+    ctx.strokeStyle = css('--ink');
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x(state.at), 0);
+    ctx.lineTo(x(state.at), h);
+    ctx.stroke();
+  }
+
+  const seek = (ev) => {
+    const r = canvas.getBoundingClientRect();
+    const frac = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+    state.at = Math.round(frac * (session.frameCount - 1));
+    paint();
+  };
+  canvas.addEventListener('pointerdown', (ev) => { canvas.setPointerCapture(ev.pointerId); seek(ev); });
+  canvas.addEventListener('pointermove', (ev) => { if (ev.buttons === 1) seek(ev); });
+  canvas.tabIndex = 0;
+  canvas.addEventListener('keydown', (ev) => {
+    const step = ev.shiftKey ? 20 : 1;
+    if (ev.key === 'ArrowLeft') { state.at = Math.max(0, state.at - step); paint(); ev.preventDefault(); }
+    if (ev.key === 'ArrowRight') { state.at = Math.min(session.frameCount - 1, state.at + step); paint(); ev.preventDefault(); }
+  });
+
+  el('play').addEventListener('click', () => {
+    state.playing = !state.playing;
+    el('play').setAttribute('aria-pressed', String(state.playing));
+    el('play').textContent = state.playing ? '❚❚ pause' : '▶ play';
+    if (state.playing) step();
+  });
+  function step() {
+    if (!state.playing) return;
+    state.at = state.at >= session.frameCount - 1 ? 0 : state.at + 1;
+    paint();
+    setTimeout(() => requestAnimationFrame(step), 60);
+  }
+
+  // The verb rows, built once so a row keeps its identity as it lights.
+  const verbs = el('verbs');
+  for (const a of session.frame(0).actions()) {
+    const row = document.createElement('div');
+    row.className = 'v';
+    row.dataset.id = String(a.id);
+    row.innerHTML = `<span class="n">${String(a.id).padStart(2, '0')}</span>`
+      + `<span class="l">${a.name.replace(/([a-z])([A-Z])/gu, '$1 $2').toLowerCase()}</span>`
+      + '<span class="c"></span>';
+    row.addEventListener('click', () => {
+      if (row.dataset.k !== 'true') return;
+      state.verb = a.id;
+      paint();
+    });
+    verbs.append(row);
+  }
+
+  // The seventy-cell grid, built once: five techniques down, fourteen forms across.
+  const grid = el('grid70');
+  const forms = session.content.forms;
+  const techniques = session.content.techniques;
+  grid.append(Object.assign(document.createElement('span'), { className: 'rl' }));
+  for (const f of forms) {
+    grid.append(Object.assign(document.createElement('span'), { className: 'h', textContent: f.id.slice(0, 6) }));
+  }
+  const cellNodes = new Map();
+  for (const t of techniques) {
+    grid.append(Object.assign(document.createElement('span'), { className: 'rl', textContent: t.id }));
+    for (const f of forms) {
+      const c = document.createElement('span');
+      c.className = `c f-${f.id}`;
+      c.title = `${t.id} ${f.id}`;
+      grid.append(c);
+      cellNodes.set(`${t.id}-${f.id}`, c);
+    }
+  }
+
+  mountThemeControl(el('themehost'), () => requestAnimationFrame(drawSpine));
+  paint();
+
+  function paint() {
+    const f = session.frame(state.at);
+    const clock = f.clock();
+    el('tickv').textContent = String(clock.worldTick);
+    el('tickmax').textContent = String(session.frameCount - 1);
+    el('erav').textContent = String(clock.era);
+    el('statusv').textContent = clock.engaged ? 'engagement' : f.status();
+
+    // Resources.
+    const r = f.resources();
+    const bar = (k, v, max, suffix = '') => `
+      <span class="k">${k}</span>
+      <span class="track"><i style="width:${Math.min(100, (v / max) * 100)}%"></i></span>
+      <span class="v">${v.toFixed(v < 10 ? 1 : 0)}${suffix}</span>`;
+    const inst = f.institutions();
+    el('res').innerHTML =
+      bar('favor', r.favor, peak.favor)
+      + bar('worship', r.worship, Math.max(1, peak.favor / 10))
+      + bar('materials', r.materials, 3200)
+      + `<span class="k">tier</span><span class="track"></span><span class="v">${r.worshipTier}</span>`
+      + `<span class="k">library</span><span class="track"></span><span class="v">${inst.libraryDepth}</span>`
+      + `<span class="k">grimoires</span><span class="track"></span><span class="v">${inst.grimoires}</span>`;
+
+    // The sixteen verbs, and their candidate counts.
+    const lists = f.candidateLists();
+    for (const row of verbs.children) {
+      const id = Number(row.dataset.id);
+      const { state: s, reconstructed, needs } = reconstructedCharge(f, session, id);
+      const list = lists.get(id);
+      row.dataset.s = s;
+      row.dataset.recon = String(reconstructed);
+      row.dataset.k = String(list !== undefined && list.length > 0);
+      row.dataset.sel = String(id === state.verb);
+      row.querySelector('.c').textContent = list === undefined ? '' : `${list.length}`;
+      row.title = s === 'charged'
+        ? `legal this tick${list === undefined ? '' : ` · ${list.length} candidates`}`
+        : reconstructed && s === 'latent'
+          ? `masked — priced here, it needs ${needs} favor and you hold ${r.favor.toFixed(1)}`
+          : 'masked, and the mask does not say why';
+    }
+
+    // The grid: live cells in their form's hue, cells the ruleset never enables dotted.
+    const rules = f.ruleset();
+    const onT = new Set(rules.techniques.filter((t) => t.permitted).map((t) => t.id));
+    const onF = new Set(rules.forms.filter((x) => x.permitted).map((x) => x.id));
+    let live = 0;
+    let nodes = 0;
+    for (const c of f.knowledge()) {
+      const node = cellNodes.get(`${c.technique}-${c.form}`);
+      if (node === undefined) continue;
+      const enabled = onT.has(c.technique) && onF.has(c.form);
+      node.dataset.off = String(!enabled);
+      node.dataset.live = String(c.live);
+      node.textContent = c.live ? String(c.deepestTier) : '';
+      node.title = `${c.technique} ${c.form} — ${c.live
+        ? `${c.nodesKnown} nodes, deepest tier ${c.deepestTier}, ${c.redundancy} instances`
+        : enabled ? 'permitted, and nobody knows anything in it' : 'not enabled by the ruleset'}`;
+      if (c.live) { live += 1; nodes += c.nodesKnown; }
+    }
+    el('gridkey').innerHTML = `<b>${live}</b> cells live · <b>${nodes}</b> nodes known · a number is the `
+      + 'deepest tier reached. Dotted cells are outside the ruleset; plain cells are permitted and empty.';
+
+    // Population: species by deepest tier.
+    const buckets = f.mageBuckets();
+    const pop = el('pop');
+    pop.innerHTML = '<span class="rl"></span>'
+      + Array.from({ length: 8 }, (_, i) => `<span class="h">${i === 0 ? '–' : i}</span>`).join('');
+    for (const b of buckets) {
+      pop.insertAdjacentHTML('beforeend',
+        `<span class="rl${b.living === 0 ? ' gone' : ''}">${b.name}</span>`
+        + b.tiers.map((n) => `<span class="c" data-n="${n}">${n}</span>`).join(''));
+    }
+    const ended = endings.filter((e) => e.at <= state.at);
+    el('popkey').innerHTML = `<b>${buckets.reduce((n, b) => n + b.living, 0)}</b> mages · column is the `
+      + 'deepest tier that mage holds, <b>–</b> is untaught.'
+      + (ended.length > 0
+        ? ` <span style="color:var(--loss)">${ended.map((e) => `${e.name} ended at tick ${e.at}`).join('; ')}</span>`
+          + ' — derived by diffing frames, because nothing announces it.'
+        : '');
+
+    // The chosen verb's candidate list, as the integers it is.
+    const list = lists.get(state.verb) ?? [];
+    el('cands').innerHTML = list.length === 0
+      ? '<div class="more">no candidates for this verb this tick</div>'
+      : list.slice(0, 10).map((c, i) =>
+          `<div class="row"><span class="ix">${i}</span><span class="p">${c.params.join(' , ')}</span></div>`).join('')
+        + (list.length > 10 ? `<div class="more">+ ${list.length - 10} more — and every slot is handles, not names</div>` : '');
+
+    drawSpine();
+  }
+}
+</script>

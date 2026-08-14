@@ -21,7 +21,7 @@
  * policy's output layer, and renumbering one is invisible everywhere.
  */
 
-import { MAGE_ROLE } from '@mm/state';
+import { MAGE_ROLE, cellIdAt } from '@mm/state';
 import {
   ACTION_SPACE_SIZE,
   ALL_GOD_ACTIONS,
@@ -29,13 +29,16 @@ import {
   GOD_ACTION,
   PARAMETERIZED_ACTIONS,
   buildCandidates,
+  buildCatalogue,
   candidateAt,
   candidateSlotCount,
   isGodAction,
+  isLegal,
+  legalityMask,
 } from '@mm/agent-api';
 import { describe, expect, it } from 'vitest';
 
-import { FIXTURE_CATALOGUE, firstUniverse, secondUniverse } from './fixtures.js';
+import { FIXTURE_CATALOGUE, FIXTURE_NODES, firstUniverse, secondUniverse } from './fixtures.js';
 
 describe('task 4.3 — the discrete action enumeration', () => {
   it('matches contracts.md §4.2 id for id', () => {
@@ -164,18 +167,48 @@ describe('candidate lists are deterministic and never longer than k', () => {
     );
   });
 
-  it('offers founding knowledge only for permitted cells and tier-1 nodes, never held ones', () => {
+  it('offers founding knowledge only for permitted cells and tier-1 nodes with no instance anywhere', () => {
     const world = firstUniverse();
-    const lists = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+    // Node 7 is a tier-1 root in a permitted cell that the fixture universe has
+    // never held. The catalogue is widened here rather than in `fixtures.ts`
+    // because every other suite reads the fixture's knowledge channels, and a
+    // seventh node would move them.
+    const catalogue = buildCatalogue(
+      [...FIXTURE_NODES, { nodeId: 7, cellId: cellIdAt(0, 0), tier: 1 }],
+      [1, 2, 3],
+    );
+    const lists = buildCandidates({ state: world.state, catalogue });
     const grants = lists.get(GOD_ACTION.grantFoundingKnowledge) ?? [];
     expect(grants.length).toBeGreaterThan(0);
     for (const grant of grants) {
-      const node = FIXTURE_CATALOGUE.node(grant.params[1] as number);
-      expect(node?.tier).toBe(1);
+      expect(catalogue.node(grant.params[1] as number)?.tier).toBe(1);
+      // Node 1 sits in a mage's mind and in the library; node 3 sits in the
+      // library alone. `grantPlan` refuses both — `instanceCount(nodeId) > 0`
+      // does not care where the instance is — so neither may be offered.
+      expect(grant.params[1]).toBe(7);
     }
-    // Mage 0 already holds node 1, so that pair is absent.
+    // Every living mage is a legal target for the one node that has no
+    // instance. The dead fourth mage is not.
+    expect(grants.map((grant) => grant.params[0])).toEqual([
+      world.mages[0],
+      world.mages[1],
+      world.mages[2],
+    ]);
+  });
+
+  it('offers nothing at all once every permitted root exists somewhere', () => {
+    // The fixture's two permitted tier-1 nodes are node 1 (a mind and the
+    // library) and node 3 (the library only). Both exist, so there is nothing
+    // left to found and §4.2's action 8 is structurally illegal.
+    //
+    // This is the mask agreeing with the rules rather than offering a
+    // submission the resolver will silently refuse: `grantPlan` would have
+    // turned down every pair in the list this used to produce.
+    const world = firstUniverse();
+    const lists = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+    expect(lists.get(GOD_ACTION.grantFoundingKnowledge)).toHaveLength(0);
     expect(
-      grants.some((g) => g.params[0] === world.mages[0] && g.params[1] === 1),
+      isLegal(legalityMask({ state: world.state, candidates: lists }), GOD_ACTION.grantFoundingKnowledge),
     ).toBe(false);
   });
 

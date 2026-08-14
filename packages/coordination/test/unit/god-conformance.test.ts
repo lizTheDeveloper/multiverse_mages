@@ -218,12 +218,20 @@ describe('prestige buys stocks and never rates', () => {
 
   it('grants exactly those four and nothing else, at every prestige level', () => {
     for (const prestige of [0, 1, 2048, constants().prestigeCap, constants().prestigeCap * 10]) {
-      expect(Object.keys(legacyGrant(prestige, constants())).sort()).toEqual([
-        'archiveNodes',
-        'favor',
-        'materials',
-        'populace',
-      ]);
+      expect(Object.keys(legacyGrant(prestige, constants())).sort()).toEqual(
+        [
+          // The four stock channels, one per entry in `LEGACY_CHANNELS`.
+          'archiveNodes',
+          'favor',
+          'materials',
+          'populace',
+          // Not a fifth channel. `archiveMaxTier` grants nothing — it is the
+          // authored bound on how deep a seeded instance may be, passed through
+          // from content because the count above cannot be honoured without it.
+          // A channel is something prestige buys; this is a limit on one.
+          'archiveMaxTier',
+        ].sort(),
+      );
     }
   });
 

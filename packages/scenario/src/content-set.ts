@@ -62,11 +62,14 @@ import {
 } from '@mm/rules-magic';
 import type { SpeciesAffinities } from '@mm/rules-world';
 import {
+  readApplicationWeights,
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
   territoryYieldShares,
 } from '@mm/rules-world';
+import type { CombatEffectIndex } from '@mm/rules-raid';
+import { combatEffectIndex } from '@mm/rules-raid';
 import type { WorldStepDeps } from '@mm/coordination';
 import {
   godEffectHooks,
@@ -320,10 +323,17 @@ export function catalogAndCells(registry: ContentRegistry): {
  *
  * It is threaded here rather than anywhere else because this is the function
  * that decides what a running universe is made of. A read in a package nothing
- * assembles registers nothing, which is the correct answer and not a limitation:
- * `@mm/rules-raid` consumes seven primitives off `node.effects` and no package
- * depends on it, so those seven are not reachable by knowledge in any
- * simulation that exists today.
+ * assembles registers nothing, which is the correct answer and not a limitation.
+ *
+ * That sentence used to end *"…so `@mm/rules-raid`'s seven combat primitives are
+ * not reachable by knowledge in any simulation that exists today"*, and it had
+ * been false since `raids.ts` was written: this package depends on
+ * `@mm/rules-raid`, installs its raid system in the reference world loop by
+ * default, and `arbitration.ts` has always turned a held node into damage. What
+ * was missing was the *fetch* — arbitration read `registry.nodes` itself, so the
+ * recorder saw nothing and the check reported seven live consumers as absent.
+ * `combat` below is that fetch, and it is handed to the arbiter as a required
+ * argument so the wire cannot be cut without a type error.
  *
  * Defaulted so every existing caller keeps working and discards the recording.
  * Nothing is conditional on it — the same data is fetched either way — so a
@@ -333,7 +343,7 @@ export function worldDeps(
   registry: ContentRegistry,
   traditionId: ContentId,
   recorder: ConsumptionRecorder = createConsumptionRecorder(),
-): WorldStepDeps {
+): WorldStepDeps & { readonly combat: CombatEffectIndex } {
   const { catalog, cells } = catalogAndCells(registry);
   const { speciesOf, ids: speciesIds } = speciesTable(registry);
   const knowledgeFor = (state: SimState): KnowledgeSubsystem =>
@@ -396,11 +406,30 @@ export function worldDeps(
   // `coordination/universe-effects.ts` — and the measurement that says it is
   // real rather than plumbed is in the W29 commit: resource-yield moved yields
   // +214% to +294%, and build-rate cut time-to-build by 57%.
+  //
+  // w107 gave `resource-yield` a **second** node-driven consumer, and the two
+  // are different mechanisms rather than one written twice. W29's is *ambient*:
+  // a castable, permitted node raises what every laborer cohort produces, and it
+  // costs the mage who knows it nothing. `GOAL.applyMagic` is the other: she
+  // spends the month casting one node she holds, and the materials are hers.
+  // Both reach the loop through `universeEffects`, whose index is built from the
+  // registry directly, so neither adds a registration here.
 
   return {
     speciesOf,
     catalog,
     cells,
+    // The wire from knowledge to a raid, built here for the same reason
+    // `universeEffects` is: this is the function that decides what a running
+    // universe is made of, and the fetch is what registers a consumer.
+    //
+    // It is **not** part of `WorldStepDeps`, and that is a §5 boundary rather
+    // than a stylistic call: `coordination` may not import `@mm/rules-raid` —
+    // a raid's consequences land in world state *through* `coordination`, so
+    // the edge runs the other way — and typing the field there would need the
+    // import. `raids.ts` reads it off `content.deps`, which is
+    // `ReturnType<typeof worldDeps>` and so picks the widening up for free.
+    combat: combatEffectIndex(registry, recorder),
     facets: nodeFacetsFrom(registry),
     affinitiesOf: (species) => {
       const cached = affinityCache.get(species.id);
@@ -410,6 +439,7 @@ export function worldDeps(
       return resolved;
     },
     appeal: readTargetAppeal(registry),
+    application: readApplicationWeights(registry),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),

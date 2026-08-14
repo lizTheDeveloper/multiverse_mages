@@ -367,6 +367,17 @@ describe('contentRevision', () => {
     // Union again: main's revision together with this branch's metis-from-use
     // content. Neither literal is a digest over a preimage holding both.
     //
+    // 162f80bf169296d0e5fd516cc3c5257a -> d4e3047657b4fa8a1a74e1d52f9f5c86,
+    // when `apply-magic` added two scalars to `autonomy-weight.json` — what a
+    // mage-month of applied magic makes, and what she eats while she makes it.
+    // In the preimage for the reason the god constants are: the two numbers
+    // decide how much of a universe's economy comes out of its mages rather than
+    // its fields, so two universes disagreeing about them would keep different
+    // populations while their revisions agreed they were compatible. Unlike the
+    // grant-budget move above, this one **does** change every run: applying
+    // magic is a goal a mage will choose, so a tick's materials and a tick's
+    // goal histogram both move from the first month.
+    //
     // 162f80bf169296d0e5fd516cc3c5257a -> 87fdff6cbf4414b584fef95bf9d4916a,
     // when `w109` appended the seventeenth god cost — action 16, the alliance
     // invitation. A price is in the preimage for the same reason every god
@@ -378,7 +389,16 @@ describe('contentRevision', () => {
     // has to. A digest that only moved when an existing byte changed could not
     // tell a build that knows action 16 from one that does not, and those two
     // builds genuinely cannot replay each other's runs.
-    expect(registry.contentRevision).toBe('87fdff6cbf4414b584fef95bf9d4916a');
+    //
+    // Union, for the third time in this list, and the two moves above are
+    // independent: `apply-magic`'s two `autonomy-weight.json` scalars landed on
+    // `main`, this branch's seventeenth god cost landed here, and neither
+    // literal is a digest over a preimage holding both. `d4e30476` does not
+    // know action 16 exists; `87fdff6c` does not know what a mage-month of
+    // applied magic makes. This tree is the first one holding both, so a sixth
+    // value is what a digest over the union is supposed to produce — not a
+    // disagreement being settled.
+    expect(registry.contentRevision).toBe('b63bd615c1877925b36c7b3eb7812731');
   });
 
   it('is stable across loads of identical content', () => {
