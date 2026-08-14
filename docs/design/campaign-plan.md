@@ -7183,3 +7183,33 @@ substitutes for the other.
 **Third documented claim to fall tonight**, after `vision-audit.md`'s node count and #122's own PR
 body. `CLAUDE.md` already says a document is not a ref for the code it describes. It is now also fair
 to say: **a document is not a ref for the CI that runs it.**
+
+## W145 — the merge log, and the one number that says the discipline worked
+
+Landed tonight, each onto a `main` whose `Verify` was confirmed green **at its own head**:
+
+| PR | what |
+| --- | --- |
+| #135 | `ui/session.json` re-recorded — unblocked a `main` that had been red for four merges |
+| #118 | the quality-diversity search: behaviour archive, null ladder, shape verdict |
+| #133 | `worshipMax` deleted, `legacy-archive-max-tier` given a real consumer |
+| #136 | **the §9 ablation mask reaches the simulation** |
+| #132 | the 200-year ascension baseline #127 stranded by 4m43s |
+
+Waiting, green: **#82** (mask sync), **#122** (raid fidelity), **#139** (the gate check onto `main`),
+**#141** (the process rules into `CLAUDE.md`).
+
+Waiting on the owner: **#138** (CI throughput), and five re-baseline decisions — **#134**
+(affiliation), **#137 + #72** (all cells, one decision), **#140** (academic primitives), **#126**
+(alliances).
+
+**The number:** the ungated drainer ran for 1h44m and produced a `main` with **one confirmed-green
+`Verify` in eight runs**. The gated chain has merged five PRs since, each onto a base whose `Verify`
+was green at its own `headSha`, with **zero** unverified commits. Same repository, same night, same
+PR pool. The difference is entirely the gate.
+
+The chains themselves were killed twice by the harness mid-wait — a fifty-minute poll loop is a
+fragile way to hold state. Replaced with a **persistent `Monitor`** that resolves the run by matching
+`headSha` to `origin/main` and emits only on *change*, so the merge decision happens inline on an
+event rather than inside a script that can be reaped. That is the more durable shape and should be
+the default for anything that has to survive a whole session.
