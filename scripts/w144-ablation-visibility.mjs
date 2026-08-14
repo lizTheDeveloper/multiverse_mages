@@ -25,18 +25,20 @@
  * rather than one, because they are different claims and folding them loses the
  * only interesting one:
  *
- * - `combatBlockMoved` — the five fields this change added or unhardcoded. On
- *   `origin/main` this is `false` for every arm *by construction*: the executor
- *   wrote `combatSources: []`, three zeros and a four-name channel list into
- *   every observation, so no arm could differ from any other.
+ * - `combatBlockMoved` — the five fields this change added or unhardcoded. At
+ *   `b02892b`, the commit this branch was cut from, it is `false` for every arm
+ *   *by construction*: the executor wrote `combatSources: []`, three zeros and a
+ *   four-name channel list into every observation, so no arm could differ from
+ *   any other. That is a statement about that ref; run `git show b02892b` to
+ *   check it rather than trusting this sentence.
  * - `outcomeMoved` — the raid's shape and result, which the record already
  *   carried. A change to reporting must never move this one.
  *
  * ## What it finds, and why the answer is not the one the task expected
  *
- * The reference scenario **joins no combat at all**. Across all eight shipped
- * strategies, two seeds each — 61 raids and 80,615 combatant-ticks — not one
- * combat attempt is begun. The cause is `chooseIntent`'s priority order: theft
+ * The reference scenario **joins no combat at all**. Measured on `b02892b`
+ * across all eight shipped strategies, two seeds each — 61 raids and 80,615
+ * combatant-ticks — not one combat attempt is begun. The cause is `chooseIntent`'s priority order: theft
  * outranks casting, and no shipped strategy grants a raider a combat node, so
  * `firstCastableNode` returns nothing on every tick of every raid.
  *

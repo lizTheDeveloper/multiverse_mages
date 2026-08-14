@@ -317,9 +317,14 @@ describe('a raid reports what happened inside it, not only its shape', { timeout
       }
     }
 
-    // **A tripwire, not a result.** Surveyed across all eight shipped strategies
-    // at two seeds each — 61 raids, 80,615 combatant-ticks — the reference
-    // scenario begins *zero* combat attempts. The cause is `chooseIntent`'s
+    // **A tripwire, not a result — and it watches one task, not the survey.**
+    // This assertion covers exactly the run above: `portal-rush`, seed 12,345,
+    // 400 world ticks. The wider claim it stands in for was a survey taken with
+    // `scripts/w144-ablation-visibility.mjs` on `b02892b` — all eight shipped
+    // strategies at two seeds each, 61 raids, 80,615 combatant-ticks, *zero*
+    // combat attempts — and that number is a statement about that ref, not a
+    // property this test enforces. Re-run the script rather than trusting it.
+    // The cause is `chooseIntent`'s
     // priority order: theft outranks casting, and no shipped strategy grants a
     // raider a combat node, so `firstCastableNode` returns nothing on every tick
     // of every raid. That, and not the mask, is why an arm ablating one of the
