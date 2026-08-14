@@ -253,7 +253,19 @@ interface ArmTotals {
  * wiring it into the default would silently make every other test in this
  * package a test of this wire.
  */
-function armTotals(arm: Arm): ArmTotals {
+/**
+ * Arms are pure functions of their inputs, so each is stepped once per process.
+ *
+ * Not only for speed. A run here is ~1.5 s of tight synchronous stepping, and
+ * vitest's worker sends a progress heartbeat over an RPC that a blocked event
+ * loop starves — the run then fails with `Timeout calling "onTaskUpdate"` while
+ * every assertion passes, which is the most confusing possible way for a suite
+ * to go red. {@link stepped} yields once per world year for the same reason,
+ * which is the pattern `long-run.ts` already established.
+ */
+const armCache = new Map<string, Promise<ArmTotals>>();
+
+async function armTotals(arm: Arm): Promise<ArmTotals> {
   const traditionId = scribingTraditionId();
   const base = worldDeps(traditionId);
   const deps: WorldStepDeps = {
@@ -261,11 +273,16 @@ function armTotals(arm: Arm): ArmTotals {
     academicEffects: academicEffectIndex(registry()),
     ...(arm.ablate === undefined ? {} : { ablation: neutralizing(arm.ablate) }),
   };
-  return stepped(deps, arm.grant);
+  const key = `${arm.grant.map((node) => node.id).join(',')}|${arm.ablate ?? ''}`;
+  const hit = armCache.get(key);
+  if (hit !== undefined) return hit;
+  const run = stepped(deps, arm.grant);
+  armCache.set(key, run);
+  return run;
 }
 
 /** The shared stepping loop, so the no-index arm below is the same run minus one dep. */
-function stepped(deps: WorldStepDeps, grant: readonly NodeFacts[]): ArmTotals {
+async function stepped(deps: WorldStepDeps, grant: readonly NodeFacts[]): Promise<ArmTotals> {
   const simulation = defineWorldSimulation(deps);
   const { state } = seededWorld(simulation.schema, {
     rootSeed: ROOT_SEED,
@@ -279,6 +296,14 @@ function stepped(deps: WorldStepDeps, grant: readonly NodeFacts[]): ArmTotals {
   let lessonsTaught = 0;
   let grimoiresScribed = 0;
   for (let tick = 0; tick < TICKS; tick += 1) {
+    // Once per world year, so the worker's progress RPC is not starved by a
+    // minute of unbroken synchronous stepping. `runLongReference` yields on the
+    // same boundary and says why.
+    if (tick > 0 && tick % 12 === 0) {
+      await new Promise<void>((resolve) => {
+        setImmediate(resolve);
+      });
+    }
     current = step(current, [], source);
     const report = simulation.lastReport() as WorldStepReport;
     researchCompleted += report.researchCompleted;
@@ -397,12 +422,12 @@ describe('a universe that knows these nodes outworks one that does not', () => {
   // what they know reaches their rates. `world-step.ts` documents the optional
   // dep as *"a thing a test can assert against rather than a silent
   // degradation"*; this is that assertion, run three times.
-  it.each(ACADEMIC_PRIMITIVES)('%s: more work finished than when knowledge moves nothing', (primitive) => {
+  it.each(ACADEMIC_PRIMITIVES)('%s: more work finished than when knowledge moves nothing', async (primitive) => {
     const grant = treatmentSet(primitive);
     const metric = METRIC[primitive];
 
-    const knowing = armTotals({ grant });
-    const inert = stepped(worldDeps(scribingTraditionId()), grant);
+    const knowing = await armTotals({ grant });
+    const inert = await stepped(worldDeps(scribingTraditionId()), grant);
 
     console.log(lift(`${primitive} vs knowledge-moves-nothing (${metric})`, knowing[metric], inert[metric]));
 
@@ -410,14 +435,14 @@ describe('a universe that knows these nodes outworks one that does not', () => {
     expect(knowing[metric]).toBeGreaterThan(inert[metric]);
   });
 
-  it('ends holding more distinct nodes, not merely churning through more work', () => {
+  it('ends holding more distinct nodes, not merely churning through more work', async () => {
     // `researchCompleted` counts completions including rediscoveries, so a
     // universe that forgets and relearns the same node scores well on it. This is
     // the check that the extra work is *retained*: distinct nodes held at the end
     // of the run.
     const grant = treatmentSet('research-rate');
-    const knowing = armTotals({ grant });
-    const inert = stepped(worldDeps(scribingTraditionId()), grant);
+    const knowing = await armTotals({ grant });
+    const inert = await stepped(worldDeps(scribingTraditionId()), grant);
 
     console.log(lift('research-rate, distinct nodes held at the end', knowing.nodesKnown, inert.nodesKnown));
     expect(knowing.nodesKnown).toBeGreaterThan(inert.nodesKnown);
@@ -435,10 +460,10 @@ describe("§9's mask reaches the academic rates, and attributes the gain", () =>
   // is where §9 applies it and the library shares that accumulator by design. The
   // delta is therefore an upper bound on the node-sourced part, not an estimate
   // of it.
-  it('attributes a large research gain to research-rate alone', () => {
+  it('attributes a large research gain to research-rate alone', async () => {
     const grant = treatmentSet('research-rate');
-    const live = armTotals({ grant });
-    const masked = armTotals({ grant, ablate: 'research-rate' });
+    const live = await armTotals({ grant });
+    const masked = await armTotals({ grant, ablate: 'research-rate' });
 
     console.log(lift('ablate research-rate (researchCompleted)', live.researchCompleted, masked.researchCompleted));
     console.log(lift('ablate research-rate (nodesKnown)', live.nodesKnown, masked.nodesKnown));
@@ -447,16 +472,16 @@ describe("§9's mask reaches the academic rates, and attributes the gain", () =>
     expect(live.nodesKnown).toBeGreaterThan(masked.nodesKnown);
   });
 
-  it('attributes a grimoire gain to scribe-rate alone', () => {
+  it('attributes a grimoire gain to scribe-rate alone', async () => {
     const grant = treatmentSet('scribe-rate');
-    const live = armTotals({ grant });
-    const masked = armTotals({ grant, ablate: 'scribe-rate' });
+    const live = await armTotals({ grant });
+    const masked = await armTotals({ grant, ablate: 'scribe-rate' });
 
     console.log(lift('ablate scribe-rate (grimoiresScribed)', live.grimoiresScribed, masked.grimoiresScribed));
     expect(live.grimoiresScribed).toBeGreaterThan(masked.grimoiresScribed);
   });
 
-  it('finds no completion-count gain for teach-rate, because a lesson already fits in a month', () => {
+  it('finds no completion-count gain for teach-rate, because a lesson already fits in a month', async () => {
     // **A finding, asserted so it cannot rot into a silent zero.**
     //
     // `teach-rate`'s magnitudes reach the multiplier — the test below reads them
@@ -473,8 +498,8 @@ describe("§9's mask reaches the academic rates, and attributes the gain", () =>
     // — but a large move would mean the saturation reading is wrong and this
     // comment is lying to the next reader.
     const grant = treatmentSet('teach-rate');
-    const live = armTotals({ grant });
-    const masked = armTotals({ grant, ablate: 'teach-rate' });
+    const live = await armTotals({ grant });
+    const masked = await armTotals({ grant, ablate: 'teach-rate' });
 
     const relative = Math.abs(live.lessonsTaught - masked.lessonsTaught) / masked.lessonsTaught;
     console.log(lift('ablate teach-rate (lessonsTaught)', live.lessonsTaught, masked.lessonsTaught));
@@ -499,7 +524,7 @@ describe('the magnitudes reach the mage, in a universe that has been running', (
   // is long enough for mages granted inert nodes to *discover* academic ones, and
   // an assertion that they had none would be a claim about goal selection wearing
   // this file's name.
-  it.each(ACADEMIC_PRIMITIVES)('%s: a holder is carrying magnitudes after five years', (primitive) => {
+  it.each(ACADEMIC_PRIMITIVES)('%s: a holder is carrying magnitudes after five years', async (primitive) => {
     const grant = treatmentSet(primitive);
     const traditionId = scribingTraditionId();
     const deps: WorldStepDeps = {
