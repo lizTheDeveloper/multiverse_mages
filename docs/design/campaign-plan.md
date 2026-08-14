@@ -6656,3 +6656,55 @@ The eight worktrees `lsof` found in use — `affiliation`, `all-cells`, `raid-fi
 `ui-wire`, `w116-before`, `w64a`, `agent-a862dc86c23c95bc2` — were each an agent's live workspace.
 Removing any one of them by a heuristic would have destroyed work in progress, and a mtime-based
 sweep would have removed most of them.
+
+## W132 — `ui-recording.test.ts` is a behaviour tripwire, and nothing else in the suite is
+
+Three PRs failed the same test tonight for three different reasons, and the third one is the
+interesting one.
+
+| PR | assertion that failed | what it meant |
+| --- | --- | --- |
+| #133, #118, #132 | `provenance.snapshotHash` | **inherited** — `main` was red (W123) |
+| #82 | `frames`, `[Array(401)]` vs `[Array(401)]` | **the branch's own change**, and correct |
+
+#82 narrows the grant candidate list and the action-8 mask. Its author had already measured that the
+branch does **not** move the world snapshot — reverting `candidates.ts` and `mask.ts` to `origin/main`
+reproduces hash `f6974848cef4578c` — and that measurement still holds. What moved is the **recording**:
+a session recording captures what the agent was *offered*, so narrowing the offer changes the frames
+while leaving the world identical.
+
+**Nothing else in 4,371 tests noticed that the offered candidate list had changed.** Not the mask
+unit tests, which assert the new rule and pass; not the action-space tests; not any balance metric.
+The one thing that caught it was a fixture nobody thinks of as a behaviour test.
+
+Two consequences worth keeping:
+
+- **Every gameplay PR will need a re-record, and that is the feature.** The diff is the claim that
+  behaviour changed. The failure mode to guard against is not the re-record — it is re-recording
+  *without reading what moved*. The rule is: compare `provenance`, `layout`, `actions`, `content` and
+  `frames` field by field and say which moved and why. A `snapshotHash` move on a branch that
+  measured no world change is a contradiction, not a chore.
+- **A fixture that pins an interface is worth more than a test that pins a function.** The mask tests
+  passed throughout, because they assert the rule the code implements. The recording failed, because
+  it asserts what a player would have seen.
+
+## W133 — the merge chain, gated
+
+Running unattended, and deliberately not a drainer. Explicit ordered list — **#132, #118, #133** —
+and before each merge it requires `main`'s `Verify` to be green **at its current head**, aborting the
+whole run the moment `main` goes red, so that a human wakes to one break rather than five.
+
+Two parser bugs found and fixed while building it, both of which had silently produced "nothing is
+ready":
+
+- `gh pr checks` output is tab-separated and the first column contains spaces. `awk '{print $2}'`
+  splits `Verify (pinned Node)` into three fields, so `$2` was `(pinned` and never equalled `pass`.
+  **The first poller ran for ten minutes reporting nothing green while both checks were green.**
+- `gh run view --json jobs --jq '.conclusion // .status'` never resolved, because a running job's
+  `conclusion` is `""` rather than `null`, and jq's `//` only falls through on `null` and `false`.
+  The main-green watcher therefore printed `not-started` for twenty consecutive polls **while the run
+  was in progress**.
+
+Both are the same lesson as W120 and W130 in a smaller costume: **a checker that silently reports the
+negative case is indistinguishable from a checker that works.** Neither bug threw. Both were caught
+only by cross-checking the tool's answer against the thing it was measuring.
