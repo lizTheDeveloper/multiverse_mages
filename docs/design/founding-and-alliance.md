@@ -142,3 +142,64 @@ old illegal all-six control while knowing 19.4 fewer nodes.
 **Do not read `draconic` never ascending as a species that needs buffing.** Under this rule it is a
 species that needs *allies*, and whether that is a fair trade is the question the alliance mechanic
 exists to answer.
+
+---
+
+## Dragons have to make friends
+
+*Owner, 2026-08-13. The design in four words, and it is the clearest statement of what species are
+for.*
+
+**Draconic is the case in miniature:**
+
+| trait | draconic | rank |
+|---|--:|---|
+| `mageAptitude` | **896** | highest |
+| `depthCeiling` | **7** | highest |
+| `lifespanMonths` | **18,000** | highest |
+| `fertility` | **96** | **lowest — 16× below orc's 1,536** |
+
+**The best mages in the game, and it cannot produce them.** A draconic-only universe reaches **4.26
+living mages** over 2400 ticks and ascends **0/100** — the only single-species opening that never wins.
+
+**That zero was recorded as a finding. It is a missing mechanic.** Under *"all species playable, not
+all build orders"* a species that can never win is a balance failure — **unless the thing that rescues
+it exists.** For draconic that thing is other people, and it is not built.
+
+### Why this is the right shape rather than a tuning problem
+
+The obvious fix is to raise draconic's fertility, and it would be wrong. **The 16× gap is the
+species.** A dragon that breeds like an orc is an orc with better stats, and the six species collapse
+toward one.
+
+**Keep the gap and build the escape.** Then draconic is not weak — it is *dependent*, which is a
+different and better thing to be, and it makes the alliance mechanic load-bearing for at least one
+player rather than optional for all of them.
+
+It also gives the affinity system something to reward. `affinities` is wired and draconic carries
+three entries, but affinity for a species you already have is worth nothing. **Under one-species
+founding it can only be earned through alliance** — which is what turns a lookup table into a reward.
+
+### What must be true, and both halves matter
+
+1. **A draconic universe must be able to ascend by acquiring academics from another species.**
+2. **It must still fail without them.**
+
+If it ascends alone the tension is gone; if it cannot ascend even with allies the species is
+unplayable. **Being in flight on `w109/alliances`.**
+
+### The known obstacle, stated in advance
+
+**Portal magic gates alliances, and portal magic is nearly unreachable.** Both `portal` nodes sit in
+`rego-limen` behind an `intellego-limen` prerequisite — **0 of 70 possible 1×1 openings and 13 of 910
+2×2 openings can reach them.**
+
+So a draconic universe may be gated out of the only mechanic that saves it. **That is a content-placement
+problem, not a reason to drop the gate**, and it is the strongest argument yet for guaranteeing portal
+reachability in every legal opening rather than leaving it to where the nodes happen to sit.
+
+### And it is good messaging
+
+*"Dragons have to make friends"* says the design in four words, and it says the theme too: **the most
+gifted individuals in the world still cannot build a civilisation alone.** That is the same sentence
+as *"a species took several thousand years to build a computer"*, told about someone in particular.
