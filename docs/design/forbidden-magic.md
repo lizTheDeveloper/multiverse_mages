@@ -540,3 +540,62 @@ spiral into an unwinnable ladder of Old Gods with nothing to show. **They keep s
 same difficulty**, which is a floor, and the ratchet only engages for players who are actually
 succeeding. That is the right way round, and it fell out of the design rather than being added to
 patch it.
+
+### What the survivors teach: Old Magic from the Last Age
+
+*Owner, 2026-08-13, supplying the mechanism.* The surviving people do not merely exist to be allied
+with — **they can teach you Old Magic from the Last Age.**
+
+> *"Whatever random spells they had at the end — usually the most useful. Fire, feed selves. These are
+> free spells and don't require an unlock."*
+
+**The inheritance is derived, not authored.** It is **whatever knowledge instances that species still
+held when the previous world ended** — so it is different every generation, and it is a consequence of
+how the last god played rather than a gift the designer chose.
+
+### Why "usually the most useful" falls out rather than being asserted
+
+**What survives is what stayed in use**, and what stays in use is what a population needs daily. Fire.
+Feeding themselves. Not the deep, spectacular, hard-won cells — **the ones somebody used every week
+for two thousand years.**
+
+That is already how this simulation works, and it needs no new rule:
+
+- **Knowledge decays and must be refreshed by teaching**, so what persists to the end of a world is
+  what kept being taught.
+- **`dailyRelevance` already scales worship per cell by what the magic is *for*** — measured
+  **+23.0% → +48.8%** for `daily` versus `spectacle`.
+- **So the practical cells are the ones a population sustains**, and the practical cells are what
+  the survivors carry into the next age.
+
+**A god who permitted spectacle leaves a thin, glamorous inheritance. A god who permitted water and
+crops leaves fire and bread.** That is the third time the daily-relevance work has paid for itself, and
+the first time it has reached across generations.
+
+### Free, and no unlock — which is the right exception
+
+**These spells bypass the worship-to-width progression entirely.** They are not cells you unlock; they
+are **cells someone in the world already knows**, and a new god does not need to invent what is
+standing in front of them.
+
+That exception is correct and it is narrow:
+
+- **It cannot inflate**, because it is bounded by what actually survived, which is a small set of
+  practical cells rather than a growing pile.
+- **It is legible** — *"the old people still know how to call fire, and they will show you"* is a
+  complete explanation of why a rule was skipped.
+- **And it makes the early game of a later generation feel different rather than merely easier.** You
+  do not begin stronger; you begin **less alone and less ignorant**, which is the same distinction the
+  whole design keeps drawing.
+
+### The one thing to guard
+
+**It must not make the practical cells worthless to permit.** If fire and food arrive free every
+generation after the first, a god may stop permitting them and spend the whole grid on spectacle —
+which would invert the daily-relevance incentive precisely.
+
+**The guard is that the inheritance is the *previous* world's practical magic, and worship is paid on
+what *this* world's population can use.** Inheriting fire does not feed anyone unless mages here still
+cast it, and the survivors are one species among the peoples this world will hold. **Worth measuring
+rather than assuming**, because it is exactly the kind of second-order incentive that has surprised
+this project before.
