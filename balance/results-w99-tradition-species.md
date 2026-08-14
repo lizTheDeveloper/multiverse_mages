@@ -22,6 +22,36 @@ and 0.2000 at n=100).
 **This changed no simulation behaviour.** The diff is four sweep JSON files, three scripts and this
 document. No package source, no gate, no baseline, no golden fixture.
 
+**The runs are committed, and that is deliberate.** `balance/w99/` holds one row per run —
+all thousand of them, every arm, with `(sweepId, rootSeed, cellIndex, replicateIndex, runSeed,
+strategy, status, terminalReason, ticksRun)` and all ten `reference*` metrics — plus each arm's
+`summary.json` with its `configurationHash` and `provenance` block. 376 KB in total.
+
+This is the thing `docs/design/tradition-sweep.md` and `balance/results-integration-r2.txt` did not
+do, and it is why neither of them can now be bisected: both point at scratchpad directories that no
+longer exist, so when their numbers stopped reproducing there was no way to find out which commit
+did it. **Every table below can be recomputed from `balance/w99/w99-runs.csv` without re-running
+anything**, and a future re-run that disagrees can be diffed against it run by run.
+
+To reproduce from scratch:
+
+```
+# the ten arms (each writes <sweepId>.<cell>.runs.ndjson into --out)
+node packages/mc-harness/bin/run-sweep.mjs --scenario ./packages/scenario/bin/scenario.mjs \
+  --sweep ./balance/sweeps/integration-r2-species-<all|draconic|dwarf|elf|gnome|human|orc>.sweep.json \
+  --out <dir> --workers 8
+node packages/mc-harness/bin/run-sweep.mjs --scenario ./packages/scenario/bin/scenario.mjs \
+  --sweep ./balance/sweeps/integration-r2-<true-naming|vancian|art-of-memory>.sweep.json \
+  --out <dir> --workers 8
+
+# the tables
+node scripts/w99-analyse.mjs --title "…" --control "all-six=<dir>" --arm "orc=<dir>" …
+
+# the two instruments a sweep cannot be
+node scripts/w99-teachability-probe.mjs 8 2400
+node scripts/w99-identity-check.mjs
+```
+
 `REFERENCE_FACTOR_IDS` offers eight factors. Every committed gate — `balance-gate`,
 `balance-gate-horizon`, `balance-gate-agency`, `balance-gate-ascension` — varies exactly two of
 them, `cohortSize` and `foundingNodes`. `balance-full` adds `foundingMages`. **No committed gate
@@ -48,8 +78,9 @@ six species under one tradition, and that tradition is True Naming by an acciden
    `@mm/rules-raid`, which has no dependents. **Every tradition result here is `acquire`/`store`
    only, and Vancian is therefore the standard-hooks control.**
 5. **The founding species mix is a real factor and it is bigger than seed noise** — and **founding
-   with all six beats founding with any one of them**, on every metric, at every seed. What it does
-   *not* do is reorder the winners. See Table 2c.
+   with all six beats founding with any one of them**: 34 of the 36 paired arm × metric cells are
+   negative at more than three paired standard errors, and the two that are not are not positive
+   either. What it does *not* do is reorder the winners. See Table 2c.
 6. **The two traditions that are indistinguishable on `ascensionRate` (0.2000 both), on the winner
    set, and on nodes known differ absolutely on whether any knowledge in the universe can move.**
    That is the case for the missing instrument, in one sentence.
@@ -306,10 +337,22 @@ and its `cost: prepaid` did nothing, which is why it is usable as the standard-h
 **4. `docs/design/tradition-sweep.md`'s headline no longer holds.** W13 measured `ascensionRate` at
 0.6875 (Vancian), 0.6979 (True Naming) and **0.1250** (Art of Memory), and its most-quoted line was
 that the Art of Memory *"is the only one of the three shipped traditions whose ascension rate falls
-inside `contracts.md` §7's declared band"*. On this build the three read **0.2000, 0.2000 and
-0.0000**. Two of the three have moved into the band and the Art of Memory has fallen out of it
-underneath — it now ascends **never**. `docs/design/ages-of-magic.md` quotes the 0.125 as a measured
-fact. It is not one any more.
+inside `contracts.md` §7's declared band"*.
+
+W13 ran an **eight**-strategy pool and this sweep runs the `integration-r2` **ten**-strategy pool,
+which changes the denominator on its own, so the rates are recomputed here **restricted to W13's own
+eight strategies** before being compared:
+
+| tradition | W13, 8-strategy pool | this build, same 8 strategies | this build, full 10-strategy pool |
+|---|---|---|---|
+| vancian-memorization | 0.6875 | **0.1250** | 0.2000 |
+| true-naming | 0.6979 | **0.1250** | 0.2000 |
+| art-of-memory | **0.1250** | **0.0000** | 0.0000 |
+
+All three fell, on a like-for-like pool. **Vancian and True Naming have moved *into* §7's 0.05–0.20
+band — landing on exactly the 0.1250 W13 singled out — and the Art of Memory has fallen out of it
+underneath, to never.** `docs/design/ages-of-magic.md` quotes the 0.125 as a measured fact about the
+Art of Memory. It is now a measured fact about the other two.
 
 
 ---
@@ -346,10 +389,10 @@ Full output in `balance/results-w99-species-arms.md`.
 | draconic only | −46.53 ±5.03 ** | −34.61 ±3.26 ** | −210.29 ±23.79 ** | −3139.95 ±233.14 ** | −320.04 ±72.92 ** | −20 (0 vs 20) |
 | orc only | −57.63 ±5.34 ** | −37.33 ±3.23 ** | −226.90 ±22.92 ** | −2575.39 ±202.74 ** | −186.16 ±61.67 ** | −18 (2 vs 20) |
 
-**Founding with all six beats founding with any one of them, on every metric, at every seed.**
-Thirty-four of the thirty-six paired cells above are negative at more than three paired standard
-errors; the two that are not are human's instance count (higher, not significantly) and dwarf's
-grimoires. This is a monoculture penalty and it is not a small one: the *best* single species loses
+**Founding with all six beats founding with any one of them.** Thirty-four of the thirty-six paired
+cells above are negative at more than three paired standard errors; the two that are not are human's
+instance count (higher, but inside its standard error) and dwarf's grimoires (lower, but inside
+its). This is a monoculture penalty and it is not a small one: the *best* single species loses
 sixteen nodes and two thirds of its library depth against the mixed founding.
 
 ### Table 2c — between-species spread against between-seed spread
