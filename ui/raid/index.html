@@ -196,7 +196,7 @@
 :root {
   --host:    #4A5F6B;   /* the defending universe. A cold slate, never cyan. */
   --raider:  #A2331F;   /* the attacking universe. The deny family. */
-  --brass:   #8A6207;   /* authored here, not baked from content. */
+  --brass:   #6B4C05;   /* authored here, not baked from content. */
 
   /* The engagement field is a dark plate in BOTH themes — .fieldwrap paints
      #090D0E and the canvas is drawn from the on-ink palette either way, because
@@ -254,7 +254,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .chip:hover{border-color:var(--rule-hi)}
 .chip.synthetic{
   border-color:var(--brass);color:var(--brass);cursor:default;
-  background:color-mix(in srgb,var(--brass) 11%,var(--panel))
+  background:color-mix(in srgb,var(--brass) 6%,var(--panel))
 }
 
 /* ============================== PHASE RAIL ============================== */
@@ -421,7 +421,7 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .mclock .u{font:10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:#7FD9E1;margin-top:.2rem}
 .mclock[hidden]{display:none}
 .fieldnote{
-  position:absolute;left:.6rem;bottom:.5rem;font:9px var(--mono);letter-spacing:.07em;color:#5C6B6D
+  position:absolute;left:.6rem;bottom:.5rem;font:9px var(--mono);letter-spacing:.07em;color:#93A9AB
 }
 .fieldtag{
   position:absolute;right:.6rem;top:.5rem;font:9px var(--mono);letter-spacing:.11em;text-transform:uppercase;
@@ -663,6 +663,8 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
       <span id="theme-host"></span>
     </div>
   </header>
+
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
 
   <div class="rail" id="rail">
     <div class="ph" data-phase="muster">
@@ -2935,3 +2937,12 @@ requestAnimationFrame(frame);
 </script>
 </body>
 </html>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['engagement', 'eventDeltas']);
+</script>

@@ -523,6 +523,115 @@ is deliberately mostly red.
 }
 ```
 
+### Claim: node-value-differentiation-measurable
+
+```json
+{
+  "claimId": "node-value-differentiation-measurable",
+  "form": "dominates",
+  "subjects": ["summit-node-holder", "equal-count-non-summit-holder"],
+  "hypothesis": "A universe holding a summit node outscores an otherwise identical universe holding the same number of non-summit nodes, which would mean node identity is worth something to the acquiring agent rather than only to the win predicate.",
+  "procedure": {
+    "design": "paired-arms",
+    "statistic": "paired prestige and ascension rate between arms matched on node count and differing on node identity",
+    "measures": ["ascensionRate", "prestigeAdvantage", "libraryDependence"],
+    "runsPerArm": 400,
+    "margin": "0.05 absolute on ascensionRate",
+    "interval": "wilson-95",
+    "refutedBy": "the two arms scoring inside each other's intervals, which would confirm that nodes are differentiated in the win condition and fungible in play"
+  },
+  "pinnedConstants": {
+    "summitDefinition": "the deepest node of a permitted cell, ties broken by node id",
+    "summitCount": 12,
+    "marginAbsolute": 0.05
+  },
+  "definitionVersion": 1,
+  "verdict": "not-measurable",
+  "verdictReason": "Still not measurable, but the superseded claim named the wrong absence. A run now takes a per-node knowledge census — RunTelemetry.census carries existingNodeIds and singleInstanceNodeIds every twelve world ticks — so node identity exists inside a run, and libraryDependence and the three raid metrics are collected rather than unavailable. What no committed artefact carries is a node-id list in a run *record*: the census reaches the collectors and the collectors emit scalars. The remaining gap is one field on RunRecord, not an absent instrument.",
+  "supersedes": ["node-value-differentiation-is-live"]
+}
+```
+
+### Claim: defender-freeze-is-inert
+
+```json
+{
+  "claimId": "defender-freeze-is-inert",
+  "form": "inert",
+  "subjects": ["defenderEngagementFreeze"],
+  "hypothesis": "Freezing a universe in engagement as the defender costs it no world time on this build, so the griefing guard contracts.md section 7 asks for cannot bite and inboundRaidTempoLoss cannot leave zero.",
+  "procedure": {
+    "design": "ablation",
+    "statistic": "world ticks spent frozen as defender, as a fraction of the run's elapsed world ticks",
+    "measures": ["inboundRaidTempoLoss", "raidLengthDistribution"],
+    "runsPerArm": 400,
+    "margin": "any run reporting a fraction above 0",
+    "refutedBy": "one run whose inboundRaidTempoLoss is greater than zero, which would mean a defender lost world time to an inbound raid"
+  },
+  "pinnedConstants": {
+    "defenderFrozenWorldTicksSource": "packages/scenario/src/executor.ts raidObservationOf, which reports a measured 0",
+    "reasonItIsZero": "portals spec: a raid SHALL consume zero world ticks, and both universes resume at the world tick recorded at portal open",
+    "marginAbsolute": 0
+  },
+  "definitionVersion": 1,
+  "verdict": "not-measurable",
+  "verdictReason": "The instrument reports a number and the number cannot move. inboundRaidTempoLoss now collects on every run and reads a measured 0 in every configuration tried — both strategies, raids on, 60 to 1200 tick horizons — because an engagement resolves inside one world tick. Section 7 defines tempo loss relative to *uninvolved* universes and section 1.1 puts one universe in a simulation instance, so there is no third party to be relative to. It must not be gated; it would read green forever, and becomes measurable when two universes share a clock."
+}
+```
+
+### Claim: knowledge-loss-channel-is-inert
+
+```json
+{
+  "claimId": "knowledge-loss-channel-is-inert",
+  "form": "inert",
+  "subjects": ["knowledgeDecay", "knowledgeLoss"],
+  "hypothesis": "Knowledge decay and loss move no registered measure at the horizons any committed sweep runs, which would mean the loss channel that motivates libraries, redundancy and rediscovery is decorative at the timescales the project actually measures.",
+  "procedure": {
+    "design": "ablation",
+    "statistic": "pooled Kaplan-Meier survival of census cohorts, and the fraction of cohort observations ending in a loss event",
+    "measures": ["knowledgeHalfLife", "libraryDependence", "referenceNodesKnown"],
+    "runsPerArm": 250,
+    "margin": "pooled survival reaching 0.5 within the horizon",
+    "refutedBy": "knowledgeHalfLife returning a measured half-life rather than a censored lower bound on any committed sweep, which would mean half of a cohort is lost inside the horizon"
+  },
+  "pinnedConstants": {
+    "censusIntervalTicks": 12,
+    "quantile": 0.5,
+    "estimator": "kaplan-meier, right-censored at run termination",
+    "horizonsProbed": [60, 240, 1200]
+  },
+  "definitionVersion": 1,
+  "verdict": "unmeasured",
+  "verdictReason": "Newly measurable and immediately suggestive. knowledgeHalfLife had no production caller until this workstream; its first readings report censored at every horizon tried, with 1 loss in 507 cohort observations at 240 ticks and a lowest survival of 0.9979 — the curve does not approach 0.5 at a century. That is a censored lower bound honestly reported, not a half-life, and it is the reading an ablation arm would have to overturn. No ablated arm has been run, so the claim is unsettled rather than held."
+}
+```
+
+### Claim: portal-opening-commits
+
+```json
+{
+  "claimId": "portal-opening-commits",
+  "form": "commits",
+  "subjects": ["14"],
+  "hypothesis": "There is a reachable world state in which opening a portal scores strictly worse than not opening it, which would make a raid a bet the god can lose rather than a free option it should always take.",
+  "procedure": {
+    "design": "counterexample-search",
+    "statistic": "terminal score of a state in which action 14 was taken against the same state in which it was not, under common random numbers",
+    "measures": ["raidInitiationCost", "raidLengthDistribution", "referenceNodesKnown", "referenceLivingMages"],
+    "refutedBy": "no reachable state in which the raiding branch scores below the non-raiding branch, over the searched set — which would mean a portal is never a sacrifice and the opening is not a commitment"
+  },
+  "pinnedConstants": {
+    "actionId": 14,
+    "actionIdProvenance": "GOD_ACTION in packages/agent-api/src/actions.ts",
+    "costQuantity": "attacker favor paid for action 14, divided by favor regenerated per world tick"
+  },
+  "definitionVersion": 1,
+  "verdict": "unmeasured",
+  "verdictReason": "The cost side of the bet became measurable here and the gain side did not. raidInitiationCost now collects: 0 under passive-control, which never opens a portal, and 4 to 5 world ticks of forgone tempo under portal-rush, so the price of a raid moves with the decision. Missing is the paired non-raiding branch; no search has been run. One caveat against a future reading: the collector averages over every raid in a run, and an inbound raid carries an attacker favor cost of zero by construction, so a run that only defended reports a measured 0 for a raid it never initiated."
+}
+```
+
 ---
 
 ## 7. How this document is checked

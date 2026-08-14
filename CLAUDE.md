@@ -109,8 +109,10 @@ The short version, because the obvious "cleanup" here is a security regression:
 - **GitHub Actions** (`.github/workflows/ci.yml`) is free and unmetered — this repo is public — and
   runs in a sandbox holding no credentials. It is the **only** gate that safely sees fork PRs.
 - **The self-hosted runner** (`scripts/ci-check.sh`, status context `ci/hetzner-lint`) runs on
-  `cto-tycoon-hel1` in a process holding Coolify, Neon, GitHub and Matrix tokens. It therefore
-  **refuses fork PRs outright**, and must keep doing so.
+  `multiverse-games-hel1` (SSH alias `games`) in a process holding Coolify, Neon, GitHub and Matrix
+  tokens. It therefore **refuses fork PRs outright**, and must keep doing so. It moved off
+  `cto-tycoon-hel1` on 2026-08-13; the status context keeps the old name because branch protection
+  requires that exact string.
 
 Neither can do the other's job. Do not delete the Actions workflow to "move CI off GitHub", and do
 not relax the fork guard to make a fork PR go green. `scripts/ci-check.sh` must stay equivalent to
@@ -187,6 +189,44 @@ branch you are reading — `git branch --show-current`, or read through `git sho
 shared checkout is frequently *not* on `main`, and a grep run in it describes whatever branch it
 happens to be sitting on. Two separate wrong findings in one session came from this, both stated
 confidently, one of them contradicting an earlier correct entry in the same document.
+
+**A document is not a ref for the code it describes.** `docs/` is full of measurements, and a
+measurement is a statement about the tree it was taken on. `vision-audit.md` asserted *"2 distinct
+nodes across 1,308 books"* in the present tense and tagged it `[executed]` — while a test file on the
+same commit carried the same figure under the header *"This bullet list is a historical record, not the
+current measurement"*, and `vision.md` marked it fixed. **Two documents on `main` contradicting each
+other, and the misleading one was the one people read.** It cost two agents a full investigation each.
+
+So: **re-verify a documented claim against the code before acting on it**, and treat mismatched line
+numbers as the cheapest available signal that a row has rotted. When you write a measurement into
+`docs/`, date it and name the ref it was taken on — an undated measurement in the present tense will be
+read as current for as long as it survives.
+
+## Check, do not ask
+
+**If a question can be answered by running something, run it.** Do not ask which of two options is
+better when the difference is measurable — measure it, then present the numbers and a
+recommendation. A question that could have been a measurement wastes a round trip and usually gets a
+guess back.
+
+**If one option obviously collapses and the other does not, just take the one that works** and say
+why. Asking is for decisions that are genuinely the author's: a rule the spec is silent on, a
+tradeoff between two things that both work, anything that changes the design rather than discovers
+it.
+
+It cuts the other way too: **a worktree with no `node_modules` will report the whole repository
+broken.** A clean `tsc --build` there failed on `@mm/content` types that are present in both the
+source and the built `.d.ts`, and nineteen tests that spawn workers failed with it — because
+`npm ci` had never run in that worktree and nothing resolved. Main was green the whole time: 4,306
+tests. The section above on worktrees says this in advance; it is repeated here because the symptom
+reads as a real defect and was reported as one twice before being checked.
+
+This has already paid twice in one session. "Unmasking four actions during engagement moves every
+balance baseline" was asserted from reading the code and was false — instrumenting the mask and
+running four strategies showed the engagement branch is evaluated **zero** times, because raids
+resolve inside one world step and nothing asks the agent. And a contrast claim of "about four
+percent of luminance" measured 1.01:1. Both were confident, both were wrong, and both cost one
+command to check.
 
 ## Conventions
 

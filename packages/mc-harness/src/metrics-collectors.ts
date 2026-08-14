@@ -55,7 +55,7 @@ import { nearestRank } from './metrics-gini.js';
 import { gini } from './metrics-gini.js';
 import type { SurvivalObservation } from './metrics-survival.js';
 import { kaplanMeier, survivalQuantile } from './metrics-survival.js';
-import type { ArmTelemetry, CensusSample, RunTelemetry } from './metrics-telemetry.js';
+import type { ArmTelemetry, CensusSample, RaidObservation, RunTelemetry } from './metrics-telemetry.js';
 import { terminalReasonName } from './session.js';
 
 /* ------------------------------------------------------------------------- *
@@ -797,6 +797,222 @@ export function collectRaidInitiationCost(telemetry: RunTelemetry): MetricEntry 
   let cost = 0;
   for (const raid of telemetry.raids) cost += raid.attackerTempoCostWorldTicks;
   return measured(cost / telemetry.raids.length, { raids: telemetry.raids.length });
+}
+
+/* ------------------------------------------------------------------------- *
+ * combatActionEconomy and combatThresholdEfficiency
+ * ------------------------------------------------------------------------- */
+
+/**
+ * The two things every raid metric here has to check before it computes
+ * anything, in the order §7 requires them.
+ *
+ * `mechanic-absent` when the build declares no raids — which is this build, so
+ * both combat metrics report it on `main` rather than a misleading zero.
+ * `no-observations` when raids exist and this run had none. Collapsing the two
+ * is the confusion the reason codes exist to end, and it is easy to do by
+ * accident because both produce an empty list.
+ */
+function raidsOrReason(telemetry: RunTelemetry): readonly RaidObservation[] | MetricEntry {
+  if (!telemetry.mechanics.raidEngagement || telemetry.raids === undefined) {
+    return unavailable(UNAVAILABLE_REASON.mechanicAbsent, {
+      owner: 'raid-engagement',
+      reasonDetail:
+        'this build declares no raid mechanic, so no cast has ever removed anybody from action. ' +
+        'A zero here would read as "combat primitives are worthless", which is a finding this ' +
+        'build has not earned.',
+    });
+  }
+  if (telemetry.raids.length === 0) {
+    return unavailable(UNAVAILABLE_REASON.noObservations, {
+      reasonDetail: 'raids exist in this build; this run initiated none.',
+    });
+  }
+  return telemetry.raids;
+}
+
+/** Folds every raid's per-source rows into one table, ascending by source. */
+function foldCombatSources(
+  raids: readonly RaidObservation[],
+): Map<string, { denied: number; hp: number; removing: number; hurting: number; spent: number }> {
+  const table = new Map<
+    string,
+    { denied: number; hp: number; removing: number; hurting: number; spent: number }
+  >();
+  for (const raid of raids) {
+    for (const row of raid.combatSources) {
+      const entry = table.get(row.source) ?? { denied: 0, hp: 0, removing: 0, hurting: 0, spent: 0 };
+      entry.denied += row.deniedCombatantTicks;
+      entry.hp += row.hitPointsRemoved;
+      entry.removing += row.removingAttempts;
+      entry.hurting += row.hurtingAttempts;
+      entry.spent += row.spentAttempts;
+      table.set(row.source, entry);
+    }
+  }
+  return table;
+}
+
+function sortedSources(
+  table: Map<string, { denied: number; hp: number; removing: number; hurting: number; spent: number }>,
+): string[] {
+  return [...table.keys()].sort();
+}
+
+/** The union of every raid's declared unimplemented channels, ascending. */
+function declaredChannels(raids: readonly RaidObservation[]): string[] {
+  const channels = new Set<string>();
+  for (const raid of raids) for (const channel of raid.unimplementedCombatChannels) channels.add(channel);
+  return [...channels].sort();
+}
+
+/**
+ * **What a combat node is actually worth**, and the metric this project did not
+ * have.
+ *
+ * Every existing measure of a combat primitive is a measure of *damage*:
+ * `RaidOutcome.primitiveApplication` totals magnitude put on the field, and
+ * `winRateByPrimitive` attributes wins to a primitive without saying through
+ * what. Two findings say damage is the wrong primary quantity — over twenty
+ * seeds the share of hit points removed ran roughly half to `area-denial`,
+ * roughly half to summons and soldier detachments and under two percent to cast
+ * `direct-damage`; and survival-regret measured zero on every seed, because the
+ * raider took the objectives and left before combat decided anything.
+ *
+ * So the primary measure is **action economy**: combatant-ticks of enemy action
+ * denied, over the combatant-ticks the raid contained. `rules-raid` computes the
+ * attribution — see `action-economy.ts` for the three channels it can produce
+ * and the fourth it declares absent — and this collector normalises and pools.
+ *
+ * The scalar is a **rate, not a level**: a raid twice as long contains twice the
+ * combatant-ticks, and a level would then rank raid length above combat. A rate
+ * near zero is the direct statement that combat does not decide raids.
+ */
+export function collectCombatActionEconomy(telemetry: RunTelemetry): MetricEntry {
+  const raids = raidsOrReason(telemetry);
+  if (!Array.isArray(raids)) return raids as MetricEntry;
+  const observed = raids as readonly RaidObservation[];
+
+  let span = 0;
+  let removals = 0;
+  let summonsRemoved = 0;
+  for (const raid of observed) {
+    span += raid.totalCombatantTicks;
+    removals += raid.worldScaleRemovals;
+    summonsRemoved += raid.summonsRemoved;
+  }
+  if (span === 0) {
+    return unavailable(UNAVAILABLE_REASON.noObservations, {
+      reasonDetail:
+        'the raids in this run contained no combatant-ticks at all — every raid resolved on the ' +
+        'tick it opened. There is no denominator, and reporting 0 would say combat denied nothing ' +
+        'when in truth there was nothing to deny.',
+    });
+  }
+
+  const table = foldCombatSources(observed);
+  let denied = 0;
+  for (const entry of table.values()) denied += entry.denied;
+
+  const bySource: Record<string, { deniedCombatantTicks: number; shareOfDenied: number; hitPointsRemoved: number; shareOfHitPoints: number }> = {};
+  let hpTotal = 0;
+  for (const entry of table.values()) hpTotal += entry.hp;
+  let dominance = 0;
+  for (const source of sortedSources(table)) {
+    const entry = table.get(source) as { denied: number; hp: number };
+    const share = denied === 0 ? 0 : entry.denied / denied;
+    if (share > dominance) dominance = share;
+    bySource[source] = {
+      deniedCombatantTicks: entry.denied,
+      shareOfDenied: share,
+      hitPointsRemoved: entry.hp,
+      shareOfHitPoints: hpTotal === 0 ? 0 : entry.hp / hpTotal,
+    };
+  }
+
+  return measured(denied / span, {
+    deniedCombatantTicks: denied,
+    totalCombatantTicks: span,
+    // The share held by the largest single source. A combat layer in which one
+    // primitive does everything reads near 1; one in which the sources trade
+    // reads near 1/n. It is the concentration the current tuning has and the
+    // reason this metric was asked for.
+    dominanceShare: dominance,
+    bySource,
+    worldScaleRemovals: removals,
+    // Outside the scalar on purpose: a summon costs its owner nothing at world
+    // scale, so crediting its removal would let damage farm denial on free
+    // bodies. Reported so the exclusion's failure mode is visible.
+    summonsRemoved,
+    raidCount: observed.length,
+    unimplementedChannels: declaredChannels(observed),
+  });
+}
+
+/**
+ * **Threshold efficiency**: of the combat attempts that landed, the fraction
+ * that removed a target rather than merely hurting one.
+ *
+ * The companion question to action economy, and the one that separates a
+ * primitive that is *small* from a primitive that is *below a threshold*. A bolt
+ * doing a thirtieth of a mage's hit points is not one-thirtieth as good as a
+ * bolt that kills; against a target that is healed, replaced, or simply
+ * withdrawn before the ninetieth cast lands, it is worth nothing at all. A ratio
+ * near zero says the primitive never crosses; a ratio near one says every
+ * application is decisive and the primitive is probably too strong.
+ *
+ * **Attempts that landed nothing are in neither the numerator nor the
+ * denominator**, and counted separately. An attempt that a target evaded says
+ * nothing about whether its source crosses a removal threshold, and folding it
+ * into the denominator would charge the caster for the *enemy's* concealment.
+ */
+export function collectCombatThresholdEfficiency(telemetry: RunTelemetry): MetricEntry {
+  const raids = raidsOrReason(telemetry);
+  if (!Array.isArray(raids)) return raids as MetricEntry;
+  const observed = raids as readonly RaidObservation[];
+
+  const table = foldCombatSources(observed);
+  let removing = 0;
+  let hurting = 0;
+  let spent = 0;
+  for (const entry of table.values()) {
+    removing += entry.removing;
+    hurting += entry.hurting;
+    spent += entry.spent;
+  }
+  const landed = removing + hurting;
+  if (landed === 0) {
+    return unavailable(UNAVAILABLE_REASON.noObservations, {
+      reasonDetail:
+        'no combat attempt in this run removed a hit point. The ratio has no denominator, and 0 ' +
+        'would claim every attempt failed to cross a threshold when none was tested.',
+    });
+  }
+
+  const bySource: Record<
+    string,
+    { removingAttempts: number; hurtingAttempts: number; spentAttempts: number; efficiency: number | null }
+  > = {};
+  for (const source of sortedSources(table)) {
+    const entry = table.get(source) as { removing: number; hurting: number; spent: number };
+    const denominator = entry.removing + entry.hurting;
+    bySource[source] = {
+      removingAttempts: entry.removing,
+      hurtingAttempts: entry.hurting,
+      spentAttempts: entry.spent,
+      // `null`, never 0: a source whose every attempt was evaded has an
+      // undefined efficiency, and a zero there is a claim it was tested.
+      efficiency: denominator === 0 ? null : entry.removing / denominator,
+    };
+  }
+
+  return measured(removing / landed, {
+    removingAttempts: removing,
+    hurtingAttempts: hurting,
+    spentAttempts: spent,
+    bySource,
+    raidCount: observed.length,
+  });
 }
 
 /* ------------------------------------------------------------------------- *
