@@ -268,3 +268,180 @@ export function foldArchive(
     marginOverNull: bestElite - nullBarOf(nulls).bar,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Phases, and why a strategy that never changes is one strategy.
+// ---------------------------------------------------------------------------
+
+/**
+ * The three phases a strategy must play differently.
+ *
+ * ## Why this exists
+ *
+ * The archive above measures whether two *strategies* differ. It cannot see
+ * whether **one** strategy differs from itself over time — and a god who opens
+ * the same cells at tick 100 and tick 2000 is playing one move slowly, not
+ * three moves in sequence.
+ *
+ * This is the same degeneracy the campaign spent weeks on, in the other
+ * dimension. Spatially, every universe held the same nodes. Temporally, every
+ * strategy does the same thing throughout. **The measured example is already in
+ * the pool**: `permit-then-idle` permits the grid for 140 of 2400 ticks and
+ * then submits nothing for the remaining 2260, and it won 40/40. That *is* a
+ * phase change — from acting to not acting — and it is the degenerate one every
+ * candidate has to beat.
+ *
+ * ## Why late is weighted heaviest
+ *
+ * Early play is the most constrained and therefore the most forced: a universe
+ * with nine nodes and one academy has few legal things to do and they are
+ * mostly the same few. **Diversity there is cheap and means least.** By the
+ * late game the constraints have lifted and what remains is what the player
+ * chose, so a difference that survives to the late game is a difference the
+ * design actually offers. Mid sits between and is weighted between.
+ *
+ * The weights are declared, not derived, and they are a design statement rather
+ * than a measurement — which is why they are here, named, and easy to argue
+ * with, instead of folded into a scoring expression.
+ */
+export const PHASE = {
+  early: 'early',
+  mid: 'mid',
+  late: 'late',
+} as const;
+
+export type Phase = (typeof PHASE)[keyof typeof PHASE];
+
+/**
+ * What one phase of width is worth.
+ *
+ * Late over mid over early, because a difference that survives the lifting of
+ * early constraints is a difference the design offers rather than one the
+ * opening position forced.
+ */
+export const PHASE_WEIGHT: Readonly<Record<Phase, number>> = Object.freeze({
+  early: 1,
+  mid: 2,
+  late: 3,
+});
+
+/**
+ * Phase boundaries as a fraction of the run, in `ERA_TICKS` terms.
+ *
+ * Fractions rather than absolute ticks because a 600-tick probe and a 2400-tick
+ * gate must both have three phases, and "late" means *late in this run* rather
+ * than "after tick 1800". A run too short to hold three eras reports fewer
+ * phases rather than three overlapping ones — see {@link phaseOfTick}.
+ */
+export const PHASE_BOUNDS: Readonly<Record<Phase, readonly [number, number]>> = Object.freeze({
+  early: [0, 1 / 3],
+  mid: [1 / 3, 2 / 3],
+  late: [2 / 3, 1],
+});
+
+/** The phase a tick falls in, given the run's horizon. */
+export function phaseOfTick(tick: number, horizon: number): Phase {
+  if (horizon <= 0) return PHASE.early;
+  const share = tick / horizon;
+  if (share < PHASE_BOUNDS.early[1]) return PHASE.early;
+  if (share < PHASE_BOUNDS.mid[1]) return PHASE.mid;
+  return PHASE.late;
+}
+
+/** One strategy's behaviour in one phase. */
+export interface PhaseObservation {
+  readonly phase: Phase;
+  readonly descriptors: Readonly<Record<string, number>>;
+}
+
+/** A candidate observed across phases rather than once at the end. */
+export interface PhasedCandidate extends CandidateOutcome {
+  readonly phases: readonly PhaseObservation[];
+}
+
+/** What a phased archive is worth, and how mobile its occupants are. */
+export interface PhasedArchive {
+  /** Width within each phase, counting only cells that clear the ladder. */
+  readonly widthByPhase: Readonly<Record<Phase, number>>;
+  /**
+   * `Σ width(phase) × weight(phase)`.
+   *
+   * **The score.** Late diversity is worth three early cells because early play
+   * is mostly forced.
+   */
+  readonly weightedWidth: number;
+  /**
+   * Distinct coordinates each strategy occupies across its phases, by id.
+   *
+   * **1 means the strategy never changed** — it played one move for the whole
+   * run, which is a strategy the design should not reward however well it
+   * scores. 3 means it played a genuinely different game in each phase.
+   */
+  readonly mobilityByStrategy: Readonly<Record<string, number>>;
+  /**
+   * Strategies whose mobility is 1.
+   *
+   * Reported by name rather than counted, because a static strategy in the pool
+   * is a finding about the *design* — it means the game did not require the
+   * player to change — and the specific one matters.
+   */
+  readonly staticStrategies: readonly string[];
+}
+
+/**
+ * Fold phased candidates into a per-phase archive.
+ *
+ * Each phase is scored independently against the same null ladder, because
+ * "beats doing nothing in the late game" is the claim that matters and an
+ * aggregate would let a strong early game pay for an absent late one.
+ */
+export function foldPhasedArchive(
+  axes: readonly BehaviourAxis[],
+  candidates: readonly PhasedCandidate[],
+  nulls: NullOutcomes,
+): PhasedArchive {
+  const widthByPhase: Record<Phase, number> = { early: 0, mid: 0, late: 0 };
+  const mobility: Record<string, number> = {};
+
+  for (const phase of Object.values(PHASE)) {
+    const inPhase: CandidateOutcome[] = [];
+    for (const candidate of candidates) {
+      const observation = candidate.phases.find((entry) => entry.phase === phase);
+      // A candidate with no observation in this phase is absent from it, not
+      // present at zero. A run that ended before its late phase has no late
+      // behaviour, and inventing one at the origin would put every truncated
+      // run in the same cell and read as agreement.
+      if (observation === undefined) continue;
+      inPhase.push({
+        strategyId: candidate.strategyId,
+        descriptors: observation.descriptors,
+        ascended: candidate.ascended,
+        runs: candidate.runs,
+        illegalActionRate: candidate.illegalActionRate,
+      });
+    }
+    widthByPhase[phase] = foldArchive(axes, inPhase, nulls).width;
+  }
+
+  for (const candidate of candidates) {
+    const seen = new Set(
+      candidate.phases.map((entry) => coordinateOf(axes, entry.descriptors)),
+    );
+    mobility[candidate.strategyId] = seen.size;
+  }
+
+  const weightedWidth = (Object.values(PHASE) as Phase[]).reduce(
+    (sum, phase) => sum + widthByPhase[phase] * PHASE_WEIGHT[phase],
+    0,
+  );
+
+  return {
+    widthByPhase,
+    weightedWidth,
+    mobilityByStrategy: mobility,
+    staticStrategies: Object.entries(mobility)
+      .filter(([, count]) => count <= 1)
+      .map(([id]) => id)
+      .sort(),
+  };
+}

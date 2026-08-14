@@ -18,12 +18,16 @@ import {
   MAX_ELITE_ILLEGAL_RATE,
   NULL_LADDER,
   NULL_RUNG,
+  PHASE,
+  PHASE_WEIGHT,
   type NullOutcomes,
   binOf,
   clearsLadder,
   coordinateOf,
   foldArchive,
+  foldPhasedArchive,
   nullBarOf,
+  phaseOfTick,
 } from '@mm/mc-harness';
 import { describe, expect, it } from 'vitest';
 
@@ -198,5 +202,102 @@ describe('the archive', () => {
     );
     expect(archive.width).toBe(0);
     expect(archive.marginOverNull).toBe(-40);
+  });
+});
+
+describe('phases', () => {
+  const phased = (
+    strategyId: string,
+    perPhase: readonly (readonly [string, number])[],
+    ascended = 10,
+  ) => ({
+    ...candidate({ strategyId, ascended }),
+    phases: perPhase.map(([phase, nodes]) => ({
+      phase: phase as 'early' | 'mid' | 'late',
+      descriptors: { nodes, universities: 0 },
+    })),
+  });
+
+  it('splits a run into three phases by fraction, not absolute tick', () => {
+    // A 600-tick probe and a 2400-tick gate must both have three phases, so
+    // "late" means late in this run.
+    expect(phaseOfTick(10, 600)).toBe(PHASE.early);
+    expect(phaseOfTick(300, 600)).toBe(PHASE.mid);
+    expect(phaseOfTick(500, 600)).toBe(PHASE.late);
+    expect(phaseOfTick(2000, 2400)).toBe(PHASE.late);
+    // Same share, different horizons, same phase.
+    expect(phaseOfTick(500, 600)).toBe(phaseOfTick(2000, 2400));
+  });
+
+  it('weights late diversity above mid above early', () => {
+    // Early play is the most constrained and therefore the most forced, so a
+    // difference that survives to the late game is worth more.
+    expect(PHASE_WEIGHT.late).toBeGreaterThan(PHASE_WEIGHT.mid);
+    expect(PHASE_WEIGHT.mid).toBeGreaterThan(PHASE_WEIGHT.early);
+  });
+
+  it('scores late width three times an early cell', () => {
+    const earlyOnly = [
+      phased('a', [['early', 5], ['mid', 100], ['late', 100]]),
+      phased('b', [['early', 300], ['mid', 100], ['late', 100]]),
+    ];
+    const lateOnly = [
+      phased('a', [['early', 100], ['mid', 100], ['late', 5]]),
+      phased('b', [['early', 100], ['mid', 100], ['late', 300]]),
+    ];
+    const early = foldPhasedArchive(AXES, earlyOnly, SILENT_NULLS);
+    const late = foldPhasedArchive(AXES, lateOnly, SILENT_NULLS);
+    // Both have two cells in one phase and one in the other two.
+    expect(early.widthByPhase.early).toBe(2);
+    expect(late.widthByPhase.late).toBe(2);
+    expect(late.weightedWidth).toBeGreaterThan(early.weightedWidth);
+  });
+
+  it('names a strategy that never changed, because that is a finding about the design', () => {
+    // Mobility 1 means one move played for the whole run. permit-then-idle's
+    // measured shape -- act for 140 ticks, then nothing for 2260 -- is the
+    // degenerate phase profile every candidate has to beat.
+    const archive = foldPhasedArchive(
+      AXES,
+      [
+        phased('static', [['early', 100], ['mid', 100], ['late', 100]]),
+        phased('mobile', [['early', 5], ['mid', 100], ['late', 300]]),
+      ],
+      SILENT_NULLS,
+    );
+    expect(archive.mobilityByStrategy['static']).toBe(1);
+    expect(archive.mobilityByStrategy['mobile']).toBe(3);
+    expect(archive.staticStrategies).toEqual(['static']);
+  });
+
+  it('treats a missing late phase as absent, not as the origin', () => {
+    // A run that ended early has no late behaviour. Inventing one at zero would
+    // put every truncated run in the same cell and read as agreement.
+    const archive = foldPhasedArchive(
+      AXES,
+      [
+        phased('full', [['early', 5], ['mid', 100], ['late', 300]]),
+        phased('truncated', [['early', 5], ['mid', 100]]),
+      ],
+      SILENT_NULLS,
+    );
+    expect(archive.widthByPhase.late).toBe(1);
+    expect(archive.mobilityByStrategy['truncated']).toBe(2);
+  });
+
+  it('applies the null ladder per phase, so a strong early game cannot pay for an absent late one', () => {
+    const nulls: NullOutcomes = {
+      ...SILENT_NULLS,
+      'passive-control': candidate({ strategyId: 'passive-control', ascended: 20 }),
+    };
+    const archive = foldPhasedArchive(
+      AXES,
+      [phased('loser', [['early', 5], ['mid', 100], ['late', 300]], 3)],
+      nulls,
+    );
+    // Loses the ladder, so it holds no cell in any phase however varied it is.
+    expect(archive.weightedWidth).toBe(0);
+    // But its mobility is still reported: it did change, it just never won.
+    expect(archive.mobilityByStrategy['loser']).toBe(3);
   });
 });

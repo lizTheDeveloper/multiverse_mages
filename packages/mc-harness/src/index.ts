@@ -462,6 +462,10 @@ export {
 
 export type {
   Archive,
+  Phase,
+  PhaseObservation,
+  PhasedArchive,
+  PhasedCandidate,
   ArchiveCell,
   BehaviourAxis,
   CandidateOutcome,
@@ -471,6 +475,11 @@ export type {
 } from './quality-diversity.js';
 export {
   CELL_STATUS,
+  PHASE,
+  PHASE_BOUNDS,
+  PHASE_WEIGHT,
+  foldPhasedArchive,
+  phaseOfTick,
   MAX_ELITE_ILLEGAL_RATE,
   NULL_LADDER,
   NULL_RUNG,
