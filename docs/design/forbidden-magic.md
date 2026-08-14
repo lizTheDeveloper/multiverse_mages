@@ -427,18 +427,48 @@ waiting for the other end of the loop to exist.
 **So "you restart, new" is not a new subsystem. It is the missing half of one that is already in the
 codebase**, and the two dead constants are the seam.
 
-### Two endings, and both seed the next game
+### Two endings, and they are not symmetric
 
-**Ascension and decay are not win and lose. They are two ways for a world to end**, and both carry
-forward:
+*Owner, correcting a reading of mine:* **"Ascend during Peak Magic is the real move — you get the
+prestige and really go on to the next one. A New God Of Magic Is Born is the degenerate case. No
+prestige."**
 
-- **You summit.** The world you built persists as a thing that was finished. What you never defeated
-  still waits — you simply left before it mattered.
-- **The world dies.** What you never defeated inherits the ruins, and has more of them.
+I had written these as two equivalent ways for a world to end. **They are not, and the asymmetry is
+the whole incentive.**
 
-**Neither is a clean slate**, and that is the point. A player who wins sloppily and a player who loses
-carefully hand very different worlds to their successor — which is the difficulty ramp nobody has to
-tune, stated as a run loop.
+| ending | what carries |
+|---|---|
+| **Ascend at Peak Magic** | **prestige.** You go on properly. |
+| **The world dies; a new god is born** | **nothing in your favour.** You continue with what you left behind and nothing to offset it. |
+
+**The degenerate case is not a loss screen — it is worse than one in a specific and interesting way.**
+The run does not stop; you simply begin again with no accumulated standing and the same waiting
+enemies. **The Old Gods follow either way. Only one path pays you for the trouble.**
+
+### And "at Peak Magic" is a timing constraint, not a threshold
+
+**This is the sharpest thing in the ending design, and it was not in the doc before.**
+
+Ascending is not simply a bar to clear whenever you manage it. **Prestige is earned by summiting while
+the world is at its height** — which means:
+
+- **Too early** and the world has not reached peak: you can ascend, but there is less to ascend *from*,
+  and the prestige reflects it.
+- **Too late** and magic is already receding: the peak has passed, the last-ditch tactics are what is
+  left, and they get you out without getting you paid.
+
+**So there is an optimal window, and finding it is the game.** That is a genuine strategic problem of
+exactly the kind this project has been unable to produce — not "maximise a number" but "judge a moment"
+— and it is the first mechanic here where **timing rather than accumulation decides the outcome.**
+
+It also gives the decay spec its teeth. A world beginning to fade is not merely losing resources: **it
+is losing the window.** Every tick after the peak is prestige the player will not get, which is a much
+better clock than a countdown because the player can *see* it in the state of their own world.
+
+**And it explains why the last-ditch tactics must be survivable but unrewarding.** They are the escape
+hatch, not the play. A player who reaches the Box of Ascendance has already lost the thing worth
+winning — they are salvaging a run, and the design should let them, without paying them as though they
+had judged the moment right.
 
 ### And "a new age struggles to be born" is the part to get right
 
@@ -465,3 +495,10 @@ meta-progression and it costs nothing to implement**, because it lives in the pl
 **If that turns out to be insufficient, the answer is not to grant power** — it is to make the Old
 Gods *fewer and more specific*, so that a careful player genuinely clears their record. **Sweep it:
 how much of a generation's unfinished business carries, with both degenerate ends as controls.**
+
+**And note what the asymmetry above already does for this problem.** Prestige is the accumulating
+thing, and it is earned only by judging the peak correctly — so a player who keeps failing does not
+spiral into an unwinnable ladder of Old Gods with nothing to show. **They keep starting fresh at the
+same difficulty**, which is a floor, and the ratchet only engages for players who are actually
+succeeding. That is the right way round, and it fell out of the design rather than being added to
+patch it.
