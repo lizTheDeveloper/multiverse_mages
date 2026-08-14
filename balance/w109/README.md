@@ -23,10 +23,16 @@ The arms, and what each is for:
 | arm | founding | strategy | what it answers |
 |---|---|---|---|
 | `draconic-abstainer` | default | `alliance-abstainer` | the shipped baseline |
-| `draconic-seeker` | default | `alliance-seeker` | can draconic reach the gate at all? (no) |
-| `draconic-gated-abstainer` | `foundingPortalMagic: 1` | `alliance-abstainer` | is the seeded node itself the cause? (no) |
+| `draconic-seeker` | default | `alliance-seeker` | can draconic reach the gate at all? (no — bit-identical to its control) |
+| `draconic-gated-abstainer` | `foundingPortalMagic: 1` | `alliance-abstainer` | is the seeded node itself the cause? (no — 0/100) |
 | `draconic-gated-seeker` | `foundingPortalMagic: 1` | `alliance-seeker` | what is the invitation worth once legal? (0 → 14/100) |
-| `draconic-gated-bodies` | `foundingPortalMagic: 1`, `foundingMages: 6` | `alliance-abstainer` | headcount or curiosity? (headcount) |
+| `draconic-gated-bodies` | `foundingPortalMagic: 1`, `foundingMages: 6` | `alliance-abstainer` | headcount or curiosity? (headcount — 15/100) |
+| `orc-gated-abstainer` / `-seeker` | `foundingPortalMagic: 1` | both | does it help a fertile species? (47 → 48, and orc barely invites) |
+| `human-gated-abstainer` / `-seeker` | `foundingPortalMagic: 1` | both | **the falsifying arm**: 35 → 50, so the verb helps the species that needs it least as much as the one that needs it most |
+
+`invitations` in the CSV is the column that explains the cross-species spread: draconic
+invites in 97 runs of 100, human in 56, orc in 4. Read it before reading any ascension
+delta, because the delta tracks it.
 
 Reproduce any arm with:
 

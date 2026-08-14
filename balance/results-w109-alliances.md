@@ -117,55 +117,96 @@ Immigrants die — a human lives 960 months inside a 2400-tick run — the speci
 being resident, and the seat reopens. The design self-limits by *concurrency*, not by
 lifetime count.
 
-## 6. The discriminator: it is bodies, not curiosity
+## 6. The discriminator: not curiosity, and not simply bodies — *affiliated* bodies
 
-An empty-headed arrival still changes two things at once — headcount, and the
-personality distribution of the roster. Draconic's roster cannot grow on its own
-inside the horizon, so one adult is a large fractional change to a roster of four.
+An empty-headed arrival changes two things at once: headcount, and the personality
+distribution of the roster. The verb refuses a resident species, so a same-species
+invitation cannot be expressed through it; the matched control is therefore the same
+bodies at approximately the same time, through the committed `foundingMages` factor —
+**six draconic founders instead of one, no invitations.**
 
-The verb refuses a species already resident, so a same-species invitation cannot be
-expressed through it. The matched control is therefore the same bodies at
-approximately the same time, through the committed `foundingMages` factor: **six
-draconic founders instead of one, no invitations.**
+| arm | living mages | ascended | nodes known | library depth | grimoires |
+|---|--:|--:|--:|--:|--:|
+| `gated-abstainer` (1 founder) | 4.31 | **0/100** | 71.12 | 14.24 | 75.98 |
+| `gated-bodies` (6 draconic founders) | 8.91 | **15/100** | 86.79 | 24.98 | 123.78 |
+| `gated-seeker` (1 + ~5 foreign) | 8.75 | **14/100** | 188.38 | 14.94 | 26.33 |
 
-| arm | living mages | ascended | nodes known | library depth | grimoires | ticksRun |
-|---|--:|--:|--:|--:|--:|--:|
-| `gated-abstainer` (1 founder) | 4.31 | **0/100** | 71.12 | 14.24 | 75.98 | 1189 |
-| `gated-bodies` (6 draconic founders) | 8.91 | **15/100** | 86.79 | 24.98 | 123.78 | 1385 |
-| `gated-seeker` (1 + ~5 foreign) | 8.75 | **14/100** | 188.38 | 14.94 | 26.33 | 2272 |
+**15/100 against 14/100 at matched headcount, same earliest ascension tick.** Six
+dragons do the same job as five foreign scholars, so the payoff is **not** the imported
+curiosity the design claims. The control was *advantaged* and only tied — draconic
+founders never die inside the horizon while immigrants do — which makes that the robust
+direction.
 
-**15/100 against 14/100, at matched headcount, with the same earliest ascension tick
-(1682).** Six dragons do the same job as five foreign scholars.
+But "headcount" is not the end of it, and the cross-species table in §7 is what forced
+the sharper answer. Look at what scribes:
 
-So the mechanic is, on this evidence, a **demographic patch**. "Dragons have to make
-friends" is true in the sense that dragons need *bodies*; it is not yet true in the
-sense that they need *other kinds of people*. The design claim — that a mismatched
-species imports the curiosity it lacks — is **not** what produces the ascensions.
+| arm | living mages | library depth | grimoires |
+|---|--:|--:|--:|
+| `human-gated-abstainer` | **162.3** | **0.05** | **0.05** |
+| `human-gated-seeker` | 171.0 | **12.32** | **25.01** |
+| `draconic-gated-abstainer` | **4.3** | **14.24** | **75.98** |
 
-Two honest qualifications, in both directions:
+**162 human mages produce 0.05 grimoires; 4.3 draconic mages produce 76.** That
+inversion has one cause. `scribeThroughputFor` returns zero for a mage whose
+`universityId` is `0`, and **`completeAffiliation` has no production caller** — so no
+mage a universe promotes for itself is *ever* affiliated. Only two kinds of mage are:
+founders, and **an invited scholar, who is affiliated at creation.**
 
-- **The control was advantaged and only tied.** Draconic founders live 18,000 months
-  and never die inside the horizon; the seeker's immigrants die and are replaced. The
-  bodies arm therefore has more, and more stable, mage-ticks than the treatment — and
-  Canon rewards four *consecutive* good era boundaries. The bias favours the control,
-  which makes "headcount suffices" the robust direction of this result.
-- **The two arms reach the same rate by visibly different routes.** The seeker knows
-  **2.2× the nodes** (188 vs 87) and almost never stagnates (3/100 vs 72/100); the
-  bodies arm builds deeper libraries and scribes far more (grimoires 124 vs 26). So
-  headcount sets the ascension rate, while *who* the bodies are sets breadth and
-  survival. A metric other than `ascensionRate` might well separate them.
+Draconic's single founder lives 18,000 months and scribes for the whole run. Human's
+founder dies at 960 months, after which the universe has **no affiliated mage at all**
+and scribing stops dead — until an invitation arrives. That is why human's library
+depth moves from 0.05 to 12.32 on roughly three invitations, and why `foundingMages: 6`
+works too: it adds six *affiliated* mages.
 
-**And the verb remains the only in-game lever that delivers the bodies.**
-`foundingMages` is a scenario instrument; no god action creates a draconic mage. So
-the discriminator explains *why* action 16 works without making it redundant.
+**So the quantity the verb actually delivers is an affiliated scholar, and it is scarce
+only because of an unwired code path.** This measurement is therefore, in substantial
+part, of the alliance mechanic compensating for a defect in a subsystem it does not
+own. **Every effect size in this document should be re-measured after
+`w108/university-fidelity` wires affiliation**, and the honest prior is that the
+alliance's advantage shrinks — possibly a great deal — once a universe can affiliate
+its own graduates.
 
-## 7. What it does to orc and human
+`foundingMages` is a scenario instrument and no god action creates a mage of the
+universe's own species, so the verb remains the only in-game lever that delivers
+affiliated bodies today. That is what makes it work; it is not what the design says
+makes it work.
 
-The immigration-free hazard is that a mechanic helping everyone equally has not made
-dragons special. Organically the question does not even arise for orc — it reaches
-the gate in 0/100 runs, exactly as draconic does — so these are gated arms too.
+## 7. What it does to orc and human — and it does not make dragons special
 
-<!-- ORC_HUMAN_TABLE -->
+All three species are measured downstream of the gate, because organically neither orc
+nor draconic ever reaches it.
+
+| species | maturity | fertility | without the verb | with it | Δ | runs that invited | invitations/run |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| **draconic** | 3,600 | 96 | 0/100 | **14/100** | **+14** | 97/100 | 14.63 |
+| **human** | 216 | 1,280 | 35/100 | **50/100** | **+15** | 56/100 | 2.92 |
+| **orc** | 168 | 1,536 | 47/100 | **48/100** | **+1** | 4/100 | 0.08 |
+
+Human's paired differences are as real as draconic's — nodes known **+35.55 ±5.08**,
+library depth **+12.27 ±2.22**, grimoires **+24.96 ±4.43**, all beyond three paired
+standard errors. Orc's are all inside it.
+
+**This is the answer to the immigration-free hazard, and it is the unwelcome one.** The
+brief's test was that *"a mechanic that only helps the species who cannot reproduce is
+correct; one that helps everyone equally has not made dragons special, it has made
+immigration free."* Downstream of the gate the verb is worth **+15 to human and +14 to
+draconic** — and human matures in 216 months against a 2,400-tick horizon and breeds at
+1,280. **It helps the species that needs it least at least as much as the one that needs
+it most, so as built it has not made dragons special.**
+
+Orc's near-zero gain is *not* evidence of the asymmetry the design wants, because orc
+barely used the verb: 4 runs in 100, 0.08 invitations per run. The gain tracks **how
+often each god could afford to invite**, not how badly each species needed to. Orc is
+not poor — it spends over a million favor per run — but it always has something cheaper
+to buy, and it is the only arm that spends on `fundUniversity` and `encourageResearch`
+in most runs (39 and 37 of 100, against draconic's zero). A policy that submits the
+first affordable preference every tick never saves for a dear one. That is a plausible
+mechanism consistent with the spend profiles and **it is not independently verified
+here**; it is a property of `alliance-seeker`'s ordering as much as of orc.
+
+So the design goal is **not** met by this mechanic on its own. What makes the shipped
+game dragon-flavoured is only the portal gate — and §3 shows the gate excludes draconic
+entirely, so in shipped form the mechanic reaches only species that did not need it.
 
 ## 8. Provenance, and one moved baseline
 
@@ -217,20 +258,24 @@ the gate in 0/100 runs, exactly as draconic does — so these are gated arms too
 
 ## 10. Recommendations, all deferred off this branch
 
-1. **Do not touch draconic `fertility`.** It cannot move a number at this horizon.
-   If more dragons are wanted, `maturityMonths` is the lever — 3,600 against 2,400 is
-   the whole of it.
-2. **Move portal magic within reach of an incurious species**, or give the chain a
-   shallower entry point. Until then action 16 is unreachable for precisely the two
-   species it was designed for. This is a content-placement decision, not a tuning
-   one.
-3. **If the design wants curiosity rather than headcount to be the payoff**, the
-   mechanic needs §2g familiarity — the per-`(species, species)` affinity capped at
-   1.15 — which is schema-bearing and was deliberately declined here. On current
-   evidence the alliance is a demographic patch, and that should be a decision rather
-   than a surprise.
-4. **`completeAffiliation` has no production caller**, so every mage promoted during
-   a run is permanently unaffiliated and can never scribe or ward — founders only.
-   That suppresses instance redundancy for every species and interacts directly with
-   these arms, since an invited scholar *is* affiliated at creation. Routed to
-   `w108/university-fidelity`; noted here because it conditions every number above.
+1. **Do not touch draconic `fertility`.** It cannot move a number at this horizon:
+   `maturityMonths` 3,600 against a 2,400-tick run means no draconic born in a run can
+   ever become a mage in it. Elf ascends 20/100 on **2.84** living mages against
+   draconic's 4.26. If more dragons are wanted, maturity is the lever.
+2. **Wire `completeAffiliation` before believing any effect size here.** It is
+   `w108/university-fidelity`'s and untouched by this branch, but §6 shows it is the
+   *mechanism* of the alliance's benefit: 162 unaffiliated human mages scribe nothing
+   while 4.3 affiliated draconic ones scribe 76 grimoires, and an invited scholar is
+   affiliated at creation. Until a universe can affiliate its own graduates, this
+   mechanic is partly compensating for a missing code path rather than delivering a
+   design.
+3. **Move portal magic within reach of an incurious species,** or give the chain a
+   shallower entry. Content placement, not tuning. Until then the verb is unreachable
+   for exactly the two species it was designed for.
+4. **The payoff has to become species-conditional, or the design claim should change.**
+   As built the verb is worth as much to human as to draconic (§7), so it is closer to
+   free immigration than to "dragons have to make friends". Two honest routes: implement
+   §2g familiarity so the benefit is the per-`(species, species)` affinity the design
+   actually describes — schema-bearing, and deliberately declined here — or accept that
+   the mechanic is a demographic patch and restate the pillar accordingly. Choosing
+   should be a decision, not a discovery.
