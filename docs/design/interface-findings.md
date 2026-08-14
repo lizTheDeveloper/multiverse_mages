@@ -143,7 +143,23 @@ fix.** The fix is a reason channel on the mask — one small enum per action, `u
 `impossible` / `spent` — which costs nothing to add now and is a format change after policies train
 against it.
 
-*Lands in: `contracts.md` §4.2 and `agent-api`'s mask.*
+**The sound design already made this decision, and already specified the cue.** Checked against
+`main` after the fact, which makes the ask considerably smaller than it looked. `sound-design.md` §7:
+
+> **Insufficient favor** is deny (§2.2) plus one strained pulse — the sub attempting its cycle and
+> not completing it. *Distinct from ordinary illegality, because "not allowed" and "not yet
+> affordable" are different problems with different fixes.*
+
+That sentence predates this finding. And §2.2 has already split deny two ways once — for stranded
+prerequisites — establishing the rule it did it under: **layer, never a seventh click**, because the
+six clicks are a closed set and adding one should require an argument. So a reason channel is not
+proposing a new distinction or a new sound. It is supplying the input to a cue the audio design has
+already decided how to express and currently cannot reach, and the visual side reached the same
+answer independently — `ui/glow/` had to reconstruct the distinction client-side to draw it at all.
+Two layers, specified separately, blocked on the same missing bit.
+
+*Lands in: `contracts.md` §4.2 and `agent-api`'s mask. Consumers already waiting on it:
+`sound-design.md` §7 and `ui/glow/`.*
 
 ### 1.7 The session drops the integer observation — **defect**
 
@@ -210,11 +226,37 @@ tick 274.** Nothing on the read path announces it. Only a consumer already diffi
 across exactly those two frames could infer it, and it would learn *"a count went to zero"* rather
 than *"a species ended"*.
 
-This is filed as open rather than defect because §4.3's outcome record may be the right home and
-nobody has looked. It is the same shape as 1.5 — a mask that says which, never why — and probably
-wants the same answer.
+**Three sections of one document are asking the read path for this, and they should be answered
+once.** Not just §6.5, whose loss cue is what the diff cannot serve: §0.4's density rule needs an
+**events-per-tick count per class** to choose between discrete sounds and a continuous texture, and
+pins loss at threshold 1 so it is *never* aggregated away; §10 needs classified per-tick events to
+build an arrangement at all. Three separate requirements, one missing capability. An answer shaped
+for any one of them alone will be re-litigated twice.
 
-*Lands in: `contracts.md` §4.3, or a side channel beside the candidate lists.*
+What every consumer needs is the same two things, and they are worth stating as a requirement rather
+than as a complaint:
+
+- **a class**, so a threshold can be applied to it, and
+- **a "was this the last one" bit**, which is the part that matters and the part **nothing
+  downstream can reconstruct.** A consumer holding every frame of the entire run still cannot
+  recover it, because the frame that would have shown the last instance is the frame where the count
+  is already zero. It is not expensive to emit and it is impossible to derive.
+
+Filed as **open** rather than defect because §4.3's outcome record may be the right home and nobody
+has looked — the audio session independently reached the same conclusion and filed it the same way.
+It is the same shape as 1.5 — a mask that says which, never why — and probably wants the same answer.
+
+**On where this is written down.** `sound-design.md` §6.5 records it at the cue it breaks, which is
+right: a reader of that cue needs to know it cannot be built yet. But that is the *consequence*, and
+nobody implementing `agent-interface` at 0.5.0 reads the audio document. The fix lands in
+`contracts.md` §4.3, and §4.3 currently says nothing about it. **That amendment has not been made and
+is not made here** — adding a requirement to the contract of record is a design decision, not a
+finding, and this document does not have the standing to make one. The requirement above is written
+to be transcribable, so that when it is authorized the amendment is a copy rather than a fresh
+argument.
+
+*Lands in: `contracts.md` §4.3, or a side channel beside the candidate lists. Recorded at the
+consequence in `sound-design.md` §6.5; the contract amendment is unwritten and unauthorized.*
 
 ---
 

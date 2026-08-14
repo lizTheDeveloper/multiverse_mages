@@ -88,7 +88,9 @@ which makes it *permanently* unaffordable at worship tier 2. Three unrelated sit
 The only way to tell them apart from outside is to price the action, and pricing is a rule §5 says
 the client may not hold. So `session.js` isolates it in one function named
 `reconstructedCharge`, every control it touches is marked **†** on the page, and the fix is a reason
-channel on the mask rather than a cleverer client.
+channel on the mask rather than a cleverer client — and `sound-design.md` §7 has been waiting on that
+same bit since before this was found: *"'not allowed' and 'not yet affordable' are different problems
+with different fixes."*
 
 **B. `session.observe()` drops the integers.** `AgentView` carries `raw: Int32Array` — its own
 comment calls it *"the reproducible artefact"* — and the session returns only the normalized
