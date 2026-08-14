@@ -218,6 +218,32 @@ describe('a reference universe is raided', () => {
     expect(played.raids.every((raid) => !raid.outbound)).toBe(true);
   });
 
+  // ### This assertion passes, and it is not measuring what it says.
+  //
+  // Measured on this branch at HORIZON=520, raids-on minus raids-off instances,
+  // six seeds:
+  //
+  //     0x12345678  -55     0x63       -193
+  //     0x0badc0de -226     0x7         -84
+  //     0x5eed0001  +42     0x1e240    +241
+  //
+  // Raids reduce instances on 4 of 6, which is better than the coin flip this
+  // read before the branch was rebased — but it is still a comparison between
+  // two RNG trajectories that diverge the moment a raid lands, and with 300
+  // nodes reachable instead of 51 that divergence is larger than anything a raid
+  // removes.
+  //
+  // And it removes nothing. Every raid in both arms reports
+  // `nodesLostLocally: 0` and `localCasualties: 0`, and the raid log names
+  // `unimplementedCombatChannels: ["removal","save","decoy","displacement"]`.
+  // **That is true on `main` too** — checked by restoring `main`'s cell.json and
+  // load.ts and re-running — so this assertion has never measured destruction on
+  // any build. It measures trajectory divergence, and it happens to have the
+  // right sign at this seed.
+  //
+  // Left green and left alone: the repair is to assert `nodesLostLocally` once
+  // `removal` is implemented, which is a raid-engagement task and not a content
+  // one, and widening it here would only make a differently-wrong assertion.
   it('destroys knowledge instances that would otherwise have survived', () => {
     const seed = 0x0bad_c0de;
     expect(play(seed, true).instances).toBeLessThan(play(seed, false).instances);
@@ -283,11 +309,39 @@ describe('raids off is the build before this one', () => {
 });
 
 describe('looting reaches what research cannot', () => {
+  // ### FAILING ON PURPOSE — this property's premise is gone, and that is the finding
+  //
+  // Looting matters because a god's ruleset is narrower than the content: a book
+  // from a universe that permitted other cells is knowledge no amount of domestic
+  // research could reach. Enabling all seventy cells removed the premise in two
+  // places at once, both of them silent.
+  //
+  // 1. `shelveForeignBooks` picks the rival's shelf from nodes in **non-v1
+  //    cells**. There are none, so it hits `if (foreign.length === 0) return;`
+  //    and the rival shelves nothing. No error, no symptom — the exact failure
+  //    mode this repository keeps catching. Note that the mechanism is keyed on
+  //    the *content* flag while `raid-constant.json`'s own gloss describes it as
+  //    *"cells this universe's own ruleset forbids"*: the two gates coincided
+  //    until now, and the code took the wrong one. Deriving it from `permits()`
+  //    instead would not help today, because the reference universe's opening
+  //    ruleset now permits all seventy.
+  //
+  // 2. `portal-rush` stops raiding outbound at all. Measured at 400 ticks, seed
+  //    0x12345678: **31 raids, all outbound, 8 nodes looted** on `main`, against
+  //    **1 raid, inbound, 0 looted** here. The strategy still submits action 14
+  //    on every one of its 400 rounds; 242 of them are now rejected
+  //    (`accounting.byActionId[14] = 242`). Whatever gates action 14 is
+  //    responding to the wider ruleset, and that is un-diagnosed. The figures are
+  //    re-measured after the rebase onto `apply-magic` and are unchanged.
+  //
+  // Left red. Asserting zero outbound raids would turn a tripwire into a
+  // description, and this is the strongest single argument that a narrow opening
+  // square — `w72`'s work — has to land with the wider grid rather than after it.
   it('brings home nodes from cells this universe would never have permitted', { timeout: 60_000 }, () => {
     // The measurement behind the content-exhaustion finding. Seventy cells are
-    // authored and twelve are enabled, and those twelve hold 51 of the 300
-    // nodes — so an undisturbed universe learns all 51 and stops, whatever it
-    // plays. Vision §3 makes a god's ruleset the thing that decides what can
+    // authored and twelve were enabled, and those twelve held 51 of the 300
+    // nodes — so an undisturbed universe learned all 51 and stopped, whatever it
+    // played. Vision §3 makes a god's ruleset the thing that decides what can
     // exist *at home*; §8 makes a raid the thing that reaches what cannot. A
     // strategy that opens portals must end holding nodes a strategy that does
     // not could never have derived.

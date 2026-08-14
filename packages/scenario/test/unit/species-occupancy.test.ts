@@ -83,10 +83,15 @@ function runTo(ticks: number) {
 }
 
 describe('the grid the reading is taken against', () => {
-  it('is the full seventy, of which the v1 ruleset permits twelve', () => {
+  it('is the full seventy, all of which the v1 ruleset now permits', () => {
+    // `enabledCells` was 12. Every cell carries `"v1": true` now, and the
+    // reference universe's opening ruleset is the OR of the enabled cells' axes,
+    // so the ruleset ceiling and the grid coincide. Both are asserted anyway:
+    // they are separate numbers that happen to be equal, and a reading against
+    // seventy means something different from a reading against the ruleset.
     const sample = runTo(0);
     expect(sample.gridCells).toBe(70);
-    expect(sample.enabledCells).toBe(12);
+    expect(sample.enabledCells).toBe(70);
   });
 
   it('covers every species content declares, in content order', () => {
@@ -129,12 +134,31 @@ describe('the founding position', () => {
         entry.occupiedCellIds.map((id) => cellName.get(id)),
       ]),
     ).toEqual([
-      ['draconic', ['intellego-limen']],
-      ['dwarf', ['intellego-mentem']],
-      ['elf', ['intellego-nomen']],
-      ['gnome', ['intellego-terram']],
-      ['human', ['perdo-limen']],
-      ['orc', ['perdo-mentem']],
+      // The founding grant moved when all seventy cells were enabled, and it
+      // moved for a reason worth knowing rather than a random one.
+      // `foundingCandidates` returns prerequisite-free nodes in *enabled* cells
+      // ascending by interned id, and interning is content-file order — so the
+      // `creo` block, which had been inert, is now the first thing the founder
+      // sees. Six species, the first six such cells:
+      //
+      //     was                          now
+      //     draconic intellego-limen     creo-animal
+      //     dwarf    intellego-mentem    creo-aquam
+      //     elf      intellego-nomen     creo-auram
+      //     gnome    intellego-terram    creo-corpus
+      //     human    perdo-limen         creo-fatum
+      //     orc      perdo-mentem        creo-herbam
+      //
+      // The property this test is about is unchanged: six species, six cells, one
+      // apiece, no two the same. Where the six sit is the starting position's
+      // business — `w72`'s opening-square work — and this file's job is to notice
+      // that it moved, which it now has.
+      ['draconic', ['creo-animal']],
+      ['dwarf', ['creo-aquam']],
+      ['elf', ['creo-auram']],
+      ['gnome', ['creo-corpus']],
+      ['human', ['creo-fatum']],
+      ['orc', ['creo-herbam']],
     ]);
     expect(collectSpeciesCellOccupancy(telemetryFor(sample))).toMatchObject({
       detail: { cellsOccupiedByAnySpecies: 6, cellsWithASoleOccupant: 6 },
@@ -153,64 +177,70 @@ describe('twenty world years in', () => {
   it('is bounded by the ruleset, not by the grid', () => {
     // **The number the capability metric cannot give you.**
     // `speciesGridVersatility` reports all six species staffing 70/70 cells,
-    // and no species can ever *occupy* more than the twelve the v1 ruleset
-    // permits. Reading realised occupancy against seventy without this in view
-    // makes six capable species look like six incapable ones.
+    // and no species can ever *occupy* more than the cells the ruleset permits.
+    // Reading realised occupancy against seventy without this in view makes six
+    // capable species look like six incapable ones — which is what it did while
+    // the ruleset permitted twelve, and is exactly the reading enabling every
+    // cell removes.
     for (const entry of sample.species) {
       expect(entry.occupiedCells).toBeLessThanOrEqual(sample.enabledCells);
       expect(entry.occupiedEnabledCells).toBe(entry.occupiedCells);
     }
   });
 
-  it('has three species at the ruleset ceiling and three below it', () => {
-    // **Re-measured on the merge of `main` (5a1ce6c) into
-    // `w108/university-fidelity`, 2026-08-14.** Not inherited from either side:
-    // both sides of that merge re-recorded this block for different reasons and
-    // *neither side's numbers survived the combination*. `main` had
-    // `12/12/11/10/10/8` (dwarf, human, orc, draconic, elf, gnome) and the
-    // branch had `12/9/12/10/10/9`; the merged run reads none of those. Taking
-    // either hunk verbatim would have pinned a number no build produces.
+  it('has no species at the ruleset ceiling, and a spread of fifteen cells', () => {
+    // Was two species pinned at the 12-cell ceiling — dwarf and human — with orc
+    // at 11 since `apply-magic`, draconic and elf at 10, gnome at 8. A third of
+    // the field was clipped by the ruleset, which is the worst possible shape for
+    // reading a species trait: a ceiling two species sit on cannot distinguish
+    // them.
     //
-    // Two causes compose here, and neither is a balance decision:
+    // Against seventy nobody is at the ceiling and the ordering is legible:
     //
-    // 1. **`apply-magic` (#127).** `speciesTerm` reads `laborAffinity` for that
-    //    goal, so species with high labor affinity spend months casting that
-    //    they used to spend reaching into another cell. That is the trade the
-    //    goal is supposed to create.
-    // 2. **The staffing rule this branch wires.** `UNIVERSITY_STAFF` link rows
-    //    are entities, and `contracts.md` §6 splits the RNG per entity handle,
-    //    so creating them shifts every handle allocated afterwards and re-rolls
-    //    every handle-keyed draw in the run. The branch verified this rather
-    //    than assuming it: a control build that creates the link rows and keeps
-    //    the old global-pool scribing reproduces the branch run byte for byte,
-    //    and the reference universe has exactly **one** university, where
-    //    owning every scribe cohort and sharing the universe's pool are
-    //    arithmetically the same thing — 142 books over 36 ticks on both.
+    //     was                now (of 70)      nodesHeld
+    //     dwarf     12       dwarf     59      70
+    //     human     12       orc       57      59
+    //     orc       11       draconic  56      57
+    //     draconic  10       gnome     55      66
+    //     elf       10       human     54      54
+    //     gnome      8       elf       44      44
     //
-    // The composition is not the sum of the parts, and that is the honest
-    // reading of it: orc fell to 11 on `main` under `apply-magic` and is back
-    // at 12 here, while draconic and elf each gained a cell they held at 10 on
-    // both sides. A re-roll moves things in both directions. What the staffing
-    // rule actually *changes* needs more than one university to see, and is
-    // measured in `coordination/test/unit/university-staffing.test.ts` — not
-    // here.
-    expect(bySpecies('dwarf').occupiedCells).toBe(12);
-    expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(12);
-    expect(bySpecies('draconic').occupiedCells).toBe(11);
-    expect(bySpecies('elf').occupiedCells).toBe(11);
-    expect(bySpecies('gnome').occupiedCells).toBe(9);
+    // The two former ceiling-sitters separate by five cells and gnome, which was
+    // last by two, is now fourth. Untuned content, so this is a measurement and
+    // not a balance claim.
+    expect(bySpecies('dwarf').occupiedCells).toBe(59);
+    expect(bySpecies('orc').occupiedCells).toBe(57);
+    expect(bySpecies('draconic').occupiedCells).toBe(56);
+    expect(bySpecies('gnome').occupiedCells).toBe(55);
+    expect(bySpecies('human').occupiedCells).toBe(54);
+    expect(bySpecies('elf').occupiedCells).toBe(44);
+    // Breadth and depth disagree, which a cell count alone cannot show: gnome is
+    // fourth on cells and second on nodes held.
+    expect(bySpecies('dwarf').nodesHeld).toBe(70);
+    expect(bySpecies('gnome').nodesHeld).toBe(66);
+    expect(bySpecies('elf').nodesHeld).toBe(44);
+    for (const entry of sample.species) {
+      expect(entry.occupiedCells).toBeLessThan(sample.enabledCells);
+    }
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0473 at this horizon, re-measured on the merge described above — was
-    // 0.0729 before either change, 0.0714 on `main` alone and 0.0645 on the
-    // branch alone. Pinned to four places: the point of the metric is that this
-    // number moves, and a test that only asserted "greater than zero" would let
-    // it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0473, 4);
+    // 0.0436 at this horizon, against 0.0714 while the ruleset permitted twelve.
+    // Pinned to four places: the point of the metric is that this number moves,
+    // and a test that only asserted "greater than zero" would let it move to
+    // anything.
+    //
+    // It went *down*, which is the opposite of what "make species affinity
+    // reachable" was expected to do, and it is a real result rather than a
+    // rounding artefact. The Gini is over occupied-cell counts, and the
+    // twelve-cell reading was compressed against a ceiling three of six species
+    // were sitting on; unclipping the field spreads the counts over a
+    // nineteen-cell range but spreads them *more evenly* in proportional terms.
+    // The differentiation that did appear is in `nodesHeld` and in which cells —
+    // see the two tests around this one — neither of which this scalar can see.
+    expect((entry as { value: number }).value).toBeCloseTo(0.0436, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -225,43 +255,83 @@ describe('twenty world years in', () => {
   });
 
   it('names which cells each species is missing, not just how many', () => {
-    // **The reading a count cannot give.** Gnome is three cells short at this
-    // horizon and the three have a shape: two of the three are Perdo. A count of
-    // 9 says "behind"; this says "mostly behind in Perdo", which is the
-    // difference between a species that is slow and a species that is locked out
-    // of a technique.
+    // **The reading a count cannot give.** Gnome is four cells short of dwarf at
+    // this horizon and the four have a shape: every one of them is Rego. A count
+    // of 55 says "behind"; this says "behind in Rego", which is the difference
+    // between a species that is slow and a species that is locked out of a
+    // technique.
     //
-    // **Re-derived on the merge described above, 2026-08-14, and the branch's
-    // claim about it did not survive.** The branch recorded
-    // `perdo-limen/mentem/terram` and argued the shape had got *cleaner* —
-    // `rego-terram` having dropped out — and called that "the strongest evidence
-    // yet that it is about Perdo and not about the seed". The merged run reads
-    // `perdo-mentem`, `perdo-terram`, `rego-terram`: gnome picked up Perdo Limen
-    // and lost Rego Terram again. So the shortfall is three cells of which two
-    // are Perdo, on both `main`'s numbers and these, but *which* three is not
-    // stable across a re-roll.
-    //
-    // That is worth stating rather than quietly re-pinning, because it is
-    // evidence against the branch's own argument: a set that reorders under a
-    // pure re-roll of handle-keyed draws is partly a seed artifact. The durable
-    // reading is "gnome is short, and disproportionately short in Perdo"; the
-    // exact membership is a pin, not a finding, and the next agent to see it
-    // move should not read the movement as a defect.
+    // Was four cells — `perdo-limen`, `perdo-mentem`, `perdo-terram`,
+    // `rego-terram` — when the ruleset permitted twelve. Same count, and the Rego
+    // half of the shape not only survived opening the grid but became the whole
+    // of it. That is the more interesting half of this result: it is a property
+    // of the species and not of which twelve cells happened to be enabled.
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
     expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
-      'perdo-mentem',
-      'perdo-terram',
-      'rego-terram',
+      'rego-ignem',
+      'rego-limen',
+      'rego-mentem',
+      'rego-nomen',
     ]);
   });
 
-  it('has every occupied cell shared, so the concentration is not specialisation', () => {
+  it('has almost every occupied cell shared, and exactly two specialists', () => {
+    // Was 12 occupied and 0 sole-occupant: every permitted cell held every
+    // species, which is the flat reading the campaign kept finding. Against
+    // seventy, 61 of 70 cells are occupied by someone and two have a sole
+    // occupant. Two out of sixty-one is not specialisation — but it is not zero
+    // either, which is the first time this reading has been anything but zero.
+    //
+    // **And both are the ones the affinities predict.**
+    //
+    //     perdo-herbam   elf   herbam 1536 — its *strongest* entry, and herbam is
+    //                          one of the ten forms the twelve never covered, so
+    //                          this affinity had no cell to act in at all
+    //     rego-terram    orc   terram 1280
+    //
+    // Asserted rather than narrated, because an identification stated in a comment
+    // is a guess until something checks it.
+    //
+    // The nine cells nobody reaches at this horizon are eight Perdo cells plus
+    // `rego-umbra`, and *six* of the nine were inside the old twelve. Widening the
+    // ruleset did not merely add reach; it moved it.
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry).toMatchObject({
-      detail: { cellsOccupiedByAnySpecies: 12, cellsWithASoleOccupant: 0 },
+      detail: { cellsOccupiedByAnySpecies: 61, cellsWithASoleOccupant: 2 },
     });
+
+    const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
+    const holders = new Map<number, string[]>();
+    for (const species of sample.species) {
+      for (const cellId of species.occupiedCellIds) {
+        holders.set(cellId, [...(holders.get(cellId) ?? []), species.speciesId]);
+      }
+    }
+    const sole = [...holders]
+      .filter(([, ids]) => ids.length === 1)
+      .map(([cellId, ids]) => [cellName.get(cellId), ids[0]]);
+    expect([...sole].sort()).toEqual([
+      ['perdo-herbam', 'elf'],
+      ['rego-terram', 'orc'],
+    ]);
+
+    const unoccupied = content.registry.cells
+      .filter((entry_) => !holders.has(entry_.contentId))
+      .map((entry_) => entry_.record.id)
+      .sort();
+    expect(unoccupied).toEqual([
+      'perdo-animal',
+      'perdo-aquam',
+      'perdo-auram',
+      'perdo-corpus',
+      'perdo-limen',
+      'perdo-mentem',
+      'perdo-terram',
+      'perdo-umbra',
+      'rego-umbra',
+    ]);
   });
 
   it('reports living mages beside every count, so a zero is readable', () => {

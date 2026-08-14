@@ -209,9 +209,10 @@ export interface EraBoundaryFacts {
  * whichever is larger.
  *
  * **A flat cap over a quantity that scales measures scale, not custodianship.**
- * Measured on this build: a universe the god never touches holds 51 nodes and
- * loses zero per era, while one that permitted most of the grid holds 220 and
- * loses seven — so an absolute allowance of two disqualified the civilization
+ * Measured when the enabled subset was twelve cells: a universe the god never
+ * touches held 51 nodes and lost zero per era, while one that permitted most of
+ * the grid held 220 and lost seven — so an absolute allowance of two
+ * disqualified the civilization
  * that was actually doing something and waved through the one in stasis. That
  * is the inverted sign this change exists to correct, and no setting of the
  * authored constant corrects it, because the number that should move with the

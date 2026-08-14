@@ -377,27 +377,33 @@ describe('contentRevision', () => {
     // grant-budget move above, this one **does** change every run: applying
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
-    // 162f80bf169296d0e5fd516cc3c5257a -> b37b15fc7f882af127057304f72a7522,
-    // when `affiliate` stopped being priced with one number. Two autonomy
-    // weights were added — the opportunity a mage with no university sees in
-    // getting one, and the much smaller opportunity a mage who has one sees in
-    // moving to a deeper one. In the preimage for the plainest possible reason:
-    // they change which goal a mage picks, and two universes that disagreed
-    // about whether their mages join institutions would not be playing the same
-    // game for five minutes. Unlike the god constants above, this one **does**
-    // change every run from its first year, and the balance baselines it moves
-    // are reported in the change that added it rather than regenerated.
     //
-    // d4e3047657b4fa8a1a74e1d52f9f5c86 + b37b15fc7f882af127057304f72a7522 ->
-    // f49b406d509a1d0e0ed4e152f7b90fb5, on `integration/ui-and-subsystems`.
-    // **Union again, and neither literal above is a competing claim about this
-    // tree.** `main` reached this merge asserting d4e3047 — `apply-magic`'s two
-    // scalars without the affiliation pair — and #134 asserted b37b15f — the
-    // affiliation pair without `apply-magic`'s. This tree's preimage strictly
-    // contains both, so it hashes to neither, exactly as the three-branch
-    // paragraph above describes. Measured with `npm run check:content` on the
-    // merged tree rather than guessed.
-    expect(registry.contentRevision).toBe('f49b406d509a1d0e0ed4e152f7b90fb5');
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> 84f506e5a7d2aae79fc51fdb4a8374b3,
+    // when `"v1": true` was flagged onto the fifty-eight cell records that
+    // lacked it, opening the whole seventy-cell grid and taking the reachable
+    // catalog from 51 nodes to 300. This is a *pure flag* edit — fifty-eight
+    // added keys, no node, effect, primitive or constant touched — and it is
+    // nonetheless the largest behavioural revision in this list, which is
+    // exactly the case the preimage is designed to catch. Two universes
+    // disagreeing about which cells carry content would run different catalogs,
+    // hold different knowledge and lose different things, while a check that
+    // hashed only values a rule reads would call them compatible.
+    //
+    // The measured consequence, so a reader can price it: primitive coverage
+    // moves from 14 of 16 primitives over 51 nodes to 16 of 16 over 300, and
+    // eleven of the eleven authored species affinities become live where four
+    // were. All three committed balance baselines are recorded against an
+    // earlier revision and the gate refuses to compare across a revision
+    // boundary, by design; re-baselining is a separate, deliberate act.
+    //
+    // 84f506e5a7d2aae79fc51fdb4a8374b3 -> bf1d3835cc22ad5168a468a6ef907f6d, on
+    // `integration/ui-and-subsystems`, where the seventy-cell flag edit arrives
+    // together with #134's two `goal-affiliate-*` autonomy weights. **A union,
+    // not a disagreement:** 84f506e5 is a digest over a preimage that has the
+    // cells and not the weights, `main`'s d4e3047 over one that has neither,
+    // and this tree's preimage strictly contains both. Measured with
+    // `npm run check:content` on the merged tree rather than picked from a side.
+    expect(registry.contentRevision).toBe('bf1d3835cc22ad5168a468a6ef907f6d');
   });
 
   it('is stable across loads of identical content', () => {
