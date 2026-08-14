@@ -95,6 +95,29 @@ Today's roles are `researcher`, `warden`, `professor`, `raider`, and `DEFENDING_
 everyone, and the taxonomy above is a *reshaping* of the role set, not an addition to it. Whoever
 implements this must reconcile the two lists deliberately rather than appending.
 
+## Graduation: a student until the university has nothing left to teach
+
+> *"They're students until they learn everything that the university they enrolled in can teach them."*
+
+A crisp, implementable condition, and it does more work than it looks like:
+
+- **University depth becomes the thing that matters**, not just capacity. A shallow university
+  graduates people quickly and shallowly; a deep one holds them. That is a real tradeoff for a god
+  deciding where to spend.
+- **Transferring between institutions becomes meaningful.** A graduate of a shallow school has
+  somewhere to go, which gives `affiliate`'s *transfer* case — priced at 64 against a first
+  affiliation's 512 in #134 — an actual population to act on.
+- **It couples to the telephone problem.** A university whose library has decayed to low mētis can
+  only graduate students into what its books still carry, so an institution that stops teaching from
+  living holders degrades what it can produce, not merely what it holds.
+- **It gives the university harness a natural output column**: time-to-graduation as a function of
+  library depth and staff, which is exactly the "does a university have increasing XYZ" question the
+  manual mode was asked for.
+
+The obvious failure mode to design against: a university with *nothing* to teach graduates its
+students instantly, which would make a bare founding a mage factory. Whether the floor is a minimum
+tenure, a minimum node count, or something else is not decided here.
+
 ## What this bears on
 
 - **Task 9.9, species differentiation** — unmet on every ref tested, with two approaches tried and
