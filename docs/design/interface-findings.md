@@ -633,7 +633,7 @@ is both the best fit for the design and the most blocked is the clearest single 
 
 ## 8. What caught the mistakes
 
-Four defects surfaced during this work. None was found by the person responsible for the area, and
+Ten defects surfaced during this work. None was found by the person responsible for the area, and
 none was found by anyone suspecting anything. Recorded because the mechanism generalises better than
 any of the individual fixes.
 
@@ -646,6 +646,39 @@ any of the individual fixes.
 | A candidate-list saturation figure argued from an invented *k* of 8 | Wiring `ui/targets/` to a real session, where the shipped constant is 32 |
 | "The observation carries integers" — it does not; the session returns floats | Printing a favor meter and reading `0.3125` |
 | A recorder header claiming it stored the raw vector | Checking what `session.observe()` actually returns before writing the comment |
+| "The last-instance bit is impossible to derive from any number of frames" | Deriving it. `nodesKnown` decrements at tick 274 of the reference run |
+| "There is no vessel channel at any width" | Running `knowledgeCensus` once. It returns the four vessels per node, and `fragileNodeIds` |
+| A narrowing that struck a field the requirements list still demanded | A second reader holding the two paragraphs against each other |
+
+### 8.1 The rule those last three earned
+
+Every one of them was **a file read that was locally correct and globally misleading.**
+`observation.ts` really does never write a vessel. `nodesKnown` really is a per-cell aggregate.
+`view.ts` really does hand the session a normalized vector. Each individual reading was true.
+
+What was false every time was the **quantifier** — *"there is no"*, *"impossible"*, *"none"* — and a
+quantifier over a package is not something one file can support.
+
+So: **when a claim is about what the system does *not* have, run it before writing it down.** Reading
+tells you where a thing is absent. Only execution tells you where it is. Claims of presence survive a
+file read; claims of absence do not.
+
+This is cheaper than resolving to be more careful, and the reason is structural rather than moral:
+**carefulness scales with the number of files and execution does not.** One call to the function
+settles what a day of grepping cannot.
+
+Two corollaries, both of which cost something before they were written down:
+
+- **A correction is a claim.** Both sessions verified each other's findings against `main` and then
+  relaxed the check for a *fix*, on the unexamined theory that corrections are a different category.
+  They are not.
+- **Reading is still the right tool for locating absence in a file.** The failure was never the
+  reading; it was generalising from one file to a package. `observation.ts` has no vessel write
+  remains true and remains useful — it is the sentence built on top of it that had to be withdrawn.
+
+*Attribution: this rule came out of an exchange between two sessions in which each refuted the
+other's absence claim, so it belongs to neither. It is recorded here rather than in either session's
+notes because the next person to need it will be reading this file.*
 
 **The common property is that each ran without being asked.** None required a person to suspect the
 specific failure — which matters here more than usual, because this work ran across two sessions that
