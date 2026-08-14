@@ -7985,3 +7985,63 @@ academy. `alliance-abstainer` declares `fundUniversity` as a signature action wh
 third time `permissive-breadth`'s incident has recurred. Both arms share one function so the paired
 difference is unaffected; recorded in `KNOWN_SHADOWED` rather than patched, because the fix belongs
 with a re-measurement.
+
+## W161 — the university lab, and the answer to "how do universities behave with different staff" is *they mostly don't*
+
+PR #149. The owner asked for *"an exhaustive university evaluation harness… in isolation from the main
+game"*, with a mock for every world modifier a university reads. Built: a **15-entry mocked input
+surface enumerated from `world-step.ts`'s call sites**, seven axes declared as data, five committed
+sweeps, a `bin/university-lab.mjs` with `axes / run / trend / sweep / record / replay`, and five
+goldens small enough to read in a diff.
+
+**Coverage is genuinely exhaustive where it matters**: `species-and-staff` is **all 56 species mixes ×
+6 staff sizes × 5 role mixes = 1,680 cells**, run in full. `life-stages` samples every third of 1,008
+and *says so*. The full cross of all seven axes is 151,200 cells ≈ **10 minutes single-threaded** —
+minutes, not a redesign.
+
+### Six findings, and three of them are the ask answered in the negative
+
+1. **No function in `src/universities/` can add a node to a library.** Minting a book belongs to
+   `rules-magic` and `contracts.md` §5 forbids the import. So the worked question — *does library depth
+   increase with professor count* — has the answer **rate = zero**, and it is architectural rather than
+   a tuning problem. Reported seam-first, because the flat line alone would be partly a harness
+   artifact.
+2. **A university with no mages scribes exactly as much as one with sixteen** — **511,440 fp either
+   way.** Throughput reads populace cohorts; **the roster is not an input.** That is the owner's
+   question — *"how do universities behave with different staff?"* — answered directly: **on scribing,
+   they do not.**
+3. **Scribe demand is zero in every cell of every sweep**, while laborer and student demand are live.
+   And this one has a **working positive control**: `books-awaiting` gives `0, 2, 4, 8, 16, 32`, so the
+   zero is a fact about the literal at `world-step.ts:748` and **not a broken probe**. That is the
+   discipline this campaign has spent all night learning, applied without being asked.
+4. **One shelf, four answers.** `depthCeiling` spreads what a species can take from the same library:
+   at 256 nodes, `human 752, dwarf 766, elf 768, draconic 768`. **A real per-species difference that
+   nobody was looking for**, on an axis that is not time-to-tier.
+5. **Food is read by nothing**, and **no university function reads a god constant.** The god has three
+   levers on *founding* and **none on a standing institution.** A god cannot influence a university
+   that already exists — which is a gameplay gap, not a balance one.
+6. `staffCohortsOf`'s dead `isLive` parameter — the eighth built-and-never-reached find — **now has a
+   caller and a test.**
+
+### The merge decision it correctly refused to make
+
+Both #125 and `main` had moved `ui/session.json`, so **resolving that conflict *is* the re-baseline
+decision #125 is blocked on.** The agent did not make it: it took `origin/main` for every
+baseline/behaviour file — **including two that auto-merged silently** (`species-occupancy.test.ts`,
+`loss-shock-recovery.test.ts`) and would have failed later looking like real defects — and left
+`world-step.ts` phase 2a in #125.
+
+Result: **every path in `git diff origin/main --stat` is a new file.** `snapshotHash` identical on both
+sides. All three gates PASS at `0.00 SE` on every metric of every strategy except
+`uniform-random-legal`, which is non-zero on `main` too. 4,496 tests, 0 failures.
+
+Reachability goes **124 → 130**, all six in `staff.ts`, and **six rather than #125's two precisely
+because the wiring stayed behind** — landing #125 first and rebasing removes four. Stated as the tidier
+order rather than as a problem.
+
+### The fidelity gap it names
+
+`university-harness.ts` (#125's) is **deliberately untouched so #125 merges cleanly**, and its single
+pooled `materials` is a real gap the lab closes: **`world-step.ts` charges construction against `stone`
+and upkeep against `vellum`.** A harness that pools them cannot show a university that can build but
+cannot keep books.
