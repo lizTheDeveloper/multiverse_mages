@@ -156,8 +156,12 @@ Two consequences with different owners:
   cannot render. Confirmed present on the record — `actionEconomy` is a key on the tick-226
   raid — and absent from `layout.ts`.
 
-All six land in `agent-interface` rather than in a client. `docs/design/interface-findings.md` is
-where they are tracked with their status.
+A–E land in `agent-interface` rather than in a client, and `docs/design/interface-findings.md`
+tracks them with their status. **F is new here and is not in that document yet** — said plainly
+rather than left to be inferred from the sentence above, because a README claiming a finding is
+tracked somewhere it is not is how the `vision-audit.md` mismatch cost two agents a day each.
+Whoever files it owns choosing between the two consequences above; they are a design decision, not
+a defect to fix.
 
 ## Rules for anything added here
 
