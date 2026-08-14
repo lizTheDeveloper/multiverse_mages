@@ -5842,3 +5842,63 @@ per-strategy arm of the agency gate.
 **And the prior `notes` were carried forward verbatim rather than left to the tool** — they record a
 still-true measurement (no pool strategy submits god action 8) that a regeneration would otherwise have
 silently deleted. **That is the notes-replacement defect, avoided by someone who knew about it.**
+
+---
+
+## W115 — species affinities are unreachable, which is why species look identical
+
+*2026-08-14. The answer to "why don't they have any real differences?" — they do, and the content
+selection switches them off.*
+
+**The enabled twelve cells cover four forms: `limen`, `mentem`, `nomen`, `terram`.** Against that:
+
+| species | authored affinities | reachable in v1 |
+|---|---|---|
+| elf | herbam 1536, **mentem 1280** | mentem — its **weaker** one |
+| dwarf | **terram 1536**, ignem 1152 | terram |
+| draconic | ignem 1792, vim 1536, **nomen 1280** | nomen — its **weakest** |
+| orc | **terram 1280**, corpus 1280 | terram |
+| **gnome** | imaginem 1408, vim 1280 | **none** |
+| **human** | *(none authored at all)* | **none** |
+
+**Two of six species have no species identity in the playable game. Three of the other four express
+only their weakest affinity. Draconic's actual character — fire and raw magic — is entirely
+unreachable.**
+
+### This retires a finding the campaign has leaned on for weeks
+
+*"All six species can staff 70 of 70 cells"* has been quoted as evidence that species are
+interchangeable and that the differentiation problem is deep. **It is not deep. Their differentiating
+trait is switched off by the content selection.**
+
+**And `w80` measured that species affinity is the term doing most of the ordering work** in the
+acquisition score — so the strongest lever in the system is currently pointed at almost nothing.
+
+### It also explains W114's result
+
+The alliance discriminator found *"bodies, not curiosity"* and could not find anything else. **There
+was nothing else to find.** A dragon's affinities do not exist inside the playable cells, so an
+invited scholar of another species differs from a native one in headcount and personality alone —
+which is exactly what the measurement reported.
+
+**W114's conclusion stands and its scope narrows: the mechanism is headcount *in a world where species
+have no magical character*.** Whether difference matters is a question the twelve-cell content set was
+incapable of answering.
+
+### The owner's ruling: open all the cells
+
+**All 70 enabled, 300 nodes reachable.** In flight on `w115/enable-all-cells`.
+
+**Deliberately NOT touching `permits()` or the god's ruleset.** These are two gates and conflating them
+is a recorded trap: `enabled` governs what content is live; `permits()` governs what a universe's god
+has allowed. **A universe should still start narrow** — that is the opening square's job — and this
+change is about what exists to be opened.
+
+**Expect it to be the largest behavioural change in the campaign.** 249 of 300 nodes have never been
+exercised, 36 cross-cell prerequisite edges become live, and every committed baseline moves.
+
+**The three measurements that make it worth doing**: whether per-species outcomes finally separate
+(comparable against `w99`'s committed 1,000 run records without re-running); where content exhaustion
+sits once `passive-control` has 300 nodes instead of 51; and what happens to the strategy space, which
+is the other half of `w72`'s finding that a seeded 3×4 reaches 236 nodes against the authored square's
+51.
