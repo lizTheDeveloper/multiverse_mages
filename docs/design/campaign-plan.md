@@ -5324,3 +5324,68 @@ not Wilson. Wilson is for proportions; these outcomes are counts. Two of my brie
 The author also caught themselves reporting `verify` green off a shell exit code that belonged to
 `tail` rather than to `verify`. **On a quiet machine: `main` 307/307, this branch 308/308, run back to
 back.** A number reported with the way it was obtained is worth more than the number.
+
+---
+
+## W102 — three of four sweeps cannot observe a win, and that is why `ascensionRate` read inert
+
+*2026-08-13. The reachability harness's one `inert` verdict, diagnosed. It was a claim about the probe.*
+
+`ascension-min-tick` is **600**. The reachability probe ran at **240 ticks** and reported
+`ascensionRate` as **inert — exactly 0.000 across 128 runs.**
+
+**Ascension was impossible by construction at that horizon**, so `0.000` is the only number the probe
+could have produced. The verdict is an artifact of the probe, not a property of the metric.
+
+And it generalises well past one probe:
+
+| sweep | `worldTickCap` | can observe an ascension? |
+|---|--:|---|
+| `balance-gate` | 60 | **no** |
+| `balance-gate-horizon` | 240 | **no** |
+| `balance-full` | 240 | **no** |
+| `balance-gate-ascension` | 2400 | yes |
+
+`ascension-era-count` is 4 against `ERA_TICKS` 240, so path B completes at **tick 960**. **Three of the
+four committed sweeps cap below the win condition.** Every per-run metric that depends on a run ending
+gloriously has therefore been declared on a sweep physically unable to produce one — *regardless of
+whether its collector ran.*
+
+**This is the campaign's modal defect in a dimension nobody had checked: not an uncalled function, an
+unreachable horizon.** Ten instances were about wiring. This one is about time, and the instrument was
+correctly wired the whole way through.
+
+**An `inert` verdict is a claim about the game. A `horizon-too-short` verdict is a claim about the
+probe.** They recommend opposite actions — mine would have sent someone to redesign the win condition.
+The harness is being extended with the second verdict.
+
+### Fixed
+
+- **`balance-full`'s cap moves 240 → 1200.** It carries no committed baseline, so the change costs
+  nothing, and it is the sweep where the per-run metrics are declared.
+- **It now declares all thirteen per-run metric ids rather than seven.** The six missing —
+  `combatActionEconomy`, `combatThresholdEfficiency`, `lossShockRecovery`,
+  `roleAssignmentDemographicCost`, `speciesCellOccupancy`, `speciesGridVersatility` — were added to the
+  registry after the sweep was written. **A registry entry nothing declares is collected nowhere**,
+  which is a third way for a metric to be silently absent.
+- **`makeReferenceExecutor` forwards its `raids` option**, which was declared on
+  `ReferenceExecutorOptions` and dropped. With the switch working, raids move **4 of 13** metrics.
+
+### Deliberately not fixed, and both refusals are the point
+
+**`inboundRaidTempoLoss` will not be wired.** §8's tempo cost is relative to *uninvolved* universes and
+§1.1 puts one universe per simulation instance, so it is **structurally zero in a single-universe Monte
+Carlo.** Wiring it produces an honest zero forever — **a frozen number that looks measured, which is
+precisely what the quarantine list exists to prevent.** It wants a fifth verdict,
+`structurally-zero-by-design`: the fix for `no-producer` is a wire, and the fix for this is a second
+universe.
+
+**`foundingSpeciesMask` was not added to the full sweep.** I added it, then the methodology's pinned
+10,000-run sample size rejected it — seven species levels would make it 70,000 — and the refusal is
+correct twice over. The species sweep belongs in its own file, and more importantly: **wiring the
+species collectors without varying the species factor is a working instrument pointed at a constant.**
+Either alone is a null result. `w99/tradition-species-sweep` is building the other half.
+
+**`illegalActionRate` is left alone deliberately.** It reads session counters while `CANDIDATE_SLOTS`
+covers only actions 8–14, so seven of fifteen verbs submit bare. That is a known instrument defect with
+a known cause, and it should be fixed as one rather than swept up here.
