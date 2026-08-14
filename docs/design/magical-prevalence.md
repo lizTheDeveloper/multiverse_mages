@@ -267,3 +267,41 @@ already authored and the pipeline that would use them is the one being designed 
 The functional form of *access* — whether activation is a fraction of university capacity, a function
 of seats, or something else — and the dwarf and gnome numbers. Both are the author's to set, and
 **guessing them in code is how a placeholder becomes a balance constant nobody remembers inventing.**
+
+## Not all mages should be equal — the population needs a base, not a peak
+
+> *"Not all mages are the same or should be created equal. You need low-level spellcasters to stay in
+> the population to continuously cast — identify objects, so they can keep the economy running or
+> whatever the hell."*
+
+**The distribution of mage depth matters, not just the count.** A universe of all-archmages starves:
+nobody is doing the small continuous work the economy runs on. So the shape of the pyramid is a thing
+a god manages, and *"my mages are all very advanced"* should be a *failure state* as legible as
+*"my mages are all novices."*
+
+This is already half-built and pointing the right way:
+
+- **`GOAL.applyMagic`** (#127) is exactly this verb — a mage spends the month casting a node she holds
+  *at the world*, costing her the month and her rations and putting materials into the stocks. It was
+  the first goal in the game that *uses* magic rather than accumulating it.
+- Its measured null is the same story from the other side: **five of 59 `resource-yield` effects are in
+  enabled cells and all five route to stone**, and stone buys nothing without a god action. **The base
+  of the pyramid has nothing useful to cast.** That is a content gap, not a mechanism gap.
+- And the **populace mage** role named earlier — *"who just have a job"* — is the population this
+  applies to.
+
+So three things line up: a role that exists, a verb that exists, and **nothing worth casting at the
+bottom of the tree.** *"Identify objects"* is the archetype and there is nothing like it authored —
+low-tier, endlessly repeatable, individually trivial, collectively load-bearing.
+
+**That is the sharpest content ask to come out of this conversation**, and it is cheap: it needs no new
+primitive and no new mechanic, only low-tier nodes whose effects feed the economy, in cells a starting
+universe can actually reach.
+
+### It also changes what graduation means
+
+If students graduate when their university has nothing left to teach, and most students only ever reach
+the shallow end, then **most graduates are permanently the base of the pyramid** — and that is correct
+rather than a bug. The interesting question becomes *who gets to keep going*, which is a decision a god
+makes with limited seats, and it is exactly the inequality the visible prevalence formula is meant to
+expose.
