@@ -121,4 +121,19 @@ export {
   windowsOf,
 } from './long-run.js';
 
+export type {
+  StrategyAudit,
+  StrategyAuditOptions,
+  VerbAudit,
+  VerbVerdict,
+} from './strategy-audit.js';
+export {
+  AUDIT_RUN_SEED,
+  AUDIT_WORLD_TICK_CAP,
+  VERB_VERDICT,
+  actionName,
+  auditPool,
+  auditStrategy,
+  formatAudit,
+} from './strategy-audit.js';
 export { speciesCellOccupancy } from './species-occupancy.js';
