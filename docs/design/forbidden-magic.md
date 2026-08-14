@@ -206,3 +206,107 @@ and the three claims collapse into one number.
 **They must trade against each other, and that trade is a swept parameter with both degenerate ends as
 controls** — worship so plentiful that all three are free, and so scarce that only one is ever
 affordable.
+
+---
+
+## Idle academics do evil, and this makes the campaign's worst finding into a mechanic
+
+*Owner, 2026-08-13:* **"Especially if there is no Lost Magic to rediscover and basically nothing for
+academics to do — they should do evil, forbidden things."**
+
+**This is the best reframe available, because the thing it describes is already true and already
+measured.**
+
+The campaign's central, repeated finding is **content exhaustion**: a universe reaches its ceiling and
+stops. `passive-control` reaches **51 nodes doing nothing at all**, and an `archivist` who builds
+roughly thirteen hundred universities reaches **the same 51**. After that the roster has nothing left
+to learn, and `GOAL.idle` — **which already exists and is currently a null outcome** — absorbs the
+rest of the run.
+
+**Thousands of idle mage-ticks that presently produce nothing.**
+
+Under this design they produce cults. **The failure becomes the mechanic**, and it does so with a goal
+that is already in the enumeration and already chosen.
+
+### Why this is right rather than merely convenient
+
+**It is true about people.** A university full of brilliant, funded, unoccupied scholars is not a
+stable object. The game is a model of how hard it is to produce complex knowledge; *what a research
+culture does when it runs out of frontier* is exactly the kind of thing that model should have an
+opinion about.
+
+**And it makes the frontier a resource rather than a backdrop.** Today running out of things to learn
+is an anticlimax the harness reports as a flat line. Under this it is a **hazard**: a god who
+permitted narrowly and exhausted the cells has an idle, dangerous faculty, and the fix is to give them
+something to do — open more grid, find Lost Magic, send them somewhere.
+
+**That is the loop the whole design has been reaching for.** Width is not just power; **width is
+occupation.** A god unlocks more magic partly so their academics have somewhere to put their
+attention.
+
+### It also gives rediscovery a job
+
+The 3× rediscovery multiplier and the whole loss-and-recovery apparatus currently model something the
+reference universe barely does. **Lost Magic as the alternative to idleness** makes it load-bearing:
+a world with things to recover has occupied scholars, and a world that has recovered everything does
+not.
+
+**So knowledge loss stops being purely a cost.** A universe that has lost things has work; one that
+has lost nothing and learned everything has a problem. That is a genuinely strange and good incentive,
+and it is the first thing in this design that makes decay *desirable* under some conditions.
+
+### The measurement, which is unusually cheap
+
+**Idle mage-ticks are already countable**, and the campaign has the numbers to compare against: the
+tick at which a universe hits its ceiling, and how long it sits there. **If cult pressure is a function
+of idle scholar-time, the existing null results become the baseline** — every arm that flatlined is an
+arm that should now be growing an underground.
+
+---
+
+## Not ascending decays the world
+
+*Owner, same session:* **"Not ascending should carry consequences, namely: The World Begins To Decay
+and Magic Leaves The World."**
+
+**Stagnation must not be neutral.** Today a run that does not ascend simply ends, and `passive-control`
+sitting at 51 nodes for two thousand ticks costs nothing. That is why doing nothing has been
+competitive.
+
+**Under this, the clock is real**: a world that does not reach the summit begins to lose what it has.
+Magic drains out. The grid narrows. The thing you built comes apart while you watch.
+
+### Why this is the correct pressure, structurally
+
+- **It makes the horizon a deadline rather than a measurement window.** The owner's phrasing elsewhere
+  — *"before the sun swallows the earth"* — is the same idea, and it is what makes draconic's slowness
+  fatal rather than merely slow. **A species that is patient and immortal still loses to a world that
+  is running down.**
+- **It is the counterweight to accumulation.** Every mechanic in this design rewards building up.
+  Without decay the optimal play is always *more*, and the late game is an accumulation phase with no
+  shape. **A world that decays if you stall is a world where tempo matters.**
+- **And it inverts the worship-buys-width loop into something that can run backwards.** Width is not
+  a ratchet: what a civilisation stops sustaining, it loses. That is already how library upkeep works
+  — instances degrade on unpaid materials — so the vocabulary exists.
+
+### The interaction that makes this dangerous, and interesting
+
+**Decay and idleness compound.** A world that has exhausted its content has idle academics *and* is not
+ascending — so it grows cults **and** loses magic at the same time, and the cults are strongest exactly
+when the god is weakest.
+
+**That is a death spiral, and it needs a floor.** A run should be able to *fail* — that is the point —
+but it should fail in a way a player can see coming and could have prevented, not one that becomes
+unrecoverable before it becomes visible. **The interface prototypes' `ascension/` question — "can a
+player see which one they are heading for?" — stops being a nicety and becomes a requirement.**
+
+### Open, and none of it guessable
+
+1. **What decays first?** Magic leaving the world is evocative and ambiguous. Cells closing, instances
+   decaying faster, worship falling, mages not being born — these are very different games. **Cells
+   closing is the strongest**: it is the direct inverse of the unlock, and it means the world visibly
+   narrows.
+2. **When does it start?** A deadline that is never reached is decoration; one that arrives before a
+   universe can plausibly ascend is a loss screen. **Sweep it against the measured ascension tick.**
+3. **Is decay recoverable?** If a decayed world can be pulled back, the mechanic is tension; if not, it
+   is a timer. **Tension is better, and it is also harder to tune.**
