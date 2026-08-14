@@ -5194,3 +5194,34 @@ selection defect** — and W95's proposed fix would not have touched it.
 founding is created unaffiliated (W87), `affiliate` never fires in any run (W87), and the academy holds
 64 student seats. So the institution that teaching, scribing, siting and specialisation all hang off is
 staffed by **two people out of a hundred**, permanently.
+
+### W94 addendum — a merge that caught a compile-level gap neither branch had alone
+
+`w56/combat-evaluator` widened `RaidObservation` with five action-economy fields and supplied them
+**only in test fixtures**. `main`, meanwhile, grew a **production** builder — `raidObservationOf` in
+`scenario/src/executor.ts`. Neither side was wrong on its own; together they did not compile.
+
+**Git did not flag it, because it was not a conflict.** Both files auto-merged cleanly and the type
+error appeared afterwards. That is the merge doing the job a merge is for, and it is the argument
+against the tempting shortcut of resolving conflicts and pushing without a typecheck.
+
+**Resolved by supplying the fields honestly rather than with zeroes.** The executor observes a raid's
+*shape* — how long it ran, what the portal cost — and not what happens inside it, so it names every
+denial channel as unimplemented **in this executor**. That is exactly what
+`unimplementedCombatChannels` was added for; the field's own doc says a declared list *"is how the
+fifth is avoided."*
+
+**Emitting empty sources against a zero denominator would have made "no instrumentation" and "no
+combat" the same observation** — a channel structurally incapable of moving, which is a failure this
+project has already shipped four times. The fix took the same number of lines and says a different
+thing.
+
+Four other conflicts on the same branch were mechanical, and one is worth the recipe: the metric count
+read `fourteen` on one side and `sixteen` on the other. **Neither is right, and the answer is not
+arithmetic on the two literals** — counting the list gives **eighteen**, main's sixteen plus this
+branch's two combat metrics. That is the fifth distinct place today where a merge wanted a number that
+had to be *measured from the tree* rather than reconciled between two claims: content revision digests,
+the god-constant count, the metric count, the baselines, and this.
+
+**The general rule, now earned five times: when both sides of a conflict assert a count or a hash, ask
+the tree.** Neither literal describes a tree holding both.
