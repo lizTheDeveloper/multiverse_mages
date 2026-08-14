@@ -898,3 +898,52 @@ who cannot have institutions is not a variant. It is the argument.
 it haunted, or needs its own. **Higher-dimensional realms lean toward "its own"** — a geometry is a
 property of a place, not a passenger — and that may be the natural boundary between species you *ally*
 with and species you *become*.
+
+### Non-euclidean is nearly free here, and the contract already says why
+
+*Owner:* **"Higher Dimensions is fun, and since we don't have to maintain a world at that level we can
+be non-euclidean and all kinds of weird stuff."**
+
+**Verified, and it is more true than the intuition claimed.** `packages/state/src/components.ts` states
+it as a contract, under the heading *"No world-scale component has a position"*:
+
+> §0: *"Only engagement entities have positions… **World-scale entities have no coordinates** — the
+> component model must not assume otherwise."*
+
+**The world scale has no geometry to break.** A territory is `landUnits` and `capacityPerLandUnit` —
+**capacity, not space.** There is nothing to make non-euclidean because there is nothing euclidean.
+
+**So weird geometry is bounded to exactly one place: the raid map.** And that is the cheapest possible
+place for it, because:
+
+- **It already has the machinery** — buildings, sampled line-of-sight, a breadth-first flow field.
+  Adjacency, visibility and pathing are precisely what dimensionality transforms.
+- **It is rebuilt per engagement**, so *"temporarily 4D"* costs nothing to unwind. The temporary
+  qualifier the owner attached to the idea is free.
+- **And it cannot corrupt the world sim**, because the world sim does not know where anything is.
+
+**A constraint written to keep the component model clean turns out to make the strangest idea in the
+design almost free.** That is worth recording as a fact about this architecture rather than a lucky
+break: **Multiverse Mages can afford weird space in a way a game with a persistent 3D world cannot.**
+
+### Which makes the weird-magic catalogue a content question, not an engine one
+
+*Owner:* **"Animal spirits. Blood magic. Straight up alien magic."**
+
+All three are authored already, and they differ on the axes that matter:
+
+| kind | `mvee` paradigm | shape |
+|---|---|---|
+| **animal spirits** | `spirit_accord` (5×8, teach ✓, scroll ✓, `src: social`), `animus`, `tethermancy` | **relationship-based** — magic as negotiation with things that have wills. The animism axis exists for exactly this. |
+| **blood magic** | `blood` (4×4, teach ✓, **scroll ✗**, `src: internal`) | **teachable but unrecordable.** A tradition you must learn from a person because it cannot be written — which is a different failure mode from `pact` and a different game from either. |
+| **alien magic** | the dimensional set — `dimension`, `escalation`, `corruption_crown` | **not of this world**, and the one that wants the geometry above. |
+
+**`blood` is the sharpest of the three for this project specifically.** `teach=true, scroll=false` is
+the exact combination Mages has never run: the Art of Memory is `standard`-acquire with a `palace`
+store, and True Naming is the opposite. **A tradition where knowledge moves between people but never
+onto a shelf makes libraries worthless and teaching everything** — which is a direct attack on the
+mechanic the whole campaign has been measuring.
+
+**None of the three needs an engine change.** They need the `store` and `acquire` hooks Mages already
+has, plus content. **Only the alien/dimensional set wants new machinery, and it wants it in the one
+subsystem that can afford it.**
