@@ -89,6 +89,7 @@ state would have no mechanism preventing mid-raid rule changes at all.
 | `upheavals` | array of `{factor, expiryTick}` | worship shocks in force. An entity per shock, because two forbiddings can overlap and the combined factor is the shared multiplicative-on-remainder arithmetic over both |
 | `eraEvaluations` | array of `{era, libraryDependence, nodesLost, passed}` | what each era boundary found. `libraryDependence` at era 2 is not recoverable from state at era 4, so the Enduring Canon ascension path cannot be decided without retaining these |
 | `godState` | singleton, below | counters, high-water marks, and cached derivations that one tick of state cannot see |
+| `grantBudget` | singleton, below | the founding-grant allowance and its ledger. **Absent means unbounded** |
 | `ascended` | `bool` | terminal flag |
 
 **`godState` — one row beside the universe, not fifteen more universe fields.** Widening the
@@ -114,6 +115,65 @@ pre-`god-agency` save describes.
 | `goodEraRun` | `uint16` | consecutive passing era boundaries |
 | `overBudgetEdicts` | `uint8` | edicts in force beyond the current budget. **Reported, never auto-revoked** |
 | `terminalTick` | `int32` | world tick the run ended on, `0` while running |
+
+**`grantBudget` — the founding-grant allowance, and a deviation from this document as originally
+drawn.** It is the sixth overall, after `state`, `primitives`, `coordination` and `scenario` in §5
+and the goal commitment and effort progress in §1.2, and it is recorded here for the reason those
+are: a reader planning against §1.1 as written would find action 8 unlimited, and it is not.
+
+| Field | Type | Notes |
+|---|---|---|
+| `startingGrants` | `uint16` | founding grants available before the universe has discovered anything |
+| `accrualNodes` | `uint16` | self-discovered nodes that earn one further grant. `0` means a fixed allowance, not a division by zero |
+| `cap` | `uint16` | ceiling on `startingGrants + earned`. A ceiling on what may be **granted**, never on what is held |
+| `grantsUsed` | `uint16` | grants applied so far, over the run |
+| `seededNodes` | `uint16` | ever-known nodes a god put there rather than the universe finding them |
+
+`foundingGrantsRemaining = max(0, min(startingGrants + floor((everKnown − seededNodes) / accrualNodes), cap) − grantsUsed)`.
+
+The reasoning, in the order it forced the decision:
+
+- **Grants are made scarce, not weak, and the distinction is load-bearing.** `setMastery`'s only
+  non-test caller is the decay pass and it lowers, so an instance granted at `grantMastery` is
+  currently the universe's **only** source of knowledge above the teach threshold. A nudge-shaped
+  grant would achieve "permission is necessary but not sufficient" by deleting that source before
+  its replacement exists. Limiting the *count* achieves the same design goal and nothing that works
+  today stops working.
+- **Absence means unbounded, and that is a decision rather than a default.** Every pre-`w69` save
+  and every hand-built test world carries no row, and all of them were written against unlimited
+  grants. Reading an absent row as a budget of zero would switch founding grants off for all of
+  them at once, silently. This is also why the revision-4 → 5 migration appends an **empty**
+  section rather than synthesising one: a synthesised row's `grantsUsed` would read zero for a run
+  that may have granted thirty times, handing a restored save a fresh allowance, and its `cap`
+  would come from the restoring build's content and impose a limit on a run measured without one.
+- **The parameters live in state and not only in content, because a sweep has to vary them.**
+  `god-constant.json` is the authority for the defaults and nothing may hardcode them. But
+  `worldDeps` resolves the god constants **once per worker** and shares the frozen struct across
+  every run that worker executes, so two arms of one sweep could never disagree about a budget read
+  from there. Seeding it into state at founding is the same shape `edictBudget` already has, and it
+  is what makes the budget a swept parameter rather than a number somebody guessed.
+- **`seededNodes` is what stops the budget paying for itself.** The accrual counts nodes the mages
+  discovered for themselves — ever-known less the nodes a god seeded. Without the subtraction a
+  grant makes a node ever-known, the accrual reads that as a discovery, and a budget of one with an
+  accrual of one is a budget of infinity. It counts the scenario's tick-zero seeding too, so a cell
+  running `foundingNodes: 4` does not begin life credited with four discoveries it did not make.
+- **The mask closes when the budget is spent**, through `agent-api`'s candidate list rather than
+  through a second copy of the rule — exactly as `canIssueEdict` gates actions 5 and 6. An action a
+  bot can submit but which reliably does nothing is what `illegalActionRate` calls *"a spec-clarity
+  smell"*: the mask says yes, `god-agency` refuses, and the disagreement reads as a confused agent
+  rather than as a resource that ran out.
+- **The cost is a third schema revision**, repaired exactly as the two before it: world-schema
+  revision 6 appends an empty `grant-budget` section, and `sim-core`'s `SNAPSHOT_VERSION` again
+  does not move. `WORLD_SCHEMA_VERSION` is now **6** — revision 5 is `material-stock`, and
+  `grant-budget` is appended after it because section order in a snapshot is declaration order.
+  It is also the one place in `migrations.ts` where appending beats rewriting:
+  `splitMaterialsByKind` rewrites the universe layout and is right to, because a save that recorded
+  a materials total did record something. A save that predates the budget recorded nothing.
+- **What ships is inert.** All three constants ship at values no run can reach — the grid holds 300
+  nodes and only prerequisite-free ones in permitted cells are grantable — so this build grants
+  exactly as it always did and the mechanic is exercised only through the swept arms. The value
+  that eventually ships falls out of a measured curve rather than out of a guess, which is what the
+  harness is for.
 
 **A terminated universe is frozen in its component rows, and not in its clock.** `god-agency`'s
 ascension spec asks that *"no world tick may further alter the universe's state"* and that a
@@ -1084,6 +1144,7 @@ unavailable status is an honest answer.
 | `inboundRaidTempoLoss` | world ticks a universe spends frozen in engagement as a defender, as a fraction of elapsed multiverse time. **Must stay under its threshold** — this is the griefing guard |
 | `raidInitiationCost` | tempo an attacker forgoes per raid, for comparison against what they gain |
 | `speciesGridVersatility` | cells of the seventy a species can staff with a qualified researcher, over the full grid and over the permitted cells separately. **Flag above 80% coverage even when depth is low** — the hegemony guard, and a different question from depth |
+| `speciesCellOccupancy` | cells of the seventy a species **actually occupies** — a living mage of that species holding a knowledge instance of some node in the cell, in a mind — over the full grid and over the permitted cells separately, with *which* cells carried beside the count. The scalar is the Gini coefficient across species, so "one species staffs everything" is a number; 0 is an even spread. The outcome counterpart to `speciesGridVersatility`'s capability, and the observation its falsification test is stated over |
 | `lossShockRecovery` | world ticks a species roster takes to regain its pre-shock headcount after a deterministic cull, per species, right-censored. Asserts that long-lived species recover *worse* rather than assuming fertility handles it |
 | `roleAssignmentDemographicCost` | fall in a species' share of the roster under role assignment into lossy roles, against a paired arm that assigned none. Makes action 10 a demographic lever with a price rather than a free choice |
 

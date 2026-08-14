@@ -488,5 +488,26 @@
     "unit": "count",
     "gloss": "Placeholder for the median unaided universe's headcount at the reference tick — the reference scenario's founding population, which the first sweep replaces with a measured median.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "founding-grant-budget-start",
+    "value": 4096,
+    "unit": "count",
+    "gloss": "Founding grants a god may make before the universe has discovered anything. 4096 is unreachable — the grid holds 300 nodes and only prerequisite-free ones in permitted cells are grantable — so at this build no budget is in force and action 8 behaves exactly as it always has. The number is deliberately inert: the balance sweep varies it per arm through the scenario, and the value that ships here changes only once a curve says which one to ship.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "founding-grant-accrual-nodes",
+    "value": 8,
+    "unit": "count",
+    "gloss": "Nodes the mages discovered for themselves that earn one further grant. The god buys the right to seed again by the universe demonstrating it can grow unaided. 0 would mean a fixed allowance and no accrual at all, which is a legitimate arm of the experiment rather than a disabled feature. Moved by whichever budget arm separates permit-then-idle from permissive-breadth.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "founding-grant-budget-cap",
+    "value": 4096,
+    "unit": "count",
+    "gloss": "Ceiling on grants ever authorized — starting allowance plus everything accrued. A ceiling on what may be granted, never on what is held, so a frugal god keeps earning and a spent one is not refunded. Unreachable at this build for the same reason the starting allowance is.",
+    "tuningStatus": "untuned"
   }
 ]

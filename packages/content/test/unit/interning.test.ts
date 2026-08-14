@@ -330,6 +330,18 @@ describe('contentRevision', () => {
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of file names.
     //
+    // 6973d2c55f6d7788bbaa6886e507bbde -> 162f80bf169296d0e5fd516cc3c5257a,
+    // when the founding-grant budget added three god constants — the starting
+    // allowance, the self-discovered nodes that earn another grant, and the
+    // ceiling. In the preimage for the reason every other god constant is: two
+    // universes that disagreed about how many nodes a god may seed would be
+    // playing different games while their revisions agreed they were
+    // compatible. Nothing existing changed a byte, and all three ship at values
+    // no run can reach, so this revision plays identically to the last one —
+    // which is the opposite of the ascension-constant move above, and the
+    // difference is worth reading: that one changed when a run ends, this one
+    // changes nothing until a sweep names a level.
+    //
     // ba7be8d68b582e2985e0360bbc7e11b0 -> b418fc0278d53ccfd12dc16facef97b8,
     // when W53 added the `practice-rate` primitive, the `bless-practice-rate`
     // god constant, and the two `rego-mentem` nodes that grant the primitive.
@@ -347,7 +359,12 @@ describe('contentRevision', () => {
     // has `practice-rate` but not the metis pass keeps a different library.
     // Both differences are exactly what the revision exists to refuse to shrug
     // at, so the digest over the union is a value no tree has held before.
-    expect(registry.contentRevision).toBe('c1512ad561126f3cfb89a62dafd776e2');
+    //
+    // And again a value no tree has held: this is the first holding `main`'s
+    // revision together with the `practice-rate` primitive and its constant.
+    // Neither side's literal is a digest over this preimage, which is the
+    // whole reason the check is a digest rather than a hand-kept list.
+    expect(registry.contentRevision).toBe('3c6f52d2b320752c6d7f02d5ed69b384');
   });
 
   it('is stable across loads of identical content', () => {

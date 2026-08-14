@@ -59,6 +59,7 @@ import { isMeasured } from './metrics.js';
 import type { ArmRunSummary, ArmTelemetry, MirroredPlay } from './metrics-telemetry.js';
 import type { ArmContribution } from './protocol.js';
 import { terminalReasonName } from './session.js';
+import { armScopedMetricId, distinctStrategyKeys, strategyKeyOf } from './arm-scope.js';
 
 /** The ablation play shape `ArmTelemetry` carries. Named so the fold can hold one. */
 type ArmTelemetryAblationPlay = NonNullable<ArmTelemetry['ablationPlays']>[number];
@@ -131,6 +132,23 @@ function fold(rule: string, values: readonly number[]): number | null {
  * *not* dropped from the sweep: the summary reports them by classification, and
  * the throughput figure counts them. `truncated` runs contribute normally,
  * which is the point of recording them at all.
+ *
+ * ## And once per strategy arm, when the sweep runs more than one
+ *
+ * A sweep-level mean over a round-robin pool is a mean over strategies whose
+ * outcomes differ by up to 294×, which describes no universe anyone could play
+ * and dilutes any single arm's movement by the arm count before a gate sees it.
+ * Measured on the committed 200-year gate: **all eighty (metric, strategy) arms
+ * could fall to zero and every comparison stayed inside tolerance.**
+ *
+ * So each arm is also folded on its own, under the compound ids
+ * {@link armScopedMetricId} builds, and the sweep-level line is kept beside them
+ * rather than replaced — it is still the right summary, and dropping it would
+ * make two baselines from either side of this change incomparable.
+ *
+ * Emitted **only for a pool that runs more than one arm.** For the two
+ * `passive-control` gates the arm fold and the sweep fold are the same numbers,
+ * so adding them would double every baseline to say one thing twice.
  */
 export function aggregateMetrics(
   records: readonly RunRecord[],
@@ -139,6 +157,9 @@ export function aggregateMetrics(
 ): MetricAggregate[] {
   const ordered = sortCanonically(records);
   const aggregates: MetricAggregate[] = [];
+  const arms = distinctStrategyKeys(ordered);
+  // One arm is not an arm structure, it is the sweep. See the note above.
+  const armsToFold = arms.length > 1 ? arms : [];
 
   // Metric ids sorted, so the summary's aggregate list is itself canonical and
   // two executions produce byte-identical summaries.
@@ -173,8 +194,34 @@ export function aggregateMetrics(
       sampleCount: values.length,
       unavailableByReason: sortedCounts(unavailable),
     });
+
+    for (const arm of armsToFold) {
+      const armValues: number[] = [];
+      const armUnavailable: Record<string, number> = {};
+      for (const record of ordered) {
+        if (strategyKeyOf(record) !== arm) continue;
+        const entry = record.metrics[metricId];
+        if (entry === undefined) continue;
+        if (isMeasured(entry)) armValues.push(entry.value);
+        else armUnavailable[entry.reason] = (armUnavailable[entry.reason] ?? 0) + 1;
+      }
+      aggregates.push({
+        metricId: armScopedMetricId(metricId, arm),
+        aggregation: definition.aggregation,
+        definitionVersion: definition.definitionVersion,
+        unit: definition.unit,
+        value: fold(definition.aggregation, armValues),
+        sampleCount: armValues.length,
+        unavailableByReason: sortedCounts(armUnavailable),
+      });
+    }
   }
 
+  // Sorted as a whole rather than per metric, so the summary's aggregate list is
+  // in the same order a baseline's metric lines are — `baselineProblems` rejects
+  // an unsorted baseline, and the two orders disagreeing would make a valid
+  // regeneration impossible to produce.
+  aggregates.sort((a, b) => (a.metricId < b.metricId ? -1 : a.metricId > b.metricId ? 1 : 0));
   return aggregates;
 }
 

@@ -91,6 +91,10 @@ const COMMITTED_PINS: DefinitionPins = {
     definitionVersion: 1,
     digest: 'ffc68286151c84955578f99968bca6921cbab6bb51c6f048ac5898bd77cc3a84',
   },
+  speciesCellOccupancy: {
+    definitionVersion: 1,
+    digest: '4a38c1e1ac75bf34317cc2bc0c0cb699dba03d739c82f5754e879f8759dfa39a',
+  },
   speciesGridVersatility: {
     definitionVersion: 1,
     digest: 'a7903901cf08d9221732d6d2f56907b27badb346e587f2ce5d3fd4d093598eac',

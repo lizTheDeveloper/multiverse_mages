@@ -10,6 +10,13 @@ coverage/
 # agent worktrees
 .claude/worktrees/
 
+# Agent-local tooling config. A coding agent run inside this repo may write its
+# own skills or session state here; none of it is project source, and a `git add
+# -A` in a worktree will otherwise sweep it into a commit. Caught exactly that
+# way once.
+.qwen/
+.codex/
+
 # secrets — never commit; this repo is public
 .env
 .env.*
