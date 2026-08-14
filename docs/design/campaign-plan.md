@@ -6222,3 +6222,40 @@ keeps rediscovering.
 **Both red checks are non-blocking, and that is why neither was acted on.** The order is: drive
 each to green on its own merits, *then* make it required. Making either required while red blocks
 everything; adding exclusions to either converts a defect into silence.
+
+## W122 — the orchestrator oversubscribed the machine by 18×, and that is a source of false findings
+
+```
+$ uptime
+load averages: 302.57 254.15 186.62     # 16 cores
+$ ps -Ao comm | grep -c vitest
+49
+```
+
+**Seven agents, each running `npm run verify`, each spawning ~10 vitest workers.** Plus a
+2,400-tick sweep with four workers, plus my own verify. On sixteen cores. This is an orchestration
+defect and it is mine, not any agent's.
+
+It matters because of what it does to *evidence*. Every agent in flight is about to see timeouts,
+worker crashes and flaky failures, and the standing instruction in this repository is to
+investigate a red result. At this load a red result is a fact about the machine. `PER_RUN_TIMEOUT_MS`
+exists to bound a *hang*; at eighteen times oversubscription it bounds a healthy run instead, and
+the tempting fix — raise the timeout — would permanently blind the instrument that catches real
+hangs.
+
+This is the same failure the memory note already records (*"never pkill by name; check load average
+before believing a test failure"*) and the same shape as the `node_modules`-less worktree that
+reported the whole repository broken while `main` was green with 4,306 tests. **Third variant, and
+the first one I caused.**
+
+Sent to all seven agents: check `uptime` before believing a failure, re-run a failing file alone
+before reporting it, and do not "fix" a test that only fails under load.
+
+**Two orphans found while cleaning up, and the second is a real defect.** Killing
+`search-strategies.mjs` leaves its spawned `run-sweep.mjs` child running — it had been burning four
+workers for eighteen minutes after its parent died, writing into a records directory nothing would
+ever read. The parent does not forward signals to the child it spawns. Anything in `bin/` that
+`spawn()`s a worker sweep should tear it down on `SIGINT`/`SIGTERM`; right now none of them do.
+
+**The standing rule for the rest of this campaign: count the concurrent verifies before spawning an
+agent.** Sixteen cores is roughly two full verifies at a time, not seven.
