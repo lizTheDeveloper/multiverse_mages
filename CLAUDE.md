@@ -255,6 +255,30 @@ positive control — an input it must accept — and prefer a third exit for *"t
 folding that into *"the answer is no"*. `scripts/w117-gate-check.sh` does this: `0` open, `42` shut,
 `1` broken probe.
 
+## `cd <dir> || exit 1`, in every multi-command block
+
+A `cd` that fails **does not stop the block that follows it**. The rest runs in whatever directory the
+shell was already in — and in this repository that is the **shared checkout**, which is frequently on
+someone else's branch.
+
+That has now cost twice. The first time, five plan commits landed in a 1,224-line variant of
+`campaign-plan.md` on `plan-w18`. The second, a decision brief was committed and pushed to `plan-w18`
+because the worktree it was meant for had been removed by an earlier cleanup — a cleanup that was
+correct on its own terms, and which still set the trap.
+
+**Knowing the rule did not prevent either.** The failure is mechanical, not inattention, so the fix
+has to be mechanical too:
+
+    cd .claude/worktrees/<name> || exit 1
+
+Every *script* in this campaign already had that guard; the **inline** blocks did not, and that is
+exactly where it bit both times. And treat any worktree cleanup as invalidating every path a later
+command might assume.
+
+If you do land a commit on the wrong branch: **reverting is usually right and force-pushing is not.**
+Reverting a *merge* commit is the exception — it poisons future merges of the same content for
+whoever owns the branch, so a stray merge is better left in place than reverted.
+
 ## A background loop outlives the reasoning that started it
 
 An auto-merger built earlier in a session was still running an hour after the same session wrote down
