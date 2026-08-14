@@ -1,11 +1,11 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "819705b03416e268d81f47a8607b825f4c3de4cc658842e4444b5849bef2340c",
+  "contentHash": "a434e2b1f6df264a11b24f1597d51692db53072099016cc9b16d630973e5aa28",
   "kind": "gate",
   "metrics": [
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":7.341619406520885,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":22.024858219562656,"unit":"grimoires","value":321.5},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":8.56424216598007,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":25.692726497940214,"unit":"instances","value":1003.91},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":7.2697109955749735,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":21.80913298672492,"unit":"grimoires","value":320.58},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":8.543139836459785,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":25.629419509379353,"unit":"instances","value":1003.475},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":0.7622235196302664,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":2.286670558890799,"unit":"nodes","value":18.64},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":200,"standardError":0.19841977765148644,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.5952593329544593,"unit":"mages","value":37.72},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":200,"standardError":0.16197599973389862,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.4859279992016958,"unit":"nodes","value":39.345},
@@ -21,18 +21,18 @@
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "162f80bf169296d0e5fd516cc3c5257a",
+    "contentHash": "b6a577ddbb1777bd581eeaf05e937ff4",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Provenance only, re-recorded once from the merged tree. No rule changed and no metric moved for any run this sweep executes. contentRevision moved to 162f80bf169296d0e5fd516cc3c5257a because the founding-grant budget added three god constants (founding-grant-budget-start, founding-grant-accrual-nodes, founding-grant-budget-cap) on top of the five this branch merged from main, and the gate is right that a delta across two content revisions is a category error. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0. The universe remains degenerate in known ways, and one of them is now measured rather than suspected: no strategy in the pool submits god action 8 even at an unbounded budget, so the founding-grant budget this revision adds cannot reach any metric here, and these deltas are exactly zero for a reason rather than reassuringly. This is the regenerate-once-from-the-merged-tree pattern of d5a3357, 6180b65 and d1d3140.",
+  "rationale": "Re-recorded from the merged tree. The refusal was provenance, not a metric breach: provenance.contentHash moved because this is the first tree holding both mains revision and this branchs optional displacement term on an effect. No tolerance was set and --tolerance-k was never passed, so every tolerance here is k times the measured standard error with k unchanged at 3. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0, and this file is evidence about one build rather than an assertion that the build is balanced. The universe remains degenerate in known ways -- among them that the three gates resolve zero raids, that no strategy in the pool submits god action 8 at any budget, and that no committed gate varies species or tradition -- so a metric that does not move here has not been shown to be inert, only to be out of this instruments reach.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":321.5,"value":321.5},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":1003.91,"value":1003.91},
+    {"delta":-0.9200000000000159,"deltaInStandardErrors":-0.12531295196028067,"metricId":"referenceGrimoires","previousValue":321.5,"value":320.58},
+    {"delta":-0.43499999999994543,"deltaInStandardErrors":-0.05079258521295738,"metricId":"referenceKnowledgeInstances","previousValue":1003.91,"value":1003.475},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":18.64,"value":18.64},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":37.72,"value":37.72},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":39.345,"value":39.345},
@@ -42,7 +42,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":212.175,"value":212.175},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":68.175,"value":68.175}
   ],
-  "supersedes": "cc751ba3e7564acce5ebb67005997d7ea4c31250fda47f7563a3ea975d44449c",
+  "supersedes": "819705b03416e268d81f47a8607b825f4c3de4cc658842e4444b5849bef2340c",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }
