@@ -31,12 +31,15 @@
     "prebalance:gate": "npm run typecheck",
     "balance:gate:horizon": "node packages/mc-harness/bin/balance-gate.mjs --scenario ./packages/scenario/bin/scenario.mjs --sweep ./balance/sweeps/balance-gate-horizon.sweep.json --baseline ./balance/baselines/balance-gate-horizon-v1.baseline.json --workers 4",
     "prebalance:gate:horizon": "npm run typecheck",
+  "balance:gate:agency": "node packages/mc-harness/bin/balance-gate.mjs --scenario ./packages/scenario/bin/scenario.mjs --sweep ./balance/sweeps/balance-gate-agency.sweep.json --baseline ./balance/baselines/balance-gate-agency-v1.baseline.json --workers 4",
+  "prebalance:gate:agency": "npm run typecheck",
     "balance:gate:ascension": "node packages/mc-harness/bin/balance-gate.mjs --scenario ./packages/scenario/bin/scenario.mjs --sweep ./balance/sweeps/balance-gate-ascension.sweep.json --baseline ./balance/baselines/balance-gate-ascension-v1.baseline.json --workers 4",
     "prebalance:gate:ascension": "npm run typecheck",
     "test:watch": "vitest",
     "bench": "tsc -p packages/sim-core/bench/tsconfig.run.json && node scripts/bench.mjs",
     "verify:nosweeps": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test",
-    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test && npm run balance:gate && npm run balance:gate:horizon && npm run balance:gate:ascension",
+    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test && npm run balance:gate && npm run balance:gate:horizon && npm run balance:gate:agency",
+  "verify:full": "npm run verify && npm run balance:gate:ascension",
     "ui": "npx --yes http-server . -p 8200 --no-dotfiles -c-1"
   },
   "devDependencies": {

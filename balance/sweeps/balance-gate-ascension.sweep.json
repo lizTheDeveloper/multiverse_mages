@@ -6,7 +6,7 @@
     { "id": "cohortSize", "levels": [4, 12] },
     { "id": "foundingNodes", "levels": [1, 4] }
   ],
-  "replicates": 8,
+  "replicates": 16,
   "agentPool": {
     "strategies": [
       "passive-control",

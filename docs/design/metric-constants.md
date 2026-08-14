@@ -119,6 +119,13 @@ Generated from the registry and checked against it. `definitionVersion` is per m
 | `illegalActionRate` | `strategyAttribution` | `"even split across the run slots"` |
 | `inboundRaidTempoLoss` | `denominator` | `"elapsed world ticks of this run"` |
 | `raidInitiationCost` | `denominator` | `"raids initiated"` |
+| `speciesCellOccupancy` | `assertsNoTarget` | `"all six species are tuningStatus untuned; this metric measures the spread, it does not declare what the spread should be, and no gate reads it"` |
+| `speciesCellOccupancy` | `enabledDenominator` | `"cells permits() accepts, never a hardcoded twelve"` |
+| `speciesCellOccupancy` | `livingOnly` | `true` |
+| `speciesCellOccupancy` | `locationKinds` | `"mind only; library and grimoire copies are excluded"` |
+| `speciesCellOccupancy` | `occupancyRule` | `"a living mage of the species holds a knowledge instance of some node in the cell, at location kind mind; library and grimoire copies are excluded"` |
+| `speciesCellOccupancy` | `readingTick` | `"run end"` |
+| `speciesCellOccupancy` | `scalar` | `"Gini over per-species occupied-cell counts, the shared metrics-gini estimator"` |
 | `speciesGridVersatility` | `closureScope` | `"global transitive prerequisite closure over the whole catalogue"` |
 | `speciesGridVersatility` | `depthComparison` | `"node.tier > depthCeiling refuses, mirroring the gateway"` |
 | `speciesGridVersatility` | `enabledDenominator` | `"cells permits() accepts, never a hardcoded twelve"` |

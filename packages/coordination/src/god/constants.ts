@@ -92,6 +92,12 @@ export interface GodConstants {
   readonly encourageDecayPerTick: Fp;
   readonly encourageMaxCells: number;
   readonly grantMastery: Fp;
+  /** Founding grants available before the universe has discovered anything. */
+  readonly foundingGrantBudgetStart: number;
+  /** Self-discovered nodes that earn one further grant. `0` disables accrual. */
+  readonly foundingGrantAccrualNodes: number;
+  /** Ceiling on grants ever authorized — the allowance plus everything accrued. */
+  readonly foundingGrantBudgetCap: number;
   readonly fundProgress: Fp;
   readonly foundUniversityCapacity: number;
 
@@ -195,6 +201,9 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     encourageDecayPerTick: value('encourage-decay-per-tick'),
     encourageMaxCells: value('encourage-max-cells'),
     grantMastery: value('grant-mastery'),
+    foundingGrantBudgetStart: value('founding-grant-budget-start'),
+    foundingGrantAccrualNodes: value('founding-grant-accrual-nodes'),
+    foundingGrantBudgetCap: value('founding-grant-budget-cap'),
     fundProgress: value('fund-progress'),
     foundUniversityCapacity: value('found-university-capacity'),
 

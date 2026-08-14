@@ -99,6 +99,8 @@ export type {
   RaidObservation,
   RoleDemographySample,
   RosterSample,
+  SpeciesCellOccupancy,
+  SpeciesCellOccupancySample,
   RunTelemetry,
   SpeciesGridReach,
   SpeciesVersatilitySample,
@@ -117,6 +119,7 @@ export {
   VERSATILITY_HEGEMONY_FRACTION,
   collectLossShockRecovery,
   collectRoleAssignmentDemographicCost,
+  collectSpeciesCellOccupancy,
   collectSpeciesGridVersatility,
 } from './metrics-species-health.js';
 
@@ -254,6 +257,7 @@ export { TERMINAL_REASON } from '@mm/agent-api';
 
 export type {
   ArmContribution,
+  CensusTracePoint,
   FailureClass,
   Provenance,
   RunExecutor,
@@ -359,6 +363,14 @@ export { DEFAULT_OUTPUT_MODE, describeSweep, reproduceCommand, runSweepCommand }
 export type { SweepFileResult } from './sweep-file.js';
 export { parseSweepFile, readSweepFile } from './sweep-file.js';
 
+export type { ArmScopedRun, ScopedMetricId } from './arm-scope.js';
+export {
+  ARM_SCOPE_SEPARATOR,
+  armScopedMetricId,
+  distinctStrategyKeys,
+  parseMetricScope,
+  strategyKeyOf,
+} from './arm-scope.js';
 export type { StandardErrorEstimate, StandardErrorMethod } from './standard-error.js';
 export { STANDARD_ERROR_METHOD, standardErrorOf } from './standard-error.js';
 

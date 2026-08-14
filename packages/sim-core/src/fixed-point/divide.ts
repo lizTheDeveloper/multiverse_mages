@@ -51,6 +51,85 @@
  * variance, no accumulated drift.
  */
 
+// ---------------------------------------------------------------------------
+// The annihilation sentinel.
+// ---------------------------------------------------------------------------
+
+/**
+ * One division that turned a non-zero numerator into exactly zero.
+ *
+ * Carries the operands and nothing else. Attribution — which call site, how
+ * often, whether it is the same site every tick — is the consumer's job, and
+ * deliberately so: the core performs no I/O and cannot afford to capture a
+ * stack on a hot path.
+ */
+export interface FixedPointAnnihilation {
+  readonly numerator: number;
+  readonly denominator: number;
+}
+
+/** Called for every division whose exact result floored to zero. */
+export type AnnihilationSentinel = (event: FixedPointAnnihilation) => void;
+
+let activeAnnihilationSentinel: AnnihilationSentinel | undefined;
+
+/**
+ * Watches for the rounding step that silently deletes a quantity, and is off by
+ * default.
+ *
+ * ## The defect it exists to find
+ *
+ * `installValueSentinel` in `component.ts` catches values that are not
+ * integers. This catches the opposite failure: a value that is a *perfectly
+ * legal* integer — zero — arrived at because this function rounded a small
+ * non-zero quotient down. Nothing is corrupt, nothing throws, and the resulting
+ * zero is indistinguishable from a zero that was meant.
+ *
+ * The project has met this failure four times and defended it by hand each
+ * time. `planConstructionLabour` floored a backlog into a headcount of zero and
+ * froze every building at 98% forever. `RaidState.stabilityDecayPerTick` is an
+ * authored integer rather than a derived one, with a comment explaining that a
+ * derived decay gives "a raid that runs forever, with no error and no symptom".
+ * `laggedWorship` moves one unit when its step floors away. Each fix was a site
+ * someone happened to look at.
+ *
+ * ## Why it lives here rather than in `mul` and `div`
+ *
+ * It was in `mul` and `div` first, and an adversarial reviewer pointed out that
+ * this made the registry built on it claim a completeness it did not have:
+ * the rules path calls `floorDiv` **directly** at eighty sites, and every one of
+ * them was invisible. `materialsProduced` floors each material kind's share
+ * through a bare `floorDiv`; so does the cohort transfer budget, which is zero
+ * for any cohort below sixteen members.
+ *
+ * This function is the only `/` in the simulation core, and `mul`, `div` and
+ * `toInt` all route through it. Watching it is therefore not a wider sample of
+ * the floors — it is all of them.
+ *
+ * ## Cost, and why it may not change a result
+ *
+ * One comparison against `undefined` when nothing is installed, on the core's
+ * hottest function. Measured: no difference outside run-to-run noise. The
+ * sentinel is observation-only and must stay so — a callback that mutated state
+ * would break INV-5, which requires that a run with recording enabled and one
+ * without produce identical results.
+ *
+ * @param next - The sentinel to install, or `undefined` to remove it.
+ * @returns The sentinel that was installed before, so a caller can restore it.
+ */
+export function installAnnihilationSentinel(
+  next: AnnihilationSentinel | undefined,
+): AnnihilationSentinel | undefined {
+  const previous = activeAnnihilationSentinel;
+  activeAnnihilationSentinel = next;
+  return previous;
+}
+
+/** Whether an annihilation sentinel is currently watching. */
+export function annihilationSentinelInstalled(): boolean {
+  return activeAnnihilationSentinel !== undefined;
+}
+
 /** Guards the inputs so the exactness argument above actually holds. */
 function assertSafeInteger(value: number, role: string): void {
   if (!Number.isSafeInteger(value)) {
@@ -100,5 +179,9 @@ export function floorDiv(numerator: number, denominator: number): number {
   // Normalise -0 to 0. They compare equal under `===` but not under
   // `Object.is`, and a -0 that reaches a snapshot is a byte-determinism hazard
   // for no benefit whatsoever.
+  if (activeAnnihilationSentinel !== undefined && quotient === 0 && numerator !== 0) {
+    activeAnnihilationSentinel({ numerator, denominator });
+  }
+
   return quotient === 0 ? 0 : quotient;
 }

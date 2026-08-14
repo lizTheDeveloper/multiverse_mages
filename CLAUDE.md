@@ -84,9 +84,13 @@ world loop, seeds a starting position and hands it to `agent-api`'s session as a
 the Monte Carlo harness can run a real universe instead of a toy one. It is a **leaf** — nothing here
 imports it — and that is what makes its unusually wide edge list safe. Two further deviations, both from **§1.2**, are recorded in that section: the
 `goal-commitment` component and the `effort-progress` component, neither of which
-`mages-and-species` expected to need. Each cost a world-schema revision — `WORLD_SCHEMA_VERSION` is
-now 3 — and neither moved `sim-core`'s `SNAPSHOT_VERSION`, which is inside the hashed header and
-would break every golden fixture with a version error instead of a behaviour diff.
+`mages-and-species` expected to need. A third, from **§1.1**, is the `grant-budget` component: god
+action 8 is no longer unlimited, and an absent row means unbounded so that every older save and
+every hand-built test world keeps the behaviour it was written against. Each cost a world-schema
+revision — `WORLD_SCHEMA_VERSION` is now 6, after `material-stock` took revision 5 — and none of
+them moved `sim-core`'s
+`SNAPSHOT_VERSION`, which is inside the hashed header and would break every golden fixture with a
+version error instead of a behaviour diff.
 
 Two commands worth knowing before touching the core:
 
@@ -163,6 +167,26 @@ down.
 The reason is concrete: more than one agent or person may be editing this repository at the same
 time. Files changing underneath a running command produce failures that look like real defects and
 are not, and `git stash` in a shared tree can sweep up someone else's uncommitted work.
+
+**Never use `git stash` here — not even with an explicit pathspec.** The stash is **repo-global**: it
+is shared across every worktree, so a `pop` in your worktree can take an entry another agent pushed
+from theirs. This is not hypothetical. An agent's `stash push` failed silently, its following
+`stash pop` took a different agent's `WIP on demo/shell`, and it left conflicted `ui/` files in a
+worktree that had nothing to do with the UI. It was caught only because a control run came back
+byte-identical to its treatment, which was implausible — nothing in the tooling flagged it.
+
+To swap a file to another revision temporarily, use:
+
+    git show <ref>:<path> > <path>
+
+That touches no index and no stash, is confined to your worktree, and `git checkout -- <path>` puts it
+back. If you think you need `git stash`, you want either that or a commit on your own branch.
+
+**And a finding about code is a finding about a ref.** Before reporting what the code does, check what
+branch you are reading — `git branch --show-current`, or read through `git show <ref>:<path>`. The
+shared checkout is frequently *not* on `main`, and a grep run in it describes whatever branch it
+happens to be sitting on. Two separate wrong findings in one session came from this, both stated
+confidently, one of them contradicting an earlier correct entry in the same document.
 
 ## Conventions
 
