@@ -5126,3 +5126,71 @@ forbidding a cell actually costs a civilization something."*
 **A content check enforcing symmetry on the one term that is symmetric, while two other terms are not,
 is a guard that reads as a guarantee and is not one.** Whether the asymmetry is right is a design
 question; that the check implies otherwise is a defect either way.
+
+---
+
+## W97 — W95 was wrong, its source is a committed doc, and the real defect is elsewhere
+
+*2026-08-13. The fourth stale-reference error of the day, and the first whose source is a file on `main`.*
+
+**W95 called scribe selection "the sharpest thing on the board." It was already fixed.**
+
+- `cheapest(outlook.scribableTargets)` in `feasibility.ts` is the **affordability gate**, implementing
+  `openspec/changes/mages-and-species/specs/mage-autonomy/spec.md:44` verbatim. **It never picks what
+  gets written.**
+- Selection is `chooseTarget` → `compareAppeal`, a **six-term utility argmax** covering all five
+  target-taking goals *including* scribe.
+- **`w7` did touch scribing.** Its merge commit is titled *"the novelty tie-break and the utility score,
+  kept apart"*, and it added **`compareNovelty`**, partitioning novel-before-held off a `libraryHolds`
+  flag. The code explicitly refuses the redesign W95 proposed: folding novelty into the weighted sum
+  *"has only two outcomes: a bound small enough to be outvoted, which restores the
+  1,263-books-two-nodes defect, or a bound large enough to dominate, which is a lexicographic prefix
+  wearing a magnitude's clothes."*
+
+**Re-measured on `origin/main`, 200 world years, five seeds: mean 34.6 distinct nodes per library**
+(46/39/48/6/34) against a claimed 2. **Cross-seed Jaccard 0.125–0.958** — libraries diverge between
+universes, seed 589825 holds nine nodes 589826 lacks, and **raids have something to steal.**
+
+### The source was a committed document, which is new and worse
+
+The 1,308-books figure came from `docs/design/vision-audit.md`, which asserts it in the **present
+tense** and tags it **`[executed]`**. Meanwhile `packages/scenario/test/unit/reference-long-run.test.ts`
+carries the same figure under the header *"This bullet list is a historical record, not the current
+measurement"*, naming `w7` as the fix, and `vision.md` marks it fixed in the past tense.
+
+**Two documents on `main` contradicted each other and the misleading one is the one people read.** It
+also cites line numbers that no longer match their files — the cheapest available rot signal, and
+nothing was checking it. Corrected in PR #86: three rows struck through rather than deleted, plus a
+banner saying what the file is.
+
+**Four instances in one day** — `advanceConstruction`, `compareTargets`, the audit's repeat of
+`advanceConstruction`, and now this. The first three were working-tree errors; **this one would have
+survived the CLAUDE.md rule**, because the reader *did* check a ref — the ref just had a stale document
+on it. So the rule needs its second half: **a document is not a ref for the code it describes.**
+
+### The real defect the probe found
+
+Seed 589828 reproduces the symptom on **~1 seed in 5**, with identical selection inputs:
+
+| | 589825 | 589828 |
+|---|--:|--:|
+| nodes known anywhere | 51 | 51 |
+| mages affiliated to the university | 2 | 2 |
+| nodes known **by affiliated mages** | 51 | 51 |
+| books written | 140 | **212** |
+| **distinct nodes shelved** | **46** | **6** |
+
+**More books written, and 45 of 51 known nodes never reach a shelf.** Affiliation and knowledge are
+ruled out as the differentiator, which is what makes this worth chasing.
+
+Leading hypothesis: the `remainingCost <= materials` filter. When vellum is tight the *affordable*
+candidate set collapses to cheap nodes, and because **novelty is a preference and not a filter**, a
+scribe writes a duplicate rather than nothing. **That is a materials-supply interaction, not a
+selection defect** — and W95's proposed fix would not have touched it.
+
+### And an oddity worth its own look
+
+**107 living mages and only 2 affiliated to the university** — in both runs. Every mage promoted after
+founding is created unaffiliated (W87), `affiliate` never fires in any run (W87), and the academy holds
+64 student seats. So the institution that teaching, scribing, siting and specialisation all hang off is
+staffed by **two people out of a hundred**, permanently.
