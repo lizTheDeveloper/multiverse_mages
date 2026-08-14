@@ -399,6 +399,41 @@ stranded node it is *layered* with a faint pre-echo of the missing prerequisite 
 The distinction between layering and replacing is the whole of it. A seventh click would mean
 learning a new sound; a layer means the deny you already know, with something underneath it.
 
+**A third cause of illegality has since been measured, and it argues the same pattern again.** The
+UI session reports (`interface-findings.md` §1.6) that `packages/agent-api/src/mask.ts` masks an
+action *"whose cost exceeds the current favor pool"* with **the same zero** it uses for one that is
+structurally impossible. Confirmed on `main`: `mask[action] = 0` in both cases, in a `Uint8Array`
+that has no room to say which.
+
+Their measurements over the reference run:
+
+| Tick | Dark | Why |
+|---|---|---|
+| 0 | 15 of 16 | **fourteen only because favor is 0** |
+| 20 | 3 | `revokeEdict` — affordable, and there are no edicts to revoke |
+| 20–400 | | `changeTradition` — 64 favor against a cap of 40, so **permanently** unaffordable at worship tier 2 |
+
+Three unrelated situations, one bit, and they are opposite instructions to a player: *wait*, *change
+something*, and *never*. A player told "not now" fourteen times at tick 0 cannot learn that waiting
+fixes all fourteen — nor that waiting will never fix `changeTradition`.
+
+**So the single deny sound in §2.2 is currently correct only because the read path cannot support
+more, which is not the same as one meaning being right.** If the mask gains the reason channel their
+finding proposes — `unaffordable` / `impossible` / `spent` — the deny cue should split *with it*,
+and by the same rule this section already established: **layer, do not add a click.** The six are a
+closed set. An unaffordable deny already has its layer specified in §7's *"deny plus one strained
+pulse — the sub attempting its cycle and not completing"*; a structurally-impossible deny is the
+bare click; a spent-this-tick deny wants the third.
+
+Decide it before 520 assets exist rather than after. That is the UI session's argument and it is
+correct: a layer added to a recorded bank is a re-render of every deny in it.
+
+**Salience parity (§0.3) says the same thing from the visual side.** `ui/glow/` could not draw the
+distinction without reconstructing it client-side, and pricing is a rule §5 forbids the client to
+hold — so every control that relied on the reconstruction is marked † on their page. **That marker
+is the finding made visible, not a fix**, and the audio layer would need exactly the same crutch to
+split the deny sound today.
+
 Per §0.3 this is salience, not payload: the interface must still name the missing prerequisite. The
 sound makes you ask; the panel answers.
 
@@ -866,6 +901,34 @@ actively trying to make loss bite, which moves the same dial toward the frequenc
 **The design's most important audio moment sits on a parameter that is currently at neither end of
 its usable range**, and no amount of care in this section changes that. It is a mechanic question,
 not a sound question, and it belongs to whoever tunes redundancy.
+
+**And there is a second exposure, upstream of the balance one: the read path cannot tell this event
+from an ordinary one.** The UI session, wiring eleven prototypes to a real `AgentSession`
+(`interface-findings.md` §1.9), reports that the observation path emits **per-tick states and
+nothing else**. A consumer wanting *"what just happened"* has to diff two frames, and **a diff
+cannot distinguish a last-instance loss from an ordinary one** — which is precisely the distinction
+every rule above is built on.
+
+Their measurement is the clearest statement of the cost: in the reference run, seed 20260813, the
+**Human species is alive at tick 273 and extinct at tick 274**, and nothing on the wire announces
+it. A view diffing the mage block learns *"a count went to zero"*, not *"a species ended"*.
+
+Verified against `main` before recording it here: `OutcomeRecord`, in
+`packages/agent-api/src/outcome.ts`, carries the terminal flag, the terminal reason, the era, and
+the §7 metric deltas — and **no event classification of any kind**.
+
+**This is the same shape as §0.4's density problem, and it should be solved once.** §0.4 needs an
+events-per-tick count per class to decide between discrete sounds and a density texture; §10 needs
+classified per-tick events to build an arrangement from; this section needs one specific event
+distinguished from its ordinary sibling. All three are asking the read path for something it does
+not carry, and **none of them can be built until it does**. §10's classified events currently have
+nothing to be built from.
+
+The UI session files it as *open* rather than as a defect because §4.3's outcome record may be the
+right home and nobody has looked. That is the correct posture and this document should not
+pre-empt it. What this section can say is what the audio layer needs from whatever answer arrives:
+**an event needs a class and a "was this the last one" bit**, and the second cannot be reconstructed
+downstream from any number of frames.
 
 **This sound is exposed to a balance number nobody has fixed yet.** Everything above assumes loss
 is rare enough that an arrhythmic, untuned, un-aggregated event can carry it. That assumption is
