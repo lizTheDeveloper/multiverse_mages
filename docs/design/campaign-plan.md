@@ -5389,3 +5389,78 @@ Either alone is a null result. `w99/tradition-species-sweep` is building the oth
 **`illegalActionRate` is left alone deliberately.** It reads session counters while `CANDIDATE_SLOTS`
 covers only actions 8–14, so seven of fifteen verbs submit bare. That is a known instrument defect with
 a known cause, and it should be fixed as one rather than swept up here.
+
+---
+
+## W103 — the search returns a result: width 2, and the two winners know the same things
+
+*2026-08-13. The first genuine output of the quality-diversity loop, after two fixes to the
+instrument.*
+
+### Two instrument fixes first, because the first result was noise
+
+**The sample size was wrong.** Round-robin deals replicates across the pool, so `replicates: seeds`
+gave each of twelve strategies **fewer than one run**, and the ladder compared a single sample against
+a single sample. The first run reported `asc 1/1` against `bar 0` and called it width 1 — **a coin
+landing heads once.** Replicates are now `seeds × pool size`.
+
+**And two axes were placeholders reading zero**, which I had flagged in the doc as the highest-value
+next change. They are wired now from fields the run record already carries rather than from new
+metrics: `terminalReason` distinguishes the routes §1.1 numbers, and `spendConcentration` is a
+Herfindahl over favor spent by action id. **That second one is the only descriptor that reads the
+verbs rather than their consequences** — which is what a strategy actually *is*.
+
+### The result
+
+**`WIDTH 2, margin-over-null 7`.** Two strategies beat doing nothing:
+
+| strategy | ascended | nodesKnown | libraryDepth | terminalReason | spendConcentration |
+|---|--:|--:|--:|--:|--:|
+| `permissive-breadth` | 8/13 | **4** | **3** | 1 | 2 |
+| `allocate-concentrate` | 13/13 | **4** | **3** | 2 | 1 |
+
+**They are identical on both knowledge axes and differ only on how they spent and how they ended.**
+
+Without the two axes wired in this pass they would occupy **one** cell and the search would report
+width 1. So the entire measured width of the strategy space rests on descriptors that read the verbs,
+not the outcomes.
+
+**This is the campaign's central finding arriving from a direction with nothing to do with containment
+statistics.** The two ways to play that exist differ in *how they play*, not in what they end up
+knowing — and the knowledge axes are **saturated** at this horizon, because everyone who plays at all
+lands in the same bins.
+
+### The bar is one bot, and three designed strategies lose to it
+
+| null | ascended |
+|---|--:|
+| `permit-then-idle` | **6/12** |
+| `passive-control` | 0/13 |
+| `uniform-random-legal` | 0/12 |
+| `idle-then-declare` | 0/13 |
+
+**Only `permit-then-idle` scores at all.** The entire floor is set by a bot that permits the grid and
+then submits nothing — and `denial-warden`, `portal-rush` and `archivist` are all reported `lost to
+rung 2`, meaning **three designed strategies are worse than setting the rules and walking away.**
+
+Note what the ladder bought here that a single null would not have: `passive-control` at 0/13 says
+acting beats not acting, and `permit-then-idle` at 6/12 says **the ruleset is doing most of the work.**
+Those are different diagnoses and only a laddered floor separates them.
+
+### Next steps this hands to design, in the order the evidence supports them
+
+1. **The knowledge axes are saturated — widen the content, not the strategies.** Both winners top out
+   in the same bins, so no strategy change can produce a knowledge difference that does not exist to be
+   produced. This is `w72`'s opening square and `w80`'s cost dispersion, and the search now independently
+   says they are the binding work.
+2. **Price the ruleset verbs.** `permit-then-idle` sets the entire floor for one reason: permitting is
+   nearly free (W82 measured 1×1 to the whole grid at **84 favor, once**). A floor set by a free verb
+   is a floor no priced strategy can be expected to clear.
+3. **`denial-warden`, `portal-rush` and `archivist` need re-examining, not retuning.** Each loses to
+   idling. `portal-rush`'s defining action was unreachable for most of this campaign and `archivist`
+   builds ~1,300 universities for the same 51 nodes doing nothing reaches. They are probes of
+   mechanisms that do not yet bite.
+4. **Run it at 2400.** Every number here is at 1200 ticks, and `ascension-era-count × ERA_TICKS` puts
+   path B at 960 — so this horizon sees the win condition but only just, and the late-game phase is
+   thin. **The phase weighting (late 3 : mid 2 : early 1) has not yet been exercised on a run long
+   enough to have a real late game.**
