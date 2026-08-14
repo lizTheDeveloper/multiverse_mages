@@ -68,6 +68,15 @@ export {
   territoryExtent,
 } from './carrying-capacity.js';
 
+export type { DisplacementOptions, DisplacementOutcome } from './displacement.js';
+export {
+  DISPLACED_LABOR_CAP,
+  DISPLACEMENT_CLAMP_ID,
+  NO_DISPLACEMENT,
+  laborAfterDisplacement,
+  stackDisplacedLabor,
+} from './displacement.js';
+
 export type { EconomicInput, WorshipInputs } from './counts.js';
 export { ECONOMIC_INPUTS, worshipInputs } from './counts.js';
 

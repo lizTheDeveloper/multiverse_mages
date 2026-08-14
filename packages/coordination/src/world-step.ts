@@ -164,6 +164,7 @@ import {
   hazardAt,
   insertNewborns,
   killMage,
+  laborAfterDisplacement,
   libraryRateMultiplier,
   libraryUpkeep,
   materialsProduced,
@@ -171,6 +172,7 @@ import {
   readCommitment,
   rollMortality,
   scribingThroughput,
+  stackDisplacedLabor,
   stepMageAutonomy,
   stepPopulace,
   subsistenceDemand,
@@ -441,6 +443,18 @@ export interface WorldStepReport {
    */
   readonly economicNodes: number;
   /**
+   * The share of the workforce this tick's magic replaced, `fp` in
+   * `[0, DISPLACED_LABOR_CAP]`.
+   *
+   * Emitted for the reason {@link economicNodes} is: a universe whose harvest
+   * fell because its mages died and one whose harvest fell because its mages
+   * learned to quarry without hands produce the same `producedByKind` series
+   * and are opposite situations. It is also the only place the ceiling is
+   * visible from outside — a share pinned at the cap on every tick and a share
+   * comfortably under it look identical in every other number.
+   */
+  readonly displacedLaborShare: Fixed;
+  /**
    * `build-rate` magnitudes reaching construction this tick.
    *
    * Separated from {@link economicNodes} because the two answer different
@@ -703,7 +717,28 @@ export function worldSystem(
               index: deps.universeEffects,
               cells: deps.cells,
               ruleset,
+              ...(deps.ablation === undefined ? {} : { ablation: deps.ablation }),
             });
+
+      // And what that knowledge costs the universe in the work it replaces.
+      // Folded once, here, and handed to both readers of the laborer headcount
+      // — the fields and the building sites — because a share applied twice by
+      // two phases that each thought they were the only one is the arithmetic
+      // this whole layer is arranged to make impossible.
+      // No `counters` here, deliberately. The only clamp counter this loop has
+      // is `rateClamps`, and its total is what a `CapitalEmission` reports as
+      // *"times the shared cap bound during this tick's evaluations"* — a
+      // series `capitalSnowball` is computed from at 0.5.0. Folding an
+      // unrelated ceiling into it would move a balance metric for a reason
+      // that has nothing to do with capital, which is exactly the kind of
+      // quiet conflation that makes a baseline irreproducible.
+      //
+      // Displacement's ceiling is observable anyway, and more directly:
+      // `displacedLaborShare` below is the folded share itself, so a run
+      // pinned at `DISPLACED_LABOR_CAP` says so in every tick it is pinned.
+      // `stackDisplacedLabor` still takes a counter, for a harness that wants
+      // one of its own.
+      const displaced = stackDisplacedLabor(economy.displacement);
 
       // Labour is exclusive between the fields and the building sites, so the
       // split is decided once, here, before either phase spends it.
@@ -729,8 +764,15 @@ export function worldSystem(
         cohorts,
         readMaterialStock(state, universe).stone,
         deps,
+        displaced.fraction,
       );
-      const produced = produceMaterials(cohorts, deps, economy, labour.onSites);
+      const produced = produceMaterials(
+        cohorts,
+        deps,
+        economy,
+        labour.onSites,
+        displaced.fraction,
+      );
       const opening = readMaterialStock(state, universe);
       const stock = zeroAmounts();
       for (const kind of MATERIAL_KINDS) stock[kind] = opening[kind] + produced[kind];
@@ -1056,6 +1098,7 @@ export function worldSystem(
         remainingByKind: closing,
         shortKinds: consumption.shortKinds,
         economicNodes: economy.contributingNodes,
+        displacedLaborShare: displaced.fraction,
         buildRateSources: economy.buildRate.length,
         buildRateMagnitudes: economy.buildRate,
         buildProgressAdded: construction.progressAdded,
@@ -1117,16 +1160,23 @@ function produceMaterials(
   deps: WorldStepDeps,
   economy: UniverseEconomyBonuses,
   onSites: ReadonlyMap<EntityHandle, number>,
+  displacedFraction: Fixed,
 ): MaterialAmounts {
   const produced = zeroAmounts();
   cohorts.forEach((handle, key, count) => {
     if (key.occupation !== OCCUPATION.laborer) return;
     const species = deps.speciesOf(key.speciesId);
     if (species === undefined) return;
+    // The workforce magic has replaced is gone before the month is planned, not
+    // subtracted from what it produced: a laborer whose work a spell now does
+    // is not a laborer working at a discount. She is still in the cohort, still
+    // eats, and still has children — which is the whole cost, and the reason
+    // `resource-yield` is no longer free.
+    const working = laborAfterDisplacement(count, displacedFraction);
     // Labour is exclusive. A laborer on a building site is not also in a field
     // this month, and letting her be both would make founding a university free
     // — which is the shape of bug that reads as a balance problem for a year.
-    const inFields = Math.max(0, count - (onSites.get(handle) ?? 0));
+    const inFields = Math.max(0, working - (onSites.get(handle) ?? 0));
     if (inFields === 0) return;
     const share = materialsProduced({
       laborerCount: inFields,
@@ -1188,6 +1238,7 @@ function planConstructionLabour(
   cohorts: CohortStore,
   stone: Fixed,
   deps: WorldStepDeps,
+  displacedFraction: Fixed,
 ): {
   readonly onSites: ReadonlyMap<EntityHandle, number>;
   readonly crew: readonly { readonly affinity: Fixed; months: number }[];
@@ -1239,7 +1290,13 @@ function planConstructionLabour(
     if (key.occupation !== OCCUPATION.laborer || count <= 0) return;
     const species = deps.speciesOf(key.speciesId);
     if (species === undefined) return;
-    laborers.push({ handle, count, affinity: species.laborAffinity });
+    // The same displaced share the fields see, applied here so that a crane
+    // spell shrinks the crew rather than only the harvest. Applying it in one
+    // phase and not the other would make displacement a food tax wearing a
+    // build-rate label.
+    const working = laborAfterDisplacement(count, displacedFraction);
+    if (working <= 0) return;
+    laborers.push({ handle, count: working, affinity: species.laborAffinity });
   });
   // Ascending handle: a total order over stable identities, rather than over
   // whatever sequence a scan happened to produce.

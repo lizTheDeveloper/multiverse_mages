@@ -494,6 +494,20 @@ bits and an axis mask cannot express a ragged subset.
                                     // 3072 * 1792 / 1024 = 5376
   "effects": [
     { "primitive": "direct-damage", "magnitude": 512, "target": "single", "durationTicks": 0 }
+    // Optional fifth key, `displacement`, on any effect:
+    //   "displacement": { "role": "laborer", "fraction": 77 }
+    // What the effect costs the universe in the work it replaces -- the thing
+    // that raises output also removes the role that used to produce it. `role`
+    // is an occupation from §1.3 and `laborer` is the only one v1 prices;
+    // `fraction` is fp in 1..1023, the share of that role ONE contributing
+    // instance removes. Shares stack multiplicative-on-remainder (§3) and are
+    // clamped by a ceiling in `@mm/rules-world`, so no number of casters
+    // abolishes an occupation.
+    //
+    // Optional, and absent on 295 of the 300 shipped nodes' effects. Absence
+    // is not a zero: an effect without it is a pure bonus and takes exactly
+    // the path it always took, which is what made adding the field cheaper
+    // than the seven separate mechanics that each wanted one.
   ],
   "knowledgeKind": "episteme",      // "episteme" | "metis". Authored, never derived: `metis` marks
                                     // knowledge that codification destroys, so a cell's deep end is

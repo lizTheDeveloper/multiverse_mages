@@ -408,7 +408,13 @@ describe('contentRevision', () => {
     // #80's per-node `researchCost` variation joined the union. Measured on the
     // merged tree; #80's own branch asserted 938a659562b1ca222bcc34bb5d2c7b1a
     // over a preimage without the seventy-cell flags or the affiliation weights.
-    expect(registry.contentRevision).toBe('4db249045e6b40860a2d5aaa14a8d86f');
+    //
+    // 4db249045e6b40860a2d5aaa14a8d86f -> 1102b84cf04262520a2ab2e1cccefc8e, when
+    // #79's optional per-effect displacement cost joined the union. #79 and #80
+    // both edit `node.json` and the two edits auto-merged with no conflict;
+    // `check:content` re-validated the result — 300 nodes, no duplicate id, no
+    // orphaned effect — before this literal was recorded.
+    expect(registry.contentRevision).toBe('1102b84cf04262520a2ab2e1cccefc8e');
   });
 
   it('is stable across loads of identical content', () => {

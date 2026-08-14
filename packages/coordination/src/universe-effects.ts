@@ -106,6 +106,23 @@
  * per-kind reading of it would be this module authoring a semantics
  * `contracts.md` §3 did not give it.
  *
+ * ## And what the knowledge costs
+ *
+ * Every effect in the shipped content used to be a pure bonus — 59
+ * `resource-yield`, 55 `research-rate`, 33 `build-rate`, and no term on the
+ * other side of any of them. `node.schema.json`'s optional `displacement` is
+ * that term, and this module routes it the same way it routes a magnitude:
+ * gathered per contributing instance, filtered to `target: "universe"`, and
+ * handed on **unstacked** for `@mm/rules-world` to fold and clamp.
+ *
+ * It is deliberately *not* filtered to {@link ECONOMIC_PRIMITIVES}. A cost is
+ * something the universe pays, and nothing about paying it is specific to the
+ * two primitives this module happens to spend.
+ *
+ * The one place the ablation mask is read is here, and `UniverseEconomyDeps`
+ * says why: a displacement never passes through `stackMagnitudes`, so the mask
+ * cannot neutralize it downstream the way it neutralizes everything else.
+ *
  * ## Cost
  *
  * The index is built once per content load. The per-tick pass is one
@@ -121,6 +138,7 @@ import type { Fixed, SimState } from '@mm/sim-core';
 import { TIME_MODE } from '@mm/sim-core';
 import type { CellResolver, ConsumptionRecorder, EffectSourceInstance } from '@mm/rules-magic';
 import { gatherEffects } from '@mm/rules-magic';
+import type { AblationMask } from '@mm/primitives';
 import type { MaterialAmounts, MaterialKind } from '@mm/rules-world';
 import { MATERIAL_KINDS, formRoutesToMaterials, routeYieldByForm, zeroAmounts } from '@mm/rules-world';
 import type { Ruleset } from '@mm/state';
@@ -271,6 +289,20 @@ export interface UniverseEconomyBonuses {
   /** `build-rate` magnitudes, for `stackMagnitudes`. */
   readonly buildRate: readonly Fixed[];
   /**
+   * Authored displacement shares, `fp`, for `stackDisplacedLabor`.
+   *
+   * Unstacked, exactly like the two lists above and for the same reason: this
+   * module gathers and routes, and the fold plus its ceiling belong to the
+   * package that owns the arithmetic. One entry per contributing instance, so
+   * a spell four mages can cast displaces four times — the same semantics its
+   * magnitude has, which is what stops "how many people know it" mattering to
+   * the bonus and not to the cost.
+   *
+   * Empty is the ordinary case: five of the three hundred authored nodes carry
+   * a displacement, and every other effect is the pure bonus it always was.
+   */
+  readonly displacement: readonly Fixed[];
+  /**
    * Contributions that reached the economy this tick.
    *
    * Emitted because "the economy did not move" and "nothing reached it" look
@@ -286,6 +318,7 @@ export interface UniverseEconomyBonuses {
 export const NO_ECONOMY_BONUSES: UniverseEconomyBonuses = {
   resourceYield: { food: [], stone: [], vellum: [] },
   buildRate: [],
+  displacement: [],
   contributingNodes: 0,
 };
 
@@ -294,6 +327,23 @@ export interface UniverseEconomyDeps {
   readonly index: UniverseEffectIndex;
   readonly cells: CellResolver;
   readonly ruleset: Ruleset;
+  /**
+   * §9's ablation mask, read **here** and only for displacement.
+   *
+   * Every other magnitude on this object is neutralized downstream inside
+   * `stackMagnitudes`, which is where the mask belongs and where no consumer
+   * can read an unmasked value. A displacement share never reaches
+   * `stackMagnitudes` — its fold is `multiplicativeOnRemainder` over a
+   * quantity that is not a primitive — so the one place it can be neutralized
+   * is where it is collected.
+   *
+   * Skipping it is the only defensible reading. An arm that neutralized
+   * `resource-yield` while still emptying the fields would measure a cost
+   * with its benefit removed, and would report the primitive as *negative* —
+   * a wrong-signed arm is worse than a missing one, because it looks like a
+   * finding.
+   */
+  readonly ablation?: AblationMask | undefined;
 }
 
 const cached = new WeakMap<SimState, UniverseEconomyBonuses>();
@@ -336,10 +386,24 @@ export function universeEconomyBonuses(
 
   const resourceYield: Record<MaterialKind, Fixed[]> = { food: [], stone: [], vellum: [] };
   const buildRate: Fixed[] = [];
+  const displacement: Fixed[] = [];
   let contributingNodes = 0;
 
   for (const contribution of contributions) {
     if (contribution.target !== 'universe') continue;
+
+    // Collected before the economic-primitive filter, because a displacement is
+    // a cost the *universe* pays and nothing about it is specific to the two
+    // primitives this module happens to spend. `rego-mentem` carries
+    // `worship-yield` at universe scope today and could be given a cost
+    // tomorrow without editing this line. A displacement on a `self`- or
+    // `single`-targeted effect has no consumer in v1 and is skipped above: a
+    // spell one mage casts on herself does not restructure an economy.
+    const share = contribution.displacement;
+    if (share !== undefined && !(deps.ablation?.neutralizes(contribution.primitiveId) ?? false)) {
+      displacement.push(share.fraction);
+    }
+
     if (!ECONOMIC_PRIMITIVES.has(contribution.primitiveId)) continue;
     contributingNodes += 1;
 
@@ -356,7 +420,12 @@ export function universeEconomyBonuses(
     }
   }
 
-  const built: UniverseEconomyBonuses = { resourceYield, buildRate, contributingNodes };
+  const built: UniverseEconomyBonuses = {
+    resourceYield,
+    buildRate,
+    displacement,
+    contributingNodes,
+  };
   cached.set(state, built);
   return built;
 }

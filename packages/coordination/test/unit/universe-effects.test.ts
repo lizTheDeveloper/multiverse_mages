@@ -62,6 +62,7 @@ import {
   collectRecords,
   defineWorldStateSchema,
 } from '@mm/state';
+import { neutralizing } from '@mm/primitives';
 import { MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
 
 import type { UniverseEconomyBonuses, UniverseEffectIndex } from '../../src/index.js';
@@ -312,5 +313,140 @@ describe('resource-yield is routed by the node\'s form, and the routing discrimi
     expect(terram.resourceYield.food).toEqual([]);
     expect(herbam.resourceYield.food.length).toBeGreaterThan(0);
     expect(herbam.resourceYield.stone).toEqual([]);
+  });
+});
+
+/**
+ * The cost side of the same wire.
+ *
+ * Every effect in the shipped content was a pure bonus until five of them were
+ * given a `displacement`, and the arithmetic of the fold belongs to
+ * `@mm/rules-world`. What is asked here is only what this module decides: which
+ * contributions' costs are collected, and which are not. The three negatives
+ * carry the weight — a cost that survives an interdiction, or an ablation, or
+ * that appears where nothing authored one, is a cost nobody chose.
+ */
+describe('displacement is collected on the same terms as the bonus it hangs off', () => {
+  /**
+   * The *Rego Terram* node whose gloss is the mechanism: *"compel stone out of
+   * a seam that no crew could reach."* It carries `resource-yield` at
+   * `target: "universe"` and the largest of the five authored displacements.
+   */
+  const DISPLACING_NODE = 'rt-quarry-without-hands';
+
+  /** That node's authored share, read from content rather than restated here. */
+  function authoredShare(stringId: string): number {
+    const node = registry().nodes.find((entry) => entry.record.id === stringId);
+    if (node === undefined) throw new Error(`node.json declares no "${stringId}"`);
+    const effect = node.record.effects.find((candidate) => candidate.displacement !== undefined);
+    if (effect?.displacement === undefined) {
+      throw new Error(`"${stringId}" carries no displacement; the shipped content moved`);
+    }
+    return effect.displacement.fraction;
+  }
+
+  it('a castable, permitted displacing node contributes its authored share', () => {
+    const { state } = stateHolding(
+      nodeContentId(DISPLACING_NODE),
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c001,
+    );
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    expect(bonuses.displacement).toEqual([authoredShare(DISPLACING_NODE)]);
+    expect(bonuses.resourceYield.stone.length).toBe(1);
+  });
+
+  it('a node with no authored displacement contributes no share at all — absence is not a zero', () => {
+    const { state } = stateHolding(
+      nodeContentId(TERRAM_NODE),
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c002,
+    );
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    // A pure bonus, exactly as it was before the field existed. An empty list
+    // rather than `[0]`: a zero share would fold to nothing today and would be
+    // an authored claim that the node costs the universe something, which
+    // nobody wrote.
+    expect(bonuses.displacement).toEqual([]);
+    expect(bonuses.resourceYield.stone.length).toBe(1);
+  });
+
+  it('an interdiction removes the cost with the bonus, not one without the other', () => {
+    const nodeId = nodeContentId(DISPLACING_NODE);
+    const { state } = stateHolding(
+      nodeId,
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c003,
+    );
+    const { cells } = catalogAndCells();
+
+    const bonuses = bonusesFor(state, rulesetInterdicting(cells.cellOf(nodeId)));
+
+    // Forbidding the cell must not leave the fields empty for a spell nobody
+    // may cast any more. Both halves are gathered through one `permits()` call,
+    // which is what makes this impossible rather than merely untrue today.
+    expect(bonuses.displacement).toEqual([]);
+    expect(bonuses.resourceYield.stone).toEqual([]);
+  });
+
+  it('a book on a shelf costs nothing, for the same reason it earns nothing', () => {
+    const { state } = stateHolding(
+      nodeContentId(DISPLACING_NODE),
+      LOCATION_KIND.grimoire,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c004,
+    );
+
+    expect(bonusesFor(state, permissiveRuleset()).displacement).toEqual([]);
+  });
+
+  it('an arm that neutralizes the primitive neutralizes its displacement too', () => {
+    const { state } = stateHolding(
+      nodeContentId(DISPLACING_NODE),
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c005,
+    );
+    const { cells } = catalogAndCells();
+
+    const ablated = universeEconomyBonuses(state, {
+      index: effectIndex(),
+      cells,
+      ruleset: permissiveRuleset(),
+      ablation: neutralizing('resource-yield'),
+    });
+
+    // The wrong-signed arm this guards against: `stackMagnitudes` neutralizes
+    // the yield downstream, so an arm that kept the cost would measure
+    // `resource-yield` as a primitive whose only effect is emptying the fields
+    // — and would report it as *negative*, which reads as a finding rather than
+    // as a hole in the harness.
+    expect(ablated.displacement).toEqual([]);
+  });
+
+  it('leaves a different arm’s displacement alone', () => {
+    const { state } = stateHolding(
+      nodeContentId(DISPLACING_NODE),
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c006,
+    );
+    const { cells } = catalogAndCells();
+
+    const ablated = universeEconomyBonuses(state, {
+      index: effectIndex(),
+      cells,
+      ruleset: permissiveRuleset(),
+      ablation: neutralizing('build-rate'),
+    });
+
+    expect(ablated.displacement).toEqual([authoredShare(DISPLACING_NODE)]);
   });
 });
