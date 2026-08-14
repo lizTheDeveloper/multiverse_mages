@@ -310,3 +310,78 @@ player see which one they are heading for?" — stops being a nicety and becomes
    universe can plausibly ascend is a loss screen. **Sweep it against the measured ascension tick.**
 3. **Is decay recoverable?** If a decayed world can be pulled back, the mechanic is tension; if not, it
    is a timer. **Tension is better, and it is also harder to tune.**
+
+---
+
+## Last-ditch ascension: what the receding tide uncovers
+
+*Owner, 2026-08-13:* **"In the Magic Leaves The World scenario it begins fading, becomes harder to
+ascend, and then there have to be some last-ditch ascension tactics — Prophecies From A Lost Age Of
+High Magic, Secret Texts The Ancient Masters Used, A Portal To The Undying Lands, The Box Of
+Ascendance, you know, whatever tropes."**
+
+**This is the answer to the death-spiral floor, and it is a better answer than a cap on decay.**
+
+I flagged that decay plus idleness compound into something unrecoverable. **The fix is not to soften
+the decay — it is that the decay itself opens options that did not exist while magic was abundant.**
+
+    magic is abundant  →  the ordinary paths work; the desperate ones are unavailable
+    magic is fading    →  the ordinary paths get harder
+                       →  and the old things start to show through
+    magic is nearly gone → only the desperate paths remain, and they are open
+
+**When the tide goes out, the high-water marks become visible.** A world thick with living magic has no
+use for a half-legible prophecy from an age nobody remembers; a world where magic is nearly gone has
+nothing else.
+
+That is thematically exact and structurally load-bearing at the same time: **the late game stops being
+a decline and becomes a different game**, which is what the phase weighting (late 3 : mid 2 : early 1)
+exists to reward and what nothing has yet supplied.
+
+### The tropes map onto mechanics that already exist
+
+Each of these is a real thing in the codebase wearing a better name:
+
+| trope | what it already is |
+|---|---|
+| **Prophecies From A Lost Age Of High Magic** | **rediscovery.** The 3× multiplier and the whole loss-and-recovery apparatus, which currently model something the reference universe barely does. Knowledge from when the grid was wide. |
+| **Secret Texts The Ancient Masters Used** | **grimoires and libraries** — and specifically the *palace* store hook and looted texts. A physical object carrying knowledge no living mind holds. |
+| **A Portal To The Undying Lands** | **`limen` and `portal`.** Ascension by *leaving* rather than by summiting in place — and it uses the cell the design has already made load-bearing. |
+| **The Box Of Ascendance** | an **artifact**: one object that does the thing. The only entry here with no current counterpart, and therefore the one to build last. |
+
+**Three of the four need no new subsystem.** They need the existing ones to become *reachable under
+conditions where the normal path is closing*, which is a gating change rather than a mechanics change.
+
+### Why this is the right shape
+
+**It rewards having lost things.** A civilisation that never lost any knowledge has no prophecies to
+recover, no ancient texts, nothing buried. **The world that decayed is the world that has something to
+find** — which is the strange, good incentive noted above where decay stops being purely a cost, taken
+to its conclusion.
+
+**It makes the comeback earned rather than granted.** A last-ditch tactic is not a mercy rule. Each one
+should be **expensive, risky, and only available because things are bad** — the player who reaches for
+the Box is making a real decision, not receiving a handout.
+
+**And it should be adjacent to forbidden magic without being identical to it.** Desperate is not the
+same as dark, and the design is stronger if those are two axes rather than one: *"we opened the sealed
+archive"* and *"we bargained with a thing that waits"* are different stories, and a player should be
+able to take the first without the second. **But the second should be more powerful**, and that is the
+temptation the endgame is built on.
+
+### Open, and none of it guessable
+
+1. **Are these unlocked by decay, or merely made worth doing by it?** Unlocking is cleaner and more
+   legible — *this option appeared* — but always-available-and-rarely-worth-it is subtler and rewards a
+   player who spots the moment. **I lean unlocking**, because the game currently has no way to tell a
+   player that something changed.
+2. **How many should exist, and should a run see all of them?** Four tropes is a good number to author
+   and a bad number to offer at once. **A run seeing one or two is a story; a run seeing four is a
+   menu.**
+3. **Do they compete with ordinary ascension or replace it?** If the desperate paths are strictly worse,
+   nobody takes them and they are decoration. **If they are strictly better, everyone stalls
+   deliberately to unlock them** — which is exactly the degenerate strategy this project has been
+   catching all campaign, and the null ladder's rung 2 is the guard that would find it.
+4. **What does the Box of Ascendance cost?** The one with no existing counterpart is also the one most
+   likely to be a magic button. **It should probably cost something no other verb costs** — a species,
+   a university, the god's own accumulated worship — and it should be swept, with both ends as controls.
