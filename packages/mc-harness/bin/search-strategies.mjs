@@ -105,9 +105,16 @@ async function main() {
   // which two strategies can genuinely be *different* rather than better.
   const axes = [
     { id: 'nodesKnown', edges: [10, 30, 60, 120, 240] },
-    { id: 'universities', edges: [1, 5, 40] },
     { id: 'libraryDepth', edges: [2, 10, 30] },
-    { id: 'ascensionPath', edges: [1, 2, 3, 4] },
+    // How the run ended, not how well. `terminalReason` distinguishes the
+    // routes §1.1 numbers, so two strategies that both ascend by different
+    // paths are two ways to play rather than one.
+    { id: 'terminalReason', edges: [1, 2, 3, 4] },
+    // What the god actually spent favor on, as a share of its spending.
+    // A strategy is what it *does*, and this is the only descriptor that reads
+    // the verbs rather than their consequences -- two strategies reaching the
+    // same nodes by funding versus by permitting are not one way to play.
+    { id: 'spendConcentration', edges: [256, 512, 768] },
   ];
 
   const rng = searchRng(searchSeed);
@@ -135,10 +142,17 @@ async function main() {
     kind: 'full',
     rootSeed: searchSeed,
     factors: [{ id: 'foundingNodes', levels: [4] }],
-    replicates: seeds,
+    // `seeds` runs *per strategy*, not per sweep.
+    //
+    // Round-robin assignment deals replicates out across the pool, so
+    // `replicates: seeds` gives each of twelve strategies fewer than one run
+    // and the ladder compares a candidate's single sample against a null's
+    // single sample. The first run of this search reported `asc 1/1` against
+    // `bar 0` and called it width 1, which is a coin landing heads once.
+    replicates: seeds * allStrategies.length,
     agentPool: { strategies: allStrategies, assignment: 'round-robin', slots: 1 },
     termination: { worldTickCap: Number(args.ticks ?? 600), perRunTimeoutMs: 120000 },
-    metrics: ['referenceNodesKnown', 'referenceLibraryDepth'],
+    metrics: ['referenceNodesKnown', 'referenceLibraryDepth', 'referenceGrimoires'],
     ablation: { mode: 'none', primitives: [] },
     failureThreshold: 0,
   };
@@ -182,13 +196,21 @@ async function main() {
       if (id === undefined) continue;
       const entry = byStrategy.get(id) ?? {
         strategyId: id, ascended: 0, runs: 0, nodes: 0, depth: 0, illegal: 0, submitted: 0,
+        terminal: 0, concentration: 0,
       };
       entry.runs += 1;
       if (record.status === 'ascended') entry.ascended += 1;
       entry.nodes += record.metrics?.referenceNodesKnown?.value ?? 0;
       entry.depth += record.metrics?.referenceLibraryDepth?.value ?? 0;
-      entry.illegal += record.accounting?.illegal ?? 0;
-      entry.submitted += record.accounting?.submitted ?? 0;
+      entry.illegal += record.accounting?.rejections ?? 0;
+      entry.submitted += record.accounting?.submissions ?? 0;
+      entry.terminal += record.terminalReason ?? 0;
+      // Herfindahl over favor spent by action id, in fp: 1024 means every coin
+      // went to one verb, and near zero means it was spread evenly.
+      const spend = Object.values(record.godSpendByAction ?? {});
+      const total = spend.reduce((sum, value) => sum + value, 0);
+      entry.concentration +=
+        total <= 0 ? 0 : Math.round(1024 * spend.reduce((sum, v) => sum + (v / total) ** 2, 0));
       byStrategy.set(id, entry);
     }
   }
@@ -198,8 +220,8 @@ async function main() {
     descriptors: {
       nodesKnown: entry.runs === 0 ? 0 : entry.nodes / entry.runs,
       libraryDepth: entry.runs === 0 ? 0 : entry.depth / entry.runs,
-      universities: 0,
-      ascensionPath: 0,
+      terminalReason: entry.runs === 0 ? 0 : entry.terminal / entry.runs,
+      spendConcentration: entry.runs === 0 ? 0 : entry.concentration / entry.runs,
     },
     ascended: entry.ascended,
     runs: entry.runs,
