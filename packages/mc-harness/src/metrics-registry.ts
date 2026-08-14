@@ -74,6 +74,8 @@ import {
   VERSATILITY_HEGEMONY_FRACTION,
   collectLossShockRecovery,
   collectRoleAssignmentDemographicCost,
+  OCCUPANCY_DEFINITION,
+  collectSpeciesCellOccupancy,
   collectSpeciesGridVersatility,
 } from './metrics-species-health.js';
 import type { ArmTelemetry, RunTelemetry } from './metrics-telemetry.js';
@@ -447,6 +449,44 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       'reading is disproved too: if every species scores 70/70 forever the metric is measuring ' +
       'the grid rather than the species, and the teachable window beside it is where the ' +
       'separation actually lives.',
+  },
+  {
+    id: 'speciesCellOccupancy',
+    definition:
+      'Per species, the count of grid cells it actually occupies at run end — a cell is occupied ' +
+      'when a living mage of that species holds a knowledge instance of some node in it, in a ' +
+      'mind — reported over the full seventy and over the cells the ruleset permits. The per-run ' +
+      'scalar is the Gini coefficient over those per-species counts, so that "one species can ' +
+      'staff everything" is a number: 0 is an even spread and a rising value is a roster ' +
+      'collapsing onto one species. Living mages and distinct nodes held accompany each count, ' +
+      'so a zero can be read as "none alive" rather than as incapacity.',
+    scope: METRIC_SCOPE.perRun,
+    collectRun: collectSpeciesCellOccupancy,
+    // Max, not mean: the failure this guards against is a single run in which
+    // occupancy has collapsed onto one species, and averaging it against runs
+    // that stayed even is the arithmetic that would hide it.
+    aggregation: 'max',
+    unit: 'Gini coefficient over per-species occupied-cell counts',
+    definitionVersion: 1,
+    pinnedConstants: {
+      occupancyRule: OCCUPANCY_DEFINITION,
+      locationKinds: 'mind only; library and grimoire copies are excluded',
+      livingOnly: true,
+      scalar: 'Gini over per-species occupied-cell counts, the shared metrics-gini estimator',
+      enabledDenominator: 'cells permits() accepts, never a hardcoded twelve',
+      readingTick: 'run end',
+      assertsNoTarget:
+        'all six species are tuningStatus untuned; this metric measures the spread, it does not ' +
+        'declare what the spread should be, and no gate reads it',
+    },
+    thresholdOwner: 'mages-and-species',
+    disprovedBy:
+      'A species this metric scores as occupying a cell that `speciesGridVersatility` scores as ' +
+      'unstaffable by that species. The two are capability and outcome over one grid, and ' +
+      'versatility\'s own falsification test is stated over exactly this observation: the ' +
+      'predicted-staffable set must be a superset of the observed-occupied set. The weaker ' +
+      'reading is disproved too — if this reads a flat zero on every run whose species are alive ' +
+      'and holding nodes, it is counting something other than cells.',
   },
   {
     id: 'lossShockRecovery',
