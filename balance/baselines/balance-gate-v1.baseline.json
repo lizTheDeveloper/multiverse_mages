@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "b5536f4b9c17c572fdb63d2de8fc7f7dfa72a0eb8d578ce0b090e684f05fd437",
+  "contentHash": "31e3c04686218cc10ef48251e32d78841b92b2a2b30c40bf64d9fd6bc8c165be",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.6249668756435547,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.874900626930664,"unit":"grimoires","value":90.97},
@@ -15,20 +15,18 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.44595117331339296,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3378535199401789,"unit":"people","value":-14.59}
   ],
   "notes": [
-    "Still a degenerate universe, and the earlier baselines' warning carries over unchanged: the reference scenario has no study loop and spreads knowledge only from its founding grants, so these numbers describe that universe rather than a balanced game.",
-    "What moved: nothing. Every metric in this sweep returned delta 0.00000 against the superseded baseline before regeneration, and regenerate-baseline's own verdict is the same.",
-    "Why nothing could have moved: both new terms multiply favor REGENERATION and nothing else, and no metric in this sweep reads favor, worship or the edict budget. This gate is structurally incapable of seeing any of the three changes on this branch, including a defect that was paying a god about 12.6 percent extra favor for magic she had outlawed. That is a finding about the gate rather than a reassurance about the change; the effect sizes are in tools/w60 and on PR #63.",
-    "Constants: legacy-yield-per-node fp(8), library-legacy cap fp(1536), and seventy authored dailyRelevance values from fp(64) to fp(1024). All tuningStatus untuned."
+    "The mechanic is a grant-budget component on the universe handle plus a legality-mask edge. An absent row means unbounded, which is what every save and every hand-built test world written before it carries, so nothing that worked stops working. The three constants also ship at values no run can reach, because the grid holds 300 nodes and only prerequisite-free ones in permitted cells are grantable. WORLD_SCHEMA_VERSION moved 5 to 6 -- material-stock holds revision 5 -- and sim-core's SNAPSHOT_VERSION did not move; no golden fixture diffs and goldens:regen was never run.",
+    "Measured in tools/w69 over four full 2400-tick runs per strategy: archivist sees action 8 masked for affordability on 4307 of 4804 ticks and for an empty candidate list on zero of them; denial-warden is closed by an empty list on 3508 ticks, having forbidden the grid; narrow-depth sees it legal on 76 percent of its ticks and asks zero times, because encourageResearch sits ahead of it and policyFor takes the first legal preference. Only uniform-random-legal ever grants, and it landed 1 grant from 234 submissions -- the other 233 were admitted by the mask and refused by the rules, because foundingKnowledgeCandidates excludes a node only when this mage holds it while grantPlan refuses any node with an instance anywhere."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "947f84e5adc4572932b606e72d2c1e9a",
+    "contentHash": "162f80bf169296d0e5fd516cc3c5257a",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Not a balance claim. release-plan.md forbids one before 0.5.0 and this file makes none: it is a measurement of one build, re-recorded because contentRevision moved twice on this branch (dailyRelevance authored on all seventy cells, then the library-legacy primitive and legacy-yield-per-node), and the gate is right that a delta across two builds is a category error rather than a regression.",
+  "rationale": "Provenance only, re-recorded once from the merged tree. No rule changed and no metric moved for any run this sweep executes. contentRevision moved to 162f80bf169296d0e5fd516cc3c5257a because the founding-grant budget added three god constants (founding-grant-budget-start, founding-grant-accrual-nodes, founding-grant-budget-cap) on top of the five this branch merged from main, and the gate is right that a delta across two content revisions is a category error. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0. The universe remains degenerate in known ways, and one of them is now measured rather than suspected: no strategy in the pool submits god action 8 even at an unbounded budget, so the founding-grant budget this revision adds cannot reach any metric here, and these deltas are exactly zero for a reason rather than reassuringly. This is the regenerate-once-from-the-merged-tree pattern of d5a3357, 6180b65 and d1d3140.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
@@ -42,7 +40,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.41,"value":129.41},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.59,"value":-14.59}
   ],
-  "supersedes": "2b8d3557dd71103f0341405690bfca7fb13d8beceb4df7ebc16f57779c264cc4",
+  "supersedes": "9ea779c022d85e669cb4e152960c46203ccd2b82aa5bb4a22d4459ace6cf412a",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }

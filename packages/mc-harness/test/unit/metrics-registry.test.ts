@@ -45,7 +45,7 @@ function contractsMarkdown(): string {
 }
 
 describe('the §7 table parser', () => {
-  it('finds exactly the fifteen metric names §7 tabulates', () => {
+  it('finds exactly the sixteen metric names §7 tabulates', () => {
     const ids = contractSection7MetricIds(contractsMarkdown());
     expect(ids).toEqual([
       'ascensionRate',
@@ -59,6 +59,7 @@ describe('the §7 table parser', () => {
       'raidInitiationCost',
       'raidLengthDistribution',
       'roleAssignmentDemographicCost',
+      'speciesCellOccupancy',
       'speciesGridVersatility',
       'timeToTierBySpecies',
       'winRateByPrimitive',

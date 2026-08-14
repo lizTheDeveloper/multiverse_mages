@@ -61,6 +61,7 @@ import {
   MAGE_ROLE,
   UNIVERSITY,
   readRulesetForObservation,
+  canGrantFoundingKnowledge,
   collectRecords,
   findUniverse,
   permits,
@@ -173,11 +174,26 @@ function knownNodesByMage(state: SimState): ReadonlyMap<number, ReadonlySet<numb
  *
  * Ordering: ascending mage handle, then ascending node id. Both are stable
  * identities, so the list is the same on every machine holding the same state.
+ *
+ * **An exhausted grant budget empties the list, which closes the mask entry.**
+ * Founding grants are a bounded resource — a god starts with an allowance and
+ * earns more by the universe discovering nodes on its own — and an action a bot
+ * can submit but which reliably does nothing is the defect `illegalActionRate`
+ * calls a *"spec-clarity smell"*: the mask says yes, `god-agency` refuses, and
+ * the disagreement lands in the telemetry looking like a confused agent. So the
+ * budget is read here, from the same `@mm/state` accessor the rules use, and the
+ * mask follows it down through `PARAMETERIZED_ACTIONS` with no edit of its own —
+ * exactly as `canIssueEdict` gates actions 5 and 6.
+ *
+ * The permitted-cell filter is re-derived from the ruleset **at call time** and
+ * never cached, so a grid whose enabled set moves during a run — techniques and
+ * forms are to become discoverable — narrows and widens this list with it.
  */
 function foundingKnowledgeCandidates(input: CandidateInput): Candidate[] {
   const { state, catalogue } = input;
   const universe = findUniverse(state);
   if (universe === 0) return [];
+  if (!canGrantFoundingKnowledge(state, universe)) return [];
   const ruleset = readRulesetForObservation(state, universe);
   const known = knownNodesByMage(state);
 

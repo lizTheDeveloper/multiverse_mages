@@ -330,6 +330,18 @@ describe('contentRevision', () => {
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of file names.
     //
+    // 6973d2c55f6d7788bbaa6886e507bbde -> 162f80bf169296d0e5fd516cc3c5257a,
+    // when the founding-grant budget added three god constants — the starting
+    // allowance, the self-discovered nodes that earn another grant, and the
+    // ceiling. In the preimage for the reason every other god constant is: two
+    // universes that disagreed about how many nodes a god may seed would be
+    // playing different games while their revisions agreed they were
+    // compatible. Nothing existing changed a byte, and all three ship at values
+    // no run can reach, so this revision plays identically to the last one —
+    // which is the opposite of the ascension-constant move above, and the
+    // difference is worth reading: that one changed when a run ends, this one
+    // changes nothing until a sweep names a level.
+    //
     // 6973d2c55f6d7788bbaa6886e507bbde -> 0300687b08567c65a1b1ac31cf32e720,
     // when `dailyRelevance` was added to `cell.json` (§2.2) and authored for all
     // seventy cells in one pass — the share of ordinary people whose daily life
@@ -362,7 +374,10 @@ describe('contentRevision', () => {
     // primitive no node carries, so a build that had the id and not the
     // constant — or the constant at a different value — would run the channel
     // at a rate nothing else in the content set could reveal.
-    expect(registry.contentRevision).toBe('947f84e5adc4572932b606e72d2c1e9a');
+    //
+    // Another union, for the fifth time in this list: the first tree holding
+    // `main`'s revision together with `dailyRelevance` on all seventy cells.
+    expect(registry.contentRevision).toBe('ff5599a8e99ec22a956f8e3677f8cafd');
   });
 
   it('is stable across loads of identical content', () => {

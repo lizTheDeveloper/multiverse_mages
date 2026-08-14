@@ -99,6 +99,8 @@ export type {
   RaidObservation,
   RoleDemographySample,
   RosterSample,
+  SpeciesCellOccupancy,
+  SpeciesCellOccupancySample,
   RunTelemetry,
   SpeciesGridReach,
   SpeciesVersatilitySample,
@@ -117,6 +119,7 @@ export {
   VERSATILITY_HEGEMONY_FRACTION,
   collectLossShockRecovery,
   collectRoleAssignmentDemographicCost,
+  collectSpeciesCellOccupancy,
   collectSpeciesGridVersatility,
 } from './metrics-species-health.js';
 
@@ -254,6 +257,7 @@ export { TERMINAL_REASON } from '@mm/agent-api';
 
 export type {
   ArmContribution,
+  CensusTracePoint,
   FailureClass,
   Provenance,
   RunExecutor,
