@@ -8045,3 +8045,73 @@ order rather than as a problem.
 pooled `materials` is a real gap the lab closes: **`world-step.ts` charges construction against `stone`
 and upkeep against `vellum`.** A harness that pools them cannot show a university that can build but
 cannot keep books.
+
+## W162 — the design dashboard, and a correction I owe on `contentHash`
+
+PR #154. `ui/design-dashboard/` over the shared theme, no build and no dependency, with
+`scripts/build-design-dashboard.mjs` writing a committed `data.json` pinned by a test — the same
+generate-and-pin shape as `ui/session.json`. Screenshotted and iterated in Playwright, both themes, two
+viewports, **zero console messages**.
+
+### The correction: I have been reading the wrong `contentHash`
+
+**A baseline's top-level `contentHash` is a tamper seal over its own fields. It is not a content hash.**
+Verified on `main` just now:
+
+```
+                              top-level        provenance.contentHash
+balance-gate-v1               c1eef88c4f7d     d4e3047657b4
+balance-gate-horizon-v1       ee6ebcab5bdb     d4e3047657b4
+balance-gate-agency-v1        1de86d675796     d4e3047657b4
+balance-gate-ascension-v1     0713fc97bcb5     d4e3047657b4
+```
+
+**All four seals differ; all four content revisions are identical**, and equal to this tree's.
+
+W125 printed the **top-level** field and reported *"contentHash: branch `6c510a29` → main `d4b10e3b` —
+DIFFERENT"* as though it said something about content. **It did not.** Two baselines of the same
+content set have different seals as soon as any row differs, so "the contentHashes differ" was
+circular — it restated that the files differ. The claims in that entry rest on the **row comparison**,
+which was correct and independently reproduced, so the conclusion survives; the supporting sentence
+does not.
+
+W146 and the #132 analysis used **`provenance.contentHash`** and were right.
+
+**Labelling the seal "content" would have said four different things about one content set**, and it
+very nearly said one wrong thing here.
+
+### Two findings the page made visible, both computed rather than asserted
+
+- **No committed baseline holds a value for a single §7 metric.** All eighteen are registered with a
+  collector; all four gate sweeps declare only the ten `reference*` vital signs. **And the ascension
+  baseline lists a `definitionVersion` for all eighteen in its provenance, which reads at a glance as
+  eighteen measured metrics.** It is provenance of the *registry*, not of a measurement. This
+  generalises the earlier finding that six raid metrics had no committed measurement: **it is all
+  eighteen.** `contracts.md` §7 defines the balance instrument, and nothing has ever recorded a number
+  from it.
+- **3 of 16 primitives still have no node-driven consumer** — `research-rate`, `scribe-rate`,
+  `teach-rate` — and the table distinguishes *no consumer* from *consumed, but not by anything a mage
+  can learn*, which is the distinction the check itself is built on.
+
+### Two pieces of craft worth copying
+
+- **`check-reachability.mjs` had no machine-readable output, and that was reported rather than worked
+  around.** It gains `--json` emitting the arrays it already builds; the prose report and exit codes
+  are unchanged. Parsing its prose would have been the quiet option and would have rotted.
+- **Line numbers and file/symbol totals are projected *out* of the pinned equality**, deliberately —
+  controlled both ways: shifting every line by 7 passes, renaming one unreached symbol fails. Pinning
+  them would go red on unrelated rules-path PRs and **train the regenerate-to-green reflex**, which is
+  the habit this whole campaign exists to prevent.
+
+Fixes found only by looking at a screenshot: the serif's old-style figures rendered `0` as `O` and
+`#117` as `#II7`, because the `font:` shorthand **silently resets `font-variant-numeric`**; the grid
+crushed its form labels below ~1000px; four of six decision recommendations were truncated mid-sentence
+by a line-wise parse; and there was one hardcoded number on a page whose header claims it has none.
+
+### A flake, reported with its control
+
+`npm run test` passes **4,467/4,467 and exits 1** on a single unhandled
+`[vitest-worker]: Timeout calling "onTaskUpdate"`. The discriminating control was run: with the new
+test file removed, the same command exits 1 with the same error at 4,462/4,462. **So it is not this
+change** — and it was measured twice on the branch and not on `main`, so it is explicitly *not* a claim
+that `main` is red.
