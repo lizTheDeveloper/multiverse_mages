@@ -107,8 +107,26 @@ luminance at all. So on paper charge **blooms downward** — ink drawn to the co
 coming off it. Both resolve from the same `--ctl-charged-*` and `--glow-charged` tokens, so a
 prototype writes one rule and gets the right treatment in either theme.
 
-Measured across all eleven prototypes in both themes: **no text below WCAG 4.5:1**, worst case 4.72.
-`packages/content/test/unit/ui-theme.test.ts` guards the three ways this breaks silently.
+Measured across all eleven prototypes **and `index.html`** in both themes, on `ui-visual-pass`
+(2026-08-14), by computing the ratio for every text node against its nearest opaque background:
+**no text below its WCAG threshold**, with one deliberate exception — `console/`'s zero-count and
+outside-the-ruleset cells set `color: transparent`, because an empty cell and a cell holding zero
+are drawn as different things on purpose.
+
+Getting there fixed four failures that had gone unmeasured, three of them on `index.html`. **The
+front door was the page the discipline did not cover**: `ui-theme.test.ts` iterates *directories*,
+so a file at the top level is invisible to it, and `index.html` declares its own small palette
+rather than loading `theme.css`. Its `--faint` measured **2.70:1 on vellum and 3.91:1 on ink** —
+carrying the lede, every section heading, every card path and the footer — and its `--brass` ran
+3.79:1 as 11px text on paper. The fourth was a specificity collision: `console/`'s
+`.clockbar button[aria-pressed="true"]` also matched the shared theme control mounted inside that
+bar, painting `--god` on `--ctl-charged-bg`, so **the selected theme button measured 1.28:1 and
+only on vellum**.
+
+`packages/content/test/unit/ui-theme.test.ts` guards the three ways the token setup breaks
+silently. It does not measure contrast — that needs a browser, and this repository has no browser
+dependency — so the numbers above are a statement about the ref they were taken on and want
+re-measuring when colour moves.
 
 ## What they are allowed to do
 
