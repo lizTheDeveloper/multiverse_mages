@@ -294,3 +294,59 @@ proposal here where the *fiction* supplies the moral distinction the *data* cann
 species-scoped one are the same mechanic at two scales — **`Shapeshift` and `Alter Species` as one
 tier-progression rather than two verbs** — which would be tidy, and would mean the deepest form of a
 healer's art is the power to change what a people is.
+
+### And they landed on a world that already had a god
+
+*Owner, completing the reading:* **"They landed on a world shortly after their own god maybe started to
+wane — and on the world of man, who had their own god of magic."**
+
+**This is the structural insight, and it changes the run loop.**
+
+Every framing so far has had **one god per world**: a god is born, sets what magic can exist, ascends
+or fades, and a new god follows. **ElfQuest's actual shape is two** — arrivals with a waning god,
+landing in a world that already had one of its own.
+
+### Which means a world can hold more than one god of magic
+
+    a people's god begins to wane
+        → the people go looking, or are sent, or flee
+        → they arrive somewhere that already has a god
+    → two gods of magic, one world, two systems of what magic can be
+
+**That is the alliance mechanic seen properly.** Portalling to another people does not just import
+academics — **it imports their god's ruleset.** The visitors' magic works because *their* god permitted
+it, and yours did not.
+
+**And it is what §3's Portal Rule has been describing all along**: a raid is arbitrated by the *host*
+universe's ruleset, and `mvee`'s `foreignMagicPolicy` enumerates the four answers —
+`compatible` · `hostile` · `incompatible` · `absorbs`. **Those are not four raid outcomes. They are
+four answers to *what happens when another god's magic arrives in your world*.**
+
+### It also explains the inheritance properly
+
+The survivors who *"teach you Old Magic from the Last Age"* are not carrying orphaned knowledge. **They
+are carrying their god's magic**, from a god who waned — which is why what survives is the practical
+cells: **those are the ones that kept being useful after their god stopped being able to grant
+anything new.**
+
+**A waning god's people keep fire and bread.** Not because fire is simple, but because it is what they
+still needed when the miracles stopped.
+
+### And it makes later ages genuinely crowded
+
+Under this, age six is not one god with five generations of history behind them. **It is a world with
+several gods in it** — most waning, one new, each with a people who remember what their god's magic
+could do.
+
+**That is the multiverse premise arriving inside a single world**, and it is a much better answer to
+"what makes later ages different" than a difficulty modifier. **The later world is not harder. It is
+more crowded, more argued-over, and full of magic that obeys rules you did not write.**
+
+**It is also where PvP finally has a reason to exist.** `contracts.md` §1.1 puts one universe per
+simulation instance, and that constraint has blocked raids, alliances and the whole multiverse premise
+all campaign. **Two gods in one world is a much smaller change than two simulated universes** — the
+peoples share a world, the territories, the sun. **What differs is only whose ruleset their magic
+answers to.**
+
+**That may be the cheapest available route to the game's core promise**, and it should be costed
+before anyone builds a second universe.
