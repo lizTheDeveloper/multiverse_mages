@@ -6876,3 +6876,70 @@ cycle**, which is the honest price of knowing.
 
 *(The chains already gate on the `Verify` **job**, not the run's overall status, which is why they
 read `e73bea9` as green at 02:43 while its balance gate was still running. That part was right.)*
+
+## W137 — the mask tripwire, isolated to a single action, and what #122 did not do
+
+### #82: the offer surface changed, the world did not
+
+The re-record on `w90/mask-sync` came back with a clean isolation, and it is the best evidence yet
+that `ui-recording.test.ts` is a behaviour instrument rather than a freshness check:
+
+| top-level field | result |
+| --- | --- |
+| `provenance` | **unchanged** — `snapshotHash` still `f6974848cef4578c` |
+| `layout`, `actions`, `content` | unchanged |
+| `frames` | **moved, 395 of 401** |
+
+| frame field | frames differing |
+| --- | ---: |
+| `obs` | **0 of 401** |
+| `sat` | 0 of 401 |
+| `status` | 0 of 401 |
+| `mask` | 211 of 401 |
+| `candidates` | 395 of 401 |
+
+**The only mask entry that ever differs is 8, and the only candidate list that ever differs is 8.**
+Action 8 was mask-legal in 390 of 401 frames and is legal in 179 — and those 211 newly-closed frames
+are exactly the 211 whose mask differs. `obs` identical in all 401 means **nothing the god *did*
+changed; only what it was *offered***, which is precisely what the PR claims to change.
+
+That the reference universe now spends over half the run with no grantable root is the rule working,
+and it matches the PR's own "177 submitted, 2 landed".
+
+**And it remains the only thing in 4,395 tests that noticed.** Every mask unit test asserts one
+property of one mask against one fixture; none compares the whole offer surface across a real run.
+Its value depends on being re-recorded *promptly* when it fires — a recording left stale stops
+tripping on anything.
+
+### #122: honest about closing nothing
+
+Raid fidelity is green, `verify` exit 0, 4,382 tests, all three gates at delta `0.00000`. And
+`check:consumption` is **4/14 → 4/14, byte-identical failure lists**. The raid-fidelity work **closed
+none of the combat gap**, and nothing in it could have: it adds fidelity *tests* and metric
+*declarability*, no content and no rules path. Reported that way rather than as progress.
+
+Two things it found that were not in the brief, both of the night's recurring shape:
+
+- **The PR body had gone false.** §3 described a mechanism the merge removes and asserted
+  `collectRunMetrics` has no production caller — untrue since #67. Rewritten rather than left,
+  because `CLAUDE.md` records that when two documents disagree, *"the misleading one was the one
+  people read."* Its quoted p50 of 49 was stale too; measured **65** on the merge.
+- **Keeping both sides of `measures.ts` typechecks and then throws at module load.** All three raid
+  metrics are `perRun`, so they are already in `BALANCE_RUN_METRIC_DEFINITIONS`; `sweep.ts` joins
+  that with `REFERENCE_MEASURES` through `metricRegistry`, which throws `Duplicate metric id
+  raidLengthDistribution`. A clean textual merge that compiles and cannot load.
+
+## W138 — the CI throughput fix, prepared and NOT merged
+
+PR #138 opened, one line, and deliberately left out of both merge chains.
+
+It adds the SHA to the workflow concurrency group **for `main` pushes only**, so each `main` commit
+gets its own group and none can cancel another. Branch and PR runs keep the shared group and keep
+cancelling supersedes; the fork guard, `pull_request:`, `ci/hetzner-lint` and the required status
+checks are untouched.
+
+**It is not merged, and that is the point.** The night's largest self-inflicted defect (W135) was an
+unattended automation I built and then forgot was running. Merging a CI-semantics change unattended,
+in the same session, hours after that lesson, would be the same mistake wearing a better argument.
+The gated chains work correctly without it — only slowly, at one merge per balance-gate cycle, which
+is the honest price of knowing.
