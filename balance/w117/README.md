@@ -109,6 +109,33 @@ invitation. The verb lives on `w109/alliances` (PR #126, open, unmerged). Re-run
 arms would mean a three-way merge of `w109` on top of both gate branches, which is not one clean
 batch and is not what was asked for.
 
+## Re-run the gate. Do not trust a claim that it opened.
+
+`./scripts/w117-gate-check.sh [ref]` — defaults to `origin/main`. **Exit 0 open, 42 shut, 1 a
+broken probe**, which is deliberately not the same exit as shut.
+
+| probe | change | where | shut | open |
+|---|---|---|---|---|
+| A | `w115/enable-all-cells` | `packages/content/src/load.ts`, `export const V1_CELL_COUNT` | **12** | **70** |
+| B | `w116/complete-affiliation` | a call-shaped `completeAffiliation(` outside `autonomy/affiliation.ts` | **0** call sites | **>= 1** |
+
+Both must hold at once. Twelve cells cover four forms and reach 51 of 300 nodes, and species
+affinity barely intersects them, so *"all six species are interchangeable"* is an artifact of the
+selection until probe A reads 70. An unaffiliated mage cannot scribe or ward and nothing promoted a
+mage into affiliation, so grimoire counts taken before probe B flips are measuring the defect.
+
+**Probe B matches a paren, and that is not tidiness to be cleaned up.** On a shut `main` the only
+mention of `completeAffiliation` outside its own module is a **doc comment** at
+`packages/coordination/src/world-step.ts:1454`. A bare-name grep counts that comment as a production
+caller and declares the gate **open on a build where affiliation is still unwired** — sending the
+whole re-measurement straight past the defect it exists to measure.
+
+Both probes carry a **positive control**: a pattern that must match on any ref at all. If a control
+misses, the script exits 1 and says the probe is broken, because an empty search result is not
+evidence of absence unless the search is known to work. All four states are exercised: probe A reads
+70 on `w115` and 12 on `main`, probe B reads 1 on `w116` and 0 on `main`, and only the conjunction
+opens.
+
 ## To run it, once the gate opens
 
 Confirm the mechanism shipped rather than inferring it from a merge title — grep that
