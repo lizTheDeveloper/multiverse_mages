@@ -53,11 +53,61 @@ It also gives an answer to a question the campaign could not: **why found a seco
 reaches. If universities are what convert worship into permitted cells, a second one is a second
 frontier rather than a second pile.
 
-**The specific mechanism is deliberately not fixed here.** Candidates, in the order I would test them:
-a university's *dominant cell* determining which neighbouring cells it can open; total university
-capacity setting how many cells may be open at once; or a university being required to *hold* a cell
-for it to remain permitted. **The third is the most interesting** — it makes width something a
-civilisation maintains rather than accumulates, and it means a collapse *narrows the world.*
+### The mechanism: a great person, and you get the student you get
+
+*Owner, 2026-08-13, resolving what the previous paragraph left open.*
+
+**A new kind of magic is discovered the way a new kind of science is: by a person.** Not by a
+threshold quietly opening a cell. Worship accrues into a charge; the charge is spent on **a student at
+a university**; that student founds a discipline.
+
+**This is Civilization's great-person mechanism, with one change that makes it better: you pick a
+random student.** You do not groom the prodigy you wanted. You get the ones you have, at the
+universities you built, of the species you founded with — and one of them becomes the person who
+opened a cell of the grid forever.
+
+That single constraint does a lot of work at once:
+
+- **It makes the roster matter.** Who is at your universities decides what magic your civilisation can
+  invent. A god with two students has two futures.
+- **It makes universities the gate without inventing a gate.** The student must be *somewhere*. That is
+  the unlock running through universities, exactly as instructed, using nothing new.
+- **It makes species choice permanent in a second way.** Under one-species founding, the discipline
+  your civilisation invents is invented by a member of the only species you have.
+- **And it is how sciences are actually founded** — a person, at an institution, at the frontier, and
+  which person it turns out to be is substantially luck.
+
+### The verb already exists, and it is the one nobody uses
+
+**`grantFoundingKnowledge` — action 8 — is this button.** It is on the UI branches, it takes a mage
+handle and a node, and W83 measured its exact problem:
+
+> The verb is not unreachable, it is **unchosen**. `narrow-depth` sees action 8 legal on **76% of ticks
+> and asks zero times**. Nine of ten strategies never submit it. And founding knowledge is worth about
+> **1% of outcome** — remove all of it and `permit-then-idle` goes 194.5 → 193.5 nodes.
+
+**Because it seeds a node.** A node is worth 1%. **A discipline is worth a column of the grid.**
+
+Reframing action 8 from *"seed one node in one mind"* to *"elevate one student, who founds a kind of
+magic"* is the same verb, the same handle, the same UI button — and it goes from a 1% channel nobody
+chooses to the most consequential act a god performs.
+
+**And `w69/grant-budget` already built the scarcity.** It made grants a budget that accrues from
+*nodes the mages discovered for themselves*, deliberately so that a god's own grant could not be read
+as a discovery. **Swap that accrual to worship and the mechanism is finished** — the budget, the mask
+edge, the refusal-when-spent and the swept constants are all landed and tested.
+
+### Two questions this leaves, both worth measuring rather than deciding
+
+**How random is "a random student"?** Fully random makes the roster a lottery; weighted by aptitude or
+by the university's dominant cell makes it a consequence of play. **Weighted is more likely right** —
+it rewards building the right institution — but a lottery is more likely *fun*, and this project has
+no measurement of fun. Sweep the weighting, with pure-random and pure-deterministic as the ends.
+
+**What exactly does the student open?** A whole cell is the strong reading and matches "a new kind of
+science." A single deep node is the weak one and matches today's grant. **The strong reading is the
+one that makes worship buy width**, which is the point of this document — but it is also a much larger
+grant, and `w69`'s budget arithmetic assumes the weak one.
 
 ## What this does to forbidding, which is the late game
 
