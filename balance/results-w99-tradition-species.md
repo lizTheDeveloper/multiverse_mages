@@ -235,10 +235,126 @@ teachable against 0.0. Any claim of the form *"knowledge spreads"* is a True Nam
 
 ## Recommendation
 
-<!-- RECOMMENDATION -->
+**Neither factor should be added to a committed gate on this build.** Not because they do nothing —
+both move the game more than the seed does — but for three reasons that are about the gate rather
+than about the factor.
+
+### 1. A gate's cost is multiplicative and its budget is already spent
+
+`balance-gate.sweep.json` is held to 400 runs by a test whose comment says why: *"a gate that takes
+ten minutes gets deleted, and a deleted gate is the failure this whole change is about."* Adding
+`tradition` triples the cells; adding `foundingSpeciesMask` at all seven levels multiplies them by
+seven; adding both is twenty-one times the current gate. There are four gates. `verify` runs three
+of them on every push and `ci-check.sh` must stay equivalent to `verify`.
+
+### 2. Several arms are degenerate, and a degenerate arm is an exact-equality demand
+
+`standard-error.ts` is explicit that a zero standard error is not softened: *"a metric that has
+never varied cannot move by chance; if it moves, something changed."* That is the right rule and it
+is why single-species arms are dangerous in a gate rather than merely expensive. An orc-only
+universe reports 0.0 nodes known under five of ten strategies with zero variance, so the tolerance
+is zero and the gate demands exact equality — of a quantity that is zero because the universe is
+dying, not because the rule is stable. Any tuning change anywhere would trip it, and the failure
+would name orc rather than the thing that moved.
+
+### 3. The thing worth gating is not the factor, it is the instrument that is missing
+
+The most consequential finding here — that under two of three traditions a universe ends holding
+nothing it can teach — **is invisible to every gate that could be built out of the current metric
+set**, because the observation vector carries no mastery channel. Adding tradition levels to a gate
+would add arms that all report plausible `referenceKnowledgeInstances` numbers while differing
+absolutely in whether any of that knowledge can move. A gate built now would pass a build in which
+teaching had been switched off entirely.
+
+### What to do instead
+
+1. **Keep both factors as measurement sweeps**, which is what this change commits. They are cheap to
+   re-run and they are the record against which a later gate would be calibrated.
+2. **Give the observation a teachable-instance channel, or give `mc-harness` a teachability metric
+   through `armContribution`**, before gating either factor. `knowledgeCensus` already computes the
+   number; nothing carries it into a run record.
+3. **If one factor has to be gated first, gate `tradition` and not species** — three levels rather
+   than seven, no degenerate arm, and the two levels that matter (`acquire` and `store`) are the two
+   hooks that reach the simulation at all.
+4. **Decide what `castPolicy` and `costPolicy` are for.** Half of `vision.md` §4a's licensed
+   extension surface currently has no execution path outside `@mm/rules-raid`, which no package
+   depends on. Until that changes, "the tradition axis" means `acquire` and `store`.
+
 
 ---
 
 ## What this makes tradition-specific or all-six-specific
 
-<!-- CORRECTIONS -->
+Three committed statements are true only under an `acquire: standard` tradition and are stated as
+facts about the game. The reference universe runs True Naming, so each is false for **every
+measurement this project has taken**. They are reported here and **deliberately not edited on this
+branch** — this change's claim to have altered no behaviour rests on its diff being sweep files,
+scripts and results, and a prose correction is a separate decision.
+
+### 1. `docs/design/release-plan.md:314–316` — the 0.4.0 degeneracy
+
+> **Teaching stops after world year twenty.** A researched instance is created at `fp(256)` and the
+> teach threshold is `fp(512)`, so nothing a mage works out for herself is ever teachable.
+> Knowledge spreads only from founding grants, and those are taught out inside the first window.
+
+This is a **release claim**, in the document `CLAUDE.md` calls authoritative for versioning, in the
+0.4.0 section, describing the reference universe. Both sentences are properties of `acquire:
+standard`. The reference universe resolves `true-naming`, whose `acquire` hook sets `instanceMastery:
+1024`. Measured on this build, in the same passive control: 84.3% of post-founding arrivals are
+teachable on arrival, teaching runs for the full 2400 ticks and its rate **rises** across the four
+quarters (262 → 412 → 687 → 794 lessons). Teaching does not stop after world year twenty; under
+Vancian it stops after world year *four*.
+
+The claim is not merely mis-scoped, it is inverted: it describes the two traditions nothing was
+measured under and denies the one everything was measured under.
+
+### 2. `packages/scenario/src/species-versatility.ts:45–55` — the rationale under a shipped metric
+
+> Research creates an instance at `DEFAULT_INITIAL_MASTERY` (256), which is below the 512 teach
+> threshold and can never climb to it. **Every teachable instance in a universe therefore descends
+> from a god's founding grant at 1024** […] So "can this species staff a cell" does not turn on what
+> it can learn. It turns on how long it can still pass on what it was handed.
+
+This is the justification for `teachableWindowTicks`, a **field of the committed
+`speciesGridVersatility` metric**, and its pinned constant `teachableWindowRule` is recorded in
+`docs/design/metric-constants.md:141`. The arithmetic is fine and tradition-independent:
+
+| species | retention | decay/tick | floor | `teachableWindowTicks` |
+|---|---|---|---|---|
+| draconic | 1536 | 5 | 384 | 102 |
+| dwarf | 1536 | 5 | 384 | 102 |
+| elf | 1280 | 6 | 320 | 85 |
+| human | 1024 | 8 | 256 | 64 |
+| orc | 896 | 9 | 224 | 56 |
+| gnome | 512 | 16 | 128 | 32 |
+
+What is false is the sentence that makes the window *the* constraint. Under True Naming every
+research completion mints a fresh instance at 1024, so the teachable stock is continuously
+replenished and the window is a decay time rather than a budget the universe cannot refill. The
+probe measures 5,074 arrivals per passive run under True Naming, 4,280 of them teachable — against
+a founding grant budget of a handful. **The metric's number is right and its published meaning is a
+statement about Vancian and the Art of Memory.**
+
+### 3. Everything species-shaped was measured in the all-six universe
+
+`release-plan.md`'s 0.4.0 `timeToTierBySpecies` table, `loss-shock-recovery.test.ts`'s *"orc
+measures a mean of 1.22 living mages across 32 seeds"*, and W61's occupancy work are all readings
+taken **inside a universe founded with all six species**, where the species compete for the same
+academy seats, shelves and food. They are not statements about what a species does. The
+single-species arms below are, and they disagree with the mixed-universe reading — an orc-only
+universe is not orc's row in the all-six table.
+
+This is the same class of error as the tradition one, and it has the same cause: a factor that no
+committed gate varies becomes invisible, and a constant nobody chose starts reading as a property of
+the game.
+
+### 4. The prior measurement of both factors is superseded
+
+`balance/results-integration-r2.txt` and `docs/design/tradition-sweep.md` are the only two places
+either factor was ever measured, and neither reproduces on `main`. Eighty-three commits touched
+`packages/` between `results-integration-r2.txt` and `e2a15cf`, among them `feat(w69): founding
+grants become a budget — scarce, not weak`, which is exactly the constant that decides how much
+teachable knowledge a Vancian universe ever gets. `tradition-sweep.md` reported 134.1 Vancian
+lessons per passive run; this build reports **4.1**. Neither file's per-run records were committed
+— both point at scratchpad paths — so the divergence is visible but not cheaply bisectable.
+
