@@ -163,9 +163,17 @@ describe('twenty world years in', () => {
   });
 
   it('has three species at the ruleset ceiling and three below it', () => {
+    // **Orc dropped from 12 to 11 when `apply-magic` shipped, and it is the
+    // only entry that moved.** `speciesTerm` reads `laborAffinity` for that
+    // goal and orc's is the highest in the content set at `fp(1536)`, so an orc
+    // mage spends months applying magic that she used to spend reaching into a
+    // twelfth cell. That is a species behaving like its own traits say it
+    // should, and it costs it a cell of breadth — which is the trade the goal
+    // is supposed to create and the reason this pin is re-recorded rather than
+    // widened.
     expect(bySpecies('dwarf').occupiedCells).toBe(12);
     expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(12);
+    expect(bySpecies('orc').occupiedCells).toBe(11);
     expect(bySpecies('draconic').occupiedCells).toBe(10);
     expect(bySpecies('elf').occupiedCells).toBe(10);
     expect(bySpecies('gnome').occupiedCells).toBe(8);
@@ -174,10 +182,11 @@ describe('twenty world years in', () => {
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0729 at this horizon. Pinned to four places: the point of the metric is
-    // that this number moves, and a test that only asserted "greater than zero"
-    // would let it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0729, 4);
+    // 0.0714 at this horizon, down from 0.0729 before `apply-magic`: one orc
+    // cell fewer makes the occupancy spread very slightly flatter. Pinned to
+    // four places: the point of the metric is that this number moves, and a
+    // test that only asserted "greater than zero" would let it move to anything.
+    expect((entry as { value: number }).value).toBeCloseTo(0.0714, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 

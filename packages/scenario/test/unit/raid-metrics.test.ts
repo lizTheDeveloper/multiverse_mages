@@ -16,14 +16,17 @@
  *
  * `raid-engagement.test.ts` proves a reference universe resolves raids.
  * `metric-completeness.test.ts` proves every declared metric reaches every
- * record. Between the two sat a gap nothing asserted: the raids were resolved,
- * reduced to `RaidObservation`s, attached to `ReferenceRunResult` — and then
- * dropped, because `RunOutcome.metrics` came from `collectReferenceMetrics`,
- * which knew only the census-derived vital signs. §7's collectors existed,
- * `collectRunMetrics` existed, and **nothing in the production run path called
- * it**, so `raidLengthDistribution` and `raidInitiationCost` had never appeared
- * in a run record. Declaring them in a sweep failed at validation with *"the
- * reference scenario defines no metric raidInitiationCost"*.
+ * record. Between the two sat a gap nothing asserted: that the raids a run
+ * resolves arrive in that run's record as §7's three raid metrics, at each of
+ * the three answers those metrics can honestly give.
+ *
+ * The route they arrive by is `collectDeclaredMetrics`, which splits a task's
+ * declared ids between `measures.ts`'s vital signs and `contracts.md` §7's
+ * registry, and feeds the §7 half from `RunTelemetry`. **This file asserts the
+ * raid end of that route and nothing else asserts it**: `collectRunMetrics` has
+ * a production caller and seven per-run metrics are declarable, but until a run
+ * actually raids, `raidLengthDistribution` and `raidInitiationCost` can only
+ * ever be observed reporting an absence.
  *
  * This file is the chain, asserted at all three of its honest answers, because
  * the interesting failure is not "the number is wrong" but "the number is a
@@ -33,7 +36,7 @@
  * - **`no-observations`** — raids exist, this run initiated none.
  * - **`measured`** — a run long enough to raid, with the histogram behind it.
  *
- * The two reasons are the distinction `RunMeasurement.raids` carries as
+ * The two reasons are the distinction `RunTelemetry.raids` carries as
  * `undefined` versus `[]` all the way from the executor, and collapsing them is
  * the confusion §7's reason codes exist to end.
  */
@@ -42,7 +45,13 @@ import { describe, expect, it } from 'vitest';
 
 import type { MetricEntry, RunTask } from '@mm/mc-harness';
 import { UNAVAILABLE_REASON } from '@mm/mc-harness';
-import { REFERENCE_METRIC_IDS, executeReferenceRun, referenceContent } from '@mm/scenario';
+import {
+  BALANCE_RUN_METRIC_IDS,
+  REFERENCE_METRIC_IDS,
+  REFERENCE_REGISTRIES,
+  executeReferenceRun,
+  referenceContent,
+} from '@mm/scenario';
 
 /** The three run-scoped raid metrics of `contracts.md` §7. */
 const RAID_METRIC_IDS = ['raidLengthDistribution', 'inboundRaidTempoLoss', 'raidInitiationCost'];
@@ -73,7 +82,11 @@ function task(worldTickCap: number): RunTask {
     // nothing about the chain.
     strategies: ['portal-rush'],
     worldTickCap,
-    metrics: [...REFERENCE_METRIC_IDS],
+    // Both registries, because the reference scenario answers to both and a
+    // record carries only what its task declared. The vital signs come along
+    // so this file also proves the two halves of `collectDeclaredMetrics`
+    // reach one record together rather than one displacing the other.
+    metrics: [...REFERENCE_METRIC_IDS, ...RAID_METRIC_IDS],
     ablatedPrimitives: [],
   };
 }
@@ -117,18 +130,25 @@ function measured(
 
 describe('the reference scenario declares the §7 raid metrics', () => {
   it('names all three among the ids a sweep may declare', () => {
-    // The validation half. Before this, `validateSweep` rejected a sweep file
-    // that named either of them, so no sweep could ask for one.
+    // The validation half: `validateSweep` checks a sweep file's metric ids
+    // against `REFERENCE_REGISTRIES`, so an id absent from it cannot be asked
+    // for by any sweep no matter how good its collector is.
     for (const id of RAID_METRIC_IDS) {
-      expect(REFERENCE_METRIC_IDS, `${id} is not declarable`).toContain(id);
+      expect(REFERENCE_REGISTRIES.metrics.has(id), `${id} is not declarable`).toBe(true);
+      expect(BALANCE_RUN_METRIC_IDS, `${id} is not a §7 per-run metric`).toContain(id);
     }
   });
 
   it('keeps §7 ids rather than inventing prefixed twins of them', () => {
     // A `referenceRaidLength...` would have been a second definition of a
-    // digest-pinned metric, and the two would have drifted apart silently.
+    // digest-pinned metric, and the two would have drifted apart silently. The
+    // two registries stay disjoint by prefix, which is also what keeps
+    // `metricRegistry` from throwing on a duplicate id when they are joined.
     for (const id of REFERENCE_METRIC_IDS) {
-      if (!id.startsWith('reference')) expect(RAID_METRIC_IDS).toContain(id);
+      expect(id, 'a vital sign must be prefixed').toMatch(/^reference/);
+    }
+    for (const id of RAID_METRIC_IDS) {
+      expect(REFERENCE_METRIC_IDS, `${id} is duplicated as a vital sign`).not.toContain(id);
     }
   });
 });

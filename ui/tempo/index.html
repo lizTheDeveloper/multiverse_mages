@@ -143,6 +143,8 @@
   <p class="lede">All three run off one simulated stream. Change the population — the routine classes cross
   their thresholds and turn to texture, while loss stays discrete at any scale.</p>
 
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
   <div class="globalbar">
     <button class="run" id="run" type="button" aria-pressed="true">⏸ Running</button>
     <span class="k">population</span>
@@ -444,4 +446,13 @@ setInterval(() => {
 <script type="module">
   import { floatThemeControl } from '../shared/theme.js';
   floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['eventDeltas']);
 </script>

@@ -518,6 +518,8 @@
     for reading someone you cannot command.</p>
   </div>
 
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
   <div class="provbar">
     <label><input type="checkbox" id="pt"> Show data provenance</label>
     <div class="key">
@@ -906,4 +908,13 @@
 <script type="module">
   import { floatThemeControl } from '../shared/theme.js';
   floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['individualMages', 'explainChannel']);
 </script>

@@ -341,7 +341,43 @@ describe('contentRevision', () => {
     // which is the opposite of the ascension-constant move above, and the
     // difference is worth reading: that one changed when a run ends, this one
     // changes nothing until a sweep names a level.
-    expect(registry.contentRevision).toBe('162f80bf169296d0e5fd516cc3c5257a');
+    //
+    // `2c67315a` is the digest W29 recorded on its own branch, which reached
+    // that point holding W6's, W8's and W17's constants and the material split
+    // but *not* the value edit below.
+    //
+    // 2c67315ae04ee6c74dfa204474af4eb6 -> ba7be8d68b582e2985e0360bbc7e11b0,
+    // when W29's tree met a `main` that had meanwhile brought
+    // `max-summons-per-side` down from 16 to 8 to agree with `primitive.json`'s
+    // `summon` cap — the same ceiling authored twice, disagreeing since both
+    // files existed. That edit is the first entry in this whole list that
+    // changes a *value* rather than adding a file, which is the point of a
+    // revision taken over the values: two universes that disagreed about how
+    // many summons a side may hold would fight two different battles, and the
+    // digest now says so instead of calling them compatible.
+    //
+    // `main` reached this merge asserting 6b18886a — W17's successor plus that
+    // value edit, taken there without W6's or W8's constants and without the
+    // material split. Neither 6b18886a nor 2c67315a is a competing claim about
+    // *this* tree: each is a claim about a smaller preimage, and this tree's
+    // preimage strictly contains both. ba7be8d6 is therefore the union
+    // arriving, not a disagreement being settled — the same situation the
+    // three-branch paragraph above describes, one level up.
+    //
+    // Union again: main's revision together with this branch's metis-from-use
+    // content. Neither literal is a digest over a preimage holding both.
+    //
+    // 162f80bf169296d0e5fd516cc3c5257a -> d4e3047657b4fa8a1a74e1d52f9f5c86,
+    // when `apply-magic` added two scalars to `autonomy-weight.json` — what a
+    // mage-month of applied magic makes, and what she eats while she makes it.
+    // In the preimage for the reason the god constants are: the two numbers
+    // decide how much of a universe's economy comes out of its mages rather than
+    // its fields, so two universes disagreeing about them would keep different
+    // populations while their revisions agreed they were compatible. Unlike the
+    // grant-budget move above, this one **does** change every run: applying
+    // magic is a goal a mage will choose, so a tick's materials and a tick's
+    // goal histogram both move from the first month.
+    expect(registry.contentRevision).toBe('d4e3047657b4fa8a1a74e1d52f9f5c86');
   });
 
   it('is stable across loads of identical content', () => {

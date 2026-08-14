@@ -225,8 +225,10 @@ describe('recovery, per species', () => {
    * draconic's 3.20e-4) and orc the shortest maturity lag at 168 months — and
    * neither recovers either. Both are censored alongside the long-lived pair.
    *
-   * What does recover is gnome and dwarf, which are neither the most fertile nor
-   * the shortest-lived. So recovery is not rate-limited by fertility at all:
+   * What recovers is dwarf — and gnome did too until `apply-magic` shipped and
+   * the goal drew months away from the roster's rebuild. Neither is the most
+   * fertile nor the shortest-lived. So recovery is not rate-limited by fertility
+   * at all:
    * student demand *is* university capacity (`populace/demand.ts`), the
    * carrying-capacity brake is one scalar shared across every species, and the
    * roster refills against seats rather than against births.
@@ -267,10 +269,23 @@ describe('recovery, per species', () => {
     // Something recovers, so the censoring above is a finding and not a run
     // that simply ended too early for anybody.
     expect(species.length).toBeGreaterThan(0);
-    const recoverers = species.map((row) => String(row['speciesId']));
-    // The recoverers are not the two shortest-lived species, which is the whole
-    // of the refutation in one assertion.
-    expect(recoverers).not.toContain('orc');
-    expect(recoverers).not.toContain('human');
+    // Absent species are filtered out here for exactly the reason the block
+    // above filters them out of the `censored` check, and the guard was
+    // one-sided until `apply-magic` shipped and this seed's orc roster reached
+    // the shock tick empty.
+    //
+    // A species at zero is scored as recovering in twelve ticks — nought is
+    // trivially back to nought — and that reads in `recoverers` as the very
+    // outcome this test exists to refute. It is not one. `preShock: 0,
+    // postShock: 0` is a species that was never there, and the refutation is a
+    // claim about species that were: **the two shortest-lived species that had
+    // a roster do not recover.** Symmetrical with the `censored` guard, and
+    // stated rather than left to whoever next reads a green test and a zero.
+    const recoverers = species
+      .map((row) => String(row['speciesId']))
+      .filter((speciesId) => present.has(speciesId));
+    for (const shortLived of ['human', 'orc']) {
+      if (present.has(shortLived)) expect(recoverers).not.toContain(shortLived);
+    }
   });
 });
