@@ -283,10 +283,55 @@ describe('twenty world years in', () => {
     // seventy, 61 of 70 cells are occupied by someone and two have a sole
     // occupant. Two out of sixty-one is not specialisation — but it is not zero
     // either, which is the first time this reading has been anything but zero.
+    //
+    // **And both are the ones the affinities predict.**
+    //
+    //     perdo-herbam   elf   herbam 1536 — its *strongest* entry, and herbam is
+    //                          one of the ten forms the twelve never covered, so
+    //                          this affinity had no cell to act in at all
+    //     rego-terram    orc   terram 1280
+    //
+    // Asserted rather than narrated, because an identification stated in a comment
+    // is a guess until something checks it.
+    //
+    // The nine cells nobody reaches at this horizon are eight Perdo cells plus
+    // `rego-umbra`, and *six* of the nine were inside the old twelve. Widening the
+    // ruleset did not merely add reach; it moved it.
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry).toMatchObject({
       detail: { cellsOccupiedByAnySpecies: 61, cellsWithASoleOccupant: 2 },
     });
+
+    const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
+    const holders = new Map<number, string[]>();
+    for (const species of sample.species) {
+      for (const cellId of species.occupiedCellIds) {
+        holders.set(cellId, [...(holders.get(cellId) ?? []), species.speciesId]);
+      }
+    }
+    const sole = [...holders]
+      .filter(([, ids]) => ids.length === 1)
+      .map(([cellId, ids]) => [cellName.get(cellId), ids[0]]);
+    expect([...sole].sort()).toEqual([
+      ['perdo-herbam', 'elf'],
+      ['rego-terram', 'orc'],
+    ]);
+
+    const unoccupied = content.registry.cells
+      .filter((entry_) => !holders.has(entry_.contentId))
+      .map((entry_) => entry_.record.id)
+      .sort();
+    expect(unoccupied).toEqual([
+      'perdo-animal',
+      'perdo-aquam',
+      'perdo-auram',
+      'perdo-corpus',
+      'perdo-limen',
+      'perdo-mentem',
+      'perdo-terram',
+      'perdo-umbra',
+      'rego-umbra',
+    ]);
   });
 
   it('reports living mages beside every count, so a zero is readable', () => {
