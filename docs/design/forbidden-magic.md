@@ -140,3 +140,69 @@ pressure that arrives on a timer, and it is the difference between a decline and
 the late game is a defence minigame and the construction game ends at mid. **The saturated world should
 also be where the best magic finally exists** — the cults are what make it *cost* something, not what
 it is *for*.
+
+---
+
+## Your followers push back
+
+*Owner, 2026-08-13. The counter-pressure, and it makes worship do a third job while putting the three
+in competition.*
+
+**Worshippers exert pressure on forbidden magic.** A god with a large, devoted following suppresses
+cults; a god with few followers cannot.
+
+That is the piece that stops this being one-directional. Without it, forbidding accumulates enemies
+with no counterplay and the only strategy is to forbid nothing — **which would delete the ruleset verb
+the whole game is named for.**
+
+### Why this is the right counter rather than a new resource
+
+**It gives the populace a role.** Today they are a worship source and a subsistence demand — a number
+that eats and believes. Under this they are also **the thing standing between your world and its
+underground**, which is a much better reason for a god to care about ordinary people than a per-head
+accrual rate.
+
+**And it makes worship genuinely contested.** Worship now does three things:
+
+| worship buys | mechanic |
+|---|---|
+| **tempo** | favor regeneration, `favor-cap-base`'s stated job |
+| **width** | unlocking new kinds of magic through universities |
+| **suppression** | holding down what you forbade |
+
+**Three claims on one pool is a real decision** — and it is the first time worship has been anything
+but a rate. A god who spends everything on width finds their underground unpoliced; one who holds
+enough back to keep order grows more slowly. **That tension is the game, and it costs no new
+resource.**
+
+### And it composes with daily relevance, which is already measured
+
+`dailyRelevance` scales worship per cell by what the magic is *for* — measured at **+23.0% → +48.8%**
+for `daily` versus `spectacle`. So:
+
+**A god whose permitted magic serves ordinary life has more followers, and therefore more suppression.**
+A god who permits only spectacle has a thin, spectacular following and a thriving underground.
+
+**That is a coherent moral shape falling out of existing mechanics rather than being asserted**, and it
+is the second time the daily-relevance work has paid for itself.
+
+### Open, and not to be guessed
+
+1. **Is suppression a stock or a flow?** A standing suppression *level* competing with spending is
+   simpler; a per-tick expenditure makes it an active choice. **The second is more interesting and more
+   likely to be micromanagement.**
+2. **Can followers lose?** If suppression always wins given enough worship, cults are a tax rather than
+   a threat. **There should be a level of forbidden magic that a purely devotional response cannot
+   hold** — otherwise the answer to every cult is "have more people."
+3. **Does suppression convert or destroy?** A cult broken by the faithful and a cult broken by force
+   are different fictions, and only one of them is *"they came back."*
+
+### The caution that now matters most
+
+**This makes worship the answer to three separate problems, and a resource that answers everything
+answers nothing.** If width, tempo and suppression all scale together, a god simply maximises worship
+and the three claims collapse into one number.
+
+**They must trade against each other, and that trade is a swept parameter with both degenerate ends as
+controls** — worship so plentiful that all three are free, and so scarce that only one is ever
+affordable.
