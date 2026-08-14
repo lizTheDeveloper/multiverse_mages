@@ -84,10 +84,14 @@ const GATES = [
  * that nobody reads "the gate is fixed" as "the gate sees everything".
  */
 const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
-  'balance/baselines/balance-gate-agency-v1.baseline.json': [
-    'referenceNodesGained@denial-warden',
-    'referenceNodesKnown@denial-warden',
-  ],
+  // **Empty since w107, and the change is in the instrument rather than in the
+  // world.** `apply-magic` moved `denial-warden`'s `referenceNodesKnown` from
+  // 4.75 to 5.75 nodes and its `referenceNodesGained` with it, and a mean that
+  // is no longer within a rounding error of zero has a tolerance that no longer
+  // exceeds it. The agency gate is now blind to **none** of its eighty arm
+  // lines, median MDE 12.3 %. Shrinking this list is a build failure precisely
+  // so that it arrives with a rationale, and this is the rationale.
+  'balance/baselines/balance-gate-agency-v1.baseline.json': [],
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
     'referenceGrimoires@denial-warden',
     'referenceKnowledgeInstances@denial-warden',
