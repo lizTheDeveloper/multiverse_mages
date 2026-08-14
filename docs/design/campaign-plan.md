@@ -6177,3 +6177,48 @@ a crash, and this one survived three separate invocations without a single warni
 **And the denominator rule**: before quoting a rate, check what its denominator counts.
 `orc 1.22 living mages` was misquoted once already for the same reason — a number read
 without its scope.
+
+## W121 — "magic doesn't do anything", stated as a number: four primitives of fourteen
+
+The second red non-blocking check on `main` (474ccdf). `node scripts/check-primitive-consumption.mjs`:
+
+```
+Primitive consumption over 8 registered consumer(s)
+  (4 primitive(s) reachable from authored nodes):
+  build-rate         33 node(s) -> universe-effects.universeEconomyBonuses
+  portal              2 node(s) -> god/interventions.portalPlan
+  resource-yield     59 node(s) -> universe-effects.universeEconomyBonuses
+  worship-yield      11 node(s) -> god/system.yieldSources
+
+Consumed, but never from node effects — knowledge cannot move these:
+  fertility, lifespan, research-rate, teach-rate
+
+FAIL: primitive(s) with no node-driven consumer: area-denial, blink, concealment,
+      direct-damage, knowledge-steal, research-rate, scribe-rate, summon, teach-rate, ward
+```
+
+**Four of fourteen.** This is the campaign's founding complaint — *"magic doesn't… do anything
+so that's why the search space is not fruitful"* — with a denominator attached, and it has been
+sitting in a non-blocking CI job the whole time.
+
+The ten failures split cleanly, and the split is the roadmap:
+
+- **Seven are combat** — `area-denial`, `blink`, `concealment`, `direct-damage`,
+  `knowledge-steal`, `summon`, `ward`. Nothing a mage learns changes any of them. That is the
+  mechanical statement of *raids do not read what mages know*, and it is why `rules-raid` can be
+  fully built and still leave the strategy space flat. Belongs with `w106/raid-fidelity`.
+- **Three are academic** — `research-rate`, `teach-rate`, `scribe-rate`. These are *consumed*,
+  but only off god blessing and encouragement constants, never off a node effect. **No discovery
+  can make research or teaching faster.** That is the missing lever under publish-or-perish: the
+  god can bless a mage into productivity, but a hundred years of scholarship cannot.
+
+The check's framing is the part worth keeping: it does not ask whether anything reads a
+primitive, it asks whether *what the academics know* can change it. A primitive moved only by god
+intervention is a failure on purpose. Its closing line — *"an authored effect on an unconsumed
+primitive reads as a rule and behaves as a comment"* — is the same sentence the reachability check
+makes about symbols, and the two together now describe every instance of the pattern this campaign
+keeps rediscovering.
+
+**Both red checks are non-blocking, and that is why neither was acted on.** The order is: drive
+each to green on its own merits, *then* make it required. Making either required while red blocks
+everything; adding exclusions to either converts a defect into silence.
