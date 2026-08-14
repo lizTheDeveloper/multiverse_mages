@@ -24,7 +24,7 @@ import {
   createUniverse,
   defineWorldStateSchema,
 } from '@mm/state';
-import { KnowledgeSubsystem } from '@mm/rules-magic';
+import { KnowledgeSubsystem, MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
 
 import { CoordinatingKnowledgeGateway } from '../../src/index.js';
 
@@ -135,6 +135,65 @@ describe('the port answers the questions rules-world asks', () => {
     expect(after.knows(mage, held?.nodeId ?? 0)).toBe(true);
     expect(after.heldNodes(mage)).toEqual([held?.nodeId]);
   });
+
+  it('separates what a mage holds from what she can cast', () => {
+    // `castableNodes` is the gateway's half of `GOAL.applyMagic`'s
+    // applicability, and it is three of `gatherEffects`' four gates asked of one
+    // mage. The one that is easy to get wrong is the mastery threshold: a node
+    // finished last month sits at `DEFAULT_INITIAL_MASTERY` and is held without
+    // being castable, and a build that conflated the two would let a mage
+    // harvest with a spell she cannot yet perform.
+    const { state, knowledge, gateway, mage } = universeWithOneMage();
+    const [low, high] = gateway.researchFrontier(mage, 2);
+    expect(low).toBeDefined();
+    expect(high).toBeDefined();
+
+    for (const [target, mastery] of [
+      [low, MASTERY_ACTIVATION_THRESHOLD - 1],
+      [high, MASTERY_ACTIVATION_THRESHOLD],
+    ] as const) {
+      attachRecord(state, KNOWLEDGE_INSTANCE, state.entities.create(), {
+        nodeId: target?.nodeId ?? 0,
+        locationKind: LOCATION_KIND.mind,
+        locationId: mage,
+        acquiredTick: 0,
+        mastery,
+      });
+    }
+    knowledge.rebuild();
+
+    const after = buildGatewayOver(state, knowledge, gateway);
+    expect(after.heldNodes(mage)).toContain(low?.nodeId);
+    expect(after.heldNodes(mage)).toContain(high?.nodeId);
+    // At the threshold, not above it: the comparison is `>=`, and a strict `>`
+    // would move the whole activation boundary by one fixed-point unit for
+    // every consumer of it.
+    expect(after.castableNodes(mage)).toEqual([high?.nodeId]);
+  });
+
+  it('stops offering a cast the moment the ruleset stops permitting it', () => {
+    // Permission is evaluated when the question is asked, so an interdiction
+    // takes the verb away without touching what anybody knows. Asserted through
+    // a second gateway over the *same* state with a different ruleset, which is
+    // the only difference between the two answers.
+    const { state, knowledge, gateway, mage } = universeWithOneMage();
+    const target = gateway.researchFrontier(mage, 1)[0];
+    attachRecord(state, KNOWLEDGE_INSTANCE, state.entities.create(), {
+      nodeId: target?.nodeId ?? 0,
+      locationKind: LOCATION_KIND.mind,
+      locationId: mage,
+      acquiredTick: 0,
+      mastery: 1024,
+    });
+    knowledge.rebuild();
+
+    expect(buildGatewayOver(state, knowledge, gateway).castableNodes(mage)).toEqual([
+      target?.nodeId,
+    ]);
+    expect(forbiddenGateway(state, knowledge).castableNodes(mage)).toEqual([]);
+    // And she still knows it.
+    expect(forbiddenGateway(state, knowledge).knows(mage, target?.nodeId ?? 0)).toBe(true);
+  });
 });
 
 describe('a gateway built without a ledger is query-only, and says so', () => {
@@ -158,6 +217,41 @@ describe('a gateway built without a ledger is query-only, and says so', () => {
 });
 
 /** Rebuilds the gateway with the same deps, for the "one view per phase" rule. */
+/**
+ * The same state under a ruleset that permits nothing.
+ *
+ * Written as a whole second gateway rather than as a mutated ruleset, because a
+ * gateway memoizes its scans against the ruleset it was built with — that is
+ * what makes it a view of one phase — and mutating one in place would answer a
+ * question that was never asked.
+ */
+function forbiddenGateway(
+  state: ReturnType<typeof buildWorld>['state'],
+  knowledge: KnowledgeSubsystem,
+): CoordinatingKnowledgeGateway {
+  const { catalog, cells } = catalogAndCells();
+  const { speciesOf, ids } = speciesTable();
+  const species = speciesOf(ids[0] as number);
+  if (species === undefined) throw new Error('the shipped registry declares no species');
+  const traditionId = registry().traditions[0]?.contentId ?? 1;
+  return new CoordinatingKnowledgeGateway({
+    state,
+    knowledge,
+    catalog,
+    cells,
+    facets: nodeFacets(),
+    ruleset: { permittedTechniques: 0, permittedForms: 0, edicts: [] },
+    ratesOf: () => ({
+      learnRate: species.learnRate,
+      rediscoveryAffinity: species.rediscoveryAffinity,
+      depthCeiling: species.depthCeiling,
+      scribeAffinity: species.scribeAffinity,
+    }),
+    store: shippedStorePolicy(traditionId),
+    acquire: shippedAcquirePolicy(traditionId),
+  });
+}
+
 function buildGatewayOver(
   state: ReturnType<typeof buildWorld>['state'],
   knowledge: KnowledgeSubsystem,

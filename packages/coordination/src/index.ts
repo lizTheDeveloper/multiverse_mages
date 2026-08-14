@@ -118,6 +118,7 @@ export type { AblationMask } from '@mm/primitives';
 export { NO_ABLATION, neutralizing } from '@mm/primitives';
 
 export type {
+  AppliedNodeYield,
   UniverseEconomyBonuses,
   UniverseEconomyDeps,
   UniverseEffectIndex,
