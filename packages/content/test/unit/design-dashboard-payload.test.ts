@@ -143,18 +143,38 @@ const withoutFileSeals = (block: Payload['metrics']): unknown => {
   return clone;
 };
 
-const withoutLocations = (block: Payload['reachability']): unknown => {
+const REACHABILITY_ROW_KEYS = [
+  'unreached',
+  'reachedOnlyByUnreached',
+  'untouchedComponents',
+  'unconsumedConstants',
+] as const;
+
+/**
+ * `reachability`, reduced to the **shape** the page reads rather than the findings
+ * it happened to hold when the payload was generated.
+ *
+ * Line numbers and the two file/symbol totals were already projected out, on the
+ * argument that pinning them "would go red on unrelated rules-path PRs and train
+ * the regenerate-to-green reflex". **The finding rows and `findingCount` are that
+ * same hazard and it caught us**: #156 gave `explicitOpeningAxes` a caller, the
+ * count fell 131 → 130, and `main` went red on a dashboard that had asserted
+ * nothing about itself. A reachability finding being *fixed* is the best possible
+ * reason for this file to change, and the worst possible reason for `main` to break.
+ *
+ * So the contents go, and what stays is what would actually break the page: the
+ * blocks exist, they are arrays, and each row carries the keys the table renders.
+ * The findings themselves have a guard already — `check:reachability` in CI, which
+ * is where a change in them belongs.
+ */
+const reachabilityShape = (block: Payload['reachability']): unknown => {
   const clone = JSON.parse(JSON.stringify(block)) as Record<string, unknown>;
   delete clone['examinedSymbolCount'];
   delete clone['productionFileCount'];
-  for (const key of [
-    'unreached',
-    'reachedOnlyByUnreached',
-    'untouchedComponents',
-    'unconsumedConstants',
-  ]) {
+  delete clone['findingCount'];
+  for (const key of REACHABILITY_ROW_KEYS) {
     const rows = clone[key] as Record<string, unknown>[];
-    for (const row of rows) delete row['line'];
+    clone[key] = rows.map((row) => Object.keys(row).sort().join(','));
   }
   return clone;
 };
@@ -195,7 +215,7 @@ describe('ui/design-dashboard/data.json', () => {
     // numbers stay in the payload because the page prints them in a column; they
     // are asserted below to exist, which is the property that would actually
     // break the table.
-    expect(withoutLocations(fresh.reachability)).toEqual(withoutLocations(committed.reachability));
+    expect(reachabilityShape(fresh.reachability)).toEqual(reachabilityShape(committed.reachability));
     expect(fresh.decisions).toEqual(committed.decisions);
     expect(fresh.measurements).toEqual(committed.measurements);
     expect(fresh.openQuestions).toEqual(committed.openQuestions);
