@@ -7771,3 +7771,73 @@ And a documentation-rot flag, the fourth tonight: **`balance/README.md`'s five-s
 Not afforded, and named: a `uniform-random-legal` ablation arm (32 runs/arm on a shared machine), and
 diagnosing whether the six primitives are **cast-but-invisible** or **never cast** — which needs the
 `RaidRecord` change first.
+
+## W157 — bodies on the field, nobody swings. Four refinements deep, and each one was measured.
+
+PR #145. The chain of successive corrections is worth reading as a whole, because **every step
+narrowed the previous one and every step was a measurement, not an inference:**
+
+1. *"Magic does nothing in a raid."* — **false**; 85,056 fp from four v1 nodes (#144).
+2. *"Nobody sends a mage to the raid."* — **false**; `portal-rush` applies `assignRole` 949 times and
+   takes 118 casualties (W156).
+3. *"Ablation moves nothing, so the wire is dead."* — **false**; `RaidRecord` could not see it (W156's
+   own self-correction).
+4. And now: **no shipped strategy puts a combat node in a combatant's hands.**
+
+`scripts/w144-ablation-visibility.mjs`, across **all eight shipped strategies at two seeds each — 61
+raids, 80,615 combatant-ticks — the reference scenario begins zero combat attempts.** `chooseIntent`
+ranks theft at candidate 2 and casting at 3, and no strategy grants a raider a combat node. **The
+bodies are on the field and nobody swings.** The one positive control that exists is
+`knowledge-steal`, where the combat block does move: 4,212 → 4,580 combatant-ticks on `0x00041000`.
+
+That is the real gap, and it took four refinements to reach because each layer above it was itself
+broken.
+
+### The shape question answered by the code, not by me
+
+I offered two options — a per-primitive ledger or opposing-side casualties — and the answer was
+**neither**: `RaidOutcome.actionEconomy`, because `RaidObservation` **already declares
+`combatSources` / `totalCombatantTicks` / `worldScaleRemovals` / `summonsRemoved` /
+`unimplementedCombatChannels` field-for-field against `ActionEconomyReport`**, and two §7 collectors
+are written against exactly those. Opposing-side casualties are **subsumed** — `removals` is a
+per-side pair — which is why it is one field and not two. `primitiveApplication` was left behind
+because nothing downstream of that boundary reads it.
+
+**The discriminating question was "which shape has a written consumer", and asking it beat both of my
+guesses.**
+
+### A wrong explanation is worse than a missing one
+
+`raidObservationOf` hardcoded `combatSources: []`, three zeros, and a four-element
+`unimplementedCombatChannels`. Now: real rows, **3,379–4,331 combatant-ticks per seed** at 600 ticks,
+and `['displacement']` carried from `rules-raid`'s own `UNIMPLEMENTED_CHANNELS`. `combatActionEconomy`
+moves from `unavailable: no-observations` to **`measured`**.
+
+And the reason string it used to publish was *"the raids in this run contained no combatant-ticks at
+all — every raid resolved on the tick it opened."* **That was false on every raid this executor has
+ever produced.** A metric that reports absence *and supplies a wrong explanation for it* is a new
+variant of tonight's pattern and the most misleading one yet: it answers the question a reader would
+have asked next.
+
+Same again in `combat-ablation-reaches-a-raid.test.ts`, which blamed *"defenders field `warden`"* —
+but `DEFENDING_ROLES` is `{warden, professor, researcher, raider}`. **Every living mage defends.**
+
+### Discipline worth copying
+
+The agency gate showed 11 non-zero rows. Rather than assert they were pre-existing, the agent
+**swapped its four changed files to their `origin/main` contents with `git show <ref>:<path>` and
+re-ran** — byte-identical rows. Pre-existing drift on `main`, flagged for separate attention, and
+proved rather than argued. `snapshotHash` unchanged at `f6974848cef4578c`, which is the right result
+for a reporting-only change.
+
+### And it declined the one-line fix, correctly
+
+`balance-full`'s pool was **deliberately not changed**: the measurement says it would record more
+nulls than it fixes. Both combat metrics are blocked by zero attempts under *every* strategy, and
+`roleAssignmentDemographicCost` is blocked by something else entirely — **nothing in `scenario` ever
+sets `RunTelemetry.roleDemography`**, so it reports `no-observations` regardless of pool. That is the
+**tenth** built-and-never-reached find of the campaign.
+
+**Next named step, and it is content plus strategy rather than code:** put a combat node in a
+combatant's hands in at least one shipped strategy, then the pool fix, then the metrics can speak.
+A tripwire now pins zero-attempts and **fails the day a strategy fields an armed combatant**.
