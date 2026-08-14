@@ -278,15 +278,20 @@ async function main() {
     // `dead` is ambiguous, and the ambiguity is the whole trap. It means either
     // "no strategy beats doing nothing" or "the run ended before anyone could
     // win". The `--ticks` guard above rules out the second only at the hard
-    // floor; ascension has been *observed* at 2,400 ticks (elf, 20/100) and not
-    // at 600, so a cap between the two can still produce a `dead` archive that
-    // is a fact about the horizon. Print the cap beside the verdict so the two
-    // readings cannot be confused by anyone who did not run the command.
+    // floor, and caps well above the floor have still produced archives where
+    // nothing ascended. So print the cap and the ascension count beside the
+    // verdict, and let the reader compare them.
+    //
+    // Deliberately no reference horizon here. The obvious thing to write is
+    // "ascension has been observed at N ticks", and that is a measurement of a
+    // build — it rots the moment the grid or the goals change, and it would rot
+    // inside the one file that reads `ascension-min-tick` out of content
+    // precisely so a number could not drift from its source.
     process.stdout.write(
-      `[search] WARNING: dead -- no cell beat the null ladder at --ticks ${String(args.ticks)}. ` +
-        `Zero runs ascended. ascension-min-tick is ${ascensionMinTick} and ascension has been ` +
-        'observed at 2400; below that, `dead` is a fact about the horizon and not about the ' +
-        'strategies.\n',
+      `[search] WARNING: dead -- no cell beat the null ladder at --ticks ${String(args.ticks)}, ` +
+        `and zero runs ascended (ascension-min-tick is ${ascensionMinTick}). A horizon too short ` +
+        'for the win condition produces this verdict for a reason that is not about the ' +
+        'strategies; re-run longer before reading it as one.\n',
     );
   }
   for (const cell of archive.cells) {
