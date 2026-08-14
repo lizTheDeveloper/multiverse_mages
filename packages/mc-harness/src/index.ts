@@ -357,6 +357,30 @@ export {
   wilsonInterval,
 } from './ablation.js';
 
+export type {
+  MetricReachability,
+  PairedDifference,
+  ReachabilityInput,
+  ReachabilityPair,
+  ReachabilityReason,
+  ReachabilityVerdict,
+  SeededArm,
+  SeededCoordinates,
+} from './reachability.js';
+export {
+  REACHABILITY_REASON,
+  REACHABILITY_VERDICT,
+  REACHABILITY_Z_95,
+  classifyPaired,
+  leverReached,
+  mergeReachability,
+  pairedDifference,
+  pairedRunSeedProblems,
+  quantile975,
+  quarantineList,
+  reachabilityReportProblems,
+} from './reachability.js';
+
 export type { ReproduceOptions, ReproductionResult, RunSelector } from './reproduce.js';
 export { compareToRecord, reproduceRun, taskFor } from './reproduce.js';
 
