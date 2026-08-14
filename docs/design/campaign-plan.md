@@ -7498,3 +7498,71 @@ threshold-free *1 of 12*; and a verdict is a function of K while a reproduction 
 
 `balance:gate` **PASS with `delta 0.00000` on all nine metrics** — the instrument is behaviour-neutral,
 which is what a measurement should be.
+
+## W153 — combat magic already worked. The instrument was blind, and I amplified it.
+
+PR #144, and the headline is a refutation of my own brief.
+
+Measured on **unmodified `origin/main` at `63ff09d`, before touching anything**: a warband holding
+four v1 `direct-damage` nodes put **85,056 fp** on the field. A tier-matched academic warband put
+**0**. `arbitration.ts` has been turning held nodes into damage since `raid-engagement`, and
+`scenario/raids.ts` has been calling it, installed in the reference world loop **by default**.
+
+**So "thirty-three already-authored effects that change nothing when a mage goes to war" — which I
+wrote in W121, tabulated in W129, and briefed an agent on — was false.** They changed plenty. Two
+narrower things were broken:
+
+1. **Nothing registered the fetch.** `arbitration.ts` read `registry.nodes` directly, so the
+   composition root's recorder never saw it and `check:consumption` reported **seven live consumers
+   as absent**.
+2. **Nothing could switch it off.** `{}` at every stacking site and no `ablation` on `openPortal`, so
+   a sweep arm neutralizing `direct-damage` would have reported *"no effect"* while the arm ran at
+   full strength.
+
+**This is the same class as every other defect tonight, and it is the one I was least suspicious
+of.** I treated `check:consumption` as ground truth because it was red and because its framing —
+*"can what the academics know change it"* — was so well argued. A confidently-wrong instrument reads
+exactly like a finding. **Five silent-checker bugs, and then the checker I trusted most.**
+
+### What the PR actually delivers
+
+- **`check:consumption` 10 → 3.** All seven combat primitives closed; the three left
+  (`research-rate`, `scribe-rate`, `teach-rate`) are exactly #140's scope — **disjoint halves of one
+  red**.
+- **The ablation mask is threaded**, through `openPortal` → `CastArbiter` → one `#stackOptions()`.
+  Four of the seven never touch `stackMagnitudes`, so they are neutralized at `#authored`
+  **length-preservingly**, keeping the arms on the same RNG stream. Proof: with `direct-damage`
+  ablated, raids resolve on the **identical engagement tick**, seed by seed, one arm at 2105.6 fp and
+  the other at 0.
+- Seam justified by content: **every v1 combat effect is authored `self`/`single`/`area`/`side`,
+  none `universe`** — the same shape #140 found, and the same reason a universe-wide bonus is wrong.
+- Measurement over 30 seeds: armed **2105.6 ± 127.2** vs unarmed **0.0 ± 0.0** (16.6 SE); seven paired
+  ablation arms all beyond 3 SE, four collapsing to exactly zero.
+- **Balance: 109 of 109 rows byte-identical**, measured against a second worktree at pristine
+  `origin/main` rather than argued. `ui/session.json` re-records byte-identical; `snapshotHash` still
+  `f6974848cef4578c`.
+
+### The finding nobody went looking for, and it is the real gap
+
+**The reference universe fields no mage combatants.** All sixteen living mages are `researcher`;
+`assign role` is **god action 10**, and no passive strategy submits it. Every reference raid resolves
+with **zero casualties, zero nodes lost, zero nodes gained.**
+
+So six of seven combat ablations change nothing in a reference run — *not because the mask is weak but
+because reference raids contain almost no combat.* `knowledge-steal` still bites on 2 of 6 seeds
+through intent scoring, and the new scenario test asserts exactly that, in both directions, verified
+by fault injection.
+
+**That reframes the raid problem entirely.** It was never "magic does nothing in a raid". It is that
+**nobody sends a mage to the raid**, because the verb that would is a god action no scripted strategy
+plays. That is a strategy-pool and autonomy question, not a rules-path one — and it is a far better
+target than the one I set.
+
+`blink` is a smaller case of the same: ablatable and measurable (6553.6 → 0), but **never selected**
+by a warband holding tier-3/4 damage nodes. It only matters in a loadout without better options.
+
+### And a gate that does not exist
+
+**`check:consumption` is not in `npm run verify`.** Nothing keeps the seven closed once they are
+closed. Adding it would turn `main` red while #140's three are outstanding, so the sequencing is the
+owner's — but it belongs on the list beside making `check:reachability` blocking.
