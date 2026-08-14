@@ -675,6 +675,15 @@ Two corollaries, both of which cost something before they were written down:
 - **Reading is still the right tool for locating absence in a file.** The failure was never the
   reading; it was generalising from one file to a package. `observation.ts` has no vessel write
   remains true and remains useful — it is the sentence built on top of it that had to be withdrawn.
+- **Run until you find the consumer, not until you find the absence.** The rule's own worst near-miss
+  came from stopping when the evidence already supported the wanted conclusion. Ninety-three authored
+  effects on `research-rate`, `teach-rate` and `scribe-rate` really are gathered and dropped —
+  `gatherEffects` has one production caller and it filters to a two-member set. From that it looked
+  as though vision §6a's compounding loop had no mechanism. It has one, two hops further on under a
+  different name: `world-step.ts` passes library capital into `workOne`, where every mage's rate is a
+  `libraryRateMultiplier` over the shelves behind them, bounded by species `depthCeiling`. **An absent
+  call site is not an absent mechanism.** The real finding is narrower and survives: content declares
+  an influence the engine grants by another route.
 
 *Attribution: this rule came out of an exchange between two sessions in which each refuted the
 other's absence claim, so it belongs to neither. It is recorded here rather than in either session's
