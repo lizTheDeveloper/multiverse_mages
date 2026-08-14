@@ -6354,3 +6354,63 @@ has no caller, which is the finding above. This is the pre-existing lie already 
 `campaign-plan.md:4168`, and it was correctly **not** flipped: `MechanicAvailability` feeds whether
 `prestigeAdvantage` reports `no-observations` or `mechanic-absent`, so flipping it changes what a
 committed baseline compares against. **That is a re-baseline decision, and it joins #132.**
+
+## W125 — three baselines were regenerated, and checking it nearly produced a false accusation
+
+The alliances agent (PR #126) regenerated **three** gate baselines before my instruction not to
+reached it, and reported so plainly: `balance-gate-v1`, `balance-gate-horizon-v1`,
+`balance-gate-agency-v1`, with the claim that **no metric moved** — 109 rows, every delta zero.
+
+Its reasoning was that `ci/hetzner-lint` is a **required** check and it was failing on
+`baseline-invalid`, which is a *structural* refusal — the gate declines to compare across two
+`contentHash` values, calling it *"a category error"* — rather than a tolerance failure. So no
+content-touching branch can go green without a regeneration. That is a real bind and the report was
+honest about it, but it does not override whose call it is.
+
+### The near-miss
+
+I checked the claim by diffing the branch's baselines against **`origin/main`**, and got:
+
+```
+balance-gate-agency-v1     90 rows, 85 moved     referenceLibraryDepth 3.815 -> 5.28
+balance-gate-horizon-v1    10 rows, 10 moved     referenceKnowledgeInstances 277 -> 310
+balance-gate-v1             9 rows,  8 moved
+```
+
+Which reads as: the agent regenerated baselines that moved substantially and told me they hadn't.
+**That would have been a false accusation.** The branch is cut from `ebe4fb4`, eighteen commits
+behind, and `main`'s baselines moved in between when **#127 (`w107/apply-magic`) landed**. My diff
+conflated two different changes and attributed both to the branch.
+
+Against its own merge base, which is the only comparison that means anything:
+
+```
+balance-gate-agency-v1     90 rows, 0 moved     contentHash 01b153ba -> 6c510a29
+balance-gate-horizon-v1    10 rows, 0 moved     contentHash 819705b0 -> 5ec7a300
+balance-gate-v1             9 rows, 0 moved     contentHash 31e3c046 -> c4f77a48
+```
+
+**Zero of 109. The agent was exactly right.** The regeneration was provenance-only.
+
+*A finding about code is a finding about a ref* — recorded three times in `CLAUDE.md`, and this is
+the first time it nearly cost an agent its credibility rather than costing an agent an
+investigation. **Diff a branch against its merge base, never against a moving `main`.**
+
+### The decision that is actually open
+
+Provenance-only *against `ebe4fb4`* does not survive contact with today's `main`. #127 moved the
+numbers, so rebasing #126 means regenerating against a base where the metrics genuinely differ —
+that is a real re-baseline, not a hash refresh, and it is the owner's call. #126 is already
+`CONFLICTING` on all three files.
+
+`balance-gate-ascension-v1` was **correctly left alone**: the agent killed its regeneration
+mid-flight because that is the one gate that genuinely moves, and measured it instead. Twenty of
+ninety rows, every one `uniform-random-legal` or an aggregate over it at ⅛ of the arm's move,
+largest **1.46 SE against k = 3** — *inside* tolerance. Cause verified rather than inferred: that
+strategy **invited in 8 of 8 runs, 29 invitations, and no other strategy did once**, because it is
+the only one sampling the whole legal set and action 16 needs portal magic *plus* a species with no
+living mage — which the all-six mix supplies only after an extinction.
+
+So the ascension gate is red on `baseline-invalid`, **not** on tolerance. That distinction is the
+whole decision: a structural refusal to compare across content hashes is not evidence that balance
+regressed.
