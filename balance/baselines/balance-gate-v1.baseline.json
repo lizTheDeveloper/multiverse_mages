@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "31e3c04686218cc10ef48251e32d78841b92b2a2b30c40bf64d9fd6bc8c165be",
+  "contentHash": "44be6b1ac2dcd85229c7541092f61b32369f9c89e303435792db639e4bf5f07c",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.6249668756435547,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.874900626930664,"unit":"grimoires","value":90.97},
@@ -20,13 +20,13 @@
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "162f80bf169296d0e5fd516cc3c5257a",
+    "contentHash": "ff5599a8e99ec22a956f8e3677f8cafd",
     "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
   },
-  "rationale": "Provenance only, re-recorded once from the merged tree. No rule changed and no metric moved for any run this sweep executes. contentRevision moved to 162f80bf169296d0e5fd516cc3c5257a because the founding-grant budget added three god constants (founding-grant-budget-start, founding-grant-accrual-nodes, founding-grant-budget-cap) on top of the five this branch merged from main, and the gate is right that a delta across two content revisions is a category error. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0. The universe remains degenerate in known ways, and one of them is now measured rather than suspected: no strategy in the pool submits god action 8 even at an unbounded budget, so the founding-grant budget this revision adds cannot reach any metric here, and these deltas are exactly zero for a reason rather than reassuringly. This is the regenerate-once-from-the-merged-tree pattern of d5a3357, 6180b65 and d1d3140.",
+  "rationale": "Re-recorded after merging main. The refusal was provenance, not a metric breach: provenance.contentHash moved because this tree is the first holding both mains grant-budget constants and this branchs dailyRelevance on all seventy cells. Every metric was inside tolerance before regeneration -- the five-year gate reported delta 0.00000 (0.00 SE) on all ten, and the twenty-year and agency gates refused on the hash alone and never compared a metric. No tolerance was set and --tolerance-k was never passed, so every tolerance here is k times the measured standard error with k unchanged at 3. These numbers are a measurement and not a balance claim: release-plan.md forbids any balance claim before 0.5.0, and this file is evidence about one build rather than an assertion that the build is balanced. The universe remains degenerate in known ways -- among them that the three gates resolve zero raids, that no strategy in the pool submits god action 8 at any budget, and that no committed gate varies species or tradition -- so a metric that does not move here has not been shown to be inert, only to be out of this instruments reach.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
@@ -40,7 +40,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.41,"value":129.41},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.59,"value":-14.59}
   ],
-  "supersedes": "9ea779c022d85e669cb4e152960c46203ccd2b82aa5bb4a22d4459ace6cf412a",
+  "supersedes": "31e3c04686218cc10ef48251e32d78841b92b2a2b30c40bf64d9fd6bc8c165be",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }
