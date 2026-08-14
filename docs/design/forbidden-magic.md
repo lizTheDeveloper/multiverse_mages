@@ -487,10 +487,48 @@ is *fragile*, because the things waiting have names and you gave them those name
 **A meta-progression that only ratchets difficulty is a punishment for playing.** If every run is
 strictly harder than the last, a player's reward for engagement is a worse game.
 
-**Something must accumulate in the player's favour**, and the honest candidates are knowledge rather
-than power: **the map of what magic can exist is the same seventy cells every time**, and a player who
-has seen ten worlds knows things about that grid a first-timer does not. **That is a real
-meta-progression and it costs nothing to implement**, because it lives in the player's head.
+**Something must accumulate in the player's favour** — and the owner has supplied a much better answer
+than the one I had:
+
+> **"Maybe it's easier next time — you start off in the same world but with a new race, and the old
+> race is around, and you can make friends immediately."**
+
+**The world persists. The peoples accumulate.** A new god is born into the *same* world, playing a
+*different* species, and **the species the previous generation raised is still living there.**
+
+That is the right kind of accumulation, for three reasons:
+
+- **It is social, not statistical.** Nothing gets stronger. What you have is **someone to talk to**,
+  which is a completely different currency from power creep and cannot inflate.
+- **It is earned in the fiction.** The elves are there because a previous god of magic spent a world
+  raising them. **You are inheriting your own work, from the outside.**
+- **And it lands precisely on the mechanic that most needs help.** One-species founding makes the early
+  game lonely and gates escape behind portal magic that most openings cannot reach. **A restart where
+  allies already exist skips that wall entirely** — *"dragons have to make friends"* becomes *"the
+  friends are already here, and you made them."*
+
+**So the second run is genuinely easier, and the reason is legible.** Not a difficulty slider, not
+carried-over stats: the world remembers who lives in it.
+
+### Which makes the meta-progression two opposed accumulations
+
+| accumulates | earned by | effect |
+|---|---|---|
+| **Old Gods** | failing to finish an adversary | the world gets more dangerous |
+| **peoples** | raising a species through a generation | the world gets friendlier |
+
+**Both are things you did, and they point in opposite directions.** A player who summits cleanly leaves
+a world with more allies and no new horrors; one who limps out leaves peoples *and* things that wait.
+
+**That is a self-balancing ramp with no constant to tune**, which is worth stating twice in a project
+carrying hundreds of untuned ones.
+
+It also gives the earlier framing its full sense. *"A new age struggles to be born"* is not a blank
+world — it is a world with ruins, survivors, and things in the dark, **all of them yours.**
+
+**And the honest smaller version still holds beneath it**: a player who has seen ten worlds knows
+things about the seventy-cell grid that a first-timer does not, and that costs nothing to implement
+because it lives in their head.
 
 **If that turns out to be insufficient, the answer is not to grant power** — it is to make the Old
 Gods *fewer and more specific*, so that a careful player genuinely clears their record. **Sweep it:
