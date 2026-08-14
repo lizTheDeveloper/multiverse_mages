@@ -273,8 +273,12 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 Both multi-strategy gates carry **80 further lines each**, one per `(metric, strategy)`. That is
 where their power actually lives; the column above is a summary of a mean taken over eight
-strategies that do very different things. Agency arm lines: median MDE 12.3 %, **80 of 80** below
-100 %. Ascension arm lines: median 14.1 %, 70 of 77 below 100 %.
+strategies that do very different things, and both figures below count **measured, nonzero** arm
+lines only — a line at zero has no proportional effect to be minimum-detectable about, which is the
+same reason the table above prints an em dash rather than `Infinity`. Agency arm lines: median MDE
+12.3 %, **80 of 80** below 100 %. Ascension arm lines: median 14.1 %, 70 of 77 below 100 % (the
+denominator moved from 80 to 77 when the convention was written down here, not when any file
+changed).
 
 The agency gate's two blind lines closed at `w107`, and it is worth being precise about why. They
 were `referenceNodesGained@denial-warden` and `referenceNodesKnown@denial-warden`, both means so

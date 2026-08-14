@@ -907,9 +907,14 @@ export function worldSystem(
 
       // ---- 9. Consumption, then the invariant ---------------------------------
       const consumption = consumeMaterials(stock, {
-        // The same figure phase 8 divided by, so the shortfall the birth brake
-        // saw and the shortfall the stock is actually charged are one number.
-        subsistence: subsistenceThisTick,
+        // `cohorts.totalCount()` **re-read**, not `subsistenceThisTick` reused,
+        // and the difference is one tick's newborns. Phase 8 computes its figure
+        // before `deliverBirths` because the birth brake cannot be charged for a
+        // population that does not exist yet; this claim is settled afterwards
+        // and has always charged for the babies. Reusing the phase-8 number here
+        // would be tidier to read and would quietly stop feeding every child born
+        // this month — a second behaviour change riding along with this one.
+        subsistence: subsistenceDemand(cohorts.totalCount()) + applicationRationsOwed,
         // Brake 4, charged once. The same figure the work phase reserved out of
         // the scribes' stock at the top of the tick, so the priority order is
         // honoured by a claimant paid out of order and by one paid in it.
