@@ -26,7 +26,15 @@
  */
 
 import { snapshotHash } from '@mm/sim-core';
-import { GRID_CELL_COUNT, findUniverse, permits, readRulesetForObservation } from '@mm/state';
+import {
+  GRID_CELL_COUNT,
+  MAGE,
+  UNIVERSITY,
+  componentOf,
+  findUniverse,
+  permits,
+  readRulesetForObservation,
+} from '@mm/state';
 import { BOT_POOL_REGISTRY, taskFor } from '@mm/mc-harness';
 import {
   REFERENCE_REGISTRIES,
@@ -179,6 +187,75 @@ describe('the founding species mask selects who founds the universe', () => {
         options: { ...MASK_CONFIG.options, foundingSpeciesMask: 1 << registry.species.length },
       }),
     ).toThrow(/selects none of the/);
+  });
+});
+
+/**
+ * `foundingUniversities` — the instrument S2's falsifying measurement needs and
+ * the scenario did not have.
+ *
+ * *"`universityProfile`'s dominant cells differ between two universities on the
+ * same seed"* was not runnable in any form, because no starting position had ever
+ * held two universities: W24 compared two *runs* with one academy each, which
+ * cannot see a boundary between institutions at all. `scripts/w78-university-\
+ * divergence.mjs` is the reading; this is the knob it turns.
+ *
+ * As with the species mask, the assertion that matters most is the first: the
+ * default builds the **byte-identical** universe the scenario built before the
+ * option existed, so every committed baseline still describes the state it was
+ * taken on.
+ */
+describe('the founding university count decides how many academies open', () => {
+  const ACADEMY_CONFIG = { worldTickCap: 4, options: { cohortSize: 4, foundingNodes: 6 } } as const;
+
+  it('changes nothing when it is absent', () => {
+    const before = referenceScenario(content).scenario.create(0x0005_0020, ACADEMY_CONFIG);
+    const explicit = referenceScenario(content).scenario.create(0x0005_0020, {
+      ...ACADEMY_CONFIG,
+      options: { ...ACADEMY_CONFIG.options, foundingUniversities: 1 },
+    });
+    expect(snapshotHash(explicit)).toBe(snapshotHash(before));
+  });
+
+  it('opens that many academies and deals the founders round-robin between them', () => {
+    const state = referenceScenario(content).scenario.create(0x0005_0021, {
+      ...ACADEMY_CONFIG,
+      options: { ...ACADEMY_CONFIG.options, foundingUniversities: 2 },
+    });
+
+    const universities = componentOf(state, UNIVERSITY);
+    const academies: number[] = [];
+    universities.forEach((_row, handle) => {
+      academies.push(handle);
+    });
+    expect(academies).toHaveLength(2);
+
+    // Every academy owns a distinct library — the container the boundary exists
+    // to make meaningful. Two academies sharing a shelf would look like a
+    // boundary and hold nothing apart.
+    const libraries = academies.map((handle) => universities.get(handle, 'libraryId'));
+    expect(new Set(libraries).size).toBe(2);
+
+    // Six founders, one per species, dealt three and three. Nobody is left
+    // unaffiliated at founding: the round-robin is over academies, not over
+    // academies and the commons.
+    const staff = new Map<number, number>();
+    const mages = componentOf(state, MAGE);
+    mages.forEach((_row, handle) => {
+      const university = mages.get(handle, 'universityId');
+      staff.set(university, (staff.get(university) ?? 0) + 1);
+    });
+    expect(staff.get(0) ?? 0).toBe(0);
+    expect([...staff.values()].sort((a, b) => a - b)).toEqual([3, 3]);
+  });
+
+  it('refuses a universe with no academy rather than running two silent centuries', () => {
+    expect(() =>
+      referenceScenario(content).scenario.create(0x0005_0022, {
+        ...ACADEMY_CONFIG,
+        options: { ...ACADEMY_CONFIG.options, foundingUniversities: 0 },
+      }),
+    ).toThrow(/never teach and never scribe/);
   });
 });
 

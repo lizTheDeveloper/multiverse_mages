@@ -285,6 +285,10 @@ export function buildRival(input: {
       foundingSpeciesMask: 0,
       openingTechniqueCount: 0,
       openingFormCount: 0,
+      // One academy, pinned for the same reason as the other four: a rival whose
+      // internal institutional structure varied would confound a raid result
+      // with a teaching-boundary result.
+      foundingUniversities: 1,
     },
     content,
     schema: input.schema,

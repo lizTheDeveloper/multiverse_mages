@@ -174,6 +174,17 @@ const DEFAULT_FOUNDING_SPECIES_MASK = 0;
 const DEFAULT_OPENING_AXIS_COUNT = 0;
 
 /**
+ * One academy, which is what this scenario has always founded.
+ *
+ * The default builds the identical state to an absent option, byte for byte —
+ * the same promise `DEFAULT_FOUNDING_SPECIES_MASK` makes, and for the same
+ * reason: every committed baseline was measured against a one-university
+ * universe, and a scenario knob whose default moves them is not an instrument,
+ * it is a behaviour change wearing one.
+ */
+const DEFAULT_FOUNDING_UNIVERSITIES = 1;
+
+/**
  * The occupations a founding population is seeded into.
  *
  * Laborers produce the materials, students are what a mage is promoted from, and
@@ -260,6 +271,29 @@ export interface ReferenceOptions {
   /** Forms the universe is founded holding, or `0` for the v1 rectangle. */
   readonly openingFormCount: number;
   /**
+   * Academies founded at tick zero, each with its own library, with the founding
+   * mages dealt round-robin between them.
+   *
+   * **An instrument, not a magnitude**, in exactly the sense
+   * {@link ReferenceOptions.foundingSpeciesMask} is one: it turns no constant
+   * and changes no rule. It exists because *"two universities on the same seed
+   * hold different dominant cells"* is the falsifying measurement for the
+   * teaching boundary, and there was no starting position in which two
+   * universities existed at all — W24 compared two *runs* with one university
+   * each, which cannot see a boundary between institutions.
+   *
+   * Founders are dealt round-robin and the founding grants are dealt round-robin
+   * over the same list, so at six founders and six grants each academy begins
+   * holding a *different* three nodes. That is the whole point: a boundary with
+   * nothing different on either side of it measures nothing.
+   *
+   * `1` is the default and rebuilds today's universe byte for byte. `0` is
+   * refused, for the reason a species mask selecting nothing is refused — a
+   * universe with no academy can never teach or scribe, and two centuries of
+   * that would be recorded as an ordinary observation.
+   */
+  readonly foundingUniversities: number;
+  /**
    * Founding grants the god may make, before anything is discovered.
    *
    * Absent means the shipped `founding-grant-budget-start`, which is the point:
@@ -295,6 +329,7 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'foundingSpeciesMask',
   'openingTechniqueCount',
   'openingFormCount',
+  'foundingUniversities',
   'tradition',
   'grantBudgetStart',
   'grantAccrualNodes',
@@ -376,6 +411,11 @@ export function referenceOptions(config: ScenarioConfig): ReferenceOptions {
     foundingSpeciesMask: readCount(config, 'foundingSpeciesMask', DEFAULT_FOUNDING_SPECIES_MASK),
     openingTechniqueCount: readCount(config, 'openingTechniqueCount', DEFAULT_OPENING_AXIS_COUNT),
     openingFormCount: readCount(config, 'openingFormCount', DEFAULT_OPENING_AXIS_COUNT),
+    foundingUniversities: readCount(
+      config,
+      'foundingUniversities',
+      DEFAULT_FOUNDING_UNIVERSITIES,
+    ),
     grantBudgetStart: readOptionalCount(config, 'grantBudgetStart'),
     grantAccrualNodes: readOptionalCount(config, 'grantAccrualNodes'),
     grantBudgetCap: readOptionalCount(config, 'grantBudgetCap'),
@@ -551,27 +591,23 @@ export function buildReferenceState(input: {
     vellum: STARTING_MATERIALS,
   });
 
-  const library = state.entities.create();
-  attachRecord(state, LIBRARY, library, { foundedTick: 0 });
-  const university = state.entities.create();
-  attachRecord(state, UNIVERSITY, university, {
-    libraryId: library,
-    capacity: ACADEMY_CAPACITY,
-    // Complete at tick zero, and still the right call now that construction is
-    // built. The sentence that used to be here — *the construction mechanic that
-    // would finish it is not built* — was true when it was written and is not
-    // any more: laborers raise buildings from the world loop as of W29. What
-    // stands is the other half of the argument. An academy still under
-    // construction would carry no students and no scriptorium, so a universe
-    // founded on one would spend its first years unable to teach or write, and
-    // every knowledge measurement in the reference run would be measuring the
-    // opening delay instead of the mechanism.
-    //
-    // A universe therefore builds nothing at all unless the god funds a site.
-    // That is not a gap: it is what gives `fundUniversity` a marginal value it
-    // did not have when nothing could finish what it founded.
-    buildProgress: FP_ONE,
-  });
+  // At least one, always. A universe with no academy can neither teach nor
+  // scribe, and two hundred years of that is not a starting position — the same
+  // refusal `foundingSpeciesMask` makes below, for the same reason.
+  if (options.foundingUniversities < 1) {
+    throw new Error(
+      `foundingUniversities is ${String(options.foundingUniversities)}. A universe with no ` +
+        'academy can never teach and never scribe, so a run taken from one would record two ' +
+        'centuries of silence as an ordinary observation.',
+    );
+  }
+  // Each academy owns its own library, created immediately before it, so a
+  // one-university run creates the same two entities in the same order it always
+  // has and every committed baseline still describes the state it was taken on.
+  const universities: EntityHandle[] = [];
+  for (let index = 0; index < options.foundingUniversities; index += 1) {
+    universities.push(foundAcademy(state));
+  }
 
   const { speciesOf, ids } = speciesTable(content.registry);
   // Zero means every species; see DEFAULT_FOUNDING_SPECIES_MASK. Refused rather
@@ -606,11 +642,17 @@ export function buildReferenceState(input: {
 
     for (let index = 0; index < options.foundingMages; index += 1) {
       const mage = state.entities.create();
+      // Round-robin over the academies, by position in the founder list — the
+      // same dealing `grantFoundingKnowledge` uses over the same list, so with
+      // one grant each the two deals interleave and each academy opens holding
+      // different nodes. At one academy this is `universities[0]` every time,
+      // which is what it has always been.
+      const academy = universities[founders.length % universities.length] as EntityHandle;
       attachRecord(
         state,
         MAGE,
         mage,
-        createMage(rng, mage, species, speciesId, -species.maturityMonths, university),
+        createMage(rng, mage, species, speciesId, -species.maturityMonths, academy),
       );
       founders.push(mage);
     }
@@ -649,6 +691,35 @@ export function buildReferenceState(input: {
   });
 
   return state;
+}
+
+/**
+ * One completed academy and the library it owns, in that entity order.
+ *
+ * Complete at tick zero, and still the right call now that construction is
+ * built. The sentence that used to be here — *the construction mechanic that
+ * would finish it is not built* — was true when it was written and is not any
+ * more: laborers raise buildings from the world loop as of W29. What stands is
+ * the other half of the argument. An academy still under construction would
+ * carry no students and no scriptorium, so a universe founded on one would spend
+ * its first years unable to teach or write, and every knowledge measurement in
+ * the reference run would be measuring the opening delay instead of the
+ * mechanism.
+ *
+ * A universe therefore builds nothing at all unless the god funds a site. That
+ * is not a gap: it is what gives `fundUniversity` a marginal value it did not
+ * have when nothing could finish what it founded.
+ */
+function foundAcademy(state: SimState): EntityHandle {
+  const library = state.entities.create();
+  attachRecord(state, LIBRARY, library, { foundedTick: 0 });
+  const university = state.entities.create();
+  attachRecord(state, UNIVERSITY, university, {
+    libraryId: library,
+    capacity: ACADEMY_CAPACITY,
+    buildProgress: FP_ONE,
+  });
+  return university;
 }
 
 /**

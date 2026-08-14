@@ -131,6 +131,10 @@ export const LONG_RUN_OPTIONS: ReferenceOptions = Object.freeze({
   // Every species founds the long run, which is what it has always done and what
   // task 9.9's per-species time-to-tier measurement requires.
   foundingSpeciesMask: 0,
+  // One academy, which is what the long run has always founded and what every
+  // committed baseline was measured against. The two-academy starting position
+  // is `scripts/w78-university-divergence.mjs`'s, not this one's.
+  foundingUniversities: 1,
 });
 
 /** One world tick of the long run, stocks and flows together. */
