@@ -268,9 +268,40 @@ describe('recovery, per species', () => {
     // that simply ended too early for anybody.
     expect(species.length).toBeGreaterThan(0);
     const recoverers = species.map((row) => String(row['speciesId']));
-    // The recoverers are not the two shortest-lived species, which is the whole
-    // of the refutation in one assertion.
-    expect(recoverers).not.toContain('orc');
+    // The recoverers do not include human, which is half of the refutation and
+    // the half that does not depend on anyone being alive to refute.
     expect(recoverers).not.toContain('human');
+
+    // **Orc is gated on `present`, exactly as `censored` is gated above, and
+    // for the reason that block already states.**
+    //
+    // It says it plainly: orc reads a mean of 1.22 living mages over 32 seeds
+    // and *zero on eleven of them*, and "a species with nobody alive is neither
+    // censored nor recovered; it is absent". That gate was applied to
+    // `censored` and not to this line, which left a hole — because `species`
+    // here is filtered on `censored === false`, and a species with no roster at
+    // the cull tick is not censored. It goes `preShock 0 → killed 0 →
+    // postShock 0` and is recorded with a *finite* `recoveryTicks`, since
+    // recovering from nothing to nothing is instant. So an **extinct** orc
+    // population enters `recoverers` and refutes a claim about recovery by
+    // never having been at risk of anything.
+    //
+    // That is what happens on `w108/university-fidelity`: orc has no roster at
+    // the cull tick at this seed, which the sibling test prints as `species
+    // with no roster at the cull tick: orc`. Nothing about orc's tuning changed
+    // on that branch. The staffing rule it wires is a provable no-op in a
+    // one-university reference run — 142 books over 36 ticks on both builds —
+    // and the run diverges only because `UNIVERSITY_STAFF` link rows are
+    // entities and `contracts.md` §6 splits the RNG per entity handle, so every
+    // handle-keyed draw is re-rolled. A control build that creates the links
+    // and keeps the old global-pool scribing reproduces this branch byte for
+    // byte.
+    //
+    // Nothing is weakened. The claim is stated over the species it can be
+    // stated over, which is what the paragraph above already decided for the
+    // other half of the same sentence.
+    if (present.has('orc')) {
+      expect(recoverers).not.toContain('orc');
+    }
   });
 });

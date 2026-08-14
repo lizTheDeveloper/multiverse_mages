@@ -162,22 +162,42 @@ describe('twenty world years in', () => {
     }
   });
 
-  it('has three species at the ruleset ceiling and three below it', () => {
+  it('has two species at the ruleset ceiling and four below it', () => {
+    // **Re-recorded on `w108/university-fidelity`.** Was three at the ceiling:
+    // human read 12 and now reads 9, and gnome rose from 8 to 9. Draconic, elf,
+    // dwarf and orc did not move.
+    //
+    // The cause is **not** the staffing rule this branch wired. `UNIVERSITY_STAFF`
+    // link rows are entities, `contracts.md` §6 splits the RNG per entity
+    // handle, and creating them shifts every handle allocated after them — so
+    // every handle-keyed draw in the run is re-rolled. That was verified rather
+    // than assumed: a control build that creates the link rows and keeps the old
+    // global-pool scribing produces a run byte-identical to this one and
+    // different from `main`. And the reference universe has exactly **one**
+    // university, where owning every scribe cohort and sharing the universe's
+    // pool are arithmetically the same thing — measured at 142 books over 36
+    // ticks on both builds.
+    //
+    // So this is a re-baseline, not a result. What the staffing rule actually
+    // changes needs more than one university to see, and is measured in
+    // `coordination/test/unit/university-staffing.test.ts`.
     expect(bySpecies('dwarf').occupiedCells).toBe(12);
-    expect(bySpecies('human').occupiedCells).toBe(12);
     expect(bySpecies('orc').occupiedCells).toBe(12);
     expect(bySpecies('draconic').occupiedCells).toBe(10);
     expect(bySpecies('elf').occupiedCells).toBe(10);
-    expect(bySpecies('gnome').occupiedCells).toBe(8);
+    expect(bySpecies('gnome').occupiedCells).toBe(9);
+    expect(bySpecies('human').occupiedCells).toBe(9);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0729 at this horizon. Pinned to four places: the point of the metric is
-    // that this number moves, and a test that only asserted "greater than zero"
-    // would let it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0729, 4);
+    // 0.0645 at this horizon; was 0.0729, re-recorded on
+    // `w108/university-fidelity` for the handle-allocation reason given above.
+    // Pinned to four places: the point of the metric is that this number moves,
+    // and a test that only asserted "greater than zero" would let it move to
+    // anything.
+    expect((entry as { value: number }).value).toBeCloseTo(0.0645, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -192,11 +212,17 @@ describe('twenty world years in', () => {
   });
 
   it('names which cells each species is missing, not just how many', () => {
-    // **The reading a count cannot give.** Gnome is four cells short at this
-    // horizon and the four have a shape: no Perdo Mentem, Terram or Limen, and
-    // no Rego Terram. A count of 8 says "behind"; this says "behind in Perdo",
-    // which is the difference between a species that is slow and a species that
-    // is locked out of a technique.
+    // **The reading a count cannot give.** Gnome is three cells short at this
+    // horizon and the three have a shape: no Perdo Mentem, Terram or Limen. A
+    // count of 9 says "behind"; this says "behind in Perdo", which is the
+    // difference between a species that is slow and a species that is locked out
+    // of a technique.
+    //
+    // Re-recorded on `w108/university-fidelity` for the handle-allocation reason
+    // given above — and the shape got *cleaner*, not noisier: the shortfall used
+    // to include `rego-terram`, which muddied the "locked out of one technique"
+    // reading. That the finding survived a full re-roll of the run's draws is
+    // the strongest evidence yet that it is about Perdo and not about the seed.
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
@@ -204,7 +230,6 @@ describe('twenty world years in', () => {
       'perdo-limen',
       'perdo-mentem',
       'perdo-terram',
-      'rego-terram',
     ]);
   });
 
