@@ -8378,3 +8378,81 @@ loader invariant by redefining a term they share.**
 
 Everything else in the eleven is defensible on its own. **The combination is not a merge proposal, and
 the branch says so in its title.**
+
+## W168 — anti-requisites: the opposing term, and the first mechanic that costs the permissive strategy anything
+
+Branch `anti-requisites`, implemented and measured before I was told it existed. **This is the result
+the campaign has been asking for since W24**, and it is worth stating in the campaign's own terms.
+
+W24's rule was: **"without an opposing term, siting is a ranking rather than a decision."** F3 measured
+the strategy space as **one axis — permit more versus permit less** — with `permissive-breadth`
+strictly dominant. Five independent confirmations followed that the binding constraint was content
+exhaustion and *the absence of opposing terms*.
+
+**An anti-requisite is an opposing term, aimed at exactly the strategy that had none.**
+
+### What it measured — agency gate, 2400 ticks, `referenceNodesKnown`
+
+| strategy | baseline | current | delta |
+| --- | --: | --: | --: |
+| **`permissive-breadth`** | 75.25 | **45.00** | **−30.25 (−26.1 SE)** |
+| `portal-rush` | 46.13 | 46.13 | 0.00 |
+| `archivist` | 44.88 | 44.88 | 0.00 |
+| `uniform-random-legal` | 44.63 | 44.63 | 0.00 |
+| `passive-control` | 42.13 | 42.13 | 0.00 |
+| `worship-maximizer` | 41.50 | 41.50 | 0.00 |
+| `narrow-depth` | 7.63 | 7.63 | 0.00 |
+| `denial-warden` | 4.75 | 4.75 | 0.00 |
+
+**Seven of eight byte-identical. The eighth loses 40% of its knowledge.** The dominant strategy's lead
+over the passive control falls from **+33.1 nodes to +2.9** — **from one authored pair.**
+
+Both reference gates are byte-identical at every metric, and the branch says why rather than claiming
+generality: **both halves of the shipped pair are `creo`, and the v1 rectangle is
+`intellego · perdo · rego` × `mentem · terram · limen · nomen`, so the reference universe cannot reach
+either cell.** The mechanic is live and the reference run cannot see it — measured, not asserted.
+
+### Three design calls worth recording
+
+- **Authored on cells**, not nodes and not a named school region. The third was not close: **no
+  `school` entity exists anywhere in `content` or `state`**, so it would have invented a concept the
+  codebase has never had. And §4b speaks in schools — *"if you use light magic you can't also use dark
+  magic"* is a claim about bodies of magic.
+- **`resolution` is per-exclusion, not global** — `refused` is a wall, `destructive` succeeds and
+  destroys the excluded holdings. That follows §4b's *"every exclusion carries its reason"*: if the
+  reason varies, the consequence should.
+- **Enforcement sits on `createInstance`, not at the acquisition frontier.** Five things put a node in
+  a mage's head; four route through `CoordinatingKnowledgeGateway` and the fifth — **raid theft** —
+  calls `createInstance` directly. **A frontier check would have been launderable: steal the school you
+  are forbidden.** That is not an exotic edge case, it is a strategy, and a learned agent would find it
+  while a human reviewer read the filter and believed it.
+
+Only **held** locations are checked. A library is an institution, and a civilization keeping both books
+is what §4b says a civilization is *for*.
+
+### The meta-test that overruled the plan
+
+The intent was to ship the machinery with **zero** pairs so no baseline moved. **`schema-constraint-liveness`
+refused**: it proves each schema constraint by finding shipped content it applies to, mutating it, and
+asserting the load fails *for that reason*. **A schema nothing instantiates cannot be proven live, and
+an unproven constraint is exactly the decoration that file exists to catch.**
+
+The meta-test was right and the plan was wrong. That is the first time in this campaign a guard has
+overruled an agent's *design* rather than catching a defect.
+
+### And what it refuses to claim
+
+- **Not** that the space now has two axes — *"one axis with a cost on one end"*. Whether a different
+  strategy now wins is a tournament question and wants a round-robin, not this gate.
+- **Not** that −30.25 is the right magnitude. One pair, `destructive`, two cells, nine nodes,
+  `tuningStatus: "untuned"`. **A 40% loss may well be too harsh — the point is that the number to argue
+  over is now measured rather than hypothetical.**
+
+### How it relates to the pricing sweep now running
+
+Pricing attacks the same problem from the **cost** side; anti-requisites attacks it from the
+**content** side. Both are live. If pricing produces a smaller effect than one authored exclusion pair,
+**that is the more useful finding** and it would mean the lever was never the cost. The pricing agent
+has been told, and told not to abandon its measurement.
+
+The branch is **52 commits behind `main`** and conflicts on `interning.test.ts`.
