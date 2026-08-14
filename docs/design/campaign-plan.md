@@ -8115,3 +8115,62 @@ by a line-wise parse; and there was one hardcoded number on a page whose header 
 test file removed, the same command exits 1 with the same error at 4,462/4,462. **So it is not this
 change** — and it was measured twice on the branch and not on `main`, so it is explicitly *not* a claim
 that `main` is red.
+
+## W163 — thirteen pages looked at for the first time, and two of them were lying
+
+PR #152. All thirteen pages driven through Playwright at **1440 / 1280 / 1100 px in both themes**,
+every screenshot looked at, fixed, re-shot. **3,482 px of dead vertical space removed**, measured
+properly — both revisions served simultaneously, `git archive origin/main ui` on one port against the
+branch on another.
+
+**Before touching any CSS, three instrument checks**, and this is the part worth copying: the console
+probe was **positive-controlled against a page that throws**; widths were measured at 1100 and not just
+at 1440; and every source strip was dumped to confirm *"drawn, not fed"* was **by design and not a
+swallowed `catch`**. All three came back clean, which is what licensed treating every remaining defect
+as visual.
+
+### Two pages were presenting invented state
+
+- **`edicts/` prints the run's seed under a strip that says it is fed by the session — and never reads
+  the session.** `mountSourceNote(..., ['ruleset'])` labels it sourced; the page draws its own numbers.
+  The reference run holds **0 edicts at tick 400**, which the page now says, read from `ruleset()`.
+  **This is the same lie-shape as `combatActionEconomy` publishing a wrong reason for its own
+  absence** — a surface that answers the question a reader would ask next, incorrectly.
+- **`raid/` draws a synthetic trace, not the recorded run.** The reference run never enters engagement,
+  so **the "every raid resolves with zero casualties, zero nodes lost, zero nodes gained" property is
+  visible nowhere in `ui/`.** That is a gap in the wiring rather than in the page, and it is the most
+  actionable item in the PR: the single most important fact about raids in this build has no surface.
+
+### Six contrast failures, and two were invisible to any default-state sweep
+
+**`ruleset-symmetry/`'s Commit label is `#6FF0FA` on a `#6FF0FA` gradient — 1.00:1. The word is not
+there.** `ascension/`'s declare button is 1.47:1. Three more sit on `ui/index.html`, which
+**`ui-theme.test.ts` cannot see, because it iterates *directories*.** A file at the root of a swept
+tree is outside a directory-iterating sweep — the eighth variant of *a checker answering confidently
+about the wrong input*, and this one had been shipping an invisible word.
+
+Recall that this campaign already recorded *"a contrast claim of 'about four percent of luminance'
+measured 1.01:1"*. **Same class, same file tree, months apart.** Contrast on this project is not
+reliably reasoned about; it has to be measured.
+
+### Two self-corrections, one of them exquisite
+
+- **"The counter I added to fix an instrument reporting nothing was itself an instrument that would
+  report zero"** — derived from two ring buffers capped at 60. Caught before shipping and written into
+  the code comment.
+- `.mm-scroll`, applied to `raid/` without looking, faded an empty state's second line to
+  near-invisible. Caught by re-shooting.
+
+And a third correction it made against itself in prose: it flagged the `edicts/` defect mid-pass, then
+asserted the opposite in its own PR body, then checked — *"the grep was one command."*
+
+### Left rather than fixed, correctly
+
+`console/`'s middle column runs ~360 px short of its left. Three panels of genuinely different lengths,
+and **every available fix is a content-placement judgement rather than a defect** — so it is flagged,
+not guessed at.
+
+Two shared additions did most of the work and are worth knowing about: `.mm-essay`, because **eight of
+eleven pages had a 700 px essay column beside 600 px of empty screen**, and `.mm-scroll`, because
+capped lists were slicing rows mid-sentence. `ruleset/` got 20 px **taller** — the line that now says
+how many nodes you cannot see.
