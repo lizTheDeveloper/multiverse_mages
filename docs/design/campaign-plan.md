@@ -6297,3 +6297,60 @@ part that matters going forward: *their* changes will move `snapshotHash` legiti
 that happens they must re-record and say so, **but must not** run `goldens:regen` or regenerate a
 balance baseline. A change that makes magic do something and quietly re-baselines everything is
 indistinguishable from one that broke the simulation.
+
+## W124 — the prestige loop: one caller, one deletion, seven sentences, and my hypothesis was backwards
+
+PR #133, against the nine god constants W118 pulled out of the reachability check.
+
+**One got a real consumer.** `legacy-archive-max-tier`. `LegacyGrant.archiveNodes` shipped
+promising *"at or below the authored tier"* while the tier itself was resolved and read by nothing
+— **the promise lived in a comment and was kept nowhere**. `legacyGrant` now returns
+`archiveMaxTier` alongside the count, so a seeder cannot take the count without the bound. The test
+checks it against the deepest tier the shipped node graph *actually authors* — tiers run 1–6, the
+bound is 3 — so it breaks if either number moves toward the other, rather than asserting
+`3 === 3`.
+
+**One was deleted**: the `worshipMax` *field* on `GodConstants`. The content row stays, because
+removing it would move `contentRevision`, which sits inside every snapshot.
+
+**Seven were left red on purpose**, with the sentence written into the code. `carriedPrestige` and
+`legacyGrant` consume a **run boundary** — a run ends, prestige carries, a new god starts — and no
+such seam exists: `scenario` composes one universe and `step()` runs it to a tick cap. The correct
+answer was "staged ahead of its consumer, and here is which seam is missing", not a manufactured
+restart. The guardrail sent mid-task was the right call; the check's own phrasing (*"the fix is a
+caller, or a deletion"*) pushes hard toward inventing one.
+
+### My worship hypothesis was backwards, and the measurement says so
+
+I briefed that `worshipMax` *"looks like a cap that nothing enforces"* and that worship was
+probably unbounded. Wrong on both counts. The loader already enforces that `worship-max` equals the
+three class caps summed, and `worship.ts:188` documents why there is deliberately no `Math.min`: a
+clamp *"would make that identity untestable, because the clamp would hide a broken one."*
+
+| every source at | worship target | of ceiling 9,216 |
+| --- | --- | --- |
+| 10⁶ | 9,211 | 99.95% |
+| 10⁸ | **9,213** | **99.97%** |
+
+At a hundred million of every source, **every class is still strictly under its own cap.** The
+bound is structural and asymptotic. The field was read only to enforce something already true — so
+the field goes, and putting it back means adding the clamp the code argues against.
+
+### The disproof, and a judgement call worth copying
+
+The 400-tick reference snapshot hash is `f6974848cef4578c` **with and without** the branch,
+byte-identical. Any behavioural change moves it, so no balance metric can move — a stronger
+statement than running the gates, and it is why `ui/session.json` was correctly *not* re-recorded.
+
+And the gates were **not run**, deliberately: load average was 293–310 on sixteen cores (W122), and
+a gate run there would have been untrustworthy *and* would have degraded six other agents. Refusing
+to take a measurement on a machine that cannot support it is the right instinct, and it is the
+opposite of what the campaign kept doing wrong earlier.
+
+### Left for the owner
+
+`executor.ts:96` declares `prestigeCarryForward: true`. It does not carry forward — `carriedPrestige`
+has no caller, which is the finding above. This is the pre-existing lie already recorded at
+`campaign-plan.md:4168`, and it was correctly **not** flipped: `MechanicAvailability` feeds whether
+`prestigeAdvantage` reports `no-observations` or `mechanic-absent`, so flipping it changes what a
+committed baseline compares against. **That is a re-baseline decision, and it joins #132.**
