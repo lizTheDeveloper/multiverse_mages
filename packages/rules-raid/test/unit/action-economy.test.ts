@@ -57,6 +57,7 @@ import {
   addMage,
   addSoldiers,
   addUniversity,
+  combat,
   emptyWorld,
   grid,
   knowledgeFor,
@@ -263,6 +264,7 @@ function fight(seed: number): RaidOutcome {
     host: participant(hostWorld, hostKnowledge, snapshot, snapshot.traditionId),
     registry,
     grid,
+    combat,
     tuning,
     raidSeed: seed,
   });
