@@ -25,10 +25,9 @@ a revenue obligation on corporate users, which is precisely the class `CLAUDE.md
 repository's dependency graph — alongside BSL, SSPL, Elastic and CC BY-NC. Reading that rule and
 stopping would be the correct instinct.
 
-**What makes this copy legal is common ownership, not licence compatibility.** The copyright holder
-of `mvee` (Ann Howard) and the copyright holder of Multiverse Mages (Ann Kelner) are the same person,
-and she has authorised the copy. A copyright holder may license her own work to herself on any terms
-she likes; the AI Village License constrains third parties, not its author.
+**What makes this copy legal is common ownership, not licence compatibility.** The two repositories
+share a copyright holder, who has authorised the copy. A copyright holder may license her own
+work to herself on any terms she likes; the AI Village License constrains third parties, not its author.
 
 **Two consequences that must be respected:**
 

@@ -20,7 +20,7 @@ claim about its working tree on the date above.
 
 ## The one-paragraph answer
 
-**Five paradigms are worth importing and thirty-nine are not.** The single most valuable finding is
+**Six paradigms are worth importing and forty-three are not.** The single most valuable finding is
 not a paradigm at all: it is that **the raid map's adjacency is derived from coordinates through one
 frozen four-element constant and one callback**, so "temporarily raise the dimensionality of space"
 is a modifier on an existing subsystem rather than a new one. That is cheap. Two things sit next to
@@ -43,8 +43,8 @@ These are the "a finding about code is a finding about a ref" flags.
 
 A fourth defect, found in passing and worth reporting upstream rather than importing: **`tethermancy`
 is defined twice** — in `animist-paradigms.json` and `creative-paradigms.json` — with conflicting
-values (`3 × 6, compatible, logarithmic` versus `4 × 6, neutral, linear`). Whichever file loads
-second wins. Do not import that id without picking one.
+values (animist: `3 × 6, compatible, linear`; creative: `4 × 6, neutral, logarithmic`).
+Whichever file loads second wins. Do not import that id without picking one.
 
 ---
 
@@ -126,6 +126,12 @@ are comments and the module-boundaries test, whose own words are that it *"shipp
 nothing had reached for it"* (`packages/sim-core/test/unit/module-boundaries.test.ts:194`). Work done
 here is real code that the simulation does not currently run. **That is a reason to wire it in, not a
 reason to avoid it — but it must be budgeted, and it is the larger half of the cost.**
+
+This is already known and already tracked, which is good news for the estimate: `CLAUDE.md` records
+`raid-engagement` at **67/92**, *"with `packages/rules-raid` built but nothing in `scenario` opening
+a portal yet."* So "wire `rules-raid` in" is not a new invention this document is proposing — it is
+the unfinished quarter of an OpenSpec change that already exists, and the dimensionality modifier
+should be scheduled behind it rather than beside it.
 
 Corroborating evidence, from running the gate: `node scripts/check-primitive-consumption.mjs` reports
 that of sixteen primitives, only `portal` and `worship-yield` are reachable from authored nodes.
@@ -265,7 +271,8 @@ wants four or five.
 
 ## The shortlist
 
-Five. Ordered by value per unit cost, not by interest.
+Five entries covering six paradigms — item 4 is three. Ordered by value per unit cost, not by
+interest.
 
 ### 1. `pact` — the unteachable arm
 
