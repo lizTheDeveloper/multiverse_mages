@@ -153,3 +153,51 @@ That reframes several things at once:
 ticks is not a session. Either the shard runs at a coarser grain than the sim, or a player's attention
 is intermittent and the game is partly asynchronous. **That is the last structural unknown**, and it
 is a scheduling question rather than a design one.
+
+### Bot difficulty is graded by prestige — and the archive already computes the grade
+
+*Owner:* **"Different difficulties of bot at different levels of prestige, so you're not dealing with
+ancient old ones who are brilliant AlphaGo players on world number two. Also, the further up you go,
+the fewer players survive that far."**
+
+**The archive already has both axes it needs for this, and one of them is its headline number.**
+
+| axis | what it is | archive field |
+|---|---|---|
+| **which opponent** | the behaviour cell — nodes known, library depth, terminal route, spend concentration | `coordinate` |
+| **how strong** | ascensions over the null bar, on paired seeds | **`marginOverNull`** |
+
+**`marginOverNull` is a difficulty rating.** It was designed as the search's headline — *"if this is not
+growing, nothing else in the archive matters"* — and it turns out to be exactly the number a
+matchmaking tier needs. **A bot at margin +2 belongs on world two; a bot at +14 does not.**
+
+So the roster is **the archive, read as a grid**: cells give variety at each tier, margin sorts the
+tiers. **No new instrument, and the pairing discipline that makes the margin trustworthy — same seeds,
+common random numbers, nulls re-run every round — is already enforced.**
+
+### The consequence of "fewer players survive that far"
+
+**High-prestige shards will be sparse, and therefore mostly AI.**
+
+That inverts where bot quality matters. The intuition is that filler is for beginners — **the opposite
+is true.** A world-two shard fills with humans and a few weak bots. **A top-tier shard of 12–24 slots
+with few surviving humans is a field made mostly of machines**, played by the people most able to tell.
+
+**So the hard bots are not a stretch goal. They are the endgame content**, and the AI quality problem is
+worst exactly where the players are best.
+
+Two things follow, and both are about tonight's findings rather than new work:
+
+- **The shadowing class becomes a shipping bug, not a measurement note.** `permissive-breadth` never
+  founding a university and `narrow-depth` never asking for a grant are opponents failing to play their
+  own stated strategy — **and at high tier that happens in front of the players most likely to notice
+  and least likely to forgive it.**
+- **`reachable-not-worth-playing` is tier-relative, not absolute.** A bot that cannot beat
+  `passive-control` is unusable anywhere. **A bot that beats it by +2 is good filler on world two and an
+  embarrassment at the top.** The archive should carry margin per cell rather than a single pool
+  verdict — which it already does, one field down.
+
+**And the null ladder gains a second job.** It is a floor on AI quality — but *which rung* a bot clears
+is a tier assignment. A bot that beats `passive-control` and loses to `permit-then-idle` is a low-tier
+opponent with a legible weakness; one that clears all four is top-tier. **The rung diagnosis stops being
+a debugging aid and becomes the ladder's rungs.**
