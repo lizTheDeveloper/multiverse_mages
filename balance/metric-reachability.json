@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "generatedBy": "scripts/check-metric-reachability.mjs",
-  "gitSha": "e2a15cfd4b5b1446f902bd5a5af6bf4f85717d32",
+  "gitSha": "fe9482543d6298f690ccb361e637290da8041243",
   "sweepId": "metric-reachability-v1",
   "rootSeed": 20260813,
   "replicates": 16,
   "worldTickCap": 240,
-  "elapsedSeconds": 141.2,
+  "elapsedSeconds": 466.8,
   "probes": [
     {
       "probeId": "founding-grant",
@@ -79,79 +79,79 @@
       "mechanism": "the god's founding knowledge grant",
       "estimate": {
         "pairs": 1,
-        "meanDifference": 0.06668207191532538,
+        "meanDifference": 0.16786079385222785,
         "standardDeviation": 0,
         "standardError": 0,
-        "low": 0.06668207191532538,
-        "high": 0.06668207191532538,
+        "low": 0.16786079385222785,
+        "high": 0.16786079385222785,
         "quantile": 1,
-        "controlMean": 0.35382231404958686,
-        "ablatedMean": 0.42050438596491224
+        "controlMean": 0.09168781725888331,
+        "ablatedMean": 0.25954861111111116
       },
-      "detail": "over 1 pair the mean paired difference is 0.0667 with a 95% interval of [0.0667, 0.0667], which excludes zero. Control mean 0.3538, ablated mean 0.4205."
+      "detail": "over 1 pair the mean paired difference is 0.1679 with a 95% interval of [0.1679, 0.1679], which excludes zero. Control mean 0.0917, ablated mean 0.2595."
     },
     {
       "metricId": "combatActionEconomy",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces combatActionEconomy. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which combatActionEconomy was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "combatThresholdEfficiency",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces combatThresholdEfficiency. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which combatThresholdEfficiency was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "illegalActionRate",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces illegalActionRate. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which illegalActionRate was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "inboundRaidTempoLoss",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces inboundRaidTempoLoss. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which inboundRaidTempoLoss was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "knowledgeHalfLife",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces knowledgeHalfLife. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which knowledgeHalfLife was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "libraryDependence",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces libraryDependence. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which libraryDependence was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "lossShockRecovery",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces lossShockRecovery. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which lossShockRecovery was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "prestigeAdvantage",
@@ -165,39 +165,39 @@
     {
       "metricId": "raidInitiationCost",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces raidInitiationCost. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which raidInitiationCost was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "raidLengthDistribution",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces raidLengthDistribution. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which raidLengthDistribution was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "referenceGrimoires",
       "verdict": "moves",
       "reason": "interval-excludes-zero",
-      "probeId": "founding-grant",
-      "mechanism": "the god's founding knowledge grant",
+      "probeId": "founding-cohort",
+      "mechanism": "the student cohort mages are promoted from",
       "estimate": {
         "pairs": 16,
-        "meanDifference": -53.5,
-        "standardDeviation": 80.95677859203639,
-        "standardError": 20.239194648009097,
-        "low": -96.62972379490738,
-        "high": -10.370276205092622,
+        "meanDifference": -272.1875,
+        "standardDeviation": 59.63021465666546,
+        "standardError": 14.907553664166365,
+        "low": -303.9554968583385,
+        "high": -240.4195031416615,
         "quantile": 2.131,
-        "controlMean": 516.25,
-        "ablatedMean": 462.75
+        "controlMean": 349.9375,
+        "ablatedMean": 77.75
       },
-      "detail": "over 16 pairs the mean paired difference is -53.5000 with a 95% interval of [-96.6297, -10.3703], which excludes zero. Control mean 516.2500, ablated mean 462.7500."
+      "detail": "over 16 pairs the mean paired difference is -272.1875 with a 95% interval of [-303.9555, -240.4195], which excludes zero. Control mean 349.9375, ablated mean 77.7500."
     },
     {
       "metricId": "referenceKnowledgeInstances",
@@ -207,35 +207,35 @@
       "mechanism": "the student cohort mages are promoted from",
       "estimate": {
         "pairs": 16,
-        "meanDifference": -1100.875,
-        "standardDeviation": 119.35151165080957,
-        "standardError": 29.837877912702393,
-        "low": -1164.4595178319687,
-        "high": -1037.2904821680313,
+        "meanDifference": -2040.3125,
+        "standardDeviation": 190.87298350823076,
+        "standardError": 47.71824587705769,
+        "low": -2142.00008196401,
+        "high": -1938.62491803599,
         "quantile": 2.131,
-        "controlMean": 1447.3125,
-        "ablatedMean": 346.4375
+        "controlMean": 2566.75,
+        "ablatedMean": 526.4375
       },
-      "detail": "over 16 pairs the mean paired difference is -1100.8750 with a 95% interval of [-1164.4595, -1037.2905], which excludes zero. Control mean 1447.3125, ablated mean 346.4375."
+      "detail": "over 16 pairs the mean paired difference is -2040.3125 with a 95% interval of [-2142.0001, -1938.6249], which excludes zero. Control mean 2566.7500, ablated mean 526.4375."
     },
     {
       "metricId": "referenceLibraryDepth",
       "verdict": "moves",
       "reason": "interval-excludes-zero",
-      "probeId": "founding-cohort",
-      "mechanism": "the student cohort mages are promoted from",
+      "probeId": "founding-grant",
+      "mechanism": "the god's founding knowledge grant",
       "estimate": {
         "pairs": 16,
-        "meanDifference": 12.1875,
-        "standardDeviation": 12.017868640764329,
-        "standardError": 3.004467160191082,
-        "low": 5.784980481632805,
-        "high": 18.590019518367196,
+        "meanDifference": -3.3125,
+        "standardDeviation": 4.331570154112709,
+        "standardError": 1.0828925385281774,
+        "low": -5.620143999603545,
+        "high": -1.0048560003964542,
         "quantile": 2.131,
-        "controlMean": 15.125,
-        "ablatedMean": 27.3125
+        "controlMean": 12.3125,
+        "ablatedMean": 9
       },
-      "detail": "over 16 pairs the mean paired difference is 12.1875 with a 95% interval of [5.7850, 18.5900], which excludes zero. Control mean 15.1250, ablated mean 27.3125."
+      "detail": "over 16 pairs the mean paired difference is -3.3125 with a 95% interval of [-5.6201, -1.0049], which excludes zero. Control mean 12.3125, ablated mean 9.0000."
     },
     {
       "metricId": "referenceLivingMages",
@@ -245,16 +245,16 @@
       "mechanism": "the student cohort mages are promoted from",
       "estimate": {
         "pairs": 16,
-        "meanDifference": -49.125,
-        "standardDeviation": 3.9644251369734134,
-        "standardError": 0.9911062842433533,
-        "low": -51.237047491722585,
-        "high": -47.012952508277415,
+        "meanDifference": -49.375,
+        "standardDeviation": 4.272001872658765,
+        "standardError": 1.0680004681646913,
+        "low": -51.65090899765896,
+        "high": -47.09909100234104,
         "quantile": 2.131,
-        "controlMean": 57.125,
+        "controlMean": 57.375,
         "ablatedMean": 8
       },
-      "detail": "over 16 pairs the mean paired difference is -49.1250 with a 95% interval of [-51.2370, -47.0130], which excludes zero. Control mean 57.1250, ablated mean 8.0000."
+      "detail": "over 16 pairs the mean paired difference is -49.3750 with a 95% interval of [-51.6509, -47.0991], which excludes zero. Control mean 57.3750, ablated mean 8.0000."
     },
     {
       "metricId": "referenceNodesGained",
@@ -264,54 +264,54 @@
       "mechanism": "the god's founding knowledge grant",
       "estimate": {
         "pairs": 16,
-        "meanDifference": 3.75,
-        "standardDeviation": 3.2761766334148303,
-        "standardError": 0.8190441583537076,
-        "low": 2.0046168985482495,
-        "high": 5.4953831014517505,
+        "meanDifference": 2.375,
+        "standardDeviation": 1.3601470508735443,
+        "standardError": 0.34003676271838607,
+        "low": 1.6503816586471194,
+        "high": 3.0996183413528806,
         "quantile": 2.131,
-        "controlMean": 38.625,
-        "ablatedMean": 42.375
+        "controlMean": 81,
+        "ablatedMean": 83.375
       },
-      "detail": "over 16 pairs the mean paired difference is 3.7500 with a 95% interval of [2.0046, 5.4954], which excludes zero. Control mean 38.6250, ablated mean 42.3750."
+      "detail": "over 16 pairs the mean paired difference is 2.3750 with a 95% interval of [1.6504, 3.0996], which excludes zero. Control mean 81.0000, ablated mean 83.3750."
     },
     {
       "metricId": "referenceNodesGainedFinalQuarter",
       "verdict": "moves",
       "reason": "interval-excludes-zero",
-      "probeId": "founding-cohort",
-      "mechanism": "the student cohort mages are promoted from",
+      "probeId": "founding-grant",
+      "mechanism": "the god's founding knowledge grant",
       "estimate": {
         "pairs": 16,
-        "meanDifference": -3.25,
-        "standardDeviation": 3.3960761671866746,
-        "standardError": 0.8490190417966686,
-        "low": -5.0592595780687,
-        "high": -1.4407404219312994,
+        "meanDifference": 3.125,
+        "standardDeviation": 0.8850612031567836,
+        "standardError": 0.2212653007891959,
+        "low": 2.6534836440182237,
+        "high": 3.5965163559817763,
         "quantile": 2.131,
-        "controlMean": 8.25,
-        "ablatedMean": 5
+        "controlMean": 16.6875,
+        "ablatedMean": 19.8125
       },
-      "detail": "over 16 pairs the mean paired difference is -3.2500 with a 95% interval of [-5.0593, -1.4407], which excludes zero. Control mean 8.2500, ablated mean 5.0000."
+      "detail": "over 16 pairs the mean paired difference is 3.1250 with a 95% interval of [2.6535, 3.5965], which excludes zero. Control mean 16.6875, ablated mean 19.8125."
     },
     {
       "metricId": "referenceNodesKnown",
       "verdict": "moves",
       "reason": "interval-excludes-zero",
-      "probeId": "founding-cohort",
-      "mechanism": "the student cohort mages are promoted from",
+      "probeId": "founding-grant",
+      "mechanism": "the god's founding knowledge grant",
       "estimate": {
         "pairs": 16,
-        "meanDifference": -6.3125,
-        "standardDeviation": 3.8939054944875076,
-        "standardError": 0.9734763736218769,
-        "low": -8.38697815218822,
-        "high": -4.238021847811781,
+        "meanDifference": -1.625,
+        "standardDeviation": 1.3601470508735443,
+        "standardError": 0.34003676271838607,
+        "low": -2.3496183413528806,
+        "high": -0.9003816586471194,
         "quantile": 2.131,
-        "controlMean": 42.625,
-        "ablatedMean": 36.3125
+        "controlMean": 85,
+        "ablatedMean": 83.375
       },
-      "detail": "over 16 pairs the mean paired difference is -6.3125 with a 95% interval of [-8.3870, -4.2380], which excludes zero. Control mean 42.6250, ablated mean 36.3125."
+      "detail": "over 16 pairs the mean paired difference is -1.6250 with a 95% interval of [-2.3496, -0.9004], which excludes zero. Control mean 85.0000, ablated mean 83.3750."
     },
     {
       "metricId": "referencePeakPopulation",
@@ -321,16 +321,16 @@
       "mechanism": "the student cohort mages are promoted from",
       "estimate": {
         "pairs": 16,
-        "meanDifference": -271.1875,
-        "standardDeviation": 18.439879789919093,
-        "standardError": 4.609969947479773,
-        "low": -281.0113459580794,
-        "high": -261.3636540419206,
+        "meanDifference": -265.5625,
+        "standardDeviation": 17.94795717252152,
+        "standardError": 4.48698929313038,
+        "low": -275.1242741836608,
+        "high": -256.0007258163392,
         "quantile": 2.131,
-        "controlMean": 299.6875,
-        "ablatedMean": 28.5
+        "controlMean": 294.375,
+        "ablatedMean": 28.8125
       },
-      "detail": "over 16 pairs the mean paired difference is -271.1875 with a 95% interval of [-281.0113, -261.3637], which excludes zero. Control mean 299.6875, ablated mean 28.5000."
+      "detail": "over 16 pairs the mean paired difference is -265.5625 with a 95% interval of [-275.1243, -256.0007], which excludes zero. Control mean 294.3750, ablated mean 28.8125."
     },
     {
       "metricId": "referencePopulation",
@@ -340,16 +340,16 @@
       "mechanism": "the student cohort mages are promoted from",
       "estimate": {
         "pairs": 16,
-        "meanDifference": -271.4375,
-        "standardDeviation": 18.586621532704644,
-        "standardError": 4.646655383176161,
-        "low": -281.3395226215484,
-        "high": -261.5354773784516,
+        "meanDifference": -265.75,
+        "standardDeviation": 17.987032365938894,
+        "standardError": 4.496758091484724,
+        "low": -275.33259149295395,
+        "high": -256.16740850704605,
         "quantile": 2.131,
-        "controlMean": 299.6875,
-        "ablatedMean": 28.25
+        "controlMean": 294.375,
+        "ablatedMean": 28.625
       },
-      "detail": "over 16 pairs the mean paired difference is -271.4375 with a 95% interval of [-281.3395, -261.5355], which excludes zero. Control mean 299.6875, ablated mean 28.2500."
+      "detail": "over 16 pairs the mean paired difference is -265.7500 with a 95% interval of [-275.3326, -256.1674], which excludes zero. Control mean 294.3750, ablated mean 28.6250."
     },
     {
       "metricId": "referencePopulationChange",
@@ -359,52 +359,52 @@
       "mechanism": "the student cohort mages are promoted from",
       "estimate": {
         "pairs": 16,
-        "meanDifference": -73.4375,
-        "standardDeviation": 18.586621532704644,
-        "standardError": 4.646655383176161,
-        "low": -83.3395226215484,
-        "high": -63.5354773784516,
+        "meanDifference": -67.75,
+        "standardDeviation": 17.987032365938894,
+        "standardError": 4.496758091484724,
+        "low": -77.33259149295395,
+        "high": -58.167408507046055,
         "quantile": 2.131,
-        "controlMean": 83.6875,
-        "ablatedMean": 10.25
+        "controlMean": 78.375,
+        "ablatedMean": 10.625
       },
-      "detail": "over 16 pairs the mean paired difference is -73.4375 with a 95% interval of [-83.3395, -63.5355], which excludes zero. Control mean 83.6875, ablated mean 10.2500."
+      "detail": "over 16 pairs the mean paired difference is -67.7500 with a 95% interval of [-77.3326, -58.1674], which excludes zero. Control mean 78.3750, ablated mean 10.6250."
     },
     {
       "metricId": "roleAssignmentDemographicCost",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces roleAssignmentDemographicCost. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which roleAssignmentDemographicCost was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "speciesCellOccupancy",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces speciesCellOccupancy. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which speciesCellOccupancy was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "speciesGridVersatility",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces speciesGridVersatility. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which speciesGridVersatility was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "timeToTierBySpecies",
       "verdict": "not-measurable",
-      "reason": "no-producer",
+      "reason": "no-pairs",
       "probeId": "founding-grant",
       "mechanism": "the god's founding knowledge grant",
       "estimate": null,
-      "detail": "nothing in the production pipeline produces timeToTierBySpecies. Its collector and its definition exist; no run record and no arm summary carries an entry for it, and a sweep declaring it is rejected before dispatch. The experiment was not run because there is no observation for it to compare — this is not a claim that the mechanism does nothing."
+      "detail": "probe founding-grant completed no pair in which timeToTierBySpecies was measured on both arms. The arms were scheduled; nothing was paired."
     },
     {
       "metricId": "winRateByPrimitive",
@@ -423,16 +423,16 @@
       "mechanism": "the god's founding knowledge grant",
       "estimate": {
         "pairs": 1,
-        "meanDifference": 0.006886179252918456,
+        "meanDifference": 0.0061237771251105855,
         "standardDeviation": 0,
         "standardError": 0,
-        "low": 0.006886179252918456,
-        "high": 0.006886179252918456,
+        "low": 0.0061237771251105855,
+        "high": 0.0061237771251105855,
         "quantile": 1,
-        "controlMean": 0.025481713303878273,
-        "ablatedMean": 0.03236789255679673
+        "controlMean": 0.012534143380519946,
+        "ablatedMean": 0.018657920505630532
       },
-      "detail": "over 1 pair the mean paired difference is 0.0069 with a 95% interval of [0.0069, 0.0069], which excludes zero. Control mean 0.0255, ablated mean 0.0324."
+      "detail": "over 1 pair the mean paired difference is 0.0061 with a 95% interval of [0.0061, 0.0061], which excludes zero. Control mean 0.0125, ablated mean 0.0187."
     }
   ],
   "quarantined": [
