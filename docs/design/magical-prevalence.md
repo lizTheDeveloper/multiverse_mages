@@ -95,6 +95,62 @@ Today's roles are `researcher`, `warden`, `professor`, `raider`, and `DEFENDING_
 everyone, and the taxonomy above is a *reshaping* of the role set, not an addition to it. Whoever
 implements this must reconcile the two lists deliberately rather than appending.
 
+## The two halves are different kinds of thing, and that is the design
+
+> *"'Is magic user' is a species-level thing, and 'will access education' is population × university
+> count / capacity."*
+
+**Prevalence is content; access is state.** Your species sets the ceiling and your buildings set how
+much of it you reach. That separation is what makes the gap legible to a player and what makes
+university-building the lever that closes it:
+
+    latent      = population × prevalence[species]        <- content, fixed for a run
+    activated   = f(population, university count, capacity)  <- state, the god's to move
+
+The exact functional form is **not decided here** — *"population × university count / capacity"* reads
+most naturally as *access is bounded by how much seating exists relative to the people who need it*,
+but whether that is `min(1, seats / latent)`, something with diminishing returns per additional
+university, or something else is the author's. **Writing a plausible formula into code is how a
+placeholder becomes a balance constant nobody remembers inventing.**
+
+## Class capacity is species-shaped, and `species.json` already says so
+
+> *"A class of 12 is the practical limit for humans. Gnomes forget, dwarves remember — so gnomes have
+> smaller classes and are more curious than dwarves, but dwarves have larger class capacity because of
+> their better bookkeeping."*
+
+**The shipped content already encodes this, unprompted.** On `main`:
+
+| species | `retention` | `curiosity` | `scribeAffinity` |
+| --- | ---: | ---: | ---: |
+| dwarf | **1536** | 512 | **1792** |
+| draconic | 1536 | 256 | 640 |
+| elf | 1280 | 896 | 1024 |
+| **human** | **1024** | 1152 | 1024 |
+| orc | 896 | 384 | 384 |
+| gnome | **512** | **1792** | 896 |
+
+Gnome is **lowest retention and highest curiosity**; dwarf is **high retention, lowest-but-one
+curiosity, and best scribing by a wide margin**; human sits at exactly `1024`, the fixed-point unit —
+which is the species the author named the baseline of 12 for.
+
+So class capacity has an obvious candidate derivation rather than a new authored field:
+
+    capacity = 12 × retention / 1024
+
+giving **dwarf and draconic 18, elf 15, human 12, orc 10, gnome 6.** That is a real spread, it is
+already in the data, and nobody has to invent it.
+
+Two things to decide, both the author's: whether *"better bookkeeping"* means `retention` alone or
+`retention` combined with `scribeAffinity` — dwarf leads both, so the two are indistinguishable on
+dwarf and differ sharply on **draconic**, which has high retention and poor scribing. And whether
+capacity is per class, per professor, or per university.
+
+**Note what the gnome case buys.** Highest curiosity and smallest classes is a genuine strategic
+identity — gnomes find things fastest and can teach them to the fewest people — and it is exactly the
+kind of per-species plurality task 9.9 has failed twice to produce by tuning rates. It comes for free
+from numbers already shipped.
+
 ## Graduation: a student until the university has nothing left to teach
 
 > *"They're students until they learn everything that the university they enrolled in can teach them."*
