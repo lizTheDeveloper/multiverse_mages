@@ -6478,3 +6478,58 @@ Not yet proven. `CLAUDE.md`'s rule applies to me as much as to anyone: **an abse
 proven by reading files.** The agent is instrumenting the seam, declaring `mode: 'one-sided'`, and
 counting how many world steps actually see a non-empty mask. If that count is not zero, this entry
 is wrong and should be struck.
+
+## W128 — the merge discipline, written down before draining the queue unattended
+
+The mandate widened to *"just merge things together"* with nobody awake to watch it. The obvious
+implementation — a loop that merges every PR whose two required checks are green — is **the exact
+mechanism that produced W123**, and it must not be built.
+
+`main` went red because #121 and #127 were *both green individually*. "Require branches to be up to
+date before merging" is off, so GitHub never re-ran #121 against the base #127 had just changed. A
+green check is a statement about the base it ran on, and an unattended drainer across twenty-one
+PRs against a moving `main` cannot tell a stale green from a live one. It would manufacture W123s
+faster than anyone could read them.
+
+**So: serial, with the check GitHub is not making.**
+
+1. Merge exactly one PR.
+2. Fetch, and wait for `Verify` on `main` **at the new head** to go green.
+3. Only then consider the next.
+
+That step 2 is the whole discipline. It is the difference between *"the queue drained"* and *"the
+queue drained and `main` still works"*, and it is cheap — one poll loop per merge against a cost
+already paid once tonight in a red `main` that blocked every other PR for four merges.
+
+**Order is forced by dependency, not preference.** #135 first: #132, #133, #118 and #122 all fail
+`Verify` *only* on the `ui-recording` break they inherit from `main`. Merging #132 before #135
+cannot work — it is not that it would be unwise, it is that #132 cannot go green.
+
+### Two red checks that are not findings
+
+Worth recording because both read as author defects and neither is:
+
+- **#133 `ci/hetzner-lint`**: the truncated status text is `: 400,^[[22m` — a status string cut
+  mid-ANSI-escape. The actual failure is `ui-recording.test.ts:98:30`, i.e. `main`'s break again.
+- **#134 `ci/hetzner-lint`**: `listOnTimeout` / `processTimers` inside vitest. A **timeout**, on a
+  machine that was at load 300 an hour ago (W122). Not a defect; an artifact.
+
+Neither branch should be "fixed" on that evidence, and a drainer that treated `hetzner: fail` as the
+author's problem would have stranded both indefinitely.
+
+### The scope boundary the widened mandate does not dissolve
+
+*"Merge things together"* covers **#132** — it is #127's own byte-identical baseline, recommended,
+characterized, and approved twice. It does **not** silently cover **#126's three gates**. Those were
+verified provenance-only *against `ebe4fb4`*; today's `main` has moved through #127, so a rebase
+turns them into a **real** re-baseline of three gates. If #126 lands, it must be regenerated against
+current `main` with the deltas and their standard errors written into the PR body, so that tomorrow's
+reader can see what was accepted rather than inferring it. A rebase must not re-baseline three gates
+under cover of a merge instruction.
+
+### And the branch-protection fix stays deferred, for a second reason
+
+Enabling *"require branches to be up to date"* is the real fix for W123. It is also an owner-level
+change to a protected repository, `CLAUDE.md` requires reading `docs/devops/ci-and-deploy.md` first,
+and — tactically — switching it on **right now** would require rebasing all twenty-one open PRs
+before any could merge, with nobody awake to do it. Right fix, wrong hour.
