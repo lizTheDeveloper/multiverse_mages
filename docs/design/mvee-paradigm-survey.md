@@ -223,8 +223,9 @@ Counting the TypeScript-only definitions too the figure is **sixteen**, adding `
 `rational`, `divine_monopoly` and `hemomancy`.
 
 **All sixteen are also `allowsScrolls: false`, and the converse never occurs: there is no paradigm in
-`mvee` that can be scribed but not taught.** The reverse pairing does exist — `tech_supremacy`,
-`threshold` and `breath` are all teachable but unscribable — which is the asymmetry worth keeping,
+`mvee` that can be scribed but not taught.** The reverse pairing is common — `divine`,
+`breath`, `threshold` and `tech_supremacy` are all teachable but unscribable — which is the asymmetry
+worth keeping,
 because it says storage is downstream of transmission rather than parallel to it.
 
 **What they would do to Mages is the most valuable experiment in this document, and it is nearly
@@ -238,7 +239,7 @@ tradition-specific.
 **But it needs a code change, and here is exactly which.** Mages' hook enumeration
 (`packages/content/src/hooks.ts`) is `acquire ∈ {standard, true-name}` and `store ∈ {standard,
 palace}`. **There is no kind that means "cannot be taught" and none that means "cannot be written
-down."** So importing any of the eleven requires:
+down."** So importing any of them requires:
 
 - a new `acquire` kind — call it `unteachable`, params `{}` — plus the branch in the acquire path
   that honours it;
