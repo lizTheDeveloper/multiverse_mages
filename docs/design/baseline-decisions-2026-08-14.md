@@ -1,0 +1,116 @@
+# Baseline decisions waiting, as of 2026-08-14
+
+**Measured on `origin/main` at `cc20d54` and on each PR's own head. Dated because a measurement is a
+statement about the tree it was taken on** — if you are reading this after those refs moved, re-run
+before acting.
+
+`CLAUDE.md` reserves re-baselining for the repository owner, so six branches are sitting on it. They
+are not equally hard. **Three are mechanical** — an agent ran the discriminating control and the
+movement is provably not about balance — **and three are genuine judgements about the game.** This
+page separates them so the easy ones do not queue behind the hard ones.
+
+Nothing here has been regenerated. Every number below was *reported* by the branch that found it.
+
+---
+
+## The mechanical three
+
+Each of these fails a gate for a reason that is **structural, not behavioural**, and the evidence for
+that is a control someone actually ran.
+
+### #72 — the opening square
+
+- `verify:nosweeps` **exit 0, 4,402/4,402**.
+- All three gates fail on **one line each**: `provenance.rngRegistryHash`. **Every metric passes at
+  delta `0.00000`.**
+- Cause: appending `openingSquare: 12` changes `canonicalHash(RNG_STREAM)`, and `gate.ts` treats that
+  key as a block-level refusal. **A hash cannot distinguish "appended" from "renumbered"** — that is
+  the real finding, and it will recur on every future stream addition.
+- *Recommendation:* accept, or fix the baseline format so an appended stream is distinguishable from
+  a renumbered one. The second is the better long-term answer and is its own change.
+
+### #125 — universities become institutions
+
+- **4,411/4,411 tests pass.** `balance:gate` and `balance:gate:horizon` pass; only
+  `balance:gate:agency` regresses, 7 rows against `toleranceK = 3`.
+- **The discriminating control was run**: keep the link entities, revert only the scribing rule — and
+  it **reproduces the treatment exactly, metric for metric**. So none of the movement comes from
+  universities owning their staff. **All of it is entity-handle re-allocation.**
+- *Recommendation:* accept. This is a consequence of entity numbering, not of the mechanic.
+
+### #126 — alliances
+
+- Three gates regenerated **provenance-only against its own merge base** `ebe4fb4`: **0 of 109 metric
+  rows moved**, verified independently against that base rather than against today's `main`.
+- **But the branch is far behind**, and `main` has since taken #127. A rebase makes this a **real**
+  re-baseline against a base whose numbers genuinely differ.
+- *Recommendation:* **rebase first, then re-report.** Do not accept the current files — they are
+  provenance-only against a base that no longer exists.
+
+---
+
+## The three that are actually about the game
+
+### #134 — affiliation completion  ·  *the founding defect, closed*
+
+- **Affiliated share: all-six `0.0077 → 0.7226`; human `0.0003 → 0.9991`.** Grimoires per living mage
+  at 5 years **2.34 → 10.28**.
+- **The loss channel is damped for the first time**: the two arms that were *forgetting faster than
+  they learned* (−4.875, −3.250 nodes in the final quarter) are now near flat.
+- Cost: all three gates `baseline-invalid` (`contentHash` moved with two new weights), and **9 pinned
+  observations moved across 7 files**.
+- **The part that needs your eye:** at 200 years it is genuinely mixed. Human, orc, gnome and all-six
+  rise (inside SE), but **dwarf falls 79% (~4 SE) while its population doubles**, elf −43%, draconic
+  −28%. The author's hypothesis — flagged unproven — is `applyLibraryUpkeep`, **newly reached rather
+  than newly written**, because this is the first build to keep a library deep enough to owe upkeep it
+  cannot pay.
+- *Recommendation:* accept the change; the defect it closes is the one this campaign exists for. The
+  dwarf regression is a separate investigation and should be opened as one rather than blocking this.
+
+### #140 — scholarship moves the academic primitives  ·  *no content change*
+
+- `check:consumption` **10 failures → 7**. Behaviour: research **+30.6%**, distinct nodes retained
+  **+39.4%**, grimoires **+43.4%**. Ablation-attributed: research +30.4%, scribe +32.1%.
+- **`contentRevision` byte-identical.** Only `snapshotHash` moved.
+- Gate movement: `referenceNodesGained` and `referenceNodesKnown` **+44.54 SE**,
+  `referenceKnowledgeInstances` +29.13 SE — with **population flat at +0.04 SE as a control**, which
+  is what says this is the intended channel and not a population artifact.
+- **One claim on this PR is on notice.** It reports `reference-time-to-tier` separating four species
+  strictly. A neighbouring claim of the same shape (#127's orc separation) **vanished on a re-roll**,
+  so the ordering has not been established. The *effect sizes* are far outside noise; it is the
+  *ordering* that is unverified. A measurement of the cross-seed spread is in progress.
+- *Recommendation:* accept on the effect sizes. Do not quote the four-species ordering until the
+  spread lands.
+
+### #137 — all seventy cells  ·  *hold*
+
+- 51 reachable nodes → **300**; `check:content` clean over all of them. Affinity liveness **4/11 →
+  11/11**, and both new sole-occupant cells are affinity-predicted.
+- **And the differentiation metrics went the wrong way.** Occupancy Gini **0.0714 → 0.0436**;
+  time-to-tier separations **7 of 15 pairs → 4**. Six times the content, *less* distinguishable
+  species.
+- Two tests left red, correctly: looting lost its premise (`shelveForeignBooks` selects on
+  `record.v1`, and there are no non-v1 cells left — **249 of 300 shelvable today, 0 of 300 under
+  this**), and the 9.5 scribing tripwire fired.
+- **#72 does not fix this**, contrary to what was said earlier and since measured:
+  `resolveOpeningSquare`'s default returns `v1RulesetAxes(registry)` — the same flag — so #72 on top
+  of #137 opens the whole grid too. `explicitOpeningAxes` exists and **has no caller**.
+- *Recommendation:* **hold.** This is the one change that made the stated goal worse, and the companion
+  that was supposed to rescue it does not, as shipped. What it needs is `explicitOpeningAxes` wired
+  into the reference default — a design decision, not a merge.
+
+---
+
+## Not a baseline decision, but the throughput blocker
+
+**#138** — each `main` commit currently gets its own verification only if no other commit lands within
+~40 minutes, because a **non-required** 35-minute balance-gate job shares the workflow's concurrency
+group. GitHub keeps one pending run per group, so intermediate commits are **cancelled in the queue,
+never run**. Three of `main`'s last eight runs were never verified.
+
+It also corrects `docs/devops/ci-and-deploy.md`, which asserts *"`main` runs never cancel each other.
+They serialise"* — the one property in that section whose stated purpose is preserving the release
+record, and the one that did not hold.
+
+*Recommendation:* take this first. Everything above merges at one commit per forty minutes until it
+lands.
