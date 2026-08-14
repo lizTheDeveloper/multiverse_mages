@@ -126,6 +126,37 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'the intent, this is the line that says so.',
   ],
 
+  // ---- Not a live quantity: a comparison weight. ----
+  //
+  // Reviewed on the terms this file's header sets — does it stall, or does it
+  // handle the zero — and the answer is neither, because there is nothing here to
+  // stall. `effortTerm` is one of six addends in an appeal score used only to
+  // *order* candidate research targets against each other. It stores nothing,
+  // drains nothing, and carries no state between ticks.
+  //
+  // It floors when a target is nearly finished: the sample is
+  // `floorDiv(58, 64) -> 0`, a remaining cost of 58/1024 fp against an
+  // `effortDivisor` of 64. The term is negative by construction because remaining
+  // cost is a price, so flooring it to zero means "this project is so nearly done
+  // that it carries no effort penalty" — which is the correct reading of that
+  // input and not a lost quantity. The five other terms still separate the
+  // candidates, and a target whose effort penalty rounds away is a target the
+  // penalty was never going to decide.
+  //
+  // It appears now because enabling all seventy cells took the research frontier
+  // from 51 nodes to 300, which is the first content set in which a remaining cost
+  // lands in `(0, 64)` inside twenty world years. It fires on 2 of 240 ticks
+  // (persistence 0.008), so the sentinel is right to see it and right not to be
+  // alarmed.
+  [
+    'target-appeal:effortTerm',
+    'Not a quantity. One of six addends ordering research candidates; it stores ' +
+      'nothing and carries nothing between ticks. Floors only for a nearly ' +
+      'finished target — floorDiv(58, 64) — where "no effort penalty" is the ' +
+      'correct reading of the input rather than a loss. First reachable when all ' +
+      'seventy cells were enabled and the frontier went from 51 nodes to 300.',
+  ],
+
   // ---- Handled at the site. ----
   [
     'worship:laggedWorship',
@@ -176,7 +207,20 @@ describe('the set of functions that floor a live quantity to zero', () => {
     expect(detail, detail.join('\n')).toEqual([]);
     expect(unregistered).toEqual([]);
     expect(registeredButUnseen).toEqual([]);
-  });
+    // A timeout rather than the suite default, and the number is a measurement.
+    // The sentinel wraps every `floorDiv` in the rules path, so its cost tracks
+    // the amount of arithmetic a tick does — and enabling all seventy cells took
+    // the research frontier from 51 nodes to 300. Measured on this build, 240
+    // recorded ticks of the reference universe:
+    //
+    //     historic twelve    1.8 s
+    //     all seventy       31.7 s
+    //
+    // Uninstrumented the same runs are 1.1 s and 2.2 s, so the widening costs 2x
+    // and the *instrument* costs the other 9x. 180 s leaves room for a loaded
+    // machine without leaving room for a regression: if this arm needs more, the
+    // frontier scan is doing something new and that is the thing to look at.
+  }, 180_000);
 
   it('and the instrument that says so can be made to fail', () => {
     // The half that usually gets skipped. A recorder that never fires would
