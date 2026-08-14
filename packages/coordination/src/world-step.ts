@@ -105,7 +105,7 @@ import {
   MAGE,
   OCCUPATION,
   POPULACE_COHORT,
-  UNIVERSE,
+  MATERIAL_STOCK,
   UNIVERSITY,
   attachRecord,
   collectRecords,
@@ -123,12 +123,14 @@ import type {
   StorePolicy,
 } from '@mm/rules-magic';
 import { decayHeldKnowledge } from '@mm/rules-magic';
-import type { RediscoveryClampCounter } from '@mm/primitives';
+import type { AblationMask, RediscoveryClampCounter } from '@mm/primitives';
 import { ClampCounters, createRediscoveryClampCounter } from '@mm/primitives';
 import type {
   CapitalEmission,
   CohortDemography,
   MageGoalCommitment,
+  MaterialAmounts,
+  MaterialKind,
   ScaleFreeHazard,
   SpeciesAffinities,
   StepRng,
@@ -138,6 +140,10 @@ import type {
 import {
   CohortStore,
   GOAL,
+  LABORERS_PER_BUILD_UNIT,
+  MATERIALS_PER_LABOR_MONTH,
+  MATERIAL_KINDS,
+  advanceConstruction,
   NO_EMPHASIS,
   applyLibraryUpkeep,
   assertMaterialsNonNegative,
@@ -162,8 +168,12 @@ import {
   stepMageAutonomy,
   stepPopulace,
   subsistenceDemand,
+  totalAmount,
+  zeroAmounts,
 } from '@mm/rules-world';
 
+import type { UniverseEconomyBonuses, UniverseEffectIndex } from './universe-effects.js';
+import { NO_ECONOMY_BONUSES, universeEconomyBonuses } from './universe-effects.js';
 import type { LibraryCapital } from './capital.js';
 import { libraryCapital } from './capital.js';
 import { EffortLedger } from './effort-store.js';
@@ -242,6 +252,43 @@ export interface WorldStepDeps {
    */
   readonly territory: TerritoryExtent;
   /**
+   * What this universe's land yields, as shares over the three material kinds
+   * summing to `fp(1024)` — `territoryYieldShares` of the same content records
+   * {@link WorldStepDeps.territory} was summed from.
+   *
+   * Beside the extent and for the same reason: it is a function of content that
+   * is fixed for the length of a run, so recomputing it per tick would invite
+   * somebody to make it depend on something that is not. It is what makes a
+   * supply chain **sited** — a universe of river delta and one of highland waste
+   * put the same person-months in and get differently-shaped baskets out —
+   * without any entity acquiring a coordinate (vision §7a).
+   */
+  readonly yieldShares: MaterialAmounts;
+  /**
+   * Every node's universe-scoped economic effect, precomputed from content.
+   *
+   * The wire `universe-effects.ts` describes at length: without it the shipped
+   * content's 46 economically-weighted cells reach nothing, `resource-yield` is
+   * an empty array and `build-rate` has no consumer. Optional so that a caller
+   * building a world for a knowledge test need not supply one — and when it is
+   * absent the economy is exactly the inert one this change replaced, which is
+   * a thing a test can assert against rather than a silent degradation.
+   */
+  readonly universeEffects?: UniverseEffectIndex | undefined;
+  /**
+   * §9's ablation mask, neutralizing at most one primitive across the world loop.
+   *
+   * Absent is the control arm and is what every ordinary run uses.
+   *
+   * It exists because a causal claim needs a counterfactual that isolates **one**
+   * cause. Forbidding *Terram* removes that form's `build-rate` **and** its
+   * `resource-yield` **and** stops mages researching in it at all, so an outcome
+   * that moves when the cell is forbidden has three candidate explanations.
+   * Neutralizing `build-rate` with the ruleset untouched leaves exactly one: the
+   * magic is researched, taught, paid for, and does nothing.
+   */
+  readonly ablation?: AblationMask | undefined;
+  /**
    * Primitive records, for the stacking rules and caps their magnitudes obey.
    *
    * `researchRate` and `teachRate` join the list with vision §6a's loop: the
@@ -255,6 +302,8 @@ export interface WorldStepDeps {
   readonly primitives: {
     readonly lifespan: PrimitiveRecord;
     readonly resourceYield: PrimitiveRecord;
+    /** `build-rate`, for its stacking rule and cap. Construction's only multiplier. */
+    readonly buildRate: PrimitiveRecord;
     readonly researchRate: PrimitiveRecord;
     readonly teachRate: PrimitiveRecord;
     readonly scribeRate: PrimitiveRecord;
@@ -334,8 +383,60 @@ export interface WorldStepDeps {
 /** What one world tick did. Reporting only; never an input to any rule. */
 export interface WorldStepReport {
   readonly worldTick: number;
+  /** Every kind summed. Kept so a reader comparing runs across this change has one series that means the same thing on both sides. */
   readonly materialsProduced: Fixed;
+  /** Every kind summed, after consumption. */
   readonly materialsRemaining: Fixed;
+  /**
+   * Production by kind, `fp` — and the reason the change was made.
+   *
+   * A single number could not say whether a universe was short of **food** or
+   * short of **vellum**, and those are opposite problems with opposite fixes:
+   * one is relieved by *Creo Herbam* and the other by *Creo Animal*. The two
+   * per-kind series below are what makes the bottleneck nameable, which is what
+   * makes a spell worth casting.
+   */
+  readonly producedByKind: MaterialAmounts;
+  /** The closing stocks by kind, `fp`. */
+  readonly remainingByKind: MaterialAmounts;
+  /** Which kinds could not pay a claimant this tick. */
+  readonly shortKinds: Readonly<Record<MaterialKind, boolean>>;
+  /**
+   * Distinct known, permitted nodes that contributed a universe-scoped economic
+   * effect this tick.
+   *
+   * Emitted because "the economy did not move" and "no node reached it" look
+   * identical in every other series, and the entire history of this seam is a
+   * bonus list nobody noticed was empty for three releases.
+   */
+  readonly economicNodes: number;
+  /**
+   * `build-rate` magnitudes reaching construction this tick.
+   *
+   * Separated from {@link economicNodes} because the two answer different
+   * questions and the first one anybody asks of this change is *did* `build-rate`
+   * *stop being inert*. A run where this is zero for every tick is a run where it
+   * did not, whatever the totals say.
+   */
+  readonly buildRateSources: number;
+  /**
+   * The `build-rate` magnitudes themselves, so a caller can check **attribution**
+   * rather than presence.
+   *
+   * A count says a number arrived. The magnitudes say *which authored node* it
+   * came from, because every one of them must be a magnitude some node in the
+   * content set declares — and a wire that invented its own numbers would pass
+   * a count and fail this. The list this tick, not cumulative.
+   */
+  readonly buildRateMagnitudes: readonly Fixed[];
+  /** `buildProgress` added by laborers this tick, `fp`. Excludes the god's funding. */
+  readonly buildProgressAdded: Fixed;
+  /** Universities finished by that labour this tick. */
+  readonly universitiesCompleted: number;
+  /** Stone construction asked for this tick, `fp`. */
+  readonly constructionStoneOwed: Fixed;
+  /** Stone construction was actually paid, `fp`. Below `owed` means the quarry is the bottleneck. */
+  readonly constructionStonePaid: Fixed;
   readonly carryingCapacity: number;
   readonly mageDeaths: number;
   readonly magesPromoted: number;
@@ -520,8 +621,34 @@ export function worldSystem(
       const efforts = new EffortLedger(state);
 
       // ---- 1. Materials production ---------------------------------------
-      const produced = produceMaterials(cohorts, deps);
-      let materials = readRecord(state, UNIVERSE, universe).materials + produced;
+      // What the universe's knowledge is worth to its economy, read once. This
+      // is the wire `universe-effects.ts` exists to run: before it, this line's
+      // predecessor passed a hardcoded empty array and every `resource-yield`
+      // node in the shipped content reached nothing.
+      const economy: UniverseEconomyBonuses =
+        deps.universeEffects === undefined
+          ? NO_ECONOMY_BONUSES
+          : universeEconomyBonuses(state, {
+              index: deps.universeEffects,
+              cells: deps.cells,
+              ruleset,
+            });
+
+      // Labour is exclusive between the fields and the building sites, so the
+      // split is decided once, here, before either phase spends it.
+      // The opening stone is read before production because a crew is hired at
+      // the start of the month out of what is already in the yard, not out of
+      // what the quarry will deliver by the end of it.
+      const labour = planConstructionLabour(
+        state,
+        cohorts,
+        readMaterialStock(state, universe).stone,
+        deps,
+      );
+      const produced = produceMaterials(cohorts, deps, economy, labour.onSites);
+      const opening = readMaterialStock(state, universe);
+      const stock = zeroAmounts();
+      for (const kind of MATERIAL_KINDS) stock[kind] = opening[kind] + produced[kind];
 
       // Every library's shelves, read once for the whole tick. Vision §6a's
       // capital is a function of what is *already* written down, so a book
@@ -539,11 +666,15 @@ export function worldSystem(
       const rateClamps = new ClampCounters();
 
       // Scribing is paid at the desk rather than in phase 9 — see the module
-      // note — so what a scribe may spend is the stock less this tick's
-      // subsistence *and* this tick's library upkeep, both of which outrank her
-      // in `CONSUMPTION_ORDER`. Read once, before the populace phase changes the
-      // headcount, so that every scribe in a tick is offered the same stock.
-      const subsistenceReserve = subsistenceDemand(cohorts.totalCount());
+      // note — so what a scribe may spend is the **vellum** stock less this
+      // tick's library upkeep, which outranks her in `CONSUMPTION_ORDER` and is
+      // the only claimant that still shares a stock with her.
+      //
+      // Subsistence used to be subtracted here too and is not any more, because
+      // it is no longer made of the same stuff. That is one of the two places
+      // this change is visible as a behaviour difference rather than as a
+      // refactor: a hungry universe can now still write its books, and a
+      // universe with thin herds cannot write them however well it eats.
       // Brake 4, owed on the shelves as they stand at the top of the tick. Owed
       // on *instances*, so a second copy of a node the library already holds
       // costs upkeep forever and contributes nothing to depth — which is the
@@ -553,10 +684,17 @@ export function worldSystem(
         0,
       );
       let materialsScribed = 0;
+      // Scribing spends **vellum**, and so does library upkeep; subsistence
+      // spends food and no longer competes with either. So the reserve a scribe
+      // must leave behind is the upkeep alone — `subsistenceReserve` is still
+      // read, because phase 8 needs it, but it is no longer subtracted here.
+      // That is the differentiated economy doing its first useful thing: a
+      // universe can no longer be unable to write a page because it is hungry,
+      // and can absolutely be unable to write one because its herds are thin.
       const materialsAccess = {
-        available: () => Math.max(materials - subsistenceReserve - upkeepOwed, 0),
+        available: () => Math.max(stock.vellum - upkeepOwed, 0),
         consume: (amount: Fixed) => {
-          materials -= amount;
+          stock.vellum -= amount;
           materialsScribed += amount;
         },
       };
@@ -614,7 +752,10 @@ export function worldSystem(
       const work = spendTheMonth(state, gatewayFor(), deps, worldTick, capital, rateClamps);
 
       // ---- 6. Autonomy -------------------------------------------------------
-      const stockAtDecisionTime = materials;
+      // What a mage believes the treasury holds when she chooses a goal. Every
+      // kind summed, because a goal is scored against "can this universe afford
+      // to do things", not against a particular shelf.
+      const stockAtDecisionTime = totalAmount(stock);
       const gateway = gatewayFor();
       // One scan of the shelves for the whole phase, not one per mage. See
       // `universityPreference`.
@@ -682,13 +823,17 @@ export function worldSystem(
           : Math.min(
               FP_UNIT,
               floorDiv(
-                Math.max(0, subsistenceThisTick - Math.max(0, materials)) * FP_UNIT,
+                Math.max(0, subsistenceThisTick - Math.max(0, stock.food)) * FP_UNIT,
                 subsistenceThisTick,
               ),
             );
       const capacity = carryingCapacity({
         territory: deps.territory,
-        materials,
+        // Food, not the three kinds summed. `carrying-capacity.ts` says why: a
+        // country holds more people because there is more to eat, and a heap of
+        // quarried stone should raise what a universe can build rather than
+        // what it can feed.
+        food: stock.food,
         completedCapacity: completedCapacity(state),
         subsistenceShortfallShare,
       });
@@ -699,8 +844,27 @@ export function worldSystem(
         deps,
       });
 
+      // ---- 8a. Construction ---------------------------------------------------
+      // Laborers raise buildings, and until this phase existed they did not.
+      // `advanceConstruction` shipped in `rules-world` with **no caller outside
+      // its own tests** — the Monte Carlo harness recorded the consequence as
+      // *"universities-are-founded-and-never-finished"* — so `build-rate` had no
+      // consumer at all and the god's `fundUniversity` was the only thing that
+      // could ever finish a site.
+      //
+      // The god's flat funding is untouched and still applies. What is added is
+      // the ordinary path: person-months of laborer time, paid for in **stone**,
+      // multiplied by whatever `build-rate` magic the universe knows.
+      const construction = advanceUniversities(state, {
+        stone: stock.stone,
+        deps,
+        crew: labour.crew,
+        buildRateBonuses: economy.buildRate,
+        counters: rateClamps,
+      });
+
       // ---- 9. Consumption, then the invariant ---------------------------------
-      const consumption = consumeMaterials(materials, {
+      const consumption = consumeMaterials(stock, {
         subsistence: subsistenceDemand(cohorts.totalCount()),
         // Brake 4, charged once. The same figure the work phase reserved out of
         // the scribes' stock at the top of the tick, so the priority order is
@@ -710,11 +874,14 @@ export function worldSystem(
         // Charging it twice is the obvious mistake here; the tick's spend is
         // reported as `materialsScribed` rather than hidden.
         scribing: 0,
-        construction: 0,
+        // Charged here rather than deducted in phase 8a, for the reason
+        // `advanceConstruction`'s own header gives: the stocks have one writer,
+        // and a phase that reached for `stock.stone` itself would be the second.
+        construction: construction.stoneOwed,
       });
-      materials = consumption.materialsRemaining;
-      assertMaterialsNonNegative(materials);
-      componentOf(state, UNIVERSE).set(universe, 'materials', materials);
+      const closing = consumption.remaining;
+      assertMaterialsNonNegative(closing);
+      writeMaterialStock(state, universe, closing);
 
       // The shortfall, apportioned per library and settled in ascending handle
       // order — `applyLibraryUpkeep`'s documented order, and the reason it is
@@ -729,8 +896,18 @@ export function worldSystem(
 
       onReport?.({
         worldTick,
-        materialsProduced: produced,
-        materialsRemaining: materials,
+        materialsProduced: totalAmount(produced),
+        materialsRemaining: totalAmount(closing),
+        producedByKind: produced,
+        remainingByKind: closing,
+        shortKinds: consumption.shortKinds,
+        economicNodes: economy.contributingNodes,
+        buildRateSources: economy.buildRate.length,
+        buildRateMagnitudes: economy.buildRate,
+        buildProgressAdded: construction.progressAdded,
+        universitiesCompleted: construction.completed,
+        constructionStoneOwed: construction.stoneOwed,
+        constructionStonePaid: consumption.spent.construction,
         carryingCapacity: capacity,
         mageDeaths: mortality.deaths,
         magesPromoted: promoted,
@@ -774,20 +951,275 @@ export function worldSystem(
  * a universe holds several species, so an average would let one able cohort
  * raise the output of every other.
  */
-function produceMaterials(cohorts: CohortStore, deps: WorldStepDeps): Fixed {
-  let produced = 0;
-  cohorts.forEach((_handle, key, count) => {
+function produceMaterials(
+  cohorts: CohortStore,
+  deps: WorldStepDeps,
+  economy: UniverseEconomyBonuses,
+  onSites: ReadonlyMap<EntityHandle, number>,
+): MaterialAmounts {
+  const produced = zeroAmounts();
+  cohorts.forEach((handle, key, count) => {
     if (key.occupation !== OCCUPATION.laborer) return;
     const species = deps.speciesOf(key.speciesId);
     if (species === undefined) return;
-    produced += materialsProduced({
-      laborerCount: count,
+    // Labour is exclusive. A laborer on a building site is not also in a field
+    // this month, and letting her be both would make founding a university free
+    // — which is the shape of bug that reads as a balance problem for a year.
+    const inFields = Math.max(0, count - (onSites.get(handle) ?? 0));
+    if (inFields === 0) return;
+    const share = materialsProduced({
+      laborerCount: inFields,
       laborAffinity: species.laborAffinity,
+      shares: deps.yieldShares,
       resourceYield: deps.primitives.resourceYield,
-      resourceYieldBonuses: [],
+      resourceYieldBonuses: economy.resourceYield,
+      ...(deps.ablation === undefined ? {} : { ablation: deps.ablation }),
     });
+    for (const kind of MATERIAL_KINDS) produced[kind] += share[kind];
   });
   return produced;
+}
+
+/**
+ * Which laborers stand on a building site this tick, and how many.
+ *
+ * ## Why the plan is made before production rather than after
+ *
+ * Production runs in phase 1 and construction in phase 8a, and labour is
+ * exclusive between them, so the split has to be decided before either spends
+ * it. Deciding it here — from the construction backlog and the laborer
+ * headcount, both of which are settled at the top of the tick — is what lets
+ * phase 1 subtract and phase 8a add without either reading the other's result.
+ *
+ * ## Ascending cohort handle, and no average anywhere
+ *
+ * Sites are filled from the laborer cohorts in **ascending handle order**,
+ * which is a total order over stable identities rather than over whatever
+ * sequence a scan happened to produce. Each cohort then builds at its **own**
+ * `laborAffinity`: `materials.ts` rejects averaging across cohorts by name —
+ * *"an average would let one high-affinity cohort raise the output of every
+ * other"* — and building is the same question wearing different clothes. A
+ * universe whose orcs do the building really does build faster than one whose
+ * elves do.
+ *
+ * ## The crew carries its own affinity, and a stale handle is why
+ *
+ * The plan is made in phase 1 and spent in phase 8a, and the **populace phase
+ * runs in between**: cohorts lose members, empty ones are destroyed, and their
+ * slots go back on the free list. A plan that stored only handles and looked the
+ * species up later therefore read a handle whose generation had moved, and the
+ * entity store refused it — `StaleHandleError` inside `CohortStore.keyOf`, on
+ * the archivist strategy, five runs out of thirty-two in the ascension sweep,
+ * every one of them at tick zero of its own accounting.
+ *
+ * That is a good failure and a lucky one: the store's generation check turned a
+ * would-be silent misattribution — one species' laborers building at another
+ * species' affinity — into a loud refusal. The fix is to resolve everything the
+ * construction phase needs **while the handles are still valid**, so the crew
+ * that leaves phase 1 is a list of person-months and affinities and holds no
+ * reference to a cohort at all.
+ *
+ * @returns `onSites` for the production phase, which runs immediately and may
+ * still key on handles, and `crew` for the construction phase, which may not.
+ */
+function planConstructionLabour(
+  state: SimState,
+  cohorts: CohortStore,
+  stone: Fixed,
+  deps: WorldStepDeps,
+): {
+  readonly onSites: ReadonlyMap<EntityHandle, number>;
+  readonly crew: readonly { readonly affinity: Fixed; months: number }[];
+  readonly total: number;
+} {
+  const backlog = constructionBacklog(state);
+  const onSites = new Map<EntityHandle, number>();
+  const crew: { readonly affinity: Fixed; months: number }[] = [];
+  if (backlog <= 0) return { onSites, crew, total: 0 };
+
+  // Rounded **up**, and this is not a rounding preference. Flooring here is a
+  // Zeno stall with a work crew: `LABORERS_PER_BUILD_UNIT` is forty laborers per
+  // whole university, so a site with 22 `fp` of work left asks for
+  // `floor(22 × 40 / 1024)` = **zero** people and stops forever, two per cent
+  // short, with materials in the barn and laborers idle. Measured: the probe in
+  // `tools/w29` froze every site at 1002 of 1024 and reported no completions in
+  // 200 ticks. Rounding up means any backlog at all summons at least one person,
+  // which is both the arithmetic fix and the sentence a reader would expect.
+  // Integer ceil-div, not `Math.ceil(a / b)`. Division by 1024 is exact in a
+  // double and that is not the point: `CLAUDE.md` forbids floating-point
+  // arithmetic in the rules path categorically, because the constraint is only
+  // worth anything if nobody has to audit which divisions happen to be safe.
+  //
+  // And bounded by what the stone can pay for, which is the difference between
+  // a famine somebody chose and a waste nobody did. Labour is exclusive: a
+  // laborer on a site is not in a field. Sizing the crew from the backlog alone
+  // would send the whole workforce to stand at sites there is no stone to build,
+  // producing neither buildings nor food — the one arrangement with nothing to
+  // recommend it. `advanceConstruction` already computes exactly this bound for
+  // itself (`affordableMonths`); applying it before anyone leaves the field is
+  // the same rule asked one step earlier, where it can still change an answer.
+  //
+  // What this deliberately does **not** do is cap the share of the workforce a
+  // god may divert. Measured with `tools/w29/over-founding.mjs`: founding a
+  // hundred sites at once takes food production to exactly **zero** for as long
+  // as they are building, and finishes eighty-four of them in a hundred and
+  // fifty months. That is a real decision with a real cost, and inventing a cap
+  // would be this file deciding how much rope a player gets. It is raised as an
+  // author question instead.
+  let wanted = Math.min(
+    floorDiv(backlog * LABORERS_PER_BUILD_UNIT + FP_UNIT - 1, FP_UNIT),
+    floorDiv(Math.max(0, stone), MATERIALS_PER_LABOR_MONTH),
+  );
+  if (wanted <= 0) return { onSites, crew, total: 0 };
+
+  let total = 0;
+  const laborers: { handle: EntityHandle; count: number; affinity: Fixed }[] = [];
+  cohorts.forEach((handle, key, count) => {
+    if (key.occupation !== OCCUPATION.laborer || count <= 0) return;
+    const species = deps.speciesOf(key.speciesId);
+    if (species === undefined) return;
+    laborers.push({ handle, count, affinity: species.laborAffinity });
+  });
+  // Ascending handle: a total order over stable identities, rather than over
+  // whatever sequence a scan happened to produce.
+  laborers.sort((a, b) => a.handle - b.handle);
+
+  for (const cohort of laborers) {
+    if (wanted <= 0) break;
+    const taken = Math.min(cohort.count, wanted);
+    onSites.set(cohort.handle, taken);
+    crew.push({ affinity: cohort.affinity, months: taken });
+    wanted -= taken;
+    total += taken;
+  }
+  return { onSites, crew, total };
+}
+
+/** What one tick of building did, across every unfinished site. */
+interface ConstructionPhase {
+  /** `buildProgress` added this tick, `fp`. */
+  readonly progressAdded: Fixed;
+  /** Sites finished by this labour. Excludes any the god funded to completion. */
+  readonly completed: number;
+  /** Stone the work cost, `fp`. Settled by `consumeMaterials`, not deducted here. */
+  readonly stoneOwed: Fixed;
+  /** Person-months that went unspent for want of stone. */
+  readonly labourStalled: number;
+}
+
+interface ConstructionInputs {
+  readonly stone: Fixed;
+  readonly deps: WorldStepDeps;
+  /**
+   * Person-months and the affinity they work at, resolved in phase 1.
+   *
+   * Deliberately not cohort handles. See {@link planConstructionLabour}: the
+   * populace phase runs between the plan and this, so a handle held across it
+   * may name a destroyed cohort.
+   */
+  readonly crew: readonly { readonly affinity: Fixed; months: number }[];
+  readonly buildRateBonuses: readonly Fixed[];
+  readonly counters: ClampCounters;
+}
+
+/**
+ * Advances every unfinished university by one tick of laborer time.
+ *
+ * Sites are walked in **ascending university handle** and cohorts in ascending
+ * cohort handle, for the reason `applyLibraryUpkeep` walks libraries that way:
+ * which site goes short is a question about a shared stock, and answering it in
+ * whatever order a scan produced would make the answer depend on the history
+ * that reached the state rather than on the state.
+ *
+ * The stone budget is spent down as it is committed, so the *first* site is the
+ * one that gets built when there is not enough for all of them. That is a
+ * decision and not an accident: spreading a shortage evenly would leave every
+ * site permanently unfinished, which is the failure mode
+ * `universities-are-founded-and-never-finished` already recorded from the other
+ * direction.
+ */
+function advanceUniversities(state: SimState, input: ConstructionInputs): ConstructionPhase {
+  let progressAdded = 0;
+  let completed = 0;
+  let stoneOwed = 0;
+  let labourStalled = 0;
+  let budget = Math.max(0, input.stone);
+
+  // A working copy: the phase spends `months` down, and the plan it was handed
+  // belongs to the caller.
+  const assignments = input.crew.map((entry) => ({ affinity: entry.affinity, months: entry.months }));
+  if (assignments.length === 0) {
+    return { progressAdded: 0, completed: 0, stoneOwed: 0, labourStalled: 0 };
+  }
+
+  const sites = [...collectRecords(state, UNIVERSITY)]
+    .filter(({ row }) => row.buildProgress < FP_UNIT)
+    .sort((a, b) => a.handle - b.handle);
+
+  const store = componentOf(state, UNIVERSITY);
+  for (const site of sites) {
+    for (const assignment of assignments) {
+      if (assignment.months <= 0) continue;
+      const outcome = advanceConstruction(site.row, {
+        laborMonths: assignment.months,
+        laborAffinity: assignment.affinity,
+        materials: budget,
+        buildRate: input.deps.primitives.buildRate,
+        buildRateBonuses: input.buildRateBonuses,
+        counters: input.counters,
+        ...(input.deps.ablation === undefined ? {} : { ablation: input.deps.ablation }),
+      });
+      progressAdded += outcome.progressAdded;
+      stoneOwed += outcome.materialsSpent;
+      budget -= outcome.materialsSpent;
+      labourStalled += outcome.labourStalled;
+      // Person-months the site could not use are returned to the pool for the
+      // next site rather than burned, which is what makes a surplus of laborers
+      // finish two universities in a tick instead of one and a half.
+      assignment.months = outcome.labourStalled + outcome.labourSurplus;
+      if (outcome.completed) {
+        completed += 1;
+        break;
+      }
+    }
+    store.set(site.handle, 'buildProgress', site.row.buildProgress);
+  }
+
+  return { progressAdded, completed, stoneOwed, labourStalled };
+}
+
+/** The universe's three stocks, or zeros if no row has been written yet. */
+function readMaterialStock(state: SimState, universe: EntityHandle): MaterialAmounts {
+  const store = componentOf(state, MATERIAL_STOCK);
+  if (!store.has(universe)) return { food: 0, stone: 0, vellum: 0 };
+  return {
+    food: store.get(universe, 'food'),
+    stone: store.get(universe, 'stone'),
+    vellum: store.get(universe, 'vellum'),
+  };
+}
+
+/**
+ * Writes the three stocks back, creating the row on first use.
+ *
+ * Lazy creation rather than a row seeded at world build, for the reason
+ * `god-state` is lazy: a universe that has never been stepped has no economy to
+ * record, and a row of zeros is indistinguishable from a universe that spent
+ * everything.
+ */
+function writeMaterialStock(
+  state: SimState,
+  universe: EntityHandle,
+  stock: MaterialAmounts,
+): void {
+  const store = componentOf(state, MATERIAL_STOCK);
+  if (!store.has(universe)) {
+    attachRecord(state, MATERIAL_STOCK, universe, stock);
+    return;
+  }
+  store.set(universe, 'food', stock.food);
+  store.set(universe, 'stone', stock.stone);
+  store.set(universe, 'vellum', stock.vellum);
 }
 
 interface MortalityPhase {

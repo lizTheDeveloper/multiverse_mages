@@ -47,6 +47,7 @@
 
 import type { ContentId, ContentRegistry } from '@mm/content';
 import type { Fixed, SimState } from '@mm/sim-core';
+import { NULL_ENTITY } from '@mm/sim-core';
 import type { Handle, RaidSideValue, Ruleset } from '@mm/state';
 import { COMBATANT_SOURCE_KIND, MAGE, RAID_SIDE, collectRecords, permits } from '@mm/state';
 import type { MagicGrid } from '@mm/rules-magic';
@@ -183,7 +184,7 @@ export function deployRaid(raid: Raid): void {
         raid.host.world,
         (library) => raid.host.knowledge.instancesAt(3, library),
         (instance) => raid.host.knowledge.read(instance).nodeId,
-        { handle: archmage?.handle ?? 0, tier: archmage?.deepestTier ?? 0 },
+        { handle: archmage?.handle ?? NULL_ENTITY, tier: archmage?.deepestTier ?? 0 },
         raid.grid,
       ),
       raid.tuning,

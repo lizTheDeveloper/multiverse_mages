@@ -50,6 +50,11 @@ export default defineConfig({
       // go through this table at all — it speaks the wire to a spawned process,
       // which is the boundary the package exists to be.
       '@mm/gym-bridge': packageSrc('gym-bridge'),
+      // The authoritative server. Its own tests import it by name; the agent
+      // processes its end-to-end test spawns do not go through this table at
+      // all — they speak the wire to a socket, which is the boundary the
+      // package exists to be.
+      '@mm/server': packageSrc('server'),
     },
   },
   test: {

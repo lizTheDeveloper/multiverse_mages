@@ -71,10 +71,10 @@ const COMMITTED_PINS: DefinitionPins = {
     definitionVersion: 1,
     digest: '65f18d4984a02fb786917f86f51892d0c458a3d57f5f819c1e9f8305f692a4ca',
   },
-  // Bumped to 2 by agent-interface task group 10. `carryForwardMax` used to be
-  // `null` — the statement that nobody had chosen a magnitude — and is now
-  // PRESTIGE_CAP out of loaded content. The arithmetic is unchanged; what the
-  // collector is allowed to run against is not.
+  lossShockRecovery: {
+    definitionVersion: 1,
+    digest: '76340c1f6e15c834c63a6f369ce1dabd84015233941a3206e3b48d262554caee',
+  },
   prestigeAdvantage: {
     definitionVersion: 2,
     digest: '87609d4538435b4b3410b41b89622ef5cde7e54520ec813f4ae9b3514bf871e2',
@@ -87,24 +87,26 @@ const COMMITTED_PINS: DefinitionPins = {
     definitionVersion: 1,
     digest: '312340d88bf5dad245acc5c09e09a5607d126316d068a732039c2242e1b5f54b',
   },
+  roleAssignmentDemographicCost: {
+    definitionVersion: 1,
+    digest: 'ffc68286151c84955578f99968bca6921cbab6bb51c6f048ac5898bd77cc3a84',
+  },
+  speciesCellOccupancy: {
+    definitionVersion: 1,
+    digest: '4a38c1e1ac75bf34317cc2bc0c0cb699dba03d739c82f5754e879f8759dfa39a',
+  },
+  speciesGridVersatility: {
+    definitionVersion: 1,
+    digest: 'a7903901cf08d9221732d6d2f56907b27badb346e587f2ce5d3fd4d093598eac',
+  },
   timeToTierBySpecies: {
     definitionVersion: 1,
     digest: 'af19e7a8c52842476c0ee43d9222d891f079b368327d4b9f4c56286a69b84951',
   },
-  // Bumped to 2 by task group 7. The metric was a placeholder that could only
-  // report `mechanic-absent`; it is now an interval-gated estimate with a
-  // pinned z, a stated no-detected-effect rule and a named `not-attributable`
-  // exclusion. Same name, different quantity — which is exactly what a
-  // definitionVersion is for.
   winRateByPrimitive: {
     definitionVersion: 2,
     digest: '52943601b98d6ff400c8965f8fe1492977c6cc6620a98c8e44bb4d32ddc197f1',
   },
-  // Bumped to 2 by `god-agency` task 7.2. The quantity is now named as the
-  // god's favor-ledger regeneration rather than the looser "favor regen", and
-  // the three saturated worship source classes are reported with it — a
-  // coefficient over 0.35 says inequality is growing and says nothing about
-  // which class produced it, and the retunes differ.
   worshipSnowball: {
     definitionVersion: 2,
     digest: 'a33987823d4d24af4c9444fb89984ee5131c4498ddb8dcc2d26378437ca67ec9',

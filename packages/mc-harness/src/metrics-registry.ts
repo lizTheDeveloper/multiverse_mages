@@ -69,6 +69,15 @@ import {
   collectWinRateByPrimitive,
   collectWorshipSnowball,
 } from './metrics-collectors.js';
+import {
+  RECOVERY_FRACTION,
+  VERSATILITY_HEGEMONY_FRACTION,
+  collectLossShockRecovery,
+  collectRoleAssignmentDemographicCost,
+  OCCUPANCY_DEFINITION,
+  collectSpeciesCellOccupancy,
+  collectSpeciesGridVersatility,
+} from './metrics-species-health.js';
 import type { ArmTelemetry, RunTelemetry } from './metrics-telemetry.js';
 
 /** The full registry entry for one §7 metric. */
@@ -90,6 +99,26 @@ export interface BalanceMetricDefinition extends MetricDefinition {
   readonly pinnedConstants: Readonly<Record<string, JsonValue>>;
   /** The capability that owns the *threshold*, per §7's ownership split. */
   readonly thresholdOwner: string;
+  /**
+   * The observation that would show this metric is measuring the wrong thing.
+   *
+   * `docs/design/invariants.md` has carried a *"Disproved by"* column since
+   * 0.2.0 and this registry has not, which a prior audit called out. The gap
+   * matters more here than there: an invariant that fails goes red, while a
+   * metric that is measuring the wrong quantity stays green and keeps
+   * publishing a number. Four have — `libraryDependence` pinned at 0,
+   * `capitalSnowball`'s byte-identical checkpoints, `referenceLibraryDepth` at
+   * 1.00, and a coverage gate counting primitives nothing consumed — and in
+   * every case the disproof was cheap and nobody had written down what it was.
+   *
+   * A sentence naming a *specific observation*, not "if it looks wrong". It is
+   * deliberately **not** part of {@link definitionDigest}: a sharper disproof
+   * for the same quantity is an improvement, and forcing it through a
+   * `definitionVersion` bump would make it look like the metric changed.
+   * `metrics-registry.test.ts` guards it instead, by requiring one on every
+   * entry.
+   */
+  readonly disprovedBy: string;
 }
 
 /** {@link MetricRegistry}, plus access to the full definitions. */
@@ -99,7 +128,8 @@ export interface BalanceMetricRegistry extends MetricRegistry {
 }
 
 /**
- * The twelve metrics of `contracts.md` §7.
+ * The metrics of `contracts.md` §7 — the original twelve, plus the three
+ * species measurements `mages-and-species` added.
  *
  * Ordered as §7 tabulates them, so a reader can hold the two side by side. The
  * registry sorts ids for every canonical purpose; this array is for humans.
@@ -129,6 +159,10 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       notAttributablePrimitives: Object.keys(NOT_ATTRIBUTABLE_PRIMITIVES).sort(),
     },
     thresholdOwner: 'raid-engagement',
+    disprovedBy:
+      'A control arm and an ablation arm producing byte-identical run records — the ' +
+      'neutralization did not reach the simulation, and every interval would then be centred on ' +
+      '0.5 for a reason that has nothing to do with the primitive.',
   },
   {
     id: 'timeToTierBySpecies',
@@ -151,6 +185,10 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       locationKind: 'mind',
     },
     thresholdOwner: 'mages-and-species',
+    disprovedBy:
+      'Two species with materially different learnRate and depthCeiling reporting the same ' +
+      'first-reach tick across seeds, which would mean the measurement is reading a tick the ' +
+      'species traits do not gate.',
   },
   {
     id: 'knowledgeHalfLife',
@@ -173,6 +211,9 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       cohorts: 'pooled',
     },
     thresholdOwner: 'knowledge-model',
+    disprovedBy:
+      'A run in which nodes are observed being lost while the estimate stays at the censoring ' +
+      'bound — the census would be sampling a quantity the loss path does not move.',
   },
   {
     id: 'libraryDependence',
@@ -191,6 +232,9 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       excludeEmptyUniverseSamples: true,
     },
     thresholdOwner: 'knowledge-model',
+    disprovedBy:
+      'The fraction sitting at exactly 0 across every census of a run that demonstrably holds ' +
+      'single-instance nodes. It has done exactly this, which is why the sentence is here.',
   },
   {
     id: 'worshipSnowball',
@@ -217,6 +261,9 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       perClassContributions: ['mages', 'universities', 'populace'],
     },
     thresholdOwner: 'god-agency',
+    disprovedBy:
+      'Checkpoints whose Gini is identical across arms with different worship inputs, or a ' +
+      'coefficient that does not move when a single universe is handed a large favor advantage.',
   },
   {
     id: 'capitalSnowball',
@@ -238,6 +285,10 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       scalarCheckpoint: 'last checkpoint with a sample',
     },
     thresholdOwner: 'god-agency',
+    disprovedBy:
+      'Byte-identical checkpoint samples across runs with different library outcomes. Observed ' +
+      'once already: identical checkpoints mean the quantity is not being read from the ' +
+      'libraries.',
   },
   {
     id: 'raidLengthDistribution',
@@ -257,6 +308,9 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       scalar: 'p50',
     },
     thresholdOwner: 'raid-engagement',
+    disprovedBy:
+      'Any raid landing in the overflow bin, which contradicts §1.6\'s termination proof rather ' +
+      'than describing a long tail.',
   },
   {
     id: 'ascensionRate',
@@ -276,6 +330,9 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       targetBandMax: 0.2,
     },
     thresholdOwner: 'god-agency',
+    disprovedBy:
+      'A rate that stays inside the 5-20% band while the denominator excludes truncated runs — ' +
+      'the band would then be an artefact of selecting on the outcome being measured.',
   },
   {
     id: 'prestigeAdvantage',
@@ -300,6 +357,9 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       thresholdMax: 0.6,
     },
     thresholdOwner: 'god-agency',
+    disprovedBy:
+      'A win rate at exactly 0.5 across mirrored pairs whose seeded prestige differs, which ' +
+      'would mean the carry-forward is not reaching the seeded universe.',
   },
   {
     id: 'illegalActionRate',
@@ -319,6 +379,9 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       strategyAttribution: 'even split across the run slots',
     },
     thresholdOwner: 'agent-interface',
+    disprovedBy:
+      'The collector\'s numerator disagreeing with agent-api\'s own rejection counter, which ' +
+      'would mean somebody has started recounting.',
   },
   {
     id: 'inboundRaidTempoLoss',
@@ -332,6 +395,9 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
     definitionVersion: 1,
     pinnedConstants: { denominator: 'elapsed world ticks of this run' },
     thresholdOwner: 'raid-engagement',
+    disprovedBy:
+      'Frozen world ticks reported for a universe that was never a defender, or a fraction ' +
+      'above 1.',
   },
   {
     id: 'raidInitiationCost',
@@ -345,6 +411,139 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
     definitionVersion: 1,
     pinnedConstants: { denominator: 'raids initiated' },
     thresholdOwner: 'raid-engagement',
+    disprovedBy:
+      'A non-zero cost reported by a run that initiated no raid, which would mean the ' +
+      'denominator is not raids initiated.',
+  },
+  {
+    id: 'speciesGridVersatility',
+    definition:
+      'Per species, the count of grid cells it can staff with a qualified researcher, over the ' +
+      'full seventy and over the cells the ruleset permits, reported separately. A cell is ' +
+      'staffable when some node in it is reachable within the species depthCeiling over the ' +
+      'global transitive prerequisite closure. The per-run scalar is the highest per-species ' +
+      'staffable fraction over the full grid — a maximum, because the failure mode is one species ' +
+      'that can do everything and a mean would average it against five that cannot. Cells whose ' +
+      'deepest node the species can reach, and the world ticks it keeps a fully-mastered node ' +
+      'above the teach threshold, accompany it.',
+    scope: METRIC_SCOPE.perRun,
+    collectRun: collectSpeciesGridVersatility,
+    aggregation: 'max',
+    unit: 'fraction of grid cells staffable',
+    definitionVersion: 1,
+    pinnedConstants: {
+      hegemonyFraction: VERSATILITY_HEGEMONY_FRACTION,
+      staffableRule: 'some node in the cell reachable within depthCeiling',
+      closureScope: 'global transitive prerequisite closure over the whole catalogue',
+      depthComparison: 'node.tier > depthCeiling refuses, mirroring the gateway',
+      scalar: 'maximum per-species staffable fraction over the full grid',
+      enabledDenominator: 'cells permits() accepts, never a hardcoded twelve',
+      teachableWindowRule:
+        'floor((MASTERY_MAX - DEFAULT_TEACH_THRESHOLD) / masteryDecayPerTick(retention))',
+    },
+    thresholdOwner: 'mages-and-species',
+    disprovedBy:
+      'A species this metric scores as unable to staff a cell, observed holding a mind instance ' +
+      'of a node in that cell during any run. The predicted-staffable set must be a superset of ' +
+      'the observed-staffed set, and one counterexample means the gates are wrong. The weaker ' +
+      'reading is disproved too: if every species scores 70/70 forever the metric is measuring ' +
+      'the grid rather than the species, and the teachable window beside it is where the ' +
+      'separation actually lives.',
+  },
+  {
+    id: 'speciesCellOccupancy',
+    definition:
+      'Per species, the count of grid cells it actually occupies at run end — a cell is occupied ' +
+      'when a living mage of that species holds a knowledge instance of some node in it, in a ' +
+      'mind — reported over the full seventy and over the cells the ruleset permits. The per-run ' +
+      'scalar is the Gini coefficient over those per-species counts, so that "one species can ' +
+      'staff everything" is a number: 0 is an even spread and a rising value is a roster ' +
+      'collapsing onto one species. Living mages and distinct nodes held accompany each count, ' +
+      'so a zero can be read as "none alive" rather than as incapacity.',
+    scope: METRIC_SCOPE.perRun,
+    collectRun: collectSpeciesCellOccupancy,
+    // Max, not mean: the failure this guards against is a single run in which
+    // occupancy has collapsed onto one species, and averaging it against runs
+    // that stayed even is the arithmetic that would hide it.
+    aggregation: 'max',
+    unit: 'Gini coefficient over per-species occupied-cell counts',
+    definitionVersion: 1,
+    pinnedConstants: {
+      occupancyRule: OCCUPANCY_DEFINITION,
+      locationKinds: 'mind only; library and grimoire copies are excluded',
+      livingOnly: true,
+      scalar: 'Gini over per-species occupied-cell counts, the shared metrics-gini estimator',
+      enabledDenominator: 'cells permits() accepts, never a hardcoded twelve',
+      readingTick: 'run end',
+      assertsNoTarget:
+        'all six species are tuningStatus untuned; this metric measures the spread, it does not ' +
+        'declare what the spread should be, and no gate reads it',
+    },
+    thresholdOwner: 'mages-and-species',
+    disprovedBy:
+      'A species this metric scores as occupying a cell that `speciesGridVersatility` scores as ' +
+      'unstaffable by that species. The two are capability and outcome over one grid, and ' +
+      'versatility\'s own falsification test is stated over exactly this observation: the ' +
+      'predicted-staffable set must be a superset of the observed-occupied set. The weaker ' +
+      'reading is disproved too — if this reads a flat zero on every run whose species are alive ' +
+      'and holding nodes, it is counting something other than cells.',
+  },
+  {
+    id: 'lossShockRecovery',
+    definition:
+      'World ticks a species roster takes to return to its pre-shock headcount after a ' +
+      'deterministic cull of a fixed fraction of living mages at a fixed world tick, per species, ' +
+      'right-censored at run termination. The per-run scalar is the maximum over species that ' +
+      'recovered — the slowest species determines whether a loss compounds across an era — with ' +
+      'censored species named alongside, and with the nodes held before the shock and never ' +
+      'regained reported per species beside the headcount.',
+    scope: METRIC_SCOPE.perRun,
+    collectRun: collectLossShockRecovery,
+    aggregation: 'max',
+    unit: 'world ticks to regain the pre-shock roster',
+    definitionVersion: 1,
+    pinnedConstants: {
+      recoveryFraction: RECOVERY_FRACTION,
+      selectionRule: 'every k-th living mage by ascending entity handle, no RNG draw',
+      censoring: 'right-censored at run termination',
+      unshockedRunReports: 'no-observations, never 0',
+      knowledgeRecovery: 'distinct nodes held in a mind by a living mage of the species',
+    },
+    thresholdOwner: 'mages-and-species',
+    disprovedBy:
+      'Two species whose per-member mage-production rate and maturity lag differ by two orders of ' +
+      'magnitude reporting the same recovery time. Content puts orc at roughly 340x draconic once ' +
+      'fertility, mageAptitude and maturityMonths are composed, so equal recovery times would ' +
+      'mean the measurement is not reading the pipeline that regrows a roster.',
+  },
+  {
+    id: 'roleAssignmentDemographicCost',
+    definition:
+      'The largest fall in any species share of the mage roster at run end, at fp scale, in an ' +
+      'arm that assigned long-lived species to lossy roles against a paired arm sharing run seeds ' +
+      'that assigned none. Positive means role assignment consumed a species. Reported ' +
+      'mechanic-absent when the build has no raid engagement, because role assignment reaches ' +
+      'mortality only through combatant eligibility; no-observations when no role was assigned; ' +
+      'and a measured zero only when roles were assigned, raids were fought, and the share did ' +
+      'not move.',
+    scope: METRIC_SCOPE.perRun,
+    collectRun: collectRoleAssignmentDemographicCost,
+    aggregation: 'max',
+    unit: 'fp share of the mage roster',
+    definitionVersion: 1,
+    pinnedConstants: {
+      paired: true,
+      lossyRoleRule: 'RAIDING_ROLES, which is {raider} — the only role that raises death risk',
+      mortalityPathway: 'raid combatant eligibility; roleId does not enter the mortality hazard',
+      scalar: 'largest per-species fall against the control, fp scale',
+      absentMechanic: 'raidEngagement',
+    },
+    thresholdOwner: 'mages-and-species',
+    disprovedBy:
+      'A measured non-zero cost in a build whose mortality hazard has no role term and whose ' +
+      'raids never deployed — that would mean the difference is coming from seed divergence ' +
+      'between the arms rather than from the assignment. The pairing is what makes that ' +
+      'checkable: identical seeds with no assignments must difference to exactly zero.',
   },
 ]);
 

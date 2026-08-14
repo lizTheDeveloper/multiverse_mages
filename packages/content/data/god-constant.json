@@ -283,7 +283,42 @@
     "id": "ascension-loss-max",
     "value": 2,
     "unit": "count",
-    "gloss": "Nodes that may leave the universe during a passing era. Three losses ends the run of good eras.",
+    "gloss": "Nodes that may leave the universe during a passing era, as a floor. The scale-relative allowance in ascension-loss-fraction takes over once the canon is large enough for a share of it to exceed this.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ascension-summit-cells",
+    "value": 13,
+    "unit": "count",
+    "gloss": "Permitted cells that must stand at their floor for Path A — deepest node held by a living mage. §8a's summit is 'the deepest node of a cell'; this is how many at once, and it is the conjunct that reads play. Calibrated, not guessed: the v1 rectangle is twelve cells and an unattended universe masters all twelve, so the tuner measures 12 infeasible (exploit −0.542) and 13 feasible (+0.167) — the first value needing an axis the universe did not start with. Set to 1 to recover the shipped rule.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ascension-summit-copies",
+    "value": 2,
+    "unit": "count",
+    "gloss": "Surviving instances a mastered cell's deepest node needs. Two is the shipped value, promoted from a literal in the rules to data: by construction only one mage has ever held a cell's deepest node, so a second copy is what makes teaching or scribing a necessary step rather than a nicety. Raise it once redundancy costs something.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ascension-canon-breadth",
+    "value": 77,
+    "unit": "count",
+    "gloss": "Nodes a passing era boundary must hold — the 'knowledge' in §8a's 'held its knowledge intact across enough eras'. Before this the predicate asked only that nothing had gone wrong, so a universe nobody touches was a perfect custodian. Anchored to the passive baseline: the v1 rectangle holds exactly 51 nodes and an unattended universe learns all 51, so 51 is content exhaustion. 77 is 1.5x it. A count, not a fraction of the graph, so the summit cannot recede as content grows.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ascension-canon-cells",
+    "value": 18,
+    "unit": "count",
+    "gloss": "Distinct cells a passing era boundary must hold at least one node in. The spread half of 'its knowledge': a canon of the right size crammed into three cells is depth, and Path A already rewards depth. Anchored to the same passive baseline of twelve cells, at the same 1.5x. Set it to 0 to recover the predicate exactly as it shipped.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ascension-loss-fraction",
+    "value": 51,
+    "unit": "fp",
+    "gloss": "Share of the canon a passing era may lose — 5% — floored by ascension-loss-max. An absolute cap over a quantity that scales measures scale rather than custodianship: measured on this build, a passive universe holds 51 nodes and loses none while a broad one holds 220 and loses seven, so a flat allowance of two disqualified the civilization that was doing something and waved through the one in stasis. Set it to 0 to recover the predicate exactly as it shipped.",
     "tuningStatus": "untuned"
   },
   {
@@ -445,6 +480,27 @@
     "value": 72,
     "unit": "count",
     "gloss": "Placeholder for the median unaided universe's headcount at the reference tick — the reference scenario's founding population, which the first sweep replaces with a measured median.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "founding-grant-budget-start",
+    "value": 4096,
+    "unit": "count",
+    "gloss": "Founding grants a god may make before the universe has discovered anything. 4096 is unreachable — the grid holds 300 nodes and only prerequisite-free ones in permitted cells are grantable — so at this build no budget is in force and action 8 behaves exactly as it always has. The number is deliberately inert: the balance sweep varies it per arm through the scenario, and the value that ships here changes only once a curve says which one to ship.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "founding-grant-accrual-nodes",
+    "value": 8,
+    "unit": "count",
+    "gloss": "Nodes the mages discovered for themselves that earn one further grant. The god buys the right to seed again by the universe demonstrating it can grow unaided. 0 would mean a fixed allowance and no accrual at all, which is a legitimate arm of the experiment rather than a disabled feature. Moved by whichever budget arm separates permit-then-idle from permissive-breadth.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "founding-grant-budget-cap",
+    "value": 4096,
+    "unit": "count",
+    "gloss": "Ceiling on grants ever authorized — starting allowance plus everything accrued. A ceiling on what may be granted, never on what is held, so a frugal god keeps earning and a spent one is not refunded. Unreachable at this build for the same reason the starting allowance is.",
     "tuningStatus": "untuned"
   }
 ]

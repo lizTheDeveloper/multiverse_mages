@@ -61,9 +61,19 @@ import {
   traditionTableFrom,
 } from '@mm/rules-magic';
 import type { SpeciesAffinities } from '@mm/rules-world';
-import { readTargetAppeal, resolveSpeciesAffinities, territoryExtent } from '@mm/rules-world';
+import {
+  readTargetAppeal,
+  resolveSpeciesAffinities,
+  territoryExtent,
+  territoryYieldShares,
+} from '@mm/rules-world';
 import type { WorldStepDeps } from '@mm/coordination';
-import { godEffectHooks, nodeFacetsFrom, resolveGodContent } from '@mm/coordination';
+import {
+  godEffectHooks,
+  nodeFacetsFrom,
+  resolveGodContent,
+  universeEffectIndex,
+} from '@mm/coordination';
 
 /** The permitted-axis halves of a ruleset (`contracts.md` §1.1). */
 export interface RulesetAxes {
@@ -205,6 +215,33 @@ export function scribingTraditionId(registry: ContentRegistry): ContentId {
   throw new Error(
     'No shipped tradition keeps written copies, so nothing in this universe could ever be ' +
       'scribed and `libraryDependence` would be measuring an empty shelf.',
+  );
+}
+
+/**
+ * The interned id of the tradition a sweep *named*, or a refusal.
+ *
+ * The counterpart to {@link scribingTraditionId}, which picks a tradition by
+ * asking the hooks a question. This one is told which tradition to use, and
+ * exists because `vision.md` §4a makes the tradition an axis of play — *"a
+ * universe has exactly one tradition, chosen by the god"* — and an axis nobody
+ * can select is an axis nobody can measure.
+ *
+ * **Refuses an unknown name rather than falling back.** A sweep arm labelled
+ * `art-of-memory` that quietly ran the default would produce a table of three
+ * columns, two of them the same universe, reported as a comparison of three
+ * traditions. That is the specific failure this whole measurement exists to
+ * avoid, so the error names every tradition the content set actually ships.
+ */
+export function traditionIdNamed(registry: ContentRegistry, name: string): ContentId {
+  for (const entry of registry.traditions) {
+    if (entry.record.id === name) return entry.contentId;
+  }
+  const shipped = registry.traditions.map((entry) => entry.record.id).join(', ');
+  throw new Error(
+    `No shipped tradition has the id ${JSON.stringify(name)}. The content set ships: ${shipped}. ` +
+      'Refusing rather than defaulting: an arm that silently ran another tradition would be ' +
+      'reported as a measurement of the one it names.',
   );
 }
 
@@ -374,9 +411,18 @@ export function worldDeps(
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
+    // The same records the extent is summed from, read for their yield mix
+    // instead of their capacity. Both are fixed for the length of a run.
+    yieldShares: territoryYieldShares(registry.territories.map((entry) => entry.record)),
+    // The wire from knowledge to the economy. Built here, at the composition
+    // root, because it is a pure projection of the content set — see
+    // `universe-effects.ts`, which explains at length what was not connected
+    // before it existed.
+    universeEffects: universeEffectIndex(registry),
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),
+      buildRate: primitiveNamed(registry, 'build-rate'),
       researchRate: primitiveNamed(registry, 'research-rate'),
       teachRate: primitiveNamed(registry, 'teach-rate'),
       scribeRate: primitiveNamed(registry, 'scribe-rate'),
