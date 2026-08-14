@@ -80,7 +80,12 @@ import {
 import { KnowledgeSubsystem, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
 import { readRaidTuning } from '@mm/rules-raid';
 import { createMage } from '@mm/rules-world';
-import type { GodConstants, GodTickReport, WorldStepReport } from '@mm/coordination';
+import type {
+  AblationMask,
+  GodConstants,
+  GodTickReport,
+  WorldStepReport,
+} from '@mm/coordination';
 import { defineWorldSimulation, resolveGodContent } from '@mm/coordination';
 
 import type { RulesetAxes } from './content-set.js';
@@ -700,6 +705,26 @@ export interface ReferenceScenarioOptions {
    * shipped runs with it `true`.
    */
   readonly telemetry?: boolean;
+  /**
+   * §9's ablation mask for this run, or absent for the control arm.
+   *
+   * Per **scenario**, not per `ReferenceContent`, and that placement is the
+   * whole of the fix. A `ReferenceContent` is resolved once and memoized for the
+   * life of a worker process — `CONTENT_BY_TRADITION` in `executor.ts` — so a
+   * mask folded into `content.deps` would be shared by every subsequent run the
+   * worker executed, and one ablation arm would silently neutralize the arms
+   * scheduled after it. `referenceScenario` is already built once per run, for
+   * exactly the reasons its own doc comment gives, so it is the object whose
+   * lifetime matches a mask's.
+   *
+   * Absent is strictly not the same as {@link NO_ABLATION} here: absent leaves
+   * `WorldStepDeps.ablation` undefined, so every control run, every golden
+   * replay fixture and every committed baseline takes the byte-identical branch
+   * at `world-step.ts`'s three `deps.ablation === undefined` sites. The two are
+   * arithmetically equivalent and only one of them is a claim worth making on a
+   * path with baselines attached.
+   */
+  readonly ablation?: AblationMask;
 }
 
 /**
@@ -716,7 +741,9 @@ export function referenceScenario(
   content: ReferenceContent = referenceContent(),
   options: ReferenceScenarioOptions = {},
 ): ReferenceRun {
-  const simulation = defineWorldSimulation(content.deps);
+  const simulation = defineWorldSimulation(
+    options.ablation === undefined ? content.deps : { ...content.deps, ablation: options.ablation },
+  );
   const raiding = options.raids ?? true;
 
   // Per run, like the report closures and the raid log, and installed **first**
