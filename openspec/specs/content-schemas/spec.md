@@ -65,16 +65,20 @@ higher tier than the node itself.
 - **WHEN** a tier-2 node lists a tier-4 node as a prerequisite
 - **THEN** the loader throws and names both nodes with their tiers
 
-### Requirement: Schema spans the full grid, data covers v1 only
+### Requirement: Schema spans the full grid, and so does the data
 
-The content schema SHALL support all 70 technique×form cells. Shipped content data SHALL define
-exactly the v1 subset of 12 cells, each flagged `"v1": true`, and that subset MUST include
-`rego-limen`.
+The content schema SHALL support all 70 technique×form cells. Shipped content data SHALL flag all
+70 with `"v1": true`, and the flagged set MUST include `rego-limen`.
 
-#### Scenario: v1 subset is exactly twelve cells
+It flagged 12 — 3 techniques × 4 forms, holding 51 of the 300 authored nodes — until `w115` opened
+the grid so that species affinities had cells to act in. See `magic-grid`'s "The v1 cell subset"
+for the invariant that survives the change: the flagged set must be a full technique × form
+rectangle, because an axis mask can express nothing else.
+
+#### Scenario: v1 subset is the whole grid
 
 - **WHEN** the content registry is loaded
-- **THEN** exactly 12 cells are flagged `v1`, drawn from 3 techniques and 4 forms
+- **THEN** exactly 70 cells are flagged `v1`, spanning 5 techniques and 14 forms
 
 #### Scenario: Portals are reachable in v1
 

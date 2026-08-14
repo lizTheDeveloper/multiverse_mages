@@ -314,11 +314,23 @@ export function buildRival(input: {
 /**
  * Shelves books the raiding universe's own god could never have permitted.
  *
- * **This is the answer to content exhaustion, and it is the reason looting
- * matters more than burning.** Seventy cells are authored and twelve are
- * enabled, and those twelve hold 51 of the 300 nodes — so an undisturbed
- * universe learns all 51 and stops, and the plateau every strategy hits is the
- * end of the content rather than a balance result. Vision §3 makes a god's
+ * **This was the answer to content exhaustion, and it is currently inert.**
+ * It was written when seventy cells were authored and twelve enabled, holding 51
+ * of the 300 nodes — so an undisturbed universe learned all 51 and stopped, and
+ * the plateau every strategy hit was the end of the content rather than a balance
+ * result.
+ *
+ * All seventy cells are enabled now, so `foreign` below is **empty**, the early
+ * return fires, and no rival shelves anything. That is a silent loss of the whole
+ * mechanism and it is not repaired here, because the repair is a design decision:
+ * this function picks the shelf from cells not flagged `"v1"` — the *content*
+ * gate — while `raid-constant.json`'s gloss for `rival-foreign-book-count`
+ * describes it as *"cells this universe's own ruleset forbids"*, which is the
+ * *god's* gate. The two coincided until now and this code took the wrong one.
+ * Re-keying it to `permits()` would not help today either, because the reference
+ * universe's opening ruleset permits all seventy; it needs a narrow opening
+ * square to have anything to forbid. `raid-engagement.test.ts` carries the
+ * failing test and the measurement. Vision §3 makes a god's
  * ruleset the thing that decides what *can exist* at home; §8 makes a raid the
  * thing that reaches what cannot. A book taken from a universe that permitted
  * other cells is knowledge no amount of domestic research could reach, and
