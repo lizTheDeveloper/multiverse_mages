@@ -200,7 +200,7 @@ describe('time to tier, by species', () => {
     }
   });
 
-  it('separates four of six, and 9.9 is closer than it has ever been', () => {
+  it('separates three groups and not four species, and 9.9 is where it was', () => {
     // **Rewritten three times, and this time the direction reversed back.** The
     // previous version recorded a single separation — draconic strictly after
     // four ordinary species, with elf bridging — taken after
@@ -270,43 +270,55 @@ describe('time to tier, by species', () => {
     expect(draconic.low).toBeLessThan(human.low);
     expect(draconic.high).toBeGreaterThan(elf.high);
 
-    // **The trio is a pair now, and `apply-magic` is what broke it up.**
+    // **The trio is a trio again, and the `apply-magic` split did not survive a
+    // re-roll.** Re-measured on the merge of `main` (5a1ce6c) into
+    // `w108/university-fidelity`, 2026-08-14.
     //
-    // Measured, tier 3, in ticks, this build against the one before the goal
-    // existed:
+    // Measured, tier 3, in ticks, across the three builds:
     //
-    // | species | before | with `apply-magic` |
-    // |---|---|---|
-    // | gnome    | [24, 25] | [24, 25] |
-    // | dwarf    | [25, 30] | [25, 30] |
-    // | orc      | [21, 27] | **[32, 51]** |
-    // | human    | [30, 31] | [30, 31] |
-    // | elf      | [53, 60] | [53, 60] |
-    // | draconic | [26, 380] | [25, 301] |
+    // | species | before `apply-magic` | `main` with `apply-magic` | merged with staffing |
+    // |---|---|---|---|
+    // | gnome    | [24, 25]  | [24, 25]   | [24, 25] |
+    // | dwarf    | [25, 30]  | [25, 30]   | [25, 34] |
+    // | orc      | [21, 27]  | **[32, 51]** | **[25, 40]** |
+    // | human    | [30, 31]  | [30, 31]   | [29, 31] |
+    // | elf      | [53, 60]  | [53, 60]   | [53, 60] |
+    // | draconic | [26, 380] | [25, 301]  | [27, 246] |
     //
-    // Only orc moved, and it moved because `speciesTerm` reads `laborAffinity`
-    // for this goal and orc's is the highest in the content set at `fp(1536)`,
-    // against the lowest `curiosity` but draconic's at `fp(384)`. An orc mage
-    // therefore likes applied work about as much as a gnome likes research, and
-    // she spends months on it that she used to spend reaching tier 3. That is
-    // the seventh species trait finding a rule to read it, and it is the first
-    // time a species' *economic* disposition has changed how deep it gets.
+    // `main` recorded that `apply-magic` had pushed orc clear of the pair and
+    // called it *"9.9 is one species closer than it has ever been"*. **That did
+    // not hold.** This branch changes nothing about orc, `laborAffinity` or the
+    // applied channel; `UNIVERSITY_STAFF` link rows are entities, `contracts.md`
+    // §6 splits the RNG per entity handle, and creating them re-rolls every
+    // handle-keyed draw in the run. Orc's interval came back down to [25, 40]
+    // and overlaps both gnome and dwarf again.
     //
-    // **9.9 is one species closer than it has ever been.** Human, orc and elf
-    // now separate strictly from each other and from the pair; only gnome and
-    // dwarf still overlap. Task 9.9 wants four species separated by more than
-    // the cross-seed spread and this build separates three plus a pair — still
-    // not four, still recorded rather than repaired, because every species
-    // magnitude is `tuningStatus: "untuned"` and inventing one to make a test go
-    // green is what the measurement pivot exists to prevent.
+    // The mechanism `main` described is still real — `speciesTerm` does read
+    // `laborAffinity`, orc's is the highest in the content set at `fp(1536)`,
+    // and an orc mage does spend months on applied work. What is *not* real is
+    // the separation: an effect that a pure re-roll of handle-keyed draws can
+    // erase was inside the cross-seed spread all along, and 32 seeds of one
+    // arrangement was not enough to see it. **This is the strongest evidence in
+    // the suite that a species-separation claim needs more seeds than task 9.9
+    // has been giving it.**
+    //
+    // So the count goes back to three groups and not four species: a fast trio
+    // that overlaps internally, human, and elf, with draconic spanning. Recorded
+    // rather than repaired — every species magnitude is `tuningStatus:
+    // "untuned"`, and inventing one to make a test go green is what the
+    // measurement pivot exists to prevent.
     const overlaps = (a: { low: number; high: number }, b: { low: number; high: number }): boolean =>
       a.low <= b.high && b.low <= a.high;
+    // The trio overlaps pairwise, which is the "three groups, not four species"
+    // claim stated as the thing that would have to stop being true for task 9.9
+    // to advance. Asserted over all three pairs rather than the single
+    // gnome/dwarf pair `main` left, so that whichever member separates first
+    // fails this loudly instead of sliding past a narrower assertion.
     expect(overlaps(gnome, dwarf)).toBe(true);
-    // Orc is strictly after human, and human strictly after nobody: the pair
-    // still brackets it. Asserted in the direction that now holds, so the day a
-    // tuning pass folds orc back into the pair this fails loudly rather than
-    // the suite quietly keeping the old "three groups" claim.
-    expect(human.high).toBeLessThan(orc.low);
+    expect(overlaps(dwarf, orc)).toBe(true);
+    expect(overlaps(gnome, orc)).toBe(true);
+    // And the trio is still strictly ahead of elf, which is the separation that
+    // has survived every build so far — including this re-roll.
     expect(orc.high).toBeLessThan(elf.low);
   });
 });
