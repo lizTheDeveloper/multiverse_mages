@@ -242,3 +242,75 @@ the design.
   tests. That may be exactly right — §13 wanted `depthCeiling` to bite — or it may belong behind the
   subset widening. **It is a release-scope decision and it is the author's**, which is why the
   measurement is above and the number is unchanged.
+
+## The balance gates, which say more than the unit tests do
+
+**Added 2026-08-14, same branch and same refs.** `npm run verify` never reaches these — it fails at
+`npm run test` first — so they were run individually. All three fail, and the finding is not the
+failure.
+
+Every one reports `baseline-invalid` first:
+
+> `provenance.contentHash` is `8a7688bf…` and the baseline was recorded at `162f80bf…`. The gate
+> compares two runs of one build; across two builds a delta is not a regression, it is a category
+> error.
+
+The gate is right to say so, and the deltas below are read as **measurements**, not as regressions.
+A content change necessarily invalidates a content-hashed baseline; re-recording is a deliberate act
+under `packages/mc-harness/bin/regenerate-baseline.mjs` and is not done here.
+
+### The short and horizon gates: the v1 subset got *harder*, not bigger
+
+| metric | gate | baseline | current | SE |
+|---|---|--:|--:|--:|
+| `referenceNodesKnown` | short (240t) | 17.06 | **14.95** | −19.2 |
+| `referenceNodesKnown` | horizon (2400t) | 41.85 | **39.34** | −15.5 |
+| `referenceKnowledgeInstances` | horizon | 1003.9 | **938.2** | −7.7 |
+
+The v1 subset grew 51 → 63 reachable nodes and the reference universe **learns fewer of them**.
+That is the opposite of the naive expectation and it is the single most useful number here: twelve
+new v1 nodes are *competing for the same finite research and scribing throughput*, so the added
+content dilutes rather than accumulates. Node count went up; knowledge went down.
+
+This is exactly the shape `campaign-plan.md` keeps finding — the binding constraint is throughput
+against an exhaustible list — and it is direct evidence that **adding content alone does not move
+the ceiling**. The dilution is a real opposing term that nobody authored deliberately.
+
+### The agency gate: the strategy space moved, and only at the top
+
+`referenceNodesKnown` per strategy, 2400 ticks:
+
+| strategy | baseline | current | verdict |
+|---|--:|--:|---|
+| `permissive-breadth` | 75.25 | **80.13** | up, +4.2 SE |
+| `archivist` | 44.88 | 43.13 | flat |
+| `portal-rush` | 46.13 | 44.13 | flat |
+| `passive-control` | 42.13 | 40.38 | flat |
+| `worship-maximizer` | 41.50 | 39.88 | flat |
+| `uniform-random-legal` | 44.63 | 44.75 | flat |
+| `denial-warden` | 4.75 | 4.38 | flat |
+| `narrow-depth` | 7.63 | 7.63 | unmoved |
+
+**The only strategy that gained is the one that permits the most magic.** Everything else is flat or
+slightly down. F3's finding — *"the strategy space is one axis: permit more vs permit less"* — is
+not contradicted by this content; it is **reinforced**, with the permissive end pulled further out.
+
+The more interesting number is `referenceNodesGainedFinalQuarter`, up across the board
+(`permissive-breadth` 17.1 → 23.0, +5.9 SE; `worship-maximizer` 5.9 → 7.9; `archivist` 5.9 → 7.3).
+**The frontier is still open at the end of the run where it used to be closing.** That is precisely
+the *unexhausted frontier* `ages-of-magic` §1 asks for, and it is the one thing measured here that
+looks like the ceiling rather than the rate.
+
+### What this means for the set
+
+It sharpens the "what is deliberately not claimed" section rather than softening it.
+
+- **Claimed and now measured:** the frontier stays open longer, at every strategy. That is a real
+  result and the sweep found it.
+- **Refuted:** any suggestion that more nodes means more knowledge. Short and horizon gates both say
+  the reference universe learns *less*. Twelve v1 nodes cost 2.1 and 2.5 mean nodes known.
+- **Unmoved:** the strategy space is still one axis. Seven of eight strategies did not separate.
+  The nodes carrying the genuinely new opposing terms — anti-requisites, co-casting, correlated
+  loss, permanent extinction — are exactly the ones whose machinery does not exist yet, so the sweep
+  cannot see them. **This is the strongest argument in this document for building that machinery
+  before authoring more content.**
