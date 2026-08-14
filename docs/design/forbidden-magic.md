@@ -599,3 +599,29 @@ what *this* world's population can use.** Inheriting fire does not feed anyone u
 cast it, and the survivors are one species among the peoples this world will hold. **Worth measuring
 rather than assuming**, because it is exactly the kind of second-order incentive that has surprised
 this project before.
+
+### And the inheritance is capped in the grid's own geometry
+
+*Owner:* **"But it's like no more than X% of a full row or column, idk."**
+
+**The cap is expressed as a fraction of a technique-row or a form-column**, not as a node count — and
+that is the right unit, because it is the unit the grid is already drawn in.
+
+**A survivor people can leave you *some* fire. They cannot leave you fire.**
+
+That matters for the same reason the equivalence class for foundational knowledge is the cell: **a
+whole row or column is a *discipline*, and a discipline should be founded by a prodigy, not
+inherited.** The inheritance is meant to be practical scraps that stayed useful — *"they still know how
+to call a flame"* — and an uncapped one would quietly become *"they still know Ignem"*, which is a
+different and much larger gift.
+
+It also bounds the interaction that would otherwise break the progression. Without a cap, a long chain
+of generations could accumulate the whole grid for free and **the worship-to-width unlock would stop
+being the way magic enters a world** — which is the spine of the whole design.
+
+**The value of X is unknown and should stay unknown until it is measured.** The owner's *"idk"* is the
+correct answer and it is exactly the case the standing rule was written for: **a design decision that
+reduces to a scalar nobody can defend is a swept parameter, with both degenerate ends as controls** —
+0% (no inheritance at all, so a restart is only allies and no knowledge) and 100% (a survivor people
+hands over entire disciplines). **The curve between those decides whether the mechanic is a warm
+detail or the dominant strategy**, and a flat curve would mean it is neither.
