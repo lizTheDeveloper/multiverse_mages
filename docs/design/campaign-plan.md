@@ -5260,3 +5260,67 @@ stayed dropped, the branch would have merged with the count silently unasserted.
 hand-merging numbers; resolve every count and digest by **asking the tree**; re-record from the merged
 tree with the notes *and* the rationale re-passed, since the regenerator replaces both wholesale; and
 run the gates rather than reasoning about whether they would pass.
+
+---
+
+## W101 — the reachability harness, and a correction to a correction of mine
+
+*2026-08-13, PR #117. Twenty-eight metrics probed; **sixteen quarantined.***
+
+| verdict | count | metrics |
+|---|--:|---|
+| **moves** | 12 | all ten `reference*` vital signs, plus `capitalSnowball` and `worshipSnowball` |
+| **inert** | 1 | `ascensionRate` — **exactly 0.000 in every arm of every probe**, 128 runs at 240 ticks |
+| **no-producer** | 13 | every §7 per-run metric |
+| **no-observations** | 2 | `winRateByPrimitive`, `prestigeAdvantage` |
+
+**Sixteen of twenty-eight registered metrics cannot currently be optimised against.** That is the
+number the self-evolving search exists to refuse to hill-climb on, and it is now published rather than
+discovered one workstream at a time.
+
+### The correction: my defence of `winRateByPrimitive` was wrong
+
+Earlier today I corrected PR #57's framing, arguing that `winRateByPrimitive` *"does not score combat
+nodes by damage — it ablates each primitive and measures the win rate of the arm retaining it against
+the arm where it is neutralised, over mirrored paired seeds with a Wilson score interval,"* and that
+adding a damage-output metric would be a regression.
+
+**The design is what I said it is. The wiring is not there.** `RunTask.ablatedPrimitives` has **zero
+production consumers** — so the ablation arm is never actually ablated, and the harness's own
+self-test probe confirms it: **0 of 13 metrics moved** under the primitive mask.
+
+So `winRateByPrimitive` is `no-observations`, and **PR #57's original complaint was closer to right
+than my correction of it.** The measurement I defended as already-outcome-based is a measurement that
+does not run. That is the eleventh instance of this project's modal defect, and the first one where I
+argued *for* the broken instrument.
+
+It also **strengthens** the finding I recorded as W81. I wrote that "the ablation mask never reached
+the god subsystem." It reaches **no** subsystem.
+
+### Three findings that refute what I briefed
+
+1. **`foundingSpeciesMask` reaches decisively — masking to one species moved 12 of 13 metrics**, the
+   widest footprint of any probe. I had suspected species differences might be smaller than seed noise.
+   They are not, and W92's recommendation to sweep it is now backed by a measurement rather than an
+   argument.
+2. **The default tradition already *is* `true-naming`.** The harness's first probe compared the default
+   against itself and reported `lever-did-not-reach` — **the exact false negative the harness exists to
+   prevent, committed by the harness.** Caught and reported by its author. Against
+   `vancian-memorization` the cheapest unrun experiment **moves 8 of 13.**
+3. **`makeReferenceExecutor` silently drops its documented `raids` A/B switch** — it forwards only
+   `content` and `censusIntervalTicks`, verified empirically. **With a working lever, raids move 4 of
+   13.** So raids are **not inert; they are unmeasurable through the factory the pipeline uses.**
+   Reported, deliberately not patched.
+
+That third one matters beyond its branch. **Every raid result this campaign has published was measured
+through that factory**, and "the gates resolve zero raids" now has a second cause sitting on top of the
+first.
+
+### And a methodological note worth keeping
+
+The statistic is a **paired mean-difference interval over per-seed deltas** — t below 30 df, z beyond —
+not Wilson. Wilson is for proportions; these outcomes are counts. Two of my briefs said Wilson.
+
+The author also caught themselves reporting `verify` green off a shell exit code that belonged to
+`tail` rather than to `verify`. **On a quiet machine: `main` 307/307, this branch 308/308, run back to
+back.** A number reported with the way it was obtained is worth more than the number.
