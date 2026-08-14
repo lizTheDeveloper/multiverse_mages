@@ -54,6 +54,10 @@ __pycache__/
 # that commit existed to fix.
 ui/lattices.html
 
+# Generated portraits. Regenerable from character.json via `npm run forge`, and
+# the licensing question that governs generated audio (ASSET-LICENSE.md) applies
+# to generated art too — so they stay out of history until that is settled.
+assets/portraits/
 # W49 measurement scratch; the committed copies live in balance/
 .w49/
 
