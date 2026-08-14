@@ -145,6 +145,8 @@ import {
   MATERIAL_KINDS,
   advanceConstruction,
   applyLibraryUpkeep,
+  assignStaff,
+  staffCohortsOf,
   assertMaterialsNonNegative,
   carryingCapacity,
   clearCommitment,
@@ -495,6 +497,30 @@ export interface WorldStepReport {
    * question about which tiers carried it cannot be answered from a scalar.
    */
   readonly capital: readonly CapitalEmission[];
+  /**
+   * Scribe cohorts newly put on a university's staff this tick.
+   *
+   * `UNIVERSITY_STAFF` shipped in `WORLD_COMPONENTS` with no writer, and this
+   * is the writer. Reported because a universe that assigns a cohort every tick
+   * is a universe whose cohorts are churning — `contracts.md` §1.3 buckets
+   * cohorts by decade of birth, so a steady population re-keys its scribes
+   * every ten years and re-staffs then, and a figure that never settles is a
+   * populace defect wearing a staffing costume.
+   */
+  readonly staffAssigned: number;
+  /** Staff links dropped this tick because their cohort no longer existed. */
+  readonly staffPruned: number;
+  /**
+   * Completed universities that ended the tick with no staff at all.
+   *
+   * The number the god's build strategy could not see. Under the global scribe
+   * pool every university reported the whole universe's scribes as its own, so
+   * founding the thousandth one looked exactly as productive as founding the
+   * first. This is the count that says otherwise, and it is the reason the
+   * `archivist` strategy could build 1,300 universities and reach the node
+   * count that doing nothing reaches.
+   */
+  readonly universitiesUnstaffed: number;
 }
 
 /** A world schema with the coordinating loop installed, and its last report. */
@@ -722,6 +748,28 @@ export function worldSystem(
         }),
       });
 
+      // ---- 2a. Staffing -------------------------------------------------
+      // Between populace and work, and the position is the whole of the
+      // correctness argument. Cohorts are created, merged and emptied in phase
+      // 2, so a staff link written before it can name a cohort that no longer
+      // exists; and phase 5 reads the links to decide what each university's
+      // scribes produce, so they must be settled before it runs.
+      //
+      // `staff.ts` carries the reasoning for what this phase *is*. The short
+      // version: until it existed, `scribeThroughputFor` handed every
+      // university the universe's entire scribe population, which its own
+      // comment conceded was a placeholder. An institution that cannot own its
+      // staff is not an institution, and a thousand of them are not a
+      // civilisation.
+      const staffing = assignStaff(
+        state,
+        cohorts
+          .handles()
+          .filter((handle) => cohorts.keyOf(handle).occupation === OCCUPATION.scribe)
+          .map((handle) => ({ cohort: handle, count: cohorts.countOf(handle) })),
+        (handle) => cohorts.isLive(handle),
+      );
+
       // ---- 3. Mage mortality, and what a death costs -----------------------
       const mortality = killTheDead(state, {
         rng,
@@ -908,6 +956,9 @@ export function worldSystem(
         lessonsTaught: work.lessonsTaught,
         grimoiresScribed: work.grimoiresScribed,
         materialsScribed,
+        staffAssigned: staffing.assigned.length,
+        staffPruned: staffing.pruned,
+        universitiesUnstaffed: staffing.unstaffed,
         effortsInFlight: efforts.size,
         libraryUpkeepOwed: upkeepOwed,
         libraryUpkeepPaid: consumption.spent.libraryUpkeep,
@@ -1733,14 +1784,37 @@ function completedCapacity(state: SimState): number {
 }
 
 /**
- * Scribe-months a university produces this tick.
+ * Scribe-months a university produces this tick, **from its own staff**.
  *
- * The scribe cohorts are the universe's, not the university's: §1.4 gives a
- * university `staffCohorts`, and until `god-agency` staffs one there is no
- * assignment to read. Taking the whole scribe population is the honest
- * placeholder — it is wrong in the direction of over-supply, which shows up as
- * scribing being too easy rather than as a mask that never lifts, and it is
- * marked here rather than buried.
+ * ## What this used to be, and why it mattered more than it looked
+ *
+ * Until phase 2a existed this function summed the *universe's* whole scribe
+ * population for every university it was asked about, and said so: *"Taking the
+ * whole scribe population is the honest placeholder … it is wrong in the
+ * direction of over-supply."* The direction was right and the magnitude was
+ * not. Over-supply per university is over-supply *multiplied by the number of
+ * universities*, so founding the second one doubled the universe's scribing for
+ * the price of some stone, and founding the thousandth multiplied it by a
+ * thousand. That is the arithmetic under `archivist` building roughly 1,300
+ * universities and reaching the same node count as doing nothing: the strategy
+ * was not wrong about universities being cheap, it was reading a number that
+ * could not tell it they were worthless.
+ *
+ * It was also the second reason the `w78` teaching boundary showed nothing.
+ * Two universities with different libraries and different professors still
+ * scribed at exactly the same rate, because the one input that was supposed to
+ * distinguish them was a universe-wide constant. There was no channel left for
+ * them to diverge through.
+ *
+ * ## Now
+ *
+ * Only cohorts linked to *this* university through `UNIVERSITY_STAFF`, and only
+ * ones the cohort store still recognises. A completed university that phase 2a
+ * had no free cohort for produces nothing, which is a supported state with a
+ * downstream consumer — `scribing.ts` says so, and the `mage-autonomy` mask
+ * reads that zero to take `scribe` off the goal list of a mage affiliated only
+ * with it. The zero was always reachable in principle; this is the first build
+ * in which it is reachable in fact.
  */
 function scribeThroughputFor(
   state: SimState,
@@ -1754,15 +1828,18 @@ function scribeThroughputFor(
 
   let scribes = 0;
   let affinity = 0;
-  cohorts.forEach((_handle, key, count) => {
-    if (key.occupation !== OCCUPATION.scribe) return;
+  for (const cohort of staffCohortsOf(state, universityId as EntityHandle, (handle) =>
+    cohorts.isLive(handle),
+  )) {
+    const key = cohorts.keyOf(cohort);
+    if (key.occupation !== OCCUPATION.scribe) continue;
     const species = deps.speciesOf(key.speciesId);
-    if (species === undefined) return;
-    scribes += count;
+    if (species === undefined) continue;
+    scribes += cohorts.countOf(cohort);
     // The best affinity present, not an average: an average would make one
     // clumsy cohort slow down a dwarven scriptorium.
     if (species.scribeAffinity > affinity) affinity = species.scribeAffinity;
-  });
+  }
   if (scribes === 0) return 0;
 
   return scribingThroughput(readRecord(state, UNIVERSITY, universityId as EntityHandle), {
