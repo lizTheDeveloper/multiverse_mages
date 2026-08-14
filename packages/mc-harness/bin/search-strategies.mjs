@@ -219,12 +219,34 @@ async function main() {
       ],
       { cwd: process.cwd(), stdio: ['ignore', 'ignore', 'pipe'] },
     );
+
+    // Kill the sweep when this process is killed.
+    //
+    // Without this, `kill` on the search leaves `run-sweep.mjs` running with
+    // its own worker pool. Observed: a sweep kept four workers busy for
+    // eighteen minutes after its parent died, writing into a records directory
+    // nothing would ever read, on a machine already at eighteen times
+    // oversubscription. Nothing reported it — the search was gone, so there was
+    // nobody left to notice.
+    //
+    // `tune-balance.mjs` has the same shape for restoring a constants file.
+    const onSignal = (signal) => {
+      child.kill(signal);
+      process.exit(130);
+    };
+    process.on('SIGINT', onSignal);
+    process.on('SIGTERM', onSignal);
+
     let stderr = '';
     child.stderr.on('data', (chunk) => { stderr += chunk; });
     child.on('error', reject);
-    child.on('close', (code) =>
-      code === 0 ? resolve() : reject(new Error(`run-sweep exited ${code}: ${stderr.slice(0, 500)}`)),
-    );
+    child.on('close', (code) => {
+      process.off('SIGINT', onSignal);
+      process.off('SIGTERM', onSignal);
+      return code === 0
+        ? resolve()
+        : reject(new Error(`run-sweep exited ${code}: ${stderr.slice(0, 500)}`));
+    });
   });
 
   // Fold the records into one outcome per strategy. Descriptors come from
