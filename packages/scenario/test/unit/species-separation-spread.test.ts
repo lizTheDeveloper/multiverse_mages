@@ -50,6 +50,15 @@
  *  human < orc     strict in  0/12 sets     gap  4.3 ± 0.8 ticks  =   5.4 SE
  * ```
  *
+ * There is a **third** seed-dependent claim in that file and it points the other
+ * way: `expect(overlaps(gnome, dwarf)).toBe(true)` asserts that two species are
+ * *indistinguishable*. Non-overlap is the complement of `gnome.high < dwarf.low`
+ * here — dwarf never precedes gnome in any set, and neither is ever censored —
+ * so the overlap holds in **7 of 12** sets and fails in five. A claim that two
+ * species cannot be told apart is as seed-dependent as a claim that they can,
+ * and it is asserted here so that the audit covers the file rather than only its
+ * separations.
+ *
  * `human < orc` is #127's finding, still asserted next door. Widening the search
  * to four *consecutive-integer* seed sets cut the same way as the committed one
  * — in case the committed seeds were an unrepresentative corner of the seed
@@ -98,7 +107,16 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-const TIMEOUT_MS = 600_000;
+/**
+ * Generous, and deliberately more generous per run than the sibling file's 300
+ * seconds for six runs.
+ *
+ * This is twenty-five runs on a shared box that has been seen at load 300, and
+ * a timeout here would read as a real defect in an instrument whose whole
+ * subject is not mistaking noise for a finding. Observed cost is about 150
+ * seconds at load 11.
+ */
+const TIMEOUT_MS = 900_000;
 
 /** See the module note. */
 const SETS = MIN_SETS_FOR_REFUTATION;
@@ -216,6 +234,31 @@ describe('every strict separation this repository asserts, re-rolled', () => {
     },
     TIMEOUT_MS,
   );
+
+  it('finds the sibling file\'s "these two are indistinguishable" claim seed-dependent too', () => {
+    // `expect(overlaps(gnome, dwarf)).toBe(true)` next door. Non-overlap is the
+    // complement of a strict separation whenever neither species is censored and
+    // the order never reverses, and both hold for this pair in every set — so
+    // `strictSets` counts exactly the sets in which that assertion is false.
+    const pair = separationOf(report, 'gnome', 'dwarf');
+    console.log(
+      `overlaps(gnome, dwarf) is false in ${String(pair.strictSets)}/` +
+        `${String(pair.comparableSets)} sets — the sibling file asserts it true`,
+    );
+    for (const speciesId of ['gnome', 'dwarf']) {
+      const spread = report.spreads.find((entry) => entry.speciesId === speciesId);
+      expect(spread?.censored, `${speciesId} censored`).toBe(0);
+    }
+    // 5 of 12 at the bin's default design, 2 of 4 here. Asserted as "not always
+    // true" rather than as a rate, because the rate is a function of how many
+    // sets were taken and the claim next door is not.
+    expect(
+      pair.strictSets,
+      'gnome and dwarf now overlap in every seed set, so the sibling file\'s ' +
+        'indistinguishability assertion has stopped being seed-dependent. Re-measure with ' +
+        '`--sets 12` and re-record this, in both files.',
+    ).toBeGreaterThan(0);
+  });
 
   it('accounts for every strict separation the sibling file asserts', () => {
     // The tripwire. A new `expect(a.high).toBeLessThan(b.low)` next door is a

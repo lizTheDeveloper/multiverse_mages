@@ -145,6 +145,8 @@ export const LEGACY_SEED_SET: readonly number[] = Object.freeze([
  * Standard errors a paired gap must clear before a separation is called
  * established.
  *
+ * Fixed before any number was measured, unlike {@link CHAIN_REFUTED_FRACTION}.
+ *
  * Three, not two. A two-sided 95 % interval at eleven degrees of freedom wants
  * about 2.2, and the extra margin is deliberate slack for the fact that this is
  * being asked of several pairs at once — six pairs at 5 % each is a one-in-four
@@ -184,6 +186,23 @@ export const MIN_SETS_FOR_REFUTATION = 4;
  * refutable, and "inconclusive" would be a generous word for that. A quarter is
  * the line: a claim that survives a re-roll less often than one time in four is
  * a claim the re-roll has answered.
+ *
+ * ## This threshold was written **after** the measurement, and that is stated
+ * rather than hidden
+ *
+ * {@link ESTABLISHED_STANDARD_ERRORS} and {@link MIN_SETS_FOR_REFUTATION} were
+ * both fixed before any number came back. This one was not: the need for a
+ * chain-level rule only became visible once #140's chain turned out to fail as a
+ * whole without any link failing alone. Choosing a threshold after seeing the
+ * data is the exact move this file exists to police, so the honest handling is
+ * to say so and to argue the rule on principle instead of on the number — a
+ * conjunction is what was claimed, and a conjunction that dies in eleven
+ * re-rolls out of twelve has been answered.
+ *
+ * It also means **the reproduction rate is the measurement and the verdict is a
+ * label on top of it**. `setsHolding / comparableSets` is reported on every
+ * chain for that reason, and any statement of a verdict should lead with the
+ * rate. A reader who prefers a different line can apply it to the same number.
  */
 export const CHAIN_REFUTED_FRACTION = 0.25;
 

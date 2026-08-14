@@ -97,9 +97,10 @@ a *mean* rather than about an extremum. Both are reported and they are not inter
 published claim of the form "these intervals do not overlap" must be judged against the endpoints,
 and only a claim about mean arrival may be judged against the SE.
 
-## Every separation `main` asserts, re-rolled
+## Every seed-dependent claim `main` asserts, re-rolled
 
-`reference-time-to-tier.test.ts` asserts five strict separations. Twelve sets, tier 3:
+`reference-time-to-tier.test.ts` asserts five strict separations and one *non*-separation. Twelve
+sets, tier 3:
 
 | separation | asserted as | strict in | paired gap | verdict |
 | --- | --- | ---: | ---: | --- |
@@ -108,6 +109,18 @@ and only a claim about mean arrival may be judged against the SE.
 | dwarf < elf | `fastTrio.high < elf.low` | **12/12** | 27.1 ± 0.4 ticks = 62.2 SE | **established** |
 | orc < elf | `orc.high < elf.low` | 11/12 | 20.6 ± 0.8 ticks = 26.7 SE | inconclusive |
 | human < orc | `human.high < orc.low` | **0/12** | 4.3 ± 0.8 ticks = 5.4 SE | **refuted** |
+
+And the claim that points the other way:
+
+| claim | asserted as | holds in |
+| --- | --- | ---: |
+| gnome and dwarf are indistinguishable | `overlaps(gnome, dwarf) === true` | **7/12** |
+
+That one is worth naming separately: **a claim that two species *cannot* be told apart is exactly as
+seed-dependent as a claim that they can.** Non-overlap is the complement of `gnome.high < dwarf.low`
+for this pair — dwarf never precedes gnome in any set and neither is ever censored — so the
+assertion is false in five of twelve sets. Three of that file's six seed-read claims do not
+reproduce, not two.
 
 `human < orc` is #127's *"9.9 is one species closer than it has ever been"*. That finding was
 reported as retracted after a re-roll — and **the assertion is still on `main`.** It is not merely
@@ -131,7 +144,10 @@ that claim does not always hold.
 > *"gnome, dwarf, human and elf now form a strict chain — four species separated by more than the
 > cross-seed spread, which is what task 9.9 asks for."* — PR #140
 
-### REFUTED.
+### It survives a re-roll in 1 of 12 seed sets.
+
+That rate is the measurement. **REFUTED** is a label put on top of it by a rule stated below, and a
+reader who prefers a different rule can apply it to the same number.
 
 Measured on `w18/academic-primitive-consumers` at `1ae52c3` — the branch that made the claim — 12
 sets, tier 3, 720 ticks:
@@ -151,6 +167,19 @@ ticks they are smaller than dwarf's own endpoint travel of 10 ticks.
 individually refutable — each separates in three or four sets — but the claim made was about the
 four together, and a claim that survives a re-roll less than one time in four has been answered by
 the re-roll. The rule is written down in `CHAIN_REFUTED_FRACTION` so nobody has to re-derive it.
+
+**That threshold was chosen after the measurement, and saying so is part of the finding.** The other
+two — `ESTABLISHED_STANDARD_ERRORS = 3` and `MIN_SETS_FOR_REFUTATION = 4` — were fixed before any
+number came back. The chain rule was not: the need for a chain-level rule at all only became visible
+once #140's chain turned out to fail as a whole without any link failing alone. Picking a line after
+seeing the data is the exact move this document exists to police, so it is argued on principle — a
+conjunction is what was claimed — and the threshold-free number, 1 of 12, is what every statement of
+the verdict leads with.
+
+**A verdict is a function of K; a reproduction rate is not.** `dwarf < human` is 0/4 at the guard
+test's four sets, which the rule calls *refuted*, and 3/12 at the bin's twelve, which it calls
+*inconclusive*. Both are honest and the instrument is not contradicting itself: the rate is the
+measurement, and the label depends on how many sets you took. Quote rates, not labels.
 
 **What #140 is not.** It is not a measurement error: its published table reproduces to the tick.
 Every species did get faster, the mechanism it wired is real and separately evidenced, and
