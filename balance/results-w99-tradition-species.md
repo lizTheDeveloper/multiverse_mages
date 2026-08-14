@@ -470,6 +470,24 @@ teaching had been switched off entirely.
    extension surface currently has no execution path outside `@mm/rules-raid`, which no package
    depends on. Until that changes, "the tradition axis" means `acquire` and `store`.
 
+---
+
+## `npm run verify`
+
+**Green, exit code 0.** 307 test files, 4,314 tests, and all three balance gates passing:
+
+```
+Balance gate for balance-gate-v1:         PASS (tolerance k = 3 standard errors).
+Balance gate for balance-gate-horizon-v1: PASS (tolerance k = 3 standard errors).
+Balance gate for balance-gate-agency-v1:  PASS (tolerance k = 3 standard errors).
+```
+
+**Every one of the 109 metric comparisons across the three gates reads `delta 0.00000 (0.00 SE)`.**
+Not one non-zero delta anywhere in the log. That is the second half of the no-behaviour-change
+proof — the first half being the paired snapshot hashes above — and it is what a reader should check
+rather than the sentence at the top of this document. No golden fixture was regenerated. No balance
+baseline was regenerated. No package source was touched.
+
 
 ---
 
