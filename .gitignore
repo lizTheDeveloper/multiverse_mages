@@ -42,6 +42,10 @@ __pycache__/
 .w46/
 # W70's opening-square size sweep. Same reason: 480 runs of node-id sets.
 .w70/
+# W80's discovery-order arms. Same reason: 84 runs x 2 arms of per-node
+# first-seen ticks is megabytes of JSON and none of it is source. The tools that
+# produce it and the report that reads it are both committed.
+.w80/
 
 # The generated lattice report, regenerated with scripts/content-graph.mjs.
 # Named exactly rather than globbed: `ui/*.html` also matched ui/index.html, and

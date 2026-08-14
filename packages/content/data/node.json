@@ -6,7 +6,7 @@
     "gloss": "Close a working animal's injury before the season is lost along with it. Unglamorous, and the reason the ox that hauls stone for a library is usually the same ox for thirty years.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2477,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -30,7 +30,7 @@
     "prerequisites": [
       "can-mend-the-beast"
     ],
-    "researchCost": 4096,
+    "researchCost": 5066,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -60,7 +60,7 @@
     "prerequisites": [
       "can-mend-the-beast"
     ],
-    "researchCost": 8192,
+    "researchCost": 9154,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -84,7 +84,7 @@
     "prerequisites": [
       "can-quicken-the-herd"
     ],
-    "researchCost": 8192,
+    "researchCost": 9983,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -115,7 +115,7 @@
       "can-call-the-pack",
       "can-the-fat-year"
     ],
-    "researchCost": 16384,
+    "researchCost": 19575,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -143,7 +143,7 @@
     "gloss": "Make clean water where the ground offers none. A siege is arithmetic about wells, and this working changes the arithmetic.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2424,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -167,7 +167,7 @@
     "prerequisites": [
       "caq-draw-the-sweet-water"
     ],
-    "researchCost": 4096,
+    "researchCost": 4799,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -191,7 +191,7 @@
     "prerequisites": [
       "caq-the-unfailing-well"
     ],
-    "researchCost": 8192,
+    "researchCost": 9769,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -221,7 +221,7 @@
     "prerequisites": [
       "caq-turn-the-channel"
     ],
-    "researchCost": 16384,
+    "researchCost": 19788,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -249,7 +249,7 @@
     "gloss": "Put the wind where a mill or a drying floor wants it. The most-cast working in any university that owns farmland, and the least written about.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2559,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -273,7 +273,7 @@
     "prerequisites": [
       "cau-turn-the-wind"
     ],
-    "researchCost": 4096,
+    "researchCost": 5233,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -303,7 +303,7 @@
     "prerequisites": [
       "cau-clear-the-sky"
     ],
-    "researchCost": 8192,
+    "researchCost": 9560,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -327,7 +327,7 @@
     "prerequisites": [
       "cau-clear-the-sky"
     ],
-    "researchCost": 8192,
+    "researchCost": 9983,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -352,7 +352,7 @@
       "cau-the-borrowed-season",
       "cau-call-the-storm"
     ],
-    "researchCost": 16384,
+    "researchCost": 20889,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -380,7 +380,7 @@
     "gloss": "Knit a body back to the shape it held an hour ago. Over a career an infirmary staffed by one such mage is worth about two years to everyone who passes through it, which is the first number anyone in the discipline learns to quote.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2175,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -404,7 +404,7 @@
     "prerequisites": [
       "cc-close-the-wound"
     ],
-    "researchCost": 4096,
+    "researchCost": 4957,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -428,7 +428,7 @@
     "prerequisites": [
       "cc-the-mended-decade"
     ],
-    "researchCost": 8192,
+    "researchCost": 9769,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -452,7 +452,7 @@
     "prerequisites": [
       "cc-the-mended-decade"
     ],
-    "researchCost": 8192,
+    "researchCost": 9769,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -477,7 +477,7 @@
       "cc-the-long-tenure",
       "cc-quicken-the-cohort"
     ],
-    "researchCost": 32768,
+    "researchCost": 36595,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -505,7 +505,7 @@
     "gloss": "Fortune, made in quantities too small to prove. The literature on whether it works at all is the largest in the discipline and the least conclusive.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2615,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -529,7 +529,7 @@
     "prerequisites": [
       "cf-make-the-small-luck"
     ],
-    "researchCost": 4096,
+    "researchCost": 5406,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -553,7 +553,7 @@
     "prerequisites": [
       "cf-the-promised-year"
     ],
-    "researchCost": 8192,
+    "researchCost": 8215,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -577,7 +577,7 @@
     "prerequisites": [
       "cf-the-fated-hand"
     ],
-    "researchCost": 32768,
+    "researchCost": 32135,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -641,7 +641,7 @@
     "gloss": "Bring a crop up in the time it takes to walk the field. The yield is unchanged; what changes is how many times in a year the field is a field.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2451,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -665,7 +665,7 @@
     "prerequisites": [
       "ch-quicken-the-seed"
     ],
-    "researchCost": 4096,
+    "researchCost": 5011,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -695,7 +695,7 @@
     "prerequisites": [
       "ch-grow-the-beam"
     ],
-    "researchCost": 8192,
+    "researchCost": 7698,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -719,7 +719,7 @@
     "prerequisites": [
       "ch-grow-the-beam"
     ],
-    "researchCost": 16384,
+    "researchCost": 19364,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -747,7 +747,7 @@
     "gloss": "A flame that needs no fuel and does not go out when the window is open. The first working most universities teach, because a lamp that costs nothing buys more reading hours than any endowment.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2532,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -771,7 +771,7 @@
     "prerequisites": [
       "cig-strike-the-light"
     ],
-    "researchCost": 4096,
+    "researchCost": 5177,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -801,7 +801,7 @@
     "prerequisites": [
       "cig-hold-the-temperature"
     ],
-    "researchCost": 8192,
+    "researchCost": 10202,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -831,7 +831,7 @@
     "prerequisites": [
       "cig-hold-the-temperature"
     ],
-    "researchCost": 8192,
+    "researchCost": 8578,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -856,7 +856,7 @@
       "cig-the-assayers-flame",
       "cig-the-uncontained-hour"
     ],
-    "researchCost": 16384,
+    "researchCost": 20664,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -884,7 +884,7 @@
     "gloss": "Make an image that holds still and can be walked around. The illustrated lecture, arriving centuries before cheap paper; students who have seen a thing argue about it less.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2247,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -908,7 +908,7 @@
     "prerequisites": [
       "cim-cast-the-likeness"
     ],
-    "researchCost": 4096,
+    "researchCost": 4595,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -938,7 +938,7 @@
     "prerequisites": [
       "cim-the-shown-interior"
     ],
-    "researchCost": 8192,
+    "researchCost": 8126,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -962,7 +962,7 @@
     "prerequisites": [
       "cim-the-shown-interior"
     ],
-    "researchCost": 8192,
+    "researchCost": 9560,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -987,7 +987,7 @@
       "cim-the-absent-scholar",
       "in-spell-the-lesser-name"
     ],
-    "researchCost": 16384,
+    "researchCost": 16461,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -1015,7 +1015,7 @@
     "gloss": "Make a threshold where the architecture provided none. A line across a floor that behaves, from then on, like a wall's business.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2152,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -1039,7 +1039,7 @@
     "prerequisites": [
       "cl-set-the-doorstep"
     ],
-    "researchCost": 4096,
+    "researchCost": 4260,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -1064,7 +1064,7 @@
       "cl-draw-the-circle",
       "il-sense-the-seam"
     ],
-    "researchCost": 8192,
+    "researchCost": 10769,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -1094,7 +1094,7 @@
     "prerequisites": [
       "cl-the-made-door"
     ],
-    "researchCost": 16384,
+    "researchCost": 17004,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -1122,7 +1122,7 @@
     "gloss": "Put a question into a mind that was not asking one. Tutors call it cheating, and use it in the first week of every term.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2272,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -1147,7 +1147,7 @@
       "cm-kindle-the-question",
       "im-follow-the-thought"
     ],
-    "researchCost": 4096,
+    "researchCost": 4497,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -1171,7 +1171,7 @@
     "prerequisites": [
       "cm-the-given-memory"
     ],
-    "researchCost": 8192,
+    "researchCost": 8215,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -1195,7 +1195,7 @@
     "prerequisites": [
       "cm-the-second-attention"
     ],
-    "researchCost": 16384,
+    "researchCost": 20664,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -1223,7 +1223,7 @@
     "gloss": "Attach a name to a thing that had none, and have it stick. A catalogue is impossible before this working and merely tedious after it.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2175,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -1247,7 +1247,7 @@
     "prerequisites": [
       "cn-give-the-use-name"
     ],
-    "researchCost": 4096,
+    "researchCost": 4448,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -1278,7 +1278,7 @@
       "cn-name-the-unnamed",
       "in-derive-the-true-name"
     ],
-    "researchCost": 8192,
+    "researchCost": 9154,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -1302,7 +1302,7 @@
     "prerequisites": [
       "cn-the-name-that-teaches"
     ],
-    "researchCost": 16384,
+    "researchCost": 17189,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -1330,7 +1330,7 @@
     "gloss": "Stone out of nothing, one brick at a time, at a price in mage-months no quarry would survive being compared to. The point is not the brick; it is that the brick appears where no cart can go.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2398,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -1354,7 +1354,7 @@
     "prerequisites": [
       "ct-make-the-brick"
     ],
-    "researchCost": 4096,
+    "researchCost": 4747,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -1379,7 +1379,7 @@
       "ct-make-the-brick",
       "it-find-the-deep-seam"
     ],
-    "researchCost": 8192,
+    "researchCost": 9355,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -1404,7 +1404,7 @@
       "ct-the-poured-wall",
       "ct-the-conjured-vein"
     ],
-    "researchCost": 16384,
+    "researchCost": 18949,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -1432,7 +1432,7 @@
     "gloss": "Make a shadow where nothing stands to cast one. Trivial, and the first half of everything else in the form.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2129,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -1456,7 +1456,7 @@
     "prerequisites": [
       "cu-cast-the-shadow"
     ],
-    "researchCost": 4096,
+    "researchCost": 4214,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -1480,7 +1480,7 @@
     "prerequisites": [
       "cu-the-lengthened-dusk"
     ],
-    "researchCost": 8192,
+    "researchCost": 8578,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -1510,7 +1510,7 @@
     "prerequisites": [
       "cu-the-kept-shadow"
     ],
-    "researchCost": 16384,
+    "researchCost": 20004,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -1538,7 +1538,7 @@
     "gloss": "Thicken the magic of a place the way one banks a fire. Everything cast in the room afterwards is easier, and nobody can say by how much without casting it twice.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2761,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -1562,7 +1562,7 @@
     "prerequisites": [
       "cv-kindle-the-aura"
     ],
-    "researchCost": 4096,
+    "researchCost": 5465,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -1586,7 +1586,7 @@
     "prerequisites": [
       "cv-feed-the-working"
     ],
-    "researchCost": 8192,
+    "researchCost": 11125,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -1616,7 +1616,7 @@
     "prerequisites": [
       "cv-feed-the-working"
     ],
-    "researchCost": 8192,
+    "researchCost": 8672,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -1641,7 +1641,7 @@
       "cv-the-standing-aura",
       "cv-the-warded-precinct"
     ],
-    "researchCost": 32768,
+    "researchCost": 41674,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -1675,7 +1675,7 @@
     "gloss": "Take an hour-old print for everything it is: what made it, what weight it was carrying, and whether it was hurrying away from something that is still nearby.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1910,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -1699,7 +1699,7 @@
     "prerequisites": [
       "ian-cut-the-sign"
     ],
-    "researchCost": 4096,
+    "researchCost": 3949,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -1723,7 +1723,7 @@
     "prerequisites": [
       "ian-number-the-herd"
     ],
-    "researchCost": 8192,
+    "researchCost": 8039,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -1754,7 +1754,7 @@
       "ian-chart-the-migration",
       "im-follow-the-thought"
     ],
-    "researchCost": 16384,
+    "researchCost": 12693,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -1782,7 +1782,7 @@
     "gloss": "Find how deep the water truly sits, and whether it will still be sitting there in August, without lowering a rope into it.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1952,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -1806,7 +1806,7 @@
     "prerequisites": [
       "iaq-sound-the-well"
     ],
-    "researchCost": 4096,
+    "researchCost": 3992,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -1836,7 +1836,7 @@
     "prerequisites": [
       "iaq-sip-the-standing-pool"
     ],
-    "researchCost": 8192,
+    "researchCost": 7867,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -1866,7 +1866,7 @@
     "prerequisites": [
       "iaq-trace-the-current"
     ],
-    "researchCost": 16384,
+    "researchCost": 15425,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -1894,7 +1894,7 @@
     "gloss": "The old soldier's knee, made deliberate and made accurate. Three days' warning saves more harvests than any working of Creo, and costs a university nothing to keep.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1973,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -1918,7 +1918,7 @@
     "prerequisites": [
       "iau-the-ache-before-rain"
     ],
-    "researchCost": 4096,
+    "researchCost": 4079,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -1942,7 +1942,7 @@
     "prerequisites": [
       "iau-gauge-the-winds-road"
     ],
-    "researchCost": 8192,
+    "researchCost": 7952,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -1972,7 +1972,7 @@
     "prerequisites": [
       "iau-reckon-the-season"
     ],
-    "researchCost": 16384,
+    "researchCost": 16283,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -2000,7 +2000,7 @@
     "gloss": "Two fingers at a wrist, and the whole of what the body is currently doing about itself. Every physician thinks she can already do this; the ones who can are the ones who stop being surprised.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1555,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -2024,7 +2024,7 @@
     "prerequisites": [
       "ic-take-the-pulse"
     ],
-    "researchCost": 4096,
+    "researchCost": 3320,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -2048,7 +2048,7 @@
     "prerequisites": [
       "ic-sift-the-humours"
     ],
-    "researchCost": 8192,
+    "researchCost": 6760,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -2078,7 +2078,7 @@
     "prerequisites": [
       "ic-listen-at-the-ribs"
     ],
-    "researchCost": 16384,
+    "researchCost": 13255,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -2106,7 +2106,7 @@
     "gloss": "The oldest divination there is, made honest. The lots were always random; this working is the part that makes them not, and every student's first result is indistinguishable from luck.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1696,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -2130,7 +2130,7 @@
     "prerequisites": [
       "if-cast-the-lots"
     ],
-    "researchCost": 4096,
+    "researchCost": 3357,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -2154,7 +2154,7 @@
     "prerequisites": [
       "if-the-omen-and-the-coincidence"
     ],
-    "researchCost": 8192,
+    "researchCost": 7698,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -2185,7 +2185,7 @@
       "if-the-fork-seen-from-above",
       "in-derive-the-true-name"
     ],
-    "researchCost": 16384,
+    "researchCost": 13992,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -2215,7 +2215,7 @@
     "prerequisites": [
       "if-the-appointed-hour"
     ],
-    "researchCost": 32768,
+    "researchCost": 25598,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -2249,7 +2249,7 @@
     "gloss": "See the rot in a field on the morning it decides to happen, rather than on the morning it shows.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1890,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -2273,7 +2273,7 @@
     "prerequisites": [
       "ih-sight-the-blight"
     ],
-    "researchCost": 4096,
+    "researchCost": 3906,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -2297,7 +2297,7 @@
     "prerequisites": [
       "ih-question-the-orchard"
     ],
-    "researchCost": 8192,
+    "researchCost": 7615,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -2327,7 +2327,7 @@
     "prerequisites": [
       "ih-pick-out-the-simple"
     ],
-    "researchCost": 16384,
+    "researchCost": 15593,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -2355,7 +2355,7 @@
     "gloss": "Know the state of a fire without opening the door to it, which is the only way to know the state of a fire.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1952,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -2379,7 +2379,7 @@
     "prerequisites": [
       "iig-judge-the-kiln"
     ],
-    "researchCost": 4096,
+    "researchCost": 4168,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -2409,7 +2409,7 @@
     "prerequisites": [
       "iig-the-colour-of-ready-iron"
     ],
-    "researchCost": 8192,
+    "researchCost": 6132,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -2433,7 +2433,7 @@
     "prerequisites": [
       "iig-scry-the-coals"
     ],
-    "researchCost": 16384,
+    "researchCost": 16108,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -2461,7 +2461,7 @@
     "gloss": "Notice that what you are looking at is a picture of itself. The first lesson is that the tell is never in the image; it is in how little the image is bothering to be looked at from the side.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1606,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -2486,7 +2486,7 @@
       "iim-catch-the-painted-thing",
       "im-weigh-the-attention"
     ],
-    "researchCost": 4096,
+    "researchCost": 3320,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -2510,7 +2510,7 @@
     "prerequisites": [
       "iim-watch-the-light-lie"
     ],
-    "researchCost": 8192,
+    "researchCost": 6760,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -2540,7 +2540,7 @@
     "prerequisites": [
       "iim-the-room-you-are-not-in"
     ],
-    "researchCost": 16384,
+    "researchCost": 13255,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -2568,7 +2568,7 @@
     "gloss": "Feel the exact line at which one place stops being itself. A student who has it stops walking into doorways she did not know were there.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1659,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -2592,7 +2592,7 @@
     "prerequisites": [
       "il-sense-the-seam"
     ],
-    "researchCost": 4096,
+    "researchCost": 3430,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -2616,7 +2616,7 @@
     "prerequisites": [
       "il-count-the-doors"
     ],
-    "researchCost": 8192,
+    "researchCost": 6760,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -2640,7 +2640,7 @@
     "prerequisites": [
       "il-read-the-binding"
     ],
-    "researchCost": 16384,
+    "researchCost": 12693,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -2662,7 +2662,7 @@
     "gloss": "Tell whether you are being listened to, and by how much of a mind.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1624,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -2686,7 +2686,7 @@
     "prerequisites": [
       "im-weigh-the-attention"
     ],
-    "researchCost": 4096,
+    "researchCost": 3621,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -2710,7 +2710,7 @@
     "prerequisites": [
       "im-follow-the-thought"
     ],
-    "researchCost": 8192,
+    "researchCost": 7136,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -2735,7 +2735,7 @@
       "im-read-the-surface",
       "in-hear-the-name-spoken"
     ],
-    "researchCost": 16384,
+    "researchCost": 14454,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -2763,7 +2763,7 @@
     "gloss": "Notice that a thing has a name at all, which most people go their whole lives without doing.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1677,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -2787,7 +2787,7 @@
     "prerequisites": [
       "in-hear-the-name-spoken"
     ],
-    "researchCost": 4096,
+    "researchCost": 3468,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -2811,7 +2811,7 @@
     "prerequisites": [
       "in-spell-the-lesser-name"
     ],
-    "researchCost": 8192,
+    "researchCost": 7059,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -2841,7 +2841,7 @@
     "prerequisites": [
       "in-derive-the-true-name"
     ],
-    "researchCost": 16384,
+    "researchCost": 13842,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -2869,7 +2869,7 @@
     "gloss": "Know what the ground under a field will give up before a season is wasted on it.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1849,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -2893,7 +2893,7 @@
     "prerequisites": [
       "it-taste-the-soil"
     ],
-    "researchCost": 4096,
+    "researchCost": 3949,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -2923,7 +2923,7 @@
     "prerequisites": [
       "it-survey-the-strata"
     ],
-    "researchCost": 8192,
+    "researchCost": 7533,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -2948,7 +2948,7 @@
       "it-survey-the-strata",
       "il-count-the-doors"
     ],
-    "researchCost": 8192,
+    "researchCost": 7533,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -2970,7 +2970,7 @@
     "gloss": "Notice that something in the room is casting one shadow more than it is entitled to. Half the students who learn it stop sleeping well; the other half stop being surprised by anything.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1642,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -2994,7 +2994,7 @@
     "prerequisites": [
       "iu-the-second-shadow"
     ],
-    "researchCost": 4096,
+    "researchCost": 3393,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -3019,7 +3019,7 @@
       "iu-what-the-shadow-remembers",
       "il-sense-the-seam"
     ],
-    "researchCost": 8192,
+    "researchCost": 6908,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -3049,7 +3049,7 @@
     "prerequisites": [
       "iu-look-along-the-shadow"
     ],
-    "researchCost": 16384,
+    "researchCost": 12556,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -3074,7 +3074,7 @@
       "iu-the-unlit-line",
       "if-the-fork-seen-from-above"
     ],
-    "researchCost": 32768,
+    "researchCost": 23988,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -3102,7 +3102,7 @@
     "gloss": "The small pull in a room in the moment before something is cast in it. Students describe it as a held breath that is not theirs, and the ones who never feel it are usually the ones who die indoors.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1714,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -3127,7 +3127,7 @@
       "iv-feel-the-air-go-tight",
       "in-hear-the-name-spoken"
     ],
-    "researchCost": 4096,
+    "researchCost": 3543,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -3151,7 +3151,7 @@
     "prerequisites": [
       "iv-price-the-working"
     ],
-    "researchCost": 8192,
+    "researchCost": 7214,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -3181,7 +3181,7 @@
     "prerequisites": [
       "iv-the-residue-in-the-room"
     ],
-    "researchCost": 16384,
+    "researchCost": 13545,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -3209,7 +3209,7 @@
     "gloss": "Move a beast's coat into a season it is not in. The wool comes off thick in high summer and the animal spends the rest of the year disagreeing with the weather.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2347,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -3233,7 +3233,7 @@
     "prerequisites": [
       "ma-turn-the-coat"
     ],
-    "researchCost": 4096,
+    "researchCost": 4645,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -3257,7 +3257,7 @@
     "prerequisites": [
       "ma-the-willing-ox"
     ],
-    "researchCost": 8192,
+    "researchCost": 8672,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -3281,7 +3281,7 @@
     "prerequisites": [
       "ma-the-changed-kennel"
     ],
-    "researchCost": 16384,
+    "researchCost": 18543,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -3309,7 +3309,7 @@
     "gloss": "Turn foul water into water. Not clean water — water, which is a lower standard than the phrase suggests and has founded more towns than any other working in the cell.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2296,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -3333,7 +3333,7 @@
     "prerequisites": [
       "maq-sweeten-the-cistern"
     ],
-    "researchCost": 4096,
+    "researchCost": 4546,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -3357,7 +3357,7 @@
     "prerequisites": [
       "maq-thicken-the-ford"
     ],
-    "researchCost": 8192,
+    "researchCost": 8578,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -3381,7 +3381,7 @@
     "prerequisites": [
       "maq-the-standing-river"
     ],
-    "researchCost": 16384,
+    "researchCost": 17377,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -3409,7 +3409,7 @@
     "gloss": "Change which way the air has decided to go. Mills, sails, and drying-floors all run on the assumption that this is legal here, and half of them stop when it is not.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2424,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -3433,7 +3433,7 @@
     "prerequisites": [
       "mau-turn-the-wind"
     ],
-    "researchCost": 4096,
+    "researchCost": 4957,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -3463,7 +3463,7 @@
     "prerequisites": [
       "mau-turn-the-wind"
     ],
-    "researchCost": 8192,
+    "researchCost": 7615,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -3488,7 +3488,7 @@
       "mau-the-mild-season",
       "mau-the-air-that-carries-nothing"
     ],
-    "researchCost": 16384,
+    "researchCost": 18343,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -3516,7 +3516,7 @@
     "gloss": "Take the hands of a trade you never trained in. Copyists hired for their fingers rather than their letters are a known and faintly disreputable feature of large libraries.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1910,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -3540,7 +3540,7 @@
     "prerequisites": [
       "mc-borrowed-hands"
     ],
-    "researchCost": 4096,
+    "researchCost": 4696,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -3564,7 +3564,7 @@
     "prerequisites": [
       "mc-borrowed-hands"
     ],
-    "researchCost": 8192,
+    "researchCost": 7452,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -3589,7 +3589,7 @@
       "mc-the-body-for-the-work",
       "mc-wear-another-face"
     ],
-    "researchCost": 16384,
+    "researchCost": 14612,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -3613,7 +3613,7 @@
     "prerequisites": [
       "mc-the-long-body"
     ],
-    "researchCost": 32768,
+    "researchCost": 28837,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -3647,7 +3647,7 @@
     "gloss": "Change a trivial fate into a different trivial fate. The dropped cup lands whole and the milk is sour instead. Nothing is gained; something is exchanged, which is the entire cell in one sentence and the reason it is taught first.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2587,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -3671,7 +3671,7 @@
     "prerequisites": [
       "mf-turn-the-small-luck"
     ],
-    "researchCost": 4096,
+    "researchCost": 4124,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -3695,7 +3695,7 @@
     "prerequisites": [
       "mf-change-the-debt"
     ],
-    "researchCost": 8192,
+    "researchCost": 8126,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -3719,7 +3719,7 @@
     "prerequisites": [
       "mf-change-the-debt"
     ],
-    "researchCost": 16384,
+    "researchCost": 20442,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -3750,7 +3750,7 @@
       "mf-the-later-appointment",
       "mf-divide-it-among-the-heirs"
     ],
-    "researchCost": 32768,
+    "researchCost": 39052,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -3784,7 +3784,7 @@
     "gloss": "Turn green timber into seasoned timber without spending the years on it. The beam is honest about having been hurried, and a good carpenter can hear it in the tap of a mallet.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2321,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -3808,7 +3808,7 @@
     "prerequisites": [
       "mh-season-the-green-wood"
     ],
-    "researchCost": 4096,
+    "researchCost": 4595,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -3832,7 +3832,7 @@
     "prerequisites": [
       "mh-season-the-green-wood"
     ],
-    "researchCost": 8192,
+    "researchCost": 9355,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -3863,7 +3863,7 @@
       "mh-the-second-harvest",
       "mh-the-grown-beam"
     ],
-    "researchCost": 16384,
+    "researchCost": 17004,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -3885,7 +3885,7 @@
     "gloss": "Turn a fire's heat into a slower and longer heat of the same total. Smelting that would take a week takes a week, and takes one charge of fuel to do it.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2398,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -3909,7 +3909,7 @@
     "prerequisites": [
       "mi-bank-the-forge"
     ],
-    "researchCost": 4096,
+    "researchCost": 3823,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -3933,7 +3933,7 @@
     "prerequisites": [
       "mi-bank-the-forge"
     ],
-    "researchCost": 8192,
+    "researchCost": 8958,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -3958,7 +3958,7 @@
       "mi-the-cold-flame",
       "mi-teach-the-fire-what-to-eat"
     ],
-    "researchCost": 16384,
+    "researchCost": 18146,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -3986,7 +3986,7 @@
     "gloss": "Change a mechanism's appearance into the appearance of its own structure. Students stop asking what is inside it, because what is inside it is now what they are looking at.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2129,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -4010,7 +4010,7 @@
     "prerequisites": [
       "mim-turn-the-diagram"
     ],
-    "researchCost": 4096,
+    "researchCost": 4214,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -4034,7 +4034,7 @@
     "prerequisites": [
       "mim-turn-the-diagram"
     ],
-    "researchCost": 8192,
+    "researchCost": 7698,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -4059,7 +4059,7 @@
       "mim-the-lecture-made-visible",
       "mim-wear-the-room"
     ],
-    "researchCost": 16384,
+    "researchCost": 16821,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -4087,7 +4087,7 @@
     "gloss": "A wall raised against weather can be persuaded it was raised against people. It was not, and it knows, so the persuasion has to be renewed about as often as a sentry is changed.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2039,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -4111,7 +4111,7 @@
     "prerequisites": [
       "ml-change-what-the-wall-means"
     ],
-    "researchCost": 4096,
+    "researchCost": 4035,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -4135,7 +4135,7 @@
     "prerequisites": [
       "ml-change-what-the-wall-means"
     ],
-    "researchCost": 8192,
+    "researchCost": 9457,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -4160,7 +4160,7 @@
       "ml-the-door-that-was-a-window",
       "il-read-the-binding"
     ],
-    "researchCost": 16384,
+    "researchCost": 16108,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -4188,7 +4188,7 @@
     "gloss": "Change a problem's shape in a mind until it is a problem that mind already knows how to have. Nothing has been solved. The solving now costs what an easy problem costs.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1995,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -4212,7 +4212,7 @@
     "prerequisites": [
       "mm-turn-the-difficulty"
     ],
-    "researchCost": 4096,
+    "researchCost": 4400,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -4243,7 +4243,7 @@
       "mm-the-changed-appetite",
       "im-read-the-surface"
     ],
-    "researchCost": 8192,
+    "researchCost": 8395,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -4267,7 +4267,7 @@
     "prerequisites": [
       "mm-the-changed-appetite"
     ],
-    "researchCost": 16384,
+    "researchCost": 15763,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -4295,7 +4295,7 @@
     "gloss": "Change a true name by the smallest amount that is still a change. The thing changes by the same amount. Most of what is known about naming was learned by doing this to unimportant objects and writing down how they were afterwards slightly different unimportant objects.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2061,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -4320,7 +4320,7 @@
       "mn-alter-one-letter",
       "in-spell-the-lesser-name"
     ],
-    "researchCost": 4096,
+    "researchCost": 4079,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -4344,7 +4344,7 @@
     "prerequisites": [
       "mn-alter-one-letter"
     ],
-    "researchCost": 8192,
+    "researchCost": 9983,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -4369,7 +4369,7 @@
       "mn-lend-the-name",
       "in-derive-the-true-name"
     ],
-    "researchCost": 16384,
+    "researchCost": 17566,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -4400,7 +4400,7 @@
       "mn-call-it-iron-until-it-is",
       "mn-trade-true-names"
     ],
-    "researchCost": 32768,
+    "researchCost": 31108,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -4434,7 +4434,7 @@
     "gloss": "Turn cut stone briefly workable. The masons have the length of an afternoon and no more, and every quarry in the subset has a bell for it.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2272,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -4458,7 +4458,7 @@
     "prerequisites": [
       "mt-soften-the-stone"
     ],
-    "researchCost": 4096,
+    "researchCost": 4497,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -4483,7 +4483,7 @@
       "mt-soften-the-stone",
       "it-survey-the-strata"
     ],
-    "researchCost": 8192,
+    "researchCost": 9154,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -4513,7 +4513,7 @@
     "prerequisites": [
       "mt-the-stone-that-was-sand"
     ],
-    "researchCost": 16384,
+    "researchCost": 17189,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -4541,7 +4541,7 @@
     "gloss": "Change the direction a shadow falls without moving what casts it. Nobody notices, in the sense that nobody can afterwards say what it was they noticed.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2017,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -4565,7 +4565,7 @@
     "prerequisites": [
       "mu-turn-the-shadow"
     ],
-    "researchCost": 4096,
+    "researchCost": 3992,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -4589,7 +4589,7 @@
     "prerequisites": [
       "mu-turn-the-shadow"
     ],
-    "researchCost": 8192,
+    "researchCost": 9355,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -4613,7 +4613,7 @@
     "prerequisites": [
       "mu-the-shadow-of-something-else"
     ],
-    "researchCost": 16384,
+    "researchCost": 15934,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -4641,7 +4641,7 @@
     "gloss": "Change a small spell into a different small spell while it is still being cast. The first thing every apprentice does with it is ruin a working she had already finished paying for.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2106,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -4665,7 +4665,7 @@
     "prerequisites": [
       "mv-turn-the-working"
     ],
-    "researchCost": 4096,
+    "researchCost": 4168,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -4689,7 +4689,7 @@
     "prerequisites": [
       "mv-turn-the-working"
     ],
-    "researchCost": 8192,
+    "researchCost": 8215,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -4713,7 +4713,7 @@
     "prerequisites": [
       "mv-convert-the-form"
     ],
-    "researchCost": 16384,
+    "researchCost": 16640,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -4744,7 +4744,7 @@
       "mv-turn-the-incoming",
       "mv-the-second-tradition"
     ],
-    "researchCost": 32768,
+    "researchCost": 34293,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -4778,7 +4778,7 @@
     "gloss": "Unmake the wind in a beast at a gallop. The rider is not thrown and is not hurt; she is simply on foot, in a field, a long way from her line.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1869,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -4802,7 +4802,7 @@
     "prerequisites": [
       "pan-founder-the-horse"
     ],
-    "researchCost": 4096,
+    "researchCost": 3430,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -4826,7 +4826,7 @@
     "prerequisites": [
       "pan-nothing-takes-the-scent"
     ],
-    "researchCost": 8192,
+    "researchCost": 8039,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -4850,7 +4850,7 @@
     "prerequisites": [
       "pan-empty-the-pasture"
     ],
-    "researchCost": 16384,
+    "researchCost": 16283,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -4878,7 +4878,7 @@
     "gloss": "Unmake the water a body is carrying, beginning with the water it can spare. There is a good deal of it, and then there is not.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1829,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -4903,7 +4903,7 @@
       "paq-thirst",
       "in-spell-the-lesser-name"
     ],
-    "researchCost": 4096,
+    "researchCost": 3621,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -4927,7 +4927,7 @@
     "prerequisites": [
       "paq-unwrite"
     ],
-    "researchCost": 8192,
+    "researchCost": 7867,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -4951,7 +4951,7 @@
     "prerequisites": [
       "paq-the-dry-season"
     ],
-    "researchCost": 16384,
+    "researchCost": 15934,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -4979,7 +4979,7 @@
     "gloss": "Unmake the air a body has already drawn. She does not gasp — there is nothing left to gasp with — and it is the surprise on the face that wardens remember afterwards.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1931,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -5003,7 +5003,7 @@
     "prerequisites": [
       "pau-take-the-breath"
     ],
-    "researchCost": 4096,
+    "researchCost": 3543,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -5027,7 +5027,7 @@
     "prerequisites": [
       "pau-unmake-the-gale"
     ],
-    "researchCost": 8192,
+    "researchCost": 8304,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -5051,7 +5051,7 @@
     "prerequisites": [
       "pau-the-airless-room"
     ],
-    "researchCost": 16384,
+    "researchCost": 16821,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -5079,7 +5079,7 @@
     "gloss": "Take the strength out of the hand that is holding the sword. It is not a wound, and it does not mend the way a wound does.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1890,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -5103,7 +5103,7 @@
     "prerequisites": [
       "pc-wither-the-hand"
     ],
-    "researchCost": 4096,
+    "researchCost": 3741,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -5127,7 +5127,7 @@
     "prerequisites": [
       "pc-the-long-fever"
     ],
-    "researchCost": 8192,
+    "researchCost": 7372,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -5152,7 +5152,7 @@
       "pc-take-the-years",
       "pn-unsay-the-name"
     ],
-    "researchCost": 16384,
+    "researchCost": 14454,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -5174,7 +5174,7 @@
     "gloss": "Unmake a sign before anyone has read it. The augur is not wrong. There is simply nothing there for her to be right about.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1910,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -5198,7 +5198,7 @@
     "prerequisites": [
       "pf-spoil-the-omen"
     ],
-    "researchCost": 4096,
+    "researchCost": 4079,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -5223,7 +5223,7 @@
       "pf-take-the-luck",
       "pn-unsay-the-name"
     ],
-    "researchCost": 8192,
+    "researchCost": 7452,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -5247,7 +5247,7 @@
     "prerequisites": [
       "pf-nothing-is-owed"
     ],
-    "researchCost": 16384,
+    "researchCost": 17377,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -5271,7 +5271,7 @@
     "prerequisites": [
       "pf-where-nothing-turns-out"
     ],
-    "researchCost": 32768,
+    "researchCost": 31789,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -5299,7 +5299,7 @@
     "gloss": "Unmake a row of a crop at the root. Done at the edge of a field it reads as bad drainage, and that is the point of doing it at the edge.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1849,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -5323,7 +5323,7 @@
     "prerequisites": [
       "ph-wither-the-row"
     ],
-    "researchCost": 4096,
+    "researchCost": 3660,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -5347,7 +5347,7 @@
     "prerequisites": [
       "ph-take-the-haft"
     ],
-    "researchCost": 8192,
+    "researchCost": 7952,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -5372,7 +5372,7 @@
       "ph-the-failed-harvest",
       "pt-pull-down-the-arch"
     ],
-    "researchCost": 16384,
+    "researchCost": 16108,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -5400,7 +5400,7 @@
     "gloss": "Take the fire out of a flame. The wick is not wet and no smoke rises, and the room is a room that a moment ago had a light in it.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1771,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -5424,7 +5424,7 @@
     "prerequisites": [
       "pig-snuff"
     ],
-    "researchCost": 4096,
+    "researchCost": 3781,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -5448,7 +5448,7 @@
     "prerequisites": [
       "pig-snuff"
     ],
-    "researchCost": 8192,
+    "researchCost": 6908,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -5473,7 +5473,7 @@
       "pig-take-the-warmth",
       "pig-the-unburnt-library"
     ],
-    "researchCost": 16384,
+    "researchCost": 13992,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -5501,7 +5501,7 @@
     "gloss": "Unmake the resemblance between a thing and its picture. The portrait is still a portrait. It is simply not of anyone.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1810,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -5525,7 +5525,7 @@
     "prerequisites": [
       "pim-take-the-likeness"
     ],
-    "researchCost": 4096,
+    "researchCost": 3582,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -5549,7 +5549,7 @@
     "prerequisites": [
       "pim-the-quiet-working"
     ],
-    "researchCost": 8192,
+    "researchCost": 8395,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -5573,7 +5573,7 @@
     "prerequisites": [
       "pim-unmake-the-demonstration"
     ],
-    "researchCost": 16384,
+    "researchCost": 13842,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -5595,7 +5595,7 @@
     "gloss": "Wear at a boundary until it stops being certain about where it is. Contains no portal-stability effect, and may never gain one (contracts.md §1.6).",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2017,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -5619,7 +5619,7 @@
     "prerequisites": [
       "pl-fray-the-edge"
     ],
-    "researchCost": 4096,
+    "researchCost": 3992,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -5644,7 +5644,7 @@
       "pl-unhinge",
       "il-read-the-binding"
     ],
-    "researchCost": 8192,
+    "researchCost": 8672,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -5668,7 +5668,7 @@
     "prerequisites": [
       "pl-the-open-wound"
     ],
-    "researchCost": 16384,
+    "researchCost": 17566,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -5696,7 +5696,7 @@
     "gloss": "Take the sharpness out of an attention. The victim is not hurt and cannot say what is wrong, only that thinking has begun to cost more than it did.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1973,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -5720,7 +5720,7 @@
     "prerequisites": [
       "pm-blunt-the-edge"
     ],
-    "researchCost": 4096,
+    "researchCost": 3906,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -5745,7 +5745,7 @@
       "pm-the-misplaced-hour",
       "im-read-the-surface"
     ],
-    "researchCost": 8192,
+    "researchCost": 8486,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -5769,7 +5769,7 @@
     "prerequisites": [
       "pm-scatter-the-lesson"
     ],
-    "researchCost": 16384,
+    "researchCost": 15094,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -5793,7 +5793,7 @@
     "prerequisites": [
       "pm-unmake-the-mind"
     ],
-    "researchCost": 32768,
+    "researchCost": 31789,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -5821,7 +5821,7 @@
     "gloss": "Damage a name slightly, in the mouth of whoever is trying to use it on you.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1890,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -5846,7 +5846,7 @@
       "pn-mispronounce",
       "in-spell-the-lesser-name"
     ],
-    "researchCost": 4096,
+    "researchCost": 3741,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -5870,7 +5870,7 @@
     "prerequisites": [
       "pn-shed-the-use-name"
     ],
-    "researchCost": 8192,
+    "researchCost": 7952,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -5894,7 +5894,7 @@
     "prerequisites": [
       "pn-unsay-the-name"
     ],
-    "researchCost": 16384,
+    "researchCost": 13842,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -5916,7 +5916,7 @@
     "gloss": "Take the bind out of mortar, one course at a time.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1810,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -5940,7 +5940,7 @@
     "prerequisites": [
       "pt-crumble"
     ],
-    "researchCost": 4096,
+    "researchCost": 3949,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -5965,7 +5965,7 @@
       "pt-open-the-ground",
       "it-read-the-fault"
     ],
-    "researchCost": 8192,
+    "researchCost": 7059,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -5989,7 +5989,7 @@
     "prerequisites": [
       "pt-pull-down-the-arch"
     ],
-    "researchCost": 16384,
+    "researchCost": 15763,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -6017,7 +6017,7 @@
     "gloss": "Wear at what a thing leaves behind it. The shadow is still there and no longer quite belongs to anyone, and the thing that cast it is, by a small amount, less.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1995,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -6041,7 +6041,7 @@
     "prerequisites": [
       "pu-thin-the-shade"
     ],
-    "researchCost": 4096,
+    "researchCost": 3949,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -6065,7 +6065,7 @@
     "prerequisites": [
       "pu-lay-the-shade"
     ],
-    "researchCost": 8192,
+    "researchCost": 8578,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -6090,7 +6090,7 @@
       "pu-nothing-casts-here",
       "pm-unmake-the-mind"
     ],
-    "researchCost": 16384,
+    "researchCost": 15259,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -6112,7 +6112,7 @@
     "gloss": "Do not argue with a working. Unmake the part of it that intends to keep going, and then wait a moment.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1931,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -6137,7 +6137,7 @@
       "pv-let-it-lapse",
       "pl-unhinge"
     ],
-    "researchCost": 4096,
+    "researchCost": 3823,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -6162,7 +6162,7 @@
       "pv-the-unfinished-sentence",
       "il-read-the-binding"
     ],
-    "researchCost": 8192,
+    "researchCost": 7533,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -6184,7 +6184,7 @@
     "gloss": "Compel a beast to stand where it was put, without rope and without argument. A draft team that does not shy is worth two teams that do, which is why the working appears in building accounts a century before it appears in any bestiary.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2223,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -6208,7 +6208,7 @@
     "prerequisites": [
       "ran-the-quiet-halter"
     ],
-    "researchCost": 4096,
+    "researchCost": 4400,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -6232,7 +6232,7 @@
     "prerequisites": [
       "ran-the-quiet-halter"
     ],
-    "researchCost": 8192,
+    "researchCost": 6983,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -6257,7 +6257,7 @@
       "ran-drive-the-herd",
       "ran-the-borrowed-eye"
     ],
-    "researchCost": 16384,
+    "researchCost": 17566,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -6285,7 +6285,7 @@
     "gloss": "Send water down the ditch you meant it to take, and keep it there through a season. Irrigation is the oldest application and still the one that pays for the rest.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2175,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -6309,7 +6309,7 @@
     "prerequisites": [
       "raq-turn-the-channel"
     ],
-    "researchCost": 4096,
+    "researchCost": 4306,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -6333,7 +6333,7 @@
     "prerequisites": [
       "raq-raise-the-weir"
     ],
-    "researchCost": 8192,
+    "researchCost": 6833,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -6357,7 +6357,7 @@
     "prerequisites": [
       "raq-turn-the-channel"
     ],
-    "researchCost": 8192,
+    "researchCost": 7372,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -6382,7 +6382,7 @@
       "raq-stand-the-water-off",
       "raq-the-held-breath"
     ],
-    "researchCost": 16384,
+    "researchCost": 16461,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -6410,7 +6410,7 @@
     "gloss": "Put the wind where a sail wants it, for as long as the crossing takes. Timber and stone arrive on the day they were promised, which quietly changes what a university is able to plan.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2296,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -6434,7 +6434,7 @@
     "prerequisites": [
       "rau-set-the-wind"
     ],
-    "researchCost": 4096,
+    "researchCost": 3660,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -6458,7 +6458,7 @@
     "prerequisites": [
       "rau-set-the-wind"
     ],
-    "researchCost": 8192,
+    "researchCost": 7214,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -6483,7 +6483,7 @@
       "rau-turn-the-storm-aside",
       "rau-step-on-the-air"
     ],
-    "researchCost": 16384,
+    "researchCost": 17377,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -6511,7 +6511,7 @@
     "gloss": "Hold a body to its stance, one part at a time — usually your own. Flesh that has been told not to give does not give, and the surgeons found this useful a long time before the duellists did.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1810,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -6535,7 +6535,7 @@
     "prerequisites": [
       "rc-still-the-limb"
     ],
-    "researchCost": 4096,
+    "researchCost": 3582,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -6559,7 +6559,7 @@
     "prerequisites": [
       "rc-still-the-limb"
     ],
-    "researchCost": 8192,
+    "researchCost": 8304,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -6584,7 +6584,7 @@
       "rc-the-steady-hand",
       "rc-puppet-flesh"
     ],
-    "researchCost": 16384,
+    "researchCost": 13842,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -6609,7 +6609,7 @@
       "rc-puppet-flesh",
       "rc-the-lengthened-term"
     ],
-    "researchCost": 32768,
+    "researchCost": 32839,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -6637,7 +6637,7 @@
     "gloss": "Hold a chance to the shape it already had. It cannot make an unlikely thing happen; it can stop a likely one from being spoiled, and across a hundred experiments that is worth a great deal more.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1973,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -6661,7 +6661,7 @@
     "prerequisites": [
       "rf-hold-the-lot"
     ],
-    "researchCost": 4096,
+    "researchCost": 4851,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -6685,7 +6685,7 @@
     "prerequisites": [
       "rf-hold-the-lot"
     ],
-    "researchCost": 8192,
+    "researchCost": 7698,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -6710,7 +6710,7 @@
       "rf-turn-the-ill-hour",
       "rf-the-kept-oath"
     ],
-    "researchCost": 16384,
+    "researchCost": 15593,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -6740,7 +6740,7 @@
     "prerequisites": [
       "rf-the-appointed-hour"
     ],
-    "researchCost": 32768,
+    "researchCost": 35811,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -6768,7 +6768,7 @@
     "gloss": "Compel a cutting to take, and to take the way the grafter intended rather than the way the tree would have preferred. An orchard planted under it comes into bearing years early.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2199,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -6792,7 +6792,7 @@
     "prerequisites": [
       "rh-set-the-graft"
     ],
-    "researchCost": 4096,
+    "researchCost": 4497,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -6822,7 +6822,7 @@
     "prerequisites": [
       "rh-the-obedient-coppice"
     ],
-    "researchCost": 8192,
+    "researchCost": 8215,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -6847,7 +6847,7 @@
       "rh-the-obedient-coppice",
       "rt-set-the-stone"
     ],
-    "researchCost": 16384,
+    "researchCost": 17377,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -6875,7 +6875,7 @@
     "gloss": "Hold a fire at exactly the heat the work wants, for as long as the work takes. Smelters who have it waste no charge and no charcoal, and can say beforehand what a furnace will yield.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2272,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -6899,7 +6899,7 @@
     "prerequisites": [
       "rig-bank-the-forge"
     ],
-    "researchCost": 4096,
+    "researchCost": 3621,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -6923,7 +6923,7 @@
     "prerequisites": [
       "rig-bank-the-forge"
     ],
-    "researchCost": 8192,
+    "researchCost": 7698,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -6948,7 +6948,7 @@
       "rig-hold-the-fire-off",
       "rig-drive-the-flame"
     ],
-    "researchCost": 16384,
+    "researchCost": 17189,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -6976,7 +6976,7 @@
     "gloss": "Compel an image to stay exactly as it was set down, so that the tenth copy of a diagram is still the first. Scriptoria that hold it stop losing figures to the slow drift of careful hands.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1869,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -7000,7 +7000,7 @@
     "prerequisites": [
       "rim-hold-the-likeness"
     ],
-    "researchCost": 4096,
+    "researchCost": 3700,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -7024,7 +7024,7 @@
     "prerequisites": [
       "rim-hold-the-likeness"
     ],
-    "researchCost": 8192,
+    "researchCost": 7867,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -7049,7 +7049,7 @@
       "rim-show-the-working",
       "rm-the-patient-lesson"
     ],
-    "researchCost": 16384,
+    "researchCost": 15934,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -7077,7 +7077,7 @@
     "gloss": "Compel a threshold to keep meaning what it means, against anything arguing otherwise.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1931,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -7101,7 +7101,7 @@
     "prerequisites": [
       "rl-hold-the-door"
     ],
-    "researchCost": 4096,
+    "researchCost": 3823,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -7125,7 +7125,7 @@
     "prerequisites": [
       "rl-hold-the-door"
     ],
-    "researchCost": 8192,
+    "researchCost": 7533,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -7151,7 +7151,7 @@
       "rl-seal-the-way",
       "il-read-the-binding"
     ],
-    "researchCost": 16384,
+    "researchCost": 18343,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -7175,7 +7175,7 @@
     "prerequisites": [
       "rl-open-the-portal"
     ],
-    "researchCost": 32768,
+    "researchCost": 36201,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,
@@ -7209,7 +7209,7 @@
     "gloss": "Keep a mind on the thing in front of it. Unglamorous, and the single largest effect on how fast a university actually teaches.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2039,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -7233,7 +7233,7 @@
     "prerequisites": [
       "rm-hold-the-attention"
     ],
-    "researchCost": 4096,
+    "researchCost": 4035,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -7257,7 +7257,7 @@
     "prerequisites": [
       "rm-the-patient-lesson"
     ],
-    "researchCost": 8192,
+    "researchCost": 9154,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -7282,7 +7282,7 @@
       "rm-the-patient-lesson",
       "im-follow-the-thought"
     ],
-    "researchCost": 16384,
+    "researchCost": 18543,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -7310,7 +7310,7 @@
     "gloss": "Say a thing's name in the imperative and have it arrive. The oldest complaint in the literature is that it does not specify in what condition.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2296,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -7335,7 +7335,7 @@
       "rn-call-by-name",
       "in-spell-the-lesser-name"
     ],
-    "researchCost": 4096,
+    "researchCost": 3864,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -7357,7 +7357,7 @@
     "gloss": "Hold your own name in your own keeping, so that it does not answer when someone else uses it. Taught in the same term as Compel by Name, by professors who consider that an ethics curriculum.",
     "tier": 2,
     "prerequisites": ["rn-call-by-name"],
-    "researchCost": 4096,
+    "researchCost": 3864,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -7374,7 +7374,7 @@
     "prerequisites": [
       "rn-call-by-name"
     ],
-    "researchCost": 8192,
+    "researchCost": 8215,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -7399,7 +7399,7 @@
       "rn-compel-by-name",
       "in-derive-the-true-name"
     ],
-    "researchCost": 16384,
+    "researchCost": 18146,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -7427,7 +7427,7 @@
     "gloss": "Put a block exactly where it belongs, on the first attempt, without a crane.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 2152,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -7451,7 +7451,7 @@
     "prerequisites": [
       "rt-set-the-stone"
     ],
-    "researchCost": 4096,
+    "researchCost": 4260,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -7476,7 +7476,7 @@
       "rt-set-the-stone",
       "it-find-the-deep-seam"
     ],
-    "researchCost": 8192,
+    "researchCost": 8395,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -7501,7 +7501,7 @@
       "rt-raise-the-course",
       "rt-quarry-without-hands"
     ],
-    "researchCost": 16384,
+    "researchCost": 17004,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -7529,7 +7529,7 @@
     "gloss": "Compel a shadow to stay where it was cast while the thing that cast it moves. Nobody watches a shadow; they watch what it says is standing there.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1910,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -7553,7 +7553,7 @@
     "prerequisites": [
       "ru-hold-the-shadow-still"
     ],
-    "researchCost": 4096,
+    "researchCost": 3781,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -7577,7 +7577,7 @@
     "prerequisites": [
       "ru-hold-the-shadow-still"
     ],
-    "researchCost": 8192,
+    "researchCost": 7452,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -7602,7 +7602,7 @@
       "ru-the-lent-shadow",
       "ru-step-by-shadow"
     ],
-    "researchCost": 16384,
+    "researchCost": 17950,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -7630,7 +7630,7 @@
     "gloss": "Hold a half-formed working still while you finish it. Most failed research is not wrong, merely interrupted, and this is the working that stops the interruption from counting.",
     "tier": 1,
     "prerequisites": [],
-    "researchCost": 2048,
+    "researchCost": 1995,
     "teachCost": 512,
     "scribeCost": 1024,
     "rediscoveryMultiplier": 5632,
@@ -7654,7 +7654,7 @@
     "prerequisites": [
       "rv-steady-the-working"
     ],
-    "researchCost": 4096,
+    "researchCost": 3949,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
@@ -7678,7 +7678,7 @@
     "prerequisites": [
       "rv-steady-the-working"
     ],
-    "researchCost": 8192,
+    "researchCost": 8039,
     "teachCost": 2048,
     "scribeCost": 4096,
     "rediscoveryMultiplier": 6144,
@@ -7709,7 +7709,7 @@
       "rv-turn-the-casting",
       "rv-the-working-kept-in-iron"
     ],
-    "researchCost": 16384,
+    "researchCost": 15259,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,
@@ -7733,7 +7733,7 @@
     "prerequisites": [
       "rv-forbid-the-casting"
     ],
-    "researchCost": 32768,
+    "researchCost": 34666,
     "teachCost": 8192,
     "scribeCost": 16384,
     "rediscoveryMultiplier": 8192,

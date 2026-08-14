@@ -403,7 +403,12 @@ describe('contentRevision', () => {
     // cells and not the weights, `main`'s d4e3047 over one that has neither,
     // and this tree's preimage strictly contains both. Measured with
     // `npm run check:content` on the merged tree rather than picked from a side.
-    expect(registry.contentRevision).toBe('bf1d3835cc22ad5168a468a6ef907f6d');
+    //
+    // bf1d3835cc22ad5168a468a6ef907f6d -> 4db249045e6b40860a2d5aaa14a8d86f, when
+    // #80's per-node `researchCost` variation joined the union. Measured on the
+    // merged tree; #80's own branch asserted 938a659562b1ca222bcc34bb5d2c7b1a
+    // over a preimage without the seventy-cell flags or the affiliation weights.
+    expect(registry.contentRevision).toBe('4db249045e6b40860a2d5aaa14a8d86f');
   });
 
   it('is stable across loads of identical content', () => {
