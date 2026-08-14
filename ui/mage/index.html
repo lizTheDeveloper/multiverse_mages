@@ -322,6 +322,9 @@
   }
   .reading .body p { margin: 0 0 7px; font-size: 14.5px; line-height: 1.5; }
   .reading .body p:last-of-type { margin-bottom: 0; }
+  .reading .body .caveat { margin-top: .7rem; padding-top: .6rem; border-top: 1px solid var(--loss);
+    font-size: 13.5px; line-height: 1.5; color: var(--soft); }
+  .reading .body .caveat b { color: var(--loss); font-weight: 600; }
   .reading .body .work {
     font-family: var(--mono); font-size: 10.5px; color: var(--soft);
     font-variant-numeric: tabular-nums; margin-top: 9px;
@@ -515,6 +518,8 @@
     for reading someone you cannot command.</p>
   </div>
 
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
   <div class="provbar">
     <label><input type="checkbox" id="pt"> Show data provenance</label>
     <div class="key">
@@ -634,6 +639,7 @@
         <em>transmissible</em>, which is worse, because nothing announces it. Below
         <span class="num">512</span> she cannot teach it and cannot pass it on, and nothing in the subsystem
         restores mastery — practice does, and practice is an operation somebody has to perform.</p>
+        <div class="caveat"><b>No mage like this currently exists in a run.</b> W8 measured <code>libraryDependence</code> at <b>0</b> and <code>nodesLost</code> at 0.00 for six of eight strategies: at 50–80 copies per node nothing is ever the last copy, so the situation this panel is built around cannot arise today. The arithmetic is still correct and the read-path gap it found is still real — the scenario is aspirational until concentration changes, which the campaign names as the remaining problem rather than a tuning value.</div>
         <div class="work">704 − 512 = 192 &nbsp;·&nbsp; decay 16/tick at retention 512 &nbsp;·&nbsp; 192 ÷ 16 = 12 ticks &nbsp;·&nbsp; 1 tick = 1 month</div>
         <div class="gap"><b>The panel cannot compute any of this.</b> Mastery is a snapshot field, but the
         floor, the per-tick rate and the threshold crossing are rules computations, and contracts §5 forbids
@@ -902,4 +908,13 @@
 <script type="module">
   import { floatThemeControl } from '../shared/theme.js';
   floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['individualMages', 'explainChannel']);
 </script>

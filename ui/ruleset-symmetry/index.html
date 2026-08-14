@@ -134,6 +134,8 @@
   cell looks identical whether your civilization has spent two centuries in it or has never held a single
   node there. <em>The second kind is a pure gift to an attacker, and nothing currently says so.</em></p>
 
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
   <div class="axes" id="axes"></div>
   <div class="dirs" id="dirs"></div>
 
@@ -361,4 +363,13 @@ render();
 <script type="module">
   import { floatThemeControl } from '../shared/theme.js';
   floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['ruleset', 'otherUniverse']);
 </script>

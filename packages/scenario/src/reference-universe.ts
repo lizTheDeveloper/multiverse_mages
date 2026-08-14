@@ -80,7 +80,12 @@ import {
 import { KnowledgeSubsystem, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
 import { readRaidTuning } from '@mm/rules-raid';
 import { createMage } from '@mm/rules-world';
-import type { GodConstants, GodTickReport, WorldStepReport } from '@mm/coordination';
+import type {
+  AblationMask,
+  GodConstants,
+  GodTickReport,
+  WorldStepReport,
+} from '@mm/coordination';
 import { defineWorldSimulation, resolveGodContent } from '@mm/coordination';
 
 import type { RulesetAxes } from './content-set.js';
@@ -95,6 +100,8 @@ import {
   v1RulesetAxes,
   worldDeps,
 } from './content-set.js';
+import { BalanceTelemetryRecorder, balanceTelemetrySystem } from './balance-telemetry.js';
+import type { BalanceRunTelemetry } from './balance-telemetry.js';
 import type { RaidRecord } from './raids.js';
 import { raidSystem } from './raids.js';
 import { portalTargetIds, readRivalConstants } from './rival-universe.js';
@@ -753,6 +760,15 @@ export interface ReferenceRun {
    * the build makes, not something a collector infers from an empty list.
    */
   raids: () => readonly RaidRecord[];
+  /**
+   * The §7 per-run telemetry this run produced — the knowledge census and the
+   * per-`(species, tier)` first-reach table.
+   *
+   * A closure like the two above it, and per-run for the same reason. Call it
+   * **after** the episode: `balanceTelemetry()` finalizes the run's last census
+   * sample, which is the one a system cannot take. See `balance-telemetry.ts`.
+   */
+  balanceTelemetry: () => BalanceRunTelemetry;
 }
 
 /** The scenario id every reference run records. Stable; a baseline is keyed on it. */
@@ -771,6 +787,42 @@ export interface ReferenceScenarioOptions {
    * assumed. Everything shipped runs with it `true`.
    */
   readonly raids?: boolean;
+  /**
+   * Whether the §7 balance-telemetry system is installed. Default `true`.
+   *
+   * The **inertness control**, and it exists for the same reason `raids` does:
+   * a claim that an instrument does not perturb what it measures is only worth
+   * anything if the un-instrumented arm can actually be built and compared.
+   * `balance-telemetry.test.ts` steps both arms from one seed and asserts
+   * identical snapshot hashes; without this switch that assertion could only be
+   * made against a hash somebody wrote down once.
+   *
+   * `false` is **not** a build to collect against: `balanceTelemetry()` then
+   * returns an empty census, and §7's per-run collectors will honestly report
+   * `no-observations` for a universe that was simply never watched. Everything
+   * shipped runs with it `true`.
+   */
+  readonly telemetry?: boolean;
+  /**
+   * §9's ablation mask for this run, or absent for the control arm.
+   *
+   * Per **scenario**, not per `ReferenceContent`, and that placement is the
+   * whole of the fix. A `ReferenceContent` is resolved once and memoized for the
+   * life of a worker process — `CONTENT_BY_TRADITION` in `executor.ts` — so a
+   * mask folded into `content.deps` would be shared by every subsequent run the
+   * worker executed, and one ablation arm would silently neutralize the arms
+   * scheduled after it. `referenceScenario` is already built once per run, for
+   * exactly the reasons its own doc comment gives, so it is the object whose
+   * lifetime matches a mask's.
+   *
+   * Absent is strictly not the same as {@link NO_ABLATION} here: absent leaves
+   * `WorldStepDeps.ablation` undefined, so every control run, every golden
+   * replay fixture and every committed baseline takes the byte-identical branch
+   * at `world-step.ts`'s three `deps.ablation === undefined` sites. The two are
+   * arithmetically equivalent and only one of them is a claim worth making on a
+   * path with baselines attached.
+   */
+  readonly ablation?: AblationMask;
 }
 
 /**
@@ -787,25 +839,46 @@ export function referenceScenario(
   content: ReferenceContent = referenceContent(),
   options: ReferenceScenarioOptions = {},
 ): ReferenceRun {
-  const simulation = defineWorldSimulation(content.deps);
+  const simulation = defineWorldSimulation(
+    options.ablation === undefined ? content.deps : { ...content.deps, ablation: options.ablation },
+  );
   const raiding = options.raids ?? true;
 
+  // Per run, like the report closures and the raid log, and installed **first**
+  // so that the tick it labels a sample with is the tick the state arrived at.
+  // It writes nothing and draws nothing; see `balance-telemetry.ts`.
+  const recorder = new BalanceTelemetryRecorder(content);
+  const recording = options.telemetry ?? true;
+  const telemetrySystems = recording ? [balanceTelemetrySystem(recorder)] : [];
+  const balanceTelemetry = (): BalanceRunTelemetry => {
+    if (recording) recorder.finish();
+    return recorder.telemetry();
+  };
+
   if (!raiding) {
+    const raidlessSchema = defineWorldStateSchema([
+      ...telemetrySystems,
+      ...simulation.schema.systems,
+    ]);
     return {
       scenario: {
         scenarioId: REFERENCE_SCENARIO_ID,
         catalogue: content.catalogue,
-        create: (runSeed: number, config: ScenarioConfig): SimState =>
-          buildReferenceState({
+        create: (runSeed: number, config: ScenarioConfig): SimState => {
+          const state = buildReferenceState({
             runSeed,
             options: referenceOptions(config),
             content,
-            schema: simulation.schema,
-          }),
+            schema: raidlessSchema,
+          });
+          recorder.begin(state);
+          return state;
+        },
       },
       lastReport: simulation.lastReport,
       lastGodReport: simulation.lastGodReport,
       raids: () => [],
+      balanceTelemetry,
     };
   }
 
@@ -822,6 +895,7 @@ export function referenceScenario(
   // Last in the list, so the god's action 14 has already been resolved and paid
   // for by the time this reads it.
   const schema = defineWorldStateSchema([
+    ...telemetrySystems,
     ...simulation.schema.systems,
     raidSystem({
       content,
@@ -849,16 +923,20 @@ export function referenceScenario(
         // scenario reused across two would report the first one's raids in the
         // second one's record.
         records.length = 0;
-        return buildReferenceState({
+        const state = buildReferenceState({
           runSeed,
           options: referenceOptions(config),
           content,
           schema,
         });
+        // The census belongs to one episode too, and for the identical reason.
+        recorder.begin(state);
+        return state;
       },
     },
     lastReport: simulation.lastReport,
     lastGodReport: simulation.lastGodReport,
     raids: () => records,
+    balanceTelemetry,
   };
 }
