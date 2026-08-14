@@ -7257,3 +7257,61 @@ old baseline to the new one**, i.e. #127's own effect, recorded on purpose. They
 about this run and must not be read as one.
 
 Written down before the run finished, because a prediction made after the fact is not one.
+
+## W147 — correcting W141: #72 is *not* #137's companion, and the measurement says so
+
+I relayed the #137 author's review as *"#137 and #72 are one decision, not two"* and briefed an agent
+on that basis. **The agent measured it and the claim does not hold.**
+
+**`resolveOpeningSquare`'s default path returns `v1RulesetAxes(registry)`** — which reads *the same
+`v1` flag #137 sets*. Measured: as shipped it yields 3×4 = 12 cells; with all seventy flagged, 5×14 =
+**70**. So **#72 on top of #137 opens the whole grid on every shipped path.** It does not narrow
+anything.
+
+`explicitOpeningAxes` — the function that would take a square by name rather than from the flag —
+**exists and has no caller.** Another instance of built-and-never-reached, and by my count the
+seventh distinct one this campaign has surfaced.
+
+So the accurate statement is: **#72 supplies the mechanism and none of the wiring.** The follow-up
+edit that would make it #137's companion is wiring `explicitOpeningAxes` into the reference
+universe's default — and that changes what a universe starts with, moving `ui/session.json`'s
+`snapshotHash` and every baseline metric legitimately. The agent deliberately did not do it, and was
+right not to: it is a design decision that belongs with the re-baseline call, not an unattended fix.
+
+**And the three effects I attributed to the missing square split three ways:**
+
+- **Looting: not restorable by any square, at all.** `shelveForeignBooks` selects on `record.v1`, not
+  on the ruleset. 249 of 300 nodes are shelvable today; **0 of 300** under #137. The square cannot
+  reach this — it needs the selector re-keyed onto the god's gate, which is the mismatch W141 already
+  identified and nobody has fixed.
+- **`build-rate`: did not reproduce.** A 5×14 stand-in gave **more** effect lines (873 vs 507), not
+  fewer. Reported as **unreconciled** and explicitly *not* as a refutation — reconciling needs #137
+  actually in the tree.
+- **`portal-rush`: not measurable here.** The rival's `raiderNodeCandidates` and `shelveForeignBooks`
+  both key on `cell.v1`, which the stand-in does not move.
+
+That is the correct standard: one refuted, one unreconciled, one unmeasurable, each labelled as such
+rather than folded into a single confident sentence. I had folded them.
+
+### #72's own gate failure is re-baseline decision six
+
+`verify:nosweeps` is exit 0, **4,402/4,402**. All three gates fail on exactly one line each —
+`provenance.rngRegistryHash` — while **every metric passes at delta `0.00000`**. Appending
+`openingSquare: 12` changes `canonicalHash(RNG_STREAM)`, and `gate.ts` treats that key as a
+block-level refusal. **A hash alone cannot distinguish "appended" from "renumbered"**, so this is
+unfixable without either re-baselining or changing the baseline format. Neither was done.
+
+## W148 — `main` moves under a merge, and the stale file arrives without a conflict
+
+#132 landed **mid-merge** for the #72 agent. Its first merge silently kept the branch's **older
+ascension baseline** — no conflict, no warning, a clean merge of a stale file. Caught only by diffing
+the merged tree against `origin/main` afterwards; fixed by a second merge.
+
+This is `CLAUDE.md`'s `package-lock.json` hazard generalised, and worth stating in the general form:
+**a file that auto-merges without a conflict can still be the wrong version, and git will not tell
+you.** With a gated chain landing PRs through the night, every in-flight branch is exposed to it.
+
+The procedure, now sent to the other agent merging right now: after merging `origin/main`, fetch
+again, check whether `main` moved, and **diff the merged tree against `origin/main` for the paths you
+did not intend to touch** — `balance/**`, `ui/session.json`, `packages/content/data/**`. Anything
+differing there that you did not author is this failure.
