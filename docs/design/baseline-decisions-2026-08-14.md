@@ -44,8 +44,20 @@ that is a control someone actually ran.
   rows moved**, verified independently against that base rather than against today's `main`.
 - **But the branch is far behind**, and `main` has since taken #127. A rebase makes this a **real**
   re-baseline against a base whose numbers genuinely differ.
-- *Recommendation:* **rebase first, then re-report.** Do not accept the current files — they are
-  provenance-only against a base that no longer exists.
+- **Measured what the rebase would cost** (2026-08-14, `origin/main` at `954da94`): the branch's
+  three baselines differ from `main`'s in **103 of 109 rows**, and all three `contentHash`es differ.
+  **That movement is `main`'s, not the branch's** — `main` has taken #127 and #132 since `ebe4fb4`,
+  and the branch's files still carry `ebe4fb4`-era values.
+- So a textual rebase cannot settle this: whichever side wins silently decides the baseline, which is
+  the `package-lock.json` hazard in a file where it matters far more.
+- **A prediction that would make the decision small.** The alliance branch adds a god verb (action
+  16). If no strategy in the gate pool exercises it, a re-run on the rebased tree should reproduce
+  `main`'s values exactly, and the regeneration would again be **provenance-only** — the same result
+  it had against its own base. If instead the values move, the verb *is* being exercised and the
+  movement is the finding.
+- *Recommendation:* **rebase, re-run the three gates, and report.** Do not accept the current files —
+  they are provenance-only against a base that no longer exists. Cost is one gate cycle (~35 min for
+  the 200-year one), and it converts this from an unanswerable question into a one-line answer.
 
 ---
 
