@@ -274,7 +274,7 @@ universes you are not looking at.
 
 If the client omits it, the player cannot price a raid while the harness scores them on exactly that.
 
-### 5.1a The vision permits mid-raid rule changes and the contract still forbids them — **defect**
+### 5.1a The vision permits mid-raid rule changes and the contract now agrees — **resolved on paper, open in code**
 
 `raid-engagement.md` repeals `vision.md` §3's frozen-policy sentence, and vision §3 on `main` now
 reads *"Rules changes may be made during a raid, and every change locks until the raid ends."*
@@ -288,10 +288,23 @@ W8's note that *"`contracts.md` needed no change"* was about §1.1 and the one-u
 about §4.2. The two documents now disagree about whether the game's most interesting moment has any
 verbs in it.
 
-This is not a documentation tidy. `contracts.md` is what every implementation reads, and the mask is
-enforced in one place on purpose; while §4.2 stands, the raid design the vision now describes cannot
-be built, and `ui/raid/`'s premise — verbs whose agency decays across three phases — is unbuildable
-against the contract as written.
+**Amended.** §4.2 now carries a per-action table: permit technique and form are legal during an
+engagement and lock; forbid is legal for the defender only and locks; edicts and everything else stay
+masked. Forbidding is defender-only per `raid-engagement.md` §6.2, because under §3 the host's
+ruleset governs and an attacker forbidding their own cells would change nothing.
+
+**Two silences were made visible rather than filled.** The raid document names *"forbid and permit"*
+and says nothing about edicts, so actions 5–7 stay masked with the gap recorded; and the raid verb
+set it describes has no action ids in §4.2 at all, with a note that Vis collides with
+`mages-and-species`'s economy requirement forbidding a fourth resource.
+
+**Still open in code**, which is why this is not simply resolved: `agent-api/src/mask.ts` returns
+`[1, 0, 0, …]` from one early return in engagement mode and quotes the repealed paragraph verbatim;
+the released `observation-action-space` spec still requires the old rule; `interventions` still says
+every intervention is world-time only. Unmasking four actions widens the legal action set inside
+every engagement, so it moves what every committed baseline measured — it needs its own change with
+its own re-baselining, not a ride-along on a documentation edit. Until then `ui/raid/`'s premise is
+sound against the contract and still unbuildable against the code.
 
 ### 5.2 Cost per tick of effect is the comparison nobody can make — **open**
 

@@ -898,12 +898,70 @@ Any layer accepting actions across a trust boundary (`server`, and `gym-bridge` 
 remotely) MUST apply its own admission policy — rate limiting, disconnection — *before* the action
 reaches the core. The core does not defend itself; the boundary does.
 
-**Every action except no-op is masked during engagement.** The god acts only in world time. This
-covers the ruleset actions 1–7 and 13, and equally 8–12, 14, and 15: blessing a defender mid-raid,
-or declaring ascension to escape a losing one, violates frozen policy exactly as squarely as
-forbidding a technique does. Silence in an earlier draft of this table was not permission.
+**Most actions are masked during engagement, and four are not.** This paragraph previously read
+*"every action except no-op is masked"*, enforcing vision §3's frozen-policy sentence. **That
+sentence was repealed** by `raid-engagement.md`, and vision §3 now reads: *"Rules changes may be made
+during a raid, and every change locks until the raid ends."* This table is what every implementation
+reads, so it is amended here rather than left to disagree with the vision of record.
 
-This is the vision's frozen-policy rule (§3), enforced in one place.
+| ID | Action | During engagement |
+|---|---|---|
+| 1 | permit technique | **legal**, and locks |
+| 2 | forbid technique | **legal for the defender only**, and locks |
+| 3 | permit form | **legal**, and locks |
+| 4 | forbid form | **legal for the defender only**, and locks |
+| 5–7 | edicts: dispensation, interdiction, revoke | masked — see the open question below |
+| 8–15 | every other action | masked |
+
+**The lock is the whole point and it is a mask rule, not a cost rule.** A cell permitted mid-raid
+MUST NOT be forbidden again before the raid resolves, and one forbidden mid-raid MUST NOT be
+permitted again. So the mask entry for the inverse action on that axis goes false for the remainder
+of the engagement, which makes every mid-raid change a commitment under uncertainty rather than a
+reaction knob. `raid-engagement.md` §1: *"Without the lock, mid-raid policy is a reaction knob and
+the correct play is to counter whatever you last saw."*
+
+**Forbidding is defender-only**, ruled in `raid-engagement.md` §6.2: under §3 the host's ruleset
+governs, so an attacker forbidding their own cells would change nothing inside the host universe.
+Making it defender-only turns a dead verb into a deliberate asymmetry.
+
+**Reverting after the raid costs more than the change did.** That multiplier is untuned content and
+is not fixed here.
+
+**Two things this amendment deliberately does not settle**, because `raid-engagement.md` does not
+and `CLAUDE.md` says to stop rather than invent a rule:
+
+- **Edicts (5–7) are unstated.** §3 of that document names *"forbid and permit, which carry over
+  from world time under the locking rule"* and says nothing about single-cell exceptions. An edict
+  is a ruleset change, so the vision's amended sentence arguably reaches it; the raid document's
+  enumeration does not. They stay masked until someone rules, and this row exists so the silence is
+  visible rather than inherited.
+**Not yet implemented, and the gap is named rather than left to be discovered.** This amendment
+changes what the contract *says*; it changes no code. Three places still enforce the repealed rule
+and each is a deliberate follow-up, not an oversight:
+
+- `packages/agent-api/src/mask.ts` quotes the old paragraph verbatim and returns `[1, 0, 0, …]` from
+  a single early return in engagement mode. That shape was chosen so a newly added action is masked
+  *by default*; unmasking four actions means the branch stops being total, and the reason it was
+  written that way — *"the failure mode this rule has already had once is an action that nobody
+  remembered to add to a list"* — applies with more force after this change, not less.
+- `openspec/specs/observation-action-space/spec.md` carries a released requirement, *"Rules changes
+  are masked during engagement"*, with a scenario asserting every action except no-op is masked.
+- `openspec/changes/god-agency/specs/interventions/spec.md` requires *"Every intervention is
+  world-time only"* and has scenarios refusing blessing and ascension mid-raid. Those two remain
+  correct under this amendment; the technique and form scenarios do not.
+
+**Unmasking these four is a behaviour change, not a documentation change.** It widens the legal
+action set inside every engagement, which moves what any agent can do and therefore what every
+committed balance baseline measured. It should land as its own change with its own re-baselining,
+and until it does, this table describes the rule and `mask.ts` describes today's behaviour. A reader
+who needs to know which is live should read the code.
+
+- **The raid verb set is not in this table.** `raid-engagement.md` §3 gives raids *"their own verbs,
+  live only inside an engagement, distinct from §4's world-time verbs"*, with the defender spending
+  favor and the attacker spending Vis and exposure. Those are not enumerated here and have no action
+  ids. Whoever specifies them must decide whether they extend this space or form a second one — and
+  note that Vis collides with a shipped requirement, `mages-and-species`'s economy spec, which
+  forbids a fourth resource.
 
 ### 4.3 Reward and episode boundaries
 
