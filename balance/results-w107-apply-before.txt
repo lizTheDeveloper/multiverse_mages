@@ -1,3 +1,5 @@
+W107 — BEFORE: origin/main @ 21b034f, no apply-magic. Instrument: tools/w107/apply-arms.mjs 2400 8.
+
 W107 — apply-magic arms, 2400 ticks, 8 seed(s) from 589825
 
 ruleset        population      peak pop     food made    stone made       applied      applying         built         mages subs.short fp
