@@ -7213,3 +7213,47 @@ fragile way to hold state. Replaced with a **persistent `Monitor`** that resolve
 `headSha` to `origin/main` and emits only on *change*, so the merge decision happens inline on an
 event rather than inside a script that can be reaped. That is the more durable shape and should be
 the default for anything that has to survive a whole session.
+
+## W146 — a falsifiable claim about the next run, stated before it finishes
+
+`main`'s 200-year balance gate at `019b8e1` — the last commit before #132 landed:
+
+```
+Balance gate for balance-gate-ascension-v1: FAIL (tolerance k = 3 standard errors).
+  baseline-invalid: provenance.contentHash is "d4e3047657b4fa8a1a74e1d52f9f5c86"
+    and the baseline was recorded at "162f80bf169296d0e5fd516cc3c5257a".
+    The gate compares two runs of one build; across two builds a delta is not a
+    regression, it is a category error.
+  pass  referenceGrimoires                       0.21 SE   tolerance 43.7
+  pass  referenceGrimoires@archivist            -0.17 SE   tolerance 275.1
+  pass  referenceGrimoires@denial-warden         0.09 SE   tolerance 8.8
+  pass  referenceGrimoires@narrow-depth         -0.21 SE   tolerance 40.5
+  pass  referenceGrimoires@passive-control       0.60 SE   tolerance 29.8
+  pass  referenceGrimoires@permissive-breadth   -0.29 SE   tolerance 162.7
+```
+
+**This settles the #132 question empirically rather than by argument.** Every individual metric
+passes, comfortably. The gate is red for one reason: `contentHash` `162f80bf…` (what the baseline was
+recorded against) ≠ `d4e30476…` (what `main` now is). #127 shipped the behaviour; its baseline missed
+the merge by 4m43s; the gate has been refusing to compare across builds ever since — correctly, and
+saying so in as many words.
+
+**#132's baseline carries `provenance.contentHash = d4e3047657b4…`.** It is byte-identical to the
+file `w107/apply-magic` itself measured.
+
+### The claim
+
+`5a1ce6c`'s `Balance gate, two hundred world years` will **pass**, on all ninety rows, with no
+`baseline-invalid` line.
+
+**What would disprove it:** any `baseline-invalid` (the hashes still disagree, so the fix was aimed at
+the wrong thing), or any row beyond `k = 3` (the behaviour moved again between `d4e30476` and
+`5a1ce6c`, which would mean one of #133, #136 or #118 changed the simulation while reporting that it
+had not — #136 in particular claimed *every delta exactly `0.00000`*).
+
+The six rows beyond tolerance recorded in #132 — `referencePeakPopulation@permissive-breadth` at
+**8.02 SE**, then −6.11, −4.69, 3.78, 3.15, 3.10 — are its `supersededDeltas`: the movement **from the
+old baseline to the new one**, i.e. #127's own effect, recorded on purpose. They are not a prediction
+about this run and must not be read as one.
+
+Written down before the run finished, because a prediction made after the fact is not one.
