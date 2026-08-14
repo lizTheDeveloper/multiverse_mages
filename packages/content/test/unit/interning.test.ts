@@ -341,7 +341,18 @@ describe('contentRevision', () => {
     // which is the opposite of the ascension-constant move above, and the
     // difference is worth reading: that one changed when a run ends, this one
     // changes nothing until a sweep names a level.
-    expect(registry.contentRevision).toBe('162f80bf169296d0e5fd516cc3c5257a');
+    //
+    // 162f80bf169296d0e5fd516cc3c5257a -> b37b15fc7f882af127057304f72a7522,
+    // when `affiliate` stopped being priced with one number. Two autonomy
+    // weights were added — the opportunity a mage with no university sees in
+    // getting one, and the much smaller opportunity a mage who has one sees in
+    // moving to a deeper one. In the preimage for the plainest possible reason:
+    // they change which goal a mage picks, and two universes that disagreed
+    // about whether their mages join institutions would not be playing the same
+    // game for five minutes. Unlike the god constants above, this one **does**
+    // change every run from its first year, and the balance baselines it moves
+    // are reported in the change that added it rather than regenerated.
+    expect(registry.contentRevision).toBe('b37b15fc7f882af127057304f72a7522');
   });
 
   it('is stable across loads of identical content', () => {
