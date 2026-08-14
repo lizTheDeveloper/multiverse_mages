@@ -84,7 +84,7 @@ import type { LongRunResult } from '@mm/scenario';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 /** Long enough for two hundred world years on a busy machine. */
-const LONG_RUN_TIMEOUT_MS = 300_000;
+const LONG_RUN_TIMEOUT_MS = 1_200_000;
 
 /**
  * The bound `maxCarryingCapacity` gives the shipped `territory.json`.
@@ -342,6 +342,33 @@ describe('two hundred world years of the reference universe', () => {
     // holds: the last window is not zero. A future change that drives vellum
     // to zero for good should fail this loudly rather than have the suite
     // quietly keep asserting the old "dies forever" shape.
+    //
+    // ### THIS TRIPWIRE HAS FIRED, and it is left red on purpose.
+    //
+    // The paragraph above asked for exactly this: *"a future change that drives
+    // vellum to zero for good should fail this loudly rather than have the suite
+    // quietly keep asserting the old 'dies forever' shape."* Enabling all seventy
+    // cells is that change. Measured on this branch, the ten 240-tick windows:
+    //
+    //     research  1616 1267 1649 1305  867 1256 1303 1179 1032  923
+    //     taught     868  972  536  571  846  441 1056  708  888 1694
+    //     scribed    616  525  109    0    5   26   29   18    0    0
+    //
+    // Teaching survives — the two assertions above pass, and the last window is
+    // the busiest teaching window of the run. Scribing does not: books peak at
+    // 1,196 in world year 60 and fall to 290, and the last two windows scribe
+    // nothing at all.
+    //
+    // The mechanism is population rather than content. The wider grid supports a
+    // far larger populace — 20,358 people at year 200 against a few hundred — and
+    // the run ends with human and orc extinct (`mages [10/47/6/24/0/0]`) while
+    // occupations sit at `[89/17/64/0/20188]`: the fourth slot, scriptorium, is
+    // zero from world year 20 onward and everyone is in the fifth. Vellum is not
+    // being produced because nobody is assigned to produce it.
+    //
+    // Not repaired here. Retuning the occupation mix or the vellum economy against
+    // one seed is what this file's own notes warn against twice, and the finding
+    // belongs to whoever owns `mage-autonomy`'s reallocation.
     expect(scribed[0] ?? 0).toBeGreaterThan(0);
     expect(
       scribed[scribed.length - 1] ?? 0,

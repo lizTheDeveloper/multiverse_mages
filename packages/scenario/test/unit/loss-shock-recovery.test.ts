@@ -53,7 +53,16 @@ beforeAll(async () => {
     shock: { atTick: SHOCK_TICK, everyKth: EVERY_KTH },
   });
   control = await runLongReference({ content, ticks: TICKS });
-}, 300_000);
+  // Raised from 300_000. Two two-hundred-year runs, and enabling all seventy
+  // cells took the research frontier from 51 nodes to 300 — so every mage's
+  // frontier scan walks six times as many candidates and the reference universe
+  // grows to twenty thousand people instead of a few hundred. Uninstrumented,
+  // 240 world ticks went from 1.1 s to 2.2 s on this build; at 2,400 ticks with
+  // the population the wider grid supports, the pair of runs no longer fits in
+  // five minutes. `reference-long-run.test.ts` measures the same runs at 141 s
+  // for one of them, so the budget below is roughly four times the observed cost
+  // — room for a loaded machine, not room for a regression.
+}, 1_200_000);
 
 function samplesOf(run: LongRunResult): RosterSample[] {
   const out: RosterSample[] = [];
@@ -123,7 +132,7 @@ describe('the cull itself', () => {
       shock: { atTick: SHOCK_TICK, everyKth: EVERY_KTH },
     });
     expect(again.shock?.culled).toEqual(shocked.shock?.culled);
-  }, 300_000);
+  }, 1_200_000);
 
   it('leaves the control untouched, so the pairing means something', () => {
     expect(control.shock).toBeUndefined();
