@@ -164,11 +164,65 @@ are unusual and good:
 would be one — the first genuinely new primitive proposed in this campaign rather than a consumer for
 an existing one.
 
-### Two failure modes to design against
+### It targets a spell, and it is *supposed* to be griefable
 
-- **Undiscoverable corruption is indistinguishable from a bug.** If a player can never learn *why*
-  learning failed, the mechanic reads as broken software. The "mark it corrupted when you fail" step is
-  not flavour — it is the feedback that makes the rest legible, and it must be reliable.
-- **Total corruption is a griefing move.** *"Corrupt all your books and leave"* is a great story and a
-  bad steady state if it is cheap and unbounded. Cost, detectability, or a cap on how much one raid can
-  touch is the author's call, but something has to bound it.
+> *"It targets a spell, because then a scribe can mess up one spell but not others for that grimoire.
+> Realistically it needs to be a griefable move for people who build giant stoic libraries that they
+> share with no one — because if no one is constantly turning over your books, you have no idea if
+> they're good or not. So I think it should be expensive. All spells cost something that the raiders
+> are using up, and so it should cost something."*
+
+**Per-instance, not per-grimoire.** One `knowledge-instance` is corrupted, not the container. A scribe
+can ruin one spell and leave the rest of the volume sound, and a raider can pick a target rather than
+razing.
+
+**And this corrects a caution I wrote above, which was wrong.** I listed *"total corruption is a
+griefing move"* as a failure mode to design against. **It is the mechanic, not a failure of it.** The
+design intent is precisely that a hoarded, uncirculated library is *vulnerable in a way its owner
+cannot see*, because **the only way to know a book is good is that someone recently read it.** A
+library nobody turns over is a library whose state is unknown to its owner — that is the point, and
+softening it would delete the idea.
+
+So the bound is **cost, not a cap on damage**. Every spell costs the raider something they are
+spending; corruption should too. That makes it a *choice under a budget* rather than a free action, and
+it means a mass-corruption raid is possible and expensive — which is exactly the shape that punishes
+hoarding without making it a dominant opening.
+
+The one caution that survives: **undiscoverable corruption is indistinguishable from a bug.** If a
+player can never learn *why* learning failed, the mechanic reads as broken software. The "mark it
+corrupted when a reader fails" step is not flavour — it is the feedback that makes the deferred cost
+legible, and it has to be reliable. **Hidden until read is the design; hidden forever is a defect.**
+
+## Can the raid subsystem model this? Not yet — and here is the gap
+
+> *"If the raid sub-component isn't able to answer these questions by modeling them out, we need to
+> roadmap that."*
+
+Checked on `main` at `7694528`. The pieces that exist:
+
+- `OBJECTIVE_KIND` is `{ library: 1, university: 2, archmage: 3 }` — **a library is already a raid
+  objective**, so the target exists.
+- `Intent.kind` is `'cast' | 'steal' | 'move' | 'objective' | 'withdraw' | 'guard'` — **there is a
+  `steal` and an `objective` interaction, and no `corrupt`.**
+- `spatial.ts` and `arbitration.ts` exist, so position and contest are modelled.
+
+What is missing, and each item is a roadmap entry rather than a patch:
+
+1. **No corrupt intent and no corruption primitive.** `knowledge-steal` has 6 authored effects; there
+   is nothing for corruption. This would be the first genuinely new primitive of the campaign.
+2. **No cost model for a per-spell action inside a raid.** The owner's requirement — *"all spells cost
+   something the raiders are using up"* — needs the raid to price a repeated per-instance action, which
+   is different from pricing one objective interaction.
+3. **No detection or stealth model at all.** *"Sneak in, corrupt, leave"* has no representation:
+   nothing in `rules-raid` models being seen or not seen, so "leave undetected" cannot currently be a
+   distinct outcome from "leave."
+4. **Raids resolve inside one world step**, which is why no raider has ever come home and why the
+   withdrawal margin sits at tick ~2,600 against raids ending near tick 65. A raid that *sneaks* wants
+   duration.
+5. **And nothing exercises combat at all today**: across all eight shipped strategies at two seeds —
+   61 raids, 80,615 combatant-ticks — **zero combat attempts**, because no strategy puts a combat node
+   in a combatant's hands. Any corruption measurement would inherit that emptiness.
+
+So the honest answer to the question in the quote is **no**, and the roadmap is those five items in
+roughly that order — with (5) first, because until something arms a raider the other four cannot be
+measured, only asserted.
