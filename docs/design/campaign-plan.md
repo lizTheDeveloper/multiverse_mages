@@ -6583,3 +6583,76 @@ consumer exists. `w115/enable-all-cells` is the bigger unlock, but it is also th
 it moves the content hash and therefore every baseline. This one does not touch content at all.
 
 `direct-damage` at eleven is larger still, and it belongs to `w106/raid-fidelity` (#122).
+
+## W130 — the gate is a script now, and the comparison it guards would have degraded in silence
+
+The re-measurement stood down without measuring, which is the correct output. Final reading on
+`e73bea9`: `V1_CELL_COUNT=12`, `affiliationCallSites=0` — **shut**. Every number taken before those
+two land describes a world that is about to stop existing.
+
+**The gate is `scripts/w117-gate-check.sh` now, not a claim.** `./scripts/w117-gate-check.sh [ref]`,
+exit **0** open, **42** shut, **1** a broken probe — deliberately a third exit, because a probe that
+silently stops working reads as "shut" forever.
+
+| probe | change | reads | shut | open |
+| --- | --- | --- | ---: | ---: |
+| A | `w115` | `export const V1_CELL_COUNT` in `content/src/load.ts` | 12 | 70 |
+| B | `w116` | call-shaped `completeAffiliation(` outside `autonomy/affiliation.ts` | 0 | ≥1 |
+
+All four states were exercised rather than argued: A reads 70 on `w115` and 12 on `main`, B reads 1
+on `w116` and 0 on `main`, and only the conjunction opens.
+
+**Probe B matches a parenthesis, and that is not a typo to clean up.** The first detector used a bare
+name — and on a shut `main` the only mention of `completeAffiliation` outside its own module is a
+**doc comment** at `world-step.ts:1454`. That detector would have declared the gate **open on a build
+where affiliation is still unwired**, sending the re-measurement straight past the defect it exists
+to measure.
+
+### The same defect class as W120, a third time
+
+**W99 committed its 1,000 records as a CSV. `w99-analyse.mjs` reads a directory holding a
+`.runs.ndjson`.** The before/after batch would have found no historical records, silently fallen back
+to the new run on both sides, and answered *"does draconic differ from human"* instead of *"what did
+opening the grid do to draconic."* A well-formed comparison of the wrong two things.
+
+Bridged by `scripts/w99-csv-to-records.mjs`, reading only committed data, and validated rather than
+asserted: it reproduces every number in `results-w99-species-arms.md` to the last decimal, CRN at
+600 pairs / 0 mismatches, with a **positive control** (same records → exactly `+0.00 ±0.00`) and a
+**negative** one (human vs orc → real deltas).
+
+That is now three instances of one shape — W120's flat records directory, W120's two `.find()`
+analysers, and this. **An aggregator that locates its input by shape rather than by name will
+eventually find the wrong input and say nothing.**
+
+### Two things the resumed run cannot do, found before it ran
+
+- **Question 3 has no instrument.** Affiliated-fraction is not measurable: the census decodes
+  everything from §4.1's observation vector, and that vector has **no affiliation channel** —
+  `institutions` carries four descriptors, none counting affiliated mages. It needs a new channel,
+  which is a §4.1 contract change and a layout-digest change, and it belongs to `w116`.
+- **The alliance re-run cannot run on `main` at all.** `GOD_ACTION` holds sixteen verbs and none is
+  an alliance or invitation; the verb lives on `w109/alliances` (#126). That arm needs a three-way
+  merge, not one clean batch.
+
+## W131 — worktree cleanup: 5.4 GB to 1.7 GB, and the rule that made it safe
+
+Ninety-two worktrees, 5.4 GB, 48 of them holding a 71 MB `node_modules`.
+
+Removal was gated on three conditions, all checked per worktree rather than assumed:
+
+1. **Not in use by a live process.** Determined by reading the actual `cwd` of every running
+   `node`/`npm`/`vitest`/`claude` process via `lsof`, not by file mtimes — mtimes are useless here,
+   because a checkout stamps them and an agent that only commits never touches a tracked file.
+2. **Clean** — `git status --porcelain` empty.
+3. **Fully pushed** — `git rev-list --count origin/<branch>..<branch>` is zero.
+
+Sixty-two met all three and were removed; `git worktree remove` refused none, which is the check on
+the check. Seventeen were dirty or unpushed and were **kept**, losing only their `node_modules`,
+which is untracked and one `npm ci` away.
+
+**5,534 MB → 1,685 MB.** Repository total is now 1.8 GB.
+
+The eight worktrees `lsof` found in use — `affiliation`, `all-cells`, `raid-fidelity`, `barks`,
+`ui-wire`, `w116-before`, `w64a`, `agent-a862dc86c23c95bc2` — were each an agent's live workspace.
+Removing any one of them by a heuristic would have destroyed work in progress, and a mtime-based
+sweep would have removed most of them.
