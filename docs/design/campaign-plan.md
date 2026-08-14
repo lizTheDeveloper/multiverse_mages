@@ -7926,3 +7926,62 @@ not be merged into one.**
 
 **Nothing about differentiation gets decided before step 2 finishes.** Both previous attempts (#137,
 #140) were measured against a fixed twelve-cell start, which the sweep is about to make a variable.
+
+## W160 — the #126 prediction held, and the verb is out of reach rather than inert
+
+W-earlier stated a falsifiable prediction before the run: *"if no strategy in the gate pool exercises
+the verb, the re-run should reproduce `main`'s values exactly, and the regeneration is provenance-only
+again."*
+
+**It held.** `balance:gate` 9/9 and `balance:gate:horizon` 10/10 at `delta 0.00000`, regenerated with
+`supersededDeltas` all zeros and committed; both now PASS in CI.
+
+### But the *reason* is better than the prediction
+
+Measured through `@mm/scenario`'s own `auditPool()` rather than by grep: **action 16 is legal for
+0 ticks across all fourteen pool strategies at both 60 and 240 ticks** — which are *exactly the two
+gate horizons*. It first becomes legal at **world tick 276**, and `uniform-random-legal` submits it
+**ten times by tick 600**.
+
+**So the verb is out of reach, not inert**, and **lengthening any gate horizon will move these
+numbers.** That is a much sharper statement than "nothing uses it", and it means the provenance-only
+result is a property of *where the gates stop*, not of the mechanic. Anyone extending a horizon should
+expect this baseline to move and should not read it as a regression.
+
+The agent **corrected its own instrument mid-measurement**: `auditStrategy` emits no row for an
+unlisted non-signature verb, and it had been printing that absence as `0`. Re-measured with 16 forced
+into every audited set, each run checked against an untouched one by `snapshotHash`. **A missing row
+read as a zero** is the same failure this campaign has now found seven times, and this is the first
+time an agent caught it in its own tooling before publishing.
+
+### `main`'s agency baseline is 17 rows stale — confirmed independently, twice
+
+`balance:gate:agency` moves 17 of 90 rows, max **1.44 SE** against k=3. **Not committed**, because a
+clean `origin/main` in a separate worktree produces the identical 17 and passes. Last recorded at
+#127; #82 has since changed `uniform-random-legal`'s legal set.
+
+**#72's merge found the same 17 rows, by a different route, an hour earlier.** Two independent agents,
+two independent branches, one stale file. It is not a branch's drift and it will be attributed to the
+next branch that has to touch a hash. `balance-gate-ascension-v1` is a **fourth** stale file, and
+unlike the three gates its movement is **unmeasured** — at 200 years the run is far past tick 276, so
+*"provenance-only"* would be a guess there.
+
+### And a new failure mode: a clean `git diff` over a stale `dist`
+
+A full re-measurement was lost and re-run. After restoring an ablated source file, `git diff` came back
+clean — **but `bin/` entry points import from `dist`, which was still built from the ablated source.**
+A `ui/session.json` recording and an audit pass were both taken against it. Caught only because
+`verify:nosweeps` runs `tsc --build`, after which the UI test disagreed with the file just committed.
+
+**`git diff --quiet` is a statement about source, not about the build.** Same class as `CLAUDE.md`'s
+existing warning that a worktree without `node_modules` reports the whole repository broken — from the
+other direction, and worth writing down beside it.
+
+### Left rather than fixed, correctly
+
+Four newly-shadowed verbs: **neither alliance arm ever founds or funds a university**, because the
+front-of-list founding is gated on `universities === 0` and the reference universe ships a completed
+academy. `alliance-abstainer` declares `fundUniversity` as a signature action while doing so — the
+third time `permissive-breadth`'s incident has recurred. Both arms share one function so the paired
+difference is unaffected; recorded in `KNOWN_SHADOWED` rather than patched, because the fix belongs
+with a re-measurement.
