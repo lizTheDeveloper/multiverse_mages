@@ -7425,3 +7425,76 @@ refusing to compare across builds is not a regression — **both of those look l
 a finding.** The distinction cost this campaign several hours to learn.
 
 Written before the run finished (W146), including what would disprove it. Nothing did.
+
+## W152 — #140's four-species separation is REFUTED, and so is the contrast I drew from it
+
+PR #143 measured it. **12 independent seed sets × 6 seeds, tier 3, 720 ticks.**
+
+### The correction I owe, stated first
+
+I reported #140's *"separates four species strictly — gnome < dwarf < human < elf"* as **the most
+decision-relevant result of the campaign**, twice. **It survives a re-roll in 1 of 12 seed sets.**
+
+| link | strict in |
+| --- | ---: |
+| `gnome < dwarf` | 4/12 |
+| `dwarf < human` | 3/12 |
+| `human < elf` | **12/12** |
+| the full chain | **1/12** |
+
+On `main` the chain holds **0/12**. And **#140 is not a measurement error** — its published table
+reproduces to the tick, as does `main`'s. Its one robust link, `human < elf`, was **already
+established on `main` at 64.7 SE**. w18 also *loses* `orc < elf`, 11/12 → 0/12.
+
+**The same four relations separate robustly before and after. Task 9.9 is unmet on both refs, and the
+branch did not move it.**
+
+### And the contrast collapses with it
+
+W143 drew the conclusion *"the differentiation came from making knowledge matter, not from having
+more of it"* — #140 versus #137. **That is not what happened.** #137 made the metrics *worse*; #140
+did not move them *at all*. **Neither approach has produced species differentiation.** The honest
+statement is that the campaign has two negative results on 9.9 and no positive one.
+
+What survives from #140 is what was always separately measured: research **+30.6%**, distinct nodes
+retained **+39.4%**, grimoires **+43.4%**, population flat at +0.04 SE. **Those are effect sizes on
+knowledge, not on differentiation**, and they are far outside noise. #140 remains worth merging on
+them. It is the *species* claim that dies, and it was mine to check before amplifying.
+
+### A live false assertion on `main`
+
+`human < orc` is **#127's finding, which its own author later retracted — and it is still asserted in
+`reference-time-to-tier.test.ts` on `main` today.** It holds in **1 of 16 seed sets: the one it was
+measured on.** The alternative explanation was checked rather than assumed — four consecutive-integer
+seed sets cut the same way behave like the derived ones.
+
+**The test is green because it runs on the seed set where the claim is true.** That is the sharpest
+instance yet of this campaign's recurring shape: not a metric that cannot move, but an assertion
+pinned by a lucky draw. Three of the six seed-read claims in that file do not reproduce.
+
+### Why the old statistic could never have caught it
+
+The file reduces each species to `[min, max]` over **one fixed list of six seeds** and calls it a
+separation when two intervals do not overlap. **A range only grows as seeds are added**, so
+non-overlap gets *strictly easier* with fewer seeds, and the statistic has no standard error. A
+six-seed interval endpoint moves **up to 14 ticks** between seed sets among the fast species.
+Draconic's `max` travels **425 ticks** and is censored in **17 of 72 runs** — no claim about draconic
+is worth making at that horizon at all.
+
+### The instrument, which is the durable part
+
+- `packages/scenario/bin/species-separation.mjs` — `--sets --tier --chain --pair`, printing the legacy
+  calibration set *first*, which is what makes the rest believable.
+- `packages/scenario/src/species-separation.ts` — seeds from `deriveRunSeed` at K root seeds, N held
+  at 6 deliberately, paired CRN differencing.
+- `species-separation-spread.test.ts` — pins a **verdict per claim**, plus a tripwire that counts the
+  sibling file's separations **so a new one cannot be added without its spread**.
+- `docs/design/species-separation-spread.md`, dated and naming both refs.
+
+Two caveats the author put in writing unprompted, both of which raise my confidence rather than lower
+it: `CHAIN_REFUTED_FRACTION` was chosen **after** the measurement, so every statement leads with the
+threshold-free *1 of 12*; and a verdict is a function of K while a reproduction rate is not, so
+**quote rates, not labels**.
+
+`balance:gate` **PASS with `delta 0.00000` on all nine metrics** — the instrument is behaviour-neutral,
+which is what a measurement should be.
