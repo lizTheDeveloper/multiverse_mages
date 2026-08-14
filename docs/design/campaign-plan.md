@@ -5,6 +5,60 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Campaign: make the game have strategies
 
+> ## Where this stands — 2026-08-14, `main` at `aa54c7c`
+>
+> **Read this first; the rest of the file is a chronological log and is now 7,700 lines.**
+>
+> ### What the campaign set out to find, and what it found
+>
+> The premise was *"magic doesn't do anything, so the strategy space isn't fruitful."* That turned
+> out to be **half right and half an instrument failure**, and separating the two took the night.
+>
+> - **Genuinely inert, now fixed:** a mage had nine goals and **none of them was "use magic"**
+>   (#127); `completeAffiliation` had **no production caller**, so 107 living mages produced 2
+>   affiliated (#134, unmerged); the §9 ablation mask was **threaded but never delivered to the
+>   simulation**, so every ablation arm was its own control (#136).
+> - **Never inert at all — the instrument was blind:** combat magic already worked. Four v1
+>   `direct-damage` nodes put **85,056 fp** on the field against an academic warband's 0, on
+>   unmodified `main`. `check:consumption` reported **seven live consumers as absent** because
+>   `arbitration.ts` read `registry.nodes` directly (#144).
+>
+> ### The one goal that is still unmet, measured
+>
+> **Task 9.9 — species differentiation — is unmet on every ref tested.** Not "partially": the
+> four-species chain that #140 reported survives a re-roll in **1 of 12 seed sets** (0 of 12 on
+> `main`), and #137 is worse than neutral — at 720 ticks it censors human in **51 of 72 runs** and
+> reverses `human < elf`, so most numbers taken there are about **truncation, not species**. What
+> genuinely separates is **three species in a chain, not four**, and **draconic is not a species this
+> horizon can say anything about** (17/72 censored).
+>
+> Two approaches have been tried and neither moved it. Untried: species-specific **costs** rather
+> than affinities; affinity changing what a species can **reach** rather than how fast; or
+> differentiating on something other than time-to-tier. See task 9.9's entry and
+> `species-separation-spread.md`.
+>
+> ### The lesson that generalises
+>
+> **Nine defects tonight were the same shape: something built, exported, tested — and never
+> reached.** `advanceConstruction`, `applyLibraryUpkeep`, `UNIVERSITY_STAFF`, `carriedPrestige`,
+> `legacyGrant`, the ablation mask, `explicitOpeningAxes`, `staffCohortsOf`'s `isLive`, and
+> `arbitration.ts`'s recorder. *"The symbol exists"* and *"a test covers it"* are both compatible with
+> *"the game never runs it."*
+>
+> **And six were the mirror image: a checker that answered confidently about the wrong input** — a
+> records directory globbed across runs, an analyser locating input by shape rather than name, an
+> awk column split, jq's `//` on an empty string, a CI gate reading the newest run instead of the
+> right one, and `check:consumption` itself. Both patterns are now written into `CLAUDE.md`.
+>
+> ### What is waiting for a human
+>
+> `docs/design/baseline-decisions-2026-08-14.md` — six branches blocked on a re-baseline call,
+> **separated into three mechanical and three substantive**, because they are not equally hard.
+> **#138 first**: until it lands, every merge to `main` costs ~40 minutes, because a *non-required*
+> 35-minute balance gate shares `main`'s concurrency group and GitHub keeps only one pending run per
+> group. Three of `main`'s last eight runs were **never verified**.
+
+
 **Goal.** Understand and articulate the probable strategies, and balance the game automatically so
 the demo strategy set has enough variety that a human would enjoy playing it.
 
