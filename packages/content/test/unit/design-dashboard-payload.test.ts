@@ -73,7 +73,15 @@ interface Payload {
     readonly baselines: readonly { readonly sweepId: string; readonly contentRevision: string }[];
     readonly contractMetricsWithCommittedValue: readonly string[];
   };
-  readonly reachability: { readonly findingCount: number; readonly examinedSymbolCount: number };
+  readonly reachability: {
+    readonly findingCount: number;
+    readonly examinedSymbolCount: number;
+    readonly productionFileCount: number;
+    readonly unreached: readonly { readonly name: string; readonly file: string; readonly line: number }[];
+    readonly reachedOnlyByUnreached: readonly { readonly name: string; readonly line: number }[];
+    readonly untouchedComponents: readonly { readonly name: string; readonly line: number }[];
+    readonly unconsumedConstants: readonly { readonly id: string; readonly line: number }[];
+  };
   readonly decisions: {
     readonly statedDate: string | null;
     readonly statedRef: { readonly branch: string; readonly commit: string } | null;
@@ -89,6 +97,30 @@ interface Payload {
 }
 
 const committed = JSON.parse(readFileSync(COMMITTED, 'utf8')) as Payload;
+
+/**
+ * The reachability block minus the fields that move without a finding moving.
+ *
+ * Built by deleting from a clone rather than by destructuring the omissions
+ * away: the discard names would be unused bindings, and this repository's lint
+ * rejects those — correctly, since a discard that stops matching a real field
+ * silently starts comparing it again.
+ */
+const withoutLocations = (block: Payload['reachability']): unknown => {
+  const clone = JSON.parse(JSON.stringify(block)) as Record<string, unknown>;
+  delete clone['examinedSymbolCount'];
+  delete clone['productionFileCount'];
+  for (const key of [
+    'unreached',
+    'reachedOnlyByUnreached',
+    'untouchedComponents',
+    'unconsumedConstants',
+  ]) {
+    const rows = clone[key] as Record<string, unknown>[];
+    for (const row of rows) delete row['line'];
+  }
+  return clone;
+};
 
 describe('ui/design-dashboard/data.json', () => {
   it('is what `npm run ui:dashboard` produces today', () => {
@@ -109,7 +141,24 @@ describe('ui/design-dashboard/data.json', () => {
     expect(fresh.primitives).toEqual(committed.primitives);
     expect(fresh.species).toEqual(committed.species);
     expect(fresh.metrics).toEqual(committed.metrics);
-    expect(fresh.reachability).toEqual(committed.reachability);
+    // Reachability is compared with **line numbers and totals projected out**,
+    // deliberately, and the reason is about what a red test teaches.
+    //
+    // `unreached` carries a line number for each of a hundred-odd symbols, and
+    // `examinedSymbolCount` / `productionFileCount` move whenever anyone adds a
+    // file or an export. Pinned literally, this test goes red on rules-path PRs
+    // that changed nothing it is about — adding a comment line above an
+    // unreached export is enough. The reflex fix for a test that is red for no
+    // reason is to regenerate, and here regenerating would be *correct* most
+    // times, which is worse than it being wrong: it trains exactly the habit
+    // `CLAUDE.md` forbids around goldens.
+    //
+    // What stays pinned is what a reader would want to argue about — which
+    // symbols, which components, which constants, and `findingCount`. The line
+    // numbers stay in the payload because the page prints them in a column; they
+    // are asserted below to exist, which is the property that would actually
+    // break the table.
+    expect(withoutLocations(fresh.reachability)).toEqual(withoutLocations(committed.reachability));
     expect(fresh.decisions).toEqual(committed.decisions);
     expect(fresh.measurements).toEqual(committed.measurements);
     expect(fresh.openQuestions).toEqual(committed.openQuestions);
@@ -131,6 +180,13 @@ describe('ui/design-dashboard/data.json', () => {
 
     expect(committed.species.rows).toHaveLength(6);
     expect(committed.reachability.examinedSymbolCount).toBeGreaterThan(0);
+    // The one property of a line number the page depends on. Pinning the values
+    // themselves is what the projection above declines to do, and this is the
+    // half of that trade which still has to hold.
+    for (const entry of committed.reachability.unreached) {
+      expect(entry.line, `${entry.name} has no line`).toBeGreaterThan(0);
+      expect(entry.file.length).toBeGreaterThan(0);
+    }
 
     expect(committed.metrics.rows.length).toBeGreaterThan(0);
     for (const row of committed.metrics.rows) {

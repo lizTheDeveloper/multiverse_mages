@@ -63,7 +63,11 @@
   .tile .n{font:400 1.9rem/1 var(--serif);font-variant-numeric:lining-nums tabular-nums;letter-spacing:-.02em}
   .tile .n small{font:400 1rem var(--serif);color:var(--faint)}
   .tile .k{font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
-  .tile .why{font-size:.78rem;color:var(--soft);line-height:1.35}
+  /* Clamped, with the full sentence on the tile's title. One of these is a
+     whole refuted claim lifted from a document; unclamped it set the height of
+     the entire row and left the other five mostly empty. */
+  .tile .why{font-size:.78rem;color:var(--soft);line-height:1.35;
+    display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 
   /* ---------- sections ---------- */
   section{margin:0 0 2.6rem;scroll-margin-top:1rem}
@@ -154,7 +158,7 @@
   .card[data-kind="backlog"]{border-left-color:var(--line)}
   .card[data-kind="landed"]{border-left-color:var(--god)}
   .card .t{font:400 1.02rem var(--serif);color:var(--ink);line-height:1.25}
-  .card .r{font-size:.83rem;color:var(--soft);line-height:1.45}
+  .card .r{font-size:.83rem;color:var(--soft);line-height:1.45;max-width:104ch}
   .card .r b{color:var(--ink);font-weight:500}
 
   .gapcard{background:transparent;border:1px dashed var(--ctl-denied-border);border-radius:4px;
@@ -267,6 +271,10 @@
     <details class="more">
       <summary>Every pooled metric value the four baselines hold</summary>
       <div class="scroller" style="margin-top:.5rem"><table id="baseline-values"></table></div>
+    </details>
+    <details class="more">
+      <summary>Why each baseline was last re-recorded — its own <code>rationale</code> field</summary>
+      <div id="baseline-rationales" style="margin-top:.5rem"></div>
     </details>
     <div id="separation" style="margin-top:1.2rem"></div>
   </section>
@@ -384,7 +392,9 @@ const barCell = (value, max, tone) =>
     el('span', { class: 'v', text: value }),
   );
 
-const fp = (n) => (n / 1024).toFixed(2);
+/** Fixed point, at the scale the payload publishes rather than at a literal. */
+const fpScale = () => data.species.fpScale;
+const fp = (n) => (n / fpScale()).toFixed(2);
 
 let data;
 try {
@@ -426,11 +436,16 @@ try {
   const missing = data.primitives.unconsumed.length;
   const measured = data.metrics.contractMetricsWithCommittedValue.length;
   const decisionsOpen = data.decisions.items.filter((i) => i.recommendation !== null).length;
+  // Counted, not typed in. The one hardcoded figure this tile used to carry was
+  // the only number on a page whose whole argument is that it has none.
+  const refuted = Object.values(data.measurements).filter(
+    (m) => m !== null && typeof m === 'object' && m.status === 'refuted',
+  );
 
   const tile = (state, n, sub, k, why) =>
     el(
       'div',
-      { class: 'tile', 'data-state': state },
+      { class: 'tile', 'data-state': state, title: `${k}: ${why}` },
       el('div', { class: 'n' }, document.createTextNode(String(n)), sub ? el('small', { text: ` / ${sub}` }) : null),
       el('div', { class: 'k', text: k }),
       el('div', { class: 'why', text: why }),
@@ -441,7 +456,13 @@ try {
     tile(missing === 0 ? 'measured' : 'refuted', nodeDriven, data.primitives.rows.length, 'primitives node-driven', `${missing} have no path from what an academic knows.`),
     tile(measured === 0 ? 'refuted' : 'measured', measured, data.metrics.rows.length, '§7 metrics with a value', 'No committed baseline holds a value for any of them.'),
     tile('unmeasured', data.reachability.findingCount, null, 'reachability findings', `Over ${data.reachability.examinedSymbolCount} examined exported values.`),
-    tile('refuted', 1, null, 'refuted design claim', 'Task 9.9 — four separable species — is unmet on all three measured refs.'),
+    tile(
+      'refuted',
+      refuted.length,
+      null,
+      refuted.length === 1 ? 'refuted design claim' : 'refuted design claims',
+      refuted.map((m) => m.headline).join(' '),
+    ),
     tile('unmeasured', decisionsOpen, null, 'decisions waiting', 'Each carries a recommendation and none has been taken.'),
   );
 }
@@ -576,7 +597,7 @@ try {
   const worst = (key) => rows.find((r) => r[key] === ex[key].min);
 
   document.getElementById('species-say').append(
-    document.createTextNode('Fixed point at 1/1024, so 1024 is parity. The tensions are the point, and they read off the extremes rather than off a caption: '),
+    document.createTextNode(`Fixed point at 1/${data.species.fpScale}, so ${data.species.fpScale} is parity. The tensions are the point, and they read off the extremes rather than off a caption: `),
     el('b', { text: `${best('scribeAffinity').name} is the best scribe (${ex.scribeAffinity.max})` }),
     document.createTextNode(` and sits low on curiosity at ${rows.find((r) => r.id === best('scribeAffinity').id).curiosity}; `),
     el('b', { text: `${best('curiosity').name} is the most curious (${ex.curiosity.max})` }),
@@ -708,6 +729,17 @@ try {
     { head: 'n', cls: 'num', get: (m) => m.sampleSize },
     { head: 'status', get: (m) => (m.status === 'measured' ? mark('ok', 'measured') : mark('warn', m.status)) },
   ], values);
+
+  document.getElementById('baseline-rationales').append(
+    ...baselines.map((b) =>
+      el(
+        'div',
+        { class: 'card', 'data-kind': 'landed', style: 'margin-bottom:.5rem' },
+        el('div', { class: 't', text: b.sweepId }),
+        el('div', { class: 'r' }, prose(b.rationale)),
+      ),
+    ),
+  );
 
   const sep = data.measurements.speciesSeparation;
   document.getElementById('separation').append(

@@ -357,7 +357,9 @@ const baselines = BASELINE_FILES.map((file) => {
     rngRegistryHash: doc.provenance.rngRegistryHash,
     armCount: arms.size,
     arms: [...arms].sort(),
-    // First sentence of the rationale — the claim the re-record was made under.
+    // The whole rationale, which is the claim the last re-record was made under.
+    // Shown behind a disclosure on the page rather than trimmed: these run to a
+    // paragraph and the load-bearing sentence is rarely the first one.
     rationale: doc.rationale,
     metricIds: [...new Set(doc.metrics.map((metric) => metric.metricId.split('@')[0]))].sort(),
     pooled: pooled.map((metric) => ({
