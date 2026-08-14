@@ -25,15 +25,35 @@ constants — `legacy-archive-max-tier` and `legacy-reference-tick` — are reso
 The whole prestige cluster is built and unreachable. It was built to carry something forward between
 runs and nothing was ever on the other end.
 
-**The Old Gods are the other end.** A god who ascends does not simply score — **they persist, and they
-become the transcendent thing a later universe's cultists reach for.** Your previous victories are the
-antagonists of your next game.
+**The Old Gods are the other end — and they are specifically the adversaries you did not defeat.**
 
-That is a roguelike meta-progression, it makes `prestige` mean something for the first time, and it
-costs almost nothing structurally because the carry-forward apparatus already exists and is already
-declared as available.
+*Owner, correcting an earlier reading of mine:*
 
-**And it is thematically exact.** A god of magic who transcended is, from inside a later world, indistinguishable from a very old and very powerful thing that should not be spoken to.
+> **"Your undefeated adversaries are actually The Old Gods, who wait and use forbidden magic to
+> fuck up your day."**
+
+I had written that *ascended gods* carry forward. **It is the opposite, and the opposite is much
+better: what persists is unfinished business.** A cult you survived but never broke does not
+disappear when the run ends. **It waits.**
+
+That inverts the meta-progression into something far stronger than a victory ledger:
+
+- **Your failures accumulate as named antagonists**, with history, rather than difficulty scaling by a
+  number.
+- **"They wait" is the whole tone.** Not defeated, not dormant by accident — patient.
+- **And it resolves a tension I flagged two paragraphs later.** I wrote that a perma-raid should be
+  *"survivable indefinitely and never finished."* Survivable indefinitely, yes — but **never finishing
+  it now has a price, paid in the next generation.** So a player has a real reason to try to end a
+  cult rather than merely outlast it, and "I can tank this forever" stops being the correct answer.
+
+**It also makes the difficulty curve authored by the player rather than by a constant.** A god who
+cleans up their world faces a quiet next generation; a god who accumulates unresolved enemies inherits
+all of them at once. **That is a ramp nobody has to tune**, which is worth noting in a project with
+hundreds of untuned constants.
+
+And it is thematically exact twice over. A thing that was never beaten, that had time and no body and
+nothing else to do, is the correct origin for a transcendent horror — and **"I let that one go" is a
+much better reason for a monster to exist than "I won."**
 
 ## Forbidding creates its own opposition, which is the mechanic
 
@@ -107,8 +127,12 @@ pressure that arrives on a timer, and it is the difference between a decline and
 3. **How random is "random magic"?** Uniform over the grid is easy and characterless. Weighted by what
    the Old God was strong in — *by what a previous player did* — is enormously better and nearly free
    given prestige carry-forward. **Sweep it.**
-4. **How much prestige carries?** A scalar nobody can defend, with both ends as controls: a god whose
-   ascension changes nothing later, and one whose ascension makes the next run unwinnable.
+4. **How much carries, and what counts as "undefeated"?** Two scalars and a definition, none of them
+   guessable. Survived-but-not-broken is clearly undefeated; **is a cult you never noticed also
+   undefeated?** I think yes — it waited precisely because nothing troubled it — but that is a taste
+   call with a large consequence, because it decides whether ignoring a problem is cheaper than
+   fighting it. **Sweep the carry amount with both ends as controls**: a generation that changes
+   nothing, and one that makes the next run unwinnable.
 
 ## The one thing to be careful of
 
