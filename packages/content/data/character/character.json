@@ -1,0 +1,92 @@
+[
+  {
+    "id": "maren-kell",
+    "name": "Maren Kell",
+    "species": "human",
+    "voiceId": "7DTpboyigwqXiCkvQjMX",
+    "ageBracket": "middle",
+    "note": "Adjunct. Three papers in progress, two of them the same paper.",
+    "look": "harried scholar, ink-stained fingers, short dark hair, tired eyes, plain grey robe",
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/maren-kell.png",
+        "inputHash": "0c030e5b"
+      }
+    }
+  },
+  {
+    "id": "sirivel",
+    "name": "Sirivel",
+    "species": "elf",
+    "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+    "ageBracket": "old",
+    "note": "Has been mid-thought since a spring. Not this one.",
+    "look": "serene long-faced elf, silver hair, very still expression, pale green robe",
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/sirivel.png",
+        "inputHash": "15f6075b"
+      }
+    }
+  },
+  {
+    "id": "brenna-stonecourt",
+    "name": "Brenna Stonecourt",
+    "species": "dwarf",
+    "voiceId": "rZcizibcb1rTBqSwSjpY",
+    "ageBracket": "middle",
+    "note": "Keeps blank requisition forms in a coat pocket, for precisely this.",
+    "look": "stern dwarf archivist, braided grey beard, spectacles, brown leather apron over dark tunic",
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/brenna-stonecourt.png",
+        "inputHash": "e968db47"
+      }
+    }
+  },
+  {
+    "id": "vashtareth",
+    "name": "Vashtareth",
+    "species": "draconic",
+    "voiceId": "uVKHymY7OYMd6OailpG5",
+    "ageBracket": "old",
+    "note": "One of three. Remembers the god before this one.",
+    "look": "ancient draconic scholar, dark bronze scales, heavy brow, deep-set amber eyes, black robe",
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/vashtareth.png",
+        "inputHash": "578c5748"
+      }
+    }
+  },
+  {
+    "id": "pib-quillory",
+    "name": "Pib Quillory",
+    "species": "gnome",
+    "voiceId": "OTMqA7lryJHXgAnPIQYt",
+    "ageBracket": "young",
+    "note": "Has discovered it six times. It is new every time.",
+    "look": "bright-eyed gnome, wild hair, delighted expression, patched blue coat covered in pockets",
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/pib-quillory.png",
+        "inputHash": "9a64c62a"
+      }
+    }
+  },
+  {
+    "id": "durga-ashfall",
+    "name": "Durga Ashfall",
+    "species": "orc",
+    "voiceId": "DUAKkudcC2PI6KEqJ60K",
+    "ageBracket": "middle",
+    "note": "Built the north vault. Every stone of it.",
+    "look": "broad orc builder, tusks, close-cropped hair, stone dust on a heavy canvas smock",
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/durga-ashfall.png",
+        "inputHash": "a6339be5"
+      }
+    }
+  }
+]

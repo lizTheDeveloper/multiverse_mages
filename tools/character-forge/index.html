@@ -1,0 +1,261 @@
+<!--
+  Multiverse Mages — the character forge.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  Served by `npm run forge`. Not openable from file:// — it needs the server for
+  the character set and for generation, which requires API keys that must never
+  reach a browser.
+-->
+<meta charset="utf-8">
+<title>Multiverse Mages — character forge</title>
+<style>
+  :root{
+    --ground:#ece7de; --panel:#f5f2eb; --sunk:#e2dcd0; --line:#c8c0b1;
+    --ink:#17191c; --soft:#55595f; --faint:#8a8d93;
+    --brass:#9a6b1f; --verdigris:#2f6f60; --ember:#a83a2c;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif;
+    --serif:"Iowan Old Style",Palatino,"Book Antiqua",Georgia,serif;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --ground:#0f1216; --panel:#171b21; --sunk:#1f242c; --line:#2c333d;
+    --ink:#dfe3e8; --soft:#99a1ac; --faint:#6a737f;
+    --brass:#c08a3e; --verdigris:#58a08d; --ember:#d1594a;}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.55 var(--sans);height:100vh;display:flex;flex-direction:column}
+  header{padding:.7rem 1rem;border-bottom:1px solid var(--line);display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+  h1{font:400 1.15rem var(--serif);margin:0;white-space:nowrap}
+  .stat{font:11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .stat b{color:var(--verdigris)}
+  .stat .warn{color:var(--ember)}
+  .spacer{flex:1}
+  main{flex:1;display:grid;grid-template-columns:17rem 1fr;min-height:0}
+  #list{border-right:1px solid var(--line);overflow-y:auto;background:var(--panel)}
+  .row{padding:.5rem .75rem;cursor:pointer;border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent);display:flex;gap:.5rem;align-items:center}
+  .row:hover{background:var(--sunk)}
+  .row[aria-current="true"]{background:color-mix(in srgb,var(--brass) 16%,var(--sunk));border-left:3px solid var(--brass);padding-left:calc(.75rem - 3px)}
+  .row img{width:32px;height:32px;image-rendering:pixelated;border:1px solid var(--line);border-radius:2px;background:var(--sunk)}
+  .row .who{flex:1;min-width:0}
+  .row .who b{display:block;font-weight:500;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .who span{font:10px var(--mono);color:var(--faint)}
+  .row .dot{width:7px;height:7px;border-radius:50%;background:var(--ember);flex:none}
+  .row[data-stale="false"] .dot{visibility:hidden}
+  #edit{overflow-y:auto;padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1rem;max-width:52rem}
+  .field{display:flex;flex-direction:column;gap:.25rem}
+  .field label{font:10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  input,select,textarea{font:inherit;padding:.45rem .55rem;background:var(--sunk);color:var(--ink);border:1px solid var(--line);border-radius:3px;width:100%}
+  textarea{min-height:4rem;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--brass);outline-offset:1px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+  button{font:inherit;color:inherit;background:var(--sunk);border:1px solid var(--line);border-radius:3px;padding:.45rem .8rem;cursor:pointer}
+  button:hover:not(:disabled){border-color:var(--brass)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.primary{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+  .bar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+  h2{font:10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:1rem 0 0;font-weight:500;border-top:1px solid var(--line);padding-top:.8rem}
+  .assets{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.6rem}
+  .asset{border:1px solid var(--line);border-radius:3px;padding:.6rem;background:var(--panel);display:flex;flex-direction:column;gap:.35rem}
+  .asset .k{font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .asset .s{font:11px var(--mono)}
+  .asset[data-state="fresh"] .s{color:var(--verdigris)}
+  .asset[data-state="stale"] .s{color:var(--ember)}
+  .asset[data-state="missing"] .s{color:var(--faint)}
+  .asset img{width:64px;height:64px;image-rendering:pixelated;border:1px solid var(--line);background:var(--sunk)}
+  .previews{display:flex;flex-direction:column;gap:.4rem}
+  .preview{display:flex;gap:.5rem;align-items:center;padding:.4rem .55rem;border:1px solid var(--line);border-radius:3px;background:var(--panel)}
+  .preview .id{font:10px var(--mono);color:var(--faint);flex:1;overflow:hidden;text-overflow:ellipsis}
+  .msg{font:11px var(--mono);color:var(--faint);min-height:1.2em}
+  .msg[data-bad="true"]{color:var(--ember)}
+  .lines{max-height:11rem;overflow-y:auto;border:1px solid var(--line);border-radius:3px;background:var(--panel);padding:.5rem .65rem;font-size:.85rem;color:var(--soft);display:flex;flex-direction:column;gap:.25rem}
+  .lines b{color:var(--ink);font-weight:400;font-family:var(--serif)}
+  .empty{color:var(--faint);padding:2.5rem;text-align:center}
+</style>
+
+<header>
+  <h1>Character forge</h1>
+  <span class="stat" id="counts">—</span>
+  <span class="spacer"></span>
+  <span class="stat" id="keys">—</span>
+  <button id="new">+ New character</button>
+</header>
+
+<main>
+  <div id="list"></div>
+  <div id="edit"><div class="empty">Select a character, or make one.</div></div>
+</main>
+
+<script type="module">
+  let data = { characters: [], species: [], pool: {}, lines: {}, keys: {} };
+  let current = null;
+  let previews = [];
+  const $ = (id) => document.getElementById(id);
+  const audio = new Audio();
+
+  const load = async () => { data = await (await fetch('/api/state')).json(); render(); };
+
+  function render() {
+    const stale = data.characters.filter((c) => c.stale.length).length;
+    $('counts').innerHTML = `<b>${data.characters.length}</b> characters · `
+      + (stale ? `<span class="warn">${stale} stale</span>` : 'all current');
+    $('keys').innerHTML = `elevenlabs ${data.keys.elevenlabs ? '<b>ready</b>' : '<span class="warn">missing</span>'}`
+      + ` · pixellab ${data.keys.pixellab ? '<b>ready</b>' : '<span class="warn">missing</span>'}`;
+
+    const list = $('list'); list.replaceChildren();
+    for (const c of data.characters) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.dataset.stale = String(c.stale.length > 0);
+      if (current?.id === c.id) row.setAttribute('aria-current', 'true');
+      const img = c.assets?.portrait ? `<img src="/portrait/${c.id}.png?t=${Date.now()}" alt="">` : '<img alt="">';
+      row.innerHTML = `${img}<div class="who"><b>${c.name}</b><span>${c.species}${c.ageBracket ? ' · ' + c.ageBracket : ''}</span></div><span class="dot"></span>`;
+      row.addEventListener('click', () => { current = c; previews = []; render(); });
+      list.append(row);
+    }
+    renderEdit();
+  }
+
+  function renderEdit() {
+    const el = $('edit');
+    if (!current) { el.innerHTML = '<div class="empty">Select a character, or make one.</div>'; return; }
+    const c = current;
+    const speciesOpts = data.species.map((s) => `<option value="${s.id}"${s.id === c.species ? ' selected' : ''}>${s.name}</option>`).join('');
+    const voiceOpts = (data.pool[c.species] ?? []).map((v) => `<option value="${v}"${v === c.voiceId ? ' selected' : ''}>${v}</option>`).join('');
+    const ageOpts = ['young', 'middle', 'old'].map((a) => `<option value="${a}"${a === c.ageBracket ? ' selected' : ''}>${a}</option>`).join('');
+
+    el.innerHTML = `
+      <div class="row2">
+        <div class="field"><label for="f-name">Name</label><input id="f-name" value="${c.name ?? ''}"></div>
+        <div class="field"><label for="f-id">Id</label><input id="f-id" value="${c.id ?? ''}"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="f-species">Species</label><select id="f-species">${speciesOpts}</select></div>
+        <div class="field"><label for="f-age">Age bracket</label><select id="f-age"><option value=""></option>${ageOpts}</select></div>
+      </div>
+      <div class="field"><label for="f-note">Note — shapes the portrait</label><textarea id="f-note">${c.note ?? ''}</textarea></div>
+
+      <h2>Voice</h2>
+      <div class="row2">
+        <div class="field"><label for="f-voice">Voice id (existing)</label><input id="f-voice" list="pool" value="${c.voiceId ?? ''}"><datalist id="pool">${voiceOpts}</datalist></div>
+        <div class="field"><label>&nbsp;</label><button id="probe">Verify it synthesises</button></div>
+      </div>
+      <div class="field"><label for="f-vnote">Voice description — used when generating a new one</label><textarea id="f-vnote">${c.voiceNote ?? ''}</textarea></div>
+      <div class="bar">
+        <button id="design">Design 3 candidate voices</button>
+        <span class="msg" id="vmsg"></span>
+      </div>
+      <div class="previews" id="previews"></div>
+
+      <h2>Lines this character will speak</h2>
+      <div class="lines" id="lines"></div>
+
+      <h2>Assets</h2>
+      <div class="assets" id="assets"></div>
+
+      <h2></h2>
+      <div class="bar">
+        <button class="primary" id="save">Save</button>
+        <button id="del">Delete</button>
+        <span class="msg" id="smsg"></span>
+      </div>`;
+
+    const lines = (data.lines[c.species] ?? []).slice(0, 40);
+    $('lines').innerHTML = lines.length
+      ? lines.map((l) => `<div><b>${l.text}</b></div>`).join('')
+      : '<span>No lines for that species.</span>';
+
+    const assets = $('assets');
+    assets.replaceChildren();
+    for (const kind of ['portrait', 'sprite', 'voice']) {
+      const stored = c.assets?.[kind];
+      const state = !stored ? 'missing' : (c.stale.includes(kind) ? 'stale' : 'fresh');
+      const box = document.createElement('div');
+      box.className = 'asset';
+      box.dataset.state = state;
+      box.innerHTML = `<span class="k">${kind}</span>`
+        + (kind === 'portrait' && stored ? `<img src="/portrait/${c.id}.png?t=${Date.now()}" alt="">` : '')
+        + `<span class="s">${state === 'fresh' ? 'current' : state === 'stale' ? 'STALE — inputs changed' : 'not generated'}</span>`;
+      if (kind === 'portrait') {
+        const b = document.createElement('button');
+        b.textContent = stored ? 'Regenerate' : 'Generate';
+        b.disabled = !data.keys.pixellab;
+        b.addEventListener('click', async () => {
+          b.disabled = true; b.textContent = 'generating…';
+          const r = await (await fetch('/api/portrait', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: c.id }) })).json();
+          if (!r.ok) { $('smsg').textContent = r.error; $('smsg').dataset.bad = 'true'; }
+          await load();
+          current = data.characters.find((x) => x.id === c.id) ?? null;
+          render();
+        });
+        box.append(b);
+      }
+      assets.append(box);
+    }
+
+    $('probe').addEventListener('click', async () => {
+      const msg = $('vmsg'); msg.textContent = 'checking…'; delete msg.dataset.bad;
+      const r = await (await fetch('/api/voice/probe', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ voiceId: $('f-voice').value.trim() }) })).json();
+      msg.textContent = r.ok ? 'synthesises — usable' : r.error;
+      msg.dataset.bad = String(!r.ok);
+    });
+
+    $('design').addEventListener('click', async () => {
+      const msg = $('vmsg'); msg.textContent = 'designing…'; delete msg.dataset.bad;
+      // The design endpoint wants >=100 characters of preview text, so pad from
+      // the species' own lines rather than repeating one bark.
+      const sample = (data.lines[$('f-species').value] ?? []).map((l) => l.text).join(' ').slice(0, 400);
+      const r = await (await fetch('/api/voice/design', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ description: $('f-vnote').value, sample }) })).json();
+      if (!r.ok) { msg.textContent = r.error; msg.dataset.bad = 'true'; return; }
+      msg.textContent = `${r.previews.length} candidates — listen, then keep one`;
+      previews = r.previews;
+      const box = $('previews'); box.replaceChildren();
+      for (const [i, p] of previews.entries()) {
+        const row = document.createElement('div');
+        row.className = 'preview';
+        row.innerHTML = `<span class="id">${i + 1}. ${p.generatedVoiceId}</span>`;
+        const play = document.createElement('button');
+        play.textContent = '▶';
+        play.addEventListener('click', () => { audio.src = `data:audio/mpeg;base64,${p.audio}`; void audio.play(); });
+        const keep = document.createElement('button');
+        keep.textContent = 'Keep this one';
+        keep.addEventListener('click', async () => {
+          keep.disabled = true; keep.textContent = 'keeping…';
+          const k = await (await fetch('/api/voice/keep', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ generatedVoiceId: p.generatedVoiceId, name: `${$('f-name').value} (${$('f-species').value})`, description: $('f-vnote').value }) })).json();
+          if (k.ok) { $('f-voice').value = k.voiceId; msg.textContent = `kept as ${k.voiceId} — save to keep it`; }
+          else { msg.textContent = k.error; msg.dataset.bad = 'true'; }
+          keep.textContent = 'Keep this one'; keep.disabled = false;
+        });
+        row.append(play, keep);
+        box.append(row);
+      }
+    });
+
+    $('save').addEventListener('click', async () => {
+      const record = {
+        id: $('f-id').value.trim(), name: $('f-name').value.trim(),
+        species: $('f-species').value, voiceId: $('f-voice').value.trim(),
+        voiceNote: $('f-vnote').value.trim() || undefined,
+        ageBracket: $('f-age').value || undefined,
+        note: $('f-note').value.trim() || undefined,
+        assets: c.assets ?? {},
+      };
+      await fetch('/api/save', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(record) });
+      await load();
+      current = data.characters.find((x) => x.id === record.id) ?? null;
+      render();
+      $('smsg').textContent = 'saved';
+    });
+
+    $('del').addEventListener('click', async () => {
+      await fetch('/api/delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: c.id }) });
+      current = null; await load();
+    });
+  }
+
+  $('new').addEventListener('click', () => {
+    current = { id: '', name: '', species: data.species[0]?.id ?? 'human', voiceId: '', assets: {}, stale: [] };
+    previews = []; renderEdit();
+  });
+
+  await load();
+</script>

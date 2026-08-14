@@ -47,3 +47,8 @@ __pycache__/
 # as a README pointing at a page that was never in the tree, which is the defect
 # that commit existed to fix.
 ui/lattices.html
+
+# Generated portraits. Regenerable from character.json via `npm run forge`, and
+# the licensing question that governs generated audio (ASSET-LICENSE.md) applies
+# to generated art too — so they stay out of history until that is settled.
+assets/portraits/
