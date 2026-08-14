@@ -904,14 +904,17 @@ sentence was repealed** by `raid-engagement.md`, and vision §3 now reads: *"Rul
 during a raid, and every change locks until the raid ends."* This table is what every implementation
 reads, so it is amended here rather than left to disagree with the vision of record.
 
-| ID | Action | During engagement |
-|---|---|---|
-| 1 | permit technique | **legal**, and locks |
-| 2 | forbid technique | **legal for the defender only**, and locks |
-| 3 | permit form | **legal**, and locks |
-| 4 | forbid form | **legal for the defender only**, and locks |
-| 5–7 | edicts: dispensation, interdiction, revoke | masked — see the open question below |
-| 8–15 | every other action | masked |
+| Action | During engagement |
+|---|---|
+| permit technique *(1)*, permit form *(3)* | **legal**, and locks |
+| forbid technique *(2)*, forbid form *(4)* | **legal for the defender only**, and locks |
+| edicts *(5, 6, 7)* | masked — see the open question below |
+| every other action *(0, 8–15)* | masked |
+
+*Action ids are given in italics here rather than as a leading column, because the
+enumeration above is the one `god-conformance.test.ts` parses — it counts rows beginning with an
+id and asserts there are exactly sixteen, and a second such table is indistinguishable from four
+more actions.*
 
 **The lock is the whole point and it is a mask rule, not a cost rule.** A cell permitted mid-raid
 MUST NOT be forbidden again before the raid resolves, and one forbidden mid-raid MUST NOT be

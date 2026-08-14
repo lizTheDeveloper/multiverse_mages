@@ -200,6 +200,13 @@ why. Asking is for decisions that are genuinely the author's: a rule the spec is
 tradeoff between two things that both work, anything that changes the design rather than discovers
 it.
 
+It cuts the other way too: **a worktree with no `node_modules` will report the whole repository
+broken.** A clean `tsc --build` there failed on `@mm/content` types that are present in both the
+source and the built `.d.ts`, and nineteen tests that spawn workers failed with it — because
+`npm ci` had never run in that worktree and nothing resolved. Main was green the whole time: 4,306
+tests. The section above on worktrees says this in advance; it is repeated here because the symptom
+reads as a real defect and was reported as one twice before being checked.
+
 This has already paid twice in one session. "Unmasking four actions during engagement moves every
 balance baseline" was asserted from reading the code and was false — instrumenting the mask and
 running four strategies showed the engagement branch is evaluated **zero** times, because raids
