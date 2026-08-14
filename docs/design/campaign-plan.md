@@ -7624,3 +7624,39 @@ travelling 425 ticks).
 
 Cost not paid, and named: ~2,400 ticks to uncensor human under seventy cells, about 20 minutes for
 twelve sets.
+
+## W155 — qualifying W153 before anyone acts on it, because I have been wrong three times tonight the same way
+
+W153 reports #144's finding as *"nobody sends a mage to the raid"* and calls it a strategy-pool
+problem. **I checked the pool before briefing anyone on that, and the statement needs narrowing.**
+
+`packages/mc-harness/src/strategies.ts` on `main`:
+
+```
+732:    GOD_ACTION.assignRole,
+744:      { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round) },
+796:  signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.assignRole, GOD_ACTION.declareAscension],
+812:    { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round) },
+```
+
+**`assignRole` is in the pool**, and `portal-rush` carries it as a *signature action*. So the accurate
+statement is the one #144's agent actually made — **the reference universe** fields no mage
+combatants, because the reference run is driven by a passive strategy — not the broader *"no strategy
+sends a mage"*, which is what I wrote.
+
+Whether `portal-rush` produces combatants, and whether its raids therefore contain the combat the
+reference run lacks, is **unmeasured**. It is one arm and one sweep away.
+
+**I am recording the qualification instead of spawning an agent on it**, because tonight has a
+pattern: I briefed *"the ablation mask is unreachable"* (true, but I named the wrong break),
+*"research/teach/scribe belong on the universe seam"* (wrong — they are authored `self`/`single`),
+and *"thirty-three combat effects change nothing in a raid"* (wrong — they put 85,056 fp on the field
+before anyone touched them). **Three briefs, three refutations, all from a confident inference I
+could have checked first.** The agents' measurements have been better than my reasoning every time,
+and the correct response is to check the premise before spending an agent on it, not after.
+
+**Next step, stated as a measurement rather than a conclusion:** run `portal-rush` against the same
+raid instrumentation #144 built and report casualties, nodes lost and nodes gained. If it fields
+combatants, the reference universe's emptiness is a property of *passive-control* and the gates that
+use it, and the fix is which strategy the reference arm runs. If it does not, the gap is real and
+larger.
