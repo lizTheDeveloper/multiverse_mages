@@ -385,3 +385,83 @@ temptation the endgame is built on.
 4. **What does the Box of Ascendance cost?** The one with no existing counterpart is also the one most
    likely to be a magic button. **It should probably cost something no other verb costs** — a species,
    a university, the god's own accumulated worship — and it should be swept, with both ends as controls.
+
+---
+
+## The world is dying, a new age struggles to be born, and a new god of magic is born
+
+*Owner, 2026-08-13, closing the loop.* **You restart, new.**
+
+**The end of a world is not a game-over screen. It is the transition.** A world that decays past
+saving dies, an age struggles to follow it, and **a new god of magic is born** — which is you, next
+run, somewhere else.
+
+That makes this a roguelike whose meta-progression is **adversarial rather than cumulative**. You do
+not carry power forward. **You carry your unfinished business forward**, and it has had a long time to
+think about you.
+
+### The loop, whole
+
+    a god sets what magic can exist
+      → academics discover, teach, record, and lose it
+      → the grid widens with worship; prodigies open cells nobody has opened
+      → what the god forbade goes underground and organises
+      → the frontier is exhausted; idle scholars turn to dark things
+      → the world thins, magic recedes, and old things show through
+      → the god summits — or does not
+    → whatever was never defeated waits
+      → a new age struggles to be born
+      → a new god of magic is born
+      → and the waiting things are already there
+
+**Every arrow in that diagram is a mechanic in this repository or a spec in this folder.** Most of the
+early ones are built.
+
+### It makes prestige the run loop rather than a bonus
+
+`prestigeCarryForward: true` is declared, `carriedPrestige` and `legacyGrant` have no production
+caller, and **`legacy-reference-tick` and `legacy-archive-max-tier` are authored constants for a
+generation boundary that never arrives.** The apparatus was built for exactly this and has been
+waiting for the other end of the loop to exist.
+
+**So "you restart, new" is not a new subsystem. It is the missing half of one that is already in the
+codebase**, and the two dead constants are the seam.
+
+### Two endings, and both seed the next game
+
+**Ascension and decay are not win and lose. They are two ways for a world to end**, and both carry
+forward:
+
+- **You summit.** The world you built persists as a thing that was finished. What you never defeated
+  still waits — you simply left before it mattered.
+- **The world dies.** What you never defeated inherits the ruins, and has more of them.
+
+**Neither is a clean slate**, and that is the point. A player who wins sloppily and a player who loses
+carefully hand very different worlds to their successor — which is the difficulty ramp nobody has to
+tune, stated as a run loop.
+
+### And "a new age struggles to be born" is the part to get right
+
+**The transition should not be instant.** The phrase is doing real work: an age *struggling* to be born
+is a period where the new world is thin, the old things are strong, and the new god has almost nothing.
+
+**That is the same shape as the early game the design already specifies** — one species, a small
+square, magic raw and new — but with a reason for the smallness that is not merely "you start small."
+**You start small because the last world ended**, and what is left of it is not friendly.
+
+It also gives the opening its stakes. A first run's early game is a tutorial; a fifth run's early game
+is *fragile*, because the things waiting have names and you gave them those names.
+
+### The one thing this must not become
+
+**A meta-progression that only ratchets difficulty is a punishment for playing.** If every run is
+strictly harder than the last, a player's reward for engagement is a worse game.
+
+**Something must accumulate in the player's favour**, and the honest candidates are knowledge rather
+than power: **the map of what magic can exist is the same seventy cells every time**, and a player who
+has seen ten worlds knows things about that grid a first-timer does not. **That is a real
+meta-progression and it costs nothing to implement**, because it lives in the player's head.
+
+**If that turns out to be insufficient, the answer is not to grant power** — it is to make the Old
+Gods *fewer and more specific*, so that a careful player genuinely clears their record. **Sweep it:
+how much of a generation's unfinished business carries, with both degenerate ends as controls.**
