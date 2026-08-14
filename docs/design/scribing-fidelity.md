@@ -226,3 +226,32 @@ What is missing, and each item is a roadmap entry rather than a patch:
 So the honest answer to the question in the quote is **no**, and the roadmap is those five items in
 roughly that order — with (5) first, because until something arms a raider the other four cannot be
 measured, only asserted.
+
+## Who can discover corruption, and why that makes deep knowledge the most fragile
+
+> *"The newest students can't discover corruption, right? But they're most likely all learning the
+> lowest level spells."*
+
+Discovery is gated by the reader, not by the book. A novice failing to learn cannot tell *"this text is
+wrong"* from *"I am not good enough yet"* — which is exactly right, and it produces a consequence
+worth stating on its own:
+
+**Your deepest, rarest knowledge is the most likely to be silently gone.**
+
+A corrupted tier-1 book sits in a stream of students and is found almost immediately. A corrupted
+tier-6 book can only be discovered by someone already near tier 6 — of whom a universe has very few,
+who have other things to do, and who may not exist at all for decades. So corruption's expected time
+to discovery **rises steeply with tier**, and the loss is worst exactly where the library was most
+valuable.
+
+Two consequences fall out without being designed for:
+
+- **Circulation is the defence, and it is naturally weakest where it matters most.** The books nobody
+  reads are the books nobody *can* read.
+- It gives the **archmage** a job besides research: walking the deep shelves is the only audit that
+  exists. That is a use for a scarce, expensive mage that is not "cast a bigger spell".
+
+The novice's failure should probably still record *something* — an unresolved failure rather than a
+corruption mark — or the same book will be failed against repeatedly with no memory. Whether that is
+modelled or simply left as wasted months is the author's call, but silence is the expensive option for
+the player to reason about.
