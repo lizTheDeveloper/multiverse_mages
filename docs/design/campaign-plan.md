@@ -5225,6 +5225,7 @@ the god-constant count, the metric count, the baselines, and this.
 
 **The general rule, now earned five times: when both sides of a conflict assert a count or a hash, ask
 the tree.** Neither literal describes a tree holding both.
+<<<<<<< HEAD
 
 ### W94 addendum 2 — the baseline stack, and two things that only a whole-object assertion catches
 
@@ -5551,3 +5552,88 @@ commits have touched `packages/` since, and both point at scratchpad paths that 
 neither can be bisected. **This run committed its 1,000 records (380 KB) so that it can be**, and every
 table recomputes from the CSV without re-running anything. That is the difference between a
 measurement and an anecdote, and it is worth the 380 KB.
+=======
+>>>>>>> origin/main
+
+---
+
+## W111 — W93 was wrong: `rules-raid` has three dependents, and my check was the broken thing
+
+*2026-08-13. A correction to a headline finding, and the verification error that produced it.*
+
+**W93 reported: "`@mm/rules-raid` has zero dependents on `main`. No `package.json` declares it. No
+source file imports it. 4,525 lines nothing imports."** It became a load-bearing claim in several
+later entries and in the design work.
+
+**It is false.** On `origin/main`:
+
+- **`packages/scenario/package.json` declares `@mm/rules-raid`** in its `dependencies`.
+- **Three source files import it**: `content-set.ts`, `raids.ts`, `reference-universe.ts`.
+
+### The verification was broken, not the code
+
+I checked with a glob pathspec — `git grep -l "@mm/rules-raid" origin/main -- 'packages/*/src'` — and
+got nothing. **The same query with the literal path `packages/scenario/src` returns three files.** The
+glob silently matched nothing and I read the empty result as an empty answer.
+
+**That is a worse error than the wrong finding.** An empty result from a search is not evidence of
+absence unless the search is known to work, and **the cheap guard — run the query against a case you
+know is positive — costs one command.** This document has recorded four "finding about code is a
+finding about a ref" errors; **this is a fifth kind: a finding about code is only as good as the query
+that found it.**
+
+### What survives, in narrowed form
+
+The raid subsystem **was** under-connected, and the true version is more interesting than mine:
+
+- **The dependency resolved via workspace hoisting with nothing declaring it** until recently, which
+  means **`npm`'s purity gate provably misses undeclared workspace imports.** That is a real gap in a
+  check this project relies on.
+- **The gates still resolve zero raids**, which was separately measured and stands.
+- **`CLAUDE.md`'s "nothing in `scenario` opening a portal yet" is stale.**
+
+---
+
+## W112 — no raider has ever come home
+
+*2026-08-13, PR #122. Sixty seeds, 180 attacker-mages, shipped constants, no tuning override.*
+
+**0 survivors. 0 withdrawals. 38 of 38 mind-thefts forfeited.**
+
+**And the mechanism is not damage.** `chooseIntent` orders a withdrawal only once `portalStability`
+falls to `withdraw-stability-margin` (409,600). Stability decays 1,024/tick from ~3,072,000, so the
+margin arrives around **tick 2,600** — and every one of these raids ends by `objectivesResolved` around
+**tick 65**. `resolveRaid`'s stranded rule then kills **every attacker alive and not withdrawn, on any
+termination reason**, not only portal collapse.
+
+**So the withdrawal condition is unreachable by two orders of magnitude, and the penalty for not
+withdrawing is death.** The code path is sound: raise the margin above initial stability and a raider
+walks out alive, pinned as a positive control.
+
+**`knowledge-steal` therefore cannot deliver** — it fires 38 times in 60 raids and delivers nothing.
+Its problem was never zero nodes (it has four); **it is zero deliveries.** Library looting is
+unaffected, because `settleLibrary` settles against the objective and is not gated on a surviving
+carrier — **a wiped-out warband still moves books home.**
+
+`resolveRaid` already names the intended softening — *"a survival roll scaled by distance to the
+portal — NOT automatic extraction"* — so the fix is a tuning decision the code was written expecting.
+
+### Wounds and capture
+
+| fate | representation | writes back to the world? |
+|---|---|---|
+| **death** | `MAGE.alive` | **yes** — set to 0, mind emptied by the ordinary death path |
+| **wounds** | `COMBATANT.hp`, engagement scope only | **no** — a hurt survivor's `MAGE.vigor` is byte-identical |
+| **capture** | **none, anywhere** | n/a |
+
+**A raid can kill a mage in the world**, which retires the worry I briefed. **A raid cannot wound one
+and cannot take one.** `stranded` is death-with-forfeiture, not capture.
+
+### And my registry fix was wrong and must be dropped
+
+I extended `REFERENCE_REGISTRIES` so a sweep could declare a raid metric. **`REFERENCE_REGISTRIES` is
+derived from `REFERENCE_MEASURES`, and `buildRunRecord` refuses undeclared keys** — so extending the
+registry alone cannot work, and it is **actively hazardous**: it makes fifteen further metrics
+*declarable but uncollectible*, which is a new way to produce a green-looking measurement of nothing.
+
+**Reverted.** The correct route is the one PR #122 took — declare the measures, not the registry.

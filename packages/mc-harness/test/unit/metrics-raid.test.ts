@@ -24,18 +24,10 @@ import {
   raidLengthHistogram,
 } from '@mm/mc-harness';
 
-import { ALL_MECHANICS, arm, telemetry } from './metrics-fixtures.js';
+import { ALL_MECHANICS, arm, raidObservation, telemetry } from './metrics-fixtures.js';
 
 function raid(overrides: Partial<RaidObservation> = {}): RaidObservation {
-  return {
-    raidId: 1,
-    raidSeed: 4242,
-    engagementTicks: 15,
-    initialPortalStabilityTicks: 100,
-    defenderFrozenWorldTicks: 3,
-    attackerTempoCostWorldTicks: 7,
-    ...overrides,
-  };
+  return raidObservation(overrides);
 }
 
 describe('the histogram (task 6.9)', () => {
