@@ -1005,6 +1005,102 @@ reason, era, and the balance-metric deltas since the previous step. The `agent-a
   not end. One agent plays both scales — which is exactly what the fixed-shape observation with its
   zero-filled engagement block exists to support.
 
+**Amendment: the outcome record must also carry events.** The record above answers *what is true
+now* and *what moved since the last step*. Three specified consumers need a third thing — *what
+happened* — and none of them can be built without it.
+
+An **event record** accompanies each observation: a list, possibly empty, of the discrete things
+that occurred during the step. Each entry carries at minimum:
+
+- **a class**, from a closed enumeration, so a consumer can apply a per-class rule to it;
+- **the entity or content it concerns**, at the granularity the thing itself has — a node id, a mage
+  handle, a cell id — not the aggregate the observation buckets it into;
+- **whether the event *ended* that thing** — this step took the last instance of a node, the last
+  member of a species, the last mage who could teach a tier. A **transition, not a property**; the
+  difference is argued below and is the whole of what this field adds.
+
+The class enumeration, the wire format and the per-class payload are **not fixed here**. They belong
+to `agent-interface` at 0.5.0, in the same way §4.4 fixes that candidate lists are slot-indexed and
+leaves `k` to a per-action constant. What this section fixes is that the events exist, that they are
+emitted alongside the observation rather than on request, and that terminality is carried rather
+than left to be inferred.
+
+**Why inference does not serve, stated carefully, because the first version of this argument was
+wrong.** It is tempting to claim the last-instance bit cannot be reconstructed downstream. It can be,
+partially: §4.1's `nodesKnown` channel is derived from `count(instances) > 0`, so a decrement is a
+node leaving the universe, and a consumer holding two consecutive frames will see it. In the
+reference run it happens once, at tick 274 — `perdo-mentem`, `nodesKnown` 3 → 2, instances 10 → 7 —
+in the same step that the last Human dies. The claim of impossibility was refuted by the first
+attempt to derive it.
+
+What a frame diff genuinely cannot recover is everything that makes the event *usable*:
+
+- **Identity.** The knowledge block is per cell. Three instances went and one node ended; whether
+  that was one node held in three places or three unrelated losses, one of which happened to be a
+  last copy, the aggregate does not distinguish.
+- **Vessel.** A node can be lost from a mind, a memory palace, a grimoire or a library, and vision
+  §5 makes those four different kinds of loss. The *observation vector* has no vessel channel — but
+  `agent-api` already computes one. See the note below, because it narrows this requirement more
+  than anything else here.
+- **Causation.** A diff of two frames says a death and a loss both fell in the same interval. It
+  cannot say the loss followed from the death. `sound-design.md` §6.5 builds its cue on precisely
+  that link — a death mark, a pause, then loss, where *"the pause between the two is the sound of
+  finding out"* — and a consumer that cannot attribute the loss cannot place the pause.
+- **Anything that nets.** A count cannot distinguish a step with one gain and one loss from a step
+  with neither. This has not been observed; it is a property of counting and does not need to be.
+
+So the requirement is not that the information is unobtainable. It is that recovering it from
+aggregates costs every consumer the same reconstruction, each of them differently wrong, to
+approximate something the core knows exactly at the moment it happens.
+
+**Much of this is already computed, and the gap is one level up.** `agent-api` exports
+`knowledgeCensus(state)`, a second projection alongside the observation vector, and it carries by
+name most of what the paragraphs above ask for: `whereKept` splits every instance across mind,
+grimoire, library and palace; `byNode` gives the same split per node with a `distinctLocations`
+count; `fragileNodeIds` is documented as *"nodes at exactly one instance — the last copy"*, which is
+terminality with node identity attached; `unwrittenNodeIds` is every node held only in minds and
+palaces. Run against the reference scenario at tick 0 it returns
+`whereKept {mind: 1, grimoire: 0, library: 0, palace: 0}` and `fragileNodeIds [99]`.
+
+**`AgentSession` exposes none of it.** The session offers `reset`, `observe`, `legalActions`,
+`candidates`, `submit`, `status`, `outcome`, `accounting`, `illegalActionCount`, `rng` and
+`snapshotHash` — and not `knowledgeCensus`, not `AgentView.raw`, not the `ExplainProjection` §4.4
+describes. Three projections the package computes and exports, none of them reachable through the
+only door a client has.
+
+That reshapes this amendment. **Vessel and node identity do not need a new event field; they need
+the session to expose a projection that already exists**, which is an `agent-api` surface decision
+rather than a change to this contract. What remains genuinely absent, and what the requirement above
+is therefore *for*, is narrower and worth stating exactly:
+
+- **Terminality as a transition.** Struck as a *property*, kept as an *event*. `fragileNodeIds` is
+  a **stock** — the nodes standing at one copy at this tick. The cue fires on a **flow** — the node
+  that went from one to zero *in this step*. Every field of that census is a stock at a
+  `worldTick`: no delta, no "since last", no per-tick count anywhere in the type. Turning the first
+  into the second means holding the previous census and differencing it, which is frame-diffing one
+  projection over, discarding the same causation. This is the narrowest field in the amendment and
+  the one most likely to be struck later as redundant by someone who has read the census and not
+  the difference.
+- **Causation.** Nothing links a death to the loss it caused. Two censuses a step apart show both;
+  neither says one followed from the other.
+- **Per-step counts by class.** §0.4's threshold needs to know how many events of a class fell in
+  this step. A census is a stock, not a flow, and differencing stocks nets.
+- **Being told rather than having to look.** Every consumer diffing two censuses writes the same
+  reconstruction, and they will not all write it the same way.
+
+**Three consumers, one capability, and they should be answered together.** `sound-design.md` §0.4's
+density rule needs an events-per-tick count *per class* to decide whether a class plays as discrete
+sounds or as a continuous texture, and forbids any class being discrete without a stated threshold.
+§6.5 needs the vessel — available from the census the moment a session exposes it — plus two things
+that are not: the moment a node's last copy goes, and the causal link between a death and the loss
+that followed it. It pins loss at a threshold of 1 so that it is never aggregated away. §10 needs classified per-tick events to build an arrangement at all. An answer
+shaped for any one of these alone will be relitigated by the other two.
+
+*This amendment states a requirement and deliberately does not design the schema. The cost of
+deciding it late is the reason it is written now: the format is cheap to change before policies and
+committed baselines depend on it, and a format change after that is a retrofit with a version bump
+attached.*
+
 ### 4.4 Parameterized actions and the explain channel
 
 Actions 8–14 carry entity handles drawn from a set that changes every tick, and a flat discrete mask
