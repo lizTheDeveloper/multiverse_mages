@@ -65,7 +65,7 @@
  *     node tools/w158/analyse.mjs --out .w158
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { POOL, content as shippedReferenceContent, runOne } from '../w15/composition.mjs';
@@ -197,7 +197,42 @@ function main() {
     (_job, index) => index % shards === shard,
   );
 
-  const lines = [];
+  // **Appended per run, not written at the end.** The replicate-major ordering
+  // above exists so that an interrupted sweep still holds every arm at every
+  // price for as many replicates as it finished — and a writer that buffers to
+  // the last line makes that property a lie: a sweep killed at 90 % holds
+  // nothing at all. The manifest is rewritten after every run for the same
+  // reason, so it always describes the file that is actually on disk.
+  const file = `shard-${String(shard)}-of-${String(shards)}.ndjson`;
+  const path = join(out, file);
+  writeFileSync(path, '', 'utf8');
+  const manifest = (runs) =>
+    writeFileSync(
+      `${path}.manifest.json`,
+      `${JSON.stringify(
+        {
+          sweepId: SWEEP_ID,
+          rootSeed: ROOT_SEED,
+          file,
+          shard,
+          shards,
+          replicates,
+          worldTickCap,
+          prices,
+          strategies,
+          openings: OPENINGS.map((opening) => opening.id),
+          cells: CELLS.map((cell) => cell.cellIndex),
+          planned: jobs.length,
+          runs,
+        },
+        undefined,
+        2,
+      )}\n`,
+      'utf8',
+    );
+  manifest(0);
+
+  let written = 0;
   for (const job of jobs) {
     const resolved = contentForPrice(cache, job.price);
     const started = Date.now();
@@ -213,8 +248,9 @@ function main() {
       options: { ...job.cell.options, ...job.opening.options },
       worldTickCap,
     });
-    lines.push(
-      JSON.stringify({
+    appendFileSync(
+      path,
+      `${JSON.stringify({
         sweepId: SWEEP_ID,
         price: job.price,
         opening: job.opening.id,
@@ -235,8 +271,11 @@ function main() {
         submissions: run.accounting.submissions,
         rejections: run.accounting.rejections,
         elapsedMs: Date.now() - started,
-      }),
+      })}\n`,
+      'utf8',
     );
+    written += 1;
+    manifest(written);
     process.stderr.write(
       `${job.strategyId} price=${String(job.price)} ${job.opening.id} cell=${String(job.cell.cellIndex)} ` +
         `r=${String(job.replicateIndex)} nodes=${String(run.terminal.nodeIds.length)} ` +
@@ -244,30 +283,6 @@ function main() {
     );
   }
 
-  const file = `shard-${String(shard)}-of-${String(shards)}.ndjson`;
-  writeFileSync(join(out, file), `${lines.join('\n')}\n`, 'utf8');
-  writeFileSync(
-    join(out, `${file}.manifest.json`),
-    `${JSON.stringify(
-      {
-        sweepId: SWEEP_ID,
-        rootSeed: ROOT_SEED,
-        file,
-        shard,
-        shards,
-        replicates,
-        worldTickCap,
-        prices,
-        strategies,
-        openings: OPENINGS.map((opening) => opening.id),
-        cells: CELLS.map((cell) => cell.cellIndex),
-        runs: lines.length,
-      },
-      undefined,
-      2,
-    )}\n`,
-    'utf8',
-  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main();
