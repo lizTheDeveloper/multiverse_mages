@@ -90,7 +90,9 @@ export const WHY_ABSENT = {
     'this run is peaceful. It raids: the recorder builds the reference scenario with ' +
     '`{ raids: true }` and one portal opens at world tick 226. A raid resolves inside a single ' +
     'world step, so no observation is ever taken while the clock is in engagement mode, and the ' +
-    'block is unobservable through `observe()` rather than merely empty.',
+    'block is unobservable rather than merely empty — and structurally, not by luck: ' +
+    '`AgentSession` alternates `observe()` and `submit()`, and `submit()` runs a whole world ' +
+    'step synchronously, so no consumer can sample while the clock is in engagement mode.',
   otherUniverse:
     '§1.1 puts one universe in one simulation instance. The multiverse is not in state, so a ' +
     'second universe cannot be read — only named as a portal target id.',

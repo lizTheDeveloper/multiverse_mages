@@ -134,9 +134,12 @@ engagement mode"*. That is true of the observation and false of the run. Measure
   the layout and in every frame — is **zero in all 25,664 readings across 401 frames**, and the
   clock's engagement-mode flag is set in **none** of them.
 
-So the block is not empty *in this run*; it is **unobservable**. A raid resolves inside a single
-world step, so no observation is ever sampled while the clock is in engagement mode, and no
-recording of any length or seed would populate those 64 channels. This is the observation-side
+So the block is not empty *in this run*; it is **unobservable** — and structurally, not by
+sampling luck. `AgentSession` alternates `observe()` and `submit()`, and `submit()` runs a whole
+world step synchronously, so **no consumer of the session can sample while the clock is in
+engagement mode**, whatever the seed or tick count. The recorder makes that concrete: its loop is
+`record(); for (…) { session.submit(noop); record(); }` — observation strictly between steps, and a
+raid opens, resolves and closes inside one of them. This is the observation-side
 corollary of the already-recorded finding that the mask's engagement branch is evaluated zero
 times: the same single-step resolution that stops the agent being asked also stops the world being
 looked at.
