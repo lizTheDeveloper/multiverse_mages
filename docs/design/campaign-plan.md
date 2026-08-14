@@ -5902,3 +5902,56 @@ exercised, 36 cross-cell prerequisite edges become live, and every committed bas
 sits once `passive-control` has 300 nodes instead of 51; and what happens to the strategy space, which
 is the other half of `w72`'s finding that a seeded 3×4 reaches 236 nodes against the authored square's
 51.
+
+### W114, qualified again — the asymmetry may be affordability, not demographics
+
+*2026-08-14. The agent doubting its own favourable result, and the alternative is a pattern this
+campaign has now seen three times.*
+
+| | without the verb | with it | Δ |
+|---|--:|--:|--:|
+| draconic (gated) | 0/100 | 14/100 | **+14** |
+| orc (gated) | 47/100 | 48/100 | **+1** |
+
+**Orc invited in only 4 of 100 runs**, and every paired metric delta sits inside 3 SE. So the verb is
+not free immigration — good. **But two mechanisms produce that +1 and they mean different things:**
+
+- **Demographics** — orc does not *need* an outsider, because it grows its own roster. The design
+  claim, and it is well-targeted.
+- **Affordability** — orc never *accumulates* the invitation's 24,576 favor, because it always has
+  something cheaper to buy.
+
+**The evidence points at the second.** Orc spends **~1M favor per run** — it is not poor — and it
+spends it on `fundUniversity` and `encourageResearch`, **which draconic never does.** Draconic, with
+four mages and no fundable university, runs out of cheap options and therefore saves.
+
+**Reported as an evidenced hypothesis rather than a conclusion**, which is the correct standard here.
+But it matters: **if it is affordability, the asymmetry is partly an artifact of one strategy's
+preference ordering** rather than a property of the species.
+
+### And that is the third instance of preference-order shadowing
+
+This is now a class, not three incidents:
+
+1. **`permissive-breadth`** — `fundUniversity` sat behind always-legal `permitTechnique`, so the
+   strategy whose stated role is *"funds broadly"* **founded no university in any run of any sweep ever
+   taken.**
+2. **`narrow-depth`** — sees action 8 legal on **76% of ticks and asks zero times**, because
+   `encourageResearch` sits ahead of it.
+3. **`alliance-seeker` / orc** — a greedy order that always finds something cheap never saves for
+   something dear.
+
+**A greedy preference list over a mixed price range is not a strategy, it is a spending habit** — and
+it silently converts *"this verb is unaffordable"* into *"this species does not need it."* **The
+shadowing audit (`w90/mask-sync`) was scoped to legality; it should also ask about price.**
+
+### A data-hygiene catch worth recording
+
+Five of six baseline arms reproduce `w99`'s committed records **exactly**. Only `human` differs —
+41.30 against 39.62 nodes — and it is **the one arm that ran while source was being edited.** Genuine
+build contamination, excluded and re-measured.
+
+**That is what committing 1,000 run records bought**: an arm that disagrees with a prior measurement is
+either a finding or a mistake, and without the prior records there is no way to tell which. It also
+retroactively justifies softening the curiosity monotonicity claim — **for a better reason than the one
+originally given.**
