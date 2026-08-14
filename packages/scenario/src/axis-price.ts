@@ -173,20 +173,3 @@ export function withAxisPriceScale(registry: ContentRegistry, scale: number): Co
   Object.defineProperty(derived, APPLIED_SCALE, { value: scale, enumerable: true });
   return derived;
 }
-
-/**
- * What one axis action costs under a scale, without building a registry.
- *
- * For tools and reports that want to state a price beside a measurement. Reads
- * the same record the rules path reads, so it cannot quote a number the
- * simulation did not charge.
- */
-export function axisPriceUnder(
-  registry: ContentRegistry,
-  actionId: number,
-  scale: number,
-): number {
-  const base = registry.godCost(actionId)?.favorCost ?? 0;
-  if (scale === 0 || scale === AXIS_PRICE_IDENTITY) return base;
-  return mul(base, scale);
-}

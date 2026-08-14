@@ -39,7 +39,6 @@ import {
   AXIS_PRICE_ACTION_IDS,
   AXIS_PRICE_IDENTITY,
   appliedAxisPriceScale,
-  axisPriceUnder,
   referenceContent,
   referenceScenario,
   withAxisPriceScale,
@@ -75,7 +74,6 @@ describe('the axis-price factor', () => {
         const expected = Math.floor((base * scale) / AXIS_PRICE_IDENTITY);
         expect(resolver?.[actionId]).toBe(expected);
         expect(mask?.[actionId]).toBe(expected);
-        expect(axisPriceUnder(shipped.registry, actionId, scale)).toBe(expected);
       }
     }
   });

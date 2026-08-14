@@ -80,7 +80,6 @@ export {
   AXIS_PRICE_ACTION_IDS,
   AXIS_PRICE_IDENTITY,
   appliedAxisPriceScale,
-  axisPriceUnder,
   withAxisPriceScale,
 } from './axis-price.js';
 
