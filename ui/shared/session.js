@@ -86,8 +86,11 @@ export const WHY_ABSENT = {
     '`AgentView` carries `raw` — its own comment calls it *the reproducible artefact* — and ' +
     '`session.observe()` returns only the normalized floats. The integers here are reconstructed.',
   engagement:
-    'The engagement block is 64 slots that §4.1 zero-fills at world scale. This run never entered ' +
-    'engagement mode, so there is no raid in it to draw.',
+    'The engagement block is 64 slots and every one of them is zero here — but *not* because ' +
+    'this run is peaceful. It raids: the recorder builds the reference scenario with ' +
+    '`{ raids: true }` and one portal opens at world tick 226. A raid resolves inside a single ' +
+    'world step, so no observation is ever taken while the clock is in engagement mode, and the ' +
+    'block is unobservable through `observe()` rather than merely empty.',
   otherUniverse:
     '§1.1 puts one universe in one simulation instance. The multiverse is not in state, so a ' +
     'second universe cannot be read — only named as a portal target id.',

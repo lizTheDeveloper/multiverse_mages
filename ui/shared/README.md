@@ -70,10 +70,13 @@ of all eleven rather than of the three that were easy.
 | [`ascension/`](../ascension/) | action 15's mask bit | the moment it lapses. A frame is a state; nothing says *it just became unavailable*. |
 | [`ruleset-symmetry/`](../ruleset-symmetry/) | this universe's ruleset | the other universe. §1.1 puts one universe in one instance, so a raider's ruleset is not readable — only its id, as a portal target. |
 | [`mage/`](../mage/) | nothing | **individual mages do not exist on the read path.** §4.1's mage block is 6 species x 8 tiers of counts. |
-| [`raid/`](../raid/) | nothing in this run | the 64-slot engagement block is real and zero-filled at world scale; the reference run never enters engagement mode |
+| [`raid/`](../raid/) | nothing — and see finding F, because the reason is not the one this table used to give | the 64-slot engagement block, which is zero in all 25,664 readings even though the run does raid |
 | [`tempo/`](../tempo/) | nothing | pacing is about *events*, and a frame is a state |
 
 ## What wiring found
+
+Six things. Five came from wiring the prototypes to a real session; the sixth came from opening
+one of them and measuring what it drew.
 
 **A. The legality mask is one bit and the interface needs three states.** `mask.ts` masks an action
 *"whose cost exceeds the current favor pool"* using the same zero it uses for an action that is
@@ -120,7 +123,37 @@ reference run makes this concrete: **the Human species is alive at tick 273 and 
 274**, and no consumer of this read path can be told so — only a view that happened to diff the mage
 block across those two frames could infer it, and only if it were already watching.
 
-All five land in `agent-interface` rather than in a client. `docs/design/interface-findings.md` is
+**F. A raid happens, and the read path shows no trace of it.** This one corrects an earlier entry
+in this file, which said `raid/` had nothing to draw because *"the reference run never enters
+engagement mode"*. That is true of the observation and false of the run. Measured on
+`ui-visual-pass` (2026-08-14):
+
+- `scripts/record-session.mjs` builds the scenario with **`{ raids: true }`**, and the run that
+  produced `ui/session.json` returns **one `RaidRecord`, at world tick 226**.
+- The observation's engagement block — `{ name: 'engagement', offset: 336, size: 64 }`, present in
+  the layout and in every frame — is **zero in all 25,664 readings across 401 frames**, and the
+  clock's engagement-mode flag is set in **none** of them.
+
+So the block is not empty *in this run*; it is **unobservable**. A raid resolves inside a single
+world step, so no observation is ever sampled while the clock is in engagement mode, and no
+recording of any length or seed would populate those 64 channels. This is the observation-side
+corollary of the already-recorded finding that the mask's engagement branch is evaluated zero
+times: the same single-step resolution that stops the agent being asked also stops the world being
+looked at.
+
+Two consequences with different owners:
+
+- **The 64 channels are dead weight until something samples mid-engagement**, which is a decision
+  for `agent-interface` — either sample during engagement, or say that engagement is not observable
+  and reclaim the block.
+- **`RaidRecord.actionEconomy`, added in #145, is not on the read path at all.** It lives on
+  `scenario`'s run record and is consumed by `mc-harness` telemetry; `agent-api`'s observation
+  layout has its own `ENGAGEMENT_SIDE_CHANNELS` and objective slots and does not carry it. So the
+  one thing a raid surface gained this week is the one thing a client reading a session still
+  cannot render. Confirmed present on the record — `actionEconomy` is a key on the tick-226
+  raid — and absent from `layout.ts`.
+
+All six land in `agent-interface` rather than in a client. `docs/design/interface-findings.md` is
 where they are tracked with their status.
 
 ## Rules for anything added here
