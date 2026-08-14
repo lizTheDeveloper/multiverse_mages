@@ -7104,3 +7104,82 @@ Five instances now, all of them a check that answers confidently about the wrong
 v3 resolves the run **by matching `headSha` to `origin/main`** and reports `no-run-for-head` rather
 than falling back to whatever is newest. Chain 3 is running on it, and its first line —
 `main(019b8e1) verify: no-verify-job-yet` — is the fix visible in the log.
+
+## W143 — scholarship now moves the academic primitives, and *this* is what separated the species
+
+PR #140. `check:consumption` **10 failures → 7**. `research-rate` (45 nodes), `teach-rate` (19) and
+`scribe-rate` (19) now register against `coordination/academic-effects.academicRateBonuses`.
+
+**The consumer shape turned on a fact my brief got wrong.** I pointed at `universeEconomyBonuses`,
+the template `resource-yield` uses. But these three are **not** `target: "universe"` — v1 authors
+them at `self` (research, scribe) and `single` (teach), exclusively. Routing them through the
+universe seam would have made **one scholar's private study accelerate every scholar alive.** The
+right seam already existed with exactly one supplier: `capitalRateMultiplier`'s parameter is
+literally named `nodeBonuses` and documented *"bonuses from nodes and effects"*, and `world-step.ts`
+was filling it with the god's constants only.
+
+Behaviour, measured by stepping real universes and reading `WorldStepReport` counters rather than
+multipliers — wire on vs off: **research +30.6%, distinct nodes retained +39.4%, lessons +31.2%,
+grimoires +43.4%.** Ablation-attributed: research +30.4%, scribe +32.1%, **teach +0.2%**.
+
+### The headline, and it is a direct contrast with W141
+
+**`reference-time-to-tier` now separates four species strictly — gnome < dwarf < human < elf.** That
+is what task 9.9 asks for, and that file has recorded it as *unmet* since it was written.
+
+Set that against opening all seventy cells (#137), which moved time-to-tier separations **7 of 15
+pairs → 4** and Gini 0.0714 → 0.0436 — *less* differentiation, from ~6× the content.
+
+**The differentiation came from making knowledge matter, not from having more of it.** Two changes
+measured the same night, in opposite directions, and the one that worked touches **no content at
+all**. That is the most decision-relevant result of the campaign so far, and it argues that the
+binding constraint was never content volume — it was whether what a mage knows changes anything.
+
+### Two findings that feed the next pass
+
+- **`teach-rate` moves no completion count, and that is content, not the wire.** `teachCost` is 512
+  at tier 1 while a teaching pair pushes 2048/tick, so **tiers 1–3 complete in one month at any
+  multiplier**. Tier-1 `scribeCost` is exactly 1024, same story. This belongs in a cost-tuning pass
+  before 0.5.0 — and it is the same shape as W126's *"the v1 rectangle cannot make food"*: a lever
+  wired correctly into a range where it cannot express itself.
+- **`libraryRateMultiplier` never had §9's mask threaded.** Harmless while ablation was unreachable
+  (W134) — and a **false negative** the moment it was fixed, because a sweep arm would have reported
+  "no effect" while the effect ran. Two defects that were each invisible until the other was
+  repaired.
+
+`@denial-warden` goes the other way (−14.85 SE); half of that is explained — it forbids every
+technique and form by rotation, so the permission gate correctly switches these rates off — and why
+it lands *below* baseline is **unconfirmed and flagged as such**, on absolute numbers of 3.25 → 0.625
+nodes. A matched-node control arm was built, found to be systematically confounded by graph position,
+and **discarded rather than reported.**
+
+All three gates fail by instruction; nothing regenerated. `contentRevision` byte-identical.
+
+## W144 — the devops doc asserted an invariant that was false, and it was the one protecting the release record
+
+`docs/devops/ci-and-deploy.md` lists three load-bearing properties of the concurrency key. The third:
+
+> **`main` runs never cancel each other.** They serialise. Every one of them is a merge commit whose
+> green is part of the release record.
+
+**False.** `cancel-in-progress: false` stops a *running* job being killed; it does nothing about a
+*queued* one, and GitHub keeps only one pending run per group. Three of `main`'s last eight runs —
+`72d9538`, `fbb9dcb`, `14155e7` — **never started**.
+
+The other two properties in that section are genuinely load-bearing and correctly argued (the repo
+component stops a fork branch named `main` cancelling a real `main` run; deriving group and guard
+from one pair keeps the guard constant per group). It is the third, the one whose stated purpose is
+*the release record*, that did not hold — and the record is precisely what was lost.
+
+Corrected in place on #138's branch, with a dated section recording the measurement, naming the
+~35-minute balance gate as the cause of the window, and documenting the alternative not taken.
+
+**It is still not merged.** A change that revises a documented invariant on a protected repository is
+the owner's to take. Also worth separating clearly: this is **not** the file's existing
+`## Known issue: the queue runs superseded commits` — that one is the *self-hosted runner's* `run_ci`
+serialisation and its `is_superseded` fix. Same symptom shape, different system, and neither fix
+substitutes for the other.
+
+**Third documented claim to fall tonight**, after `vision-audit.md`'s node count and #122's own PR
+body. `CLAUDE.md` already says a document is not a ref for the code it describes. It is now also fair
+to say: **a document is not a ref for the CI that runs it.**
