@@ -169,3 +169,80 @@ game is exclusively things going wrong, the arc is a decline rather than an age 
 framing elsewhere is *ages of magic*, which is a thing to reach, not to survive. **The saturated world
 should also be where the best magic finally exists**, and the search's phase weighting will report
 which of those two it actually is.
+
+---
+
+## The late game: the world fills with magic, and something comes through
+
+*Owner, 2026-08-13. This is where sorcerers belong, and it resolves the scoping question above by
+making it a question about **when** rather than **whether**.*
+
+**Sorcerers are not a starting choice. They are what happens to a world that has become saturated.**
+
+    early    one species, a small square, magic is raw and new
+    mid      worship, universities, prodigies, alliances through portals
+    late     the world is full of magic
+               → sorcerers appear — untaught, innate, unteachable
+               → portal magic opens holes it did not mean to
+               → demons, fae, things not (yet) playable come through
+               → and pact magic becomes available
+
+**That is the late game having its own character rather than being the mid game with bigger numbers**,
+which is what the phase weighting (late 3 : mid 2 : early 1) was written to reward and which nothing
+has yet supplied.
+
+### Portal magic gains a second consequence, and that is what makes it a decision
+
+Portal magic is already the gate on alliances — *"dragons have to make friends"* runs through it. **Now
+it is also how you get holes.**
+
+**One verb, two consequences, one of them unintended.** That is a real strategic decision rather than a
+prerequisite to be satisfied: a civilisation that opens itself to other peoples has opened itself, and
+cannot choose to be open only to the ones it likes. **The species you wanted and the things you did not
+are the same door.**
+
+It also gives forbidding its late-game job. Prohibiting a portal cell becomes a real move — *close the
+doors* — with a real cost, because the doors are how your allies come too.
+
+### Why pact magic specifically, and why it can only be late
+
+`mvee`'s `pact` paradigm is `allowsTeaching: false`, `allowsScrolls: false`, `sources: divine`, 4
+techniques × 4 forms. **Power granted by an entity in exchange for something.**
+
+**It cannot exist before there is an entity to bargain with**, which is exactly why it is late: the
+holes bring the counterparty. Pact is not a tradition a universe founds under — it is one that becomes
+*available* when something arrives that can grant it.
+
+And its properties are severe in a way already measured. Under standard-acquire traditions a universe
+ends 2400 ticks with **zero teachable instances**, teaching totalling **4.1 lessons** — a catastrophe
+when it is the whole world's rule. **Per-mage, and late, it is a bargain a particular scholar made**:
+her power is real, it is hers, and it dies with her. That is the tragedy this design keeps reaching
+for, and it only lands at mage scope.
+
+### What this resolves about the two shapes above
+
+This document separated *a tradition discovered by the universe* (cheap) from *a tradition held by a
+mage* (a schema revision). **The late game needs both, in that order:**
+
+- **Sorcerers are per-mage.** A sorcerer in an academic universe is one mage playing by different
+  rules — precisely what a universe-scoped `traditionId` cannot say.
+- **Pact is per-mage too**, for the same reason: a bargain someone made, not a law of the world.
+- **But saturation is universe-scoped and cheap** — a threshold on how much magic exists, which the
+  worship-to-width progression already computes.
+
+So: **universe-scoped saturation → makes per-mage traditions possible → sorcerers and pact are what
+they are.** The expensive change stays expensive and now has a reason bigger than "sorcerers would be
+nice."
+
+### Two cautions
+
+**Non-playable species are a category and should stay one.** Demons and fae that *arrive* are not a
+seventh and eighth row in `species.json` — they are things a universe deals with, not things it founds
+as. **"Not (yet) playable" is the owner's phrasing and the parenthesis should be respected**: do not
+foreclose them becoming playable, and do not assume it.
+
+**And the late game must not be only bad.** Sorcerers, holes and pacts are all *pressure*. If the late
+game is exclusively things going wrong, the arc is a decline rather than an age — and the framing
+elsewhere is **ages of magic**, a thing to reach rather than survive. **The saturated world should also
+be where the best magic finally exists**, and the search's phase weighting will report which of the two
+it actually is.
