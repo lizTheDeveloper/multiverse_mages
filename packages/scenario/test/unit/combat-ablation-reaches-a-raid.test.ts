@@ -64,8 +64,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { rngFromRootSeed, step } from '@mm/sim-core';
-import { ablationMaskFor } from '@mm/primitives';
 import { MAGE, MAGE_ROLE, collectRecords } from '@mm/state';
+import { ablationMaskFor } from '@mm/coordination';
 
 import { referenceContent, referenceScenario } from '../../src/index.js';
 
