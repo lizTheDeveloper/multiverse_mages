@@ -55,7 +55,13 @@ import { nearestRank } from './metrics-gini.js';
 import { gini } from './metrics-gini.js';
 import type { SurvivalObservation } from './metrics-survival.js';
 import { kaplanMeier, survivalQuantile } from './metrics-survival.js';
-import type { ArmTelemetry, CensusSample, RaidObservation, RunTelemetry } from './metrics-telemetry.js';
+import type {
+  ArmTelemetry,
+  CensusSample,
+  RaidObservation,
+  RaidRunSlice,
+  RunTelemetry,
+} from './metrics-telemetry.js';
 import { terminalReasonName } from './session.js';
 
 /* ------------------------------------------------------------------------- *
@@ -727,7 +733,7 @@ export function raidLengthHistogram(
  * *"Absent and empty are distinguishable"* scenario, and it is why
  * {@link RunTelemetry.raids} is `undefined` rather than `[]` on this build.
  */
-export function collectRaidLengthDistribution(telemetry: RunTelemetry): MetricEntry {
+export function collectRaidLengthDistribution(telemetry: RaidRunSlice): MetricEntry {
   if (!telemetry.mechanics.raidEngagement || telemetry.raids === undefined) {
     return unavailable(UNAVAILABLE_REASON.mechanicAbsent, {
       owner: 'raid-engagement',
@@ -760,7 +766,7 @@ export function collectRaidLengthDistribution(telemetry: RunTelemetry): MetricEn
  * denominator decision — elapsed world ticks of *this run*, not of the sweep —
  * rather than re-deciding it.
  */
-export function collectInboundRaidTempoLoss(telemetry: RunTelemetry): MetricEntry {
+export function collectInboundRaidTempoLoss(telemetry: RaidRunSlice): MetricEntry {
   if (!telemetry.mechanics.raidEngagement || telemetry.raids === undefined) {
     return unavailable(UNAVAILABLE_REASON.mechanicAbsent, { owner: 'raid-engagement' });
   }
@@ -785,7 +791,7 @@ export function collectInboundRaidTempoLoss(telemetry: RunTelemetry): MetricEntr
  * **`mechanic-absent` at 0.5.0.** Per *raid*, not per run — the comparison §7
  * asks for is against what one raid gains.
  */
-export function collectRaidInitiationCost(telemetry: RunTelemetry): MetricEntry {
+export function collectRaidInitiationCost(telemetry: RaidRunSlice): MetricEntry {
   if (!telemetry.mechanics.raidEngagement || telemetry.raids === undefined) {
     return unavailable(UNAVAILABLE_REASON.mechanicAbsent, { owner: 'raid-engagement' });
   }
@@ -813,7 +819,7 @@ export function collectRaidInitiationCost(telemetry: RunTelemetry): MetricEntry 
  * is the confusion the reason codes exist to end, and it is easy to do by
  * accident because both produce an empty list.
  */
-function raidsOrReason(telemetry: RunTelemetry): readonly RaidObservation[] | MetricEntry {
+function raidsOrReason(telemetry: RaidRunSlice): readonly RaidObservation[] | MetricEntry {
   if (!telemetry.mechanics.raidEngagement || telemetry.raids === undefined) {
     return unavailable(UNAVAILABLE_REASON.mechanicAbsent, {
       owner: 'raid-engagement',
