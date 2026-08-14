@@ -7025,3 +7025,82 @@ origin/w115/enable-all-cells       A=70  B=0   GATE SHUT   exit 42
 ```
 
 Both halves now exist. Neither is on `main`.
+
+## W141 — all seventy cells open (#137), and the differentiation metrics went *backwards*
+
+51 reachable nodes become **300**. `V1_CELL_COUNT` 12 → 70, techniques 3 → 5, forms 4 → 14; the
+invariant `checkV1Subset` defends is the **rectangle**, not the number, and 70/70 is still
+rectangular. `check:content` passes clean over all 300 — no cycle, no inverted tier, no unknown
+reference, no rediscovery-floor breach. **The content was fine. What surfaced was code that had never
+been reached**, which is this campaign's one recurring finding in yet another costume:
+
+- `check:primitive-coverage` failed **in the direction it was built to fail in**: both declared
+  exclusions became covered. Coverage **14/16 over 51 nodes → 16/16 over 300**.
+- `stackContributions` throws `RangeError` on a `lifespan` effect without `speciesBase` — no
+  production caller, so not shipped-breaking.
+- **`fertility` and `lifespan` still have no node-driven consumer.** 22 newly-reachable nodes author
+  effects nothing reads.
+
+### The measurement it was for: yes. The measurement that matters: no.
+
+**Affinity liveness 4/11 → 11/11, zero inert.** Sole-occupant cells 0 → 2, and both are
+affinity-predicted — **elf alone in `perdo-herbam`** (herbam 1536, its strongest, in a form the twelve
+never covered) and orc in `rego-terram`. W115's diagnosis was right.
+
+**And the differentiation metrics got worse.** Occupancy Gini **0.0714 → 0.0436**; time-to-tier
+separations **7 of 15 pairs → 4**, and those four are band-against-band rather than four distinct
+species. Orc, which `apply-magic` had just pulled clear, overlaps everything again.
+
+**Opening the grid made the species *less* distinguishable, not more.** That is the opposite of the
+intent and it should not be smoothed over. Exhaustion goes 51 → **269 of 300** at 200 years, so the
+plateau moved; the meta did not widen.
+
+### The reviewer decision this forces
+
+**A universe now starts wide**, because the reference ruleset is derived from the enabled set. So
+`w72`'s narrow **opening square is no longer optional alongside this** — it is what makes looting mean
+anything, what gives the god's forbid verb something to remove, and what would restore `build-rate`.
+**#137 and #72 are one decision, not two.**
+
+Supporting evidence, all from the same run:
+
+- **Looting lost its premise, twice.** `shelveForeignBooks` picks its shelf from **non-v1 cells** —
+  there are none now, so it early-returns silently. It is keyed on the *content* gate while
+  `raid-constant.json`'s own gloss describes the *god's* gate; the two coincided until tonight and the
+  code took the wrong one. And `portal-rush` goes from **31 outbound raids / 8 nodes looted on `main`
+  to 1 inbound / 0**, with 242 of 400 action-14 submissions rejected — **un-diagnosed**.
+- **`build-rate` stops mattering entirely.** All three arms finish at the unaided 98 months, because
+  the magnitudes reaching construction fall from `{128,192,256,384}` to `{128,192}` — nobody gets deep
+  enough into Rego Terram. **Vision §4 is not falsified here, it is *unreached*.**
+- The **9.5 scribing tripwire fired**, exactly as its own comment asked: scriptorium occupation is zero
+  from world year 20 in a ~21,000-person universe, and human and orc go extinct.
+
+Two tests left **red and not weakened**, which is the right call.
+
+### Why this is not being merged unattended
+
+All three gates report `baseline-invalid` (`contentRevision` → `84f506e5…`); largest movers are
+horizon `referenceNodesKnown` 40.67 → 68.11 and `referenceKnowledgeInstances` 951.6 → 1625.1.
+`goldens:regen` was never run and nothing was regenerated.
+
+So #137 is a content change that moves every baseline, leaves two tests red, and **by its own
+measurement moves the differentiation metrics backwards**. Merging that while the owner sleeps would
+be substituting my judgement for theirs on the single decision the whole campaign is about. It waits,
+next to #134 and #72.
+
+## W142 — my own merge gate was sha-blind, and chain 1's log is what caught it
+
+`main_verify` read `gh run list --branch main --limit 1` and **never checked the run's `headSha`
+against `origin/main`**. So "main is green" could be a statement about a different commit.
+
+Auditing chain 1's log: after merging #133 it logged `main is now 384a2a5` and then
+`main verify: success` — but at that instant `384a2a5`'s run had only just been created. It resolved
+safely, and it was luck rather than design.
+
+**Exactly the shape of every silent-checker bug tonight** — the flat records directory, the two
+`.find()` analysers, the CSV-vs-ndjson mismatch, the awk column split, the `//` on an empty string.
+Five instances now, all of them a check that answers confidently about the wrong input.
+
+v3 resolves the run **by matching `headSha` to `origin/main`** and reports `no-run-for-head` rather
+than falling back to whatever is newest. Chain 3 is running on it, and its first line —
+`main(019b8e1) verify: no-verify-job-yet` — is the fix visible in the log.
