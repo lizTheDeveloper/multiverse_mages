@@ -7,8 +7,18 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 **Build:** `w99/tradition-species-sweep` off `main` (`e2a15cf`), reference-universe-v1, scenario
 build `0.3.0`, record format 3.
-**Instruments:** the `integration-r2` sweep family re-run in full on this build, plus two scripts
-that answer questions a sweep physically cannot.
+**Instruments:** the `integration-r2` sweep family re-executed on this build, plus two scripts that
+answer questions a sweep physically cannot.
+
+**Sample size, stated plainly.** The committed sweep files declare 400 replicates. Under the machine
+contention this ran on, one 400-replicate arm took twenty-five minutes, so **every arm here was
+executed at 100 replicates — ten runs per strategy over the ten-strategy pool.** That is a *prefix*
+and not a different experiment: `seed.ts` deliberately does not mix the replicate count into the
+derivation, so runs 0–99 of a 100-replicate execution are bit-identical to runs 0–99 of the
+committed 400-replicate file. Anyone re-running the committed files gets a superset of these numbers.
+The all-six control was executed at 200 and **truncated to its first 100 records** so that every arm
+in the table carries the same seeds; its full 200-run figures agree (`ascensionRate` 0.2000 at n=200
+and 0.2000 at n=100).
 **This changed no simulation behaviour.** The diff is four sweep JSON files, three scripts and this
 document. No package source, no gate, no baseline, no golden fixture.
 
@@ -18,7 +28,7 @@ them, `cohortSize` and `foundingNodes`. `balance-full` adds `foundingMages`. **N
 varies `foundingSpeciesMask` or `tradition`**, so every universe in every gate is founded with all
 six species under one tradition, and that tradition is True Naming by an accident of the alphabet.
 
-## The result in six lines
+## The result in seven lines
 
 1. **`balance/results-integration-r2.txt` does not reproduce on `main`.** Eighty-three commits
    touched `packages/` since it was written, including `feat(w69): founding grants become a budget`.
@@ -37,8 +47,13 @@ six species under one tradition, and that tradition is True Naming by an acciden
    two helpers that do reach further (`castCost`, `expendOnCast`) are consumed only by
    `@mm/rules-raid`, which has no dependents. **Every tradition result here is `acquire`/`store`
    only, and Vancian is therefore the standard-hooks control.**
-5. **The founding species mix is a real factor and it is bigger than seed noise.** See Table 3.
-6. **Neither factor should be added to a committed gate yet**, and the reason is in the
+5. **The founding species mix is a real factor and it is bigger than seed noise** — and **founding
+   with all six beats founding with any one of them**, on every metric, at every seed. What it does
+   *not* do is reorder the winners. See Table 2c.
+6. **The two traditions that are indistinguishable on `ascensionRate` (0.2000 both), on the winner
+   set, and on nodes known differ absolutely on whether any knowledge in the universe can move.**
+   That is the case for the missing instrument, in one sentence.
+7. **Neither factor should be added to a committed gate yet**, and the reason is in the
    recommendation section — it is not that they do nothing.
 
 ---
@@ -223,7 +238,79 @@ teachable against 0.0. Any claim of the form *"knowledge spreads"* is a True Nam
 
 ### 1c. The tradition sweep on this build
 
-<!-- TRADITION TABLES -->
+Three arms, one hundred runs each, common random numbers verified — 200 pairs compared, **zero seed
+or strategy mismatches**, one `sweepId`, one `rootSeed`, three distinct levels. Full output in
+`balance/results-w99-tradition-arms.md`.
+
+#### Table 1d — per arm
+
+| tradition | hooks | ascended/n | `ascensionRate` | nodes known | library depth | grimoires | instances | living mages |
+|---|---|---|---|---|---|---|---|---|
+| **true-naming** *(the status quo)* | `true-name` / `standard` | 20/100 | **0.2000** | 73.47 ±6.84 | 39.78 ±3.59 | 224.45 ±22.38 | 3217.56 ±236.62 | 328.12 ±74.50 |
+| **vancian-memorization** *(the control)* | `standard` / `standard` | 20/100 | **0.2000** | 76.62 ±7.81 | 27.00 ±2.12 | 140.36 ±12.85 | 2824.16 ±210.78 | 355.12 ±80.84 |
+| **art-of-memory** | `standard` / `palace` | **0/100** | **0.0000** | 21.36 ±1.04 | **0.00 ±0.00** | **0.00 ±0.00** | 858.25 ±114.58 | 373.78 ±87.52 |
+
+Terminal statuses: true-naming `{truncated 65, ascended 20, stagnated 15}`, vancian
+`{truncated 63, ascended 20, stagnated 17}`, art-of-memory `{truncated 73, stagnated 27}`.
+
+#### Table 1e — paired against True Naming, same seed and same strategy
+
+| tradition | nodes known | library depth | grimoires | instances | living mages | ascended Δ |
+|---|---|---|---|---|---|---|
+| vancian | +3.15 ±1.38 | **−12.78 ±3.88** ** | **−84.09 ±19.10** ** | **−393.40 ±101.78** ** | +27.00 ±14.73 | **0** (20 vs 20) |
+| art-of-memory | **−52.11 ±6.55** ** | **−39.78 ±3.59** ** | **−224.45 ±22.38** ** | **−2359.31 ±184.52** ** | +45.66 ±16.90 | **−20** (0 vs 20) |
+
+#### Table 1f — is the tradition bigger than the seed?
+
+| metric | median ratio | strategies with `sd_between ≥ sd_within` |
+|---|---|---|
+| nodes known | **9.17** | 9 of 10 |
+| knowledge instances | **4.66** | 10 of 10 |
+| library depth | **2.21** | 10 of 10 |
+| grimoires | **1.80** | 10 of 10 |
+| living mages | 0.46 | 1 of 10 |
+| population | 0.43 | 0 of 10 |
+
+The tradition is emphatically a factor on the knowledge metrics and emphatically **not** one on the
+demographic metrics — which is the right shape, because neither `acquire` nor `store` touches
+births or deaths, and it is a useful negative control on the instrument.
+
+#### The answer, in four parts
+
+**1. The tradition changes the game — but the `acquire` axis and the `store` axis change different
+things, and only one of them changes the outcome.**
+
+`store` decides everything. The Art of Memory's `palace` hook has `scribingAvailable: false`, and
+that single boolean produces a universe with **zero grimoires and zero library depth in all one
+hundred runs**, 21.4 nodes known against 73.5, and **not one ascension**. Vancian and True Naming
+differ only in `acquire`, and they ascend at exactly the same rate — 20/100 each — with exactly the
+same two winning strategies at exactly the same counts (`permissive-breadth` 10/10, `permit-then-idle`
+10/10, and eight strategies at 0/10 under both).
+
+**2. The `acquire` axis is invisible to the outcome and enormous underneath it.** Paired, Vancian
+knows *more* nodes than True Naming, not fewer (+3.15 ±1.38, inside three standard errors overall,
+and per strategy `permissive-breadth` reaches 228.8 ±5.6 under Vancian against 202.0 ±2.1 under True
+Naming — True Naming's `researchCostMultiplier: 2048` costing it breadth). What Vancian loses is
+carriage: 12.8 fewer distinct nodes shelved, 84 fewer books, 393 fewer instances — and, invisibly to
+every committed metric, **all 78.9 of its teachable instances**.
+
+**So the two traditions that are indistinguishable on the ascension rate, on the winner set, and on
+nodes known differ absolutely on whether any knowledge in the universe can move.** That is the whole
+case for the missing instrument.
+
+**3. Which of these are `acquire`/`store` only? All of them.** `castPolicy` and `costPolicy` were
+never executed in any of these three hundred runs, because nothing outside `@mm/rules-raid` calls
+them and no package depends on `@mm/rules-raid`. Vancian's `cast: prepared` with `slotsPerMage: 4`
+and its `cost: prepaid` did nothing, which is why it is usable as the standard-hooks control.
+
+**4. `docs/design/tradition-sweep.md`'s headline no longer holds.** W13 measured `ascensionRate` at
+0.6875 (Vancian), 0.6979 (True Naming) and **0.1250** (Art of Memory), and its most-quoted line was
+that the Art of Memory *"is the only one of the three shipped traditions whose ascension rate falls
+inside `contracts.md` §7's declared band"*. On this build the three read **0.2000, 0.2000 and
+0.0000**. Two of the three have moved into the band and the Art of Memory has fallen out of it
+underneath — it now ascends **never**. `docs/design/ages-of-magic.md` quotes the 0.125 as a measured
+fact. It is not one any more.
+
 
 ---
 
