@@ -228,24 +228,68 @@ entirely, so in shipped form the mechanic reaches only species that did not need
 - **`contentRevision` moves**, `162f80bf…` → `87fdff6c…`, because the seventeenth god
   cost is in the preimage. The digest is over parsed values, not file bytes. Every
   existing price is byte-identical.
-- **The append is behaviourally inert, and the route to that sentence is worth
-  keeping.** An intermediate build of this branch *was* not inert: re-running the
-  draconic species sweep then showed 9 of 10 strategies bit-identical and **all 10
-  runs of `uniform-random-legal` differing**, because that strategy samples the
-  legality mask and the mask had grown a spuriously-legal seventeenth entry. That
-  was the optimistic-mask defect in §9 wearing a second hat. With the gate in the
-  mask, action 16 is illegal until a universe holds portal magic, the legal set is
-  therefore exactly what it was, and **all 10 of 10 strategies are bit-identical**:
-  83 stagnated and 17 truncated, before and after, 26.88 nodes and 4.26 living mages
-  either way.
-- **The committed balance baselines are re-recorded for provenance, and for nothing
-  else.** All four gates fail on `baseline-invalid` — the gate refuses to compare
-  across two `contentHash` values, correctly calling it *"a category error"* — while
-  **every metric in every gate reports `delta 0.00000`**, including each
-  per-strategy arm of the agency gate. So this branch does join the re-baseline
-  stack, and it joins it carrying the weakest possible claim: the numbers are
-  unchanged and only the stamp moved. `supersededDeltas` in each regenerated file
-  is a column of zeros, which is the check a reviewer should apply.
+- **The append is inert for every scripted strategy, and not inert in general — the
+  distinction is the whole of the baseline story.** An intermediate build was worse than
+  that: re-running the draconic species sweep then showed **all 10 runs of
+  `uniform-random-legal` differing**, because the optimistic mask of §9 had made action
+  16 spuriously legal and that strategy samples the legal set. With the gate in the mask
+  the draconic species sweep is **bit-identical across all ten pool strategies** — 83
+  stagnated and 17 truncated, 26.88 nodes and 4.26 living mages, before and after —
+  because draconic never holds portal magic, so the action is never legal there.
+  **`balance-gate-ascension-v1` is different and genuinely moves.** Its universes found
+  all six species over 2400 ticks, so once one has died out a slot opens; combined with
+  a universe that did reach portal magic, action 16 becomes legal, and
+  `uniform-random-legal` takes it — **verified by re-running the sweep and reading
+  `godSpendByAction`: it invited in 8 of its 8 runs, 29 invitations, and no other
+  strategy invited once.** Every non-zero delta in that gate is that arm or an aggregate
+  over it, at exactly one eighth of the arm's move for a pool of eight, and the largest
+  is **1.46 standard errors against a tolerance of 3**.
+- **Three baselines were re-recorded for provenance. The fourth was measured and left
+  alone, because re-baselining a gate that actually moved is the owner's call.** All
+  four gates first failed on `baseline-invalid` — the gate refuses to compare across two
+  `contentHash` values, correctly calling it *"a category error"*, which is a structural
+  refusal rather than a tolerance failure and which any content edit will trigger.
+  - `balance-gate-v1` (9 metrics), `-horizon-v1` (10) and `-agency-v1` (90):
+    **every metric `delta 0.00000`**, `regenerate-baseline.mjs` printed *"no metric
+    moved"*, `supersededDeltas` is 109 zeros, prior `notes` carried forward verbatim.
+    These are re-recorded and committed.
+  - `balance-gate-ascension-v1`: **NOT re-recorded.** It is the one gate that genuinely
+    moves, and the movement is reported below rather than absorbed. Until it is
+    re-recorded by whoever owns that decision, the *non-required* "Balance gate, two
+    hundred world years" check stays red on `baseline-invalid`.
+
+**What moved in `balance-gate-ascension-v1`, and by how much.** Measured, not adopted.
+Twenty of ninety metric rows move; every one is `uniform-random-legal` or an aggregate
+over it, and each aggregate is exactly one eighth of the arm's move because the pool
+holds eight strategies. The largest movement is **1.46 standard errors against a
+tolerance of k = 3**, so nothing here would have failed the gate on tolerance.
+
+| metric | arm value | delta | in SE |
+|---|--:|--:|--:|
+| `referencePopulation@uniform-random-legal` | 27197.875 → 26699.5 | −498.375 | −1.46 |
+| `referencePopulationChange@uniform-random-legal` | 27053.875 → 26555.5 | −498.375 | −1.46 |
+| `referencePeakPopulation@uniform-random-legal` | 29490 → 29405 | −85 | −0.23 |
+| `referenceGrimoires@uniform-random-legal` | — | +13 | — |
+| `referenceLivingMages@uniform-random-legal` | — | −5.5 | — |
+| `referenceKnowledgeInstances@uniform-random-legal` | — | −5.5 | — |
+| `referenceLibraryDepth@uniform-random-legal` | — | +2.75 | — |
+| `referenceNodesKnown@uniform-random-legal` | — | −0.125 | — |
+| `referenceNodesGained@uniform-random-legal` | — | −0.125 | — |
+| `referenceNodesGainedFinalQuarter@uniform-random-legal` | — | −0.125 | — |
+
+The aggregates move at ⅛ of each: grimoires +1.625, living mages −0.6875, population
+−62.296875, nodes known −0.015625, and so on. `referencePeakPopulation` moves −85 on
+both because it is a maximum rather than a mean.
+
+**The cause is verified rather than inferred.** Re-running the sweep and reading
+`godSpendByAction`: `uniform-random-legal` **invited in 8 of its 8 runs, 29 invitations
+in total, and no other strategy invited once** — it is the only one that samples the
+whole legal set, so it is the only one that finds a newly legal action. Action 16 needs
+a living mage holding portal magic **and** a species with no living mage; the all-six
+founding mix satisfies the second only after a species has died out, which is why this
+2400-tick mixed sweep moves while the draconic-only species sweep is bit-identical. The
+verification run had zero failed runs, and the sweep's `perRunTimeoutMs` is 30 minutes
+against runs that take seconds, so machine load did not manufacture this.
 - The pre-append baseline arms reproduce `balance/w99/` **exactly** — draconic
   0/100 at 26.88 nodes and 4.26 living mages, elf 20/100 at 2.84 — so the W99
   baseline has not moved underneath this branch.
