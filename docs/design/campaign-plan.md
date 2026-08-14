@@ -8313,3 +8313,68 @@ read, it has to be on the ref the agent is given.
 The same agent also caught that **W82 names the wrong v1 rectangle** — `{intellego, muto, rego} ×
 {aquam, fatum, limen, nomen}` where the tree holds `{intellego, perdo, rego} × {limen, mentem, nomen,
 terram}`. Corrected in place.
+
+## W167 — the combination is worse than `main` on every axis measured, and #137 is why
+
+PR #155, `integration/ui-and-subsystems`. All eleven merged, **one `--no-ff` commit each so any single
+one can be `git revert -m 1`'d** — which is what makes a candidate branch a decision aid rather than a
+tangle.
+
+**`npm run verify` is red: 27 reproducible failures across 14 files** (the full-suite run said 38;
+eleven were timeouts at load 90, and the agent separated them rather than reporting the larger number).
+They group into four causes, and the first subsumes most of the rest:
+
+- **#137 redefines what "the v1 subset" means**, and **#72, #140 and the loader invariant all depend on
+  the old meaning.**
+- **Raids stop being observable** — against a `main` that had just made them measurable.
+- A new annihilation, `displacement:laborAfterDisplacement`, 18 of 240 ticks.
+- Species occupancy reads 4 where #137 pins 59.
+
+### The four measurements, none of them kind
+
+1. **`check:consumption` 2 failures** against `main`'s 3 — **but #140 alone takes it to 0.** The two
+   remaining are `fertility`/`lifespan`, *unchanged in substance and no longer declared*, because #137
+   had to empty the exclusion list for `check:coverage` and **the same list feeds both checks**.
+   **One list can no longer express both checks' truths** — a real structural defect that only appears
+   in combination.
+2. **`check:reachability` 123**, and **`main` measures 124, not the 121 I have been quoting.**
+   `UNIVERSITY_STAFF` leaves the declared-and-never-read section; `completeAffiliation` gains its
+   caller. The five newly-unreached symbols were verified uncalled on their own branches too, so no
+   union silently dropped a call site.
+3. **All three gates refuse across the revision boundary** — and print the movement anyway: knowledge
+   roughly **doubles** everywhere (`referenceNodesKnown` **+120 to +255 SE**), population moves nowhere.
+4. **Species separation is worse than `main`.** Same instrument, same parameters: three claims that
+   reproduce **12/12** on `main` reproduce **2/12, 1/12 and 0/12** here. **No pair exceeds 3/12.** The
+   four-species chain holds **0/12**, with `dwarf < human` **backwards**.
+
+### The conflict that would have shipped, found by reading
+
+**#134's `shipped-content.test.ts`: both sides raised `autonomyWeights` 36 → 38 for *different* pairs
+of weights.** The literal `38` **auto-merged as common text**; only the surrounding comment conflicted.
+Either side taken alone would have pinned 38 where the loader validates **40**.
+
+**No test would have caught it and no conflict marker would have shown it.** That is the third
+auto-merge hazard of the campaign — after the stale ascension baseline and `species-occupancy.test.ts`
+asserting `human` twice — and the most subtle: **two correct edits producing a wrong common value.**
+
+Also: `PRIMITIVE_COVERAGE_EXCLUSIONS` is `[]` on #137 and three entries on #63; **measured on the union
+it is exactly `['library-legacy']` — neither side.** And #75's union dropped two `/**` openers, leaving
+comment bodies as **live code**, caught by typechecking after each merge and then swept for across every
+unioned file.
+
+### And it refused the tempting shortcut
+
+**Baselines were deliberately not regenerated**, on the stated grounds that the gate prints per-row SE
+movement anyway and **re-baselining a red tree would bake a broken state into a committed
+measurement.** That is exactly right, and it is the discipline that separates a measurement candidate
+from a rubber stamp.
+
+### What this settles
+
+**#137 should not land as it stands**, and now for a fourth independent reason: it made species
+differentiation *worse* (W141), it destroys the measurement at the horizon anyone runs (W154), its
+supposed companion #72 does not rescue it (W147) — and in combination it **breaks #72, #140 and the
+loader invariant by redefining a term they share.**
+
+Everything else in the eleven is defensible on its own. **The combination is not a merge proposal, and
+the branch says so in its title.**
