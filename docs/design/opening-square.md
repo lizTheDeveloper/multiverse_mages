@@ -460,3 +460,181 @@ The `5 × 14` stand-in is exact for the player's universe and **not** for the ri
 `raiderNodeCandidates` and `shelveForeignBooks` key on `cell.v1`, which the stand-in does not move.
 A raid number taken here would be measuring a different configuration than the one that regressed, so
 none is reported.
+
+---
+
+## 10. The wiring, and what the choice is worth
+
+**Measured 2026-08-14 on `w72/opening-square-wiring` at `02cb41f`, branched from `origin/main` at
+`5e6237f`.** #137 (*enable all seventy cells*) is **not** in this tree and `cell.json` was not
+touched. Every number below is a reading; where one is not, it says so.
+
+### 10a. What was wired
+
+§9a's finding was that `explicitOpeningAxes` had no caller, so #72 as merged opened the same twelve
+cells it always did. It has one now, and it is the **default** path:
+
+    size -> standardOpeningOrder -> explicitOpeningAxes -> RulesetAxes -> permits()
+
+`standardOpeningOrder` is the v1 rectangle's own axes first, ascending by content id, then every
+remaining axis. Two properties follow, both asserted in `test/unit/opening-square.test.ts` rather
+than argued: the prefix **at the rectangle's own size is the rectangle** — so the full-size arm of a
+size sweep is a control, and `ui/session.json` re-records byte-identical at snapshot hash
+`f6974848cef4578c` — and smaller squares **nest** inside larger, so a size sweep varies size alone.
+
+`openingSquareSeeded: 1` keeps W82's drawn square. The default is the god because the owner's
+sentence is that the square *"shouldn't be hard-coded — that's for the player to decide"*, and
+*"the RNG decides"* is that abdication pointed the other way. **The god's square draws nothing**, so
+unlike #72 itself it adds no stream and forces no re-baseline event.
+
+### 10b. What each square holds, statically
+
+Ascending content order makes the arms `intellego` → `+perdo` → `+rego` over `limen` → `+mentem` →
+`+nomen` → `+terram`.
+
+| square | cells | nodes in square | prerequisite-reachable | founding candidates | raid cell (`rego-limen`) | distinct primitives |
+|---|--:|--:|--:|--:|:--:|--:|
+| 1×2 | 2 | 8 | **7** | 2 | no | 4 |
+| 1×3 | 3 | 12 | **12** | 3 | no | 5 |
+| 2×2 | 4 | 17 | **16** | 4 | no | 6 |
+| 2×3 | 6 | 25 | **25** | 6 | no | 7 |
+| **3×4 (control)** | 12 | 51 | **51** | 12 | **yes** | **14** |
+
+Two consequences that must lead any reading of the arms below, not surface as mysteries:
+
+- **No arm below 3×3 can raid.** The only `portal` node in shipped content is `rl-open-the-portal`
+  in `rego-limen`, and `rego` is the third technique in content order. This is a genuine consequence
+  of a narrow opening, not an artefact of the ordering: W82's static audit found 0 of 70 possible
+  1×1 openings and 13 of 910 2×2 openings can ever raid.
+- **`foundingNodes` silently clamps.** Every cell holds exactly one prerequisite-free node, so a
+  1×2 square offers two founding candidates to a sweep asking for four. `buildReferenceState` deals
+  what exists. W83 measured founding knowledge at about **1%** of outcome, which is the size of this
+  confound.
+
+### 10c. Differentiation — `species-separation.mjs`, 12 seed sets × 6 seeds, tier 3, 720 ticks
+
+72 runs per arm. The control is the default build (no `--opening`), and its calibration set
+reproduces the committed docstring in `reference-time-to-tier.test.ts` exactly — gnome `[24,25]`,
+dwarf `[25,30]`, orc `[32,51]`, human `[30,31]`, draconic `[25,301]` — so the instrument is sound
+before any arm is read.
+
+**Rates, not verdicts.** A verdict is a function of how many sets were run; a rate is not.
+
+| pair | 1×2 | 1×3 | 2×2 | 2×3 | **3×4 control** |
+|---|--:|--:|--:|--:|--:|
+| `gnome < elf` | 12/12 | 12/12 | 12/12 | 12/12 | **12/12** |
+| `gnome < human` | 12/12 | 12/12 | 12/12 | 12/12 | **12/12** |
+| `dwarf < elf` | 7/12 | 10/12 | 11/12 | 11/12 | **12/12** |
+| `human < elf` | 10/12 | 10/12 | 11/12 | 11/12 | **12/12** |
+| `gnome < dwarf` | 4/12 | 5/12 | 6/12 | 6/12 | 5/12 |
+| `dwarf < human` | 4/12 | 1/12 | 0/12 | 0/12 | 1/12 |
+| **pairs reaching ESTABLISHED** | **2** | **2** | **2** | **2** | **4** |
+
+The four-species chain `gnome < dwarf < human < elf` is **REFUTED in every arm including the
+control** — that is a fact about `main` at this horizon, reproduced here, not something the opening
+square broke.
+
+Mean time to tier 3, ± standard error over the twelve set means:
+
+| species | 1×2 | 1×3 | 2×2 | 2×3 | **3×4 control** |
+|---|--:|--:|--:|--:|--:|
+| gnome | 24.3 ± 0.1 | 24.2 ± 0.1 | 24.2 ± 0.1 | 24.0 ± 0.1 | **24.3 ± 0.0** |
+| human | 29.8 ± 0.1 | 30.0 ± 0.2 | 29.8 ± 0.1 | 29.8 ± 0.1 | **29.9 ± 0.1** |
+| dwarf | 29.4 ± 1.2 | 27.6 ± 0.2 | 28.5 ± 0.2 | 28.4 ± 0.3 | **27.7 ± 0.3** |
+| elf | 51.0 ± 0.8 | 51.5 ± 0.7 | 51.4 ± 0.4 | 50.8 ± 0.5 | **54.8 ± 0.3** |
+| orc | 48.3 ± 10.0 † | 91.8 ± 18.4 † | 56.0 ± 8.2 † | 39.3 ± 1.7 | **34.2 ± 0.8** |
+| draconic | 216.8 ± 107.1 † | 215.0 ± 58.7 † | 275.8 ± 46.5 † | 201.6 ± 43.8 † | **209.0 ± 21.8 †** |
+
+† censored at the horizon in some runs, and the censoring is itself the finding. Runs censored out
+of 72: **draconic 65 / 56 / 37 / 30 / 17** and **orc 28 / 11 / 1 / 0 / 0** across 1×2 → 3×4. The
+other four species are censored nowhere.
+
+**So the narrow arms' draconic and orc numbers are about truncation, not about species**, and none
+of them should be quoted as a separation — the same failure mode #143 found at the opposite extreme
+under #137. The rows that *are* clean are gnome, human, dwarf and elf, and elf carries the result:
+**54.8 ± 0.3 in the control against 50.8–51.5 ± 0.4–0.8 in every narrow arm, six to eight standard
+errors apart.**
+
+### 10d. Width — the quality-diversity archive, 12 strategies × 4 seeds, 1,200 ticks
+
+`--ticks 1200`, above `ascension-min-tick` 600, so the horizon guard is respected and ascension is
+reachable. One arm per invocation at a fixed `--search-seed`, one level per factor, so all five arms
+run on the **same** universes.
+
+| arm | archive width | margin over null | ascended | mean nodes known across the pool |
+|---|--:|--:|--:|--:|
+| 1×2 | 1 | 3 | 6/48 | 70.3 |
+| 1×3 | 1 | 3 | 6/48 | 72.7 |
+| 2×2 | 1 | 4 | 9/48 | 73.6 |
+| 2×3 | 2 | 4 | 7/48 | 79.3 |
+| **3×4 control** | **2** | 4 | 7/48 | **94.4** |
+
+Width is a small integer at four seeds and the 1↔2 step is one strategy crossing the bar; read it as
+consistent with 10c rather than as independent evidence.
+
+### 10e. The sharpest number, and it is not about differentiation
+
+Nodes known at 1,200 ticks, per strategy, per arm:
+
+| strategy | 1×2 | 1×3 | 2×2 | 2×3 | 3×4 |
+|---|--:|--:|--:|--:|--:|
+| `passive-control` | **7** | **12** | **16** | **25** | **51** |
+| `uniform-random-legal` | 7 | 12 | 16 | 25 | 62 |
+| `archivist` | 7 | 12 | 16 | 25 | 51 |
+| `worship-maximizer` | 7 | 12 | 16 | 25 | 51 |
+| `portal-rush` | 7 | 12 | 16 | 25 | 56 |
+| `permit-then-idle` | **196** | 195 | 196 | 197 | **199** |
+| `permissive-breadth` | **204** | 205 | 199 | 207 | **207** |
+| `allocate-concentrate` | **192** | 192 | 186 | 186 | **194** |
+| `allocate-spread` | **207** | 207 | 204 | 208 | **203** |
+
+**The passive row is exactly the reachable-node column of 10b — 7, 12, 16, 25, 51 — reproduced by a
+dynamic run from a static content audit taken independently.** A universe whose god never spends
+learns precisely its square and stops.
+
+**And four of twelve strategies erase the square entirely.** `permit-then-idle` reaches 196 nodes
+from a two-cell opening against 199 from the twelve-cell one: **a 1.5% difference from a starting
+content set seven times smaller.** W82 found that going from 1×1 to the whole grid costs **84 favor,
+once**; this is that price paid, measured on the god's square rather than the seed's.
+
+### 10f. The answer
+
+**The opening square is a real choice, and today it binds only on gods who do not spend.**
+
+- On the passive universe — which is every balance baseline, every separation reading and every
+  golden fixture — the square is a hard ceiling on content and it **reduces** species
+  differentiation: four established pairs at 3×4, two at every narrower size, monotone in between.
+- On a god who permits, it is gone inside 1,200 ticks for the price of 84 favor, and the arms differ
+  by about 1.5%.
+
+So the finding is **not** "square size does not change the game". It is that square size changes the
+game the harness measures and barely changes the game a player plays, and the gap between those two
+is `permit-technique` / `permit-form` being `untuned`. **Pricing the permit verbs is the change that
+makes the opening square a decision rather than a starting position** — W82 said this from a
+containment probe and it is now measurable in nodes.
+
+**A recommendation the measurement supports:** keep the default at the full v1 rectangle. It is the
+best of the five sizes for species differentiation and the only one that can raid, and a smaller
+default would hard-code the decision the owner reserved for the player.
+
+### 10g. What was not measured
+
+- **Interaction between square and strategy.** Every arm ran the same pool; nothing here separates
+  "the square changed the game" from "the square changed what this pool does".
+- **How fast a permitting god erases the square.** The 1,200-tick endpoint says it happens, not
+  when. That needs per-tick permitted-cell counts, and it is the measurement that would price the
+  verbs.
+- **Squares of one size in different positions.** Only the content-order prefix was run, so
+  *position* is unmeasured and every claim here is about size alone.
+- **Sizes above 3×4.** The standard order extends past the rectangle into the disabled cells, and
+  nothing was run there; §9 and #143 both suggest the horizon would need to grow first.
+- **`--sets` above 12 and `--seeds` above 4.** Both were budget, on a machine at load 17–75
+  throughout.
+
+### 10h. Looting, confirmed unchanged
+
+`shelveForeignBooks` still selects on `entry.record.v1` — the **content** flag — and this change
+moves only `permittedTechniques` / `permittedForms` on the `UNIVERSE` component. **A narrow opening
+therefore does not change what is shelvable**, and §9b stands exactly as written: re-keying that
+predicate onto the raiding universe's ruleset remains a prerequisite for #137, and it is a separate
+change from this one.
