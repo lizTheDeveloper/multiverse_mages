@@ -1440,14 +1440,18 @@ export function poolDegeneracy(
  */
 export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze({
   'open-portal':
-    'Action 14 is implemented and unreachable, which are different things and both are true. ' +
-    'coordination/src/god/interventions.ts has a portalPlan that finds a living mage holding a ' +
-    'portal-primitive node and enters engagement. But candidates.ts derives action 14\'s slot list ' +
-    'from a caller-supplied portalTargets, contracts.md §1.1 puts exactly one universe in a ' +
-    'simulation instance, and the reference scenario supplies no targets — so the list is empty and ' +
-    'the mask clears the action every tick. It is therefore permanently MASKED rather than inert, ' +
-    'which makes portal-rush the one strategy whose defining action degeneracyOf reports as ' +
-    'unreachable. Raids, and a second universe to point a portal at, land in 0.9.0.',
+    'STALE, corrected 2026-08-13. This entry said action 14 was permanently MASKED because the ' +
+    'reference scenario supplied no portalTargets. It supplies them: reference-universe.ts passes ' +
+    'portalTargets: portalTargetIds(constants), sourced from rival-universe.ts, and action 14 ' +
+    'resolves in measurement -- 16 of 100 elf runs and 17 of 100 gnome runs at 2400 ticks. ' +
+    'What is true is narrower and more interesting: reaching action 14 needs a living mage holding ' +
+    'a portal-primitive node, the portal nodes sit in rego-limen behind an intellego-limen ' +
+    'prerequisite, and whether a species gets there is monotonic in curiosity -- gnome 17, elf 16, ' +
+    'dwarf 3, orc 0, draconic 0 per hundred. So the gate is a curiosity gate wearing a ' +
+    'content-placement costume, and the two species least able to pass it are the two that most ' +
+    'need what lies beyond. That is a finding about species and content, not about a mask. ' +
+    'Retracted in place rather than deleted because this entry misled an agent into believing a ' +
+    'measurement was impossible, and the retraction is the useful part.',
   'five-strategies-are-one-universe':
     'Ascension eligibility now reads play: Path A counts permitted cells standing at their floor ' +
     'and Path B requires an era boundary to hold a canon of a stated size spread over a stated ' +

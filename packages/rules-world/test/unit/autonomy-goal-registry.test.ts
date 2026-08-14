@@ -53,6 +53,9 @@ const AS_SHIPPED: readonly (readonly [string, number])[] = [
   ['affiliate', 6],
   ['ward-duty', 7],
   ['raid-readiness', 8],
+  // Appended by `apply-magic` (w107). Nothing above it moved, which is the only
+  // thing this pin is here to check.
+  ['apply-magic', 9],
 ];
 
 const BASELINE_CONSEQUENCE =
@@ -63,7 +66,7 @@ const BASELINE_CONSEQUENCE =
   'there moves.';
 
 describe('the goal registry is append-only', () => {
-  it('holds exactly the nine goals shipped at 0.4.0, at exactly their ids', () => {
+  it('holds exactly the goals shipped, at exactly their ids', () => {
     const actual = GOALS_IN_ORDER.map((goal) => [GOAL_NAMES[goal], goal] as const);
     // The message is attached to the assertion rather than left to the diff so
     // that a renumbering explains itself where CI prints it.
@@ -118,13 +121,17 @@ describe('idle is id zero and is the goal nothing can remove', () => {
 });
 
 describe('goals that need a node say so once', () => {
-  it('lists exactly the five target-taking goals', () => {
+  it('lists exactly the target-taking goals', () => {
     expect([...GOALS_NEEDING_A_TARGET]).toEqual([
       GOAL.researchNode,
       GOAL.rediscoverNode,
       GOAL.seekTeaching,
       GOAL.teach,
       GOAL.scribe,
+      // `apply-magic` names the node she casts. It is the one target-taking goal
+      // with no project behind it — every candidate's `remainingCost` is zero,
+      // because she already knows them all.
+      GOAL.applyMagic,
     ]);
   });
 
