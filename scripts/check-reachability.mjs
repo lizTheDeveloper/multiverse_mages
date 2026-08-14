@@ -305,11 +305,28 @@ const DECLARED_EXCLUSIONS = [
 const DEFAULT_ROOT = fileURLToPath(new URL('../', import.meta.url));
 
 function resolveRoot(args) {
-  const [root] = args;
+  const [root] = args.filter((arg) => !arg.startsWith('--'));
   return root === undefined ? DEFAULT_ROOT : root;
 }
 
 const REPO_ROOT = resolveRoot(process.argv.slice(2));
+
+/**
+ * `--json` emits the findings as data instead of as the report.
+ *
+ * The prose report is the point of this check — every section carries the
+ * argument for why the finding is a finding, and a reader who gets only a list
+ * of symbol names learns nothing. But a report that exists **only** as prose is
+ * unreadable by anything else, and `ui/design-dashboard/` needs these findings
+ * as rows. Scraping them back out of the formatted text would be exactly the
+ * mistake the script's own header warns about one level down: a parser that
+ * agrees with the output until the day someone rewords a heading.
+ *
+ * So the arrays are emitted directly. The exit code is unchanged in both modes
+ * — a JSON run of a failing tree still exits 1 — because a caller that only
+ * wanted the data would otherwise have to decide for itself what a finding is.
+ */
+const EMIT_JSON = process.argv.slice(2).includes('--json');
 
 /** Every production source file under `dir`, recursively. */
 function sourceFilesUnder(dir, out = []) {
@@ -771,6 +788,63 @@ const findingCount =
   constantsBehindDeadCode.length +
   staleExclusions.length +
   closedExclusions.length;
+
+if (EMIT_JSON) {
+  // Sorted at every level so two runs of the same tree produce the same bytes.
+  // A payload built from this is committed and pinned by a test, and an
+  // unstable key order would read as a behaviour change on every regeneration.
+  console.log(
+    `${JSON.stringify(
+      {
+        ok: findingCount === 0,
+        findingCount,
+        examinedSymbolCount: examinedSymbols.length,
+        examinedPackages: [...examinedPackages].sort(),
+        productionFileCount: productionFiles.length,
+        orphanPackages: [...orphanPackages].sort(),
+        unreached: unreached.map(({ file, line, name, kind }) => ({ file, line, name, kind })),
+        reachedOnlyByUnreached: reachedOnlyByUnreached.map(({ file, line, name, via }) => ({
+          file,
+          line,
+          name,
+          via: [...via].sort(),
+        })),
+        untouchedComponents: untouchedComponents.map(({ line, name }) => ({
+          file: COMPONENTS_FILE,
+          line,
+          name,
+        })),
+        unconsumedConstants: unconsumedConstants.map(({ id, field, line }) => ({
+          id,
+          field,
+          file: CONSTANTS_FILE,
+          line,
+        })),
+        constantsBehindDeadCode: constantsBehindDeadCode.map(({ id, field, via }) => ({
+          id,
+          field,
+          via: [...via].sort(),
+        })),
+        staleExclusions: staleExclusions.map(({ symbol, file }) => ({ symbol, file })),
+        closedExclusions: closedExclusions.map(({ symbol, file }) => ({ symbol, file })),
+        structuralExclusions: STRUCTURAL_EXCLUSIONS.map((rule) => ({
+          id: rule.id,
+          count: structurallyExcluded.filter((entry) => entry.rule === rule.id).length,
+          reason: rule.reason,
+        })),
+        declaredExclusions: DECLARED_EXCLUSIONS.map(({ symbol, file, reason }) => ({
+          symbol,
+          file,
+          reason,
+        })),
+        excludedPackages: EXCLUDED_PACKAGES.map(({ name, reason }) => ({ name, reason })),
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  process.exit(findingCount === 0 ? 0 : 1);
+}
 
 const lines = [];
 lines.push(

@@ -133,6 +133,18 @@
   .realbar b{color:var(--ink);font-variant-numeric:tabular-nums}
   .realbar .sub{color:var(--soft)}
   .dir.real .slot .nm{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  /* The real list is the same .slot row as directions A–C, but it is the only
+     one that spans the full page and carries a single integer. Stacked, thirteen
+     of them took 830px to say thirteen numbers, with 1,200px of nothing between
+     the handle and the score column. Wrapped into as many columns as fit, and
+     with the parameter label on the same line as the handle, it is one screen
+     of a list that is genuinely short. */
+  .dir.real .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));
+    gap:.35rem;align-content:start}
+  .dir.real .slot{grid-template-columns:1.6rem 1fr}
+  .dir.real .slot br{display:none}
+  .dir.real .slot .sub{margin-left:.45rem}
+  .dir.real .slot .sc{display:none}
 
 </style>
 
@@ -160,7 +172,7 @@
 
   <section class="dir real" id="real" style="margin-top:1rem"></section>
 
-  <div class="note">
+  <div class="note mm-essay">
     <h2>What operating these settles</h2>
     <p><b>The population number decides this, and nobody has chosen it.</b> Vision §13 leaves "how many
     mages does a mature universe hold" to benchmarking. At 48 the roster is the best of the three and the
@@ -312,7 +324,7 @@ function render() {
     <div class="dhead"><span class="letter">A</span><span class="name">Roster</span>
       <span class="tag">scan and click</span></div>
     <div class="dbody">
-      <div class="roster">${cast.slice(0, shown).map(m => `
+      <div class="roster mm-scroll">${cast.slice(0, shown).map(m => `
         <div class="rrow" role="option" tabindex="0" data-id="${m.id}" aria-selected="false">
           <span><span class="nm">${m.name}</span><br>
             <span class="sub">${m.species} · ${fmtAge(m)} · ${m.role}</span></span>

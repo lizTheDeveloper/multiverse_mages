@@ -36,16 +36,20 @@
  * quietly supplies what the rules do not.
  */
 
-export type { RulesetAxes } from './content-set.js';
+export type { OpeningSquareSize, RulesetAxes } from './content-set.js';
 export {
   acquireHookOf,
   catalogAndCells,
   contentCatalogue,
+  explicitOpeningAxes,
   foundingCandidates,
   primitiveNamed,
   scribingTraditionId,
+  seededOpeningAxes,
   shippedContent,
   speciesTable,
+  standardOpeningAxes,
+  standardOpeningOrder,
   storeHookOf,
   traditionIdNamed,
   v1RulesetAxes,
