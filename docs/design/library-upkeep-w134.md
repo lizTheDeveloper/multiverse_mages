@@ -114,8 +114,10 @@ affiliated founder.
 
 ## A committed test says the same thing, and it went red on this branch
 
-`npm run verify` on `b02e115` reports 9 failed tests across 7 files. Three were re-run in isolation
-on a quiet box and each **passes on `e2a15cf` and fails on `b02e115`**:
+`npm run verify` on `b02e115` reports 9 failed tests across 7 files, the same count on two
+independent full runs. **All seven files pass on `e2a15cf`**, each run there directly, so every one
+of the nine is introduced by this branch. Three were also re-run on `b02e115` in isolation on a
+quiet box:
 
 - `packages/coordination/test/unit/knowledge-capital.test.ts` — vision §6a's *"a deep library
   produces strictly more of the library output over five years than a bare shelf"*, **expected
@@ -129,9 +131,10 @@ on a quiet box and each **passes on `e2a15cf` and fails on `b02e115`**:
 - `packages/scenario/test/unit/causal-chain-build-rate.test.ts` — link 5b, **expected 184 to be
   181**.
 
-The other four — `loss-shock-recovery`, `raid-engagement`, `reference-long-run` (9.8) and
-`reference-time-to-tier` — were not contrasted against `e2a15cf` and are unverified in either
-direction as of this date.
+The other four are the same shape: `raid-engagement` (*"destroys knowledge instances that would
+otherwise have survived"*, expected 1294 < 1242 — the raid can no longer destroy what upkeep
+already did), `reference-long-run` 9.8 (the capital curve *"no longer falls back"*),
+`reference-time-to-tier` (expected 510 < 28) and `loss-shock-recovery`.
 
 ## What this measurement did not do
 
