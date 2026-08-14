@@ -176,7 +176,7 @@
     "species": "orc",
     "voiceId": "DUAKkudcC2PI6KEqJ60K",
     "ageBracket": "middle",
-    "note": "Durga raised the north vault and holds its stonework ward — learned in order to build it, never scribed, because nobody catalogues a builder — while the founding tablet credits the archmage who signed the requisition, so Durga cut a name into the ninth course of the inner wall and plastered over it.",
+    "note": "Raised the north vault and holds ct-the-poured-wall, learned in order to build it and never scribed, because nobody catalogues a builder. The founding tablet credits whoever signed the requisition, so a name went into the ninth course, under the plaster.",
     "look": "broad orc builder, tusks, close-cropped hair, stone dust on a heavy canvas smock",
     "lines": [
       {
@@ -202,7 +202,7 @@
       {
         "id": "durga-last-copy",
         "tier": "last-copy",
-        "text": "The vault's ward. Learned it to raise it, never scribed — nobody asks a builder. Only in me. Sort that before the next portal."
+        "text": "The poured wall — no courses for anything to fail along. I learned it to build this, and it's in no book, because nobody asks a builder what the wall is doing. Only in me. Sort that out before the next portal."
       },
       {
         "id": "durga-death",

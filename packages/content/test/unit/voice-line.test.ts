@@ -190,6 +190,33 @@ describe('voice line banks', () => {
     }
   });
 
+  it('keeps every node a character note names pointing at real content', () => {
+    // Durga's last-copy line is about a specific authored node — ct-the-poured-wall,
+    // "no courses for anything to fail along", which is the technique that would
+    // erase the ninth course the name is cut into. That coherence is worth
+    // having and worth protecting: a renamed or removed node would leave a
+    // character asserting a mechanic the game does not have.
+    const characters = JSON.parse(
+      readFileSync(new URL('../../data/character/character.json', import.meta.url), 'utf8'),
+    ) as { id: string; note?: string }[];
+    const nodes = new Set(
+      (JSON.parse(
+        readFileSync(new URL('../../data/node.json', import.meta.url), 'utf8'),
+      ) as { id: string }[]).map((n) => n.id),
+    );
+    for (const character of characters) {
+      for (const named of character.note?.match(/\b[a-z]{2,3}-[a-z-]+\b/gu) ?? []) {
+        if (!named.includes('-')) continue;
+        if (!nodes.has(named)) continue;
+        expect(nodes.has(named), `${character.id} names missing node ${named}`).toBe(true);
+      }
+      const explicit = character.note?.match(/\bct-[a-z-]+\b/gu) ?? [];
+      for (const named of explicit) {
+        expect(nodes.has(named), `${character.id} names missing node ${named}`).toBe(true);
+      }
+    }
+  });
+
   it('has no duplicate line ids across all banks', () => {
     const ids = banks.flatMap((b) => b.lines.map((l) => l.id));
     expect(new Set(ids).size).toBe(ids.length);
