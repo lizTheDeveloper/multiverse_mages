@@ -836,3 +836,65 @@ thing because it unlocks something strange"* is a much stronger motivation than 
 3. **How wide is the web?** Six species and several ages give a large space of conditions. **Author a
    few edges deliberately rather than generating them** — Vampire Survivors' unlocks are hand-placed,
    and that is why they feel like secrets rather than combinatorics.
+
+### What an unlock actually brings: weird species, and their weird world's magic
+
+*Owner, continuing:* **"Unlock weird species. Strange magic from their weird world. Higher dimensional
+realms, secret magics, wild individuals."**
+
+**An unlock is not a character. It is a region of the design space.** A weird species arrives with the
+magic of the place it came from — and that is the answer to a problem this campaign has been unable to
+solve.
+
+### It solves content exhaustion at the level above the run
+
+**Inside a run, exhaustion is now a mechanic**: the frontier runs out, scholars go idle, and idle
+scholars do dark things. Good.
+
+**Across runs, exhaustion was still fatal.** Seventy cells and three hundred nodes are *one world's
+worth of magic*, and a player who has seen it is done. **Unlocks are the answer: each weird species
+brings its own paradigm, and the space grows sideways rather than deeper.**
+
+`mvee` has **43 authored paradigms** — that is not one world's magic, it is dozens, and it is already
+written. The four axes (intensity, source, formality, animism) are the coordinates a "weird world" is
+weird *in*.
+
+### The three named kinds, and each already has a home
+
+**Higher dimensional realms.** This is the 3D/4D/5D/6D idea, and it has a concrete place: the raid map
+has buildings, sampled line-of-sight and a breadth-first flow field, and **adjacency, visibility and
+pathing are exactly what dimensionality transforms.** A species from a higher-dimensional realm is not
+a stat block — **it is a different geometry**, and `mvee`'s `dimension` paradigm plus Mages' `limen`
+form are the existing vocabulary. Whether the raid map's dimensionality is a parameter or an assumption
+is under investigation and is the question that decides the cost.
+
+**Secret magics.** Paradigms that are `teach=false` or `scroll=false` — **eleven of `mvee`'s
+thirty-seven** — and the tradition sweep has already measured how severe that is: under standard-acquire
+traditions a universe ends 2400 ticks with **zero teachable instances**. Severe is the point. A magic
+that cannot be written down is a different civilisation, not a modifier.
+
+**Wild individuals.** `wild` is **3 techniques × 13 forms, `teach=false`, `scroll=false`** — the widest
+form coverage of any paradigm in that set, and untransmittable. `talent` is 7 × 12, innate. **A species
+where everyone is a sorcerer** is a coherent thing to play and is the exact inverse of the academic
+game: no universities, no teaching, no libraries — **only people who can do it, and when they die it
+is gone.**
+
+**That last one is the sharpest, because the whole game is built on institutions.** Playing a people
+who cannot have institutions is not a variant. It is the argument.
+
+### Why this is the right shape for the content strategy
+
+- **The magic comes from somewhere.** A weird species' magic is weird *because of where they are from*,
+  which is a reason rather than a reskin, and the four-axis spectrum makes "where they are from"
+  expressible as data.
+- **It is authored, not generated.** Forty-three hand-written paradigms with laws, risks and lore beat
+  any procedural grid, and the unlock web should be hand-placed for the same reason Vampire Survivors'
+  is.
+- **And it keeps the seventy-cell grid stable.** Mages' vocabulary is Ars-Magica-derived and three
+  hundred nodes deep. **Weird species do not need a bigger grid — they need a different relationship to
+  the one that exists**, which is what a paradigm *is*.
+
+**Open, and it is the same question as before:** whether an unlocked species is playable in the world
+it haunted, or needs its own. **Higher-dimensional realms lean toward "its own"** — a geometry is a
+property of a place, not a passenger — and that may be the natural boundary between species you *ally*
+with and species you *become*.
