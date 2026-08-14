@@ -7566,3 +7566,61 @@ by a warband holding tier-3/4 damage nodes. It only matters in a loadout without
 **`check:consumption` is not in `npm run verify`.** Nothing keeps the seven closed once they are
 closed. Adding it would turn `main` red while #140's three are outstanding, so the sequencing is the
 owner's — but it belongs on the list beside making `check:reachability` blocking.
+
+## W154 — four false assertions retired, and #137 does not fail to move 9.9 — it destroys the measurement
+
+### The audit that corrected its own audit
+
+Before retiring anything, the agent re-ran the file with a **general predicate** rather than the
+`a.high < b.low` matcher it had used the first time. **That found its own earlier pass incomplete**:
+it had reported *"three of six"* and missed `draconic.low < human.low` at 5/12. The real answer is
+**four of eight**.
+
+Worth dwelling on, because it is the same failure this whole PR is about: **a narrower matcher
+answered confidently about fewer claims than existed.** The agent caught it on itself, unprompted,
+and said so.
+
+| claim | held in | outcome |
+| --- | ---: | --- |
+| `gnome.high < elf.low`, `dwarf.high < elf.low`, `gnome.high < human.low`, `draconic.high > elf.high` | **12/12** | kept, untouched |
+| `orc.high < elf.low` | 11/12 | **retired** |
+| `overlaps(gnome, dwarf)` | 7/12 | **retired** |
+| `draconic.low < human.low` | 5/12 | **retired** |
+| `human.high < orc.low` | **0/12** | **retired** |
+
+**`orc < elf` was retired despite holding 11 of 12** — orc really is faster than elf, by 26.7 SE. But
+a file that runs one seed set **cannot state a rate**, so the rate lives in the guard and the
+assertion lives nowhere. That is the right instinct: the problem was never which claims were true, it
+was a format that cannot express uncertainty.
+
+**And the retirements cannot be silently undone.** The guard pins the **exact source text** of all
+four, so re-adding one fails *naming the rate that retired it*. Tripwire count moved 4 → 2 in the same
+commit, and the guard was exercised in both directions rather than assumed — no false positive on the
+current file, and a simulated re-add of `human.high < orc.low` trips both the text pin and the count.
+
+### #137, measured rather than restated
+
+The agent measured `w115/enable-all-cells` at `d6c32d0` instead of repeating W141's figures — *"since
+repeating an unverified claim is what this PR argues against"*, which is exactly right.
+
+**It is worse than "did not move 9.9". At 720 ticks it destroys the measurement.**
+
+- Every species is **~20× slower** to tier 3.
+- **Human is censored in 51 of 72 runs** — two whole seed sets never reach tier 3 at all.
+- `gnome < elf` and `dwarf < elf` fall to 8/12; **`human < elf` reverses**; `gnome < dwarf` is refuted
+  outright at 0/12, and that one is clean of censoring.
+- Two relations survive at 10/10 — and the agent **explicitly refuses to report them as robust
+  separations**, because they are precisely the two reading the most censored species. That would be
+  an artefact of where the run stopped.
+
+So W141's *"differentiation metrics went backwards"* understates it. Under #137 the horizon no longer
+reaches the thing being measured, and **most numbers taken there are about truncation, not about
+species.**
+
+`docs/design/species-separation-spread.md` now opens with the finding rather than leaving it to be
+inferred: **task 9.9 is unmet on all three refs; what separates is three species in a chain, not four;
+and draconic is not a species this horizon can say anything about** (17/72 censored, `max` endpoint
+travelling 425 ticks).
+
+Cost not paid, and named: ~2,400 ticks to uncensor human under seventy cells, about 20 minutes for
+twelve sets.
