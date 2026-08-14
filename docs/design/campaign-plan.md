@@ -5637,3 +5637,85 @@ registry alone cannot work, and it is **actively hazardous**: it makes fifteen f
 *declarable but uncollectible*, which is a new way to produce a green-looking measurement of nothing.
 
 **Reverted.** The correct route is the one PR #122 took — declare the measures, not the registry.
+
+---
+
+## W113 — universities: staffing wired, admission has no state, and upkeep cannot bite when it matters
+
+*2026-08-13, PR #125. The isolation harness asked for, plus four findings.*
+
+### The isolation test can be written, and the brief's sentence is a passing test
+
+*"Admitted four students, completed construction on tick **86**, shelved eleven distinct nodes,
+dominant cell `intellego-mentem`."* **Tick 86 rather than the 90 I guessed** — 1024 `fp` at twelve a
+tick — is the simulation's own answer, which is the difference between a harness and a fixture.
+
+**Three of the four clauses are claims about the simulation. The fourth is not.**
+
+| | state | production caller |
+|---|---|---|
+| construction | `buildProgress` | yes, phase 8a |
+| capacity | `capacity` | one, **aggregate only** |
+| **admission** | **none anywhere** | **impossible** |
+| staffing | `UNIVERSITY_STAFF` | **none, before this branch** |
+| specialisation | deliberately none | none |
+
+**Admission is worse than unwired.** There is **no hosted count on the university and no `universityId`
+on a populace cohort** — `admitStudents` is arithmetic over a number the project does not store. The
+harness carries it in a local variable, and **two tests assert the absence** so it fails loudly the day
+someone stores it.
+
+### Staffing is wired, and it makes institutions cost something for the first time
+
+`UNIVERSITY_STAFF` was already in `WORLD_COMPONENTS`, so this cost **no schema bump, no RNG stream, no
+contracts deviation.** Seeded world, 36 ticks, fixed scribe population:
+
+| universities | 1 | 4 | 12 |
+|---|--:|--:|--:|
+| books, `main` | 142 | 80 | 57 |
+| books, this branch | **142** | **29** | **22** |
+
+**One university is byte-identical — that is the control.** Past that, **spreading a fixed scribe
+population over twelve universities costs 61% of the books.**
+
+**That is the first real institutional tradeoff in the project.** `archivist` building ~1,300
+universities for the same 51 nodes was not a strategy failure so much as a world where founding cost
+nothing; **now a university you cannot staff is a university that does not scribe.**
+
+### `completeAffiliation` bounds this PR, and explains 107-living-2-affiliated
+
+**`completeAffiliation` has no production caller** — only its definition, its barrel export, and a
+`world-step.ts` comment *claiming* it is the completion path. `changeAffiliation` is dead behind it.
+
+**It caps the work in its own branch**: `scribeThroughputFor` returns zero for `universityId === 0`, so
+the staffing wiring can only reach founder mages. **That is why the reference run holds 107 living
+mages and 2 affiliated, permanently** — and why a one-university reference run could never have shown
+this work moving at all.
+
+**And it cannot simply be wired: `affiliate` has no effort row, so there is no completion event to hang
+it on.** Fixing it means *inventing when an affiliation completes*, which is a design call. That is the
+next branch, and its brief is now written.
+
+### Two side findings, and the first is a real defect
+
+**A library under sixteen instances can never lose a book to unpaid upkeep.** Upkeep is 2 `fp` against a
+degradation threshold of 32, and the shortfall floors per tick. **So degradation is unreachable exactly
+when a universe is most fragile** — the mechanic that models institutional decay switches off for small
+libraries, which are the only ones that would notice. Both magnitudes are untuned, so it is a 0.5.0
+note rather than a bug, but the *shape* is backwards.
+
+**And the orc assertion was a latent hole in the test, not something weakened.** An **extinct** species
+is not censored, records a finite `recoveryTicks` — nothing to nothing is instant — and therefore enters
+`recoverers`. Gated on `present`, exactly as the `censored` assertion above it already was. **A test
+that counted an extinct species among the recovered was wrong before anyone touched it.**
+
+### Two corrections to my brief
+
+- **`effectiveCapacity` does have a caller.** I listed it as unwired.
+- **`mage.universityId` exists as affiliation state** — what is missing is anything that *completes* an
+  affiliation, which is a narrower and more useful claim than the one I made.
+
+**And the discipline worth noting:** the agent checked all four of my cross-branch corrections against
+its own diff and reported `ACTION_ID_MAX` reading 15 in both places with an empty diff for `god/`,
+`content/` and `agent-api/` — **not on that seam.** Checking that a warning does not apply is as useful
+as heeding one.
