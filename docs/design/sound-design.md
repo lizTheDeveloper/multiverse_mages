@@ -981,8 +981,15 @@ instance across mind, grimoire, library and palace, per node, and adds `fragileN
 down to their last copy. Run on the reference scenario it returns real values at tick 0. So the four
 vessels this section is built on are computed today; they are simply not on `AgentSession`, which
 exposes neither the census, nor the raw observation, nor the explain channel. What §6.5 needs from
-the vessel is a session surface, not a new channel. What it needs from `contracts.md` §4.3 is the
-part no projection supplies: the causal link, and per-step counts by class for §0.4.
+the vessel is a session surface, not a new channel.
+
+What it needs from `contracts.md` §4.3 is the part no projection supplies, and one of those parts is
+easy to mistake for something the census already gives. `fragileNodeIds` is a **stock**: the nodes
+standing at one copy at this tick. This cue fires on a **flow**: the node that went from one to zero
+*in this step*. Every field of that census is a stock — it carries no delta and no per-tick count —
+so turning the first into the second means holding the previous census and differencing it, which is
+frame-diffing again, one projection over, losing the same causation. So: **the moment of loss**, the
+**causal link** from the death that caused it, and **per-step counts by class** for §0.4.
 
 **This sound is exposed to a balance number nobody has fixed yet.** Everything above assumes loss
 is rare enough that an arrhythmic, untuned, un-aggregated event can carry it. That assumption is

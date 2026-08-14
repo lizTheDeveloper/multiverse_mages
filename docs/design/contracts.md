@@ -1015,9 +1015,14 @@ that occurred during the step. Each entry carries at minimum:
 - **a class**, from a closed enumeration, so a consumer can apply a per-class rule to it;
 - **the entity or content it concerns**, at the granularity the thing itself has — a node id, a mage
   handle, a cell id — not the aggregate the observation buckets it into;
-- **whether it was terminal for that thing**: the last instance of a node, the last member of a
-  species, the last mage who could teach a tier. This is the field the consumers are actually
-  waiting on.
+- **whether the event *ended* that thing**: this step took the last instance of a node, the last
+  member of a species, the last mage who could teach a tier. This is a **transition, not a
+  property** — the distinction matters and is easy to lose. `agent-api`'s knowledge census already
+  answers *which nodes stand at one copy right now*; nothing answers *which node went from one to
+  zero in this step*. Every field of that census is a stock at a `worldTick`; it carries no delta,
+  no "since last", no per-tick count. A consumer can only turn the first into the second by holding
+  the previous census and differencing it, which is the reconstruction this amendment exists to
+  stop asking of everyone.
 
 The class enumeration, the wire format and the per-class payload are **not fixed here**. They belong
 to `agent-interface` at 0.5.0, in the same way §4.4 fixes that candidate lists are slot-indexed and
@@ -1068,11 +1073,15 @@ palaces. Run against the reference scenario at tick 0 it returns
 describes. Three projections the package computes and exports, none of them reachable through the
 only door a client has.
 
-That reshapes this amendment. **Vessel, node identity and last-copy-ness do not need a new event
-field; they need the session to expose a projection that already exists**, which is an `agent-api`
-surface decision rather than a change to this contract. What remains genuinely absent, and what the
-requirement above is therefore *for*, is narrower and worth stating exactly:
+That reshapes this amendment. **Vessel and node identity do not need a new event field; they need
+the session to expose a projection that already exists**, which is an `agent-api` surface decision
+rather than a change to this contract. What remains genuinely absent, and what the requirement above
+is therefore *for*, is narrower and worth stating exactly:
 
+- **Terminality as a transition.** Struck from the ask as a *property* and kept as an *event*, on
+  the distinction drawn above: the census says which nodes stand at one copy, never which one just
+  reached zero. This is the narrowest field here and the one most likely to be dropped as redundant
+  by someone who has read the census and not the difference.
 - **Causation.** Nothing links a death to the loss it caused. Two censuses a step apart show both;
   neither says one followed from the other.
 - **Per-step counts by class.** §0.4's threshold needs to know how many events of a class fell in
@@ -1083,9 +1092,9 @@ requirement above is therefore *for*, is narrower and worth stating exactly:
 **Three consumers, one capability, and they should be answered together.** `sound-design.md` §0.4's
 density rule needs an events-per-tick count *per class* to decide whether a class plays as discrete
 sounds or as a continuous texture, and forbids any class being discrete without a stated threshold.
-§6.5 needs the terminality bit and the vessel — both available from the census the moment a session
-exposes it — plus the causal link between a death and the loss that followed it, which is not, and
-pins loss at a threshold of 1 so that it is never aggregated away. §10 needs classified per-tick events to build an arrangement at all. An answer
+§6.5 needs the vessel — available from the census the moment a session exposes it — plus two things
+that are not: the moment a node's last copy goes, and the causal link between a death and the loss
+that followed it. It pins loss at a threshold of 1 so that it is never aggregated away. §10 needs classified per-tick events to build an arrangement at all. An answer
 shaped for any one of these alone will be relitigated by the other two.
 
 *This amendment states a requirement and deliberately does not design the schema. The cost of
