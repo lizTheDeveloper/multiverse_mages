@@ -65,7 +65,7 @@ const content = referenceContent();
 
 function task(worldTickCap: number): RunTask {
   return {
-    coordinates: { cellIndex: 0, replicateIndex: 0 },
+    coordinates: { rootSeed: 1, sweepId: 'w106-raid-metrics', cellIndex: 0, replicateIndex: 0 },
     runSeed: 12_345,
     levels: {},
     // The one bot in the pool that spends its favor on portals. A passive
@@ -81,6 +81,37 @@ function task(worldTickCap: number): RunTask {
 function entry(metrics: Readonly<Record<string, MetricEntry>>, id: string): MetricEntry {
   const found = metrics[id];
   if (found === undefined) throw new Error(`the run record carries no ${id}`);
+  return found;
+}
+
+/**
+ * The entry, asserted unavailable and narrowed to it.
+ *
+ * `MetricEntry` is a discriminated union, so a bare `expect(...).toBe(...)` on
+ * `reason` does not narrow it and does not compile. Narrowing through a throw
+ * keeps the assertion's failure message about the metric rather than about a
+ * missing property.
+ */
+function unavailable(
+  metrics: Readonly<Record<string, MetricEntry>>,
+  id: string,
+): Extract<MetricEntry, { status: 'unavailable' }> {
+  const found = entry(metrics, id);
+  if (found.status !== 'unavailable') {
+    throw new Error(`${id} was measured at ${String(found.value)}; expected it to be unavailable`);
+  }
+  return found;
+}
+
+/** The mirror of {@link unavailable}, for the same reason. */
+function measured(
+  metrics: Readonly<Record<string, MetricEntry>>,
+  id: string,
+): Extract<MetricEntry, { status: 'measured' }> {
+  const found = entry(metrics, id);
+  if (found.status !== 'measured') {
+    throw new Error(`${id} was unavailable (${found.reason}); expected it to be measured`);
+  }
   return found;
 }
 
@@ -108,9 +139,9 @@ describe('a run that cannot raid says so, and says which kind of cannot', () => 
     // `raids: false` must flow `undefined` — never `[]` — into the measurement.
     expect(result.raids).toBeUndefined();
     for (const id of RAID_METRIC_IDS) {
-      const measured = entry(result.outcome.metrics, id);
-      expect(measured.status, id).toBe('unavailable');
-      expect(measured.reason, id).toBe(UNAVAILABLE_REASON.mechanicAbsent);
+      expect(unavailable(result.outcome.metrics, id).reason, id).toBe(
+        UNAVAILABLE_REASON.mechanicAbsent,
+      );
     }
   });
 
@@ -120,9 +151,9 @@ describe('a run that cannot raid says so, and says which kind of cannot', () => 
     // The two distribution metrics need a raid; the tempo-loss fraction has a
     // denominator without one and honestly measures zero frozen ticks.
     for (const id of ['raidLengthDistribution', 'raidInitiationCost']) {
-      const measured = entry(result.outcome.metrics, id);
-      expect(measured.status, id).toBe('unavailable');
-      expect(measured.reason, id).toBe(UNAVAILABLE_REASON.noObservations);
+      expect(unavailable(result.outcome.metrics, id).reason, id).toBe(
+        UNAVAILABLE_REASON.noObservations,
+      );
     }
   });
 });
@@ -133,8 +164,7 @@ describe('a run that raids measures it', { timeout: 120_000 }, () => {
 
     expect(result.raids?.length ?? 0).toBeGreaterThan(0);
 
-    const length = entry(result.outcome.metrics, 'raidLengthDistribution');
-    expect(length.status).toBe('measured');
+    const length = measured(result.outcome.metrics, 'raidLengthDistribution');
     expect(length.value).toBeGreaterThan(0);
     // §7's own disproof condition for this metric: *"any raid landing in the
     // overflow bin, which contradicts §1.6's termination proof"*. Asserted here
@@ -143,15 +173,13 @@ describe('a run that raids measures it', { timeout: 120_000 }, () => {
     expect(length.detail?.overflow).toBe(0);
     expect(length.detail?.raidCount).toBe(result.raids?.length);
 
-    const cost = entry(result.outcome.metrics, 'raidInitiationCost');
-    expect(cost.status).toBe('measured');
+    const cost = measured(result.outcome.metrics, 'raidInitiationCost');
     // Per raid, not per run — §7 pins the denominator as "raids initiated", and
     // its disproof condition is a non-zero cost from a run that initiated none.
     expect(cost.detail?.raids).toBe(result.raids?.length);
     expect(cost.value).toBeGreaterThan(0);
 
-    const tempo = entry(result.outcome.metrics, 'inboundRaidTempoLoss');
-    expect(tempo.status).toBe('measured');
+    const tempo = measured(result.outcome.metrics, 'inboundRaidTempoLoss');
     expect(tempo.detail?.elapsedWorldTicks).toBe(RAIDING_HORIZON);
   });
 
