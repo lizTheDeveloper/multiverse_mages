@@ -62,6 +62,7 @@ import {
 } from '@mm/rules-magic';
 import type { SpeciesAffinities } from '@mm/rules-world';
 import {
+  readGoalAppeal,
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
@@ -402,6 +403,7 @@ export function worldDeps(
       return resolved;
     },
     appeal: readTargetAppeal(registry),
+    goalAppeal: readGoalAppeal(registry),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),

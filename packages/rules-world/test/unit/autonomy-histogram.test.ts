@@ -32,7 +32,7 @@ import {
   selectGoal,
 } from '../../src/index.js';
 
-import { appealWeights, richOutlook } from './autonomy-fixtures.js';
+import { appealWeights, goalAppealWeights, richOutlook } from './autonomy-fixtures.js';
 import { stepRng } from './mage-fixtures.js';
 
 describe('the histogram counts by species, role, and goal', () => {
@@ -102,6 +102,7 @@ describe('switches and masking are counted alongside', () => {
     for (let mage = 1; mage <= 30; mage += 1) {
       const selection = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
         outlook: richOutlook({ mage }),
         worldTick: 4,
         incumbent: undefined,

@@ -29,7 +29,7 @@ import { describe, expect, it } from 'vitest';
 import { GOALS_IN_ORDER, TERM_KINDS, scoreGoal, selectGoal } from '../../src/index.js';
 import type { TermKind } from '../../src/index.js';
 
-import { appealWeights, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
+import { appealWeights, goalAppealWeights, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
 import { stepRng } from './mage-fixtures.js';
 
 describe('each term can be removed on its own', () => {
@@ -37,8 +37,8 @@ describe('each term can be removed on its own', () => {
     const state = richOutlook({ species: speciesNamed('gnome'), normalizedAge: 900 });
     for (const ablate of TERM_KINDS) {
       for (const goal of GOALS_IN_ORDER) {
-        const full = scoreGoal(goal, state);
-        const partial = scoreGoal(goal, state, { ablate });
+        const full = scoreGoal(goal, state, goalAppealWeights);
+        const partial = scoreGoal(goal, state, goalAppealWeights, { ablate });
         expect(partial.terms[ablate]).toBe(0);
         for (const other of TERM_KINDS) {
           if (other === ablate) continue;
@@ -51,9 +51,9 @@ describe('each term can be removed on its own', () => {
 
   it('keeps the six-key shape, so two breakdowns are comparable field by field', () => {
     const state = richOutlook();
-    const keys = Object.keys(scoreGoal(GOALS_IN_ORDER[1] ?? 0, state).terms).sort();
+    const keys = Object.keys(scoreGoal(GOALS_IN_ORDER[1] ?? 0, state, goalAppealWeights).terms).sort();
     for (const ablate of TERM_KINDS) {
-      expect(Object.keys(scoreGoal(GOALS_IN_ORDER[1] ?? 0, state, { ablate }).terms).sort()).toEqual(
+      expect(Object.keys(scoreGoal(GOALS_IN_ORDER[1] ?? 0, state, goalAppealWeights, { ablate }).terms).sort()).toEqual(
         keys,
       );
     }
@@ -83,6 +83,7 @@ describe('ablation changes selections, and the change is attributable', () => {
       const mage = index + 1;
       return selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
         outlook: contested(mage),
         worldTick: 0,
         incumbent: undefined,
@@ -107,6 +108,7 @@ describe('ablation changes selections, and the change is attributable', () => {
     const state = contested(3);
     const full = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
       outlook: state,
       worldTick: 0,
       incumbent: undefined,
@@ -114,6 +116,7 @@ describe('ablation changes selections, and the change is attributable', () => {
     });
     const ablated = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
       outlook: state,
       worldTick: 0,
       incumbent: undefined,

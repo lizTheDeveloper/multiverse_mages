@@ -149,6 +149,82 @@ function withAnAcademy(state: SimState): void {
   });
 }
 
+/**
+ * The same academy, with **nobody in it**.
+ *
+ * `withAnAcademy` affiliates every mage by hand, which was the only way any
+ * mage was ever affiliated: `completeAffiliation` had no production caller, so
+ * the `affiliate` goal completed nothing and a universe's own promotions stayed
+ * unaffiliated for life. This fixture is that one line removed, so the loop has
+ * to do it — and an unaffiliated mage may not scribe, so the shelves are the
+ * measurement.
+ */
+function withAnEmptyAcademy(state: SimState): void {
+  const library = state.entities.create();
+  attachRecord(state, LIBRARY, library, { foundedTick: 0 });
+  const university = state.entities.create();
+  attachRecord(state, UNIVERSITY, university, {
+    libraryId: library,
+    capacity: 64,
+    buildProgress: FP_ONE,
+  });
+
+  const roster: EntityHandle[] = [];
+  componentOf(state, MAGE).forEach((_row, handle) => {
+    roster.push(handle);
+  });
+  const founder = roster[0];
+  if (founder === undefined) throw new Error('the fixture seeded no mages');
+  const instance = state.entities.create();
+  attachRecord(state, KNOWLEDGE_INSTANCE, instance, {
+    nodeId: 1,
+    locationKind: LOCATION_KIND.mind,
+    locationId: founder,
+    acquiredTick: 0,
+    mastery: FP_ONE,
+  });
+}
+
+/** How many living mages belong to a university, and how many there are. */
+function affiliation(state: SimState): { living: number; affiliated: number } {
+  let living = 0;
+  let affiliated = 0;
+  for (const { row } of collectRecords(state, MAGE)) {
+    if (row.alive === 0) continue;
+    living += 1;
+    if (row.universityId !== 0) affiliated += 1;
+  }
+  return { living, affiliated };
+}
+
+describe('mages join the institution nobody put them in', () => {
+  it('affiliates a population that started unaffiliated', () => {
+    const before = totals(0, withAnEmptyAcademy);
+    expect(affiliation(before.state).affiliated).toBe(0);
+
+    const run = totals(TICKS, withAnEmptyAcademy);
+    const { living, affiliated } = affiliation(run.state);
+    expect(living).toBeGreaterThan(0);
+    expect(affiliated).toBeGreaterThan(0);
+  });
+
+  it('writes books it could not have written, because scribing needs a university', () => {
+    // The whole point of the goal, stated as the thing it unlocks. Before the
+    // call was wired this run produced zero grimoires and zero scribed
+    // materials, because `scribeThroughputFor` returns zero for
+    // `universityId === 0` and `isFeasible` masks `scribe` on it.
+    const run = totals(TICKS, withAnEmptyAcademy);
+    expect(run.grimoiresScribed).toBeGreaterThan(0);
+    expect(componentOf(run.state, GRIMOIRE).size).toBeGreaterThan(0);
+  });
+
+  it('stays deterministic with affiliation in it', () => {
+    const first = totals(20, withAnEmptyAcademy);
+    const second = totals(20, withAnEmptyAcademy);
+    expect(snapshotHash(second.state)).toBe(snapshotHash(first.state));
+  });
+});
+
 describe('a stepped universe finishes what its mages start', () => {
   it('completes research, and banks progress on what is still in flight', () => {
     const run = totals(TICKS);

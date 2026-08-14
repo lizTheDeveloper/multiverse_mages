@@ -29,7 +29,7 @@ import { RNG_STREAM } from '@mm/sim-core';
 import { GOAL, argmaxWithTieBreak, chooseTarget, completeAffiliation, selectGoal } from '../../src/index.js';
 import type { GoalScore } from '../../src/index.js';
 
-import { appealWeights, outlook, richOutlook, target } from './autonomy-fixtures.js';
+import { appealWeights, goalAppealWeights, outlook, richOutlook, target } from './autonomy-fixtures.js';
 import { mageRow, recordingRng, stepRng } from './mage-fixtures.js';
 
 const scored = (goal: number, score: number): GoalScore => ({
@@ -115,6 +115,7 @@ describe('identical runs select identical goals', () => {
         for (let mage = 1; mage <= 12; mage += 1) {
           const selection = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
             outlook: richOutlook({ mage }),
             worldTick: tick,
             incumbent: undefined,
@@ -148,6 +149,7 @@ describe('targets are chosen by utility, and ties still fall to cost then node i
   it('re-points a goal whose committed target has gone', () => {
     const first = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
       outlook: richOutlook({ mage: 3, discoveryTargets: [target(11, 1, 10)] }),
       worldTick: 0,
       incumbent: undefined,
@@ -157,6 +159,7 @@ describe('targets are chosen by utility, and ties still fall to cost then node i
 
     const gone = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
       outlook: richOutlook({ mage: 3, discoveryTargets: [target(12, 1, 10)] }),
       worldTick: 1,
       incumbent: first.commitment,

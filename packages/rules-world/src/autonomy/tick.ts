@@ -61,6 +61,7 @@ import type { Selection } from './select.js';
 import { selectGoal } from './select.js';
 import type { ScoringOptions } from './scoring.js';
 import type { TargetAppealWeights } from './target-appeal.js';
+import type { GoalAppealWeights } from './terms.js';
 import type { StepRng } from '../mages/rng.js';
 
 /** Everything one tick of autonomy needs from outside this package. */
@@ -88,6 +89,8 @@ export interface AutonomyTickInput {
   readonly isComplete?: ((mage: MageHandle, commitment: MageGoalCommitment) => boolean) | undefined;
   /** Target-selection weights, read once from content by the caller. */
   readonly appeal: TargetAppealWeights;
+  /** Goal-selection weights, read once from the same file by the same caller. */
+  readonly goalAppeal: GoalAppealWeights;
   readonly scoring?: ScoringOptions | undefined;
   readonly schedule?: ScheduleOptions | undefined;
 }
@@ -161,6 +164,7 @@ export function stepMageAutonomy(input: AutonomyTickInput): AutonomyTickReport {
         incumbent !== undefined && (input.isComplete?.(entry.mage, incumbent) ?? false),
       rng,
       appeal: input.appeal,
+      goalAppeal: input.goalAppeal,
       scoring: input.scoring,
       schedule: input.schedule,
     });

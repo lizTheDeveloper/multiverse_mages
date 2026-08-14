@@ -74,7 +74,7 @@ describe('shipped content', () => {
       // multiverse out of state and something has to say who is on the other
       // end of the portal.
       raidConstants: 46,
-      autonomyWeights: 36,
+      autonomyWeights: 38,
     });
   });
 
