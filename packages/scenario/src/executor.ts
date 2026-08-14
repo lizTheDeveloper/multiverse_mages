@@ -564,6 +564,26 @@ function raidObservationOf(record: RaidRecord, god: GodTickReport | undefined): 
     defenderFrozenWorldTicks: 0,
     attackerTempoCostWorldTicks:
       regenerated <= 0 ? 0 : Math.floor(record.attackerFavorCost / regenerated),
+
+    // The action-economy fields, declared absent rather than reported as zero.
+    //
+    // `RaidRecord` carries no combat instrumentation: this executor observes a
+    // raid's shape — how long it ran, what the portal cost — and not what
+    // happened inside it. Emitting empty sources with a zero denominator would
+    // make "no instrumentation" and "no combat" the same observation, which is
+    // the confusion `unimplementedCombatChannels` exists to end, and it is the
+    // fifth instance of a metric reading as a healthy constant while being
+    // structurally incapable of moving.
+    //
+    // So every channel §3 permits is named here as unimplemented *in this
+    // executor*. The engine may implement them — `rules-raid` does — but
+    // nothing carries them across this boundary yet, and a reader of the metric
+    // needs to know which of those two statements the zero is.
+    combatSources: [],
+    totalCombatantTicks: 0,
+    worldScaleRemovals: 0,
+    summonsRemoved: 0,
+    unimplementedCombatChannels: ['removal', 'save', 'decoy', 'displacement'],
   };
 }
 

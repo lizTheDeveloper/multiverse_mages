@@ -21,6 +21,7 @@
     "check:audio": "node packages/content/bin/validate-audio.mjs",
     "check:coverage": "node scripts/check-primitive-coverage.mjs",
     "check:consumption": "node scripts/check-primitive-consumption.mjs",
+    "check:reachability": "node scripts/check-reachability.mjs",
     "content:map": "node scripts/content-graph.mjs --format map",
     "content:graph": "node scripts/content-graph.mjs --format html",
     "audio:generate": "node scripts/generate-audio.mjs",

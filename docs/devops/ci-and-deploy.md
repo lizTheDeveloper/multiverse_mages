@@ -145,6 +145,44 @@ remaining ones are declared exclusions.* Declared exclusions are `fertility` and
 `packages/rules-magic/src/effects/consumption.ts`. Lengthening that list to go green is the exact
 failure the check exists to catch; the number in the FAIL line going down is the progress.
 
+## The fourth Actions job: rules-path reachability, non-blocking
+
+`npm run check:reachability` parses every production source in the rules path with the TypeScript
+compiler API and asks, per exported value: **does anything that is not a test call this?** It is
+the code-shaped counterpart of `check:consumption`, which asks the same question about content.
+
+It exists because of W85. Three university subsystems — `advanceConstruction`, `applyLibraryUpkeep`
+and `UNIVERSITY_STAFF` — were built, unit-tested, exported, named in a design document and
+discussed at length in the world loop's own comments, and none of them was ever called. Two have
+since been wired (`ef3bba9`, `9a3b6b5`); the third has not. The general lesson is what the check
+mechanises: *"the symbol exists" and "a test covers it" are both compatible with "the game never
+runs it."*
+
+**It parses rather than greps, and that is the whole design.** This repository names symbols in
+prose constantly — `world-step.ts` discussed `advanceConstruction` before anything called it, and
+`mc-harness/src/strategies.ts` quotes the W85 finding inside a string literal. A grep would have
+counted both as callers and reported the flagship defect as reached. Comments, string literals,
+import and re-export specifiers, and `typeof` references in type positions are all excluded, each
+for a reason written in the script's header. `packages/sim-core/test/unit/reachability-check.test.ts`
+holds one controlled case per claim, run as a subprocess against a throwaway root.
+
+Like `consumption`, it runs as its own job — `Rules-path reachability (non-blocking)`,
+`continue-on-error: true` — and is **not** in `npm run verify`, so `scripts/ci-check.sh` does not
+run it either and the two gates stay equivalent.
+
+**Red is the correct current answer.** When the job was added, the count was 115: one orphaned
+package (`@mm/rules-raid`, which nothing depends on), 94 exported values with no production caller,
+10 called only by symbols that are themselves unreached, one component declared and never read or
+written (`UNIVERSITY_STAFF`), three god constants resolved and never consumed
+(`worship-max`, `legacy-archive-max-tier`, `legacy-reference-tick`), and six read only by unreached
+code (the `legacy-*` prestige set, behind `legacyGrant`).
+
+**The condition for making it blocking** is at the flip point in `ci.yml` and repeated here: when
+the finding count is small enough — under ten is a reasonable reading — that a pull request adding
+one symbol ahead of its caller is a conversation rather than a blockage. Reached by wiring or
+deleting, never by lengthening `DECLARED_EXCLUSIONS` in the script. Every entry there is a finding
+the check will never make again, which is why each carries a written argument rather than a name.
+
 ## The balance regression gates
 
 There are **three**, and none of them is redundant. This section said "two" until the 2400-tick
