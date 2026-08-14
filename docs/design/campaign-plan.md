@@ -5955,3 +5955,61 @@ build contamination, excluded and re-measured.
 either a finding or a mistake, and without the prior records there is no way to tell which. It also
 retroactively justifies softening the curiosity monotonicity claim — **for a better reason than the one
 originally given.**
+
+### W114, falsified — it is affiliation, and the alliance was compensating for it
+
+*2026-08-14, with the human arm in. **This supersedes both of my earlier readings. The design claim is
+refuted and the real mechanism is somewhere else entirely.***
+
+| species | maturity | fertility | without | with | Δ | runs that invited |
+|---|--:|--:|--:|--:|--:|--:|
+| draconic | 3,600 | 96 | 0/100 | 14/100 | **+14** | 97/100 |
+| **human** | **216** | 1,280 | 35/100 | **50/100** | **+15** | 56/100 |
+| orc | 168 | 1,536 | 47/100 | 48/100 | +1 | **4/100** |
+
+**Human gains more than draconic** — and human, maturing in 216 months against a 2,400-tick horizon,
+is the species that needs immigration *least*. Paired differences well past 3 SE.
+
+**By the brief's own test: the verb has not made dragons special. It has made immigration free.**
+
+**And my "targeted demographic patch" reading was wrong.** Orc's flat +1 is not the wanted asymmetry —
+**orc invited in only 4 runs of 100.** The gain tracks *how often each god could afford the price*, not
+how badly each species needed it. I read orc's low usage as orc's low benefit and published it as a
+rescue of the claim. It was neither.
+
+### The mechanism is neither curiosity nor bodies. It is affiliation.
+
+**162 living human mages produce 0.05 grimoires. 4.3 living draconic mages produce 76.**
+
+- **`scribeThroughputFor` returns zero when `universityId === 0`.**
+- **`completeAffiliation` has no production caller**, so **no mage a universe promotes for itself is
+  ever affiliated.**
+- **Only founders are — and an invited scholar, who is affiliated at creation.**
+
+So draconic's founder lives **18,000 months** and scribes all run. **Human's founder dies at 960 and
+scribing stops dead** until an invitation arrives. That is why `foundingMages: 6` reproduces the whole
+effect, and why human's library depth moves **0.05 → 12.32** on three invitations.
+
+**The alliance measurement is substantially the alliance compensating for an unwired code path in a
+subsystem it does not own.** Every effect size here should be re-measured after `w108` wires
+affiliation, and the honest prior is that the advantage shrinks considerably.
+
+### Which makes `completeAffiliation` the highest-value open item in the project
+
+It has now surfaced as a root cause **three times from three directions**: the university branch found
+it caps its own staffing work, the alliance branch found it is the actual mechanism behind a species
+result, and the campaign has been unable to explain **107 living mages and 2 affiliated** for weeks.
+
+**And it cannot simply be wired** — `affiliate` has no effort row, so there is no completion event to
+hang it on. **Fixing it means deciding when an affiliation completes**, which is a design call, and it
+is now blocking measurement rather than merely being untidy.
+
+### One thing done exactly right, worth recording
+
+`ci/hetzner-lint` legitimately caught **three** things in sequence: `baseline-invalid` on the moved
+`contentRevision`, then a test requiring the rationale to cite **0.5.0** (`release-plan.md` forbids
+balance claims before then), then one requiring it to **acknowledge known degeneracy.**
+
+**All three were satisfied truthfully rather than worded around** — and the degeneracy acknowledgement
+is where the affiliation defect got recorded, which is exactly the field it exists for. `supersededDeltas`
+is **109 zeros.**
