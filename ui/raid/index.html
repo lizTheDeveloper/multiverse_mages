@@ -628,12 +628,20 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 .prov ul{margin:.2rem 0 0;padding-left:1.05rem;font-size:.85rem;color:var(--soft);line-height:1.55}
 .prov li{margin-bottom:.22rem}
 .prov li b{color:var(--ink);font-weight:600}
+.prov .inner.ahead{grid-template-columns:1fr;padding-top:0}
+.prov .inner.ahead > div{border-top:1px dotted var(--line);padding-top:.9rem}
 .findings{border-top:1px solid var(--line);padding:.9rem .85rem 1.1rem}
 .findings h3{font:400 1.05rem var(--serif);margin:0 0 .5rem}
 .findings ol{margin:0;padding-left:1.15rem;font-size:.88rem;color:var(--soft);line-height:1.6;max-width:88ch}
 .findings li{margin-bottom:.5rem}
 .findings li b{color:var(--ink)}
 .findings code{background:var(--sunk);padding:.05rem .22rem;border-radius:2px}
+@media (min-width:68rem){
+  .prov .inner.ahead ul{columns:2;column-gap:2.2rem}
+  .prov .inner.ahead li{break-inside:avoid}
+  .findings ol{columns:2;column-gap:2.6rem;max-width:none}
+  .findings li{break-inside:avoid}
+}
 
 .foot{margin-top:1.4rem;font:10px var(--mono);line-height:1.7;color:var(--faint);max-width:86ch}
 .foot a{color:var(--soft)}
@@ -900,6 +908,13 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
             standing in for <code>navigation.ts</code>, which this page cannot import.</li>
         </ul>
       </div>
+    </div>
+    <!-- The fourth kind is an essay, not a list, and it ran three times the
+         length of the other three. Left inside the four-up grid it stranded a
+         1050 x 820 void beside itself — a whole screen of nothing, which reads
+         as a pane that failed to render. It gets its own full-width block, set
+         in two columns so the measure stays readable. -->
+    <div class="inner ahead">
       <div>
         <h3><span class="k ahead">ahead of the engine</span>Design, not shipped code</h3>
         <ul>

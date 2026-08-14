@@ -92,14 +92,31 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // lines, median MDE 12.3 %. Shrinking this list is a build failure precisely
   // so that it arrives with a rationale, and this is the rationale.
   'balance/baselines/balance-gate-agency-v1.baseline.json': [],
+  // Ten since w107, up from seven, and the three that joined are all the same
+  // shape: an arm whose *spread* widened rather than an arm that stopped
+  // producing. `referencePeakPopulation@permissive-breadth` is the clearest —
+  // its mean nearly doubled, 7,009 to 12,685, because applied food raises `K`
+  // hardest in the arm that permits the most cells, and seeds that were
+  // formerly all pinned near the same ceiling now finish far apart. A wider
+  // spread is a larger standard error, and a larger standard error is a wider
+  // tolerance. `referenceLibraryDepth@portal-rush` and
+  // `referenceNodesGainedFinalQuarter@portal-rush` are the same story at the
+  // other end: the raider arm's knowledge series lost the little it had.
+  //
+  // Growing this list is a build failure precisely so it arrives with a
+  // rationale rather than as a silent widening, and this is the rationale. Do
+  // not add a tenth without one.
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
     'referenceGrimoires@denial-warden',
     'referenceKnowledgeInstances@denial-warden',
     'referenceLibraryDepth@denial-warden',
+    'referenceLibraryDepth@portal-rush',
     'referenceNodesGained@denial-warden',
     'referenceNodesGainedFinalQuarter@narrow-depth',
     'referenceNodesGainedFinalQuarter@passive-control',
+    'referenceNodesGainedFinalQuarter@portal-rush',
     'referenceNodesKnown@denial-warden',
+    'referencePeakPopulation@permissive-breadth',
   ],
   'balance/baselines/balance-gate-v1.baseline.json': [],
   'balance/baselines/balance-gate-horizon-v1.baseline.json': [],
