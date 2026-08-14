@@ -685,8 +685,18 @@ Two corollaries, both of which cost something before they were written down:
   call site is not an absent mechanism.** The real finding is narrower and survives: content declares
   an influence the engine grants by another route.
 
+  What makes this more than a slogan is that **the incentive runs the wrong way.** *"The compounding
+  loop is broken"* is a better headline than *"ninety-three effects are declared against the wrong
+  mechanism"*, and the better headline is exactly the one you stop early to protect. Both sessions
+  stopped one step short here, a step apart, and neither was being careless. A rule that only fires
+  when you are being sloppy catches less than one that fires when you are pleased with what you
+  found.
+
 *Attribution: this rule came out of an exchange between two sessions in which each refuted the
-other's absence claim, so it belongs to neither. It is recorded here rather than in either session's
+other's absence claim, so it belongs to neither. Five corrections came out of it, and the split is
+worth keeping: four were found by the other session, one by continuing to look after the evidence
+already agreed. The second kind is rarer and harder to institutionalise, which is why the corollary
+above is written in terms of the incentive rather than the error. It is recorded here rather than in either session's
 notes because the next person to need it will be reading this file.*
 
 **The common property is that each ran without being asked.** None required a person to suspect the
