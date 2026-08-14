@@ -759,3 +759,80 @@ happening.** That is the design target, and it is worth more than any balance nu
 3. **And the last-ditch tactics get their justification.** *Prophecies from a lost age* and *secret
    texts the ancient masters used* are what a civilisation reaches for **when it can no longer do what
    its ancestors did** — which is the most human thing in the entire design.
+
+---
+
+## The multiverse move: hard species, early age, high prestige → you unlock what came through the holes
+
+*Owner, 2026-08-13:* **"If you beat the game early, using a hard species in an early age, and prestige
+— maybe you go dragon → fae. *That's* the Vampire Survivors thing."**
+
+**This is the capstone, and it makes three earlier decisions pay off at once.**
+
+### It is why prestige had to be a tuple
+
+The section above argued that *ascended · draconic · age 1 · alone · at peak* must be recorded as a
+**category** rather than collapsed into a score. **This is what the category is for.**
+
+**The tuple is not a brag. It is an unlock key.** A specific, hard, legible condition — *hard species,
+early age, ascended at peak* — opens a door. That only works if the conditions survived; a scalar
+prestige number could never express it.
+
+### And it is why "not (yet) playable" had that parenthesis
+
+Demons and fae were specified as **things that come through the holes** — a category a universe *deals
+with*, not one it founds as. **The parenthesis was doing real work**, and this is the payoff:
+
+    you play the peoples of a world
+        → you open portals; things come through that are not of the world
+        → you beat the game the hard way
+    → you play one of those things
+
+**That is the multiverse move.** The escalation is not from weak to strong — **it is from *worldly* to
+*unworldly***, which is a much more interesting axis and one the design already has vocabulary for.
+The fae were an *antagonist* last age.
+
+### Why the Vampire Survivors comparison is exactly right, including the part that constrains it
+
+**Vampire Survivors' unlock web works because its characters are not upgrades.** They play
+*differently*, are *specifically* unlocked by something you did, and the discovering is most of the
+pleasure. **The rule that makes it work is the one to import: an unlock must change how you play, not
+how much you win.**
+
+Applied here:
+
+- **A fae god should not be a stronger draconic god.** They should have a different relationship to
+  worship, to institutions, to teaching — a people who are *not from here* should probably not want
+  universities in the shape mortals do.
+- **The unlock condition must be specific and discoverable**, not a threshold. *"Ascend as draconic in
+  a first age"* is a sentence a player can hold in their head and aim at. *"Reach 40,000 prestige"* is
+  not.
+- **And the web should have shape.** Dragon → fae is one edge. What each unlocked species then unlocks
+  is the meta-game, and it should be authored as a graph rather than a ladder.
+
+### What it fixes about the run loop
+
+**It gives the ratchet somewhere good to go.** The concern recorded earlier was that a
+meta-progression which only accumulates Old Gods is a punishment for playing. The answers so far were
+*peoples accumulate* (warm, social) and *knowledge in the player's head* (honest, small).
+
+**This is the third and strongest: playing well opens genuinely new games.** Not a bonus applied to
+the old one — **a different thing to play**, earned by a specific act of skill.
+
+And it makes the hardest categories worth attempting **without paying them a multiplier** — which is
+the taste call flagged in the previous section, now resolved in the better direction. *"Do the hard
+thing because it unlocks something strange"* is a much stronger motivation than *"do the hard thing for
+1.4× score."*
+
+### Open, and the first one is load-bearing
+
+1. **What is a fae god actually like?** If the answer is "draconic with better numbers", the whole
+   mechanic is power creep wearing a costume. **The unlock is only worth building if the unlocked thing
+   plays differently**, and `mvee`'s paradigm set is the obvious source — `pact` is `teach=false,
+   scroll=false, source: divine`, which is already a *fundamentally* different game and is thematically
+   exactly what a fae bargain should be.
+2. **Is the unlocked species playable in the same world, or does it need its own?** Fae in the world
+   they haunted is a good story; fae *anywhere* is a simpler rule.
+3. **How wide is the web?** Six species and several ages give a large space of conditions. **Author a
+   few edges deliberately rather than generating them** — Vampire Survivors' unlocks are hand-placed,
+   and that is why they feel like secrets rather than combinatorics.
