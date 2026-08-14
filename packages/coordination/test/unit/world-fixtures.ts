@@ -28,6 +28,7 @@ import type { WorldSchema } from '@mm/sim-core';
 import {
   MAGE,
   MAGE_ROLE,
+  MATERIAL_STOCK,
   OCCUPATION,
   POPULACE_COHORT,
   attachRecord,
@@ -44,7 +45,12 @@ import {
   traditionTableFrom,
 } from '@mm/rules-magic';
 import type { TargetAppealWeights } from '@mm/rules-world';
-import { readTargetAppeal, resolveSpeciesAffinities, territoryExtent } from '@mm/rules-world';
+import {
+  readTargetAppeal,
+  resolveSpeciesAffinities,
+  territoryExtent,
+  territoryYieldShares,
+} from '@mm/rules-world';
 import type { NodeFacetResolver, WorldStepDeps } from '../../src/index.js';
 import { nodeFacetsFrom } from '../../src/index.js';
 
@@ -134,15 +140,34 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
     territory: territoryExtent(registry().territories.map((entry) => entry.record)),
+    // The same records the extent is summed from, read for their yield mix
+    // instead of their capacity — `scenario`'s composition root does the same
+    // (`content-set.ts`). Required on `WorldStepDeps` since `w29`, so a fixture
+    // that omitted it would fail to compile rather than silently step a
+    // universe whose land yields nothing.
+    yieldShares: territoryYieldShares(registry().territories.map((entry) => entry.record)),
     primitives: {
       lifespan: primitiveNamed('lifespan'),
       resourceYield: primitiveNamed('resource-yield'),
+      // Construction's only multiplier. Present here even though this file's
+      // default `worldDeps` does not wire `universeEffects` (see the note
+      // below on `seededWorld`'s abundant stone), because the field is
+      // required whether or not any node ever contributes to it.
+      buildRate: primitiveNamed('build-rate'),
       researchRate: primitiveNamed('research-rate'),
       teachRate: primitiveNamed('teach-rate'),
       scribeRate: primitiveNamed('scribe-rate'),
       fertility: primitiveNamed('fertility'),
     },
     knowledgeFor: (state) => KnowledgeSubsystem.fromState(state, catalog.nodeCount),
+    // `universeEffects` is deliberately absent here. Most of the tests in this
+    // package predate the wire `universe-effects.ts` describes and assert
+    // behaviour that has nothing to do with it; wiring it into the shared
+    // default would make every one of them a test of the wire too, silently.
+    // `universe-effects.test.ts` builds its own deps with it present, which is
+    // the caller `world-step.ts`'s own doc comment names as the point of
+    // making the field optional: "a thing a test can assert against rather
+    // than a silent degradation."
   };
 }
 
@@ -191,7 +216,7 @@ export function seededWorld(
   const traditions = registry().traditions;
   const traditionId = options.traditionId ?? traditions[0]?.contentId ?? 1;
 
-  createUniverse(state, {
+  const universe = createUniverse(state, {
     // Three techniques × four forms is the v1 rectangle's shape; the exact bits
     // are the shipped content's business and the loop only asks `permits`.
     permittedTechniques: 0b11111,
@@ -201,16 +226,25 @@ export function seededWorld(
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    // A working stock, not a lever on `K`. Carrying capacity comes from the
-    // shipped territory (`contracts.md` §2.7) and sits far above the seeded
-    // population whatever the stock is; materials only modulate it, within the
-    // bound `carrying-capacity.ts` states.
-    materials: 1000 * 1024,
     prestige: 0,
     prestigeEarned: 0,
     terminalReason: 0,
     favorCap: 0,
     ascended: 0,
+  });
+  // A working stock, not a lever on `K` — and, since `w29`, three of them
+  // rather than one. Carrying capacity comes from the shipped territory
+  // (`contracts.md` §2.7) and sits far above the seeded population whatever
+  // the stock is; materials only modulate it, within the bound
+  // `carrying-capacity.ts` states. Each kind gets the same abundant figure the
+  // single scalar used to carry, so no claimant is a bottleneck by default —
+  // a test that wants one starves a specific kind itself, the way
+  // `knowledge-capital.test.ts` zeroes `vellum` to force a library upkeep
+  // shortfall.
+  attachRecord(state, MATERIAL_STOCK, universe, {
+    food: 1000 * 1024,
+    stone: 1000 * 1024,
+    vellum: 1000 * 1024,
   });
 
   const mages: EntityHandle[] = [];

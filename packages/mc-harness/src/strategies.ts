@@ -526,7 +526,11 @@ const PERMISSIVE_BREADTH: StrategyDefinition = {
   // could never permit technique 5 or form 14 — a fifth of the technique axis
   // and a fourteenth of the form axis that the pool's widest ruleset never
   // opened.
-  version: 3,
+  // 4: `fundUniversity` moved ahead of the three ruleset actions while
+  // `universityCount` is zero. It sat behind always-legal `permitTechnique`, so
+  // the strategy that exists to fund broadly completed no university in any run
+  // of any sweep ever taken.
+  version: 4,
   hypothesis:
     'Whether breadth outruns the loss channel. A wide ruleset offers more nodes to discover and ' +
     'more institutions to hold them; §6a says knowledge decays and is lost, so breadth might ' +
@@ -551,17 +555,36 @@ const PERMISSIVE_BREADTH: StrategyDefinition = {
   ],
   preferences: ({ observation, round }) => {
     const universities = channel(observation, UNIVERSITY_COUNT);
-    const preferred: ActionSubmission[] = [
+    const preferred: ActionSubmission[] = [];
+    // Found *first* while there is nothing to fund, and only then permit.
+    //
+    // The order used to be the other way round, with the three ruleset actions
+    // ahead of this push and the comment below already claiming "found until
+    // there is something to fund" — which the order defeated. `policyFor` takes
+    // the first legal preference, `permitTechnique` is legal on every round, so
+    // this strategy never reached slot 0 and ended every run at `unis=1`: the
+    // seeded academy, never having completed a university. The comment
+    // described an intent the list did not implement.
+    //
+    // It went unnoticed because nothing read `universityCount` until the
+    // ascension conjunct did. A strategy that funds broadly and founds nothing
+    // still permitted widely, so it still produced the wide ruleset its
+    // hypothesis is about, and every metric anyone was looking at moved.
+    if (universities === 0) {
+      preferred.push({ action: GOD_ACTION.fundUniversity, parameter: 0 });
+    }
+    preferred.push(
       { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
       { action: GOD_ACTION.permitForm, parameter: form(round) },
       { action: GOD_ACTION.issueDispensation, parameter: (round % 70) + 1 },
-    ];
-    // Found until there is something to fund, then spread across what exists.
-    preferred.push(
-      universities === 0
-        ? { action: GOD_ACTION.fundUniversity, parameter: 0 }
-        : { action: GOD_ACTION.fundUniversity, parameter: rotate(GOD_ACTION.fundUniversity, round) },
     );
+    // Then spread funding across what exists.
+    if (universities !== 0) {
+      preferred.push({
+        action: GOD_ACTION.fundUniversity,
+        parameter: rotate(GOD_ACTION.fundUniversity, round),
+      });
+    }
     // Slot 0 is the deepest permitted cell; rotating spreads encouragement
     // rather than compounding it, which is the whole difference from
     // narrow-depth below.
@@ -736,6 +759,14 @@ const ARCHIVIST: StrategyDefinition = {
  */
 const PORTAL_RUSH: StrategyDefinition = {
   strategyId: 'portal-rush',
+  // 4: `assignRole` was added second in the preference list. This is the change
+  // the version field was written for: the entry below explains at length that
+  // `permitTechnique` sat unreachable behind a permanently masked `openPortal`,
+  // and the day `openPortal` became reachable — this one — the bot needed a
+  // raider to send through it. A portal-rush that opens portals and fields
+  // nobody is measuring the portal action, not the raid economy, and every
+  // number recorded under version 3 is a number about an empty battlefield.
+  //
   // 3: its one ruleset move, the tempo `permitTechnique`, became a 1-based id.
   //
   // Bumped even though a 96-run seed-matched A/B at 2400 ticks produced
@@ -746,7 +777,7 @@ const PORTAL_RUSH: StrategyDefinition = {
   // is all of them. The version is a claim about the definition, not about
   // whether this build happens to exercise it, and the day `openPortal` becomes
   // reachable this strategy names a different technique than it used to.
-  version: 3,
+  version: 4,
   hypothesis:
     'Whether reaching the portal early is worth the tempo it costs. It is the strategy the raid ' +
     'economy is supposed to reward, so it probes whether the multiverse is a strategic axis or a ' +
@@ -762,9 +793,23 @@ const PORTAL_RUSH: StrategyDefinition = {
       'the reason the whole field exists: it made portal-rush the only strategy that *looked* able ' +
       'to win while being one of the seven that could not.',
   },
-  signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.declareAscension],
+  signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.assignRole, GOD_ACTION.declareAscension],
   preferences: ({ round }) => [
     { action: GOD_ACTION.openPortal, parameter: rotate(GOD_ACTION.openPortal, round) },
+    // Somebody has to go through it. `rules-raid`'s `RAIDING_ROLES` is the
+    // `raider` role alone and `createMage` makes every mage a `researcher`, so
+    // a god who opens portals and never assigns a role sends an empty warband:
+    // the raid resolves on the first tick as a defender victory, nothing is
+    // looted, nothing is burned, and the strategy is passive-control paying
+    // favor for the privilege. Measured before this line existed — 337 raids
+    // across four runs and zero nodes taken from any of them.
+    //
+    // `assignRoleCandidates` lists every living mage against each role it does
+    // not hold, in handle then role order, so a rotating slot index reaches
+    // `raider` about one submission in three. That is the coarsest instrument
+    // the action space offers and it is enough: the point of this bot is that
+    // it raids, not that it fields an optimal warband.
+    { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round) },
     // Tempo while the portal is unreachable: push the deepest cell and permit
     // the technique that would open more of it.
     { action: GOD_ACTION.encourageResearch, parameter: 0 },
@@ -826,6 +871,337 @@ const WORSHIP_MAXIMIZER: StrategyDefinition = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Adversarial probes added by the W6 verification (branch
+// w6-verify/positive-achievement). These exist to falsify two of W6's claims and
+// are not part of the shipped pool's argument.
+// ---------------------------------------------------------------------------
+
+/**
+ * The honest idle-then-declare probe: do nothing, ever, and declare on the first
+ * round the mask permits it.
+ *
+ * W6 measures its exploit margin against `uniform-random-legal`, which is a
+ * *crippled* probe rather than an idle one: it submits actions 1–7 bare, and
+ * `CANDIDATE_SLOTS` covers only 8–14, so those submissions are refused and it
+ * effectively presses buttons 8–15 at random. A margin measured against it can
+ * say "this bot is broken" rather than "playing beats not playing". This one is
+ * the control that separates the two — its preference list is empty, so
+ * `policyFor` submits `DECLARE` when legal and `noop` otherwise, and nothing
+ * else ever.
+ */
+const IDLE_THEN_DECLARE: StrategyDefinition = {
+  strategyId: 'idle-then-declare',
+  version: 1,
+  hypothesis:
+    'The exploit probe W6\'s margin claims to be measured against. It plays nothing and takes the ' +
+    'summit the instant the mask opens it, so its ascension rate is exactly the rate at which the ' +
+    'win condition is reachable without playing. If it wins as often as the pool, the exploit ' +
+    'margin measures uniform-random-legal\'s parameter bug rather than the predicate.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'That is the definition of the probe. "Idle then declare" is one policy, and the declaration ' +
+      'has to be most-preferred or the measurement is of when a random draw happened to reach it.',
+  },
+  signatureActions: [GOD_ACTION.declareAscension],
+  preferences: () => [],
+};
+
+/**
+ * Permit the whole grid for the first stretch of the run, then idle.
+ *
+ * The degenerate-play probe. W6's predicates are anchored above the passive
+ * ceiling on the argument that clearing them requires "the god permitted an axis
+ * the universe did not start with" — which is a statement about the *ruleset*,
+ * not about anything the universe achieved. This bot funds nothing, encourages
+ * nothing, teaches nothing and blesses nobody; it presses two buttons for 140 of
+ * 2400 ticks and then does literally nothing for the remaining 2260.
+ */
+const PERMIT_THEN_IDLE: StrategyDefinition = {
+  strategyId: 'permit-then-idle',
+  version: 1,
+  hypothesis:
+    'Whether W6\'s "positive achievement" is an achievement or a ruleset edit. It opens the grid ' +
+    'with permitTechnique/permitForm alone for 140 rounds and then submits nothing at all for the ' +
+    'remaining 2260 ticks. If it clears the predicates at permissive-breadth\'s rate, then the ' +
+    'conjuncts read what the god permitted, not what the universe did — and the universe learns ' +
+    'the newly-permitted nodes on its own, exactly as it learns the original fifty-one.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'Symmetric with permissive-breadth, which it is the ablation of: same declaration policy, ' +
+      'every non-permit action removed. A difference in stance would be a second variable.',
+  },
+  signatureActions: [GOD_ACTION.permitTechnique, GOD_ACTION.permitForm],
+  preferences: ({ round }) =>
+    round >= 140
+      ? []
+      : [
+          { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
+          { action: GOD_ACTION.permitForm, parameter: form(round) },
+        ],
+};
+
+// ---------------------------------------------------------------------------
+// W27: the allocation pair.
+// ---------------------------------------------------------------------------
+
+/**
+ * The round at which both allocation bots stop permitting and start spending.
+ *
+ * 140, which is {@link PERMIT_THEN_IDLE}'s own switch-over, so the permit phase
+ * of all three is the same prefix rather than a similar one.
+ */
+const ALLOCATION_PERMIT_ROUNDS = 140;
+
+/**
+ * The last round on which an allocation bot founds a university rather than
+ * advancing one.
+ *
+ * There has to be a fleet before "which university do you fund" is a question:
+ * the reference universe seeds exactly one, `fundUniversity` slot 0 is the fixed
+ * "found new" option and slots 1-7 are existing universities ranked
+ * least-complete-first, so with one university on the map six of the seven
+ * allocation slots resolve to nothing and the spreading bot would silently buy
+ * less than the concentrating one. That is a spend difference produced by the
+ * candidate list rather than by the strategy, and it would land squarely inside
+ * the only comparison this pair exists to make.
+ *
+ * So both bots found on the identical schedule — the eight funding rounds from
+ * 150 to 234 — and only then begin to allocate. Founding is also priced by a
+ * *different* constant (`found-university-cost`, 10240, against 3072 to
+ * advance), which is the second reason the founding rule is held identical
+ * rather than left to each bot.
+ */
+const ALLOCATION_FOUNDING_UNTIL = 246;
+
+/**
+ * Which verb an allocation round spends on. **Shared by both bots.**
+ *
+ * One function rather than two matching schedules, because "the two arms spend
+ * on the same verb on the same round" is the premise of the whole experiment and
+ * a premise that lives in two places is a premise that can drift. Both bots call
+ * this; neither can disagree with it.
+ *
+ * The cycle is one world year (§0's twelve ticks) and is spaced to stay under
+ * favor income rather than to maximise spending. Per twelve rounds it buys one
+ * grant (12288), two blessings (2048 each), one funding (3072) and eight
+ * encouragements (1024 each) — 27,648, or **2,304 per tick against roughly
+ * 2,721 of passive regeneration**. That margin is deliberate: an unaffordable
+ * action is a *masked* action, and a bot that outran its income would differ
+ * from its partner in when the mask closed, which is a second variable inside
+ * the one-variable comparison.
+ */
+function allocationVerb(round: number): number {
+  switch (round % 12) {
+    case 0:
+      return GOD_ACTION.grantFoundingKnowledge;
+    case 3:
+    case 9:
+      return GOD_ACTION.blessMage;
+    case 6:
+      return GOD_ACTION.fundUniversity;
+    default:
+      return GOD_ACTION.encourageResearch;
+  }
+}
+
+/**
+ * The preference list an allocation bot submits, given how it picks a slot.
+ *
+ * **Exactly one verb per round, and no cross-verb fall-through.** `policyFor`
+ * appends `noop`, so a masked or refused submission makes the round a no-op for
+ * that arm rather than substituting a different verb. Fall-through is right for
+ * every other strategy in this pool and wrong here: it would let masking change
+ * the *mix* of verbs an arm bought, and then the two arms would differ in what
+ * they spent on as well as in where they spent it, which is precisely the
+ * confound the pair is built to exclude.
+ *
+ * `slotFor` is the whole of the difference between the two bots.
+ */
+function allocationPreferences(
+  round: number,
+  slotFor: (action: number, round: number) => number,
+): readonly ActionSubmission[] {
+  if (round < ALLOCATION_PERMIT_ROUNDS) {
+    // Byte-identical to permit-then-idle's prefix: same axes, same order, same
+    // ticks. The ruleset the two arms play under is therefore the same by
+    // construction rather than by observation.
+    return [
+      { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
+      { action: GOD_ACTION.permitForm, parameter: form(round) },
+    ];
+  }
+  const action = allocationVerb(round);
+  if (action === GOD_ACTION.fundUniversity && round < ALLOCATION_FOUNDING_UNTIL) {
+    // Slot 0 is "found new" — the same rule in both bots. See
+    // ALLOCATION_FOUNDING_UNTIL for why this is not left to the allocator.
+    return [{ action: GOD_ACTION.fundUniversity, parameter: 0 }];
+  }
+  return [{ action, parameter: slotFor(action, round) }];
+}
+
+/**
+ * The half of the hypothesis both bots share, in the words they share it in.
+ *
+ * The pair is one experiment and the ids are distinct, so the *statement* is
+ * common and each bot adds the sentence that is true only of itself. A pool
+ * whose two arms carried a byte-identical hypothesis would be a pool a report
+ * could not tell apart, which is why `strategy-pool.test.ts` refuses one.
+ *
+ * Stated as the thing that could come back false: that the god's allocation is a
+ * decision at all. Six mechanics were built and none moved `permit-then-idle`,
+ * which wins while funding nothing and blessing nobody. This pair asks the prior
+ * question — whether *which* verbs the god buys changes anything — and a null is
+ * the informative answer, because it would mean the next fix is not an economy
+ * change but a change to what the verbs do.
+ */
+const ALLOCATION_HYPOTHESIS =
+  'Whether the god\'s post-permit decision space has any shape. This bot and its partner permit ' +
+  'identically, spend on the identical verb on the identical round, and differ only in which ' +
+  'candidate slot they name. If the two are statistically indistinguishable, allocation is not a ' +
+  'decision and no setting of the favor economy can make it one — the verbs would have to change ' +
+  'what they do. If they diverge, a real decision space exists and pricing it is worth doing. ';
+
+/**
+ * Always the salience-top slot.
+ *
+ * Every candidate ordering in `candidates.ts` puts its own idea of the most
+ * important entity first — the least-complete university, the most depleted
+ * mage, the lowest-id grantable root on the lowest-handle mage, and the
+ * permitted cell with the most instances already in it, which is where §6a says
+ * encouragement compounds. Taking slot 0 everywhere is "trust the ranking".
+ *
+ * `fundUniversity` is the one exception and it is not a choice: slot 0 of that
+ * action is the fixed "found new" option rather than a ranked entity, so the
+ * top-ranked *existing* university is slot 1.
+ */
+const ALLOCATE_CONCENTRATE: StrategyDefinition = {
+  strategyId: 'allocate-concentrate',
+  version: 1,
+  hypothesis:
+    ALLOCATION_HYPOTHESIS +
+    'This is the arm that trusts the ranking: it names slot 0 of every candidate list, so it ' +
+    'always buys whatever the salience ordering already called most important.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'Identical to its partner and to permit-then-idle, because a stance is a second variable and ' +
+      'this pair exists to have exactly one. Both arms take the summit the moment the mask opens ' +
+      'it, so a difference in ascension rate between them is a difference in what their spending ' +
+      'built rather than in how long they were willing to wait.',
+  },
+  signatureActions: [
+    GOD_ACTION.grantFoundingKnowledge,
+    GOD_ACTION.blessMage,
+    GOD_ACTION.fundUniversity,
+    GOD_ACTION.encourageResearch,
+  ],
+  preferences: ({ round }) =>
+    allocationPreferences(round, (action) =>
+      action === GOD_ACTION.fundUniversity ? 1 : 0,
+    ),
+};
+
+/**
+ * Spreads across the slot range instead of trusting the top of it.
+ *
+ * The maximal allocation contrast the action space admits. It is *not* the
+ * contrast the brief asked for — technique-heavy against form-heavy clusters,
+ * high-tier against low-tier mages, trunk nodes against leaves — and the reason
+ * is worth stating where a reader of the pool will find it: **none of those
+ * three axes exists in §4.4's vocabulary.** `foundingKnowledgeCandidates`
+ * filters to `tier === 1`, so every grantable node is a prerequisite-free root
+ * and there are no leaves to choose; `blessCandidates` ranks by ascending vigor
+ * and never reads a mage's tier; `fundUniversityCandidates` ranks by build
+ * progress and a university carries no cluster identity at all. The salience
+ * ordering *is* the targeting policy, it is hardcoded, and it is the same for
+ * every strategy in this file.
+ *
+ * So the god cannot express "bless the strong one" — only "bless the first one"
+ * or "bless a different one". That is the axis, and this is the second half of
+ * it.
+ *
+ * The one honest caveat, recorded rather than discovered later: `blessMage`'s
+ * list is 32 slots deep over a population of thousands, so slot 0 and slot 31
+ * are both inside the most-depleted tail. **That contrast is near-null by
+ * construction**, and a null result on blessing is a fact about the encoding,
+ * not about the simulation. `grantFoundingKnowledge` is the slot axis with real
+ * content in it: its sixteen slots are typically one mage against sixteen
+ * different tier-1 nodes, so concentrate and spread genuinely seed different
+ * knowledge.
+ */
+/**
+ * How many blessing slots the spreading arm rotates over.
+ *
+ * **Eight, and not the pinned `k` of thirty-two.** This is a measured
+ * correction, not a guess. `CANDIDATE_SLOTS` pins `blessMage` at 32 and
+ * `candidates.ts` fills that list with *living mages* — of which the reference
+ * universe holds **13 to 18** through the early run, rising to a median of 61
+ * only much later. A bot rotating over the declared 32 therefore names a slot
+ * past the end of the list for most of the run, and §4.4 makes that *"an
+ * ordinary illegal action"*: the gate refuses it and **it buys nothing**.
+ *
+ * Version 1 did exactly that, and the first execution measured the damage —
+ * **13,497 gate rejections on action 9 against the concentrating arm's zero**,
+ * and 24.4 blessings bought against 110.3. That is not an allocation
+ * difference; it is one arm being unable to spend, and it failed G1 by a spend
+ * gap of 32.5% against a 5% tolerance. The comparison was declared invalid and
+ * the instrument repaired, which is what a validity gate is for.
+ *
+ * Eight is chosen to sit strictly below the **13** the population floor was
+ * measured at, and it is **asserted rather than assumed**: the repaired arm's
+ * gate rejections must read zero, and the re-run reports them.
+ *
+ * The contrast survives the narrowing. Slot 0 is the most depleted living mage
+ * and slot 7 is the eighth most depleted, so the concentrating arm still buys
+ * one mage repeatedly while the spreading arm still buys eight in rotation.
+ * What is lost is reach into a part of the list that **was never there** — the
+ * old rotation was not spreading further, it was missing.
+ */
+const SPREAD_BLESS_SLOTS = 8;
+
+const ALLOCATE_SPREAD: StrategyDefinition = {
+  strategyId: 'allocate-spread',
+  // 2: the blessing rotation was cut from the pinned 32 slots to 8. At 32 it
+  // named slots that did not exist for most of the run and bought nothing
+  // there, which made the pair differ in how much it spent rather than only in
+  // where. See SPREAD_BLESS_SLOTS for the measurement.
+  version: 2,
+  hypothesis:
+    ALLOCATION_HYPOTHESIS +
+    'This is the arm that distrusts the ranking: it rotates across each list\'s full depth, so it ' +
+    'seeds different roots, blesses different mages and encourages different cells than its ' +
+    'partner while spending on the same verb in the same round.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'Identical to its partner, for the reason given there. Symmetry of stance is what makes the ' +
+      'pair a controlled comparison rather than two strategies that happen to be measured together.',
+  },
+  signatureActions: [
+    GOD_ACTION.grantFoundingKnowledge,
+    GOD_ACTION.blessMage,
+    GOD_ACTION.fundUniversity,
+    GOD_ACTION.encourageResearch,
+  ],
+  preferences: ({ round }) =>
+    allocationPreferences(round, (action, currentRound) =>
+      action === GOD_ACTION.fundUniversity
+        ? // Slots 1-7: the existing universities. Slot 0 is skipped because it
+          // is "found new", which both bots do on the shared schedule above —
+          // rotating into it here would buy a different thing at a different
+          // price and call the difference allocation.
+          1 + (currentRound % (candidateSlotCount(GOD_ACTION.fundUniversity) - 1))
+        : action === GOD_ACTION.blessMage
+          ? // Not `rotate`: the blessing list is shorter than its pinned k for
+            // most of a run. See SPREAD_BLESS_SLOTS.
+            currentRound % SPREAD_BLESS_SLOTS
+          : rotate(action, currentRound),
+    ),
+};
+
 /**
  * The pool, in registration order.
  *
@@ -833,6 +1209,11 @@ const WORSHIP_MAXIMIZER: StrategyDefinition = {
  * the spec lists the roles in, not alphabetical: {@link botStrategyRegistry}
  * sorts the ids it publishes, and this array is what a reader compares against
  * the spec paragraph.
+ *
+ * The two verification probes are appended rather than inserted so that
+ * `round-robin` assignment — `strategies[replicateIndex % size]` over the *sweep
+ * file's* list, not this one — is unaffected for any sweep that does not name
+ * them.
  */
 export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   PASSIVE_CONTROL,
@@ -843,6 +1224,10 @@ export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   ARCHIVIST,
   PORTAL_RUSH,
   WORSHIP_MAXIMIZER,
+  IDLE_THEN_DECLARE,
+  PERMIT_THEN_IDLE,
+  ALLOCATE_CONCENTRATE,
+  ALLOCATE_SPREAD,
 ]);
 
 // ---------------------------------------------------------------------------
@@ -1063,19 +1448,46 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'the mask clears the action every tick. It is therefore permanently MASKED rather than inert, ' +
     'which makes portal-rush the one strategy whose defining action degeneracyOf reports as ' +
     'unreachable. Raids, and a second universe to point a portal at, land in 0.9.0.',
-  'ascension-is-passive':
-    'declareAscension is now gated: mask.ts clears it unless the god-state row\'s ascensionPath has ' +
-    'left ASCENSION_PATH.none, and the outcome system recomputes that every world tick so it can ' +
-    'lapse. What is *not* yet true is that eligibility measures play. Path A gates on world tick ' +
-    '>= ascension-min-tick (600) and worship tier >= ascension-tier-gate (4), and worship accrues ' +
-    'from mages, universities and populace whether or not the god acts — so the path opens by ' +
-    'passive accumulation around tick 700 in the reference universe, at the same 51 nodes known ' +
-    'that passive-control reaches doing nothing. Measured: at 2400 ticks the pool\'s winners ' +
-    'declare within a few dozen ticks of each other regardless of what they did beforehand. Until ' +
-    'the gate depends on something the god\'s play moves, a strategy\'s ascension timing is ' +
-    'evidence about the clock and not about the strategy. That is what W2 of the ascension-meta ' +
-    'campaign exists to change; delete this entry when it does.',
-  'noise-floor-submits-axis-actions-bare':
+  'five-strategies-are-one-universe':
+    'Ascension eligibility now reads play: Path A counts permitted cells standing at their floor ' +
+    'and Path B requires an era boundary to hold a canon of a stated size spread over a stated ' +
+    'number of cells, both anchored above what a universe reaches with no god action at all. The ' +
+    'entry that used to sit here said the opposite and has been deleted rather than edited, ' +
+    'because it told a reader not to run the experiment that found this one. What replaces it is ' +
+    'a limit of the POOL, not of the game. Measured over four factor cells at 2400 ticks, reading ' +
+    'the god tick report at every era boundary: passive-control, uniform-random-legal, archivist, ' +
+    'portal-rush and worship-maximizer all end at exactly (12 mastered cells, 51 nodes known, 12 ' +
+    'cells spanned). They submit different actions and produce the SAME universe. permissive-' +
+    'breadth reaches (15, 262, 70); narrow-depth and denial-warden reach (0, <=9, <=5), strictly ' +
+    'below the passive profile on every axis. So the pool holds three distinct achievement ' +
+    'profiles and its Pareto front is one point. Any predicate that refuses the exploit probe ' +
+    'refuses all five of its profile-mates, and any predicate that admits the two deniers admits ' +
+    'the passive profile too — which is why no setting of any ascension constant can make three ' +
+    'strategies win at materially different rates while the idle probe still loses. That is a ' +
+    'measurement of the strategy pool and of the two loops that would make the other strategies\' ' +
+    'actions matter: universities do not compound into a rate, and nothing is ever the last copy, ' +
+    'so libraryDependence is identically zero and redundancy buys nothing. Delete this entry when ' +
+    'a second strategy can produce a universe distinguishable from the one the god never touched. ' +
+    'W29 NOTE, NOT A RE-MEASUREMENT: the condition in that last sentence is now at least partly ' +
+    'met, and every number above was taken against a build where it could not be. Two universes ' +
+    'differing only in which forms they permit now produce economies that differ on every series ' +
+    'measured (tools/w29/two-universes.mjs, 200 ticks, seed 589825): food 321443 vs 468099, vellum ' +
+    '75733 vs 274403, months to raise a university 30 vs 42. The reason the five strategies ' +
+    'converged was that permitting a cell had no economic consequence; it now has one. Re-run the ' +
+    'four factor cells before quoting any figure in this entry.',
+  'universities-are-founded-and-never-finished':
+    'SUPERSEDED BY W29, kept because the measurement it records is still the measurement — what ' +
+    'changed underneath it is the mechanism. The clause "advanceConstruction in rules-world has ' +
+    'no caller outside it" was true when this was written and is FALSE now: the world loop grew a ' +
+    'construction phase, laborers raise buildings paid in stone, and build-rate multiplies the ' +
+    'progress. So a completed university is no longer god-attributable by construction. What ' +
+    'survives is the finding that made this entry worth writing: permissive-breadth lists ' +
+    'fundUniversity behind permitTechnique and never reaches it; archivist takes slot 0 every ' +
+    'round and founds hundreds. Those are facts about the strategies, not about construction, and ' +
+    'a Path A gate on completedUniversities is still inverted for that reason. Re-measure before ' +
+    'quoting any number here: every one of them was taken against a build where nothing a laborer ' +
+    'did could finish a site.',
+'noise-floor-submits-axis-actions-bare':
     'uniform-random-legal draws a parameter only when candidateSlotCount says the action has one, ' +
     'and CANDIDATE_SLOTS covers 8–14 alone — actions 1–7 are not §4.4 parameterized actions, so ' +
     'they carry no slot list and the floor submits them with no parameter at all. Every one is ' +

@@ -16,6 +16,22 @@
 # `npm run lint` against a tree that was never installed, which fails for a
 # reason that has nothing to do with the commit.
 #
+# Which gates run where, because "the balance gates" is no longer one set:
+#
+#   `npm run verify`        five world years, twenty, and twenty with the whole
+#                           strategy pool. This script runs exactly that, and
+#                           equivalence with it is the standing constraint below.
+#   `npm run verify:full`   the above plus the two-hundred-year gate. Nothing
+#                           automated calls it; it exists so a person, and the
+#                           release checklist, can name the whole thing.
+#   GitHub Actions          runs the two-hundred-year gate as its own parallel
+#                           job on every commit, not required to merge. It costs
+#                           830-1154 s and this runner serialises against a
+#                           2400 s timeout, so keeping it here would make every
+#                           other pull request queue behind the win condition.
+#                           `docs/design/release-plan.md` makes it required at
+#                           release, which is where the claim it supports lives.
+#
 # This must stay equivalent to the `verify` gate in package.json. If they drift,
 # a commit can pass locally and fail on the runner, or worse, the reverse.
 
@@ -40,7 +56,7 @@ npm ci
 
 # --- Does this commit need the Monte Carlo sweeps? -------------------------
 #
-# The three balance gates are the expensive part of `verify` by a wide margin,
+# The balance gates `verify` runs are the expensive part of it by a wide margin,
 # and they are the reason a docs-only pull request sits behind a queue on the
 # single self-hosted runner. A change that touches no code cannot move a
 # balance number.
@@ -50,6 +66,16 @@ npm ci
 #   1. ALLOWLIST, NEVER DENYLIST. We skip only when *every* changed path is a
 #      known documentation path. A denylist of code paths would silently exempt
 #      any new top-level directory the day someone adds one.
+#
+#      `ui/` is on the list for the same reason `docs/` is, and the reason is
+#      narrower than it looks: it is in no tsconfig, no eslint glob and no
+#      vitest include, so a `ui/`-only diff cannot change what the simulation
+#      does. It is NOT unwatched — `packages/content/test/unit/ui-theme.test.ts`
+#      reads every prototype and asserts the shared palette, and that test still
+#      runs here, because what is skipped is the Monte Carlo sweeps and nothing
+#      else. A prototype that drifts still fails; it just no longer
+#      spends five hundred seconds proving a stylesheet did not move a
+#      balance number.
 #   2. FAIL CLOSED. Any uncertainty — no merge base, a shallow clone, a git
 #      error, an unrecognised path — runs the full gate. A skipped sweep must
 #      be a decision, never an accident.
@@ -67,7 +93,7 @@ if git rev-parse --verify --quiet "$base" >/dev/null 2>&1; then
       while IFS= read -r f; do
         [ -z "$f" ] && continue
         case "$f" in
-          docs/*|openspec/*|.claude/*|*.md|LICENSE) ;;
+          docs/*|openspec/*|.claude/*|ui/*|*.md|LICENSE) ;;
           *) docs_only=0; break ;;
         esac
       done <<< "$changed"
@@ -76,7 +102,7 @@ if git rev-parse --verify --quiet "$base" >/dev/null 2>&1; then
 fi
 
 if [ "$docs_only" -eq 1 ]; then
-  echo "=== docs-only diff against ${base}: skipping the three balance sweeps ==="
+  echo "=== docs-only diff against ${base}: skipping the balance sweeps ==="
   echo "Changed paths:"
   echo "$changed" | sed 's/^/  /'
   echo "Everything else in \`verify\` still runs. To force the full gate, unset"

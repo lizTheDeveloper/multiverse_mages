@@ -109,25 +109,57 @@ export interface ApotheosisFacts {
 }
 
 /**
+ * How many permitted cells stand at their floor: deepest node held by a living
+ * mage, and surviving in at least `copies` instances.
+ *
+ * A count rather than a boolean, and that is the whole of Path A's fix. The
+ * shipped v1 rectangle is twelve cells holding fifty-one nodes, and a universe
+ * the god never touches learns **all fifty-one of them** — so "some cell is at
+ * its floor" is not an achievement, it is what a starting position converges to
+ * on its own. Counting instead of testing turns the same predicate into a
+ * question about how much of the grid the god *opened*, because the thirteenth
+ * mastered cell can only exist if a technique or a form was permitted that the
+ * universe did not begin with.
+ *
+ * Iterating the deepest-by-cell map rather than the held set is deliberate: the
+ * quantity is "cells at their floor", and a mage holding two summits would
+ * otherwise be counted twice while a cell held by two mages counted once.
+ */
+export function masteredCellCount(facts: ApotheosisFacts, copies: number): number {
+  let mastered = 0;
+  for (const [cellId, nodeId] of facts.deepest) {
+    if (!facts.permitsCell(cellId)) continue;
+    if (!facts.heldByLivingMage.has(nodeId)) continue;
+    if (facts.instanceCount(nodeId) < copies) continue;
+    mastered += 1;
+  }
+  return mastered;
+}
+
+/**
  * Whether the Apotheosis path is satisfied right now.
  *
- * Four conjuncts, and each is independently unlikely: a species with the depth
- * ceiling to reach the cell's deepest tier, a mage who lived long enough to
- * climb the whole prerequisite chain, the cell still permitted at the moment of
- * declaration, and *two* surviving instances of a node that by construction
- * only one mage has ever held. That last one is why teaching or scribing is a
- * necessary step and not a nicety.
+ * Five conjuncts, and each is independently unlikely: a species with the depth
+ * ceiling to reach a cell's deepest tier, a mage who lived long enough to climb
+ * the whole prerequisite chain, the cell still permitted at the moment of
+ * declaration, `ascension-summit-copies` surviving instances of a node that by
+ * construction only one mage has ever held — that last one is why teaching or
+ * scribing is a necessary step and not a nicety — and now
+ * `ascension-summit-cells` cells in that state at once.
+ *
+ * **The cell count is the conjunct that reads play.** Worship tier does not:
+ * it accrues from mages, universities and populace whether or not the god acts,
+ * and a 2-D scan over the two authored knobs found the idle probe winning every
+ * cell of the grid because of it. Raising the tier gate could not fix that —
+ * `worship-tier-count` is 5, so the knob was already one step from its ceiling.
+ *
+ * At `ascension-summit-cells = 1` and `ascension-summit-copies = 2` this is
+ * exactly the predicate that shipped before, which is what makes the change
+ * bisectable against a moved balance number.
  */
 export function apotheosisSatisfied(facts: ApotheosisFacts, constants: GodConstants): boolean {
   if (facts.worshipTier < constants.ascensionTierGate) return false;
-  for (const nodeId of facts.heldByLivingMage) {
-    const cellId = facts.cellOf(nodeId);
-    if (facts.deepest.get(cellId) !== nodeId) continue;
-    if (!facts.permitsCell(cellId)) continue;
-    if (facts.instanceCount(nodeId) < 2) continue;
-    return true;
-  }
-  return false;
+  return masteredCellCount(facts, constants.ascensionSummitCopies) >= constants.ascensionSummitCells;
 }
 
 /**
@@ -158,6 +190,78 @@ export function qualifyingPath(
   if (apotheosisSatisfied(facts, constants)) return ASCENSION_PATH.apotheosis;
   if (canonSatisfied(god, constants)) return ASCENSION_PATH.canon;
   return ASCENSION_PATH.none;
+}
+
+/** What one era boundary is judged on. Facts, not state, for the same reason Path A's are. */
+export interface EraBoundaryFacts {
+  /** Distinct nodes of which the universe holds at least one instance. */
+  readonly nodesKnown: number;
+  /** Distinct cells in which the universe knows at least one node. */
+  readonly cellsKnown: number;
+  /** `libraryDependence` at the boundary, fp. */
+  readonly dependence: Fixed;
+  /** Nodes that left the universe during the era now ending. */
+  readonly eraNodesLost: number;
+}
+
+/**
+ * Nodes a passing era may lose: the authored floor, or a share of the canon,
+ * whichever is larger.
+ *
+ * **A flat cap over a quantity that scales measures scale, not custodianship.**
+ * Measured on this build: a universe the god never touches holds 51 nodes and
+ * loses zero per era, while one that permitted most of the grid holds 220 and
+ * loses seven — so an absolute allowance of two disqualified the civilization
+ * that was actually doing something and waved through the one in stasis. That
+ * is the inverted sign this change exists to correct, and no setting of the
+ * authored constant corrects it, because the number that should move with the
+ * canon's size was not a function of it.
+ *
+ * `ascension-loss-max` is retained as the floor so that a small canon is not
+ * handed a free loss by the fraction rounding to zero, and so the authored
+ * constant keeps meaning what it meant.
+ *
+ * Integer arithmetic throughout: `floorDiv` over fixed point at 1/1024, never a
+ * float and never a rounding mode that depends on the platform.
+ */
+export function lossAllowance(nodesKnown: number, constants: GodConstants): number {
+  const scaled = floorDiv(Math.max(nodesKnown, 0) * constants.ascensionLossFraction, FP_ONE);
+  return Math.max(constants.ascensionLossMax, scaled);
+}
+
+/**
+ * Whether one era boundary passes — the conjunction Path B counts runs of.
+ *
+ * Four conjuncts, and the first two are the fix. As shipped, the test asked only
+ * that dependence was low and losses few, both of which are *absences*: a
+ * universe nobody touches has no single-copy nodes and loses nothing, so **doing
+ * nothing was perfect custodianship** and Path B opened passively around tick
+ * 1080. Vision §8a's second summit is *"a civilization that has held its
+ * knowledge intact across enough eras"*, and holding fifty-one nodes that nobody
+ * reads is not what that sentence is about.
+ *
+ * So a passing boundary now also requires a canon of a stated size, spread over
+ * a stated number of cells. Both are anchored to the *passive baseline* rather
+ * than to any strategy's score — the starting rectangle is twelve cells holding
+ * fifty-one nodes and an unattended universe learns every one of them, so those
+ * two numbers are the game's own autonomous ceiling and the constants are
+ * multiples of them.
+ *
+ * The two breadth conjuncts are not redundant with each other and the tension
+ * between them is the point: node count alone is satisfied by driving a few
+ * cells to their floor, cell count alone by scattering a single node across
+ * many, and both together by opening the grid and then keeping it — which raises
+ * the number of single-copy nodes and pushes back on the dependence ceiling.
+ * Three axes that cannot all be maximised at once is the difference between a
+ * summit and a counter.
+ */
+export function eraBoundaryPassed(facts: EraBoundaryFacts, constants: GodConstants): boolean {
+  return (
+    facts.nodesKnown >= constants.ascensionCanonBreadth &&
+    facts.cellsKnown >= constants.ascensionCanonCells &&
+    facts.dependence <= constants.ascensionDependenceMax &&
+    facts.eraNodesLost <= lossAllowance(facts.nodesKnown, constants)
+  );
 }
 
 /** `libraryDependence` (§7): the fraction of known nodes with exactly one instance. */

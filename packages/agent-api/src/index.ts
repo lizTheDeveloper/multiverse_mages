@@ -169,6 +169,34 @@ export { observe } from './view.js';
 
 export type { ExplainProjection, ExplainedDecision } from './explain.js';
 
+/**
+ * §4.4's second projection: the knowledge census (vision §5).
+ *
+ * Exported beside the explain channel and **not** from {@link AgentView}, for
+ * the reason `./explain.ts` gives about itself — a field on the observation
+ * would be a channel a policy could learn to read, and §4.4's "no simulation
+ * behaviour may depend on whether it was requested" would then rest on
+ * everybody remembering. `./knowledge-census.ts` argues the placement at length.
+ */
+export type {
+  CensusOptions,
+  ContainmentReport,
+  InstanceMastery,
+  KnowledgeCensus,
+  LocationSplit,
+  MageRepertoire,
+  MarooningSummary,
+  MasteryModel,
+  NodeCensusEntry,
+  NodeMastery,
+} from './knowledge-census.js';
+export {
+  CENSUS_LOCATION_KINDS,
+  knowledgeCensus,
+  locationSharePerMille,
+  mageContainment,
+} from './knowledge-census.js';
+
 export type { AgentRng, AgentRngInput } from './agent-rng.js';
 export { agentRng } from './agent-rng.js';
 

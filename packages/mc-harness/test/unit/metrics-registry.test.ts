@@ -45,7 +45,7 @@ function contractsMarkdown(): string {
 }
 
 describe('the §7 table parser', () => {
-  it('finds exactly the fourteen metric names §7 tabulates', () => {
+  it('finds exactly the eighteen metric names §7 tabulates', () => {
     const ids = contractSection7MetricIds(contractsMarkdown());
     expect(ids).toEqual([
       'ascensionRate',
@@ -58,9 +58,13 @@ describe('the §7 table parser', () => {
       'inboundRaidTempoLoss',
       'knowledgeHalfLife',
       'libraryDependence',
+      'lossShockRecovery',
       'prestigeAdvantage',
       'raidInitiationCost',
       'raidLengthDistribution',
+      'roleAssignmentDemographicCost',
+      'speciesCellOccupancy',
+      'speciesGridVersatility',
       'timeToTierBySpecies',
       'winRateByPrimitive',
       'worshipSnowball',
@@ -140,5 +144,30 @@ describe('every registered metric carries the seven fields task 6.1 names', () =
     // Copy-pasted definitions are how two metrics end up measuring one thing.
     const definitions = BALANCE_METRIC_REGISTRY.definitions.map((entry) => entry.definition);
     expect(new Set(definitions).size).toBe(definitions.length);
+  });
+
+  /**
+   * `disprovedBy` is not in `definitionDigest` — a sharper disproof for the same
+   * quantity is an improvement, and routing it through a `definitionVersion`
+   * bump would make it read as a redefinition. So this is the check that keeps
+   * it from being optional in practice.
+   *
+   * An invariant that fails goes red. A metric measuring the wrong quantity
+   * stays green and keeps publishing a number, which is how four of them came
+   * to report healthy constants they were structurally incapable of moving.
+   */
+  it('makes every metric name the observation that would disprove it', () => {
+    for (const definition of BALANCE_METRIC_REGISTRY.definitions) {
+      expect(
+        definition.disprovedBy.length,
+        `${definition.id} has no disproof, or one too short to name an observation`,
+      ).toBeGreaterThan(40);
+    }
+  });
+
+  it('gives each metric a distinct disproof', () => {
+    // A disproof copied from a neighbour is a metric nobody thought about.
+    const disproofs = BALANCE_METRIC_REGISTRY.definitions.map((entry) => entry.disprovedBy);
+    expect(new Set(disproofs).size).toBe(disproofs.length);
   });
 });

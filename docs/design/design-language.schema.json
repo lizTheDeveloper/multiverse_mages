@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/design-language.schema.json",
+  "title": "design-language.md claims",
+  "description": "One depth claim, as defined by docs/design/design-language.md. Every fenced jsonc block under a '### Claim:' heading in that document is validated against this schema by packages/content/test/unit/design-language-claims.test.ts. A claim is a falsifiable sentence, a decision procedure that would settle it, a pinned set of free parameters, a version, and a verdict. A claim with no procedure is not a claim; a verdict of not-measurable must say why.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["claimId", "form", "subjects", "hypothesis", "procedure", "definitionVersion", "verdict"],
+  "properties": {
+    "claimId": {
+      "$ref": "#/$defs/slug",
+      "description": "Stable and permanent once any evidence file names it."
+    },
+    "form": {
+      "type": "string",
+      "description": "The claim verb. The vocabulary is closed: adding a form is a versioned amendment to design-language.md §3, not an edit to one claim.",
+      "enum": [
+        "nests",
+        "incomparable",
+        "width",
+        "reproducible",
+        "dominates",
+        "degenerate",
+        "chain",
+        "solved-open-loop",
+        "inert",
+        "commits",
+        "composes"
+      ]
+    },
+    "subjects": {
+      "type": "array",
+      "description": "What the claim is about, in the order the form's signature gives. Strategy ids, node ids, primitive ids, action ids as decimal strings, or the reserved token 'v1-strategy-pool'.",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "type": "string", "minLength": 1, "maxLength": 96 }
+    },
+    "hypothesis": {
+      "type": "string",
+      "description": "A sentence that could turn out to be false. Same standard as StrategyDefinition.hypothesis: 'plays broadly' is a description, 'whether breadth outruns the loss channel' is a hypothesis.",
+      "minLength": 24,
+      "maxLength": 800
+    },
+    "procedure": { "$ref": "#/$defs/procedure" },
+    "pinnedConstants": {
+      "type": "object",
+      "description": "Every free parameter this claim invented. A constant that is not here is a constant nobody is guarding. Changing one without bumping definitionVersion is the failure this field exists to make visible."
+    },
+    "definitionVersion": {
+      "type": "integer",
+      "description": "Bumped whenever the procedure or the pinned constants change. A verdict compared across a version bump is comparing two claims.",
+      "minimum": 1,
+      "maximum": 4096
+    },
+    "verdict": {
+      "type": "string",
+      "description": "holds and refuted are readings. unmeasured means nobody has run it. not-measurable means the instrument does not exist, which is an honest answer and a different finding from a failure — the same distinction the metrics registry draws with its unavailable status.",
+      "enum": ["holds", "refuted", "unmeasured", "not-measurable"]
+    },
+    "verdictReason": {
+      "type": "string",
+      "description": "Required when the verdict is not-measurable: what instrument is missing. Optional otherwise, for a one-line reading of the numbers.",
+      "minLength": 8,
+      "maxLength": 600
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Committed artefacts a reader can open. Required when the verdict is holds or refuted. Repository-relative paths, optionally with a heading anchor.",
+      "maxItems": 8,
+      "items": { "type": "string", "minLength": 4, "maxLength": 200 }
+    },
+    "supersedes": {
+      "type": "array",
+      "description": "Claim ids this one replaces. A refuted claim is not deleted; it is superseded, so the history of what was believed stays readable.",
+      "maxItems": 8,
+      "items": { "$ref": "#/$defs/slug" }
+    }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 96,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "procedure": {
+      "type": "object",
+      "description": "How the claim would be settled. Every field here is part of the claim's identity, which is why changing any of them bumps definitionVersion.",
+      "additionalProperties": false,
+      "required": ["design", "statistic"],
+      "properties": {
+        "design": {
+          "type": "string",
+          "description": "content-static needs no simulation and can be a unit test. Everything else needs a sweep, and the distinction is load-bearing: only the first can be enforced by npm run verify.",
+          "enum": [
+            "content-static",
+            "held-set",
+            "paired-arms",
+            "ablation",
+            "restricted-play",
+            "counterexample-search"
+          ]
+        },
+        "statistic": {
+          "type": "string",
+          "description": "The quantity compared, named so two runs of this procedure compare the same thing.",
+          "minLength": 3,
+          "maxLength": 200
+        },
+        "measures": {
+          "type": "array",
+          "description": "Metric ids from the balance metric registry, or reference-sweep measure ids. Required for every design except content-static.",
+          "maxItems": 12,
+          "items": { "type": "string", "minLength": 2, "maxLength": 64 }
+        },
+        "runsPerArm": {
+          "type": "integer",
+          "description": "n per arm. Round-robin assignment is strategies[replicateIndex % poolSize], so a count that does not divide the pool measures a subset.",
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "margin": {
+          "type": "string",
+          "description": "The threshold the statistic must clear, written with its units. A claim may not name a threshold it did not pin, so this string is also expected to appear as a pinned constant.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "interval": {
+          "type": "string",
+          "description": "The uncertainty convention, e.g. wilson-95 or three-standard-errors. Absent means the claim is deterministic.",
+          "minLength": 3,
+          "maxLength": 64
+        },
+        "nullModel": {
+          "type": "string",
+          "description": "Required for held-set designs. Set-geometry statistics are inflated by marginal totals alone — a nested-looking matrix arises by chance from row and column sums — so a held-set claim without a null model reports arithmetic as structure. See depth-and-skill.md §3.2.",
+          "minLength": 8,
+          "maxLength": 300
+        },
+        "refutedBy": {
+          "type": "string",
+          "description": "The reading that would overturn the claim, stated before it is run. A claim that cannot say this is not falsifiable and does not belong in the language.",
+          "minLength": 12,
+          "maxLength": 400
+        }
+      }
+    }
+  }
+}

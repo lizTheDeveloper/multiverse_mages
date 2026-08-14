@@ -47,12 +47,19 @@ export {
   shippedContent,
   speciesTable,
   storeHookOf,
+  traditionIdNamed,
   v1RulesetAxes,
   worldDeps,
 } from './content-set.js';
 
+export type { AnnihilationSite } from './annihilation.js';
+export { AnnihilationRecorder } from './annihilation.js';
+
 export type { CensusSample } from './census.js';
 export { censusLine, censusOf } from './census.js';
+
+export type { MasteryModelOptions } from './mastery-model.js';
+export { referenceMasteryModel } from './mastery-model.js';
 
 export type { ReferenceMeasure, RunMeasurement } from './measures.js';
 export {
@@ -67,12 +74,11 @@ export type { ReferenceContent, ReferenceOptions, ReferenceRun } from './referen
 export {
   REFERENCE_FACTOR_IDS,
   REFERENCE_SCENARIO_ID,
+  TRADITION_FACTOR_ID,
   buildReferenceState,
-  defaultTraditionIndex,
   referenceContent,
   referenceOptions,
   referenceScenario,
-  traditionOrder,
 } from './reference-universe.js';
 
 export type { ReferenceExecutorOptions, ReferenceRunResult } from './executor.js';
@@ -106,3 +112,5 @@ export {
   timeToTierBySpecies,
   windowsOf,
 } from './long-run.js';
+
+export { speciesCellOccupancy } from './species-occupancy.js';

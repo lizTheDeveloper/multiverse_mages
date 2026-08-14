@@ -654,12 +654,15 @@ function chooseIntent(
 /**
  * The first node this combatant can **actually release right now**, ascending.
  *
- * Three filters, and every one of them is load-bearing:
+ * Four filters, and every one of them is load-bearing:
  *
  * - **Legal**, from the mask — so an illegal node is never a candidate.
  * - **Readied**, if the host's `cast` hook requires preparation — a Vancian sky
  *   releases only what was memorised, and once the list is spent it is spent.
  * - **Affordable**, at the host's `cost` hook price.
+ * - **Effective**, from the arbiter's `CastProfile` — a cast that would place
+ *   nothing on the field is not a cast, and neither is a summon by a side
+ *   already at its cap.
  *
  * Leaving any of them out produces the same failure and it is not subtle: the
  * combatant declares a cast every tick, the cast is refused every tick, and
@@ -668,6 +671,20 @@ function chooseIntent(
  * the preparations ran out, and both sides stood in a field for two thousand
  * ticks. A refusal that costs a tick is a behavioural bug wearing a safety
  * check's clothes.
+ *
+ * **The fourth filter used to test `direct-damage`, and that was the bug.** The
+ * safety check was real and its reasoning was right; the test it used was too
+ * narrow by four primitives. `area-denial`, `blink` and `summon` are all things
+ * `resolveOneCast` can place, so a node carrying one of them and no damage was
+ * refused a candidacy it would have honoured — which made five of the seven
+ * combat primitives structurally 0-castable and let `area-denial` onto the field
+ * only when it happened to ride on a damage node's ticket. `ward` and
+ * `concealment` stay 0-castable **on purpose**: §3 gives them a stacking rule
+ * and no trigger, `passiveDefences` reads them once at portal open, and there is
+ * no cast form for the applier to apply. `knowledge-steal` stays out because the
+ * theft intent owns it, and `portal` because it gates raiding rather than being
+ * released in a field. That is what `castProfile` encodes, derived from the same
+ * `#effectsOf` the applier uses so the two cannot disagree.
  */
 function firstCastableNode(raid: Raid, brief: CombatantBrief): ContentId | undefined {
   const hostCast = raid.host.hooks.hostCast;
@@ -679,12 +696,21 @@ function firstCastableNode(raid: Raid, brief: CombatantBrief): ContentId | undef
       ? brief.preparedSpells.filter((nodeId) => brief.legalNodes.has(nodeId))
       : [...brief.legalNodes];
 
+  const roster = raid.rosters[brief.side] as SideRoster;
+
   for (const nodeId of [...pool].sort((a, b) => a - b)) {
     const node = raid.registry.node(nodeId);
     if (node === undefined) continue;
-    if (!node.effects.some((effect) => effect.primitive === COMBAT_PRIMITIVES.directDamage)) {
-      continue;
-    }
+    const profile = raid.arbiter.castProfile(nodeId);
+    if (!profile.placesEffects) continue;
+    // A summon over the cap is a no-op whose cost is still charged, so a
+    // summon-only node held at the cap is the "refusal that costs a tick" this
+    // function exists to prevent, arriving through a resolution rather than a
+    // refusal. Read from live roster state, not randomness: same state, same
+    // answer, on every machine. It narrows the window rather than closing it —
+    // two summoners acting in one tick with one slot left still produce one
+    // charged no-op, deterministically.
+    if (profile.summonOnly && !sideHasSummonRoom(roster, raid.tuning)) continue;
     const price = raid.tuning.castVigorBase + raid.tuning.castVigorPerTier * node.tier;
     if (!raid.host.hooks.hostCost.paidAtPreparation && price > vigor) continue;
     return nodeId;
@@ -815,10 +841,7 @@ function resolveOneCast(
   // No target means no expenditure: the preparation stays readied and the price
   // is not charged. Charging for a cast that never happened is the kind of
   // asymmetry that shows up months later as an unexplained vigor drain.
-  const needsTarget = raid.registry
-    .node(nodeId)
-    ?.effects.some((effect) => effect.primitive === COMBAT_PRIMITIVES.directDamage);
-  if (needsTarget === true && target === undefined) return;
+  if (raid.arbiter.castProfile(nodeId).requiresTarget && target === undefined) return;
 
   const resolution = raid.arbiter.resolveCast({
     nodeId,
