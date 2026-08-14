@@ -1954,14 +1954,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "f39c5b9dfda4728f949209dff53176abc1cbc4f38dd298678a8cd805cc9a2def",
+        "fileSeal": "c1eef88c4f7d14d54e609ed44449c721c2fae32905880d1412db6cd1b5520b68",
         "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
         "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
         "buildVersion": "0.3.0",
-        "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab",
+        "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
         "armCount": 0,
         "arms": [],
-        "rationale": "w107 added GOAL.applyMagic: a mage may spend the month casting one resource-yield node she holds at the world, which costs her that month and her rations and puts materials into the stocks. contentRevision moved 162f80bf169296d0e5fd516cc3c5257a -> d4e3047657b4fa8a1a74e1d52f9f5c86 because autonomy-weight.json gained apply-output-per-month (fp 64) and apply-ration-per-month (fp 4), so the gate refuses on provenance before it reads a metric. UNLIKE THE LAST THREE RE-RECORDS, METRICS MOVED, AND ON PURPOSE. A month spent applying is a month not spent studying, so the knowledge series fall and no population series does: at the five-year gate referenceNodesKnown -1.17 (-10.6 SE), referenceKnowledgeInstances -33.14 (-15.4 SE), referenceLibraryDepth -1.465 (-6.7 SE), while referencePopulation, referencePeakPopulation and referenceGrimoires all pass. The horizon gate shows the same shape and moves referenceNodesGainedFinalQuarter UP +0.685 (+6.5 SE) -- universes are still learning at the end of a run that used to have plateaued. That trade is the mechanism, not a regression, and the numbers are why this file is re-recorded rather than its tolerances widened. NO NEW RNG STREAM was added (goal selection reuses stream 7 keyed per mage, so contracts.md 6 re-baseline event is avoided), NO WORLD SCHEMA REVISION was needed, and NO GOLDEN FIXTURE WAS REGENERATED. This file is a measurement, not a balance claim: release-plan.md forbids a balance claim before 0.5.0. Both magnitudes ship tuningStatus untuned and are the first two numbers a sweep should move. Record: balance/results-w107-apply-before.txt and balance/results-w107-apply-after.txt.",
+        "rationale": "PR #72 (w70/opening-square) appends RNG_STREAM.openingSquare = 12 to the stream registry, which moves canonicalHash(RNG_STREAM) from 80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab to 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9. gate.ts treats provenance.rngRegistryHash as a block-level refusal, so all three gates report baseline-invalid before reading a metric. A HASH CANNOT DISTINGUISH APPENDED FROM RENUMBERED -- that is the real finding and it will recur on every future stream addition; fixing the baseline format so an appended stream is distinguishable is its own change and is NOT attempted here. The repository owner authorised this hash refresh for PR #72 specifically. NO BEHAVIOUR CHANGED: resolveOpeningSquare's default path (openingTechniqueCount = openingFormCount = 0) returns v1RulesetAxes(registry) and is deliberately draw-free, so the reference universe is byte-for-byte today's universe, and no committed sweep sets either count. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. THIS FILE: all 9 metric rows were already at delta 0.00000 against the superseded baseline on the merged tree (verify:nosweeps exit 0, 4473/4473 tests). This regeneration is provenance-only: 0 of 9 values moved and 0 of 9 tolerances moved.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2073,14 +2073,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "5e9fd738a3a1f4b7933b7f99a765f17cfc1c59c376312eeef75050f32022151e",
+        "fileSeal": "ee6ebcab5bdb8f1a85b00e52164b88c6d2ec785450c2300b320f4b669ecc1fa6",
         "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
         "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
         "buildVersion": "0.3.0",
-        "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab",
+        "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
         "armCount": 0,
         "arms": [],
-        "rationale": "w107 added GOAL.applyMagic: a mage may spend the month casting one resource-yield node she holds at the world, which costs her that month and her rations and puts materials into the stocks. contentRevision moved 162f80bf169296d0e5fd516cc3c5257a -> d4e3047657b4fa8a1a74e1d52f9f5c86 because autonomy-weight.json gained apply-output-per-month (fp 64) and apply-ration-per-month (fp 4), so the gate refuses on provenance before it reads a metric. UNLIKE THE LAST THREE RE-RECORDS, METRICS MOVED, AND ON PURPOSE. A month spent applying is a month not spent studying, so the knowledge series fall and no population series does: at the five-year gate referenceNodesKnown -1.17 (-10.6 SE), referenceKnowledgeInstances -33.14 (-15.4 SE), referenceLibraryDepth -1.465 (-6.7 SE), while referencePopulation, referencePeakPopulation and referenceGrimoires all pass. The horizon gate shows the same shape and moves referenceNodesGainedFinalQuarter UP +0.685 (+6.5 SE) -- universes are still learning at the end of a run that used to have plateaued. That trade is the mechanism, not a regression, and the numbers are why this file is re-recorded rather than its tolerances widened. NO NEW RNG STREAM was added (goal selection reuses stream 7 keyed per mage, so contracts.md 6 re-baseline event is avoided), NO WORLD SCHEMA REVISION was needed, and NO GOLDEN FIXTURE WAS REGENERATED. This file is a measurement, not a balance claim: release-plan.md forbids a balance claim before 0.5.0. Both magnitudes ship tuningStatus untuned and are the first two numbers a sweep should move. Record: balance/results-w107-apply-before.txt and balance/results-w107-apply-after.txt.",
+        "rationale": "PR #72 (w70/opening-square) appends RNG_STREAM.openingSquare = 12 to the stream registry, which moves canonicalHash(RNG_STREAM) from 80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab to 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9. gate.ts treats provenance.rngRegistryHash as a block-level refusal, so all three gates report baseline-invalid before reading a metric. A HASH CANNOT DISTINGUISH APPENDED FROM RENUMBERED -- that is the real finding and it will recur on every future stream addition; fixing the baseline format so an appended stream is distinguishable is its own change and is NOT attempted here. The repository owner authorised this hash refresh for PR #72 specifically. NO BEHAVIOUR CHANGED: resolveOpeningSquare's default path (openingTechniqueCount = openingFormCount = 0) returns v1RulesetAxes(registry) and is deliberately draw-free, so the reference universe is byte-for-byte today's universe, and no committed sweep sets either count. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. THIS FILE: all 10 metric rows were already at delta 0.00000 against the superseded baseline on the merged tree. This regeneration is provenance-only: 0 of 10 values moved and 0 of 10 tolerances moved.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2203,11 +2203,11 @@
         "runCount": 64,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "d4b10e3b8ece8970f8d6b86abe98a231d4442952e84c70a15b6147344917cab3",
+        "fileSeal": "1de86d6757967e5fa3a4af3e4c78f9d2782d9908296c2bf490ef60742a8c79ea",
         "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
         "configurationHash": "1b73f7e27b0bf2eb582d9094c5747ebd29663c6f5991847ea2178fccd3304b28",
         "buildVersion": "0.3.0",
-        "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab",
+        "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
         "armCount": 8,
         "arms": [
           "archivist",
@@ -2219,7 +2219,7 @@
           "uniform-random-legal",
           "worship-maximizer"
         ],
-        "rationale": "w107 added GOAL.applyMagic: a mage may spend the month casting one resource-yield node she holds at the world, which costs her that month and her rations and puts materials into the stocks. contentRevision moved 162f80bf169296d0e5fd516cc3c5257a -> d4e3047657b4fa8a1a74e1d52f9f5c86 because autonomy-weight.json gained apply-output-per-month (fp 64) and apply-ration-per-month (fp 4), so the gate refuses on provenance before it reads a metric. UNLIKE THE LAST THREE RE-RECORDS, METRICS MOVED, AND ON PURPOSE. A month spent applying is a month not spent studying, so the knowledge series fall and no population series does: at the five-year gate referenceNodesKnown -1.17 (-10.6 SE), referenceKnowledgeInstances -33.14 (-15.4 SE), referenceLibraryDepth -1.465 (-6.7 SE), while referencePopulation, referencePeakPopulation and referenceGrimoires all pass. The horizon gate shows the same shape and moves referenceNodesGainedFinalQuarter UP +0.685 (+6.5 SE) -- universes are still learning at the end of a run that used to have plateaued. That trade is the mechanism, not a regression, and the numbers are why this file is re-recorded rather than its tolerances widened. NO NEW RNG STREAM was added (goal selection reuses stream 7 keyed per mage, so contracts.md 6 re-baseline event is avoided), NO WORLD SCHEMA REVISION was needed, and NO GOLDEN FIXTURE WAS REGENERATED. This file is a measurement, not a balance claim: release-plan.md forbids a balance claim before 0.5.0. Both magnitudes ship tuningStatus untuned and are the first two numbers a sweep should move. Record: balance/results-w107-apply-before.txt and balance/results-w107-apply-after.txt.",
+        "rationale": "PR #72 (w70/opening-square) appends RNG_STREAM.openingSquare = 12 to the stream registry, which moves canonicalHash(RNG_STREAM) from 80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab to 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9. gate.ts treats provenance.rngRegistryHash as a block-level refusal, so all three gates report baseline-invalid before reading a metric. A HASH CANNOT DISTINGUISH APPENDED FROM RENUMBERED -- that is the real finding and it will recur on every future stream addition; fixing the baseline format so an appended stream is distinguishable is its own change and is NOT attempted here. The repository owner authorised this hash refresh for PR #72 specifically. NO BEHAVIOUR CHANGED: resolveOpeningSquare's default path (openingTechniqueCount = openingFormCount = 0) returns v1RulesetAxes(registry) and is deliberately draw-free, so the reference universe is byte-for-byte today's universe, and no committed sweep sets either count. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. READ THE DIFF OF THIS FILE CAREFULLY, AND DO NOT READ IT AS A BEHAVIOUR CHANGE FROM #72. 73 of this file's 90 rows were already at delta 0.00000 against the superseded baseline; 17 were not -- referenceGrimoires, referenceKnowledgeInstances, referenceLibraryDepth, referenceLivingMages, referenceNodesGained, referenceNodesKnown, referencePopulation and referencePopulationChange in the pooled series, and those same eight plus referencePeakPopulation on the uniform-random-legal arm. ALL 17 ARE MAIN'S OWN DRIFT, NOT THIS BRANCH'S, AND THAT WAS MEASURED RATHER THAN ARGUED: a second worktree detached at pristine origin/main 769452845f31c33ab7800d3333fcb5c818feef41 ran the same gate and reproduced ALL 90 ROWS BYTE-IDENTICALLY -- diffing the two sorted row listings gives an empty diff. Across the three gates that is 109 of 109 rows identical between this branch and main, the same discriminating control and the same row count PR #144 used. Main's own agency gate PASSES with those 17 deltas inside tolerance, which is why Verify (pinned Node) is green at that ref; this file records main's current values only because refreshing the provenance hash requires re-running the sweep at all. Every moved row is well inside its tolerance -- the largest is referenceGrimoires@uniform-random-legal at -1.44 SE against k = 3. Seventeen tolerances moved with their values, so the power table in balance/README.md moved with them and is updated in the same commit; gate-power.test.ts is what caught that, correctly.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2235,52 +2235,52 @@
         "pooled": [
           {
             "metricId": "referenceGrimoires",
-            "value": 265.765625,
+            "value": 261,
             "unit": "grimoires",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 10.46005935914682,
-            "tolerance": 31.380178077440462,
+            "standardError": 10.700992031991706,
+            "tolerance": 32.10297609597512,
             "sampleSize": 64
           },
           {
             "metricId": "referenceKnowledgeInstances",
-            "value": 878.015625,
+            "value": 872.671875,
             "unit": "instances",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 14.612700156349442,
-            "tolerance": 43.83810046904833,
+            "standardError": 14.483464777225269,
+            "tolerance": 43.45039433167581,
             "sampleSize": 64
           },
           {
             "metricId": "referenceLibraryDepth",
-            "value": 16.046875,
+            "value": 15.65625,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 1.3876372398343164,
-            "tolerance": 4.162911719502949,
+            "standardError": 1.3509978950760804,
+            "tolerance": 4.052993685228241,
             "sampleSize": 64
           },
           {
             "metricId": "referenceLivingMages",
-            "value": 37.46875,
+            "value": 37.546875,
             "unit": "mages",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.46561451330472936,
-            "tolerance": 1.396843539914188,
+            "standardError": 0.4648273368951099,
+            "tolerance": 1.3944820106853297,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesGained",
-            "value": 34.625,
+            "value": 34.6875,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.28980057798424075,
-            "tolerance": 0.8694017339527222,
+            "standardError": 0.2651650429449553,
+            "tolerance": 0.795495128834866,
             "sampleSize": 64
           },
           {
@@ -2295,12 +2295,12 @@
           },
           {
             "metricId": "referenceNodesKnown",
-            "value": 37.125,
+            "value": 37.1875,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.28980057798424075,
-            "tolerance": 0.8694017339527222,
+            "standardError": 0.2651650429449553,
+            "tolerance": 0.795495128834866,
             "sampleSize": 64
           },
           {
@@ -2315,22 +2315,22 @@
           },
           {
             "metricId": "referencePopulation",
-            "value": 211.75,
+            "value": 211.328125,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.4857012969180348,
-            "tolerance": 7.457103890754104,
+            "standardError": 2.477092313202114,
+            "tolerance": 7.431276939606342,
             "sampleSize": 64
           },
           {
             "metricId": "referencePopulationChange",
-            "value": 67.75,
+            "value": 67.328125,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.4857012969180348,
-            "tolerance": 7.457103890754104,
+            "standardError": 2.477092313202114,
+            "tolerance": 7.431276939606342,
             "sampleSize": 64
           }
         ]
@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 124,
-    "examinedSymbolCount": 843,
+    "findingCount": 131,
+    "examinedSymbolCount": 853,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 307,
+    "productionFileCount": 309,
     "orphanPackages": [],
     "unreached": [
       {
@@ -3046,6 +3046,30 @@
         "kind": "function"
       },
       {
+        "file": "packages/rules-world/src/universities/staff.ts",
+        "line": 276,
+        "name": "assignStaff",
+        "kind": "function"
+      },
+      {
+        "file": "packages/rules-world/src/universities/staff.ts",
+        "line": 131,
+        "name": "staffCohortsOf",
+        "kind": "function"
+      },
+      {
+        "file": "packages/rules-world/src/universities/staff.ts",
+        "line": 106,
+        "name": "staffingIndex",
+        "kind": "function"
+      },
+      {
+        "file": "packages/rules-world/src/universities/staff.ts",
+        "line": 185,
+        "name": "unstaffUniversity",
+        "kind": "function"
+      },
+      {
         "file": "packages/scenario/src/annihilation.ts",
         "line": 54,
         "name": "AnnihilationRecorder",
@@ -3058,14 +3082,20 @@
         "kind": "function"
       },
       {
+        "file": "packages/scenario/src/content-set.ts",
+        "line": 317,
+        "name": "explicitOpeningAxes",
+        "kind": "function"
+      },
+      {
         "file": "packages/scenario/src/long-run.ts",
-        "line": 566,
+        "line": 572,
         "name": "longRunLines",
         "kind": "function"
       },
       {
         "file": "packages/scenario/src/long-run.ts",
-        "line": 509,
+        "line": 515,
         "name": "longestOccupationAlternation",
         "kind": "function"
       },
@@ -3251,6 +3281,30 @@
         ]
       },
       {
+        "file": "packages/rules-world/src/universities/staff.ts",
+        "line": 208,
+        "name": "pruneStaffLinks",
+        "via": [
+          "assignStaff"
+        ]
+      },
+      {
+        "file": "packages/rules-world/src/universities/staff.ts",
+        "line": 77,
+        "name": "staffLinks",
+        "via": [
+          "assignStaff"
+        ]
+      },
+      {
+        "file": "packages/rules-world/src/universities/staff.ts",
+        "line": 167,
+        "name": "staffUniversity",
+        "via": [
+          "assignStaff"
+        ]
+      },
+      {
         "file": "packages/scenario/src/strategy-audit.ts",
         "line": 396,
         "name": "actionName",
@@ -3275,13 +3329,7 @@
         ]
       }
     ],
-    "untouchedComponents": [
-      {
-        "file": "packages/state/src/components.ts",
-        "line": 786,
-        "name": "UNIVERSITY_STAFF"
-      }
-    ],
+    "untouchedComponents": [],
     "unconsumedConstants": [
       {
         "id": "legacy-reference-tick",
@@ -3399,7 +3447,7 @@
     "items": [
       {
         "group": "The mechanical three",
-        "heading": "#72 — the opening square",
+        "heading": "#72 — the opening square  ·  **LANDED 2026-08-14 as `672066f`. Kept for the record; not a pending decision.**",
         "recommendation": "accept, or fix the baseline format so an appended stream is distinguishable from a renumbered one. The second is the better long-term answer and is its own change."
       },
       {

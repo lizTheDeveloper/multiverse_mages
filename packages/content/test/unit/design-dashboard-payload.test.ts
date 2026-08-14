@@ -106,6 +106,43 @@ const committed = JSON.parse(readFileSync(COMMITTED, 'utf8')) as Payload;
  * rejects those — correctly, since a discard that stops matching a real field
  * silently starts comparing it again.
  */
+/**
+ * `measurements`, with every baseline's `fileSeal` projected out.
+ *
+ * **`fileSeal` is a tamper seal over a baseline file's own fields, not a content
+ * hash** — this payload renames it for exactly that reason, and all four seals
+ * differ while all four `provenance.contentHash` values are identical. So the seal
+ * moves whenever *any row of any baseline* moves, which is precisely the class of
+ * unrelated pull request `withoutLocations` above exists to keep out of this
+ * equality.
+ *
+ * It cost a CI failure to learn: #72's baseline refresh landed mid-build and this
+ * test went red on one seal, having asserted nothing about the dashboard. A pinning
+ * test that reddens on other people's work gets regenerated to green without being
+ * read, and then it pins nothing.
+ *
+ * The seal is still *displayed* — it is what a reader checks a file against. It is
+ * simply not what this test is for. `provenance.contentHash` **stays pinned**,
+ * because a change there means the content set moved and the dashboard genuinely is
+ * stale.
+ */
+const withoutFileSeals = (block: Payload['metrics']): unknown => {
+  const clone = JSON.parse(JSON.stringify(block)) as Record<string, unknown>;
+  const strip = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      for (const entry of value) strip(entry);
+      return;
+    }
+    if (value !== null && typeof value === 'object') {
+      const row = value as Record<string, unknown>;
+      delete row['fileSeal'];
+      for (const nested of Object.values(row)) strip(nested);
+    }
+  };
+  strip(clone);
+  return clone;
+};
+
 const withoutLocations = (block: Payload['reachability']): unknown => {
   const clone = JSON.parse(JSON.stringify(block)) as Record<string, unknown>;
   delete clone['examinedSymbolCount'];
@@ -140,7 +177,7 @@ describe('ui/design-dashboard/data.json', () => {
     expect(fresh.grid).toEqual(committed.grid);
     expect(fresh.primitives).toEqual(committed.primitives);
     expect(fresh.species).toEqual(committed.species);
-    expect(fresh.metrics).toEqual(committed.metrics);
+    expect(withoutFileSeals(fresh.metrics)).toEqual(withoutFileSeals(committed.metrics));
     // Reachability is compared with **line numbers and totals projected out**,
     // deliberately, and the reason is about what a red test teaches.
     //
