@@ -237,10 +237,32 @@ What every consumer needs is the same two things, and they are worth stating as 
 than as a complaint:
 
 - **a class**, so a threshold can be applied to it, and
-- **a "was this the last one" bit**, which is the part that matters and the part **nothing
-  downstream can reconstruct.** A consumer holding every frame of the entire run still cannot
-  recover it, because the frame that would have shown the last instance is the frame where the count
-  is already zero. It is not expensive to emit and it is impossible to derive.
+- **a "was this the last one" bit**, which is the part that matters.
+
+**Correction, and it weakens the argument I first made.** I claimed the last-instance bit was
+impossible to reconstruct downstream. It is not, and I found that out by trying: `nodesKnown` is
+derived from `count(instances) > 0`, so a decrement *is* a node leaving the universe. In the
+reference run it happens exactly once, at **tick 274** — `perdo-mentem`, `nodesKnown` 3 → 2,
+instances 10 → 7 — the same tick the Human species goes extinct.
+
+What that one line cannot tell you is the whole of what the cue needs:
+
+- **Which node.** The block is per cell. Three instances went and one node ended; whether that was
+  one node held in three places or three losses spread across nodes, one of which happened to be a
+  last copy, the aggregate does not say.
+- **Which vessel.** §6.5 makes mind, palace, grimoire and library four distinct sounds because they
+  are four distinct kinds of gone. The observation has no vessel channel at all.
+- **The causal link.** §6.5's cue is a *sequenced pair* — death mark, a pause, then loss — and the
+  document is explicit that **"the pause between the two is the sound of finding out."** A diff of
+  frames 273 and 274 says both things happened in that interval. It cannot say the loss was
+  *because of* those deaths, and the causation is what the pause expresses.
+- **Anything that nets.** A count cannot distinguish a tick with one gain and one loss from a tick
+  with neither. That is arithmetic, not a measurement — it did not occur in this run, and nothing
+  prevents it.
+
+So the honest requirement is not "impossible to derive" but **"derivable only in aggregate, and
+stripped of the identity, the vessel and the causation every consumer needs."** That is a weaker
+claim and still sufficient, and it has the advantage of being true.
 
 Filed as **open** rather than defect because §4.3's outcome record may be the right home and nobody
 has looked — the audio session independently reached the same conclusion and filed it the same way.
