@@ -178,8 +178,32 @@ async function main() {
   };
 
   const sweepPath = `${dirname(out)}/search-sweep.json`;
-  const recordsPath = `${dirname(out)}/records`;
-  mkdirSync(dirname(out), { recursive: true });
+
+  // The records directory is per-invocation, and the run refuses to reuse one.
+  //
+  // It used to be a flat `records/` beside the archive, and the fold reads
+  // **every** `.ndjson` in it. Two runs into the same output directory
+  // therefore folded the earlier run's records into the later one's archive,
+  // silently and with no warning — a `--seeds 8` run reported `runs=12` per
+  // strategy because it had eaten the `--seeds 4` run that preceded it, at a
+  // different `--ticks`. Every descriptor and every ascension rate in that
+  // archive was a mixture of two horizons.
+  //
+  // Nothing failed. The archive was well-formed, the numbers were plausible,
+  // and the only symptom was a denominator that did not match the flag. So the
+  // directory is named for the whole experiment and the run stops rather than
+  // adding to a directory that already holds records.
+  const runId = `${SWEEP_ID}-seed${searchSeed}-n${seeds}-t${String(args.ticks)}`;
+  const recordsPath = `${dirname(out)}/records/${runId}`;
+  mkdirSync(recordsPath, { recursive: true });
+  const stale = readdirSync(recordsPath).filter((file) => file.endsWith('.ndjson'));
+  if (stale.length > 0) {
+    throw new Error(
+      `${recordsPath} already holds ${String(stale.length)} record file(s) from an earlier run ` +
+        'with these exact parameters. Folding them in would mix two runs into one archive. ' +
+        'Remove the directory to re-run, or change --out.',
+    );
+  }
   writeFileSync(sweepPath, `${JSON.stringify(sweep, null, 2)}\n`);
 
   process.stdout.write(`${`[search] evaluating ${allStrategies.length} strategies x ${seeds} replicates`}\n`);
@@ -257,7 +281,7 @@ async function main() {
 
   const archive = foldArchive(axes, candidates, nulls);
   const payload = {
-    searchSeed, sweepId: SWEEP_ID, seeds, axes, ladder: NULL_LADDER,
+    searchSeed, sweepId: SWEEP_ID, runId, ticks: Number(args.ticks), seeds, axes, ladder: NULL_LADDER,
     nulls, candidates, archive,
     status: archive.cells.length === 0 ? 'no-observations' : 'measured',
   };
