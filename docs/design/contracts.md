@@ -1039,8 +1039,9 @@ What a frame diff genuinely cannot recover is everything that makes the event *u
   that was one node held in three places or three unrelated losses, one of which happened to be a
   last copy, the aggregate does not distinguish.
 - **Vessel.** A node can be lost from a mind, a memory palace, a grimoire or a library, and vision
-  §5 makes those four different kinds of loss. The observation has no vessel channel at all, so this
-  one is not merely coarse — it is absent.
+  §5 makes those four different kinds of loss. The *observation vector* has no vessel channel — but
+  `agent-api` already computes one. See the note below, because it narrows this requirement more
+  than anything else here.
 - **Causation.** A diff of two frames says a death and a loss both fell in the same interval. It
   cannot say the loss followed from the death. `sound-design.md` §6.5 builds its cue on precisely
   that link — a death mark, a pause, then loss, where *"the pause between the two is the sound of
@@ -1052,11 +1053,39 @@ So the requirement is not that the information is unobtainable. It is that recov
 aggregates costs every consumer the same reconstruction, each of them differently wrong, to
 approximate something the core knows exactly at the moment it happens.
 
+**Much of this is already computed, and the gap is one level up.** `agent-api` exports
+`knowledgeCensus(state)`, a second projection alongside the observation vector, and it carries by
+name most of what the paragraphs above ask for: `whereKept` splits every instance across mind,
+grimoire, library and palace; `byNode` gives the same split per node with a `distinctLocations`
+count; `fragileNodeIds` is documented as *"nodes at exactly one instance — the last copy"*, which is
+terminality with node identity attached; `unwrittenNodeIds` is every node held only in minds and
+palaces. Run against the reference scenario at tick 0 it returns
+`whereKept {mind: 1, grimoire: 0, library: 0, palace: 0}` and `fragileNodeIds [99]`.
+
+**`AgentSession` exposes none of it.** The session offers `reset`, `observe`, `legalActions`,
+`candidates`, `submit`, `status`, `outcome`, `accounting`, `illegalActionCount`, `rng` and
+`snapshotHash` — and not `knowledgeCensus`, not `AgentView.raw`, not the `ExplainProjection` §4.4
+describes. Three projections the package computes and exports, none of them reachable through the
+only door a client has.
+
+That reshapes this amendment. **Vessel, node identity and last-copy-ness do not need a new event
+field; they need the session to expose a projection that already exists**, which is an `agent-api`
+surface decision rather than a change to this contract. What remains genuinely absent, and what the
+requirement above is therefore *for*, is narrower and worth stating exactly:
+
+- **Causation.** Nothing links a death to the loss it caused. Two censuses a step apart show both;
+  neither says one followed from the other.
+- **Per-step counts by class.** §0.4's threshold needs to know how many events of a class fell in
+  this step. A census is a stock, not a flow, and differencing stocks nets.
+- **Being told rather than having to look.** Every consumer diffing two censuses writes the same
+  reconstruction, and they will not all write it the same way.
+
 **Three consumers, one capability, and they should be answered together.** `sound-design.md` §0.4's
 density rule needs an events-per-tick count *per class* to decide whether a class plays as discrete
 sounds or as a continuous texture, and forbids any class being discrete without a stated threshold.
-§6.5 needs the terminality bit and the vessel, and pins loss at a threshold of 1 so that it is never
-aggregated away. §10 needs classified per-tick events to build an arrangement at all. An answer
+§6.5 needs the terminality bit and the vessel — both available from the census the moment a session
+exposes it — plus the causal link between a death and the loss that followed it, which is not, and
+pins loss at a threshold of 1 so that it is never aggregated away. §10 needs classified per-tick events to build an arrangement at all. An answer
 shaped for any one of these alone will be relitigated by the other two.
 
 *This amendment states a requirement and deliberately does not design the schema. The cost of

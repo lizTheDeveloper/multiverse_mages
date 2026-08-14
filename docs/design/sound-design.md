@@ -970,11 +970,19 @@ the UI session refuted it by trying: `nodesKnown` comes from `count(instances) >
 reference run, at tick 274, in the same step as the last Human death.
 
 The requirement survives in weaker and truer form, and §4.3 states it that way. A frame diff recovers
-that *something* ended; it cannot recover **which node** (the block is per cell), **which vessel** —
-mind, palace, grimoire and library are the four sounds this section is built on, and the observation
-has no vessel channel at all — or **whether the loss followed from the death**, which is the link the
-pause expresses. Aggregates are not merely coarse here; they discard the causation the cue is made
-of.
+that *something* ended; it cannot recover **which node** (the block is per cell) or **whether the
+loss followed from the death**, which is the link the pause expresses. Aggregates are not merely
+coarse here; they discard the causation the cue is made of.
+
+**The vessel is a shorter story than it first appeared, and the first version of this paragraph got
+it wrong too.** It said there was no vessel channel at any width. `observation.ts` indeed never
+writes one — but `agent-api` exports a second projection, `knowledgeCensus`, which splits every
+instance across mind, grimoire, library and palace, per node, and adds `fragileNodeIds` for nodes
+down to their last copy. Run on the reference scenario it returns real values at tick 0. So the four
+vessels this section is built on are computed today; they are simply not on `AgentSession`, which
+exposes neither the census, nor the raw observation, nor the explain channel. What §6.5 needs from
+the vessel is a session surface, not a new channel. What it needs from `contracts.md` §4.3 is the
+part no projection supplies: the causal link, and per-step counts by class for §0.4.
 
 **This sound is exposed to a balance number nobody has fixed yet.** Everything above assumes loss
 is rare enough that an arrhythmic, untuned, un-aggregated event can carry it. That assumption is
