@@ -80,6 +80,8 @@ import {
 import type { KnowledgeSubsystem, MagicGrid, PortalHooks } from '@mm/rules-magic';
 import { MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
 
+import type { TargetSettlement } from './action-economy.js';
+import { ActionEconomyLedger, COMBAT_SOURCE } from './action-economy.js';
 import type { ArbitrationFaults, HeldInstance } from './arbitration.js';
 import { COMBAT_PRIMITIVES, CastArbiter, summonCount } from './arbitration.js';
 import type { CombatantBrief, SideRoster } from './combatants.js';
@@ -129,6 +131,16 @@ interface DenialField {
   readonly owner: RaidSideValue;
   readonly position: Point;
   readonly magnitude: Fixed;
+  /**
+   * The action-economy attempt id of the cast that laid it.
+   *
+   * A field applies damage on every tick it stands, but *"casts that remove a
+   * target against casts that merely hurt one"* is a question about the cast. A
+   * field that kills on its fortieth tick has to attribute back to the one cast
+   * that made it, or one cast becomes forty attempts and threshold efficiency
+   * reads as a per-tick statistic under a per-cast name.
+   */
+  readonly attempt: number;
   ticksRemaining: number;
 }
 
@@ -149,6 +161,8 @@ export interface Raid {
   readonly objectives: ObjectiveBrief[];
   readonly fields: DenialField[];
   readonly ledger: OutcomeLedger;
+  /** Observation only. Draws nothing, decides nothing. See `action-economy.ts`. */
+  readonly economy: ActionEconomyLedger;
   readonly counters: ClampCounters;
   /** Where the attacker came in, and the only way out. */
   readonly portal: Point;
@@ -256,6 +270,7 @@ export function openPortal(options: OpenPortalOptions): Raid {
     objectives: [],
     fields: [],
     ledger: new OutcomeLedger(),
+    economy: new ActionEconomyLedger(),
     counters,
     portal: { x: floorDiv(tuning.battlefieldExtent, 2), y: 0 },
     maxTicks: maxEngagementTicks(engagement.raid),
@@ -356,6 +371,14 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
     combatants.filter((brief) => brief.side === RAID_SIDE.defender).length,
   );
 
+  // Idempotent, and here rather than at deployment because deployment happens in
+  // `portal.ts` and a second registration site is a second place an entry tick
+  // could be wrong. A summon registers itself as it is created, so its span
+  // starts when it does rather than when it is first seen.
+  for (const brief of combatants) {
+    raid.economy.register(brief.handle, brief.side, isWorldScale(brief), tick);
+  }
+
   // ---- Phase 1: intent, against tick-start state. ----
   const intents = new Map<EntityHandle, Intent>();
   for (const brief of combatants) {
@@ -377,8 +400,14 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
 
   // Damage accumulates here and is settled once, in cleanup.
   const ledger = new Map<EntityHandle, Fixed>();
-  const addDamage = (target: EntityHandle, amount: Fixed): void => {
+  const addDamage = (
+    target: EntityHandle,
+    amount: Fixed,
+    source: string,
+    attempt: number,
+  ): void => {
     ledger.set(target, (ledger.get(target) ?? 0) + amount);
+    raid.economy.damage(target, source, amount, attempt);
   };
 
   // ---- Phase 3: area denial. Additive across fields; bypasses concealment. ----
@@ -391,7 +420,13 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
       // A field targets nobody, so there is nothing for concealment to evade —
       // which is the mechanical reason area denial is the counter to a
       // concealment build, and it is stated rather than left emergent.
-      addDamage(brief.handle, denial.magnitude);
+      //
+      // It also decoys nobody, and this is the one place that is easy to get
+      // wrong. A field catching a summon diverts no enemy attention: it damages
+      // everything in radius whether the summon is there or not. The
+      // action-economy decoy channel is defined as *an attack spent on a
+      // summon*, and only the two targeted sites in phase 4 spend one.
+      addDamage(brief.handle, denial.magnitude, COMBAT_SOURCE.areaDenial, denial.attempt);
       raid.ledger.applied(COMBAT_PRIMITIVES.areaDenial, denial.owner, denial.magnitude);
     }
   }
@@ -409,8 +444,16 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
     if (brief.intrinsicDamage > 0) {
       const target = acquireTarget(raid, brief, combatants, brief.intrinsicRange);
       if (target !== undefined) {
-        addDamage(target.handle, brief.intrinsicDamage);
+        // Separated from a cast's `direct-damage` in the action-economy ledger
+        // and *only* there: `primitiveApplication` keeps logging both as
+        // `direct-damage`, because `winRateByPrimitive`'s ablation reads it and
+        // its meaning may not move under that metric. The separation is the
+        // whole reason a cast bolt can be told apart from a summoned servant.
+        const source = intrinsicSourceOf(brief);
+        const attempt = raid.economy.beginAttempt(source);
+        addDamage(target.handle, brief.intrinsicDamage, source, attempt);
         raid.ledger.applied(COMBAT_PRIMITIVES.directDamage, brief.side, brief.intrinsicDamage);
+        if (target.sourceKind === COMBATANT_SOURCE_KIND.summon) raid.economy.decoyed(target.side);
       }
     }
   }
@@ -440,13 +483,46 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
   if (raid.faults.disableStabilityDecay !== true) decayStability(raid.engagement.raid);
 
   // ---- Phase 8: cleanup — settle the ledger, remove the dead, ask if it ends. ----
+  //
+  // The hp write below is exactly what it was. What is new is that `hpBefore`
+  // and the applied total are handed to the action-economy ledger as they pass,
+  // rather than recomputed afterwards: a second `applyWardOnce` would increment
+  // the clamp counters twice and move `capClamps`, and a value read after the
+  // write would be the wrong one.
+  const settlements: TargetSettlement[] = [];
   for (const [handle, raw] of ledger) {
     const brief = briefOf(raid, handle);
     if (brief === undefined) continue;
     const applied = raid.arbiter.applyWardOnce(raw, brief.wardSources);
-    const remaining = field(raid, handle, 'hp') - applied;
+    const before = field(raid, handle, 'hp');
+    const remaining = before - applied;
     setField(raid, handle, 'hp', remaining > 0 ? remaining : 0);
+    settlements.push({
+      handle,
+      hpBefore: before,
+      rawTotal: raw,
+      appliedTotal: applied,
+      observeWard: (value) => raid.arbiter.observeWardApplication(value, brief.wardSources),
+    });
   }
+  // A combatant that only had a cast evade off it took no damage and is not in
+  // the damage map, and it is exactly the one `concealment` needs settled.
+  const damaged = new Set(ledger.keys());
+  for (const handle of raid.economy.pendingTargets()) {
+    if (damaged.has(handle)) continue;
+    const brief = briefOf(raid, handle);
+    if (brief === undefined) continue;
+    settlements.push({
+      handle,
+      hpBefore: field(raid, handle, 'hp'),
+      rawTotal: 0,
+      appliedTotal: 0,
+      observeWard: (value) => raid.arbiter.observeWardApplication(value, brief.wardSources),
+    });
+  }
+  settlements.sort((a, b) => a.handle - b.handle);
+  for (const settlement of settlements) raid.economy.settle(settlement, tick);
+  raid.economy.endTick();
   for (const denial of raid.fields) denial.ticksRemaining -= 1;
   for (let at = raid.fields.length - 1; at >= 0; at -= 1) {
     if ((raid.fields[at] as DenialField).ticksRemaining <= 0) raid.fields.splice(at, 1);
@@ -468,6 +544,27 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
     livingAttackers: alive.filter((brief) => brief.side === RAID_SIDE.attacker).length,
     livingDefenders: alive.filter((brief) => brief.side === RAID_SIDE.defender).length,
   });
+}
+
+/**
+ * Whether removing this combatant costs its universe anything.
+ *
+ * A summon has no world source and writes nothing back, so its removal is
+ * counted apart from the primary action-economy scalar — see `action-economy.ts`
+ * on why folding it in would let damage farm denial on free bodies.
+ */
+function isWorldScale(brief: CombatantBrief): boolean {
+  return (
+    brief.sourceKind === COMBATANT_SOURCE_KIND.mage ||
+    brief.sourceKind === COMBATANT_SOURCE_KIND.soldierDetachment
+  );
+}
+
+/** Which intrinsic attacker this is, for attribution. */
+function intrinsicSourceOf(brief: CombatantBrief): string {
+  return brief.sourceKind === COMBATANT_SOURCE_KIND.summon
+    ? COMBAT_SOURCE.summonIntrinsic
+    : COMBAT_SOURCE.soldierIntrinsic;
 }
 
 function briefOf(raid: Raid, handle: EntityHandle): CombatantBrief | undefined {
@@ -738,7 +835,7 @@ function resolveOneCast(
   combatants: readonly CombatantBrief[],
   _index: unknown,
   tick: number,
-  addDamage: (target: EntityHandle, amount: Fixed) => void,
+  addDamage: (target: EntityHandle, amount: Fixed, source: string, attempt: number) => void,
 ): void {
   const target = acquireTarget(raid, caster, combatants, raid.tuning.castRange);
   // No target means no expenditure: the preparation stays readied and the price
@@ -777,11 +874,16 @@ function resolveOneCast(
     }
   }
 
+  const denialAttempt =
+    resolution.effects.areaDenial.length > 0
+      ? raid.economy.beginAttempt(COMBAT_SOURCE.areaDenial)
+      : 0;
   for (const denial of resolution.effects.areaDenial) {
     raid.fields.push({
       owner: caster.side,
       position: target === undefined ? positionOf(raid, caster) : positionOf(raid, target),
       magnitude: denial.magnitude,
+      attempt: denialAttempt,
       // A field with no declared duration lasts the tick it was cast in, which
       // is one application. A zero-tick field that applied nothing would be a
       // primitive that content could declare and never observe.
@@ -794,16 +896,24 @@ function resolveOneCast(
   }
 
   if (resolution.effects.directDamage.length > 0 && target !== undefined) {
+    // One attempt per cast per primitive, opened before the roll so that a cast
+    // which evades is counted `spent` rather than disappearing from the table.
+    // An attempt nobody counted flatters every ratio it was left out of.
+    const attempt = raid.economy.beginAttempt(COMBAT_SOURCE.directDamage);
     // The evasion roll — the only miss chance in combat — on stream 8, keyed on
     // the *target*, because it is the target's concealment being tested.
     const stream = raid.rng.actorStream(RNG_STREAM.combat, tick, packCombatantKey(target.key));
     const evaded = raid.arbiter.evades(field(raid, target.handle, 'concealment'), stream);
     if (!evaded) {
       for (const magnitude of resolution.effects.directDamage) {
-        addDamage(target.handle, magnitude);
+        addDamage(target.handle, magnitude, COMBAT_SOURCE.directDamage, attempt);
         raid.ledger.applied(COMBAT_PRIMITIVES.directDamage, caster.side, magnitude);
       }
+      if (target.sourceKind === COMBATANT_SOURCE_KIND.summon) raid.economy.decoyed(target.side);
     } else {
+      let kept = 0;
+      for (const magnitude of resolution.effects.directDamage) kept += magnitude;
+      raid.economy.evaded(target.handle, kept, attempt);
       raid.ledger.applied(COMBAT_PRIMITIVES.concealment, target.side, field(raid, target.handle, 'concealment'));
     }
   }
@@ -822,7 +932,7 @@ function summonInto(raid: Raid, caster: CombatantBrief, magnitude: Fixed): void 
   const wanted = summonCount(magnitude);
   for (let created = 0; created < wanted; created += 1) {
     if (!sideHasSummonRoom(roster, raid.tuning)) return;
-    spawnCombatant(raid.engagement.entities, roster, {
+    const spawned = spawnCombatant(raid.engagement.entities, roster, {
       side: caster.side,
       sourceKind: COMBATANT_SOURCE_KIND.summon,
       // §1.6: a summon has no world source, and writes nothing back. It never
@@ -835,6 +945,8 @@ function summonInto(raid: Raid, caster: CombatantBrief, magnitude: Fixed): void 
       intrinsicDamage: raid.tuning.summonDamage,
       intrinsicRange: raid.tuning.detachmentRange,
     });
+    // Registered at the tick it was created, so its span starts when it does.
+    raid.economy.register(spawned.handle, caster.side, false, engagementTickOf(raid));
     raid.ledger.applied(COMBAT_PRIMITIVES.summon, caster.side, FP_ONE);
   }
 }
@@ -1030,6 +1142,7 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
     forbiddenCastsBlocked: raid.arbiter.forbiddenCastsBlocked,
     capClamps: raid.counters.entries(),
     primitiveApplication: raid.ledger.primitiveApplication(),
+    actionEconomy: raid.economy.report(engagementTickOf(raid)),
     peakCombatants: raid.ledger.peakCombatants,
   };
 
