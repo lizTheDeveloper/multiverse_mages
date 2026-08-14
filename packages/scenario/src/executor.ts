@@ -28,7 +28,8 @@
 import { OBSERVATION_LAYOUT_DIGEST, OBSERVATION_SCHEMA_VERSION, createSession } from '@mm/agent-api';
 import type { ScenarioConfig } from '@mm/agent-api';
 import { RNG_STREAM } from '@mm/sim-core';
-import type { GodTickReport } from '@mm/coordination';
+import { ablationMaskFor } from '@mm/coordination';
+import type { AblationMask, GodTickReport } from '@mm/coordination';
 import type {
   AgentSession,
   ArmContribution,
@@ -525,6 +526,36 @@ export function collectDeclaredMetrics(
 }
 
 /**
+ * The ablation mask a task asks for, or `undefined` on the control arm.
+ *
+ * **This function is the fix for a seam that was open from the day task group 7
+ * landed.** `RunTask.ablatedPrimitives` has been set by `tasks.ts` and carried
+ * across the worker boundary since then, and nothing on this side of the
+ * boundary ever read it. A sweep declaring `ablation.mode: "one-sided"`
+ * therefore ran its arm against an unmasked universe: instrumenting
+ * `stackMagnitudes` over a 300-tick reference run showed **0 of 70,462** stacked
+ * magnitudes seeing a mask, and the declared arm's `RunOutcome` was byte-identical
+ * to the control's. That is precisely the condition `winRateByPrimitive`'s own
+ * `disprovedBy` names — *"a control arm and an ablation arm producing
+ * byte-identical run records"* — and it is the same failure shape as `raids`
+ * being *"declared on the options type and silently dropped"* in
+ * {@link makeReferenceExecutor}, three paragraphs down this file.
+ *
+ * Empty returns `undefined` rather than `NO_ABLATION`, so a control run leaves
+ * `WorldStepDeps.ablation` unset and takes the identical branch it always took.
+ * See `ReferenceScenarioOptions.ablation` for why that distinction is worth a
+ * line of code on a path with committed baselines on it.
+ *
+ * `ablationMaskFor` rather than `neutralizing(ids[0])`, so a task naming two
+ * primitives is refused by name here instead of quietly ablating the first and
+ * being recorded under both.
+ */
+function ablationFor(task: RunTask): AblationMask | undefined {
+  if (task.ablatedPrimitives.length === 0) return undefined;
+  return ablationMaskFor(task.ablatedPrimitives);
+}
+
+/**
  * Runs one task over a real universe and reports what it did.
  *
  * Exported beside {@link makeReferenceExecutor} so a test can read the census a
@@ -544,8 +575,10 @@ export function executeReferenceRun(
   const interval = options.censusIntervalTicks ?? CENSUS_INTERVAL_TICKS;
 
   const raiding = options.raids ?? true;
+  const ablation = ablationFor(task);
   const { scenario, lastGodReport, raids, balanceTelemetry } = referenceScenario(content, {
     raids: raiding,
+    ...(ablation === undefined ? {} : { ablation }),
   });
   const strategyId = task.strategies[0];
   if (strategyId === undefined) {
