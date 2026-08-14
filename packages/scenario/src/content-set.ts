@@ -335,7 +335,7 @@ export function worldDeps(
   recorder: ConsumptionRecorder = createConsumptionRecorder(),
 ): WorldStepDeps {
   const { catalog, cells } = catalogAndCells(registry);
-  const { speciesOf } = speciesTable(registry);
+  const { speciesOf, ids: speciesIds } = speciesTable(registry);
   const knowledgeFor = (state: SimState): KnowledgeSubsystem =>
     KnowledgeSubsystem.fromState(state, catalog.nodeCount);
 
@@ -457,6 +457,19 @@ export function worldDeps(
           recorder,
         ).keys(),
       ),
+      // Every species the content declares, because the roster is a fact about
+      // the multiverse rather than about this universe's arm — the same shape
+      // `portalTargets` has. What varies between the arms of the alliance
+      // measurement is whether the god *uses* action 16, not whether anyone
+      // would answer; a roster resolved per worker could not have expressed the
+      // latter anyway (see `contracts.md` §1.1 on `grantBudget`), and pretending
+      // otherwise would have put a swept parameter behind a shared frozen
+      // struct.
+      //
+      // `invitePlan` still refuses a species already living here, so this being
+      // "all six" is a ceiling and not a permission.
+      invitableSpecies: new Set(speciesIds),
+      speciesOf,
       // `nodesLostThisTick` is deliberately absent: `defineWorldSimulation`
       // supplies it from the world loop's own report closure, because that is
       // the one place that knows which tick a loss count belongs to.

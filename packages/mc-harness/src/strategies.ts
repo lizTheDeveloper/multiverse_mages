@@ -1215,6 +1215,136 @@ const ALLOCATE_SPREAD: StrategyDefinition = {
  * file's* list, not this one — is unaffected for any sweep that does not name
  * them.
  */
+
+// ---------------------------------------------------------------------------
+// The alliance pair. Read them together; they exist to be subtracted.
+// ---------------------------------------------------------------------------
+
+/**
+ * The preference list both alliance arms play, minus the invitation.
+ *
+ * Factored out rather than written twice because the whole measurement is the
+ * difference between two strategies, and two hand-maintained copies of "the
+ * same thing except one line" is exactly the shape that drifts. A pairing whose
+ * arms disagreed about anything other than action 16 would attribute the
+ * difference to alliances anyway, and nobody would be able to tell.
+ */
+function allianceGroundwork(observation: Float64Array, round: number): ActionSubmission[] {
+  const universities = channel(observation, UNIVERSITY_COUNT);
+  const preferred: ActionSubmission[] = [];
+
+  // Found before anything else while there is nothing to fund — the fix
+  // `permissive-breadth` version 4 records, and an alliance needs a university
+  // more than that strategy does: `invitePlan` refuses when there is no host,
+  // and an unaffiliated mage cannot scribe at all.
+  if (universities === 0) {
+    preferred.push({ action: GOD_ACTION.fundUniversity, parameter: 0 });
+  }
+
+  // Breadth, on `permissive-breadth`'s rotation. The portal chain is seven
+  // nodes across `rego-limen` and `intellego-limen`, both of which the v1
+  // rectangle already permits — so this is not what opens the gate. It is what
+  // keeps the universe out of stagnation long enough to reach it: draconic runs
+  // on this build end at a mean of 1,060 world ticks of a possible 2,400, and
+  // 83 of 100 of them end as stagnation rather than as time.
+  preferred.push(
+    { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
+    { action: GOD_ACTION.permitForm, parameter: form(round) },
+  );
+
+  // Founding grants, rotated across slots. The candidate list is prerequisite-
+  // free roots in permitted cells, which is where `rl-hold-the-door` and
+  // `il-sense-the-seam` live — the two entry points of the portal chain. This
+  // does not name them (a slot index cannot name a node), it shortens every
+  // chain including theirs.
+  preferred.push({
+    action: GOD_ACTION.grantFoundingKnowledge,
+    parameter: rotate(GOD_ACTION.grantFoundingKnowledge, round),
+  });
+
+  // Roles, rotated. `role-appeal-raider-portal` is +256 and is the only term in
+  // `targetAppeal` that argues *for* a portal node; the species term argues
+  // against it at −384 for a curiosity-256 species. Rotating rather than
+  // targeting, for the same reason as the grants.
+  preferred.push({
+    action: GOD_ACTION.assignRole,
+    parameter: rotate(GOD_ACTION.assignRole, round),
+  });
+
+  if (universities !== 0) {
+    preferred.push({
+      action: GOD_ACTION.fundUniversity,
+      parameter: rotate(GOD_ACTION.fundUniversity, round),
+    });
+  }
+
+  preferred.push({
+    action: GOD_ACTION.encourageResearch,
+    parameter: rotate(GOD_ACTION.encourageResearch, round),
+  });
+
+  return preferred;
+}
+
+const ALLIANCE_HYPOTHESIS =
+  'Whether a civilization that cannot grow its own faculty can borrow one in time. Draconic ' +
+  'matures at 3,600 months against a 2,400-tick horizon, so no draconic born in a run can ever ' +
+  'become a mage in it: the founding cohort is the entire mage population, fertility is ' +
+  'irrelevant at this horizon, and the species ascends 0 of 100. The claim is that action 16 ' +
+  'moves that number and that it moves it *within the horizon* — allied draconic ascending later ' +
+  'but at the same rate would falsify it as squarely as no change at all. The paired control is ' +
+  '`alliance-abstainer`, which plays this identical list without the invitation, so the ' +
+  'difference between the two arms is one action and nothing else.';
+
+/** Breadth, a host, and a scholar from abroad the moment the gate opens. */
+const ALLIANCE_SEEKER: StrategyDefinition = {
+  strategyId: 'alliance-seeker',
+  version: 1,
+  hypothesis: ALLIANCE_HYPOTHESIS,
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'The hypothesis is about tempo, not about ceiling — whether allies get a slow species to the ' +
+      'summit before the run ends. Declaring the moment the condition opens is what makes ' +
+      '`ticksRun` on an ascended run readable as "when", and both arms take the same stance so ' +
+      'that the comparison is of eligibility and not of nerve.',
+  },
+  signatureActions: [GOD_ACTION.inviteScholar],
+  preferences: ({ observation, round }) => [
+    // First, and the position is the strategy. The mask is closed until a
+    // living mage holds portal magic, so this costs nothing on every round
+    // where it is not available and fires on the first round where it is —
+    // which is what makes the arrival tick a measurement rather than a
+    // consequence of where a line sits in a list.
+    { action: GOD_ACTION.inviteScholar, parameter: 0 },
+    ...allianceGroundwork(observation, round),
+  ],
+};
+
+/** `alliance-seeker` with the invitation removed. The control half of the pair. */
+const ALLIANCE_ABSTAINER: StrategyDefinition = {
+  strategyId: 'alliance-abstainer',
+  version: 1,
+  hypothesis:
+    'The null of `alliance-seeker`. It plays the identical preference list without action 16, so ' +
+    'that the paired difference between the two arms is the invitation and not the breadth, the ' +
+    'grants, the roles or the university that both of them buy. It exists to answer the second ' +
+    'half of the design requirement — that a draconic universe must still *fail* without allies — ' +
+    'which a comparison against a differently-played baseline could not answer at all.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because: 'Identical to `alliance-seeker` by construction; see its stance.',
+  },
+  signatureActions: [
+    GOD_ACTION.permitTechnique,
+    GOD_ACTION.permitForm,
+    GOD_ACTION.fundUniversity,
+    GOD_ACTION.grantFoundingKnowledge,
+    GOD_ACTION.assignRole,
+  ],
+  preferences: ({ observation, round }) => allianceGroundwork(observation, round),
+};
+
 export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   PASSIVE_CONTROL,
   UNIFORM_RANDOM_LEGAL,
@@ -1228,6 +1358,8 @@ export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   PERMIT_THEN_IDLE,
   ALLOCATE_CONCENTRATE,
   ALLOCATE_SPREAD,
+  ALLIANCE_SEEKER,
+  ALLIANCE_ABSTAINER,
 ]);
 
 // ---------------------------------------------------------------------------

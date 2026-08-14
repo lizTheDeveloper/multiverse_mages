@@ -57,11 +57,15 @@ describe('task 4.3 — the discrete action enumeration', () => {
     expect(GOD_ACTION.declareAscension).toBe(15);
   });
 
-  it('is 16 wide, dense, and gap-free', () => {
-    expect(ACTION_SPACE_SIZE).toBe(16);
-    expect([...ALL_GOD_ACTIONS]).toEqual(Array.from({ length: 16 }, (_, index) => index));
-    for (let id = 0; id < 16; id += 1) expect(isGodAction(id)).toBe(true);
-    expect(isGodAction(16)).toBe(false);
+  it('is 17 wide, dense, and gap-free', () => {
+    // 17 since `w109` appended action 16, `inviteScholar`. §4.2's ids are
+    // permanent and the space is append-only: nothing moved, and the width is
+    // pinned here rather than derived so that widening it stays a deliberate
+    // edit — a policy's output layer is this number.
+    expect(ACTION_SPACE_SIZE).toBe(17);
+    expect([...ALL_GOD_ACTIONS]).toEqual(Array.from({ length: 17 }, (_, index) => index));
+    for (let id = 0; id < 17; id += 1) expect(isGodAction(id)).toBe(true);
+    expect(isGodAction(17)).toBe(false);
     expect(isGodAction(-1)).toBe(false);
   });
 
@@ -75,7 +79,10 @@ describe('task 4.3 — the discrete action enumeration', () => {
 
 describe('task 4.4 — k is a pinned structural constant per action', () => {
   it('pins a slot count for every parameterized action and no others', () => {
-    expect([...PARAMETERIZED_ACTIONS]).toEqual([8, 9, 10, 11, 12, 13, 14]);
+    // 16 joins §4.4's range: it addresses a species id whose *legal* set is a
+    // property of state, exactly as 13 addresses a tradition id. 15 stays out —
+    // declaring ascension takes no parameter at all.
+    expect([...PARAMETERIZED_ACTIONS]).toEqual([8, 9, 10, 11, 12, 13, 14, 16]);
     for (const action of PARAMETERIZED_ACTIONS) {
       expect(candidateSlotCount(action), `k for action ${action}`).toBeGreaterThan(0);
     }
@@ -187,5 +194,50 @@ describe('candidate lists are deterministic and never longer than k', () => {
     expect(candidateAt(lists, GOD_ACTION.blessMage, 3)).toBeUndefined();
     expect(candidateAt(lists, GOD_ACTION.blessMage, 999)).toBeUndefined();
     expect(candidateAt(lists, GOD_ACTION.blessMage, -1)).toBeUndefined();
+  });
+});
+
+describe('action 16 — the alliance gate is in the mask, not only in the rules', () => {
+  // The regression these three pin cost a whole measurement arm. `policyFor`
+  // submits **one action per round** and takes the first the mask calls legal,
+  // so a mask that is optimistic by one predicate does not cost an agent a
+  // countable refusal — it costs it the entire round, for the whole run. The
+  // first draft omitted the portal check here on the reasoning that
+  // `invitePlan` refuses on it anyway; measured over 100 draconic runs, the arm
+  // whose strategy listed action 16 first ended at library depth 2.51 against
+  // its paired control's 13.64, having invited nobody.
+  it('offers nobody while no living mage holds portal magic', () => {
+    const lists = buildCandidates({
+      state: firstUniverse().state,
+      catalogue: FIXTURE_CATALOGUE,
+      invitableSpecies: [1, 2, 3, 4, 5, 6],
+      // The gate: no node here carries the primitive.
+      portalNodes: [],
+    });
+    expect(lists.get(GOD_ACTION.inviteScholar)).toEqual([]);
+  });
+
+  it('offers nobody when the roster is empty even if the gate is open', () => {
+    const lists = buildCandidates({
+      state: firstUniverse().state,
+      catalogue: FIXTURE_CATALOGUE,
+      invitableSpecies: [],
+      portalNodes: [1],
+    });
+    expect(lists.get(GOD_ACTION.inviteScholar)).toEqual([]);
+  });
+
+  it('offers exactly the species no living mage belongs to, once the gate opens', () => {
+    // The fixture's living mages are species 1, 1 and 3 — the species-3 raider
+    // is dead and must not count, since a universe whose last dwarf died is
+    // exactly a universe that may ask for another.
+    const lists = buildCandidates({
+      state: firstUniverse().state,
+      catalogue: FIXTURE_CATALOGUE,
+      invitableSpecies: [1, 2, 3, 4, 5, 6],
+      // Mage 0 holds node 1 in mind; the fixture permits its cell.
+      portalNodes: [1],
+    });
+    expect(lists.get(GOD_ACTION.inviteScholar)?.map((one) => one.params[0])).toEqual([2, 4, 5, 6]);
   });
 });

@@ -366,7 +366,19 @@ describe('contentRevision', () => {
     //
     // Union again: main's revision together with this branch's metis-from-use
     // content. Neither literal is a digest over a preimage holding both.
-    expect(registry.contentRevision).toBe('162f80bf169296d0e5fd516cc3c5257a');
+    //
+    // 162f80bf169296d0e5fd516cc3c5257a -> 87fdff6cbf4414b584fef95bf9d4916a,
+    // when `w109` appended the seventeenth god cost — action 16, the alliance
+    // invitation. A price is in the preimage for the same reason every god
+    // constant is: two universes that disagreed about what a scholar costs
+    // would be playing different games while their revisions called them
+    // compatible. This is an *addition* rather than a value edit, so every
+    // existing price is byte-identical and a universe that never invites
+    // anybody plays exactly as it did — but the revision moves anyway, and it
+    // has to. A digest that only moved when an existing byte changed could not
+    // tell a build that knows action 16 from one that does not, and those two
+    // builds genuinely cannot replay each other's runs.
+    expect(registry.contentRevision).toBe('87fdff6cbf4414b584fef95bf9d4916a');
   });
 
   it('is stable across loads of identical content', () => {

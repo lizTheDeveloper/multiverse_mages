@@ -101,6 +101,30 @@ export interface CandidateInput {
    * single-universe Monte Carlo run.
    */
   readonly portalTargets?: readonly number[];
+  /**
+   * Species this universe's allies could send a scholar from.
+   *
+   * Caller-supplied for the same reason {@link portalTargets} is: §1.1 puts one
+   * universe in a simulation instance, so the roster of realms willing to send
+   * anyone is not a fact state holds. An empty or absent list means action 16
+   * has no candidates and is masked — the correct answer for a universe with no
+   * allies, and the control arm of the measurement that justified the verb.
+   *
+   * Membership is necessary and not sufficient: the rules still refuse a
+   * species already represented among the living, and refuse everything until
+   * the universe holds portal magic.
+   */
+  readonly invitableSpecies?: readonly number[];
+  /**
+   * Node ids whose effects carry the `portal` primitive.
+   *
+   * Caller-supplied because the primitive a node carries is content, and §5
+   * gives this package no edge to the effect tables. Absent means the mask
+   * cannot confirm the gate and therefore holds action 16 closed, which is the
+   * safe direction: a universe that cannot demonstrate portal magic is treated
+   * as not having it.
+   */
+  readonly portalNodes?: readonly number[];
 }
 
 /** Every parameterized action's list, each truncated to its pinned `k`. */
@@ -133,6 +157,8 @@ function candidatesFor(action: number, input: CandidateInput): Candidate[] {
       return changeTraditionCandidates(input);
     case GOD_ACTION.openPortal:
       return portalCandidates(input);
+    case GOD_ACTION.inviteScholar:
+      return inviteScholarCandidates(input);
     default:
       return [];
   }
@@ -340,6 +366,93 @@ function portalCandidates(input: CandidateInput): Candidate[] {
     .filter((target) => Number.isInteger(target) && target !== 0)
     .sort((a, b) => a - b)
     .map((target) => ({ params: [target] }));
+}
+
+/**
+ * Action 16: species an ally could send, ascending by interned id.
+ *
+ * Two filters, and they are different in kind. The roster is the caller's — see
+ * {@link CandidateInput.invitableSpecies}. The exclusion of species already
+ * living here is *state's*, and it is what stops the verb being a general
+ * population pump: a universe may import the kind of academic it does not have,
+ * and may never import a second copy of itself. That is the whole difference
+ * between an alliance and free immigration, and it is why draconic gains far
+ * more from this action than orc does — a species whose own roster is healthy
+ * has nothing to send for.
+ *
+ * **The portal gate is applied here too, and leaving it out was a measured
+ * defect rather than a theoretical one.** The first draft of this function
+ * omitted it, on the reasoning that `invitePlan` refuses on the gate anyway and
+ * the mask could afford to be optimistic by one predicate. It cannot. A policy
+ * submits **one action per round** and takes the first its mask calls legal, so
+ * an optimistic bit here does not cost an agent a countable refusal — it costs
+ * it *the entire round*, every round, forever. Measured over 100 draconic runs:
+ * the arm whose strategy listed action 16 first reached 65.46 nodes and a
+ * library depth of 2.51 against its paired control's 70.00 and 13.64, having
+ * spent every tick of two hundred years submitting an invitation the rules
+ * refused. It never invited anybody, because the gate it could not see was shut
+ * the whole time.
+ *
+ * That is what §7's `illegalActionRate` note means by *"a spec-clarity smell"*,
+ * arriving as a balance number instead of as a counter: the mask said yes, the
+ * resolver said no, and the disagreement read as a strategy that had stopped
+ * working.
+ */
+function inviteScholarCandidates(input: CandidateInput): Candidate[] {
+  const roster = input.invitableSpecies ?? [];
+  if (roster.length === 0) return [];
+
+  const resident = new Set<number>();
+  for (const { row } of collectRecords(input.state, MAGE)) {
+    if (row.alive !== 0) resident.add(row.speciesId);
+  }
+
+  if (!holdsPortalMagic(input)) return [];
+
+  return [...new Set(roster)]
+    .filter((speciesId) => Number.isInteger(speciesId) && speciesId > 0)
+    .filter((speciesId) => !resident.has(speciesId))
+    .sort((a, b) => a - b)
+    .map((speciesId) => ({ params: [speciesId] }));
+}
+
+/**
+ * Whether a living mage holds a permitted node carrying the `portal` primitive.
+ *
+ * The mask's copy of `coordination`'s `portalMagicHolder`. Two copies of one
+ * predicate is ordinarily the thing to avoid, and here it is forced: §5 gives
+ * `agent-api` no edge to `coordination`, and the alternative — an optimistic
+ * mask — is the defect documented above. The two are kept honest by the rules
+ * being strictly the stricter of the pair: the mask may only ever be *more*
+ * closed than the resolver, never more open.
+ */
+function holdsPortalMagic(input: CandidateInput): boolean {
+  const portalNodes = input.portalNodes ?? [];
+  if (portalNodes.length === 0) return false;
+
+  const { state, catalogue } = input;
+  const universe = findUniverse(state);
+  if (universe === 0) return false;
+  const ruleset = readRulesetForObservation(state, universe);
+  const portal = new Set(portalNodes);
+
+  const living = new Set(
+    collectRecords(state, MAGE)
+      .filter(({ row }) => row.alive !== 0)
+      .map(({ handle }) => handle),
+  );
+
+  for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
+    if (row.locationKind !== LOCATION_KIND.mind && row.locationKind !== LOCATION_KIND.palace) {
+      continue;
+    }
+    if (!portal.has(row.nodeId)) continue;
+    if (!living.has(row.locationId)) continue;
+    const node = catalogue.node(row.nodeId);
+    if (node === undefined) continue;
+    if (permits(ruleset, node.cellId)) return true;
+  }
+  return false;
 }
 
 /**

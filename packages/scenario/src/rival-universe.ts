@@ -272,7 +272,16 @@ export function buildRival(input: {
     // would confound "which species founded my universe" with "which species I am
     // fighting". Zero is also what this builder did before the field existed, so
     // no raid measured before it moves.
-    options: { cohortSize: 64, foundingMages: 2, foundingNodes: 6, foundingSpeciesMask: 0 },
+    // `foundingPortalMagic: 0` for the same reason as the mask beside it: a
+    // rival that started holding portal magic would be a different opponent
+    // than every raid measured before the instrument existed.
+    options: {
+      cohortSize: 64,
+      foundingMages: 2,
+      foundingNodes: 6,
+      foundingSpeciesMask: 0,
+      foundingPortalMagic: 0,
+    },
     content,
     schema: input.schema,
   });

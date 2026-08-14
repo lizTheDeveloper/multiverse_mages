@@ -41,6 +41,7 @@
  */
 
 import type { ContentRegistry, Fp } from '@mm/content';
+import { GOD_ACTION_ID_MAX } from '@mm/content';
 
 /** Costs by `contracts.md` §4.2 action id, plus the two prices that have no id. */
 export interface GodCosts {
@@ -152,8 +153,16 @@ export interface GodContent {
   readonly costs: GodCosts;
 }
 
-/** The highest action id `contracts.md` §4.2 declares. */
-const ACTION_ID_MAX = 15;
+/**
+ * The highest action id `contracts.md` §4.2 declares.
+ *
+ * Imported rather than restated. It was a literal `15` here and a separate
+ * literal in `@mm/content`, and when §4.2 grew action 16 only one of them
+ * moved — so the cost table was built one entry short and the new action was
+ * silently free, which is the worst available failure: the mask's affordability
+ * check passes, the resolver charges nothing, and the run looks fine.
+ */
+const ACTION_ID_MAX = GOD_ACTION_ID_MAX;
 
 /** Reads the whole constant set out of a loaded registry. */
 export function resolveGodConstants(registry: ContentRegistry): GodConstants {

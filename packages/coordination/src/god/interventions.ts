@@ -63,6 +63,9 @@ import type { AxisChangeCounterRecord } from '@mm/state';
 import { FP_ONE, NULL_ENTITY, TIME_MODE } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
+import type { SpeciesRecord } from '@mm/content';
+import type { StepRng } from '@mm/rules-world';
+import { createMage } from '@mm/rules-world';
 import {
   AXIS_CHANGE_COUNTER,
   AXIS_KIND,
@@ -119,6 +122,7 @@ export const ACTION = {
   changeTradition: 13,
   openPortal: 14,
   declareAscension: 15,
+  inviteScholar: 16,
 } as const;
 
 /** Everything the dispatch needs that is content or a subsystem rather than state. */
@@ -139,6 +143,28 @@ export interface InterventionDeps {
    * per-tick path for a fact that cannot change.
    */
   readonly portalNodes: ReadonlySet<number>;
+  /**
+   * Species an allied realm would send a scholar from, by interned id.
+   *
+   * Caller-supplied, exactly as `agent-api`'s candidate list is and for the
+   * same §1.1 reason: the roster of realms is not in this universe's state. An
+   * empty set switches action 16 off without a branch anywhere else, which is
+   * what makes the paired measurement a factor level rather than a build flag.
+   */
+  readonly invitableSpecies: ReadonlySet<number>;
+  /** The species table, for the traits an arriving scholar is built from. */
+  readonly speciesOf: (speciesId: number) => SpeciesRecord | undefined;
+  /**
+   * The step's randomness, for the arriving scholar's personality roll.
+   *
+   * Stream 1 keyed on her own entity handle — `contracts.md` §6's mage-birth
+   * stream, the same one promotion draws from. Insertion invariance is what
+   * makes this free: a draw keyed on a handle that did not exist before
+   * disturbs nobody else's rolls, so **no committed baseline is invalidated by
+   * adding this action.** That property is the reason the verb creates a mage
+   * rather than, say, re-rolling an existing one.
+   */
+  readonly rng: StepRng;
   /** Asks the clock to enter engagement. Supplied by the step context. */
   readonly requestEngagement: () => void;
 }
@@ -223,7 +249,7 @@ function report(tally: Tally): InterventionReport {
 
 /** Whether an action id is one this dispatch owns. `0` is the no-op and is not. */
 function isGodIntervention(kind: number): boolean {
-  return Number.isInteger(kind) && kind >= ACTION.permitTechnique && kind <= ACTION.declareAscension;
+  return Number.isInteger(kind) && kind >= ACTION.permitTechnique && kind <= ACTION.inviteScholar;
 }
 
 /**
@@ -339,6 +365,8 @@ function planOf(
       return portalPlan(state, universe, params[0], deps);
     case ACTION.declareAscension:
       return ascensionPlan(state, universe, worldTick, deps);
+    case ACTION.inviteScholar:
+      return invitePlan(state, universe, params[0], worldTick, deps);
     default:
       return undefined;
   }
@@ -950,27 +978,139 @@ function portalPlan(
   deps: InterventionDeps,
 ): Plan | undefined {
   if (targetId === undefined || targetId === 0) return undefined;
+  if (portalMagicHolder(state, universe, deps) === 0) return undefined;
 
+  return {
+    cost: interventionCost(ACTION.openPortal, deps.god.costs),
+    apply: () => {
+      deps.requestEngagement();
+    },
+  };
+}
+
+/**
+ * A living mage holding a permitted node that carries the `portal` primitive,
+ * or `0`.
+ *
+ * Extracted rather than duplicated because actions 14 and 16 are the same
+ * design claim pointing two ways: a universe that has not worked out how to
+ * hold a threshold open is alone, and being alone is what it means to be unable
+ * either to raid or to ally. `ages-of-magic.md` §2f states the peaceful half —
+ * *"the peaceful counterpart to the portal"* — and two copies of the predicate
+ * would let one half of that sentence drift away from the other.
+ *
+ * **Measured, and it is a finding rather than a detail.** On this build no
+ * draconic-only run in a hundred ever satisfies this predicate: the closure to
+ * `rl-open-the-portal` is seven nodes across two cells ending at tier 4, and
+ * `speciesTargetTerm` prices a tier-4 node for a curiosity-256 species at the
+ * −384 bound. The species this gate is between and its rescue is the species
+ * least able to pass it. That is a fact about where the portal nodes sit in the
+ * grid, not a reason to price the alliance differently, and it is recorded in
+ * the branch's measurement rather than patched around here.
+ */
+function portalMagicHolder(
+  state: SimState,
+  universe: EntityHandle,
+  deps: InterventionDeps,
+): EntityHandle {
   const ruleset = readRulesetForObservation(state, universe);
-  let holder = 0;
   for (const { handle, row } of collectRecords(state, MAGE)) {
     if (row.alive === 0) continue;
     for (const nodeId of heldNodeIds(state, handle)) {
       if (!deps.catalog.node(nodeId)) continue;
       const cellId = deps.cells.cellOf(nodeId);
       if (!isCellId(cellId) || !permits(ruleset, cellId)) continue;
-      if (!deps.portalNodes.has(nodeId)) continue;
-      holder = handle;
-      break;
+      if (deps.portalNodes.has(nodeId)) return handle;
     }
-    if (holder !== 0) break;
   }
-  if (holder === 0) return undefined;
+  return 0;
+}
+
+// ---------------------------------------------------------------------------
+// 16: alliances
+// ---------------------------------------------------------------------------
+
+/**
+ * Inviting a scholar of another species.
+ *
+ * `ages-of-magic.md` §2f: *"alliances between realms are the way that you get
+ * visiting mages."* This is the smallest thing that makes that sentence true
+ * against `contracts.md` §1.1, which puts one universe in a simulation
+ * instance and therefore leaves no second realm to negotiate with. What
+ * arrives is an **immigrant, not a modifier** — an ordinary `MAGE` row of the
+ * invited species, affiliated to one of this universe's universities, indexed
+ * by every loop that counts a mage, free to research, teach and be taught.
+ *
+ * ## Four preconditions, and each one is doing separate work
+ *
+ * 1. **The species is on the caller's roster.** §1.1 again: who would send
+ *    anyone is not a fact this universe's state holds.
+ * 2. **No living mage of that species is already here.** This is what stops the
+ *    verb being free immigration. A universe may import the kind of academic it
+ *    lacks and may never import a second copy of itself, so a species with a
+ *    healthy roster of its own gains nothing — which is the asymmetry the
+ *    mechanic exists to create. Draconic, whose `maturityMonths` of 3,600
+ *    exceeds the whole 2,400-tick horizon and which therefore cannot promote a
+ *    single new mage inside a run, gains the most; orc, which promotes
+ *    constantly, gains almost nothing.
+ * 3. **The universe holds portal magic.** The owner's design, and the same
+ *    predicate action 14 uses. See {@link portalMagicHolder}.
+ * 4. **A university exists to host her.** A visiting scholar is hosted, not
+ *    merely resident, and affiliation is what lets her scribe at all
+ *    (`scribeThroughputFor` returns zero for an unaffiliated mage). The lowest
+ *    handle among universities is chosen — deterministic, and not a claim that
+ *    it is the best one; ranking hosts is the universities layer's to own.
+ *
+ * ## What it deliberately does not do
+ *
+ * No familiarity, no per-pair affinity, no resistance or damage bonus —
+ * §2g's accumulating `(your species, their species)` quantity is a schema-
+ * bearing mechanic and this action does not need it to be measurable. No cost
+ * in mages sent the other way either: §2f's *"a mage sent abroad is subtracted
+ * from a stationed set"* is the half that needs a second simulated realm, and
+ * inventing a one-sided version of it here would price a mechanic against a
+ * cost the model cannot yet represent. Both are named so a reader knows they
+ * were declined rather than missed.
+ */
+function invitePlan(
+  state: SimState,
+  universe: EntityHandle,
+  speciesId: number | undefined,
+  worldTick: number,
+  deps: InterventionDeps,
+): Plan | undefined {
+  if (speciesId === undefined || speciesId <= 0) return undefined;
+  if (!deps.invitableSpecies.has(speciesId)) return undefined;
+
+  const species = deps.speciesOf(speciesId);
+  if (species === undefined) return undefined;
+
+  for (const { row } of collectRecords(state, MAGE)) {
+    if (row.alive !== 0 && row.speciesId === speciesId) return undefined;
+  }
+
+  if (portalMagicHolder(state, universe, deps) === 0) return undefined;
+
+  let host: EntityHandle = 0;
+  for (const { handle } of collectRecords(state, UNIVERSITY)) {
+    if (host === 0 || handle < host) host = handle;
+  }
+  if (host === 0) return undefined;
 
   return {
-    cost: interventionCost(ACTION.openPortal, deps.god.costs),
+    cost: interventionCost(ACTION.inviteScholar, deps.god.costs),
     apply: () => {
-      deps.requestEngagement();
+      const mage = state.entities.create();
+      // Born `maturityMonths` ago, so she arrives an adult who can work this
+      // tick. A scholar who had to grow up here would be a birth wearing a
+      // diplomat's name, and for draconic — whose maturity exceeds the run —
+      // it would make the action do nothing at all inside a measurable horizon.
+      attachRecord(
+        state,
+        MAGE,
+        mage,
+        createMage(deps.rng, mage, species, speciesId, worldTick - species.maturityMonths, host),
+      );
     },
   };
 }
