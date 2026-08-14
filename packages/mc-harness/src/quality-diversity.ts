@@ -157,6 +157,57 @@ export interface Archive {
    * nothing else in the archive matters.
    */
   readonly marginOverNull: number;
+  /**
+   * What shape the strategy space is in — **not** how good it is.
+   *
+   * `width` alone is the wrong thing to maximise, and this exists to say so in
+   * a number. A design where *everything* works is not balanced, it is **flat**,
+   * and flat is the state this project has actually been in: `passive-control`
+   * reaching the same fifty-one nodes as an archivist who built thirteen
+   * hundred universities.
+   *
+   * What is wanted is a **wide** space — many genuinely viable ways to play and
+   * a large surrounding region of ways that do not work, with the not-working
+   * legible. **A cell nobody should play is content, provided a player can find
+   * out why**, and {@link ArchiveCell.failedRung} is what makes that findable.
+   */
+  readonly shape: MetaShape;
+}
+
+/** The four states a strategy space can be in, only one of which is wanted. */
+export const META_SHAPE = {
+  /** Nothing clears the null ladder. No game. */
+  dead: 'dead',
+  /**
+   * Everything reached clears it. No wrong answers, therefore no right ones —
+   * and no reason to prefer one opening over another.
+   */
+  flat: 'flat',
+  /** Both populated: many ways to play, many ways not to. **The target.** */
+  wide: 'wide',
+  /** Too few cells reached to say. Not a verdict; a request for more search. */
+  unresolved: 'unresolved',
+} as const;
+
+export type MetaShape = (typeof META_SHAPE)[keyof typeof META_SHAPE];
+
+/**
+ * Fewest reached cells from which `flat` or `wide` may be claimed.
+ *
+ * Three, because two cells can be one-and-one by luck. Below this the honest
+ * answer is `unresolved`, and reporting `wide` off two cells would be the same
+ * error as the first run of this search calling a coin landing heads once a
+ * width of one.
+ */
+export const MIN_CELLS_TO_JUDGE_SHAPE = 3;
+
+/** The shape a set of cells is in. Pure, so the thresholds are testable. */
+export function shapeOf(occupied: number, notWorthPlaying: number): MetaShape {
+  const reached = occupied + notWorthPlaying;
+  if (occupied === 0) return META_SHAPE.dead;
+  if (reached < MIN_CELLS_TO_JUDGE_SHAPE) return META_SHAPE.unresolved;
+  if (notWorthPlaying === 0) return META_SHAPE.flat;
+  return META_SHAPE.wide;
 }
 
 /** Maximum illegal-action rate an elite may carry. Above this it is a mask bug. */
@@ -266,6 +317,7 @@ export function foldArchive(
     width: occupied.length,
     reachableNotWorthPlaying: cells.length - occupied.length,
     marginOverNull: bestElite - nullBarOf(nulls).bar,
+    shape: shapeOf(occupied.length, cells.length - occupied.length),
   };
 }
 

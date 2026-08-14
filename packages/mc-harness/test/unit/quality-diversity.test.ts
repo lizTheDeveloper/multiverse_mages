@@ -16,6 +16,7 @@ import {
   type CandidateOutcome,
   CELL_STATUS,
   MAX_ELITE_ILLEGAL_RATE,
+  META_SHAPE,
   NULL_LADDER,
   NULL_RUNG,
   PHASE,
@@ -28,6 +29,7 @@ import {
   foldPhasedArchive,
   nullBarOf,
   phaseOfTick,
+  shapeOf,
 } from '@mm/mc-harness';
 import { describe, expect, it } from 'vitest';
 
@@ -299,5 +301,49 @@ describe('phases', () => {
     expect(archive.weightedWidth).toBe(0);
     // But its mobility is still reported: it did change, it just never won.
     expect(archive.mobilityByStrategy['loser']).toBe(3);
+  });
+});
+
+describe('meta shape', () => {
+  it('calls a space with no winners dead', () => {
+    expect(shapeOf(0, 9)).toBe(META_SHAPE.dead);
+  });
+
+  it('calls a space where everything works flat, which is the failure to avoid', () => {
+    // Not balanced -- flat. A design with no wrong answers has no right ones,
+    // and no reason to prefer one opening over another.
+    expect(shapeOf(6, 0)).toBe(META_SHAPE.flat);
+  });
+
+  it('calls a space with winners and losers wide, which is the target', () => {
+    // StarCraft, not a symmetric mirror: all species playable, not all build
+    // orders.
+    expect(shapeOf(4, 11)).toBe(META_SHAPE.wide);
+  });
+
+  it('refuses to judge a space too small to have a shape', () => {
+    // Two cells can be one-and-one by luck. Reporting `wide` off that would be
+    // the same error as calling a coin landing heads once a width of one.
+    expect(shapeOf(1, 1)).toBe(META_SHAPE.unresolved);
+    expect(shapeOf(2, 1)).toBe(META_SHAPE.wide);
+  });
+
+  it('reports the shape on the archive, not just the width', () => {
+    const nulls: NullOutcomes = {
+      ...SILENT_NULLS,
+      'passive-control': candidate({ strategyId: 'passive-control', ascended: 5 }),
+    };
+    const archive = foldArchive(
+      AXES,
+      [
+        candidate({ strategyId: 'wins', descriptors: { nodes: 100 }, ascended: 9 }),
+        candidate({ strategyId: 'loses', descriptors: { nodes: 5 }, ascended: 1 }),
+        candidate({ strategyId: 'loses2', descriptors: { nodes: 300 }, ascended: 0 }),
+      ],
+      nulls,
+    );
+    expect(archive.width).toBe(1);
+    expect(archive.reachableNotWorthPlaying).toBe(2);
+    expect(archive.shape).toBe(META_SHAPE.wide);
   });
 });

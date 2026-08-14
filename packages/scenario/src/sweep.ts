@@ -29,10 +29,11 @@
  * rather than a §7 metric — see `measures.ts`.
  */
 
-import type { SweepRegistries, SweepSpec } from '@mm/mc-harness';
+import type { MetricDefinition, SweepRegistries, SweepSpec } from '@mm/mc-harness';
 import {
   BALANCE_METRIC_REGISTRY,
   BOT_POOL_REGISTRY,
+  METRIC_SCOPE,
   factorRegistry,
   metricRegistry,
 } from '@mm/mc-harness';
@@ -41,27 +42,50 @@ import { REFERENCE_MEASURES, REFERENCE_METRIC_IDS } from './measures.js';
 import { REFERENCE_FACTOR_IDS } from './reference-universe.js';
 
 /**
+ * The seven `per-run` metrics of `contracts.md` §7, as a sweep may declare them.
+ *
+ * Only the per-run half. The five arm-scoped metrics are properties of an arm's
+ * runs, are computed by `runner.ts` for **any** arm that describes itself, and
+ * already appear in every sweep summary without being named — so listing them
+ * here would let a sweep declare a column that every record fills with
+ * `{unavailable, per-arm-scope}` beside a summary that carries the real number.
+ * One quantity reported twice, once as an absence, is the kind of thing a reader
+ * two years from now has to reverse-engineer.
+ *
+ * Derived from the registry rather than typed out. A list of ids maintained
+ * beside the registry is the two-lists failure `measures.ts` names: it is how a
+ * metric comes to be declarable and uncollectable, or collected and
+ * undeclarable.
+ */
+export const BALANCE_RUN_METRIC_DEFINITIONS: readonly MetricDefinition[] = Object.freeze(
+  BALANCE_METRIC_REGISTRY.definitions.filter(
+    (definition) => definition.scope === METRIC_SCOPE.perRun,
+  ),
+);
+
+/** Every §7 per-run metric id, ascending. What a sweep file may now also name. */
+export const BALANCE_RUN_METRIC_IDS: readonly string[] = Object.freeze(
+  BALANCE_RUN_METRIC_DEFINITIONS.map((definition) => definition.id).sort(),
+);
+
+/**
  * The registries the reference sweep is validated against.
  *
  * The strategy registry is the real bot pool, not a list of names: a sweep that
  * named a strategy the pool cannot build would otherwise fail inside a worker,
  * once per run, rather than once before dispatch.
+ *
+ * **Two metric registries, joined.** The vital signs of `measures.ts` and §7's
+ * per-run half, because `executor.ts` now collects both and a sweep can only
+ * declare what it is validated against. Before this the §7 collectors were
+ * unreachable from any sweep file — the validator would have rejected their ids
+ * at expansion, which is why `collectRunMetrics` had no production caller and
+ * seven metrics were structurally incapable of moving.
  */
 export const REFERENCE_REGISTRIES: SweepRegistries = {
-  // The ten reference vital signs **and** the eighteen §7 metrics.
-  //
-  // It was the ten alone, and that is why no sweep could ever declare a raid
-  // metric: `raidLengthDistribution` and `raidInitiationCost` are registered in
-  // `mc-harness` and were not in the registry a sweep is validated against, so
-  // naming one failed before dispatch with "not in the metric registry".
-  //
-  // Raids were resolving the whole time — `executor.ts` reads
-  // `options.raids ?? true` — so every sweep this project has run has run raids
-  // it could not see. Not an uncollected metric: an *undeclarable* one, which
-  // is a fourth way for a measurement to be silently absent.
   metrics: metricRegistry([
     ...REFERENCE_MEASURES.map((entry) => entry.definition),
-    ...BALANCE_METRIC_REGISTRY.definitions,
+    ...BALANCE_RUN_METRIC_DEFINITIONS,
   ]),
   strategies: BOT_POOL_REGISTRY,
   factors: factorRegistry(REFERENCE_FACTOR_IDS),

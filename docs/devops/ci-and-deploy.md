@@ -10,7 +10,7 @@ purpose, and they are not redundant.
 
 | | GitHub Actions (`.github/workflows/ci.yml`) | Self-hosted runner (`ci/hetzner-lint`) |
 |---|---|---|
-| Runs on | GitHub's throwaway VMs | `cto-tycoon-hel1`, alongside Coolify |
+| Runs on | GitHub's throwaway VMs | `multiverse-games-hel1` (SSH alias `games`) |
 | Cost | **Free** — Actions is unmetered for public repos | Hetzner box we already pay for |
 | Fork PRs | **Yes** — this is the only gate that sees them | **No, deliberately refused** |
 | Holds secrets | No | Yes: Coolify, Neon, GitHub, Matrix tokens |
@@ -32,9 +32,36 @@ GitHub user. Each one exists because the other cannot do its job.
 
 ## The self-hosted runner
 
-Lives at `/opt/ci-runner` on `cto-tycoon-hel1` (SSH alias `hetzner`). It is a small Python webhook
-receiver, shared with `themultiverse.school` — it is **not** specific to this repo, so changes to
-it affect that repo too.
+Lives at `/opt/ci-runner` on **`multiverse-games-hel1`** (SSH alias `games`), in a container named
+`ci-runner-webhook`. It is a small Python webhook receiver, shared with `themultiverse.school` — it
+is **not** specific to this repo, so changes to it affect that repo too.
+
+**Moved from `cto-tycoon-hel1` on 2026-08-13.** The status context is still `ci/hetzner-lint`,
+because that exact string is what the branch protection rule requires and renaming it would make
+every open PR unmergeable until the rule is edited to match. So the name records where the runner
+*was*, and this paragraph is the only thing that says where it *is*.
+
+**There are two receivers, and that is correct.** `cto-tycoon-hel1` runs the same
+`webhook_receiver.py` for **`themultiverse.school`**, and it stays there — its log is school builds
+and school staging deploys, with no `multiverse_mages` traffic. This repository's webhook goes to
+`multiverse-games-hel1`; the school's goes to `cto-tycoon-hel1`. One receiver per repository, on the
+box that repository deploys to.
+
+Do not "consolidate" them and do not stop one because the other exists — an earlier draft of this
+page called the second one a duplicate and suggested stopping whichever was not receiving this
+repo's webhook, which would have taken down the school's CI. Check which repository a receiver is
+serving before touching it:
+
+    ssh hetzner 'docker logs --tail 20 ci-runner-webhook'   # expect themultiverse.school
+    ssh games   'docker logs --tail 20 ci-runner-webhook'   # expect multiverse_mages
+
+**Serialisation is by design, and reads as a stall.** The receiver holds a per-repository
+`threading.Lock`, so a second push while a run is in flight gets a `pending` status reading
+*"Queued -- another CI run in progress"* and waits. With `npm run verify` at roughly twelve minutes
+a queued check can sit for half an hour and still be healthy. Read the container log before
+concluding the runner is down:
+
+    ssh games 'docker logs --tail 40 ci-runner-webhook'
 
 Flow for a push to `main` or a same-repo PR:
 
@@ -120,7 +147,7 @@ It runs `scripts/ci-check.sh` per delivered webhook with a 600 s timeout, so a b
 times in a minute is checked three times, and concurrent branches serialise. Cancelling or skipping
 a queued job whose SHA is no longer its branch tip would cut that queue by roughly what the
 concurrency key cut on Actions. It is not done here because it needs production access to
-`cto-tycoon-hel1` and the receiver is **shared with `themultiverse.school`**, so a change there
+the runner host and the receiver is **shared with `themultiverse.school`**, so a change there
 affects another repository and wants owner sign-off.
 
 ## The third Actions job: primitive consumption, non-blocking

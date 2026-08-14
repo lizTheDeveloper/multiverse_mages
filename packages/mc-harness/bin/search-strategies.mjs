@@ -261,8 +261,15 @@ async function main() {
   writeFileSync(out, `${JSON.stringify(payload, null, 2)}\n`);
 
   console.log(`[search] wrote ${out}`);
-  console.log(`[search] WIDTH ${archive.width}   margin-over-null ${archive.marginOverNull}`);
-  console.log(`[search] reachable-not-worth-playing ${archive.reachableNotWorthPlaying}`);
+  console.log(
+    `[search] SHAPE ${archive.shape.toUpperCase()}   width ${archive.width}` +
+    `   not-worth-playing ${archive.reachableNotWorthPlaying}` +
+    `   margin-over-null ${archive.marginOverNull}`,
+  );
+  // Target is WIDE. `flat` means everything works, which is not balance -- it
+  // is an absence of consequence, and it is the state this project started in.
+  if (archive.shape === 'flat') console.log('[search] WARNING: flat -- no wrong answers, so no right ones');
+  if (archive.shape === 'dead') console.log('[search] WARNING: dead -- nothing beats doing nothing');
   for (const cell of archive.cells) {
     console.log(
       `  ${cell.status === 'occupied' ? 'OCCUPIED ' : 'not-worth'} ${cell.elite.strategyId.padEnd(22)}` +

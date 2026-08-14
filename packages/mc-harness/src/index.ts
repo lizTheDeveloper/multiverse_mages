@@ -470,11 +470,15 @@ export type {
   BehaviourAxis,
   CandidateOutcome,
   CellStatus,
+  MetaShape,
   NullOutcomes,
   NullRung,
 } from './quality-diversity.js';
 export {
   CELL_STATUS,
+  META_SHAPE,
+  MIN_CELLS_TO_JUDGE_SHAPE,
+  shapeOf,
   PHASE,
   PHASE_BOUNDS,
   PHASE_WEIGHT,
