@@ -31,10 +31,11 @@ their checks go green and neither branch has a PR, so no amount of waiting would
 
 ## What is prepared
 
-`scripts/w117-run.sh` runs all seven species arms as **one sequential batch** and then the
-analysis, in a single command. It is deliberately one script: editing source between arms is how an
-arm got contaminated on 08-13, and roughly eighty worktrees share this machine, so parallel arms
-manufacture the RPC-timeout noise that then has to be explained away.
+`scripts/w117-run.sh` runs the whole thing as **one sequential batch**: it converts W99's committed
+records, runs the seven species arms, and writes both analyses. It is deliberately one script,
+because editing source between arms is how an arm got contaminated on 08-13, and roughly eighty
+worktrees share this machine, so parallel arms manufacture the RPC-timeout noise that then has to
+be explained away.
 
 `balance/sweeps/w117-species-*.sweep.json` are the `integration-r2-species-*` specs with one field
 changed: `replicates` drops from 400 to **100**.
@@ -51,6 +52,44 @@ whole reason W99's 1,000 records were committed.
 `deriveRunSeed` **excludes the replicate count by design** (`packages/mc-harness/src/seed.ts`:
 folding it in "would mean that adding a 51st replicate re-seeded the first fifty"). So 100
 replicates reproduces W99's seeds exactly; 400 would have reproduced them and then added 300 more.
+
+### The committed records could not actually be read, and now can
+
+W99 committed its 1,000 records as **one CSV**. `scripts/w99-analyse.mjs` reads *a directory holding
+a `.runs.ndjson`* — the harness's own output shape — and cannot read that CSV. So the records that
+exist precisely to be re-compared were not readable by the one script that does the comparison, and
+the re-measurement would silently have degraded into new-vs-new: *"does draconic differ from human
+on the new build"* instead of the question actually asked, **"what did opening the grid do to
+draconic"**.
+
+`scripts/w99-csv-to-records.mjs` bridges it. It reads only committed data and runs no simulation,
+and it is verified rather than assumed:
+
+- Replaying the converted records through `w99-analyse.mjs` reproduces **every number** in
+  `balance/results-w99-species-arms.md` — Table 1 to the last decimal, and the CRN check at 600
+  pairs with zero seed-or-strategy mismatches.
+- Pointing control and arm at the *same* records gives paired differences of exactly `+0.00 ±0.00`
+  on all six metrics; pointing them at human and orc gives real deltas with significance markers.
+  A positive and a negative control, so an all-zero movement table would be a finding rather than a
+  broken script.
+
+One incidental correction: `w99-analyse.mjs`'s own usage line says `--control <dir>`, but the parser
+requires `--control <label>=<dir>` and throws on a bare directory. The runner uses the form that
+works.
+
+### Q2 has a contingency, because 2400 ticks may not be enough any more
+
+`balance/sweeps/w117-exhaustion-longcap.sweep.json` is drafted and **is not part of the batch**.
+`passive-control` reached 51 nodes and stopped, and 2400 ticks was enough to exhaust 51. With 300
+reachable it may well truncate while still climbing, and a truncated run cannot say where a plateau
+sits — it can only say the plateau is somewhere past the cap. The contingency is
+`passive-control` alone at `worldTickCap` 9600, 40 replicates, under its own `sweepId`
+(`w117-exhaustion-v1`) since pairing against W99 is not what Q2 needs.
+
+**Run it only if the standard batch shows `referenceNodesGainedFinalQuarter` still above zero.**
+That measure is the plateau detector: a derivative going to zero is what "it stopped" means, and it
+exists because a level metric read at a fixed horizon cannot tell a universe still learning from one
+that has stopped.
 
 ## Two things the prepared batch cannot answer, found while preparing
 
