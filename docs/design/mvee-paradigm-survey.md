@@ -11,7 +11,9 @@ Nothing here is approved and nothing here is built.*
 Source: `mvee` / *AI Village*, at `~/src/multiverse_games/games/mvee`, read-only. This document is
 the follow-up to `docs/design/ruleset-map.md` (branch `docs/vision-audit-staleness`), which
 proposed adopting `mvee`'s paradigm space wholesale. **This one says which parts survive contact
-with the code**, and corrects three things the earlier document got wrong.
+with the code**, and corrects four things previously believed — including one this document itself
+asserted in an earlier draft, which is left visible rather than quietly fixed because the way it went
+wrong is instructive.
 
 Every claim about Mages below is a claim about `main` at `e2a15cf`. Every claim about `mvee` is a
 claim about its working tree on the date above.
@@ -23,11 +25,11 @@ claim about its working tree on the date above.
 **Six paradigms are worth importing and forty-three are not.** The single most valuable finding is
 not a paradigm at all: it is that **the raid map's adjacency is derived from coordinates through one
 frozen four-element constant and one callback**, so "temporarily raise the dimensionality of space"
-is a modifier on an existing subsystem rather than a new one. That is cheap. Two things sit next to
-it that are not cheap and must be said in the same breath: **`rules-raid` is orphaned** — nothing
-imports it — and **literal N-dimensional space is a combinatorial wall**. The recommendation is a
-fold-adjacency transform on the existing 2-D grid, which produces the effect the owner described
-without paying for either.
+is a modifier on an existing subsystem rather than a new one, **and that subsystem is live** —
+`scenario` installs `rules-raid` into the reference universe's world loop. So this is cheap in code
+*and* reachable from a running simulation. The one thing that is not cheap is the literal reading:
+**N-dimensional space is a combinatorial wall.** The recommendation is a fold-adjacency transform on
+the existing 2-D grid, which produces the effect the owner described without paying for it.
 
 ---
 
@@ -40,6 +42,7 @@ These are the "a finding about code is a finding about a ref" flags.
 | `foreignMagicPolicy` has **four** values | `ruleset-map.md` | It is a **thirteen-value union type**, `MagicParadigm.ts:523-536`. Twelve of the thirteen appear in shipped paradigms; only `tolerant` is unused. The four named in `ruleset-map.md` are the first four listed. |
 | `rego-limen` holds **two** nodes | task brief | It holds **five** — `rl-hold-the-door`, `rl-step-across`, `rl-seal-the-way`, `rl-open-the-portal`, `rl-the-standing-gate`. All five `limen` cells are authored (4, 4, 4, 4, 5 = 21 nodes), and three of the five are `v1: true`. The limen school is not empty; it is authored and thin at the top. |
 | `mvee` has **~43** paradigms | `ruleset-map.md` | **49 distinct ids.** 37 live in the five JSON data files; the rest are TypeScript-only, chiefly the nine in `NullParadigms.ts`. The TS-only ones were never surveyed before and one group of them is on the shortlist below. |
+| **`rules-raid` is orphaned**, so `cast` and `cost` have no simulation path | task brief, `CLAUDE.md`, **and this document's own first draft** | **False.** `scenario/src/reference-universe.ts:728` installs `raidSystem` into the world schema and `scenario/src/raids.ts:92` value-imports the package. The module-boundaries test permits the edge and says *"It does now"*. See Question 4 for how three sources managed to agree on a stale fact, and for the real defect underneath it — `scenario`'s `package.json` does not declare the dependency it uses. |
 
 A fourth defect, found in passing and worth reporting upstream rather than importing: **`tethermancy`
 is defined twice** — in `animist-paradigms.json` and `creative-paradigms.json` — with conflicting
@@ -120,23 +123,42 @@ to get right.
 
 ### Two caveats that belong next to the loud part
 
-**`rules-raid` is orphaned.** Nothing imports it. `packages/rules-raid/package.json` declares seven
-dependencies and appears in no other package's dependency list; the only references anywhere else
-are comments and the module-boundaries test, whose own words are that it *"shipped complete and
-nothing had reached for it"* (`packages/sim-core/test/unit/module-boundaries.test.ts:194`). Work done
-here is real code that the simulation does not currently run. **That is a reason to wire it in, not a
-reason to avoid it — but it must be budgeted, and it is the larger half of the cost.**
+**`rules-raid` is wired in — and an earlier draft of this document said it was not.** The correction
+is worth keeping visible, because getting it wrong made the recommendation look twice as expensive as
+it is.
 
-This is already known and already tracked, which is good news for the estimate: `CLAUDE.md` records
-`raid-engagement` at **67/92**, *"with `packages/rules-raid` built but nothing in `scenario` opening
-a portal yet."* So "wire `rules-raid` in" is not a new invention this document is proposing — it is
-the unfinished quarter of an OpenSpec change that already exists, and the dimensionality modifier
-should be scheduled behind it rather than beside it.
+`packages/scenario/src/reference-universe.ts:728` appends `raidSystem({...})` to the world schema, and
+`packages/scenario/src/raids.ts:92` value-imports `openPortal` and friends from `@mm/rules-raid`. The
+module-boundaries test lists `rules-raid` as a permitted **value** edge for `scenario` and says so in
+as many words: *"`rules-raid` shipped complete and uncalled, so the composition root had no portal to
+open. **It does now** — `raids.ts` drives `openPortal` through `applyRaidOutcome`"*
+(`packages/sim-core/test/unit/module-boundaries.test.ts:190-198`). **A reference universe stepped
+through `scenario` runs raids.**
 
-Corroborating evidence, from running the gate: `node scripts/check-primitive-consumption.mjs` reports
-that of sixteen primitives, only `portal` and `worship-yield` are reachable from authored nodes.
-**Every engagement primitive — `direct-damage`, `ward`, `area-denial`, `blink`, `summon`,
-`knowledge-steal` — is in the FAIL list, because the package that would consume them is orphaned.**
+**How the error happened, since it is the exact hazard `CLAUDE.md` warns about.** Two sources agreed
+and both were stale. A `grep` for `"@mm/rules-raid"` across `packages/*/package.json` returns nothing
+— see the genuine defect below — and the module-boundaries comment was read as far as *"nothing had
+reached for it"* and no further, when the next clause is *"It does now."* **A fragment of a comment is
+not a ref either.** `CLAUDE.md` compounded it, recording `raid-engagement` at 67/92 *"with
+`packages/rules-raid` built but nothing in `scenario` opening a portal yet"* — which is now false, and
+is a documentation-drift bug in its own right.
+
+**The genuine defect found on the way: `packages/scenario/package.json` does not declare
+`@mm/rules-raid`.** Its `dependencies` list eight workspace siblings and `rules-raid` is not among
+them, while `src/raids.ts` and `src/reference-universe.ts` both import from it at runtime. It resolves
+today through workspace hoisting, so nothing fails — but the declared graph is wrong, and `CLAUDE.md`
+already records what an under-declared workspace does to `npm ci` on a fresh worktree. **One line, and
+worth a separate PR.**
+
+**What *is* still unreached is narrower, and it is the consumption check's own path.** `node
+scripts/check-primitive-consumption.mjs` reports that of sixteen primitives only `portal` and
+`worship-yield` are reachable from authored nodes, with every engagement primitive —
+`direct-damage`, `ward`, `area-denial`, `blink`, `summon`, `knowledge-steal` — in the FAIL list. That
+is **not** because nothing consumes them: it is because the check assembles its universe through
+`worldDeps()` in `scenario/src/content-set.ts`, which does not install the raid system that
+`reference-universe.ts` does. **So the check measures a narrower build than the reference universe
+runs**, and a `dimensionality` primitive would land in the same gap. Worth knowing before treating
+that FAIL list as a map of what the simulation ignores.
 (That check is *not* in `npm run verify`. It runs in CI as an explicitly **non-blocking** job, and it
 fails there today — on this docs-only PR as much as on `main`, which is how you can tell it is
 reporting the state of the tree rather than anything a branch did to it.)
@@ -298,7 +320,7 @@ interest.
 |---|---|
 | **what it is** | Perceive, fold, and reduce space. `teach=true`, `scroll=true`, ambient source, 6 × 5, `transforms`. Its 13-entry spell list is a five-tier progression from "see into the next dimension" to "walk through the space between". |
 | **hooks** | **None of the four.** Its character is entirely in *which cells are enabled* and in a raid-layer modifier. That is a feature: it does not compete for hook budget. |
-| **cost** | **Split.** (a) The node progression across `intellego-limen` and `rego-limen` is **data-only** — names, glosses, tiers, prerequisites, and re-derived fixed-point costs. (b) The dimensionality modifier is a **contained code change** in `rules-raid` — extend `NEIGHBOURS` with fold-pairs, wrap the `blocks` callback, key the navigator cache on dimensionality. (c) A `dimensionality` primitive is **not data-only**: `check:consumption` asks whether what academics *know* can move a number, so it needs a consumer, and its natural consumer is the orphaned `rules-raid`. **Wiring `rules-raid` into the world loop is the real bill.** |
+| **cost** | **Split.** (a) The node progression across `intellego-limen` and `rego-limen` is **data-only** — names, glosses, tiers, prerequisites, and re-derived fixed-point costs. (b) The dimensionality modifier is a **contained code change** in `rules-raid` — extend `NEIGHBOURS` with fold-pairs, wrap the `blocks` callback, key the navigator cache on dimensionality. (c) A `dimensionality` primitive is **not data-only** — `check:consumption` asks whether what academics *know* can move a number, so it needs a consumer — but its natural consumer, `rules-raid`, is **already installed in the world loop by `scenario`**. **There is no wiring bill.** The residual is that the consumption check's own `worldDeps()` path does not install the raid system, so a new engagement primitive will read as unconsumed there until that is addressed. |
 | **what it unlocks** | A `limen` progression that runs from "open a door" to "raise the dimension of the room", on the axis the design now hinges on. Portal magic gates interspecies alliances; today `rego-limen` tops out at a portal that stays open. This gives the school five more rungs and gives raids a spatial ability that is not damage. |
 
 ### 3. `threshold` — the limen tradition, as opposed to the limen school
@@ -342,10 +364,12 @@ paradigm at all. The five groups below sum to forty-three.
 Mages does not model: sanity, corruption, memory loss, cumulative unrecoverable cost, wild surge,
 narrative causality, per-cast emotional state. **`corruption_crown` is the sharpest loss** — power
 scaling with lost self is a genuinely good mechanic — and it deserves its own line: **its character
-lives entirely in the `cost` hook, and the `cost` hook has no simulation path.** `costPolicy` and
-`castPolicy` are read only by `rules-raid`, which nothing imports. A paradigm whose whole identity is
-its cost curve **cannot currently express itself in Mages at all**, and importing it would produce a
-tradition that is a comment. Revisit if and only if `rules-raid` is wired in.
+lives entirely in the `cost` hook.** `costPolicy` and `castPolicy` are read only by `rules-raid` — a
+much weaker objection than the brief assumed, since `scenario` now installs that package into the
+world loop, so those two hooks *do* have a path. The reason to reject `corruption_crown` is therefore
+not reachability but content: it needs cumulative, unrecoverable cost and a memory/identity model, and
+Mages has neither. **Of everything on the reject list this is the one to revisit first**, and it is
+closer to hand than it looked.
 
 **Mages already has it (4).** `academic`, `craft`, `names`, `rune`. `academic` is Mages' baseline —
 8 × 10, teach and scrolls both true, logarithmic scaling — and importing it would be importing the
@@ -383,11 +407,13 @@ whether a paradigm is a mechanism or a costume.
 2. **The `limen` node progression** — data-only, no code, re-derived magnitudes, straight into
    `intellego-limen` and `rego-limen`. Deepens the school the alliance gate depends on without
    touching the rules path.
-3. **Wire `rules-raid` into the world loop.** This is the prerequisite for everything interesting and
-   it is currently nobody's task. Until it happens, six of sixteen primitives are unreachable and two
-   of four tradition hooks are decorative.
-4. **Then, and only then, the dimensionality modifier** — fold-adjacency plus LOS-piercing, temporary,
-   cache keyed on level. It is cheap in code and worthless while its package is orphaned.
+3. **Fix two small truths about `rules-raid` that are currently mis-recorded** — add `@mm/rules-raid`
+   to `packages/scenario/package.json`'s dependencies, and correct `CLAUDE.md`'s "nothing in
+   `scenario` opening a portal yet". Neither is this document's job, both are a few minutes, and both
+   caused this document to be wrong once already.
+4. **The dimensionality modifier** — fold-adjacency plus LOS-piercing, temporary, cache keyed on
+   level. **No longer blocked on anything**, which is the single biggest change between this
+   document's first draft and this one.
 5. **The `null` control arm**, whenever someone has an afternoon. It is free and it makes every other
    number mean something.
 
