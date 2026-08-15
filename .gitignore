@@ -40,6 +40,8 @@ __pycache__/
 .w17/
 # W46's affinity-ablation arms. Same reason.
 .w46/
+# W70's opening-square size sweep. Same reason: 480 runs of node-id sets.
+.w70/
 
 # The generated lattice report, regenerated with scripts/content-graph.mjs.
 # Named exactly rather than globbed: `ui/*.html` also matched ui/index.html, and
@@ -50,3 +52,8 @@ ui/lattices.html
 
 # W49 measurement scratch; the committed copies live in balance/
 .w49/
+
+# W117 regenerates these from balance/w99/w99-runs.csv in one command
+# (scripts/w99-csv-to-records.mjs). Committing them would duplicate the
+# committed CSV in a second format that could then drift from it.
+balance/w99/records/

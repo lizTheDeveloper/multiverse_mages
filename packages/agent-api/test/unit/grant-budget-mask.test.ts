@@ -25,12 +25,34 @@
  * budgets" but "the list is empty and therefore the entry is clear".
  */
 
-import { EVER_KNOWN, GRANT_BUDGET, attachRecord, componentOf, findUniverse } from '@mm/state';
+import { EVER_KNOWN, GRANT_BUDGET, attachRecord, cellIdAt, componentOf, findUniverse } from '@mm/state';
 import type { EntityHandle, SimState } from '@mm/sim-core';
-import { GOD_ACTION, buildCandidates, isLegal, legalityMask } from '@mm/agent-api';
+import { GOD_ACTION, buildCandidates, buildCatalogue, isLegal, legalityMask } from '@mm/agent-api';
 import { describe, expect, it } from 'vitest';
 
-import { FIXTURE_CATALOGUE, firstUniverse } from './fixtures.js';
+import { FIXTURE_NODES, firstUniverse } from './fixtures.js';
+
+/**
+ * The fixture catalogue widened by one ungranted root.
+ *
+ * `firstUniverse` holds an instance of *both* of its permitted tier-1 nodes —
+ * node 1 in a mind and the library, node 3 in the library — and the candidate
+ * list now excludes any node of which the universe holds an instance anywhere,
+ * because that is the condition `grantPlan` itself applies. Against the
+ * unwidened catalogue the list is therefore empty before the budget is ever
+ * consulted, and every assertion below would be about the instance rule rather
+ * than about the budget.
+ *
+ * Node 7 is a tier-1 root in a permitted cell that the fixture universe has
+ * never held, so the budget is the only thing left that can empty this list.
+ * Widened here rather than in `fixtures.ts` for the reason
+ * `action-space.test.ts` gives: every other suite reads the fixture's
+ * knowledge channels, and a seventh node would move them.
+ */
+const BUDGET_CATALOGUE = buildCatalogue(
+  [...FIXTURE_NODES, { nodeId: 7, cellId: cellIdAt(0, 0), tier: 1 }],
+  [1, 2, 3],
+);
 
 /** Attaches a budget row to the fixture universe. No call means no budget. */
 function withBudget(
@@ -50,14 +72,14 @@ function withBudget(
 function maskFor(state: SimState): Uint8Array {
   return legalityMask({
     state,
-    candidates: buildCandidates({ state, catalogue: FIXTURE_CATALOGUE }),
-    catalogue: FIXTURE_CATALOGUE,
+    candidates: buildCandidates({ state, catalogue: BUDGET_CATALOGUE }),
+    catalogue: BUDGET_CATALOGUE,
   });
 }
 
 function grantCandidates(state: SimState): number {
   return (
-    buildCandidates({ state, catalogue: FIXTURE_CATALOGUE }).get(
+    buildCandidates({ state, catalogue: BUDGET_CATALOGUE }).get(
       GOD_ACTION.grantFoundingKnowledge,
     ) ?? []
   ).length;

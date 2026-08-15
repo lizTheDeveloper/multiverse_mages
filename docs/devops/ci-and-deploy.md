@@ -126,8 +126,9 @@ branch or else the pushed branch. Three things about it are load-bearing:
   leaving a merge commit with no green on record. Branch protection is evaluated pre-merge under a
   different group, so nothing is bypassed — but `CLAUDE.md`'s release discipline wants the record,
   and an untagged, unverified release is not a rollback target.
-- **`main` runs never cancel each other.** They serialise. Every one of them is a merge commit whose
-  green is part of the release record.
+- **`main` runs never cancel each other** — *this was believed, and it is false. See the section
+  below.* The intent is right and the record it protects is the point; the mechanism did not deliver
+  it.
 
 Cancellation only ever hits the *older* run in a group, so the newest check run for a given name
 always belongs to the survivor: a cancelled `Verify (pinned Node)` can never mask a newer green one,
@@ -414,6 +415,50 @@ detail lives in comments in `/opt/ci-runner` on the box, which is not public.
 Golden fixtures deserve a specific mention. `npm run goldens:regen` is never run to make a test
 pass — a fixture diff is a claim that behaviour changed on purpose. CI cannot detect intent, so
 that rule is enforced by review, which is why the PR requirement is not optional.
+
+## `main` runs did not serialise, they cancelled in the queue (2026-08-14)
+
+**The claim above was wrong**, and it cost the tree its release record for several hours.
+
+`cancel-in-progress` is false for `main`, so no `main` run is ever killed *while running*. That is
+not the same as "every `main` commit is verified", because **GitHub keeps only one pending run per
+concurrency group**. A second `main` commit inside the window queues; a third cancels the second
+before it has started. Not interrupted — never begun.
+
+Measured on 2026-08-14, `main`'s last eight runs:
+
+```
+384a2a5  pending
+72d9538  cancelled     <- never ran
+e73bea9  failure       (Verify (pinned Node) = success; the balance gate is what failed)
+474ccdf  failure
+b4333d0  failure
+fbb9dcb  cancelled     <- never ran
+14155e7  cancelled     <- never ran
+a1998f1  success
+```
+
+One confirmed-green `Verify` in eight, and three commits with no verification on record at all. This
+is also why the `ui/session.json` break survived four merges: **the signal was being destroyed about
+as fast as it was generated.**
+
+**The window is set by a job that is explicitly not required.** `Balance gate, two hundred world
+years` takes ~35 minutes and lives in this workflow, so the *run* holds the group for ~40 minutes
+even though `Verify (pinned Node)` finishes in about eight. That job's own comment in `ci.yml` says
+*"nothing blocks on this job"* — true of the merge gate, and false of the next commit's
+verification, which is exactly what the shared group made it block.
+
+**Fix applied:** the SHA is now part of the group for `main` pushes only, so each `main` commit gets
+its own group and none can cancel another. Branch and PR runs are untouched — same shared group,
+same supersede-cancelling, which is correct there and is what the section above is about. Actions
+minutes are unmetered on a public repository, so the cost is nil.
+
+`cancel-in-progress` is left exactly as it was: with per-commit groups it has nothing to cancel on
+`main`, and leaving the expression intact keeps PR and fork behaviour provably unchanged.
+
+**An alternative that would also work and was not taken:** move the balance gate into its own
+workflow. That is arguably cleaner, but it changes a check name and the shape this document
+describes, where the fix above is one line.
 
 ## Known issue: the queue runs superseded commits (2026-08-13)
 

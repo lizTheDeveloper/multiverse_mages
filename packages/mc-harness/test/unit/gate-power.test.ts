@@ -84,22 +84,57 @@ const GATES = [
  * that nobody reads "the gate is fixed" as "the gate sees everything".
  */
 const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
-  // **Empty since w107, and the change is in the instrument rather than in the
-  // world.** `apply-magic` moved `denial-warden`'s `referenceNodesKnown` from
-  // 4.75 to 5.75 nodes and its `referenceNodesGained` with it, and a mean that
-  // is no longer within a rounding error of zero has a tolerance that no longer
-  // exceeds it. The agency gate is now blind to **none** of its eighty arm
-  // lines, median MDE 12.3 %. Shrinking this list is a build failure precisely
-  // so that it arrives with a rationale, and this is the rationale.
-  'balance/baselines/balance-gate-agency-v1.baseline.json': [],
+  // **Two since w108, and it was empty from w107 until then.** The history is
+  // the rationale, because the same two lines have now crossed 100 % in both
+  // directions and neither crossing was a change in the instrument.
+  //
+  // `w107`'s `apply-magic` moved `denial-warden`'s `referenceNodesKnown` from
+  // 4.75 to 5.75 nodes and its `referenceNodesGained` with it, and a mean no
+  // longer within a rounding error of zero had a tolerance that no longer
+  // exceeded it — so the list emptied and the gate saw all eighty arm lines.
+  //
+  // `w108/university-fidelity` moved them back: `referenceNodesKnown` 5.75 →
+  // 4.125 and `referenceNodesGained` 3.25 → 1.625, at MDE 114 % and 289 %.
+  // **That movement is a re-roll and not a mechanic** — the branch allocates
+  // `UNIVERSITY_STAFF` link rows, `contracts.md` §6 splits the RNG per entity
+  // handle, and a control build that keeps the rows and reverts only the
+  // scribing rule reproduces it metric for metric. Median agency arm MDE is
+  // 11.3 %, 78 of 80 below 100 %.
+  //
+  // Growing this list is a build failure precisely so that it arrives with a
+  // rationale, and this is the rationale. The lesson to carry: a `denial-warden`
+  // knowledge line sits close enough to zero that it will cross this threshold
+  // on any re-roll, in either direction, and that is a fact about the strategy
+  // rather than about the tolerance.
+  'balance/baselines/balance-gate-agency-v1.baseline.json': [
+    'referenceNodesGained@denial-warden',
+    'referenceNodesKnown@denial-warden',
+  ],
+  // Ten since w107, up from seven, and the three that joined are all the same
+  // shape: an arm whose *spread* widened rather than an arm that stopped
+  // producing. `referencePeakPopulation@permissive-breadth` is the clearest —
+  // its mean nearly doubled, 7,009 to 12,685, because applied food raises `K`
+  // hardest in the arm that permits the most cells, and seeds that were
+  // formerly all pinned near the same ceiling now finish far apart. A wider
+  // spread is a larger standard error, and a larger standard error is a wider
+  // tolerance. `referenceLibraryDepth@portal-rush` and
+  // `referenceNodesGainedFinalQuarter@portal-rush` are the same story at the
+  // other end: the raider arm's knowledge series lost the little it had.
+  //
+  // Growing this list is a build failure precisely so it arrives with a
+  // rationale rather than as a silent widening, and this is the rationale. Do
+  // not add a tenth without one.
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
     'referenceGrimoires@denial-warden',
     'referenceKnowledgeInstances@denial-warden',
     'referenceLibraryDepth@denial-warden',
+    'referenceLibraryDepth@portal-rush',
     'referenceNodesGained@denial-warden',
     'referenceNodesGainedFinalQuarter@narrow-depth',
     'referenceNodesGainedFinalQuarter@passive-control',
+    'referenceNodesGainedFinalQuarter@portal-rush',
     'referenceNodesKnown@denial-warden',
+    'referencePeakPopulation@permissive-breadth',
   ],
   'balance/baselines/balance-gate-v1.baseline.json': [],
   'balance/baselines/balance-gate-horizon-v1.baseline.json': [],
