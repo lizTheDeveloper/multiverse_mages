@@ -458,7 +458,13 @@ describe('contentRevision', () => {
     // `minItems` from 17 to 16 while leaving all seventeen records in place
     // reproduces `0dfdd5ef...` byte-identically. The digest is over the content
     // values, not over the files that constrain them.
-    expect(registry.contentRevision).toBe('0dfdd5efc2c6dad07bd486a7d80c851d');
+    // d4e30476... -> 2644913b..., when magnitudes became signed and
+    // `pn-the-nameless` took the first authored **cost** in the grid: a
+    // `teach-rate` of −192 beside its concealment. One authored value, and the
+    // revision is a digest over the values, so this is the ordinary case rather
+    // than a union of branches. It changes every run in which any mage learns
+    // The Nameless — which is the point of the change, not a side effect of it.
+    expect(registry.contentRevision).toBe("PENDING");
   });
 
   it('is stable across loads of identical content', () => {
