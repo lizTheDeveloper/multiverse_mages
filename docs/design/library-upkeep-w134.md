@@ -85,9 +85,18 @@ the after tree is **24,170 fp** — 2.4% of the endowment. The ledger closes to 
       = 109,301 (final stock)
 
 So every book in the game is written out of the founding endowment, and then charged 2 fp per tick
-forever against an income that was never sized to carry it. `firstUnpayableTick` is simply the tick
-at which the endowment stops covering the shelf, and #134 — by affiliating everybody, which is what
-it was for — moves that tick 2.3× earlier for the species that writes fastest.
+forever against an income that was never sized to carry it.
+
+**`firstUnpayableTick` is not the tick the endowment runs dry**, and it is worth being precise
+because the two readings look alike. `world-step.ts:688` gives scribes
+`max(stock.vellum − upkeepOwed, 0)`, so writing spends the stock down to *exactly this tick's*
+upkeep bill and no further — the stock sits on the upkeep line for as long as anyone is writing.
+Unpayability is the tick at which the shelf's bill exceeds what is standing there, and it resolves
+itself by destroying shelf until the bill fits again. The 109,301 fp dwarf ends with is therefore
+**recovery after the collapse, not headroom that was never used**: a 51.8-instance shelf owes about
+104 fp a tick, which that stock would carry for roughly a thousand ticks on a run that ended at
+821.5. #134 — by affiliating everybody, which is what it was for — moves the crossing 2.3× earlier
+for the species that writes fastest.
 
 Two arithmetic consequences worth having written down:
 

@@ -199,6 +199,17 @@ read the economy code — this is line-by-line the shortage semantics: every sub
 goes to servicing the negative pool, and nothing downstream can pull. Machinations has had a name and an
 exact semantics for this since 2012.
 
+> **Answered 2026-08-14, on `b02e115` (W134).** The code was read: **unmet upkeep does not bank as
+> debt.** `applyLibraryUpkeep` floors the shortfall into destroyed instances and drops the
+> remainder in the same tick, saying so by name — *"It is not banked — a 'pending degradation'
+> counter would be a field on a component `contracts.md` §1.5 does not have"* — and
+> `assertMaterialsNonNegative` refuses a negative stock at every tick boundary, so no pool can go
+> negative for inflow to service. **The design recommendation in §6 idea 1 — "unmet upkeep should
+> lapse into decay, never bank as debt" — is therefore already satisfied**, and the shortage
+> semantics above do not apply to this drain. Ideas 2 and 4 do: see
+> `docs/design/library-upkeep-w134.md`. The 3.4× figure in this section's heading is an older,
+> undated measurement and W134 does not replace it.
+
 **Name 2: converter-engine deadlock (Appendix B.3, verbatim):**
 > "A converter engine introduces the chances of a deadlock, when both resources dry out, the engine
 > stops working. Players run the risk of creating deadlocks themselves by forgetting to invest energy
