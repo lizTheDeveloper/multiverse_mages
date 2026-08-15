@@ -14,16 +14,16 @@ is what happens when you skip that step.
 
 | Package | Integration debt | Superseded | Tooling-only | Dead | False positive | Total |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `content` | 0 | 0 | 5 | 1 | 0 | 6 |
+| `content` | 1 | 0 | 5 | 1 | 0 | 7 |
 | `coordination` | 13 | 2 | 0 | 1 | 0 | 16 |
 | `primitives` | 2 | 0 | 1 | 0 | 0 | 3 |
 | `rules-magic` | 16 | 6 | 1 | 4 | 0 | 27 |
-| `rules-raid` | 5 | 0 | 0 | 2 | 0 | 7 |
+| `rules-raid` | 9 | 0 | 0 | 2 | 0 | 11 |
 | `rules-world` | 19 | 6 | 3 | 12 | 0 | 40 |
-| `scenario` | 0 | 0 | 12 | 0 | 0 | 12 |
+| `scenario` | 3 | 0 | 12 | 0 | 0 | 15 |
 | `sim-core` | 1 | 0 | 5 | 0 | 0 | 6 |
 | `state` | 5 | 0 | 0 | 3 | 0 | 8 |
-| **Total** | **61** | **14** | **27** | **23** | **0** | **125** |
+| **Total** | **69** | **14** | **27** | **23** | **0** | **133** |
 
 The headline: **61 of the 125 are integration debt** — mechanics that are built, mostly tested,
 exported, and that nothing in a running universe calls. That is the number the raw count was hiding.
@@ -69,9 +69,19 @@ were moved to §3 and are not here.
 
 One more was dropped from this table on inspection: **`withdrawGrimoire`** is declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"* — which is an accepted design decision rather than debt.
 
-That is 46 of the 61. The remaining 15 are integration debt of the ordinary kind — an economy input
+That is 46 of the 69. The remaining 23 are integration debt of the ordinary kind — an economy input
 list, a commitment predicate, a monoculture threshold, `speciesRediscoveryMultiplier`,
 `worshipShareOfRegeneration` — worth wiring, not worth a row.
+
+**Eight of those 23 arrived on 2026-08-14**, when `w182/raid-seam` merged `main`: 125 → 133, and the
+split is worth stating because only half is this branch's. Four — `characterFor`, `FOUNDING_PROBE`,
+`auditFounding`, `formatFounding` — were **already slipped on `main`** before that branch existed,
+confirmed by running the ratchet on a pristine `origin/main` worktree at `9b4b242d`, which reports
+the same four. The other four are `rules-raid`'s verb surface from `w37/raid-playable`:
+`legalVerbs`, `verbSide`, `runPlanFor` and `ENGAGEMENT_PHASE_NAMES` — a phase/side verb table for a
+client and a mask, and the scripted-plan entry point for a headless run. They are staged ahead of
+their consumer rather than dead. `applyDirective` is deliberately **not** among them: the raid seam
+wired it, which was the point of that branch.
 
 ---
 
