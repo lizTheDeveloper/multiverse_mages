@@ -55,7 +55,7 @@ is not a number.
 | 13 | [`vision-audit.md`](vision-audit.md) | **measured**, stale on the vision's text | Which vision claims are wired, at `6e5ecee` (2026-08-11), with evidence per row. Its reachability findings still hold; its §3, §11, §12 and §13 rows audit sentences since amended. See the note at its head. |
 | 14 | [`economy-flow-models.md`](economy-flow-models.md) | research synthesis | W31's survey of formal economy-design languages. Concludes Machinations fits this game unusually well, and names what the literature does not supply. |
 | 15 | [`interface-findings.md`](interface-findings.md) | **measured** | What eleven interface prototypes found that the contracts do not carry. Not a specification; each entry says where the finding should land. |
-| 16 | [`reachability-triage.md`](reachability-triage.md) | **measured** | The 125 findings of `npm run check:reachability`, at `e2b89d8` (2026-08-14), sorted into 76 integration-debt items, 26 tooling-only exports, 23 dead symbols and 0 false positives. An inventory, not a fix; §2 names the mechanisms whose absence silently disables a subsystem. |
+| 16 | [`reachability-triage.md`](reachability-triage.md) | **measured** | The 125 findings of `npm run check:reachability`, at `e2b89d8` (2026-08-14): 63 integration-debt items, 13 superseded accessors, 26 tooling-only exports, 23 dead symbols, 0 false positives. An inventory, not a fix. §2 names the mechanisms whose absence disables a subsystem; §3 and §5 are why an unreached symbol is never by itself a claim about a capability. |
 
 ## Deferred — decided early, scheduled late
 
