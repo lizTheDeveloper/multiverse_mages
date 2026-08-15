@@ -309,9 +309,9 @@
   },
   {
     "id": "casting-vellum-per-month",
-    "value": 16,
+    "value": 4,
     "unit": "fp",
-    "gloss": "Vellum one mage-month of magical work consumes, in the same unit as MATERIALS_PER_LABORER (16) so the two compare: a month at the bench eats about what a month in a field makes. Vellum because vellum is the contended stock \u2014 stone is never short across the 2400-tick reference run, so a claim there would cost nothing. Paid before libraryUpkeep, so a universe that works magic hard cannot also keep its shelves.",
+    "gloss": "Vellum one mage-month of magical work consumes. A quarter of MATERIALS_PER_LABORER (16), which is the unit it is expressed in so the two compare. Chosen by sweep: at 16 and 8 the library sheds nodes and reference-long-run 9.8's tripwire fires; 4 is the highest rate that costs without shedding. Vellum because vellum is the contended stock \u2014 stone is never short across 2400 ticks, so a claim there would cost nothing. Paid before libraryUpkeep.",
     "tuningStatus": "untuned"
   }
 ]

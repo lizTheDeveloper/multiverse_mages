@@ -140,8 +140,14 @@ describe('subsistence is a claim on the food stock like any other', () => {
 
 describe('consumption follows a documented priority order', () => {
   it('pays in the order the module declares', () => {
+    // `casting` joined on 2026-08-15 (`substrate.md` §6), second: after the
+    // populace eats and ahead of the archive. The position is the decision —
+    // `remaining` is tracked per kind, so a claimant only ranks against the
+    // ones sharing its stock, and casting on vellum is what makes §7.1's
+    // *"magic competes with the library, not with bread"* a true sentence.
     expect([...CONSUMPTION_ORDER]).toEqual([
       'subsistence',
+      'casting',
       'libraryUpkeep',
       'scribing',
       'construction',
@@ -158,7 +164,8 @@ describe('consumption follows a documented priority order', () => {
       expect(CLAIMANT_KIND[claimant]).toBeDefined();
     }
     expect(CLAIMANT_KIND).toEqual({
-      casting: 0, subsistence: 'food',
+      subsistence: 'food',
+      casting: 'vellum',
       libraryUpkeep: 'vellum',
       scribing: 'vellum',
       construction: 'stone',

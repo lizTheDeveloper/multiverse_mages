@@ -78,6 +78,12 @@ describe('the three kinds, and the total claimant map', () => {
   });
 
   it('gives every claimant in CONSUMPTION_ORDER a kind, and only vellum is shared', () => {
+    // Three vellum claimants since the `casting` claim landed: casting,
+    // libraryUpkeep and scribing all draw on the archive's skins. That is the
+    // point of putting casting there — `consumeMaterials` tracks `remaining`
+    // per kind, so a claimant only ranks against the ones it SHARES a stock
+    // with, and magic competing with the library is what substrate.md §7.1
+    // decided (a stone claim would have competed with construction instead).
     for (const claimant of CONSUMPTION_ORDER) {
       expect(MATERIAL_KINDS).toContain(CLAIMANT_KIND[claimant]);
     }
@@ -85,7 +91,7 @@ describe('the three kinds, and the total claimant map', () => {
     // Vellum has two claimants (libraryUpkeep, scribing); food and stone have
     // exactly one each. That is the whole of "only the vellum pair still
     // competes", stated as a count rather than as prose.
-    expect(kindsClaimed.filter((kind) => kind === 'vellum')).toHaveLength(2);
+    expect(kindsClaimed.filter((kind) => kind === 'vellum')).toHaveLength(3);
     expect(kindsClaimed.filter((kind) => kind === 'food')).toHaveLength(1);
     expect(kindsClaimed.filter((kind) => kind === 'stone')).toHaveLength(1);
   });

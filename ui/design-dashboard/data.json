@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "e9511403d956c7cc67660d03dbd9cc2e",
+    "contentRevision": "c8f737c02edba6edf8294ba1b82e5f5b",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -17,7 +17,7 @@
       "godCosts": 16,
       "godConstants": 72,
       "raidConstants": 46,
-      "autonomyWeights": 38
+      "autonomyWeights": 39
     },
     "metricRegistrySize": 18,
     "note": "This payload is a pure function of the repository contents and a test asserts it, so it is a statement about the commit you are reading it on. Figures lifted from a document carry that document's own stated date and ref, and are labelled as historical."
@@ -2538,8 +2538,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 129,
-    "examinedSymbolCount": 879,
+    "findingCount": 130,
+    "examinedSymbolCount": 883,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2551,7 +2551,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 323,
+    "productionFileCount": 324,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2900,6 +2900,12 @@
         "file": "packages/rules-world/src/economy/carrying-capacity.ts",
         "line": 222,
         "name": "NO_TERRITORY",
+        "kind": "const"
+      },
+      {
+        "file": "packages/rules-world/src/economy/casting.ts",
+        "line": 50,
+        "name": "REQUIRED_CASTING_WEIGHTS",
         "kind": "const"
       },
       {
