@@ -84,6 +84,12 @@ const PERMANENT_IDS: Readonly<Record<string, number>> = {
   // that is the assertion doing its job: it is the only thing that would catch
   // two of the three quietly shipping the same number. Do not add a gap
   // exemption to make it green.
+  //
+  // The general rule this is one instance of — an append's id is valid only
+  // once every id below it has landed, so an id is settled by merge position
+  // and not by authoring, and re-checking it belongs to merging — is argued in
+  // `streams.ts` beside the registry itself. Do not read the specific
+  // assignment here as an instruction; it is one queue's arithmetic.
   detachment: 14,
 };
 

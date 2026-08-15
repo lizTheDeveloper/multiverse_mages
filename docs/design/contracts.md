@@ -1305,6 +1305,15 @@ That is the check working. The alternative — each branch taking the next numbe
 free — is three PRs shipping one ID and three baselines that silently stop describing the game they
 were measured on.
 
+Stated generally, because the assignment above is one queue's arithmetic and not a rule: **an
+append's ID is valid only once every ID below it has landed.** So an ID is settled by a branch's
+position in the merge queue rather than at the moment it is authored, and **re-checking it is part
+of merging** — a change that has sat while another append landed must confirm its ID is still the
+next one and renumber if it is not. That costs nothing extra: the `rngRegistryHash` refusal forces a
+re-baseline for any append regardless. "Take the next free number" is correct only when nothing else
+is in flight, and is precisely wrong when something is, because both changes see the same number
+free.
+
 Draws key on `(rootSeed, stream, tick, actorKey, drawOrdinal)` where `actorKey` is stable identity,
 never array index. This gives **insertion invariance**: adding a combatant, or adding a draw,
 disturbs nobody else's rolls. Without it, an ablation run diverges from its control for reasons

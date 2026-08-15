@@ -82,6 +82,28 @@ export const RNG_STREAM = {
    * is the correct reading of a branch holding the second slot in a queue whose
    * first slot has not arrived. It closes when #170 is merged in, and needs no
    * edit here.
+   *
+   * ## The general rule, because the case above is not one
+   *
+   * **An append's id is valid only once every id below it has landed.** Density
+   * makes that a hard consequence rather than etiquette: a branch that takes
+   * `N` while anything under `N` is still unmerged reads as a gap, and its
+   * density assertion is red until those land — so "take the next free number"
+   * is wrong advice the moment two changes are in flight, because they both see
+   * the same number free.
+   *
+   * Two things follow, and the second is the one that gets forgotten:
+   *
+   * 1. An id is **not** settled when it is authored. It is settled by the
+   *    branch's position in the merge queue, which can change after the commit
+   *    that wrote it.
+   * 2. **Re-checking it is part of merging**, not part of authoring. A branch
+   *    that has sat while another append landed must confirm its id is still
+   *    the next one, and renumber if it is not — which is cheap, because the
+   *    `rngRegistryHash` refusal already forces a re-baseline either way.
+   *
+   * Do not read "#170 lands 13, so this is 14" as an instruction. It is one
+   * queue's arithmetic, and it is wrong on any tree with a different queue.
    */
   detachment: 14,
 } as const;
