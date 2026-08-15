@@ -48,6 +48,8 @@
     "ui": "npx --yes http-server . -p 8200 --no-dotfiles -c-1",
     "preui": "npm run ui:dashboard && npm run ui:record",
     "ui:record": "node scripts/record-session.mjs",
+    "preplay": "npm run typecheck",
+    "play": "node scripts/play-server.mjs",
     "preui:record": "npm run typecheck",
     "ui:dashboard": "node scripts/build-design-dashboard.mjs",
     "preui:dashboard": "npm run typecheck"
