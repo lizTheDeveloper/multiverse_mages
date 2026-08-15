@@ -100,6 +100,7 @@ function ownPreferences(
     observation,
     mask: fullMask(),
     round: 0,
+    candidates: new Map(),
     context: contextFor(definition.strategyId, 7),
   }).filter((preference) => preference.action !== GOD_ACTION.declareAscension);
 }
@@ -204,7 +205,7 @@ describe('a blocked preference falls through (task 5.6)', () => {
       for (const [index, mask] of adversarialMasks().entries()) {
         const policy = policyFor(definition, contextFor(definition.strategyId, 4242));
         for (let round = 0; round < 4; round += 1) {
-          const chosen = policy(blankObservation(), mask, 0) as ActionSubmission | number;
+          const chosen = policy(blankObservation(), mask, 0, new Map()) as ActionSubmission | number;
           const action = typeof chosen === 'number' ? chosen : chosen.action;
           expect(
             isLegal(mask, action),
@@ -231,13 +232,14 @@ describe('a blocked preference falls through (task 5.6)', () => {
           observation: blankObservation(),
           mask,
           round: 0,
+          candidates: new Map(),
           context: contextFor(definition.strategyId, 99),
         });
         const expected =
           reference.find((preference) => isLegal(mask, preference.action)) ??
           ({ action: GOD_ACTION.noop } as ActionSubmission);
         expect(
-          policy(blankObservation(), mask, 0),
+          policy(blankObservation(), mask, 0, new Map()),
           `${definition.strategyId} did not fall through to its first legal preference`,
         ).toEqual(expected);
       }
@@ -308,7 +310,7 @@ describe('a blocked preference falls through (task 5.6)', () => {
     for (const definition of BOT_POOL) {
       const policy = policyFor(definition, contextFor(definition.strategyId, 3));
       for (let round = 0; round < 3; round += 1) {
-        expect(policy(blankObservation(), impossible, 0)).toEqual({ action: GOD_ACTION.noop });
+        expect(policy(blankObservation(), impossible, 0, new Map())).toEqual({ action: GOD_ACTION.noop });
       }
     }
   });
@@ -327,7 +329,7 @@ describe('a blocked preference falls through (task 5.6)', () => {
     const policy = policyFor(definition, contextFor('portal-rush', 7));
     const submissions: number[] = [];
     for (let round = 0; round < 12; round += 1) {
-      const chosen = policy(blankObservation(), mask, 0) as ActionSubmission;
+      const chosen = policy(blankObservation(), mask, 0, new Map()) as ActionSubmission;
       submissions.push(chosen.action);
     }
     expect(submissions).not.toContain(GOD_ACTION.openPortal);
@@ -344,7 +346,7 @@ describe('a blocked preference falls through (task 5.6)', () => {
     const portalOpen = fullMask();
     portalOpen[GOD_ACTION.declareAscension] = 0;
     const openPolicy = policyFor(definition, contextFor('portal-rush', 7));
-    expect((openPolicy(blankObservation(), portalOpen, 0) as ActionSubmission).action).toBe(
+    expect((openPolicy(blankObservation(), portalOpen, 0, new Map()) as ActionSubmission).action).toBe(
       GOD_ACTION.openPortal,
     );
   });
@@ -523,8 +525,8 @@ describe('strategies are deterministic at a fixed agent-side seed (task 5.10)', 
     const zero: number[] = [];
     const one: number[] = [];
     for (let round = 0; round < 24; round += 1) {
-      zero.push((slotZero(blankObservation(), mask, 0) as ActionSubmission).action);
-      one.push((slotOne(blankObservation(), mask, 1) as ActionSubmission).action);
+      zero.push((slotZero(blankObservation(), mask, 0, new Map()) as ActionSubmission).action);
+      one.push((slotOne(blankObservation(), mask, 1, new Map()) as ActionSubmission).action);
     }
     expect(zero).not.toEqual(one);
   });

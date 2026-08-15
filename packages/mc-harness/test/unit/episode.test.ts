@@ -36,6 +36,10 @@ class NeverEndingSession implements AgentSession<Record<string, never>> {
   observe(): Float64Array {
     return new Float64Array(1);
   }
+  /** No parameterized actions in this double; the loop only counts submissions. */
+  candidates(): ReadonlyMap<number, readonly never[]> {
+    return new Map();
+  }
   legalActions(): Uint8Array {
     return Uint8Array.of(1);
   }

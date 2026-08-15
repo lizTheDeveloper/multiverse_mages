@@ -97,7 +97,7 @@
  *   rules packages, which §5 forbids the harness.
  */
 
-import type { AgentRng } from '@mm/agent-api';
+import type { AgentRng, CandidateLists } from '@mm/agent-api';
 import {
   ACTION_SPACE_SIZE,
   GOD_ACTION,
@@ -132,6 +132,17 @@ export interface PreferenceInput {
   readonly mask: Uint8Array;
   /** Rounds this policy has already acted in this episode. Zero on the first. */
   readonly round: number;
+  /**
+   * §4.4's slot-indexed candidate lists, keyed by action id.
+   *
+   * The mask is per-kind: it says whether an action has *any* target, never how
+   * many. Without this a strategy picking a slot index is guessing against
+   * `candidateSlotCount`'s declared constant, which outruns the live list for
+   * most of a run — `blessMage` is pinned at 32 against 13–18 living mages
+   * early on. Every index past the end is refused as an ordinary illegal action
+   * and buys nothing.
+   */
+  readonly candidates: CandidateLists;
   readonly context: StrategyContext;
 }
 
@@ -429,10 +440,24 @@ function formExceptFirst(round: number): number {
  * was driving, right up until the grid was re-authored.
  */
 
-/** Cycles a slot index over an action's pinned `k`. */
-function rotate(action: number, round: number): number {
-  const slots = candidateSlotCount(action);
-  return slots === 0 ? 0 : round % slots;
+/**
+ * Cycles a slot index over the action's **live** candidate list.
+ *
+ * Was `round % candidateSlotCount(action)` — the *declared* pin. `CANDIDATE_SLOTS`
+ * states the maximum a list may reach, not its length now, so rotating over it
+ * names a slot past the end for most of a run: `blessMage` is pinned at 32
+ * against 13–18 living mages early. §4.4 makes that "an ordinary illegal
+ * action", so the turn is spent and nothing is bought.
+ *
+ * Falls back to the pin only when the lists are unavailable, which no
+ * production path does — the episode loop always has them. Keeping the fallback
+ * means a test double that omits `candidates` behaves as it did rather than
+ * dividing by zero, and the `?? ` is the only place the old constant is still
+ * consulted.
+ */
+function rotate(action: number, round: number, candidates: CandidateLists): number {
+  const live = candidates.get(action)?.length ?? candidateSlotCount(action);
+  return live === 0 ? 0 : round % live;
 }
 
 /**
@@ -553,7 +578,7 @@ const PERMISSIVE_BREADTH: StrategyDefinition = {
     GOD_ACTION.fundUniversity,
     GOD_ACTION.encourageResearch,
   ],
-  preferences: ({ observation, round }) => {
+  preferences: ({ candidates, observation, round }) => {
     const universities = channel(observation, UNIVERSITY_COUNT);
     const preferred: ActionSubmission[] = [];
     // Found *first* while there is nothing to fund, and only then permit.
@@ -582,7 +607,7 @@ const PERMISSIVE_BREADTH: StrategyDefinition = {
     if (universities !== 0) {
       preferred.push({
         action: GOD_ACTION.fundUniversity,
-        parameter: rotate(GOD_ACTION.fundUniversity, round),
+        parameter: rotate(GOD_ACTION.fundUniversity, round, candidates),
       });
     }
     // Slot 0 is the deepest permitted cell; rotating spreads encouragement
@@ -590,7 +615,7 @@ const PERMISSIVE_BREADTH: StrategyDefinition = {
     // narrow-depth below.
     preferred.push({
       action: GOD_ACTION.encourageResearch,
-      parameter: rotate(GOD_ACTION.encourageResearch, round),
+      parameter: rotate(GOD_ACTION.encourageResearch, round, candidates),
     });
     return preferred;
   },
@@ -731,7 +756,7 @@ const ARCHIVIST: StrategyDefinition = {
     GOD_ACTION.blessMage,
     GOD_ACTION.assignRole,
   ],
-  preferences: ({ observation, round }) => {
+  preferences: ({ candidates, observation, round }) => {
     const libraries = channel(observation, LIBRARY_DEPTH);
     const preferred: ActionSubmission[] = [];
     // Below a shallow library, build the shelves; above it, fill them.
@@ -739,10 +764,10 @@ const ARCHIVIST: StrategyDefinition = {
       preferred.push({ action: GOD_ACTION.fundUniversity, parameter: 0 });
     }
     preferred.push(
-      { action: GOD_ACTION.grantFoundingKnowledge, parameter: rotate(GOD_ACTION.grantFoundingKnowledge, round) },
+      { action: GOD_ACTION.grantFoundingKnowledge, parameter: rotate(GOD_ACTION.grantFoundingKnowledge, round, candidates) },
       { action: GOD_ACTION.blessMage, parameter: 0 },
-      { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round) },
-      { action: GOD_ACTION.fundUniversity, parameter: rotate(GOD_ACTION.fundUniversity, round) },
+      { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round, candidates) },
+      { action: GOD_ACTION.fundUniversity, parameter: rotate(GOD_ACTION.fundUniversity, round, candidates) },
     );
     return preferred;
   },
@@ -794,8 +819,8 @@ const PORTAL_RUSH: StrategyDefinition = {
       'to win while being one of the seven that could not.',
   },
   signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.assignRole, GOD_ACTION.declareAscension],
-  preferences: ({ round }) => [
-    { action: GOD_ACTION.openPortal, parameter: rotate(GOD_ACTION.openPortal, round) },
+  preferences: ({ candidates, round }) => [
+    { action: GOD_ACTION.openPortal, parameter: rotate(GOD_ACTION.openPortal, round, candidates) },
     // Somebody has to go through it. `rules-raid`'s `RAIDING_ROLES` is the
     // `raider` role alone and `createMage` makes every mage a `researcher`, so
     // a god who opens portals and never assigns a role sends an empty warband:
@@ -809,7 +834,7 @@ const PORTAL_RUSH: StrategyDefinition = {
     // `raider` about one submission in three. That is the coarsest instrument
     // the action space offers and it is enough: the point of this bot is that
     // it raids, not that it fields an optimal warband.
-    { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round) },
+    { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round, candidates) },
     // Tempo while the portal is unreachable: push the deepest cell and permit
     // the technique that would open more of it.
     { action: GOD_ACTION.encourageResearch, parameter: 0 },
@@ -845,7 +870,7 @@ const WORSHIP_MAXIMIZER: StrategyDefinition = {
       'rather than an achievement. That reading only exists if it declares on the first round it can.',
   },
   signatureActions: [GOD_ACTION.blessMage, GOD_ACTION.fundUniversity, GOD_ACTION.changeTradition],
-  preferences: ({ observation, round }) => {
+  preferences: ({ candidates, observation, round }) => {
     const favor = channel(observation, FAVOR);
     const worship = channel(observation, WORSHIP);
     const preferred: ActionSubmission[] = [];
@@ -856,16 +881,16 @@ const WORSHIP_MAXIMIZER: StrategyDefinition = {
     // Worship low relative to favor: buy visibility — blessings and buildings.
     if (worship < favor) {
       preferred.push(
-        { action: GOD_ACTION.blessMage, parameter: rotate(GOD_ACTION.blessMage, round) },
+        { action: GOD_ACTION.blessMage, parameter: rotate(GOD_ACTION.blessMage, round, candidates) },
         { action: GOD_ACTION.fundUniversity, parameter: 0 },
       );
     }
     preferred.push(
-      { action: GOD_ACTION.fundUniversity, parameter: rotate(GOD_ACTION.fundUniversity, round) },
+      { action: GOD_ACTION.fundUniversity, parameter: rotate(GOD_ACTION.fundUniversity, round, candidates) },
       // A tradition change is the one lever §2.5 gives over how casting is
       // priced, so a strategy about prices tries it once the cheap moves are
       // masked.
-      { action: GOD_ACTION.changeTradition, parameter: rotate(GOD_ACTION.changeTradition, round) },
+      { action: GOD_ACTION.changeTradition, parameter: rotate(GOD_ACTION.changeTradition, round, candidates) },
     );
     return preferred;
   },
@@ -1186,7 +1211,7 @@ const ALLOCATE_SPREAD: StrategyDefinition = {
     GOD_ACTION.fundUniversity,
     GOD_ACTION.encourageResearch,
   ],
-  preferences: ({ round }) =>
+  preferences: ({ candidates, round }) =>
     allocationPreferences(round, (action, currentRound) =>
       action === GOD_ACTION.fundUniversity
         ? // Slots 1-7: the existing universities. Slot 0 is skipped because it
@@ -1198,7 +1223,7 @@ const ALLOCATE_SPREAD: StrategyDefinition = {
           ? // Not `rotate`: the blessing list is shorter than its pinned k for
             // most of a run. See SPREAD_BLESS_SLOTS.
             currentRound % SPREAD_BLESS_SLOTS
-          : rotate(action, currentRound),
+          : rotate(action, currentRound, candidates),
     ),
 };
 
@@ -1229,7 +1254,11 @@ const ALLOCATE_SPREAD: StrategyDefinition = {
  * arms disagreed about anything other than action 16 would attribute the
  * difference to alliances anyway, and nobody would be able to tell.
  */
-function allianceGroundwork(observation: Float64Array, round: number): ActionSubmission[] {
+function allianceGroundwork(
+  observation: Float64Array,
+  round: number,
+  candidates: CandidateLists,
+): ActionSubmission[] {
   const universities = channel(observation, UNIVERSITY_COUNT);
   const preferred: ActionSubmission[] = [];
 
@@ -1259,7 +1288,7 @@ function allianceGroundwork(observation: Float64Array, round: number): ActionSub
   // chain including theirs.
   preferred.push({
     action: GOD_ACTION.grantFoundingKnowledge,
-    parameter: rotate(GOD_ACTION.grantFoundingKnowledge, round),
+    parameter: rotate(GOD_ACTION.grantFoundingKnowledge, round, candidates),
   });
 
   // Roles, rotated. `role-appeal-raider-portal` is +256 and is the only term in
@@ -1268,19 +1297,19 @@ function allianceGroundwork(observation: Float64Array, round: number): ActionSub
   // targeting, for the same reason as the grants.
   preferred.push({
     action: GOD_ACTION.assignRole,
-    parameter: rotate(GOD_ACTION.assignRole, round),
+    parameter: rotate(GOD_ACTION.assignRole, round, candidates),
   });
 
   if (universities !== 0) {
     preferred.push({
       action: GOD_ACTION.fundUniversity,
-      parameter: rotate(GOD_ACTION.fundUniversity, round),
+      parameter: rotate(GOD_ACTION.fundUniversity, round, candidates),
     });
   }
 
   preferred.push({
     action: GOD_ACTION.encourageResearch,
-    parameter: rotate(GOD_ACTION.encourageResearch, round),
+    parameter: rotate(GOD_ACTION.encourageResearch, round, candidates),
   });
 
   return preferred;
@@ -1310,14 +1339,14 @@ const ALLIANCE_SEEKER: StrategyDefinition = {
       'that the comparison is of eligibility and not of nerve.',
   },
   signatureActions: [GOD_ACTION.inviteScholar],
-  preferences: ({ observation, round }) => [
+  preferences: ({ observation, round, candidates }) => [
     // First, and the position is the strategy. The mask is closed until a
     // living mage holds portal magic, so this costs nothing on every round
     // where it is not available and fires on the first round where it is —
     // which is what makes the arrival tick a measurement rather than a
     // consequence of where a line sits in a list.
     { action: GOD_ACTION.inviteScholar, parameter: 0 },
-    ...allianceGroundwork(observation, round),
+    ...allianceGroundwork(observation, round, candidates),
   ],
 };
 
@@ -1342,7 +1371,7 @@ const ALLIANCE_ABSTAINER: StrategyDefinition = {
     GOD_ACTION.grantFoundingKnowledge,
     GOD_ACTION.assignRole,
   ],
-  preferences: ({ observation, round }) => allianceGroundwork(observation, round),
+  preferences: ({ observation, round, candidates }) => allianceGroundwork(observation, round, candidates),
 };
 
 export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
@@ -1459,8 +1488,19 @@ export const BOT_POOL_REGISTRY: BotStrategyRegistry = botStrategyRegistry(BOT_PO
  */
 export function policyFor(definition: StrategyDefinition, context: StrategyContext): SlotPolicy {
   let round = 0;
-  return (observation: Float64Array, mask: Uint8Array): ActionSubmission => {
-    const preferences = effectivePreferences(definition, { observation, mask, round, context });
+  return (
+    observation: Float64Array,
+    mask: Uint8Array,
+    _slot: number,
+    candidates: CandidateLists,
+  ): ActionSubmission => {
+    const preferences = effectivePreferences(definition, {
+      observation,
+      mask,
+      round,
+      candidates,
+      context,
+    });
     round += 1;
     for (const preference of preferences) {
       if (isLegal(mask, preference.action)) return preference;
