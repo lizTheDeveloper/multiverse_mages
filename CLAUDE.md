@@ -311,6 +311,25 @@ If you do land a commit on the wrong branch: **reverting is usually right and fo
 Reverting a *merge* commit is the exception — it poisons future merges of the same content for
 whoever owns the branch, so a stray merge is better left in place than reverted.
 
+## A gate run taken after re-recording cannot fail
+
+When a baseline is regenerated from a tree and the gate is then run on that same tree, the gate compares
+the tree against numbers derived from it. **It passes by construction.** Quoting that run as evidence the
+change is safe is circular, and it looks exactly like evidence.
+
+**Cite the pre-record run**: the gate against the *old* baselines, which either shows every row at
+`delta 0.00000` or shows what moved. `supersededDeltas` in the regenerated file carries the same
+information and is committed, so it is quotable after the fact.
+
+Two related traps in the same command:
+
+- **`regenerate.ts` replaces `notes` and defaults to empty.** Carrying prior entries forward is an
+  explicit act, not a default. A re-record that silently drops four notes looks identical to one that
+  never had them.
+- **`contentHash` at the top level of a baseline is a tamper seal over the file's own fields, not a
+  content revision.** `provenance.contentHash` is the content revision. Reasoning from the wrong one
+  produces confident nonsense — two baselines with different seals can hold identical provenance.
+
 ## A background loop outlives the reasoning that started it
 
 An auto-merger built earlier in a session was still running an hour after the same session wrote down

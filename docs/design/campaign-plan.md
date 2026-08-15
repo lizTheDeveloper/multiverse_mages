@@ -9871,3 +9871,51 @@ it rather than an instinct.
 
 It also reframes every balance gate: they all play the twelve, so **they are systematically blind to the
 mechanics that only wider play reveals.** A green gate is a statement about a narrow position.
+
+## W193 — alliances still moves nothing with anti-requisites in the base, and the proof is which run was cited
+
+#126, brought current through `1e2651a` and re-recorded. **109 of 109 rows at `delta 0.00000`.**
+
+| gate | rows | at zero |
+|---|--:|--:|
+| `balance-gate-v1` | 9 | 9 |
+| `balance-gate-horizon-v1` | 10 | 10 |
+| `balance-gate-agency-v1` | 90 | 90 |
+
+And a number that had drifted in the retelling is repaired: **the old "90/90" was the agency gate alone**,
+90 of the 109. So this *restores* 109/109 rather than carrying a smaller figure forward. Every metric value
+is byte-identical to `main`'s; only `provenance.contentHash` moved.
+
+### The methodological point, now a rule in `CLAUDE.md`
+
+The agent cited the **pre-record** gate runs — the gate against the *old* baselines — and said why:
+**a gate run taken after re-recording compares the tree against numbers derived from that same tree and
+cannot fail.** It passes by construction and looks exactly like evidence. `supersededDeltas` carries the
+same information and is committed, so it stays quotable afterwards.
+
+Two neighbouring traps recorded with it:
+
+- **`regenerate.ts:214` replaces `notes` and defaults to empty.** Carrying the four prior entries forward
+  is an explicit act. A re-record that silently drops them is indistinguishable from one that never had
+  them.
+- The top-level `contentHash` is a **tamper seal over the file's own fields**, not a content revision —
+  `provenance.contentHash` is. I read the wrong one earlier in this campaign and reported a difference
+  that was circular.
+
+The zero-count grep also got a **positive control**: run against #161's own recording it finds that
+recording's 19 movers, so a zero from it means zero rather than a broken pattern.
+
+### Three findings from the merge
+
+- **The PR body claimed `balance-gate-ascension-v1` was re-recorded. It never was** — byte-identical to
+  `main`, still carrying w107's hash from #132. An earlier merge on the branch took main's side and nobody
+  updated the prose. **A PR body is not a ref either.**
+- `ACTION_NAMES` gained `'inviteScholar'` at index 16 — the real fix, since #166's drift guard is still
+  open. #164 rewrote most of `strategy-audit.ts` and git auto-merged the entry intact.
+- The `interning` revision's independence was **measured rather than asserted**: stripping `cell.json`'s
+  `excludes` reproduces the prior digest exactly, the schema is **not** in the digest preimage, and the
+  mirror probe is *refused* by the god-cost invariant because `GOD_ACTION_ID_MAX` moved to 16 — which is
+  the silently-free-god-action fix doing its job.
+
+`verify:nosweeps` exit 0, **331 files / 4,583 tests**, three gates PASS. The two non-blocking checks fail
+here and **also on `main`**.
