@@ -311,6 +311,21 @@ If you do land a commit on the wrong branch: **reverting is usually right and fo
 Reverting a *merge* commit is the exception — it poisons future merges of the same content for
 whoever owns the branch, so a stray merge is better left in place than reverted.
 
+## `git worktree add <dir> <branch>` checks out the *local* branch, not the remote
+
+An agent ran `git worktree add .claude/worktrees/x w116/complete-affiliation` and got a checkout **89
+commits behind `origin`**, because a local ref of that name existed and was stale. Merging `origin/main`
+into it produced **seven conflicts including `packages/coordination/src/world-step.ts`** — a file that had
+already been verified clean at the real head. Resolving those would have been surgery on the deterministic
+rules path to fix a conflict that does not exist.
+
+**Add worktrees from the remote ref, or fast-forward immediately after:**
+
+    git worktree add <dir> --detach origin/<branch>       # or
+    git -C <dir> merge --ff-only origin/<branch>
+
+And when a merge conflicts in a file someone told you was clean, **suspect your ref before their finding.**
+
 ## A trailing `echo` throws away the exit code you were checking
 
 A compound command's status is its **last** command's status. So
