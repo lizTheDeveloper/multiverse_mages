@@ -76,6 +76,35 @@ export { heldMastery, teach, transmittedMastery } from './teaching.js';
 export type { ScribingInputs, ScribingOutcome, StoreHook } from './scribing.js';
 export { PALACE_STORE, STANDARD_STORE, scribe, scribeCapacityCost } from './scribing.js';
 
+export type { CorruptionValue, Fidelity } from './fidelity.js';
+export {
+  BOOK_MASTERY_FLOOR,
+  BOOK_MASTERY_SPAN,
+  CORRUPTION,
+  CORRUPTION_READ_BASE,
+  CORRUPTION_READ_PER_TIER,
+  FIDELITY_PLATEAU_END,
+  FIDELITY_ZERO_AT,
+  GENERATION_STEP_BASE,
+  GENERATION_STEP_MAX,
+  GENERATION_STEP_MIN,
+  KNOWLEDGE_KIND_STEP,
+  PRISTINE,
+  canDiscoverCorruption,
+  corruptionReadBar,
+  fidelityAt,
+  fidelityFractionOf,
+  fidelityOf,
+  generationStep,
+  isCorruptionValue,
+  masteryFromBook,
+  readsThroughCorruption,
+  setFidelity,
+} from './fidelity.js';
+
+export type { StudyInputs, StudyOutcome } from './study.js';
+export { study } from './study.js';
+
 export {
   destroyGrimoire,
   destroyLibrary,

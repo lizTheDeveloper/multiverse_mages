@@ -41,6 +41,7 @@ import { RNG_STREAM, mul, nextBounded } from '@mm/sim-core';
 
 import type { CellResolver, KnowledgeRng, NodeCatalog } from './catalog.js';
 import { requireNode } from './catalog.js';
+import { fidelityOf, generationStep, setFidelity } from './fidelity.js';
 import {
   SCRIBE_CAPACITY_PER_TIER,
   SCRIBE_DURABILITY_BASE,
@@ -114,6 +115,15 @@ export interface ScribingOutcome {
   /** The instance that *is* its contents, or `0`. */
   readonly instance: Handle;
   readonly durability: Fp;
+  /**
+   * The copy distance the new book was written at, in `fp` generations.
+   *
+   * `fp(1024)` — one generation — for a book scribed out of a mind that
+   * researched the node or was taught it in person. Higher when the scribe
+   * herself learned it from a book, which is the whole of the telephone problem:
+   * see `fidelity.ts`.
+   */
+  readonly copyGeneration: Fp;
   /** What the caller should deduct. Zero on a refusal. */
   readonly materialsConsumed: Fp;
   readonly capacityConsumed: Fp;
@@ -182,6 +192,13 @@ export function scribe(inputs: ScribingInputs): ScribingOutcome {
     });
   }
 
+  // The distance the *best* copy the scribe holds sits at. A mage who learned
+  // the same node twice — once from a teacher, once from a spent book — writes
+  // from the better memory, which is the only reading that does not punish her
+  // for having read widely.
+  const sourceGeneration = bestHeldGeneration(inputs);
+  const copyGeneration = sourceGeneration + generationStep(inputs.scribeAffinity, node.knowledgeKind);
+
   const stream = inputs.rng.actorStream(RNG_STREAM.scribing, inputs.scribe);
   const durability =
     mul(SCRIBE_DURABILITY_BASE, inputs.scribeAffinity) +
@@ -210,15 +227,49 @@ export function scribe(inputs: ScribingInputs): ScribingOutcome {
     grimoire,
   });
 
+  // Written after the instance exists, because the row hangs on its handle. A
+  // book at generation zero is not representable and must not be: zero means
+  // "in a mind that has not read a book", and every book is at least one
+  // scribing away from one.
+  setFidelity(inputs.knowledge.state, instance, { copyGeneration });
+
   return {
     grimoire,
     instance,
     durability,
+    copyGeneration,
     materialsConsumed: node.scribeCost,
     capacityConsumed: capacityRequired,
   };
 }
 
+/**
+ * The lowest copy distance among the instances of this node the scribe holds.
+ *
+ * `heldMastery` already established that at least one exists, so the fallback of
+ * `0` is unreachable through {@link scribe}; it is written as a default rather
+ * than a throw because a scribe holding nothing is a refusal this function is
+ * called after, not an invariant it is responsible for.
+ */
+function bestHeldGeneration(inputs: ScribingInputs): Fp {
+  let best: Fp | undefined;
+  for (const instance of inputs.knowledge.instancesHeldBy(inputs.scribe)) {
+    const view = inputs.knowledge.read(instance);
+    if (view.nodeId !== inputs.nodeId) continue;
+    const { copyGeneration } = fidelityOf(inputs.knowledge.state, instance);
+    if (best === undefined || copyGeneration < best) best = copyGeneration;
+  }
+  return best ?? 0;
+}
+
 function refuse(refusal: KnowledgeRefusal): ScribingOutcome {
-  return { refusal, grimoire: 0, instance: 0, durability: 0, materialsConsumed: 0, capacityConsumed: 0 };
+  return {
+    refusal,
+    grimoire: 0,
+    instance: 0,
+    durability: 0,
+    copyGeneration: 0,
+    materialsConsumed: 0,
+    capacityConsumed: 0,
+  };
 }

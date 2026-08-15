@@ -39,7 +39,7 @@
  * a node is interdicted by. Wiring is `{ cellOf }` at the call site.
  */
 
-import type { ContentId, ContentRegistry, Fp, NodeRecord } from '@mm/content';
+import type { ContentId, ContentRegistry, Fp, KnowledgeKind, NodeRecord } from '@mm/content';
 import type { RngStream } from '@mm/sim-core';
 
 /**
@@ -64,6 +64,15 @@ export interface KnowledgeNode {
   readonly scribeCost: Fp;
   /** At least `@mm/primitives`' `REDISCOVERY_FLOOR`; the loader enforces it. */
   readonly rediscoveryMultiplier: Fp;
+  /**
+   * `contracts.md` §2.3's authored kind: can this survive being written down?
+   *
+   * Shipped on all three hundred nodes since `knowledge-model` — 271 `episteme`,
+   * 29 `metis` — and read by nothing in the rules path until scribing fidelity
+   * gave it one. It scales how much copy distance a scribing costs; see
+   * `fidelity.ts`'s `KNOWLEDGE_KIND_STEP`.
+   */
+  readonly knowledgeKind: KnowledgeKind;
 }
 
 /** The loaded node graph, addressed by interned id. */
@@ -198,6 +207,7 @@ function projectNode(
     teachCost: record.teachCost,
     scribeCost: record.scribeCost,
     rediscoveryMultiplier: record.rediscoveryMultiplier,
+    knowledgeKind: record.knowledgeKind,
   };
 }
 

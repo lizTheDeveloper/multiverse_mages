@@ -162,6 +162,14 @@ export const EFFORT_KIND = {
   research: 1,
   teaching: 2,
   scribing: 3,
+  /**
+   * Reading a written instance back into a mind.
+   *
+   * Appended, and the id matters for the same reason the others' do: an
+   * `effort-progress` row carries this value, so a save written before study
+   * existed must keep reading `3` as scribing. Nothing renumbers.
+   */
+  study: 4,
 } as const;
 
 export type EffortKindValue = (typeof EFFORT_KIND)[keyof typeof EFFORT_KIND];

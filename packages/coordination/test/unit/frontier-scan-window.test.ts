@@ -214,7 +214,7 @@ function universePermitting(
         learnRate: species.learnRate,
         rediscoveryAffinity: species.rediscoveryAffinity,
         depthCeiling: species.depthCeiling,
-        scribeAffinity: species.scribeAffinity,
+        scribeAffinity: species.scribeAffinity, curiosity: 1024,
       }),
       store: shippedStorePolicy(traditionId),
       acquire: shippedAcquirePolicy(traditionId),
