@@ -10795,3 +10795,36 @@ against 125 pinned.** Three of the four are in `strategy-audit.ts` and predate t
 **The ratchet detected genuine new debt within hours of landing, and the agent left it red rather than
 re-pinning it** — *"accepting that debt belongs to the PR that incurred it."* That is precisely the
 behaviour the design intended: a ratchet that anyone may re-pin to make green is a counter, not a gate.
+
+## W208 — what `teach-rate` actually is, after four passes at it
+
+This document has said four different things about `teach-rate` in one night. Consolidating, because the
+drift is more instructive than any single entry.
+
+| entry | claim | status |
+|---|---|---|
+| W187 | *"wired, registered, green on `check:consumption`, and behaviourally inert"* | **over-reached** |
+| W190 | *"inert for tiers 1–3 only; every measurement was below tier 4"* | **wrong premise** — the 1.25× is not a tier gate |
+| W205 | live at width twelve — 11 tier-4 + 2 tier-5 nodes, mean deepest tier 3.89, **5 of 19 sources** | **holds** |
+| W203/W204 | it barely moves because **almost nothing is teachable** | **holds, and is the cause** |
+
+**What is true:** `teach-rate` is wired, its sources are inside v1, and it moves lesson *completions* by
+**+3.1%**. The "1.25×" is `LIBRARY_CONTRIBUTION`'s knot at **24 shelved nodes** — a founding-position
+threshold, not a tier gate; the twelve reach 49.0 shelved nodes under the scenario default against 7.3
+under `LONG_RUN_OPTIONS`, same square, same seeds. And it cannot do more than that because **nothing
+raises mastery**, so the pool of teachable knowledge is whatever a god granted.
+
+### The agent corrected its own source, not just its PR
+
+Asked only to soften a paragraph, it grepped its own code first and found **two sentences it had written
+that over-reached in exactly the way that section is about** — *"behaviourally inert under v1 content"*
+and *"nineteen `single`-target effects reach a consumer and move no outcome"* — when what it had measured
+was **one metric in one harness**. It had promoted a completion count to a claim about the mechanic.
+
+`consumption.ts` now carries the narrow claim **and the retraction beside it**, kept rather than edited
+out, on the grounds that it is that section's own thesis one turn further on: **a number that does not
+move is evidence about that number** — and about nothing else.
+
+That is the whole night's methodological lesson in one file. The recurring error, mine included, was never
+bad measurement. It was **promoting a narrow measurement to a broad claim**, and then citing the broad
+claim somewhere the measurement's scope did not travel.
