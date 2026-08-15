@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 125,
-    "examinedSymbolCount": 860,
+    "findingCount": 128,
+    "examinedSymbolCount": 863,
     "examinedPackages": [
       "content",
       "coordination",
@@ -3095,14 +3095,26 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 368,
+        "line": 663,
+        "name": "auditFounding",
+        "kind": "function"
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 649,
         "name": "auditPool",
         "kind": "function"
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 402,
+        "line": 747,
         "name": "formatAudit",
+        "kind": "function"
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 704,
+        "name": "formatFounding",
         "kind": "function"
       },
       {
@@ -3264,7 +3276,15 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 397,
+        "line": 420,
+        "name": "FOUNDING_PROBE",
+        "via": [
+          "auditFounding"
+        ]
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 692,
         "name": "actionName",
         "via": [
           "formatAudit"
@@ -3272,9 +3292,10 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 280,
+        "line": 494,
         "name": "auditStrategy",
         "via": [
+          "auditFounding",
           "auditPool"
         ]
       },
