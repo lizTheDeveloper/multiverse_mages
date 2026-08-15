@@ -1,0 +1,51 @@
+{
+  "sweepId": "integration-r2-species-v1",
+  "kind": "full",
+  "rootSeed": 20260811,
+  "factors": [
+    {
+      "id": "foundingSpeciesMask",
+      "levels": [
+        2
+      ]
+    }
+  ],
+  "replicates": 100,
+  "agentPool": {
+    "strategies": [
+      "passive-control",
+      "uniform-random-legal",
+      "permissive-breadth",
+      "narrow-depth",
+      "denial-warden",
+      "archivist",
+      "portal-rush",
+      "worship-maximizer",
+      "idle-then-declare",
+      "permit-then-idle"
+    ],
+    "assignment": "round-robin",
+    "slots": 1
+  },
+  "termination": {
+    "worldTickCap": 2400,
+    "perRunTimeoutMs": 600000
+  },
+  "metrics": [
+    "referenceGrimoires",
+    "referenceKnowledgeInstances",
+    "referenceLibraryDepth",
+    "referenceLivingMages",
+    "referenceNodesGained",
+    "referenceNodesGainedFinalQuarter",
+    "referenceNodesKnown",
+    "referencePeakPopulation",
+    "referencePopulation",
+    "referencePopulationChange"
+  ],
+  "ablation": {
+    "mode": "none",
+    "primitives": []
+  },
+  "failureThreshold": 0
+}

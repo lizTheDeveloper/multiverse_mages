@@ -10,6 +10,13 @@ coverage/
 # agent worktrees
 .claude/worktrees/
 
+# Agent-local tooling config. A coding agent run inside this repo may write its
+# own skills or session state here; none of it is project source, and a `git add
+# -A` in a worktree will otherwise sweep it into a commit. Caught exactly that
+# way once.
+.qwen/
+.codex/
+
 # secrets — never commit; this repo is public
 .env
 .env.*
@@ -20,6 +27,10 @@ coverage/
 # Generated audio candidates. Selected takes are committed under assets/selected/.
 assets/candidates/
 
+# Superseded takes from a voice recast. Kept on disk so a swap is reversible
+# with one `mv`, but they are regenerable audio and do not belong in history.
+assets/retired/
+
 # Python bytecode, from packages/gym-bridge/python.
 __pycache__/
 *.py[cod]
@@ -27,3 +38,22 @@ __pycache__/
 # W17 measurement output. Same reason .w15/ is ignored: a sweep writes tens of
 # thousands of lines of JSON per arm and none of it is source.
 .w17/
+# W46's affinity-ablation arms. Same reason.
+.w46/
+# W70's opening-square size sweep. Same reason: 480 runs of node-id sets.
+.w70/
+
+# The generated lattice report, regenerated with scripts/content-graph.mjs.
+# Named exactly rather than globbed: `ui/*.html` also matched ui/index.html, and
+# `git add ui/` skips an ignored file SILENTLY — so the front door was committed
+# as a README pointing at a page that was never in the tree, which is the defect
+# that commit existed to fix.
+ui/lattices.html
+
+# W49 measurement scratch; the committed copies live in balance/
+.w49/
+
+# W117 regenerates these from balance/w99/w99-runs.csv in one command
+# (scripts/w99-csv-to-records.mjs). Committing them would duplicate the
+# committed CSV in a second format that could then drift from it.
+balance/w99/records/

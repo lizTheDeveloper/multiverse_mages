@@ -247,6 +247,59 @@ Materials SHALL be produced per world tick from laborer cohort counts scaled by 
 construction, grimoire scribing, library upkeep, and populace subsistence. The materials stock MUST
 NOT go negative.
 
+> **AMENDED by `city-and-supply-chain` (W29): materials have three kinds.**
+>
+> Recorded here rather than done quietly, following the precedent `populace-and-record` set for its
+> own deviation. The requirement above is unchanged in every clause; what changed is what the word
+> *materials* denotes.
+>
+> **The change.** Materials are now `food`, `stone` and `vellum`, held as three stocks on a
+> `material-stock` component (`WORLD_SCHEMA_VERSION` 5; `SNAPSHOT_VERSION` untouched) rather than as
+> one `i32` on the universe. Production is `laborerCount × MATERIALS_PER_LABORER × laborAffinity`
+> split by the universe's **territory yield shares** and then scaled by a **per-kind**
+> `resource-yield` stacking, each capped separately.
+>
+> **The reason.** The magic system has fourteen materials — `docs/design/sound-design.md` §4.2 is
+> titled *"Forms are materials"* — and the economy had one integer. With one stock, permitting *Creo
+> Herbam* and permitting *Rego Terram* are the same move, so no ruleset is distinguishable from any
+> other by its economy and no spell is worth casting. The requirement's own MUST clauses could all
+> be satisfied by an economy in which nothing the god does matters.
+>
+> **Claimants are denominated.** `subsistence → food`, `libraryUpkeep → vellum`, `scribing → vellum`,
+> `construction → stone`. `CONSUMPTION_ORDER` is unchanged and still walked in full, but only the
+> vellum pair still contends: upkeep is paid before scribing out of the same stock. Subsistence and
+> construction no longer compete with anything, which is the intended reading — a universe can no
+> longer starve its people to finish a building, because a building is not made of food.
+>
+> **No substitution between kinds.** A hungry universe may not eat its quarry. Substitution is a
+> market, and a market dissolves the differentiation the kinds exist to create.
+>
+> **Labour is exclusive.** A laborer standing on a building site produces no materials that tick.
+> This is a consequence of the same change: `advanceConstruction` previously had **no caller outside
+> its own tests**, so construction consumed neither labour nor materials, and connecting it required
+> deciding where the person-months come from.
+>
+> **What this does not change.** `K` is still derived from territory and still bounded by
+> `maxCarryingCapacity`; the provisioning multiplier now reads the **food** stock alone, which is the
+> reading `MATERIALS_PROVISION_SATURATION`'s own documentation already assumed when it described its
+> saturation point as *"a generation's food in the barns"*.
+
+#### Scenario: A shortage of one kind does not starve another kind's claimant
+
+- **WHEN** the `vellum` stock is empty and the `food` stock is full
+- **THEN** subsistence is paid in full, library upkeep and scribing record a shortfall, and the
+  recorded shortfall names `vellum` — which the single-stock economy could not express
+
+#### Scenario: Two rulesets produce two economies
+
+- **WHEN** two universes identical in seed, species, founding position and content differ only in
+  which forms they permit — one permitting Terram, Ignem and Auram, the other Herbam, Aquam and
+  Animal
+- **THEN** their per-kind production, their months-to-raise-a-university and their stone-per-building
+  all differ. This is the scenario the capability had no way to state before, and the one an
+  external review's question — *why do the god's verbs produce no marginal value?* — was really
+  asking for
+
 #### Scenario: Orc laborers outproduce draconic laborers
 
 - **WHEN** equal-count orc (`laborAffinity` `fp(1536)`) and draconic (`fp(512)`) laborer cohorts are
@@ -278,6 +331,20 @@ The economy SHALL track exactly three inputs — populace, materials, and knowle
 MUST NOT introduce a fourth resource. Favor and worship are the god's currency and are owned by
 `god-agency`; this capability MAY expose the counts worship is computed from but MUST NOT define or
 compute worship.
+
+> **W29 reads this requirement as unchanged, and says so explicitly because the reading is
+> arguable.**
+>
+> `ECONOMIC_INPUTS` still holds exactly `['populace', 'materials', 'knowledge-as-capital']` and
+> `economy-three-inputs.test.ts` still asserts its length is three. Splitting materials into `food`,
+> `stone` and `vellum` is the move a spreadsheet makes when one column becomes three, not the move it
+> makes when a second sheet appears: there is no new thing a universe accumulates, no new currency,
+> and nothing that competes with the three named inputs for the same role.
+>
+> The clause this could be read against is *"MUST NOT introduce a fourth resource"*. If the author's
+> intent was that the economy hold exactly three **stocks** rather than three **inputs**, then this
+> change violates it and the requirement needs rewording rather than annotating. That is a question
+> for the author, and it is raised here rather than settled.
 
 #### Scenario: No fourth resource
 

@@ -1,0 +1,42 @@
+{
+  "sweepId": "w117-exhaustion-v1",
+  "kind": "full",
+  "rootSeed": 20260811,
+  "factors": [
+    {
+      "id": "foundingSpeciesMask",
+      "levels": [
+        0
+      ]
+    }
+  ],
+  "replicates": 40,
+  "agentPool": {
+    "strategies": [
+      "passive-control"
+    ],
+    "assignment": "round-robin",
+    "slots": 1
+  },
+  "termination": {
+    "worldTickCap": 9600,
+    "perRunTimeoutMs": 1800000
+  },
+  "metrics": [
+    "referenceGrimoires",
+    "referenceKnowledgeInstances",
+    "referenceLibraryDepth",
+    "referenceLivingMages",
+    "referenceNodesGained",
+    "referenceNodesGainedFinalQuarter",
+    "referenceNodesKnown",
+    "referencePeakPopulation",
+    "referencePopulation",
+    "referencePopulationChange"
+  ],
+  "ablation": {
+    "mode": "none",
+    "primitives": []
+  },
+  "failureThreshold": 0
+}
