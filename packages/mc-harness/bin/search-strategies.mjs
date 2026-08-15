@@ -58,9 +58,8 @@
  * without invalidating every committed measurement.
  */
 
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -129,7 +128,7 @@ async function main() {
   })();
 
   const harness = await import('../dist/index.js');
-  const { BOT_POOL, NULL_LADDER, foldArchive } = harness;
+  const { BOT_POOL, MAX_ELITE_ILLEGAL_RATE, NULL_LADDER, foldArchive } = harness;
 
   const nullIds = new Set(NULL_LADDER.map((entry) => entry.strategyId));
   const seedStrategies = BOT_POOL.filter((entry) => !nullIds.has(entry.strategyId));
@@ -374,13 +373,46 @@ async function main() {
         'strategies; re-run longer before reading it as one.\n',
     );
   }
+  // A cell can fail to be occupied for two unrelated reasons, and printing them
+  // the same way is the failure this repo has documented five times: folding
+  // "the probe is broken" into "the answer is no". `clearsLadder` already
+  // separates them -- an elite over `MAX_ELITE_ILLEGAL_RATE` is refused with the
+  // comment *"above this it is a mask bug"* -- and then reuses `failedRung` to
+  // say so, which prints as `(lost to rung N)`. That sentence means *this
+  // strategy is weaker than doing nothing*. A mask bug means *this strategy was
+  // never allowed to play*, and reading the first for the second retires a real
+  // defect as a balance result.
+  //
+  // Recomputed here from `elite.illegalActionRate` rather than plumbed through a
+  // new status, so this is display-only and cannot move a baseline. The archive
+  // JSON already carries the rate, so an analyser can make the same distinction.
+  const maskBugs = [];
   for (const cell of archive.cells) {
+    const masked = cell.status !== 'occupied' && cell.elite.illegalActionRate > MAX_ELITE_ILLEGAL_RATE;
+    if (masked) maskBugs.push(cell.elite);
     process.stdout.write(
-      `  ${cell.status === 'occupied' ? 'OCCUPIED ' : 'not-worth'} ${cell.elite.strategyId.padEnd(22)}` +
+      `  ${cell.status === 'occupied' ? 'OCCUPIED ' : masked ? 'MASK-BUG ' : 'not-worth'} ` +
+      `${cell.elite.strategyId.padEnd(22)}` +
       ` asc ${String(cell.elite.ascended).padStart(3)}/${cell.elite.runs}` +
       ` bar ${String(cell.nullBar).padStart(3)}` +
-      (cell.failedRung ? ` (lost to rung ${cell.failedRung})` : '') +
+      (masked
+        ? ` (illegal ${(cell.elite.illegalActionRate * 100).toFixed(1)}% > ${String(MAX_ELITE_ILLEGAL_RATE * 100)}% -- excluded, not beaten)`
+        : cell.failedRung
+          ? ` (lost to rung ${cell.failedRung})`
+          : '') +
       `  ${cell.coordinate}\n`,
+    );
+  }
+  // Loud, and last, because it is a defect report rather than a result. A strategy
+  // that cannot submit a legal action is not evidence about balance in either
+  // direction, and a sweep containing one has a smaller effective pool than its
+  // own header claims.
+  for (const elite of maskBugs) {
+    process.stdout.write(
+      `[search] WARNING: mask bug -- ${elite.strategyId} submitted illegal actions at ` +
+        `${(elite.illegalActionRate * 100).toFixed(1)}%. It was excluded from holding a cell, so it ` +
+        'is absent from the archive for a reason that is not about its play. Fix the mask or the ' +
+        "strategy's preferences before reading this sweep's width.\n",
     );
   }
 }
