@@ -47,13 +47,13 @@
 
 import type { ContentId, ContentRegistry } from '@mm/content';
 import type { Fixed, SimState } from '@mm/sim-core';
-import { NULL_ENTITY } from '@mm/sim-core';
+import { NULL_ENTITY, RNG_STREAM, nextBounded } from '@mm/sim-core';
 import type { Handle, RaidSideValue, Ruleset } from '@mm/state';
 import { COMBATANT_SOURCE_KIND, MAGE, RAID_SIDE, collectRecords, permits } from '@mm/state';
 import type { MagicGrid } from '@mm/rules-magic';
 
 import { COMBAT_PRIMITIVES } from './arbitration.js';
-import type { EligibleMage } from './combatants.js';
+import type { EligibleMage, SideRoster } from './combatants.js';
 import {
   DEFENDING_ROLES,
   RAIDING_ROLES,
@@ -218,24 +218,83 @@ function deploySide(
 
   for (const cohort of eligibleCohorts(participant.world)) {
     let remaining = cohort.record.count;
+    let fieldPartial = false;
+    if (tuning.detachmentStrength > 0) {
+      // Exactly one draw per eligible cohort, taken **before** any detachment is
+      // spawned and taken whether or not the remainder is zero. Both halves of
+      // that matter: a draw count that depended on the data — on how many whole
+      // detachments came first, or on whether the roster filled — would make the
+      // populace shift this cohort's own later draws, and this is the one place
+      // the count is read.
+      //
+      // `actorStream` keyed on the cohort handle, so each cohort has its own
+      // cursor and its result does not depend on which cohorts were visited
+      // first. The side is the tick argument because deployment happens outside
+      // any world tick and the two participants are two separate worlds whose
+      // entity handles are numbered independently: without it, attacker cohort 7
+      // and defender cohort 7 would draw the same value.
+      const draw = nextBounded(
+        raid.rng.actorStream(RNG_STREAM.detachment, side, cohort.handle),
+        tuning.detachmentStrength,
+      );
+      fieldPartial = draw < remaining % tuning.detachmentStrength;
+    }
+
     while (remaining >= tuning.detachmentStrength && sideHasRoom(roster, tuning)) {
-      spawnCombatant(raid.engagement.entities, roster, {
-        side,
-        // §1.3: a cohort is never promoted to individuals. It lends a counted
-        // portion of itself and gets the survivors back.
-        sourceKind: COMBATANT_SOURCE_KIND.soldierDetachment,
-        sourceId: cohort.handle,
-        position: deploymentPosition(raid, side, roster.nextSpawnOrdinal),
-        hp: tuning.detachmentMaxHp,
-        vigor: 0,
-        concealment: 0,
-        intrinsicDamage: tuning.detachmentDamage,
-        intrinsicRange: tuning.detachmentRange,
-        detachmentStrength: tuning.detachmentStrength,
-      });
+      spawnDetachment(raid, side, roster, cohort.handle, tuning.detachmentStrength);
       remaining -= tuning.detachmentStrength;
     }
+
+    // The remainder, resolved by the draw above rather than truncated away.
+    //
+    // ## Why truncation is not a rounding error here
+    //
+    // `detachment-strength` is an authored **100**, and cohorts are keyed on
+    // species × occupation × birth decade (`contracts.md` §1.3), so a populace of
+    // a few thousand soldiers is already scattered across dozens of cohorts far
+    // below a hundred. `N` cohorts of `c` people each fielded
+    // `N × floor(c / 100)` detachments — **zero** for every `c < 100`, for every
+    // seed, forever — where the design asks for `floor(N × c / 100)`. The error
+    // is per cohort and always downward, so it grows with fragmentation and
+    // never cancels. It is the same defect `promotion.ts` argues at length about
+    // and the same fix: *"a species can be rare by design; it may not be rare
+    // because of a floor."*
+    //
+    // The detachment fields at full combat statistics — a detachment is a unit
+    // of force, not a fraction of one — but records `remaining` as its strength
+    // rather than the authored hundred, so the cohort is never billed for people
+    // it does not have. `consequences.ts` clamps a cohort's count at zero and
+    // calls over-lending *"a bug in derivation"*; this is the derivation, and it
+    // does not commit that bug.
+    if (fieldPartial && remaining > 0 && sideHasRoom(roster, tuning)) {
+      spawnDetachment(raid, side, roster, cohort.handle, remaining);
+    }
   }
+}
+
+/** One soldier detachment, standing for `strength` of its cohort's people. */
+function spawnDetachment(
+  raid: Raid,
+  side: RaidSideValue,
+  roster: SideRoster,
+  cohort: Handle,
+  strength: number,
+): void {
+  const tuning: RaidTuning = raid.tuning;
+  spawnCombatant(raid.engagement.entities, roster, {
+    side,
+    // §1.3: a cohort is never promoted to individuals. It lends a counted
+    // portion of itself and gets the survivors back.
+    sourceKind: COMBATANT_SOURCE_KIND.soldierDetachment,
+    sourceId: cohort,
+    position: deploymentPosition(raid, side, roster.nextSpawnOrdinal),
+    hp: tuning.detachmentMaxHp,
+    vigor: 0,
+    concealment: 0,
+    intrinsicDamage: tuning.detachmentDamage,
+    intrinsicRange: tuning.detachmentRange,
+    detachmentStrength: strength,
+  });
 }
 
 /**
