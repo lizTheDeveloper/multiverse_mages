@@ -11673,3 +11673,54 @@ block stays zero-filled and `capabilities()` already says `engagement: false`.
 
 It went **around `@mm/server`** after reading it — `Match`, `ordering` and `desync` solve multi-client
 problems a local player does not have.
+
+## W220 — four float divisions in the rules path, in a file that cites the rule against them
+
+PR #190 (the fix) and #187 (the pass). Adding `packages/coordination/src/**/*.ts` to `RULES_SRC` exposed
+**four live violations of constraint 1** — the deterministic core's float ban — in the world loop.
+
+| site | was |
+|---|---|
+| `god/ascension.ts:522` | `Math.floor(share(…) / FP_ONE)` |
+| `god/ascension.ts:523` | `Math.floor((nodes * FP_ONE * budget) / (FP_ONE * FP_ONE))` |
+| `god/interventions.ts:443` | `Math.floor((cellId - 1) / GRID_FORM_COUNT)` |
+| `god/interventions.ts:846` | `Math.ceil(encourageMagnitude / encourageDecayPerTick)` |
+
+### The detail that makes this the night's best illustration
+
+**`ascension.ts` states the rule at line 228** — *"integer arithmetic throughout: `floorDiv` over fixed
+point at 1/1024"* — **imports `floorDiv`, uses it three times, and divides with `/` at line 522 of the same
+file.**
+
+**Nobody had forgotten the rule. Nothing checked it.** The file knows the constraint, cites it, uses the
+correct helper three times, and violates it four times — because no tool covered the package. That is the
+whole campaign's thesis in one file: the failures are not ignorance, they are unenforced knowledge.
+
+All four are now `floorDiv`; the ceiling uses the exact identity `floorDiv(a + b - 1, b)`, whose
+denominator the content loader already refuses non-positive. **Equivalence sweep: 82,001 comparisons, 0
+disagreements** across every reachable input — so the fix is behaviour-preserving by measurement, not by
+inspection.
+
+### And the anti-rot measure fixes the *meta*-problem
+
+The existing probe block catches **a ban that stopped firing**. It cannot catch **a package never
+listed** — because the probe list and the glob are written by the same hand, and **both were missing
+`coordination`.**
+
+So `purity-lint.test.ts` now **reads `packages/` off disk and asserts the partition**: adding a workspace
+package **fails until somebody decides which side of the ban it is on.** That is the difference between a
+check and a checklist.
+
+`scenario` was investigated and **recommended out, with reasons written down** — nine float sites, all
+statistics or reporting, none in the state it seeds, and it is a genuine leaf. `server` and `gym-bridge`
+were **unmentioned in the comment too**, the same silence that hid `coordination`, and are now named. Six
+exclusions, seven rules-path packages, all accounted for.
+
+Verified in both directions: injected float + clock + random gives **5 errors per `coordination/src` file**,
+matching `rules-world`; and `verify:nosweeps` is **exit 0 at 336 files / 4,676 tests**. Three further
+controls — removing `coordination` from the list, an unclassified package on disk, and an excluded package
+gaining the ban — each fail with the right message.
+
+**Stated rather than glossed:** the three balance gates were **not** run, because the pass is constrained
+against gates and sweeps. #190's body says so and asks a reviewer to run them before merge. **The
+equivalence sweep is offered in their place, not as a substitute for them.**
