@@ -8663,3 +8663,62 @@ came from someone looking at a layer I had not opened.** The rule I keep writing
 me at least as hard: *where the question is "does this happen", look, do not infer.*
 
 The sequencing agent has been told, since I gave it this claim as a dependency.
+
+## W172 — two of three rebased green, and a re-baseline coupling I created today
+
+#125 and #126 are resolved and green; #140 is mergeable and deliberately **not** green.
+
+### #125 — and its "deliberately red" blocker is simply gone
+
+Its `reference-time-to-tier.test.ts` conflict was resolved by taking **`main`'s side wholesale**, and
+not on arithmetic — **on a tripwire.** #143 installed a source-text check in
+`species-separation-spread.test.ts` that pins `RETIRED_ASSERTIONS` and the count of
+`.high).toBeLessThan(` sites in the sibling file. The branch's side re-adds two assertions retired at
+**7/12** and **11/12**, so keeping any of it **fails by construction.**
+
+That is the guard working exactly as designed, one day old, against a merge nobody anticipated when it
+was written.
+
+And the assertion #125 was being *held red on* — `expect(human.high).toBeLessThan(orc.low)` — **is
+simply gone**, deleted by #143 at 0/12. The blocker dissolved rather than being resolved.
+
+**The brief's explicit question was whether the merge changed the movement. It did not**: all seven
+agency rows reproduce §5 **delta-for-delta and SE-for-SE**. So the control that justified its
+re-baseline still holds after twenty-two commits of `main`.
+
+### #126 — the prediction confirmed, and an instruction correctly broken
+
+**109 of 109 rows at `delta 0.00000`** (9/9, 10/10, 90/90), with `baseline-invalid` on `contentHash`
+the only finding. The prediction written down before the rebase held exactly.
+
+**It regenerated the agency baseline against my explicit instruction not to — and flagged it rather
+than doing it quietly.** The reasoning is better than my instruction was: I forbade it because `main`'s
+copy was 17 rows stale, but **#72 landed as `672066f` and absorbed those rows**, so agency now
+reproduces at 90/90 and the re-record imports none of `main`'s numbers, only the stamp. Leaving it
+would have left a file the gate refuses to read.
+
+**That is how to break an instruction**: do it, say you did, give the reason the instruction no longer
+applies, and tell the owner the revert is two files.
+
+### #140 — three blockers, all judgements rather than merges
+
+Headline improved on its own: **`check:consumption` is now 10 → 0**, not 10 → 7, because #144 landed
+the combat half in between.
+
+1. **Three gates move on real behaviour** (+44.54, +29.13, +20.23 SE) and **no control can separate
+   movement from mechanic here — the movement *is* the mechanic.** Correctly refused as the owner's.
+2. `orc < elf` goes **inconclusive → refuted**; wants a 12-set re-measurement and a re-worded row.
+3. `ablation-reaches-the-world-loop` reads 300 vs 301 — **the same assertion the anti-requisites branch
+   trips at 300 vs 298**, so one fix serves both.
+
+### Two hazards, and the second is mine
+
+- **Two arm lines went blind again.** `referenceNodesGained@denial-warden` (MDE **289%**) and
+  `referenceNodesKnown@denial-warden` (**114%**) — *the same two that closed at w107* — **crossed back
+  on a pure re-roll.** Recorded in `BLIND_ARM_LINES`. A power threshold that a re-roll can cross in
+  either direction is not a property of the build.
+- **New tonight, and I introduced it.** `ui/design-dashboard/data.json` (#154) embeds each gate's
+  provenance and metric rows, so **every baseline re-record now also requires `npm run ui:dashboard`.**
+  It hit all three branches. I projected `fileSeal` and the reachability findings out of that payload's
+  pin today for exactly this reason and **did not follow the thought to the metric rows** — the same
+  omission twice in one file, and the second time it taxed three unrelated PRs.
