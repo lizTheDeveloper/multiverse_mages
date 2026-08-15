@@ -139,6 +139,7 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     teachableToMe: [],
     teachableByMe: [],
     scribableTargets: [],
+    applicableTargets: [],
     materials: 0,
     scribeThroughput: 0,
     betterAffiliationAvailable: false,
@@ -164,6 +165,9 @@ export function richOutlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     teachableToMe: [target(31)],
     teachableByMe: [target(41)],
     scribableTargets: [target(51, 1, 512)],
+    // `remainingCost` zero, because an applicable node is one she already knows
+    // — there is no project left to pay for.
+    applicableTargets: [target(61, 1, 0)],
     materials: 4096,
     scribeThroughput: 1024,
     betterAffiliationAvailable: true,

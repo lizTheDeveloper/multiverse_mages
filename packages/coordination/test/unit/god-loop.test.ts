@@ -52,7 +52,7 @@ import type { WorldSimulation } from '../../src/index.js';
 import { ACTION, defineWorldSimulation, ledgerBalances } from '../../src/index.js';
 
 import { catalogAndCells, registry, seededWorld, sourceFor } from './world-fixtures.js';
-import { constants, costs, godlyWorldDeps } from './god-fixtures.js';
+import { constants, costs, godlyWorldDeps, worshipMax } from './god-fixtures.js';
 
 const C = constants();
 const COSTS = costs();
@@ -93,7 +93,7 @@ describe('the god systems are installed, and the world loop still runs', () => {
     for (let tick = 0; tick < 12; tick += 1) current = step(current, [], source);
     const record = universeOf(current);
     expect(record.worship).toBeGreaterThan(0);
-    expect(record.worship).toBeLessThan(C.worshipMax);
+    expect(record.worship).toBeLessThan(worshipMax());
   });
 
   it('regenerates favor once per world tick, into a pool that is never negative', () => {

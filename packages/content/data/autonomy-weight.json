@@ -120,6 +120,21 @@
   },
 
   {
+    "id": "apply-output-per-month",
+    "value": 64,
+    "unit": "fp",
+    "gloss": "Materials one mage-month of applied magic makes before her node's resource-yield multiplier, in the same unit as MATERIALS_PER_LABORER (16). Four laborers' worth: a month of casting is several pairs of hands and not a hundred. routeYieldByForm decides which kinds, so a Terram caster quarries and a Herbam caster feeds. The first number a sweep should move: applied output is linear in it.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "apply-ration-per-month",
+    "value": 4,
+    "unit": "fp",
+    "gloss": "Food one applying mage eats that world tick, in the same unit as SUBSISTENCE_PER_PERSON (1). Four peasants' worth, charged at the same rank as their meals rather than as a fifth claimant: a casting mage's dinner is a dinner. Before this she was in no POPULACE_COHORT and ate nothing at all, which made every mage-hour of production free.",
+    "tuningStatus": "untuned"
+  },
+
+  {
     "id": "role-appeal-researcher-research-rate",
     "value": 384,
     "unit": "fp",

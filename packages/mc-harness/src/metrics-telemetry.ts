@@ -165,6 +165,37 @@ export interface CheckpointSample {
   };
 }
 
+/**
+ * What one combat primitive was worth in one raid, in action-economy terms.
+ *
+ * Plain numbers, and deliberately not `rules-raid`'s own report type.
+ * `contracts.md` §5 gives `mc-harness` exactly one edge, to `agent-api`, and
+ * `packages/mc-harness/test/unit/package-boundaries.test.ts` enforces it — so
+ * the executor flattens `RaidOutcome.actionEconomy` into this and the harness
+ * never learns what a `CombatantBrief` is. It is also what lets a raid's
+ * telemetry survive a structured clone to a worker.
+ *
+ * `source` is finer than `contracts.md` §3's primitive list in one place, and
+ * that split is the whole point: `rules-raid` logs a summon's and a soldier
+ * detachment's intrinsic attacks into `primitiveApplication` as `direct-damage`,
+ * which makes "the bolt" and "the summoned servant" the same row. A measure that
+ * cannot tell a cast from a body cannot answer what a combat *node* is worth.
+ */
+export interface RaidCombatSource {
+  /** `direct-damage`, `area-denial`, `summon-intrinsic`, `ward`, … See `rules-raid`'s `COMBAT_SOURCE`. */
+  readonly source: string;
+  /** Combatant-ticks of enemy action this source denied, summed over both sides. */
+  readonly deniedCombatantTicks: number;
+  /** Hit points it actually removed, overkill excluded. **Secondary** — reported, not primary. */
+  readonly hitPointsRemoved: number;
+  /** Attempts that damaged a combatant which reached zero hit points on a tick they fed. */
+  readonly removingAttempts: number;
+  /** Attempts that removed hit points and left the target standing. */
+  readonly hurtingAttempts: number;
+  /** Attempts that landed nothing — evaded, or warded to zero. In neither ratio. */
+  readonly spentAttempts: number;
+}
+
 /** One raid, as `raid-engagement` will report it. */
 export interface RaidObservation {
   /** Stable within the run, so a failure can name the raid. */
@@ -179,6 +210,37 @@ export interface RaidObservation {
   readonly defenderFrozenWorldTicks: number;
   /** World ticks of tempo the attacker forwent to open and hold this portal. */
   readonly attackerTempoCostWorldTicks: number;
+
+  /**
+   * Per-primitive action economy, ascending by `source`.
+   *
+   * Required rather than optional, for the reason the module opens with:
+   * absence is *declared* through {@link MechanicAvailability}, never inferred
+   * from a missing field. An optional field would make "this build has no
+   * action-economy instrumentation" and "this raid had no combat" the same
+   * observation, which is the confusion the reason codes exist to end.
+   */
+  readonly combatSources: readonly RaidCombatSource[];
+  /**
+   * Combatant-ticks this raid contained: for every combatant, the ticks from
+   * entry to removal or to resolution. The denominator that turns denied
+   * combatant-ticks from a level into a rate comparable across raid lengths.
+   */
+  readonly totalCombatantTicks: number;
+  /** World-scale combatants removed — mages and detachments. Summons are not in this. */
+  readonly worldScaleRemovals: number;
+  /** Summons removed. Reported apart, and outside the primary scalar. */
+  readonly summonsRemoved: number;
+  /**
+   * Denial channels `contracts.md` §3 permits that this build's engine has no
+   * code path for — `displacement`, today.
+   *
+   * Carried through to the metric's detail so that a channel reading zero is
+   * visibly a statement about the engine rather than a measurement. Four metrics
+   * in this project have read as healthy constants while being structurally
+   * incapable of moving; a declared list is how the fifth is avoided.
+   */
+  readonly unimplementedCombatChannels: readonly string[];
 }
 
 /**
@@ -451,6 +513,29 @@ export interface RunTelemetry {
   /** The role-assignment demography pair, or absent when the run made no assignments. */
   readonly roleDemography?: RoleDemographySample;
 }
+
+/**
+ * The three fields every raid-scoped run collector reads, and no more.
+ *
+ * Named and narrowed rather than taking the whole {@link RunTelemetry}, so that
+ * the three signatures in `metrics-collectors.ts` state their own input
+ * instead of implying they read a species list and a tier-reach table they
+ * never touch. That is the documented contract: whatever a raid collector
+ * comes to report, it reports it out of *"were there raids, how many, and how
+ * long did the run last"* and nothing else, and widening one of them is
+ * therefore a visible change to a signature rather than a silent new read.
+ *
+ * It also keeps the collectors callable by anything that can honestly answer
+ * those three questions without fabricating the rest — a test harness holding
+ * a fixed raid log, say — rather than only by the full run telemetry the
+ * reference executor assembles.
+ *
+ * Contravariance is what keeps this free: a function taking this slice still
+ * satisfies {@link BalanceMetricDefinition.collectRun}'s `RunTelemetry`
+ * parameter, so the §7 registry is unchanged and every existing caller passing
+ * full telemetry still compiles.
+ */
+export type RaidRunSlice = Pick<RunTelemetry, 'mechanics' | 'raids' | 'ticksRun'>;
 
 /** One run, as an arm-scoped collector sees it. */
 export interface ArmRunSummary {

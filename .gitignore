@@ -42,6 +42,8 @@ __pycache__/
 .w46/
 # W52's three emphasis arms — 324 runs of sampled node composition. Same reason.
 .w52/
+# W70's opening-square size sweep. Same reason: 480 runs of node-id sets.
+.w70/
 
 # The generated lattice report, regenerated with scripts/content-graph.mjs.
 # Named exactly rather than globbed: `ui/*.html` also matched ui/index.html, and
@@ -49,3 +51,11 @@ __pycache__/
 # as a README pointing at a page that was never in the tree, which is the defect
 # that commit existed to fix.
 ui/lattices.html
+
+# W49 measurement scratch; the committed copies live in balance/
+.w49/
+
+# W117 regenerates these from balance/w99/w99-runs.csv in one command
+# (scripts/w99-csv-to-records.mjs). Committing them would duplicate the
+# committed CSV in a second format that could then drift from it.
+balance/w99/records/

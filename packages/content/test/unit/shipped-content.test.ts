@@ -74,10 +74,17 @@ describe('shipped content', () => {
       // multiverse out of state and something has to say who is on the other
       // end of the portal.
       raidConstants: 46,
-      // 38 rather than main's 36: this branch adds two, because the god's
-      // emphasis became a preference the outlook weighs rather than a rate it
-      // multiplies, and a preference needs a weight to be weighed against.
-      autonomyWeights: 38,
+      // Forty, and neither side of this merge said so. `main` reached 38 when
+      // `apply-magic` added `apply-output-per-month` and `apply-ration-per-month`
+      // — scalars rather than role-appeal rows, pricing what applied work makes
+      // and eats. This branch reached 38 independently, adding two because the
+      // god's emphasis became a preference the outlook weighs rather than a rate
+      // it multiplies, and a preference needs a weight to be weighed against.
+      // All four are in `REQUIRED_AUTONOMY_WEIGHTS`, the loader checks the set in
+      // both directions, and this tree is the first holding all four — so 38
+      // from either side would be a count the loader rejects. Measured, not
+      // chosen.
+      autonomyWeights: 40,
     });
   });
 

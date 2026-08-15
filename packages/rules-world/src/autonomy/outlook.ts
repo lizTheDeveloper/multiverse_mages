@@ -129,6 +129,23 @@ export interface MageOutlook {
   readonly teachableByMe: readonly KnowledgeTarget[];
   /** Nodes she could commit to a grimoire, with their scribe costs. */
   readonly scribableTargets: readonly KnowledgeTarget[];
+  /**
+   * Nodes she could spend the month **casting at the world**, already gated.
+   *
+   * The four gates are the coordinating layer's, and every one of them is a
+   * question this package may not ask: held at a mind or a memory palace, at or
+   * above `MASTERY_ACTIVATION_THRESHOLD`, in a cell the ruleset permits *now*,
+   * and carrying a `resource-yield` effect whose form routes to a material.
+   * They are the same gates `universe-effects.ts` applies to the ambient
+   * multiplier, deliberately: two answers to "can she cast this" would diverge,
+   * and the one without the adversarial test would be the one the economy used.
+   *
+   * `remainingCost` is zero for every entry — she already knows them — so
+   * `compareTargets`' cost ordering falls straight through to the appeal score
+   * and then to node id, which is exactly what is wanted when there is no
+   * project to finish.
+   */
+  readonly applicableTargets: readonly KnowledgeTarget[];
 
   /** The universe's materials stock, `fp`. Scribing is masked without enough. */
   readonly materials: Fixed;
