@@ -82,6 +82,7 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
     [GOAL.affiliate]: 0,
     [GOAL.wardDuty]: 0,
     [GOAL.raidReadiness]: 0,
+    [GOAL.applyMagic]: 0,
     [GOAL.practice]: 0,
     ...entries,
   };
@@ -104,6 +105,13 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
  *   negative on `scribe`. Somebody has to be unwilling to sit still, or the
  *   universe has no one to send through a portal.
  *
+ * `apply-magic` is the ninth goal and **no role is for it**, which is a
+ * statement rather than an omission: the god's four roles are all about
+ * knowledge, and the one that leans toward applied work is the warden, because
+ * standing watch and turning a hillside into a quarry are the same instinct
+ * about doing something with what the academy already has rather than adding to
+ * it. The professor leans hardest away — her month is worth more in a
+ * classroom.
  * `practice` is where the four rows disagree most usefully. A **professor**
  * maintains her fundamentals because she cannot supervise without them — that
  * is `ages-of-magic.md` §2c's loop, and it is the largest practice entry in the
@@ -119,6 +127,7 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
     [GOAL.rediscoverNode]: 256,
     [GOAL.seekTeaching]: 64,
     [GOAL.wardDuty]: -128,
+    [GOAL.applyMagic]: -64,
     [GOAL.practice]: -64,
   }),
   [MAGE_ROLE.warden]: row({
@@ -126,12 +135,14 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
     [GOAL.scribe]: 128,
     [GOAL.researchNode]: -64,
     [GOAL.raidReadiness]: 64,
+    [GOAL.applyMagic]: 128,
   }),
   [MAGE_ROLE.professor]: row({
     [GOAL.teach]: 384,
     [GOAL.seekTeaching]: 192,
     [GOAL.scribe]: 128,
     [GOAL.raidReadiness]: -128,
+    [GOAL.applyMagic]: -128,
     [GOAL.practice]: 256,
   }),
   [MAGE_ROLE.raider]: row({

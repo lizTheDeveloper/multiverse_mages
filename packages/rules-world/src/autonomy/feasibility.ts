@@ -122,6 +122,14 @@ export function isFeasible(goal: GoalId, outlook: MageOutlook): boolean {
       return outlook.universityId !== 0;
     case GOAL.raidReadiness:
       return true;
+    case GOAL.applyMagic:
+      // A mage with nothing castable that the world can feel has nothing to
+      // apply. The list is already filtered — held at mind or palace, at or
+      // above the activation threshold, in a permitted cell, carrying a
+      // `resource-yield` effect whose form routes to a material — because every
+      // one of those is a question this package may not ask (`contracts.md` §5
+      // rule 3) and the coordinating layer answers them all in one pass.
+      return anyOf(outlook.applicableTargets);
     case GOAL.practice:
       // Held, permitted, and below full mastery — the gateway has already
       // applied all three, because they are `practice`'s own refusals and a

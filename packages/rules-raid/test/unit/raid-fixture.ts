@@ -42,16 +42,28 @@ import type { PortalHooks } from '@mm/rules-magic';
 import {
   KnowledgeSubsystem,
   MagicGrid,
+  createConsumptionRecorder,
   portalHookSet,
   resolvePortalHooks,
   traditionTable,
 } from '@mm/rules-magic';
-import type { RaidParticipant, RaidTuning } from '@mm/rules-raid';
-import { readRaidTuning } from '@mm/rules-raid';
+import type { CombatEffectIndex, RaidParticipant, RaidTuning } from '@mm/rules-raid';
+import { combatEffectIndex, readRaidTuning } from '@mm/rules-raid';
 
 export const registry: ContentRegistry = loadContent(shippedContentSource());
 export const grid: MagicGrid = MagicGrid.from(registry);
 export const tuning: RaidTuning = readRaidTuning(registry);
+
+/**
+ * The combat-effect index every test raid is opened with.
+ *
+ * Built here, once, over the shipped registry — the same fetch `scenario`'s
+ * `worldDeps` makes for the real composition root, over the same content. The
+ * recorder is created and dropped: a test is not the assembled simulation, and
+ * a registration from one would be exactly the "code exists that reads this"
+ * answer the consumption check refuses to accept.
+ */
+export const combat: CombatEffectIndex = combatEffectIndex(registry, createConsumptionRecorder());
 
 const traditions = traditionTable(
   registry.traditions.map((entry) => [entry.contentId, entry.record] as const),

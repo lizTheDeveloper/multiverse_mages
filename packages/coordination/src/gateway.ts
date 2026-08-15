@@ -146,6 +146,7 @@ import type {
 } from '@mm/rules-magic';
 import {
   DEFAULT_TEACH_THRESHOLD,
+  MASTERY_ACTIVATION_THRESHOLD,
   disownGrimoire,
   isRediscovery,
   practice,
@@ -1094,6 +1095,35 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   /** Every node this mage holds in mind or palace, ascending by node id. */
   heldNodes(mage: MageHandle): readonly ContentId[] {
     return [...this.#holdings(mage).keys()].sort((a, b) => a - b);
+  }
+
+  /**
+   * Every node this mage could **cast right now**, ascending by node id.
+   *
+   * Three of `gatherEffects`' four gates, asked of one mage instead of of every
+   * instance in the universe: held at a mind or a memory palace (which is what
+   * `#holdings` already walks), mastery at or above
+   * {@link MASTERY_ACTIVATION_THRESHOLD}, and the cell permitted **now**. The
+   * fourth — whether the primitive applies in this time mode — is a question
+   * about an *effect* and belongs to whoever is spending it.
+   *
+   * The threshold is `rules-magic`'s own constant rather than a second copy.
+   * `universe-effects.ts` makes the argument at length and it is the same one
+   * here: two answers to *"can she cast this"* would diverge, and the one
+   * without the adversarial test would be the one a mage's career ran on.
+   *
+   * Permission is evaluated at the moment of the question, so an interdiction
+   * takes the verb away without touching what anybody knows — which is what an
+   * interdiction is.
+   */
+  castableNodes(mage: MageHandle): readonly ContentId[] {
+    const found: ContentId[] = [];
+    for (const [nodeId, mastery] of this.#holdings(mage)) {
+      if (mastery < MASTERY_ACTIVATION_THRESHOLD) continue;
+      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
+      found.push(nodeId);
+    }
+    return found.sort((a, b) => a - b);
   }
 
   /**

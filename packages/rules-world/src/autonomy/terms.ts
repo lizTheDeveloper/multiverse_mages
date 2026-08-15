@@ -134,6 +134,17 @@ export const GOAL_BASE_APPEAL: Readonly<Record<GoalId, Fixed>> = {
   [GOAL.affiliate]: 256,
   [GOAL.wardDuty]: 320,
   [GOAL.raidReadiness]: 256,
+  /**
+   * Below `research-node` and level with `scribe`, on purpose.
+   *
+   * A mage who can already cast a thing is choosing between *using* it and
+   * *extending* what the universe knows, and vision §5 makes the academy's
+   * appetite for the second the reason a universe has mages at all. Applied
+   * work has to be attractive enough to be chosen and not so attractive that
+   * every archmage becomes a farmhand. **Untuned**, and this is the number the
+   * sweep should move first.
+   */
+  [GOAL.applyMagic]: 384,
   // Below both research goals and both teaching goals on purpose. Maintenance
   // is what a mage does when she has fallen behind, not what she wants to be
   // doing — `ages-of-magic.md` §2c's scholar is a scholar because of the
@@ -169,6 +180,7 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.affiliate]: 128,
     [GOAL.wardDuty]: -64,
     [GOAL.raidReadiness]: 64,
+    [GOAL.applyMagic]: 0,
     [GOAL.practice]: -64,
   },
   [AGE_BAND.prime]: {
@@ -181,6 +193,7 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.affiliate]: 0,
     [GOAL.wardDuty]: 0,
     [GOAL.raidReadiness]: 0,
+    [GOAL.applyMagic]: 0,
     [GOAL.practice]: 0,
   },
   [AGE_BAND.senescent]: {
@@ -193,6 +206,10 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.affiliate]: -64,
     [GOAL.wardDuty]: 64,
     [GOAL.raidReadiness]: -256,
+    // Positive, and for the same reason `teach` and `scribe` are: what an old
+    // mage knows leaves the universe when she does unless she spends it on
+    // something. A harvest is a use that outlives her exactly as a book is.
+    [GOAL.applyMagic]: 128,
     [GOAL.practice]: 192,
   },
 };
@@ -267,6 +284,14 @@ export function speciesTerm(goal: GoalId, outlook: MageOutlook): Fixed {
       return boundTerm('species', shareOfDeviation(species.learnRate, 4));
     case GOAL.scribe:
       return boundTerm('species', shareOfDeviation(species.scribeAffinity, 2));
+    case GOAL.applyMagic:
+      // `laborAffinity` is the trait the economy already reads off a species —
+      // `materialsProduced` scales a laborer cohort by it — so a species that is
+      // good at turning a month into materials is the species whose mages think
+      // applied work is worth a month. Reusing the authored trait rather than
+      // inventing a ninth keeps "which species farms with magic" a content
+      // decision.
+      return boundTerm('species', shareOfDeviation(species.laborAffinity, 2));
     case GOAL.practice:
       // Retention, inverted. A species that forgets slowly has less maintenance
       // to do and finds it correspondingly less pressing; a species that forgets
@@ -312,6 +337,15 @@ export function personalityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
       return boundTerm('personality', shareOfDeviation(caution, 2));
     case GOAL.raidReadiness:
       return boundTerm('personality', shareOfDeviation(ambition, 2));
+    case GOAL.applyMagic:
+      // Cautious up, curious down, and the two signs are the point: applying
+      // what you already know is the reliable thing to do with a month and the
+      // least interesting. A mage high in both is where she started, which is
+      // the same shape `rediscover-node` uses one axis apart.
+      return boundTerm(
+        'personality',
+        shareOfDeviation(caution, 4) - shareOfDeviation(curiosity, 4),
+      );
     case GOAL.practice:
       // Caution keeps what it has; ambition wants the next thing. Both axes,
       // opposed, because practice is the one goal on the table that is purely
@@ -359,6 +393,8 @@ export function opportunityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
       return boundTerm('opportunity', outlook.wardPressure);
     case GOAL.raidReadiness:
       return boundTerm('opportunity', outlook.raidPressure);
+    case GOAL.applyMagic:
+      return boundTerm('opportunity', candidateOpportunity(outlook.applicableTargets.length));
     case GOAL.practice:
       // **One count, not two, and the removed one was a duplicate that
       // saturated the clamp.**

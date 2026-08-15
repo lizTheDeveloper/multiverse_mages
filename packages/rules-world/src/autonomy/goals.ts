@@ -90,8 +90,26 @@ export const GOAL = {
   wardDuty: 7,
   /** Prepare for a raid. */
   raidReadiness: 8,
-  /** Keep a node she already holds sharp, restoring its mastery. */
-  practice: 9,
+  /**
+   * Spend the month casting a node she already holds **at** the world.
+   *
+   * The ninth goal, and the first that is not about knowledge. See
+   * `rules-world/src/economy/application.ts` for what it consumes and what it
+   * makes; the short version is that until it existed a mage could *hold* a
+   * node and could never *work* one, so nothing anybody knew ever touched
+   * anything.
+   */
+  applyMagic: 9,
+  /**
+   * Keep a node she already holds sharp, restoring its mastery.
+   *
+   * The tenth goal. It was authored on its branch as the ninth and takes 10
+   * here because `applyMagic` reached `main` first — the registry is
+   * append-only (`state/src/components.ts` serializes `goalId` into
+   * `goal-commitment`), so ids 0-8 are untouched and the two new goals are
+   * ordered by which one landed, not by which is more important.
+   */
+  practice: 10,
 } as const;
 
 /** Any id in the permanent registry. */
@@ -116,6 +134,7 @@ export const GOALS_IN_ORDER: readonly GoalId[] = [
   GOAL.affiliate,
   GOAL.wardDuty,
   GOAL.raidReadiness,
+  GOAL.applyMagic,
   GOAL.practice,
 ];
 
@@ -138,6 +157,7 @@ export const GOAL_NAMES: Readonly<Record<GoalId, string>> = {
   [GOAL.affiliate]: 'affiliate',
   [GOAL.wardDuty]: 'ward-duty',
   [GOAL.raidReadiness]: 'raid-readiness',
+  [GOAL.applyMagic]: 'apply-magic',
   [GOAL.practice]: 'practice',
 };
 
@@ -159,6 +179,7 @@ export const GOALS_NEEDING_A_TARGET: readonly GoalId[] = [
   GOAL.seekTeaching,
   GOAL.teach,
   GOAL.scribe,
+  GOAL.applyMagic,
   GOAL.practice,
 ];
 
