@@ -106,6 +106,33 @@ asserts that index links only to prototypes that exist and links to every one of
 directions, because a front door pointing at a missing page is worse than no front door and an
 unlinked prototype is invisible.
 
+## Playing one
+
+    npm run play      # a universe that is actually running, on :8300
+
+Opens on [`console/`](console/). This is the one command that makes the game **playable by a
+person**: `scripts/play-server.mjs` builds the reference scenario exactly the way the recorder does,
+holds one `AgentSession` in memory, and publishes it over HTTP in **the same document shape the
+recording has** — so the pages parse it without learning a second format and `no build step` is
+still true. Nothing was bundled and no dependency was added; the server is Node's own `http`.
+
+**It opens on tick 40, not tick 0**, and that is deliberate: the god starts with no favor and
+§4.2's mask folds affordability into the same bit as legality, so exactly *one* of sixteen actions
+is legal at tick 0 and thirteen are legal by tick 25. Those forty ticks are real — they are on the
+spine, in the action log, and replayed by the control like any others. `npm run play -- --warm 0`
+starts at the beginning instead.
+
+Only `console/` acts on it. It gets a cast panel — pick a verb, pick its parameter, cast — and the
+world on the page is the world after the action. Every other page reads the live document exactly as
+it read a recording, which is the point of keeping one shape. A page served without a live universe
+behind it falls back to the recording and says `Recording` in its source strip; the cast controls are
+**not rendered at all** rather than rendered dead.
+
+The honest part is the **control** button next to `cast`. It asks the server to replay the whole run
+twice from its seed — once with the action, once with a no-op — settle both thirty ticks, and report
+the two snapshot hashes and which observation slots differ. That is the difference between a loop
+that is live and a loop that looks live.
+
 ## Running them
 
     npm run ui        # builds both payloads, then serves the repository root on :8200

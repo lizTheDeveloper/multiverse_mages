@@ -97,6 +97,40 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
     'bought with "blessings and buildings" buys only blessings, and the buildings half of its ' +
     'hypothesis has never been measured. This is exactly permissive-breadth\'s incident ' +
     '(w73/pool-build-order, PR #70) in a second strategy.',
+  // The alliance pair, and the four entries below are one finding written four
+  // times because `allianceGroundwork` is one list shared by both arms.
+  //
+  // `assignRole` sits ahead of both verbs and is legal on 599 of 600 ticks, so
+  // neither is ever reached. The `fundUniversity` half is the third instance of
+  // the `permissive-breadth` incident: the list *does* put a founding at the
+  // front, but only inside `if (universities === 0)`, and the reference universe
+  // is seeded with a completed academy — so that branch never runs, the rotated
+  // entry behind `assignRole` never fires, and **neither alliance arm founds or
+  // funds a university in any run.** `alliance-abstainer` declares
+  // `fundUniversity` as a signature action while doing so, which is what makes
+  // it the same defect rather than merely a similar one.
+  //
+  // Why this is recorded rather than fixed here: both arms shadow *identically*,
+  // by construction — they share the function — so the paired difference the
+  // w109 measurement reports is unaffected, and changing the build order now
+  // would invalidate every number already taken against it. Neither strategy is
+  // in a gate pool, so nothing baselined moves either way. The fix belongs with
+  // the re-measurement, not with this merge.
+  'alliance-seeker/11':
+    'fundUniversity is listed on every tick and submitted on none. Its front-of-list entry is ' +
+    'gated on `universities === 0`, which the reference universe never satisfies, and its rotated ' +
+    'entry sits behind assignRole. Shared with alliance-abstainer through allianceGroundwork, so ' +
+    'the pairing subtracts it out; see the note above this block.',
+  'alliance-seeker/12':
+    'encourageResearch is last in allianceGroundwork, behind assignRole, which is legal on 599 of ' +
+    '600 ticks. Shared with alliance-abstainer, so the paired difference is unaffected.',
+  'alliance-abstainer/11':
+    'fundUniversity is a signature action of this arm and is never submitted, for the reason given ' +
+    'for alliance-seeker/11 — the two arms play one shared list. This is permissive-breadth\'s ' +
+    'incident (w73/pool-build-order, PR #70) for the third time, and worship-maximizer/11 for the ' +
+    'second: a strategy declaring a verb load-bearing and never once reaching it.',
+  'alliance-abstainer/12':
+    'encourageResearch, behind assignRole, exactly as alliance-seeker/12. One list, two arms.',
 });
 
 const audits = auditPool();

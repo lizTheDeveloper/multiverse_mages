@@ -895,6 +895,32 @@ later grows does not silently rescale an existing policy's inputs.
 | 13 | change tradition | traditionId |
 | 14 | open portal | targetUniverseId |
 | 15 | declare ascension | — |
+| 16 | invite scholar | speciesId |
+
+**Action 16 is an append, and the seventeenth row is a deviation from this table
+as originally drawn.** It is the seventh overall, after `state`, `primitives`,
+`coordination` and `scenario` in §5, the goal commitment and effort progress in
+§1.2, and `grantBudget` in §1.1. `ages-of-magic.md` §2f makes alliances *"the
+way that you get visiting mages"*, and §1.1 puts one universe in a simulation
+instance — so there is no second realm to negotiate with, and the smallest thing
+that makes the fiction true is a god verb that spends favor to attract one
+scholar of another species into one of your universities. She is an ordinary
+`MAGE` row, not a modifier.
+
+Three consequences a reader planning against this table needs:
+
+- **Ids stay permanent; the space grows.** `ACTION_SPACE_SIZE` is now **17**, so
+  a policy's output layer and every legality mask are one wider. That is a
+  contract change for a trained agent and is why it is recorded here rather than
+  in a changelog. No existing id moved.
+- **It costs no RNG stream and no schema revision.** The arriving scholar's
+  personality is drawn on stream 1 against her own entity handle — §6's
+  insertion invariance makes a draw keyed on a handle that did not previously
+  exist disturb nobody — so **no committed balance baseline is invalidated**.
+  `WORLD_SCHEMA_VERSION` stays at 6.
+- **The roster is the caller's, exactly as `portalTargets` is**, and for the
+  same §1.1 reason. An empty roster masks the action, which is what a universe
+  with no allies means and what the control arm of the measurement supplies.
 
 **Legality mask is mandatory.** Every observation carries a boolean mask over the action space. An
 agent that submits an illegal action gets a no-op and a counter increment — never an exception,
