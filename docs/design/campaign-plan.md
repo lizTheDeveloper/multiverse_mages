@@ -8785,3 +8785,54 @@ know. It should be re-decided with this on the table.
 *(The agent also shipped a counter that could only ever have returned zero —
 `report.shortKinds.length` on a `Record` — caught it, fixed it, and disclosed it unprompted. Third
 agent today to catch its own instrument before publishing.)*
+
+## W174 — the pricing result, finished: no price binds, and two instruments cannot see what they look like they measure
+
+PR #159, both required checks green, **nothing under `balance/` moved and nothing regenerated** — all
+three gates at delta `0.00000` on every row.
+
+### No price binds, and the ones that look like they do are a lockout
+
+**No price up to 7× moves `permissive-breadth` at all** — it opens the whole 5×14 grid from either
+opening, gap inside ±6. A one-time toll cannot bind a god who keeps spending: **2400 ticks of income is
+2,400–13,000 favor against a 96-favor grid.**
+
+**And the prices that appear to bind are not binding — they are outlasting a bot's 140-round permit
+window.** The axis masks say so directly: the narrow arm ends with `openTechniques` **frozen at its
+founding 1.0** while `openForms` climbs to 10–12. **That is a lockout, not a narrower square**, and
+without reading the masks it would have been reported as the price working.
+
+**A single number cannot fix it**, for a reason that is structural rather than a matter of range: a
+technique costs **twice** a form against a **common** 70-favor cap, so the two verbs land on opposite
+sides of the cliff. At 16×, `permissive-breadth` opens **all fourteen forms and cannot buy one
+technique** (1.0 × 14.0).
+
+### Stated in the direction that costs something
+
+One exclusion pair takes `permissive-breadth` **75.25 → 45.00** (−26.1 SE) with the other seven
+byte-identical. **No price up to 7× moves it at all.** The agent's own conclusion, and it is the right
+one to write down: **the lever was probably never the cost.**
+
+The distinction it draws is the useful part — **a toll is undirected**; at 8× and 16× it "works" by
+deleting a verb for everyone. **An exclusion is directed.** That is why one authored pair beats a
+sixteen-fold price rise.
+
+### Two instruments that cannot see what they appear to measure
+
+- **`illegalActionRate` cannot detect an unaffordable action.** 649,882 submissions, 3,143
+  rejections — **all** of them `permissive-breadth`'s slot exhaustion. **Arms where the god could
+  afford nothing recorded zero.** The mask filters first, so unaffordability is a *substitution*, not
+  a rejection. A metric named for illegality is blind to the most common way an action fails.
+- **`species-separation.mjs` cannot answer any god-action question.** `runLongReference` **submits no
+  actions, ever** — byte-identical at 1×, 8× and 16×.
+
+**The second one bounds every 9.9 finding in this campaign.** The refutations of #140's four-species
+chain and of #137, and the "three species in a chain, not four" result, were all taken **under passive
+play with no god acting at all.** They are sound as comparisons — like against like — but their scope
+is narrower than I have been stating it: **species do not differentiate *when nobody plays*.** Whether
+they differentiate under a god who acts is **still unmeasured**, and it is the same gap flagged earlier
+as *"separation under play, ~40 min/ref"*. I have quoted those results repeatedly without that
+qualifier.
+
+*(`SeedSetInput.options` landed mid-measurement so the instrument can now vary the opening square; it
+still cannot vary a price or submit an action.)*
