@@ -11055,3 +11055,52 @@ different file and still needs the carve-out W211 recommends.
 **Also: #171 has no CI at all.** No check runs exist for `9911cdf5` and `gh run list` reports no runs for
 its branch — the workflow never triggered, so it is not queued, it is absent. That needs a push to
 re-trigger, and it is not the serial runner's queue.
+
+## W212 — universities are staffed. 6 → 5 → 4 → 3 → 2 → 1 becomes 64 of 69.
+
+PR #134. The single highest-leverage item the macro model identified, closed and green.
+
+### The curve that defined the defect, inverted
+
+Passive reference, seed 20260813, 200 world years:
+
+| tick | 0 | 120 | 480 | 960 | 1920 | 2400 |
+|---|--:|--:|--:|--:|--:|--:|
+| **before** | 6 | 5 | 4 | 3 | 2 | **1** |
+| **after** | 6 | 14 | 17 | 47 | 25 | **64** |
+
+**64 of 69 living mages, in an academy of exactly 64 seats.** `referenceGrimoires` **90.5 → 411.7**,
+`referenceLibraryDepth` **3.8 → 7.0**, `referenceLivingMages` unmoved — so this is not more mages, it is
+the *same* mages finally attached to institutions.
+
+### And the founding academy is no longer life support
+
+Measured on `main` + `w24/university-siting` + this branch: with the academy deleted and a god founding,
+**487 grimoires by world-year 25** — where W181 measured **zero in every arm ever taken.**
+
+**With the caveat stated rather than buried:** the **passive** arm is still zero, and correctly so — *a
+passive god founds nothing, so no university exists to join.* The gates run `passive-control`, so removing
+the academy still needs an opening position that funds a university. **That is a scenario question now,
+not a broken wire**, which is exactly the right kind of remaining problem.
+
+### It chose the existing PR over its own implementation, on a real distinction
+
+It had written its own version and abandoned it: `settleAffiliations` adds movers to `completedBy`, so a
+moved mage re-evaluates through the `'complete'` path, whereas its phase-6b version routed a *successful*
+goal through the `'infeasible'` branch. **Same wasted month either way — but only one tells the truth in
+the histogram.** That is the difference between a fix and a fix you can measure afterwards.
+
+### Three findings it flagged rather than fixed
+
+- **A pre-existing zero the tests were hiding.** `raid-engagement` asserts raids destroy knowledge, and it
+  **passed on `main`** — while every raid ends with **zero casualties and zero nodes lost.** The gap was
+  engagement *freezing world time*, not destruction. Once scribing got loud the proxy split 2–2 across
+  seeds. A test that passes because time does not advance is not a test of destruction.
+- **Dwarf reversed hard** — confirmed by two independent instruments (12 of 12 seed sets, and occupancy
+  **12 → 5 cells**). Highest `scribeAffinity` in the content, trading breadth for depth. Recorded as
+  *consistent, not proven*, with the test stating what would refute it.
+- **A real test-isolation bug**: a timed-out test leaks a global sentinel through a `finally` that never
+  runs.
+
+`verify:nosweeps` exit 0 — **332 files, 4,617 tests, zero failures** — and CI's `Verify (pinned Node)`
+**success on this exact head.**
