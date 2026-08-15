@@ -2544,7 +2544,7 @@
     ],
     "ok": false,
     "findingCount": 125,
-    "examinedSymbolCount": 855,
+    "examinedSymbolCount": 857,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2957,7 +2957,7 @@
       },
       {
         "file": "packages/rules-world/src/populace/demand.ts",
-        "line": 84,
+        "line": 166,
         "name": "NO_DEMAND",
         "kind": "const"
       },
