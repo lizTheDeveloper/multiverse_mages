@@ -12725,3 +12725,48 @@ after it.** Stated here, not answered.
 The rule, and it cost a wrong sentence in a public doc: **a summary statistic is not the
 measurement.** `marginOverNull -2` had a name attached to it in my head — *the nulls beat
 the field* — and the archive it came from named a different null and a tie.
+
+## W239 — The prototype is playable on `main`, and it proves the entitlement gap
+
+[executed, 2026-08-15, clean worktree at `origin/main` @ e8ce6619, `npm ci` + `tsc --build`
++ `npm run play`, endpoints hit with curl]
+
+An end-to-end check of the thing the demo is for, on current `main` rather than on a
+branch:
+
+    npm run play  ->  http://localhost:8300/
+    "Opened at tick 40 - it ran 40 ticks on its own first, because tick 0 is not
+     a playable position."
+    400 observation slots, layout 46182c35d829
+
+- `GET /live/session.json` — `provenance.actionSpaceSize: 17`, and the `actions` array
+  has **17** entries. #195's fix is live: the client sees the whole space.
+- `POST /live/submit {"kind":16}` — **HTTP 200**, `{"admitted":false,"rejection":"masked"}`.
+  Previously this 400'd. The division is now right: the *server* accepts the verb and the
+  *game* declines it, which is the difference between a broken button and a disabled one.
+- `POST /live/submit {"kind":17}` — HTTP 400. The bound holds on the other side too.
+- `POST /live/advance {"count":5}` — HTTP 200.
+
+**And the frame settles W236's claim with direct evidence.** The response carries a
+`candidates` map alongside the mask:
+
+    mask:       [1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,0]
+    candidates: {"8":[{params:[1048582,215]}, ...], "9":[19 entries], "16":[]}
+
+`inviteScholar` is masked **because its candidate list is empty**, and the UI is told so
+in the same breath. So a human at this prototype picks from a list of real targets, with
+the list's length in front of them.
+
+The agent's `observe()` returns 400 anonymous slots and **none of them carry a candidate
+list length** — W236 grepped `layout.ts`, `observation.ts`, `entitlement.ts` and
+`player-state.ts` for one and found nothing. The two paths are served by the same session.
+
+That is the asymmetry stated precisely, and it is no longer an inference from code: **the
+UI is handed the candidate lists; the agent is handed a per-kind bit.** Every strategy in
+`BOT_POOL` is therefore playing a strictly harder game than the human it stands in for,
+and `illegalActionRate` measures that handicap rather than the strategy.
+
+Which also means the repair has a shape the observation layout may not need to change for:
+the play server already computes these lists per tick from the session. The question is
+whether the agent is *entitled* to them under §4.4 — and that is the design decision W236
+declined to take, now with the evidence that the other client already takes it.
