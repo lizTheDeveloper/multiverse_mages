@@ -1707,7 +1707,7 @@ function spendTheMonth(
   // archive can carry the work, less when it cannot, and the same number for
   // everybody.
   const castingShare =
-    researchMonths <= 0 ? FP_ONE : Math.floor((grantedMonths * FP_ONE) / researchMonths);
+    researchMonths <= 0 ? FP_ONE : floorDiv(grantedMonths * FP_ONE, researchMonths);
 
   mages.forEach((row, handle) => {
     if ((alive[row] as number) === 0) return;

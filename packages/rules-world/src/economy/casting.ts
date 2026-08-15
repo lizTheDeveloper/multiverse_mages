@@ -44,7 +44,7 @@
  */
 
 import type { Fixed } from '@mm/sim-core';
-import { mul } from '@mm/sim-core';
+import { floorDiv, mul } from '@mm/sim-core';
 
 /** The weight ids this module reads, so the contract is checked both ways. */
 export const REQUIRED_CASTING_WEIGHTS = ['casting-vellum-per-month'] as const;
@@ -113,5 +113,5 @@ export function affordableMageMonths(
   // Floor division: a partial month is rounded *down*, so the stock is never
   // overdrawn by rounding. The remainder stays in the stock rather than being
   // granted for free.
-  return Math.floor((available * mageMonths) / owed);
+  return floorDiv(available * mageMonths, owed);
 }
