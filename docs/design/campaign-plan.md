@@ -9292,3 +9292,57 @@ The same standard applied to two merges gave opposite outcomes, and the differen
 **The literal was the fragile one.** Where a test can assert a relationship between two things the run
 produces, it should — that assertion survives every merge that moves both, and it is the merges that
 move both which W178 showed are the ones that auto-merge green and wrong.
+
+## W184 — the checklist exists: 108 traits, and 70 of them have never been decided
+
+PR #165 lands the observation-entitlement work W175 designed. The inventory is the deliverable, and its
+shape is the finding:
+
+| class | count |
+|---|--:|
+| OBSERVABLE | 12 |
+| AGGREGATED | 19 |
+| **WITHHELD** | **76** |
+| ambiguous | 1 |
+| **total** | **108** |
+
+**Seventy of the seventy-six withheld traits are `not-yet-decided`** — no artifact anywhere says whether
+a player should see them. That is the honest starting inventory, and it is the number that justifies the
+whole exercise: the previous state of the art was that nobody could have said whether it was 0 or 70.
+`hidden-from-opponent` is used **zero** times, because the observation is always of the agent's own
+universe; it goes live with `pvp-server`.
+
+### Three rows worth reading twice
+
+1. **`ever-known.nodeId` is withheld, so the rediscovery model is entirely invisible.** An agent cannot
+   distinguish a cell *never explored* from one *explored and forgotten* — **the two states with the most
+   different expected value in the whole knowledge model.** Rediscovery is 3× cheaper; nothing can act on
+   that.
+2. **`knowledge-instance.mastery` is withheld.** Decay, loss and teaching all move it, and no channel
+   carries it in any aggregate. An instance about to decay counts exactly as much as a mastered one.
+3. **`institutions` is 4 slots over 4 components, and `agent-api` never imports `LIBRARY` at all.**
+   `institutions[331]` is "library depth", computed from `knowledge-instance.locationKind` — so **how many
+   libraries exist is not observable**, while a quantity named after them is.
+
+### The proof obligations were met
+
+**Round-trip byte-identical across eleven states**, each chosen for a branch the encoder actually has —
+no universe entity, over-budget edicts, unnamed node, memory palace, a dead mage who knew a deep node, a
+missing `material-stock` row, more than twelve objectives with value ties, a combatant on a nonexistent
+side. **Mutation-tested**: dropping `palace` from the mage tier axis fails exactly one case, the palace
+one. `OBSERVATION_LAYOUT_DIGEST` **did not move** — `46182c35d829b205`, asserted against the value
+captured in the inventory *before* any code was written. `verify:nosweeps` green at 328 files / 4,560
+tests.
+
+### Four existing guards caught the change, and all four were right
+
+The best available evidence that this repo's gate idiom works. `schema-duplication` rejected a
+hand-rolled `PlayerRuleset` as *"step one of a second `permits()`"*, which forced consuming `@mm/state`'s
+`Ruleset` instead — a better design, because **bit expansion is an encoding concern**: it moved into
+`encodePlayerState`, and a strategy can now call `permits(player.ruleset, cellId)` directly. Two
+`float-boundary` ledgers and `arbitration-conformance` each required the new files be declared.
+
+**Known follow-up:** the inventory doc and `TRAIT_CLASSIFICATION` are two hand-authored copies of the same
+108 rows. Counts are pinned on both sides, so a *count* change is caught — but a single silently
+reclassified row would pass. Generating the doc from the table closes it, and until then this is the
+exact defect class the change exists to prevent, living inside the change itself.
