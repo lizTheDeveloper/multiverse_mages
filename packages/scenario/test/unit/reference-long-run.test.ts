@@ -420,10 +420,32 @@ describe('two hundred world years of the reference universe', () => {
     // set to write and copies it more often. Fewer nodes and the same books is
     // exactly a higher ratio.
     //
-    // Widened to 5 to fit the new measurement with headroom, not doubled
-    // reflexively — still well under the "ten would mean it is gone" ceiling the
-    // original comment named.
-    expect(last?.grimoires ?? 0).toBeLessThan(5 * (last?.libraryDepth ?? 1));
+    // **The two effects compound, and the merged tree is the first one holding
+    // both.** `w78/teaching-boundary` measured this same ratio independently and
+    // widened it to `6 ×` for its own reason: teaching stops at the institution,
+    // only six of ninety mages are ever affiliated, and they collectively know
+    // less, so the shelf holds fewer *distinct* nodes. That is the same
+    // denominator `apply-magic` cuts, by a different mechanism. Neither number
+    // below is a claim about a tree holding both:
+    //
+    // | tree | books | distinct nodes | ratio | bound it carried |
+    // |---|--:|--:|--:|---|
+    // | after `vellum` decoupled from food | 157 | 48 | 3.3 | `< 4 ×` |
+    // | `main`, after `apply-magic` | 186 | 43 | 4.33 | `< 5 ×` |
+    // | `w78`, after the teaching boundary | 154 | 36 | 4.3 | `< 6 ×` |
+    // | **both, this tree** | **164** | **25** | **6.56** | `< 8 ×` |
+    //
+    // Re-measured from the merged tree rather than taken from either side —
+    // `5 ×` and `6 ×` are both bounds this tree fails, and taking the tighter of
+    // two numbers neither side measured here is how a merge silently pins a
+    // value the build cannot hold. The numerator barely moved; the denominator
+    // fell 43 → 25 because both mechanisms take distinct nodes off the shelf.
+    //
+    // Widened to 8, which fits 6.56 with headroom and is still under the "ten
+    // would mean it is gone" ceiling the original comment named — but 6.56 is
+    // the closest this ratio has ever come to it. **If this fails again, do not
+    // widen it a fourth time without naming which mechanism moved which half.**
+    expect(last?.grimoires ?? 0).toBeLessThan(8 * (last?.libraryDepth ?? 1));
 
     // The replacement for "it falls": it does not, anywhere in the run.
     // Walked tick by tick rather than compared as peak-vs-last, for the same
