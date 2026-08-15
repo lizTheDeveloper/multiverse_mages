@@ -109,6 +109,78 @@ and highly disordered. Then:
 That is the mathy, Witch Hat-ish version of the grid: a working is a verb applied to a position on
 a gradient, and its cost falls out of the two rather than being authored per node.
 
+## 4a. A spell is a tree, and the ages are its depth
+
+*Prompted by Odrzywołek, ["All elementary functions from a single binary
+operator"](https://arxiv.org/abs/2603.21852) (arXiv:2603.21852). The paper shows that
+`eml(x, y) = exp(x) − ln(y)`, together with the constant `1`, generates every function on a
+scientific calculator — constants, arithmetic, transcendentals — under the grammar
+`S → 1 | eml(S, S)`. Every expression is a binary tree of identical nodes, and what varies is
+**depth**.*
+
+Three things follow, in descending order of how load-bearing they are.
+
+### The grammar is already §1 of `ages-of-magic.md`
+
+| age | a spell is | space over 70 cells |
+|---|---|--:|
+| first | one cell | 70 |
+| second | two cells | 2,415 |
+| third | three cells | 54,740 |
+
+That is tree depth, written down before the analogy existed. It means a compound is not *"a spell
+that names several cells"* — it is an **application**, and the third age is not more content but
+deeper composition. The frontier opens faster than a civilization can walk it for a combinatorial
+reason rather than an authored one, which is exactly what §1's *"the point is that the space opens
+faster than a civilization can walk it"* asks for and does not currently have a mechanism behind.
+
+### Research becomes a search, which is the divergence problem's answer
+
+This is the part worth building rather than admiring. The paper recovers exact closed forms from
+numerical data by descending a gradient over tree structures.
+
+`campaign-plan.md`'s W15 measured cross-strategy containment at **1.000** — a single fixed node
+ordering predicts each run's held set from its count alone, because acquisition walks a sorted
+queue. W17 made the queue value-scored and containment did not move. The author's stated goal is
+*"it should feel like you're maybe going to discover deep magic that no other player has found"*,
+and a longer queue cannot produce that however it is ordered.
+
+**If research is a search for a composition that produces an observed effect, two universes
+searching from different held knowledge land on different trees.** Divergence stops being a thing
+to engineer and becomes what search does. It also gives **rediscovery** a meaning it has never had:
+you retain the *effect* and have lost the *tree*, so you search again — and may find a different
+one. A gnome's `rediscoveryAffinity` becomes *better search* rather than a cost multiplier.
+
+### The operator is a making minus an unmaking
+
+`exp(x) − ln(y)` is a growth term minus its inverse. One operator, and it is
+**Creo minus Perdo** — which is §2's table with the two signs composed into a single node rather
+than kept apart.
+
+`muto-vim` tier 5 already claims this exists: *"change any working into any other by way of what the
+two were before they were told apart."* The paper is a constructive proof that a common root of that
+kind can exist — one operation, differentiated by composition rather than by kind. That is
+suggestive rather than binding, and it is listed third for that reason.
+
+### What does **not** transfer, and this is not a caveat
+
+**The arithmetic.** `exp` and `ln` compose into stiff surfaces, which is why the paper needs Adam
+and shallow depth. `CLAUDE.md`'s first non-negotiable constraint is fixed-point integers at 1/1024
+with **no floating point in the rules path**, and that constraint exists because live PvP and
+committed balance baselines both depend on bit-exact determinism. Nothing here is worth relaxing it
+for.
+
+So the **structure** transfers and the **operator** does not: a spell is a tree over one composition
+rule, and what that rule computes at each node is this project's design decision, not `exp − ln`.
+
+**And the search must not be literal.** A gradient optimizer per mage per tick would be the most
+expensive thing in the simulation, in a codebase whose research frontier is already bounded by
+`MAX_CANDIDATE_TARGETS = 16` for cost reasons. The cheap analogue is a bounded neighbourhood —
+search the trees reachable in one or two applications from what this mage already holds — which
+plausibly buys the divergence without the price. **Whether that is enough to move W15's numbers is
+a measurement, not an argument**, and its falsifiable form already exists: prefix fidelity below
+0.7, dimensionality above 1, containment below 1.000, and gnome ≠ human.
+
 ## 5. Sign inversion is a player-facing operation, and it is already written
 
 *Muto Vim* — transform raw magic — is the sign-inversion cell, authored tier 1 through 5 and
