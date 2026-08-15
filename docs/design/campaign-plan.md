@@ -12829,3 +12829,66 @@ caller.** W236 grepped `layout.ts`, `observation.ts`, `entitlement.ts` and
 lists, and never grepped `session.ts`, which is where the agent's other three inputs
 already come from. The absence was real in the place I looked and the thing was sitting in
 the place I did not.
+
+## W241 — The candidate lists reach the strategies, and a strategy starts doing its job
+
+[executed, 2026-08-15, `w241/candidates-reach-the-strategies`; `npm run verify` exit **0**,
+4,696 tests, 109 balance metrics all inside tolerance]
+
+W240 said the repair was three steps in `mc-harness` rather than the schema-version change
+W236 escalated. Taking them:
+
+1. forward `candidates()` through `AgentSession`, `ApiSessionLike`, the adapter and the
+   episode loop,
+2. put the lists on `PreferenceInput`,
+3. rotate over the live length instead of `candidateSlotCount`'s declared pin.
+
+Fifteen `rotate` call sites, two `scenario` consumers, five test doubles. `tsc` found every
+one — changing the signature rather than adding an optional parameter is what made the
+compiler the checker instead of me.
+
+**Measured at 1500 ticks:**
+
+| strategy               | before | after |
+|------------------------|--------|-------|
+| `portal-rush`          | 0.483  | **0** |
+| `worship-maximizer`    | 0.201  | **0** |
+| `uniform-random-legal` | 0.129  | 0.129 |
+| effective pool         | 12/14  | **14/14** |
+
+`uniform-random-legal` is unchanged deliberately — it draws its slot uniformly *by design*,
+and `strategies.ts` records that changing that distribution "is a design decision and not a
+bug fix". Its rejections are a property of what it is.
+
+**And I was wrong that this needs a baseline accept.** W240 said "doing this changes what
+every parameterized strategy submits, so it moves balance baselines… a real accept/reject."
+All 109 metrics pass; the largest move is `referenceGrimoires@portal-rush` at **0.31 SE
+against a tolerance of 106**. The wasted submissions were no-ops, so removing them changes
+what those turns *do* without moving the aggregates the gate watches. Sixth correction,
+and the only one in the optimistic direction.
+
+**Two tests changed, and both were load-bearing.**
+
+`balance-telemetry` used `portal-rush` as its positive control for *"illegalActionRate
+moves when the strategy submits something the mask refuses"*, on the stated reasoning that
+it "asks for action 14 whether or not it can afford one". True, and a defect. **A probe
+that only worked because the thing it probed was broken is not a probe** — this repo has a
+rule about giving a checker a positive control, and this is the inverse failure: a control
+whose validity depended on a bug. Replaced with `uniform-random-legal`.
+
+`founding-instrument` recorded that `permissive-breadth` *"completed no university in any
+run of any sweep ever taken"* and predicted the assertion would fail "the day the founding
+academy leaves the starting position". **The academy did not move.** The live
+`fundUniversity` list holds two entries — slot 0, "found a new one", and the one existing
+academy — so `round % 2` reaches slot 0 every other round and the strategy whose stated
+role is to fund broadly now founds. Before **0** submitted, after **3**.
+
+That is the part worth keeping: a strategy's stated role and its observed behaviour had
+come apart, the file said so in prose and pinned the gap as a measurement, and the gap
+closed from a direction nobody predicted. The prediction was wrong and the *instrument*
+was right, which is the whole argument for writing before-measurements down.
+
+The rule: **an adapter that forwards "the methods we need" silently defines what the
+callers may know.** `AgentSession` listed six of seven and nothing failed — no test, no
+lint, no reachability check — because a dropped capability is not a broken one. The
+symptom surfaced four layers away as a balance result about two strategies being weak.
