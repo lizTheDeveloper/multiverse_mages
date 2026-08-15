@@ -9346,3 +9346,66 @@ hand-rolled `PlayerRuleset` as *"step one of a second `permits()`"*, which force
 108 rows. Counts are pinned on both sides, so a *count* change is caught — but a single silently
 reclassified row would pass. Generating the doc from the table closes it, and until then this is the
 exact defect class the change exists to prevent, living inside the change itself.
+
+## W185 — scribe demand is zero in every shipped build, and the scribe cohort can only ever drain
+
+PR #166. Three fixes commissioned; the most valuable outcome was an implementation **deleted unbuilt**.
+
+**Fix 1 was not done, deliberately, and the collision check is why.** `w23/university-siting` already
+replaces the `scribingQueueDepth: 0` literal with `unwrittenNodeCount(state)`, amends the economy spec,
+and adds an agreement test. The agent deleted its own promotion rather than ship a second implementation
+— w23's reading, *nodes with no written copy anywhere* (vision §5), is better sourced than the lab's
+per-university one.
+
+**And it corrected my reading of w23.** I recorded w23's head commit — *"the university lab's demand
+obligation stays zero"* — as possibly pinning the queue at zero. It does not. That subject is about the
+**lab harness** answering w23's new fifth input `materialsObligation`; `unwritten-queue-agreement.test.ts`
+asserts the **opposite** of a zero queue. A commit subject is not a description of the diff.
+
+### The counterfactual, measured read-only on main
+
+`knowledgeCensus.unwrittenNodeIds.length` is exactly what w23 pins `unwrittenNodeCount()` to, so the
+comparison needed none of w23's code. Reference scenario, `cohortSize: 4`, `foundingNodes: 4`, 600 ticks:
+
+| seed | scribe cohort | soldiers | idle | scribe demand now | scribe demand under w23 |
+|---|---|---|---|--:|--:|
+| `0x00090001` | 23 → 14 | 0 throughout | 21 → 182 | **0 every tick** | 40 → 88 → 86 |
+| `20260811` | 23 → 16 | 0 throughout | 10 → 188 | **0 every tick** | 6 → 34 → 2 |
+
+**w23's fix is not correct-but-unobservable — it asks for 40–88 scribes where main asks for none.**
+
+**And a second defect fell out: the scribe cohort only ever drains.** Reallocation can classify `scribe`
+as *surplus* and never as *wanted*, so the cohort is a one-way valve — 23 → 14 while idle goes 21 → 182.
+**This is W181's shape again**: affiliated mages run 6→5→4→3→2→1, scribes run 23→14, and in both cases a
+population has a sink and no source. Two independent instances is a pattern in the reallocation model,
+not two bugs.
+
+### Fix 2 — there is no standing army, and saying so has a citation
+
+No sizing rule exists anywhere, and the one design text engaging the substance argues against one:
+`ages-of-magic.md` §2b, *"There is no separate military."* Cross-checked against `rules-raid`'s
+`combatants.ts`, which fields defenders from mage roles. So the literal is now `NO_STANDING_ARMY` with
+the citation — an honestly-labelled zero rather than an anonymous one.
+
+**With a trap recorded for whoever raises it:** `detachment-strength` is 100 and `portal.ts` deploys
+**per cohort**, so a universe-wide soldier target fragments across species and birth decades into cohorts
+of fewer than 100, fields **zero** detachments, and charges full subsistence for all of them. A future
+non-zero target is a bug unless deployment is fixed first.
+
+Also correcting `docs/design/vision-audit.md:355`, which calls soldiers `implemented-unreached`:
+`packages/scenario/src/raids.ts` is now the caller and runs an inbound arrival process, and **all three
+of that row's cited line numbers have rotted.**
+
+### Fix 3 — a drift guard whose positive control found the failure a length check misses
+
+`action-names-drift.test.ts`, four assertions. The load-bearing one checks names against `GOD_ACTION`
+**keys at their own ids**, because `ACTION_NAMES` is positional: a mid-list insertion with an appended
+name passes a length check while mislabelling every later row. Both modes confirmed by positive control
+(`GOD_ACTION` mutated then restored via `cp` — **no `git stash`** — tree verified clean):
+
+- 17th action appended → **2 of 4 fail**, naming id 16 and the index to fix
+- two ids renumbered, length unchanged → **1 of 4 fails**, and **a length check alone passes this**
+
+No baseline regenerated and no `ui:dashboard` run, correctly: `NO_STANDING_ARMY` is `0`, so nothing here
+changes behaviour. All four golden suites pass, including `replays scribe-demand.json to the same
+digest`. `verify:nosweeps` 4,530/4,530.
