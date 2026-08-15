@@ -60,7 +60,7 @@
 
 import type { Action, EntityHandle, SimState } from '@mm/sim-core';
 import type { AxisChangeCounterRecord } from '@mm/state';
-import { FP_ONE, NULL_ENTITY, TIME_MODE } from '@mm/sim-core';
+import { FP_ONE, NULL_ENTITY, TIME_MODE, floorDiv } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
 import type { SpeciesRecord } from '@mm/content';
@@ -466,9 +466,12 @@ function strandedByAxis(
     // already inert, and counting it would charge the god worship for a
     // disruption that already happened.
     if (!permits(ruleset, cellId)) continue;
+    // `floorDiv`, not `Math.floor(a / b)`: `grid.ts` carries the same note over
+    // the same arithmetic, and this copy was in the float form only because
+    // `coordination` was outside the rules-path lint glob until W201.
     const onAxis =
       axisKind === AXIS_KIND.technique
-        ? Math.floor((cellId - 1) / GRID_FORM_COUNT) === bit
+        ? floorDiv(cellId - 1, GRID_FORM_COUNT) === bit
         : (cellId - 1) % GRID_FORM_COUNT === bit;
     if (onAxis) inert += 1;
   }
@@ -871,7 +874,16 @@ function encouragePlan(
   // decay rate lasts the extra tick rather than one short of it. Flooring here
   // was the alternative and would make `emphasisAt` return a positive value on
   // a tick the row had already expired.
-  const lifetime = Math.ceil(constants.encourageMagnitude / constants.encourageDecayPerTick);
+  //
+  // Ceiling division written as a floor, because `Math.ceil(a / b)` is float
+  // division and the rules path has none. `floorDiv(a + b - 1, b)` is the exact
+  // integer identity for positive `b`, and `b` is positive by construction:
+  // `content/src/god.ts` refuses a load where `encourage-decay-per-tick` is not
+  // — *"a zero decay makes a research emphasis"* permanent. Where the old form
+  // would have produced `Infinity` on a zero it could never legally receive,
+  // this throws instead, which is the better of the two failures.
+  const decay = constants.encourageDecayPerTick;
+  const lifetime = floorDiv(constants.encourageMagnitude + decay - 1, decay);
   const expiryTick = worldTick + lifetime;
 
   return {
