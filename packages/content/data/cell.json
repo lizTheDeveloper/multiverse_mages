@@ -82,6 +82,13 @@
       "cig-the-assayers-flame",
       "cig-the-uncontained-hour",
       "cig-the-standing-furnace"
+    ],
+    "excludes": [
+      {
+        "cell": "creo-umbra",
+        "reason": "A light thrown by nothing and a shadow cast by nothing are one claim about what throws a thing, pointed opposite ways. A scholar cannot hold both accounts; a civilization can, which is what a civilization is for.",
+        "resolution": "destructive"
+      }
     ]
   },
   {
@@ -148,6 +155,13 @@
       "cu-the-lengthened-dusk",
       "cu-the-kept-shadow",
       "cu-the-unlit-hall"
+    ],
+    "excludes": [
+      {
+        "cell": "creo-ignem",
+        "reason": "A light thrown by nothing and a shadow cast by nothing are one claim about what throws a thing, pointed opposite ways. A scholar cannot hold both accounts; a civilization can, which is what a civilization is for.",
+        "resolution": "destructive"
+      }
     ]
   },
   {
