@@ -132,6 +132,23 @@ export interface Scenario {
    */
   readonly portalTargets?: readonly number[];
   /**
+   * Species an allied realm would send a scholar from, if any.
+   *
+   * The same §1.1 shape as {@link portalTargets}, and absent for the same
+   * reason: who else is in the sky is the scenario's knowledge, never state's.
+   * Absent means action 16 has no candidates and stays masked — a universe with
+   * nobody to ask.
+   */
+  readonly invitableSpecies?: readonly number[];
+  /**
+   * Node ids carrying the `portal` primitive, for action 16's gate.
+   *
+   * Content, not state, and §5 gives `agent-api` no edge to the effect tables —
+   * so whoever assembled the content supplies it, exactly as it supplies
+   * {@link invitableSpecies}. Absent holds the action closed.
+   */
+  readonly portalNodes?: readonly number[];
+  /**
    * Builds the initial state.
    *
    * **Must be a pure function of its two arguments.** Reading a clock, a
@@ -267,6 +284,16 @@ export function createSession(options: SessionOptions): AgentSession {
   const portalTargets =
     scenario.portalTargets === undefined ? {} : { portalTargets: scenario.portalTargets };
 
+  /** The alliance roster, spread for exactly the reason above. */
+  const invitableSpecies =
+    scenario.invitableSpecies === undefined
+      ? {}
+      : { invitableSpecies: scenario.invitableSpecies };
+
+  /** Action 16's gate, spread for exactly the reason above. */
+  const portalNodes =
+    scenario.portalNodes === undefined ? {} : { portalNodes: scenario.portalNodes };
+
   let state: SimState | undefined;
   let cap = 0;
   let view: AgentView | undefined;
@@ -316,6 +343,8 @@ export function createSession(options: SessionOptions): AgentSession {
       state: current,
       catalogue: scenario.catalogue,
       ...portalTargets,
+      ...invitableSpecies,
+      ...portalNodes,
       truncated: atCap(current),
     });
     return view;
@@ -412,7 +441,13 @@ export function createSession(options: SessionOptions): AgentSession {
 
       submitted += 1;
       const screened = admit(
-        { state: current, catalogue: scenario.catalogue, ...portalTargets },
+        {
+          state: current,
+          catalogue: scenario.catalogue,
+          ...portalTargets,
+          ...invitableSpecies,
+          ...portalNodes,
+        },
         [action],
       );
       const rejection = screened.rejected[0];
