@@ -11104,3 +11104,37 @@ the histogram.** That is the difference between a fix and a fix you can measure 
 
 `verify:nosweeps` exit 0 — **332 files, 4,617 tests, zero failures** — and CI's `Verify (pinned Node)`
 **success on this exact head.**
+
+### W209 addendum — the ratchet trap, stated correctly, and a test that asserted a count
+
+Two corrections from the agent that found the trap, both sharper than my version.
+
+**The trap is not "pin adopts main's four."** `reachability:pin` **regenerates the whole baseline from the
+current report**, so it banks every unpinned finding present at that instant — the author's and everyone
+else's — **in one undifferentiated write**. And what made the distinction visible was **the control
+worktree on untouched `origin/main`, not the pin**. Without that control the agent *could not have known
+which of the five findings were its own*, so the honest move would have been **unavailable rather than
+merely unattractive**.
+
+Which collapses two findings into one, and it is the better statement:
+
+> **A tool that writes a whole baseline needs an instrument that attributes rows, or its convenience path
+> silently launders someone else's debt.**
+
+That applies to `reachability:pin`, and it applies unchanged to `regenerate-baseline.mjs` — which is the
+same shape and is currently the only way to clear `baseline-invalid` (W211).
+
+**And two defects on that branch were the agent's own**, reported against itself:
+
+- **`corruptibleIn` excluded only the saboteur's *own* corruptions**, so two saboteurs in one warband
+  double-counted the deepest book — **seven corruptions against a four-book shelf.** Caught by its own
+  test, *"but only because it asserted a count rather than existence."* An existence assertion would have
+  passed on a wrong number, which is the same failure as W205's spread pin and W198's population equality.
+- The power-table rewriter that matched by row shape and rewrote 27 rows across four tables — already
+  recorded, and worth repeating only because it was *"committed by the agent who had read that section
+  that hour."*
+
+**Still open and stated plainly:** `scribingQueueDepth: 0` is upstream of measuring the telephone problem
+properly — the scriptorium stops after its founding cohorts, so **the copy chain closes only 1–3 times per
+run.** #172 fixes the literal. The agent left it there rather than pulling another branch's question into
+its own PR, which is the right boundary.
