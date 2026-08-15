@@ -11022,3 +11022,36 @@ work from landing at all**, which defeats its own goal. Three options:
    night's largest changes.
 
 Recorded rather than acted on: the rule is the owner's and so is its exception.
+
+### W211 addendum — #172's blocker is the session pin, not the baseline seal, and #179 is on the critical path
+
+Traced #172's required-check failure to the step rather than assuming it matched #169's. **It does not.**
+
+```
+FAIL packages/scenario/test/unit/ui-recording.test.ts
+  > ui/session.json > is byte-for-byte what `npm run ui:record` produces today
+  AssertionError: expected { seed: 20260813, ticks: 400, …(7) } to deeply equal { … }
+```
+
+**Not a balance gate and not `baseline-invalid`.** It is the **committed session fixture's byte pin** —
+the *third* `snapshotHash` the cohort agent identified and deliberately left red under the no-baselines
+rule, on the correct reasoning that neither committed version is right on the combined tree.
+
+So the night's PRs are blocked by **two different committed-derived-artifact problems**, not one:
+
+| PR | required check fails on | cleared by |
+|---|---|---|
+| #169 | `baseline-invalid` — `provenance.contentHash` mismatch | a provenance-only re-seal, which **does not exist** |
+| #172 | `ui/session.json` byte pin | **#179**, which deletes the pin and builds the artifact in CI |
+
+**That puts #179 on the critical path for landing the scribing loop**, rather than being the tidy-up it
+was commissioned as. It was justified on merge-conflict cost and on the discovery that the dashboard pin
+had already gone blind; it turns out to also be the thing that unblocks a required check.
+
+The two problems share a cause — **a generated file committed and pinned byte-for-byte** — and #179 fixes
+that cause for both artifacts. It does **not** fix `baseline-invalid`, which is a different seal on a
+different file and still needs the carve-out W211 recommends.
+
+**Also: #171 has no CI at all.** No check runs exist for `9911cdf5` and `gh run list` reports no runs for
+its branch — the workflow never triggered, so it is not queued, it is absent. That needs a push to
+re-trigger, and it is not the serial runner's queue.
