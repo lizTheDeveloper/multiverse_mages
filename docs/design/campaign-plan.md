@@ -12686,12 +12686,42 @@ sweep itself. Zero ascensions at 900 replicates 3 of 3 search seeds.
 
     SHAPE DEAD   width 0   margin-over-null -2
 
-**Negative two.** The null ladder ascended *more often than the best strategy did* — doing
-nothing beat playing, and beat it by a margin. Under the old enum that was
-indistinguishable from a sweep that ran too short, which is how it survived this long
-unexamined. Ascension is priced at zero and `idle-then-declare` takes the summit the
-instant the mask opens it, so *declare and wait* is not merely competitive on that seed;
-it is dominant.
+**Corrected the same hour, from the archive rather than from the headline.** I first wrote
+that the null ladder outscored the field and that `idle-then-declare` was dominant. The
+nulls say otherwise:
 
-That is the strongest balance finding of the night, and it is a design question rather
-than a defect: **what should the win condition cost?** It is stated here and not answered.
+    idle-then-declare      ascended 0/4
+    passive-control        ascended 0/4
+    uniform-random-legal   ascended 0/4
+    permit-then-idle       ascended 2/4     <- the whole of the null bar
+
+    alliance-seeker        ascended 2/4
+    permissive-breadth     ascended 2/4
+
+`idle-then-declare` won **nothing**. And `−2` is not a defeat margin: `bestElite` is
+computed over *occupied* cells, width is 0, so the arithmetic is `0 − 2`. The two best
+strategies **tied** the bar at 2/4, and `clearsLadder` is strictly greater because *tying
+with doing nothing is not beating it*. Every occupied cell was therefore refused, which is
+what drove width to 0 and the shape to `dead`.
+
+**The real finding is better than the one I reported.** The null holding the bar is
+`permit-then-idle`, which is *not* doing nothing — it permits the whole grid for the first
+stretch of the run and then stops. `strategies.ts` calls it the **degenerate-play probe**
+and built it to test exactly this, because Path B's predicates are anchored on the
+argument that clearing them requires *"the god permitted an axis the universe did not
+start with"*. It does that once, early, and then never acts again — and it matches the
+best real strategy in the pool.
+
+So on this seed the game's answer to *"how do I win"* is: **open the grid in the first
+stretch and then stop playing.** `ascension-canon-cells` is 18 against a starting
+rectangle of 12, so the permits are load-bearing and the idling is free. Two strategies
+that spend the whole run allocating, blessing and funding buy exactly nothing over a
+single early burst of permits.
+
+That is the strongest balance finding of the night and it is a design question rather than
+a defect: **the second summit rewards an opening move and is indifferent to everything
+after it.** Stated here, not answered.
+
+The rule, and it cost a wrong sentence in a public doc: **a summary statistic is not the
+measurement.** `marginOverNull -2` had a name attached to it in my head — *the nulls beat
+the field* — and the archive it came from named a different null and a tie.
