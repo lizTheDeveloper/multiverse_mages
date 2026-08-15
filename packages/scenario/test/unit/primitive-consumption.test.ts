@@ -127,7 +127,7 @@ describe('god-driven consumption is recorded, and does not count', () => {
     //
     // So the assertion inverts: the god-only set is empty, and every primitive
     // the registry declares is reachable from an authored node.
-    expect(report.godOnly ?? []).toEqual([]);
+    expect(report.nonNode.map((entry) => entry.primitiveId)).toEqual([]);
     for (const primitiveId of ['research-rate', 'teach-rate', 'scribe-rate', 'lifespan', 'fertility']) {
       expect(consumed, `${primitiveId} lost its node-driven consumer`).toContain(primitiveId);
     }
