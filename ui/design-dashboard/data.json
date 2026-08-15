@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 131,
-    "examinedSymbolCount": 875,
+    "findingCount": 132,
+    "examinedSymbolCount": 879,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 315,
+    "productionFileCount": 318,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2575,6 +2575,12 @@
         "file": "packages/content/src/audio.ts",
         "line": 140,
         "name": "audioSelect",
+        "kind": "function"
+      },
+      {
+        "file": "packages/content/src/character.ts",
+        "line": 73,
+        "name": "characterFor",
         "kind": "function"
       },
       {
