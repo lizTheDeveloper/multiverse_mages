@@ -38,23 +38,48 @@
 
 import type { ContentId, ContentRegistry, PrimitiveRecord, SpeciesRecord } from '@mm/content';
 import { loadContent, shippedContentSource } from '@mm/content';
-import type { SimState } from '@mm/sim-core';
+import type { RngStream, SimState } from '@mm/sim-core';
+import { nextBounded } from '@mm/sim-core';
+import type { Ruleset } from '@mm/state';
+import { permits } from '@mm/state';
 import type { CatalogueNode, ContentCatalogue } from '@mm/agent-api';
 import { buildCatalogue } from '@mm/agent-api';
-import type { AcquirePolicy, CellResolver, NodeCatalog, StorePolicy } from '@mm/rules-magic';
+import type {
+  AcquirePolicy,
+  CellResolver,
+  ConsumptionRecorder,
+  NodeCatalog,
+  StorePolicy,
+} from '@mm/rules-magic';
 import {
   KnowledgeSubsystem,
   MagicGrid,
   acquirePolicy,
   catalogFromRegistry,
+  createConsumptionRecorder,
   hookFor,
+  nodeEffectMagnitudes,
+  registerNonNodeConsumer,
   storePolicy,
   traditionTableFrom,
 } from '@mm/rules-magic';
 import type { SpeciesAffinities } from '@mm/rules-world';
-import { readTargetAppeal, resolveSpeciesAffinities, territoryExtent } from '@mm/rules-world';
+import {
+  readApplicationWeights,
+  readTargetAppeal,
+  resolveSpeciesAffinities,
+  territoryExtent,
+  territoryYieldShares,
+} from '@mm/rules-world';
+import type { CombatEffectIndex } from '@mm/rules-raid';
+import { combatEffectIndex } from '@mm/rules-raid';
 import type { WorldStepDeps } from '@mm/coordination';
-import { godEffectHooks, nodeFacetsFrom, resolveGodContent } from '@mm/coordination';
+import {
+  godEffectHooks,
+  nodeFacetsFrom,
+  resolveGodContent,
+  universeEffectIndex,
+} from '@mm/coordination';
 
 /** The permitted-axis halves of a ruleset (`contracts.md` §1.1). */
 export interface RulesetAxes {
@@ -156,7 +181,272 @@ export function v1RulesetAxes(registry: ContentRegistry): RulesetAxes {
 }
 
 /**
- * Interned node ids inside the v1 rectangle that have no prerequisites,
+ * How many techniques and how many forms a universe is founded holding.
+ *
+ * The **opening square** (`campaign-plan.md`, "The 2×2 opening"): a universe
+ * does not begin with the grid, it begins with a sub-rectangle of it, and the
+ * rest is reached by permitting further axes.
+ *
+ * There is deliberately no third field naming *which* axes. Two ways to say
+ * that already exist and both are expressible without one — {@link
+ * explicitOpeningAxes} for a god who chose, {@link seededOpeningAxes} for a
+ * harness that wants divergence it did not have to author — and a spec that
+ * could say it a third way would be a third notion of what a universe starts
+ * with.
+ */
+export interface OpeningSquareSize {
+  /** Techniques permitted at founding, `1..registry.techniques.length`. */
+  readonly techniqueCount: number;
+  /** Forms permitted at founding, `1..registry.forms.length`. */
+  readonly formCount: number;
+}
+
+/**
+ * The axis masks a set of technique and form bits implies.
+ *
+ * The whole opening-square mechanic is this function's output and nothing else.
+ * `permits()` in `@mm/state` is `technique ∈ mask AND form ∈ mask` modulo
+ * edicts, so an opening *is* a pair of masks — there is no second notion of
+ * "is this cell open" to keep in step, no component to remember the founding
+ * square, and no world-schema revision. Growing the square is `permitTechnique`
+ * and `permitForm`, which `god/interventions.ts` already prices in favor.
+ */
+function axesFromBits(techniqueBits: Iterable<number>, formBits: Iterable<number>): RulesetAxes {
+  let permittedTechniques = 0;
+  let permittedForms = 0;
+  for (const bit of techniqueBits) permittedTechniques |= 1 << bit;
+  for (const bit of formBits) permittedForms |= 1 << bit;
+  return { permittedTechniques, permittedForms };
+}
+
+/**
+ * Refuses a size the registry cannot supply.
+ *
+ * Refuses rather than clamps. A clamped 9-technique square would run to
+ * completion as a 5-technique one and be recorded as a distinct arm, which is
+ * the same defect `readCount` refuses in `reference-universe.ts`: a level the
+ * scenario cannot honour produces a cell identical to its neighbour and a
+ * record claiming the two differ.
+ */
+function assertSquareFits(registry: ContentRegistry, size: OpeningSquareSize): void {
+  const techniques = registry.techniques.length;
+  const forms = registry.forms.length;
+  if (
+    !Number.isInteger(size.techniqueCount) ||
+    size.techniqueCount < 1 ||
+    size.techniqueCount > techniques ||
+    !Number.isInteger(size.formCount) ||
+    size.formCount < 1 ||
+    size.formCount > forms
+  ) {
+    throw new Error(
+      `An opening square of ${String(size.techniqueCount)} techniques × ${String(size.formCount)} ` +
+        `forms does not fit the ${String(techniques)} × ${String(forms)} grid, and a square with ` +
+        'no techniques or no forms permits nothing at all. Both counts are at least 1.',
+    );
+  }
+}
+
+/**
+ * A uniformly random permutation of `0..count-1`, integer-only.
+ *
+ * Fisher–Yates backwards, which draws exactly `count - 1` times **whatever the
+ * caller intends to keep**. That fixed cost is the point rather than an
+ * incidental: a sweep takes the first *k* entries as its square, so drawing a
+ * whole permutation and slicing it makes the 1×1 arm's square a prefix of the
+ * 2×2 arm's at the same seed. The arms are then *nested*, and a size sweep
+ * varies size alone. Drawing only the *k* axes each arm needs would move the
+ * square's position as well as its size and confound the two.
+ */
+function axisPermutation(stream: RngStream, count: number): number[] {
+  const order = Array.from({ length: count }, (_unused, index) => index);
+  for (let i = count - 1; i > 0; i -= 1) {
+    const j = nextBounded(stream, i + 1);
+    const swap = order[i] as number;
+    order[i] = order[j] as number;
+    order[j] = swap;
+  }
+  return order;
+}
+
+/**
+ * An opening square drawn from the universe's own seed.
+ *
+ * **The harness answer to "who chooses the opening square".** A seeded square
+ * guarantees divergence across a sweep without relying on the strategy pool to
+ * produce it, which is exactly what a dimensionality measurement needs: two
+ * universes that begin at different squares have no queue in common to walk.
+ *
+ * Both axes are drawn from `RNG_STREAM.openingSquare` and nothing else touches
+ * that stream, so adding this draw re-rolls no mortality, no research and no
+ * founding personality. That is not an argument — `test/unit/opening-square.test.ts`
+ * asserts a seeded build and an explicit build of the same square agree on the
+ * snapshot hash, which they can only do if the draw is invisible to every other
+ * subsystem.
+ */
+export function seededOpeningAxes(
+  registry: ContentRegistry,
+  size: OpeningSquareSize,
+  stream: RngStream,
+): RulesetAxes {
+  assertSquareFits(registry, size);
+  // Both permutations come off one stream, techniques first. The order is
+  // arbitrary and permanent: swapping it would move every seeded square ever
+  // recorded without changing a single rule.
+  const techniqueOrder = axisPermutation(stream, registry.techniques.length);
+  const formOrder = axisPermutation(stream, registry.forms.length);
+  const techniqueBits = registry.techniques.map((entry) => entry.record.bit);
+  const formBits = registry.forms.map((entry) => entry.record.bit);
+  return axesFromBits(
+    techniqueOrder.slice(0, size.techniqueCount).map((index) => techniqueBits[index] as number),
+    formOrder.slice(0, size.formCount).map((index) => formBits[index] as number),
+  );
+}
+
+/**
+ * An opening square named outright, by content id.
+ *
+ * **The play answer to the same question.** A god who picks her universe's
+ * first techniques and forms is making the most path-dependent decision in the
+ * game, and this is the shape that decision arrives in. Named by content id
+ * rather than by bit, for the reason `referenceContent` names a tradition by
+ * string: a bit is a fact about the order of a data file, so a caller that
+ * asked for bit 2 would be asking for something else the day a technique is
+ * inserted.
+ */
+export function explicitOpeningAxes(
+  registry: ContentRegistry,
+  techniqueIds: readonly string[],
+  formIds: readonly string[],
+): RulesetAxes {
+  const techniqueBits = new Map(registry.techniques.map((e) => [e.record.id, e.record.bit]));
+  const formBits = new Map(registry.forms.map((e) => [e.record.id, e.record.bit]));
+  const resolve = (ids: readonly string[], table: Map<string, number>, axis: string): number[] =>
+    ids.map((id) => {
+      const bit = table.get(id);
+      if (bit === undefined) {
+        throw new Error(
+          `The registry holds no ${axis} "${id}", so an opening square naming it would silently ` +
+            'permit one axis fewer than the god asked for.',
+        );
+      }
+      return bit;
+    });
+  if (techniqueIds.length === 0 || formIds.length === 0) {
+    throw new Error(
+      'An opening square must name at least one technique and at least one form. A square with ' +
+        'neither permits no cell, and every mage in the universe would be idle forever.',
+    );
+  }
+  return axesFromBits(
+    resolve(techniqueIds, techniqueBits, 'technique'),
+    resolve(formIds, formBits, 'form'),
+  );
+}
+
+/**
+ * The order a god's opening square grows in, when nobody names one.
+ *
+ * **The v1 rectangle's own axes first, ascending by content id, then every
+ * remaining axis ascending.** Two properties follow from that ordering and both
+ * are load-bearing:
+ *
+ * 1. **The prefix at the v1 rectangle's own size *is* the v1 rectangle**, so
+ *    the largest standard opening is today's universe and a size sweep has a
+ *    real control rather than a re-implementation of one. Asserted in
+ *    `test/unit/opening-square.test.ts` against {@link v1RulesetAxes} rather
+ *    than argued from this comment.
+ * 2. **Smaller openings nest inside larger ones**, so a sweep over sizes varies
+ *    size alone — the same property {@link seededOpeningAxes} buys by drawing a
+ *    whole permutation and slicing it.
+ *
+ * Ascending content id is a **reproducible** order, not a ranking: nothing here
+ * claims `intellego` is the technique a god should take first. It is the same
+ * order {@link foundingCandidates} deals in, and for the same reason — a
+ * starting position that depended on file order would not be reproducible from
+ * its own description.
+ */
+export function standardOpeningOrder(registry: ContentRegistry): {
+  readonly techniqueIds: readonly string[];
+  readonly formIds: readonly string[];
+} {
+  const order = (
+    all: readonly string[],
+    inRectangle: ReadonlySet<string>,
+  ): readonly string[] => {
+    const ascending = [...all].sort();
+    return Object.freeze([
+      ...ascending.filter((id) => inRectangle.has(id)),
+      ...ascending.filter((id) => !inRectangle.has(id)),
+    ]);
+  };
+  const v1Cells = registry.cells.filter((entry) => entry.record.v1 === true);
+  return {
+    techniqueIds: order(
+      registry.techniques.map((entry) => entry.record.id),
+      new Set(v1Cells.map((entry) => entry.record.technique)),
+    ),
+    formIds: order(
+      registry.forms.map((entry) => entry.record.id),
+      new Set(v1Cells.map((entry) => entry.record.form)),
+    ),
+  };
+}
+
+/**
+ * The opening square a god takes when she has not named one herself.
+ *
+ * **The default answer to "who chooses the opening square" is the god, not the
+ * RNG.** A size is a choice a sweep or a client can express as two integers;
+ * {@link standardOpeningOrder} turns it into named axes, and
+ * {@link explicitOpeningAxes} — the play verb — turns those into the masks
+ * `permits()` reads. Nothing here draws, so a standard opening adds no RNG
+ * stream and forces no re-baseline event.
+ *
+ * A god who wants a *different* square of the same size calls
+ * {@link explicitOpeningAxes} directly. This function is the default, not the
+ * only shape a square comes in.
+ */
+export function standardOpeningAxes(
+  registry: ContentRegistry,
+  size: OpeningSquareSize,
+): RulesetAxes {
+  assertSquareFits(registry, size);
+  const { techniqueIds, formIds } = standardOpeningOrder(registry);
+  return explicitOpeningAxes(
+    registry,
+    techniqueIds.slice(0, size.techniqueCount),
+    formIds.slice(0, size.formCount),
+  );
+}
+
+/**
+ * The opening square, in the shape `permits()` takes.
+ *
+ * **Membership in the square is asked of the one arbitration function and
+ * nowhere else.** This file used to answer it itself — two lines of
+ * `axes.permittedTechniques & (1 << techniqueBit)` — and
+ * `state/test/unit/arbitration-conformance.test.ts` caught it, correctly: a
+ * second implementation of legality is a second implementation, however small,
+ * and the part every reimplementation drops is edict precedence. A square with
+ * an interdiction inside it would then deal a founding grant in a cell the
+ * universe forbids.
+ *
+ * No edicts, because an opening square is the axis halves of a ruleset and a
+ * universe has issued nothing at tick zero. Passing the empty list rather than
+ * skipping `permits()` is what keeps the day edicts *are* part of a founding
+ * position a one-line change here instead of a second rule.
+ */
+function openingRuleset(axes: RulesetAxes): Ruleset {
+  return {
+    permittedTechniques: axes.permittedTechniques,
+    permittedForms: axes.permittedForms,
+    edicts: [],
+  };
+}
+
+/**
+ * Interned node ids inside the opening square that have no prerequisites,
  * ascending.
  *
  * These are the only nodes a founding grant can usefully name: a node whose
@@ -165,14 +455,37 @@ export function v1RulesetAxes(registry: ContentRegistry): RulesetAxes {
  * Ascending id, because a founding grant is part of the starting position and a
  * starting position that depended on file order would not be reproducible from
  * its own description.
+ *
+ * **Read off the axes rather than the `v1` flag**, because under an opening
+ * square the flag no longer says what a universe starts with — it says what the
+ * *standard* opening is, which is one square among 910 two-by-twos. A grant
+ * dealt from the v1 cells into a universe that does not permit them would be a
+ * founding endowment nobody could cast, teach or rediscover.
+ *
+ * **This can legitimately return fewer candidates than `foundingNodes` asks
+ * for.** Every one of the seventy cells happens to hold exactly one
+ * prerequisite-free node in shipped content, so a 1×1 square offers exactly
+ * one; a universe asking for four gets one. `buildReferenceState` deals what
+ * exists rather than refusing, because a refused run punches a hole in a paired
+ * seed grid while a thinly-founded run is data.
  */
-export function foundingCandidates(registry: ContentRegistry): readonly ContentId[] {
-  const v1Cells = new Set(
-    registry.cells.filter((entry) => entry.record.v1 === true).map((entry) => entry.record.id),
+export function foundingCandidates(
+  registry: ContentRegistry,
+  axes: RulesetAxes = v1RulesetAxes(registry),
+): readonly ContentId[] {
+  const ruleset = openingRuleset(axes);
+  // A cell's interned `contentId` *is* its grid cell id — `@mm/content` interns
+  // it as `techniqueBit × 14 + formBit + 1`, which is what `permits()` expects,
+  // and `state/test/unit/grid-agrees-with-content.test.ts` pins the two together
+  // for all seventy.
+  const openCells = new Set(
+    registry.cells
+      .filter((entry) => permits(ruleset, entry.contentId))
+      .map((entry) => entry.record.id),
   );
   return Object.freeze(
     registry.nodes
-      .filter((entry) => v1Cells.has(entry.record.cell) && entry.record.prerequisites.length === 0)
+      .filter((entry) => openCells.has(entry.record.cell) && entry.record.prerequisites.length === 0)
       .map((entry) => entry.contentId)
       .sort((a, b) => a - b),
   );
@@ -290,8 +603,38 @@ export function catalogAndCells(registry: ContentRegistry): {
  * fertility the births, and research-rate and teach-rate the accumulator vision
  * §6a's library contributes into. Everything else the loop needs it reads out of
  * state.
+ *
+ * ## The recorder, and why this function is the place it is threaded
+ *
+ * `recorder` collects which primitives this wiring actually pulled node effects
+ * for. `scripts/check-primitive-consumption.mjs` builds a universe with a fresh
+ * one and asserts every primitive has a node-driven consumer — the *consumption*
+ * question, as against `check:coverage`'s *authorship* question. See
+ * `packages/rules-magic/src/effects/consumption.ts` for the argument.
+ *
+ * It is threaded here rather than anywhere else because this is the function
+ * that decides what a running universe is made of. A read in a package nothing
+ * assembles registers nothing, which is the correct answer and not a limitation.
+ *
+ * That sentence used to end *"…so `@mm/rules-raid`'s seven combat primitives are
+ * not reachable by knowledge in any simulation that exists today"*, and it had
+ * been false since `raids.ts` was written: this package depends on
+ * `@mm/rules-raid`, installs its raid system in the reference world loop by
+ * default, and `arbitration.ts` has always turned a held node into damage. What
+ * was missing was the *fetch* — arbitration read `registry.nodes` itself, so the
+ * recorder saw nothing and the check reported seven live consumers as absent.
+ * `combat` below is that fetch, and it is handed to the arbiter as a required
+ * argument so the wire cannot be cut without a type error.
+ *
+ * Defaulted so every existing caller keeps working and discards the recording.
+ * Nothing is conditional on it — the same data is fetched either way — so a
+ * caller that ignores it cannot get different behaviour, only less information.
  */
-export function worldDeps(registry: ContentRegistry, traditionId: ContentId): WorldStepDeps {
+export function worldDeps(
+  registry: ContentRegistry,
+  traditionId: ContentId,
+  recorder: ConsumptionRecorder = createConsumptionRecorder(),
+): WorldStepDeps & { readonly combat: CombatEffectIndex } {
   const { catalog, cells } = catalogAndCells(registry);
   const { speciesOf } = speciesTable(registry);
   const knowledgeFor = (state: SimState): KnowledgeSubsystem =>
@@ -311,10 +654,73 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
   // a pure function of the species record and the registry.
   const affinityCache = new Map<string, SpeciesAffinities>();
 
+  // The god hooks stack blessing and encouragement *constants*, never a node's
+  // authored magnitude — a blessed mage researches faster because the god blessed
+  // her, not because anyone discovered anything. Recorded so the consumption
+  // report can say "consumed, but never from node effects" about these three
+  // rather than leaving a reader to wonder how `research-rate` can be in use and
+  // unconsumed at the same time. A non-node registration never counts toward
+  // consumption; it only explains.
+  registerNonNodeConsumer(
+    recorder,
+    'research-rate',
+    'coordination/god/effects.researchMultiplierFor (blessing + encouragement constants)',
+  );
+  registerNonNodeConsumer(
+    recorder,
+    'teach-rate',
+    'coordination/god/effects.teachMultiplierFor (blessing constants)',
+  );
+  registerNonNodeConsumer(
+    recorder,
+    'lifespan',
+    'coordination/god/effects.lifespanEffectsFor (blessing + curse constants)',
+  );
+  // Species content, not node content: `carrying-capacity` scales births by the
+  // species record's own `fertility`, which no amount of research changes.
+  registerNonNodeConsumer(
+    recorder,
+    'fertility',
+    'rules-world/economy/carrying-capacity (species.fertility)',
+  );
+  // `scribe-rate` is deliberately *not* registered. Its primitive record is
+  // handed to the loop, but `world-step.ts` passes `NO_BONUSES` — a literal
+  // empty source list — so it stacks to the identity every tick and nothing,
+  // node or god, can move it. Registering it would be a claim this file cannot
+  // support; it belongs in the failure list, and it is there.
+  //
+  // `resource-yield` used to be in that sentence and no longer is. W29 wired
+  // the economy: `world-step.ts` now passes `economy.resourceYield` and
+  // `economy.buildRate` from `universeEconomyBonuses`, which gathers
+  // `target: "universe"` node effects gated on the node being *known* and its
+  // cell *permitted*. Both register from that fetch site — see
+  // `coordination/universe-effects.ts` — and the measurement that says it is
+  // real rather than plumbed is in the W29 commit: resource-yield moved yields
+  // +214% to +294%, and build-rate cut time-to-build by 57%.
+  //
+  // w107 gave `resource-yield` a **second** node-driven consumer, and the two
+  // are different mechanisms rather than one written twice. W29's is *ambient*:
+  // a castable, permitted node raises what every laborer cohort produces, and it
+  // costs the mage who knows it nothing. `GOAL.applyMagic` is the other: she
+  // spends the month casting one node she holds, and the materials are hers.
+  // Both reach the loop through `universeEffects`, whose index is built from the
+  // registry directly, so neither adds a registration here.
+
   return {
     speciesOf,
     catalog,
     cells,
+    // The wire from knowledge to a raid, built here for the same reason
+    // `universeEffects` is: this is the function that decides what a running
+    // universe is made of, and the fetch is what registers a consumer.
+    //
+    // It is **not** part of `WorldStepDeps`, and that is a §5 boundary rather
+    // than a stylistic call: `coordination` may not import `@mm/rules-raid` —
+    // a raid's consequences land in world state *through* `coordination`, so
+    // the edge runs the other way — and typing the field there would need the
+    // import. `raids.ts` reads it off `content.deps`, which is
+    // `ReturnType<typeof worldDeps>` and so picks the widening up for free.
+    combat: combatEffectIndex(registry, recorder),
     facets: nodeFacetsFrom(registry),
     affinitiesOf: (species) => {
       const cached = affinityCache.get(species.id);
@@ -324,12 +730,22 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
       return resolved;
     },
     appeal: readTargetAppeal(registry),
+    application: readApplicationWeights(registry),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
+    // The same records the extent is summed from, read for their yield mix
+    // instead of their capacity. Both are fixed for the length of a run.
+    yieldShares: territoryYieldShares(registry.territories.map((entry) => entry.record)),
+    // The wire from knowledge to the economy. Built here, at the composition
+    // root, because it is a pure projection of the content set — see
+    // `universe-effects.ts`, which explains at length what was not connected
+    // before it existed.
+    universeEffects: universeEffectIndex(registry, recorder),
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),
+      buildRate: primitiveNamed(registry, 'build-rate'),
       researchRate: primitiveNamed(registry, 'research-rate'),
       teachRate: primitiveNamed(registry, 'teach-rate'),
       scribeRate: primitiveNamed(registry, 'scribe-rate'),
@@ -342,8 +758,26 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
       cells,
       knowledgeFor,
       worshipYield: primitiveNamed(registry, 'worship-yield'),
-      worshipYieldNodes: nodesCarrying(registry, 'worship-yield'),
-      portalNodes: new Set(nodesCarrying(registry, 'portal').keys()),
+      // Both of these go through `nodeEffectMagnitudes` rather than a local
+      // helper so the fetch is recorded. These are the two places in the whole
+      // assembled simulation where a node's authored magnitudes become
+      // something the loop reads: `yieldSources` gates each node's worship
+      // magnitudes on `knowledge.instanceCount(nodeId) > 0`, and `portalPlan`
+      // gates the raid entry point on a living mage holding a portal node.
+      worshipYieldNodes: nodeEffectMagnitudes(
+        registry,
+        'worship-yield',
+        'coordination/god/system.yieldSources',
+        recorder,
+      ),
+      portalNodes: new Set(
+        nodeEffectMagnitudes(
+          registry,
+          'portal',
+          'coordination/god/interventions.portalPlan',
+          recorder,
+        ).keys(),
+      ),
       // `nodesLostThisTick` is deliberately absent: `defineWorldSimulation`
       // supplies it from the world loop's own report closure, because that is
       // the one place that knows which tick a loss count belongs to.
@@ -352,26 +786,13 @@ export function worldDeps(registry: ContentRegistry, traditionId: ContentId): Wo
   };
 }
 
-/**
- * Interned node ids that carry a primitive, and each node's magnitudes.
- *
- * The magnitudes are handed over as a **list per node, unstacked**. Summing
- * them here would be inline stacking by another spelling — the lint rule says
- * so in as many words — and it would also be the wrong arithmetic: how several
- * sources of one primitive combine is the registry's declared `stacking` rule,
- * and `stackMagnitudes` is the only thing permitted to apply it. Callers that
- * want one number ask that function for it.
- */
-function nodesCarrying(
-  registry: ContentRegistry,
-  primitiveId: string,
-): Map<number, readonly number[]> {
-  const found = new Map<number, readonly number[]>();
-  for (const entry of registry.nodes) {
-    const magnitudes = entry.record.effects
-      .filter((effect) => effect.primitive === primitiveId)
-      .map((effect) => effect.magnitude);
-    if (magnitudes.length > 0) found.set(entry.contentId, Object.freeze(magnitudes));
-  }
-  return found;
-}
+// `nodesCarrying` used to live here — a local helper that filtered
+// `registry.nodes` by primitive. It moved to `@mm/rules-magic` as
+// `nodeEffectMagnitudes`, unchanged except that it now takes a recorder and
+// registers the fetch. The move is the mechanism, not tidying: a local helper
+// can be copied into a second file and the consumption check would never know,
+// whereas the shared accessor cannot hand over node magnitudes without saying
+// who asked. Its note about returning magnitudes **unstacked** — summing them
+// here would be inline stacking by another spelling, and the registry's
+// declared `stacking` rule is `stackMagnitudes`'s alone to apply — travelled
+// with it.

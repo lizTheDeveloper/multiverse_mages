@@ -1,0 +1,77 @@
+# W58 Test 1 — does a random bot beat the strategy pool?
+
+## Probe inertness (the validity gate)
+
+- archivist              agrees=true  probed=406d7793d8bdc42e/ascended/1201  unprobed=406d7793d8bdc42e/ascended/1201
+- denial-warden          agrees=true  probed=1e0fe03b34acc1b3/stagnated/505  unprobed=1e0fe03b34acc1b3/stagnated/505
+- narrow-depth           agrees=true  probed=12ff827f8bd96ace/stagnated/525  unprobed=12ff827f8bd96ace/stagnated/525
+- passive-control        agrees=true  probed=b001c4af4b83d35f/truncated/2400  unprobed=b001c4af4b83d35f/truncated/2400
+- permissive-breadth     agrees=true  probed=7decf45b7b5270bb/ascended/962  unprobed=7decf45b7b5270bb/ascended/962
+- portal-rush            agrees=true  probed=75ddf28fb328e0d7/ascended/962  unprobed=75ddf28fb328e0d7/ascended/962
+- uniform-random-legal   agrees=true  probed=14095a52d8ce6185/ascended/825  unprobed=14095a52d8ce6185/ascended/825
+- worship-maximizer      agrees=true  probed=a6325a0212a308d0/ascended/962  unprobed=a6325a0212a308d0/ascended/962
+
+All arms agree: the instrumentation changed no run. Numbers below are valid.
+
+## Standalone ascension rate, per strategy, pooled over all four starting positions
+
+strategy                runs  asc    rate  apoth  canon  stag  trunc   ticks   nodes  instances
+passive-control           80    0  0.0000      0      0     0     80    2400    51.0       2683
+uniform-random-legal      80   80  1.0000     78      2     0      0     740    50.5       1796
+permissive-breadth        80   80  1.0000     19     61     0      0     993   190.9       5431
+narrow-depth              80   21  0.2625      0     21    32     27    1335     7.7        194
+denial-warden             80   20  0.2500      0     20    33     27    1346     3.1         22
+archivist                 80   79  0.9875     37     42     1      0    1196    51.0       2139
+portal-rush               80   80  1.0000     11     69     0      0     954    50.9       1681
+worship-maximizer         80   80  1.0000     17     63     0      0     943    50.9       1682
+
+## The same rates, per starting position
+
+strategy                        cell0          cell1          cell2          cell3
+                       cohort4-founding1 cohort4-founding4 cohort12-founding1 cohort12-founding4
+passive-control            0/20 0.000     0/20 0.000     0/20 0.000     0/20 0.000
+uniform-random-legal      20/20 1.000    20/20 1.000    20/20 1.000    20/20 1.000
+permissive-breadth        20/20 1.000    20/20 1.000    20/20 1.000    20/20 1.000
+narrow-depth               0/20 0.000     0/20 0.000    18/20 0.900     3/20 0.150
+denial-warden              1/20 0.050     1/20 0.050    12/20 0.600     6/20 0.300
+archivist                 20/20 1.000    19/20 0.950    20/20 1.000    20/20 1.000
+portal-rush               20/20 1.000    20/20 1.000    20/20 1.000    20/20 1.000
+worship-maximizer         20/20 1.000    20/20 1.000    20/20 1.000    20/20 1.000
+
+## Paired against the probe, world by world
+
+Each row is one strategy against `uniform-random-legal` on the identical set of
+starting universes. `probeOnly` counts worlds the probe ascended in and the strategy
+did not; `stratOnly` the reverse. Under the null they are equal.
+
+strategy                 both  probeOnly  stratOnly  neither
+passive-control             0         80          0        0
+permissive-breadth         80          0          0        0
+narrow-depth               21         59          0        0
+denial-warden              20         60          0        0
+archivist                  79          1          0        0
+portal-rush                80          0          0        0
+worship-maximizer          80          0          0        0
+
+## What the shipped margin computes, reconstructed on these numbers
+
+ascensionRate (run-weighted, whole pool) = 0.6875
+poolMean (unweighted mean of per-strategy rates, PROBE INCLUDED, as tuner.ts computes) = 0.6875
+probeRate = 1.0000
+exploitMargin = poolMean - probeRate = -0.3125
+ascensionRate - probeRate = -0.3125   <- identical when runs per strategy are equal
+mean of the seven non-probe rates = 0.6429
+honest margin (non-probe mean - probeRate) = -0.3571
+
+## Terminal knowledge, to see whether winning tracks knowing
+
+strategy                  rate  nodesKnown  grimoires  populace  mages  submits  rejects
+passive-control         0.0000        51.0         15     18408   77.9     2400        0
+uniform-random-legal    1.0000        50.5        192       771   95.6      740       57
+permissive-breadth      1.0000       190.9         52      2141   64.5      993        4
+narrow-depth            0.2625         7.7         19      7795   51.4     1335        0
+denial-warden           0.2500         3.1         22      8260   53.5     1346        0
+archivist               0.9875        51.0        616      4160   50.9     1196        0
+portal-rush             1.0000        50.9         61      1764   64.8      954        0
+worship-maximizer       1.0000        50.9         49      1708   65.4      943      123
+

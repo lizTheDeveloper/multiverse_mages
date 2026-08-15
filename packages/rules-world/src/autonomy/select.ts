@@ -118,6 +118,8 @@ function targetsFor(goal: GoalId, outlook: MageOutlook): readonly KnowledgeTarge
       return outlook.teachableByMe;
     case GOAL.scribe:
       return outlook.scribableTargets;
+    case GOAL.applyMagic:
+      return outlook.applicableTargets;
     default:
       return [];
   }

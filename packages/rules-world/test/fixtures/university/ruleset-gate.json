@@ -1,0 +1,243 @@
+{
+  "spec": {
+    "name": "ruleset-gate",
+    "axes": [
+      "ruleset",
+      "seededDepth",
+      "staffSize"
+    ],
+    "ticks": 60,
+    "capacity": 40
+  },
+  "digest": {
+    "runs": 90,
+    "crossSize": 90,
+    "stride": 1,
+    "columns": {
+      "adds.demand.0": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "adds.demand.1": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "adds.demand.2": {
+        "min": 40,
+        "max": 40,
+        "sum": 3600,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "adds.demand.3": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "adds.demand.4": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "adds.instancesDegraded": {
+        "min": 0,
+        "max": 885,
+        "sum": 21996,
+        "distinct": 4,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=256 staffSize=0"
+      },
+      "adds.scribeMonthsFinal": {
+        "min": 640,
+        "max": 1110,
+        "sum": 68604,
+        "distinct": 9,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=256 staffSize=0"
+      },
+      "adds.scribeMonthsTotal": {
+        "min": 30080,
+        "max": 52170,
+        "sum": 3224388,
+        "distinct": 9,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=256 staffSize=0"
+      },
+      "adds.seatsRefused": {
+        "min": 200,
+        "max": 200,
+        "sum": 18000,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "adds.shelfReplacementCost": {
+        "min": 0,
+        "max": 1142784,
+        "sum": 32016384,
+        "distinct": 5,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=256 staffSize=0"
+      },
+      "adds.stoneConsumed": {
+        "min": 2048,
+        "max": 2048,
+        "sum": 184320,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "adds.studentsAdmitted": {
+        "min": 40,
+        "max": 40,
+        "sum": 3600,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "adds.vellumShortfall": {
+        "min": 0,
+        "max": 29728,
+        "sum": 775872,
+        "distinct": 4,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=256 staffSize=0"
+      },
+      "adds.vellumUpkeepPaid": {
+        "min": 0,
+        "max": 992,
+        "sum": 70848,
+        "distinct": 3,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=32 staffSize=0"
+      },
+      "contains.buildProgress": {
+        "min": 1024,
+        "max": 1024,
+        "sum": 92160,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "contains.complete": {
+        "min": 1,
+        "max": 1,
+        "sum": 90,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "contains.completedOnTick": {
+        "min": 13,
+        "max": 13,
+        "sum": 1170,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "contains.designedCapacity": {
+        "min": 40,
+        "max": 40,
+        "sum": 3600,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "contains.distinctNodes": {
+        "min": 0,
+        "max": 256,
+        "sum": 3564,
+        "distinct": 9,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=256 staffSize=0"
+      },
+      "contains.dominantCell": {
+        "min": 0,
+        "max": 66,
+        "sum": 1062,
+        "distinct": 3,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=1"
+      },
+      "contains.effectiveCapacity": {
+        "min": 40,
+        "max": 40,
+        "sum": 3600,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "contains.grimoireCount": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "contains.hosted": {
+        "min": 40,
+        "max": 40,
+        "sum": 3600,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "contains.instanceCount": {
+        "min": 0,
+        "max": 256,
+        "sum": 7056,
+        "distinct": 5,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=256 staffSize=0"
+      },
+      "contains.profileCells": {
+        "min": 0,
+        "max": 64,
+        "sum": 1773,
+        "distinct": 18,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=256 staffSize=16"
+      },
+      "contains.residentMages": {
+        "min": 0,
+        "max": 16,
+        "sum": 465,
+        "distinct": 6,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=16"
+      },
+      "contains.staffCohorts": {
+        "min": 1,
+        "max": 1,
+        "sum": 90,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      },
+      "contains.staffHeadcount": {
+        "min": 40,
+        "max": 40,
+        "sum": 3600,
+        "distinct": 1,
+        "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
+        "maxAt": "ruleset=permit-all seededDepth=0 staffSize=0"
+      }
+    }
+  }
+}

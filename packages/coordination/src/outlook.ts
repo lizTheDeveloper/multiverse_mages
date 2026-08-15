@@ -44,6 +44,7 @@ import { ageInMonths, boundCandidates, gatherFrontier, normalizedAge } from '@mm
 
 import type { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { NodeFacetResolver } from './node-facets.js';
+import type { UniverseEffectIndex } from './universe-effects.js';
 
 /** Everything an outlook needs beyond the mage's own row. */
 export interface OutlookDeps {
@@ -82,6 +83,18 @@ export interface OutlookDeps {
    * from the first grimoire. {@link universityPreference} builds it once.
    */
   readonly preferredUniversityFor: (current: Handle) => Handle;
+  /**
+   * The authored half of *"is this node worth casting at the world?"*, or
+   * `undefined` on a build with no economy index wired.
+   *
+   * `undefined` is a real answer and not a failure: `world-fixtures.ts` builds a
+   * loop with no `universeEffects`, and on such a build no node is applicable,
+   * every mage's `applicableTargets` is empty, and `apply-magic` is masked for
+   * everyone. That is exactly what a universe whose economy nobody connected
+   * should do, and it is what keeps this change from silently altering a
+   * fixture that never opted into an economy.
+   */
+  readonly universeEffects?: UniverseEffectIndex | undefined;
 }
 
 /**
@@ -118,6 +131,7 @@ export function buildOutlook(
     teachableToMe: boundCandidates(teachableToMe(mage, deps), species),
     teachableByMe: boundCandidates(teachableByMe(mage, deps), species),
     scribableTargets: boundCandidates(scribableBy(mage, deps), species),
+    applicableTargets: boundCandidates(applicableBy(mage, deps), species),
 
     materials: deps.materials,
     scribeThroughput: deps.scribeThroughputOf(row.universityId),
@@ -215,6 +229,45 @@ function scribableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
     seen.add(nodeId);
     const target = deps.gateway.scribableBy(mage, nodeId);
     if (target !== undefined && target.remainingCost <= deps.materials) found.push(target);
+  }
+  return found;
+}
+
+/**
+ * Nodes this mage could spend the month **casting at the world**.
+ *
+ * The composition of the two halves of the applicability question, and neither
+ * half is duplicated here. `castableNodes` is the gateway's — held at a mind or
+ * palace, mastery at or above the activation threshold, cell permitted right
+ * now. `appliedYieldOf` is the content index's — the node carries a
+ * `resource-yield` effect at `target: "universe"` and its form routes to a
+ * material. A node has to pass both to be worth a month.
+ *
+ * `remainingCost` is `0` for every entry, because there is no project to
+ * finish: she already knows the node, and applying it is work she can do again
+ * next month. That makes `compareTargets`' cost ordering fall straight through
+ * to the appeal score, which is the right tie-break when every candidate is
+ * equally *available* and they differ only in what they are good for.
+ *
+ * Ascending node id, from `castableNodes`, so the list a mage sees does not
+ * depend on the order the instance component happened to be written in.
+ */
+function applicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
+  const index = deps.universeEffects;
+  if (index === undefined) return [];
+  const found: KnowledgeTarget[] = [];
+  for (const nodeId of deps.gateway.castableNodes(mage)) {
+    if (index.appliedYieldOf(nodeId) === undefined) continue;
+    const facets = deps.facetsOf(nodeId);
+    found.push({
+      nodeId,
+      tier: deps.tierOf(nodeId),
+      remainingCost: 0,
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
+      libraryHolds: false,
+    });
   }
   return found;
 }

@@ -222,3 +222,52 @@ describe('lerp', () => {
     expect(() => lerp(fromInt(0), FP_MAX, fromInt(2))).toThrow(RangeError);
   });
 });
+
+/**
+ * NaN, specifically — because a NaN that survives arithmetic does not crash
+ * anywhere useful. It reaches an `i32` component column, the typed array
+ * coerces it to `0`, and the mechanic that produced it reads as one that
+ * contributed nothing. That is indistinguishable from a balance result, and it
+ * is the failure this whole block exists to make impossible.
+ *
+ * The range comparisons alone cannot do it: `NaN < FP_MIN` and `NaN > FP_MAX`
+ * are *both* false, so a bounds-only guard returns NaN as a valid `Fixed`.
+ * Every guard here therefore tests integrality first.
+ */
+describe('NaN rejection', () => {
+  it('is rejected as an operand by every scaling helper', () => {
+    expect(() => mul(Number.NaN, FP_ONE)).toThrow(RangeError);
+    expect(() => mul(FP_ONE, Number.NaN)).toThrow(RangeError);
+    expect(() => div(Number.NaN, FP_ONE)).toThrow(RangeError);
+    expect(() => div(FP_ONE, Number.NaN)).toThrow(RangeError);
+    expect(() => lerp(Number.NaN, FP_ONE, 0)).toThrow(RangeError);
+    expect(() => lerp(0, Number.NaN, 0)).toThrow(RangeError);
+    expect(() => lerp(0, FP_ONE, Number.NaN)).toThrow(RangeError);
+  });
+
+  it('is rejected on the way in and on the way out of the domain', () => {
+    expect(() => fromInt(Number.NaN)).toThrow(RangeError);
+    expect(() => toInt(Number.NaN)).toThrow(RangeError);
+  });
+
+  it('is rejected along with the other non-finite values', () => {
+    expect(() => mul(Number.POSITIVE_INFINITY, FP_ONE)).toThrow(RangeError);
+    expect(() => mul(Number.NEGATIVE_INFINITY, FP_ONE)).toThrow(RangeError);
+    expect(() => div(FP_ONE, Number.POSITIVE_INFINITY)).toThrow(RangeError);
+    expect(() => toInt(Number.POSITIVE_INFINITY)).toThrow(RangeError);
+  });
+
+  it('never survives to be written into an i32 component column', () => {
+    // The consequence, stated once so a reader does not have to take it on
+    // faith: this is what a NaN would have become had one got through.
+    const column = new Int32Array(1);
+    column[0] = Number.NaN;
+    expect(column[0]).toBe(0);
+
+    // And why a bounds-only guard could not have stopped it. Read through a
+    // variable because `use-isnan` — rightly — bans comparing the literal.
+    const notANumber: number = Number.NaN;
+    expect(notANumber < FP_MIN).toBe(false);
+    expect(notANumber > FP_MAX).toBe(false);
+  });
+});

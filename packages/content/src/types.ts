@@ -53,11 +53,69 @@ export interface TechniqueRecord {
   readonly bit: number;
 }
 
+/**
+ * ## There is deliberately no named `{ food, stone, vellum }` type in this file
+ *
+ * Both `yieldWeights` and `yieldPerLandUnit` below are written out inline, which
+ * looks like a missed abstraction and is not. A named triple here would be a
+ * second declaration of `@mm/state`'s `MaterialStockRecord`, and
+ * `schema-duplication.test.ts` refuses one by name: *"two declarations of one §1
+ * entity drift, and the field the copy adds is one the component layout never
+ * serializes."* Sharing the state type instead is not available either —
+ * `contracts.md` §5 makes `content` a leaf, and an edge from here to `state`
+ * would invert the dependency graph.
+ *
+ * The refusal is also right on the merits. These are not the same quantity
+ * wearing two hats. A **stock** is state and is spent; a **weight** is content
+ * and is read. They share three field names because they are about the same
+ * three kinds, which is exactly the coincidence a shared type would harden into
+ * a claim that they are one thing.
+ *
+ * The two here are not even the same *scale*: {@link FormRecord.yieldWeights} is
+ * a fixed-point share of a magnitude, bounded `0..1024`, while
+ * {@link TerritoryRecord.yieldPerLandUnit} is a fixed-point rate with no such
+ * ceiling. The schema enforces each bound separately.
+ */
+
 export interface FormRecord {
   readonly id: string;
   readonly name: string;
   readonly gloss: string;
   readonly bit: number;
+  /**
+   * How a `resource-yield` magnitude on a node in one of this form's cells is
+   * routed to `food`, `stone`, and `vellum` — the three material kinds the
+   * economy differentiated a single materials stock into. `sound-design.md`
+   * §4.2, "Forms are materials", is the source of truth for what each form
+   * physically *is* (Terram is "mass, gravel, stone"; Herbam is "fibre,
+   * splinter"), and this field is that gloss made numeric: the weight a kind
+   * carries is the share of the magnitude that becomes that kind of stuff.
+   *
+   * **Forms are deliberately not partitioned across kinds.** A cell's yield is
+   * not required to sum its weights to `fp(1024)`, and several forms name more
+   * than one kind at full or near-full weight: Animal is both meat (`food`)
+   * and hide (`vellum`) at `512` apiece, and Herbam is both timber's fibre
+   * (`food`, as forage and mast) and its parchment stock (`vellum`) the same
+   * way. A form is what its magic touches, not a slot in a single ledger, and
+   * collapsing Animal or Herbam to one kind would be inventing a constraint
+   * §4.2 never states.
+   *
+   * **All-zero weights are not a placeholder; they are the correct value for a
+   * form whose magic is not a material at all.** §4.2 says so by name for
+   * three of these: Mentem "has no reverb… it is not in the world" — mind
+   * magic touches no substance a granary or a shelf could hold. Vim "is the
+   * carrier itself, unfiltered" — the medium magic runs on, not a stuff
+   * conjured or moved. Umbra "is only tail… you never hear the thing, only the
+   * room's response to it" — shadow is what magic does to a space, not
+   * something taken out of one. Corpus, Imaginem, Fatum and Limen are zero for
+   * the same shape of reason: body, image, fate and threshold are things
+   * magic *does*, not things a mage stores on a shelf or eats. A schema that
+   * required a nonzero weight somewhere would be asserting every one of these
+   * forms secretly yields a material, which is false, so the floor here is
+   * `0`, not `1`.
+   */
+  readonly yieldWeights: { readonly food: Fp; readonly stone: Fp; readonly vellum: Fp };
+  readonly tuningStatus: TuningStatus;
 }
 
 /** A content-declared starting edict for a cell (`contracts.md` §1.1). */
@@ -85,6 +143,20 @@ export interface EffectRecord {
 
 export type TuningStatus = 'untuned' | 'tuned';
 
+/**
+ * Whether a node's knowledge survives being written down.
+ *
+ * `episteme` is a result — a procedure, a derivation, a name, a formula — that a
+ * competent stranger can reproduce from a correct text. `metis` is the
+ * practitioner's knowledge that codification destroys: reading a situation,
+ * judging a moment, telling two things apart that a text can only name.
+ *
+ * Authored, never derived. Tier is not the axis: a tier-1 knack can be pure
+ * mētis and a tier-5 result perfectly writable. The reasoning behind every call
+ * in the shipped set is in `docs/design/metis-authoring.md`.
+ */
+export type KnowledgeKind = 'episteme' | 'metis';
+
 export interface NodeRecord {
   readonly id: string;
   readonly cell: string;
@@ -97,6 +169,7 @@ export interface NodeRecord {
   readonly scribeCost: Fp;
   readonly rediscoveryMultiplier: Fp;
   readonly effects: readonly EffectRecord[];
+  readonly knowledgeKind: KnowledgeKind;
   readonly tuningStatus: TuningStatus;
 }
 
@@ -205,6 +278,20 @@ export interface TerritoryRecord {
   readonly landUnits: number;
   /** People one land unit of this region carries, `fp`. */
   readonly capacityPerLandUnit: Fp;
+  /**
+   * The mix of `food`, `stone`, and `vellum` one land unit of this territory
+   * produces, `fp` per kind.
+   *
+   * A territory's yield and a form's {@link FormRecord.yieldWeights} answer
+   * different questions and are deliberately not the same field: a form says
+   * what a *technique acting on it* produces — Terram's magic makes stone
+   * because stone is what Terram is — while a territory says what the *land
+   * itself* is like independent of any magic worked on it. The river delta
+   * outproduces the highland waste in every kind at once because it is simply
+   * richer ground, which is a fact about geography, not about which of the
+   * fourteen forms a mage happened to cast.
+   */
+  readonly yieldPerLandUnit: { readonly food: Fp; readonly stone: Fp; readonly vellum: Fp };
   readonly tuningStatus: TuningStatus;
 }
 

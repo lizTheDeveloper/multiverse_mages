@@ -1,0 +1,878 @@
+{
+  "pact": {
+    "id": "pact",
+    "name": "The Pacts",
+    "description": "Power granted by patron entities in exchange for service",
+    "universeIds": [
+      "shadow_realms",
+      "demon_courts"
+    ],
+    "lore": "Why spend decades studying when you can have power NOW? The entities\nbeyond reality offer shortcuts - for a price. Some prices are bearable.\nOthers... you don't find out until it's too late.",
+    "chorusOrigin": {
+      "civilizationId": "djinn_ahl",
+      "civilizationName": "Djinn-Ahl",
+      "connectionStrength": "ambient",
+      "manifestation": "The contractual binding structure of pact magic — the precise specification of terms, the literal interpretation of agreements, the inescapable consequences of poorly worded bargains — mirrors the Djinn-Ahl's Chorus-interaction framework. The Djinn-Ahl spent 3.5 billion years developing contract-law as a method for inter-species Chorus engagement. The 'entities beyond reality' that offer pacts in MVEE universes may include beings operating within this ancient framework, whether they know it or not.",
+      "resonantSpecies": [
+        "djinn_ahl"
+      ],
+      "lore": "The Djinn-Ahl's wish-granting tradition is not generosity — it is a legal system older than most species' star systems. Pact magic's insistence on precise terms, its absolute enforcement of contracts, and its refusal to honor intent over letter are all hallmarks of the Djinn-Ahl's approach to Chorus interaction: you must specify exactly what you mean, because the Chorus does not interpret charitably. Patrons who offer pacts may be unknowing participants in a contractual framework that predates their own existence."
+    },
+    "sources": [
+      {
+        "id": "patron",
+        "name": "Patron Grant",
+        "type": "divine",
+        "regeneration": "passive",
+        "regenRate": 0.02,
+        "storable": false,
+        "transferable": false,
+        "stealable": false,
+        "detectability": "subtle",
+        "description": "Power flows from your patron as long as they favor you"
+      }
+    ],
+    "costs": [
+      {
+        "type": "favor",
+        "canBeTerminal": true,
+        "cumulative": true,
+        "recoverable": true,
+        "recoveryMethod": "quest",
+        "visibility": "hidden"
+      },
+      {
+        "type": "corruption",
+        "canBeTerminal": true,
+        "cumulative": true,
+        "recoverable": false,
+        "visibility": "subtle"
+      },
+      {
+        "type": "soul_fragment",
+        "canBeTerminal": true,
+        "cumulative": true,
+        "recoverable": false,
+        "visibility": "hidden"
+      }
+    ],
+    "channels": [
+      {
+        "type": "will",
+        "requirement": "required",
+        "canBeMastered": false,
+        "blockEffect": "no_effect"
+      },
+      {
+        "type": "prayer",
+        "requirement": "optional",
+        "canBeMastered": false,
+        "blockEffect": "no_effect",
+        "proficiencyBonus": 5
+      },
+      {
+        "type": "blood",
+        "requirement": "enhancing",
+        "canBeMastered": false,
+        "blockEffect": "no_effect",
+        "proficiencyBonus": 15
+      }
+    ],
+    "laws": [
+      {
+        "id": "oath_binding",
+        "name": "The Contract is Sacred",
+        "type": "oath_binding",
+        "strictness": "absolute",
+        "canBeCircumvented": false,
+        "violationConsequence": "Power stripped, patron may claim soul",
+        "description": "Pact terms are magically enforced - there is no escape"
+      },
+      {
+        "id": "patron_authority",
+        "name": "The Patron Decides",
+        "type": "consent",
+        "strictness": "strong",
+        "canBeCircumvented": false,
+        "description": "Patrons can revoke or modify granted powers at will"
+      }
+    ],
+    "risks": [
+      {
+        "trigger": "divine_anger",
+        "consequence": "silence",
+        "severity": "severe",
+        "probability": 0.8,
+        "mitigatable": false,
+        "description": "Your patron is displeased and cuts off your power"
+      },
+      {
+        "trigger": "overuse",
+        "consequence": "corruption_gain",
+        "severity": "moderate",
+        "probability": 0.3,
+        "mitigatable": false,
+        "description": "Your form begins to reflect your patron's nature"
+      },
+      {
+        "trigger": "debt",
+        "consequence": "debt_called",
+        "severity": "catastrophic",
+        "probability": 1.0,
+        "mitigatable": false,
+        "description": "Your patron calls in what you owe"
+      },
+      {
+        "trigger": "failure",
+        "consequence": "attention_gained",
+        "severity": "minor",
+        "probability": 0.2,
+        "mitigatable": true,
+        "description": "Your patron notices your failure"
+      }
+    ],
+    "acquisitionMethods": [
+      {
+        "method": "contract",
+        "rarity": "uncommon",
+        "voluntary": true,
+        "prerequisites": [
+          "contact_patron",
+          "something_to_offer"
+        ],
+        "grantsAccess": [
+          "patron"
+        ],
+        "startingProficiency": 30,
+        "description": "Negotiate terms with an otherworldly entity"
+      },
+      {
+        "method": "gift",
+        "rarity": "rare",
+        "voluntary": false,
+        "grantsAccess": [
+          "patron"
+        ],
+        "startingProficiency": 50,
+        "description": "Chosen by a patron for their own inscrutable reasons"
+      }
+    ],
+    "availableTechniques": [
+      "destroy",
+      "control",
+      "summon",
+      "perceive"
+    ],
+    "availableForms": [
+      "mind",
+      "spirit",
+      "void",
+      "body"
+    ],
+    "forbiddenCombinations": [
+      {
+        "technique": "create",
+        "form": "spirit",
+        "reason": "Only patrons may create souls"
+      },
+      {
+        "technique": "protect",
+        "form": "void",
+        "reason": "Void cannot be warded, only embraced"
+      }
+    ],
+    "powerScaling": "step",
+    "powerCeiling": 150,
+    "allowsGroupCasting": false,
+    "allowsEnchantment": false,
+    "persistsAfterDeath": false,
+    "allowsTeaching": false,
+    "allowsScrolls": false,
+    "foreignMagicPolicy": "hostile",
+    "conflictingParadigms": [
+      "divine",
+      "academic"
+    ]
+  },
+  "threshold": {
+    "id": "threshold",
+    "name": "Threshold Magic",
+    "description": "Doorways, crossroads, and boundaries are sources of magical power",
+    "lore": "Between day and night, between worlds, between life and death - the in-between places hold power. Stand at a threshold and you stand everywhere. Cross it wrong and you may never cross back.",
+    "universeIds": [
+      "liminal_realms"
+    ],
+    "sources": [
+      {
+        "type": "ambient",
+        "regeneration": "none",
+        "detectability": "subtle",
+        "storable": false,
+        "transferable": false,
+        "stealable": false
+      }
+    ],
+    "costs": [
+      {
+        "type": "mana",
+        "baseAmount": 15,
+        "powerMultiplier": 2.0
+      }
+    ],
+    "channels": [
+      {
+        "name": "will",
+        "requirement": "required"
+      },
+      {
+        "name": "material",
+        "requirement": "required"
+      }
+    ],
+    "laws": [
+      {
+        "type": "threshold",
+        "strength": "absolute",
+        "circumventable": false
+      },
+      {
+        "type": "consent",
+        "strength": "strong",
+        "circumventable": true
+      }
+    ],
+    "risks": [
+      {
+        "trigger": "failure",
+        "consequence": "stuck_between",
+        "severity": "severe",
+        "probability": 0.3,
+        "mitigatable": true
+      },
+      {
+        "trigger": "critical_failure",
+        "consequence": "lost_in_transition",
+        "severity": "catastrophic",
+        "probability": 0.15,
+        "mitigatable": false
+      }
+    ],
+    "acquisitionMethods": [
+      {
+        "method": "awakening",
+        "rarity": "uncommon"
+      },
+      {
+        "method": "study",
+        "rarity": "rare"
+      }
+    ],
+    "forbiddenCombinations": [],
+    "resonantCombinations": [
+      {
+        "technique": "summon",
+        "form": "spirit",
+        "bonusEffect": "Gateway summoning",
+        "powerMultiplier": 2.0
+      },
+      {
+        "technique": "control",
+        "form": "space",
+        "bonusEffect": "Portal creation",
+        "powerMultiplier": 1.8
+      }
+    ],
+    "availableTechniques": [
+      "create",
+      "control",
+      "perceive",
+      "summon"
+    ],
+    "availableForms": [
+      "space",
+      "spirit",
+      "void"
+    ],
+    "compatibleParadigms": [
+      "spatial"
+    ],
+    "conflictingParadigms": [],
+    "powerScaling": "step",
+    "foreignMagicPolicy": "gateway",
+    "powerCeiling": 120,
+    "groupCastingMultiplier": 1.5,
+    "allowsGroupCasting": true,
+    "allowsEnchantment": true,
+    "persistsAfterDeath": false,
+    "allowsTeaching": true,
+    "allowsScrolls": false
+  },
+  "dimension": {
+    "id": "dimension",
+    "name": "Dimensional Magic",
+    "description": "Manipulate spatial dimensions - perceive, fold, flatten, and tear reality itself",
+    "universeIds": [
+      "gravity_falls",
+      "dark_forest",
+      "flatland",
+      "tesseract_realm",
+      "nightmare_realm"
+    ],
+    "lore": "Reality is a shadow of higher truths. What you see as a solid cube, a 4D being\nsees as a mere slice. Dimensional mages learn to perceive beyond their native\ndimensions, fold space for travel, and - if desperate - reduce dimensions entirely.\n\n**Building Summoning**: Advanced mages can conjure shelters (Tier 1), towers (Tier 2),\ntesseracts (Tier 3), penteracts (Tier 4), and hexeracts (Tier 5). Realm pockets create\nspaces bigger on the inside. These structures are folded from geometry itself.\n\nThe Nightmare Realm exists in the spaces between. Entities like the Triangle\n(DO NOT SUMMON) wait for moments when the barrier thins. Every portal is a door\nthat swings both ways.\n\nThe ultimate weapon is dimensional collapse - reducing a region from 3D to 2D\npermanently. The Dark Forest silence exists because everyone fears this deterrent.\nUse it, and you may win the battle. But the collapse spreads. Always.",
+    "sources": [
+      {
+        "id": "hyperspatial_energy",
+        "name": "Hyperspatial Energy",
+        "type": "ambient",
+        "regeneration": "passive",
+        "regenRate": 0.02,
+        "storable": true,
+        "transferable": true,
+        "stealable": false,
+        "detectability": "subtle",
+        "description": "Energy from the dimensions beyond normal perception"
+      },
+      {
+        "id": "rift_proximity",
+        "name": "Rift Proximity",
+        "type": "ambient",
+        "regeneration": "none",
+        "storable": false,
+        "transferable": false,
+        "stealable": false,
+        "detectability": "obvious",
+        "description": "Power drawn from nearby dimensional rifts"
+      },
+      {
+        "id": "between_touch",
+        "name": "Between-Touch",
+        "type": "void",
+        "regeneration": "none",
+        "storable": false,
+        "transferable": false,
+        "stealable": false,
+        "detectability": "beacon",
+        "description": "Direct connection to the space between dimensions"
+      },
+      {
+        "id": "weirdness",
+        "name": "Weirdness",
+        "type": "ambient",
+        "regeneration": "passive",
+        "regenRate": 0.05,
+        "storable": true,
+        "transferable": true,
+        "stealable": true,
+        "detectability": "obvious",
+        "description": "The anomalous energy of places where dimensions thin"
+      }
+    ],
+    "costs": [
+      {
+        "type": "mana",
+        "canBeTerminal": false,
+        "cumulative": false,
+        "recoverable": true,
+        "recoveryMethod": "rest",
+        "visibility": "hidden"
+      },
+      {
+        "type": "sanity",
+        "canBeTerminal": true,
+        "cumulative": true,
+        "recoverable": true,
+        "recoveryMethod": "time",
+        "visibility": "subtle"
+      },
+      {
+        "type": "corruption",
+        "canBeTerminal": true,
+        "cumulative": true,
+        "recoverable": true,
+        "recoveryMethod": "ritual",
+        "visibility": "obvious"
+      }
+    ],
+    "channels": [
+      {
+        "type": "focus",
+        "requirement": "required",
+        "canBeMastered": true,
+        "blockEffect": "reduces_power",
+        "description": "Geometric focus objects - tesseracts, Klein bottles, impossible shapes"
+      },
+      {
+        "type": "meditation",
+        "requirement": "enhancing",
+        "canBeMastered": true,
+        "blockEffect": "no_effect",
+        "description": "Mental focus to perceive beyond native dimensions"
+      },
+      {
+        "type": "glyph",
+        "requirement": "optional",
+        "canBeMastered": true,
+        "blockEffect": "no_effect",
+        "description": "Portal circles, dimensional runes, Cipher wheels"
+      },
+      {
+        "type": "material",
+        "requirement": "optional",
+        "canBeMastered": false,
+        "blockEffect": "no_effect",
+        "description": "Objects from other dimensions serve as anchors"
+      }
+    ],
+    "laws": [
+      {
+        "id": "flatland_law",
+        "name": "Flatland Law",
+        "type": "threshold",
+        "strictness": "absolute",
+        "canBeCircumvented": true,
+        "circumventionCostMultiplier": 3.0,
+        "description": "Beings can only naturally perceive their native dimension count. Seeing more requires magic or mutation."
+      },
+      {
+        "id": "projection_law",
+        "name": "Projection Law",
+        "type": "similarity",
+        "strictness": "absolute",
+        "canBeCircumvented": false,
+        "description": "Higher dimensions project onto lower as shadows. A 4D cube casts a 3D shadow; a 3D sphere casts a 2D shadow."
+      },
+      {
+        "id": "weirdness_magnetism",
+        "name": "Weirdness Magnetism",
+        "type": "resonance",
+        "strictness": "strong",
+        "canBeCircumvented": true,
+        "circumventionCostMultiplier": 2.0,
+        "description": "Dimensional anomalies attract each other. Rifts cluster. Entities find rifts."
+      },
+      {
+        "id": "conservation_of_dimensionality",
+        "name": "Conservation of Dimensionality",
+        "type": "conservation",
+        "strictness": "strong",
+        "canBeCircumvented": true,
+        "circumventionCostMultiplier": 5.0,
+        "description": "Total dimensions are conserved. Reducing one area increases instability elsewhere."
+      },
+      {
+        "id": "collapse_cascade",
+        "name": "Collapse Cascade",
+        "type": "entropy",
+        "strictness": "absolute",
+        "canBeCircumvented": false,
+        "description": "Once begun, dimensional collapse spreads. It can be slowed, never stopped."
+      },
+      {
+        "id": "between_hungers",
+        "name": "The Between Hungers",
+        "type": "witness",
+        "strictness": "strong",
+        "canBeCircumvented": false,
+        "description": "The space between dimensions is aware. It notices those who touch it."
+      }
+    ],
+    "risks": [
+      {
+        "trigger": "overuse",
+        "consequence": "corruption_gain",
+        "severity": "moderate",
+        "probability": 0.3,
+        "mitigatable": true,
+        "description": "Perception of higher dimensions destabilizes your sense of reality"
+      },
+      {
+        "trigger": "failure",
+        "consequence": "trapped",
+        "severity": "severe",
+        "probability": 0.2,
+        "mitigatable": true,
+        "description": "Failed dimensional shift leaves you partially in the Between"
+      },
+      {
+        "trigger": "critical_failure",
+        "consequence": "wild_surge",
+        "severity": "catastrophic",
+        "probability": 0.1,
+        "mitigatable": false,
+        "description": "Critical failure tears a rift that attracts Between-entities"
+      },
+      {
+        "trigger": "attention",
+        "consequence": "attention_gained",
+        "severity": "severe",
+        "probability": 0.4,
+        "mitigatable": false,
+        "description": "The Triangle and its kind notice dimensional disturbances"
+      },
+      {
+        "trigger": "paradox",
+        "consequence": "bleed_through",
+        "severity": "catastrophic",
+        "probability": 0.15,
+        "mitigatable": false,
+        "description": "Reality bleeds between dimensions, causing localized Weirdmageddon"
+      },
+      {
+        "trigger": "exhaustion",
+        "consequence": "coma",
+        "severity": "severe",
+        "probability": 0.25,
+        "mitigatable": true,
+        "description": "Dimensional sight overload shuts down consciousness"
+      },
+      {
+        "trigger": "overreach",
+        "consequence": "mutation",
+        "severity": "catastrophic",
+        "probability": 0.2,
+        "mitigatable": false,
+        "description": "Exposure to too many dimensions causes permanent perception changes"
+      }
+    ],
+    "acquisitionMethods": [
+      {
+        "method": "study",
+        "rarity": "rare",
+        "voluntary": true,
+        "prerequisites": [
+          "advanced_mathematics",
+          "topology_understanding"
+        ],
+        "grantsAccess": [
+          "hyperspatial_energy"
+        ],
+        "startingProficiency": 10,
+        "description": "Academic study of hyperdimensional mathematics"
+      },
+      {
+        "method": "awakening",
+        "rarity": "rare",
+        "voluntary": false,
+        "prerequisites": [
+          "near_rift_exposure"
+        ],
+        "grantsAccess": [
+          "hyperspatial_energy",
+          "weirdness"
+        ],
+        "startingProficiency": 20,
+        "description": "Accidental exposure to a dimensional rift"
+      },
+      {
+        "method": "contract",
+        "rarity": "legendary",
+        "voluntary": true,
+        "prerequisites": [
+          "contacted_between_entity"
+        ],
+        "grantsAccess": [
+          "hyperspatial_energy",
+          "between_touch"
+        ],
+        "startingProficiency": 40,
+        "description": "Deal with an entity from the Between (EXTREMELY DANGEROUS)"
+      },
+      {
+        "method": "artifact",
+        "rarity": "rare",
+        "voluntary": true,
+        "prerequisites": [
+          "dimensional_artifact_bonded"
+        ],
+        "grantsAccess": [
+          "hyperspatial_energy",
+          "rift_proximity"
+        ],
+        "startingProficiency": 25,
+        "description": "Bond with an object from another dimension count"
+      },
+      {
+        "method": "bloodline",
+        "rarity": "legendary",
+        "voluntary": false,
+        "grantsAccess": [
+          "hyperspatial_energy",
+          "weirdness"
+        ],
+        "startingProficiency": 50,
+        "description": "Descended from an extradimensional being"
+      }
+    ],
+    "availableTechniques": [
+      "perceive",
+      "control",
+      "destroy",
+      "summon",
+      "protect",
+      "transform"
+    ],
+    "availableForms": [
+      "space",
+      "void",
+      "mind",
+      "body",
+      "image"
+    ],
+    "forbiddenCombinations": [
+      {
+        "technique": "destroy",
+        "form": "space",
+        "reason": "Destroying space itself is the Dimensional Collapse - forbidden except in extremis",
+        "consequence": "Initiates dimensional collapse cascade"
+      }
+    ],
+    "resonantCombinations": [
+      {
+        "technique": "perceive",
+        "form": "space",
+        "bonusEffect": "Dimensional Sight - see into higher dimensions",
+        "powerMultiplier": 1.8
+      },
+      {
+        "technique": "control",
+        "form": "space",
+        "bonusEffect": "Portal Creation - fold space for travel",
+        "powerMultiplier": 2.0
+      },
+      {
+        "technique": "summon",
+        "form": "void",
+        "bonusEffect": "Between-Summoning - call entities from the Between",
+        "powerMultiplier": 2.5
+      },
+      {
+        "technique": "protect",
+        "form": "space",
+        "bonusEffect": "Reality Anchor - stabilize local dimensions",
+        "powerMultiplier": 1.5
+      },
+      {
+        "technique": "transform",
+        "form": "body",
+        "bonusEffect": "Flat Adaptation - become able to survive as 2D",
+        "powerMultiplier": 1.6
+      }
+    ],
+    "powerScaling": "exponential",
+    "powerCeiling": 250,
+    "allowsGroupCasting": true,
+    "groupCastingMultiplier": 1.5,
+    "allowsEnchantment": true,
+    "persistsAfterDeath": true,
+    "allowsTeaching": true,
+    "allowsScrolls": true,
+    "foreignMagicPolicy": "transforms",
+    "compatibleParadigms": [
+      "paradox",
+      "void",
+      "dream_magic"
+    ],
+    "conflictingParadigms": [
+      "divine",
+      "nature"
+    ]
+  },
+  "dimensional_powers": [
+    {
+      "id": "dimensional_sight",
+      "name": "Dimensional Sight",
+      "description": "See into an additional spatial dimension, revealing hidden objects and spaces",
+      "tier": "novice",
+      "cost": {
+        "mana": 15,
+        "sanity": 5
+      },
+      "duration": 200,
+      "cooldown": 100,
+      "category": "perception",
+      "attractsAttention": false,
+      "lore": "The first lesson: reality has more corners than you can see."
+    },
+    {
+      "id": "hypersight",
+      "name": "Hypersight",
+      "description": "See all sides of an object simultaneously (4D perspective on 3D objects)",
+      "tier": "journeyman",
+      "cost": {
+        "mana": 30,
+        "sanity": 15
+      },
+      "duration": 100,
+      "cooldown": 200,
+      "category": "perception",
+      "attractsAttention": false,
+      "lore": "The cube has no hidden faces. Neither does the mind observing it."
+    },
+    {
+      "id": "between_glimpse",
+      "name": "Between-Glimpse",
+      "description": "Briefly perceive the space between dimensions, seeing what lurks there",
+      "tier": "master",
+      "cost": {
+        "mana": 50,
+        "sanity": 30
+      },
+      "duration": 40,
+      "cooldown": 600,
+      "category": "perception",
+      "attractsAttention": true,
+      "lore": "The Between looks back. Always."
+    },
+    {
+      "id": "phase_shift",
+      "name": "Phase Shift",
+      "description": "Briefly shift partially into another dimension to pass through barriers",
+      "tier": "apprentice",
+      "cost": {
+        "mana": 25,
+        "stamina": 20
+      },
+      "duration": 0,
+      "cooldown": 150,
+      "category": "movement",
+      "attractsAttention": false
+    },
+    {
+      "id": "fold_step",
+      "name": "Fold Step",
+      "description": "Fold space to teleport a short distance by stepping through the 4th dimension",
+      "tier": "journeyman",
+      "cost": {
+        "mana": 40,
+        "sanity": 10
+      },
+      "duration": 0,
+      "cooldown": 100,
+      "category": "movement",
+      "attractsAttention": false,
+      "lore": "The shortest distance between two points is a fold."
+    },
+    {
+      "id": "portal_creation",
+      "name": "Portal Creation",
+      "description": "Create a stable portal between two locations by connecting them through higher dimensions",
+      "tier": "master",
+      "cost": {
+        "mana": 100,
+        "sanity": 20,
+        "realityStability": 10
+      },
+      "duration": 600,
+      "cooldown": 1200,
+      "category": "movement",
+      "attractsAttention": true,
+      "lore": "A door is a hole in a wall. A portal is a hole in reality."
+    },
+    {
+      "id": "between_walk",
+      "name": "Between-Walk",
+      "description": "Enter the space between dimensions and walk to any visible location",
+      "tier": "grandmaster",
+      "cost": {
+        "mana": 150,
+        "sanity": 50,
+        "realityStability": 25
+      },
+      "duration": 0,
+      "cooldown": 2400,
+      "category": "movement",
+      "attractsAttention": true,
+      "lore": "Time does not pass in the Between. Nothing does, except you."
+    },
+    {
+      "id": "dimensional_shunt",
+      "name": "Dimensional Shunt",
+      "description": "Briefly push a target partially out of phase, making them intangible and disoriented",
+      "tier": "apprentice",
+      "cost": {
+        "mana": 35
+      },
+      "duration": 60,
+      "cooldown": 200,
+      "category": "combat",
+      "attractsAttention": false
+    },
+    {
+      "id": "flatten_strike",
+      "name": "Flatten Strike",
+      "description": "Temporarily compress a target to 2D, dealing massive damage and immobilizing them",
+      "tier": "master",
+      "cost": {
+        "mana": 80,
+        "sanity": 25,
+        "realityStability": 15
+      },
+      "duration": 40,
+      "cooldown": 600,
+      "category": "combat",
+      "attractsAttention": true,
+      "lore": "A sphere becomes a circle. A person becomes a silhouette."
+    },
+    {
+      "id": "dimensional_collapse",
+      "name": "Dimensional Collapse",
+      "description": "Begin a localized dimension reduction. EXTREMELY DANGEROUS - may spread.",
+      "tier": "grandmaster",
+      "cost": {
+        "mana": 200,
+        "sanity": 100,
+        "realityStability": 50
+      },
+      "duration": 0,
+      "cooldown": 0,
+      "category": "forbidden",
+      "attractsAttention": true,
+      "lore": "The Dark Forest has one law: reduce or be reduced."
+    },
+    {
+      "id": "flat_adaptation",
+      "name": "Flat Adaptation",
+      "description": "Temporarily become able to survive as a 2D being if flattened",
+      "tier": "journeyman",
+      "cost": {
+        "mana": 45,
+        "stamina": 30
+      },
+      "duration": 400,
+      "cooldown": 800,
+      "category": "utility",
+      "attractsAttention": false,
+      "lore": "Learn to live sideways, and you can survive the collapse."
+    },
+    {
+      "id": "anchor_reality",
+      "name": "Anchor Reality",
+      "description": "Stabilize local dimensions, preventing unwanted shifts or collapses",
+      "tier": "master",
+      "cost": {
+        "mana": 60,
+        "realityStability": -20
+      },
+      "duration": 600,
+      "cooldown": 300,
+      "category": "utility",
+      "attractsAttention": false
+    },
+    {
+      "id": "summon_from_between",
+      "name": "Summon from Between",
+      "description": "Pull an object or entity from the space between dimensions",
+      "tier": "grandmaster",
+      "cost": {
+        "mana": 120,
+        "sanity": 40,
+        "realityStability": 30
+      },
+      "duration": 0,
+      "cooldown": 2000,
+      "category": "utility",
+      "attractsAttention": true,
+      "lore": "Something always answers. Make sure you want to meet it."
+    }
+  ]
+}

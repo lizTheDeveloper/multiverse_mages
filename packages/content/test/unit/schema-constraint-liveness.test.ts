@@ -146,9 +146,11 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
   // something" stays true as written.
   ...[
     'cell.schema.json#/$defs/cell/properties/edicts/items',
+    'node.schema.json#/$defs/node/properties/knowledgeKind',
     'node.schema.json#/$defs/node/properties/tuningStatus',
     'node.schema.json#/$defs/effect/properties/target',
     'species.schema.json#/$defs/species/properties/tuningStatus',
+    'form.schema.json#/$defs/form/properties/tuningStatus',
     'territory.schema.json#/$defs/territory/properties/tuningStatus',
     'tradition.schema.json#/$defs/tradition/properties/tuningStatus',
     'primitive.schema.json#/$defs/primitive/properties/scale',

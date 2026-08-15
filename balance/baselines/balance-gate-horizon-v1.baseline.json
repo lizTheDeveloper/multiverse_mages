@@ -1,47 +1,48 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "5f6e2da472dae264eb581b8aec89eca61afc3a45a3f7a6242b1f3b071e671af3",
+  "contentHash": "ee6ebcab5bdb8f1a85b00e52164b88c6d2ec785450c2300b320f4b669ecc1fa6",
   "kind": "gate",
   "metrics": [
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":9.096673478109839,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":27.290020434329517,"unit":"grimoires","value":361.33},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":9.983888807187594,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":29.95166642156278,"unit":"instances","value":1015.77},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":0.7149625364810583,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":2.144887609443175,"unit":"nodes","value":25.09},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":200,"standardError":0.2068137780117906,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.6204413340353718,"unit":"mages","value":37.785},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":200,"standardError":0.11539638872431078,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.3461891661729323,"unit":"nodes","value":44.41},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":200,"standardError":0.10026241080488821,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.30078723241466465,"unit":"nodes","value":2.055},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":200,"standardError":0.11539638872431078,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.3461891661729323,"unit":"nodes","value":46.91},
-    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":200,"standardError":3.9799999999999995,"standardErrorMethod":"jackknife","status":"measured","tolerance":11.939999999999998,"unit":"people","value":353},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":1.298379877432814,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.8951396322984415,"unit":"people","value":211.685},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.298379877432814,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.8951396322984415,"unit":"people","value":67.685}
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":7.143616709614083,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":21.43085012884225,"unit":"grimoires","value":323.895},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":7.841504111756485,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":23.524512335269456,"unit":"instances","value":951.57},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":0.7679139513869336,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":2.303741854160801,"unit":"nodes","value":16.1},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":200,"standardError":0.20106730521019525,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.6032019156305858,"unit":"mages","value":37.715},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":200,"standardError":0.18070863909868268,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.542125917296048,"unit":"nodes","value":38.165},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":200,"standardError":0.10454956836303993,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.3136487050891198,"unit":"nodes","value":8.33},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":200,"standardError":0.18070863909868268,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.542125917296048,"unit":"nodes","value":40.665},
+    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":200,"standardError":6.965000000000003,"standardErrorMethod":"jackknife","status":"measured","tolerance":20.89500000000001,"unit":"people","value":362},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":1.2032901324523286,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.609870397356986,"unit":"people","value":212.29},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.2032901324523289,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.6098703973569863,"unit":"people","value":68.29}
   ],
   "notes": [
-    "The universe remains degenerate in the ways integration round 2 recorded, and W28 closes none of them. Regenerated in one pass alongside balance-gate-v1 and balance-gate-ascension-v1, which moved for the same single reason and by the same amount: nothing."
+    "The universe remains degenerate in the ways integration round 2 recorded, and w107 closes none of them. Two measured findings worth reading beside this gate. First, the v1 rectangle cannot make food: of the 59 authored resource-yield effects at target universe, exactly five sit in a v1 cell and all five route to stone, because terram is the only material-bearing form among the twelve. Every ruleset comparison taken inside the v1 rectangle is therefore an argument about stone. Second, stated carefully because the sloppy version has misled several readers: advanceConstruction and applyLibraryUpkeep both have production callers in world-step.ts and run every tick, so construction is NOT inert. What is measured over 1200 ticks of the reference universe with zero god actions is constructionStoneOwed 0, buildProgressAdded 0, universitiesCompleted 0, against exactly one university -- the seeded academy, already complete. Founding a site is a god action, so with no actions submitted there is nothing to advance and stone is never spent. Those two facts together are why the campaign-plan W90 measurement of a yield-maximising ruleset was null by construction of its arms rather than for want of a mechanism: the arms could only make stone, and stone had nothing to buy.",
+    "Measured 2026-08-14 on w70/opening-square merged with origin/main at 769452845f31c33ab7800d3333fcb5c818feef41. NO GOLDEN FIXTURE WAS REGENERATED, and none needed to be: what moved is the stream registry hash, not a replay. ui/session.json is byte-identical after npm run ui:record -- snapshotHash did not move. balance-gate-ascension-v1 was deliberately NOT re-recorded: it carries the same superseded rngRegistryHash and will refuse for the same reason, but its Actions job is already failing on main at that ref and is marked not required to merge, so re-recording it is a separate decision on a separate failure."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
-    "contentHash": "1f471d16ed93d75ade4284e72596803b",
-    "metricDefinitionVersions": {"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1},
+    "contentHash": "d4e3047657b4fa8a1a74e1d52f9f5c86",
+    "metricDefinitionVersions": {"ascensionRate":1,"capitalSnowball":1,"combatActionEconomy":1,"combatThresholdEfficiency":1,"illegalActionRate":1,"inboundRaidTempoLoss":1,"knowledgeHalfLife":1,"libraryDependence":1,"lossShockRecovery":1,"prestigeAdvantage":2,"raidInitiationCost":1,"raidLengthDistribution":1,"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1,"roleAssignmentDemographicCost":1,"speciesCellOccupancy":1,"speciesGridVersatility":1,"timeToTierBySpecies":1,"winRateByPrimitive":2,"worshipSnowball":2},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
-    "rngRegistryHash": "80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab"
+    "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9"
   },
-  "rationale": "W28 authored four traditions and made gloss and tuningStatus required on a tradition, moving contentRevision a622452a3b55e38fd902a2d3264b44d7 to 1f471d16ed93d75ade4284e72596803b. The gate compares provenance.contentHash as a block, so that alone invalidates the baseline. NO METRIC MOVED -- this is a provenance refresh, not a behaviour change. The reference tradition did not move: scribingTraditionId still returns true-naming on the seven-tradition set. No rules constant was touched and NO GOLDEN FIXTURE WAS REGENERATED. This file is a measurement, not a balance claim: release-plan.md forbids a balance claim before 0.5.0. Record: docs/superpowers/plans/w28-magic-regimes.md.",
+  "rationale": "PR #72 (w70/opening-square) appends RNG_STREAM.openingSquare = 12 to the stream registry, which moves canonicalHash(RNG_STREAM) from 80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab to 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9. gate.ts treats provenance.rngRegistryHash as a block-level refusal, so all three gates report baseline-invalid before reading a metric. A HASH CANNOT DISTINGUISH APPENDED FROM RENUMBERED -- that is the real finding and it will recur on every future stream addition; fixing the baseline format so an appended stream is distinguishable is its own change and is NOT attempted here. The repository owner authorised this hash refresh for PR #72 specifically. NO BEHAVIOUR CHANGED: resolveOpeningSquare's default path (openingTechniqueCount = openingFormCount = 0) returns v1RulesetAxes(registry) and is deliberately draw-free, so the reference universe is byte-for-byte today's universe, and no committed sweep sets either count. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. THIS FILE: all 10 metric rows were already at delta 0.00000 against the superseded baseline on the merged tree. This regeneration is provenance-only: 0 of 10 values moved and 0 of 10 tolerances moved.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":361.33,"value":361.33},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":1015.77,"value":1015.77},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":25.09,"value":25.09},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":37.785,"value":37.785},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":44.41,"value":44.41},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":2.055,"value":2.055},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":46.91,"value":46.91},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":353,"value":353},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":211.685,"value":211.685},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":67.685,"value":67.685}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":323.895,"value":323.895},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":951.57,"value":951.57},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":16.1,"value":16.1},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":37.715,"value":37.715},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":38.165,"value":38.165},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":8.33,"value":8.33},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":40.665,"value":40.665},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":362,"value":362},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":212.29,"value":212.29},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":68.29,"value":68.29}
   ],
-  "supersedes": "fb7f0e21ae83da785a65207d8ec34304b256d3db490b74eb2978d9bf5fca1028",
+  "supersedes": "5e9fd738a3a1f4b7933b7f99a765f17cfc1c59c376312eeef75050f32022151e",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }

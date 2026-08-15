@@ -1,0 +1,359 @@
+<!doctype html>
+<!--
+  Multiverse Mages — where the knowledge is.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  Design pillar #2: knowledge is physical. It occupies minds and books and
+  buildings, it can be taught, copied, stolen and lost, and that is what makes
+  a civilization feel mortal. Nothing in the interface has represented that yet
+  — ui/mage/ shows one person's instances, and this is the other 51 nodes.
+
+  The state model is unusually specific and the interface should not blur it.
+  A knowledge instance carries a locationKind of mind, palace, grimoire or
+  library. Exactly one instance exists per written copy, and shelving a book
+  rewrites its location rather than creating an instance. Mind and palace
+  instances decay; grimoire and library instances never do. A palace dies with
+  its holder and cannot be looted or burned. Node existence is derived — it is
+  count(instances) > 0, never a stored flag — and libraryDependence is the set
+  of nodes surviving on exactly one instance, which the index can enumerate
+  without a scan.
+
+  Three directions on the same 51 nodes:
+
+    A  by node     the canonical list. Every node, where its copies live.
+    B  by vessel   minds, grimoires, libraries, palaces as containers.
+    C  by risk     sorted by what it would take to lose it.
+
+  Serve with `npm run ui`, then open /ui/knowledge/.
+
+  KNOWN COST: instance placement is generated from a seeded PRNG over the real
+  51-node v1 subset, not read from a running simulation. Node names, cells and
+  tiers are real. The redundancy distribution is deliberately NOT the campaign's
+  measured ~55 copies per node — at that redundancy nothing is ever at risk and
+  all three directions look identical, which is itself the finding stated on the
+  page.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — where the knowledge is</title>
+
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  .wrap{max-width:86rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
+  h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
+  .lede{color:var(--soft);max-width:68ch;margin:0 0 .45rem}
+  .lede b{color:var(--god-lit);font-weight:500}.lede em{color:var(--ink);font-style:italic}
+  code{font:12.5px var(--mono);color:var(--soft)}
+
+  .bar{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:1.3rem 0 1.4rem;
+    padding:.7rem .85rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
+  .bar .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+  .bar b{font:12px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+  .bar input[type=range]{accent-color:var(--god);vertical-align:middle;width:11rem}
+  .bar .dep{margin-left:auto;font:11px var(--mono)}
+  .bar .dep b{color:var(--loss)}
+
+  .vessels{display:flex;gap:.9rem;flex-wrap:wrap;font:10px var(--mono);letter-spacing:.08em;
+    text-transform:uppercase;color:var(--faint);margin-bottom:1rem}
+  .vessels span{display:inline-flex;align-items:center;gap:.35rem}
+  .vessels i{width:8px;height:8px;border-radius:2px;display:block}
+  .v-mind{background:var(--mind);box-shadow:0 0 8px -1px var(--mind)}
+  .v-book{background:var(--book)}
+  .v-lib{background:var(--lib)}
+  .v-palace{background:var(--palace);box-shadow:0 0 8px -1px var(--palace)}
+
+  .dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem;align-items:start}
+  @media (max-width:78rem){.dirs{grid-template-columns:1fr}}
+  .dir{border:1px solid var(--edge);border-radius:5px;background:var(--panel);display:flex;flex-direction:column}
+  .dhead{padding:.75rem .9rem;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:.5rem}
+  .dhead .letter{font:700 13px var(--mono);color:var(--god)}
+  .dhead .name{font:400 1.06rem var(--serif)}
+  .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .dbody{padding:.7rem .8rem;display:flex;flex-direction:column;gap:.45rem}
+  .scroll{max-height:26rem;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+  .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
+
+  /* A: by node */
+  .nrow{display:grid;grid-template-columns:1fr auto;gap:.45rem;align-items:center;padding:.35rem .45rem;
+    border-radius:3px;background:var(--sunk);border:1px solid transparent}
+  .nrow .nm{font-size:.87rem}
+  .nrow .cell{font:9px var(--mono);letter-spacing:.09em;text-transform:uppercase;display:block;margin-top:.1rem}
+  .c-limen{color:var(--limen)}.c-mentem{color:var(--mentem)}
+  .c-nomen{color:var(--nomen)}.c-terram{color:var(--terram)}
+  .pips{display:flex;gap:2px;align-items:center}
+  .pip{width:7px;height:7px;border-radius:2px;display:block}
+  .pip.mind{background:var(--mind);box-shadow:0 0 6px -1px var(--mind)}
+  .pip.palace{background:var(--palace);box-shadow:0 0 6px -1px var(--palace)}
+  .pip.book{background:var(--book)}
+  .pip.lib{background:var(--lib)}
+  .nrow[data-sole="true"]{border-color:var(--loss);background:color-mix(in srgb,var(--loss) 10%,var(--sunk))}
+  .nrow[data-sole="true"] .nm{color:color-mix(in srgb, var(--loss) 45%, var(--ink))}
+  .more{font:9.5px var(--mono);color:var(--faint);margin-left:.2rem}
+
+  /* B: by vessel */
+  .vwrap{display:flex;flex-direction:column;gap:.5rem}
+  .vgrp{border:1px solid var(--edge);border-radius:3px;background:var(--sunk);padding:.5rem .55rem}
+  .vgrp .h{display:flex;align-items:baseline;gap:.4rem;font:10px var(--mono);letter-spacing:.1em;
+    text-transform:uppercase;margin-bottom:.35rem}
+  .vgrp .h b{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .vgrp .traits{font:9.5px var(--mono);color:var(--faint);line-height:1.5;margin-bottom:.35rem}
+  .swarm{display:flex;flex-wrap:wrap;gap:2px}
+  .h-mind{color:var(--mind)}.h-book{color:var(--book)}.h-lib{color:var(--lib)}.h-palace{color:var(--palace)}
+
+  /* C: by risk */
+  .risk{display:grid;grid-template-columns:1fr auto;gap:.45rem;align-items:center;padding:.4rem .45rem;
+    border-radius:3px;background:var(--sunk);border-left:2px solid transparent}
+  .risk .nm{font-size:.87rem}
+  .risk .what{font:9.5px var(--mono);color:var(--faint);display:block;margin-top:.12rem;line-height:1.45}
+  .risk .lvl{font:9.5px var(--mono);letter-spacing:.09em;text-transform:uppercase}
+  .risk[data-r="sole"]{border-left-color:var(--loss);background:color-mix(in srgb,var(--loss) 11%,var(--sunk))}
+  .risk[data-r="sole"] .lvl{color:var(--loss)}
+  .risk[data-r="sole"] .nm{color:color-mix(in srgb, var(--loss) 45%, var(--ink))}
+  .risk[data-r="fragile"]{border-left-color:var(--warn)}
+  .risk[data-r="fragile"] .lvl{color:var(--warn)}
+  .risk[data-r="safe"]{border-left-color:var(--rule-hi)}
+  .risk[data-r="safe"] .lvl{color:var(--faint)}
+  .flat{padding:.6rem .55rem;border:1px dashed var(--rule-hi);border-radius:3px;font:10.5px var(--mono);
+    color:var(--faint);line-height:1.6}
+  .flat b{color:var(--warn)}
+
+  .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
+  .note h2{font:400 1.4rem var(--serif);margin:0 0 .5rem}
+  .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
+  .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--god-lit)}
+  footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages · design pillar #2 · vision §5 · knowledge-instances</div>
+  <h1>Where the knowledge is</h1>
+  <p class="lede">Knowledge is physical. It occupies <b>minds, memory palaces, grimoires and libraries</b>,
+  and the state model is specific about each: exactly one instance exists per written copy, shelving a book
+  rewrites its location rather than making a new one, mind and palace instances decay while written ones
+  never do, and a palace dies with its holder and cannot be looted or burned. <em>An interface that blurs
+  those four into "you know it" throws away the pillar.</em></p>
+  <p class="lede">Node existence is derived — <code>count(instances) &gt; 0</code>, never a stored flag —
+  and <code>libraryDependence</code> is the set of nodes surviving on exactly one instance. Move the
+  redundancy slider: that number is what decides whether any of this matters.</p>
+
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
+  <div class="bar">
+    <span class="k">mean copies per node</span>
+    <input id="red" type="range" min="1" max="60" step="1" value="4">
+    <b id="redv">4</b>
+    <span class="k">· 51 v1 nodes</span>
+    <span class="dep"><span class="k">libraryDependence</span> <b id="depv">—</b> nodes on a single copy</span>
+  </div>
+
+  <div class="vessels">
+    <span><i class="v-mind"></i>mind — decays, dies with its holder</span>
+    <span><i class="v-palace"></i>palace — decays, unburnable, unlootable, dies with its holder</span>
+    <span><i class="v-book"></i>grimoire — never decays, burns, can be looted</span>
+    <span><i class="v-lib"></i>library — never decays, burns with the building</span>
+  </div>
+
+  <div class="dirs" id="dirs"></div>
+
+  <div class="note mm-essay">
+    <h2>What operating these settles</h2>
+    <p><b class="hot">Drag the slider to 55 and all three directions become the same screen — and that is now measured rather than predicted.</b> W8 landed raids: books burn, grimoires fell <b>1232 to 354</b> in a raid season, and <em>nothing was lost</em> — <code>nodesLost</code> is 0.00 for six of eight strategies and <code>libraryDependence</code> sits at <b>0</b>, because at 50–80 copies per node a whole library is held fifty other places. The campaign's own verdict: <em>concentration, not the absence of a mechanism, is the remaining problem.</em> So the risk direction has nothing to sort, permanently, until copies stop being free — and no decay constant and no interface can change that.</p>
+    <p><b>Vessels are not decoration and only direction B makes them primary.</b> The four location kinds
+    have genuinely different failure modes — a mind dies, a palace dies unburnable, a book burns or is
+    stolen, a library takes everything shelved in it at once. A player deciding whether to fund a
+    scriptorium or bless an archivist is choosing between those failure modes, and a by-node list flattens
+    the choice into a count.</p>
+    <p><b>The one thing a by-node list has that the others do not.</b> It is the only direction where a
+    node that <em>does not exist yet</em> can appear at all — an empty row is a node this universe has
+    never held, and that is the thing a god deciding where to grant founding knowledge needs to see.
+    Directions B and C can only show what exists, because they are organised by where instances are.</p>
+    <p><b>Rediscovery deserves a state and has none here.</b> A node that once existed and was lost is not
+    the same as one never known: re-deriving it costs at least three times research, and the distinction is
+    a persisted per-node ever-known record. None of these three directions distinguishes "never had it"
+    from "had it and lost it", and the second is the more interesting row in the game.</p>
+  </div>
+
+  <footer>
+    Prototype · not the client. Instance placement is generated from a seeded PRNG over the real 51-node v1
+    subset; node names, cells and tiers are real. The redundancy distribution is deliberately not the
+    measured 50–80 copies per node — see above.<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+</div>
+
+<script type="module">
+/* The real v1 subset: 51 nodes across 12 cells. Names and tiers from node.json. */
+const NODES = [
+  ['Sense the Seam','intellego-limen',1],['Count the Doors','intellego-limen',2],
+  ['Read the Binding','intellego-limen',3],['Stand in the Doorway','intellego-limen',4],
+  ['Weigh the Attention','intellego-mentem',1],['Follow the Thought','intellego-mentem',2],
+  ['Read the Surface','intellego-mentem',3],['Open the Locked Room','intellego-mentem',4],
+  ['Hear the Name Spoken','intellego-nomen',1],['Spell the Lesser Name','intellego-nomen',2],
+  ['Derive the True Name','intellego-nomen',3],['The Catalogue of Names','intellego-nomen',4],
+  ['Taste the Soil','intellego-terram',1],['Survey the Strata','intellego-terram',2],
+  ['Find the Deep Seam','intellego-terram',3],['Read the Fault','intellego-terram',3],
+  ['Fray the Edge','perdo-limen',1],['Unhinge','perdo-limen',2],
+  ['The Open Wound','perdo-limen',3],['Nothing Holds','perdo-limen',4],
+  ['Blunt the Edge','perdo-mentem',1],['The Misplaced Hour','perdo-mentem',2],
+  ['Scatter the Lesson','perdo-mentem',3],['Unmake the Mind','perdo-mentem',4],
+  ['The Empty Room','perdo-mentem',5],
+  ['Mispronounce','perdo-nomen',1],['Shed the Use-Name','perdo-nomen',2],
+  ['Unsay the Name','perdo-nomen',3],['The Nameless','perdo-nomen',4],
+  ['Crumble','perdo-terram',1],['Open the Ground','perdo-terram',2],
+  ['Pull Down the Arch','perdo-terram',3],['The Swallowed Hall','perdo-terram',4],
+  ['Hold the Door','rego-limen',1],['Step Across','rego-limen',2],
+  ['Seal the Way','rego-limen',3],['Open the Portal','rego-limen',4],
+  ['The Standing Gate','rego-limen',5],
+  ['Hold the Attention','rego-mentem',1],['The Patient Lesson','rego-mentem',2],
+  ['Kindle Devotion','rego-mentem',3],['The Shared Mind','rego-mentem',4],
+  ['Call by Name','rego-nomen',1],['Keep the Name Close','rego-nomen',2],
+  ['Write the Name Down','rego-nomen',2],['Compel by Name','rego-nomen',3],
+  ['The Bound Servant','rego-nomen',4],
+  ['Set the Stone','rego-terram',1],['Raise the Course','rego-terram',2],
+  ['Quarry Without Hands','rego-terram',3],['The Vaulted Hall','rego-terram',4],
+];
+const KINDS = ['mind','book','lib','palace'];
+const KIND_LABEL = { mind:'minds', book:'grimoires', lib:'libraries', palace:'memory palaces' };
+const KIND_TRAIT = {
+  mind:   'decays toward a retention floor · dies with its holder',
+  book:   'never decays · burns · can be looted',
+  lib:    'never decays · burns with the building, all of it at once',
+  palace: 'decays · unburnable, unlootable · dies with its holder',
+};
+
+let seed = 991;
+const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+
+let world = [];
+function build(meanCopies) {
+  seed = 991;
+  world = NODES.map(([name, cell, tier]) => {
+    // deeper nodes are rarer; shallow ones are everywhere
+    const bias = Math.max(0.18, 1 - (tier - 1) * 0.2);
+    let n = Math.max(1, Math.round(meanCopies * bias * (0.45 + rnd() * 1.25)));
+    const inst = [];
+    for (let i = 0; i < n; i += 1) {
+      const r = rnd();
+      inst.push(r < 0.42 ? 'mind' : r < 0.68 ? 'book' : r < 0.94 ? 'lib' : 'palace');
+    }
+    return { name, cell, tier, form: cell.split('-')[1], inst };
+  });
+}
+
+const held = (n) => n.inst.length;
+const perishable = (n) => n.inst.filter(i => i === 'mind' || i === 'palace').length;
+const written = (n) => n.inst.filter(i => i === 'book' || i === 'lib').length;
+
+function riskOf(n) {
+  if (held(n) === 1) return 'sole';
+  if (written(n) === 0) return 'fragile';       // exists only in heads
+  if (held(n) <= 3) return 'fragile';
+  return 'safe';
+}
+function riskWhy(n) {
+  if (held(n) === 1) {
+    const k = n.inst[0];
+    return k === 'mind' ? 'one copy, in a living memory — dies with her'
+      : k === 'palace' ? 'one copy, in a memory palace — unburnable and unlootable, and it dies with her'
+      : k === 'lib' ? 'one copy, shelved — one fire from gone'
+      : 'one copy, a single book — burns or is looted';
+  }
+  if (written(n) === 0) return `${held(n)} copies, all of them in heads — nothing is written down`;
+  if (held(n) <= 3) return `${held(n)} copies, ${written(n)} written`;
+  return `${held(n)} copies, ${written(n)} written`;
+}
+
+function render() {
+  const dep = world.filter(n => held(n) === 1).length;
+  document.getElementById('depv').textContent = dep;
+
+  const pips = (n, cap = 10) => {
+    const shown = n.inst.slice(0, cap);
+    return `<span class="pips">${shown.map(k => `<span class="pip ${k}"></span>`).join('')}` +
+      (n.inst.length > cap ? `<span class="more">+${n.inst.length - cap}</span>` : '') + '</span>';
+  };
+
+  const byRisk = world.slice().sort((a, b) => held(a) - held(b) || a.tier - b.tier);
+  const counts = KINDS.map(k => [k, world.reduce((acc, n) => acc + n.inst.filter(i => i === k).length, 0)]);
+  const total = counts.reduce((a, [, c]) => a + c, 0);
+
+  document.getElementById('dirs').innerHTML = `
+    <section class="dir">
+      <div class="dhead"><span class="letter">A</span><span class="name">By node</span>
+        <span class="tag">the canonical list</span></div>
+      <div class="dbody"><div class="scroll mm-scroll">
+        ${world.map(n => `
+          <div class="nrow" data-sole="${held(n) === 1}">
+            <span><span class="nm">${n.name}</span>
+              <span class="cell c-${n.form}">${n.cell} · t${n.tier}</span></span>
+            ${pips(n)}
+          </div>`).join('')}
+      </div></div>
+      <div class="dfoot">Every node, with where its copies live. The only direction where a node that does
+        <em>not</em> exist could appear at all — which is what a god deciding where to grant founding
+        knowledge needs.</div>
+    </section>
+
+    <section class="dir">
+      <div class="dhead"><span class="letter">B</span><span class="name">By vessel</span>
+        <span class="tag">knowledge is physical</span></div>
+      <div class="dbody"><div class="vwrap">
+        ${counts.map(([k, c]) => `
+          <div class="vgrp">
+            <div class="h h-${k}">${KIND_LABEL[k]}<b>${c} · ${Math.round((c / total) * 100)}%</b></div>
+            <div class="traits">${KIND_TRAIT[k]}</div>
+            <div class="swarm">${Array.from({ length: Math.min(c, 120) },
+              () => `<span class="pip ${k}"></span>`).join('')}${c > 120 ? `<span class="more">+${c - 120}</span>` : ''}</div>
+          </div>`).join('')}
+      </div></div>
+      <div class="dfoot">The four location kinds have genuinely different failure modes. A player choosing
+        between funding a scriptorium and blessing an archivist is choosing between those, and a by-node
+        list flattens it into a count.</div>
+    </section>
+
+    <section class="dir">
+      <div class="dhead"><span class="letter">C</span><span class="name">By risk</span>
+        <span class="tag">what it takes to lose it</span></div>
+      <div class="dbody">
+        ${dep === 0 ? `<div class="flat"><b>Nothing is at risk.</b> libraryDependence is empty at this
+          redundancy, so this direction has nothing to sort and its colouring never fires. At the
+          campaign's measured ~55 copies per node this is the permanent state of the screen.</div>` : ''}
+        <div class="scroll mm-scroll">
+        ${byRisk.map(n => {
+          const r = riskOf(n);
+          return `<div class="risk" data-r="${r}">
+            <span><span class="nm">${n.name}</span><span class="what">${riskWhy(n)}</span></span>
+            <span class="lvl">${r === 'sole' ? 'sole copy' : r}</span></div>`;
+        }).join('')}
+        </div>
+      </div>
+      <div class="dfoot">Sorted by fragility, which is the only ordering that answers "what should I do
+        next". Entirely dependent on redundancy being low enough for the question to exist.</div>
+    </section>`;
+}
+
+const red = document.getElementById('red');
+red.addEventListener('input', () => {
+  document.getElementById('redv').textContent = red.value;
+  build(Number(red.value));
+  render();
+});
+build(4);
+render();
+</script>
+
+<script type="module">
+  import { floatThemeControl } from '../shared/theme.js';
+  floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['knowledgeAggregates', 'individualMages', 'eventDeltas']);
+</script>
