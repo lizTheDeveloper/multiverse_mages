@@ -26,6 +26,30 @@ Each finding carries a **status**:
 
 And a **lands in**, naming the package or document that owns it.
 
+### Provenance of the numbers
+
+`CLAUDE.md`: *"an undated measurement in the present tense will be read as current for as long as it
+survives."* Everything below is a measurement, and most of it is written in the present tense, so
+here is the ref it was taken on.
+
+**Findings 1.6–1.10, the amendment to 1.1, and §8.1** were measured on **2026-08-14** at
+`14baa59`, against the reference scenario at **seed 20260813**, 400 ticks — snapshot hash
+`efeff5e8c0427c4e`, observation layout digest `46182c35d829b205`. Reproduce with:
+
+    npm run ui:record        # writes ui/session.json; the same file these were read from
+
+That recording is committed and `packages/scenario/test/unit/ui-recording.test.ts` re-runs the
+recorder and compares frames, so **any of these numbers going stale is a red test rather than a
+silently wrong document** — which is the one protection the earlier findings here do not have. It
+has held byte-identical across three `main` merges so far, including the §4.3 amendment.
+
+The claims that are *not* covered by that test are the ones read out of source rather than out of a
+run — `CANDIDATE_SLOTS` pinning 32, the ninety-three authored effects, the `ECONOMIC_PRIMITIVES` set
+with two members. Those were checked by hand on the same ref and nothing re-checks them. Treat a
+mismatched line number as the cheapest signal that one has rotted.
+
+Findings 1.1–1.5 and §§2–7 predate this note and carry no ref. That is a gap, not a convention.
+
 ---
 
 ## 1. Findings that land in `agent-interface` (0.5.0)
@@ -46,6 +70,14 @@ slots stratified per criterion so that each reserves capacity. §4.4 requires ne
 
 Six of the sixteen actions carry an entity handle, so this affects grant-founding-knowledge, bless,
 assign-role, fund-university, encourage-research and open-portal.
+
+**Amended after wiring `ui/targets/` to a real session.** The eight slots above were this prototype's
+own constant, not the shipped one: `CANDIDATE_SLOTS` pins 16 for grant-founding-knowledge, 32 for
+bless and assign-role, 16 for encourage-research and 8 for the rest. The saturation mechanism is
+unchanged — one criterion taking a whole list does not care how long the list is — but the number of
+mages it takes to get there is four times what the prototype showed, and the reference run never
+reaches it. What the real lists *do* show at every tick is 1.8 below, which is a different defect in
+the same structure.
 
 *Lands in: `contracts.md` §4.4, and the `agent-api` spec that implements it.*
 
@@ -102,6 +134,212 @@ interface's own comment describes the masked list as *"for attributing a stall"*
 to a **player** needs the reason, not the count.
 
 *Lands in: `rules-world`'s autonomy layer to retain it, `agent-interface` to expose it.*
+
+---
+
+### 1.6 The legality mask is one bit, and the interface needs three states — **defect**
+
+Found by wiring `ui/glow/` to a recorded session rather than to its own timer.
+
+The light system distinguishes **charged** (do it now), **latent** (the god could, but not this tick)
+and **denied** (masked — something else has to change first). §4.2 gives one bit for all three.
+`mask.ts` masks an action *"whose cost exceeds the current favor pool"* with the same zero it uses for
+an action that is structurally impossible, and the two are opposite instructions to a player: *wait*
+versus *change something*.
+
+Measured over the reference run, seed 20260813:
+
+| Tick | Dark | Why |
+|---|---|---|
+| 0 | 15 of 16 | fourteen because favor is 0; `declareAscension` because it is free and the world is not ready |
+| 20 | 3 | `revokeEdict` — affordable, and there are no edicts to revoke |
+| 20–400 | | `changeTradition` — 64 favor against a cap of 40, so *permanently* unaffordable at worship tier 2 |
+
+Three unrelated situations, one bit. A player told "not now" fourteen times at tick 0 has no way to
+learn that waiting fixes all fourteen, and no way to learn that waiting will never fix
+`changeTradition`.
+
+The only way to separate them from outside is to price the action, and pricing is a rule §5 forbids
+the client to hold. `ui/shared/session.js` isolates that in one function named `reconstructedCharge`,
+and every control it touches is marked **†** on the page so a reader can see which lights are the
+contract talking and which are the client guessing. **That marker is the finding made visible, not a
+fix.** The fix is a reason channel on the mask — one small enum per action, `unaffordable` /
+`impossible` / `spent` — which costs nothing to add now and is a format change after policies train
+against it.
+
+**The sound design already made this decision, and already specified the cue.** Checked against
+`main` after the fact, which makes the ask considerably smaller than it looked. `sound-design.md` §7:
+
+> **Insufficient favor** is deny (§2.2) plus one strained pulse — the sub attempting its cycle and
+> not completing it. *Distinct from ordinary illegality, because "not allowed" and "not yet
+> affordable" are different problems with different fixes.*
+
+That sentence predates this finding. And §2.2 has already split deny two ways once — for stranded
+prerequisites — establishing the rule it did it under: **layer, never a seventh click**, because the
+six clicks are a closed set and adding one should require an argument. So a reason channel is not
+proposing a new distinction or a new sound. It is supplying the input to a cue the audio design has
+already decided how to express and currently cannot reach, and the visual side reached the same
+answer independently — `ui/glow/` had to reconstruct the distinction client-side to draw it at all.
+Two layers, specified separately, blocked on the same missing bit.
+
+*Lands in: `contracts.md` §4.2 and `agent-api`'s mask. Consumers already waiting on it:
+`sound-design.md` §7 and `ui/glow/`.*
+
+### 1.7 The session drops the integer observation — **defect**
+
+`AgentView` carries two observations: `raw: Int32Array`, which `view.ts`'s own comment calls **"the
+reproducible artefact"**, and the normalized `Float64Array` that §4.1 pins as the export.
+**`AgentSession.observe()` returns only the normalized one.** Every consumer that is not already
+holding a `SimState` — a client, a viewer, a recorder, a debugger — reads `0.3125` where the world
+holds `40.0` favor.
+
+Nothing displayable survives that. A meter can be drawn from a ratio; *"40 favor, and the thing you
+want costs 64"* cannot.
+
+Today it is recoverable: every descriptor in the layout is `ratio` or `flag`, both exact ratios of a
+divisor the package exports, so `scripts/record-session.mjs` reconstructs the integers and
+`packages/agent-api/test/unit/normalization-inversion.test.ts` pins that it can. **That test is a
+tripwire, not a solution.** `NORMALIZATION_RULES` also declares `log-bucket` and `bounded`, and one
+channel adopting either makes every reconstruction silently lossy — in a renderer, months later,
+looking exactly like a rendering bug. Saturation is already unrecoverable, which is why the recorder
+writes the saturated slot indices per frame instead of pretending.
+
+Exposing `raw` on the session is a one-line addition now and a client-wide correctness problem later.
+
+*Lands in: `agent-api`'s session surface.*
+
+### 1.8 Candidate lists are shorter than their declared *k*, and the length moves — **defect**
+
+`CANDIDATE_SLOTS` pins 32 slots for `blessMage`. The reference run returns **6** at tick 0 and 16–20
+thereafter. Six of the seven parameterized actions never fill their list at any tick:
+
+| Action | Declared *k* | Lengths seen over 400 ticks |
+|---|---|---|
+| `grantFoundingKnowledge` | 16 | 16 |
+| `blessMage` | 32 | 6, 16, 17, 18, 19, 20 |
+| `assignRole` | 32 | 18, 32 |
+| `fundUniversity` | 8 | 2 |
+| `encourageResearch` | 16 | 12 |
+| `changeTradition` | 8 | 2 |
+| `openPortal` | 8 | 3 |
+
+`candidates.ts` states both rules seven lines apart. Its header: the length *"comes from
+`CANDIDATE_SLOTS` and never from how many candidates were found — a list that shrank when mages died
+would make slot 5 mean a different mage every tick, which is the exact thing a policy cannot learn
+against."* Its `truncate`: *"Never pads — an absent slot is illegal."* The measured behaviour is the
+second, and `gate.ts` handles the consequence as an ordinary `empty-slot` rejection.
+
+The cost is not the truncation, which is sound; it is that **nothing says how many slots are real.**
+The mask is one bit per *action*, not per slot. A policy network discovers the end of a list by
+submitting into it and spending an illegal action; a human interface renders a menu whose length
+changes under the cursor. Either pad to *k* with an explicit empty marker, or publish the live length
+alongside the list — but the file should stop asserting both.
+
+*Lands in: `contracts.md` §4.4 and `agent-api`'s `candidates.ts` — at minimum the contradicting
+comment, which is currently the only statement of intent anyone has.*
+
+### 1.9 A frame is a state, so there are no events — **open**
+
+Every prototype about *change* — `tempo/`, `ascension/`, `knowledge/`, and everything
+`sound-design.md` §10 specifies — needs to know what just happened. The read path emits states. A view
+wanting events has to diff two frames itself, and a diff cannot distinguish a last-instance loss from
+an ordinary one, which is the distinction §6.5 is built on.
+
+The reference run makes the cost concrete: **the Human species is alive at tick 273 and extinct at
+tick 274.** Nothing on the read path announces it. Only a consumer already diffing the mage block
+across exactly those two frames could infer it, and it would learn *"a count went to zero"* rather
+than *"a species ended"*.
+
+**Three sections of one document are asking the read path for this, and they should be answered
+once.** Not just §6.5, whose loss cue is what the diff cannot serve: §0.4's density rule needs an
+**events-per-tick count per class** to choose between discrete sounds and a continuous texture, and
+pins loss at threshold 1 so it is *never* aggregated away; §10 needs classified per-tick events to
+build an arrangement at all. Three separate requirements, one missing capability. An answer shaped
+for any one of them alone will be re-litigated twice.
+
+What every consumer needs is the same two things, and they are worth stating as a requirement rather
+than as a complaint:
+
+- **a class**, so a threshold can be applied to it, and
+- **a "was this the last one" bit**, which is the part that matters.
+
+**Correction, and it weakens the argument I first made.** I claimed the last-instance bit was
+impossible to reconstruct downstream. It is not, and I found that out by trying: `nodesKnown` is
+derived from `count(instances) > 0`, so a decrement *is* a node leaving the universe. In the
+reference run it happens exactly once, at **tick 274** — `perdo-mentem`, `nodesKnown` 3 → 2,
+instances 10 → 7 — the same tick the Human species goes extinct.
+
+What that one line cannot tell you is the whole of what the cue needs:
+
+- **Which node.** The block is per cell. Three instances went and one node ended; whether that was
+  one node held in three places or three losses spread across nodes, one of which happened to be a
+  last copy, the aggregate does not say.
+- **Which vessel.** §6.5 makes mind, palace, grimoire and library four distinct sounds because they
+  are four distinct kinds of gone. The observation has no vessel channel at all.
+- **The causal link.** §6.5's cue is a *sequenced pair* — death mark, a pause, then loss — and the
+  document is explicit that **"the pause between the two is the sound of finding out."** A diff of
+  frames 273 and 274 says both things happened in that interval. It cannot say the loss was
+  *because of* those deaths, and the causation is what the pause expresses.
+- **Anything that nets.** A count cannot distinguish a tick with one gain and one loss from a tick
+  with neither. That is arithmetic, not a measurement — it did not occur in this run, and nothing
+  prevents it.
+
+So the honest requirement is not "impossible to derive" but **"derivable only in aggregate, and
+stripped of the identity, the vessel and the causation every consumer needs."** That is a weaker
+claim and still sufficient, and it has the advantage of being true.
+
+Filed as **open** rather than defect because §4.3's outcome record may be the right home and nobody
+has looked — the audio session independently reached the same conclusion and filed it the same way.
+It is the same shape as 1.5 — a mask that says which, never why — and probably wants the same answer.
+
+**Where this is written down — now settled.** `sound-design.md` §6.5 records it at the cue it breaks,
+which is right for the consequence, but nobody implementing `agent-interface` at 0.5.0 reads the
+audio document. The fix lands in `contracts.md` §4.3, which said nothing about it. That amendment
+was flagged here as unwritten and unauthorized, was authorized, and has been made: **§4.3 now
+requires an event record alongside each observation**, carrying a class, the entity or content at
+its own granularity, and whether the event was terminal for that thing — with the class enumeration
+and wire format left to `agent-interface`, the same division §4.4 uses for candidate lists.
+
+*Lands in: `contracts.md` §4.3 — **amended**. Consequence recorded at `sound-design.md` §6.5;
+implementation is `agent-interface` at 0.5.0 and is not yet scheduled.*
+
+---
+
+### 1.10 The session is narrower than the package behind it — **defect**
+
+Three findings above are the same finding, and none of us saw it until the third one:
+
+| Projection | Computed and exported by `agent-api` | On `AgentSession` |
+|---|---|---|
+| `AgentView.raw` — the integer observation | yes | no (§1.7) |
+| `ExplainProjection` — why a mage acted | yes | no (§1.4) |
+| `KnowledgeCensus` — where knowledge physically is | yes | no |
+
+`AgentSession` offers `reset`, `observe`, `legalActions`, `candidates`, `submit`, `status`,
+`outcome`, `accounting`, `illegalActionCount`, `rng`, `snapshotHash`. It is the only door a client
+has, and it is narrower than the package it wraps.
+
+The census is the one that makes the pattern impossible to miss, because it carries almost exactly
+what two other findings were about to demand as new contract requirements. Run against the reference
+scenario at tick 0 it returns `whereKept {mind: 1, grimoire: 0, library: 0, palace: 0}` and
+`fragileNodeIds [99]`, and per node a `distinctLocations` count whose own documentation makes the
+argument: *"forty copies in one library is one fire from loss, and three copies in one mage's palace
+is one funeral from it."* The opt-in per-instance path adds `locationKind`, `marooned`, `condemned`
+and `ticksToUnteachable` — which is §2.1's mastery trajectory, filed as unpublished, sitting in an
+exported function.
+
+**Every finding here phrased as "the read path does not carry X" should be re-read as "the session
+does not expose X."** That is a much cheaper fix than any of the contract changes those findings
+were heading toward, and §4.3's amendment was narrowed on the strength of it.
+
+**How it was missed, twice.** Both times the evidence was a file read that was locally correct and
+globally misleading: `observation.ts` genuinely never writes a vessel, `view.ts` genuinely hands the
+session a normalized vector. Neither file says what else the package exports. What caught it was
+running `knowledgeCensus` against a real state — the same method that caught §1.9's overclaim one
+finding earlier.
+
+*Lands in: `agent-api`'s session surface. Not `contracts.md` — the contract already permits these
+projections; the session simply does not offer them.*
 
 ---
 
@@ -419,7 +657,7 @@ is both the best fit for the design and the most blocked is the clearest single 
 
 ## 8. What caught the mistakes
 
-Four defects surfaced during this work. None was found by the person responsible for the area, and
+Ten defects surfaced during this work. None was found by the person responsible for the area, and
 none was found by anyone suspecting anything. Recorded because the mechanism generalises better than
 any of the individual fixes.
 
@@ -429,6 +667,61 @@ any of the individual fixes.
 | A cue note that over-explained | The 300-character `post` cap in the audio schema — three times, each producing a shorter and better sentence |
 | A denied state dimmed by eye | A contrast measurement, twice: "about four percent of luminance" was one percent, and an opacity dim measured 2.4:1 |
 | A front door committed without its page | `readFileSync` throwing `ENOENT`, in a link test written for an entirely different purpose |
+| A candidate-list saturation figure argued from an invented *k* of 8 | Wiring `ui/targets/` to a real session, where the shipped constant is 32 |
+| "The observation carries integers" — it does not; the session returns floats | Printing a favor meter and reading `0.3125` |
+| A recorder header claiming it stored the raw vector | Checking what `session.observe()` actually returns before writing the comment |
+| "The last-instance bit is impossible to derive from any number of frames" | Deriving it. `nodesKnown` decrements at tick 274 of the reference run |
+| "There is no vessel channel at any width" | Running `knowledgeCensus` once. It returns the four vessels per node, and `fragileNodeIds` |
+| A narrowing that struck a field the requirements list still demanded | A second reader holding the two paragraphs against each other |
+
+### 8.1 The rule those last three earned
+
+Every one of them was **a file read that was locally correct and globally misleading.**
+`observation.ts` really does never write a vessel. `nodesKnown` really is a per-cell aggregate.
+`view.ts` really does hand the session a normalized vector. Each individual reading was true.
+
+What was false every time was the **quantifier** — *"there is no"*, *"impossible"*, *"none"* — and a
+quantifier over a package is not something one file can support.
+
+So: **when a claim is about what the system does *not* have, run it before writing it down.** Reading
+tells you where a thing is absent. Only execution tells you where it is. Claims of presence survive a
+file read; claims of absence do not.
+
+This is cheaper than resolving to be more careful, and the reason is structural rather than moral:
+**carefulness scales with the number of files and execution does not.** One call to the function
+settles what a day of grepping cannot.
+
+Two corollaries, both of which cost something before they were written down:
+
+- **A correction is a claim.** Both sessions verified each other's findings against `main` and then
+  relaxed the check for a *fix*, on the unexamined theory that corrections are a different category.
+  They are not.
+- **Reading is still the right tool for locating absence in a file.** The failure was never the
+  reading; it was generalising from one file to a package. `observation.ts` has no vessel write
+  remains true and remains useful — it is the sentence built on top of it that had to be withdrawn.
+- **Run until you find the consumer, not until you find the absence.** The rule's own worst near-miss
+  came from stopping when the evidence already supported the wanted conclusion. Ninety-three authored
+  effects on `research-rate`, `teach-rate` and `scribe-rate` really are gathered and dropped —
+  `gatherEffects` has one production caller and it filters to a two-member set. From that it looked
+  as though vision §6a's compounding loop had no mechanism. It has one, two hops further on under a
+  different name: `world-step.ts` passes library capital into `workOne`, where every mage's rate is a
+  `libraryRateMultiplier` over the shelves behind them, bounded by species `depthCeiling`. **An absent
+  call site is not an absent mechanism.** The real finding is narrower and survives: content declares
+  an influence the engine grants by another route.
+
+  What makes this more than a slogan is that **the incentive runs the wrong way.** *"The compounding
+  loop is broken"* is a better headline than *"ninety-three effects are declared against the wrong
+  mechanism"*, and the better headline is exactly the one you stop early to protect. Both sessions
+  stopped one step short here, a step apart, and neither was being careless. A rule that only fires
+  when you are being sloppy catches less than one that fires when you are pleased with what you
+  found.
+
+*Attribution: this rule came out of an exchange between two sessions in which each refuted the
+other's absence claim, so it belongs to neither. Five corrections came out of it, and the split is
+worth keeping: four were found by the other session, one by continuing to look after the evidence
+already agreed. The second kind is rarer and harder to institutionalise, which is why the corollary
+above is written in terms of the incentive rather than the error. It is recorded here rather than in either session's
+notes because the next person to need it will be reading this file.*
 
 **The common property is that each ran without being asked.** None required a person to suspect the
 specific failure — which matters here more than usual, because this work ran across two sessions that

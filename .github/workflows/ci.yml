@@ -67,8 +67,33 @@ on:
 #
 # `pull_request:` must never be narrowed at all: fork PRs generate no push event,
 # and this workflow is the only gate that may safely see a fork.
+# ## Why `main` runs are grouped per commit and everything else per branch
+#
+# `cancel-in-progress` is false for `main` on purpose: a run on `main` must never
+# be killed mid-flight. But GitHub keeps **only one pending run per group**, so a
+# false `cancel-in-progress` does not mean "every commit is verified" — it means
+# every commit *queues*, and each queued run is cancelled by the next one to
+# arrive. Cancelled before it ever started, not interrupted.
+#
+# That is not hypothetical. Measured on 2026-08-14, `main`'s last eight runs held
+# three `cancelled` and exactly one `success`, and the tree went hours with no
+# confirmed `Verify` while every individual PR was green. `72d9538`, `fbb9dcb`
+# and `14155e7` were never verified at all.
+#
+# The cause is throughput. `Balance gate, two hundred world years` takes ~35
+# minutes and sits in this workflow, so the *run* holds the group for ~40 minutes
+# even though `Verify (pinned Node)` finishes in about eight. A second commit
+# inside that window queues; a third cancels the second. The comment on that job
+# says "nothing blocks on this job" — true of the merge gate, and false of the
+# next commit's verification, which is what this group made it block.
+#
+# Adding the SHA to the group for `main` gives every `main` commit its own group,
+# so none can cancel another and each is verified on its own merits. Branch and
+# PR runs keep the shared group and keep cancelling supersedes, which is what you
+# want there and costs nothing — this repository is public, so Actions minutes
+# are unmetered.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event.pull_request.head.ref || github.ref_name }}-${{ (github.event_name == 'push' && github.ref_name == 'main') && github.sha || '' }}
   cancel-in-progress: ${{ (github.event.pull_request.head.repo.full_name || github.repository) != github.repository || (github.event.pull_request.head.ref || github.ref_name) != 'main' }}
 
 permissions:

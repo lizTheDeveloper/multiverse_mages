@@ -122,6 +122,30 @@
   .note b{color:var(--ink);font-weight:600}
   .note .hot{color:var(--god-lit)}
   footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
+
+  /* The control panel: the §4.4 list with nothing added to it. Marked by the
+     god's own edge rather than a letter, because it is not a fourth direction. */
+  .dir.real{border-left:2px solid var(--god)}
+  .realbar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.7rem;
+    font:11px var(--mono);color:var(--faint)}
+  .realbar label{display:flex;align-items:center;gap:.4rem}
+  .realbar input[type=range]{flex:0 1 12rem}
+  .realbar b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .realbar .sub{color:var(--soft)}
+  .dir.real .slot .nm{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  /* The real list is the same .slot row as directions A–C, but it is the only
+     one that spans the full page and carries a single integer. Stacked, thirteen
+     of them took 830px to say thirteen numbers, with 1,200px of nothing between
+     the handle and the score column. Wrapped into as many columns as fit, and
+     with the parameter label on the same line as the handle, it is one screen
+     of a list that is genuinely short. */
+  .dir.real .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));
+    gap:.35rem;align-content:start}
+  .dir.real .slot{grid-template-columns:1.6rem 1fr}
+  .dir.real .slot br{display:none}
+  .dir.real .slot .sub{margin-left:.45rem}
+  .dir.real .slot .sc{display:none}
+
 </style>
 
 <div class="wrap">
@@ -142,9 +166,13 @@
     <label class="scale">population <input id="pop" type="range" min="12" max="3000" step="1" value="48"> <b id="popv">48</b> mages</label>
   </div>
 
+  <div id="srchost" style="margin:0 0 1rem"></div>
+
   <div class="dirs" id="dirs"></div>
 
-  <div class="note">
+  <section class="dir real" id="real" style="margin-top:1rem"></section>
+
+  <div class="note mm-essay">
     <h2>What operating these settles</h2>
     <p><b>The population number decides this, and nobody has chosen it.</b> Vision §13 leaves "how many
     mages does a mature universe hold" to benchmarking. At 48 the roster is the best of the three and the
@@ -181,6 +209,8 @@
 </div>
 
 <script type="module">
+import { mountSourceNote, openSession } from '../shared/session.js';
+
 /* Real traits, from packages/content/data/species.json. */
 const SPECIES = {
   human:    { life: 960,   mature: 216,  cur: 1152, depth: 4, ret: 1024, scribe: 1024 },
@@ -267,6 +297,19 @@ const OUTCOMES = [
 
 const fmtAge = (m) => `${Math.round(m.age / 12)}y`;
 
+/* The parameter order §4.2's table gives for each action. Names, not values —
+   the values come from the run. */
+const PARAM_NAMES = { 8: 'mage handle , node id', 9: 'mage handle', 10: 'mage handle , role id' };
+
+const session = await openSession({ recording: '../session.json' }).catch(() => null);
+/* `CANDIDATE_SLOTS`, shipped with the recording rather than copied here: the
+   pinned k that `truncate` cuts to and never pads up to. A hand-written copy on
+   the one page arguing that nothing here is invented would be the exception
+   that proves nothing, and it would go stale the moment 1.8 is fixed. */
+const DECLARED_K = session === null ? {} : session.content.candidateSlots;
+let realTick = session === null ? 0 : session.frameCount - 1;
+mountSourceNote(document.getElementById('srchost'), session, ['candidates', 'mageNames']);
+
 function render() {
   const cast = makeCast(state.pop);
   const ranked = cast.slice().sort((a, b) => salience(b) - salience(a));
@@ -281,7 +324,7 @@ function render() {
     <div class="dhead"><span class="letter">A</span><span class="name">Roster</span>
       <span class="tag">scan and click</span></div>
     <div class="dbody">
-      <div class="roster">${cast.slice(0, shown).map(m => `
+      <div class="roster mm-scroll">${cast.slice(0, shown).map(m => `
         <div class="rrow" role="option" tabindex="0" data-id="${m.id}" aria-selected="false">
           <span><span class="nm">${m.name}</span><br>
             <span class="sub">${m.species} · ${fmtAge(m)} · ${m.role}</span></span>
@@ -385,6 +428,72 @@ function render() {
   wire(a, 'a'); wire(b, 'b');
   c.querySelectorAll('.outcome').forEach((btn) => {
     btn.addEventListener('click', () => { state.outcome = Number(btn.dataset.oc); render(); });
+  });
+  renderReal();
+}
+
+/**
+ * The same list, from a real session, drawn without adding anything.
+ *
+ * A, B and C above are argued from a cast this page invents, which is what lets
+ * three directions be compared at all. This one is not a fourth direction: it is
+ * the control. Every field it shows is a field §4.4 actually carries, and the
+ * gap between it and B is the whole finding — B's slots have names, species and
+ * ages because this prototype made them up, and the read path has two integers.
+ */
+function renderReal() {
+  const host = document.getElementById('real');
+  host.innerHTML = '';
+  if (session === null) return;
+
+  const f = session.frame(realTick);
+  const lists = f.candidateLists();
+  const list = lists.get(Number(state.verb)) ?? [];
+  const declared = DECLARED_K[state.verb];
+  const mages = f.mageBuckets().reduce((n, m) => n + m.living, 0);
+
+  host.innerHTML = `
+    <div class="dhead"><span class="letter">·</span><span class="name">The list as it exists</span>
+      <span class="tag">recorded session, not invented</span></div>
+    <div class="dbody">
+      <div class="realbar">
+        <label>tick <input id="realtick" type="range" min="0" max="${session.frameCount - 1}"
+          value="${realTick}" step="1"></label>
+        <b>${f.clock().worldTick}</b>
+        <span class="sub">${mages} mages alive · ${list.length} slots returned · k declared ${declared}</span>
+      </div>
+      <div class="slots">${list.slice(0, 12).map((c, i) => `
+        <div class="slot">
+          <span class="ix">${i}</span>
+          <span><span class="nm">${c.params.map((p) => p.toLocaleString()).join(' , ')}</span><br>
+            <span class="sub">${PARAM_NAMES[state.verb] ?? 'params'}</span></span>
+          <span class="sc">—</span>
+        </div>`).join('')}
+        ${list.length > 12 ? `<div class="slot empty"><span class="ix">…</span>
+          <span class="nm">${list.length - 12} more slots</span><span></span></div>` : ''}
+        ${list.length === 0 ? `<div class="slot empty"><span class="ix">—</span>
+          <span class="nm">no candidates this tick</span><span></span></div>` : ''}
+      </div>
+      <div class="cutline">what a slot carries</div>
+      <div class="below">Two integers. There is no name, no species, no age, no mastery and no reason —
+        every one of those in A, B and C was invented by this page. A human interface built on this
+        would be a menu of entity handles.</div>
+      ${list.length !== declared ? `<div class="saturated">
+        <b>shorter than its declared k.</b> <code>CANDIDATE_SLOTS</code> pins ${declared} for this
+        action and the list returned ${list.length}. <code>candidates.ts</code> states both rules seven
+        lines apart — its header says the length <em>"never [comes] from how many candidates were
+        found"</em>, and <code>truncate</code> says <em>"never pads — an absent slot is illegal"</em>.
+        The measured behaviour is the second. Nothing in the mask says how many slots are real, so a
+        consumer finds the end of the list by submitting into it and taking an <code>empty-slot</code>
+        rejection.
+      </div>` : ''}
+    </div>
+    <div class="dfoot">Not a direction — a control. This is the material B and C are drawn from, and
+      the difference between them is the read path.</div>`;
+
+  host.querySelector('#realtick')?.addEventListener('input', (e) => {
+    realTick = Number(e.target.value);
+    renderReal();
   });
 }
 

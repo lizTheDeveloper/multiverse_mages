@@ -18,12 +18,42 @@ whether knowledge loss lands off the beat before 520 assets were generated again
 | [`tempo/`](tempo/) | What wall-clock pacing does a world tick get, and which events are allowed to interrupt? One question, because speed decides what an event is. |
 | [`raid/`](raid/) | Muster, contact, resolution — agency spends down as the fight goes on. What is a player *doing*, what does each cast cost them in secrets, and can you look back at what happened without stopping the clock? |
 | [`glow/`](glow/) | Cyan is the god's own light and the form hues stay the world's. Does that rule survive a vellum ground, or does light force the client dark? |
+| [`console/`](console/) | Not a twelfth direction — the composition. Do the surfaces hold together as one screen against one clock, and where does the read path stop being able to feed them? |
+
+## Not a prototype: [`design-dashboard/`](design-dashboard/)
+
+The eleven above each ask one interface question. **This one asks nothing.** It is an instrument for
+reading the campaign's own state — the seventy-cell grid and which twelve are enabled, primitive
+consumption, the species table and the tensions in it, the `contracts.md` §7 metric registry and
+which of those metrics has ever been measured, what the four committed baselines actually hold,
+`check:reachability`'s findings, and the design decisions waiting on the owner.
+
+It reads one file, `design-dashboard/data.json`, written by:
+
+    npm run ui:dashboard
+
+**Generated, committed, and pinned** — the same treatment `session.json` gets, and
+`packages/content/test/unit/design-dashboard-payload.test.ts` re-runs the generator and compares.
+The payload takes **no clock reading and makes no `git` call**, deliberately: that is what makes the
+pin a check rather than a guaranteed failure, and it is why the page can say it is a statement about
+whatever commit you are reading it on. Figures lifted from a document carry that document's own
+stated date and ref and are labelled historical.
+
+It counts as a prototype for `ui-index.test.ts` and `ui-theme.test.ts` — both sweep every directory
+here — so it is linked from the index and uses `shared/theme.css` like everything else. It is not
+counted as one anywhere a *direction* is being counted.
 
 ## What these found
 
-`docs/design/interface-findings.md` consolidates it: eighteen findings, each with what was found, how,
-its status (open / defect / resolved / blocked) and **where it lands**. Most are not client problems —
-the majority have to be settled in `agent-interface` at 0.5.0 or they become a retrofit at 0.13.0.
+`docs/design/interface-findings.md` consolidates it: twenty-three findings, each with what was found,
+how, its status (open / defect / resolved / blocked) and **where it lands**. Most are not client
+problems — the majority have to be settled in `agent-interface` at 0.5.0 or they become a retrofit at
+0.13.0.
+
+Four of them, and one correction to an earlier one, came from wiring the prototypes to a real
+session rather than to their own invented data. That is written up in
+[`shared/README.md`](shared/README.md), which also maps which prototype can be fed today and which
+cannot.
 
 ## Coverage against the action space
 
@@ -60,7 +90,8 @@ Surfaces that are not actions, and still need directions:
 the read path cannot answer, and it found five things, which is a different job from comparing layouts.
 Anyone picking a mage-panel design should treat it as one candidate, not as a decision.
 
-**Start at [`index.html`](index.html)** — it lists all eleven with the question each answers. A test
+**Start at [`index.html`](index.html)** — it lists all eleven with the question each answers, plus
+the dashboard. A test
 asserts that index links only to prototypes that exist and links to every one of them, in both
 directions, because a front door pointing at a missing page is worse than no front door and an
 unlinked prototype is invisible.
@@ -70,7 +101,20 @@ unlinked prototype is invisible.
     npm run ui        # serves the repository root on :8200
 
 Then open `http://localhost:8200/ui/ruleset/`. They are static files, so any static server works;
-the script exists so nobody has to remember the flags.
+the script exists so nobody has to remember the flags. Serve them rather than opening the files
+directly — the recording is fetched, and `file://` will not.
+
+## Where the data comes from
+
+`ui/session.json` is a real `AgentSession` driven over the reference scenario for 400 ticks, written
+by `npm run ui:record` and read through [`shared/session.js`](shared/session.js). Every prototype
+carries a strip at the top saying which run it is reading, or — for the parts the read path does not
+carry — which capability is missing and why.
+
+It is **committed, and treated as a golden**: regenerate only by explicit command, and a diff is a
+claim that behaviour changed on purpose. `packages/scenario/test/unit/ui-recording.test.ts` re-runs
+the recorder and compares, so a stale recording is a red test rather than a prototype quietly showing
+last month's universe.
 
 ## Light and dark
 
@@ -87,13 +131,59 @@ luminance at all. So on paper charge **blooms downward** — ink drawn to the co
 coming off it. Both resolve from the same `--ctl-charged-*` and `--glow-charged` tokens, so a
 prototype writes one rule and gets the right treatment in either theme.
 
-Measured across all eleven prototypes in both themes: **no text below WCAG 4.5:1**, worst case 4.72.
-`packages/content/test/unit/ui-theme.test.ts` guards the three ways this breaks silently.
+Measured across all eleven prototypes **and `index.html`** in both themes, on `ui-visual-pass`
+(2026-08-14), by computing the ratio for every text node against its nearest opaque background, in
+each page's default state *and* after visiting every `aria-pressed` toggle on it: **no measurable
+text below its WCAG threshold.** Two things are outside "measurable", both named by the sweep rather
+than folded into a pass:
+
+- `console/`'s zero-count and outside-the-ruleset cells set `color: transparent`, deliberately —
+  an empty cell and a cell holding zero are drawn as different things.
+- Four button labels sit on a `linear-gradient` fill, which no computed-style sweep can measure
+  (see below). Those were measured by hand against their declared stops: 5.87, 6.62, 7.30, 7.95,
+  8.07, 9.81, 14.41, 15.41.
+
+**The two worst failures were not in any page's default state.**
+A sweep that loads each page and measures cannot see a control that is masked on load. `ascension/`'s
+declare button paints its live treatment in only two of four world states, and
+`ruleset-symmetry/`'s commit button is `[disabled]` and flat-filled until a change is staged. Both
+set `color: var(--ctl-charged-fg)` over a saturated `linear-gradient`, and on ink that token is
+**the same colour as the top stop of the fill**: the word "Commit" measured **1.00:1** against its
+own button, and "Declare ascension" **1.47:1**. Both now take `--ground`, which inverts with the
+fill — worst case 5.87:1 across all four stops in both themes.
+
+Neither is visible to a computed-style sweep either: an element filled with a gradient has
+`backgroundColor: rgba(0,0,0,0)`, so walking up for an opaque ancestor finds the panel *behind* the
+button and reports a ratio against a surface the text is not on. The first widened sweep produced
+four confident false failures that way. A checker that cannot see its input has to say so rather
+than fold it into "fails".
+
+Getting there fixed six failures that had gone unmeasured, three of them on `index.html`. **The
+front door was the page the discipline did not cover**: `ui-theme.test.ts` iterates *directories*,
+so a file at the top level is invisible to it, and `index.html` declares its own small palette
+rather than loading `theme.css`. Its `--faint` measured **2.70:1 on vellum and 3.91:1 on ink** —
+carrying the lede, every section heading, every card path and the footer — and its `--brass` ran
+3.79:1 as 11px text on paper. The last was a specificity collision: `console/`'s
+`.clockbar button[aria-pressed="true"]` also matched the shared theme control mounted inside that
+bar, painting `--god` on `--ctl-charged-bg`, so **the selected theme button measured 1.28:1 and
+only on vellum**.
+
+`packages/content/test/unit/ui-theme.test.ts` guards the three ways the token setup breaks
+silently. It does not measure contrast — that needs a browser, and this repository has no browser
+dependency — so the numbers above are a statement about the ref they were taken on and want
+re-measuring when colour moves.
+
+`design-dashboard/` is **not** in the measurement above: it was built after that sweep ran, against
+the same tokens and screenshotted in both themes, which is a weaker claim and is stated as one. The
+token guards in `ui-theme.test.ts` *do* cover it; the contrast numbers do not.
 
 ## What they are allowed to do
 
 - **Load real content.** `ruleset/content.json` is generated from `packages/content/data`, so a
   prototype is never arguing from invented numbers.
+- **Read a real session.** Through `shared/session.js`, which decodes and computes nothing. The one
+  exception — telling *unaffordable* apart from *impossible*, which §4.2's single mask bit cannot —
+  is isolated in a function named after what it does wrong, and every control it touches is marked.
 - **Synthesise audio live.** Per `docs/design/sound-design.md` §0.8's synthesised tier, so a
   prototype runs from a static file with nothing to fetch.
 
