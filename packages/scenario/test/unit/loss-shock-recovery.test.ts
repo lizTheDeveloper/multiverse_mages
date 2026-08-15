@@ -184,8 +184,37 @@ describe('recovery, per species', () => {
     // species in the game into an invariant, and every branch that perturbed
     // the simulation at all tripped it — which is a test reporting its own
     // fragility, not a regression.
+    // **And the replacement assertion was wrong too, one layer deeper.** It read
+    // "every species that *had* a roster lost mages", and the cull does not
+    // promise that: it takes every `EVERY_KTH`th mage from one **global**
+    // ordering, so what a species loses depends on where its handles fall in
+    // that ordering and not on how many it has. On `w190/scribing-fidelity`
+    // orc reaches the shock tick with `preShock: 2` and `killed: 0` — two mages,
+    // both on the wrong parity. That is not a smaller roster than before; it is
+    // the same accident of ordering the previous author diagnosed, expressed at
+    // `preShock: 2` instead of at `preShock: 0`.
+    //
+    // So this asserts what an every-kth global cull actually guarantees — that
+    // it took about the fraction it claims to take, across the universe — and
+    // *names* any species that had a roster and lost nobody, which is the
+    // finding the length check was accidentally carrying. A per-species
+    // guarantee would need a per-species cull, and that is a different
+    // instrument.
     const withRoster = detail.species.filter((row) => (row['preShock'] as number) > 0);
-    expect(shockedSpecies).toHaveLength(withRoster.length);
+    const preShockTotal = withRoster.reduce((sum, row) => sum + (row['preShock'] as number), 0);
+    const killedTotal = withRoster.reduce((sum, row) => sum + (row['killed'] as number), 0);
+    expect(killedTotal).toBeGreaterThan(0);
+    expect(killedTotal).toBeLessThan(preShockTotal);
+
+    const spared = withRoster
+      .filter((row) => (row['killed'] as number) === 0)
+      .map((row) => `${String(row['speciesId'])} (roster ${String(row['preShock'])})`);
+    if (spared.length > 0) {
+      console.log(`species with a roster that the cull missed entirely: ${spared.join(', ')}`);
+    }
+    // Not every species, or the cull culled nobody and every number below is
+    // about a shock that did not happen.
+    expect(spared.length).toBeLessThan(withRoster.length);
 
     // And the fact the old assertion was accidentally carrying: name any
     // species that had nobody to lose. This is the signal worth keeping — a
@@ -243,9 +272,21 @@ describe('recovery, per species', () => {
     const species = (detail['species'] as Record<string, unknown>[]).filter(
       (row) => row['censored'] === false,
     );
+    // **`killed > 0`, not `preShock > 0`** — and the difference is the same one
+    // the block above turned out to need. The previous author's guard excluded
+    // species that were *absent*, on the ground that "a species with nobody
+    // alive is neither censored nor recovered; it is absent". A species that was
+    // present and lost nobody is in exactly that position for exactly that
+    // reason: it has nothing to recover from, so it scores `recoveryTicks: 12`
+    // — a roster trivially back to where it started — and reads as a recoverer
+    // while having survived no shock at all.
+    //
+    // On this branch orc is that species, at `preShock: 2, killed: 0`. Under the
+    // old guard it was `present`, so the test demanded orc be censored for
+    // failing to recover from a loss it never took.
     const present = new Set(
       (detail['species'] as Record<string, unknown>[])
-        .filter((row) => (row['preShock'] as number) > 0)
+        .filter((row) => (row['killed'] as number) > 0)
         .map((row) => String(row['speciesId'])),
     );
 

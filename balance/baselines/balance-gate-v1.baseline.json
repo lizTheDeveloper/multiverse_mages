@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "f77cc0f685f7eec24dd3be4dbfabeed054ab2065e99a7e897b95c589f906c1ef",
+  "contentHash": "78014f55b4ca20639d654df4ded21bbfced91fc4cafb46bfd092e61fed461f5b",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.6584806791956626,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.975442037586988,"unit":"grimoires","value":90.77},
@@ -15,7 +15,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.41915975231310515,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.2574792569393154,"unit":"people","value":-14.57}
   ],
   "notes": [
-    "Two of the three causes are identity-only. The behavioural one is the study fallback, and it is small: a reference universe completes 1-3 studies over 1200-2400 ticks, because teacherFor almost always finds a living holder (by design) and scribingQueueDepth is still hardcoded 0 at world-step.ts:780, so the scriptorium stops after its founding cohorts. Read a large delta here as evidence against that, not for it."
+    "A measurement and not a balance claim. No release before 0.5.0 may claim any magnitude here is balanced, every constant scribing fidelity introduces carries tuningStatus untuned, and the universe these vital signs describe is still degenerate in the ways this README records - the scriptorium still stops after its founding cohorts, because scribingQueueDepth is hardcoded 0 at world-step.ts:780. Two of the three causes above are identity-only. The behavioural one is the study fallback, and it is small: a reference universe completes 1-3 studies over 1200-2400 ticks, because teacherFor almost always finds a living holder, which is by design. Read a large delta here as evidence against that claim, not for it. What did move is the 20-year gate's referenceNodesGained and referenceNodesKnown, both +0.365 at 2.10 SE - a mage who can now read a shelf reaches a node she previously could not reach at all."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -29,9 +29,9 @@
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":-0.09000000000000341,"deltaInStandardErrors":-0.05416689548773077,"metricId":"referenceGrimoires","previousValue":90.86,"value":90.77},
-    {"delta":0.7549999999999955,"deltaInStandardErrors":0.34597807679007914,"metricId":"referenceKnowledgeInstances","previousValue":277.31,"value":278.065},
-    {"delta":0.020000000000000018,"deltaInStandardErrors":0.10082188475705939,"metricId":"referenceLibraryDepth","previousValue":3.725,"value":3.745},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":90.77,"value":90.77},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":278.065,"value":278.065},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":3.745,"value":3.745},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":39,"value":39},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":13.38,"value":13.38},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":15.88,"value":15.88},
@@ -39,7 +39,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.43,"value":129.43},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.57,"value":-14.57}
   ],
-  "supersedes": "679bd925f008a508d7c86d5fb9825e6915caa279cf6dbb10fbf502774ccd2c4d",
+  "supersedes": "31514fbdf4cd52295fc3fd221bf76d04d5856f6bab0bf3cb203c30945c6752a9",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }

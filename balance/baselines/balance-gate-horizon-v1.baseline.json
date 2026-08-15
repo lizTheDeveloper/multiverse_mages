@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "9622c9b939abf6babeb82b85fe680de33efb326b4256ffa80108ed08a6f236b7",
+  "contentHash": "22529f6f6e4b1f23fe885da6d5c5f1d355dd723fa70fd0361611a107d01a37e2",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":7.013235883030059,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":21.039707649090175,"unit":"grimoires","value":322.59},
@@ -16,7 +16,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.3109637753989098,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.9328913261967298,"unit":"people","value":68.825}
   ],
   "notes": [
-    "Two of the three causes are identity-only. The behavioural one is the study fallback, and it is small: a reference universe completes 1-3 studies over 1200-2400 ticks, because teacherFor almost always finds a living holder (by design) and scribingQueueDepth is still hardcoded 0 at world-step.ts:780, so the scriptorium stops after its founding cohorts. Read a large delta here as evidence against that, not for it."
+    "A measurement and not a balance claim. No release before 0.5.0 may claim any magnitude here is balanced, every constant scribing fidelity introduces carries tuningStatus untuned, and the universe these vital signs describe is still degenerate in the ways this README records - the scriptorium still stops after its founding cohorts, because scribingQueueDepth is hardcoded 0 at world-step.ts:780. Two of the three causes above are identity-only. The behavioural one is the study fallback, and it is small: a reference universe completes 1-3 studies over 1200-2400 ticks, because teacherFor almost always finds a living holder, which is by design. Read a large delta here as evidence against that claim, not for it. What did move is this gate's referenceNodesGained and referenceNodesKnown, both +0.365 at 2.10 SE - a mage who can now read a shelf reaches a node she previously could not reach at all."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -30,18 +30,18 @@
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":-2.4850000000000136,"deltaInStandardErrors":-0.3546095223579295,"metricId":"referenceGrimoires","previousValue":325.075,"value":322.59},
-    {"delta":5.7450000000000045,"deltaInStandardErrors":0.7415932046760751,"metricId":"referenceKnowledgeInstances","previousValue":954.845,"value":960.59},
-    {"delta":0.4049999999999976,"deltaInStandardErrors":0.5204115255949133,"metricId":"referenceLibraryDepth","previousValue":16.385,"value":16.79},
-    {"delta":0.03999999999999915,"deltaInStandardErrors":0.20495914622395434,"metricId":"referenceLivingMages","previousValue":37.77,"value":37.81},
-    {"delta":0.365000000000002,"deltaInStandardErrors":2.1022755077885913,"metricId":"referenceNodesGained","previousValue":38.205,"value":38.57},
-    {"delta":0.22000000000000064,"deltaInStandardErrors":2.0863263502427847,"metricId":"referenceNodesGainedFinalQuarter","previousValue":8.43,"value":8.65},
-    {"delta":0.365000000000002,"deltaInStandardErrors":2.1022755077885913,"metricId":"referenceNodesKnown","previousValue":40.705,"value":41.07},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":322.59,"value":322.59},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":960.59,"value":960.59},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":16.79,"value":16.79},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":37.81,"value":37.81},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":38.57,"value":38.57},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":8.65,"value":8.65},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":41.07,"value":41.07},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":378,"value":378},
-    {"delta":-0.2050000000000125,"deltaInStandardErrors":-0.15437083366330037,"metricId":"referencePopulation","previousValue":213.03,"value":212.825},
-    {"delta":-0.2049999999999983,"deltaInStandardErrors":-0.15437083366328966,"metricId":"referencePopulationChange","previousValue":69.03,"value":68.825}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":212.825,"value":212.825},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":68.825,"value":68.825}
   ],
-  "supersedes": "d11c79f2143cabfe8800b2cff154b5830fa52a1d4ac5cc4da210baac0fee0c7c",
+  "supersedes": "3a1fcf35887944c8ceff1acc1e4be8bdc2044a5662c41017cd49a78a964aa091",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }
