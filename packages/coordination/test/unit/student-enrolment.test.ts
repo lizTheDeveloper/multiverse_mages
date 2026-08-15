@@ -23,8 +23,12 @@
  * 3. **`teach-rate` can move a graduation date**, which follows from (2) and is
  *    asserted as *"faculty who hold more keep students longer"*.
  * 4. **A student has a handle**, and therefore holds knowledge instances and can
- *    be taught. The reading half of that is #170's, and is deliberately not
- *    asserted here — see the note on `study` at the foot of the file.
+ *    be taught. Asserted in `packages/scenario/test/unit/students-hold-knowledge.test.ts`
+ *    rather than here, and the venue is the finding: this file's fixture
+ *    graduates its students almost as fast as it seats them, because a
+ *    three-node endowment is a curriculum you finish in a season. The reference
+ *    universe is the only assembled world deep enough for the claim to be
+ *    non-vacuous, so that is where it is made.
  *
  * Every figure below is a **property**, never a pinned literal, because this
  * branch deliberately takes no baselines. `toBeGreaterThan` against a control
@@ -60,6 +64,7 @@ interface RunTotals {
   readonly studentsEnrolled: number;
   readonly magesGraduated: number;
   readonly latentUnactivated: number;
+  readonly unseated: number;
   readonly studentMages: number;
   readonly livingMages: number;
   readonly studentsStalled: number;
@@ -78,6 +83,7 @@ function runWorld(options: { cohortSize?: number; ticks?: number }): RunTotals {
   let studentsEnrolled = 0;
   let magesGraduated = 0;
   let latentUnactivated = 0;
+  let unseated = 0;
   let last: WorldStepReport | undefined;
   for (let tick = 0; tick < (options.ticks ?? TICKS); tick += 1) {
     current = step(current, [], source);
@@ -85,12 +91,14 @@ function runWorld(options: { cohortSize?: number; ticks?: number }): RunTotals {
     studentsEnrolled += report.studentsEnrolled;
     magesGraduated += report.magesGraduated;
     latentUnactivated += report.latentUnactivated;
+    unseated += report.unseated;
     last = report;
   }
   return {
     studentsEnrolled,
     magesGraduated,
     latentUnactivated,
+    unseated,
     studentMages: last?.studentMages ?? 0,
     livingMages: last?.livingMages ?? 0,
     studentsStalled: last?.studentsStalled ?? 0,
@@ -161,6 +169,17 @@ describe('defect 1: intake is people, not seats', () => {
 
     expect(small.studentsEnrolled).toBeGreaterThan(0);
     expect(large.studentsEnrolled).toBeGreaterThan(small.studentsEnrolled);
+  });
+
+  it('splits the gap into the half the god can close and the half he cannot', () => {
+    // The two halves have different levers and their sum has none: a rare
+    // species and an unbuilt university look identical in a total and opposite
+    // here. With 64 seats against a cohort of 120 per species the seats bind, so
+    // `unseated` must be non-zero — which is the number *"the more universities
+    // you have, the more latent magic users you can activate"* is a claim about.
+    const crowded = runWorld({ cohortSize: 120 });
+    expect(crowded.unseated).toBeGreaterThan(0);
+    expect(crowded.latentUnactivated).toBeGreaterThan(0);
   });
 
   it('reports the gap between who could be a mage and who was seated', () => {

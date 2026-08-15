@@ -59,6 +59,7 @@ const totals = {
   studentsEnrolled: 0,
   magesGraduated: 0,
   latentUnactivated: 0,
+  unseated: 0,
   lessonsTaught: 0,
   researchCompleted: 0,
   births: 0,

@@ -333,19 +333,43 @@ export function seededWorld(
     // have aged out of nothing in particular. An endowed shelf is what an
     // institution is founded with, and it is the cheapest honest way to give
     // this fixture a curriculum.
+    //
+    // **And the same nodes in the founders' minds**, because a shelf is only
+    // half a curriculum and, at 0.4.0, the weaker half: the reading edge
+    // (`study.ts`, #170) is not on this branch, so a book on a shelf is research
+    // *capital* and not something anybody opens. Without a faculty who hold
+    // something, a student can be seated and can never be taught — which is a
+    // property of the fixture, not of the loop, and would make every claim about
+    // what a student learns vacuous.
+    //
+    // The `mastery: 1024` is `MASTERY_MAX`: a founder teaches what she knows
+    // completely, which is what an endowment means and what keeps
+    // `DEFAULT_TEACH_THRESHOLD` from silently deciding the fixture.
     const { catalog } = catalogAndCells();
-    let endowed = 0;
-    for (let nodeId = 1; nodeId <= catalog.nodeCount && endowed < 1; nodeId += 1) {
+    const endowment: number[] = [];
+    for (let nodeId = 1; nodeId <= catalog.nodeCount && endowment.length < 3; nodeId += 1) {
       if (catalog.node(nodeId)?.tier !== 1) continue;
-      const instance = state.entities.create();
-      attachRecord(state, KNOWLEDGE_INSTANCE, instance, {
+      endowment.push(nodeId);
+    }
+    for (const nodeId of endowment) {
+      const shelved = state.entities.create();
+      attachRecord(state, KNOWLEDGE_INSTANCE, shelved, {
         nodeId,
         locationKind: LOCATION_KIND.library,
         locationId: library,
         acquiredTick: 0,
         mastery: 1024,
       });
-      endowed += 1;
+      for (const mage of mages) {
+        const known = state.entities.create();
+        attachRecord(state, KNOWLEDGE_INSTANCE, known, {
+          nodeId,
+          locationKind: LOCATION_KIND.mind,
+          locationId: mage,
+          acquiredTick: 0,
+          mastery: 1024,
+        });
+      }
     }
   }
 

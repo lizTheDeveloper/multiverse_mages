@@ -497,6 +497,16 @@ export interface WorldStepReport {
    */
   readonly latentUnactivated: number;
   /**
+   * People who cleared the species gate this tick and found no free seat.
+   *
+   * **The half of the gap the god can close**, split out from
+   * {@link latentUnactivated} because the two have different levers and their
+   * sum has none: a rare species and an unbuilt university look identical in the
+   * total and opposite here. *"The more universities you have, the more latent
+   * magic users you can activate"* is a claim about this number falling.
+   */
+  readonly unseated: number;
+  /**
    * Students who finished their university's curriculum this tick and became
    * researchers.
    *
@@ -1120,6 +1130,7 @@ export function worldSystem(
         magesPromoted: promoted,
         studentsEnrolled: enrolment.enrolled,
         latentUnactivated: enrolment.latentUnactivated,
+        unseated: enrolment.unseated,
         magesGraduated: graduation.graduated,
         studentsStalled: graduation.stalled,
         studentMages: countStudentMages(state),
@@ -1868,6 +1879,7 @@ function enrolMaturedStudents(
   const seats = freeSeatsByUniversity(state, gateway);
   let enrolled = 0;
   let latentUnactivated = 0;
+  let unseated = 0;
   for (const entry of matured) {
     const species = phase.deps.speciesOf(entry.speciesId);
     if (species === undefined) continue;
@@ -1901,7 +1913,15 @@ function enrolMaturedStudents(
     const passedOver = entry.count - admitted.length;
     if (admitted.length > 0) cohorts.remove(entry.cohort, admitted.length);
     if (passedOver > 0) cohorts.transfer(entry.cohort, OCCUPATION.laborer, passedOver);
-    latentUnactivated += passedOver;
+    // **Split, because the two halves have different levers and a sum has
+    // none.** Somebody the fraction rejected is beyond the god's reach — she was
+    // not born able, or was never found — and somebody who passed the fraction
+    // and found no chair is a building the god did not fund. Reporting only the
+    // total would make "build more universities" and "this species is rare"
+    // indistinguishable, which is precisely the inequality
+    // `magical-prevalence.md` wants a player to be able to read.
+    unseated += Math.max(0, outcome.promoted - admitted.length);
+    latentUnactivated += Math.max(0, passedOver - Math.max(0, outcome.promoted - admitted.length));
 
     for (const university of admitted) {
       const mage = state.entities.create();
@@ -1919,7 +1939,7 @@ function enrolMaturedStudents(
       enrolled += 1;
     }
   }
-  return { enrolled, latentUnactivated };
+  return { enrolled, latentUnactivated, unseated };
 }
 
 /** What one enrolment phase did. */
@@ -1936,6 +1956,11 @@ interface EnrolmentReport {
    * and neither of those exists in the game today."*
    */
   readonly latentUnactivated: number;
+  /**
+   * People who cleared the species gate and found **no chair** — the god's half
+   * of the gap, and the one he can close by building.
+   */
+  readonly unseated: number;
 }
 
 /**
