@@ -12642,3 +12642,56 @@ exposing the counts and taking the digest change deliberately.
 The rule: **when a workaround is a literal constant in one caller, the defect is in what
 that caller could not ask.** Patching the second caller with a second constant is the
 error the first patch should have prevented.
+
+## W237 — The fix that retired a defect as a balance result, itself retired one
+
+[executed, 2026-08-15, `w237/report-every-excluded`; `npm run verify` exit 0]
+
+#196 made the report distinguish a strategy **excluded** for illegal actions from one that
+genuinely **lost** to the null ladder. It built that list while walking `archive.cells`.
+
+A cell holds exactly **one elite per coordinate**. So a strategy that is both over
+`MAX_ELITE_ILLEGAL_RATE` *and* out-competed for its coordinate is an elite of no cell —
+and was reported nowhere at all. At 1500 ticks `portal-rush` (0.483) was caught and
+**`worship-maximizer` (0.201) was silent.** The fix written to stop a defect being retired
+as a balance result was retiring one, in the same commit that named the pattern.
+
+The ceiling is a property of a candidate's own run, not of whether it won a coordinate, so
+the candidate list is what to walk. #197 also prints `effective pool 12 of 14`, which
+moves W236's pool correction out of a document and into the tool that computes it.
+
+The rule: **a fix that reads its input from the wrong collection is the defect it is
+fixing.** `archive.cells` answers *which strategy won each coordinate*; the question was
+*which strategies could not compete at all*, and those are different populations.
+
+## W238 — `horizon-bound`, and the seed where doing nothing wins by two
+
+[executed, 2026-08-15, `w238/horizon-bound-is-not-dead`; `npm run verify` exit 0]
+
+`shapeOf` returned `dead` for two unrelated situations — nothing beat the null ladder, and
+the run ended before anyone could ascend. `search-strategies.mjs` described the ambiguity
+in prose because the type could not express it. W232–W235 is what that costs.
+
+`shapeOf(occupied, notWorthPlaying, ascensions)` now returns `META_SHAPE.horizonBound`
+when no cell is occupied **and** nothing ascended anywhere. `ascensions` is **required
+rather than optional**: a default would let a caller keep the old conflation silently,
+which is the thing being fixed. Nulls count toward the total — if `idle-then-declare`
+reached the summit, the horizon was long enough, and a field that failed to is a result.
+
+The discriminator is the **ascension count, not a tick threshold**. That matters: a
+threshold would be a constant to keep in sync with content, and this is derived from the
+sweep itself. Zero ascensions at 900 replicates 3 of 3 search seeds.
+
+**And the case that now has a name is the interesting one.** Seed 40260901 at 1350 ticks:
+
+    SHAPE DEAD   width 0   margin-over-null -2
+
+**Negative two.** The null ladder ascended *more often than the best strategy did* — doing
+nothing beat playing, and beat it by a margin. Under the old enum that was
+indistinguishable from a sweep that ran too short, which is how it survived this long
+unexamined. Ascension is priced at zero and `idle-then-declare` takes the summit the
+instant the mask opens it, so *declare and wait* is not merely competitive on that seed;
+it is dominant.
+
+That is the strongest balance finding of the night, and it is a design question rather
+than a defect: **what should the win condition cost?** It is stated here and not answered.
