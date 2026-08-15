@@ -139,6 +139,7 @@ describe('a raid burns a library, and durability decides how much of it', () => 
     // a thing to vandalise rather than a thing to take from, and the 249 nodes
     // outside this content set's enabled cells would stay out of reach of
     // every strategy for ever.
+    console.log('W182 LOOT', SEEDS.map((seed) => lootedBy(ORCISH, seed)));
     expect(lootedBy(ORCISH, SEEDS[0] as number)).toBeGreaterThan(0);
   });
 

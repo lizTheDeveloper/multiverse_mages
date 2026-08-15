@@ -57,8 +57,16 @@ describe('phaseOf is a pure function of five numbers', () => {
   });
 
   it('leaves muster at the authored ceiling even if the sides never meet', () => {
-    expect(phaseOf({ ...BASE, engagementTick: 119 })).toBe(ENGAGEMENT_PHASE.muster);
-    expect(phaseOf({ ...BASE, engagementTick: 120 })).toBe(ENGAGEMENT_PHASE.contact);
+    // Resolution is checked first and outranks the ceiling, so the ceiling is
+    // only *observable* when the onset sits above it. The shipped content puts
+    // the onset (96) below the ceiling (120) on purpose — see the constant's
+    // gloss — which means the shipped raid goes muster → resolution and never
+    // reaches contact without a fight. That is a fact about the content, and
+    // this is a claim about the function, so the two are separated here rather
+    // than conflated.
+    const late = { ...BASE, resolutionOnsetTicks: 1_000 };
+    expect(phaseOf({ ...late, engagementTick: 119 })).toBe(ENGAGEMENT_PHASE.muster);
+    expect(phaseOf({ ...late, engagementTick: 120 })).toBe(ENGAGEMENT_PHASE.contact);
   });
 
   it('enters resolution at the authored onset tick, contact or not', () => {

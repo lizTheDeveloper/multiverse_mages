@@ -42,6 +42,6 @@ for k in "${CANDIDATES[@]}"; do
     fs.writeFileSync(path, JSON.stringify(rows, null, 2) + "\n");
   ' "$DATA" "$k"
   echo "=== withdraw-after-ticks = $k"
-  node scripts/w182-withdrawal.mjs | tail -3
+  node scripts/w182-withdrawal.mjs | tail -8
   echo
 done

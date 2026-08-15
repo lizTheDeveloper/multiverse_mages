@@ -223,6 +223,8 @@ export interface RaidObservation {
   readonly raidersFielded: number;
   readonly raidersWithdrawn: number;
   readonly raidersStranded: number;
+  /** Nodes the attacking side carried out of the host universe. */
+  readonly nodesTakenByAttacker: number;
 
   /**
    * Who won, and why it ended. `RAID_SIDE` and `RAID_END_REASON` values,

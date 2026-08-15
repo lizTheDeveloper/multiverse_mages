@@ -145,6 +145,16 @@ export interface RaidRecord {
   readonly raidersFielded: number;
   readonly raidersWithdrawn: number;
   readonly raidersStranded: number;
+  /**
+   * Nodes the attacking side carried out of the host universe, whichever side
+   * this universe was on. Raid-relative, like the three counts above.
+   *
+   * The other half of a withdrawal tuning. A threshold early enough that every
+   * raider comes home is also early enough that none of them takes anything,
+   * and without this the first reads as a success — `localCasualties` falls,
+   * `raidersWithdrawn` rises, and nothing says the raid accomplished nothing.
+   */
+  readonly nodesTakenByAttacker: number;
   /** Nodes that left this universe entirely — every instance destroyed. */
   readonly nodesLostLocally: number;
   /** Nodes this universe's raiders carried home. */
@@ -484,6 +494,7 @@ function resolveOneRaid(input: {
     raidersFielded: outcome.raidersFielded,
     raidersWithdrawn: outcome.raidersWithdrawn,
     raidersStranded: outcome.raidersStranded,
+    nodesTakenByAttacker: countOf(applied.nodesGainedByRaider),
     // `nodesLostByHost` is the host's loss and `nodesGainedByRaider` the
     // attacker's gain, both computed by the write-back rather than by
     // `resolveRaid`, which hardcodes both to `[]`.

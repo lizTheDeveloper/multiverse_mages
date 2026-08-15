@@ -71,6 +71,7 @@ function summary(result) {
   let stranded = 0;
   let combatantTicks = 0;
   let attempts = 0;
+  let objectivesTaken = 0;
   const lengths = [];
   const sources = new Set();
   const victors = [0, 0];
@@ -82,6 +83,7 @@ function summary(result) {
     withdrawn += raid.raidersWithdrawn;
     stranded += raid.raidersStranded;
     combatantTicks += raid.totalCombatantTicks;
+    objectivesTaken += raid.nodesTakenByAttacker;
     lengths.push(raid.engagementTicks);
     for (const row of raid.combatSources) {
       sources.add(row.source);
@@ -97,6 +99,7 @@ function summary(result) {
     killed: fielded - withdrawn - stranded,
     combatantTicks,
     attempts,
+    objectivesTaken,
     sources: [...sources].sort(),
     attackerWins: victors[0],
     defenderWins: victors[1],
@@ -120,6 +123,7 @@ let all = {
   combatantTicks: 0,
   attackerWins: 0,
   defenderWins: 0,
+  objectivesTaken: 0,
 };
 const reasonTotals = new Map();
 const sources = new Set();
@@ -150,10 +154,16 @@ const rate = all.fielded === 0 ? 0 : (all.withdrawn * 1000) / all.fielded;
 console.log(
   `TOTAL raids=${all.raids} fielded=${all.fielded} withdrew=${all.withdrawn} ` +
     `stranded=${all.stranded} killed=${all.killed}  ` +
-    `withdrawalRate=${(rate / 10).toFixed(1)}%  combatAttempts=${all.attempts} ` +
+    `withdrawalRate=${(rate / 10).toFixed(1)}%  nodesLooted=${all.objectivesTaken} ` +
+    `combatAttempts=${all.attempts} ` +
     `combatSources=${JSON.stringify([...sources].sort())}`,
 );
 console.log(
   `portal life (engagement ticks) observed ${portalLow === Infinity ? 'n/a' : portalLow}-${portalHigh}; ` +
     `longest raid ${lengthMax}`,
+);
+console.log(
+  `attackerWins=${all.attackerWins} defenderWins=${all.defenderWins}  ` +
+    `endReasons(1=portalCollapsed,2=objectivesResolved,3=sideEliminated,5=raidersWithdrew)=` +
+    JSON.stringify([...reasonTotals.entries()].sort((a, b) => a[0] - b[0])),
 );

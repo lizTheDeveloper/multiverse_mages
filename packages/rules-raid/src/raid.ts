@@ -617,7 +617,19 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
       (brief) => brief.side === RAID_SIDE.attacker && !isMarchingAtAWall(raid, brief, nextTick),
     ).length,
     livingDefenders: alive.filter((brief) => brief.side === RAID_SIDE.defender).length,
+    // `livingCombatants` excludes the withdrawn, so they have to be counted off
+    // the roster rather than off `alive`.
+    withdrawnAttackers: withdrawnAttackerCount(raid),
   });
+}
+
+/** Attackers who left through the portal alive. */
+function withdrawnAttackerCount(raid: Raid): number {
+  let count = 0;
+  for (const brief of raid.rosters[RAID_SIDE.attacker].briefs) {
+    if (brief.withdrawn && isAlive(raid, brief)) count += 1;
+  }
+  return count;
 }
 
 /**

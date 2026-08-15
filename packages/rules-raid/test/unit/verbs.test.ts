@@ -407,6 +407,7 @@ describe('§5: the muster decisions change the outcome', () => {
 
     const control = totals('none');
     const spent = totals('defender');
+    console.log('W182 VERBS', { control, spent });
     expect(spent.defenders).toBeGreaterThan(control.defenders);
     expect(spent.attackers).toBeLessThan(control.attackers);
     expect(spent.taken).toBeLessThanOrEqual(control.taken);

@@ -121,33 +121,52 @@ describe('a named warband goes through a portal and comes back transformed', () 
 });
 
 describe('death is real, and it is written into the world', () => {
-  it('kills every raider and empties her mind through the ordinary death path', () => {
-    const result = sixMages();
-    const brannoc = fateOf(result, 'Brannoc');
+  it('empties a lost raider\'s mind through the ordinary death path', () => {
+    // Searched rather than named. Under the constants this file was first
+    // written against every raider was stranded, so `Brannoc` on the default
+    // seed was a safe pick; `withdraw-after-ticks` makes most of them come home
+    // and which ones do not is a property of the seed. The claim is about what
+    // happens to a mage who is lost, not about who is unlucky.
+    let lost;
+    for (let seed = 1; seed <= 40 && lost === undefined; seed += 1) {
+      lost = sixMages(seed).fates.find(
+        (fate) => fate.side === RAID_SIDE.attacker && fate.died && fate.knownBefore.length > 0,
+      );
+    }
 
-    expect(brannoc.died).toBe(true);
+    expect(lost, 'no raider was lost in forty seeds, so this claim has nothing to stand on')
+      .toBeDefined();
+    if (lost === undefined) return;
+
     // Read from the `MAGE` row, not from the casualty list: the ledger claiming
     // a death and the world recording one are the two things this asserts are
     // the same event.
-    expect(brannoc.aliveAfter).toBe(false);
+    expect(lost.aliveAfter).toBe(false);
     // Her memory palace and her mind empty with her. `applyRaidOutcome` routes
     // this through `knowledge-model`'s own `destroyInstancesHeldBy` rather than
     // a raid-specific rule, which is why the assertion is "she knows nothing"
     // and not "the raid deleted two rows".
-    expect(brannoc.knownBefore).toHaveLength(2);
-    expect(brannoc.knownAfter).toEqual([]);
+    expect(lost.knownAfter).toEqual([]);
   });
 
-  it('records the raiders as stranded, which is death and not capture', () => {
-    const result = sixMages();
-    for (const name of ['Brannoc', 'Sela', 'Odo']) {
-      const fate = fateOf(result, name);
-      expect(fate.stranded, `${name} was expected to be stranded`).toBe(true);
-      // The implication that matters: stranded always resolves to a dead mage.
-      // If this ever fails, the stranded-raider rule has grown a second outcome
-      // — which would be the place capture would land, and it has not.
-      expect(fate.died, `${name} was stranded but not killed`).toBe(true);
+  it('records a lost raider as stranded, which is death and not capture', () => {
+    // The implication that matters, asserted over every attacker of every seed
+    // rather than three named mages: stranded always resolves to a dead mage.
+    // If this ever fails, the stranded-raider rule has grown a second outcome —
+    // which is where capture would land, and it has not.
+    let stranded = 0;
+    for (let seed = 1; seed <= 20; seed += 1) {
+      for (const fate of sixMages(seed).fates) {
+        if (!fate.stranded) continue;
+        stranded += 1;
+        expect(fate.side, 'only an attacker can be stranded').toBe(RAID_SIDE.attacker);
+        expect(fate.died, `${fate.name} was stranded but not killed`).toBe(true);
+      }
     }
+    // The control on the implication: it would hold vacuously if nobody were
+    // ever stranded, which is the state `withdraw-after-ticks` had to avoid
+    // creating in the other direction.
+    expect(stranded).toBeGreaterThan(0);
   });
 
   it('leaves the defenders alive in their own world', () => {
@@ -245,38 +264,61 @@ describe('knowledge moves between universes, and the moves are readable', () => 
     expect(result.attackerNodesAfter).toContain(nodeId(SHELVED));
   });
 
-  it('moves the looted book even though every raider who could carry it died', () => {
-    const result = sixMages();
+  it('moves the looted book even when no raider who could carry it survived', () => {
     // Worth its own assertion because it is surprising and it is load-bearing:
     // library looting is settled by `settleLibrary` against the *objective*, so
     // it is not gated on a surviving carrier — while a node read out of a mind
     // is forfeited if the thief does not come home. Two knowledge routes out of
     // a universe with two different survival requirements.
-    expect(result.fates.filter((fate) => fate.side === RAID_SIDE.attacker && !fate.died)).toEqual([]);
-    expect(result.applied.nodesGainedByRaider.length).toBeGreaterThan(0);
+    //
+    // Searched for a raid in which nobody came back, because that is now the
+    // uncommon case rather than the only one. The claim is unchanged; what
+    // changed is that it takes a seed to demonstrate.
+    let wiped;
+    for (let seed = 1; seed <= 40 && wiped === undefined; seed += 1) {
+      const result = sixMages(seed);
+      const survivors = result.fates.filter(
+        (fate) => fate.side === RAID_SIDE.attacker && !fate.died,
+      );
+      if (survivors.length === 0 && result.applied.nodesGainedByRaider.length > 0) wiped = result;
+    }
+
+    expect(
+      wiped,
+      'no raid in forty seeds lost its whole warband and still moved a book',
+    ).toBeDefined();
   });
 });
 
 /**
  * The measurement this harness was built to be able to take, and the answer it
- * gave.
+ * gives now.
  *
- * Sixty raids under the **shipped** raid constants — no tuning override — and no
- * raider has ever come home. The mechanism is not damage: it is that
- * `chooseIntent` only orders a withdrawal once `portalStability` falls to
- * `withdraw-stability-margin` (409,600), stability decays at 1,024 per
- * engagement tick, and every one of these raids ends by `objectivesResolved`
- * around tick 65. The withdrawal condition is reachable in principle — it fires
- * immediately if the margin is raised above the initial stability — and
- * unreachable in every raid the shipped numbers actually produce.
+ * **It used to be zero.** Under the constants this file was written against, no
+ * raider came home from any of sixty raids — not because of damage, but because
+ * `chooseIntent` ordered a withdrawal only once `portalStability` fell to
+ * `withdraw-stability-margin` (409,600), and a portal that opens with 2,401–3,600
+ * ticks of life never falls that far inside a raid that ends around tick 65. The
+ * threshold was unreachable in every raid the shipped numbers produced, so the
+ * stranded-raider rule took every survivor and `knowledge-steal` could not
+ * deliver a single node: every theft was forfeited with the thief.
  *
- * The consequence is that `knowledge-steal` cannot deliver: **every** node read
- * out of a mind is forfeited with the thief. This is pinned as a test rather
- * than written in a document because it is a balance claim that should fail
- * loudly the moment it stops being true.
+ * `withdraw-after-ticks` replaces it with an elapsed-tick threshold, which is a
+ * clock the raid actually runs on. This pins the new answer at the same sixty
+ * seeds, and it is pinned rather than written down for the same reason the old
+ * zero was: it is a balance claim, and it should fail loudly the moment it stops
+ * being true. The **direction** is the assertion — raiders come home, thefts are
+ * delivered — and the exact counts are recorded beside it so a change that moves
+ * them has to say so.
+ *
+ * Measured on this tree: **173 of 180 raiders come home**, and **0 of 33 mind-
+ * thefts are forfeited**, against 0 and 33-of-33 before. The seven who do not
+ * come home are the control on the other side — the timer still takes people.
  */
-describe('under the shipped constants, no raider comes home', () => {
-  it('kills every attacker across sixty seeds and forfeits every mind-theft', () => {
+const SIXTY_SEED_WITHDRAWALS = 173;
+
+describe('under the shipped constants, raiders come home', () => {
+  it('brings most attackers back across sixty seeds and delivers their thefts', () => {
     let attackers = 0;
     let survivors = 0;
     let withdrawals = 0;
@@ -299,20 +341,29 @@ describe('under the shipped constants, no raider comes home', () => {
     }
 
     expect(attackers).toBe(180);
-    expect(survivors).toBe(0);
-    expect(withdrawals).toBe(0);
 
-    // The control: theft *happens*, so "zero delivered" is a statement about
-    // extraction rather than about a mechanic that never fires. Without this
-    // the zero above would be satisfied by raiders who never stole anything.
+    // The direction, which is the claim. A survivor is an attacker who was not
+    // taken by anything — damage or the timer — and every survivor here is a
+    // raider who reached the portal, because the stranded-raider rule leaves no
+    // third option.
+    expect(withdrawals).toBeGreaterThan(0);
+    expect(survivors).toBe(withdrawals);
+
+    // The counts, recorded. `SIXTY_SEED_WITHDRAWALS` is a measurement of this
+    // tree at this content revision, not a target.
+    expect(withdrawals).toBe(SIXTY_SEED_WITHDRAWALS);
+
+    // The control, kept from the version of this test that asserted zero: theft
+    // *happens*, so "delivered" is a statement about extraction rather than
+    // about a mechanic that never fires.
     expect(thefts).toBeGreaterThan(0);
-    expect(forfeited).toBe(thefts);
+    expect(forfeited).toBeLessThan(thefts);
   });
 
-  it('withdraws immediately once the margin is above the initial stability', () => {
-    // The positive control on the diagnosis. Nothing is wrong with the
-    // withdrawal *code*; the margin is simply never reached in a raid that ends
-    // when its objectives do. Raise it and a raider walks out alive.
+  it('withdraws immediately when the threshold is tick zero', () => {
+    // The positive control, kept and repointed. Nothing was ever wrong with the
+    // withdrawal *code*; the threshold was simply never crossed. Ask for it on
+    // the opening tick and a raider walks out alive.
     const result = resolveWarband({
       attackers: [
         { name: 'Brannoc', nodes: [FIRE, MIND_READING] },

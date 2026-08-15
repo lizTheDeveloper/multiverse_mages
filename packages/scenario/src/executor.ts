@@ -701,6 +701,7 @@ function raidObservationOf(record: RaidRecord, god: GodTickReport | undefined): 
     raidersFielded: record.raidersFielded,
     raidersWithdrawn: record.raidersWithdrawn,
     raidersStranded: record.raidersStranded,
+    nodesTakenByAttacker: record.nodesTakenByAttacker,
     victor: record.victor,
     reason: record.reason,
 
