@@ -8938,3 +8938,69 @@ main's wholesale.
 **And no baselines were regenerated, which was correct rather than an omission** — main's agency and
 ascension baselines are the ones recorded against main's code, while w59's were 123 commits stale.
 Taking main's beats re-recording. `goldens:regen` was never run.
+
+## W178 — three auto-merges produced green trees stating things no build produces
+
+The integration wave's real finding is not any one branch. It is that **`git merge` reporting no
+conflict is not evidence the merged file is true**, and it happened three separate ways in one night.
+
+**1. Assertion literals merge to the intersection.** In `species-occupancy.test.ts` on #140, *only the
+comments conflicted.* The assertion literals merged cleanly into a set **no build produces**:
+
+| | merged literal | actually measured |
+|---|---|---|
+| orc | 12 | **11** |
+| draconic | 11 | **9** |
+| gnome missing vs dwarf | `[perdo-mentem, perdo-terram]` | `[perdo-limen, perdo-mentem, perdo-terram]` |
+
+Two independent deletions — #125 dropped `perdo-limen`, #140 dropped `rego-terram` — merged to their
+*intersection*, which is what a three-way merge is supposed to do with a list and is exactly wrong for
+a list of measurements. **An unexamined merge would have been green on invented numbers.** All pins
+are now read off a run of the merged tree: Gini 0.0625, two species at the ceiling rather than three.
+
+**2. YAML merges to a duplicate mapping key.** `.github/workflows/ci.yml` on `w59/gate-power` gained a
+*duplicate* `ascension:` job with no conflict marker, because main already carried it verbatim. Not a
+syntax error, so nothing fails — and it lands in the workflow that gates `main`.
+
+**3. A schema revision number merges to a collision.** `w37/raid-playable` wrote `mid-raid-change` as
+world-schema **revision 5**; main has since taken 5 (`material-stock`) and 6 (`grant-budget`). Nothing
+conflicts, and the result applies a raid repair to a save that only needed the materials split.
+Renumbered to 7 throughout.
+
+**The rule, generalised from the five earlier instances:** the campaign plan already says *"when both
+sides of a conflict assert a count or a hash, ask the tree."* The correction is that **the conflict is
+optional.** Any file where both sides edit measured literals, registry ordinals, or a mapping's keys
+must be re-derived from the merged tree whether or not git stopped to ask. `package-lock.json` is the
+gentle member of this family, because it at least fails loudly on `npm ci`.
+
+**And a fourth, new tonight and structural:** `ui/design-dashboard/data.json` embeds each gate's
+provenance, so **every baseline re-record now also requires `npm run ui:dashboard`**. That is a second
+committed artifact deriving from the first, and it hit all three branches in the stack. It is the same
+argument as W176's: the payload should be built in CI and diffed, not committed.
+
+### Where the raid actually stands, measured rather than read
+
+`w37/raid-playable` builds every verb, cost, phase boundary, lock and surcharge a playable raid needs
+— six verbs, three phases, asymmetric currencies, `RaidLock`, `applyRuleChange`, the `MID_RAID_CHANGE`
+component, `revertSurcharge` priced identically at the mask and at `coordination`'s resolver, ~690
+lines of tests — and **no caller can reach any of them.** `applyDirective` and `runPlanFor` are
+exported and called by nothing outside `rules-raid`'s own tests.
+
+Probed on the merged tree at the 2400-tick reference horizon:
+
+- **Raids still resolve inside one world step.** `runRaid` is `while (termination === undefined)
+  stepEngagement(raid)`, driven to completion from `raids.ts:437`. `stepEngagement` *is* exported, so
+  the substrate for a tick-at-a-time caller exists and has no caller.
+- **Zero combat attempts, on both paths.** `portal-rush` at seed 12345: 108 raids, **88,470
+  combatant-ticks, `bySource: {}`**. The discriminator matters — those were all outbound, so
+  `passive-control` (which never submits action 14, making all its raids rival-generated inbound) was
+  run too: 7 raids, **19,912 combatant-ticks, `bySource: {}`**. #145 fixed the *denominator*;
+  the numerator is still empty. Nothing puts a combat node in a combatant's hands, either direction.
+- **No raider comes home.** `withdraw-stability-margin` is unchanged at 409600 — the window opens
+  2,418–3,518 ticks into raids whose p50 length is **77** and max **149**. w37's new
+  `resolution-stability-margin` has the same units problem.
+- `mask.ts:121` still early-returns `[1,0,0,…]` during engagement, verbatim.
+
+**So the remaining work is one seam, and it is much smaller than the design implies:** unmask actions
+1–4 during engagement and route them to `applyDirective`. That closes the repealed-§4.2 hole and the
+`ui/raid` synthetic-trace hole together.
