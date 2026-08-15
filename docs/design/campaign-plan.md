@@ -12326,10 +12326,59 @@ The test's own comment names the ceiling it was written against: *"ten would mea
 gone."* Four of these are past ten; one is past seventy.
 
 **This is not a pinned byte and it is not the test being stale.** It is a health check
-that says duplicates must not swamp distinct knowledge, and every wiring change trips it
-in the same direction: the scribes copy a shrinking set of nodes more and more times.
-Which is the same sentence as #194's title — *library depth 44 -> 5*.
+that says duplicates must not swamp distinct knowledge, and these four trip it in the
+same direction: the scribes copy a shrinking set of nodes more and more times. Which is
+the same sentence as #194's title — *library depth 44 -> 5*.
+
+**Scope, stated exactly, because the table above is four rows and the claim was eleven:**
+four PRs trip `:426`. #183 trips something else entirely — a `snapshotHash` byte-pin in
+`ui-recording.test.ts:98`. **Six are undiagnosed** (#134, #169, #170, #171, #172, #186):
+the grep that built this table matched vitest assertion output only, so `<no test line>`
+means *the failure was not an assertion*, not *the failure was this one*. Whether "one
+invariant" survives is a claim about those six, and it is not yet measured.
+
+And the ceiling has two bands, not one. `:426` has been re-argued upward three times with
+a measurement each time (≈1 → 3.3 → 4.33 → 5), against a stated *"ten would mean it is
+gone."* #185 at 73.9 and #194 at 39.6 are past that. **#176 at 6.5 is inside the band the
+comment blesses** — that one is a widening with an argument, which is this file's
+established practice, and not the same work as the other two.
 
 The rule this earns: **when N branches fail, the shared thing to look for is the
 invariant, not the test.** Same test across branches is a coincidence of surface. Same
 *direction* across branches is a defect upstream of all of them.
+
+## W232 — The six were a different failure entirely, and SHAPE DEAD runs backwards
+
+[executed, 2026-08-15, `gh api .../actions/jobs/<id> --jq '.steps[]|select(.conclusion=="failure").name'`]
+
+W231 asked whether "one invariant" survives the six undiagnosed PRs. **It does not.**
+`<no test line>` meant *the failure was not an assertion*, and reading the failing **step
+name** rather than the log body says what it was:
+
+    #134 #169 #170 #171 #172 #186  ->  Balance regression gate (five world years)
+    #176 #181 #185 #194            ->  Test (unit + golden replay)
+    #183                           ->  Test — snapshotHash byte-pin
+
+Three populations, not one, and they need three different decisions:
+
+1. **Balance gate (6).** Not a defect — a baseline comparison. #170 and #134 are already
+   measured provenance-only; #172 genuinely moves 7 of 9 metrics and needs an accept.
+2. **Library ratio (4).** #176 at 6.5 books/node is *inside* the band `:426`'s comment
+   blesses; #185 at 73.9 and #194 at 39.6 are past the stated *"ten would mean it is
+   gone."* Same test, opposite verdicts.
+3. **Byte-pin (1).** #183, plus two more deep-equal pins riding along on #176.
+
+**And the SHAPE DEAD result has no ref.** `smoke-600.json` records `searchSeed`, `seeds`,
+and `shape: dead` — and no commit, branch, or date. It was written 2026-08-14 01:35, when
+none of the eleven wiring PRs had landed. So *"nothing beats doing nothing"* is a
+measurement of the **unwired** world these PRs exist to fix, not a consequence of them.
+I had begun forming the causal story in the opposite direction.
+
+Two rules, both earned the same way:
+
+- **When N branches fail, read the failing step name before the log body.** The step name
+  is one API call and partitions the population; the log body tempts you into treating a
+  baseline comparison and a health invariant as the same finding.
+- **A harness that writes an archive without a ref has produced an anecdote.**
+  `search-strategies.mjs` should stamp the commit it measured. Until it does, every
+  archive it writes is unfalsifiable — and this one nearly inverted a causal claim.
