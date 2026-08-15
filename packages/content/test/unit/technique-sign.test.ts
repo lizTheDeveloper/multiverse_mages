@@ -29,7 +29,7 @@ import { describe, expect, it } from 'vitest';
 
 import { ContentValidationError, loadContent, validateContent } from '@mm/content';
 
-import { brokenSource, recordById, recordsOf } from './fixtures.js';
+import { brokenSource, recordsOf } from './fixtures.js';
 
 /** The first node of a cell on the named technique, as a loose record. */
 function nodeOfTechnique(
