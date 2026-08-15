@@ -12908,9 +12908,11 @@ them. Re-taking the measurement with all fourteen competing:
 | 40260901    | dead  | 0     | −2     | — |
 | 77771234    | wide  | 1     | 1      | permissive-breadth |
 
-**Identical to the 12-pool.** The two repaired strategies hold no cell on any seed. Their
-illegal rate is `0.000` everywhere, so the repair is real and confirmed — it simply was not
-what was holding them back.
+**Width identical to the 12-pool; margin moved on one seed** — W235 recorded margins of
+2 / −2 / 2 and this run gives 2 / −2 / **1**. "Identical" would have been the wrong word,
+and it is the kind that gets quoted back. The two repaired strategies hold no cell on any
+seed. Their illegal rate is `0.000` everywhere, so the repair is real and confirmed — it
+simply was not what was holding them back.
 
 That is worth saying plainly against my own framing: W236 called the entitlement gap
 something that "invalidates" this campaign's raid-facing results. It invalidated the
@@ -12927,6 +12929,19 @@ something that "invalidates" this campaign's raid-facing results. It invalidated
 stretch of the run, then stop acting. It outperforms two named strategies **outright, on
 every seed**, and it is the entire null bar — `passive-control`, `idle-then-declare` and
 `uniform-random-legal` ascend zero times between them across all three seeds.
+
+**And the ladder is not misconfigured — it is reporting, by design, exactly this.** The
+obvious objection is that `permit-then-idle` takes a real action and should not be a
+"null". `NULL_RUNG` answers it:
+
+    /** Lost to `permit-then-idle`: the ruleset is the whole game. */
+    rulesetOnly: 2,
+
+Losing to that rung is a **named diagnosis**, not an accident of pool membership. The
+ladder's own header records the precedent: *"`permit-then-idle` won 40/40 by permitting
+the grid for 140 of 2400 ticks and submitting nothing for the remaining 2260, beating a
+strategy that also funds, blesses and encourages."* This measurement says that has not
+changed — the instrument built to catch it is catching it.
 
 So the win condition discriminates in exactly one dimension: **did the god open the grid
 early.** `ascension-canon-cells` is 18 against a starting rectangle of 12, so the permits
