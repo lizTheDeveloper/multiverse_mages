@@ -318,6 +318,48 @@ describe('an occupation can be grown, not only shrunk (W185)', () => {
     expect(cohortShare(0, TRANSFER_RATE_PER_TICK)).toBe(0);
   });
 
+  it('fills a university seat from idle and from nowhere else', () => {
+    // `student` consumes rather than produces, and the promotion phase empties
+    // its seats every tick, so letting it draw from working occupations makes
+    // the university a pump that converts the populace into mages. Without
+    // this rule and with the pool fix, three of five founding species reach
+    // zero populace inside sixty years of the long run.
+    const store = createCohortStore();
+    const key = {
+      speciesId: SHORT_LIVED_ID,
+      occupation: OCCUPATION.laborer,
+      birthTickBucket: ADULT_BIRTH_BUCKET,
+    };
+    store.add(key, 4_000);
+    store.add({ ...key, occupation: OCCUPATION.scribe }, 4_000);
+
+    const report = reallocateOccupations(
+      store,
+      options(ADULT_TICK, { ...NO_DEMAND, [OCCUPATION.student]: 4_000 }),
+    );
+
+    expect(report.moved).toBe(0);
+    expect(report.unmetDemand[OCCUPATION.student]).toBe(4_000);
+    expect(countByOccupation(store)[OCCUPATION.laborer]).toBe(4_000);
+    expect(countByOccupation(store)[OCCUPATION.scribe]).toBe(4_000);
+  });
+
+  it('still fills a university seat from idle', () => {
+    const store = createCohortStore();
+    store.add(
+      { speciesId: SHORT_LIVED_ID, occupation: OCCUPATION.idle, birthTickBucket: ADULT_BIRTH_BUCKET },
+      4_000,
+    );
+    const report = reallocateOccupations(
+      store,
+      options(ADULT_TICK, { ...NO_DEMAND, [OCCUPATION.student]: 4_000 }),
+    );
+
+    expect(report.movedInto[OCCUPATION.student]).toBe(
+      floorDiv(4_000 * TRANSFER_RATE_PER_TICK, FP_ONE),
+    );
+  });
+
   it('reports what left each occupation, not only what arrived', () => {
     const store = createCohortStore();
     store.add(

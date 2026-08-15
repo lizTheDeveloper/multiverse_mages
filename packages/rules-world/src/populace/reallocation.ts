@@ -47,7 +47,10 @@ import { OCCUPATIONS_IN_ORDER, RETIREMENT_NORMALIZED_AGE } from './occupations.j
  *    limiting alone still oscillates when two occupations are both short and
  *    take turns robbing each other; this is what stops that.
  * 3. **`idle` is drawn from first**, always. Idle labour is free to move;
- *    everything else is already doing something.
+ *    everything else is already doing something. For `student` — the one
+ *    occupation that consumes rather than produces — `idle` is drawn from
+ *    *only*; see {@link sourcePriorityFor} for the measurement that made that a
+ *    rule rather than a preference.
  *
  * ## Determinism
  *
