@@ -80,6 +80,7 @@ import {
   resolveGodContent,
   academicEffectIndex,
   universeEffectIndex,
+  vitalityIndex,
 } from '@mm/coordination';
 
 /** The permitted-axis halves of a ruleset (`contracts.md` §1.1). */
@@ -751,6 +752,21 @@ export function worldDeps(
     // `universeEffects`, and for the ten `target: "universe"` `research-rate`
     // effects it deliberately does not route.
     academicEffects: academicEffectIndex(registry, recorder),
+    // The same wire, one primitive pair over: `lifespan` and `fertility`. Both
+    // were declared exclusions in the consumption check, parked with a written
+    // reason — *"both sit on non-v1 nodes and are moved by species traits and
+    // blessing constants rather than by anything a mage can learn"* — and that
+    // reason has expired. The index is built here for the reason every other
+    // one is: this is the function that decides what a running universe is made
+    // of, and the fetch is what registers the consumer.
+    //
+    // The two `registerNonNodeConsumer` calls above stay, and stay true: a
+    // blessing still contributes months from a constant, and a cohort's births
+    // still scale by its species' own `fertility`. What changes is that they
+    // are no longer the *only* sources — so the check will stop printing these
+    // two under *"consumed, but never from node effects"*, which is the line
+    // this campaign exists to shorten.
+    vitality: vitalityIndex(registry, recorder),
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),
