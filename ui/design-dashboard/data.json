@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "f49b406d509a1d0e0ed4e152f7b90fb5",
+    "contentRevision": "68cea590b84f1140d42a9aed0c49f227",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -1954,14 +1954,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "876ad6a66dde3b89a22cb3d90d97294f1846b0ac836593a9170f6b4cb547f83e",
-        "contentRevision": "f49b406d509a1d0e0ed4e152f7b90fb5",
+        "fileSeal": "b9b79d291ea1bcc05dfd4a0912320cf5b96ce7260bca95d540cea1905525899f",
+        "contentRevision": "68cea590b84f1140d42a9aed0c49f227",
         "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
         "armCount": 0,
         "arms": [],
-        "rationale": "completeAffiliation gained a production caller and capacity became a bound, so mages a universe promotes for itself now join institutions and may scribe. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. Re-recorded rather than reported because provenance.contentHash moved underneath it -- apply-magic's two autonomy scalars and W116's two affiliation opportunities met in one merge -- and across two content hashes a delta is a category error rather than a regression.",
+        "rationale": "completeAffiliation gained a production caller and capacity became a bound, so mages a universe promotes for itself now join institutions and may scribe. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. Re-recorded rather than reported because provenance.contentHash moved underneath it -- apply-magic's two autonomy scalars and W116's two affiliation opportunities met in one merge -- and across two content hashes a delta is a category error rather than a regression. The universe remains degenerate in the ways integration round 2 recorded and this change closes none of them; what it closes is one wire.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2073,14 +2073,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "78efa053c337d8f4dd911372b8a7eefe6231a78679380364be751f9864585da0",
-        "contentRevision": "f49b406d509a1d0e0ed4e152f7b90fb5",
+        "fileSeal": "f40ca5d2475534daac01756b37f57cc6744f6dd2d12adab736a182129abdc397",
+        "contentRevision": "68cea590b84f1140d42a9aed0c49f227",
         "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
         "armCount": 0,
         "arms": [],
-        "rationale": "completeAffiliation gained a production caller and capacity became a bound, so mages a universe promotes for itself now join institutions and may scribe. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. Re-recorded rather than reported because provenance.contentHash moved underneath it -- apply-magic's two autonomy scalars and W116's two affiliation opportunities met in one merge -- and across two content hashes a delta is a category error rather than a regression.",
+        "rationale": "completeAffiliation gained a production caller and capacity became a bound, so mages a universe promotes for itself now join institutions and may scribe. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. Re-recorded rather than reported because provenance.contentHash moved underneath it -- apply-magic's two autonomy scalars and W116's two affiliation opportunities met in one merge -- and across two content hashes a delta is a category error rather than a regression. The universe remains degenerate in the ways integration round 2 recorded and this change closes none of them; what it closes is one wire.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2203,8 +2203,8 @@
         "runCount": 64,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "0d8c92935bf69cb4dec1ee6561ce6f946f8c3aeae70c3b3796301cc9b304808c",
-        "contentRevision": "f49b406d509a1d0e0ed4e152f7b90fb5",
+        "fileSeal": "0c49285f673a951b55a40956536ec28e379acc0189d080e9c3c4ec6d370b4bb9",
+        "contentRevision": "68cea590b84f1140d42a9aed0c49f227",
         "configurationHash": "1b73f7e27b0bf2eb582d9094c5747ebd29663c6f5991847ea2178fccd3304b28",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
@@ -2219,7 +2219,7 @@
           "uniform-random-legal",
           "worship-maximizer"
         ],
-        "rationale": "completeAffiliation gained a production caller and capacity became a bound, so mages a universe promotes for itself now join institutions and may scribe. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. Re-recorded rather than reported because provenance.contentHash moved underneath it -- apply-magic's two autonomy scalars and W116's two affiliation opportunities met in one merge -- and across two content hashes a delta is a category error rather than a regression.",
+        "rationale": "completeAffiliation gained a production caller and capacity became a bound, so mages a universe promotes for itself now join institutions and may scribe. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. Re-recorded rather than reported because provenance.contentHash moved underneath it -- apply-magic's two autonomy scalars and W116's two affiliation opportunities met in one merge -- and across two content hashes a delta is a category error rather than a regression. The universe remains degenerate in the ways integration round 2 recorded and this change closes none of them; what it closes is one wire.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2235,32 +2235,32 @@
         "pooled": [
           {
             "metricId": "referenceGrimoires",
-            "value": 264.34375,
+            "value": 250.296875,
             "unit": "grimoires",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 13.830711269444894,
-            "tolerance": 41.492133808334685,
+            "standardError": 13.503752010436767,
+            "tolerance": 40.511256031310296,
             "sampleSize": 64
           },
           {
             "metricId": "referenceKnowledgeInstances",
-            "value": 911.625,
+            "value": 859.9375,
             "unit": "instances",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 17.319197147782283,
-            "tolerance": 51.95759144334685,
+            "standardError": 20.663174898233816,
+            "tolerance": 61.989524694701444,
             "sampleSize": 64
           },
           {
             "metricId": "referenceLibraryDepth",
-            "value": 19.53125,
+            "value": 18.921875,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.5837981778834189,
-            "tolerance": 1.7513945336502568,
+            "standardError": 0.5036487956651937,
+            "tolerance": 1.510946386995581,
             "sampleSize": 64
           },
           {
@@ -2275,62 +2275,62 @@
           },
           {
             "metricId": "referenceNodesGained",
-            "value": 34.46875,
+            "value": 32.296875,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.24705294220065463,
-            "tolerance": 0.7411588266019639,
+            "standardError": 0.8144507831201343,
+            "tolerance": 2.443352349360403,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesGainedFinalQuarter",
-            "value": 6.046875,
+            "value": 5.171875,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.23017062285400366,
-            "tolerance": 0.690511868562011,
+            "standardError": 0.4195537994405485,
+            "tolerance": 1.2586613983216455,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesKnown",
-            "value": 36.96875,
+            "value": 34.796875,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.24705294220065463,
-            "tolerance": 0.7411588266019639,
+            "standardError": 0.8144507831201343,
+            "tolerance": 2.443352349360403,
             "sampleSize": 64
           },
           {
             "metricId": "referencePeakPopulation",
-            "value": 353,
+            "value": 350,
             "unit": "people",
             "status": "measured",
             "aggregation": "max",
-            "standardError": 13.78125,
-            "tolerance": 41.34375,
+            "standardError": 10.828125,
+            "tolerance": 32.484375,
             "sampleSize": 64
           },
           {
             "metricId": "referencePopulation",
-            "value": 211.671875,
+            "value": 211.484375,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.1624119382358673,
-            "tolerance": 6.487235814707602,
+            "standardError": 2.1995760422465507,
+            "tolerance": 6.598728126739652,
             "sampleSize": 64
           },
           {
             "metricId": "referencePopulationChange",
-            "value": 67.671875,
+            "value": 67.484375,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.1624119382358673,
-            "tolerance": 6.487235814707602,
+            "standardError": 2.1995760422465507,
+            "tolerance": 6.598728126739652,
             "sampleSize": 64
           }
         ]
@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 123,
-    "examinedSymbolCount": 855,
+    "findingCount": 126,
+    "examinedSymbolCount": 863,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 309,
+    "productionFileCount": 312,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2675,13 +2675,13 @@
       },
       {
         "file": "packages/rules-magic/src/grid.ts",
-        "line": 486,
+        "line": 545,
         "name": "cellAxes",
         "kind": "function"
       },
       {
         "file": "packages/rules-magic/src/grid.ts",
-        "line": 137,
+        "line": 175,
         "name": "heldNodes",
         "kind": "function"
       },
@@ -3089,14 +3089,26 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 368,
+        "line": 663,
+        "name": "auditFounding",
+        "kind": "function"
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 649,
         "name": "auditPool",
         "kind": "function"
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 401,
+        "line": 746,
         "name": "formatAudit",
+        "kind": "function"
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 703,
+        "name": "formatFounding",
         "kind": "function"
       },
       {
@@ -3250,7 +3262,15 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 396,
+        "line": 420,
+        "name": "FOUNDING_PROBE",
+        "via": [
+          "auditFounding"
+        ]
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 691,
         "name": "actionName",
         "via": [
           "formatAudit"
@@ -3258,9 +3278,10 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 280,
+        "line": 494,
         "name": "auditStrategy",
         "via": [
+          "auditFounding",
           "auditPool"
         ]
       },

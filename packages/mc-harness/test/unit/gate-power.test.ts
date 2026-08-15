@@ -84,47 +84,55 @@ const GATES = [
  * that nobody reads "the gate is fixed" as "the gate sees everything".
  */
 const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
-  // **Two since w108, and it was empty from w107 until then.** The history is
-  // the rationale, because the same two lines have now crossed 100 % in both
-  // directions and neither crossing was a change in the instrument.
+  // **Three, and the history is the rationale**: the same threshold has now been
+  // crossed in both directions by two unrelated causes, and neither crossing was
+  // a change in the instrument.
   //
-  // `w107`'s `apply-magic` moved `denial-warden`'s `referenceNodesKnown` from
-  // 4.75 to 5.75 nodes and its `referenceNodesGained` with it, and a mean no
-  // longer within a rounding error of zero had a tolerance that no longer
-  // exceeded it — so the list emptied and the gate saw all eighty arm lines.
+  // `w107`'s `apply-magic` **emptied** this list: it moved `denial-warden`'s
+  // `referenceNodesKnown` from 4.75 to 5.75 nodes and its `referenceNodesGained`
+  // with it, and a mean no longer within a rounding error of zero had a
+  // tolerance that no longer exceeded it. The arm stepped off zero.
   //
-  // `w108/university-fidelity` moved them back: `referenceNodesKnown` 5.75 →
-  // 4.125 and `referenceNodesGained` 3.25 → 1.625, at MDE 114 % and 289 %.
-  // **That movement is a re-roll and not a mechanic** — the branch allocates
-  // `UNIVERSITY_STAFF` link rows, `contracts.md` §6 splits the RNG per entity
-  // handle, and a control build that keeps the rows and reverts only the
-  // scribing rule reproduces it metric for metric. Median agency arm MDE is
-  // 11.3 %, 78 of 80 below 100 %.
+  // `w108/university-fidelity` put both back: `referenceNodesKnown` 5.75 → 4.125
+  // and `referenceNodesGained` 3.25 → 1.625. **That movement is a re-roll and
+  // not a mechanic** — the branch allocates `UNIVERSITY_STAFF` link rows,
+  // `contracts.md` §6 splits the RNG per entity handle, and a control build that
+  // keeps the rows and reverts only the scribing rule reproduces it metric for
+  // metric.
+  //
+  // `anti-requisites` (PR #161) adds the third, and this one *is* a mechanic.
+  // The shipped exclusion pair (`creo-ignem` ⊥ `creo-umbra`, `destructive`) cut
+  // `permissive-breadth`'s final-quarter node gain to a fraction of what it was,
+  // and three standard errors of a quantity that small exceeds it. The gate can
+  // still see the absolute collapse that put the line here; what it can no
+  // longer do is tell a further proportional fall from noise.
   //
   // Growing this list is a build failure precisely so that it arrives with a
-  // rationale, and this is the rationale. The lesson to carry: a `denial-warden`
-  // knowledge line sits close enough to zero that it will cross this threshold
-  // on any re-roll, in either direction, and that is a fact about the strategy
-  // rather than about the tolerance.
+  // rationale, and this is the rationale. The lesson to carry: a knowledge line
+  // whose arm sits close to zero will cross this threshold on any re-roll, in
+  // either direction, and that is a fact about the strategy rather than about
+  // the tolerance.
   //
-  // **Still two since W116, and they are two different lines.** Both of w108's
-  // entries left: `denial-warden`'s mages can now affiliate, so its
-  // `referenceNodesKnown` goes 4.125 → 6.875 and its `referenceGrimoires`
-  // 44 → 217.5, and a *level* that is no longer within a rounding error of zero
-  // has a tolerance that no longer exceeds it. Two `…FinalQuarter` lines took
-  // their place, at −1.5 against tolerance 1.91 and −0.625 against 0.650.
+  // **W116 keeps that lesson and changes every member of the list.** Both
+  // `denial-warden` *level* lines left: that arm's mages can now affiliate, so
+  // its `referenceNodesKnown` goes 4.125 -> 6.875 and its `referenceGrimoires`
+  // 44 -> 217.5, and a level no longer within a rounding error of zero has a
+  // tolerance that no longer exceeds it. Three `…FinalQuarter` lines are what
+  // remain, `permissive-breadth`'s from `anti-requisites` and two more from this
+  // change.
   //
-  // The replacement is the same fact wearing a different metric.
+  // That the list is now *entirely* final-quarter lines is the generalisation of
+  // the lesson rather than a coincidence.
   // `referenceNodesGainedFinalQuarter` is a **derivative** — nodes gained in the
-  // last quarter of a run — so its natural value is near zero for any arm at
-  // equilibrium, and near zero is exactly where a tolerance outruns a mean. The
-  // lesson w108 wrote down generalises: it is not that `denial-warden` is
-  // special, it is that a series whose honest answer is "about zero" is blind by
-  // construction, and which series that is moves whenever a mechanic changes
-  // what a strategy accumulates.
+  // last quarter — so its honest value for any arm at equilibrium is about zero,
+  // and about zero is exactly where a tolerance outruns a mean. It is not that
+  // `denial-warden` is special; it is that a series whose true answer is near
+  // zero is blind by construction, and which series that is moves whenever a
+  // mechanic changes what a strategy accumulates.
   'balance/baselines/balance-gate-agency-v1.baseline.json': [
     'referenceNodesGainedFinalQuarter@denial-warden',
     'referenceNodesGainedFinalQuarter@narrow-depth',
+    'referenceNodesGainedFinalQuarter@permissive-breadth',
   ],
   // Ten since w107, up from seven, and the three that joined are all the same
   // shape: an arm whose *spread* widened rather than an arm that stopped
