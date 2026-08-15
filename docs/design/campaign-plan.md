@@ -12559,20 +12559,31 @@ code read at `origin/main` @ 1873e9b7]
 W234 flagged `portal-rush` at 48% illegal and deliberately did **not** name a culprit.
 Naming it now, from the records rather than from reading:
 
-| strategy             | rate  | rejected action            |
-|----------------------|-------|----------------------------|
-| portal-rush          | 0.49  | **14 `openPortal`** — 712/712 |
-| worship-maximizer    | 0.25  | **9 `blessMage`** — 371/371   |
-| uniform-random-legal | 0.13  | spread over 9,11,12,14,16  |
-| permissive-breadth   | 0.003 | 11                         |
+| strategy             | rate  | every rejection lands on   | favor spent on it |
+|----------------------|-------|----------------------------|-------------------|
+| portal-rush          | 0.48  | **14 `openPortal`**        | 2,850,816         |
+| worship-maximizer    | 0.20  | **9 `blessMage`**          | 335,872           |
+| uniform-random-legal | 0.13  | spread over 9,11,12,14,16  | —                 |
+| **allocate-spread**  | **0** | — (the repaired control)   | 425,984 on 9      |
 
-**Both named strategies are refused on every single submission of the one verb they exist
-to press.** `portal-rush` never opens a portal. `worship-maximizer` never blesses a mage.
+**Correction to the first draft of this entry, which said both were refused on 100% of
+their signature verb and that `portal-rush` never opens a portal.** Both are false, and
+the error was arithmetic rather than mechanism: `byActionId` says *all of the rejections
+were on action 14*, not *all of the action-14 submissions were rejected*. I read
+`712/712` off two numbers that share a numerator. `godSpendByAction` settles it —
+`portal-rush` spends **2.85M favor on `openPortal`**, so it opens plenty of portals.
+
+The true figure is roughly **half its submissions of that verb wasted**, which is what the
+mechanism below actually predicts. A diagnosis that predicted 50% while the doc asserted
+100% should have been caught by me, not by review: **when the mechanism and the
+measurement disagree by a factor of two, the reading is wrong before the mechanism is.**
 
 **It is not the mask.** `policyFor` submits the first preference the mask *permits*, so a
 mask that forbade action 14 would make portal-rush skip it and never be rejected at all.
 It submits and is refused, which means mask and dispatch disagree — and the disagreement
-is about the **parameter**, not the verb:
+is about the **parameter**, not the verb. `allocate-spread`'s **zero** rejections are the
+control: it is the one strategy whose rotation was narrowed to fit the live list, and it
+is the one strategy that never gets refused.
 
 - `mask.ts:160` — `mask[action] = (candidates.get(action)?.length ?? 0) > 0 ? 1 : 0`. The
   mask is **per-kind**: one bit for *"is there at least one target"*. It never says how
@@ -12604,13 +12615,20 @@ mismatch rather than of play.
 
 **Three results this invalidates, and one it explains:**
 
-- Every raid-facing measurement in this campaign. The one bot whose purpose is portals
-  opened none.
+- Raid-facing measurements taken through `portal-rush`, on the two runs measured here.
+  It wastes about half its portal attempts. Whether other strategies reached raids by
+  other paths is **not measured** — the first draft of this entry said "every raid-facing
+  measurement in this campaign", which is broader than anything I ran.
 - `worship-maximizer`'s standing as a weak strategy. It spends a quarter of its turns on
   nothing.
-- Both are over `MAX_ELITE_ILLEGAL_RATE`, so both were excluded from the archive — the
-  effective pool was **12**, not the 14 the header printed. W235's width numbers are
-  widths of a pool missing two members.
+- Both are over `MAX_ELITE_ILLEGAL_RATE` — `portal-rush` 0.483, `worship-maximizer` 0.201
+  — so the effective pool was **12 of 14**, and W235's widths are widths of a pool missing
+  two members. This one checked out, and #197 now makes the tool print it rather than
+  leaving it asserted in a doc. Checking it also found that #196's own `EXCLUDED` report
+  walked `archive.cells`, so it caught `portal-rush` and **silently missed
+  `worship-maximizer`** — a cell holds one elite per coordinate, and a strategy that is
+  both over the ceiling and out-competed for its coordinate is an elite of nothing. The
+  fix meant to stop a defect being retired as a balance result was retiring one.
 - And it explains W235's `idle-then-declare` result. Doing nothing competes because
   several strategies are *also* effectively doing nothing for a large share of their turns.
 
