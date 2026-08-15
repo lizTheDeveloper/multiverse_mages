@@ -94,7 +94,18 @@ version error instead of a behaviour diff.
 
 Two commands worth knowing before touching the core:
 
-- `npm run verify` — typecheck, lint, dependency-purity, and the full test suite. This is the gate.
+- `npm run verify` — typecheck, lint, dependency-purity, and the full test suite. This is the
+  **merge** gate.
+- `npm run verify:balance` — the three Monte Carlo balance gates. **Not** in `verify` since
+  2026-08-14: they run per-commit in a non-blocking Actions job and are required at *release*, not
+  at merge. They were the entire cost of checking a commit, the self-hosted runner serialises, and
+  during a campaign every commit is sweep-bearing — so they queued every unrelated pull request
+  behind a number that was moving on purpose. `ci.yml`'s `balance` job carries the argument and the
+  condition for putting them back.
+- `npm run verify:full` — `verify` plus `verify:balance` plus the two-hundred-year ascension gate.
+  **This is what an even MINOR requires** (`release-plan.md`), and the reason the split is safe: the
+  sweeps are release evidence, and a release that skips them is taking an even MINOR without the
+  evidence the parity scheme exists to carry.
 - `npm run goldens:regen` — regenerates the golden replay fixtures. **Never run this to make a
   test pass.** A fixture diff is a claim that behaviour changed on purpose, and reviewers read it
   as one.
