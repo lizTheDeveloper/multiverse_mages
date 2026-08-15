@@ -377,7 +377,8 @@ describe('contentRevision', () => {
     // grant-budget move above, this one **does** change every run: applying
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
-    // 162f80bf169296d0e5fd516cc3c5257a -> ee99b5845d1da2afe532eb5280e07f57,
+    //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> e8442af2c5f91ae6f80ad9a178e0e451,
     // when anti-requisites landed (`vision.md` §4b) and `cell.json` gained an
     // `excludes` array carrying one pair: *Creo Ignem* and *Creo Umbra* exclude
     // one another, `destructive`. In the preimage for the sharpest version of
@@ -399,9 +400,11 @@ describe('contentRevision', () => {
     // exactly the state a balance sweep should be able to change without a
     // content edit.
     //
-    // And the two above arrived on separate branches, so neither literal is a
-    // digest over a preimage holding both: `d4e30476` has the applied-magic
-    // scalars and no exclusions, `ee99b584` has the exclusions and no scalars.
+    // On this branch that same edit was first recorded as `162f80bf ->
+    // ee99b5845d1da2afe532eb5280e07f57`, and the two arrived on separate
+    // branches, so neither literal is a digest over a preimage holding both:
+    // `d4e30476` has the applied-magic scalars and no exclusions, `ee99b584`
+    // has the exclusions and no scalars.
     // This tree is the first holding both, and a third value is what a digest
     // over the union is supposed to produce — the same situation the
     // three-branch paragraph above describes, and the reason the check is a

@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
+    "contentRevision": "e8442af2c5f91ae6f80ad9a178e0e451",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -2675,13 +2675,13 @@
       },
       {
         "file": "packages/rules-magic/src/grid.ts",
-        "line": 486,
+        "line": 545,
         "name": "cellAxes",
         "kind": "function"
       },
       {
         "file": "packages/rules-magic/src/grid.ts",
-        "line": 137,
+        "line": 175,
         "name": "heldNodes",
         "kind": "function"
       },
