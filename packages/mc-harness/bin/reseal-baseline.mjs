@@ -80,6 +80,21 @@ function parse(argv) {
   return args;
 }
 
+/**
+ * A boolean flag, strictly.
+ *
+ * `args['dry-run'] === 'true'` would read `--dry-run 1` and `--dry-run yes` as
+ * *false* and write the file — a typo in the flag whose whole purpose is not
+ * writing the file. Anything but `true` or `false` is refused instead.
+ */
+function booleanFlag(args, name) {
+  const value = args[name];
+  if (value === undefined) return false;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error(`--${name} takes "true" or "false", and was given ${JSON.stringify(value)}.`);
+}
+
 const sink = {
   out: (line) => process.stdout.write(`${line}\n`),
   err: (line) => process.stderr.write(`${line}\n`),
@@ -104,7 +119,7 @@ try {
       // wall clock would make two runs of one command write different files.
       sealedOn: args['sealed-on'],
       ...(args.note === undefined ? {} : { notes: args.note }),
-      dryRun: args['dry-run'] === 'true',
+      dryRun: booleanFlag(args, 'dry-run'),
     },
     scenario,
     sink,
