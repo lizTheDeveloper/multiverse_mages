@@ -10526,3 +10526,73 @@ red.** Alongside §8a's eight authored god constants whose only reader is the un
 
 **The caveat that matters most:** `vision-audit.md` was re-verified **selectively**. A row not named above
 **has not been cleared — it has not been checked.**
+
+## W204 — the fix for the per-cohort floor is already in the tree, argued, at one of four sites
+
+The world audit (PR #178): **47 rows — 14 BUILT, 4 PARTIAL, 21 ABSENT, 8 SUPERSEDED** — with the honest
+note that six of the fourteen BUILT are *"the document's diagnosis of a missing mechanism is confirmed"*,
+so the count is not a health score.
+
+### The repair exists, and it is documented better than anything I could have written
+
+`packages/rules-world/src/mages/promotion.ts`, verbatim at `origin/main`:
+
+> *"So the count is arithmetic: `floor(count × mageAptitude / fp(1024))`, **plus one more if a single draw
+> on stream 1 falls below the fixed-point remainder.** The expected value is preserved exactly, and the
+> draw count is `O(cohorts)` rather than `O(people)`."*
+>
+> *"**Why the remainder draw is not optional.** Plain integer truncation is simpler and needs no draw at
+> all. It is also silently biased to zero for exactly the species the vision cares about distinguishing: a
+> small cohort at a low aptitude truncates to no mages, every time, forever. **A species can be rare by
+> design; it may not be rare because of a floor.**"*
+
+That last sentence is the entire pattern, stated at one of the two sites that got it right —
+`promotion.ts` and `carrying-capacity.ts` both take the unconditional remainder draw. **Three other sites
+have exactly the bug it exists to prevent**, and now four instances are known:
+
+| site | threshold | state |
+|---|---|---|
+| `promotion.ts` (`mageAptitude`) | remainder draw | **correct** — recorded as a deliberate negative by the auditor |
+| `carrying-capacity.ts` | remainder draw | **correct** |
+| scribe reallocation | `floorDiv(count × rate, FP_ONE)`, `1/rate` = 16 | fixed on PR #172 |
+| `portal.ts:219` detachments | `detachment-strength` = 100 | **latent**, invisible only because `standingSoldierTarget: 0` |
+| `capital.ts:322` library upkeep degradation | — | **newly found, unfixed** |
+
+So this stops being a discovery problem and becomes a mechanical one: **apply the pattern the tree already
+argues for, at the three sites that lack it.** The determinism cost is known and bounded — one draw per
+cohort, on its own stream.
+
+### Nothing counts the consumption failure, by design and with a documented exit
+
+`.github/workflows/ci.yml:172`, verbatim:
+
+> *"`check:consumption` is deliberately NOT here. It is expected to be red until the effect pipeline is
+> wired, so it runs in its own non-blocking job at the bottom of this file. See that job for the condition
+> under which it moves back into this one."*
+
+Honest, and it has a stated re-entry condition — which is better than the reachability check had. But the
+consequence is that **93 authored effects on the three rate primitives sat unconsumed with nothing
+counting the number.** Those three primitives are what `ages-of-magic`'s college thesis is entirely made
+of. The check carries its own positive control: eleven other primitives pass.
+
+**It also corrects a misreading of mine.** I recorded `teach-rate`'s +0.1% as a cost-threshold effect —
+*"a lesson already fits in a month."* The auditor's reading is that it moves so little **because only a
+god blessing can move it at all**, which is W203's mastery hole seen from a third side.
+
+### A new content finding: vellum has no magical source
+
+**No universe on `main` can produce vellum by magic.** `nomen` is the only vellum-yielding form, at **one
+effect in 300 nodes**, and it is not in v1 — while **library upkeep and scribing both spend it.** That is
+the missing half of W17's dwarf diagnosis, which named *"a vellum source not sized for its sink"* without
+being able to say the source did not exist.
+
+### And two more cross-reference sources have rotted
+
+- **`reachability-triage.md` §2** says nothing in `scenario` opens a portal. Raids fire; `raids.ts` is the
+  caller. (Its `applyWard` and `replay` rows were already found wrong by the contracts audit.)
+- **`invariants.md`** records INV-29/30 as *"To be defined"* while the metrics registry defines both.
+
+That is now **five documents** found asserting stale claims in the present tense in one night —
+`vision-audit.md`, `magic-projection.md`, `reachability-triage.md`, `invariants.md`, `hard-magic.md`.
+`docs/` is not a ref, and the corollary is sharper than the rule: **the freshest-looking document is
+usually the one that has rotted, because it is the one people keep citing.**
