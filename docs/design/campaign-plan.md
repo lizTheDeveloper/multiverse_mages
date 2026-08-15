@@ -10400,3 +10400,60 @@ is not a substitute for reading. Worth writing at the ratchet itself.
 
 And the auditor flagged that **two of its own absence probes came back non-zero and were corrected before
 publishing** — one of which made the finding stronger. That is the discipline working.
+
+## W202 — anti-requisites reach v1, and the sweep rule needs a distinction I did not draw
+
+PR #176. The pair is **`perdo-nomen` ⊥ `rego-nomen`, `destructive`**, both cells inside the twelve, and
+it is grounded entirely in shipped `node.json` prose rather than invented for the mechanic:
+
+- *Call by Name* — *"say a thing's name in the imperative and **have it arrive**"*
+- *The Bound Servant* — *"a name **it cannot refuse**"*
+- *Shed the Use-Name* — *"**colleagues still recognise the face**"*
+
+So the content already says a name is the thing's own handle **and** that it is detachable. The
+contradiction holds at **tier 1**, which is where a whole-cell exclusion first fires.
+
+**Three other in-rectangle pairs were rejected on the content**, which is the part that makes the chosen
+one credible: `perdo-limen`/`rego-limen` share the classical label `abjuration` — the content already
+calls them one school; `perdo-terram`/`rego-terram` *agree* that a structure is an argument; and
+`perdo-mentem`/`rego-mentem` has real moral weight but only at tiers 3–4.
+
+**And a genuine content finding: no `refused` pair exists in the opening square at all.** Every
+prohibition in the twelve cells' prose runs through a god's *edict* or an institution — never a mage
+declining. Authoring one would have meant inventing it, and the agent said so instead.
+
+### It reaches v1, and the census says so with a count
+
+Before the pair, **1,585 of 3,772 living minds — 42% — co-held both cells.** After, **0.**
+
+That census had to run *first*, because §4b is per-mage and a universe-level null has two incompatible
+readings. **Sharpest result: `perdo-nomen` is emptied entirely** — at year twenty no living mage holds any
+node from it, and the per-species occupancy ceiling drops 12 → 11. §4b argues a civilization holds what a
+mage cannot; **this one does not, because one side of a `destructive` pair is systematically learned
+second.**
+
+### The agent contradicted my premise with data, and it is right
+
+I withdrew its sweep on the grounds that a pooled sweep cannot see this kind of work — three separate
+confirmations, all of them **subsystem wiring**. For **this** change the sweep saw it plainly:
+`balance-gate-horizon-v1` moved `referenceNodesKnown` **40.705 → 36.570, −23.82 SE**, and three of the
+four previously byte-identical arms moved past 3 SE. **Attribution was a control rather than an
+argument**: stripping the two `excludes` arrays reproduces the old baseline at `delta 0.00000` on all ten
+rows.
+
+**So the rule needs a distinction I did not draw.** *Wiring* an inert subsystem is invisible to pooled
+gates — demand 0 → 88 moved 4 of 90 rows at 0.39 SE, and the raid seam moved nothing beyond 1.24 SE.
+*Content* changes are exactly what those gates were built to see. The owner's instruction stands for the
+integration work it was aimed at; it should not be generalised to content.
+
+The agent complied anyway and reverted everything byte-identical to base, which was the right call under
+an ambiguous directive — and then said the numbers were in the doc *"if the distinction matters later."*
+It does.
+
+### Two tests left red on purpose, and one is a design question
+
+Matching #161's precedent: **9.8** — library depth at year 200 is **24 distinct nodes against 43**; and
+**9.5** — scribing stops while teaching runs away by an order of magnitude. The proposed reading, which
+wants confirming rather than believing: **a `destructive` pair between two cells mages both want is a
+teaching treadmill.** If that holds it is an argument for **`refused` over `destructive`** here — and that
+is the author's call, not an agent's.
