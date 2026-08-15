@@ -84,14 +84,31 @@ const GATES = [
  * that nobody reads "the gate is fixed" as "the gate sees everything".
  */
 const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
-  // **Empty since w107, and the change is in the instrument rather than in the
-  // world.** `apply-magic` moved `denial-warden`'s `referenceNodesKnown` from
-  // 4.75 to 5.75 nodes and its `referenceNodesGained` with it, and a mean that
-  // is no longer within a rounding error of zero has a tolerance that no longer
-  // exceeds it. The agency gate is now blind to **none** of its eighty arm
-  // lines, median MDE 12.3 %. Shrinking this list is a build failure precisely
-  // so that it arrives with a rationale, and this is the rationale.
-  'balance/baselines/balance-gate-agency-v1.baseline.json': [],
+  // **One since `anti-requisites` (PR #161), and it was empty from w107 until
+  // then.** The history is worth keeping because the two events are the same
+  // phenomenon read in opposite directions, and neither is a slack tolerance.
+  //
+  // w107 emptied this list: `apply-magic` moved `denial-warden`'s
+  // `referenceNodesKnown` from 4.75 to 5.75 nodes and its `referenceNodesGained`
+  // with it, and a mean no longer within a rounding error of zero has a
+  // tolerance that no longer exceeds it. The arm stepped off zero.
+  //
+  // PR #161 puts one back, because an arm stepped *onto* zero. The shipped
+  // exclusion pair (`creo-ignem` ⊥ `creo-umbra`, `destructive`) cut
+  // `permissive-breadth`'s final-quarter node gain from **15.375 to 3.75** — a
+  // 76 % drop, −41.59 SE, the largest movement in the file — and three standard
+  // errors of a quantity that small is 7.70, which exceeds 3.75. So the gate can
+  // no longer police a *proportional* change in that one line. It still sees the
+  // absolute collapse that put it here; what it cannot do is tell a further 50 %
+  // fall from noise.
+  //
+  // The agency gate is blind to **one** of its eighty arm lines, median MDE
+  // 13.2 %. Growing this list is a build failure precisely so that it arrives
+  // with a rationale, and this is the rationale. Do not add a second without
+  // one.
+  'balance/baselines/balance-gate-agency-v1.baseline.json': [
+    'referenceNodesGainedFinalQuarter@permissive-breadth',
+  ],
   // Ten since w107, up from seven, and the three that joined are all the same
   // shape: an arm whose *spread* widened rather than an arm that stopped
   // producing. `referencePeakPopulation@permissive-breadth` is the clearest —

@@ -107,15 +107,43 @@ Two committed payloads were re-recorded rather than edited, both because `conten
 | `ui/design-dashboard/data.json` | `npm run ui:dashboard` | `provenance.contentRevision`, plus two `reachability.unreached[].line` numbers in `packages/rules-magic/src/grid.ts` (486 → 545, 137 → 175) — line drift from this branch's own edits to that file. Finding count, names and files are unchanged. |
 
 
-All three balance gates report `baseline-invalid` on `contentHash` — correctly, since the content
-did change. No baseline is re-recorded. The deltas below are measurements.
+All three balance gates reported `baseline-invalid` on `provenance.contentHash`
+(`d4e3047657b4fa8a1a74e1d52f9f5c86 → e8442af2c5f91ae6f80ad9a178e0e451`) — correctly, since the
+content did change. **All three were re-recorded on 2026-08-14 with the owner's authorisation**;
+the deltas below are the measurements taken against the superseded baselines, immediately before
+regenerating. `balance-gate-ascension-v1` was deliberately left alone: it refuses for an older and
+unrelated reason (a superseded `rngRegistryHash` from PR #72), is already failing on `main`, and its
+job is not required to merge.
+
+**Byte-identity below is established by grepping for non-zero deltas, not by reading the pass
+column.** The distinction is not pedantic: `referenceGrimoires@permissive-breadth` **passes** at
+1.66 SE while moving **25.0**, so a pass column would have reported that row as unchanged.
 
 ### The reference gates: byte-identical
 
-| gate | metrics | every delta |
-|---|--:|---|
-| `balance-gate` (240 world ticks) | 10 | **0.00000** |
-| `balance-gate-horizon` (2400 world ticks) | 10 | **0.00000** |
+| gate | world ticks | runs | metrics | every delta |
+|---|--:|--:|--:|---|
+| `balance-gate-v1` | 60 | 200 | 9 | **0.00000** |
+| `balance-gate-horizon-v1` | 240 | 200 | 10 | **0.00000** |
+
+**Both horizons in this table were previously wrong, and the correction is worth stating rather
+than making quietly.** The rows read `240` and `2400`; the committed sweeps
+(`balance/sweeps/balance-gate.sweep.json`, `balance-gate-horizon.sweep.json`) set
+`termination.worldTickCap` to **60** and **240**. The metric count on the first row was wrong too:
+nine, not ten.
+
+These are recorded as **two independent errors, not one mechanism.** The tempting summary is "every
+label was shifted one rung up the ladder", and it does not survive the ladder: the gates run at
+**60 / 240 / 240 / 2400**, so the five-year gate's label (240) is indeed the next rung, but the
+twenty-year gate's (2400) is *two* rungs up — it borrowed the two-hundred-year gate's horizon,
+skipping the agency gate at 240. A tidy explanation attached to a correct correction is the same
+defect as the thing being corrected, so no explanation is offered beyond the two facts.
+
+**The agency table below was not affected.** Its "240 world ticks, 64 runs" matches
+`balance-gate-agency.sweep.json` exactly — `worldTickCap: 240`, four factor cells × 16 replicates.
+So the headline **−26.50** is a twenty-year number and always was; it was not quoted at ten times
+its horizon. What was mislabelled is the byte-identity table, where a wrong horizon weakens a claim
+of *no* difference rather than inflating a claim of one.
 
 Both halves of the shipped pair are `creo`, and the v1 rectangle is `intellego · perdo · rego` ×
 `mentem · terram · limen · nomen`. The reference universe **cannot reach either cell**. The mechanic
@@ -143,9 +171,18 @@ rows are printed in the *new* order on purpose: `permissive-breadth` was first a
 
 Byte-identity is the whole claim, so it is checked as one rather than read off the pass/fail column
 — a row can pass a three-SE tolerance while moving (`referenceGrimoires@permissive-breadth` moved
-+25.0 and passed at 1.66 SE). Across all ten metrics, every row for the other seven strategies
-reads `delta 0.00000`; the only non-zero rows in the whole gate are pooled aggregates and
-`@permissive-breadth`.
++25.0 and passed at 1.66 SE). Counted exactly, on the run taken immediately before regenerating:
+**71 of the gate's 90 rows are at `delta 0.00000`.** The 19 that moved are the **9 pooled
+aggregates** and **all 10 `@permissive-breadth` arm rows**, and nothing else — so the other seven
+strategies are byte-identical across **all 70 of their arm rows**, and the pooled aggregates move
+only because they pool `permissive-breadth`.
+
+The largest movements, all on that one arm: `referenceNodesGainedFinalQuarter` 15.375 → 3.75
+(−41.59 SE, the largest in the file), `referenceNodesKnown` and `referenceNodesGained` both −26.50
+(−22.35 SE), `referenceKnowledgeInstances` 1570.63 → 990.25 (−7.67 SE), and
+`referencePeakPopulation` 323 → 330 (+8.00 SE). That last one is worth noticing: the arm that
+forgets the most ends with slightly *more* people, which is the same decoupling of knowledge from
+demography that the ablation test's population floor documents.
 
 **Why these numbers differ from the first recording.** The table above previously read
 75.25 → 45.00, −30.25. Nothing about the mechanic changed: `main` re-recorded the agency baseline
@@ -235,7 +272,7 @@ differ only in an ablated primitive — the two arms lose different mages' schoo
 and the demographic paths separate. That is the mechanic working; whether it should reach
 **population** is a design question, not a bug to paper over.
 
-Three possible readings, and the ruling is the author's:
+Three possible readings were recorded, and the ruling was the author's:
 
 1. **The mechanic is correct and the test's invariant is now too strong.** Two arms that diverge in
    knowledge will diverge in population once knowledge feeds the economy, which is what §6a wants.
@@ -244,6 +281,55 @@ Three possible readings, and the ruling is the author's:
 3. **The pair should not ship on live cells at all.** But `schema-constraint-liveness` forces a
    shipped instance, so this trades one constraint for another.
 
-Nothing here is decided by this commit. The failure is left **red and documented** rather than
-worked around, because a test that changed to accommodate an unreviewed mechanic is the
-"checked box that is false" this repository has been bitten by before.
+### Ruling: reading 1, taken 2026-08-14 — and the measurement changed the reasoning
+
+**Reading 1 was taken and the test was corrected.** The paragraph above no longer describes the
+tree: the suite is green. But the argument that got there is *not* the one reading 1 states, and the
+difference matters more than the ruling.
+
+Reading 1 supposes the two arms' "demographic paths separate". **They do not.** Every primitive was
+ablated in turn at 240 ticks against the same control (population 298, living mages 67, knowledge
+3,190, grimoires 1,024). Six of the seven — `fertility`, `lifespan`, `research-rate`, `teach-rate`,
+`scribe-rate`, `build-rate` — come back **byte-identical to the control**. Only `resource-yield`
+moves anything, and what it moves is knowledge (−728) and grimoires (−726), not people: population
+300, living mages 67.
+
+Then the harshest available lever, far harsher than any ablation the suite can ask for:
+substituting `0` for `FP_ONE` in `additive-into-multiplier` — the inversion `ablation.ts` warns
+about at length, which multiplies the ablated arm's whole yield by zero. It costs **97 % of that
+arm's grimoires** (1,024 → 31) and 31 % of its knowledge, and leaves population at **297 against
+298** and living mages **unchanged at 67**.
+
+So the finding is not "the mechanic now reaches population". It is that
+**`expect(ablated.population).toBe(control.population)` never had any power to begin with.** It held
+because population is very nearly decoupled from `resource-yield` at this horizon, not because the
+two arms were demographically matched — and a two-mage knock-on was enough to break it. An equality
+that passes for a reason unrelated to its claim is the same defect class as a test that stops at the
+data structure, which is what the file's own comment says it exists to avoid.
+
+**What replaced it**, in `packages/scenario/test/unit/ablation-reaches-the-world-loop.test.ts`:
+
+- The two substantive assertions are untouched — the ablated arm ends with strictly fewer knowledge
+  instances and strictly fewer grimoires, and the arms are not deeply equal.
+- The population coda became a **one-sided floor** in its own `it`: the ablated arm may not finish
+  below **95 %** of the control's population. One-sided because the observed drift is *upward* and an
+  ablated arm with slightly more people is not the failure being guarded; the inverted-mask failure
+  is already caught by the two `toBeLessThan` assertions, which a better-off arm cannot satisfy.
+- **The floor is documented as a backstop, not as a discriminator.** The probe table above is in the
+  test file, together with the plain statement that no ablation lever available moves population by
+  more than 2 of 298, so nothing the test can do trips the floor today. It is kept because the
+  yield→demography coupling is real at longer horizons — `gate-power.test.ts` records
+  `referencePeakPopulation@permissive-breadth` moving 7,009 → 12,685 at the 2,400-tick gate "because
+  applied food raises `K` hardest in the arm that permits the most cells" — and a line that costs
+  nothing and would catch that coupling arriving at 240 ticks earns its place. A floor *presented as*
+  discriminating between the arms would not have.
+
+**The negative control is on the assertions that do have power**, since the floor demonstrably has
+none here. The three `deps.ablation` forwarding sites in `coordination`'s `world-step.ts` —
+`materialsProduced`, `advanceConstruction`, `appliedYield` — were severed, reproducing defect #136
+exactly. The ablated arm goes byte-identical to the control, `not.toEqual` fails, and both
+`toBeLessThan` assertions fail with `expected 3190 to be less than 3190`. Restoring the three lines
+returns all six tests to green.
+
+Readings 2 and 3 were **not** taken: the pair still ships on live cells with resolution
+`destructive`, so `schema-constraint-liveness` still has the instance it needs.
