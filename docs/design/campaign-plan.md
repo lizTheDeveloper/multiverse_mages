@@ -9610,3 +9610,73 @@ spread across seeds, with and without the tenth goal, at both horizons. Only re-
 says whether the effect is the goal competing or the draw order shifting. This joins W180's finding (a
 mage cannot learn to learn, which bounds 9.9 from above) as the second structural lead on a task that has
 resisted three direct attempts.
+
+## W189 — 125 findings are 61 real ones, and two of my four motivating examples were not on `main`
+
+PR #167. The ratchet is built, and the triage is worth more than the ratchet.
+
+### Correcting myself first
+
+I justified this work with four instances of *"built but never called."* **Two of them are not on
+`origin/main` at all:**
+
+- **`gatherEffects` is reached**, at `universe-effects.ts:330`. W180 said so correctly and then I
+  restated it as an unreachability. It is not — the defect was that it reached no consumer *for the three
+  academic rates*, which is a different claim and the one W180 actually made.
+- **`applyDirective` and `runPlanFor` do not exist at `e2b89d8`.** They are on `w37/raid-playable`, which
+  is unmerged. W178's *"exported and called by nothing outside `rules-raid`'s own tests"* was true of that
+  branch and was never a statement about `main`.
+
+Only **`completeAffiliation`** is among the 125. The pattern is real; my count of it was not, and it was
+inflated by quoting branch facts as trunk facts — the exact error `CLAUDE.md` names as *"a finding about
+code is a finding about a ref."*
+
+### The triage: 125 → 61
+
+| integration debt | superseded | tooling-only | dead | false positive |
+|---:|---:|---:|---:|---:|
+| **61** | **14** | **27** | **23** | **0** |
+
+**The `superseded` category was not commissioned and is the most useful column** — an unreached *symbol*
+whose *capability* is live under another name. The agent's first draft filed all fourteen as disabled
+subsystems and was wrong: **species traits are read everywhere** (`traitValueOf` is merely the unused
+accessor), **all four tradition hook points have reached implementations**, and `RNG_STREAM.populace` is
+used directly twice. Each of those would have cost an investigation ending in *"it already works."*
+
+Zero false positives, which is the number that makes the remaining 61 worth acting on.
+
+**Named as load-bearing:** university staffing (9 — the only writer of `UNIVERSITY_STAFF` is itself
+unreached, which is W181's mechanism from the other side), ascension legacy (12, **including 8 content
+constants that look like knobs and turn nothing**), spell preparation (4), tradition store consequences
+(5), portal transfer (2), **`changeTradition` (3 — the action space advertises a move the rules never
+make)**, `applyWard`, library-level destruction (2), `replay`, snapshot loading (2), `rules-raid` (5).
+
+`changeTradition` deserves its own line: **the legality mask offers the god an action whose rules do
+nothing.** That is worse than a dead function — it is a lie told to every agent that reads the mask, and
+it is in the pool's action space.
+
+### The ratchet, with its controls
+
+`scripts/check-reachability-ratchet.mjs` diffs `--json` output against a 125-entry pinned baseline. Three
+exits — **0** held, **42** drifted, **1** probe broken — and every mode has a positive control that was
+actually run and reverted:
+
+- new finding (an uncalled export added) → **42**, named, *"125 pinned, 126 reported"*
+- a pinned finding disappearing (`completeAffiliation` given a reference) → **42**, and it caught **two**
+  disappearances, because `changeAffiliation` rose with it
+- category change → reported as `moved`, not as one-new-plus-one-resolved
+- **scan collapse** (pointed at a near-empty tree, so every pinned finding "vanishes") → **1**, not 42,
+  with the test asserting `not.toBe(42)`
+- unknown category upstream → **1**, rather than passing by being ignored
+- **and a real 28-file, 1,806-insertion merge of current `main` → 0**, so it does not false-positive on work
+
+Identity is `group:file:name`, **deliberately not the line** — line numbers rot, and a rotted line is the
+cheapest signal that a row has gone stale, not a reason to fail. Re-pin is `npm run reachability:pin`.
+
+### Three broken probes, all caught by implausibility rather than by failing
+
+In the agent's own analysis: a git pathspec missing a trailing glob reported **zero** test callers for all
+125; a `\bward\b` grep matched *toward* and *forward* — which `CLAUDE.md` warns about **by name**, and it
+still happened; and `ui/design-dashboard/data.json` embeds the findings verbatim, so it matches every
+symbol name being searched for. The triage doc now carries **its own arithmetic test**, which promptly
+caught a table summing to 46 under a sentence claiming 45.
