@@ -32,7 +32,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Action, EntityHandle, SimState } from '@mm/sim-core';
-import { TIME_MODE } from '@mm/sim-core';
+import { TIME_MODE, rngFromRootSeed } from '@mm/sim-core';
 import {
   EDICT,
   EDICT_KIND,
@@ -79,6 +79,16 @@ function bench(): Bench {
     knowledge: KnowledgeSubsystem.fromState(world.state, catalog.nodeCount),
     edictBudgetMax: 8,
     portalNodes: new Set(nodesCarrying('portal').keys()),
+    // The three `InterventionDeps` w109's alliance verb added after this branch
+    // forked. Empty roster and a tick-0 stream: nothing here invites anybody.
+    invitableSpecies: new Set<number>(),
+    speciesOf: () => undefined,
+    rng: {
+      rootSeed: 1,
+      stream: (subsystemId: number) => rngFromRootSeed(1).stream(subsystemId, 0),
+      actorStream: (subsystemId: number, actorKey: number) =>
+        rngFromRootSeed(1).actorStream(subsystemId, 0, actorKey),
+    },
     requestEngagement: () => {},
   };
   return { state: world.state, universe: world.universe, deps };
