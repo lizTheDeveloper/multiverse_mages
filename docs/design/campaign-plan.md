@@ -9990,3 +9990,71 @@ The agent reported both against itself, which is why they are worth keeping:
   well-formed, plausible and wrong with nothing to flag it. Now a rule in `CLAUDE.md`: a measurement run
   is a lock on the tree it reads, and on a shared box your build can corrupt someone else's measurement in
   a different worktree through the shared `dist`.
+
+## W195 — nobody ever read a book. The reading edge did not exist.
+
+PR #170, `w190/scribing-fidelity`. The telephone problem is built, and the finding that reshaped it is
+the largest single hole in the knowledge model.
+
+### Copy distance travels book → mind → book, and the middle edge was missing
+
+**Knowledge entered a mind by research, teaching and theft only.** A library was **research capital** — a
+multiplier on a rate — and never an instance anybody *opened*. So `packages/rules-magic/src/instances/
+study.ts` had to be written before fidelity could mean anything: without it the copy chain is one link
+long and **corruption has no site at which to be discovered**, because discovery is *a reader failing*.
+
+This is the night's pattern at its most on-the-nose. Every earlier instance was a function nothing
+called; this is **a verb the design assumed and the code never had.** The vision is built on mages who
+discover, teach, record and lose knowledge — and *reading* was not among the ways to get it.
+
+### The curve was calibrated, not chosen
+
+The plateau ends at `fp(2048)` — two generations — and the reason is structural rather than a tuning
+constant: a book written by a mind that never read a book is generation 1 (*"fresh from a living holder:
+full"*), and a copy of that book by way of a reader is generation 2 (*"one copy out: fine"*).
+
+**Measured rather than reasoned**, which is why the first attempt was wrong:
+
+| generations per copy | mētis by generation |
+|---|---|
+| two | 100% / 33% / **0%** — no "one copy out" at all |
+| **one** | 100% / **100%** / 67% / 33% / 0% |
+
+Mētis is the unit and episteme is a half-cost discount, which makes the shipped `knowledgeKind` split —
+271 episteme, 29 mētis — **load-bearing for the first time since it was authored.**
+
+### The dwarf fork, decided against the more expressive option and rightly
+
+The design doc left open whether dwarves get a **medium** (carving stone) or whether `scribeAffinity`
+reduces per-generation loss, and called the medium more expressive. The agent chose `scribeAffinity`,
+and the argument is better than the doc's: **a medium is only more expressive if something can *choose*
+it, and nothing can** — no god action, mage goal or raid intent names one — *"so it would be a species
+stat in a costume."* And the durable-object half already shipped as `GRIMOIRE.durability`, computed from
+the same input.
+
+Result: dwarves get **3 full mētis copies to humans' 2**, and survive to the 8th where humans die at the
+5th.
+
+### Corruption, and the griefing bounded by cost
+
+Two sources: ambient scribal error on **RNG stream 13** — its own id, so durability's stream-5 ordinals
+do not shift, which is the stream-splitting rule observed rather than quoted — and the
+`knowledge-corrupt` primitive at `perdo-nomen`, **per-instance**, priced at the cast price in vigor
+**spent on the attempt**, so grief is bounded by cost rather than by a damage cap.
+
+**Nothing is pushed onto `knowledgeMovements`: the victim's ledger balances until a reader fails.** That
+is the owner's *"you don't know that your library is corrupted until a magic user tries to read it"*,
+implemented as an accounting property rather than a flag. Curiosity is deterministic — **gnomes repair at
+every tier, dwarves at none** — and a novice's failure is `silent` outside tier 1, **so deep knowledge
+rots invisibly**.
+
+### Honest reachability, and another producer/consumer pair
+
+The chain closes in-world but **rarely: 1 and 3 studies over 1200 and 2400 ticks.** Two causes, and one
+of them is already being fixed elsewhere: teacher-first is by design, and **`scribingQueueDepth` is still
+hardcoded `0`** — the very literal `w23/populace-and-record` replaces. **So #170's reachability depends
+on w23 landing.** That is the third producer/consumer pair identified tonight.
+
+**And the corrupt intent fires zero times in every committed sweep, because no strategy arms a raider** —
+the test says so rather than leaving it to be discovered. The only above-noise in-world evidence is the
+20-year gate's `referenceNodesGained` and `referenceNodesKnown`, both **+0.365 at 2.10 SE**.
