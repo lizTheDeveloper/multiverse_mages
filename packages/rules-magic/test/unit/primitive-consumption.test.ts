@@ -126,19 +126,29 @@ describe('the accessor records the fetch, because that is the whole mechanism', 
   });
 
   it('scans the whole grid, exactly as the wiring it replaced did', () => {
-    // `lifespan` is a declared *coverage* exclusion — no **v1** node carries it —
-    // and seventeen non-v1 nodes in the pre-authored grid do. The accessor must
-    // still find those seventeen, because the production helper it replaced
-    // (`scenario`'s `nodesCarrying`) scanned every node and legality is decided
-    // later, per node, by `permits()`. Filtering to v1 here would be a silent
-    // behaviour change dressed up as a check.
+    // Twenty nodes across the pre-authored grid carry `lifespan`, and the
+    // accessor must find all twenty: the production helper it replaced
+    // (`scenario`'s `nodesCarrying`) scanned every node, and legality is
+    // decided later, per node, by `permits()`. Filtering to v1 here would be a
+    // silent behaviour change dressed up as a check.
+    //
+    // **The premise this test was written on has changed, and the number with
+    // it.** It read "`lifespan` is a declared *coverage* exclusion — no **v1**
+    // node carries it — and seventeen non-v1 nodes in the pre-authored grid
+    // do". On `w20/compositional-content`'s grid three of the twelve v1 cells
+    // now author a `lifespan` node, which is why that branch takes `lifespan`
+    // out of `PRIMITIVE_COVERAGE_EXCLUSIONS` — the gap closed on purpose
+    // rather than rotting shut. Seventeen becomes twenty, and the split is
+    // 3 v1 / 17 non-v1. The test still discriminates the behaviour it was
+    // built for: an implementation that filtered to v1 would return 3 here,
+    // and one that filtered v1 *out* would return 17.
     const found = nodeEffectMagnitudes(
       shippedRegistry(),
       'lifespan',
       'test.sink',
       createConsumptionRecorder(),
     );
-    expect(found.size).toBe(17);
+    expect(found.size).toBe(20);
   });
 
   it('keeps two consumers of one primitive rather than deduplicating them away', () => {
@@ -300,18 +310,27 @@ describe('direction four: an excluded primitive gains a node consumer', () => {
     }
     // An exclusion that quietly becomes covered is the failure `coverage.ts`
     // argues about at length, and it rots the same way here.
+    //
+    // The probe is `fertility` rather than `lifespan`, which is what this test
+    // was written with. `lifespan` stopped being an exclusion on
+    // `w20/compositional-content` — three v1 cells author a node carrying it —
+    // so registering a node consumer for it is no longer the situation this
+    // direction exists to catch. `fertility` is the one remaining entry in
+    // `PRIMITIVE_COVERAGE_EXCLUSIONS`, with five node consumers in the
+    // pre-authored grid and none in a v1 cell, so it is exactly the shape
+    // `lifespan` used to be.
     recorder.register({
-      primitiveId: 'lifespan',
-      consumer: 'test/mortality.sink',
+      primitiveId: 'fertility',
+      consumer: 'test/fecundity.sink',
       kind: 'node',
       nodeCount: 4,
     });
 
     const report = checkPrimitiveConsumption(registry, recorder);
     expect(report.ok).toBe(false);
-    expect(report.consumedExclusions).toEqual(['lifespan']);
+    expect(report.consumedExclusions).toEqual(['fertility']);
     expect(formatPrimitiveConsumptionReport(report)).toContain(
-      'FAIL: excluded primitive(s) now node-driven: lifespan',
+      'FAIL: excluded primitive(s) now node-driven: fertility',
     );
   });
 });
@@ -383,6 +402,8 @@ describe('the two checks share one exclusion list', () => {
   it('states the exclusions in the formatted report, so a reader sees the gap', () => {
     const { recorder, registry } = fullyConsumed();
     const text = formatPrimitiveConsumptionReport(checkPrimitiveConsumption(registry, recorder));
-    expect(text).toContain('Declared exclusions: fertility, lifespan');
+    // One name, not two: `w20/compositional-content` closed the `lifespan`
+    // gap, so `fertility` is the whole of the declared list now.
+    expect(text).toContain('Declared exclusions: fertility');
   });
 });

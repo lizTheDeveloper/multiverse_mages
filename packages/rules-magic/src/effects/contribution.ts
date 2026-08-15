@@ -35,12 +35,29 @@
  * see `stack.ts`.
  */
 
-import type { ContentId, EffectTarget } from '@mm/content';
+import type {
+  ContentId,
+  EffectCondition,
+  EffectControl,
+  EffectMode,
+  EffectTarget,
+  RevealTarget,
+} from '@mm/content';
 import type { Fixed } from '@mm/sim-core';
 import { LOCATION_KIND } from '@mm/state';
 
+// `EffectMode`, `EffectCondition`, `RevealTarget` and `EffectControl` are
+// re-exported here (see the bottom of this file) rather than only imported,
+// so the rest of this package keeps importing them from `./contribution.js`
+// as it did while this package carried its own copies. `@mm/content` is now
+// the source of truth for all four — `packages/content/src` caught up to
+// `node.schema.json`'s `mode`/`when`/`reveals`/`control`/`transformTo` while
+// this task group was in flight — so `AuthoredEffect` is gone: `node.effects`
+// is read as plain `EffectRecord` again.
+
 /**
- * One legal, in-scale, above-threshold source of one primitive.
+ * One legal, in-scale, above-threshold, `when`-satisfied source of one
+ * primitive.
  *
  * Every field is data the stacker or its caller needs. Legality is not among
  * them, deliberately — see this module's opening note.
@@ -54,6 +71,23 @@ export interface EffectContribution {
   readonly magnitude: Fixed;
   readonly target: EffectTarget;
   readonly durationTicks: number;
+  /**
+   * The technique's envelope. `reveal` and `control` contribute no magnitude
+   * at all (`compositional-content.md` §3.3) — they are still emitted as
+   * contributions, marked by this field, so a caller can see that a latent
+   * effect or a control gate is active without it appearing as a stacked
+   * value.
+   */
+  readonly mode: EffectMode;
+  /** Present only when `mode` is `control` — Rego's `{floor, ceiling}` gate. */
+  readonly control?: EffectControl;
+  /**
+   * Present only when `mode` is `transform` — the primitive the `+magnitude`
+   * half lands on. `stackContributions` is what turns one `transform`
+   * contribution into two signed magnitudes; this is the field it needs to
+   * do that without re-deriving it from the node.
+   */
+  readonly transformTo?: string;
 }
 
 /**
@@ -107,3 +141,7 @@ export const CONTRIBUTING_LOCATION_KINDS: ReadonlySet<number> = new Set([
  * — can move it without touching this file.
  */
 export const MASTERY_ACTIVATION_THRESHOLD: Fixed = 512;
+
+// Re-exported so `gather.ts`, `stack.ts`, and this package's own barrel keep
+// a single import path for the mode vocabulary — see this file's opening note.
+export type { EffectCondition, EffectControl, EffectMode, RevealTarget };

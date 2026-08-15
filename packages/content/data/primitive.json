@@ -39,41 +39,46 @@
     "unit": "multiplier-on-construction-progress",
     "scale": "world",
     "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 4096 }
+    "cap": { "kind": "fp", "value": 4096 },
+    "floor": { "kind": "fp", "value": 256 }
   },
   {
     "id": "resource-yield",
     "unit": "multiplier-on-materials-per-world-tick",
     "scale": "world",
     "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 4096 }
+    "cap": { "kind": "fp", "value": 4096 },
+    "floor": { "kind": "fp", "value": 256 }
   },
   {
     "id": "research-rate",
     "unit": "multiplier-on-research-progress",
     "scale": "world",
     "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 4096 }
+    "cap": { "kind": "fp", "value": 4096 },
+    "floor": { "kind": "fp", "value": 256 }
   },
   {
     "id": "teach-rate",
     "unit": "multiplier-on-teaching-throughput",
     "scale": "world",
     "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 4096 }
+    "cap": { "kind": "fp", "value": 4096 },
+    "floor": { "kind": "fp", "value": 256 }
   },
   {
     "id": "scribe-rate",
     "unit": "multiplier-on-scribing-throughput",
     "scale": "world",
     "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 4096 }
+    "cap": { "kind": "fp", "value": 4096 },
+    "floor": { "kind": "fp", "value": 256 }
   },
   {
     "id": "lifespan",
     "unit": "additive-months",
     "scale": "world",
-    "stacking": "additive",
+    "stacking": "diminishing",
     "cap": { "kind": "fraction-of-species-base", "value": 512 }
   },
   {
@@ -81,14 +86,16 @@
     "unit": "multiplier-on-cohort-birth-rate",
     "scale": "world",
     "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 3072 }
+    "cap": { "kind": "fp", "value": 3072 },
+    "floor": { "kind": "fp", "value": 256 }
   },
   {
     "id": "worship-yield",
     "unit": "multiplier-on-favor-regeneration",
     "scale": "world",
     "stacking": "additive-into-multiplier",
-    "cap": { "kind": "fp", "value": 2048 }
+    "cap": { "kind": "fp", "value": 2048 },
+    "floor": { "kind": "fp", "value": 256 }
   },
   {
     "id": "concealment",

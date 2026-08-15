@@ -82,11 +82,38 @@ function sixViolationDocuments(): Record<ContentFileName, unknown> {
     'mau-fixture-shallow',
   ];
 
-  // 3. cycle, at equal tiers so it is unambiguously a cycle diagnostic
-  recordById(documents, 'node.json', 'rm-hold-the-attention')['prerequisites'] = [
-    'rm-the-patient-lesson',
+  // 3. cycle, at equal tiers so it is unambiguously a cycle diagnostic. Built from
+  //    fresh records for the same reason #2 is: mutating a shipped pair's
+  //    prerequisites can interact with content authored elsewhere for an
+  //    unrelated reason. `rm-hold-the-attention` and `rm-the-patient-lesson` used
+  //    to anchor this fixture, and they also sit either side of a real
+  //    antirequisite pair (`rm-still-your-own-mind` excludes
+  //    `rm-the-patient-lesson`, and requires `rm-hold-the-attention`) -- looping
+  //    the two together made `rm-hold-the-attention` transitively require its own
+  //    antirequisite through a third node, tripping a genuine but unrelated
+  //    seventh violation.
+  const cycleDonor = recordById(documents, 'node.json', 'rt-set-the-stone');
+  const cycleA = {
+    ...cycleDonor,
+    id: 'mau-fixture-cycle-a',
+    cell: 'muto-auram',
+    tier: 1,
+    prerequisites: ['mau-fixture-cycle-b'],
+  };
+  const cycleB = {
+    ...cycleDonor,
+    id: 'mau-fixture-cycle-b',
+    cell: 'muto-auram',
+    tier: 1,
+    prerequisites: ['mau-fixture-cycle-a'],
+  };
+  (documents['node.json'] as unknown[]).push(cycleA, cycleB);
+  const cycleCell = recordById(documents, 'cell.json', 'muto-auram');
+  cycleCell['nodes'] = [
+    ...(cycleCell['nodes'] as string[]),
+    'mau-fixture-cycle-a',
+    'mau-fixture-cycle-b',
   ];
-  recordById(documents, 'node.json', 'rm-the-patient-lesson')['tier'] = 1;
 
   // 4. a cell carrying both an interdiction and a dispensation
   recordById(documents, 'cell.json', 'perdo-mentem')['edicts'] = ['dispensation', 'interdiction'];
@@ -169,7 +196,7 @@ describe('validation reports every violation in a run', () => {
     expect(code).toBe(0);
     expect(output.errors).toEqual([]);
     expect(output.lines.join('\n')).toContain(
-      'OK — 5 techniques, 14 forms, 70 cells (12 flagged v1), 300 nodes, 6 species, ' +
+      'OK — 5 techniques, 14 forms, 70 cells (12 flagged v1), 357 nodes, 6 species, ' +
         '3 traditions, 16 primitives',
     );
     expect(output.lines.join('\n')).toMatch(/contentRevision [0-9a-f]{32}/u);

@@ -87,6 +87,8 @@ import { UNBOUNDED_SLOTS, admitToStore } from '../traditions/store.js';
 import type { CellResolver, KnowledgeNode, KnowledgeRng, NodeCatalog } from './catalog.js';
 import { requireNode } from './catalog.js';
 import { DEFAULT_INITIAL_MASTERY, RESEARCH_JITTER_SPAN } from './constants.js';
+import type { TrackCatalog } from './exclusion.js';
+import { acquisitionExclusion } from './exclusion.js';
 import type { KnowledgeRefusal } from './outcomes.js';
 import type { KnowledgeSubsystem } from './subsystem.js';
 
@@ -163,6 +165,23 @@ export interface ResearchInputs {
    * is what `store: standard` resolves to.
    */
   readonly store?: PersonalStore;
+  /**
+   * The universe's track catalog (`compositional-content.md` §3.1), for the
+   * track-exclusion half of `exclusion.ts`'s `acquisitionExclusion`. Node-level
+   * antirequisites are always enforced — they live on {@link KnowledgeNode}
+   * and need nothing else — but the track half needs the graph of which track
+   * excludes which, and that is what this supplies.
+   *
+   * Omitted means no track excludes anything, which is what an empty
+   * `track.json` already means and what every fixture written before this
+   * field existed continues to mean: unchanged behaviour, not a bypass.
+   *
+   * `| undefined` rather than merely optional — `exactOptionalPropertyTypes`
+   * is on, and `refuseResearch` forwards `inputs.tracks` straight through to
+   * `acquisitionExclusion` (see {@link RequirementInputs.acquire}'s note for
+   * the same pattern).
+   */
+  readonly tracks?: TrackCatalog | undefined;
 }
 
 export interface ResearchOutcome {
@@ -309,6 +328,17 @@ function refuseResearch(inputs: ResearchInputs, node: KnowledgeNode): KnowledgeR
   }
   const missing = unsatisfiedPrerequisite(inputs, node);
   if (missing !== undefined) return missing;
+  // Node antirequisites and track exclusion (`compositional-content.md`
+  // §3.2), scoped to `inputs.subject` alone — see `exclusion.ts`'s module
+  // note for why this is never a universe-scale question.
+  const excluded = acquisitionExclusion(
+    inputs.knowledge,
+    inputs.catalog,
+    inputs.tracks,
+    inputs.subject,
+    node,
+  );
+  if (excluded !== undefined) return excluded;
   return personalStoreFull(inputs.knowledge, inputs.store, inputs.subject, inputs.nodeId);
 }
 

@@ -40,6 +40,9 @@ __pycache__/
 .w17/
 # W46's affinity-ablation arms. Same reason.
 .w46/
+# W20's compositional-content arms and the scripts that drove them. Same reason.
+.w20/
+.w20-*.sh
 # W70's opening-square size sweep. Same reason: 480 runs of node-id sets.
 .w70/
 

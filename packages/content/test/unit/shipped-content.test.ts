@@ -56,7 +56,7 @@ describe('shipped content', () => {
       forms: 14,
       cells: 70,
       v1Cells: 12,
-      nodes: 300,
+      nodes: 357,
       species: 6,
       traditions: 3,
       territories: 5,
@@ -79,7 +79,22 @@ describe('shipped content', () => {
       // — they price what applied work makes and eats, not what a role wants —
       // and both are in `REQUIRED_AUTONOMY_WEIGHTS`, so the loader checks the
       // set in both directions exactly as it does for the target weights.
+      //
+      // **Re-counted from the merged tree rather than taken from either side of
+      // the merge.** W20 carried 36 here — its own branch never saw
+      // `apply-magic` — and `main` carried 38 for a reason W20 does not
+      // contradict, so the union is 38 and neither literal was a claim about
+      // this tree.
       autonomyWeights: 38,
+      // The named routes through the grid W20 adds (compositional-content.md
+      // §3.1): the open mind, the sealed mind, the quarried world, the hollow
+      // ground, the standing gate, the nameless road, the unwritten.
+      tracks: 7,
+      // Spells requiring more than one mage to cast, on mutually exclusive
+      // tracks (contracts.md §2.13): "Read the Sealed Shelf" (the-open-mind /
+      // the-sealed-mind) and "Found the Hollow Hall" (the-quarried-world /
+      // the-hollow-ground).
+      rituals: 2,
     });
   });
 

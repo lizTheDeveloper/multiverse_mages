@@ -295,8 +295,13 @@
     "nodes": [
       "im-weigh-the-attention",
       "im-follow-the-thought",
+      "im-note-the-silence",
+      "im-mark-the-avoidance",
       "im-read-the-surface",
-      "im-open-the-locked-room"
+      "im-hush-the-witness",
+      "im-open-the-locked-room",
+      "im-count-the-silences",
+      "im-the-last-secret"
     ],
     "v1": true
   },
@@ -309,9 +314,14 @@
     ],
     "nodes": [
       "it-taste-the-soil",
+      "it-mark-the-hollow",
       "it-survey-the-strata",
       "it-find-the-deep-seam",
-      "it-read-the-fault"
+      "it-read-the-fault",
+      "it-set-the-yield-tables",
+      "it-strip-the-hollow",
+      "it-price-the-vein",
+      "it-collapse-the-map"
     ],
     "v1": true
   },
@@ -368,9 +378,14 @@
     ],
     "nodes": [
       "il-sense-the-seam",
+      "il-count-the-absences",
       "il-count-the-doors",
       "il-read-the-binding",
-      "il-stand-in-the-doorway"
+      "il-read-the-unmarked-door",
+      "il-erase-two-doors",
+      "il-stand-in-the-doorway",
+      "il-hold-the-threshold",
+      "il-erase-the-standing-gate"
     ],
     "v1": true
   },
@@ -384,8 +399,13 @@
     "nodes": [
       "in-hear-the-name-spoken",
       "in-spell-the-lesser-name",
+      "in-unhear-the-name",
       "in-derive-the-true-name",
-      "in-catalogue-of-names"
+      "in-forget-the-lesser-name",
+      "in-catalogue-of-names",
+      "in-erase-the-ledger",
+      "in-read-the-whole-shelf",
+      "in-unwrite-the-name"
     ],
     "v1": true
   },
@@ -680,10 +700,14 @@
     "classicalLabels": [],
     "nodes": [
       "pm-blunt-the-edge",
+      "pm-nothing-to-find",
       "pm-the-misplaced-hour",
       "pm-scatter-the-lesson",
+      "pm-the-unheard-word",
+      "pm-forget-the-forgetting",
       "pm-unmake-the-mind",
-      "pm-the-empty-room"
+      "pm-the-empty-room",
+      "pm-the-unwritten-word"
     ],
     "v1": true
   },
@@ -695,8 +719,13 @@
     "nodes": [
       "pt-crumble",
       "pt-open-the-ground",
+      "pt-strip-the-vein",
       "pt-pull-down-the-arch",
-      "pt-the-swallowed-hall"
+      "pt-take-more-than-is-set",
+      "pt-break-the-load",
+      "pt-the-swallowed-hall",
+      "pt-the-long-fall",
+      "pt-the-unquarried"
     ],
     "v1": true
   },
@@ -747,9 +776,14 @@
     ],
     "nodes": [
       "pl-fray-the-edge",
+      "pl-forget-the-frame",
       "pl-unhinge",
+      "pl-crack-the-seam",
       "pl-the-open-wound",
-      "pl-nothing-holds"
+      "pl-nothing-holds",
+      "pl-the-severed-hold",
+      "pl-the-forgotten-threshold",
+      "pl-the-shut-world"
     ],
     "v1": true
   },
@@ -761,8 +795,13 @@
     "nodes": [
       "pn-mispronounce",
       "pn-shed-the-use-name",
+      "pn-take-back-the-word",
+      "pn-close-the-throat",
       "pn-unsay-the-name",
-      "pn-the-nameless"
+      "pn-nothing-to-call-you",
+      "pn-the-nameless",
+      "pn-the-silence-with-no-owner",
+      "pn-no-one-answers"
     ],
     "v1": true
   },
@@ -863,9 +902,14 @@
     ],
     "nodes": [
       "rm-hold-the-attention",
+      "rm-still-your-own-mind",
       "rm-the-patient-lesson",
       "rm-kindle-devotion",
-      "rm-the-shared-mind"
+      "rm-veil-the-thought",
+      "rm-the-locked-ledger",
+      "rm-the-shared-mind",
+      "rm-the-devoted-college",
+      "rm-the-unspoken-doctrine"
     ],
     "v1": true
   },
@@ -876,9 +920,14 @@
     "classicalLabels": [],
     "nodes": [
       "rt-set-the-stone",
+      "rt-mark-the-quarry-empty",
       "rt-raise-the-course",
+      "rt-leave-the-seam-unopened",
       "rt-quarry-without-hands",
-      "rt-the-vaulted-hall"
+      "rt-the-fallow-doctrine",
+      "rt-the-vaulted-hall",
+      "rt-the-endless-course",
+      "rt-the-unquarried-mind"
     ],
     "v1": true
   },
@@ -932,9 +981,13 @@
     "nodes": [
       "rl-hold-the-door",
       "rl-step-across",
+      "rl-test-the-frame",
+      "rl-open-the-hollow",
       "rl-seal-the-way",
       "rl-open-the-portal",
-      "rl-the-standing-gate"
+      "rl-the-drowned-threshold",
+      "rl-the-standing-gate",
+      "rl-the-collapsing-threshold"
     ],
     "v1": true
   },
@@ -947,10 +1000,14 @@
     ],
     "nodes": [
       "rn-call-by-name",
-      "rn-write-the-name-down",
       "rn-keep-the-name-close",
+      "rn-write-the-name-down",
       "rn-compel-by-name",
-      "rn-the-bound-servant"
+      "rn-hold-the-name-whole",
+      "rn-the-bound-servant",
+      "rn-the-open-ledger",
+      "rn-refuse-the-names-end",
+      "rn-the-name-that-outlasts"
     ],
     "v1": true
   }

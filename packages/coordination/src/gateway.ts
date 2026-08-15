@@ -138,15 +138,19 @@ import {
 import type {
   AcquirePolicy,
   CellResolver,
+  KnowledgeNode,
+  KnowledgeRefusal,
   KnowledgeRng,
   KnowledgeSubsystem,
   NodeCatalog,
   StoreHook,
   StorePolicy,
+  TrackCatalog,
 } from '@mm/rules-magic';
 import {
   DEFAULT_TEACH_THRESHOLD,
   MASTERY_ACTIVATION_THRESHOLD,
+  acquisitionExclusion,
   disownGrimoire,
   isRediscovery,
   research,
@@ -261,6 +265,17 @@ export interface GatewayDeps {
    * nothing else is `acquire`'s business.
    */
   readonly acquire: AcquirePolicy;
+  /**
+   * The universe's track catalog (`compositional-content.md` §3.1), for the
+   * track-exclusion half of `@mm/rules-magic`'s `acquisitionExclusion`.
+   *
+   * Optional, and omitted means the same thing it means to
+   * `acquisitionExclusion` itself: no track excludes anything. Node-level
+   * antirequisites need no dependency here at all — they live on the node and
+   * `this.#deps.catalog` already carries it — so a caller that only cares
+   * about that half pays nothing for omitting this.
+   */
+  readonly tracks?: TrackCatalog | undefined;
   /** Where a dead mage's grimoires go. Supplied by the death path. */
   readonly onGrimoiresInherited?: ((mage: MageHandle, inheritor: UniversityHandle) => void) | undefined;
   /**
@@ -448,6 +463,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       if (node === undefined) continue;
       if (this.knows(mage, nodeId)) continue;
       if (!this.#prerequisitesHeld(mage, node.prerequisites)) continue;
+      // Node antirequisites and track exclusion (`compositional-content.md`
+      // §3.2): an excluded node must never appear as a candidate at all, so
+      // the check runs here, in the same loop that already gates on
+      // prerequisites, before a cost is even quoted for it.
+      if (this.#isExcludedFor(mage, node) !== undefined) continue;
 
       const banked =
         this.#deps.effort?.progressOf(effortKey(EFFORT_KIND.research, mage, nodeId, 0)) ?? 0;
@@ -517,11 +537,14 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     for (const [nodeId, mastery] of this.#holdings(teacher)) {
       if (best !== undefined && nodeId >= best) continue;
       if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
-      const node = this.#deps.catalog.node(nodeId);
-      if (node === undefined || node.tier > rates.depthCeiling) continue;
-      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
-      if (this.knows(student, nodeId)) continue;
-      if (!this.#prerequisitesHeld(student, node.prerequisites)) continue;
+      // `#admitsLesson` is the single choke point for "could this student
+      // receive this node at all" — depth, legality, prerequisites, and now
+      // exclusion (`compositional-content.md` §3.2). This used to duplicate
+      // that logic inline, checked against everything `#admitsLesson` checks
+      // except exclusion, which is exactly how an excluded node kept
+      // appearing on `teachableToMe`/`teachableByMe` after `studentFor` and
+      // `teacherFor` had already stopped offering it.
+      if (!this.#admitsLesson(student, nodeId)) continue;
       best = nodeId;
     }
     return best;
@@ -681,6 +704,12 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       // at. `initialMastery` is deliberately not passed alongside it — one
       // route, so the two cannot be wired half-way.
       acquire: this.#deps.acquire,
+      // Belt-and-suspenders with `#isExcludedFor` above `researchFrontier`'s
+      // candidates: a mage cannot normally reach this call still committed to
+      // an excluded project, but `research.ts` enforces it independently
+      // (`compositional-content.md` §3.2) so a caller that bypassed candidate
+      // selection entirely still cannot finish one.
+      tracks: this.#deps.tracks,
     });
 
     if (outcome.refusal !== undefined) return;
@@ -741,6 +770,12 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       nodeId,
       worldTick: this.#deps.state.clock.worldTick,
       store: this.#deps.store,
+      // Belt-and-suspenders with `#admitsLesson` above `teachableTo`'s
+      // candidates: `teaching.ts` checks this against the student
+      // independently (`compositional-content.md` §3.2, as corrected), so a
+      // caller that bypassed candidate selection still cannot complete an
+      // illegal lesson.
+      tracks: this.#deps.tracks,
     });
 
     if (outcome.refusal !== undefined) {
@@ -1165,6 +1200,27 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   }
 
   /**
+   * Whether `mage` is excluded from `node` under either construct
+   * (`compositional-content.md` §3.2: node antirequisites, track exclusion),
+   * or the refusal naming why.
+   *
+   * One private wrapper rather than inlining `acquisitionExclusion` at each of
+   * {@link researchFrontier} and {@link #admitsLesson}: both need the
+   * identical call against a different subject, and `research.ts`/
+   * `teaching.ts` make the same call independently at the acquisition point —
+   * this is the candidate-side twin, not a third implementation.
+   */
+  #isExcludedFor(mage: MageHandle, node: KnowledgeNode): KnowledgeRefusal | undefined {
+    return acquisitionExclusion(
+      this.#deps.knowledge,
+      this.#deps.catalog,
+      this.#deps.tracks,
+      mage,
+      node,
+    );
+  }
+
+  /**
    * Whether a student could receive this node from somebody: within her depth
    * ceiling, legal here, not already known, prerequisites held.
    *
@@ -1181,7 +1237,14 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (node === undefined || node.tier > rates.depthCeiling) return false;
     if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return false;
     if (this.knows(student, nodeId)) return false;
-    return this.#prerequisitesHeld(student, node.prerequisites);
+    if (!this.#prerequisitesHeld(student, node.prerequisites)) return false;
+    // Checked against the student, not the teacher: `compositional-content.md`
+    // §3.2, as corrected — "a teacher can only pass on what a student's own
+    // commitments permit them to receive." This is the single choke point for
+    // teaching: `teachableTo` (both `teachableToMe` and `teachableByMe` in
+    // `outlook.ts`), `studentFor`, and `teacherFor` all route through it, so
+    // an excluded pairing never forms on either side.
+    return this.#isExcludedFor(student, node) === undefined;
   }
 
   /** The ledger, or a refusal naming what the caller left out. */

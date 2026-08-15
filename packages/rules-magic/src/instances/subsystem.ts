@@ -129,6 +129,9 @@ export function writtenInstanceLocation(
   return { locationKind: LOCATION_KIND.grimoire, locationId: grimoire };
 }
 
+/** A holder with nothing in mind or memory palace. Shared, and never written to. */
+const EMPTY_NODE_IDS: readonly ContentId[] = Object.freeze([]);
+
 export class KnowledgeSubsystem {
   readonly #state: SimState;
   readonly #existence: NodeExistenceIndex;
@@ -429,6 +432,26 @@ export class KnowledgeSubsystem {
    */
   holdsHeldNode(holder: Handle, nodeId: ContentId): boolean {
     return (this.#heldByHolder.get(holder)?.get(nodeId) ?? 0) > 0;
+  }
+
+  /**
+   * Every distinct node id a holder carries in mind or memory palace, in no
+   * particular order.
+   *
+   * Reads {@link #heldByHolder} directly rather than deduplicating
+   * {@link instancesHeldBy} — it is already the deduplicated index, held
+   * incrementally as instances are created and destroyed. Existing exactly
+   * for `exclusion.ts`'s track-threshold count: *"a mage holding `threshold`
+   * nodes of the named track"* (`compositional-content.md` §3.2) means
+   * distinct nodes, and theft that leaves a holder with two instances of one
+   * node must not count it twice toward a threshold. Bounded by how much this
+   * one mage knows — not by the size of the world's instance table — which is
+   * what keeps the acquisition-time exclusion check a per-mage cost rather
+   * than a per-tick scan of everyone.
+   */
+  heldNodeIdsOf(holder: Handle): readonly ContentId[] {
+    const held = this.#heldByHolder.get(holder);
+    return held === undefined ? EMPTY_NODE_IDS : [...held.keys()];
   }
 
   /**

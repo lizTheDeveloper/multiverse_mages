@@ -140,13 +140,13 @@ describe('interning', () => {
     expect(registry.intern('cell', 'creo-animal')).toBe(1);
     expect(registry.intern('cell', 'rego-nomen')).toBe(70);
     expect(registry.intern('node', 'can-call-the-pack')).toBe(1);
-    // 300, not 299: pre-authoring the other 58 cells brought 249 nodes, and
-    // `knowledge-model` task 2.5's `rn-keep-the-name-close` is the one neither
-    // side of that merge shared. Node ids intern in sort order, so it lands at
-    // 285 and every node after it shifts by one — the renumbering these
+    // 357, not 300: W20 replaced 51 ladder nodes with 108 compositional ones
+    // across the twelve v1 cells, moving the shipped total from 300 to 357.
+    // Node ids intern in sort order, so `rn-keep-the-name-close` moves from
+    // 285 to 334 and every node after it shifts too — the renumbering these
     // assertions exist to surface.
-    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(285);
-    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(300);
+    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(334);
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(357);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
@@ -258,6 +258,38 @@ describe('contentRevision', () => {
     // Three branches each recorded a successor to 2512ea02 — W6's ec506311,
     // W8's aeedc362 and W17's d37624e3 — because no two of them contained each
     // other. This is the revision of the tree that holds all three.
+    //
+    // ---- This branch's lineage from a622452a ----------------------------
+    //
+    // a622452a3b55e38fd902a2d3264b44d7 -> 02b5a898c8fff086f669ce8ddbe8631c, when W20
+    // replaced 51 ladder nodes with 108 compositional ones across the twelve v1
+    // cells (300 -> 357 nodes) and gave every effect a required `mode`, plus
+    // `track.json` (§2.12) — the named routes an exclusion can bind to instead of
+    // node by node. Two universes disagreeing about which nodes exist, what their
+    // effects fold into, or which routes exclude which would be developing
+    // different magic while their revisions agreed they were compatible.
+    //
+    // 02b5a898c8fff086f669ce8ddbe8631c -> 2fc8c278bee8b8c7e62e645d5c7ebe83, when
+    // `ritual.json` (§2.13) shipped two spells that require more than one mage to
+    // cast, each naming caster roles on tracks `track.json` already declares
+    // mutually exclusive. Two universes disagreeing about which rituals exist, or
+    // what caster roles they demand, would be developing different magic while
+    // their revisions agreed they were compatible — the same argument every prior
+    // entry in this history makes, for the same reason.
+    //
+    // 2fc8c278bee8b8c7e62e645d5c7ebe83 -> e3d4613284f6d261cac90fe13e80c1a6, when a
+    // gloss audit against `docs/design/content/spell-glosses.md` rewrote twenty
+    // gloss strings across twelve v1 nodes. **Provenance only: no rule reads a
+    // `gloss`, so no metric can move.** The revision changes anyway, and should —
+    // §0 makes this a compatibility gate over the whole content set rather than
+    // over the mechanical subset of it, precisely so that nobody has to maintain a
+    // second opinion about which fields count. The audit's substance was that
+    // eight `reveal`-mode Intellego nodes were glossed with the destruction verbs
+    // of the nodes they merely unlock, claiming a steal or an erasure at a node
+    // that contributes zero magnitude — content asserting a mechanic it does not
+    // have, invisible to every test, because a gloss is a string.
+    //
+    // ---- `main`'s lineage from the same a622452a -------------------------
     //
     // a622452a3b55e38fd902a2d3264b44d7 -> 2c67315ae04ee6c74dfa204474af4eb6,
     // when the single undifferentiated materials stock was split into three
@@ -377,7 +409,67 @@ describe('contentRevision', () => {
     // grant-budget move above, this one **does** change every run: applying
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
-    expect(registry.contentRevision).toBe('d4e3047657b4fa8a1a74e1d52f9f5c86');
+    // ---- W64: the two lineages meet -------------------------------------
+    //
+    // 6973d2c55f6d7788bbaa6886e507bbde and e3d4613284f6d261cac90fe13e80c1a6
+    // -> 542c55de64f8c9348ff6256e5e57bb61, when `w20/compositional-content`
+    // was re-cut against current `main` and the two lineages above — which
+    // fork at a622452a and had not met until this commit — were merged.
+    //
+    // Neither parent's literal survives, and for the third time in this list
+    // that is the correct outcome rather than a lost claim. `main`'s
+    // 6973d2c5 is a digest over a preimage holding the material split, the
+    // raid constants, the summons cap and both `node.json` passes, and none
+    // of this branch's 108 compositional nodes, `track.json`, `ritual.json`
+    // or the effect `mode`. This branch's e3d46132 is a digest over the
+    // mirror-image preimage. This tree is the first one holding both, so a
+    // third value is exactly what a digest over the union is supposed to
+    // produce; a merge that kept either literal would be asserting a
+    // revision no tree has.
+    //
+    // One authoring decision inside that union is recorded here rather than
+    // buried in the data, because it is a deferral and not a judgement. The
+    // merged `node.json` is 357 records: `main`'s 300, each keeping the
+    // `knowledgeKind` it was judged with — all twenty-nine `metis` calls in
+    // `docs/design/metis-authoring.md` survive this merge unmoved — plus
+    // this branch's 57 new compositional nodes, which are marked `episteme`
+    // **uniformly and mechanically, exactly as `d97caaaa`'s pass marked the
+    // original 300.** No probe in `metis-authoring.md` §1 was applied to any
+    // of the 57, and twenty of them are Intellego, where that document's
+    // first pass found 25 of its 29 calls — so the honest reading is that
+    // the mētis pass over W20's content has not been done, not that it was
+    // done and came back empty. It is deliberately left as a separate,
+    // reviewable authoring change for the same reason `d97caaaa` and
+    // `5c319f82` were kept apart: a merge is not a defensible place to make
+    // 57 new content judgements. Nothing in the rules path reads
+    // `knowledgeKind`, so this moves no metric today; what it defers is a
+    // design claim, not a number.
+    //
+    // ---- W64 arrives, and this is the merge that produced the literal below --
+    //
+    // Both lineages above met here. `main`'s chain (ending d4e30476) is a digest
+    // over a preimage holding the material split, the raid constants, the
+    // summons cap, the grant budget and `apply-magic`'s two scalars, and none of
+    // this branch's compositional nodes, `track.json`, `ritual.json` or the
+    // effect `mode`. This branch's chain (ending 542c55de) is the mirror image.
+    // This tree is the first holding both, so a third value is exactly what a
+    // digest over the union is supposed to produce, and it was **re-measured
+    // from the merged tree** rather than taken from either side.
+    //
+    // One authoring decision inside that union is recorded here rather than
+    // buried in the data, because it is a deferral and not a judgement. The
+    // merged `node.json` is 357 records: `main`'s 300, each keeping the
+    // `knowledgeKind` it was judged with — all twenty-nine `metis` calls in
+    // `docs/design/metis-authoring.md` survive this merge unmoved — plus this
+    // branch's 57 new compositional nodes, which are marked `episteme`
+    // **uniformly and mechanically, exactly as `d97caaaa`'s pass marked the
+    // original 300.** No probe in `metis-authoring.md` §1 was applied to any of
+    // the 57, and twenty of them are Intellego, where that document's first pass
+    // found 25 of its 29 calls — so the honest reading is that the mētis pass
+    // over W20's content has not been done, not that it was done and came back
+    // empty. Nothing in the rules path reads `knowledgeKind`, so this moves no
+    // metric today; what it defers is a design claim, not a number.
+    expect(registry.contentRevision).toBe('f7dd80543d8080cc0eee53ed27f1ab84');
   });
 
   it('is stable across loads of identical content', () => {

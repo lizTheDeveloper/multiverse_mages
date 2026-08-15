@@ -95,3 +95,5 @@ export {
   resourceYieldMultiplier,
   subsistenceDemand,
 } from './materials.js';
+
+export { primitiveFloor } from './primitive-floor.js';

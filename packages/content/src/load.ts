@@ -56,6 +56,7 @@ import type {
   ContentId,
   ContentNamespace,
   ContentRegistry,
+  EffectMode,
   FormRecord,
   GodConstantRecord,
   RaidConstantRecord,
@@ -67,6 +68,8 @@ import type {
   TechniqueRecord,
   TerritoryRecord,
   TraditionRecord,
+  TrackRecord,
+  RitualRecord,
 } from './types.js';
 
 /**
@@ -109,8 +112,31 @@ export const V1_FORM_COUNT = 4;
  * is a conversation. **The response to hitting it is to measure the frontier
  * scan and raise this number on purpose, or to author fewer nodes. It is never
  * to cap the scan again.**
+ *
+ * ## Raised from 1024 to 2048 by W20, on purpose
+ *
+ * W20 replaced the twelve v1 cells' 51 ladder nodes with 108 compositional ones,
+ * taking the catalog from 300 to 357. That is comfortably inside the old bound —
+ * what it crossed was the **headroom canary** in `shipped-content.test.ts`,
+ * which asserts `nodes × 3 < MAX_CONTENT_NODES` so that content arriving at the
+ * ceiling is noticed by a test that can explain it rather than by a build
+ * failure a month later. 357 × 3 = 1071. The canary did its job.
+ *
+ * 2048 is chosen against a stated target rather than doubled for comfort: the
+ * grid is seventy cells, v1 now authors nine nodes per cell, and seventy cells
+ * at that density is 630 nodes — so 630 × 3 = 1890 keeps the same threefold
+ * headroom for **the whole grid authored to v1's new standard**, which is the
+ * largest catalog this design implies. Meeting *this* number would mean the grid
+ * had grown past what `vision.md` §4 describes.
+ *
+ * The cost this bounds is unchanged in shape and larger in fact: the frontier
+ * scan is O(nodes) per mage per tick, and the catalog grew 19%. That is a real
+ * per-tick cost increase and it has not been benchmarked here — `npm run bench`
+ * does not yet reach this layer, and `world-step.ts` records the same gap about
+ * `KnowledgeSubsystem.fromState`. **Measuring it is the first thing owed if the
+ * throughput target is missed.**
  */
-export const MAX_CONTENT_NODES = 1024;
+export const MAX_CONTENT_NODES = 2048;
 
 /**
  * Authoring floor for `rediscoveryMultiplier` in v1 content.
@@ -206,6 +232,8 @@ interface ParsedDocuments {
   readonly godConstant: readonly GodConstantRecord[];
   readonly raidConstant: readonly RaidConstantRecord[];
   readonly autonomyWeight: readonly AutonomyWeightRecord[];
+  readonly track: readonly TrackRecord[];
+  readonly ritual: readonly RitualRecord[];
 }
 
 let cachedSchemas: ReadonlyMap<ContentFileName, CompiledSchema> | undefined;
@@ -292,6 +320,8 @@ export function validateContent(source: ContentSource): ValidationResult {
     godConstant: raw.get('god-constant.json') as readonly GodConstantRecord[],
     raidConstant: raw.get('raid-constant.json') as readonly RaidConstantRecord[],
     autonomyWeight: raw.get('autonomy-weight.json') as readonly AutonomyWeightRecord[],
+    track: raw.get('track.json') as readonly TrackRecord[],
+    ritual: raw.get('ritual.json') as readonly RitualRecord[],
   };
 
   // ---- Phase 3: graph integrity. ----
@@ -362,12 +392,16 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   indexById(documents.godConstant, 'god-constant.json', out);
   indexById(documents.raidConstant, 'raid-constant.json', out);
   indexById(documents.autonomyWeight, 'autonomy-weight.json', out);
+  const trackById = indexById(documents.track, 'track.json', out);
+  indexById(documents.ritual, 'ritual.json', out);
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
 
   checkCells(documents.cell, techniqueById, formById, nodeById, out);
   checkNodes(documents.node, cellById, nodeById, primitiveById, out);
+  checkTracks(documents.track, trackById, documents.node, nodeById, out);
+  checkRituals(documents.ritual, documents.track, trackById, primitiveById, out);
   checkSpecies(documents.species, formById, cellById, out);
   checkTraditions(documents.tradition, out);
   // `god-agency`'s two tables. Their coverings and identities are checks a JSON
@@ -674,6 +708,30 @@ function checkV1Subset(v1Cells: readonly CellRecord[], out: ContentDiagnostic[])
   }
 }
 
+/**
+ * `sound-design.md` §4.1's five envelopes, made mechanical
+ * (`compositional-content.md` §3.3): each technique has exactly one coherent
+ * effect mode.
+ */
+const TECHNIQUE_TO_MODE: Readonly<Record<string, EffectMode>> = {
+  creo: 'create',
+  intellego: 'reveal',
+  muto: 'transform',
+  perdo: 'remove',
+  rego: 'control',
+};
+
+type EffectPayloadKey = 'reveals' | 'control' | 'transformTo';
+
+/** Which payload each `mode` requires and which it forbids (`compositional-content.md` §3.3, §5). */
+const MODE_PAYLOADS: Readonly<Record<EffectMode, { requires: readonly EffectPayloadKey[]; forbids: readonly EffectPayloadKey[] }>> = {
+  create: { requires: [], forbids: ['reveals', 'control', 'transformTo'] },
+  remove: { requires: [], forbids: ['reveals', 'control', 'transformTo'] },
+  reveal: { requires: ['reveals'], forbids: ['control', 'transformTo'] },
+  control: { requires: ['control'], forbids: ['reveals', 'transformTo'] },
+  transform: { requires: ['transformTo'], forbids: ['reveals', 'control'] },
+};
+
 function checkNodes(
   nodes: readonly NodeRecord[],
   cellById: ReadonlyMap<string, CellRecord>,
@@ -810,11 +868,13 @@ function checkNodes(
     for (let index = 0; index < node.effects.length; index += 1) {
       const effect = node.effects[index];
       if (effect === undefined) continue;
+      const effectAt = `${at}/effects/${String(index)}`;
+
       if (!primitiveById.has(effect.primitive)) {
         out.push(
           diagnostic(
             file,
-            `${at}/effects/${String(index)}/primitive`,
+            `${effectAt}/primitive`,
             'unknown-reference',
             `node "${node.id}" declares effect primitive "${effect.primitive}", which primitive.json ` +
               'does not define. The primitive set is closed: content may not invent one — which is also ' +
@@ -822,10 +882,320 @@ function checkNodes(
           ),
         );
       }
+
+      // `mode-technique-incoherent` is enforced only where the cell is flagged
+      // v1 (contracts.md §2.3's schema description, compositional-content.md
+      // §3.3): the 58 unenabled cells stay loadable while it is impossible to
+      // enable one without authoring it to this standard. The message says so
+      // explicitly, because the check extends the moment a cell is flagged.
+      if (cell?.v1 === true) {
+        const expectedMode = TECHNIQUE_TO_MODE[cell.technique];
+        if (expectedMode !== undefined && effect.mode !== expectedMode) {
+          out.push(
+            diagnostic(
+              file,
+              `${effectAt}/mode`,
+              'mode-technique-incoherent',
+              `node "${node.id}" is in v1 cell "${cell.id}", whose technique "${cell.technique}" requires ` +
+                `effect mode "${expectedMode}" (sound-design.md §4.1); effect ${String(index)} declares mode ` +
+                `"${effect.mode}" instead. This check extends to any cell the moment it is flagged "v1": true`,
+            ),
+          );
+        }
+      }
+
+      // `mode-payload-missing` / `mode-payload-extraneous` bind the mode to the
+      // payload it takes (compositional-content.md §3.3, §5) — enforced in
+      // every cell, v1 or not, because it is a statement about the mode rather
+      // than about what the release enables.
+      const payloadRule = MODE_PAYLOADS[effect.mode];
+      if (payloadRule !== undefined) {
+        for (const key of payloadRule.requires) {
+          if (effect[key] === undefined) {
+            out.push(
+              diagnostic(
+                file,
+                effectAt,
+                'mode-payload-missing',
+                `node "${node.id}" effect ${String(index)} has mode "${effect.mode}", which requires "${key}", ` +
+                  'but the effect does not declare it',
+              ),
+            );
+          }
+        }
+        for (const key of payloadRule.forbids) {
+          if (effect[key] !== undefined) {
+            out.push(
+              diagnostic(
+                file,
+                `${effectAt}/${key}`,
+                'mode-payload-extraneous',
+                `node "${node.id}" effect ${String(index)} has mode "${effect.mode}", which does not take ` +
+                  `"${key}", but the effect declares it anyway`,
+              ),
+            );
+          }
+        }
+      }
+
+      if (effect.transformTo !== undefined && !primitiveById.has(effect.transformTo)) {
+        out.push(
+          diagnostic(
+            file,
+            `${effectAt}/transformTo`,
+            'unknown-reference',
+            `node "${node.id}" effect ${String(index)} names transformTo primitive "${effect.transformTo}", ` +
+              'which primitive.json does not define',
+          ),
+        );
+      }
+      if (effect.reveals?.cell !== undefined && !cellById.has(effect.reveals.cell)) {
+        out.push(
+          diagnostic(
+            file,
+            `${effectAt}/reveals/cell`,
+            'unknown-reference',
+            `node "${node.id}" effect ${String(index)} names reveals.cell "${effect.reveals.cell}", ` +
+              'which no cell.json record defines',
+          ),
+        );
+      }
+      if (effect.reveals?.primitive !== undefined && !primitiveById.has(effect.reveals.primitive)) {
+        out.push(
+          diagnostic(
+            file,
+            `${effectAt}/reveals/primitive`,
+            'unknown-reference',
+            `node "${node.id}" effect ${String(index)} names reveals.primitive "${effect.reveals.primitive}", ` +
+              'which primitive.json does not define',
+          ),
+        );
+      }
+      if (effect.when?.kind === 'holds-cell' && !cellById.has(effect.when.cell)) {
+        out.push(
+          diagnostic(
+            file,
+            `${effectAt}/when/cell`,
+            'unknown-reference',
+            `node "${node.id}" effect ${String(index)} names when.cell "${effect.when.cell}", which no ` +
+              'cell.json record defines',
+          ),
+        );
+      }
+
+      // `mentem-is-not-in-the-world` — sound-design.md §4.2: Mentem is "the
+      // only form with no reverb at all… happening inside the listener's head
+      // rather than in the world". Enforced for every cell of that form, v1 or
+      // not, because it is a statement about the form.
+      if (cell?.form === 'mentem' && effect.target === 'universe') {
+        out.push(
+          diagnostic(
+            file,
+            `${effectAt}/target`,
+            'mentem-is-not-in-the-world',
+            `node "${node.id}" is in Mentem cell "${cell.id}" but effect ${String(index)} declares ` +
+              'target "universe". Mentem happens inside a mind, not in the world (sound-design.md §4.2), ' +
+              'so none of its effects may target the whole universe',
+          ),
+        );
+      }
+
+      // `effect-gloss-missing` — enforced in v1 cells only, the same scope as
+      // `mode-technique-incoherent`: an ungloosed effect in playable content
+      // has none of sound-design.md's envelope semantics in prose either.
+      if (cell?.v1 === true && effect.gloss === undefined) {
+        out.push(
+          diagnostic(
+            file,
+            effectAt,
+            'effect-gloss-missing',
+            `node "${node.id}" is in v1 cell "${cell.id}" but effect ${String(index)} carries no gloss`,
+          ),
+        );
+      }
+    }
+
+    for (let index = 0; index < (node.antirequisites ?? []).length; index += 1) {
+      const antirequisiteId = (node.antirequisites ?? [])[index];
+      if (antirequisiteId === undefined) continue;
+      const antirequisiteAt = `${at}/antirequisites/${String(index)}`;
+      if (antirequisiteId === node.id) {
+        out.push(
+          diagnostic(
+            file,
+            antirequisiteAt,
+            'antirequisite-self',
+            `node "${node.id}" lists itself as an antirequisite`,
+          ),
+        );
+        continue;
+      }
+      if (!nodeById.has(antirequisiteId)) {
+        out.push(
+          diagnostic(
+            file,
+            antirequisiteAt,
+            'antirequisite-unknown',
+            `node "${node.id}" names antirequisite "${antirequisiteId}", which no node.json record defines`,
+          ),
+        );
+      }
     }
   }
 
+  out.push(...checkAntirequisiteContradictions(nodes, nodeById));
+  out.push(...checkResearchCostVariation(nodes, cellById));
+
   out.push(...findPrerequisiteCycles(nodes, nodeById));
+}
+
+/**
+ * The symmetric closure of `node.antirequisites`.
+ *
+ * **Always symmetric, and not an open question.** Unlike a track exclusion
+ * (`normaliseTrackExclusions`, below), a node-level antirequisite carries no
+ * field to declare a one-way reason: every antirequisite authored in v1 is an
+ * opposed-in-kind pair (compositional-content.md §3.2), and there is nowhere
+ * on the record to say otherwise. Declaring the relation on one side is
+ * enough — holding either member blocks the other, whichever a mage reaches
+ * first — and declaring it on both sides is not an error.
+ *
+ * The one exported entry point for this normalisation, so a caller reaches
+ * for `ContentRegistry.antirequisitesOf` or this function rather than
+ * re-deriving the closure ad hoc.
+ */
+export function normaliseAntirequisites(
+  nodes: readonly NodeRecord[],
+): ReadonlyMap<string, ReadonlySet<string>> {
+  const closure = new Map<string, Set<string>>();
+  const ensure = (id: string): Set<string> => {
+    let set = closure.get(id);
+    if (set === undefined) {
+      set = new Set();
+      closure.set(id, set);
+    }
+    return set;
+  };
+  for (const node of nodes) {
+    for (const otherId of node.antirequisites ?? []) {
+      if (otherId === node.id) continue;
+      ensure(node.id).add(otherId);
+      ensure(otherId).add(node.id);
+    }
+  }
+  return closure;
+}
+
+/**
+ * Walks every transitive prerequisite of one node, iteratively.
+ *
+ * An explicit stack rather than recursion, for the reason
+ * `findPrerequisiteCycles` gives: a long prerequisite chain should report the
+ * chain, not a `RangeError` from the JavaScript call stack. `visited` also
+ * makes this safe over a graph that turns out to contain a cycle — each id is
+ * pushed at most once, so a cycle here terminates instead of looping forever.
+ */
+function transitivePrerequisitesOf(
+  nodeId: string,
+  nodeById: ReadonlyMap<string, NodeRecord>,
+): ReadonlySet<string> {
+  const visited = new Set<string>();
+  const stack: string[] = [nodeId];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (current === undefined) continue;
+    const node = nodeById.get(current);
+    if (node === undefined) continue;
+    for (const prerequisiteId of node.prerequisites) {
+      if (!visited.has(prerequisiteId)) {
+        visited.add(prerequisiteId);
+        stack.push(prerequisiteId);
+      }
+    }
+  }
+  return visited;
+}
+
+/**
+ * `antirequisite-contradicts-prerequisite`: a node that is both a transitive
+ * prerequisite and an antirequisite of the same node is unreachable — holding
+ * it is what researching the node requires, and holding it is exactly what
+ * researching the node forbids.
+ */
+function checkAntirequisiteContradictions(
+  nodes: readonly NodeRecord[],
+  nodeById: ReadonlyMap<string, NodeRecord>,
+): readonly ContentDiagnostic[] {
+  const out: ContentDiagnostic[] = [];
+  const closure = normaliseAntirequisites(nodes);
+
+  for (let position = 0; position < nodes.length; position += 1) {
+    const node = nodes[position];
+    if (node === undefined) continue;
+    const antirequisites = closure.get(node.id);
+    if (antirequisites === undefined || antirequisites.size === 0) continue;
+
+    const prerequisites = transitivePrerequisitesOf(node.id, nodeById);
+    for (const antirequisiteId of [...antirequisites].sort(byString)) {
+      if (prerequisites.has(antirequisiteId)) {
+        out.push(
+          diagnostic(
+            'node.json',
+            pointerAppend('', position),
+            'antirequisite-contradicts-prerequisite',
+            `node "${node.id}" can never be researched: "${antirequisiteId}" is both a transitive ` +
+              `prerequisite of "${node.id}" and its antirequisite, so researching "${node.id}" would ` +
+              `require already holding the one thing holding it forbids`,
+          ),
+        );
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * `research-cost-is-tier-alone`: a v1 tier with two or more nodes that all
+ * share one `researchCost` is `strategy-dimensionality.md`'s original defect
+ * — acquisition order that is a pure function of tier — reintroduced
+ * (compositional-content.md §3.5). A tier with exactly one node cannot fail
+ * this: there is nothing for its cost to vary *from*.
+ */
+function checkResearchCostVariation(
+  nodes: readonly NodeRecord[],
+  cellById: ReadonlyMap<string, CellRecord>,
+): readonly ContentDiagnostic[] {
+  const out: ContentDiagnostic[] = [];
+  const byTier = new Map<number, NodeRecord[]>();
+  for (const node of nodes) {
+    if (cellById.get(node.cell)?.v1 !== true) continue;
+    let group = byTier.get(node.tier);
+    if (group === undefined) {
+      group = [];
+      byTier.set(node.tier, group);
+    }
+    group.push(node);
+  }
+
+  for (const tier of [...byTier.keys()].sort((a, b) => a - b)) {
+    const group = byTier.get(tier);
+    if (group === undefined || group.length < 2) continue;
+    const costs = new Set(group.map((node) => node.researchCost));
+    if (costs.size === 1) {
+      const ids = [...group.map((node) => node.id)].sort(byString);
+      out.push(
+        diagnostic(
+          'node.json',
+          '',
+          'research-cost-is-tier-alone',
+          `v1 tier ${String(tier)} has ${String(group.length)} nodes (${ids.join(', ')}) that all share ` +
+            `researchCost ${String(group[0]?.researchCost)} — acquisition order must not be a pure ` +
+            'function of tier (compositional-content.md §3.5)',
+        ),
+      );
+    }
+  }
+  return out;
 }
 
 /**
@@ -1002,6 +1372,437 @@ function checkTraditions(traditions: readonly TraditionRecord[], out: ContentDia
   }
 }
 
+/**
+ * The shared trunk every mage acquires early (`compositional-content.md`
+ * §3.1's "shared body of magic"): tiers 1 and 2. `track-excluded-by-trunk`
+ * reads this as the boundary below which a track is effectively universal.
+ */
+const TRUNK_MAX_TIER = 2;
+
+/**
+ * `exclusion-reason-missing`'s floor. The schema's own `minLength` is 1 — it
+ * cannot reject a placeholder without also rejecting every genuine one-word
+ * gloss no author would write — so the graph phase enforces the length a
+ * one-sentence justification actually needs.
+ */
+const MIN_EXCLUSION_GLOSS_LENGTH = 16;
+
+/**
+ * `ritual-too-few-roles`' floor (`contracts.md` §2.13). `ritual.schema.json`'s
+ * own `roles.minItems` is 1, deliberately below this, so a single-role record
+ * fails here with the diagnostic that explains *why* two is the minimum
+ * — "one caster role is just an expensive spell" — rather than being
+ * foreclosed by the schema before that reasoning ever runs.
+ */
+const MIN_RITUAL_ROLES = 2;
+
+/**
+ * The closure `track.excludes` resolves to, honouring each exclusion's own
+ * `symmetric` flag rather than imposing one direction on every entry.
+ *
+ * **Symmetry is derived from the exclusion's stated reason, not a free
+ * choice** — the author's ruling: two things opposed *in kind* (light and
+ * dark, making and unmaking) exclude each other mutually, while a one-way
+ * reason gives a one-way lock. The data declares which it is with
+ * `symmetric`, and this function honours whatever it declares: a
+ * `symmetric: true` entry adds both directed edges, a `symmetric: false`
+ * entry adds only the authored one. Contrast `normaliseAntirequisites`, whose
+ * node-level relation has no field to say otherwise and is always symmetric.
+ */
+export function normaliseTrackExclusions(
+  tracks: readonly TrackRecord[],
+): ReadonlyMap<string, ReadonlySet<string>> {
+  const closure = new Map<string, Set<string>>();
+  const ensure = (id: string): Set<string> => {
+    let set = closure.get(id);
+    if (set === undefined) {
+      set = new Set();
+      closure.set(id, set);
+    }
+    return set;
+  };
+  for (const track of tracks) {
+    for (const exclusion of track.excludes) {
+      ensure(track.id).add(exclusion.track);
+      if (exclusion.symmetric) ensure(exclusion.track).add(track.id);
+    }
+  }
+  return closure;
+}
+
+function checkTracks(
+  tracks: readonly TrackRecord[],
+  trackById: ReadonlyMap<string, TrackRecord>,
+  nodes: readonly NodeRecord[],
+  nodeById: ReadonlyMap<string, NodeRecord>,
+  out: ContentDiagnostic[],
+): void {
+  const file = 'track.json';
+
+  for (let position = 0; position < tracks.length; position += 1) {
+    const track = tracks[position];
+    if (track === undefined) continue;
+    const at = pointerAppend('', position);
+
+    for (let index = 0; index < track.excludes.length; index += 1) {
+      const exclusion = track.excludes[index];
+      if (exclusion === undefined) continue;
+      const exclusionAt = `${at}/excludes/${String(index)}`;
+
+      if (exclusion.track === track.id) {
+        out.push(
+          diagnostic(file, exclusionAt, 'track-exclusion-self', `track "${track.id}" excludes itself`),
+        );
+        continue;
+      }
+
+      const excludedTrack = trackById.get(exclusion.track);
+      if (excludedTrack === undefined) {
+        out.push(
+          diagnostic(
+            file,
+            `${exclusionAt}/track`,
+            'track-unknown',
+            `track "${track.id}" names excluded track "${exclusion.track}", which no track.json record defines`,
+          ),
+        );
+        continue;
+      }
+
+      if (exclusion.gloss.length < MIN_EXCLUSION_GLOSS_LENGTH) {
+        out.push(
+          diagnostic(
+            file,
+            `${exclusionAt}/gloss`,
+            'exclusion-reason-missing',
+            `track "${track.id}" excludes "${exclusion.track}" with a gloss of only ` +
+              `${String(exclusion.gloss.length)} character(s). An exclusion's shape is derived from its ` +
+              `reason (contracts.md §2.12), and a reason too short to be a sentence is a placeholder — ` +
+              `the loader requires at least ${String(MIN_EXCLUSION_GLOSS_LENGTH)}`,
+          ),
+        );
+      }
+
+      // `track-excluded-by-trunk`: tiers 1-2 are the shared trunk every mage
+      // acquires early. If the excluded track carries any node that shallow,
+      // essentially every mage touches it before she could ever choose this
+      // one, and this track becomes dead content — excluded by knowledge
+      // nobody avoids.
+      const trunkNode = nodes.find(
+        (node) => node.track === excludedTrack.id && node.tier <= TRUNK_MAX_TIER,
+      );
+      if (trunkNode !== undefined) {
+        out.push(
+          diagnostic(
+            file,
+            exclusionAt,
+            'track-excluded-by-trunk',
+            `track "${track.id}" excludes "${excludedTrack.id}", but "${excludedTrack.id}" contains tier-` +
+              `${String(trunkNode.tier)} node "${trunkNode.id}". Tiers 1-2 are the shared trunk every mage ` +
+              `acquires early, so a track excluded by trunk knowledge is a track nobody can ever enter`,
+          ),
+        );
+      }
+    }
+  }
+
+  // A node's `track` field, checked here rather than in checkNodes so every
+  // track-shaped diagnostic lives beside the rest of them.
+  for (let position = 0; position < nodes.length; position += 1) {
+    const node = nodes[position];
+    if (node === undefined || node.track === undefined) continue;
+    if (!trackById.has(node.track)) {
+      out.push(
+        diagnostic(
+          'node.json',
+          `${pointerAppend('', position)}/track`,
+          'track-unknown',
+          `node "${node.id}" names track "${node.track}", which no track.json record defines`,
+        ),
+      );
+    }
+  }
+
+  const exclusionClosure = normaliseTrackExclusions(tracks);
+
+  // `track-exclusion-unsatisfiable`: a node on track T with a prerequisite on
+  // a track T' the exclusion closure puts on the other side of T is content
+  // nobody can ever reach — researching it requires already holding a node
+  // whose track closes the door T's exclusion just opened.
+  for (let position = 0; position < nodes.length; position += 1) {
+    const node = nodes[position];
+    if (node === undefined || node.track === undefined) continue;
+    if (!trackById.has(node.track)) continue; // already reported track-unknown
+    const excluded = exclusionClosure.get(node.track);
+    if (excluded === undefined || excluded.size === 0) continue;
+
+    for (let index = 0; index < node.prerequisites.length; index += 1) {
+      const prerequisiteId = node.prerequisites[index];
+      if (prerequisiteId === undefined) continue;
+      const prerequisite = nodeById.get(prerequisiteId);
+      if (prerequisite?.track === undefined || !excluded.has(prerequisite.track)) continue;
+
+      out.push(
+        diagnostic(
+          'node.json',
+          `${pointerAppend('', position)}/prerequisites/${String(index)}`,
+          'track-exclusion-unsatisfiable',
+          `node "${node.id}" is on track "${node.track}", which excludes track "${prerequisite.track}", ` +
+            `but its prerequisite "${prerequisiteId}" is on that excluded track — "${node.id}" could never ` +
+            'be researched',
+        ),
+      );
+    }
+  }
+
+  // `track-unreachable-from-trunk`: a track with no node whose prerequisites
+  // lie entirely outside the tracks it excludes has no door in — every path
+  // onto it first requires crossing a track it cannot coexist with.
+  const nodesByTrack = new Map<string, NodeRecord[]>();
+  for (const node of nodes) {
+    if (node.track === undefined) continue;
+    let members = nodesByTrack.get(node.track);
+    if (members === undefined) {
+      members = [];
+      nodesByTrack.set(node.track, members);
+    }
+    members.push(node);
+  }
+
+  for (let position = 0; position < tracks.length; position += 1) {
+    const track = tracks[position];
+    if (track === undefined) continue;
+    const members = nodesByTrack.get(track.id);
+    if (members === undefined || members.length === 0) continue;
+
+    const excluded = exclusionClosure.get(track.id) ?? new Set<string>();
+    const hasEntryPoint = members.some((node) =>
+      node.prerequisites.every((prerequisiteId) => {
+        const prerequisite = nodeById.get(prerequisiteId);
+        return prerequisite?.track === undefined || !excluded.has(prerequisite.track);
+      }),
+    );
+    if (!hasEntryPoint) {
+      out.push(
+        diagnostic(
+          file,
+          pointerAppend('', position),
+          'track-unreachable-from-trunk',
+          `track "${track.id}" has no node whose prerequisites lie entirely outside the tracks it ` +
+            'excludes — every node on it requires a prerequisite from an excluded track, so it can never ' +
+            'be entered',
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * Like {@link normaliseTrackExclusions}, but keeps the `threshold` each edge
+ * carries instead of collapsing it to membership in a `Set`.
+ *
+ * `ritual-castable-by-one` needs the number: the loader's own `TrackExclusion`
+ * doc says it precisely — *"a mage holding `threshold` nodes of the named
+ * track may not learn anything on this one"* — and a ritual role satisfiable
+ * on fewer nodes than that is a role a mage could fill without the exclusion
+ * ever engaging. This is a second, ritual-only pass over the same `excludes`
+ * declarations rather than a change to `normaliseTrackExclusions`'s return
+ * shape, which every other track check in this file still calls and which
+ * has no use for the number.
+ *
+ * The result reads as `closure.get(trackId)?.get(otherTrackId)` = the fewest
+ * nodes of `otherTrackId` one mind may hold before `trackId` closes to it —
+ * i.e. the edge `acquisitionExclusion` (`@mm/rules-magic`) enforces at
+ * acquisition time. Honours `symmetric` exactly as `normaliseTrackExclusions`
+ * does: a `symmetric: true` entry adds both directed edges, a `symmetric:
+ * false` entry adds only the authored one. Where more than one declaration
+ * would produce the same directed edge, the smaller threshold wins, because
+ * that is the one that actually fires first at runtime — `acquisitionExclusion`
+ * refuses as soon as *any* matching exclusion's threshold is met.
+ */
+function trackExclusionThresholds(
+  tracks: readonly TrackRecord[],
+): ReadonlyMap<string, ReadonlyMap<string, number>> {
+  const closure = new Map<string, Map<string, number>>();
+  const record = (from: string, to: string, threshold: number): void => {
+    let edges = closure.get(from);
+    if (edges === undefined) {
+      edges = new Map();
+      closure.set(from, edges);
+    }
+    const existing = edges.get(to);
+    if (existing === undefined || threshold < existing) edges.set(to, threshold);
+  };
+
+  for (const track of tracks) {
+    for (const exclusion of track.excludes) {
+      record(track.id, exclusion.track, exclusion.threshold);
+      if (exclusion.symmetric) record(exclusion.track, track.id, exclusion.threshold);
+    }
+  }
+  return closure;
+}
+
+/**
+ * `contracts.md` §2.13's self-enforcing gate: a ritual whose caster roles are
+ * not mutually exclusive is refused at load, because such a "ritual" is
+ * satisfiable by one sufficiently patient mage and is just an expensive spell
+ * wearing this shape for no reason.
+ *
+ * **Every check here is a load failure, never a warning** — the same rule
+ * `compositional-content.md` §5 states for the track graph, extended to the
+ * construct built on top of it.
+ */
+function checkRituals(
+  rituals: readonly RitualRecord[],
+  tracks: readonly TrackRecord[],
+  trackById: ReadonlyMap<string, TrackRecord>,
+  primitiveById: ReadonlyMap<string, PrimitiveRecord>,
+  out: ContentDiagnostic[],
+): void {
+  const file = 'ritual.json';
+  const thresholds = trackExclusionThresholds(tracks);
+
+  for (let position = 0; position < rituals.length; position += 1) {
+    const ritual = rituals[position];
+    if (ritual === undefined) continue;
+    const at = pointerAppend('', position);
+
+    if (ritual.roles.length < MIN_RITUAL_ROLES) {
+      out.push(
+        diagnostic(
+          file,
+          `${at}/roles`,
+          'ritual-too-few-roles',
+          `ritual "${ritual.id}" declares ${String(ritual.roles.length)} caster role(s); a ritual needs ` +
+            `at least ${String(MIN_RITUAL_ROLES)} — one caster role is just an expensive spell, and the ` +
+            'whole point of this construct is that no one mage can fill every role herself',
+        ),
+      );
+    }
+
+    // Resolve each role's track, reporting a name no track.json record
+    // defines. `undefined` stands in for "already reported" below, so the
+    // mutual-exclusion and duplicate-track passes never re-report the same
+    // defect a second way.
+    const roleTracks: (string | undefined)[] = [];
+    for (let index = 0; index < ritual.roles.length; index += 1) {
+      const role = ritual.roles[index];
+      if (role === undefined) {
+        roleTracks.push(undefined);
+        continue;
+      }
+      if (trackById.has(role.track)) {
+        roleTracks.push(role.track);
+      } else {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/roles/${String(index)}/track`,
+            'ritual-role-track-unknown',
+            `ritual "${ritual.id}" role ${String(index)} names track "${role.track}", which no track.json ` +
+              'record defines',
+          ),
+        );
+        roleTracks.push(undefined);
+      }
+    }
+
+    // `ritual-duplicate-role-track`: two roles on one track are one role,
+    // authored twice, not two casters — a track cannot exclude itself
+    // (`track-exclusion-self`), so the mutual-exclusion pass below could
+    // never make sense of this pair and does not try.
+    const firstRoleForTrack = new Map<string, number>();
+    for (let index = 0; index < roleTracks.length; index += 1) {
+      const trackId = roleTracks[index];
+      if (trackId === undefined) continue;
+      const firstIndex = firstRoleForTrack.get(trackId);
+      if (firstIndex === undefined) {
+        firstRoleForTrack.set(trackId, index);
+        continue;
+      }
+      out.push(
+        diagnostic(
+          file,
+          `${at}/roles/${String(index)}/track`,
+          'ritual-duplicate-role-track',
+          `ritual "${ritual.id}" names track "${trackId}" in both role ${String(firstIndex)} and role ` +
+            `${String(index)} — two roles on the same track are one role authored twice, not two casters`,
+        ),
+      );
+    }
+
+    // `ritual-castable-by-one`: for every ordered pair of distinct-track
+    // roles (i, j), track i must be closed by holding role j's track — and
+    // role j's own `minNodes` must reach the threshold that closes it, or a
+    // mage below that threshold could dabble in both roles' tracks at once
+    // and the exclusion never engages for her. Proven once per ordered pair
+    // (`compositional-content.md` §3.2's "a mage holding `threshold` nodes of
+    // the named track may not learn anything on this one" run forward and
+    // backward), which is what makes the ritual uncastable by one mage
+    // *however long she lives* rather than merely inconvenient for her.
+    for (let i = 0; i < ritual.roles.length; i += 1) {
+      const trackI = roleTracks[i];
+      if (trackI === undefined) continue;
+
+      for (let j = 0; j < ritual.roles.length; j += 1) {
+        if (i === j) continue;
+        const trackJ = roleTracks[j];
+        if (trackJ === undefined || trackJ === trackI) continue; // already reported
+
+        const roleJ = ritual.roles[j];
+        if (roleJ === undefined) continue;
+
+        const closingThreshold = thresholds.get(trackI)?.get(trackJ);
+        if (closingThreshold === undefined) {
+          out.push(
+            diagnostic(
+              file,
+              `${at}/roles/${String(i)}`,
+              'ritual-castable-by-one',
+              `ritual "${ritual.id}": role ${String(i)}'s track "${trackI}" declares no exclusion — direct ` +
+                `or symmetric — that closes once a mage holds enough of role ${String(j)}'s track "${trackJ}". ` +
+                'Without one, a single sufficiently patient mage could eventually hold both, and this ' +
+                '"ritual" is just an expensive spell',
+            ),
+          );
+          continue;
+        }
+
+        if (roleJ.minNodes < closingThreshold) {
+          out.push(
+            diagnostic(
+              file,
+              `${at}/roles/${String(j)}/minNodes`,
+              'ritual-castable-by-one',
+              `ritual "${ritual.id}": role ${String(j)} requires only ${String(roleJ.minNodes)} node(s) of ` +
+                `track "${trackJ}", below the ${String(closingThreshold)} needed to close track "${trackI}" ` +
+                `to a mage who holds them. A mage could hold ${String(roleJ.minNodes)} of "${trackJ}" without ` +
+                `ever closing role ${String(i)}'s track, so one mage could fill both roles at once`,
+            ),
+          );
+        }
+      }
+    }
+
+    for (let index = 0; index < ritual.effects.length; index += 1) {
+      const effect = ritual.effects[index];
+      if (effect === undefined) continue;
+      if (!primitiveById.has(effect.primitive)) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/effects/${String(index)}/primitive`,
+            'unknown-reference',
+            `ritual "${ritual.id}" declares effect primitive "${effect.primitive}", which primitive.json ` +
+              'does not define',
+          ),
+        );
+      }
+    }
+  }
+}
+
 function byString(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
@@ -1042,6 +1843,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const godConstants = internNamespace(documents.godConstant);
   const raidConstants = internNamespace(documents.raidConstant);
   const autonomyWeights = internNamespace(documents.autonomyWeight);
+  const tracks = internNamespace(documents.track);
+  const rituals = internNamespace(documents.ritual);
 
   const tables = new Map<ContentNamespace, ReadonlyMap<string, ContentId>>([
     ['technique', tableOf(techniques)],
@@ -1056,6 +1859,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     ['god-constant', tableOf(godConstants)],
     ['raid-constant', tableOf(raidConstants)],
     ['autonomy-weight', tableOf(autonomyWeights)],
+    ['track', tableOf(tracks)],
+    ['ritual', tableOf(rituals)],
   ]);
   const reverse = new Map<ContentNamespace, ReadonlyMap<ContentId, string>>();
   for (const [namespace, table] of tables) {
@@ -1108,6 +1913,13 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   append('god-constant', godConstants);
   append('raid-constant', raidConstants);
   append('autonomy-weight', autonomyWeights);
+  append('track', tracks);
+  append('ritual', rituals);
+
+  // Antirequisites are declared one node at a time but meant as a relation
+  // between a pair; the symmetric closure is computed once here, over the
+  // interned node set, rather than per call.
+  const antirequisiteClosure = normaliseAntirequisites(documents.node);
 
   const counts: ContentCounts = {
     techniques: techniques.length,
@@ -1123,6 +1935,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     godConstants: godConstants.length,
     raidConstants: raidConstants.length,
     autonomyWeights: autonomyWeights.length,
+    tracks: tracks.length,
+    rituals: rituals.length,
   };
 
   return {
@@ -1140,6 +1954,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     godConstants,
     raidConstants,
     autonomyWeights,
+    tracks,
+    rituals,
     intern(namespace, id) {
       return tables.get(namespace)?.get(id) ?? 0;
     },
@@ -1197,8 +2013,14 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     roleAppeal(role, primitiveId) {
       return roleAppealByPair.get(`${role} ${primitiveId}`) ?? 0;
     },
+    antirequisitesOf(nodeId) {
+      return antirequisiteClosure.get(nodeId) ?? EMPTY_STRING_SET;
+    },
   };
 }
+
+/** Shared empty set for {@link ContentRegistry.antirequisitesOf}'s no-antirequisite case. */
+const EMPTY_STRING_SET: ReadonlySet<string> = new Set();
 
 function internNamespace<T extends { readonly id: string }>(
   records: readonly T[],

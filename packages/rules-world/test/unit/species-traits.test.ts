@@ -132,7 +132,12 @@ describe('the six species are validated content', () => {
       maturityMonths: 600,
       mageAptitude: 448,
       laborAffinity: 1280,
-      affinities: { terram: 1536, ignem: 1152 },
+      // W20 added `nomen` and `limen`, the two v1-rectangle forms a dwarf has any
+      // business with: §2.4's example moved with the data, and this pin moved with
+      // both. Before that change the dwarf declared only `terram` and `ignem`, and
+      // `ignem` is outside the v1 rectangle — so a dwarf brought exactly one
+      // readable affinity to a v1 run, and human and gnome brought none at all.
+      affinities: { terram: 1536, ignem: 1152, nomen: 1280, limen: 960 },
     });
   });
 

@@ -14,7 +14,12 @@
     "rediscoveryAffinity": 1024,
     "mageAptitude": 512,
     "laborAffinity": 1024,
-    "affinities": {},
+    "affinities": {
+      "nomen": 1280,
+      "limen": 1152,
+      "mentem": 1024,
+      "terram": 960
+    },
     "tuningStatus": "untuned"
   },
   {
@@ -32,7 +37,12 @@
     "rediscoveryAffinity": 896,
     "mageAptitude": 768,
     "laborAffinity": 768,
-    "affinities": { "herbam": 1536, "mentem": 1280 },
+    "affinities": {
+      "herbam": 1536,
+      "mentem": 1280,
+      "limen": 1152,
+      "nomen": 1024
+    },
     "tuningStatus": "untuned"
   },
   {
@@ -50,7 +60,12 @@
     "rediscoveryAffinity": 768,
     "mageAptitude": 448,
     "laborAffinity": 1280,
-    "affinities": { "terram": 1536, "ignem": 1152 },
+    "affinities": {
+      "terram": 1536,
+      "ignem": 1152,
+      "nomen": 1280,
+      "limen": 960
+    },
     "tuningStatus": "untuned"
   },
   {
@@ -68,7 +83,13 @@
     "rediscoveryAffinity": 640,
     "mageAptitude": 896,
     "laborAffinity": 512,
-    "affinities": { "ignem": 1792, "vim": 1536, "nomen": 1280 },
+    "affinities": {
+      "ignem": 1792,
+      "vim": 1536,
+      "nomen": 1280,
+      "mentem": 1152,
+      "limen": 896
+    },
     "tuningStatus": "untuned"
   },
   {
@@ -86,7 +107,13 @@
     "rediscoveryAffinity": 1792,
     "mageAptitude": 640,
     "laborAffinity": 768,
-    "affinities": { "imaginem": 1408, "vim": 1280 },
+    "affinities": {
+      "imaginem": 1408,
+      "vim": 1280,
+      "mentem": 1344,
+      "limen": 1088,
+      "nomen": 896
+    },
     "tuningStatus": "untuned"
   },
   {
@@ -104,7 +131,12 @@
     "rediscoveryAffinity": 512,
     "mageAptitude": 192,
     "laborAffinity": 1536,
-    "affinities": { "terram": 1280, "corpus": 1280 },
+    "affinities": {
+      "terram": 1280,
+      "corpus": 1280,
+      "limen": 1088,
+      "nomen": 896
+    },
     "tuningStatus": "untuned"
   }
 ]

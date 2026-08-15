@@ -51,7 +51,26 @@ export type ContentDiagnosticCode =
   | 'hook-set'
   | 'hook-kind'
   | 'hook-params'
-  | 'species-invariant';
+  | 'species-invariant'
+  | 'mode-technique-incoherent'
+  | 'mode-payload-missing'
+  | 'mode-payload-extraneous'
+  | 'mentem-is-not-in-the-world'
+  | 'antirequisite-unknown'
+  | 'antirequisite-self'
+  | 'antirequisite-contradicts-prerequisite'
+  | 'track-unknown'
+  | 'track-exclusion-self'
+  | 'track-exclusion-unsatisfiable'
+  | 'track-excluded-by-trunk'
+  | 'track-unreachable-from-trunk'
+  | 'exclusion-reason-missing'
+  | 'research-cost-is-tier-alone'
+  | 'effect-gloss-missing'
+  | 'ritual-too-few-roles'
+  | 'ritual-role-track-unknown'
+  | 'ritual-duplicate-role-track'
+  | 'ritual-castable-by-one';
 
 /**
  * Thrown by {@link loadContent} when the content set has any defect at all.

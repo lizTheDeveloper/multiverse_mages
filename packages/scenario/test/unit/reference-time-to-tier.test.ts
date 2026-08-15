@@ -67,6 +67,49 @@
  * Separating dwarf, gnome and human is a tuning question, and
  * `release-plan.md` forbids answering one before 0.5.0.
  *
+ * ## Re-measured a third time, after W20's compositional content graph, and
+ * the bands collapsed rather than sharpened
+ *
+ * `compositional-content.md` replaced the 51 v1 ladder nodes — one strict
+ * chain per cell, no choice in them at all — with 108 nodes across tracks,
+ * tiers 1-7, and per-technique cost curves. The obvious hypothesis was that
+ * more authored depth would let the high-`depthCeiling` species (elf 6,
+ * draconic 7) finally separate from the rest, since v1 previously topped out
+ * at tier 5 with exactly two nodes there and nothing above — so those two
+ * ceilings bought nothing. **That is not what happened to time-to-tier.**
+ * What widened instead is *every* species' own spread, because at each tier a
+ * mage now has many roughly-equally-costed nodes to choose between rather
+ * than one, and which one she reaches for depends on her own `curiosity` and
+ * `affinities` — so two mages of the same species, differing only by seed,
+ * now diverge as much as two different species used to.
+ *
+ * Measured, tier 3, in ticks, this build against `w17/value-sensitive-acquirer`:
+ *
+ * | species  | w17          | W20              |
+ * |----------|--------------|------------------|
+ * | gnome    | [20, 21]     | **[30, 68]**     |
+ * | dwarf    | [21, 25]     | **[31, 48]**     |
+ * | orc      | [21, 27]     | **[33, 61]**     |
+ * | human    | [28, 37]     | **[33, 52]**     |
+ * | elf      | [35, 58]     | **[35, 59]**     |
+ * | draconic | [26, 380]    | **[52, 277]** (1 of 6 seeds censored) |
+ *
+ * Every interval widened except elf's, which held almost exactly. The fast
+ * trio (gnome/dwarf/orc) that used to sit strictly below elf now overlaps it
+ * completely — gnome's own high (68) exceeds elf's low (35) by nearly double.
+ * Of the fifteen species pairs, only **one** still separates strictly at
+ * tier 3: **dwarf arrives before draconic, in every seed** (dwarf's worst
+ * case, 48, beats draconic's best, 52). Every other pair overlaps, including
+ * the one separation task 9.9's previous reading was built on (draconic after
+ * every ordinary species). **This is a regression in the number of
+ * distinguishable species, from three bands down to one surviving pair**, and
+ * it is recorded rather than repaired for the same reason as always: every
+ * species magnitude is `tuningStatus: "untuned"`, and `release-plan.md`
+ * forbids answering a tuning question before 0.5.0. Content that widens
+ * authored depth without also widening species differentiation is a finding
+ * for the balance harness, not something this test should paper over by
+ * picking a looser band definition.
+ *
  * ## Why sixty years and six seeds
  *
  * Sixty, because draconic's median is 383 ticks and its worst observed arrival
@@ -278,38 +321,15 @@ describe('time to tier, by species', () => {
     // `w7/knowledge-capital` wired vision §6a's library contribution into the
     // three rates and compressed the spread.
     //
-    // `w17/value-sensitive-acquirer` then made target selection a utility score
-    // shaped by species, age, personality and standing role
-    // (`docs/design/value-sensitive-acquirer.md`). Every species got roughly
-    // twice as fast to tier 3 *and the spread reopened*, because a species now
-    // walks toward the tier-3 nodes its own `curiosity` and `affinities` favour
-    // rather than down one queue shared by everybody.
-    //
-    // Measured, tier 3, in ticks, this build against the previous one:
-    //
-    // | species | w7 | w17 |
-    // |---|---|---|
-    // | gnome    | [39, 53]  | **[20, 21]** |
-    // | dwarf    | [41, 54]  | **[21, 25]** |
-    // | orc      | [42, 63]  | **[21, 27]** |
-    // | human    | [44, 57]  | **[28, 37]** |
-    // | elf      | [54, 110] | **[35, 58]** |
-    // | draconic | [68, 245] | **[26, 380]** |
-    //
-    // Three bands now, where there was one separation: a fast trio
-    // (gnome, dwarf, orc) that overlaps internally, human strictly after all
-    // three, and elf strictly after all three again. Draconic has stopped being
-    // a band at all — it spans from inside the fast trio to five times elf's
-    // slowest seed, which is `depthCeiling: 7` and `curiosity: 512` pulling
-    // against each other under the new score.
-    //
-    // **Task 9.9 wants four species separated by more than the cross-seed
-    // spread. This build separates three groups and not four species**, because
-    // gnome, dwarf and orc still overlap. Recorded rather than repaired: every
-    // species magnitude carries `tuningStatus: "untuned"`, no release before
-    // 0.5.0 may claim any of them is balanced, and inventing a species number to
-    // make a test go green is what `release-plan.md`'s measurement pivot exists
-    // to prevent.
+    // `compositional-content.md` (W20) replaced the 51-node v1 ladder with 108
+    // nodes across tracks and per-technique cost curves. Every species'
+    // interval widened — a mage now has many roughly-equally-costed tier-3
+    // candidates rather than one, and which one she reaches for depends on her
+    // own `curiosity`/`affinities`, so seed-to-seed variance within one species
+    // grew enough to swallow most of the between-species gaps the previous
+    // reading found. Of the fifteen possible species pairs, **fourteen now
+    // overlap**. The measured intervals are in this file's header table; the
+    // one survivor is asserted below.
     const interval = (name: string): { low: number; high: number } => {
       const column = tierThree.find((entry) => entry.name === name);
       if (column === undefined || column.observed.length === 0) {

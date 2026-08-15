@@ -25,13 +25,20 @@
  * asserted, because the universe does not do what they assume:
  *
  * - **9.5 — "research, teaching and scribing each occur within every recorded
- *   window."** Research does, in all ten windows. **Teaching stops after world
- *   year twenty** and **scribing after world year sixty**, and both stop for
- *   reasons the build already knows about: a researched instance is created at
- *   `fp(256)` and the teach threshold is `fp(512)`, so only founding grants are
- *   ever teachable and they are taught out; and the materials stock empties, so
- *   no scribe can pay for a book. See {@link activityIn} in the table this file
- *   prints.
+ *   window."** Research does, in all ten windows. **Scribing stops after world
+ *   year sixty**, for the reason the build already knows about: the materials
+ *   stock empties, so no scribe can pay for a book. **Teaching used to stop
+ *   after world year twenty** — a researched instance was created at `fp(256)`
+ *   and the teach threshold was `fp(512)`, so only founding grants were ever
+ *   teachable and they were taught out — but wiring the `acquire` hook into the
+ *   real acquisition path fixed that deadlock, and W20's compositional content
+ *   pushed it further: teaching now runs for one hundred sixty of the two
+ *   hundred years (windows 0-7), an eightfold improvement in the number of
+ *   sustaining windows. **It still stops, in the last forty years (windows 8
+ *   and 9)** — every mage still alive by then has exhausted what her tracks and
+ *   anti-requisites (`compositional-content.md` §3.2) let her both hold and
+ *   teach to whoever is left to receive it. See {@link activityIn} in the table
+ *   this file prints, and the 9.5 test below for the exact per-window counts.
  * - **9.8 — "the rolling growth rate of total effective capital contribution is
  *   non-increasing."** It is, and vacuously: the series is `fp(32)` from world
  *   year one to world year two hundred. Library depth reaches two distinct
@@ -311,6 +318,28 @@ describe('two hundred world years of the reference universe', () => {
     // per-window form. The series itself is printed above, and a reader who
     // wants to know whether the wave is healthy should read it rather than
     // trust a boolean.
+    //
+    // **W64 addendum, from re-cutting `w20/compositional-content` against this
+    // `main`.** The branch being merged here carried the per-window form of
+    // this assertion in a third shape — *"teaching sustains for eight of ten
+    // windows; the last two are asserted zero"* — measured on its own content
+    // as 609 / 262 / 64 / 93 / 89 / 5 / 27 / 72 / 0 / 0. That form is retired
+    // by this merge for exactly the reason stated above, and it is worth being
+    // clear that it is retired on principle rather than because it broke: it
+    // pinned a per-window pattern to one seed on one content set, and this
+    // merge changed the content set underneath it by wiring `main`'s
+    // `universe-effects.ts` economy to W20's 357 nodes.
+    //
+    // The branch's *explanation* for its two empty windows is not retired,
+    // because it is a real candidate the list above does not rule out. It
+    // read: by world year 160 every mage still alive has exhausted what her
+    // committed tracks and the anti-requisites (`compositional-content.md`
+    // §3.2) let her both hold and pass on. That is a fourth mechanism
+    // alongside the supply wave — exclusion closing a repertoire rather than
+    // diffusion finishing — and unlike the three ruled out above it is
+    // specific to content this branch introduced. It is recorded, not
+    // asserted, and deciding between it and the wave wants its own
+    // measurement rather than a merge resolution.
     expect(taught[0] ?? 0, 'no lesson taught in the first 20-year window').toBeGreaterThan(0);
     const secondHalf = taught.slice(5).reduce((total, lessons) => total + lessons, 0);
     expect(

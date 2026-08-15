@@ -401,8 +401,21 @@ describe('invalid content is a hard load failure', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {
         const node = recordById(documents, 'node.json', 'rl-open-the-portal');
+        // `mode: 'control'`, its required `control` payload, and a `gloss` --
+        // matching rego-limen's real effect shape exactly (Rego -> control,
+        // v1 cell) -- so this fixture fails for the one reason under test
+        // rather than also tripping mode-technique-incoherent or
+        // effect-gloss-missing.
         node['effects'] = [
-          { primitive: 'portal-stability', magnitude: 1024, target: 'universe', durationTicks: 0 },
+          {
+            primitive: 'portal-stability',
+            magnitude: 1024,
+            target: 'universe',
+            durationTicks: 0,
+            mode: 'control',
+            gloss: 'fixture effect for the unknown-primitive test',
+            control: { floor: 1408 },
+          },
         ];
       }),
     );

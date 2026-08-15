@@ -44,6 +44,7 @@ import {
   additive,
   additiveIntoMultiplier,
   applyWard,
+  diminishing,
   maxOf,
   multiplicativeOnRemainder,
   neutralizedMagnitude,
@@ -51,6 +52,7 @@ import {
   presence,
   stackMagnitudes,
 } from '@mm/primitives';
+import type { PrimitiveStackingRule } from '@mm/primitives';
 
 const registry: ContentRegistry = loadContent(shippedContentSource());
 
@@ -203,18 +205,19 @@ describe('the declared identity and the rule’s own empty case agree', () => {
    * changes one, this fails rather than the two drifting into a disagreement
    * that only shows up as a biased attribution six months later.
    */
-  const emptyCase: Readonly<Record<PrimitiveStacking, Fixed>> = {
+  const emptyCase: Readonly<Record<PrimitiveStackingRule, Fixed>> = {
     additive: additive([]),
     'summed-then-single-ward': additive([]),
     'additive-into-multiplier': additiveIntoMultiplier([]),
     'multiplicative-on-remainder': multiplicativeOnRemainder([]),
     max: maxOf([]),
     presence: presence([]),
+    diminishing: diminishing([]),
   };
 
   for (const [stacking, value] of Object.entries(emptyCase)) {
     it(`${stacking} declares the same identity its rule produces for no sources`, () => {
-      expect(neutralizedMagnitude(stacking as PrimitiveStacking)).toBe(value);
+      expect(neutralizedMagnitude(stacking as PrimitiveStackingRule)).toBe(value);
     });
   }
 

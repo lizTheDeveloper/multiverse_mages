@@ -62,6 +62,7 @@ import {
   registerNonNodeConsumer,
   storePolicy,
   traditionTableFrom,
+  trackCatalogFromRegistry,
 } from '@mm/rules-magic';
 import type { SpeciesAffinities } from '@mm/rules-world';
 import {
@@ -76,6 +77,7 @@ import { combatEffectIndex } from '@mm/rules-raid';
 import type { WorldStepDeps } from '@mm/coordination';
 import {
   godEffectHooks,
+  knowledgeEffectHooks,
   nodeFacetsFrom,
   resolveGodContent,
   universeEffectIndex,
@@ -648,6 +650,11 @@ export function worldDeps(
   // dependency-graph test is right to refuse one. This file wires; it does not
   // compute.
   const effects = godEffectHooks({ constants: god.constants, cells });
+  // Same reasoning, for the third source of these primitives: what a held
+  // node contributes at world scale is `knowledge-effects.ts`'s rule, not
+  // this file's. `registry` rather than `catalog` because `gatherEffects`
+  // reads a `ContentRegistry` directly — see that file's `KnowledgeEffectDeps`.
+  const knowledgeEffects = knowledgeEffectHooks({ registry, cells, knowledgeFor });
 
   // Species affinities are resolved once per species, not once per mage per
   // tick: six records against potentially thousands of mages, and the answer is
@@ -733,6 +740,10 @@ export function worldDeps(
     application: readApplicationWeights(registry),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
+    // `compositional-content.md` §3.1's exclusion graph. Built once, here,
+    // for the reason `territory` already is: a function of the content
+    // registry alone, fixed for the length of a run.
+    tracks: trackCatalogFromRegistry(registry),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
     // The same records the extent is summed from, read for their yield mix
     // instead of their capacity. Both are fixed for the length of a run.
@@ -783,6 +794,7 @@ export function worldDeps(
       // the one place that knows which tick a loss count belongs to.
     },
     ...effects,
+    ...knowledgeEffects,
   };
 }
 

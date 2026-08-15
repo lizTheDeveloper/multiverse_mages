@@ -52,7 +52,7 @@ import type { Handle, RaidSideValue, Ruleset } from '@mm/state';
 import { COMBATANT_SOURCE_KIND, MAGE, RAID_SIDE, collectRecords, permits } from '@mm/state';
 import type { MagicGrid } from '@mm/rules-magic';
 
-import { COMBAT_PRIMITIVES } from './arbitration.js';
+import { COMBAT_PRIMITIVES, enablesGate } from './arbitration.js';
 import type { EligibleMage } from './combatants.js';
 import {
   DEFENDING_ROLES,
@@ -140,6 +140,14 @@ export function portalGate(options: {
  * rather than theoretical: when the last instance of every `portal`-carrying
  * node is destroyed — in a raid, by a dead mage, by a burned library — the
  * action masks itself until such a node is rediscovered or re-taught.
+ *
+ * "Carrying" is mode-aware, via {@link enablesGate} (`arbitration.ts`'s
+ * effect-modes docblock has the full table): a `create` or `control` effect
+ * opens the gate — Rego *is* the portal cell (`sound-design.md` §4.3,
+ * *"Rego Limen … a hard lock, and then you are somewhere else"*) — but a
+ * `remove` effect never does. *"Perdo's signature is a hole"*: a Perdo Limen
+ * node unmakes a gate rather than opening one, so a mage holding nothing but
+ * one must not be read as holding portal knowledge at all.
  */
 function hasPortalKnowledge(options: {
   readonly attackerWorld: SimState;
@@ -152,7 +160,7 @@ function hasPortalKnowledge(options: {
       if (instance.mastery < CASTABLE_MASTERY) continue;
       const node = options.registry.node(instance.nodeId);
       if (node === undefined) continue;
-      if (node.effects.some((effect) => effect.primitive === COMBAT_PRIMITIVES.portal)) return true;
+      if (node.effects.some((effect) => enablesGate(effect, COMBAT_PRIMITIVES.portal))) return true;
     }
   }
   return false;

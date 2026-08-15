@@ -118,15 +118,21 @@ describe('the lifespan primitive is recomputed, capped, and counted', () => {
   });
 
   it('adds the stacked months of the active effects', () => {
+    // W20: `lifespan` stacks by `diminishing`, not `additive`
+    // (docs/design/compositional-content.md §3.3, contracts.md §3's "Why
+    // lifespan stacks by diminishing returns" paragraph) -- the largest source
+    // counts in full and the second at half. 60 in full, 30 at half (15):
+    // 60 + 15 = 75, not the additive 90.
     const bare = lifespanOf(human, handleOf(2, 1), 0);
     const blessed = lifespanOf(human, handleOf(2, 1), 0, [fromInt(60), fromInt(30)]);
-    expect(blessed.bonusMonths).toBe(90);
-    expect(blessed.months).toBe(bare.months + 90);
+    expect(blessed.bonusMonths).toBe(75);
+    expect(blessed.months).toBe(bare.months + 75);
   });
 
   it('clamps a bonus above 50% of the species base, and counts the clamp', () => {
-    // The spec scenario, and contracts.md §3's cap: additive months, capped at
-    // +50% of species base.
+    // The spec scenario, and contracts.md §3's cap: stacked (diminishing)
+    // months, capped at +50% of species base. Full + half of two equal
+    // sources is already 1.5x the base, well past the cap either way.
     const counters = new ClampCounters();
     const blessed = lifespanOf(
       human,

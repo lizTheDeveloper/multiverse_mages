@@ -42,6 +42,8 @@
 import type { ContentId, ContentRegistry, Fp, NodeRecord } from '@mm/content';
 import type { RngStream } from '@mm/sim-core';
 
+import { closeAntirequisites, internTrack } from './exclusion.js';
+
 /**
  * The part of a node this package reads.
  *
@@ -64,6 +66,30 @@ export interface KnowledgeNode {
   readonly scribeCost: Fp;
   /** At least `@mm/primitives`' `REDISCOVERY_FLOOR`; the loader enforces it. */
   readonly rediscoveryMultiplier: Fp;
+  /**
+   * The node's track (`compositional-content.md` §3.1), or `0`/absent for the
+   * shared body of magic every mage can reach. Interned onto `@mm/content`'s
+   * `'track'` namespace — see `exclusion.ts`'s `internTrack` for the bridge
+   * this reads through while that namespace does not exist yet.
+   *
+   * Optional, deliberately: `projectNode` always sets it, but every fixture a
+   * test built before this feature existed constructs a `KnowledgeNode`
+   * literal directly, and requiring the field would break every one of them
+   * for a track no such fixture cares about. `exclusion.ts` treats an absent
+   * value exactly as `0` — see {@link trackIdOf}.
+   */
+  readonly trackId?: ContentId;
+  /**
+   * Nodes this one may never be held alongside, **in one mind**
+   * (`compositional-content.md` §3.2). Ascending by id, and already closed
+   * over both directions by `exclusion.ts`'s `closeAntirequisites` — a
+   * consumer never has to check the reverse edge itself.
+   *
+   * Optional for the same reason {@link trackId} is. Absent reads as no
+   * antirequisites, never as "not yet computed" — see `exclusion.ts`'s
+   * {@link antirequisitesOf}.
+   */
+  readonly antirequisites?: readonly ContentId[];
 }
 
 /** The loaded node graph, addressed by interned id. */
@@ -150,13 +176,38 @@ export function catalogOf(nodes: readonly KnowledgeNode[]): NodeCatalog {
  * projection and not a cache — there is nothing here that can go stale without
  * the content revision changing.
  */
+/**
+ * Projects a loaded content registry into a catalog, interning every
+ * prerequisite once and closing `antirequisites` over both directions.
+ *
+ * The closure is a second pass over the projected list (`closeAntirequisites`,
+ * `exclusion.ts`) rather than something `projectNode` can do node-by-node: a
+ * node cannot know what excludes it without having seen every other node's
+ * declaration first. Both passes run once per content load, never per
+ * operation.
+ */
 export function catalogFromRegistry(registry: ContentRegistry): NodeCatalog {
   const nodes: KnowledgeNode[] = [];
   for (const entry of registry.nodes) {
     nodes.push(projectNode(entry.contentId, entry.record, registry));
   }
-  return catalogOf(nodes);
+  return catalogOf(closeAntirequisites(nodes));
 }
+
+/**
+ * `NodeRecord` does not yet declare `track` or `antirequisites`
+ * (`compositional-content.md` §3.2 — another workstream is adding them to
+ * `packages/content` while this was written; `node.schema.json` already
+ * declares both). This intersection type bridges the anticipated shape so
+ * `projectNode` compiles and is tested against real behaviour now: at runtime
+ * it reads `undefined` for either field until content lands, exactly as an
+ * absent optional field would, and the cast becomes redundant rather than
+ * wrong once `NodeRecord` gains them.
+ */
+type ExtendedNodeRecord = NodeRecord & {
+  readonly track?: string;
+  readonly antirequisites?: readonly string[];
+};
 
 function projectNode(
   nodeId: ContentId,
@@ -167,6 +218,13 @@ function projectNode(
   for (const prerequisite of record.prerequisites) {
     prerequisites.push(registry.intern('node', prerequisite));
   }
+
+  const extended = record as ExtendedNodeRecord;
+  const trackId = extended.track === undefined ? 0 : internTrack(registry, extended.track);
+  const antirequisites = [...(extended.antirequisites ?? [])]
+    .map((id) => registry.intern('node', id))
+    .sort((a, b) => a - b);
+
   return {
     nodeId,
     tier: record.tier,
@@ -175,6 +233,8 @@ function projectNode(
     teachCost: record.teachCost,
     scribeCost: record.scribeCost,
     rediscoveryMultiplier: record.rediscoveryMultiplier,
+    trackId,
+    antirequisites,
   };
 }
 

@@ -64,6 +64,33 @@ export type KnowledgeRefusal =
   | { readonly reason: 'node-not-held'; readonly nodeId: ContentId; readonly subject: Handle }
   /** No instance of the node survives anywhere in this universe. */
   | { readonly reason: 'node-lost'; readonly nodeId: ContentId }
+  /**
+   * The subject already holds a node this one's `antirequisites` names, or
+   * vice versa (`compositional-content.md` §3.2). Scoped to the subject alone
+   * — `mind:<mageId>` or `palace:<mageId>` — never to the universe.
+   */
+  | {
+      readonly reason: 'antirequisite-held';
+      readonly nodeId: ContentId;
+      readonly antirequisiteId: ContentId;
+      readonly subject: Handle;
+    }
+  /**
+   * The node's track is closed to this subject: she already holds `held`
+   * nodes of `excludedByTrackId`, at or above that track's declared
+   * `threshold` for excluding `trackId`. Counts only what this one mind
+   * holds — never the universe's — so a school one mage never touched stays
+   * open to her even if the rest of the population has committed to it.
+   */
+  | {
+      readonly reason: 'track-excluded';
+      readonly nodeId: ContentId;
+      readonly trackId: ContentId;
+      readonly excludedByTrackId: ContentId;
+      readonly threshold: number;
+      readonly held: number;
+      readonly subject: Handle;
+    }
   /** The teacher's mastery is below the teaching-eligibility threshold. */
   | {
       readonly reason: 'teacher-below-threshold';
@@ -130,6 +157,18 @@ export function describeRefusal(refusal: KnowledgeRefusal): string {
       return (
         `no instance of node ${String(refusal.nodeId)} survives in this universe, so it cannot ` +
         'be taught, scribed, or used as a prerequisite — only rediscovered'
+      );
+    case 'antirequisite-held':
+      return (
+        `${String(refusal.subject)} already holds node ${String(refusal.antirequisiteId)}, an ` +
+        `anti-requisite of node ${String(refusal.nodeId)}: the two may never share one mind`
+      );
+    case 'track-excluded':
+      return (
+        `${String(refusal.subject)} holds ${String(refusal.held)} node(s) of track ` +
+        `${String(refusal.excludedByTrackId)}, at or above the threshold of ` +
+        `${String(refusal.threshold)} that closes track ${String(refusal.trackId)} to her — ` +
+        `node ${String(refusal.nodeId)} is on the closed track`
       );
     case 'teacher-below-threshold':
       return (

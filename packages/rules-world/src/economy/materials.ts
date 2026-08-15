@@ -15,11 +15,12 @@
 import type { Fixed } from '@mm/sim-core';
 import { FP_ONE, floorDiv, mul } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
-import type { AblationMask, ClampCounters } from '@mm/primitives';
+import type { AblationMask, ClampCounters, EffectControl } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
 import type { MaterialAmounts, MaterialKind } from './kinds.js';
 import { MATERIAL_KINDS, zeroAmounts } from './kinds.js';
+import { primitiveFloor } from './primitive-floor.js';
 
 /**
  * ## Three stocks, four claimants, and an order that is still a decision
@@ -113,6 +114,12 @@ export interface ProductionInput {
   readonly resourceYieldBonuses: Readonly<Record<MaterialKind, readonly Fixed[]>>;
   readonly counters?: ClampCounters | undefined;
   /**
+   * Rego's combined `{floor, ceiling}` clamp for `resource-yield`, from
+   * `combineControls` over every `control`-mode source touching it. Applied
+   * after the primitive's own floor and before its cap — see `stack.ts`.
+   */
+  readonly clamp?: EffectControl | undefined;
+  /**
    * §9's ablation mask, for the arm that neutralizes `resource-yield`.
    *
    * Threaded rather than simulated by emptying the bonus lists, and the
@@ -142,9 +149,12 @@ export const NO_YIELD_BONUSES: Readonly<Record<MaterialKind, readonly Fixed[]>> 
  * from the primitive's stated unit.
  */
 export function resourceYieldMultiplier(input: ProductionInput, kind: MaterialKind): Fixed {
+  const floor = primitiveFloor(input.resourceYield);
   return stackMagnitudes(input.resourceYield, input.resourceYieldBonuses[kind], {
     ...(input.counters === undefined ? {} : { counters: input.counters }),
     ...(input.ablation === undefined ? {} : { ablation: input.ablation }),
+    ...(input.clamp === undefined ? {} : { clamp: input.clamp }),
+    ...(floor === undefined ? {} : { floor }),
   }).value;
 }
 

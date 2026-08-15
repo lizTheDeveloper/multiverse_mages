@@ -223,7 +223,13 @@ describe('eras advance, and each boundary is recorded once', () => {
     expect(evaluations.length).toBeGreaterThanOrEqual(1);
     const eras = evaluations.map(({ row }) => row.era);
     expect(new Set(eras).size).toBe(eras.length);
-  });
+    // 90s, for the reason `work-phase.test.ts` states at length and does not
+    // need repeating: W20's heavier world loop pushed this 241-tick run to
+    // **31.5s under the full suite's parallelism**, just past vitest's 30s
+    // default, so it passed alone and failed in `npm run verify`. The bound is
+    // raised because the cost is measured and recorded, not because the test was
+    // in the way. If it creeps toward 90s, measure the loop.
+  }, 90_000);
 });
 
 describe('a terminated universe is frozen', () => {

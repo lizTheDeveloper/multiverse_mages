@@ -109,18 +109,41 @@ describe('depth: the contrast vector, which does separate them', () => {
    * the derivation is reading the content correctly and the tie above is real.
    */
   it('ranks elf and draconic at the top and orc at the bottom', () => {
-    expect(bySpecies('elf').exhaustibleCells).toBe(70);
+    // **These six numbers moved when `w20/compositional-content` landed, and
+    // the ranking they were written to check survived the move.** Before it,
+    // the file read 70 / 70 / 69 / 55 / 55 / 2 against a 300-node grid whose
+    // cells ran out before most ceilings did. W20 authors 57 more nodes into
+    // the twelve v1 cells and deepens the ladders it kept, so a cell is now
+    // harder to exhaust and every figure below the top comes down.
     expect(bySpecies('draconic').exhaustibleCells).toBe(70);
-    expect(bySpecies('dwarf').exhaustibleCells).toBe(69);
-    expect(bySpecies('human').exhaustibleCells).toBe(55);
-    expect(bySpecies('gnome').exhaustibleCells).toBe(55);
-    expect(bySpecies('orc').exhaustibleCells).toBe(2);
+    expect(bySpecies('elf').exhaustibleCells).toBe(64);
+    expect(bySpecies('dwarf').exhaustibleCells).toBe(57);
+    expect(bySpecies('human').exhaustibleCells).toBe(45);
+    expect(bySpecies('gnome').exhaustibleCells).toBe(45);
+    expect(bySpecies('orc').exhaustibleCells).toBe(1);
   });
 
-  it('shows the ceiling is inert above 5 and sharp at 3', () => {
-    // dwarf (5), elf (6) and draconic (7) are within one cell of each other. A
-    // ceiling nothing hits is not a constraint; orc's is the only one that is.
-    expect(bySpecies('draconic').exhaustibleCells - bySpecies('dwarf').exhaustibleCells).toBe(1);
+  it('shows the ceiling has become a real constraint at 5, not only at 3', () => {
+    // **This assertion has been inverted by a content change, and that is the
+    // finding rather than a maintenance chore.**
+    //
+    // It used to read *"the ceiling is inert above 5 and sharp at 3"*, and
+    // asserted that draconic (ceiling 7) could exhaust exactly **1** cell more
+    // than dwarf (ceiling 5) — a gap of one across two whole ceiling steps,
+    // which is what "a ceiling nothing hits is not a constraint" meant. The
+    // shipped grid was too shallow for the difference between a 5 and a 7 to
+    // be worth anything, so orc's 3 was the only ceiling that bound.
+    //
+    // On W20's content the same gap is **13**. Deeper ladders in the twelve v1
+    // cells mean a tier-6 and tier-7 mage now reaches cells a tier-5 mage
+    // cannot finish, so the authored ceilings above 5 have started paying.
+    // That is `depthCeiling` becoming a species trait that discriminates,
+    // which is what it was authored to be — recorded here rather than
+    // smoothed, because it is a claim a reviewer should be able to disagree
+    // with by reading these two numbers.
+    expect(bySpecies('draconic').exhaustibleCells - bySpecies('dwarf').exhaustibleCells).toBe(13);
+    // orc's 3 still binds hardest by a wide margin, which is unchanged.
+    expect(bySpecies('orc').exhaustibleCells).toBe(1);
   });
 });
 
@@ -154,20 +177,46 @@ describe('the teachable window, which is where the separation actually lives', (
 
 describe('affinity liveness against the permitted cells', () => {
   /**
-   * Seven of the eleven authored affinity entries name a form no permitted cell
-   * uses, and two species have no live entry at all. That does not bias them —
-   * `affinityTerm` defaults a missing key to `FP_ONE` and subtracts it, so an
-   * undeclared species scores exactly zero rather than badly — but it does mean
-   * seven authored numbers cannot influence anything in this ruleset.
+   * **The measurement this block was written to report has been fixed by the
+   * content change that this merge brings, and the numbers are inverted.**
+   *
+   * It used to read: *"seven of the eleven authored affinity entries name a
+   * form no permitted cell uses, and two species have no live entry at all"* —
+   * so four authored numbers were doing all the work and seven could not
+   * influence anything in this ruleset. The two species with nothing live were
+   * **human and gnome**, which is to say the two species the harness most
+   * wanted to tell apart were, in the v1 ruleset, mechanically identical on
+   * this axis by accident of which forms their affinities named.
+   *
+   * `w20/compositional-content` re-authors `species.json` from 11 affinity
+   * entries to 26 — human goes from 0 authored entries to 4, gnome from 2 to
+   * 5 — and aims them at forms the twelve permitted cells actually use. The
+   * live count goes 4 -> 19 while the inert count stays at 7.
+   *
+   * This is the mechanism behind that branch's headline claim that human and
+   * gnome are the first pair of species with genuinely distinct playstyles. It
+   * is worth being exact about what is and is not shown here: the branch's own
+   * separation figures (a Jaccard of 0.57 on held repertoires, 1.7x reach)
+   * are simulated results measured elsewhere, whereas what this file proves is
+   * only the precondition — that the authored numbers are now *reachable*.
+   * `exhaustibleCells` above still gives human and gnome the identical 45, so
+   * the affinity vector is where the whole of the difference between them
+   * lives, and it did not exist before this content.
    */
-  it('finds four live entries and seven inert ones', () => {
+  it('finds nineteen live entries and seven inert ones', () => {
     const live = sample.species.reduce((sum, entry) => sum + entry.liveAffinityEntries, 0);
     const inert = sample.species.reduce((sum, entry) => sum + entry.inertAffinityEntries, 0);
-    expect([live, inert]).toEqual([4, 7]);
+    expect([live, inert]).toEqual([19, 7]);
   });
 
-  it('leaves human and gnome with no live entry', () => {
-    expect(bySpecies('human').liveAffinityEntries).toBe(0);
-    expect(bySpecies('gnome').liveAffinityEntries).toBe(0);
+  it('gives human and gnome live entries, where they had none', () => {
+    // The whole point of the re-authoring: the two species that were
+    // indistinguishable on this axis now both carry affinities that a
+    // permitted cell can actually read.
+    expect(bySpecies('human').liveAffinityEntries).toBe(4);
+    expect(bySpecies('gnome').liveAffinityEntries).toBe(3);
+    // Human's four are all live — it is the only species with nothing inert.
+    expect(bySpecies('human').inertAffinityEntries).toBe(0);
+    expect(bySpecies('gnome').inertAffinityEntries).toBe(2);
   });
 });

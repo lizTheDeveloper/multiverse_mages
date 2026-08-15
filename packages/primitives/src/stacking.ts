@@ -48,8 +48,27 @@
  * prevented, i.e. the whole effect survives.
  */
 
-import { FP_MAX, FP_MIN, FP_ONE, mul } from '@mm/sim-core';
+import { FP_MAX, FP_MIN, FP_ONE, floorDiv, mul } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
+import type { PrimitiveStacking } from '@mm/content';
+
+/**
+ * `PrimitiveStacking` (`@mm/content`) plus `diminishing`
+ * (`docs/design/compositional-content.md` §3.3, `lifespan`'s stacking rule,
+ * added after `@mm/content`'s own enum was last touched).
+ *
+ * `@mm/content`'s union is out of scope for this change — `packages/content/src`
+ * belongs to a different task group — but `primitive.schema.json` and
+ * `primitive.json` (both in scope here) already accept and author the value,
+ * and `load.ts` passes a primitive record through without stripping fields it
+ * does not type (confirmed: it is a bare `as` cast over the parsed JSON, not a
+ * field-by-field reconstruction). So the value is real at runtime; only the
+ * static type lags. This alias is what keeps {@link stackByRule} in `stack.ts`
+ * an exhaustive switch — the whole reason that switch has no `default` — until
+ * `@mm/content` catches up, at which point this alias collapses to
+ * `PrimitiveStacking` and can be deleted.
+ */
+export type PrimitiveStackingRule = PrimitiveStacking | 'diminishing';
 
 /**
  * Range guard for the operations that do not go through `mul`, which does its
@@ -195,10 +214,96 @@ export function maxOf(magnitudes: readonly Fixed[]): Fixed {
 /**
  * A boolean gate — the rule for `portal`, whose magnitude carries no meaning.
  *
- * @returns `FP_ONE` if any source is present, `0` otherwise.
+ * **A negative source suppresses the gate to `0`.** `docs/design/
+ * compositional-content.md` §3.3 gives Perdo's `remove` mode a signed
+ * `−magnitude` into whichever rule its primitive already uses; on `presence`,
+ * `sound-design.md` §4.1's line for Perdo — *"Perdo's signature is a hole"* —
+ * is the mechanical instruction, not just the flavour: unmaking a portal does
+ * not need to out-magnitude the sources that raised it, because there is
+ * nothing here for two opposed magnitudes to net against. Presence is binary,
+ * so once *any* source is a hole, the gate reads as absent regardless of how
+ * many other sources are still asserting it.
+ *
+ * @returns `FP_ONE` if at least one source is present and none is negative;
+ * `0` if there are no sources, or if any source is negative.
  */
 export function presence(magnitudes: readonly Fixed[]): Fixed {
-  return magnitudes.length > 0 ? FP_ONE : 0;
+  if (magnitudes.length === 0) {
+    return 0;
+  }
+  for (const magnitude of magnitudes) {
+    if (magnitude < 0) {
+      return 0;
+    }
+  }
+  return FP_ONE;
+}
+
+/**
+ * Diminishing returns — the rule for `lifespan` alone.
+ *
+ * `docs/design/compositional-content.md` §3.3, per the author's instruction:
+ * *"it should be **log**, so that the slow dragons are worth it."* The design
+ * this completes: the knowledge tree is deep and schools are mutually
+ * exclusive per mage (`compositional-content.md` §3.2), so reaching the
+ * deepest nodes means either being born long-lived or bootstrapping —
+ * surviving long enough to learn life extension before it can extend anyone.
+ * If stacked extensions summed linearly, enough of them would let a
+ * short-lived species buy its way to a draconic lifespan node by node.
+ * Diminishing returns are what stop that substitution: **a naturally
+ * long-lived species has to stay worth having.**
+ *
+ * `lifespan`'s existing cap (`fraction-of-species-base`, `contracts.md` §3) is
+ * not replaced by this and is not redundant with it. The cap bounds the
+ * *total* — already proportional to what a mage already is, so an orc caps at
+ * +50% of a short life and a dragon at +50% of a long one. This rule shapes
+ * the *approach*: how much a second, third, and further extension are each
+ * still worth once the first is held. Complementary axes, not alternatives.
+ *
+ * **Fixed point forbids floats, so this is an integer series, not a real
+ * logarithm.** Sources are sorted **descending**, then folded as
+ * `Σ magnitude_i / 2^min(i, MAX_DIMINISHING_RANK)` — the largest extension
+ * counts in full, the second at half, the third at a quarter, and so on,
+ * using {@link floorDiv} rather than a bitwise shift for the same uniform,
+ * sign-agnostic floor `@mm/sim-core`'s own division exists to guarantee. The
+ * rank is clamped because past `MAX_DIMINISHING_RANK` terms the divisor has
+ * already collapsed every remaining source to `0`.
+ *
+ * **Sorting first is a correctness requirement, not tidiness — the same
+ * requirement, for the same reason, as {@link multiplicativeOnRemainder}
+ * above.** The weight here depends on *rank*, so `(a at rank 0) + (b at rank
+ * 1)` and `(b at rank 0) + (a at rank 1)` disagree whenever `a !== b`, and the
+ * stack is defined over a multiset of sources, not the order two peers happen
+ * to visit them in. Leaving this unsorted would reproduce exactly the
+ * order-dependent-result, order-dependent-clamp bug that comment documents
+ * finding in ward stacking — same shape, different rule.
+ *
+ * **The halving is untuned.** Shifting by one rank per position is the
+ * cheapest exact integer decay, chosen because it is representable and
+ * invertible, not because anything has measured that halving — rather than,
+ * say, a gentler `floor(rank / 2)` shift, or a small per-tier table authored
+ * in `primitive.json` — is the right curve. `docs/design/compositional-
+ * content.md` §3.3 and `contracts.md` §3 both flag it as a placeholder for the
+ * balance harness.
+ *
+ * @returns `0` for no sources. `N` copies of one magnitude `M` never reach
+ * `N × M`: the series is bounded above by `2M` for any `N`, which is the
+ * property that makes stacking substitute poorly for being long-lived.
+ */
+export function diminishing(magnitudes: readonly Fixed[]): Fixed {
+  // Past this many ranks the divisor (2^31) already exceeds the fixed-point
+  // domain, so every further term has floored to 0 regardless.
+  const MAX_DIMINISHING_RANK = 30;
+
+  const ordered = [...magnitudes].sort((a, b) => b - a);
+
+  let total: Fixed = 0;
+  for (let rank = 0; rank < ordered.length; rank += 1) {
+    const magnitude = ordered[rank] as Fixed;
+    const shift = Math.min(rank, MAX_DIMINISHING_RANK);
+    total += floorDiv(magnitude, 1 << shift);
+  }
+  return assertRepresentable(total, 'diminishing stacking');
 }
 
 /**
