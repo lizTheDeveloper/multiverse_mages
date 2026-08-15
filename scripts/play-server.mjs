@@ -363,9 +363,12 @@ const readBody = async (req) => {
 };
 
 /** A submitted action, validated here so a typo is a 400 and not a stack trace. */
-const toAction = (body) => {
+const toAction = (body, actionSpaceSize) => {
   const kind = Number(body?.kind);
-  if (!Number.isInteger(kind) || kind < 0 || kind >= 16) return null;
+  // The bound is the session's, not a literal. `w109/alliances` took the action
+  // space from 16 to 17, and a hardcoded 16 made `inviteScholar` a dead button:
+  // the mask reported it legal, the console offered it, and this returned 400.
+  if (!Number.isInteger(kind) || kind < 0 || kind >= actionSpaceSize) return null;
   const raw = Array.isArray(body?.params) ? body.params : [];
   const params = raw.map(Number);
   if (!params.every(Number.isInteger)) return null;
@@ -409,9 +412,9 @@ async function handle(req, res) {
 
   if (route === '/live/submit' && req.method === 'POST') {
     const body = await readBody(req);
-    const action = toAction(body);
+    const action = toAction(body, run.session.actionSpaceSize);
     if (action === null) {
-      json(res, 400, { error: 'body must be {kind:int 0..15, params:int[]}' });
+      json(res, 400, { error: 'body must be {kind:int within the session action space, params:int[]}' });
       return;
     }
     const from = run.frames.length;
@@ -436,9 +439,9 @@ async function handle(req, res) {
 
   if (route === '/live/control' && req.method === 'POST') {
     const body = await readBody(req);
-    const action = toAction(body);
+    const action = toAction(body, run.session.actionSpaceSize);
     if (action === null) {
-      json(res, 400, { error: 'body must be {kind:int 0..15, params:int[]}' });
+      json(res, 400, { error: 'body must be {kind:int within the session action space, params:int[]}' });
       return;
     }
     const settle = Math.max(0, Math.min(200, Number(body?.settle ?? 30)));
