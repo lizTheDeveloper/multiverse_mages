@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "1b73f7e27b0bf2eb582d9094c5747ebd29663c6f5991847ea2178fccd3304b28",
-  "contentHash": "303171b8451848d38f190b49ba28c09aa27c30c13aaf5ead530b17b41db3d357",
+  "contentHash": "b851e49f1b8ca32c48d1f12c5610d61414dc1595b52232c28a321090773a5bda",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":64,"standardError":10.528479327667647,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":31.58543798300294,"unit":"grimoires","value":261.640625},
@@ -96,7 +96,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange@worship-maximizer","sampleSize":8,"standardError":6.1682148957376635,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":18.50464468721299,"unit":"people","value":85.375}
   ],
   "notes": [
-    "Measured on w185/cohort-source. The valve now responds to demand: with scribe demand injected at 44 the reference universe reaches exactly 44 scribes, where before the run was byte-identical with and without that demand. Pre-0.5.0, so none of these magnitudes is claimed to be balanced."
+    "Measured on w185/cohort-source, 2026-08-14. A measurement and not a balance claim: no release before 0.5.0 may claim any magnitude here is balanced, the universe these vital signs describe is still degenerate in the ways this README records, and every species magnitude still carries tuningStatus untuned. What changed is that the labour market responds to demand at all: with scribe demand injected at 44 the reference universe now reaches exactly 44 scribes, where before the run was byte-identical with and without that demand."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -106,7 +106,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9"
   },
-  "rationale": "W185: the occupation transfer pool replaces the per-cohort floor, and university seats are filled from idle only. Reallocation previously moved zero people out of any cohort below sixteen members, which is nearly every cohort, so the labour market was shut in both directions; every number below was measured against a shut valve.",
+  "rationale": "W185: the occupation transfer pool replaces the per-cohort floor, and a university seat is filled from idle only. Reallocation previously moved zero people out of any cohort below sixteen members, and cohorts are keyed on species x occupation x birth decade so nearly every cohort is below it — the labour market was shut in both directions, and every superseded number was measured against a shut valve.",
   "rootSeed": 20260811,
   "runCount": 64,
   "supersededDeltas": [
