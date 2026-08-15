@@ -69,7 +69,7 @@ were moved to §3 and are not here.
 
 One more was dropped from this table on inspection: **`withdrawGrimoire`** is declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"* — which is an accepted design decision rather than debt.
 
-That is 45 of the 61. The remaining 16 are integration debt of the ordinary kind — an economy input
+That is 46 of the 61. The remaining 15 are integration debt of the ordinary kind — an economy input
 list, a commitment predicate, a monoculture threshold, `speciesRediscoveryMultiplier`,
 `worshipShareOfRegeneration` — worth wiring, not worth a row.
 
