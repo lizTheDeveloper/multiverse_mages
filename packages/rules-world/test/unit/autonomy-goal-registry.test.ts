@@ -56,6 +56,11 @@ const AS_SHIPPED: readonly (readonly [string, number])[] = [
   // Appended by `apply-magic` (w107). Nothing above it moved, which is the only
   // thing this pin is here to check.
   ['apply-magic', 9],
+  // Appended by `practice` (w196). Nothing above it moved. The pin is updated
+  // deliberately and in the same commit as the append, which is the procedure
+  // this file exists to force: a new goal takes the next unused id, and the
+  // literal below is what a reviewer checks that claim against.
+  ['practice', 10],
 ];
 
 const BASELINE_CONSEQUENCE =
@@ -132,6 +137,9 @@ describe('goals that need a node say so once', () => {
       // with no project behind it — every candidate's `remainingCost` is zero,
       // because she already knows them all.
       GOAL.applyMagic,
+      // `practice` names the node she drills, and is the second goal with no
+      // project behind it for the same reason.
+      GOAL.practice,
     ]);
   });
 

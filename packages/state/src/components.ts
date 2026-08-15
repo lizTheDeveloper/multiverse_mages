@@ -474,11 +474,16 @@ export const ERA_EVALUATION_FIELDS_MATCH: KeysMatch<EraEvaluationRecord, typeof 
  * The founding-grant budget (`contracts.md` §1.1, added by `w69/grant-budget`).
  *
  * God action 8 grants a **full instance at `grantMastery`** — the shape is
- * unchanged and deliberately so. `setMastery`'s only non-test caller is the
- * decay pass and it lowers, so a granted instance is currently the only source
- * of knowledge above the teach threshold in the universe. Weakening the grant
- * would delete the thing before its replacement exists. What this component
- * limits is the **count**: grants become scarce rather than weak.
+ * unchanged and deliberately so. When this row was added, `setMastery`'s only
+ * non-test caller was the decay pass and it lowers, so a granted instance was
+ * the only source of knowledge above the teach threshold in the universe and
+ * weakening the grant would have deleted the thing before its replacement
+ * existed. The replacement exists: `rules-magic`'s `practice`
+ * (`w196/mastery-rises`) raises mastery, so a universe is no longer wholly
+ * dependent on grants for transmissible knowledge. The grant stays full anyway
+ * — a founding gift the founder must drill for a year before using is a delay,
+ * not a gift — and what this component limits is still the **count**: grants
+ * are scarce rather than weak.
  *
  * ## Why the parameters live in state and not only in content
  *

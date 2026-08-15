@@ -41,6 +41,9 @@ export {
   MASTERY_DECAY_PER_TICK,
   MASTERY_FLOOR_SHARE,
   MASTERY_MAX,
+  PRACTICE_CEILING_BASE,
+  PRACTICE_CEILING_PER_TIER,
+  PRACTICE_GAIN_PER_MONTH,
   RESEARCH_JITTER_SPAN,
   SCRIBE_CAPACITY_PER_TIER,
   SCRIBE_DURABILITY_BASE,
@@ -69,6 +72,9 @@ export {
   researchRequirement,
   unsatisfiedPrerequisite,
 } from './research.js';
+
+export type { PracticeInputs, PracticeOutcome } from './practice.js';
+export { practice, practiceCeiling, practicedMastery } from './practice.js';
 
 export type { TeachingInputs, TeachingOutcome } from './teaching.js';
 export { heldMastery, teach, transmittedMastery } from './teaching.js';

@@ -275,14 +275,22 @@ export interface SpeciesGridReach {
    * from full mastery: `floor((MASTERY_MAX − TEACH_THRESHOLD) /
    * masteryDecayPerTick(retention))`.
    *
-   * **This is the quantity that actually separates the species**, and it exists
-   * because nothing in the rules path ever *raises* mastery. `setMastery` has
-   * one non-test caller, `decay.ts`, and it only lowers. Researched knowledge is
-   * born at `DEFAULT_INITIAL_MASTERY` (256), below the 512 teach threshold, and
-   * can never climb to it; every teachable instance descends from a god grant at
-   * 1024 and is sliding back down. So breadth is not limited by what a species
-   * can learn, it is limited by how long it can still pass on what it was given
-   * — and that window runs from 32 ticks to 102 across the shipped six.
+   * **The span a granted instance stays transmissible for, and nothing else.**
+   *
+   * When this metric was written it was the quantity that separated the species
+   * outright, because nothing in the rules path ever *raised* mastery:
+   * `setMastery` had one non-test caller, `decay.ts`, which only lowers, so
+   * researched knowledge born at `DEFAULT_INITIAL_MASTERY` (256) could never
+   * climb to the 512 threshold and every teachable instance descended from a
+   * god grant at 1024 and was sliding back down.
+   *
+   * `rules-magic`'s `practice` (`w196/mastery-rises`) removed that monopoly: a
+   * mage can now carry her own work up to `practiceCeiling(tier,
+   * depthCeiling)`. So this number is no longer the whole story of what a
+   * species can transmit — it is the decay half of it, measured from full
+   * mastery, and it still runs from 32 ticks to 102 across the shipped six.
+   * What it does **not** report is how far a species can climb on its own,
+   * which is a function of `depthCeiling` against a node's tier.
    *
    * `0` would mean a species that cannot teach a granted node even once.
    */

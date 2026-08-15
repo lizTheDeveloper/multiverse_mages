@@ -17,10 +17,14 @@
  * Two claims carry the design and each is checked here rather than described:
  *
  * 1. **The grant's shape is unchanged.** A grant inside budget is still a full
- *    instance at `grantMastery`. `setMastery`'s only non-test caller is the decay
- *    pass and it lowers, so a granted instance is the universe's one source of
- *    knowledge above the teach threshold; a budget that quietly weakened the
- *    grant would delete that source while appearing to ration it.
+ *    instance at `grantMastery`. When this suite was written that was
+ *    load-bearing twice over: `setMastery`'s only non-test caller was the decay
+ *    pass and it lowers, so a granted instance was the universe's *one* source
+ *    of knowledge above the teach threshold, and a budget that quietly weakened
+ *    the grant would have deleted that source while appearing to ration it.
+ *    `rules-magic`'s `practice` (`w196/mastery-rises`) is a second source now,
+ *    so the assertion below is about the grant staying a gift rather than about
+ *    it being the only thing keeping knowledge transmissible.
  * 2. **A universe with no budget row is unbounded.** Every world built before
  *    this component existed is such a world, and reading absence as a budget of
  *    zero would switch founding grants off for all of them at once.
