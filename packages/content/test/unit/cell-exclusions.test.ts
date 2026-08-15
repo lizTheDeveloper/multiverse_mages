@@ -135,7 +135,7 @@ describe('exclusions are authored on cells', () => {
     expect(diagnostics.some((d) => d.code === 'intellego-exclusion')).toBe(true);
   });
 
-  it('ships exactly one pair, and it is symmetric', () => {
+  it('ships exactly two pairs, both symmetric, and one of them inside the v1 rectangle', () => {
     // **Authoring a pair here was forced, and the constraint that forced it is a
     // good one.** The plan was to ship the machinery with zero pairs so that
     // this change moved no baseline and the pairs arrived with the content that
@@ -147,22 +147,55 @@ describe('exclusions are authored on cells', () => {
     //
     // So the smallest real pair ships with the machinery: `vision.md` §4b's own
     // example, which is also the one `content/deep-magic` authors nodes for.
+    //
+    // **The second pair is the one that reaches the game.** Both halves of the
+    // first are `creo`, and the v1 rectangle is `intellego · perdo · rego` ×
+    // `mentem · terram · limen · nomen`, so the universe every session opens on
+    // cannot reach either — which is why that pair moved no reference baseline.
+    // `perdo-nomen` ⊥ `rego-nomen` is inside the rectangle, and the twenty-year
+    // reference gate moves 40.71 → 36.57 nodes known because of it.
+    //
+    // Both are `destructive` by coincidence of the two reasons, not by rule:
+    // `resolution` is authored per exclusion precisely so that it can vary, and
+    // the assertions below are per pair rather than over the set, so a future
+    // `refused` pair is a new case here and not a silent change to this one.
     const registry = loadContent(brokenSource(() => {}));
     const withExclusions = registry.cells
       .filter((entry) => (entry.record.excludes ?? []).length > 0)
       .map((entry) => entry.record.id)
       .sort();
-    expect(withExclusions).toEqual(['creo-ignem', 'creo-umbra']);
+    expect(withExclusions).toEqual(['creo-ignem', 'creo-umbra', 'perdo-nomen', 'rego-nomen']);
 
-    const light = registry.cells.find((entry) => entry.record.id === 'creo-ignem')?.record;
-    const shadow = registry.cells.find((entry) => entry.record.id === 'creo-umbra')?.record;
-    expect(light?.excludes?.[0]?.cell).toBe('creo-umbra');
-    expect(shadow?.excludes?.[0]?.cell).toBe('creo-ignem');
-    // The two halves agree on both fields the loader checks, which is what
-    // makes this a pair rather than two edges that happen to point at each
-    // other.
-    expect(light?.excludes?.[0]?.reason).toBe(shadow?.excludes?.[0]?.reason);
-    expect(light?.excludes?.[0]?.resolution).toBe(shadow?.excludes?.[0]?.resolution);
-    expect(light?.excludes?.[0]?.resolution).toBe('destructive');
+    const recordOf = (id: string) =>
+      registry.cells.find((entry) => entry.record.id === id)?.record;
+
+    // The two halves of a pair agree on both fields the loader checks, which is
+    // what makes it a pair rather than two edges that happen to point at each
+    // other. Asserted for each pair rather than once, because the loader checks
+    // it per edge and a single spot-check would pass on a half-edited file.
+    for (const [a, b] of [
+      ['creo-ignem', 'creo-umbra'],
+      ['perdo-nomen', 'rego-nomen'],
+    ] as const) {
+      const left = recordOf(a);
+      const right = recordOf(b);
+      expect(left?.excludes?.[0]?.cell).toBe(b);
+      expect(right?.excludes?.[0]?.cell).toBe(a);
+      expect(left?.excludes?.[0]?.reason).toBe(right?.excludes?.[0]?.reason);
+      expect(left?.excludes?.[0]?.resolution).toBe(right?.excludes?.[0]?.resolution);
+      expect(left?.excludes?.[0]?.resolution).toBe('destructive');
+    }
+
+    // No cell carries two exclusions yet. Stated as a fact about today's
+    // content rather than a constraint — nothing in §4b or the schema forbids
+    // it — so that the day one does, this line is the prompt to decide whether
+    // the acquisition path's behaviour under two simultaneous conflicts was
+    // ever thought about.
+    for (const id of withExclusions) expect(recordOf(id)?.excludes).toHaveLength(1);
+
+    // The v1 claim, asserted rather than described: exactly one pair is
+    // reachable from the opening square, and it is the nomen one.
+    const v1WithExclusions = withExclusions.filter((id) => recordOf(id)?.v1 === true);
+    expect(v1WithExclusions).toEqual(['perdo-nomen', 'rego-nomen']);
   });
 });

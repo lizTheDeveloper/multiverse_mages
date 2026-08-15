@@ -359,3 +359,254 @@ returns all six tests to green.
 
 Readings 2 and 3 were **not** taken: the pair still ships on live cells with resolution
 `destructive`, so `schema-constraint-liveness` still has the instance it needs.
+
+---
+
+# The second pair: the one the opening square can reach
+
+**Measured 2026-08-14 on branch `w191/anti-requisites-in-v1`, over `origin/main` @ `1e2651ad`.**
+Everything above this line describes `creo-ignem` ⊥ `creo-umbra` and remains true of it.
+
+> ## ⚠️ No baseline was re-recorded on this branch, deliberately
+>
+> A standing rule arrived from the owner while this was in flight: **do not regenerate baselines, do
+> not run balance gates, do not run sweeps, until everything is wired up.** The three gate baselines
+> *were* re-recorded earlier in the session and have been **reverted to `origin/main`**, so
+> `balance/baselines/` on this branch is byte-identical to main's.
+>
+> **All three gates therefore refuse on this branch**, with `baseline-invalid` on
+> `provenance.contentHash` (`e8442af2…` → `183e06fe…`). That is the intended state, and it is a
+> content-revision re-pin rather than a balance regression. The two must not be conflated.
+>
+> The gate numbers in *What it measures* below were taken before the rule landed. They are kept
+> because deleting a measurement that was made is worse than labelling it, but **they are a record of
+> what was observed, not a committed baseline**, and nothing in this branch depends on them.
+
+## What the first pair could not do, by its own account
+
+The section above closes with the limit stated plainly: *"That the reference universe is unaffected
+in principle. It is unaffected **because both halves are `creo`**. Authoring a pair inside the v1
+rectangle would move every baseline, which is a release-scope decision."*
+
+That is this change. The v1 rectangle is `intellego · perdo · rego` × `mentem · terram · limen ·
+nomen` — twelve cells, 51 of 300 nodes — and `creo` is not in it. So the headline
+`permissive-breadth` **68.63 → 42.50, −20.80 SE** was a statement about a god who had already
+permitted the whole grid, which is why **71 of 90 baseline rows were byte-identical**: only the arms
+that open everything moved.
+
+## The pair, and why it is discovered rather than imposed
+
+**`perdo-nomen` ⊥ `rego-nomen`, `destructive`.**
+
+> Either a name is the thing's own handle — Call by Name says the imperative reaches what it names,
+> The Bound Servant that the named cannot refuse — or a name is a coat, which Shed the Use-Name
+> takes off while colleagues still recognise the face. A scholar who has proved one account has
+> disproved the other, and the workings she built on the loser stop working.
+
+Every clause of that is quoted from shipped `node.json` prose, not invented for it:
+
+| node | cell | gloss |
+|---|---|---|
+| *Call by Name* (t1) | `rego-nomen` | "Say a thing's name in the imperative and **have it arrive**." |
+| *The Bound Servant* (t4) | `rego-nomen` | "Call a thing by a name **it cannot refuse** and keep it." |
+| *Mispronounce* (t1) | `perdo-nomen` | "**Damage a name** slightly, in the mouth of whoever is trying to use it on you." |
+| *Shed the Use-Name* (t2) | `perdo-nomen` | "Unmake the name you are called by. **Colleagues still recognise the face**." |
+
+Rego Nomen's premise is that a name is a *grip on the thing*. Perdo Nomen's is that a name is
+*detachable from the thing*, and *Shed the Use-Name* says so at its sharpest: take the name off and
+the person is still there to be recognised. Both cannot be true of one object. If the name is
+detachable then *The Bound Servant* has nothing to hold; if it is the thing's own handle then
+unsaying it should injure the thing, and the shipped gloss says it does not.
+
+**The test that decided the register is tier 1**, because a whole-cell exclusion fires the first time
+a mage takes any node from either side. The contradiction has to hold there, and here it does:
+*Call by Name* needs the name in a mouth to be unbreakable; *Mispronounce* breaks the name in a mouth.
+
+`destructive` follows from the reason, as §4b requires. This is not a mage declining — that is what
+`refused` is for.
+
+## Three other in-rectangle pairs, rejected on the content
+
+§4b rules out every `intellego` cell — *"excluding it costs a mage two-thirds of the grid rather than
+a school"* — and the loader enforces that with an `intellego-exclusion` diagnostic. That leaves
+eight candidate cells: `perdo` and `rego` × the four v1 forms.
+
+- **`perdo-limen` ⊥ `rego-limen`.** Both carry the classical label `abjuration`. **The content
+  already calls them one school**, and an exclusion would contradict `cell.json` rather than follow
+  it.
+- **`perdo-terram` ⊥ `rego-terram`.** *Pull Down the Arch* unmakes "the one stone the rest were
+  **argued** into leaning on"; *The Vaulted Hall* holds "a span up while it is built, so that it can
+  be built at a size that could not have stood while unfinished." Those two **agree** that a
+  structure is an argument. Agreement is not an anti-requisite.
+- **`perdo-mentem` ⊥ `rego-mentem`.** The most tempting, and it fails the tier-1 test. The moral
+  weight is real but it lives at tiers 3–4 — *Scatter the Lesson* is "aimed at lecture halls, and
+  used on them"; *Unmake the Mind* is what "the vision's flagship interdiction forbids by name." At
+  tier 1 the pair reduces to "keep a mind on the thing in front of it" against "take the sharpness
+  out of an attention", which is two operations on one object: neither a contradiction nor a refusal.
+
+## There is no `refused` pair in the opening square, and that is a finding
+
+`refused` is a mage declining. Searching the twelve cells for one turns up the opposite: **every
+prohibition the opening square's prose carries is discharged through a god's edict or an
+institution, never through a mage's own refusal.**
+
+- *Unmake the Mind* — "the working the vision's flagship **interdiction** forbids by name."
+- *The Empty Room* — "**Universities that permit it** do not admit to it."
+- *Compel by Name* — "the reason **a universe** may want to close exactly one of the two."
+- *Keep the Name Close* — "Taught **in the same term as** Compel by Name, by professors who consider
+  that an ethics curriculum." Which is the ethics being taught *alongside*, explicitly not refused.
+
+That is what the edict system is *for*, and it means a `refused` pair here would have to be invented.
+None is authored. `resolution` remains implemented on both branches and exercised on one.
+
+## What it measures
+
+**Everything in this subsection was measured before the standing rule above landed, against the
+then-committed baselines. The baselines have since been reverted; these are observations, not
+claims a gate will reproduce.**
+
+### It reaches v1 — the reference gates move, and they could not before
+
+`passive-control` at the default opening, no permits beyond the twelve. `referenceNodesKnown`:
+
+| gate | world ticks | runs | baseline | current | delta |
+|---|--:|--:|--:|--:|--:|
+| `balance-gate-v1` | 60 | 200 | 15.880 | 15.665 | −0.215 (−1.62 SE) |
+| `balance-gate-horizon-v1` | 240 | 200 | **40.705** | **36.570** | **−4.135 (−23.82 SE)** |
+
+The twenty-year gate also moves `referenceKnowledgeInstances` 954.85 → 892.99 (−7.98 SE) and
+`referenceNodesGainedFinalQuarter` 8.430 → 6.605 (−17.31 SE). **Ten percent of what a default
+universe knows at year twenty, gone, at twenty-four standard errors.**
+
+`ui/session.json` is the same claim in a different medium. The first pair moved
+`provenance.snapshotHash` while **all 401 frames stayed identical**, because `contentRevision` sits
+in `SimState`'s hashed header. This one changes **340 of 401 frames, first divergence at frame 61** —
+the recorded reference run itself is different.
+
+### The agency gate: the four arms that were byte-identical
+
+`referenceNodesKnown`, 240 world ticks, 64 runs. `co-hold` is the count of living minds that held
+**both** cells at the last tick, measured by `tools/w191/co-holding.mjs` **before** the pair was
+authored — the only side of the change that can answer the question, since afterwards nobody
+co-holds by construction.
+
+| strategy | mages | holds `perdo-nomen` | holds `rego-nomen` | co-hold | baseline | current | delta |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| `uniform-random-legal` | 554 | 443 | 364 | **344** | 43.750 | 39.250 | **−4.500 (−14.70 SE)** |
+| `worship-maximizer` | 546 | 431 | 324 | **321** | 40.125 | 37.000 | **−3.125 (−3.57 SE)** |
+| `archivist` | 566 | 416 | 319 | **313** | 43.375 | 39.500 | **−3.875 (−5.76 SE)** |
+| `passive-control` | 547 | 433 | 306 | **306** | 41.250 | 37.250 | **−4.000 (−4.94 SE)** |
+| `portal-rush` | 511 | 372 | 304 | **284** | 44.875 | 42.500 | −2.375 (−2.97 SE) |
+| `permissive-breadth` | 564 | 108 | 17 | **17** | 42.500 | 42.000 | −0.500 (−0.08 SE) |
+| `denial-warden` | 53 | 0 | 17 | **0** | 4.125 | 3.875 | −0.250 (−0.16 SE) |
+| `narrow-depth` | 431 | 0 | 410 | **0** | 7.750 | 7.750 | **0.000** |
+
+**Three of the four arms the first pair left byte-identical now move**, all past three standard
+errors: `passive-control`, `archivist` and `worship-maximizer`. This is the answer to whether an
+anti-requisite reaches the position anyone plays. It does.
+
+**The fourth does not, and the census says why rather than leaving it a null.**
+`narrow-depth`'s mages hold exactly two v1 cells — `rego-nomen` (410 minds) and `rego-limen` (306) —
+and **zero** hold `perdo-nomen`. No `perdo`/`rego` pair can reach an arm that never learns `perdo`.
+`denial-warden` is the same shape and ends the run knowing 4 nodes. Neither is evidence about the
+mechanic; both are facts about which cells those arms occupy. (`narrow-depth`'s tolerance is
+`0.00000` — zero variance across all 16 replicates — which is a pre-existing degeneracy in that arm
+and not something this change caused.)
+
+### The two pairs are near-orthogonal, and that is the compositional finding
+
+`permissive-breadth` is the arm the `creo` pair cost 26 nodes. This one costs it **−0.50 at −0.08 SE
+against a 19.9 tolerance** — nothing. The census explains it: `permissive-breadth` spreads its mages
+over all seventy cells, so only **17 of 564** land on both nomen cells, against 306 for
+`passive-control` out of 547.
+
+**Each pair bites where its arms' mages concentrate.** A permissive god's mages are thin everywhere
+and dense nowhere; an opening-square god's are dense in the twelve. So this is not a null on
+`permissive-breadth` — it is evidence that exclusions compose by *coverage* rather than stacking,
+and that an anti-requisite is a targeted instrument rather than a global tax.
+
+### The mechanism, measured
+
+`tools/w191/co-holding.mjs`, 240 ticks, 128 runs, before → after:
+
+| | before | after |
+|---|--:|--:|
+| minds co-holding the pair | **1585 of 3772** | **0** |
+| minds holding `perdo-nomen` | 2203 | 1100 |
+| minds holding `rego-nomen` | 2061 | 1381 |
+
+42% of living minds co-held the two cells. Every one of them now loses one side, and roughly 1,780
+held instances of nomen magic stop existing — which is where the −61.9 instances and −4.1 nodes come
+from.
+
+**The tool exists because a byte-identical sweep has two incompatible readings** — no mage ever
+co-holds the pair, or mages co-hold constantly and the *universe* absorbs it because another mage
+covers, which is §4b working exactly as designed. `referenceNodesKnown` cannot separate those, and
+they are different answers. It is an inert appended system: no draw, no write, no entity.
+
+### Attribution: a control, not an argument
+
+Stripping the two `excludes` arrays from `cell.json`, rebuilding, and re-running
+`balance-gate-horizon-v1` reproduces the superseded baseline at **`delta 0.00000` on all ten rows.**
+Every delta above is the pair and nothing else. `contentRevision` is read by `server/host.ts` and
+`state/engagement.ts` for compatibility gating and is **not** an RNG input, which is the other way
+this could have been an artefact.
+
+The loader's symmetry rules were confirmed by mutation rather than assumed — a one-sided edge, halves
+disagreeing on `resolution`, and halves disagreeing on `reason` each fail with an
+`asymmetric-exclusion` diagnostic naming both cells, and the restored file passes.
+
+## What is not claimed
+
+- **That −4.135 is the right magnitude.** Two cells, 9 nodes between them, `tuningStatus: "untuned"`.
+  Ten percent of a universe's knowledge may be too harsh. It is now a number to argue over.
+- **That the per-mage cap is unnecessary.** `tools/w189/`'s macro model predicts fragility needs a
+  cap of ≤12 nodes per mage *and* a raid rate ≥20%/yr, against today's unbounded cap and 3.7%/yr.
+  Nothing here tests that. What this shows is narrower and still worth having: **an anti-requisite
+  bites the default opening at the current cap**, so the cap is not a precondition for §4b to matter.
+  Whether it is a precondition for *fragility* is a separate measurement.
+- **That anti-requisites now cost the permissive strategy twice.** They cost it once, on `creo`. This
+  pair is near-invisible to it.
+
+## Two long-run tests are left red on purpose, because each is a decision
+
+`packages/scenario/test/unit/reference-long-run.test.ts` fails two assertions at 200 world years, and
+both are **left failing rather than re-pinned.** The precedent is this document's own: PR #161 left
+`ablation-reaches-the-world-loop` red and wrote *"a call for the owner and not one to make inside a
+merge."* Re-pinning these would bury exactly the information that decides whether this pair should
+ship — and this file's assertions are argued across five run seeds, which re-deriving from one seed
+would quietly abandon.
+
+### 9.8 — the universe ends up knowing half as much
+
+    expect(last.grimoires).toBeLessThan(5 * last.libraryDepth)   // 156 < 120 fails
+
+`libraryDepth` at world year 200 is **24 distinct nodes, against 43 before the pair.** Scribing
+capacity is unchanged, so the same scribes copy a much smaller distinct set far more often and the
+books-per-node ratio goes 4.33 → **6.5**. That is the mechanism the surrounding comment already names
+— *"Fewer nodes and the same books is exactly a higher ratio"* — one step further, and still under the
+*"ten would mean it is gone"* ceiling the original comment set.
+
+**The decision:** a `destructive` pair costs the two-century universe 19 of 43 distinct nodes. That is
+a much larger number than the −4.1 the twenty-year gate reads, because loss compounds over eight more
+windows.
+
+### 9.5 — scribing stops, and teaching runs away
+
+    9.5 books scribed per 20-year window:  631 / 218 / 12 / 0 / 0 / 3 / 7 / 2 / 0 / 0
+    9.5 lessons taught per 20-year window: 363 / 293 / 757 / 710 / 1563 / 3180 / 4283 / 3289 / 5498 / 3132
+
+Teaching does not merely survive — it grows by an order of magnitude and stays there. The reading, and
+it wants confirming rather than believing: **a `destructive` pair between two cells mages both want is
+a teaching treadmill.** A mage learns one nomen cell, is taught the other, loses the first, is taught
+it back. `teachableToMe` never empties, because the exclusion keeps manufacturing gaps. The trough
+structure the comment above documents at length — *"a trough is knowledge having finished diffusing"*
+— cannot occur when diffusion is being undone as fast as it happens.
+
+That churn is also the likeliest reason the shelf stops growing: mage-months go into re-teaching
+rather than into research, and there are fewer distinct nodes left to write down.
+
+**The decision:** if this reading is right, it is an argument for `refused` over `destructive` on
+pairs whose halves are both attractive. `refused` forks a mage permanently and cannot cycle;
+`destructive` can. `resolution` is authored per exclusion precisely so this can be chosen per pair,
+and nothing here forces the choice.

@@ -72,11 +72,22 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
     'version-4 note predicted this for the version-3 build and it is still true at version 4: ' +
     '"it sits third, behind openPortal and encourageResearch". Not a signature action, which is ' +
     'why degeneracyOf reports the strategy healthy.',
-  'portal-rush/12':
-    'encourageResearch sits third, behind assignRole, which is legal on 599 of 600 ticks. The ' +
-    'comment above it calls it "tempo while the portal is unreachable" — the portal is reachable ' +
-    'on 384 of 600 ticks now, and on the other 216 assignRole takes the slot instead. So the ' +
-    'strategy has no tempo behaviour at all, and the cell it claims to push is pushed by nobody.',
+  // `portal-rush/12` was here and is **deleted rather than kept**, because the
+  // check treats a stale entry as a failure and it is right to: an entry that
+  // says a defect is known and accepted, when the defect is gone, is read as
+  // fact by the next person. `encourageResearch` is no longer shadowed on this
+  // tree — the `perdo-nomen` ⊥ `rego-nomen` anti-requisite changes which ticks
+  // `assignRole` is legal on, and the tempo line is now reached. That is a side
+  // effect of the content change and not a fix anyone made, which is exactly
+  // why it is recorded here instead of quietly dropped.
+  'archivist/8':
+    'grantFoundingKnowledge is first in the unconditional half of the preference list, but the ' +
+    'conditional fundUniversity ahead of it fires while libraryDepth < 0.05 — and all 29 of the ' +
+    'ticks on which the mask allows action 8 fall inside that window, so the shallow-library ' +
+    'branch takes the slot every time. New on w191/anti-requisites-in-v1: the anti-requisite ' +
+    'destroys held knowledge, which keeps the library shallow for longer and widens the window ' +
+    'until it covers every grantable tick. The archivist, whose whole thesis is the founding ' +
+    'grant, therefore never makes one.',
   'worship-maximizer/11':
     'fundUniversity is a signature action and is never submitted. Both of its entries sit behind ' +
     'blessMage: the first inside the `worship < favor` branch and the second after it, and ' +

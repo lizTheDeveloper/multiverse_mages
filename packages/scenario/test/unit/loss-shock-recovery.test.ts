@@ -184,8 +184,38 @@ describe('recovery, per species', () => {
     // species in the game into an invariant, and every branch that perturbed
     // the simulation at all tripped it — which is a test reporting its own
     // fragility, not a regression.
+    //
+    // **And it has now tripped a second time, one step further along the same
+    // fault.** On `w191/anti-requisites-in-v1` the cull reads
+    // `orc pre=1 killed=0`: orc has a roster of exactly one, and a proportional
+    // cull of one mage rounds to zero. So `withRoster.length` is 6 while
+    // `shockedSpecies.length` is 5, and the equality fails for a species that
+    // was *not* extinct and *did* have something to lose.
+    //
+    // The fix is the same one the paragraph above already argued for and did
+    // not go far enough with: **name the marginal case instead of asserting it
+    // away.** A roster too small to lose anybody is a finding about orc, not a
+    // regression in the cull, and it is reported below beside the extinct list
+    // rather than encoded as an invariant that every perturbing branch trips.
     const withRoster = detail.species.filter((row) => (row['preShock'] as number) > 0);
-    expect(shockedSpecies).toHaveLength(withRoster.length);
+    const spared = detail.species
+      .filter((row) => (row['preShock'] as number) > 0 && (row['killed'] as number) === 0)
+      .map((row) => `${String(row['speciesId'])} (roster ${String(row['preShock'])})`);
+    if (spared.length > 0) {
+      console.log(`species with a roster too small for the cull to reach: ${spared.join(', ')}`);
+    }
+    expect(shockedSpecies.length + spared.length).toBe(withRoster.length);
+
+    // The invariant actually worth holding: the cull reaches the species that
+    // have mages to lose. Anything with more than a token roster must be hit,
+    // or the shock is not a shock. Two is the smallest roster a proportional
+    // cull can be expected to reduce, so that is the threshold — chosen from
+    // the arithmetic rather than from the observed data.
+    const substantial = detail.species.filter((row) => (row['preShock'] as number) >= 2);
+    for (const row of substantial) {
+      expect(row['killed'] as number).toBeGreaterThan(0);
+    }
+    expect(substantial.length).toBeGreaterThan(0);
 
     // And the fact the old assertion was accidentally carrying: name any
     // species that had nobody to lose. This is the signal worth keeping — a

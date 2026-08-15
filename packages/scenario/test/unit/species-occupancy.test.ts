@@ -162,7 +162,7 @@ describe('twenty world years in', () => {
     }
   });
 
-  it('has three species at the ruleset ceiling and three below it', () => {
+  it('has nothing at the ruleset ceiling any more, and one v1 cell empty', () => {
     // **Re-measured on the merge of `main` (5a1ce6c) into
     // `w108/university-fidelity`, 2026-08-14.** Not inherited from either side:
     // both sides of that merge re-recorded this block for different reasons and
@@ -194,12 +194,59 @@ describe('twenty world years in', () => {
     // rule actually *changes* needs more than one university to see, and is
     // measured in `coordination/test/unit/university-staffing.test.ts` — not
     // here.
-    expect(bySpecies('dwarf').occupiedCells).toBe(12);
-    expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(12);
-    expect(bySpecies('draconic').occupiedCells).toBe(11);
-    expect(bySpecies('elf').occupiedCells).toBe(11);
-    expect(bySpecies('gnome').occupiedCells).toBe(9);
+    //
+    // **Re-derived 2026-08-14 on `w191/anti-requisites-in-v1`, and this time
+    // the cause is a mechanic rather than a re-roll.** The numbers were
+    // `12/12/11/10/10/8` on `main` (5a1ce6c), `12/9/12/10/10/9` on the
+    // `w108` branch, `12/12/12/11/11/9` on their merge, and are now
+    // `11/11/11/9/9/7`. **Every species lost exactly one to two cells, and the
+    // ceiling itself moved from 12 to 11.**
+    //
+    // The cause is the `perdo-nomen` ⊥ `rego-nomen` anti-requisite
+    // (`vision.md` §4b). Under `destructive`, a mage who holds one side and
+    // acquires the other loses her instances of the first — and at this
+    // horizon that drives one side of the pair to **zero occupancy across the
+    // whole universe**, asserted below. So this is not "a re-roll moved things
+    // in both directions" as the entry above records: it is one directional
+    // loss, and it is the mechanic doing what it says.
+    expect(bySpecies('dwarf').occupiedCells).toBe(11);
+    expect(bySpecies('human').occupiedCells).toBe(11);
+    expect(bySpecies('orc').occupiedCells).toBe(11);
+    expect(bySpecies('draconic').occupiedCells).toBe(9);
+    expect(bySpecies('elf').occupiedCells).toBe(9);
+    expect(bySpecies('gnome').occupiedCells).toBe(7);
+  });
+
+  it('empties perdo-nomen entirely, which is a design question and not a bug', () => {
+    // **The sharpest consequence of the anti-requisite, and the one worth an
+    // assertion of its own.** §4b's whole argument for a per-mage rule is that
+    // "a universe can eventually hold everything, spread across many mages, and
+    // that is exactly what a civilization is for." At twenty world years in the
+    // long-run reference universe, **this civilization does not**: `perdo-nomen`
+    // has no living mage holding any node from it, while `rego-nomen` survives.
+    //
+    // The mechanism is that one side of a `destructive` pair is systematically
+    // learned second. Whichever a mage acquires later destroys the earlier, so
+    // the cell whose nodes are cheaper or better-prerequisited to reach late
+    // wins every contest, and the universe converges on one side rather than
+    // splitting across mages the way §4b anticipates.
+    //
+    // **This is left asserted rather than tuned.** Whether a `destructive` pair
+    // should be able to evict a body of magic from a universe entirely is a
+    // balance decision for the owner — `resolution` is authored per exclusion
+    // precisely so that it can be `refused` instead, which would fork mages
+    // without destroying anything. The number to argue over is now measured.
+    const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
+    const occupied = new Set<string>();
+    for (const entry of sample.species) {
+      for (const id of entry.occupiedCellIds) occupied.add(cellName.get(id) as string);
+    }
+    const v1Cells = content.registry.cells
+      .filter((entry) => entry.record.v1 === true)
+      .map((entry) => entry.record.id)
+      .sort();
+    expect(v1Cells).toHaveLength(12);
+    expect(v1Cells.filter((cell) => !occupied.has(cell))).toEqual(['perdo-nomen']);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
@@ -210,7 +257,12 @@ describe('twenty world years in', () => {
     // branch alone. Pinned to four places: the point of the metric is that this
     // number moves, and a test that only asserted "greater than zero" would let
     // it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0473, 4);
+    //
+    // **0.0805 as of `w191/anti-requisites-in-v1`, 2026-08-14.** The pair costs
+    // the three trailing species more than the three leading ones — 9→7 for
+    // gnome against 12→11 for dwarf — so the spread widens rather than
+    // narrowing. An exclusion is not a uniform tax.
+    expect((entry as { value: number }).value).toBeCloseTo(0.0805, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -250,7 +302,14 @@ describe('twenty world years in', () => {
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
+    //
+    // **Four cells as of `w191`, 2026-08-14, and the durable reading survives
+    // intact**: gnome is short, and disproportionately short in Perdo — three
+    // of the four now. `perdo-limen` returned to the shortfall, which is the
+    // membership instability this comment already warns about, and the count
+    // grew because the anti-requisite cost dwarf and gnome different cells.
     expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
+      'perdo-limen',
       'perdo-mentem',
       'perdo-terram',
       'rego-terram',
@@ -260,7 +319,8 @@ describe('twenty world years in', () => {
   it('has every occupied cell shared, so the concentration is not specialisation', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry).toMatchObject({
-      detail: { cellsOccupiedByAnySpecies: 12, cellsWithASoleOccupant: 0 },
+      // 11, not 12: `perdo-nomen` is empty. See the assertion above.
+      detail: { cellsOccupiedByAnySpecies: 11, cellsWithASoleOccupant: 0 },
     });
   });
 
