@@ -11609,3 +11609,67 @@ dressed as a repair. Fixing the reason and leaving the verdict is the harder and
 
 Counts corrected while there: **44 of 59** integration-debt rows, **16** superseded, and §4's heading said
 26 tooling-only where its own body and §1 both said 27.
+
+## W219 — the game is playable, and the recording every UI reads had every action rejected
+
+PR #189. `npm run play` → **http://localhost:8300/**, and a person can act as the god of a running
+universe.
+
+### What a player can do
+
+Opens at **tick 40 with thirteen of sixteen verbs lit**. Tick 0 is not a playable position — the god has
+no favor and **§4.2's mask folds affordability into the same bit as legality**, so exactly one action is
+legal there. The forty warm ticks are real: on the spine, in the action log, replayed by the control.
+`--warm 0` opts out.
+
+All sixteen verbs render with the right parameter chooser. **Thirteen are legal; three render masked**
+(`revokeEdict` with no edict in force, `changeTradition`, `declareAscension`) — **no button does nothing.**
+Measured at tick 80 against a no-op at the same tick, settled 30 ticks: **seven move something the console
+draws**, and **six are admitted and move the world without moving a drawn slot** — including `assignRole`,
+which the PR calls *"the honest row."*
+
+Best end-to-end demonstration, driven through the browser: **forbid form → Mentem** at tick 83 →
+favor **40.0 → 37.7**, permitted grid cells **12 → 9**, `mentem` gone.
+
+### The control is a receipt that can invalidate itself
+
+`control` replays the run twice from its seed — with the action and with a no-op — settles both 30 ticks,
+and reports snapshot hashes plus which observation slots differ. **A third replay is the null control, and
+if it does not come back identical to the no-op arm the receipt says *believe nothing below*.**
+
+```
+assignRole at tick 80, settled 30 ticks.
+null control held — a third replay with a no-op came back identical to the no-op arm
+admitted · snapshot fb347a7c046f8dfc vs a105e8700a858d0c — the world diverged
+0 of 400 observation slots differ
+The action reached the simulation and reached nothing this page can draw.
+```
+
+**And it separates *reach* from *effect*, because a refused action also moves the hash** —
+`noteIllegalAction()` writes a counter inside the hashed snapshot. A cruder receipt would have read
+"hash moved" as "the action worked."
+
+### The defect: `ui/session.json` is a recording of a god who did nothing
+
+**`scripts/record-session.mjs` submits `{ id: GOD_ACTION.noop }` while `admit()` reads `action.kind`.**
+Every tick of the recording is rejected `unknown-action`. Measured: 40 ticks of `{id:0}` → hash
+`07466680da25d689` with **illegalActionCount 40**; `{kind:0}` → `70664c0580e14131` with **0**.
+
+**Every UI in the repository reads that recording.** So every page has been rendering a world in which the
+god's actions never landed — and a live run at seed *S* is not the recording at seed *S*. Reported, not
+fixed: the fix moves `ui/session.json` and its golden, which is a separate change.
+
+### Honesty about what the morning will show
+
+Exercised against **`main` at `08ca5368`**, and checked at the end: **none of #134, #170, #183, #172 or
+#126 had merged**, so no rebase was possible. **The world is the inert one** — `grantFoundingKnowledge`'s
+candidates empty by tick 200 — and the PR's sweep *measures* that rather than hiding it.
+
+Also kept honest: **no build step added** (Node's own `http`; `ui/shared/session.js` gained a `live` branch
+beside `recording`); without a live server the console **falls back to the recording, says `Recording`, and
+does not render the cast controls at all**; `ui/raid/` was already labelled `Synthetic trace` and was left
+alone; and `openPortal` is legal and admitted but nothing in `scenario` opens a portal, so the engagement
+block stays zero-filled and `capabilities()` already says `engagement: false`.
+
+It went **around `@mm/server`** after reading it — `Match`, `ordering` and `desync` solve multi-client
+problems a local player does not have.
