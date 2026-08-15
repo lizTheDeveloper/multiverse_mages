@@ -12062,8 +12062,9 @@ to act.
 
 ### Two decisions waiting
 
-**1. The re-seal, and it is circular as documented.** Every remaining PR fails `Verify` because the three
-balance gates are steps *inside* it (`ci.yml` 154–185). `sim-rigor` §4.3 recommends one re-seal *after*
+**1. The re-seal, and it is circular as documented.** *(Amended by W227: this clears #170 but **not**
+#172, which refuses on **numbers**, not identity — see below.)* Every remaining PR fails `Verify` because
+the three balance gates are steps *inside* it (`ci.yml` 154–185). `sim-rigor` §4.3 recommends one re-seal *after*
 #170 and #185 land — **but they cannot land while the gate refuses.** Allowing **one** re-seal on one
 branch breaks the loop, and #184's tool **refuses if any metric actually moved**, so it cannot launder a
 regression. That is the recommendation.
@@ -12095,3 +12096,52 @@ layers in `docs/design/audit-sequence.md`.
 metrics and the eleven `REFERENCE_MEASURES` have **no material field**, so `resource-yield` moves materials
 −36.8% and is byte-identical across the entire committed run record. That is not a bug to fix — it is an
 apparatus that cannot observe something the design cares about.
+
+## W227 — one decision does not land the stack, and W199's confirmation was measured on a stale tree
+
+Staging the last two PRs falsified the premise I staged them under. **#170 and #172 refuse for opposite
+reasons**, and only one of them is an identity problem.
+
+| PR | gate behaviour |
+|---|---|
+| **#170** | **identity refuses** — every metric it reported moved by exactly **0.00000**. Clearing identity clears it. |
+| **#172** | **identity *matches***, so the gate **admits** it and then refuses on **7 of 9 metrics**: `referenceLivingMages` **−67.60 SE**, `referenceKnowledgeInstances` −15.86 SE, `referencePopulation` **+19.72 SE**. |
+
+**So moving the gates out of the required check — or re-sealing — would let a real, unaccepted behaviour
+change merge.** That is a different decision from the re-seal, and my handoff conflated them.
+
+### And it corrects W199, one of the three pillars under the no-baselines rule
+
+W199 recorded #172's gates as **0 of 9, 0 of 10, and 4 of 90 at max 0.39 SE**, and I called it *"third
+independent confirmation that pooled sweeps cannot see subsystem work."* **That measurement was taken on a
+tree predating the opening square**, and #172's body has now retired it.
+
+The other two pillars are untouched — `balance-gate-v1` at delta 0.00000 with the scribing change in the
+tree, and the raid seam moving nothing beyond 1.24 SE. **But the rule now rests on two confirmations, not
+three, and one of its cited cases turns out to move seven metrics.**
+
+### The headline claim survives; its figures do not — and the merge is not why
+
+Scribe cohort at t=600, three arms rebuilt: **B (valve only) 8 · D (demand only) 15 · C (both) 28** at one
+seed, **8 · 15 · 40** at the other. **Both halves alone drain the founding 24; only the pair grows it** —
+the claim holds. But `24 → 46`, the queue draining `40 → 18 → 0`, and library `24 → 180` **do not
+reproduce.**
+
+**And the control settles that the merge is innocent**: the branch's **pre-merge tip gives byte-identical
+trajectory columns**, with **different snapshot hashes** (`8ce6669b` vs `3fbd6f71`) proving the trees
+genuinely differ. **The merge moved it by zero; the numbers were already stale** — `reference-universe.ts`
+changed under the probe when the branch merged the opening square, **two days after the measurement
+commit.**
+
+A counter-reading it reported rather than buried: at one seed, library instances at t=600 finish **lowest**
+in the paired arm (62, against 99 and 72).
+
+### Two pieces of diligence worth copying
+
+- **`gate-power.test.ts` derives `balance/README.md`'s power table from the baselines**, so taking main's
+  baselines left three cells stale — **a break no conflict marker points at.** Fixed with the branch's own
+  generator, and the result is **byte-identical to main's table**, which is the positive control on the
+  operation.
+- **It audited the three silently auto-merged files for dropped test blocks**, because *"a green suite
+  cannot detect that"* — `it(` counts match both parents at **23 / 13 / 6**. Nobody else checked this all
+  night, and an auto-merge that drops a describe block is invisible to every gate we have.
