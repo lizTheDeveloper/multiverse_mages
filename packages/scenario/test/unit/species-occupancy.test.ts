@@ -197,20 +197,44 @@ describe('twenty world years in', () => {
     expect(bySpecies('dwarf').occupiedCells).toBe(12);
     expect(bySpecies('human').occupiedCells).toBe(12);
     expect(bySpecies('orc').occupiedCells).toBe(12);
-    expect(bySpecies('draconic').occupiedCells).toBe(11);
-    expect(bySpecies('elf').occupiedCells).toBe(11);
-    expect(bySpecies('gnome').occupiedCells).toBe(9);
+    //
+    // **Re-measured again on `w190/scribing-fidelity`, 2026-08-14:
+    // `12/12/12/10/10/8` where the merge read `12/12/12/11/11/9`.** The three at
+    // the ceiling are unchanged and the three below it each lost exactly one
+    // cell, so the title still describes the shape. Two causes compose here too,
+    // and the second is the interesting one:
+    //
+    // 1. **Content grew.** `pn-the-wrong-true-name` interns at 227 in sort
+    //    order, so 74 node ids shift by one and every id-keyed comparison in
+    //    the run sees a different graph. A pure renumbering moves things in
+    //    both directions; here it moved one thing.
+    // 2. **`seek-teaching` can now be satisfied by the shelf.** A mage with no
+    //    living teacher and a readable book studies it instead of falling
+    //    through, which changes what she spends a month on and therefore where
+    //    she is standing twenty years later. That is the mechanic and not a
+    //    side effect — but note it is *small*: one species, one cell, over a
+    //    horizon where the reference universe completes one to three studies
+    //    (measured; see the PR). The shelf is a fallback, and the numbers say it
+    //    behaves like one.
+    expect(bySpecies('draconic').occupiedCells).toBe(10);
+    expect(bySpecies('elf').occupiedCells).toBe(10);
+    expect(bySpecies('gnome').occupiedCells).toBe(8);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0473 at this horizon, re-measured on the merge described above — was
-    // 0.0729 before either change, 0.0714 on `main` alone and 0.0645 on the
-    // branch alone. Pinned to four places: the point of the metric is that this
-    // number moves, and a test that only asserted "greater than zero" would let
-    // it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0473, 4);
+    // 0.0729 at this horizon on `w190/scribing-fidelity` — was 0.0473 on the
+    // merge described above, 0.0729 before either of *those* changes, 0.0714 on
+    // `main` alone and 0.0645 on the branch alone. Pinned to four places: the
+    // point of the metric is that this number moves, and a test that only
+    // asserted "greater than zero" would let it move to anything.
+    //
+    // Landing back on 0.0729 is a coincidence of one species losing one cell,
+    // not a return to an earlier build. Nothing about this tree resembles the
+    // one that first produced that figure, and reading it as a revert would be
+    // the worst available inference.
+    expect((entry as { value: number }).value).toBeCloseTo(0.0729, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -250,7 +274,16 @@ describe('twenty world years in', () => {
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
+    //
+    // **And it moved again on `w190/scribing-fidelity`: `perdo-limen` is back,
+    // so gnome is now four cells short of dwarf rather than three.** Which is
+    // the third distinct membership this set has taken across three builds, and
+    // it settles the argument the paragraph above was already leaning towards —
+    // *this set is a pin, not a finding*. The durable reading remains "gnome is
+    // short, and disproportionately short in Perdo": three of the four are
+    // Perdo now, where two of three were before.
     expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
+      'perdo-limen',
       'perdo-mentem',
       'perdo-terram',
       'rego-terram',

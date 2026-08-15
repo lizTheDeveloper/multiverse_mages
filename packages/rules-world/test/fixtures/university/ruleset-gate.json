@@ -65,7 +65,7 @@
       "adds.scribeMonthsFinal": {
         "min": 640,
         "max": 1110,
-        "sum": 68604,
+        "sum": 68610,
         "distinct": 9,
         "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
         "maxAt": "ruleset=permit-all seededDepth=256 staffSize=0"
@@ -73,7 +73,7 @@
       "adds.scribeMonthsTotal": {
         "min": 30080,
         "max": 52170,
-        "sum": 3224388,
+        "sum": 3224670,
         "distinct": 9,
         "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
         "maxAt": "ruleset=permit-all seededDepth=256 staffSize=0"
@@ -88,8 +88,8 @@
       },
       "adds.shelfReplacementCost": {
         "min": 0,
-        "max": 1142784,
-        "sum": 32016384,
+        "max": 1132544,
+        "sum": 31832064,
         "distinct": 5,
         "minAt": "ruleset=permit-all seededDepth=0 staffSize=0",
         "maxAt": "ruleset=permit-all seededDepth=256 staffSize=0"

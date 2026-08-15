@@ -140,13 +140,21 @@ describe('interning', () => {
     expect(registry.intern('cell', 'creo-animal')).toBe(1);
     expect(registry.intern('cell', 'rego-nomen')).toBe(70);
     expect(registry.intern('node', 'can-call-the-pack')).toBe(1);
-    // 300, not 299: pre-authoring the other 58 cells brought 249 nodes, and
-    // `knowledge-model` task 2.5's `rn-keep-the-name-close` is the one neither
-    // side of that merge shared. Node ids intern in sort order, so it lands at
-    // 285 and every node after it shifts by one — the renumbering these
-    // assertions exist to surface.
-    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(285);
-    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(300);
+    // 301, not 300: `w190/scribing-fidelity` authored `pn-the-wrong-true-name`,
+    // the one v1 node carrying `knowledge-corrupt`. Node ids intern in **sort
+    // order**, not file order, so it lands at 227 and every node after it shifts
+    // by one — `rn-keep-the-name-close` from 285 to 286, `rv-turn-the-casting`
+    // from 300 to 301. That renumbering is exactly what these assertions exist
+    // to surface, and the considered decision is that a new primitive needs a
+    // node to carry it: an effect primitive with no authored node is a rule that
+    // behaves as a comment.
+    //
+    // The count before that was 300, from pre-authoring the other 58 cells (249
+    // nodes) plus `knowledge-model` task 2.5's `rn-keep-the-name-close`, the one
+    // neither side of that merge shared.
+    expect(registry.intern('node', 'pn-the-wrong-true-name')).toBe(227);
+    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(286);
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(301);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
@@ -409,7 +417,18 @@ describe('contentRevision', () => {
     // — the same situation the three-branch paragraph above describes, and the
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of files.
-    expect(registry.contentRevision).toBe('e8442af2c5f91ae6f80ad9a178e0e451');
+    //
+    // e8442af2c5f91ae6f80ad9a178e0e451 -> 8a20c0a64242b6322283d439724f6993,
+    // when scribing fidelity added the `knowledge-corrupt` primitive and
+    // `pn-the-wrong-true-name`, the one v1 node carrying it. In the preimage for
+    // the plainest reason on the list: two universes disagreeing about whether
+    // corruption is a thing magic can do would disagree about what a raid into
+    // either of them is *able to do*, which is the arbitration question the host
+    // ruleset exists to answer. And because node ids intern in sort order, the
+    // new node renumbers 74 nodes after it — a save's `nodeId` columns mean
+    // different nodes across the boundary, which is precisely what a revision
+    // mismatch has to refuse.
+    expect(registry.contentRevision).toBe('8a20c0a64242b6322283d439724f6993');
   });
 
   it('is stable across loads of identical content', () => {

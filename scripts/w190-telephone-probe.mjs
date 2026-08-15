@@ -133,6 +133,7 @@ function runChain({ seed, species, knowledgeKind, rungs }) {
   if (!researched.completed) throw new Error('the fixture researcher failed to finish');
 
   const rows = [];
+  let scribalErrors = 0;
   let writer = originator;
   for (let rung = 1; rung <= rungs; rung += 1) {
     const written = scribe({
@@ -152,6 +153,12 @@ function runChain({ seed, species, knowledgeKind, rungs }) {
       holderId: writer,
     });
     if (written.refusal !== undefined) throw new Error(`scribing refused: ${written.refusal.reason}`);
+    // The chain measures **fidelity alone**, so a book the scribe botched is
+    // mended before it is read. Scribal error is a second, independent
+    // mechanism with its own table below, and a chain that stopped whenever a
+    // roll went badly would report the error rate as if it were the curve.
+    if (written.corrupted) scribalErrors += 1;
+    setFidelity(state, written.instance, { corruption: CORRUPTION.sound });
 
     const reader = state.entities.create();
     const read = study({
@@ -175,6 +182,7 @@ function runChain({ seed, species, knowledgeKind, rungs }) {
     });
     writer = reader;
   }
+  rows.scribalErrors = scribalErrors;
   return rows;
 }
 
@@ -302,6 +310,24 @@ function recoveryAttempt({ species, tier, readerDeepestTier }) {
     learned: outcome.refusal === undefined,
     diagnosed: fidelityOf(state, written.instance).corruption === CORRUPTION.marked,
   };
+}
+
+console.log('\n## ambient scribal error: books botched per chain, out of the rungs written\n');
+{
+  console.log('| species | affinity | botched / written, summed over seeds |');
+  console.log('|---|---|---|');
+  for (const species of SPECIES) {
+    let botched = 0;
+    let written = 0;
+    for (const seed of SEEDS) {
+      const rows = runChain({ seed, species, knowledgeKind: 'metis', rungs: RUNGS });
+      botched += rows.scribalErrors;
+      written += rows.length;
+    }
+    console.log(
+      `| ${species.id} | ${String(species.scribeAffinity)} | ${String(botched)} / ${String(written)} |`,
+    );
+  }
 }
 
 console.log('\n## corrupted texts: who reads through, and who can even tell\n');

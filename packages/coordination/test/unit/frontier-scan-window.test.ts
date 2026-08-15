@@ -318,7 +318,7 @@ describe('the frontier scan is bounded by legality, not by a range of node ids',
 });
 
 describe('what the window cost the shipped v1 subset', () => {
-  it('put eighteen of the fifty-one v1 nodes permanently out of reach', () => {
+  it('put eighteen of the fifty-two v1 nodes permanently out of reach', () => {
     const v1 = v1NodeIds();
     const beyond = v1.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW);
 
@@ -327,7 +327,14 @@ describe('what the window cost the shipped v1 subset', () => {
     // moving a v1 cell across id 256 used to be a silent balance change — and
     // the `check:content` assertion in `@mm/content`'s loader now refuses the
     // class of reshuffle that would make an id range matter again.
-    expect(v1).toHaveLength(51);
+    // 52, not the 51 this was written against: `w190/scribing-fidelity` added
+    // `pn-the-wrong-true-name` to `perdo-nomen`. The count of *unreachable*
+    // nodes is unchanged at eighteen, and that is the load-bearing half — the
+    // new node interns at 227, inside the historic window, so it neither joins
+    // the lost block nor rescues anything from it. A content addition that moved
+    // that second number would be the silent balance change this test exists to
+    // catch.
+    expect(v1).toHaveLength(52);
     expect(beyond).toHaveLength(18);
 
     // And they were one contiguous block — the four `rego` cells of the v1
