@@ -144,6 +144,7 @@ import {
   LABORERS_PER_BUILD_UNIT,
   MATERIALS_PER_LABOR_MONTH,
   MATERIAL_KINDS,
+  NO_STANDING_ARMY,
   advanceConstruction,
   appliedYield,
   applicationRations,
@@ -797,7 +798,12 @@ export function worldSystem(
           constructionBacklog: constructionBacklog(state),
           scribingQueueDepth: 0,
           universityCapacity: completedCapacity(state),
-          standingSoldierTarget: 0,
+          // Zero, by citation rather than by omission. `ages-of-magic.md` §2b:
+          // *"A university's stationed mages are its faculty, its researchers
+          // and its garrison at once. There is no separate military."* The
+          // constant carries the rest of the argument, and the three things
+          // that would have to exist before this becomes a number.
+          standingSoldierTarget: NO_STANDING_ARMY,
         }),
       });
 
