@@ -63,6 +63,9 @@ function traditionId(): number {
 interface RunTotals {
   readonly studentsEnrolled: number;
   readonly magesGraduated: number;
+  readonly graduatedAcademic: number;
+  readonly graduatedPopulace: number;
+  readonly latentMagicUsers: number;
   readonly latentUnactivated: number;
   readonly unseated: number;
   readonly studentMages: number;
@@ -82,6 +85,9 @@ function runWorld(options: { cohortSize?: number; ticks?: number }): RunTotals {
   let current = state;
   let studentsEnrolled = 0;
   let magesGraduated = 0;
+  let graduatedAcademic = 0;
+  let graduatedPopulace = 0;
+  let latentMagicUsers = 0;
   let latentUnactivated = 0;
   let unseated = 0;
   let last: WorldStepReport | undefined;
@@ -90,6 +96,9 @@ function runWorld(options: { cohortSize?: number; ticks?: number }): RunTotals {
     const report = simulation.lastReport() as WorldStepReport;
     studentsEnrolled += report.studentsEnrolled;
     magesGraduated += report.magesGraduated;
+    graduatedAcademic += report.graduatedAcademic;
+    graduatedPopulace += report.graduatedPopulace;
+    latentMagicUsers += report.latentMagicUsers;
     latentUnactivated += report.latentUnactivated;
     unseated += report.unseated;
     last = report;
@@ -97,6 +106,9 @@ function runWorld(options: { cohortSize?: number; ticks?: number }): RunTotals {
   return {
     studentsEnrolled,
     magesGraduated,
+    graduatedAcademic,
+    graduatedPopulace,
+    latentMagicUsers,
     latentUnactivated,
     unseated,
     studentMages: last?.studentMages ?? 0,
@@ -179,15 +191,46 @@ describe('defect 1: intake is people, not seats', () => {
     // you have, the more latent magic users you can activate"* is a claim about.
     const crowded = runWorld({ cohortSize: 120 });
     expect(crowded.unseated).toBeGreaterThan(0);
-    expect(crowded.latentUnactivated).toBeGreaterThan(0);
+    // **`latentUnactivated` is structurally zero since W197 and the zero is the
+    // assertion.** The species gate moved entirely into the demand controller,
+    // so nobody prevalence rejects ever reaches the enrolment phase to be
+    // counted here; the god-facing half of the gap is `unseated` and the other
+    // half is `latentMagicUsers` minus `studentsEnrolled`, one phase earlier.
+    expect(crowded.latentUnactivated).toBe(0);
   });
 
   it('reports the gap between who could be a mage and who was seated', () => {
     // `magical-prevalence.md`: *"a god looking at '12,000 people, 1,200 latent,
     // 340 found' has an immediately legible problem and an obvious lever, and
-    // neither of those exists in the game today."* This is that number existing.
+    // neither of those exists in the game today."* This is that number existing,
+    // as the two quantities whose difference it is.
     const world = runWorld({ cohortSize: 120 });
-    expect(world.latentUnactivated).toBeGreaterThan(0);
+    expect(world.latentMagicUsers).toBeGreaterThan(0);
+    expect(world.latentMagicUsers).toBeGreaterThan(world.studentsEnrolled);
+  });
+
+  it('applies the species gate once, so seats can actually bind', () => {
+    // **The double-application fix.** `latentMagicUsers` sizes student demand by
+    // `prevalence`; enrolment used to multiply by it again, so a universe seated
+    // roughly a tenth of the pool it had just called latent and `unseated` was
+    // zero on every tick of a 1,200-tick reference run. A universe crowded
+    // against its seats must now be able to run out of chairs.
+    const crowded = runWorld({ cohortSize: 120 });
+    expect(crowded.unseated).toBeGreaterThan(0);
+    expect(crowded.studentsEnrolled).toBeGreaterThan(0);
+  });
+});
+
+describe('defect 3: aptitude sorts careers, and sorts nobody out of existence', () => {
+  it('splits a graduating class into both careers, and the halves sum', () => {
+    // *"Something for the other half of people to do."* Both outcomes have to be
+    // reachable in a real world loop, or the sort is a constant wearing a draw's
+    // clothes — and the two reported halves must add up to the whole, because a
+    // reader who has to subtract will eventually subtract the wrong thing.
+    const world = runWorld({ cohortSize: 120, ticks: 240 });
+    expect(world.magesGraduated).toBe(world.graduatedAcademic + world.graduatedPopulace);
+    expect(world.graduatedAcademic).toBeGreaterThan(0);
+    expect(world.graduatedPopulace).toBeGreaterThan(0);
   });
 });
 

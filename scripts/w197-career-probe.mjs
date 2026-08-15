@@ -107,6 +107,8 @@ process.stdout.write(
       unseatedMaxTick,
       unseatedTicks,
       population: simulation.lastReport()?.population ?? null,
+      carryingCapacity: simulation.lastReport()?.carryingCapacity ?? null,
+      latentMagicUsers: simulation.lastReport()?.latentMagicUsers ?? null,
       totals,
       finalSnapshotHash: snapshotHash(state),
     },

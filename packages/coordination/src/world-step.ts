@@ -489,12 +489,35 @@ export interface WorldStepReport {
   /** Cohort members who became student mages this tick. */
   readonly studentsEnrolled: number;
   /**
-   * People of school age this tick who could have been mages and were not
-   * seated — the species ceiling, the aptitude gate, or no free seat.
+   * People of school age this tick who could be magic users at all:
+   * `Σ cohortCount × prevalence[species]`, over every cohort past maturity.
    *
-   * `magical-prevalence.md` wants the gap between *should be* and *are* legible,
-   * because **that gap is the university's reason to exist**. This is the tick's
-   * contribution to it.
+   * **The *"1,200 latent"* of `magical-prevalence.md`'s inequality**, and since
+   * W197 the only place in the loop `prevalence` is applied. It was previously
+   * computed, handed to the demand controller and discarded; a species ceiling
+   * that nothing reports is a lever a player cannot see.
+   *
+   * A **stock**, not a flow — it is every school-age person who could go, this
+   * tick, not the ones who went. Compare it against {@link studentsEnrolled} for
+   * *"should be" versus "are"*, which is the gap the whole design says a
+   * university exists to close.
+   */
+  readonly latentMagicUsers: number;
+  /**
+   * People of school age this tick who could have been mages and were not
+   * seated, **excluding** those who found no chair.
+   *
+   * **Structurally zero since W197, and the zero is honest.** The species gate
+   * moved entirely into the demand controller, so somebody prevalence rejects is
+   * now never placed in the `student` occupation at all and never reaches this
+   * phase to be counted. Everyone who arrives here is latent by construction,
+   * and the only way to miss out is {@link unseated}.
+   *
+   * Kept rather than deleted because the *quantity* it names is still the one
+   * `magical-prevalence.md` cares about — it is now
+   * {@link latentMagicUsers} minus {@link studentsEnrolled}, one phase earlier
+   * and universe-wide, and both of those are reported. Removing the field would
+   * have made a reader think the question went away with it.
    */
   readonly latentUnactivated: number;
   /**
@@ -885,6 +908,11 @@ export function worldSystem(
         });
 
       // ---- 2. Populace ----------------------------------------------------
+      // Hoisted out of the demand literal so the report can carry it. It is the
+      // *"1,200 latent"* of `magical-prevalence.md`'s inequality, and W197 made
+      // it the only place `prevalence` is applied — so a reader who cannot see
+      // it cannot see the species gate at all.
+      const latent = latentMagicUsers(cohorts, deps, worldTick);
       const populace = stepPopulace(cohorts, {
         hazard,
         species: (speciesId) => demographyOf(speciesId, deps),
@@ -894,7 +922,7 @@ export function worldSystem(
           constructionBacklog: constructionBacklog(state),
           scribingQueueDepth: 0,
           universityCapacity: completedCapacity(state),
-          latentMagicUsers: latentMagicUsers(cohorts, deps, worldTick),
+          latentMagicUsers: latent,
           // Zero, by citation rather than by omission. `ages-of-magic.md` §2b:
           // *"A university's stationed mages are its faculty, its researchers
           // and its garrison at once. There is no separate military."* The
@@ -1152,6 +1180,7 @@ export function worldSystem(
         mageDeaths: mortality.deaths,
         magesPromoted: promoted,
         studentsEnrolled: enrolment.enrolled,
+        latentMagicUsers: latent,
         latentUnactivated: enrolment.latentUnactivated,
         unseated: enrolment.unseated,
         magesGraduated: graduation.graduated,
@@ -1867,6 +1896,16 @@ function degradeUnkeptLibraries(
   return { instances, nodesLost };
 }
 
+/**
+ * The enrolment fraction, now that `prevalence` is spent in the demand
+ * controller: **all of them**.
+ *
+ * A named constant rather than a bare `FP_ONE` at the call site, because the
+ * whole content of W197's second change is *which stage owns the species gate*,
+ * and a literal `1024` in an argument list is the least visible way to say it.
+ */
+const ENROLS_EVERY_LATENT_MEMBER: Fixed = FP_ONE;
+
 interface PromotionPhase {
   readonly rng: StepRng;
   readonly worldTick: number;
@@ -1908,15 +1947,37 @@ function enrolMaturedStudents(
   for (const entry of matured) {
     const species = phase.deps.speciesOf(entry.speciesId);
     if (species === undefined) continue;
+    // ## Every matured member of a student cohort is seated. That is the fix.
+    //
+    // **`prevalence` used to be applied here as well as in the demand
+    // controller, and the double application is why seats never bound.** The
+    // `student` occupation is not the general population: `computeOccupationDemand`
+    // already sized it as `min(universityCapacity, latentMagicUsers)`, and
+    // `latentMagicUsers` is `Σ count × prevalence[species]`. Multiplying by
+    // `prevalence` a second time meant a universe enrolled roughly a tenth of the
+    // pool it had just decided was latent — so `unseated` was zero on every tick
+    // of a 1,200-tick run and university capacity constrained nothing.
+    //
+    // Measured on this branch at unchanged content, seed 589825: enrolments over
+    // 1,200 ticks `70 → 190`, and `unseated` peaks at 21 in a tick instead of 0
+    // in all of them. The seat is the constraint again, which is what
+    // `magical-prevalence.md` says a university is *for*.
+    //
+    // The fraction is `FP_ONE` rather than absent so that the arithmetic, the
+    // overflow ceiling and the `draws: 1` contract all stay where W193 put them
+    // — and so that a reader sees the fraction being *deliberately* spent
+    // upstream rather than finding a call site that quietly stopped taking one.
+    // At `FP_ONE` the remainder is zero and the draw never promotes, which makes
+    // `promoteStudentCohort` an identity here; the rare-species floor it exists
+    // to prevent now lives in `latentInCohort`, whose own comment says it floors
+    // to zero and declines to draw. See the PR body: if a species ever truncates
+    // out of existence there, the remainder draw has to move into the demand
+    // path, and that is a larger change than this one.
     const outcome = promoteStudentCohort(
       phase.rng,
       entry.cohort,
       entry.count,
-      // `prevalence` alone since W197. Aptitude used to be the second factor
-      // here and decided *whether* a student became a mage at all; it now
-      // decides what kind of mage a graduate becomes, in `careers.ts`. Two
-      // gates on one pipe is why living mages halved when prevalence went live.
-      enrolmentFraction(prevalenceOf(species)),
+      ENROLS_EVERY_LATENT_MEMBER,
     );
 
     // **Seats are claimed before the cohort is touched, and the whole cohort's

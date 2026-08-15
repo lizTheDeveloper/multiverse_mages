@@ -142,21 +142,29 @@ export const ACADEMIC_CHANCE_PULL: Fixed = 512;
  *
  * ## `24` is measured, not chosen, and here is the measurement
  *
- * Instrumented over the reference universe, 1,200 ticks at seed 589825, on
- * `w197/aptitude-sorts-careers` (2026-08-14): **63 graduations, held nodes with
- * a mode of 6, a median of 9, and a tail out to 48.** The first value tried was
- * `8`, and it was wrong for a reason worth writing down — at full marks of 8,
- * fifty of the sixty-three graduates saturate the term, so a knob meant to
- * differentiate shallow schools from deep ones was instead a **constant `+128`
- * on almost everybody**. A term pinned at its ceiling is the same defect as one
- * pinned at its floor, and it is harder to see because the numbers all move.
+ * Instrumented over the reference universe, 1,200 ticks, on
+ * `w197/aptitude-sorts-careers` at `652db99` (2026-08-14), **after** the same
+ * branch stopped applying `prevalence` twice:
  *
- * At `24` the neutral point is 12 nodes, which sits inside the observed spread:
- * the mode graduate takes `-64`, a mid-depth one takes `0`, and only the deep
- * tail reaches `+128`. That is the term doing the job it was added for.
+ * | seed | graduations | min | median | p75 | max |
+ * | --- | ---: | ---: | ---: | ---: | ---: |
+ * | 589825 | 110 | 6 | 6 | 24 | 42 |
+ * | 1234567 | 163 | 6 | 23 | 29 | 43 |
+ *
+ * The first value tried was `8`, measured before that fix, and it was wrong for
+ * a reason worth writing down — at full marks of 8, fifty of sixty-three
+ * graduates saturated the term, so a knob meant to differentiate shallow schools
+ * from deep ones was instead a **constant `+128` on almost everybody**. A term
+ * pinned at its ceiling is the same defect as one pinned at its floor, and it is
+ * harder to see because the numbers all move.
+ *
+ * At `24` the neutral point is 12 nodes, which sits inside the observed spread
+ * on both seeds: the shallowest quartile takes `-64`, a mid-depth graduate takes
+ * roughly `0`, and only the deep tail reaches `+128`. That is the term doing the
+ * job it was added for.
  *
  * **Re-measure this if graduation changes.** It is a statement about one ref and
- * one seed, and `w196/mastery-rises` and #170's reading edge both change what a
+ * two seeds, and `w196/mastery-rises` and #170's reading edge both change what a
  * student comes out holding.
  */
 export const SCHOOLING_FULL_MARKS = 24;
