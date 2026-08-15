@@ -118,6 +118,20 @@ export interface Scenario {
   /** Node tiers, node cells and tradition ids the observation needs. */
   readonly catalogue: ContentCatalogue;
   /**
+   * Universes this one may open a portal to, if any.
+   *
+   * The one input `candidates.ts` cannot derive: `contracts.md` §1.1 puts one
+   * universe in a simulation instance, so the multiverse is not in state and
+   * there is nothing here to enumerate. Whoever built the world is the only
+   * party that knows what else is in the sky, so the scenario carries it and
+   * the session hands it to the candidate builder unchanged.
+   *
+   * Absent — the default — means action 14 has no candidates and stays masked,
+   * which is the correct answer for a genuinely solitary universe and is what
+   * every scenario built before raids landed keeps reporting.
+   */
+  readonly portalTargets?: readonly number[];
+  /**
    * Builds the initial state.
    *
    * **Must be a pure function of its two arguments.** Reading a clock, a
@@ -240,6 +254,19 @@ export function createSession(options: SessionOptions): AgentSession {
   const strategyId = options.strategyId ?? DEFAULT_STRATEGY_ID;
   const counting = options.countIllegalActions ?? true;
 
+  /**
+   * The scenario's portal targets, spread into every candidate build.
+   *
+   * Built once as an object to spread rather than passed as
+   * `portalTargets: scenario.portalTargets`, because `CandidateInput` declares
+   * the field optional and `exactOptionalPropertyTypes` makes an explicit
+   * `undefined` a different thing from an absent key. Spreading an empty object
+   * keeps "this scenario named no targets" byte-identical to every call this
+   * package made before the field existed.
+   */
+  const portalTargets =
+    scenario.portalTargets === undefined ? {} : { portalTargets: scenario.portalTargets };
+
   let state: SimState | undefined;
   let cap = 0;
   let view: AgentView | undefined;
@@ -288,6 +315,7 @@ export function createSession(options: SessionOptions): AgentSession {
     view ??= observe({
       state: current,
       catalogue: scenario.catalogue,
+      ...portalTargets,
       truncated: atCap(current),
     });
     return view;
@@ -383,7 +411,10 @@ export function createSession(options: SessionOptions): AgentSession {
       }
 
       submitted += 1;
-      const screened = admit({ state: current, catalogue: scenario.catalogue }, [action]);
+      const screened = admit(
+        { state: current, catalogue: scenario.catalogue, ...portalTargets },
+        [action],
+      );
       const rejection = screened.rejected[0];
       if (rejection !== undefined) noteRejection(action.kind);
 

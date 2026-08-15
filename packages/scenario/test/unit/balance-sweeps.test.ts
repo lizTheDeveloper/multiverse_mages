@@ -37,7 +37,12 @@ import { fileURLToPath } from 'node:url';
 
 import type { SweepSpec } from '@mm/mc-harness';
 import { expandSweep, validateSweep } from '@mm/mc-harness';
-import { CENSUS_INTERVAL_TICKS, FINAL_WINDOW_DENOMINATOR, REFERENCE_REGISTRIES } from '@mm/scenario';
+import {
+  BALANCE_RUN_METRIC_IDS,
+  CENSUS_INTERVAL_TICKS,
+  FINAL_WINDOW_DENOMINATOR,
+  REFERENCE_REGISTRIES,
+} from '@mm/scenario';
 import { describe, expect, it } from 'vitest';
 
 /** From packages/scenario/test/unit/ up to the repository root. */
@@ -117,7 +122,10 @@ describe('the three sweeps are three different instruments', () => {
     expect(vitals).toHaveLength(9);
 
     for (const [name, spec] of committed) {
-      const declared = [...spec.metrics].sort();
+      // The §7 half is a separate rule, below. Filtered out here rather than
+      // folded in, because the vital-sign rule is about what makes a *universe*
+      // legible and §7's is about what makes a *balance claim* checkable.
+      const declared = [...spec.metrics].sort().filter((id) => !BALANCE_RUN_METRIC_IDS.includes(id));
       const exact = spec.termination.worldTickCap % (FINAL_WINDOW_DENOMINATOR * CENSUS_INTERVAL_TICKS) === 0;
       expect(declared.filter((id) => id !== shape), name).toEqual(vitals);
       expect(declared.includes(shape), name).toBe(exact);
@@ -126,5 +134,32 @@ describe('the three sweeps are three different instruments', () => {
     // Not vacuous in either direction: one committed sweep is on each side.
     expect(gate.metrics).not.toContain(shape);
     expect(horizon.metrics).toContain(shape);
+  });
+
+  /**
+   * The §7 rule, and the asymmetry in it is the whole point.
+   *
+   * The **full** sweep declares `contracts.md` §7's seven per-run metrics,
+   * because it is the methodology run and those seven are what a balance claim
+   * is eventually made of. They became declarable at all only when
+   * `collectRunMetrics` got a production caller — before that the validator
+   * would have rejected every one of these ids, which is why four separate
+   * findings (`libraryDependence` pinned at 0 among them) were four symptoms of
+   * one uncalled function.
+   *
+   * The **gate** sweeps deliberately do not. A sweep's declared metric list is
+   * inside its `configurationHash`, and a baseline is keyed on that hash — so
+   * adding a column to a gated sweep invalidates its committed baseline and
+   * forces a regeneration, which is the one thing a change to the measurement
+   * apparatus must never quietly require. Gating these seven is a separate
+   * decision, taken with a baseline in hand.
+   */
+  it('declares §7 per-run metrics on the full sweep and on no gated one', () => {
+    const declares = (spec: SweepSpec): string[] =>
+      [...spec.metrics].filter((id) => BALANCE_RUN_METRIC_IDS.includes(id)).sort();
+
+    expect(declares(full)).toEqual([...BALANCE_RUN_METRIC_IDS].sort());
+    expect(declares(gate)).toEqual([]);
+    expect(declares(horizon)).toEqual([]);
   });
 });

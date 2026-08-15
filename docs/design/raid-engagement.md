@@ -20,6 +20,50 @@ you make real decisions constantly early, and by the end the run plays itself an
 right to watch it. A raid should have the same shape. There is a phase where you only watch — but it
 is not the whole raid, and it is not the beginning.
 
+## 0a. Which tradition this document assumes — added 2026-08-12
+
+This document did not name a tradition, and it has to, because `vision.md` §4a says **a universe
+has exactly one** and one of the three decides whether the thing this raid is built to take exists
+at all.
+
+**What this document assumes: a store hook that makes records.** In
+`packages/content/data/tradition.json` that is `store: { kind: "standard" }`, which is **Vancian
+Memorization** and **True Naming**. Everything below about libraries — §8's *"universities first, because that is where the
+grimoires are"*, §1's correction that libraries fall to objective capture and grimoire-burn rolls
+rather than to *Perdo*, §8's claim that a deep library and three scriptoria produce a different
+plan from a shallow library and a barracks — is a statement about a universe under one of those
+two.
+
+**Under The Art of Memory the library objective is an empty room, and this is measured, not
+feared.** Its store hook is `{ kind: "palace", slotsPerMage: 12, lootable: false, burnable: false,
+libraryDepthCoefficient: 768 }`. W13's tradition sweep (`campaign-plan.md`) reports **zero
+grimoires across all 96 runs**, library depth `0.0`, and 17.2 nodes known against 58.2 and 65.8 for
+the other two arms. `scenario`'s `scribingTraditionId` skips it outright, because a palace store
+cannot scribe. So under Art of Memory there is nothing to capture, nothing to burn, and the raid's
+primary objective does not exist.
+
+**Which hook governs is not symmetric, and §4a already decides it.** Across a portal *acquire* and
+*store* stay with the mage's home tradition; only *cast* and *cost* are host-governed. So it is the
+**defender's** tradition that decided, over world time, whether a library ever accumulated — and
+the **attacker's** that decides where anything she carries off can live. An Art of Memory raider
+looting a True Naming library has twelve palace slots and no shelf.
+
+**What is left when the shelf is gone**, all of it already in this document and none of it invented
+here: §11b's information asymmetry, whose channel is what an attacker's casts *reveal* rather than
+anything written down; the supply-chain and building targets of §8; and killing mages, which under
+a palace store is permanent destruction of knowledge rather than the loss of one copy, because the
+palace dies with its holder.
+
+**Open, and the ruling is the author's.**
+
+1. **What is the raid objective in an Art of Memory universe?** Either the raid targets something
+   else there, or Art of Memory is a tradition you cannot usefully raid, or the palace becomes
+   reachable by some means this document does not propose.
+2. **Where does an Art of Memory attacker put loot?** Refused, converted, or held somewhere §5 does
+   not yet have a location for.
+3. **Should a mixed-tradition raid be the interesting case rather than the awkward one?** The hook
+   split makes it possible; nothing here has been tuned for it.
+
 ## 1. The amendment to §3
 
 `vision.md` §3 currently ends:

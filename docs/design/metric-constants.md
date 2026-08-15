@@ -54,6 +54,18 @@ to be edited, which a reviewer reads as what it is.
 | Can a primitive be un-ablatable? | **`portal`**, reported `not-attributable` | Neutralizing a presence gate removes raiding, so the ablation arm plays no raid. A win rate there would be a comparison against an arm that never fought. |
 | Pairwise ablation? | **refused**, in the sweep validator and again in the mask | Fifteen primitives make 105 pairs: two orders of magnitude of sweep cost for a question nobody has asked. |
 | What is the maximum prestige carry-forward? | **`PRESTIGE_CAP`**, from loaded `god-constant` content | Not chosen here. The loader asserts `PRESTIGE_CAP × (fp(1024) − PRESTIGE_RETENTION) == PRESTIGE_EARN_MAX × fp(1024)`, which makes it the analytic limit of the carry-forward recurrence at its earning ceiling rather than a clamp somebody picked. |
+| What does it mean to *staff* a grid cell? | **some node in the cell reachable within `depthCeiling`**, over the transitive prerequisite closure taken across the whole catalogue | The alternative bar — reach the cell's *deepest* node — separates the species cleanly and separates them by depth, which is the question `timeToTierBySpecies` already asks. It is carried alongside as `exhaustibleCells` so the two can be read against each other. 36 of the 292 prerequisite edges cross cells, so a per-cell closure would treat those prerequisites as free. |
+| What counts as a *qualified* researcher? | reachability, plus the reported **teachable window** — `floor((MASTERY_MAX − TEACH_THRESHOLD) / masteryDecayPerTick(retention))` | Nothing in the rules path raises mastery: `setMastery`'s one non-test caller is the decay pass. Research creates an instance at 256, below the 512 teach threshold, and it can never climb. So "qualified" cannot mean "can learn it" — every teachable instance descends from a god grant at 1024 and is sliding down. The window is how long a species can still pass on what it was handed, and it is the only quantity here that separates the six. |
+| How is a loss shock applied without taking a draw? | **every k-th living mage by ascending entity handle**, at a pinned tick and fraction | A measurement that consumed randomness would re-roll every subsystem behind it and invalidate every committed baseline (`contracts.md` §6). Sorting by handle is stable, is not an array index, and is reproducible from the snapshot alone. |
+| What does an unshocked run report for `lossShockRecovery`? | **`no-observations`** | A run that lost nobody has no recovery time. `0` would read as instantaneous recovery, which is how four metrics in this project came to publish healthy constants they were structurally incapable of moving. |
+| Which roles are *lossy* for `roleAssignmentDemographicCost`? | **`RAIDING_ROLES`**, which is `{raider}` | `roleId` does not appear in the mortality hazard at all — `perTickHazard` reads age, birth tick and effective lifespan and nothing else. A role reaches mortality only through raid combatant eligibility, and only raiders deploy offensively; all four roles defend. |
+| What does `roleAssignmentDemographicCost` report with no raid mechanic? | **`mechanic-absent`**, never `0` | With no raids there is no pathway from a role to a death, so the price is undefined rather than zero. A measured `0` is reserved for the case that roles were assigned, raids were fought, and the share did not move — which is the finding that action 10 is free. |
+| What is a combat node *worth*? | combatant-ticks of enemy action denied, over the combatant-ticks a raid contains | Every prior measure of a combat primitive counted magnitude put on the field. Measured raids say that ranks the wrong thing: cast `direct-damage` removes under two percent of the hit points a raid removes, and survival-regret reads zero on every seed because the raid is decided by objectives the raider walks to. A node buys enemy action that does not happen; that is the quantity. |
+| Does "removed from action" mean killed? | no — killed, saved by `ward` or `concealment`, or soaked by a summon | Control dominates damage on this tuning, so a measure counting only corpses would report the same near-zero it exists to replace. Displacement would be a fourth channel and this engine has no code path for it, so it is *declared absent* rather than reported as a zero — a channel structurally incapable of moving is the failure this project has already shipped four times. |
+| Which source killed a combatant, when several hurt it? | split in proportion to the hit points each removed **over its whole life**, floored, remainder to the largest | Crediting the killing tick hands everything to whoever landed last — `area-denial` finishing what a bolt whittled, or the reverse — which is timing noise wearing a definition's clothes. The split conserves exactly, so the total does not change when the rows are regrouped. |
+| Does killing a summon count? | no; reported alongside, outside the scalar | A summon costs its owner nothing at world scale. Folding its removal in would let damage farm denial on free bodies, which is invisible inflation of the exact number the metric exists to make honest. Reporting it alongside makes the exclusion's failure mode visible instead of silent. |
+| What is one *attempt*, for threshold efficiency? | one resolved cast per primitive it carries, or one intrinsic attack; an `area-denial` field is one attempt for its whole life | A field applies damage on every tick it stands. Counting each tick would turn one cast into forty attempts and make a per-cast ratio read as a per-tick statistic under a per-cast name, so the field carries its cast's attempt id. |
+| What about an attempt that landed nothing? | counted, and in neither the numerator nor the denominator | An attempt the target evaded says nothing about whether its source crosses a removal threshold. Folding it into the denominator would charge the caster for the *enemy's* `concealment`. |
 
 ## Every pinned constant, by metric
 
@@ -113,4 +125,42 @@ Generated from the registry and checked against it. `definitionVersion` is per m
 | `illegalActionRate` | `strategyAttribution` | `"even split across the run slots"` |
 | `inboundRaidTempoLoss` | `denominator` | `"elapsed world ticks of this run"` |
 | `raidInitiationCost` | `denominator` | `"raids initiated"` |
-
+| `speciesCellOccupancy` | `assertsNoTarget` | `"all six species are tuningStatus untuned; this metric measures the spread, it does not declare what the spread should be, and no gate reads it"` |
+| `speciesCellOccupancy` | `enabledDenominator` | `"cells permits() accepts, never a hardcoded twelve"` |
+| `speciesCellOccupancy` | `livingOnly` | `true` |
+| `speciesCellOccupancy` | `locationKinds` | `"mind only; library and grimoire copies are excluded"` |
+| `speciesCellOccupancy` | `occupancyRule` | `"a living mage of the species holds a knowledge instance of some node in the cell, at location kind mind; library and grimoire copies are excluded"` |
+| `speciesCellOccupancy` | `readingTick` | `"run end"` |
+| `speciesCellOccupancy` | `scalar` | `"Gini over per-species occupied-cell counts, the shared metrics-gini estimator"` |
+| `speciesGridVersatility` | `closureScope` | `"global transitive prerequisite closure over the whole catalogue"` |
+| `speciesGridVersatility` | `depthComparison` | `"node.tier > depthCeiling refuses, mirroring the gateway"` |
+| `speciesGridVersatility` | `enabledDenominator` | `"cells permits() accepts, never a hardcoded twelve"` |
+| `speciesGridVersatility` | `hegemonyFraction` | `0.8` |
+| `speciesGridVersatility` | `scalar` | `"maximum per-species staffable fraction over the full grid"` |
+| `speciesGridVersatility` | `staffableRule` | `"some node in the cell reachable within depthCeiling"` |
+| `speciesGridVersatility` | `teachableWindowRule` | `"floor((MASTERY_MAX - DEFAULT_TEACH_THRESHOLD) / masteryDecayPerTick(retention))"` |
+| `lossShockRecovery` | `censoring` | `"right-censored at run termination"` |
+| `lossShockRecovery` | `knowledgeRecovery` | `"distinct nodes held in a mind by a living mage of the species"` |
+| `lossShockRecovery` | `recoveryFraction` | `1` |
+| `lossShockRecovery` | `selectionRule` | `"every k-th living mage by ascending entity handle, no RNG draw"` |
+| `lossShockRecovery` | `unshockedRunReports` | `"no-observations, never 0"` |
+| `roleAssignmentDemographicCost` | `absentMechanic` | `"raidEngagement"` |
+| `roleAssignmentDemographicCost` | `lossyRoleRule` | `"RAIDING_ROLES, which is {raider} — the only role that raises death risk"` |
+| `roleAssignmentDemographicCost` | `mortalityPathway` | `"raid combatant eligibility; roleId does not enter the mortality hazard"` |
+| `roleAssignmentDemographicCost` | `paired` | `true` |
+| `roleAssignmentDemographicCost` | `scalar` | `"largest per-species fall against the control, fp scale"` |
+| `combatActionEconomy` | `castAndIntrinsicSeparated` | `true` |
+| `combatActionEconomy` | `decoyTicksPerAbsorbedAttack` | `1` |
+| `combatActionEconomy` | `denominator` | `"combatant-ticks the raid contained: entry to removal or resolution, every combatant"` |
+| `combatActionEconomy` | `killAttribution` | `"proportional to the hit points each source removed over the target's life; floored, remainder to the largest, ties on ascending source id"` |
+| `combatActionEconomy` | `overkillExcluded` | `true` |
+| `combatActionEconomy` | `removalDuration` | `"removal tick to resolution tick"` |
+| `combatActionEconomy` | `saveAttribution` | `"one save per combatant-tick; concealment when the evaded magnitude was necessary, otherwise ward; each save owns the span to the next save, the removal, or resolution"` |
+| `combatActionEconomy` | `summonRemovalsExcluded` | `true` |
+| `combatActionEconomy` | `unimplementedChannels` | `["displacement"]` |
+| `combatThresholdEfficiency` | `attemptUnit` | `"one resolved cast per primitive, or one intrinsic attack; a field is one attempt for its whole life"` |
+| `combatThresholdEfficiency` | `denominator` | `"removing plus hurting attempts"` |
+| `combatThresholdEfficiency` | `numerator` | `"attempts that damaged a combatant which reached zero hit points on a tick they fed"` |
+| `combatThresholdEfficiency` | `pooling` | `"over every raid in the run"` |
+| `combatThresholdEfficiency` | `spentAttemptsExcluded` | `true` |
+| `combatThresholdEfficiency` | `undefinedEfficiencyIsNull` | `true` |

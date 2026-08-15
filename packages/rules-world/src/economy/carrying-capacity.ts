@@ -261,8 +261,18 @@ export function maxCarryingCapacity(territory: TerritoryExtent): number {
 export interface CapacityInput {
   /** The fixed resource: what the land itself holds. */
   readonly territory: TerritoryExtent;
-  /** The universe's materials stock, `fp`. Modulates, never drives. */
-  readonly materials: Fixed;
+  /**
+   * The universe's **food** stock, `fp`. Modulates, never drives.
+   *
+   * Food and not the sum of the three kinds, and the constant next door already
+   * argued for it before there were kinds to choose between:
+   * {@link MATERIALS_PROVISION_SATURATION} reads its own saturation point as
+   * *"a generation's food in the barns"*. A country holds more people because
+   * there is more to eat, not because there is more gravel — piling up quarried
+   * stone should raise what a universe can *build*, which it now does through
+   * construction, rather than what it can feed.
+   */
+  readonly food: Fixed;
   /** Seats across **completed** universities. Unfinished ones carry nobody. */
   readonly completedCapacity: number;
   /**
@@ -305,7 +315,7 @@ export function carryingCapacity(input: CapacityInput): number {
   // `fp` scale (the stock is already `fp`, land units are a count), and seats per
   // land unit compared at `fp` scale for the same reason.
   const materialsBonus = provisionBonus(
-    Math.max(0, input.materials),
+    Math.max(0, input.food),
     landUnits * MATERIALS_PROVISION_SATURATION,
     MATERIALS_PROVISION_CAP,
   );

@@ -34,13 +34,14 @@ import { ClampCounters } from '@mm/primitives';
 import { RAID_SIDE } from '@mm/state';
 import { CastArbiter, compareCombatantKeys, packCombatantKey } from '@mm/rules-raid';
 
-import { grid, registry, ruleset, tuning } from './raid-fixture.js';
+import { combat, grid, registry, ruleset, tuning } from './raid-fixture.js';
 
 function arbiter(): CastArbiter {
   return new CastArbiter({
     hostRuleset: ruleset({}),
     grid,
     registry,
+    combat,
     tuning,
   });
 }
@@ -75,6 +76,7 @@ describe('one ward application over the summed damage (task 6.11)', () => {
       hostRuleset: ruleset({}),
       grid,
       registry,
+      combat,
       tuning,
       counters,
     });

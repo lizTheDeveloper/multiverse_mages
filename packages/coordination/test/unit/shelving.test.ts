@@ -110,7 +110,6 @@ function desk(options: DeskOptions = {}): Desk {
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    materials: 10_000 * FP_ONE,
     prestige: 0,
     prestigeEarned: 0,
     terminalReason: 0,

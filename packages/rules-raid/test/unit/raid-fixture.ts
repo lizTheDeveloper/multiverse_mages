@@ -43,16 +43,28 @@ import type { PortalHooks } from '@mm/rules-magic';
 import {
   KnowledgeSubsystem,
   MagicGrid,
+  createConsumptionRecorder,
   portalHookSet,
   resolvePortalHooks,
   traditionTable,
 } from '@mm/rules-magic';
-import type { RaidParticipant, RaidTuning } from '@mm/rules-raid';
-import { deployRaid, openPortal, readRaidTuning } from '@mm/rules-raid';
+import type { CombatEffectIndex, RaidParticipant, RaidTuning } from '@mm/rules-raid';
+import { combatEffectIndex, deployRaid, openPortal, readRaidTuning } from '@mm/rules-raid';
 
 export const registry: ContentRegistry = loadContent(shippedContentSource());
 export const grid: MagicGrid = MagicGrid.from(registry);
 export const tuning: RaidTuning = readRaidTuning(registry);
+
+/**
+ * The combat-effect index every test raid is opened with.
+ *
+ * Built here, once, over the shipped registry — the same fetch `scenario`'s
+ * `worldDeps` makes for the real composition root, over the same content. The
+ * recorder is created and dropped: a test is not the assembled simulation, and
+ * a registration from one would be exactly the "code exists that reads this"
+ * answer the consumption check refuses to accept.
+ */
+export const combat: CombatEffectIndex = combatEffectIndex(registry, createConsumptionRecorder());
 
 const traditions = traditionTable(
   registry.traditions.map((entry) => [entry.contentId, entry.record] as const),
@@ -299,7 +311,6 @@ export function addUniverse(
     favor: 64 * FP_ONE,
     worship: FP_ONE,
     worshipTier: 1,
-    materials: 0,
     prestige: 0,
     prestigeEarned: 0,
     terminalReason: 0,
@@ -368,6 +379,11 @@ export function buildRaid(options: BuildRaidOptions = {}): BuiltRaid {
     registry,
     grid,
     tuning: { ...tuning, ...options.tuningOverride },
+    // `main`'s #136 made the combat effect index a required input to
+    // `openPortal` — it is what puts a combat node in a combatant's hands and
+    // what the §9 ablation mask is threaded through. The same index
+    // `warband.ts` builds, for the same reason.
+    combat,
     raidSeed: options.seed ?? 0x5eed_1234,
   });
   deployRaid(raid);

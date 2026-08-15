@@ -34,6 +34,7 @@ import { createState } from '@mm/sim-core';
 import {
   MAGE,
   MAGE_ROLE,
+  MATERIAL_STOCK,
   OCCUPATION,
   POPULACE_COHORT,
   UNIVERSITY,
@@ -62,6 +63,25 @@ export function constants(): GodContent['constants'] {
 /** Base favor prices by `contracts.md` §4.2 action id. */
 export function costs(): GodContent['costs'] {
   return godContent().costs;
+}
+
+/**
+ * The authored `worship-max`, read from `god-constant.json` directly.
+ *
+ * It is the one required god constant with **no field on `GodConstants`** — see
+ * `resolveGodConstants` for the argument, which is that the ceiling is an
+ * identity the content loader checks rather than a number the rules path
+ * applies, and that a field would only ever be read in order to clamp.
+ *
+ * The tests that assert the ceiling still need the authored value, and this is
+ * where they get it. Reading it from the registry rather than from a literal
+ * keeps requirement 1 of this suite's ceiling argument intact: the bound is
+ * asserted *against a constant read from content*, never against anything the
+ * formula computes, so a bound that moved with its own inputs could not satisfy
+ * it.
+ */
+export function worshipMax(): Fixed {
+  return registry().godConstant('worship-max');
 }
 
 function primitiveNamed(id: string): PrimitiveRecord {
@@ -133,6 +153,13 @@ export interface GodWorldOptions {
   readonly permittedTechniques?: number;
   readonly permittedForms?: number;
   readonly traditionId?: number;
+  /**
+   * Every kind of the working stock, at the same figure — `world-fixtures.ts`'s
+   * `seededWorld` seeds all three abundantly for the same reason, and no test
+   * here has needed to differentiate them, so a single override keeps this
+   * fixture's surface the same shape it had before `MATERIAL_STOCK` split the
+   * one field into three.
+   */
   readonly materials?: Fixed;
   readonly prestige?: Fixed;
 }
@@ -172,12 +199,17 @@ export function godWorld(schema: WorldSchema, options: GodWorldOptions = {}): Go
     favor: options.favor ?? 0,
     worship: options.worship ?? 0,
     worshipTier: 0,
-    materials: options.materials ?? 1000 * 1024,
     prestige: options.prestige ?? 0,
     prestigeEarned: 0,
     terminalReason: 0,
     favorCap: 0,
     ascended: 0,
+  });
+  const materials = options.materials ?? 1000 * 1024;
+  attachRecord(state, MATERIAL_STOCK, universe, {
+    food: materials,
+    stone: materials,
+    vellum: materials,
   });
 
   const speciesId = registry().species[0]?.contentId ?? 1;

@@ -15,6 +15,66 @@ agent's invention; the framing and both load-bearing sentences are the author's.
 > skills **fast** in the later game — but in the early game everyone is working it out for the first
 > time and magic is raw and new."*
 
+## 0. Which tradition this document assumes — added 2026-08-12
+
+This document did not name a tradition, and the progression spine it describes does not survive all
+three. `vision.md` §4a says a universe has **exactly one**, chosen by the god, and two of its four
+hooks decide whether the institutions below can work.
+
+**Assumed, and it is two assumptions rather than one.**
+
+- **A store hook that makes records** — `store: { kind: "standard" }` in
+  `packages/content/data/tradition.json`, which is **Vancian Memorization** and **True Naming**.
+  §2's whole case for the college rests on it: scribing and libraries are what let a civilization's
+  second age outlive the people who founded it.
+- **An acquire hook that leaves instances teachable.** This one is sharper and it is the assumption
+  nobody wrote down. `DEFAULT_TEACH_THRESHOLD` is 512; True Naming's acquire hook sets
+  `instanceMastery: 1024`, so every instance is born at double the threshold. W13's sweep measured
+  `lessonsTaught` per quarter as `976.6 / 268.5 / 154.0 / 113.8` under True Naming and
+  `134.1 / 0.0 / 0.0 / 0.0` under Vancian, `171.6 / 0.0 / 0.0 / 0.0` under Art of Memory. Teaching
+  is not slow under the other two; it stops. **A college that moves novices through the early
+  skills fast — §2's definition of the thing — is measured alive under exactly one of the three
+  shipped traditions.**
+
+**And the measured record this document cites was taken under that one tradition, by accident.**
+`scribingTraditionId` walks traditions in interned order, which is lexicographic:
+`art-of-memory`, `true-naming`, `vancian-memorization`. Art of Memory is skipped because a palace
+store cannot scribe, so True Naming wins the loop and Vancian is never reached. Every number below
+inherited from the campaign's reference run — W26's 93.4% marooning included — is a True Naming
+number. That does not make them wrong; it makes them unrepresentative in a direction that flatters
+this document.
+
+**What changes under the other two.**
+
+- **Vancian Memorization** keeps §2's library and loses §2e's classroom. Records accumulate; the
+  faculty stops being able to teach from them once founding grants decay below the threshold and
+  nothing climbs back. §2c's *publish-or-perish* is exactly the right diagnosis here — the perish
+  half is shipped and the publish half is not — and §2c's ruling to **build `publish` before
+  building paced teaching** becomes not merely correct but load-bearing, because publish is the only
+  proposed mechanism that would restore teachability.
+- **The Art of Memory** loses both. There is no scribing target at all, so §2c's publish-or-perish
+  has no *publish* to build: knowledge lives in twelve slots in a living mage's head
+  (`slotsPerMage: 12`, `lootable: false`, `burnable: false`) and dies with her. §2d's *"the library
+  can be deep and the curriculum thin"* has only one term under it, because the curriculum is the
+  faculty and there is no library to be deeper than it. Measured: 17.2 nodes known and an
+  `ascensionRate` of `0.125` against `0.6875` and `0.6979`.
+- **One consequence worth noting rather than ruling on.** §3a says a civilization that necromances
+  deeply *"does not need libraries the way §3 says it must, because its faculty never leaves."*
+  Under Art of Memory that stops being an alternative road and looks like the only redundancy
+  channel a palace tradition has. Whether that is an elegant fit or an accident that makes one
+  tradition depend on one road is not decided here.
+
+**Open, and the ruling is the author's.**
+
+1. **Is the third age reachable under all three traditions, or is it a Vancian/True Naming
+   feature?** §2a says the college is the fast road to it. If the college is measured dead under
+   two of three traditions, that sentence is tradition-conditional and §2a should say so.
+2. **Does `publish` mean something under a palace store?** If it does, Art of Memory stops being a
+   dead end for this document. If it does not, then §2c's ordering ruling applies to two traditions
+   and not to three.
+3. **Should the tradition sweep become a standing arm of the balance harness rather than a
+   one-off?** W13 was a single sweep; every claim in this section would silently rot without one.
+
 ## 1. The shape
 
 A spell today names exactly one cell of the 5 × 14 grid. A **compound** names a set. The progression

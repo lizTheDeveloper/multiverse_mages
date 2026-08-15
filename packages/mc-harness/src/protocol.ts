@@ -139,6 +139,41 @@ export interface ArmContribution {
   };
 }
 
+/**
+ * One census reading, carried through to the record so a run has a trajectory
+ * and not only an ending.
+ *
+ * The reference executor already samples these every twelve world ticks and
+ * keeps only the **last** one, which answers *"where did this universe finish"*
+ * and cannot answer *"when did it get there"*. Those are different questions,
+ * and the campaign has repeatedly needed the second one: "much sooner, same
+ * place" and "the ceiling subsumed the effect" are indistinguishable from a
+ * terminal reading alone.
+ *
+ * A trace point rather than a new registered metric, deliberately.
+ * {@link Provenance.metricDefinitionVersions} covers the whole reference metric
+ * registry, so adding a metric id moves provenance on every record and makes the
+ * balance gate refuse cross-build comparison — a baseline movement caused by an
+ * instrument rather than by the game. The field is additive and optional; a
+ * reader that does not know it is unaffected.
+ *
+ * Declared here rather than imported from `@mm/scenario` because §5 runs the
+ * dependency edge the other way: the scenario package implements
+ * {@link RunExecutor}, and the harness must not import it.
+ */
+export interface CensusTracePoint {
+  readonly worldTick: number;
+  /** Distinct nodes of which the universe holds at least one instance. */
+  readonly nodesKnown: number;
+  /** Knowledge instances, held and written. §7's redundancy quantity. */
+  readonly knowledgeInstances: number;
+  /** Distinct nodes held in libraries. The §6a capital loop's stock variable. */
+  readonly libraryDepth: number;
+  readonly livingMages: number;
+  readonly population: number;
+  readonly grimoires: number;
+}
+
 /** What an executor returns for a run that completed, however it ended. */
 export interface RunOutcome {
   readonly status: TerminalStatus;
@@ -156,6 +191,29 @@ export interface RunOutcome {
   readonly provenance: Provenance;
   /** See {@link ArmContribution}. Absent when the executor describes no arm. */
   readonly armContribution?: ArmContribution;
+  /**
+   * Cumulative favor the god actually **spent**, keyed by §4.2 action id.
+   *
+   * Applied spend only. `coordination`'s intervention resolver folds a cost into
+   * its tally *after* the deduction succeeds and rolls back before refusing, so
+   * an action that was masked, unaffordable or refused by a precondition
+   * contributes nothing here. That is the honest quantity for "what did this god
+   * buy", and it is why an attempted-submission count is not a substitute:
+   * between the two sits affordability, which is exactly the thing a spend
+   * comparison has to be able to see.
+   *
+   * Keys are stringified action ids, because JSON object keys are strings and a
+   * numeric-keyed record round-trips as a string-keyed one either way.
+   *
+   * Absent when the executor does not observe a god. **Not stored in world
+   * state**, and that is a requirement rather than an omission: `coordination`'s
+   * favor ledger documents that a projection inside a snapshot is inside every
+   * hash, at which point two peers can desync over a number no rule reads. The
+   * accumulation happens in the measurement layer, above the step loop.
+   */
+  readonly godSpendByAction?: Readonly<Record<string, number>>;
+  /** See {@link CensusTracePoint}. Absent when the executor keeps no trace. */
+  readonly censusTrace?: readonly CensusTracePoint[];
 }
 
 /**

@@ -165,6 +165,16 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       'blessing',
       'upheaval',
       'era-evaluation',
+      // Appended by `city-and-supply-chain`, as world-schema revision 5. It
+      // reads as though it belongs beside `universe` -- it is universe state --
+      // but section order is snapshot order, so it goes at the end like every
+      // other addition, not where it would read most naturally.
+      'material-stock',
+      // Appended by the founding-grant budget, as world-schema revision 6, and
+      // after `material-stock` for exactly the reason above.
+      'grant-budget',
+      // Appended by `raid-engagement`, as world-schema revision 7 -- renumbered
+      // from 5 on the merge, where 5 and 6 were already taken.
       'mid-raid-change',
     ]);
   });
