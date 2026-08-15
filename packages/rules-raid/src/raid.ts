@@ -613,9 +613,36 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
     engagementTick: nextTick,
     maxTicks: raid.maxTicks,
     allObjectivesResolved: allObjectivesResolved(raid.objectives),
-    livingAttackers: alive.filter((brief) => brief.side === RAID_SIDE.attacker).length,
+    livingAttackers: alive.filter(
+      (brief) => brief.side === RAID_SIDE.attacker && !isMarchingAtAWall(raid, brief, nextTick),
+    ).length,
     livingDefenders: alive.filter((brief) => brief.side === RAID_SIDE.defender).length,
   });
+}
+
+/**
+ * An attacker who is trying to leave and can never arrive.
+ *
+ * Not a third kind of death and not a shortcut: she is still alive, still on
+ * the field, and `resolveRaid` will take her under the stranded-raider rule
+ * exactly as it would have. What this excludes her from is the **termination
+ * count**, because a raid whose every remaining attacker is walking at a wall
+ * has nothing left to decide, and without it it runs to portal collapse —
+ * measured at 3,199 engagement ticks against a p50 of 65.
+ *
+ * Two conditions, and both are needed. Past the withdrawal tick, because before
+ * it she is still fighting and a raid is not over merely because one exit is
+ * blocked. Unreachable, because `stepTowardGoal` degrades to a direct step for
+ * an unreachable goal rather than refusing, so she keeps moving and no other
+ * signal distinguishes her from a raider who is simply far away.
+ *
+ * The portal cell itself is guaranteed passable by `generateTerrain`; what is
+ * left after that is the walled-off pocket a raider can deploy into, which
+ * terrain generation can produce and nothing prevents.
+ */
+function isMarchingAtAWall(raid: Raid, brief: CombatantBrief, tick: number): boolean {
+  if (tick < raid.tuning.withdrawAfterTicks) return false;
+  return !raid.navigator.canReach(positionOf(raid, brief), raid.portal);
 }
 
 /**
