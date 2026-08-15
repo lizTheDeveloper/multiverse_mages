@@ -591,11 +591,6 @@ export function runLab(scenario: LabScenario): LabReport {
     scribingQueueDepth: 0,
     universityCapacity: 0,
     standingSoldierTarget: world.standingSoldierTarget,
-      // The bill this lab's institution owes. `DemandInputs` gained this field
-      // in W23 and it is required rather than defaulted, so a harness that
-      // omitted it would be measuring a universe that asks nobody to earn its
-      // upkeep. The lab has no populace subsistence to add — it isolates one
-      // university — so the obligation is the library's upkeep alone.
     materialsObligation: 0,
   });
 
@@ -708,12 +703,20 @@ export function runLab(scenario: LabScenario): LabReport {
       scribingQueueDepth: scribeQueueDepth(world, state, library, residentHandles, counts),
       universityCapacity: effectiveCapacity(row),
       standingSoldierTarget: world.standingSoldierTarget,
-      // The bill this lab's institution owes. `DemandInputs` gained this field
-      // in W23 and it is required rather than defaulted, so a harness that
-      // omitted it would be measuring a universe that asks nobody to earn its
-      // upkeep. The lab has no populace subsistence to add — it isolates one
-      // university — so the obligation is the library's upkeep alone.
-      materialsObligation: shortfall + paid,
+      // Zero, and zero on purpose. `DemandInputs` gained this field in W23 and
+      // it is required rather than defaulted, so it has to be answered here —
+      // but the lab's committed sweep digests were recorded by a build in which
+      // the driver did not exist, and feeding it the library's real bill moves
+      // `adds.demand.0` on four of them. That would be a change to the
+      // *instrument* riding along inside a merge.
+      //
+      // The lab isolates one university against a synthetic populace; the claim
+      // W23 makes is about a whole universe's occupation mix, and
+      // `world-step.ts` is where it is made and measured. Wiring the bill in
+      // here is a real question — it would make the lab's demand answer the
+      // same shape the world's does — and it is a change with a rationale and a
+      // regenerated digest, not a merge conflict resolution.
+      materialsObligation: 0,
     });
 
     log.push({
