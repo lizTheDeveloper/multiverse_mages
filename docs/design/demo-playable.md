@@ -33,6 +33,12 @@ ask what it *would* do. `▶| tick`, `▶▶ 10`, `▶▶ 50` and `▶ play` adv
 **Press `fundUniversity` (11), then advance fifty ticks and watch `library` and `grimoires` in the
 resources pane climb.** That is the shortest path to seeing the branch do something `main` does not.
 
+Driven in a real browser rather than over HTTP, because a page that throws still returns `200`:
+selecting verb 11, pressing `cast`, then `▶▶ 50` twice took **`library` 4 → 23, `grimoires` 96 →
+299, cells live 4 → 10 and nodes known 7 → 24**, with the population pane redrawing its tier
+histogram. The only console message in the whole session was a `404` on `/favicon.ico`; there is no
+favicon and nothing depends on one.
+
 The verb sweep below is the whole action space, cast through `control` at **tick 91, seed
 20260813, settled 60 ticks**, on both trees. `main` has no play server, so the `main` column was
 taken by copying *this branch's* `scripts/play-server.mjs`, `ui/console/index.html` and
