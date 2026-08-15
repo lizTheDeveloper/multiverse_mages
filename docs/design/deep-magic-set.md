@@ -261,6 +261,28 @@ under `packages/mc-harness/bin/regenerate-baseline.mjs` and is not done here.
 
 ### The short and horizon gates: the v1 subset got *harder*, not bigger
 
+> **Framing corrected 2026-08-14, by the author's ruling.** This section originally reported the
+> result below as a finding *against* the set — "content dilutes rather than accumulates" — on the
+> campaign's standing reading that the binding constraint is content exhaustion. **That sign is
+> wrong.** The author's design intent is the opposite: *"I wanted that more spells compete for the
+> same finite research throughput. That's what I want, is for you to only be able to learn some of
+> the deep magic, and for it to feel like you're maybe going to discover deep magic that no other
+> player has found."*
+>
+> Scarcity of throughput against an abundant spell list **is the mechanic**. It is what makes
+> acquisition a choice instead of a queue you walk to the end of. The numbers below are unchanged
+> and were measured correctly; what changes is that a drop in `nodesKnown` against a larger
+> catalogue is the intended shape, not a regression.
+>
+> **The caveat that survives the correction, and it is load-bearing.** Scarcity gives a universe a
+> *stopping point*. It does not give two universes *different paths*. W15 measured cross-strategy
+> containment at **1.000** — a single fixed node ordering predicts each run's held set from its
+> count alone, on 65 of 84 runs — because `compareTargets` orders candidates by `remainingCost` then
+> `nodeId` and the acquirer is **value-blind**. So more content today makes the shared queue longer
+> without making it branch, and "magic no other player has found" is not reachable by authoring
+> alone. It needs W15's fix, whose falsifiable test is already written: prefix fidelity below 0.7,
+> dimensionality above 1, containment below 1.000, and gnome ≠ human.
+
 | metric | gate | baseline | current | SE |
 |---|---|--:|--:|--:|
 | `referenceNodesKnown` | short (240t) | 17.06 | **14.95** | −19.2 |
@@ -307,10 +329,60 @@ It sharpens the "what is deliberately not claimed" section rather than softening
 
 - **Claimed and now measured:** the frontier stays open longer, at every strategy. That is a real
   result and the sweep found it.
-- **Refuted:** any suggestion that more nodes means more knowledge. Short and horizon gates both say
-  the reference universe learns *less*. Twelve v1 nodes cost 2.1 and 2.5 mean nodes known.
+- **Measured, and intended:** more nodes means *less* knowledge per run. Short and horizon gates both
+  say the reference universe learns less — twelve v1 nodes cost 2.1 and 2.5 mean nodes known. Under
+  the author's ruling above this is the mechanic working: a finite research throughput against a
+  larger catalogue is what forces a universe to learn *some* of the deep magic rather than all of
+  it. What it does **not** yet do is make two universes learn *different* some.
 - **Unmoved:** the strategy space is still one axis. Seven of eight strategies did not separate.
   The nodes carrying the genuinely new opposing terms — anti-requisites, co-casting, correlated
   loss, permanent extinction — are exactly the ones whose machinery does not exist yet, so the sweep
   cannot see them. **This is the strongest argument in this document for building that machinery
   before authoring more content.**
+
+## `depthCeiling` is a hard wall, and it locks humans out of the deep grid
+
+**Added 2026-08-14, measured on this branch.** The author's constraint, stated directly: *"elves and
+dragons and dwarves need to **get something** for long-term-ism"* and *"humans can of course play
+long term ism."* Both must hold at once. As authored, this set satisfies the first and **breaks the
+second**.
+
+How many of the 37 new nodes each species can learn at all:
+
+| species | `depthCeiling` | lifespan | reachable of 37 |
+|---|--:|--:|--:|
+| draconic | 7 | 1,500 y | **37** |
+| elf | 6 | 700 y | **34** |
+| dwarf | 5 | 250 y | **22** |
+| human | 4 | 80 y | **1** |
+| gnome | 4 | 350 y | **1** |
+| orc | 3 | 60 y | **0** |
+
+`depthCeiling` is not a rate. `packages/rules-world/src/autonomy/candidates.ts` gates an over-deep
+node out of a mage's candidate list entirely — the `species-traits` spec's phrase is *"not a feasible
+research or teaching target for that mage, **at any rate**."* A human cannot reach these nodes
+slowly. She cannot reach them.
+
+**So this set makes deep magic a racial permission rather than a strategy**, which is backwards from
+the design intent, and it damages the divergence goal directly: if depth is species-gated, two human
+universes discover the same shallow prefix and two draconic universes the same deep one, and
+"magic no other player has found" collapses into a species lookup.
+
+**The design already disagrees with the code.** `ages-of-magic.md` §2 is explicit that a fully
+developed college is how the short-lived reach the deepest magic — *"throughput through the known"*,
+compressing a novice's passage so she arrives at the frontier with working years left. A hard
+per-mage ceiling makes that impossible in principle, whatever the college does.
+
+**The shape this suggests, which is a proposal and not a ruling.** `depthCeiling` becomes the tier a
+mage reaches *unaided*, and institutions lift it — library depth, a teacher who holds the
+prerequisites, a co-casting group. Long life then buys **solitude** rather than a bigger number: a
+dragon needs no institution and is robust; a human civilization needs one and is fragile, because
+breaking the teaching chain loses the knowledge outright. Same summit, two roads, and the difference
+between them is a real strategic axis rather than a stat comparison. It would also make
+`The Twelve-Handed Working` and the collective-ritual nodes load-bearing instead of decorative:
+they are the human road written down.
+
+**Not built here, and it must be measured rather than asserted.** Before any such rule is claimed to
+work, run it: can a human civilization actually reach tier 6 through teaching, and what does it cost
+in mage-years? A road that exists on paper and not in a sweep is the failure mode this repository
+documents most often.
