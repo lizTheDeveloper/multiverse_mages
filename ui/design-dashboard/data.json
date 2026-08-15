@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 128,
-    "examinedSymbolCount": 863,
+    "findingCount": 129,
+    "examinedSymbolCount": 868,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 311,
+    "productionFileCount": 317,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2575,6 +2575,12 @@
         "file": "packages/content/src/audio.ts",
         "line": 140,
         "name": "audioSelect",
+        "kind": "function"
+      },
+      {
+        "file": "packages/content/src/character.ts",
+        "line": 73,
+        "name": "characterFor",
         "kind": "function"
       },
       {
@@ -2957,7 +2963,7 @@
       },
       {
         "file": "packages/rules-world/src/populace/demand.ts",
-        "line": 84,
+        "line": 132,
         "name": "NO_DEMAND",
         "kind": "const"
       },

@@ -1,0 +1,220 @@
+[
+  {
+    "id": "maren-kell",
+    "name": "Maren Kell",
+    "species": "human",
+    "voiceId": "7DTpboyigwqXiCkvQjMX",
+    "ageBracket": "middle",
+    "note": "Adjunct. Three papers in progress, two of them the same paper.",
+    "look": "harried scholar, ink-stained fingers, short dark hair, tired eyes, plain grey robe",
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/maren-kell.png",
+        "inputHash": "0c030e5b"
+      }
+    }
+  },
+  {
+    "id": "sirivel",
+    "name": "Sirivel",
+    "species": "elf",
+    "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+    "ageBracket": "old",
+    "note": "Has been mid-thought since a spring. Not this one.",
+    "look": "serene long-faced elf, silver hair, very still expression, pale green robe",
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/sirivel.png",
+        "inputHash": "15f6075b"
+      }
+    }
+  },
+  {
+    "id": "brenna-stonecourt",
+    "name": "Brenna Stonecourt",
+    "species": "dwarf",
+    "voiceId": "rZcizibcb1rTBqSwSjpY",
+    "ageBracket": "middle",
+    "note": "Thirty years ago Brenna countersigned Requisition Twelve refusing lamp oil to the east vault during a shortage; the copyist worked by candle, sixty volumes burned, the refusal is filed in Brenna's own hand, and blank forms have lived in that coat pocket ever since.",
+    "look": "stern dwarf archivist, braided grey beard, spectacles, brown leather apron over dark tunic",
+    "lines": [
+      {
+        "id": "brenna-selection-1",
+        "tier": "selection",
+        "text": "Left pocket: blank requisition forms. Signed, undated. Nobody waits on my signature again."
+      },
+      {
+        "id": "brenna-selection-2",
+        "tier": "selection",
+        "text": "Take a lamp. The oil is by the door, approved. It always is."
+      },
+      {
+        "id": "brenna-annoyance-cracking",
+        "tier": "annoyance-cracking",
+        "text": "I refused the oil. Correctly — standing order, shortage on. Sixty volumes went up by candle. Being right is not a fire watch."
+      },
+      {
+        "id": "brenna-breakthrough",
+        "tier": "breakthrough",
+        "text": "Copied three times before I said a word. Third goes to the east vault — which has eleven lamps now."
+      },
+      {
+        "id": "brenna-last-copy",
+        "tier": "last-copy",
+        "text": "One copy. I know what one copy costs: sixty volumes, one candle, one countersignature. Mine. Get me vellum."
+      },
+      {
+        "id": "brenna-death",
+        "tier": "death",
+        "text": "Leave the refusal filed. Under my name. Someone after me should be able to look it up."
+      }
+    ],
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/brenna-stonecourt.png",
+        "inputHash": "e968db47"
+      }
+    }
+  },
+  {
+    "id": "vashtareth",
+    "name": "Vashtareth",
+    "species": "draconic",
+    "voiceId": "uVKHymY7OYMd6OailpG5",
+    "ageBracket": "old",
+    "note": "Vashtareth was mid-lesson, teaching a node to a younger draconic student, when the god before this one closed the axis it depended on and the lesson stopped being possible in the middle of a word; Vashtareth has taught no one in the four centuries since.",
+    "look": "ancient draconic scholar, dark bronze scales, heavy brow, deep-set amber eyes, black robe",
+    "lines": [
+      {
+        "id": "vashtareth-selection-1",
+        "tier": "selection",
+        "text": "You are the second sky."
+      },
+      {
+        "id": "vashtareth-selection-2",
+        "tier": "selection",
+        "text": "I taught, once. Ask me for something else."
+      },
+      {
+        "id": "vashtareth-annoyance-cracking",
+        "tier": "annoyance-cracking",
+        "text": "The one before you also had a reason. It was a good reason. The student was still holding the words."
+      },
+      {
+        "id": "vashtareth-breakthrough",
+        "tier": "breakthrough",
+        "text": "It is whole again. The one who was learning it has been dead four hundred years."
+      },
+      {
+        "id": "vashtareth-last-copy",
+        "tier": "last-copy",
+        "text": "It is only in me. I stopped mid-word four hundred years ago, and never began again. You may call that a choice."
+      },
+      {
+        "id": "vashtareth-death",
+        "tier": "death",
+        "text": "There are two. I taught neither of them."
+      }
+    ],
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/vashtareth.png",
+        "inputHash": "578c5748"
+      }
+    }
+  },
+  {
+    "id": "pib-quillory",
+    "name": "Pib Quillory",
+    "species": "gnome",
+    "voiceId": "OTMqA7lryJHXgAnPIQYt",
+    "ageBracket": "young",
+    "note": "Pib has derived the same node six times and never once written it down; the index carries six entries for it, every one credited to Quillory in an archivist's hand Pib does not recognise, and Pib is delighted by that hand every single time.",
+    "look": "bright-eyed gnome, wild hair, delighted expression, patched blue coat covered in pockets",
+    "lines": [
+      {
+        "id": "pib-selection-1",
+        "tier": "selection",
+        "text": "Oh! Good, you're here— look at the index, someone's found the same thing six separate times, six, which is— hold on. That's my name. That's my name six times. Whoever that is, I like them enormously."
+      },
+      {
+        "id": "pib-selection-2",
+        "tier": "selection",
+        "text": "There are notes in this pocket in handwriting I don't know. They're mine. They're very good! Whoever wrote them was having a wonderful day."
+      },
+      {
+        "id": "pib-annoyance-cracking",
+        "tier": "annoyance-cracking",
+        "text": "Seven. I could make it seven— nobody is ever first at anything seven times, nobody is first twice, and I've been first six— do you understand how lucky that is? Do you understand how lucky I am?"
+      },
+      {
+        "id": "pib-breakthrough",
+        "tier": "breakthrough",
+        "text": "SEVEN! Seven, that's seven, put it in the index under Quillory— there's room, there's always been room, whoever keeps leaving room—"
+      },
+      {
+        "id": "pib-last-copy",
+        "tier": "last-copy",
+        "text": "The index says it's known six times over. Six entries. Entries aren't copies, are they. Entries aren't— it's only in here. Write it down. In the same hand as the others, please, I've grown fond of that hand."
+      },
+      {
+        "id": "pib-death",
+        "tier": "death",
+        "text": "Oh— oh, it was the same one. Every time. All six, the same one, and it was new every time, and that's— that's the loveliest thing I've ever—"
+      }
+    ],
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/pib-quillory.png",
+        "inputHash": "9a64c62a"
+      }
+    }
+  },
+  {
+    "id": "durga-ashfall",
+    "name": "Durga Ashfall",
+    "species": "orc",
+    "voiceId": "DUAKkudcC2PI6KEqJ60K",
+    "ageBracket": "middle",
+    "note": "Raised the north vault and holds ct-the-poured-wall, learned in order to build it and never scribed, because nobody catalogues a builder. The founding tablet credits whoever signed the requisition, so a name went into the ninth course, under the plaster.",
+    "look": "broad orc builder, tusks, close-cropped hair, stone dust on a heavy canvas smock",
+    "lines": [
+      {
+        "id": "durga-selection-1",
+        "tier": "selection",
+        "text": "Ninth course, behind the plaster. That's where my name is. Bring a chisel."
+      },
+      {
+        "id": "durga-selection-2",
+        "tier": "selection",
+        "text": "Tablet credits whoever signed for it. Fair enough. I raised it."
+      },
+      {
+        "id": "durga-annoyance-cracking",
+        "tier": "annoyance-cracking",
+        "text": "You keep a ledger for who knew a thing. Not one line for who put the roof over it. So I cut my own."
+      },
+      {
+        "id": "durga-breakthrough",
+        "tier": "breakthrough",
+        "text": "That'll hold. File it under whoever you like. I know where mine goes."
+      },
+      {
+        "id": "durga-last-copy",
+        "tier": "last-copy",
+        "text": "The poured wall — no courses for anything to fail along. I learned it to build this, and it's in no book, because nobody asks a builder what the wall is doing. Only in me. Sort that out before the next portal."
+      },
+      {
+        "id": "durga-death",
+        "tier": "death",
+        "text": "Ninth course. Behind the plaster. ...Leave it."
+      }
+    ],
+    "assets": {
+      "portrait": {
+        "path": "assets/portraits/durga-ashfall.png",
+        "inputHash": "a6339be5"
+      }
+    }
+  }
+]
