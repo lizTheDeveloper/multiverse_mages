@@ -126,6 +126,19 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'the intent, this is the line that says so.',
   ],
 
+  // ---- Rounded to nearest, and the zero is the answer. ----
+  [
+    'displacement:laborAfterDisplacement',
+    'Rounded, not floored: the site adds HALF_FP before the divide, so the ' +
+      'sentinel sees a floor whose input was already the rounded displaced ' +
+      'count. A quotient of zero therefore means "this share displaces nobody ' +
+      'from this cohort", which is the correct answer to half a person and the ' +
+      "reason the function rounds to nearest at all — see the module's own note " +
+      'on why flooring the survivors instead would let any share at all empty a ' +
+      'cohort of one. Nothing stalls: the laborers are returned intact, and the ' +
+      'displaced are still fed and still bear children whatever this rounds to.',
+  ],
+
   // ---- Handled at the site. ----
   [
     'worship:laggedWorship',
