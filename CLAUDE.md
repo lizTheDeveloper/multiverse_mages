@@ -326,6 +326,19 @@ rules path to fix a conflict that does not exist.
 
 And when a merge conflicts in a file someone told you was clean, **suspect your ref before their finding.**
 
+## A guessable temp path is shared, exactly like the stash
+
+An agent wrote a PR body to `/tmp/pr-body.md`, another overwrote it, and the first **pushed the second's
+PR body onto its own pull request** before catching it.
+
+**And the obvious fix is not enough.** Told to use the session scratchpad instead, agents hit the same
+collision there within the hour — one found *another agent's PR body* at its own `pr-body.md` path and
+caught it only because it read the file back before pushing.
+
+**The rule is about the filename, not the directory.** Any path another process could guess is shared,
+wherever it lives. Put something unique in the name — the branch, the PR number, the task id — and **read
+a file back before acting on it** when anything else might have written there.
+
 ## A trailing `echo` throws away the exit code you were checking
 
 A compound command's status is its **last** command's status. So
