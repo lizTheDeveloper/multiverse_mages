@@ -12257,3 +12257,41 @@ so its red predates this branch and resealing it would cost a ~1000 s sweep for 
 The PR body now keeps **revision re-pin**, **provenance-only re-seal**, and **baseline re-record (did not
 happen)** as three distinct categories — which is the distinction this whole campaign kept having to
 rediscover.
+
+## W230 — I merged the wrong branch under the right title
+
+**My error, and it put unreviewed work on `main`.**
+
+I patched `scripts/play-server.mjs` in the `playable` worktree, committed and pushed it to
+`w206/play-action-space`, and then ran `gh pr create` **from the shared checkout** — which sits on
+`plan-w18`. **`gh` takes the branch of the directory it runs in**, so the pull request was opened from
+`plan-w18` with **my title and body attached to somebody else's diff**.
+
+#193's actual content: **`mages-page.png` added, `mm-hero.png` deleted.** Two image files, zero lines of
+code. I merged it as `871be32b`, so `main` now carries an asset change I never reviewed, under a commit
+message that describes an action-space fix it does not contain.
+
+**How it surfaced:** I checked whether the fix had landed and grepped for `kind >= 16` — expecting zero and
+finding one. The instinct was to assume my grep had matched my own comment, which has been the right answer
+several times tonight. It was not. **`git show --stat` on the merge commit named two PNGs.**
+
+### What is and is not damaged
+
+- **The fix is safe** on `origin/w206/play-action-space`, line 371, and is now open correctly as **#195**.
+- **The dead button is still live on `main`** — `toAction` still rejects `kind >= 16` while the action
+  space is 17, so `inviteScholar` 400s.
+- **The images are on `main` unreviewed**, and the commit message misdescribes them. Whether that matters
+  is the owner's call: they are somebody's asset work that landed early rather than wrong content, but the
+  history now says something false about `871be32b`.
+
+### The rule, now in `CLAUDE.md`
+
+**`gh pr create` takes the branch of the directory you run it in.** Always pass `--head` explicitly, or run
+it from the worktree holding the work. **And before merging, check the PR's files match its description** —
+`gh pr view <n> --json headRefName,files` is one call, and it is the only thing that would have caught
+this.
+
+It belongs with the night's other instances of the same shape: a `git worktree add` that took a stale local
+branch, a `grep` silenced by a NUL byte, a trailing `echo` swallowing an exit code, and a `pass`-line count
+that read one check twice. **Every one of them reported confidently about the wrong input.** This is the
+first where the wrong input reached `main`.

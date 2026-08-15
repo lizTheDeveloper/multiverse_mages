@@ -311,6 +311,18 @@ If you do land a commit on the wrong branch: **reverting is usually right and fo
 Reverting a *merge* commit is the exception — it poisons future merges of the same content for
 whoever owns the branch, so a stray merge is better left in place than reverted.
 
+## `gh pr create` takes the branch of the directory you run it in
+
+I patched a file in a worktree, committed and pushed it there, then ran `gh pr create` from the **shared
+checkout** — which sits on a different branch. `gh` used *that* branch as the head. The pull request
+carried **my title and body**, describing a fix that was not in it, over an unrelated two-file image diff.
+I then merged it, putting someone else's unreviewed work on `main` under a commit message about something
+else.
+
+**Always pass `--head <branch>` explicitly**, or run `gh` from the worktree that holds the work. And
+**before merging, check the PR's files match its description** — `gh pr view <n> --json headRefName,files`
+costs one call and is the only thing that would have caught this.
+
 ## `git worktree add <dir> <branch>` checks out the *local* branch, not the remote
 
 An agent ran `git worktree add .claude/worktrees/x w116/complete-affiliation` and got a checkout **89
