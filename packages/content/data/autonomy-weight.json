@@ -10,7 +10,7 @@
     "id": "target-affinity-divisor",
     "value": 2,
     "unit": "raw",
-    "gloss": "Divides a species affinity's deviation from fp(1) into the affinity term. 2 puts a dwarf's terram 1536 at +256 — about two tiers of effort — so an affinity is worth reaching one step deeper for and never worth reaching four.",
+    "gloss": "Divides a species affinity's deviation from fp(1) into the affinity term. 2 puts a dwarf's terram 1536 at +256 \u2014 about two tiers of effort \u2014 so an affinity is worth reaching one step deeper for and never worth reaching four.",
     "tuningStatus": "untuned"
   },
   {
@@ -104,7 +104,6 @@
     "gloss": "Symmetric clamp on the summed appeal, applied once after summation. The six bounds sum to 2304, so it does not bind today; it is a guard rail that fires only when a bound has been raised without anyone rechecking it, and the score reports whether it fired.",
     "tuningStatus": "untuned"
   },
-
   {
     "id": "apply-output-per-month",
     "value": 64,
@@ -119,7 +118,6 @@
     "gloss": "Food one applying mage eats that world tick, in the same unit as SUBSISTENCE_PER_PERSON (1). Four peasants' worth, charged at the same rank as their meals rather than as a fifth claimant: a casting mage's dinner is a dinner. Before this she was in no POPULACE_COHORT and ate nothing at all, which made every mage-hour of production free.",
     "tuningStatus": "untuned"
   },
-
   {
     "id": "role-appeal-researcher-research-rate",
     "value": 384,
@@ -189,7 +187,7 @@
     "unit": "fp",
     "role": "warden",
     "primitive": "scribe-rate",
-    "gloss": "Guarding a library and copying its contents are the same instinct about the same asset — the reasoning ROLE_BIAS already uses to raise scribe for the warden at the goal level, said again one level down.",
+    "gloss": "Guarding a library and copying its contents are the same instinct about the same asset \u2014 the reasoning ROLE_BIAS already uses to raise scribe for the warden at the goal level, said again one level down.",
     "tuningStatus": "untuned"
   },
   {
@@ -225,7 +223,7 @@
     "unit": "fp",
     "role": "professor",
     "primitive": "research-rate",
-    "gloss": "A professor who has run out of things to teach goes and learns some — ROLE_BIAS's own gloss for raising seek-teaching, pointed at the node graph.",
+    "gloss": "A professor who has run out of things to teach goes and learns some \u2014 ROLE_BIAS's own gloss for raising seek-teaching, pointed at the node graph.",
     "tuningStatus": "untuned"
   },
   {
@@ -307,6 +305,13 @@
     "role": "raider",
     "primitive": "teach-rate",
     "gloss": "Same reason, and the same sign ROLE_BIAS gives teach for this role.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "casting-vellum-per-month",
+    "value": 16,
+    "unit": "fp",
+    "gloss": "Vellum one mage-month of magical work consumes, in the same unit as MATERIALS_PER_LABORER (16) so the two compare: a month at the bench eats about what a month in a field makes. Vellum because vellum is the contended stock \u2014 stone is never short across the 2400-tick reference run, so a claim there would cost nothing. Paid before libraryUpkeep, so a universe that works magic hard cannot also keep its shelves.",
     "tuningStatus": "untuned"
   }
 ]

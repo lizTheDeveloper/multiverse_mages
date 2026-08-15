@@ -96,6 +96,11 @@ export const REQUIRED_AUTONOMY_WEIGHTS = [
   // scalars would be a second place to forget.
   'apply-output-per-month',
   'apply-ration-per-month',
+  // What a mage-month of magical *work* costs the archive — the `casting`
+  // claimant of `substrate.md` §6. Here for the same reason as the two above:
+  // the rules read it by name, so the id is a contract checked in both
+  // directions while the value stays an untuned placeholder the harness owns.
+  'casting-vellum-per-month',
 ] as const;
 
 /** The scalar ids that must be at least 1, because they are divisors. */

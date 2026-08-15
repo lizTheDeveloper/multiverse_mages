@@ -65,7 +65,7 @@ const production = (
 });
 
 const demand = (overrides: Partial<ConsumptionDemand> = {}): ConsumptionDemand => ({
-  subsistence: 0,
+  casting: 0, subsistence: 0,
   libraryUpkeep: 0,
   scribing: 0,
   construction: 0,
@@ -158,7 +158,7 @@ describe('consumption follows a documented priority order', () => {
       expect(CLAIMANT_KIND[claimant]).toBeDefined();
     }
     expect(CLAIMANT_KIND).toEqual({
-      subsistence: 'food',
+      casting: 0, subsistence: 'food',
       libraryUpkeep: 'vellum',
       scribing: 'vellum',
       construction: 'stone',
@@ -169,10 +169,10 @@ describe('consumption follows a documented priority order', () => {
     const stock: MaterialAmounts = { food: 200, stone: 200, vellum: 200 };
     const outcome = consumeMaterials(
       stock,
-      demand({ subsistence: 100, libraryUpkeep: 50, scribing: 25, construction: 10 }),
+      demand({ casting: 0, subsistence: 100, libraryUpkeep: 50, scribing: 25, construction: 10 }),
     );
     expect(outcome.spent).toEqual({
-      subsistence: 100,
+      casting: 0, subsistence: 100,
       libraryUpkeep: 50,
       scribing: 25,
       construction: 10,
@@ -195,7 +195,7 @@ describe('consumption follows a documented priority order', () => {
     const stock: MaterialAmounts = { food: 1_000_000, stone: 1_000_000, vellum: 60 };
     const outcome = consumeMaterials(
       stock,
-      demand({ subsistence: 100, libraryUpkeep: 50, scribing: 25, construction: 10 }),
+      demand({ casting: 0, subsistence: 100, libraryUpkeep: 50, scribing: 25, construction: 10 }),
     );
     // Ample food and stone: both paid in full, untouched by vellum's shortage.
     expect(outcome.spent.subsistence).toBe(100);
@@ -217,7 +217,7 @@ describe('consumption follows a documented priority order', () => {
     const stock: MaterialAmounts = { food: 0, stone: 1000, vellum: 1000 };
     const outcome = consumeMaterials(
       stock,
-      demand({ subsistence: 50, libraryUpkeep: 10, scribing: 10, construction: 10 }),
+      demand({ casting: 0, subsistence: 50, libraryUpkeep: 10, scribing: 10, construction: 10 }),
     );
     expect(outcome.spent.subsistence).toBe(0);
     expect(outcome.shortfall.subsistence).toBe(50);
@@ -230,7 +230,7 @@ describe('consumption follows a documented priority order', () => {
   it('splits demand into spent and shortfall with nothing lost between them, in every kind', () => {
     for (const level of [0, 7, 63, 175, 400]) {
       const stock: MaterialAmounts = { food: level, stone: level, vellum: level };
-      const wanted = demand({ subsistence: 100, libraryUpkeep: 50, scribing: 25, construction: 10 });
+      const wanted = demand({ casting: 0, subsistence: 100, libraryUpkeep: 50, scribing: 25, construction: 10 });
       const outcome = consumeMaterials(stock, wanted);
       for (const claimant of CONSUMPTION_ORDER) {
         expect(outcome.spent[claimant] + outcome.shortfall[claimant]).toBe(wanted[claimant]);
@@ -243,7 +243,7 @@ describe('consumption follows a documented priority order', () => {
       const stock: MaterialAmounts = { food: level, stone: level, vellum: level };
       const outcome = consumeMaterials(
         stock,
-        demand({ subsistence: 10_000, libraryUpkeep: 10_000, scribing: 10_000, construction: 10_000 }),
+        demand({ casting: 0, subsistence: 10_000, libraryUpkeep: 10_000, scribing: 10_000, construction: 10_000 }),
       );
       assertMaterialsNonNegative(outcome.remaining);
       for (const claimant of CONSUMPTION_ORDER) {
@@ -254,7 +254,7 @@ describe('consumption follows a documented priority order', () => {
   });
 
   it('treats a negative stock as empty rather than as credit, per kind', () => {
-    const outcome = consumeMaterials({ food: -500, stone: 0, vellum: 0 }, demand({ subsistence: 10 }));
+    const outcome = consumeMaterials({ food: -500, stone: 0, vellum: 0 }, demand({ casting: 0, subsistence: 10 }));
     expect(outcome.remaining.food).toBe(0);
     expect(outcome.shortfall.subsistence).toBe(10);
   });

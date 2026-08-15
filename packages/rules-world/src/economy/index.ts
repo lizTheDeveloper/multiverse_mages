@@ -48,6 +48,14 @@ export {
   readApplicationWeights,
 } from './application.js';
 
+export type { CastingWeights, CastingWeightSource } from './casting.js';
+export {
+  REQUIRED_CASTING_WEIGHTS,
+  affordableMageMonths,
+  castingDemand,
+  readCastingWeights,
+} from './casting.js';
+
 export type { BirthInput, CapacityInput, TerritoryExtent } from './carrying-capacity.js';
 export {
   BIRTHS_PER_MEMBER,

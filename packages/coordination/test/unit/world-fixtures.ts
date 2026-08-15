@@ -142,6 +142,7 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     // masked for every mage in this fixture, because applicability also needs
     // `universeEffects` and that is deliberately absent — see the note below.
     application: readApplicationWeights(registry()),
+    casting: { vellumPerMonth: 0 },
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
     territory: territoryExtent(registry().territories.map((entry) => entry.record)),

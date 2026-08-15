@@ -127,6 +127,7 @@ import type { AblationMask, RediscoveryClampCounter } from '@mm/primitives';
 import { ClampCounters, createRediscoveryClampCounter } from '@mm/primitives';
 import type {
   ApplicationWeights,
+  CastingWeights,
   CapitalEmission,
   CohortDemography,
   MageGoalCommitment,
@@ -157,6 +158,8 @@ import {
   clearCommitment,
   cohortBirths,
   computeOccupationDemand,
+  affordableMageMonths,
+  castingDemand,
   consumeMaterials,
   createMage,
   effectiveLifespan,
@@ -319,6 +322,15 @@ export interface WorldStepDeps {
    * alone, which is what every build before it did.
    */
   readonly vitality?: VitalityIndex | undefined;
+  /**
+   * What a mage-month of magical work costs the archive, read from content.
+   *
+   * `substrate.md` §6's `casting` claim. Required rather than optional, unlike
+   * the effect indices beside it: an absent cost is not a degraded behaviour a
+   * test can assert against, it is magic going back to being free, which is the
+   * thing this exists to end.
+   */
+  readonly casting: CastingWeights;
   /**
    * What a month of applied magic makes and what it eats, read from content.
    *
@@ -959,6 +971,7 @@ export function worldSystem(
         capital,
         rateClamps,
         academic,
+        stock.vellum,
       );
 
       // ---- 5a. What the mages who cast at the world made ----------------------
@@ -1111,6 +1124,12 @@ export function worldSystem(
         // would be tidier to read and would quietly stop feeding every child born
         // this month — a second behaviour change riding along with this one.
         subsistence: subsistenceDemand(cohorts.totalCount()) + applicationRationsOwed,
+        // `substrate.md` §6's spell materials, and the figure the work phase
+        // already granted rather than the one it wanted: a researcher whose
+        // month the archive could not supply did not spend it, so charging the
+        // full demand here would bill for work that never happened. The unmet
+        // remainder is reported as `castingShortfall`, not hidden.
+        casting: work.castingGranted,
         // Brake 4, charged once. The same figure the work phase reserved out of
         // the scribes' stock at the top of the tick, so the priority order is
         // honoured by a claimant paid out of order and by one paid in it.
@@ -1578,6 +1597,15 @@ interface WorkPhaseOutcome {
    * nobody chose. The basket is banked and settled once the phase is over.
    */
   readonly applied: MaterialAmounts;
+  /**
+   * Vellum the tick's magical work owes, and what it could be granted, `fp`.
+   *
+   * Both are returned rather than settled inside the walk, for the reason
+   * {@link WorkPhaseOutcome.applied} gives: a claim taken mid-walk would change
+   * what every mage visited afterwards could afford, keyed on slot order.
+   */
+  readonly castingOwed: Fixed;
+  readonly castingGranted: Fixed;
   /** Mages who spent the month applying magic. What the rations are owed for. */
   readonly applyingMages: number;
   /** Mage-months spent under each goal, indexed by goal id. */
@@ -1619,6 +1647,7 @@ function spendTheMonth(
   capital: LibraryCapital,
   rateClamps: ClampCounters,
   academic: AcademicRateBonuses,
+  vellumOnHand: Fixed,
 ): WorkPhaseOutcome {
   // The `alive` column and the handle, rather than a `MageRecord` per mage: the
   // two fields below are all this phase reads, and `collectRecords` builds an
@@ -1635,6 +1664,51 @@ function spendTheMonth(
   // an increment and no second pass — see `WorldStepReport.monthsByGoal` for
   // why the number has to exist at all.
   const monthsByGoal = new Array<number>(GOAL_COUNT).fill(0);
+
+  // `monthsByGoal` above is filled *during* the walk; the pre-pass below has to
+  // finish *before* it, so the two cannot be folded into one traversal however
+  // similar they look. The affordable share is an input to the first mage's
+  // month, and a tally taken on the way past cannot be.
+
+  // ---- The `casting` claim, decided before a single month is spent. ----
+  //
+  // `substrate.md` §6: magical work costs materials, or it is free and the
+  // whole economy is priced as though the academy were weightless. The claim is
+  // on the **act** — mage-months of research actually spent — and never on the
+  // standing effects a universe holds, which would be an upkeep on knowledge
+  // and would make forgetting a node a saving.
+  //
+  // **A pre-pass, and that is not an optimisation.** The affordable share has
+  // to be known before any mage is granted her month, or the grant depends on
+  // slot order: the researchers the walk happened to reach first would be paid
+  // in full and the rest would starve, which is exactly the order-keyed
+  // outcome `contracts.md` §6 spends real effort preventing. Counting first and
+  // scaling everyone by one fraction is order-independent by construction.
+  let researchMonths = 0;
+  mages.forEach((row, handle) => {
+    if ((alive[row] as number) === 0) return;
+    const commitment = readCommitment(state, handle);
+    if (commitment === undefined) return;
+    if (commitment.goalId === GOAL.researchNode || commitment.goalId === GOAL.rediscoverNode) {
+      researchMonths += MAGE_MONTHS_PER_TICK;
+    }
+  });
+  const castingOwed = castingDemand(researchMonths, deps.casting);
+  // What is left for casting after the claimants ahead of it in
+  // `CONSUMPTION_ORDER` that share its kind. Casting is the *first* vellum
+  // claimant, so nothing shares the stock ahead of it — subsistence is food —
+  // and the whole shelf is available. Written as a subtraction anyway so that
+  // inserting a vellum claimant before casting is a one-line change here rather
+  // than a silent over-draw.
+  const castingAvailable = Math.max(vellumOnHand, 0);
+  const grantedMonths = affordableMageMonths(researchMonths, castingAvailable, deps.casting);
+  const castingGranted = castingDemand(grantedMonths, deps.casting);
+  // The fraction every researcher's month is scaled by. `FP_ONE` when the
+  // archive can carry the work, less when it cannot, and the same number for
+  // everybody.
+  const castingShare =
+    researchMonths <= 0 ? FP_ONE : Math.floor((grantedMonths * FP_ONE) / researchMonths);
+
   mages.forEach((row, handle) => {
     if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
@@ -1653,6 +1727,7 @@ function spendTheMonth(
       capital,
       rateClamps,
       academic,
+      castingShare,
     );
     if (cast === undefined) return;
     applyingMages += 1;
@@ -1671,6 +1746,8 @@ function spendTheMonth(
     else grimoiresScribed += 1;
   }
   return {
+    castingOwed,
+    castingGranted,
     completedBy,
     researchCompleted,
     lessonsTaught,
@@ -1713,6 +1790,7 @@ function workOne(
   capital: LibraryCapital,
   rateClamps: ClampCounters,
   academic: AcademicRateBonuses,
+  castingShare: Fixed,
 ): MaterialAmounts | undefined {
   const nodeId = commitment.targetNodeId;
   if (nodeId === 0) return undefined;
@@ -1782,7 +1860,13 @@ function workOne(
       gateway.contributeResearch(
         mage,
         nodeId,
-        MAGE_MONTHS_PER_TICK,
+        // Scaled by what the archive could supply. `FP_ONE` in the ordinary
+        // case; less when the vellum ran thin, and the same fraction for every
+        // researcher this tick. A month that cannot be paid for is a month that
+        // does not accrue — the banked effort stays banked and the frontier
+        // stalls until the economy can carry it, which is `casting.ts`'s
+        // deliberately gentle shortfall rather than a voided project.
+        mul(MAGE_MONTHS_PER_TICK, castingShare),
         rate(
           deps.primitives.researchRate,
           withKnown(

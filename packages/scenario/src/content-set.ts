@@ -66,6 +66,7 @@ import {
 import type { SpeciesAffinities } from '@mm/rules-world';
 import {
   readApplicationWeights,
+  readCastingWeights,
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
@@ -738,6 +739,7 @@ export function worldDeps(
     },
     appeal: readTargetAppeal(registry),
     application: readApplicationWeights(registry),
+    casting: readCastingWeights(registry),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
