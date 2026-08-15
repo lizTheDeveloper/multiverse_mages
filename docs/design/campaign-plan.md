@@ -10299,3 +10299,33 @@ It also **killed a 45-minute ascension gate mid-run** when the no-baselines rule
 measure a tree nobody ships. `verify:nosweeps` 4,634/4,636, with both reds classified rather than patched:
 a **third** `snapshotHash` on `ui-recording` (stale fixture, layout digest unchanged), and `god-loop` at
 **95,466 ms under load 220 against 8,492 ms alone at load 93** — the box, proven rather than asserted.
+
+## W200 — the memory palace is not a retention mechanism, verified with a working control
+
+Chasing W191's two named traditions findings, because W190 established that **retention is the only thing
+that moves the shape of a university system** — affiliation takes it from zero nodes at risk to all 284
+fragile, and nothing else moves it at all.
+
+`packages/rules-magic/src/traditions/store.ts` defines **`perishesWithHolder`** and
+**`palaceLibraryDepth`**. Both have **zero call sites** outside `rules-magic`.
+
+**The control matters here, because my first probe was broken.** I tried `hooksFor|traditionOf` as a
+positive control and it returned nothing, which would have made the negative meaningless — a probe that
+finds nothing finds nothing. The working control is `decayHeldKnowledge`, imported at
+`world-step.ts:125`:
+
+| symbol | call sites outside `rules-magic` |
+|---|--:|
+| `decayHeldKnowledge` (control) | **1** |
+| `perishesWithHolder` | **0** |
+| `palaceLibraryDepth` | **0** |
+
+So a memory palace **does not perish with its holder**, and **its depth is read by nothing**. Whichever
+way that resolves at runtime — knowledge in a palace never dying, or never counting — **the palace is not
+a retention mechanism**, which is the one thing it exists to be.
+
+Both are already pinned in the ratchet baseline, among the **14 of 125 findings that sit in
+`rules-magic/src/traditions/`** — the four hook points that are this project's single licensed exception
+to content-not-code. Left for the magic auditor (`w194/audit-magic`) to place in context rather than
+fixed here, since it has that package in its corpus and a fix commissioned now would collide with its
+report.
