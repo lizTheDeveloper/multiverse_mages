@@ -86,8 +86,16 @@ export {
   collectReferenceMetrics,
 } from './measures.js';
 
+export {
+  AXIS_PRICE_ACTION_IDS,
+  AXIS_PRICE_IDENTITY,
+  appliedAxisPriceScale,
+  withAxisPriceScale,
+} from './axis-price.js';
+
 export type { ReferenceContent, ReferenceOptions, ReferenceRun } from './reference-universe.js';
 export {
+  AXIS_PRICE_FACTOR_ID,
   REFERENCE_FACTOR_IDS,
   REFERENCE_SCENARIO_ID,
   TRADITION_FACTOR_ID,
@@ -136,6 +144,7 @@ export {
 } from './long-run.js';
 
 export type {
+  FoundingAudit,
   StrategyAudit,
   StrategyAuditOptions,
   VerbAudit,
@@ -144,11 +153,14 @@ export type {
 export {
   AUDIT_RUN_SEED,
   AUDIT_WORLD_TICK_CAP,
+  FOUNDING_PROBE,
   VERB_VERDICT,
   actionName,
+  auditFounding,
   auditPool,
   auditStrategy,
   formatAudit,
+  formatFounding,
 } from './strategy-audit.js';
 export { speciesCellOccupancy } from './species-occupancy.js';
 

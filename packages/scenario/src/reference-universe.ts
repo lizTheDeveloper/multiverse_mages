@@ -103,6 +103,7 @@ import {
   v1RulesetAxes,
   worldDeps,
 } from './content-set.js';
+import { withAxisPriceScale } from './axis-price.js';
 import { BalanceTelemetryRecorder, balanceTelemetrySystem } from './balance-telemetry.js';
 import type { BalanceRunTelemetry } from './balance-telemetry.js';
 import type { RaidRecord } from './raids.js';
@@ -332,6 +333,7 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'grantBudgetStart',
   'grantAccrualNodes',
   'grantBudgetCap',
+  'axisPriceScale',
 ]);
 
 /**
@@ -352,6 +354,32 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
  * tradition, all sharing a `sweepId` and `rootSeed`.
  */
 export const TRADITION_FACTOR_ID = 'tradition';
+
+/**
+ * The factor pricing `permit-technique` and `permit-form` (`contracts.md` §4.2
+ * actions 1–4), in `fp` — `1024` is the shipped price, `8192` is eight times it.
+ *
+ * The **second** entry that is not a {@link ReferenceOptions} field, and for
+ * exactly {@link TRADITION_FACTOR_ID}'s reason: the price is read out of the
+ * content registry when `worldDeps` and `contentCatalogue` are built, which
+ * happens once per worker before any tick-zero state exists. So it is resolved
+ * where the tradition is resolved, and it is memoized the same way — see
+ * `executor.ts`, whose content cache is keyed on **both**.
+ *
+ * `0` and `1024` are the shipped price and are byte-identical to the behaviour
+ * before this factor existed. See `axis-price.ts` for why all four axis actions
+ * move together and why the registry rather than the resolver is the place the
+ * scale is applied.
+ *
+ * The same common-random-numbers warning {@link TRADITION_FACTOR_ID} carries
+ * applies here and is sharper, because this factor's whole purpose is a
+ * *within-universe* comparison: declaring several levels in one sweep file gives
+ * each level its own cell index and therefore its own seeds, and a price
+ * difference measured that way is confounded with a seed difference. One level
+ * per file, sharing a `sweepId` and `rootSeed` — or an out-of-band harness that
+ * walks the identical coordinate grid, which is what `tools/w158` does.
+ */
+export const AXIS_PRICE_FACTOR_ID = 'axisPriceScale';
 
 /**
  * Reads one option out of a scenario config, or refuses.
@@ -459,23 +487,32 @@ export interface ReferenceContent {
  * True Naming by accident of the alphabet in the first place, and a committed
  * sweep file naming `2` is that hazard with a baseline attached. See
  * `docs/superpowers/plans/integration-round-2.md`, collision 5.
+ *
+ * @param axisPriceScale - {@link AXIS_PRICE_FACTOR_ID}'s level, in `fp`. Absent,
+ * `0` and `1024` all mean the shipped price and return the registry unmodified
+ * by identity, so a caller written before this parameter existed produces
+ * byte-identical content. The scale is applied **before** anything is resolved
+ * off the registry, so `deps.god.costs` and `catalogue.costs` — the resolver's
+ * price and the mask's — cannot disagree about it.
  */
 export function referenceContent(
   registry: ContentRegistry = shippedContent(),
   traditionName?: string,
+  axisPriceScale = 0,
 ): ReferenceContent {
+  const priced = withAxisPriceScale(registry, axisPriceScale);
   const traditionId =
     traditionName === undefined
-      ? scribingTraditionId(registry)
-      : traditionIdNamed(registry, traditionName);
+      ? scribingTraditionId(priced)
+      : traditionIdNamed(priced, traditionName);
   return {
-    registry,
+    registry: priced,
     traditionId,
-    axes: v1RulesetAxes(registry),
-    foundingNodeIds: foundingCandidates(registry),
-    catalogue: contentCatalogue(registry),
-    deps: worldDeps(registry, traditionId),
-    prestigeCap: resolveGodContent(registry).constants.prestigeCap,
+    axes: v1RulesetAxes(priced),
+    foundingNodeIds: foundingCandidates(priced),
+    catalogue: contentCatalogue(priced),
+    deps: worldDeps(priced, traditionId),
+    prestigeCap: resolveGodContent(priced).constants.prestigeCap,
   };
 }
 

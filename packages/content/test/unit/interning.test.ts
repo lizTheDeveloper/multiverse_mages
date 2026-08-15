@@ -378,6 +378,45 @@ describe('contentRevision', () => {
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
     //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> e8442af2c5f91ae6f80ad9a178e0e451,
+    // when anti-requisites landed (`vision.md` §4b) and `cell.json` gained an
+    // `excludes` array carrying one pair: *Creo Ignem* and *Creo Umbra* exclude
+    // one another, `destructive`. In the preimage for the sharpest version of
+    // the reason every entry above gives — two universes disagreeing about
+    // which bodies of magic exclude one another would disagree about what a
+    // mage may *hold*, and under a `destructive` resolution about what she
+    // loses when she learns the other. A raider carries her own acquisition
+    // rules across a portal (§8's arbitration split), so a revision mismatch
+    // here is not an abstract incompatibility: it decides whether a stolen node
+    // burns the thief's own school.
+    //
+    // Unlike the founding-grant constants above, this one is **not** inert at
+    // ship: the pair is authored on live cells, and any mage who holds one side
+    // and acquires the other loses her instances of it. What keeps the shipped
+    // baselines still is that no v1 cell is involved — the v1 rectangle is
+    // `intellego · perdo · rego` × `mentem · terram · limen · nomen`, and both
+    // halves of this pair are *creo*, so the reference universe never reaches
+    // either. The mechanic is live and the reference run cannot see it, which is
+    // exactly the state a balance sweep should be able to change without a
+    // content edit.
+    //
+    // On this branch that same edit was first recorded as `162f80bf ->
+    // ee99b5845d1da2afe532eb5280e07f57`, and the two arrived on separate
+    // branches, so neither literal is a digest over a preimage holding both:
+    // `d4e30476` has the applied-magic scalars and no exclusions, `ee99b584`
+    // has the exclusions and no scalars. This tree is the first holding both,
+    // and a third value is what a digest over the union is supposed to produce
+    // — the same situation the three-branch paragraph above describes, and the
+    // reason the check is a digest over the preimage rather than a
+    // hand-maintained list of files.
+    //
+    // ---- And a fourth confluence, which is why the literal moved again ----
+    //
+    // Everything above describes `main`'s history. What follows arrived on
+    // `w182/raid-seam`, and the merge of the two is what this literal is a
+    // digest over. Neither side's value survives, for the same reason as every
+    // paragraph above: a digest over a union is a third value.
+    //
     // d4e3047657b4fa8a1a74e1d52f9f5c86 -> fd8ce7ef5fded0b0a23fc85f8006f595, when `main` met
     // `w37/raid-playable` and took the fourteen magnitudes that make
     // `raid-engagement.md` §§1-3 playable: eleven in `raid-constant.json` —
@@ -409,7 +448,7 @@ describe('contentRevision', () => {
     // unit are all in the preimage, which is exactly right: two universes that
     // disagreed about when a raider runs for the door would be playing
     // different games while their revisions claimed compatibility.
-    expect(registry.contentRevision).toBe('b6e0866220a71930e3846b01f6c03b34');
+    expect(registry.contentRevision).toBe('824c16c93ac3441c146848760eaf3ef8');
   });
 
   it('is stable across loads of identical content', () => {

@@ -68,7 +68,12 @@ import type { RunMeasurement } from './measures.js';
 import { REFERENCE_METRIC_VERSIONS, collectReferenceMetrics } from './measures.js';
 import type { RaidRecord } from './raids.js';
 import type { ReferenceContent } from './reference-universe.js';
-import { TRADITION_FACTOR_ID, referenceContent, referenceScenario } from './reference-universe.js';
+import {
+  AXIS_PRICE_FACTOR_ID,
+  TRADITION_FACTOR_ID,
+  referenceContent,
+  referenceScenario,
+} from './reference-universe.js';
 
 /**
  * The build every reference record claims to have run against.
@@ -400,18 +405,32 @@ export interface ReferenceExecutorOptions {
 }
 
 /**
- * Content resolved per tradition, memoized for the life of the process.
+ * Content resolved per **(tradition, axis price)**, memoized for the life of the
+ * process.
  *
- * The tradition cannot ride in {@link ReferenceExecutorOptions.content} the way
- * everything else does, because it is chosen by a *sweep level* and the content
- * is resolved before any task is seen. Memoizing keeps the promise
+ * Neither of those can ride in {@link ReferenceExecutorOptions.content} the way
+ * everything else does, because both are chosen by a *sweep level* and the
+ * content is resolved before any task is seen. Memoizing keeps the promise
  * `makeReferenceExecutor` makes — that a worker pays for the three hundred
  * nodes, the seventy-cell grid and the territory once rather than once per run —
  * while letting a worker serve more than one tradition. Nothing in a
  * `ReferenceContent` is written to, so sharing one across runs is the same claim
  * the executor already makes.
+ *
+ * **The key is a pair and must stay one.** A worker serves whichever tasks the
+ * pool deals it, and a sweep crossing two prices deals both to the same worker.
+ * Keyed on the tradition alone, the second price would be served the first
+ * price's content: every run would complete, every number would be plausible,
+ * and the record would name a price the simulation never charged. That is
+ * `CLAUDE.md`'s *"a checker that answers about the wrong input"* with a whole
+ * sweep behind it, so `contentCacheKey` is written once and used on every path.
  */
-const CONTENT_BY_TRADITION = new Map<string, ReferenceContent>();
+const CONTENT_BY_LEVELS = new Map<string, ReferenceContent>();
+
+/** The memo key. ` ` because no content id and no `fp` integer contains it. */
+function contentCacheKey(tradition: string | undefined, axisPriceScale: number): string {
+  return `${tradition ?? ''} ${String(axisPriceScale)}`;
+}
 
 /**
  * The tradition level a task names, validated.
@@ -435,21 +454,46 @@ function traditionOf(task: RunTask): string | undefined {
 }
 
 /**
+ * The axis-price level a task names, validated.
+ *
+ * `0` — the value an absent factor resolves to — is the shipped price, so a
+ * sweep that never heard of this factor gets the content it always got. Refuses
+ * a non-integer for {@link traditionOf}'s reason.
+ */
+function axisPriceOf(task: RunTask): number {
+  const level = task.levels[AXIS_PRICE_FACTOR_ID];
+  if (level === undefined) return 0;
+  if (typeof level !== 'number' || !Number.isInteger(level) || level < 0) {
+    throw new Error(
+      `Factor ${AXIS_PRICE_FACTOR_ID} has level ${JSON.stringify(level)}, which is not a ` +
+        'non-negative integer. It is an fp multiplier on the four §4.2 axis prices at 1/1024: ' +
+        '1024 is the shipped price and 0 means the same thing.',
+    );
+  }
+  return level;
+}
+
+/**
  * The content one task runs against: the explicitly supplied set unless the task
- * names a tradition, in which case the tradition wins.
+ * names a tradition or an axis price, in which case the levels win.
  *
  * The precedence matters. `makeReferenceExecutor` pre-resolves content and hands
  * it to every run, so a sweep declaring a `tradition` factor against a
  * pre-resolved executor would otherwise have its levels silently ignored and
- * every arm would measure the default tradition.
+ * every arm would measure the default tradition. `axisPriceScale` is on the same
+ * path for the same reason, and *both* levels are consulted before the
+ * pre-resolved set is taken — a task naming a price and no tradition used to
+ * fall through the first line and would have measured the shipped price.
  */
 function contentForTask(task: RunTask, options: ReferenceExecutorOptions): ReferenceContent {
   const named = traditionOf(task);
-  if (named === undefined) return options.content ?? referenceContent();
-  const memoized = CONTENT_BY_TRADITION.get(named);
+  const axisPriceScale = axisPriceOf(task);
+  if (named === undefined && axisPriceScale === 0) return options.content ?? referenceContent();
+  const key = contentCacheKey(named, axisPriceScale);
+  const memoized = CONTENT_BY_LEVELS.get(key);
   if (memoized !== undefined) return memoized;
-  const resolved = referenceContent(options.content?.registry, named);
-  CONTENT_BY_TRADITION.set(named, resolved);
+  const resolved = referenceContent(options.content?.registry, named, axisPriceScale);
+  CONTENT_BY_LEVELS.set(key, resolved);
   return resolved;
 }
 

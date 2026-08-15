@@ -119,6 +119,38 @@ export {
 export type { EngagementView, ObservationInput } from './observation.js';
 export { isEngaged, rawObservation } from './observation.js';
 
+/**
+ * §4.1's observation, named rather than positional — the entitlement half of
+ * `docs/design/observation-entitlement.md`.
+ *
+ * `PlayerState` says *what a player may see*; `OBSERVATION_BLOCKS` says where it
+ * goes. Those were one statement until now, made positionally, which is why a
+ * trait could be added to the world and silently reach nobody.
+ */
+export type {
+  PlayerEngagement,
+  PlayerInstitutions,
+  PlayerKnowledgeCell,
+  PlayerObjective,
+  PlayerResources,
+  PlayerSide,
+  PlayerState,
+  PlayerClock,
+} from './player-state.js';
+export { encodePlayerState, playerStateFields, project } from './player-state.js';
+
+export type { TraitClass, TraitClassification, UnencodedGap, WithholdingReason } from './entitlement.js';
+export {
+  DECLARED_UNENCODED,
+  TRAIT_CLASSES,
+  TRAIT_CLASSIFICATION,
+  WITHHOLDING_REASONS,
+  assertAllTraitsClassified,
+  assertNoUndeclaredGaps,
+  unclassifiedTraits,
+  unencodedObservables,
+} from './entitlement.js';
+
 export type { Candidate, CandidateInput, CandidateLists } from './candidates.js';
 export { buildCandidates, candidateAt } from './candidates.js';
 
