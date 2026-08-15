@@ -3,16 +3,16 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "e8442af2c5f91ae6f80ad9a178e0e451",
+    "contentRevision": "8a20c0a64242b6322283d439724f6993",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
       "cells": 70,
       "v1Cells": 12,
-      "nodes": 300,
+      "nodes": 301,
       "species": 6,
       "traditions": 3,
-      "primitives": 16,
+      "primitives": 17,
       "territories": 5,
       "godCosts": 16,
       "godConstants": 72,
@@ -984,12 +984,12 @@
         "form": "nomen",
         "enabled": true,
         "classicalLabels": [],
-        "nodeCount": 4,
+        "nodeCount": 5,
         "tierCounts": {
           "1": 1,
           "2": 1,
           "3": 1,
-          "4": 1
+          "4": 2
         }
       },
       {
@@ -1217,8 +1217,8 @@
     "totals": {
       "cells": 70,
       "enabledCells": 12,
-      "nodes": 300,
-      "nodesInEnabledCells": 51
+      "nodes": 301,
+      "nodesInEnabledCells": 52
     }
   },
   "primitives": {
@@ -1229,7 +1229,7 @@
       "packages/content/data/node.json"
     ],
     "ok": false,
-    "registrationCount": 15,
+    "registrationCount": 16,
     "unconsumed": [
       "research-rate",
       "scribe-rate",
@@ -1342,6 +1342,23 @@
         "nodeCount": 5,
         "enabledEffectCount": 0,
         "enabledNodeCount": 0
+      },
+      {
+        "id": "knowledge-corrupt",
+        "unit": "fp-probability-per-attempt-of-corrupting-an-instance",
+        "scale": "engagement",
+        "stacking": "max",
+        "cap": null,
+        "capKind": "none",
+        "status": "node-driven",
+        "consumers": [
+          "rules-raid/arbitration.CastArbiter.corruptionMagnitudes"
+        ],
+        "excluded": false,
+        "effectCount": 1,
+        "nodeCount": 1,
+        "enabledEffectCount": 1,
+        "enabledNodeCount": 1
       },
       {
         "id": "knowledge-steal",
@@ -1954,14 +1971,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "679bd925f008a508d7c86d5fb9825e6915caa279cf6dbb10fbf502774ccd2c4d",
-        "contentRevision": "e8442af2c5f91ae6f80ad9a178e0e451",
+        "fileSeal": "f77cc0f685f7eec24dd3be4dbfabeed054ab2065e99a7e897b95c589f906c1ef",
+        "contentRevision": "8a20c0a64242b6322283d439724f6993",
         "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
         "buildVersion": "0.3.0",
-        "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
+        "rngRegistryHash": "3666e19c1047950f7f36467c89c7b42f88cf97ef2861d2be326326fa96b87955",
         "armCount": 0,
         "arms": [],
-        "rationale": "PR #161 (anti-requisites) ships one symmetric exclusion pair in packages/content/data/cell.json: creo-ignem EXCLUDES creo-umbra and back, both halves carrying the same reason and resolution \"destructive\". Recorded from the tree MERGED WITH origin/main be446a6 (PR #125, w108/university-fidelity), not from the branch alone, per the w77 precedent that a competing baseline re-record means taking the measurement from the merged tree. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. BYTE-IDENTITY IS ESTABLISHED BY GREPPING FOR NON-ZERO DELTAS, NOT BY READING THE PASS COLUMN -- a row can pass three standard errors while moving a great deal, and this gate has a live example: referenceGrimoires@permissive-breadth moves +19.6 and PASSES at 1.27 SE. NO GOLDEN FIXTURE WAS REGENERATED. balance-gate-ascension-v1 is deliberately NOT re-recorded: it carries a superseded rngRegistryHash from PR #72, already fails on main for that older and unrelated reason, and balance/README.md marks its job not required to merge, so re-recording it is a separate decision on a separate failure -- the same carve-out the w70/opening-square notes record. THIS FILE (the five-year gate, worldTickCap 60, 200 runs, 9 metrics): 8 of 9 rows moved against the superseded baseline, every one of them inside tolerance -- the largest is referenceLivingMages at 0.30 SE against k = 3. ATTRIBUTION, MEASURED RATHER THAN ARGUED. #125 changed no content file, so provenance.contentHash did not move for it and this gate PASSED against the superseded baseline before regeneration; what moved are values, and they are #125 re-rolling handle-keyed draws by allocating UNIVERSITY_STAFF link rows (contracts.md 6 splits the RNG per entity handle), which is the same mechanism #125 own rationale describes for the denial-warden arm lines. The exclusion pair contributes EXACTLY ZERO here, and that was tested rather than asserted: stripping the excludes arrays from the two cells, rebuilding, and re-running this sweep reproduces every current value BYTE-IDENTICALLY. The structural reason is that both halves of the pair are creo and this sweep plays the v1 rectangle (intellego, perdo, rego x mentem, terram, limen, nomen), so the reference universe cannot reach either cell. NOTE THE CORRECTION THIS FORCES TO AN EARLIER CLAIM: on the pre-merge branch both reference gates were byte-identical at every row, and that is no longer true on the merged tree. The pair is still invisible to them; #125 is not. HORIZON CORRECTION: docs/design/anti-requisites.md labelled this gate \"240 world ticks\" with 10 metrics. The committed sweep sets worldTickCap 60 and lists 9 metrics; 240 is the horizon of the twenty-year gate. The doc is corrected in the same commit.",
+        "rationale": "w190/scribing-fidelity: RNG stream 13 (corruption) invalidates every baseline by rngRegistryHash identity before a number moves; contentRevision moved e8442af2 -> 8a20c0a6 for the knowledge-corrupt primitive and its node; and seek-teaching can now be satisfied by a book on the shelf when no living teacher holds the node.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -1976,32 +1993,32 @@
         "pooled": [
           {
             "metricId": "referenceGrimoires",
-            "value": 90.86,
+            "value": 90.77,
             "unit": "grimoires",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 1.6615314425835817,
-            "tolerance": 4.984594327750745,
+            "standardError": 1.6584806791956626,
+            "tolerance": 4.975442037586988,
             "sampleSize": 200
           },
           {
             "metricId": "referenceKnowledgeInstances",
-            "value": 277.31,
+            "value": 278.065,
             "unit": "instances",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.1822191943626787,
-            "tolerance": 6.546657583088036,
+            "standardError": 2.176078315855083,
+            "tolerance": 6.528234947565249,
             "sampleSize": 200
           },
           {
             "metricId": "referenceLibraryDepth",
-            "value": 3.725,
+            "value": 3.745,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.1983696302463702,
-            "tolerance": 0.5951088907391106,
+            "standardError": 0.20102416343741936,
+            "tolerance": 0.6030724903122581,
             "sampleSize": 200
           },
           {
@@ -2020,8 +2037,8 @@
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.132738041853502,
-            "tolerance": 0.39821412556050595,
+            "standardError": 0.1339166661375191,
+            "tolerance": 0.4017499984125573,
             "sampleSize": 200
           },
           {
@@ -2030,8 +2047,8 @@
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.132738041853502,
-            "tolerance": 0.39821412556050595,
+            "standardError": 0.1339166661375191,
+            "tolerance": 0.4017499984125573,
             "sampleSize": 200
           },
           {
@@ -2073,14 +2090,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "d11c79f2143cabfe8800b2cff154b5830fa52a1d4ac5cc4da210baac0fee0c7c",
-        "contentRevision": "e8442af2c5f91ae6f80ad9a178e0e451",
+        "fileSeal": "9622c9b939abf6babeb82b85fe680de33efb326b4256ffa80108ed08a6f236b7",
+        "contentRevision": "8a20c0a64242b6322283d439724f6993",
         "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
         "buildVersion": "0.3.0",
-        "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
+        "rngRegistryHash": "3666e19c1047950f7f36467c89c7b42f88cf97ef2861d2be326326fa96b87955",
         "armCount": 0,
         "arms": [],
-        "rationale": "PR #161 (anti-requisites) ships one symmetric exclusion pair in packages/content/data/cell.json: creo-ignem EXCLUDES creo-umbra and back, both halves carrying the same reason and resolution \"destructive\". Recorded from the tree MERGED WITH origin/main be446a6 (PR #125, w108/university-fidelity), not from the branch alone, per the w77 precedent that a competing baseline re-record means taking the measurement from the merged tree. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. BYTE-IDENTITY IS ESTABLISHED BY GREPPING FOR NON-ZERO DELTAS, NOT BY READING THE PASS COLUMN -- a row can pass three standard errors while moving a great deal, and this gate has a live example: referenceGrimoires@permissive-breadth moves +19.6 and PASSES at 1.27 SE. NO GOLDEN FIXTURE WAS REGENERATED. balance-gate-ascension-v1 is deliberately NOT re-recorded: it carries a superseded rngRegistryHash from PR #72, already fails on main for that older and unrelated reason, and balance/README.md marks its job not required to merge, so re-recording it is a separate decision on a separate failure -- the same carve-out the w70/opening-square notes record. THIS FILE (the twenty-year gate, worldTickCap 240, 200 runs, 10 metrics): all 10 rows moved against the superseded baseline, every one inside tolerance. ATTRIBUTION, MEASURED RATHER THAN ARGUED. #125 changed no content file, so provenance.contentHash did not move for it and this gate PASSED against the superseded baseline before regeneration; what moved are values, and they are #125 re-rolling handle-keyed draws by allocating UNIVERSITY_STAFF link rows (contracts.md 6 splits the RNG per entity handle), which is the same mechanism #125 own rationale describes for the denial-warden arm lines. The exclusion pair contributes EXACTLY ZERO here, and that was tested rather than asserted: stripping the excludes arrays from the two cells, rebuilding, and re-running this sweep reproduces every current value BYTE-IDENTICALLY. The structural reason is that both halves of the pair are creo and this sweep plays the v1 rectangle (intellego, perdo, rego x mentem, terram, limen, nomen), so the reference universe cannot reach either cell. NOTE THE CORRECTION THIS FORCES TO AN EARLIER CLAIM: on the pre-merge branch both reference gates were byte-identical at every row, and that is no longer true on the merged tree. The pair is still invisible to them; #125 is not. HORIZON CORRECTION: docs/design/anti-requisites.md labelled this gate \"2400 world ticks\". The committed sweep sets worldTickCap 240; 2400 is the horizon of the two-hundred-year ascension gate. Recorded as a second, independent correction rather than as one mechanism: the tidy \"every label shifted one rung up the ladder\" story does not survive the ladder itself, which is 60 / 240 / 240 / 2400, and puts this error two rungs up while the error on the five-year gate is one rung. The doc is corrected in the same commit.",
+        "rationale": "w190/scribing-fidelity: RNG stream 13 (corruption) invalidates every baseline by rngRegistryHash identity before a number moves; contentRevision moved e8442af2 -> 8a20c0a6 for the knowledge-corrupt primitive and its node; and seek-teaching can now be satisfied by a book on the shelf when no living teacher holds the node.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2096,72 +2113,72 @@
         "pooled": [
           {
             "metricId": "referenceGrimoires",
-            "value": 325.075,
+            "value": 322.59,
             "unit": "grimoires",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 7.00770803749525,
-            "tolerance": 21.02312411248575,
+            "standardError": 7.013235883030059,
+            "tolerance": 21.039707649090175,
             "sampleSize": 200
           },
           {
             "metricId": "referenceKnowledgeInstances",
-            "value": 954.845,
+            "value": 960.59,
             "unit": "instances",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 7.746834738742511,
-            "tolerance": 23.240504216227535,
+            "standardError": 7.923768236213405,
+            "tolerance": 23.771304708640216,
             "sampleSize": 200
           },
           {
             "metricId": "referenceLibraryDepth",
-            "value": 16.385,
+            "value": 16.79,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.7782302660130712,
-            "tolerance": 2.3346907980392135,
+            "standardError": 0.8144918285504835,
+            "tolerance": 2.4434754856514505,
             "sampleSize": 200
           },
           {
             "metricId": "referenceLivingMages",
-            "value": 37.77,
+            "value": 37.81,
             "unit": "mages",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.19516084418253787,
-            "tolerance": 0.5854825325476136,
+            "standardError": 0.19711438717823987,
+            "tolerance": 0.5913431615347196,
             "sampleSize": 200
           },
           {
             "metricId": "referenceNodesGained",
-            "value": 38.205,
+            "value": 38.57,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.17362139198584386,
-            "tolerance": 0.5208641759575316,
+            "standardError": 0.18483583449722546,
+            "tolerance": 0.5545075034916764,
             "sampleSize": 200
           },
           {
             "metricId": "referenceNodesGainedFinalQuarter",
-            "value": 8.43,
+            "value": 8.65,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.10544850760016493,
-            "tolerance": 0.31634552280049477,
+            "standardError": 0.10417312905124107,
+            "tolerance": 0.3125193871537232,
             "sampleSize": 200
           },
           {
             "metricId": "referenceNodesKnown",
-            "value": 40.705,
+            "value": 41.07,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.17362139198584386,
-            "tolerance": 0.5208641759575316,
+            "standardError": 0.18483583449722546,
+            "tolerance": 0.5545075034916764,
             "sampleSize": 200
           },
           {
@@ -2170,28 +2187,28 @@
             "unit": "people",
             "status": "measured",
             "aggregation": "max",
-            "standardError": 20.895000000000028,
-            "tolerance": 62.68500000000009,
+            "standardError": 22.885000000000062,
+            "tolerance": 68.65500000000019,
             "sampleSize": 200
           },
           {
             "metricId": "referencePopulation",
-            "value": 213.03,
+            "value": 212.825,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 1.3279710625074415,
-            "tolerance": 3.983913187522324,
+            "standardError": 1.3109637753989096,
+            "tolerance": 3.932891326196729,
             "sampleSize": 200
           },
           {
             "metricId": "referencePopulationChange",
-            "value": 69.03,
+            "value": 68.825,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 1.3279710625074415,
-            "tolerance": 3.983913187522324,
+            "standardError": 1.3109637753989098,
+            "tolerance": 3.9328913261967298,
             "sampleSize": 200
           }
         ]
@@ -2203,11 +2220,11 @@
         "runCount": 64,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "35e92a2acc634ac9937cc1c5b5d9cd476c526988993e70f78c6f59a6fd0b69a0",
-        "contentRevision": "e8442af2c5f91ae6f80ad9a178e0e451",
+        "fileSeal": "2a39fc0027b9ac6b3f3c361429f17ccd221f89eb9588f531b12dceec91d75655",
+        "contentRevision": "8a20c0a64242b6322283d439724f6993",
         "configurationHash": "1b73f7e27b0bf2eb582d9094c5747ebd29663c6f5991847ea2178fccd3304b28",
         "buildVersion": "0.3.0",
-        "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
+        "rngRegistryHash": "3666e19c1047950f7f36467c89c7b42f88cf97ef2861d2be326326fa96b87955",
         "armCount": 8,
         "arms": [
           "archivist",
@@ -2219,7 +2236,7 @@
           "uniform-random-legal",
           "worship-maximizer"
         ],
-        "rationale": "PR #161 (anti-requisites) ships one symmetric exclusion pair in packages/content/data/cell.json: creo-ignem EXCLUDES creo-umbra and back, both halves carrying the same reason and resolution \"destructive\". Recorded from the tree MERGED WITH origin/main be446a6 (PR #125, w108/university-fidelity), not from the branch alone, per the w77 precedent that a competing baseline re-record means taking the measurement from the merged tree. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. BYTE-IDENTITY IS ESTABLISHED BY GREPPING FOR NON-ZERO DELTAS, NOT BY READING THE PASS COLUMN -- a row can pass three standard errors while moving a great deal, and this gate has a live example: referenceGrimoires@permissive-breadth moves +19.6 and PASSES at 1.27 SE. NO GOLDEN FIXTURE WAS REGENERATED. balance-gate-ascension-v1 is deliberately NOT re-recorded: it carries a superseded rngRegistryHash from PR #72, already fails on main for that older and unrelated reason, and balance/README.md marks its job not required to merge, so re-recording it is a separate decision on a separate failure -- the same carve-out the w70/opening-square notes record. THIS FILE (the twenty-year agency gate, worldTickCap 240, 64 runs, 8 strategies round-robin, 90 rows) IS THE ONE THE MECHANIC MOVES, AND IT REFUSED BEFORE READING A METRIC: provenance.contentHash d4e3047657b4fa8a1a74e1d52f9f5c86 -> e8442af2c5f91ae6f80ad9a178e0e451, correctly, because the content did change. The repository owner authorised the re-record. The agency pool permits the FULL GRID, so unlike the reference universe it can reach creo and the pair fires in a real run. 71 of 90 rows are at delta 0.00000. The 19 that moved are 9 pooled aggregates and all 10 permissive-breadth arm rows -- AND NOTHING ELSE, so THE OTHER SEVEN STRATEGIES ARE BYTE-IDENTICAL ACROSS ALL 70 OF THEIR ARM ROWS and the pooled aggregates move only because they pool permissive-breadth. That result survived the merge with #125 unchanged in shape, which is the check worth recording: a competing re-baseline could have moved other arms and turned this from a re-quote into a different finding, and it did not. Headline on the merged tree: referenceNodesKnown@permissive-breadth 68.6250 -> 42.5000, delta -26.1250 (-20.80 SE against k = 3), and referenceNodesGained@permissive-breadth -26.1250 (-20.80 SE). Also referenceKnowledgeInstances@permissive-breadth 1614.38 -> 1013.00 (-27.04 SE), referenceNodesGainedFinalQuarter@permissive-breadth 14.6250 -> 5.25000 (-25.00 SE), and moving UPWARD referenceGrimoires@permissive-breadth +19.6250 (1.27 SE, passing) and referencePeakPopulation@permissive-breadth 330 -> 340 (1.27 SE). permissive-breadth was the top-ranked strategy on referenceNodesKnown and is now fourth. That is one authored pair doing what an opposing term is for, aimed at the strategy that had none. Tolerances moved with the values, so the power table in balance/README.md moves in the same commit and BLIND_ARM_LINES is recomputed; gate-power.test.ts enforces both, correctly.",
+        "rationale": "w190/scribing-fidelity: RNG stream 13 (corruption) invalidates every baseline by rngRegistryHash identity before a number moves; contentRevision moved e8442af2 -> 8a20c0a6 for the knowledge-corrupt primitive and its node; and seek-teaching can now be satisfied by a book on the shelf when no living teacher holds the node.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2235,72 +2252,72 @@
         "pooled": [
           {
             "metricId": "referenceGrimoires",
-            "value": 261.515625,
+            "value": 259.984375,
             "unit": "grimoires",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 10.798977725779187,
-            "tolerance": 32.39693317733756,
+            "standardError": 10.551318508396237,
+            "tolerance": 31.653955525188714,
             "sampleSize": 64
           },
           {
             "metricId": "referenceKnowledgeInstances",
-            "value": 800.734375,
+            "value": 800.40625,
             "unit": "instances",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 15.039149756240377,
-            "tolerance": 45.11744926872113,
+            "standardError": 15.210149006913115,
+            "tolerance": 45.630447020739346,
             "sampleSize": 64
           },
           {
             "metricId": "referenceLibraryDepth",
-            "value": 14.875,
+            "value": 14.9375,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 1.1083842406855124,
-            "tolerance": 3.3251527220565373,
+            "standardError": 1.1671780873114437,
+            "tolerance": 3.501534261934331,
             "sampleSize": 64
           },
           {
             "metricId": "referenceLivingMages",
-            "value": 37.953125,
+            "value": 37.890625,
             "unit": "mages",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.41369382171480396,
-            "tolerance": 1.2410814651444118,
+            "standardError": 0.4131032520750714,
+            "tolerance": 1.2393097562252142,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesGained",
-            "value": 30.96875,
+            "value": 31.203125,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.8758366535775949,
-            "tolerance": 2.6275099607327848,
+            "standardError": 0.9034169078421103,
+            "tolerance": 2.7102507235263307,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesGainedFinalQuarter",
-            "value": 4.265625,
+            "value": 4.421875,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.3661054535581244,
-            "tolerance": 1.098316360674373,
+            "standardError": 0.37662408728731095,
+            "tolerance": 1.1298722618619328,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesKnown",
-            "value": 33.46875,
+            "value": 33.703125,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.8758366535775949,
-            "tolerance": 2.6275099607327848,
+            "standardError": 0.9034169078421103,
+            "tolerance": 2.7102507235263307,
             "sampleSize": 64
           },
           {
@@ -2315,22 +2332,22 @@
           },
           {
             "metricId": "referencePopulation",
-            "value": 213.203125,
+            "value": 213.515625,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.3152960292638607,
-            "tolerance": 6.945888087791582,
+            "standardError": 2.347236989393061,
+            "tolerance": 7.041710968179183,
             "sampleSize": 64
           },
           {
             "metricId": "referencePopulationChange",
-            "value": 69.203125,
+            "value": 69.515625,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.3152960292638607,
-            "tolerance": 6.945888087791582,
+            "standardError": 2.347236989393061,
+            "tolerance": 7.041710968179183,
             "sampleSize": 64
           }
         ]
@@ -2544,7 +2561,7 @@
     ],
     "ok": false,
     "findingCount": 125,
-    "examinedSymbolCount": 855,
+    "examinedSymbolCount": 889,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2573,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 309,
+    "productionFileCount": 313,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2686,6 +2703,12 @@
         "kind": "function"
       },
       {
+        "file": "packages/rules-magic/src/instances/fidelity.ts",
+        "line": 382,
+        "name": "fidelityFractionOf",
+        "kind": "function"
+      },
+      {
         "file": "packages/rules-magic/src/instances/location.ts",
         "line": 126,
         "name": "destroyLibrary",
@@ -2705,20 +2728,14 @@
       },
       {
         "file": "packages/rules-magic/src/instances/outcomes.ts",
-        "line": 115,
+        "line": 133,
         "name": "describeRefusal",
         "kind": "function"
       },
       {
         "file": "packages/rules-magic/src/instances/scribing.ts",
-        "line": 79,
+        "line": 92,
         "name": "PALACE_STORE",
-        "kind": "const"
-      },
-      {
-        "file": "packages/rules-magic/src/instances/scribing.ts",
-        "line": 71,
-        "name": "STANDARD_STORE",
         "kind": "const"
       },
       {
@@ -2795,25 +2812,25 @@
       },
       {
         "file": "packages/rules-raid/src/arbitration.ts",
-        "line": 716,
+        "line": 753,
         "name": "drawBelow",
         "kind": "function"
       },
       {
         "file": "packages/rules-raid/src/consequences.ts",
-        "line": 363,
+        "line": 379,
         "name": "fractionOf",
         "kind": "function"
       },
       {
         "file": "packages/rules-raid/src/consequences.ts",
-        "line": 369,
+        "line": 385,
         "name": "returnedWithKnowledge",
         "kind": "function"
       },
       {
         "file": "packages/rules-raid/src/consequences.ts",
-        "line": 354,
+        "line": 370,
         "name": "strandedAttackers",
         "kind": "function"
       },
@@ -2831,7 +2848,7 @@
       },
       {
         "file": "packages/rules-raid/src/raid.ts",
-        "line": 1205,
+        "line": 1376,
         "name": "BURNABLE_LOCATION_KINDS",
         "kind": "const"
       },
@@ -3161,7 +3178,7 @@
       },
       {
         "file": "packages/state/src/enums.ts",
-        "line": 211,
+        "line": 219,
         "name": "OBJECTIVE_KIND_UNSPECIFIED",
         "kind": "const"
       },
@@ -3185,7 +3202,7 @@
       },
       {
         "file": "packages/state/src/migrations.ts",
-        "line": 496,
+        "line": 531,
         "name": "loadWorldSnapshot",
         "kind": "function"
       },
@@ -3280,7 +3297,7 @@
       },
       {
         "file": "packages/state/src/migrations.ts",
-        "line": 450,
+        "line": 485,
         "name": "migrateWorldEnvelope",
         "via": [
           "loadWorldSnapshot"
@@ -3352,7 +3369,7 @@
     "structuralExclusions": [
       {
         "id": "fields-match",
-        "count": 23,
+        "count": 24,
         "reason": "A `KeysMatch<Record, typeof COMPONENT>` assertion. Its consumer is `tsc`: it fails the build if a component spec and its record interface disagree about a field, and it does nothing at run time. One with a caller would be the surprise."
       },
       {
