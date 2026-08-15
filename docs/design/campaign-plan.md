@@ -9102,6 +9102,12 @@ twice — `ECONOMIC_PRIMITIVES = new Set(['resource-yield', 'build-rate'])` and
 `self` and `single` are never gathered. `research-rate`'s ten `universe`-target effects pass the target
 gate and are dropped by the primitive gate. **93 authored effects are inert.**
 
+> **⚠ Corrected by W218.** `ECONOMIC_PRIMITIVES` is **`{resource-yield, build-rate, worship-yield}`** —
+> three, not the two written above — so `gatherEffects` drives **3 of 16** primitives rather than 2. The
+> finding about the three academic rates is unaffected; the count of what *is* admitted was wrong. The
+> surviving residue after #169 is `fertilityBonuses: []` (`world-step.ts:1849`) and
+> `scribeRateBonuses: []` (`:2017`).
+
 ### What that means in the game, and it is not a small thing
 
 `world-step.ts`'s `MAGE_MONTHS_PER_TICK` docstring enumerates its own sources without noticing:
@@ -11552,3 +11558,54 @@ because `CLAUDE.md` treats a mismatched line number as the cheapest available si
 rotted — so pinning `:225` would manufacture exactly that signal on the next edit to that file. I have
 been citing line numbers throughout this document; where the line is not the point, the filename is the
 better reference.
+
+## W218 — the doc rot is repaired, and the health warning was itself the rot
+
+PR #188. **21 rows marked superseded**, **29 corrected in place**, **2 left unverified and labelled**, all
+re-verified against `08ca5368` rather than the `0940061`/`59dfc637` the audits ran on.
+
+The spec/record distinction held: `vision-audit.md` is a **measurement record** and **no number in it was
+rewritten** — 21 rows carry a superseded marker naming what is true now. The four **specifications**
+(`magic-projection`, `reachability-triage`, `invariants`, `hard-magic`) were corrected outright.
+
+### The banner was the rot
+
+`vision-audit.md`'s existing health warning asserted *"`raidEngagement` is still `false` on `main` … so
+every `implemented-unreached` verdict below still holds."* **That paragraph was itself stale**, and it was
+doing the most damage of anything in the file, because it told readers the rest could be trusted. Now
+retracted, replaced with a pointer to `audit-vision.md` carrying its caveat verbatim — **a row not named
+there has not been cleared** — and §8's orphan-package claim is called out at the head of the section
+*and* at the head of ranked gap #1.
+
+**And G1 in its tick-off list is deliberately left unticked**: the linkage half is closed, the *fires end
+to end* half is not. Ticking it would have been the same failure one level up.
+
+### An audit correction that was itself wrong
+
+`audit-sequence.md` §2.1 credits **#170** with closing `hard-magic` missing piece 3, on the evidence that
+`GRIMOIRE.durability` derives from `scribeAffinity`. **That is already true on `main`** —
+`SCRIBE_DURABILITY_BASE` has been in `scribing.ts` since the `knowledge-model` release, and #170 is not
+merged. Corrected in `hard-magic.md` rather than in someone else's open PR, following
+`audit-sequence`'s own convention.
+
+*(Durability's honest residue, recorded rather than glossed: it gates surviving a **burning** only —
+`decay.ts` deliberately excludes it from forgetting.)*
+
+### Two corrections that land on me
+
+- **`ECONOMIC_PRIMITIVES` is three, not two** — `{resource-yield, build-rate, worship-yield}` — so
+  `gatherEffects` drives **3 of 16** primitives. W180 is marked in place above. The academic-rate finding
+  is unaffected; my count of what *is* admitted was wrong.
+- **`campaign-plan.md` is named as a remaining carrier** of the stale `gatherEffects` claim, alongside
+  `strategy-dimensionality.md:370,424` and `interface-findings.md:705`. Mine is now fixed; those two and
+  the two code files (`check-primitive-consumption.mjs`, `consumption.ts`'s header) are not.
+
+### And a reclassification it declined to make
+
+`reachability-triage`'s `rules-raid` row **keeps its verdict and loses only its reason**: `scenario` *does*
+open a portal (`raids.ts:423`), so the stated reason was wrong — but **all five findings are still
+`unreached` in the committed baseline**, so moving them to `superseded` would have been a fresh defect
+dressed as a repair. Fixing the reason and leaving the verdict is the harder and correct call.
+
+Counts corrected while there: **44 of 59** integration-debt rows, **16** superseded, and §4's heading said
+26 tooling-only where its own body and §1 both said 27.
