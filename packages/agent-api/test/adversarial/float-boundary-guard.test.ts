@@ -105,6 +105,7 @@ const INTEGER_SIDE = [
   'candidates.ts',
   'catalogue.ts',
   'digest.ts',
+  'entitlement.ts',
   'explain.ts',
   'gate.ts',
   'index.ts',
@@ -113,6 +114,7 @@ const INTEGER_SIDE = [
   'mask.ts',
   'observation.ts',
   'outcome.ts',
+  'player-state.ts',
   'session.ts',
   'view.ts',
 ] as const;

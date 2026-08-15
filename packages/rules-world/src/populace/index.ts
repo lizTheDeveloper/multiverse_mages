@@ -48,6 +48,7 @@ export type { DemandInputs, OccupationDemand, UnmetDemand } from './demand.js';
 export {
   LABORERS_PER_BUILD_UNIT,
   NO_DEMAND,
+  NO_STANDING_ARMY,
   SCRIBES_PER_QUEUED_GRIMOIRE,
   computeOccupationDemand,
   zeroPerOccupation,

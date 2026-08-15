@@ -1598,6 +1598,14 @@ and a register clash is funnier than either register alone.
 `about` naming the target. They are not duplicated here: this section was a separate list until the
 registers landed, and two copies of the same joke drift apart within a release.
 
+**Regenerating a rewritten line requires moving its old takes aside first.** The generator skips a
+request whose output file already exists — deliberately, because the API is metered and a batch that
+dies at request 900 must not re-bill the first 899. But a *rewritten* line keeps its id, so the skip
+fires on exactly the lines whose audio is now wrong, and the run reports "0 generated, N already
+present", which reads like success. Fifteen de-gendered lines held audio of their old wording until
+this was noticed. The check that catches it is comparing take mtimes against the content file, not
+counting whether every line has takes.
+
 **No cross-species line may hardcode a gendered pronoun.** A bark fires while a specific mage is on
 screen, and any mage of any species may be of any gender, so a baked-in pronoun misgenders the
 character being pointed at roughly half the time. Write around it — *"that one"*, *"they"*, or the

@@ -117,7 +117,7 @@ import {
 } from '@mm/state';
 import type {
   AcquirePolicy,
-  CellResolver,
+  ExclusionResolver,
   KnowledgeSubsystem,
   NodeCatalog,
   StorePolicy,
@@ -144,6 +144,7 @@ import {
   LABORERS_PER_BUILD_UNIT,
   MATERIALS_PER_LABOR_MONTH,
   MATERIAL_KINDS,
+  NO_STANDING_ARMY,
   advanceConstruction,
   appliedYield,
   applicationRations,
@@ -214,7 +215,13 @@ export interface WorldStepDeps {
   /** The species behind an interned id, or `undefined` for one this content lacks. */
   readonly speciesOf: (speciesId: number) => SpeciesRecord | undefined;
   readonly catalog: NodeCatalog;
-  readonly cells: CellResolver;
+  /**
+   * Widened to {@link ExclusionResolver} rather than the bare `CellResolver`: the
+   * knowledge subsystem needs a cell's anti-requisites (`vision.md` §4b) on the
+   * acquisition path, and `MagicGrid` supplies both from one object. Every
+   * consumer that only wanted `cellOf` is unaffected — this is a superset.
+   */
+  readonly cells: ExclusionResolver;
   /**
    * A node's cell, form and effect primitives, and a species' resolved
    * affinities.
@@ -448,6 +455,24 @@ export interface WorldStepReport {
   readonly buildProgressAdded: Fixed;
   /** Universities finished by that labour this tick. */
   readonly universitiesCompleted: number;
+  /**
+   * Universities standing at the end of the tick, finished or not.
+   *
+   * A census, not an event, and the difference is the reason it exists.
+   * {@link universitiesCompleted} counts only the ones **laborers** finished, so
+   * a site the god's fourth funding action completed is invisible to it, and
+   * nothing at all reported a *founding*: §4.2 gives founding and funding one
+   * action id, so `spentByAction[11]` cannot say which purchase resolved, and
+   * `candidates` is capped at the action's slot count and stops counting at
+   * seven. A universe that founded a thousand universities and one that founded
+   * eight were the same number everywhere a caller could look — which is the
+   * same blindness {@link universitiesUnstaffed} was added for, one question
+   * earlier: *how many are there at all.*
+   *
+   * Read once per tick off the component that owns the answer. Nothing hashes
+   * it and no rule reads it back.
+   */
+  readonly universitiesStanding: number;
   /** Stone construction asked for this tick, `fp`. */
   readonly constructionStoneOwed: Fixed;
   /** Stone construction was actually paid, `fp`. Below `owed` means the quarry is the bottleneck. */
@@ -797,7 +822,12 @@ export function worldSystem(
           constructionBacklog: constructionBacklog(state),
           scribingQueueDepth: 0,
           universityCapacity: completedCapacity(state),
-          standingSoldierTarget: 0,
+          // Zero, by citation rather than by omission. `ages-of-magic.md` §2b:
+          // *"A university's stationed mages are its faculty, its researchers
+          // and its garrison at once. There is no separate military."* The
+          // constant carries the rest of the argument, and the three things
+          // that would have to exist before this becomes a number.
+          standingSoldierTarget: NO_STANDING_ARMY,
         }),
       });
 
@@ -1031,6 +1061,7 @@ export function worldSystem(
         buildRateMagnitudes: economy.buildRate,
         buildProgressAdded: construction.progressAdded,
         universitiesCompleted: construction.completed,
+        universitiesStanding: componentOf(state, UNIVERSITY).size,
         constructionStoneOwed: construction.stoneOwed,
         constructionStonePaid: consumption.spent.construction,
         carryingCapacity: capacity,

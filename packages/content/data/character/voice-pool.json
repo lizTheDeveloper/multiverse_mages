@@ -1,0 +1,44 @@
+[
+  {
+    "voiceId": "7DTpboyigwqXiCkvQjMX",
+    "species": "human",
+    "gender": "female",
+    "label": "Carli — Calm, Warm & Expressive"
+  },
+  {
+    "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+    "species": "elf",
+    "gender": "female",
+    "label": "Lily — Velvety Actress"
+  },
+  {
+    "voiceId": "rZcizibcb1rTBqSwSjpY",
+    "species": "dwarf",
+    "gender": "male",
+    "label": "Krümel King — Cookie-loving Fun Monster"
+  },
+  {
+    "voiceId": "uVKHymY7OYMd6OailpG5",
+    "species": "draconic",
+    "gender": "male",
+    "label": "Frederick — Deep and Historical"
+  },
+  {
+    "voiceId": "OTMqA7lryJHXgAnPIQYt",
+    "species": "gnome",
+    "gender": "male",
+    "label": "Crazy Eddie"
+  },
+  {
+    "voiceId": "DUAKkudcC2PI6KEqJ60K",
+    "species": "orc",
+    "gender": "male",
+    "label": "Haunting-Hector — Dark Cinematic"
+  },
+  {
+    "voiceId": "nDJIICjR9zfJExIFeSCN",
+    "species": "human",
+    "gender": "female",
+    "label": "Emmaline — young British"
+  }
+]

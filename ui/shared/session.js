@@ -319,9 +319,10 @@ export async function openSession(source = {}) {
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(
-      `No recording at ${url} (${res.status}). It is committed, so this usually means the page ` +
-        'was opened as a file:// URL rather than served. Run `npm run ui` and open ' +
-        'http://localhost:8200/ui/.',
+      `No recording at ${url} (${res.status}). It is generated rather than committed, so a ` +
+        'fresh clone does not have one yet, and a page opened as a file:// URL cannot fetch ' +
+        'one either. `npm run ui` does both — it records the session and then serves — so run ' +
+        'that and open http://localhost:8200/ui/. To record it alone: `npm run ui:record`.',
     );
   }
   const doc = await res.json();

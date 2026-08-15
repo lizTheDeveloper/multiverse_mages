@@ -60,6 +60,54 @@ export const LABORERS_PER_BUILD_UNIT = 40;
 export const SCRIBES_PER_QUEUED_GRIMOIRE = 2;
 
 /**
+ * The standing soldier target every production run passes. **Zero, and it is a
+ * citation rather than a stub.**
+ *
+ * This is a named constant instead of a literal `0` at the call site because
+ * the literal was indistinguishable from an unfinished wire, and was read as
+ * one. It is not. The design text that speaks directly to the size of a
+ * standing army says there should not be one —
+ * `docs/design/ages-of-magic.md` §2b:
+ *
+ * > **A university's stationed mages are its faculty, its researchers and its
+ * > garrison at once.** There is no separate military. The soldier's line — *"The
+ * > mages go through the portal. Someone's got to be on this side"* — is about
+ * > the faculty.
+ *
+ * The raid engine agrees from the other side: `rules-raid`'s `combatants.ts`
+ * fields defenders from the `warden`, `professor`, `researcher` and `raider`
+ * mage roles, and soldier detachments are an addendum to that roster rather
+ * than its core.
+ *
+ * ## What would have to exist before this becomes a number
+ *
+ * Three things, and none of them do:
+ *
+ * - **A source for the magnitude.** `openspec/changes/mages-and-species/specs/economy/spec.md`
+ *   names the standing soldier target as a reallocation driver and stops; no
+ *   spec, vision section or content constant states a fraction, a ratio, or a
+ *   per-portal rule. Every other coefficient in this module is untuned but
+ *   *sourced* — a quantity the universe demonstrably owes or wants. This one
+ *   would be invented, which `contracts.md`'s refusal to add `martialAffinity`
+ *   establishes as the wrong move: the capability that holds the measurement
+ *   owns the number, and `raid-engagement` has not claimed it.
+ * - **Somewhere to read it from.** There is no soldier-target field in world
+ *   state and no god action that sets one. `assignRole` writes a *mage's* §7
+ *   standing role, which is a per-mage bias and not a populace headcount.
+ * - **A target large enough to buy anything.** `raid-constant.json`'s
+ *   `detachment-strength` is 100 and `portal.ts` deploys
+ *   `while (remaining >= detachmentStrength)`, **per cohort**. Cohorts are keyed
+ *   by `(speciesId, occupation, birthTickBucket)`, so a universe-wide target
+ *   spread across several species and birth decades fragments into cohorts well
+ *   under 100 and fields **zero** detachments while charging full subsistence.
+ *   Any future target has to clear that fragmentation, not just the raw 100.
+ *
+ * So: named, cited, and left. Changing it is a design decision with an owner,
+ * and this constant is where that decision gets recorded when someone makes it.
+ */
+export const NO_STANDING_ARMY = 0;
+
+/**
  * The four quantities demand is computed from. Every one is supplied by the
  * capability that owns it.
  */

@@ -45,6 +45,29 @@ __pycache__/
 # W53's practice arms — the before/after of the applied-use probe. Same reason.
 .w53/
 
+# W158's axis-price sweep, and its pilot. Same reason: run records, not source.
+# The findings are committed as docs/design/axis-price-sweep.md; the records are
+# regenerable from tools/w158/run-arm.mjs and its manifests.
+.w158/
+.w158pilot/
+
+# The two generated UI payloads, built by `npm run ui:record` and
+# `npm run ui:dashboard` and gated by `npm run check:generated`.
+#
+# They were committed and pinned byte-for-byte until W195. Both are pure
+# functions of the repository, so committing them made every change to their
+# inputs also a change to them: `data.json` embeds all four baselines'
+# provenance, so a baseline re-record needed `ui:dashboard` too, and a 1.1 MB
+# `session.json` conflict is resolved by regenerating rather than by reading.
+# The pin was defended three times by projecting a field out of the equality,
+# and on 63f44ced the third projection had blinded it — the committed payload
+# was stale in exactly the fields it no longer compared.
+#
+# Named exactly rather than globbed, for the reason `ui/lattices.html` gives
+# below: `git add ui/` skips an ignored file SILENTLY.
+ui/session.json
+ui/design-dashboard/data.json
+
 # The generated lattice report, regenerated with scripts/content-graph.mjs.
 # Named exactly rather than globbed: `ui/*.html` also matched ui/index.html, and
 # `git add ui/` skips an ignored file SILENTLY — so the front door was committed
@@ -52,6 +75,10 @@ __pycache__/
 # that commit existed to fix.
 ui/lattices.html
 
+# Generated portraits. Regenerable from character.json via `npm run forge`, and
+# the licensing question that governs generated audio (ASSET-LICENSE.md) applies
+# to generated art too — so they stay out of history until that is settled.
+assets/portraits/
 # W49 measurement scratch; the committed copies live in balance/
 .w49/
 
@@ -59,3 +86,4 @@ ui/lattices.html
 # (scripts/w99-csv-to-records.mjs). Committing them would duplicate the
 # committed CSV in a second format that could then drift from it.
 balance/w99/records/
+.w158post/

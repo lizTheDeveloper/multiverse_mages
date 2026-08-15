@@ -25,7 +25,14 @@
  * beside it without four capabilities editing one file.
  */
 
-export type { CellResolver, KnowledgeNode, KnowledgeRng, NodeCatalog } from './catalog.js';
+export type {
+  CellResolver,
+  ExclusionEdge,
+  ExclusionResolver,
+  KnowledgeNode,
+  KnowledgeRng,
+  NodeCatalog,
+} from './catalog.js';
 export { catalogFromRegistry, catalogOf, requireNode } from './catalog.js';
 
 export {

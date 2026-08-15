@@ -32,12 +32,22 @@ It reads one file, `design-dashboard/data.json`, written by:
 
     npm run ui:dashboard
 
-**Generated, committed, and pinned** — the same treatment `session.json` gets, and
-`packages/content/test/unit/design-dashboard-payload.test.ts` re-runs the generator and compares.
-The payload takes **no clock reading and makes no `git` call**, deliberately: that is what makes the
-pin a check rather than a guaranteed failure, and it is why the page can say it is a statement about
-whatever commit you are reading it on. Figures lifted from a document carry that document's own
-stated date and ref and are labelled historical.
+**Generated and deliberately not committed** — the same treatment `session.json` gets, and for the
+same reasons plus one of its own: the payload embeds all four baselines' provenance, so while it was
+committed, every baseline re-record also required `npm run ui:dashboard`, and branches kept getting
+that wrong.
+
+The payload takes **no clock reading and makes no `git` call**, deliberately. That is what makes it
+a pure function of the repository, which in turn is what makes building it in CI produce the same
+file you build locally — and it is why the page can say it is a statement about whatever commit you
+are reading it on. Figures lifted from a document carry that document's own stated date and ref and
+are labelled historical.
+
+`npm run check:generated` gates the determinism and the untracked-ness;
+`packages/content/test/unit/design-dashboard-payload.test.ts` asserts that the payload is one the
+page can draw — the grid resolves, every metric row states what would disprove it, all four
+baselines carry their seal and revision, and each reachability table's rows carry the keys its
+columns read.
 
 It counts as a prototype for `ui-index.test.ts` and `ui-theme.test.ts` — both sweep every directory
 here — so it is linked from the index and uses `shared/theme.css` like everything else. It is not
@@ -98,11 +108,24 @@ unlinked prototype is invisible.
 
 ## Running them
 
-    npm run ui        # serves the repository root on :8200
+    npm run ui        # builds both payloads, then serves the repository root on :8200
 
 Then open `http://localhost:8200/ui/ruleset/`. They are static files, so any static server works;
 the script exists so nobody has to remember the flags. Serve them rather than opening the files
 directly — the recording is fetched, and `file://` will not.
+
+**One command is deliberately enough.** The two payloads these pages read —
+`session.json` and `design-dashboard/data.json` — are generated rather than committed
+(see below), so a fresh clone has neither. `npm run ui` builds both first, which is
+the whole reason it is a script and not an alias for `http-server`. To build one on
+its own, without serving:
+
+    npm run ui:record       # ui/session.json
+    npm run ui:dashboard    # ui/design-dashboard/data.json
+
+`npm run verify` refreshes both too, as a side effect of `npm run check:generated`. If
+you open a page and see a "could not load" box, that is the message telling you which
+command to run.
 
 ## Where the data comes from
 
@@ -111,10 +134,18 @@ by `npm run ui:record` and read through [`shared/session.js`](shared/session.js)
 carries a strip at the top saying which run it is reading, or — for the parts the read path does not
 carry — which capability is missing and why.
 
-It is **committed, and treated as a golden**: regenerate only by explicit command, and a diff is a
-claim that behaviour changed on purpose. `packages/scenario/test/unit/ui-recording.test.ts` re-runs
-the recorder and compares, so a stale recording is a red test rather than a prototype quietly showing
-last month's universe.
+It is **generated and deliberately not committed**, for the same reason `lattices.html` below is
+not: a checked-in copy drifts from the tree silently, and the whole value of a recording is that it
+is true right now. It is also 1.1 MB of JSON, which conflicts on every branch that moves a rule and
+gets "resolved" by regenerating rather than by reading.
+
+Two checks stand in for the byte-for-byte pin it used to have.
+`npm run check:generated` gates the properties that make building it safe — the recorder is
+deterministic over two runs, and the file stays out of git — with exit 42 for a finding and exit 1
+for the recorder itself being broken, which are not the same answer.
+`packages/scenario/test/unit/ui-recording.test.ts` runs the recorder and asserts that what comes out
+is something the prototypes can decode: the blocks tile the observation end to end, every frame
+carries the full observation and mask, the episode reached its cap, and no cell id is duplicated.
 
 ## Light and dark
 
