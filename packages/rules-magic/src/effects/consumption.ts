@@ -155,7 +155,8 @@
  *
  * The worked example is `teach-rate`, which is wired, registered against
  * `coordination/academic-effects.academicRateBonuses` over twenty nodes, green
- * here — and behaviourally inert under v1 content. The suite's own numbers, from
+ * here — and moves the **completion count** almost not at all. The suite's own
+ * numbers, from
  * `packages/coordination/test/unit/academic-effects.test.ts`, ablating each rate
  * against the same control:
  *
@@ -170,13 +171,31 @@
  * the test that produces it is named after the reason: *"finds no
  * completion-count gain for `teach-rate`, because a lesson already fits in a
  * month."* The rate divides a duration that is already under the tick, so
- * dividing it further buys nothing a completion count can see. Nineteen
- * `single`-target effects reach a consumer and move no outcome.
+ * dividing it further buys nothing **a completion count** can see.
+ *
+ * **State that narrowly, because the wider version of it was wrong.** An
+ * earlier draft of this paragraph said `teach-rate` was *"behaviourally inert
+ * under v1 content"* and that all nineteen `single`-target effects *"reach a
+ * consumer and move no outcome"*. Neither survives measurement. PR #173 swept
+ * 14 opening squares over 168 runs: the twelve enabled cells hold **11 tier-4
+ * and 2 tier-5 nodes**, reach a mean deepest tier of **3.89**, and carry **5 of
+ * the grid's 19 `teach-rate` sources**. The primitive is *live* at width twelve.
+ * What is flat is one metric in one harness — and the binding constraint on
+ * teaching in that harness is `LIBRARY_CONTRIBUTION`'s knot at 24 shelved nodes,
+ * not a tier gate and not the width of the opening square.
+ *
+ * The moral for this file is the moral of the section: a number that does not
+ * move is evidence about *that number*, and turning it into a claim about the
+ * mechanic is the same over-reach as turning a registration into a claim about
+ * behaviour.
  *
  * **Do not add `teach-rate` to {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} over
  * this, and do not weaken the wire.** It is genuinely consumed; whether it
- * *binds* is a content and tuning question, answered by ablation runs and by
- * the balance gates, not by a registry walk. The honest statement of what a
+ * *binds* is a content, tuning and **founding-position** question, answered by
+ * ablation runs and sweeps rather than by a registry walk. #173's sharpest
+ * result is that the founding position dominates the square: the same twelve
+ * cells reach **49.0** shelved nodes under the scenario default and **7.3**
+ * under `LONG_RUN_OPTIONS`, same seeds. The honest statement of what a
  * green here buys is the one `portal` and `worship-yield` already get: *the
  * assembled simulation fetched these node magnitudes and applied them.* The
  * check that would catch an inert magnitude is an ablation whose arms differ,
