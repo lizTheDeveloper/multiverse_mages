@@ -75,6 +75,12 @@ const PERMANENT_IDS: Readonly<Record<string, number>> = {
   // and refuses on it, so all three baselines invalidated by identity before a
   // single measured number moved. See `docs/design/opening-square.md` §4.
   openingSquare: 12,
+  // Appended by `w200/layer-one-fixes`. The second append, and the second
+  // re-baseline event: `provenance.rngRegistryHash` is taken over this whole
+  // table, so the three balance gates refuse on identity before any measured
+  // number has moved. That is expected and named in the PR body rather than
+  // worked around.
+  detachment: 13,
 };
 
 /**
@@ -107,6 +113,7 @@ const DOC_TEXT_BY_SUBSYSTEM: Readonly<Record<string, string>> = {
   objectives: 'objective and raid generation',
   terrain: 'terrain generation and combatant deployment',
   openingSquare: 'the opening square',
+  detachment: 'the partial-detachment draw at portal open',
 };
 
 /** The consequence sentence every failure from this file has to carry. */

@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "e8442af2c5f91ae6f80ad9a178e0e451",
+    "contentRevision": "7277d3f6f5829036f0cc85a4b10a0f49",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -1423,10 +1423,10 @@
           "coordination/universe-effects.universeEconomyBonuses"
         ],
         "excluded": false,
-        "effectCount": 59,
-        "nodeCount": 59,
-        "enabledEffectCount": 5,
-        "enabledNodeCount": 5
+        "effectCount": 60,
+        "nodeCount": 60,
+        "enabledEffectCount": 6,
+        "enabledNodeCount": 6
       },
       {
         "id": "scribe-rate",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 313,
+    "productionFileCount": 321,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2963,7 +2963,7 @@
       },
       {
         "file": "packages/rules-world/src/populace/demand.ts",
-        "line": 84,
+        "line": 132,
         "name": "NO_DEMAND",
         "kind": "const"
       },

@@ -1278,6 +1278,7 @@ invalidates every committed balance baseline.**
 | 10 | objective and raid generation |
 | 11 | terrain generation and combatant deployment |
 | 12 | the opening square — which techniques and forms a universe is founded holding |
+| 13 | the partial-detachment draw at portal open — whether a soldier cohort with fewer people left than `detachment-strength` fields one more detachment |
 
 **Stream 12 is the first append since the baselines were committed, and it is what taught us that
 appending is not free.** The gate compares `provenance.rngRegistryHash` as a block-level refusal,
@@ -1286,6 +1287,13 @@ baseline *by identity*, before a single number has moved. That is conservative r
 but it means **any** future subsystem addition forces a re-baseline event, and the cost belongs in
 the plan for one rather than being discovered in a red gate. See
 `docs/design/opening-square.md` §4.
+
+**Stream 13 is the second append, and it is one of those events.** It exists because deployment
+truncated a per-cohort threshold — `floor(count / 100)` detachments, on a populace fragmented by
+species × occupation × birth decade — so cohorts under a hundred fielded nothing, for every seed,
+forever. Resolving the remainder with a draw is `promotion.ts`'s idiom, and it needs an ID of its
+own rather than `terrain`'s: the two are the only deployment-time draws, and sharing a cursor would
+make how many detachments a side fields move every deployment position behind it.
 
 Draws key on `(rootSeed, stream, tick, actorKey, drawOrdinal)` where `actorKey` is stable identity,
 never array index. This gives **insertion invariance**: adding a combatant, or adding a draw,

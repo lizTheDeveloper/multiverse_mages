@@ -70,12 +70,14 @@ export const RNG_STREAM = {
    * would move the battlefield, and no committed raid baseline could be read as
    * a statement about either.
    *
-   * **13 is deliberately skipped.** `w190/scribing-fidelity` (PR #170) claims it
-   * for `corruption` and is open but unmerged at the time of writing; taking it
-   * here would give one number two meanings depending on merge order, which is
-   * exactly what this table's append-only rule exists to prevent.
+   * **13, because the table must stay dense** — `rng-registry.test.ts` asserts
+   * that, and it is what makes "append-only" checkable rather than a promise.
+   * `w190/scribing-fidelity` (PR #170) is open and also takes 13 for
+   * `corruption`. Both cannot: whichever of the two lands second renumbers to 14
+   * and re-states the §6 table, and the `rngRegistryHash` refusal below means
+   * that is a visible re-baseline rather than a silent collision.
    */
-  detachment: 14,
+  detachment: 13,
 } as const;
 
 /** Any ID in the permanent registry. */
