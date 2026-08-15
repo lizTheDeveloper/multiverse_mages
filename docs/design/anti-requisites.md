@@ -195,3 +195,55 @@ others now finish ahead of it.
    currently commit effort to a node that will be refused when it completes. A frontier filter is a
    pure optimization and is *not* in this branch — it was left out deliberately, because
    implementing it before measuring would have made the enforcement path look untested.
+
+## Rebased onto `main` @ `9cfe582`, and one test went red
+
+**Added 2026-08-14.** The branch was rebased from `e2a15cf` onto `9cfe582`, 53 commits later. Two
+things came out of it, one procedural and one substantive.
+
+### The content revision is a three-way union
+
+`main` had meanwhile taken `apply-magic`'s two `autonomy-weight.json` scalars
+(`162f80bf → d4e30476`). This branch had `162f80bf → ee99b584`. Neither literal is a digest over a
+preimage holding both, so the union produces a third: **`e8442af2c5f91ae6f80ad9a178e0e451`**. That is
+the situation `interning.test.ts` already documents twice, and both narratives are kept in the chain
+rather than one replacing the other.
+
+### `ablation-reaches-the-world-loop` fails, and it is this branch's doing
+
+    expect(ablated.population).toBe(control.population)   // expected 300 to be 298
+
+**Isolated by experiment, not inferred.** The test passes on clean `main` @ `9cfe582`. Removing only
+the `excludes` array from the two cells — changing nothing else — makes it pass on this branch.
+Restoring it makes it fail again.
+
+**Why the reference gates did not see this.** Every measurement in the section above was taken
+against the reference universe, whose ruleset is the v1 rectangle, and both halves of the pair are
+`creo`. This test is different: it permits the **full grid**, so mages actually reach
+`creo-ignem` and `creo-umbra` — nine authored nodes between them — and `destructive` fires for the
+first time in a real run.
+
+So the earlier claim in this document, *"the mechanic is live and the reference run cannot see it"*,
+was true and incomplete. The honest statement is: **no run that plays only the v1 rectangle can see
+it, and every run that permits the full grid can.** The ablation test is the first such run in the
+suite, and it is what caught this.
+
+**What it means, and the part that is genuinely open.** The test's own comment says the population
+assertion exists so a difference reads as *"a loss the arm suffered rather than an arm that died"*.
+Under `destructive`, losing a school of magic now propagates to population between two arms that
+differ only in an ablated primitive — the two arms lose different mages' schools at different ticks,
+and the demographic paths separate. That is the mechanic working; whether it should reach
+**population** is a design question, not a bug to paper over.
+
+Three possible readings, and the ruling is the author's:
+
+1. **The mechanic is correct and the test's invariant is now too strong.** Two arms that diverge in
+   knowledge will diverge in population once knowledge feeds the economy, which is what §6a wants.
+2. **`destructive` is too harsh at this magnitude.** A `refused` pair would cost nothing
+   demographically, and the shipped pair could be `refused` until the effects work lands.
+3. **The pair should not ship on live cells at all.** But `schema-constraint-liveness` forces a
+   shipped instance, so this trades one constraint for another.
+
+Nothing here is decided by this commit. The failure is left **red and documented** rather than
+worked around, because a test that changed to accommodate an unreviewed mechanic is the
+"checked box that is false" this repository has been bitten by before.
