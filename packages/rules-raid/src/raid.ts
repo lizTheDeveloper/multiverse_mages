@@ -315,7 +315,10 @@ export function openPortal(options: OpenPortalOptions): Raid {
     faults: options.faults ?? {},
   });
 
-  const terrain = generateTerrain(tuning, rng);
+  // Computed before the terrain, because the terrain generator has to know
+  // where the exit is in order to guarantee there is one. See `terrain.ts`.
+  const portal: Point = { x: floorDiv(tuning.battlefieldExtent, 2), y: 0 };
+  const terrain = generateTerrain(tuning, rng, portal);
 
   const raid: Raid = {
     attacker,
@@ -337,7 +340,7 @@ export function openPortal(options: OpenPortalOptions): Raid {
     lock: new RaidLock(),
     purse: openPurse(host.world, tuning.attackerVisStock),
     exposure: new ExposureRegister(),
-    portal: { x: floorDiv(tuning.battlefieldExtent, 2), y: 0 },
+    portal,
     maxTicks: maxEngagementTicks(engagement.raid),
     contactTick: -1,
     faults: options.faults ?? {},
