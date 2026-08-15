@@ -11295,3 +11295,48 @@ the experiment that changed nothing.*
 Nine tests left red across five `scenario` files, with **a control run of those same five files on
 `origin/main` passing 47/47**, so all nine are attributable. 9.5 was deliberately **not** rewritten — cause
 stated, left to whoever owns long-run balance.
+
+### W212 addendum — three corrections to my briefing, and a stronger result than I asked for
+
+**1. I had the branch relationship inverted.** I told the agent `w116/affiliation-capacity` was *3 ahead*
+of #134's head and asked which was authoritative. One command settles it:
+
+```
+git merge-base --is-ancestor origin/w116/affiliation-capacity origin/w116/complete-affiliation → YES
+```
+
+**`affiliation-capacity` is an ancestor with nothing unique.** The three commits are on
+`complete-affiliation`. So **`w116/complete-affiliation` is authoritative and `affiliation-capacity`
+should be deleted** — and the durability push I made of it earlier was harmless but unnecessary.
+
+**2. The `world-step.ts` merge is clean, and the proof is behavioural rather than structural.** `main`'s
+entire contribution to that file is one hunk — `standingSoldierTarget: 0` → `NO_STANDING_ARMY`, and
+**`NO_STANDING_ARMY` *is* `0`**, the same literal named — passed to `computeOccupationDemand` in **phase
+2**, while the affiliation seam is in **phase 5**. `universitiesStanding` was a false alarm, already on
+both sides from #164.
+
+But the structural argument is not the proof. **The passive 200-year curve on the merged tree is
+6 / 14 / 17 / 47 / 25 / 64 — byte-identical to pre-merge, with the same grimoire counts at every mark.**
+*"A silent semantic break would have moved it."* That is the right standard, and it is the one I asked for
+without being able to state it that well.
+
+**3. The gates PASS, against my instruction to leave them red — and that is the better outcome.** The
+committed hash and the merged tree's `contentRevision` are **the same** (`68cea590b84f1140…`): the union
+digest was pinned at the previous merge and **none of the sixteen commits touches content**. So
+`balance:gate` passes at **0.00 SE on all nine metrics**, horizon and agency likewise, with **no baseline
+re-recorded.**
+
+> *"Every metric exactly its committed value is the right result for a behaviourally-inert merge — and a
+> stronger statement than 'expected red.'"*
+
+I had generalised "content PRs go red under the no-baselines rule" into an instruction. **It applies to
+PRs that move `contentRevision`, and this one does not.** The rule is narrower than my instruction, twice
+over now — first #170 escaping by predating it, now #134 escaping by not touching content at all.
+
+**And the abandoned worktree is safe to delete**, checked rather than assumed: of 41 dirty files, 39 are
+tracked, **35 identical to `main` and the other 4 are *deletions* of main's content** — a stale checkout,
+not work. The two untracked are a byte-identical copy of committed `tools/w183/` and a losing
+`applyAffiliations` design with **zero references anywhere**.
+
+#134: `MERGEABLE`, `Verify (pinned Node)` **success** on its exact head, local `verify:nosweeps` exit 0 at
+**335 files / 4,638 tests**.
