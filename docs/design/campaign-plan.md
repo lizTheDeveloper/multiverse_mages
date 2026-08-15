@@ -13181,3 +13181,41 @@ Also found, extending the `x100` amplification method:
 `stackMagnitudes` reads a primitive's stacking rule and cap and **never its magnitude**, so an
 empty bonus list stacks to neutral. Amplifying an authored magnitude x100 cannot move a primitive
 whose bonus list nothing fills. That is why lifespan and fertility came back byte-identical.
+
+## W250 — Pricing the ending cannot work, and the reason is one sentence
+
+[executed, 2026-08-15, `w248/price-the-ending` @ 20480, `search-strategies --ticks 1350
+--seeds 4`, three search seeds — the same harness and seeds as W242]
+
+W249's retraction left one question open: the balance gate could not see the price, but W242's
+`permit-then-idle` result came from a different harness. Does a priced ending move *that*?
+
+    seed        width   margin   permit-then-idle
+    20260813    2       2        1        <- identical to unpriced
+    40260901    0      -2        2        <- identical to unpriced
+    77771234    1       1        3        <- identical to unpriced
+
+**No.** Byte-identical to W242's unpriced run on all three seeds.
+
+**And the reason is structural, not a tuning miss.** `permit-then-idle` permits the grid in the
+first stretch and then **submits nothing for the rest of the run**. It therefore holds a full
+favor pool at every tick after that, by construction. Any price it can be asked to pay, it can
+pay. A price on the ending is a tax on *spending*, and the strategy the ladder is measuring is
+the one that does not spend.
+
+So the lever is inverted: pricing the declaration **widens** the gap it was meant to close,
+penalising every strategy that funds, blesses and researches while costing the idler nothing.
+`discriminating-ascension` task 1.5 is spec-mandated, its tests pass, and it does not do what it
+was written to do.
+
+What would bite instead — stated, not taken, because it is a design decision:
+
+- **Make eligibility require having spent**, not merely having arrived. A conjunct the idler
+  cannot satisfy: prestige earned, universities completed, nodes taught rather than held.
+- **Make the canon decay without attention.** Path B already gestures at this; the passive
+  universe still passes because holding fifty-one nodes nobody reads counts as custodianship.
+- **Charge favor to *hold* eligibility**, not to declare it — an idler's full pool becomes the
+  thing being drained rather than the thing that guarantees the win.
+
+The rule: **a price only discriminates between strategies that spend.** Against a strategy whose
+whole method is not spending, any cost denominated in the currency it hoards is free.
