@@ -50,7 +50,6 @@ export {
 
 export type { CastingWeights, CastingWeightSource } from './casting.js';
 export {
-  REQUIRED_CASTING_WEIGHTS,
   affordableMageMonths,
   castingDemand,
   readCastingWeights,

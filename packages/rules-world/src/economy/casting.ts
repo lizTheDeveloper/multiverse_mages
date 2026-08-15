@@ -46,9 +46,6 @@
 import type { Fixed } from '@mm/sim-core';
 import { floorDiv, mul } from '@mm/sim-core';
 
-/** The weight ids this module reads, so the contract is checked both ways. */
-export const REQUIRED_CASTING_WEIGHTS = ['casting-vellum-per-month'] as const;
-
 /** Reads one authored `autonomy-weight.json` scalar. */
 export interface CastingWeightSource {
   autonomyWeight(id: string): Fixed;
