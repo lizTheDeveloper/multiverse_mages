@@ -353,6 +353,16 @@ async function main() {
   if (archive.shape === 'flat') {
     process.stdout.write('[search] WARNING: flat -- no wrong answers, so no right ones\n');
   }
+  // `horizon-bound` is the case this warning used to have to describe in prose,
+  // now that `shapeOf` can tell the two apart from the ascension count. The text
+  // stays, because the reader still needs to be told what to do about it.
+  if (archive.shape === 'horizon-bound') {
+    process.stdout.write(
+      `[search] WARNING: horizon-bound -- zero runs ascended anywhere at --ticks ${String(args.ticks)}, ` +
+        `and ascension-min-tick is ${ascensionMinTick}. This is not a verdict about the strategies: ` +
+        'the run ended before the win condition was reachable. Re-run longer.\n',
+    );
+  }
   if (archive.shape === 'dead') {
     // `dead` is ambiguous, and the ambiguity is the whole trap. It means either
     // "no strategy beats doing nothing" or "the run ended before anyone could
@@ -366,11 +376,14 @@ async function main() {
     // build — it rots the moment the grid or the goals change, and it would rot
     // inside the one file that reads `ascension-min-tick` out of content
     // precisely so a number could not drift from its source.
+    // Now unambiguous: reaching here means runs *did* ascend and the ladder
+    // still matched them. That is the real finding -- doing nothing is as good
+    // as playing -- and it is no longer diluted by the short-horizon case,
+    // which `horizon-bound` takes above.
     process.stdout.write(
-      `[search] WARNING: dead -- no cell beat the null ladder at --ticks ${String(args.ticks)}, ` +
-        `and zero runs ascended (ascension-min-tick is ${ascensionMinTick}). A horizon too short ` +
-        'for the win condition produces this verdict for a reason that is not about the ' +
-        'strategies; re-run longer before reading it as one.\n',
+      '[search] WARNING: dead -- runs reached the win condition and no cell beat the null ladder. ' +
+        'Playing is worth nothing against doing nothing on this pool, which is a balance result ' +
+        'and not a horizon artifact.\n',
     );
   }
   // A cell can fail to be occupied for two unrelated reasons, and printing them
