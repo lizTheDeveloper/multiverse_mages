@@ -1,0 +1,42 @@
+{
+  "sweepId": "w109-alliance-v1",
+  "kind": "full",
+  "rootSeed": 20260813,
+  "factors": [
+    {
+      "id": "foundingSpeciesMask",
+      "levels": [
+        32
+      ]
+    }
+  ],
+  "replicates": 100,
+  "agentPool": {
+    "strategies": [
+      "alliance-seeker"
+    ],
+    "assignment": "round-robin",
+    "slots": 1
+  },
+  "termination": {
+    "worldTickCap": 2400,
+    "perRunTimeoutMs": 600000
+  },
+  "metrics": [
+    "referenceGrimoires",
+    "referenceKnowledgeInstances",
+    "referenceLibraryDepth",
+    "referenceLivingMages",
+    "referenceNodesGained",
+    "referenceNodesGainedFinalQuarter",
+    "referenceNodesKnown",
+    "referencePeakPopulation",
+    "referencePopulation",
+    "referencePopulationChange"
+  ],
+  "ablation": {
+    "mode": "none",
+    "primitives": []
+  },
+  "failureThreshold": 0
+}

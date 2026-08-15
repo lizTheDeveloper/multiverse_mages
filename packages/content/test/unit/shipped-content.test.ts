@@ -64,7 +64,7 @@ describe('shipped content', () => {
       // One per action id in contracts.md §4.2, and one per magnitude the
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.
-      godCosts: 16,
+      godCosts: 17,
       godConstants: 72,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of

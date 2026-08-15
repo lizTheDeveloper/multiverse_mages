@@ -409,7 +409,56 @@ describe('contentRevision', () => {
     // — the same situation the three-branch paragraph above describes, and the
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of files.
-    expect(registry.contentRevision).toBe('e8442af2c5f91ae6f80ad9a178e0e451');
+    //
+    // 162f80bf169296d0e5fd516cc3c5257a -> 87fdff6cbf4414b584fef95bf9d4916a,
+    // when `w109` appended the seventeenth god cost — action 16, the alliance
+    // invitation. A price is in the preimage for the same reason every god
+    // constant is: two universes that disagreed about what a scholar costs
+    // would be playing different games while their revisions called them
+    // compatible. This is an *addition* rather than a value edit, so every
+    // existing price is byte-identical and a universe that never invites
+    // anybody plays exactly as it did — but the revision moves anyway, and it
+    // has to. A digest that only moved when an existing byte changed could not
+    // tell a build that knows action 16 from one that does not, and those two
+    // builds genuinely cannot replay each other's runs.
+    //
+    // Union, for the third time in this list, and the two moves above are
+    // independent: `apply-magic`'s two `autonomy-weight.json` scalars landed on
+    // `main`, this branch's seventeenth god cost landed here, and neither
+    // literal is a digest over a preimage holding both. `d4e30476` does not
+    // know action 16 exists; `87fdff6c` does not know what a mage-month of
+    // applied magic makes. This tree is the first one holding both, so a sixth
+    // value is what a digest over the union is supposed to produce — not a
+    // disagreement being settled.
+    //
+    // b63bd615c1877925b36c7b3eb7812731 -> 0dfdd5efc2c6dad07bd486a7d80c851d,
+    // when this branch merged the `main` that had meanwhile landed
+    // anti-requisites (PR #161). And so, for the fourth time in this list,
+    // neither side's literal survives: `e8442af2` is a digest over a preimage
+    // holding the exclusion pair and not the seventeenth god cost, `b63bd615`
+    // over one holding the seventeenth god cost and not the exclusion pair.
+    // This tree is the first one holding both, so a sixth value is what a
+    // digest over the union is supposed to produce -- not a disagreement being
+    // settled.
+    //
+    // MEASURED, in one direction only, and the asymmetry is worth reading.
+    // Stripping the two `excludes` arrays from `cell.json` on this tree and
+    // reloading reproduces `b63bd615...` EXACTLY, so the exclusion pair is the
+    // whole of `main`'s contribution to the move and this branch contributes
+    // none of it. The mirror probe cannot be run as a content edit: deleting the
+    // `invite-scholar` record is refused first by the schema's `minItems` and
+    // then, with that relaxed, by the `god-cost` content invariant -- "no cost
+    // is declared for action id 16" -- because `GOD_ACTION_ID_MAX` moved to 16
+    // in code on this branch. That refusal is the defect fix in the PR body
+    // working as intended (an undeclared price is a free action), so the
+    // one-sided probe is a property of the invariant, not a gap in the check.
+    //
+    // Also measured, because it is the obvious thing to assume wrongly: the
+    // schema is NOT in the preimage. Editing `god-cost.schema.json`'s
+    // `minItems` from 17 to 16 while leaving all seventeen records in place
+    // reproduces `0dfdd5ef...` byte-identically. The digest is over the content
+    // values, not over the files that constrain them.
+    expect(registry.contentRevision).toBe('0dfdd5efc2c6dad07bd486a7d80c851d');
   });
 
   it('is stable across loads of identical content', () => {

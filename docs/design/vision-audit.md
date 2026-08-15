@@ -43,9 +43,22 @@ fixture was regenerated.*
 > - **§12 — the row on grid cells beyond the v1 subset** audits a line that has since been struck
 >   as in-scope.
 >
-> **Nothing here about reachability has been superseded.** `REFERENCE_MECHANICS.raidEngagement` is
+> ~~**Nothing here about reachability has been superseded.** `REFERENCE_MECHANICS.raidEngagement` is
 > still `false` on `main` and nothing opens a portal, so every `implemented-unreached` verdict below
-> still holds against the tree. Findings are not rewritten; this note is the only addition.
+> still holds against the tree.~~
+>
+> **That paragraph is itself superseded — retracted 2026-08-15, re-verified at `08ca5368`.**
+> `REFERENCE_MECHANICS.raidEngagement` is `true` (`packages/scenario/src/executor.ts:121`),
+> `packages/scenario/src/raids.ts:423` calls `openPortal`, `packages/scenario/src/reference-universe.ts:1007`
+> supplies `portalTargets`, and `packages/scenario/package.json` lists `@mm/rules-raid`. The
+> reachability verdicts below therefore do **not** hold wholesale, and **§8 has rotted at its root**.
+> Findings are still not rewritten; rotted rows are marked in place.
+>
+> **The current statement of what of `vision.md` is wired is `docs/design/audit-vision.md`** (audited
+> at `0940061`, 2026-08-14), with `docs/design/audit-sequence.md` for what has since been closed. Its
+> caveat is carried here verbatim: **a row of this document not named in `audit-vision.md` has not
+> been cleared — it has not been checked.** The 2026-08-15 pass marked the rows those two documents
+> name and nothing else.
 
 `CLAUDE.md` states the standard this document exists to enforce: *"Work that isn't traceable to a
 section there is scope creep; sections that never ship are unmet promises."* This is the list of
@@ -335,7 +348,7 @@ caller outside `packages/rules-world/test/`, and `portalTargets` is supplied by 
 | tuned on **learn rate** | 6 | wired | `gateway.ts:421,572` → `research.ts:232`, `mul(learnRate, researchRate)`. [read] |
 | tuned on **retention** | 6 | wired | `world-step.ts:1021` → `decay.ts:74–91,205`, mastery decay each tick. [read] |
 | tuned on **fertility** | 6 | wired | `world-step.ts:955` → `carrying-capacity.ts:439`; 49,153 births in the reference run. [executed] |
-| tuned on **technique/form affinities** | 6 | **stubbed** | `affinities` is authored per species and validated at load (`packages/content/src/load.ts:938`), and no file under `rules-magic/src`, `rules-world/src` or `coordination/src` reads it. Nothing multiplies research or casting by a species' affinity for a form. [read] |
+| tuned on **technique/form affinities** | 6 | ~~**stubbed**~~ **SUPERSEDED** | ~~`affinities` is authored per species and validated at load (`packages/content/src/load.ts:938`), and no file under `rules-magic/src`, `rules-world/src` or `coordination/src` reads it. Nothing multiplies research or casting by a species' affinity for a form.~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** `packages/coordination/src/outlook.ts:67–71,123` resolves a species' `affinities` onto interned ids, `world-step.ts:900` passes `affinitiesOf` through, and `packages/rules-world/src/autonomy/outlook.ts:70–74` consumes it as target appeal. §6's seventh tuned trait is real. [read] |
 | Human — "High curiosity, high fertility, broad average aptitude" | 6 | wired, one word inaccurate | curiosity 1152, fertility 1280, empty `affinities`. `mageAptitude` 512 is second-lowest of six, against a mean near 576 — "average" reads as typical and is not. [read] |
 | Elf — "high depth ceiling, slow to learn. Deep specialists." | 6 | wired | depthCeiling 6, learnRate 640. 44 of 72 surviving mages at tick 2400 are elves — the long lifespan dominates the roster. [executed] |
 | Dwarf — "exceptional retention and scribing" | 6 | wired | retention 1536, scribeAffinity 1792 (highest), the latter feeding `scribingThroughput` (`universities/scribing.ts:96`). [read] |
@@ -352,7 +365,7 @@ caller outside `packages/rules-world/test/`, and `portalTargets` is supplied by 
 | **scribes** "copy grimoires" | 6 | wired, and unable to regrow | 1,308 books written by 17 scribes. But the labour market's demand for scribes is hardcoded — `scribingQueueDepth: 0` (`world-step.ts:474`) — so the scribe cohort can only shrink from its seed, never be replenished by need. [executed] |
 | **laborers** "build universities" | 6 | **STALE — retracted 2026-08-13** | ~~`advanceConstruction` has no caller outside `packages/rules-world/test/`.~~ It is called at `packages/coordination/src/world-step.ts:1148` via `advanceUniversities`, and has been since `9a3b6b5` (2026-08-12). The observation it supported may still hold — one university, 64 seats — but its cause is that `foundUniversity` is a **god action the reference run never takes**, not a missing function. [retracted] |
 | **students** "become the next generation of mages" | 6 | wired | `promoteMaturedStudents` (`world-step.ts:877`) gates on `maturityMonths` and promotes `floor(count × mageAptitude / fp(1024))`; 217 promotions in the reference run, and the student cohort sits at exactly the academy's 64 seats. [executed] |
-| **soldiers** "fight in raids without magic" | 6 | implemented-unreached, and the headcount is zero | `rules-raid/src/combatants.ts:89` handles soldier cohorts as combatants. In a normal run there are no soldiers at all: `standingSoldierTarget: 0` (`world-step.ts:476`) and `soldier` is excluded from `SEEDED_OCCUPATIONS` (`reference-universe.ts:133`). **Measured: 0 soldiers at tick 2400.** [executed] |
+| **soldiers** "fight in raids without magic" | 6 | ~~implemented-unreached~~ **SUPERSEDED as to reachability** | ~~`rules-raid/src/combatants.ts:89` handles soldier cohorts as combatants. In a normal run there are no soldiers at all: `standingSoldierTarget: 0` (`world-step.ts:476`) and `soldier` is excluded from `SEEDED_OCCUPATIONS` (`reference-universe.ts:133`).~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** `packages/scenario/src/raids.ts` is the caller and runs an inbound arrival process. **All three of that row's cited line numbers had rotted** — which is the cheapest available rot signal and would have caught this without reading a line of logic. The headcount claim is a measurement at `6e5ecee` and is not restated here. [executed] |
 | "A universe of pure archmages does not function" | 6 | absent | No population-mix cap, ratio or penalty exists. Worse, mages are invisible to the economy entirely: `subsistenceDemand(cohorts.totalCount())` (`world-step.ts:434,553`) sums only `POPULACE_COHORT`, so a mage eats nothing. The only friction is rate-limiting (aptitude and 64 seats), never a ratio penalty. [read] |
 
 ---
@@ -363,12 +376,12 @@ caller outside `packages/rules-world/test/`, and `portalTargets` is supplied by 
 |---|---|---|---|
 | **Populace** — "Produced by fertility, consumed by everything" | 6a | wired | Fertility → `carrying-capacity.ts:439`, gated by a logistic brake against `K`. `K` is genuinely responsive: subsistence shortfall cuts it by up to 50% (`MAX_SUBSISTENCE_PENALTY = 512`), and funded seats raise it by up to 50%. [read] |
 | populace responds to god play | 6a | wired, through two channels only | Not inert, contrary to a common reading: `K` moves with subsistence pressure and with `fundUniversity`'s seat bonus. What *is* severed is direct fertility manipulation — `deliverBirths` hardcodes `fertilityBonuses: []` (`world-step.ts:957`), so no node and no god verb can raise the birth rate. [read] |
-| **Materials** — "Buildings consume it" | 6a | implemented-unreached | Of the four claimants in `CONSUMPTION_ORDER` (`economy/materials.ts:111`), the one reachable `consumeMaterials` call hardcodes `construction: 0` and `libraryUpkeep: 0` (`world-step.ts:580–585`). `applyLibraryUpkeep` (`universities/capital.ts:271`) has no non-test caller. Two of four claimants never claim. [read] |
+| **Materials** — "Buildings consume it" | 6a | ~~implemented-unreached~~ **SUPERSEDED** | ~~Of the four claimants in `CONSUMPTION_ORDER` (`economy/materials.ts:111`), the one reachable `consumeMaterials` call hardcodes `construction: 0` and `libraryUpkeep: 0` (`world-step.ts:580–585`). `applyLibraryUpkeep` (`universities/capital.ts:271`) has no non-test caller. Two of four claimants never claim.~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** `world-step.ts:1011` passes `construction: construction.stoneOwed`, and `applyLibraryUpkeep` is called at `world-step.ts:1737` over `capital.libraries`. All four cited line numbers had rotted. [read] |
 | **Materials** — "so does every grimoire" | 6a | wired, and it binds | Scribing is paid at the desk against `materials.available()` (`gateway.ts:701`) and genuinely refuses on insufficient stock. This is the one materials claimant with teeth — and by tick 2400 the stock is **0** with a subsistence shortfall share of **986/1024**. The reference universe ends starving. [executed] |
-| "*Rego Terram* and its neighbours move this number" | 6a | stubbed | `rego-terram` is v1-enabled content with nodes carrying `resource-yield` (e.g. `rt-quarry-without-hands`, magnitude 384). `materialsProduced` accepts `resourceYieldBonuses` and its one reachable caller passes `[]` (`world-step.ts:637`). No collector gathers node effects into that array. [read] |
-| **Knowledge as capital** — "a university's output scales with the depth of its library" | 6a | implemented-unreached | `packages/rules-world/src/universities/capital.ts` is a complete, CI-tested implementation: `LIBRARY_CONTRIBUTION`, `libraryContribution()`, `contributionFor()`, and `capitalRateMultiplier()` — whose own doc comment calls it *"the one place a library's contribution reaches a rate."* All four have zero non-test callers. `libraryContribution` is called once outside tests, at `scenario/src/long-run.ts:266`, purely to *report* the number. [read] |
-| "A deep library trains better mages, who research faster, who deepen the library" — the loop closes | 6a | implemented-unreached | Half the loop runs: research and scribing genuinely deposit nodes into libraries. The other half does not: `MAGE_MONTHS_PER_TICK` is a hard `FP_ONE` (`world-step.ts:181`) whose doc comment states the absence is deliberate, and `researchMultiplierFor` is fed only by god blessings and cell emphasis (`god/effects.ts:119`). No library-depth term enters any rate. **Measured: capital contribution 32 `fp` (0.03) at tick 2400.** [executed] |
-| "That is a compounding loop, and it is the second one in the design after worship" | 6a | implemented-unreached | The worship loop compounds and is reachable (§7); the capital loop does not close. The design's stated runaway risk — *two* compounding loops feeding each other — cannot currently occur, because only one of the two exists in a normal run. [read] |
+| "*Rego Terram* and its neighbours move this number" | 6a | ~~stubbed~~ **SUPERSEDED** | ~~`materialsProduced` accepts `resourceYieldBonuses` and its one reachable caller passes `[]` (`world-step.ts:637`). No collector gathers node effects into that array.~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** `world-step.ts:1114` passes `resourceYieldBonuses: economy.resourceYield`, gathered by `packages/coordination/src/universe-effects.ts` — which is the collector this row says does not exist. [read] |
+| **Knowledge as capital** — "a university's output scales with the depth of its library" | 6a | ~~implemented-unreached~~ **SUPERSEDED** | ~~All four have zero non-test callers. `libraryContribution` is called once outside tests, at `scenario/src/long-run.ts:266`, purely to *report* the number.~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** `packages/coordination/src/capital.ts` exists precisely to join the two halves `contracts.md` §5 rule 3 forbids either package from joining; `libraryCapital` is imported at `world-step.ts:183` and called at `:724`, `contributionFor` runs through `libraryRateMultiplier` (`rules-world/src/universities/capital.ts:184`), and `applyLibraryUpkeep` at `world-step.ts:1737`. [read] |
+| "A deep library trains better mages, who research faster, who deepen the library" — the loop closes | 6a | ~~implemented-unreached~~ **SUPERSEDED** | ~~The other half does not: … No library-depth term enters any rate.~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** a library-depth term does enter the rate: `world-step.ts:1580` reads `capital.depthFor(row.universityId)` and passes it, with the species `depthCeiling`, through `libraryRateMultiplier` → `capitalRateMultiplier` for `research-rate`, `teach-rate` and `scribe-rate` alike. The **measurement** in this cell is a statement about `6e5ecee` and is not restated; `vision.md` §13 gives the current series (`0 → 336` fp). [executed] |
+| "That is a compounding loop, and it is the second one in the design after worship" | 6a | ~~implemented-unreached~~ **SUPERSEDED** | ~~the capital loop does not close … only one of the two exists in a normal run.~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** both loops now run — see the row above. Whether the pair produces a runaway is a *balance* question and remains unmeasured: `capitalSnowball` is defined at `packages/mc-harness/src/metrics-registry.ts:271` and no committed baseline carries a value or a tolerance for it (`audit-vision.md` probe P2, reproduced here: 199 metric entries, 90 distinct, none outside the `reference*` prefix). [read] |
 | "the balance harness must watch it specifically" | 6a | wired as a metric, ungated | `capitalSnowball` is registered and measured, and gated by no committed baseline. See §9. [read] |
 | "burning a rival's library is not just a loss of stored spells, it is an attack on their rate of future production" | 6a | implemented-unreached, doubly | `settleLibrary` (`rules-raid/src/consequences.ts:181`) implements per-book durability rolls and never fires. And even if it did, the second clause is void in principle: there is no rate of future production for depth to attack. [read] |
 
@@ -395,7 +408,7 @@ set, and does any shipped strategy get it *applied*?
 | 11 "fund a university" | 7 | wired, and it is the *only* way one is ever built | `fundPlan` (`:718`): slot 0 founds at `buildProgress: 0`, otherwise adds a flat `fundProgress`. `archivist` applied 283. [executed] |
 | 12 "encourage a research direction" | 7 | wired | `encouragePlan` (`:776`), magnitude derived from remaining ticks; 45 applied by `portal-rush`. [executed] |
 | 13 "rarely and ruinously — change the universe's tradition" | 7 | implemented-unreached | Never legal in any of the 8,583 tick-observations of Proof 2. [executed] |
-| 14 open portal | 7 | implemented-unreached | Never legal. `portalCandidates` returns `input.portalTargets ?? []` (`packages/agent-api/src/candidates.ts:323`) and nothing supplies it. [executed] |
+| 14 open portal | 7 | ~~implemented-unreached~~ **SUPERSEDED** | ~~Never legal. `portalCandidates` returns `input.portalTargets ?? []` and nothing supplies it.~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** `packages/scenario/src/reference-universe.ts:1007` passes `portalTargets: portalTargetIds(constants)`, and `packages/mc-harness/src/strategies.ts:1444–1445` carried the correction in-tree. `packages/server/src/index.ts:39` still declares the opposite for the multiplayer consumer — *"Nothing supplies `portalTargets`, so `openPortal` is permanently masked"* — so the two consumers differ here by declaration. [executed] |
 | 15 declare ascension | 7 | wired | Legal from ~tick 961; taken by five of eight bots. [executed] |
 | "Everything the player does costs **favor**, drawn from a regenerating pool whose regeneration scales with **worship**" | 7 | wired | `favorRegeneration` = base + worship × `favor-per-worship` (`favor.ts:80`); deducted atomically before apply (`interventions.ts:263`), ledger asserted every tick. [read] |
 | "worship — the number and devotion of mages, universities, and populace revering you" | 7 | wired | `worshipTarget` (`worship.ts:126`) reads mages, blessed mages, completed universities and populace, each saturating independently. Observed split at tick 2400: mages 2283, universities 279, populace 1936. [executed] |
@@ -421,11 +434,29 @@ set, and does any shipped strategy get it *applied*?
 
 ## §8 — Raids
 
-The whole section rests on one fact, so it is stated once: **`packages/rules-raid` is an orphan
+> ### ⚠ Superseded at the root — 2026-08-15, re-verified at `08ca5368`
+>
+> **This section's founding fact is false, and it is the fact the whole section was built on.**
+> `packages/scenario/package.json` lists `@mm/rules-raid`, `packages/scenario/src/raids.ts:423`
+> calls `openPortal`, and `REFERENCE_MECHANICS.raidEngagement` is `true`
+> (`packages/scenario/src/executor.ts:121`). Raids fire — from god action 14 and from an inbound
+> arrival process — and the engine runs to termination.
+>
+> **Every row of the table below, and this section's contribution to §3, to §4a's cast/cost-hook
+> verdicts, to §5's theft and destruction rows, and to ranked gap #1, is stated against a tree that
+> no longer exists.** Most of the *conclusions* still hold — nothing yet fights and no raider comes
+> home — but each holds for a different reason now, and the reason is the finding. Do not carry an
+> `implemented-unreached` verdict out of this section.
+>
+> Current statement: `docs/design/audit-vision.md`'s §8 row and its ranked gap 3, *"§8's raids fire
+> and nothing happens inside them"* — zero combat attempts on either path, withdrawal opening
+> 2,418–3,518 ticks into raids that end by tick 149.
+
+~~The whole section rests on one fact, so it is stated once: **`packages/rules-raid` is an orphan
 package.** Neither `packages/coordination/package.json` nor `packages/scenario/package.json` lists
 `@mm/rules-raid`, and every `from '@mm/rules-raid'` import in the tree is inside
 `packages/rules-raid/test/`. 4,525 lines of source and 1,837 lines of test, zero lines reachable
-from `makeReferenceExecutor()`. No raid has ever fired.
+from `makeReferenceExecutor()`. No raid has ever fired.~~
 
 | vision claim | § | status | evidence |
 |---|---|---|---|
@@ -448,7 +479,7 @@ from `makeReferenceExecutor()`. No raid has ever fired.
 | vision claim | § | status | evidence |
 |---|---|---|---|
 | "**Ascension** is the terminal condition: a summit reached — the deepest node of a cell, or a civilization that has held its knowledge intact across enough eras" | 8a | wired, both paths | `qualifyingPath` (`packages/coordination/src/god/ascension.ts:121`) checks apotheosis then canon. Both fire: `balance/baselines/balance-gate-ascension-v1.baseline.json` records 12 apotheosis and 12 canon of 32 runs. [baseline] Five of eight bots ascended in Proof 2. [executed] |
-| "The ascension condition must be reachable but not routine … Target band: 5–20%" | 8a | **contradicted** | The committed baseline records `ascensionRate` = **0.75**, and its own note calls this *"far above `contracts.md` §7's declared 0.05–0.20 band — a finding, not a target."* [baseline] Independently, 5 of 8 bots (0.63) ascended in Proof 2. [executed] |
+| "The ascension condition must be reachable but not routine … Target band: 5–20%" | 8a | **contradicted** (conclusion stands; **evidence superseded**) | ~~The committed baseline records `ascensionRate` = **0.75**~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** `ascensionRate` appears in **no** committed baseline. Probe reproduced here over all four files under `balance/baselines/`: 199 metric entries, 90 distinct, and the set of ids outside the `reference*` prefix is empty. The conclusion is now carried by better evidence — `openspec/changes/discriminating-ascension/proposal.md`'s *"`uniform-random-legal` ascends 10 of 10 runs at 2400 ticks while every deliberate strategy ascends 0 of 10"* — and citing the old baseline would cite a file that no longer says it. [baseline] |
 | ascension is a *summit*, i.e. a measure of play | 8a | **contradicted** | `POOL_BUILD_LIMITS['ascension-is-passive']` (`packages/mc-harness/src/strategies.ts:1066`) states it: path A gates on `worldTick ≥ 600` and `worshipTier ≥ 4`, and worship accrues from headcount whether or not the god acts, so *"the path opens by passive accumulation around tick 700 … at the same 51 nodes known that `passive-control` reaches doing nothing."* Confirmed: eligibility opened at tick 961 for `passive-control`, which had taken zero actions. Ascension currently measures the clock. [executed] |
 | "**Prestige carries forward.** Ascending closes a universe and opens a new one, seeded with legacy drawn from what the last one achieved." | 8a | implemented-unreached | `legacyGrant`, `carriedPrestige` and `legacyBudget` (`ascension.ts:268–341`) are complete, tested, and have **zero non-test callers**. Nothing composes a next universe from a prior one. `reference-universe.ts:282` always seeds `prestige: 0`. This is an entire cross-run feature behind no call site. [read] |
 | "Prestige must not compound without bound across runs" | 8a | stubbed | The `PRESTIGE_CAP` clamp and the loader-checked identity `cap × (1 − retention) == earn-max` are real; nothing ever exercises them. [read] |
@@ -488,7 +519,7 @@ That check is real and works. What is missing is the other half: nothing gates t
 | `worshipSnowball` | ✔ | measured | ✘ | ✘ — §7 declares ≤ 0.35 and p95:p50 ≤ 3:1 |
 | `capitalSnowball` | ✔ | measured | ✘ | ✘ |
 | `raidLengthDistribution` | ✔ | `unavailable: mechanic-absent` | ✘ | ✘ |
-| `ascensionRate` | ✔ | measured — **0.75** | ✘ | ✘ — §7 declares 5–20% |
+| `ascensionRate` | ✔ | ~~measured — **0.75**~~ **not in any committed baseline at `08ca5368`** (see §8a) | ✘ | ✘ — §7 declares 5–20%; `metrics-registry.ts:318` pins the band as *"reported not enforced"* |
 | `prestigeAdvantage` | ✔ | `unavailable: **no-observations**` | ✘ | ✘ — §7 declares < 60% |
 | `illegalActionRate` | ✔ | measured | ✘ | ✘ |
 | `inboundRaidTempoLoss` | ✔ | `unavailable: mechanic-absent` | ✘ | ✘ — §7 names a threshold and no number exists |
@@ -532,7 +563,7 @@ than they look, and all three are first-party and measured:
 | "TypeScript monorepo" | 10 | wired | `packages/*` workspace. [read] |
 | "A pure, dependency-free simulation core — no I/O, no floats in the rules path, seeded PRNG only" | 10 | wired | `scripts/check-purity.mjs` enforces zero third-party runtime deps and the AGPL header across eight packages, and runs in `verify`. [read] |
 | "consumed identically by the Monte Carlo harness …" | 10 | wired | `mc-harness` reaches the core only through `@mm/agent-api`. [read] |
-| "… the Electron client, and the authoritative multiplayer server" | 10 | absent | **No `electron-client` package. No `pvp-server` package.** Both are `openspec list` rows with no tasks. Until a second consumer exists, "consumed identically" is untested by construction. [read] |
+| "… the Electron client, and the authoritative multiplayer server" | 10 | absent → **half superseded** | ~~**No `electron-client` package. No `pvp-server` package.** Both are `openspec list` rows with no tasks.~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** `packages/server` exists and `openspec/changes/pvp-server` is **33/41**, so a second consumer does exist — and *"consumed identically"* is now falsifiable and false in one action bit: `packages/server/src/index.ts:39` masks `openPortal` permanently while `scenario` supplies `portalTargets`. The `electron-client` half holds, and holds harder than stated: that change has no `tasks.md` at all. [read] |
 | "Determinism is enforced by golden-replay tests" | 10 | wired | Golden fixtures and `goldens:regen` exist; deterministic hash reproduced across runs of Proof 1 (`3a00865d721b377c`). [executed] |
 | "Written so the hot loop could be ported to Rust" | 10 | stubbed | An aspiration with no artifact. [read] |
 | "Python RL bridge over JSON-over-stdio, staged for later" | 10 | wired (interface only) | `packages/gym-bridge/python/mm_gym/*` plus the TS side; no training loop, no torch. Matches §12's "the interface ships; the training does not". [read] |
@@ -582,7 +613,7 @@ is not the problem, the Status column is.
 | question | vision says | audit finds |
 |---|---|---|
 | "How many mages does a mature universe hold?" | answered — 88 mages / 18,713 populace | **Re-measured here: 72 mages / 18,417 populace at tick 2400.** Same shape, slightly lower; the doc's figure is not reproduced exactly on this commit and should be restated with its seed and options. The diagnosis holds: the roster is capped by the founding academy's 64 student seats, and no second university is ever founded. [executed] |
-| "Do universities declare a specialization?" | resolved: no, generic capacity | Holds. `packages/rules-world/src/universities/profile.ts:23` carries a conformance check rejecting any specialization field. The doc's own caveat — "resolved" is not "demonstrated" — is confirmed sharply: **library depth 2 distinct nodes against 1,308 books**, because `chooseTarget` orders candidates cheapest-first (`packages/rules-world/src/autonomy/select.ts:107`) and every scribe copies the same cheapest thing. [executed] |
+| "Do universities declare a specialization?" | resolved: no, generic capacity | Holds. `packages/rules-world/src/universities/profile.ts:23` carries a conformance check rejecting any specialization field. ~~The doc's own caveat — "resolved" is not "demonstrated" — is confirmed sharply: **library depth 2 distinct nodes against 1,308 books**, because `chooseTarget` orders candidates cheapest-first and every scribe copies the same cheapest thing.~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** **this is the figure `CLAUDE.md` records as having cost two agents an investigation each.** It was retracted at the §6 "specialization actually emerging" row on 2026-08-13 and at neither of its other two occurrences; both are now marked. `vision.md` §13 gives the current figure — **15 books over a library depth reaching 36 distinct nodes**, with effective capital contribution a curve `0 → 336` fp. The caveat that survives is the narrower one: the reference universe holds **one** university, so what is shown is a library that specializes, not two that specialize differently. [executed] |
 | pacing (world year in real seconds; raid length) | open | still open |
 | prestige carry-forward | open, deferred to `god-agency` | still open — and now blocked behind an entire unreached subsystem |
 | which 3×4 make v1 | deferred to `knowledge-model` | answered: intellego/perdo/rego × mentem/terram/limen/nomen, `rego-limen` included |
@@ -658,7 +689,15 @@ Impact means: *how much of the game's stated fantasy is unavailable because of t
 gives the smallest change that would wire it and who should own it. Where a gap needs a design
 decision, the decision is **named, not made**.
 
-### 1. No raid has ever fired — `rules-raid` is an orphan package
+### 1. ~~No raid has ever fired — `rules-raid` is an orphan package~~
+
+> **⚠ Superseded 2026-08-15, re-verified at `08ca5368` — the headline is false.** `scenario` depends
+> on `@mm/rules-raid`, `raids.ts:423` calls `openPortal`, `reference-universe.ts:1007` supplies
+> `portalTargets`, and `REFERENCE_MECHANICS.raidEngagement` is `true`. Both halves of the "smallest
+> change" below have been taken: the package is linked and a portal target exists (a synthetic rival
+> stand-in, `packages/scenario/src/rival-universe.ts`). **What is still unmet is everything §8 says a
+> raid is *for*** — zero combat attempts occur on either path and no raider comes home. Current
+> statement: `docs/design/audit-vision.md` ranked gap 3.
 
 *Costs:* the whole of §3 and §8; §4a's `cast` and `cost` hooks; §5's theft and the destruction
 path; §7's `raider` and `warden` roles; §7a's entire raid-scale half; four of §7's twelve metrics.
@@ -676,7 +715,17 @@ chooses, (a) alone changes nothing.
 *Owner:* **W8** (raids + destruction path) for (a). The decision in (b) belongs to whoever owns
 `contracts.md` §1.1 — arguably W10 (server contracts), and it should be settled before W8 finishes.
 
-### 2. Laborers build nothing; a university exists only if the god pays for it brick by brick
+### 2. ~~Laborers build nothing; a university exists only if the god pays for it brick by brick~~
+
+> **⚠ Superseded 2026-08-15, re-verified at `08ca5368`.** This gap was **not** retracted alongside
+> its own §6 table rows on 2026-08-13 and has read as live ever since. `advanceConstruction` is
+> imported at `world-step.ts:148` and called at `:1302` with `buildRateBonuses: input.buildRateBonuses`
+> fed from `economy.buildRate` (`:986`), which is node-authored `build-rate` gathered by
+> `universe-effects.ts`; `world-step.ts:1011` charges `construction: construction.stoneOwed` against
+> the stone stock. Labour, materials and `build-rate` are all involved. The committed
+> `balance-gate-ascension-v1.baseline.json` `notes` field states it carefully because the sloppy
+> version has misled several readers: *"`advanceConstruction` and `applyLibraryUpkeep` both have
+> production callers in `world-step.ts` and run every tick, so construction is NOT inert."*
 
 *Costs:* §6's "laborers build universities"; §6a's materials → buildings loop; §4's `build-rate`
 worked example; and, downstream, the mage population itself — the zero-input reference run ends
@@ -698,7 +747,14 @@ material charging and its `buildRateBonuses` input all already exist.
 `universities` and `economy`. It is the highest-impact gap that currently has no assigned
 workstream.
 
-### 3. The knowledge-capital loop does not compound
+### 3. ~~The knowledge-capital loop does not compound~~
+
+> **⚠ Superseded 2026-08-15, re-verified at `08ca5368`.** The loop closed, and the fix was not the
+> one proposed below: rather than multiplying `MAGE_MONTHS_PER_TICK`, `packages/coordination/src/capital.ts`
+> was added as the coordinating layer that joins the two halves `contracts.md` §5 rule 3 forbids
+> either package from joining. `libraryCapital` is called at `world-step.ts:724`; `world-step.ts:1580`
+> reads `capital.depthFor(...)` and routes it through `libraryRateMultiplier`. Whether it *runs away*
+> is a separate, still-unanswered question — `capitalSnowball` is defined and gated on nothing.
 
 *Costs:* §6a's second compounding loop, which the vision calls "the consequential one". A deep
 library does not train better mages, so nothing feeds back. Measured: capital contribution 32 `fp`
@@ -713,7 +769,18 @@ the multiplier's shape and cap are**, which is a balance decision, not a wiring 
 
 *Owner:* **W7** (knowledge-capital loop + teaching).
 
-### 4. Only one of sixteen effect primitives actually reads its authored magnitude
+### 4. ~~Only one of sixteen effect primitives actually reads its authored magnitude~~
+
+> **⚠ Superseded 2026-08-15, re-verified at `08ca5368` — but only partly, and the residue is the
+> useful part.** `gatherEffects` **is** called: imported at `packages/coordination/src/universe-effects.ts:123`,
+> called at `:330`. It does not appear among the 125 pinned findings of
+> `scripts/reachability-baseline.json`, which is the independent confirmation. **Three of sixteen
+> primitives are node-driven now, not one:** `resource-yield` and `build-rate` through
+> `ECONOMIC_PRIMITIVES` (`universe-effects.ts:183`) into `world-step.ts:1114` and `:986`, plus
+> `worship-yield`, which still bypasses `permits()` (contradiction 1 stands). Still hardcoded empty
+> at this ref: `fertilityBonuses: []` (`world-step.ts:1849`) and `scribeRateBonuses: []` (`:2017`).
+> The eight raid-locked primitives are still raid-locked. **The instruction below is now the wrong
+> one** — the gatherer is wired; what is missing is the two remaining bonus lists.
 
 *Costs:* §4's "Balance still runs on primitives" and the entire content-drives-behaviour promise.
 `gatherEffects` (`packages/rules-magic/src/effects/gather.ts:96`) — documented as the single
@@ -748,7 +815,10 @@ driver is not obviously part of a per-run executor.
 
 *Costs:* §8a's "reachable but not routine" and, transitively, every Monte Carlo comparison between
 strategies — if all winners declare within a few dozen ticks of each other, a sweep cannot
-attribute a win to a strategy. Measured 0.75 against a declared 5–20% band.
+attribute a win to a strategy. ~~Measured 0.75 against a declared 5–20% band.~~ **SUPERSEDED 2026-08-15, re-verified at `08ca5368`:** the
+0.75 came from a committed baseline that no longer carries `ascensionRate` at all (see §8a). The
+conclusion stands on `openspec/changes/discriminating-ascension`, which is **0/38** and carries no
+roadmap row.
 
 *Smallest change:* none that is purely mechanical. The gate is `worldTick ≥ 600 ∧ worshipTier ≥ 4`,
 and worship accrues from headcount whether or not the god acts. Making it depend on play is a
@@ -792,8 +862,18 @@ complete — so it needs a follow-up change rather than an in-flight workstream.
 ### 9. Scribing copies the cheapest thing, so no library ever differentiates
 
 *Costs:* §6's "specialization is emergent" and §6a's "burning a rival's library is an attack on
-their rate of future production". Measured: **2 distinct nodes across 1,308 books**. There is
-nothing distinctive to burn.
+their rate of future production". ~~Measured: **2 distinct nodes across 1,308 books**. There is
+nothing distinctive to burn.~~
+
+> **⚠ Superseded 2026-08-15, re-verified at `08ca5368` — the third and last occurrence of the
+> figure `CLAUDE.md` names as having cost two agents an investigation each.** Retracted at the §6
+> "specialization actually emerging" row on 2026-08-13; the §13 row and this gap were left asserting
+> it in the present tense for four days. `vision.md` §13 gives the current figure: **15 books over a
+> library depth reaching 36 distinct nodes**, after `compareTargets` was made to order scribing
+> candidates novel-first and library upkeep was charged per instance while capital pays per distinct
+> node. The surviving gap is narrower and is stated in `vision.md` itself: the reference universe
+> holds one university, so **several** libraries that differ from each other is still not
+> demonstrated.
 
 *Smallest change:* `chooseTarget`/`compareTargets` (`packages/rules-world/src/autonomy/select.ts:107`)
 orders candidates cheapest-first, node id second, for every knowledge goal. Adding any
@@ -829,10 +909,16 @@ oracle at the top of this document — not when a function exists.
 
 **Gaps**
 
-- [ ] G1 — `@mm/rules-raid` linked into a normal run, and one raid fires end to end · **W8**, blocked on a §1.1 decision
-- [ ] G2 — `advanceConstruction` called from the world tick; laborers and materials build universities · **unowned** (`mages-and-species`)
-- [ ] G3 — library depth multiplies a research/teach/scribe rate; the capital loop closes · **W7**, blocked on a balance decision
-- [ ] G4 — `gatherEffects` called; a node's authored primitive magnitude moves a number · **W7** (seam), needs a hand-off note
+> **⚠ Three boxes were ticked by the tree and not by anyone here — 2026-08-15, re-verified at
+> `08ca5368`.** They are marked `[x]` below with the call site that closes them. **G1 is deliberately
+> *not* ticked** — half of it is closed and the tick-off rule at the top of this list is that a box is
+> ticked when the claim it names is wired, not when a function exists. Every unmarked box other than
+> G1 was **not** re-checked in that pass and is not evidence of anything.
+
+- [ ] G1 — `@mm/rules-raid` linked into a normal run, and one raid fires end to end · **the linkage half is closed** (`scenario/package.json`; `raids.ts:423` calls `openPortal`); **the claim is not** — zero combat attempts on either path and no raider comes home, so nothing goes end to end. See `audit-vision.md` ranked gap 3
+- [x] G2 — `advanceConstruction` called from the world tick; laborers and materials build universities · `world-step.ts:1302`, with `construction: construction.stoneOwed` at `:1011`
+- [x] G3 — library depth multiplies a research/teach/scribe rate; the capital loop closes · `capital.ts` → `world-step.ts:724`, `:1580`
+- [x] G4 — `gatherEffects` called; a node's authored primitive magnitude moves a number · `universe-effects.ts:330`; `resource-yield` and `build-rate` only — `fertilityBonuses` and `scribeRateBonuses` are still `[]`
 - [ ] G5 — prestige carried from a terminated run into the next universe · **W6**, blocked on a "where does the driver live" decision
 - [ ] G6 — `ascensionRate` gated in CI against §7's 5–20% band · **W6**
 - [ ] G7 — `deps.store`/`deps.acquire` re-resolved from the live `traditionId`, and `traditionPlan` calls `changeTradition` · **unowned**
