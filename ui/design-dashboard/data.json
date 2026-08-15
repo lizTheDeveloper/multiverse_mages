@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
+    "contentRevision": "b63bd615c1877925b36c7b3eb7812731",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -14,7 +14,7 @@
       "traditions": 3,
       "primitives": 16,
       "territories": 5,
-      "godCosts": 16,
+      "godCosts": 17,
       "godConstants": 72,
       "raidConstants": 46,
       "autonomyWeights": 38
@@ -1954,14 +1954,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "c1eef88c4f7d14d54e609ed44449c721c2fae32905880d1412db6cd1b5520b68",
-        "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
+        "fileSeal": "5df32efc5c542935068aa542c0290f5f5bacdc34e3dea2ed1e6915ed84be8687",
+        "contentRevision": "b63bd615c1877925b36c7b3eb7812731",
         "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
         "armCount": 0,
         "arms": [],
-        "rationale": "PR #72 (w70/opening-square) appends RNG_STREAM.openingSquare = 12 to the stream registry, which moves canonicalHash(RNG_STREAM) from 80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab to 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9. gate.ts treats provenance.rngRegistryHash as a block-level refusal, so all three gates report baseline-invalid before reading a metric. A HASH CANNOT DISTINGUISH APPENDED FROM RENUMBERED -- that is the real finding and it will recur on every future stream addition; fixing the baseline format so an appended stream is distinguishable is its own change and is NOT attempted here. The repository owner authorised this hash refresh for PR #72 specifically. NO BEHAVIOUR CHANGED: resolveOpeningSquare's default path (openingTechniqueCount = openingFormCount = 0) returns v1RulesetAxes(registry) and is deliberately draw-free, so the reference universe is byte-for-byte today's universe, and no committed sweep sets either count. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. THIS FILE: all 9 metric rows were already at delta 0.00000 against the superseded baseline on the merged tree (verify:nosweeps exit 0, 4473/4473 tests). This regeneration is provenance-only: 0 of 9 values moved and 0 of 9 tolerances moved.",
+        "rationale": "Provenance only, and NOTHING MOVED, re-verified against main's own committed baselines after merging origin/main at 8d2159f. The seventeenth god-cost record -- action 16, inviteScholar -- moves provenance.contentHash from d4e3047657b4fa8a1a74e1d52f9f5c86 to b63bd615c1877925b36c7b3eb7812731, and gate.ts treats that key as a block-level refusal before it reads a metric, so this file had to be re-recorded whether or not any number moved. NO NUMBER MOVED. Measured on the merged tree before regenerating: balance-gate-v1 9 of 9 rows at delta 0.00000, balance-gate-horizon-v1 10 of 10 at delta 0.00000, balance-gate-agency-v1 90 of 90 at delta 0.00000 -- 109 of 109 against main's baselines at 8d2159f, with baseline-invalid on contentHash the only finding in any of the three. This confirms the prediction docs/design/baseline-decisions-2026-08-14.md made for this branch: if no gate strategy exercises action 16, a re-run on the rebased tree reproduces main's values exactly and the regeneration is again provenance-only. It does. Three independent checks say why: auditPool on this tree, with action 16 forced into every audited set and each run checked against an untouched one by snapshotHash, reports action 16 legal on 0 of 60 and 0 of 240 ticks for all fourteen pool strategies including uniform-random-legal, the only gate strategy that samples the legal set; it first becomes legal at world tick 276 under passive play, past both gate horizons. Forcing invitableSpecies empty reproduces the agency gate byte for byte across all 90 comparisons. And main added NO content data between this branch's merge base 7694528 and 8d2159f, so b63bd615 is the same hash this branch measured before the merge. provenance.rngRegistryHash is 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9 on both sides, unchanged by this branch -- the openingSquare stream is main's, from PR #72. NO RNG STREAM was added here, NO WORLD SCHEMA REVISION was needed, NO GOLDEN FIXTURE WAS REGENERATED, and balance-gate-ascension-v1 is deliberately untouched. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. The universe remains degenerate in the ways the first note records.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2073,14 +2073,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "ee6ebcab5bdb8f1a85b00e52164b88c6d2ec785450c2300b320f4b669ecc1fa6",
-        "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
+        "fileSeal": "cfa31e48f5e6501b4bb04c9e96d66e8e83574da491976f437d9104dadb50d436",
+        "contentRevision": "b63bd615c1877925b36c7b3eb7812731",
         "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
         "armCount": 0,
         "arms": [],
-        "rationale": "PR #72 (w70/opening-square) appends RNG_STREAM.openingSquare = 12 to the stream registry, which moves canonicalHash(RNG_STREAM) from 80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab to 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9. gate.ts treats provenance.rngRegistryHash as a block-level refusal, so all three gates report baseline-invalid before reading a metric. A HASH CANNOT DISTINGUISH APPENDED FROM RENUMBERED -- that is the real finding and it will recur on every future stream addition; fixing the baseline format so an appended stream is distinguishable is its own change and is NOT attempted here. The repository owner authorised this hash refresh for PR #72 specifically. NO BEHAVIOUR CHANGED: resolveOpeningSquare's default path (openingTechniqueCount = openingFormCount = 0) returns v1RulesetAxes(registry) and is deliberately draw-free, so the reference universe is byte-for-byte today's universe, and no committed sweep sets either count. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. THIS FILE: all 10 metric rows were already at delta 0.00000 against the superseded baseline on the merged tree. This regeneration is provenance-only: 0 of 10 values moved and 0 of 10 tolerances moved.",
+        "rationale": "Provenance only, and NOTHING MOVED, re-verified against main's own committed baselines after merging origin/main at 8d2159f. The seventeenth god-cost record -- action 16, inviteScholar -- moves provenance.contentHash from d4e3047657b4fa8a1a74e1d52f9f5c86 to b63bd615c1877925b36c7b3eb7812731, and gate.ts treats that key as a block-level refusal before it reads a metric, so this file had to be re-recorded whether or not any number moved. NO NUMBER MOVED. Measured on the merged tree before regenerating: balance-gate-v1 9 of 9 rows at delta 0.00000, balance-gate-horizon-v1 10 of 10 at delta 0.00000, balance-gate-agency-v1 90 of 90 at delta 0.00000 -- 109 of 109 against main's baselines at 8d2159f, with baseline-invalid on contentHash the only finding in any of the three. This confirms the prediction docs/design/baseline-decisions-2026-08-14.md made for this branch: if no gate strategy exercises action 16, a re-run on the rebased tree reproduces main's values exactly and the regeneration is again provenance-only. It does. Three independent checks say why: auditPool on this tree, with action 16 forced into every audited set and each run checked against an untouched one by snapshotHash, reports action 16 legal on 0 of 60 and 0 of 240 ticks for all fourteen pool strategies including uniform-random-legal, the only gate strategy that samples the legal set; it first becomes legal at world tick 276 under passive play, past both gate horizons. Forcing invitableSpecies empty reproduces the agency gate byte for byte across all 90 comparisons. And main added NO content data between this branch's merge base 7694528 and 8d2159f, so b63bd615 is the same hash this branch measured before the merge. provenance.rngRegistryHash is 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9 on both sides, unchanged by this branch -- the openingSquare stream is main's, from PR #72. NO RNG STREAM was added here, NO WORLD SCHEMA REVISION was needed, NO GOLDEN FIXTURE WAS REGENERATED, and balance-gate-ascension-v1 is deliberately untouched. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. The universe remains degenerate in the ways the first note records.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2203,8 +2203,8 @@
         "runCount": 64,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "e6557ae19898d1f4a0189a1d8b27e7ba6af850b6180310250b751c8d8609b8c5",
-        "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
+        "fileSeal": "bcbf5e3358a5538c5efe6da462fef675ca0a7e686beb0fbcae5571d9194f5d7e",
+        "contentRevision": "b63bd615c1877925b36c7b3eb7812731",
         "configurationHash": "1b73f7e27b0bf2eb582d9094c5747ebd29663c6f5991847ea2178fccd3304b28",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
@@ -2219,7 +2219,7 @@
           "uniform-random-legal",
           "worship-maximizer"
         ],
-        "rationale": "Universities own their staff: world-step.ts phase 2a creates UNIVERSITY_STAFF link rows every tick and scribeThroughputFor reads this university staff instead of the universe whole scribe pool. The movement in this file is NOT the scribing rule. The discriminating control was run: a build that keeps assignStaff and staffingIndex, so the link entities are still allocated, and reverts ONLY scribeThroughputFor to the old global-pool loop reproduces the treatment EXACTLY, metric for metric, on all seven regressed rows and every passing row. So all of the movement is entity-handle re-allocation: contracts.md section 6 splits the RNG per entity handle, and allocating a new row shifts every handle allocated after it, which re-rolls every handle-keyed draw in the run. Corroborated by construction: the reference universe has exactly ONE university, where owning every cohort and sharing the universe pool are the same arithmetic, and a seeded 36-tick A/B at one university gives 142 books on both builds. Four of the seven rows are denial-warden alone and every regressed cell has a tolerance far narrower than the same metric family elsewhere (0.38 to 15.75 here against 20 to 120 on other strategies), which is the signature of a low-variance cell that a re-roll clears trivially. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. The universe remains degenerate in the ways the first note records.",
+        "rationale": "Provenance only, and NOTHING MOVED, re-verified against main's own committed baselines after merging origin/main at 8d2159f. The seventeenth god-cost record -- action 16, inviteScholar -- moves provenance.contentHash from d4e3047657b4fa8a1a74e1d52f9f5c86 to b63bd615c1877925b36c7b3eb7812731, and gate.ts treats that key as a block-level refusal before it reads a metric, so this file had to be re-recorded whether or not any number moved. NO NUMBER MOVED. Measured on the merged tree before regenerating: balance-gate-v1 9 of 9 rows at delta 0.00000, balance-gate-horizon-v1 10 of 10 at delta 0.00000, balance-gate-agency-v1 90 of 90 at delta 0.00000 -- 109 of 109 against main's baselines at 8d2159f, with baseline-invalid on contentHash the only finding in any of the three. This confirms the prediction docs/design/baseline-decisions-2026-08-14.md made for this branch: if no gate strategy exercises action 16, a re-run on the rebased tree reproduces main's values exactly and the regeneration is again provenance-only. It does. Three independent checks say why: auditPool on this tree, with action 16 forced into every audited set and each run checked against an untouched one by snapshotHash, reports action 16 legal on 0 of 60 and 0 of 240 ticks for all fourteen pool strategies including uniform-random-legal, the only gate strategy that samples the legal set; it first becomes legal at world tick 276 under passive play, past both gate horizons. Forcing invitableSpecies empty reproduces the agency gate byte for byte across all 90 comparisons. And main added NO content data between this branch's merge base 7694528 and 8d2159f, so b63bd615 is the same hash this branch measured before the merge. provenance.rngRegistryHash is 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9 on both sides, unchanged by this branch -- the openingSquare stream is main's, from PR #72. NO RNG STREAM was added here, NO WORLD SCHEMA REVISION was needed, NO GOLDEN FIXTURE WAS REGENERATED, and balance-gate-ascension-v1 is deliberately untouched. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. The universe remains degenerate in the ways the first note records.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 309,
+    "productionFileCount": 310,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2615,7 +2615,7 @@
       },
       {
         "file": "packages/coordination/src/god/interventions.ts",
-        "line": 1047,
+        "line": 1187,
         "name": "tierDerivedValues",
         "kind": "function"
       },
@@ -3071,13 +3071,13 @@
       },
       {
         "file": "packages/scenario/src/long-run.ts",
-        "line": 573,
+        "line": 576,
         "name": "longRunLines",
         "kind": "function"
       },
       {
         "file": "packages/scenario/src/long-run.ts",
-        "line": 516,
+        "line": 519,
         "name": "longestOccupationAlternation",
         "kind": "function"
       },
@@ -3293,7 +3293,7 @@
         "id": "legacy-reference-tick",
         "field": "legacyReferenceTick",
         "file": "packages/coordination/src/god/constants.ts",
-        "line": 296
+        "line": 305
       }
     ],
     "constantsBehindDeadCode": [
