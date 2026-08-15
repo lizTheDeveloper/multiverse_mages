@@ -96,6 +96,7 @@ import {
   effectivePreferences,
   runEpisode,
 } from '@mm/mc-harness';
+import type { CandidateLists } from '@mm/agent-api';
 import { ACTION_SPACE_SIZE, GOD_ACTION, agentRng, createSession, isLegal } from '@mm/agent-api';
 import type { GodTickReport, WorldStepReport } from '@mm/coordination';
 
@@ -453,12 +454,18 @@ function auditPolicy(
   into: Counters,
 ): SlotPolicy {
   let round = 0;
-  return (observation: Float64Array, mask: Uint8Array) => {
+  return (observation: Float64Array, mask: Uint8Array, _slot: number, candidates: CandidateLists) => {
     for (let action = 0; action < ACTION_SPACE_SIZE; action += 1) {
       if (isLegal(mask, action)) into.legal[action] = (into.legal[action] ?? 0) + 1;
     }
 
-    const preferences = effectivePreferences(definition, { observation, mask, round, context });
+    const preferences = effectivePreferences(definition, {
+      observation,
+      mask,
+      round,
+      candidates,
+      context,
+    });
     round += 1;
 
     // Listed is per *tick*, not per entry: a strategy that names one verb twice
@@ -571,7 +578,7 @@ export function auditStrategy(
     // tick's. The final tick is drained after the episode, below.
     drainReport();
     drainWorld();
-    const submission = tallying(observation, mask, slot);
+    const submission = tallying(observation, mask, slot, session.candidates());
     // A `SlotPolicy` may answer with a bare action id, which §4.2 reads as slot
     // 0 — for action 11 that *is* "found a new one", so the bare form counts as
     // a founding submission rather than being dropped.

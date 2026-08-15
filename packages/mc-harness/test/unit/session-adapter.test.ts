@@ -249,6 +249,7 @@ describe('the episode loop drives the adapted session', () => {
       reset: (runSeed: number, config: ScenarioConfig) => stuck.reset(runSeed, config),
       observe: () => stuck.observe(),
       legalActions: () => stuck.legalActions(),
+      candidates: () => stuck.candidates(),
       submit: (action: Action) => {
         stuck.received.push(action);
         return { admitted: true, observation: stuck.observe(), status: 'running' as const };

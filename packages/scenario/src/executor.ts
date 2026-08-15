@@ -313,6 +313,7 @@ function recordingSession<TConfig>(
         return observation;
       },
       legalActions: () => inner.legalActions(),
+      candidates: () => inner.candidates(),
       submit: (actionId: number, parameter?: number) => {
         inner.submit(actionId, parameter);
       },

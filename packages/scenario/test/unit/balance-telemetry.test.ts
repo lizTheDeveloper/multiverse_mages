@@ -299,12 +299,26 @@ describe('the §7 per-run metrics reach a run record', () => {
     async () => {
       // The can-it-move check, and the reason it needs two strategies: the
       // passive control submits only no-ops, so its rejection rate is 0 for a
-      // real reason and a zero there proves nothing on its own. `portal-rush`
-      // asks for action 14 whether or not it can afford one.
+      // real reason and a zero there proves nothing on its own.
+      //
+      // The positive control **was** `portal-rush`, on the reasoning that it
+      // "asks for action 14 whether or not it can afford one". That was true and
+      // it was a defect: it rotated its slot index over `candidateSlotCount`'s
+      // declared pin rather than over the live candidate list, so roughly half
+      // its portal submissions named a target that did not exist. Once the lists
+      // reach the strategies its rate is **zero**, and a probe that only worked
+      // because the thing it probed was broken is not a probe.
+      //
+      // `uniform-random-legal` is the principled replacement. It draws its slot
+      // uniformly *by design* — `strategies.ts` says changing that distribution
+      // "is a design decision and not a bug fix" — so it names out-of-range
+      // slots on purpose and will keep doing so for as long as it is the noise
+      // floor. Its rejections are a property of what it is, not of what is
+      // broken.
       const passive = valuesOf(await recordsFor('passive-control'), 'illegalActionRate');
-      const rushing = valuesOf(await recordsFor('portal-rush'), 'illegalActionRate');
+      const drawing = valuesOf(await recordsFor('uniform-random-legal'), 'illegalActionRate');
       expect(passive.every((value) => value === 0)).toBe(true);
-      expect(rushing.every((value) => value > 0)).toBe(true);
+      expect(drawing.every((value) => value > 0)).toBe(true);
     },
   );
 });

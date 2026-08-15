@@ -77,6 +77,7 @@ function axisParameters(definition: StrategyDefinition): {
       observation,
       mask,
       round,
+      candidates: new Map(),
       context,
     })) {
       const onTechnique = TECHNIQUE_ACTIONS.includes(preference.action);

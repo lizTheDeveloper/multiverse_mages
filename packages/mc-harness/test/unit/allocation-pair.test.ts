@@ -56,6 +56,7 @@ function preferencesAt(strategyId: string, round: number): readonly ActionSubmis
     observation: new Float64Array(256),
     mask: new Uint8Array(16).fill(1),
     round,
+    candidates: new Map(),
     context: {
       runSeed: 1,
       agentSlotIndex: 0,

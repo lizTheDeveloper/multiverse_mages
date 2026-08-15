@@ -41,6 +41,7 @@
  * observation export path, which is where §4.1 puts the one permitted float.
  */
 
+import type { CandidateLists } from '@mm/agent-api';
 import {
   ACTION_SPACE_SIZE,
   GOD_ACTION,
@@ -230,6 +231,17 @@ export class ScriptedSession implements AgentSession<ScriptedConfig> {
     this.observation = view;
     this.observationStale = false;
     return view;
+  }
+
+  /**
+   * No parameterized candidates: this double drives the discrete head only.
+   *
+   * An empty map is the honest answer rather than a stub — `rotate` falls back
+   * to `candidateSlotCount`'s declared pin when an action has no entry, which is
+   * exactly the behaviour these tests were written against.
+   */
+  candidates(): CandidateLists {
+    return new Map();
   }
 
   legalActions(): Uint8Array {

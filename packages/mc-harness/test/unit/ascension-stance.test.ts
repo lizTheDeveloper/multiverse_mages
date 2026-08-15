@@ -75,7 +75,7 @@ function play(definition: StrategyDefinition, mask: Uint8Array, rounds: number):
   const policy = policyFor(definition, contextFor(definition.strategyId));
   const actions: number[] = [];
   for (let round = 0; round < rounds; round += 1) {
-    actions.push((policy(blankObservation(), mask, 0) as ActionSubmission).action);
+    actions.push((policy(blankObservation(), mask, 0, new Map()) as ActionSubmission).action);
   }
   return actions;
 }
@@ -192,12 +192,14 @@ describe('the stance decides what is submitted', () => {
         observation: blankObservation(),
         mask: eligibleMask(),
         round: 0,
+        candidates: new Map(),
         context: contextFor(definition.strategyId),
       })).toEqual(
         definition.preferences({
           observation: blankObservation(),
           mask: eligibleMask(),
           round: 0,
+          candidates: new Map(),
           context: contextFor(definition.strategyId),
         }),
       );
@@ -219,12 +221,13 @@ describe('the fall-through the pool was built on is untouched', () => {
           observation: blankObservation(),
           mask,
           round: 0,
+          candidates: new Map(),
           context: contextFor(definition.strategyId, 99),
         });
         const expected =
           list.find((preference) => isLegal(mask, preference.action)) ??
           ({ action: GOD_ACTION.noop } as ActionSubmission);
-        expect(policy(blankObservation(), mask, 0)).toEqual(expected);
+        expect(policy(blankObservation(), mask, 0, new Map())).toEqual(expected);
       }
     }
   });
