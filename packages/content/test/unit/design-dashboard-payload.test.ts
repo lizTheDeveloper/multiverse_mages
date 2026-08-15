@@ -1,5 +1,5 @@
 /*
- * Multiverse Mages — the committed design-dashboard payload is a golden.
+ * Multiverse Mages — the design-dashboard payload is built, and this is what it must hold.
  * Copyright (C) 2026 Ann Kelner
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -12,29 +12,43 @@
  */
 
 /**
- * `ui/design-dashboard/data.json` is the whole content of the design dashboard,
- * and it is committed so a fresh clone can open the page. That makes it exactly
- * the kind of generated artefact that rots in silence — the file keeps loading,
- * every table keeps rendering, and the repository it describes stopped being
- * this one some commits ago. The dashboard's entire argument is that its numbers
- * are current; a stale payload does not break it, it makes it *lie*.
+ * `ui/design-dashboard/data.json` is the whole content of the design dashboard.
+ * It is a pure function of the repository, and it is now **built and gitignored**
+ * rather than committed — `npm run ui:dashboard` writes it, and
+ * `npm run check:generated` gates the two properties that lets rest on: the
+ * generator is deterministic, and the artifact is not tracked.
  *
- * So it gets the treatment `ui/session.json` already has and that `CLAUDE.md`
- * gives golden replay fixtures: regenerated only by explicit command
- * (`npm run ui:dashboard`), and a diff is a claim that something changed on
- * purpose.
+ * ## Why the byte-for-byte pin that used to live here is gone
  *
- * This runs the generator rather than reimplementing it, for the reason
- * `ui-recording.test.ts` gives about the recorder: a test that reimplements the
- * builder can agree with the committed file while both have drifted from
+ * It was defended three times by projecting a field out of the equality —
+ * `fileSeal` after #72's baseline refresh landed mid-build, the reachability
+ * totals and line numbers after the same thing recurred, and finally the finding
+ * rows and `findingCount` after #156 *fixed* a finding and turned `main` red for
+ * it. Three projections in a row is the shape being wrong, not the fields.
+ *
+ * And by the third one the pin had gone blind. Measured on 63f44ced, the tip of
+ * `main`: the committed payload disagreed with fresh output in
+ * `examinedSymbolCount` (858 against 864), `productionFileCount` (309 against
+ * 313) and `NO_DEMAND`'s line number (84 against 132) — **exactly** the fields
+ * the last projection had carved out. The file this test existed to keep current
+ * was stale, and this test was green over it. `scripts/check-generated-artifacts.mjs`
+ * carries the full argument.
+ *
+ * The staleness the pin was for cannot happen to a payload that is regenerated
+ * on every read, so it is not preserved here; it is removed.
+ *
+ * ## What this test is now
+ *
+ * The other half of the old file, which was never about equality: **does the
+ * generator produce a payload the page can actually draw?** Every assertion below
+ * is a field some panel renders by name, or a structural property whose failure
+ * would make a panel render something wrong rather than nothing — the second kind
+ * being what the two projections above were really protecting, restated as
+ * properties instead of as literals.
+ *
+ * It runs the generator rather than reimplementing it, as before: a test that
+ * reimplements the builder can agree with itself while both have drifted from
  * `build-design-dashboard.mjs`, which is the one comparison that matters.
- *
- * ## Why the byte comparison is possible at all
- *
- * The payload carries no clock reading and no `git` call — see the module note
- * on the generator for why both were rejected. That is what makes "re-run it and
- * compare" a test rather than a guaranteed failure, and it is also what lets the
- * page claim to be a statement about the commit you are reading it on.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -46,7 +60,6 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
-const COMMITTED = path.join(ROOT, 'ui', 'design-dashboard', 'data.json');
 const scratch = mkdtempSync(path.join(tmpdir(), 'mm-design-dashboard-'));
 
 afterAll(() => {
@@ -56,21 +69,42 @@ afterAll(() => {
 interface Payload {
   readonly provenance: {
     readonly generatedBy: string;
-    readonly pinnedBy: string;
+    readonly command: string;
+    readonly checkedBy: string;
     readonly contentRevision: string;
+    readonly contentCounts: Readonly<Record<string, number>>;
+    readonly metricRegistrySize: number;
   };
   readonly grid: {
-    readonly cells: readonly { readonly id: string; readonly enabled: boolean }[];
+    readonly techniques: readonly { readonly id: string }[];
+    readonly forms: readonly { readonly id: string }[];
+    readonly cells: readonly {
+      readonly id: string;
+      readonly technique: string;
+      readonly form: string;
+      readonly enabled: boolean;
+      readonly nodeCount: number;
+    }[];
     readonly totals: { readonly cells: number; readonly enabledCells: number; readonly nodes: number };
   };
   readonly primitives: {
+    readonly source: string;
     readonly rows: readonly { readonly id: string; readonly status: string }[];
     readonly unconsumed: readonly string[];
   };
-  readonly species: { readonly rows: readonly { readonly id: string }[] };
+  readonly species: { readonly rows: readonly { readonly id: string; readonly name: string }[] };
   readonly metrics: {
     readonly rows: readonly { readonly id: string; readonly disprovedBy: string }[];
-    readonly baselines: readonly { readonly sweepId: string; readonly contentRevision: string }[];
+    readonly gateMetricIds: readonly string[];
+    readonly baselines: readonly {
+      readonly file: string;
+      readonly sweepId: string;
+      readonly kind: string;
+      readonly runCount: number;
+      readonly fileSeal: string;
+      readonly contentRevision: string;
+      readonly metricIds: readonly string[];
+    }[];
     readonly contractMetricsWithCommittedValue: readonly string[];
   };
   readonly reachability: {
@@ -78,9 +112,10 @@ interface Payload {
     readonly examinedSymbolCount: number;
     readonly productionFileCount: number;
     readonly unreached: readonly { readonly name: string; readonly file: string; readonly line: number }[];
-    readonly reachedOnlyByUnreached: readonly { readonly name: string; readonly line: number }[];
-    readonly untouchedComponents: readonly { readonly name: string; readonly line: number }[];
-    readonly unconsumedConstants: readonly { readonly id: string; readonly line: number }[];
+    readonly reachedOnlyByUnreached: readonly Record<string, unknown>[];
+    readonly untouchedComponents: readonly Record<string, unknown>[];
+    readonly unconsumedConstants: readonly Record<string, unknown>[];
+    readonly constantsBehindDeadCode: readonly Record<string, unknown>[];
   };
   readonly decisions: {
     readonly statedDate: string | null;
@@ -96,200 +131,210 @@ interface Payload {
   readonly openQuestions: readonly { readonly id: string; readonly detail: string }[];
 }
 
-const committed = JSON.parse(readFileSync(COMMITTED, 'utf8')) as Payload;
+/** One build of the payload, at the generator's own defaults. Costs about 0.7 s. */
+const payload = ((): Payload => {
+  const out = path.join(scratch, 'data.json');
+  execFileSync(
+    process.execPath,
+    [path.join(ROOT, 'scripts', 'build-design-dashboard.mjs'), '--out', out],
+    { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'] },
+  );
+  return JSON.parse(readFileSync(out, 'utf8')) as Payload;
+})();
 
 /**
- * The reachability block minus the fields that move without a finding moving.
+ * The row keys each reachability table renders, per block.
  *
- * Built by deleting from a clone rather than by destructuring the omissions
- * away: the discard names would be unused bindings, and this repository's lint
- * rejects those — correctly, since a discard that stops matching a real field
- * silently starts comparing it again.
+ * This is what the old `reachabilityShape` projection asserted — it reduced every
+ * row to its sorted key list and compared *that* — restated as a property so it
+ * says which keys, and so a failure names the block. It is deliberately **not**
+ * the findings themselves: a reachability finding being fixed is the best
+ * possible reason for this payload to change and the worst possible reason for
+ * `main` to break, and the findings have a gate of their own in
+ * `npm run check:reachability:ratchet`.
+ *
+ * `constantsBehindDeadCode` is here and was not in the old projection — it was
+ * pinned *literally* instead, which made it one of the redness sources this file
+ * is being rewritten to remove. The page has rendered it since it existed.
  */
-/**
- * `measurements`, with every baseline's `fileSeal` projected out.
- *
- * **`fileSeal` is a tamper seal over a baseline file's own fields, not a content
- * hash** — this payload renames it for exactly that reason, and all four seals
- * differ while all four `provenance.contentHash` values are identical. So the seal
- * moves whenever *any row of any baseline* moves, which is precisely the class of
- * unrelated pull request `withoutLocations` above exists to keep out of this
- * equality.
- *
- * It cost a CI failure to learn: #72's baseline refresh landed mid-build and this
- * test went red on one seal, having asserted nothing about the dashboard. A pinning
- * test that reddens on other people's work gets regenerated to green without being
- * read, and then it pins nothing.
- *
- * The seal is still *displayed* — it is what a reader checks a file against. It is
- * simply not what this test is for. `provenance.contentHash` **stays pinned**,
- * because a change there means the content set moved and the dashboard genuinely is
- * stale.
- */
-const withoutFileSeals = (block: Payload['metrics']): unknown => {
-  const clone = JSON.parse(JSON.stringify(block)) as Record<string, unknown>;
-  const strip = (value: unknown): void => {
-    if (Array.isArray(value)) {
-      for (const entry of value) strip(entry);
-      return;
-    }
-    if (value !== null && typeof value === 'object') {
-      const row = value as Record<string, unknown>;
-      delete row['fileSeal'];
-      for (const nested of Object.values(row)) strip(nested);
-    }
-  };
-  strip(clone);
-  return clone;
+const REACHABILITY_ROW_KEYS: Readonly<Record<string, readonly string[]>> = {
+  unreached: ['file', 'kind', 'line', 'name'],
+  reachedOnlyByUnreached: ['file', 'line', 'name', 'via'],
+  unconsumedConstants: ['field', 'file', 'id', 'line'],
+  constantsBehindDeadCode: ['field', 'id', 'via'],
 };
 
-const REACHABILITY_ROW_KEYS = [
-  'unreached',
-  'reachedOnlyByUnreached',
-  'untouchedComponents',
-  'unconsumedConstants',
-] as const;
+describe('the payload `npm run ui:dashboard` produces', () => {
+  it('carries the grid the page draws', () => {
+    // Five techniques by fourteen forms, and §2.2's twelve-cell rectangle inside
+    // it. A payload that is fresh and empty renders seventy blank tiles, which
+    // reads as "no content authored" rather than as a broken build.
+    expect(payload.grid.totals.cells).toBe(70);
+    expect(payload.grid.cells).toHaveLength(70);
+    expect(payload.grid.techniques).toHaveLength(5);
+    expect(payload.grid.forms).toHaveLength(14);
+    expect(payload.grid.totals.enabledCells).toBeGreaterThan(0);
+    expect(payload.grid.totals.nodes).toBeGreaterThan(0);
 
-/**
- * `reachability`, reduced to the **shape** the page reads rather than the findings
- * it happened to hold when the payload was generated.
- *
- * Line numbers and the two file/symbol totals were already projected out, on the
- * argument that pinning them "would go red on unrelated rules-path PRs and train
- * the regenerate-to-green reflex". **The finding rows and `findingCount` are that
- * same hazard and it caught us**: #156 gave `explicitOpeningAxes` a caller, the
- * count fell 131 → 130, and `main` went red on a dashboard that had asserted
- * nothing about itself. A reachability finding being *fixed* is the best possible
- * reason for this file to change, and the worst possible reason for `main` to break.
- *
- * So the contents go, and what stays is what would actually break the page: the
- * blocks exist, they are arrays, and each row carries the keys the table renders.
- * The findings themselves have a guard already — `check:reachability` in CI, which
- * is where a change in them belongs.
- */
-const reachabilityShape = (block: Payload['reachability']): unknown => {
-  const clone = JSON.parse(JSON.stringify(block)) as Record<string, unknown>;
-  delete clone['examinedSymbolCount'];
-  delete clone['productionFileCount'];
-  delete clone['findingCount'];
-  for (const key of REACHABILITY_ROW_KEYS) {
-    const rows = clone[key] as Record<string, unknown>[];
-    clone[key] = rows.map((row) => Object.keys(row).sort().join(','));
-  }
-  return clone;
-};
-
-describe('ui/design-dashboard/data.json', () => {
-  it('is what `npm run ui:dashboard` produces today', () => {
-    const out = path.join(scratch, 'data.json');
-    execFileSync(
-      process.execPath,
-      [path.join(ROOT, 'scripts', 'build-design-dashboard.mjs'), '--out', out],
-      { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'] },
-    );
-    const fresh = JSON.parse(readFileSync(out, 'utf8')) as Payload;
-
-    // Section by section rather than as one object, so a failure says *what*
-    // moved instead of diffing two 110 KB structures. The grid moving is a
-    // content change; the metric registry moving is a §7 change; reachability
-    // moving is a code change. Those are three different reviews.
-    expect(fresh.provenance).toEqual(committed.provenance);
-    expect(fresh.grid).toEqual(committed.grid);
-    expect(fresh.primitives).toEqual(committed.primitives);
-    expect(fresh.species).toEqual(committed.species);
-    expect(withoutFileSeals(fresh.metrics)).toEqual(withoutFileSeals(committed.metrics));
-    // Reachability is compared with **line numbers and totals projected out**,
-    // deliberately, and the reason is about what a red test teaches.
-    //
-    // `unreached` carries a line number for each of a hundred-odd symbols, and
-    // `examinedSymbolCount` / `productionFileCount` move whenever anyone adds a
-    // file or an export. Pinned literally, this test goes red on rules-path PRs
-    // that changed nothing it is about — adding a comment line above an
-    // unreached export is enough. The reflex fix for a test that is red for no
-    // reason is to regenerate, and here regenerating would be *correct* most
-    // times, which is worse than it being wrong: it trains exactly the habit
-    // `CLAUDE.md` forbids around goldens.
-    //
-    // What stays pinned is what a reader would want to argue about — which
-    // symbols, which components, which constants, and `findingCount`. The line
-    // numbers stay in the payload because the page prints them in a column; they
-    // are asserted below to exist, which is the property that would actually
-    // break the table.
-    expect(reachabilityShape(fresh.reachability)).toEqual(reachabilityShape(committed.reachability));
-    expect(fresh.decisions).toEqual(committed.decisions);
-    expect(fresh.measurements).toEqual(committed.measurements);
-    expect(fresh.openQuestions).toEqual(committed.openQuestions);
+    // Every cell resolves to a technique and a form the payload also ships, so
+    // the page never has to draw a row it cannot label. Cross-section
+    // consistency of this kind is what a whole-object equality gave for free and
+    // has to be stated once it is gone.
+    const techniques = new Set(payload.grid.techniques.map((t) => t.id));
+    const forms = new Set(payload.grid.forms.map((f) => f.id));
+    const ids = new Set<string>();
+    for (const cell of payload.grid.cells) {
+      expect(techniques, `${cell.id} names an unknown technique`).toContain(cell.technique);
+      expect(forms, `${cell.id} names an unknown form`).toContain(cell.form);
+      ids.add(cell.id);
+    }
+    expect(ids.size, 'two cells share an id').toBe(70);
+    expect(payload.grid.cells.reduce((n, c) => n + c.nodeCount, 0)).toBe(payload.grid.totals.nodes);
   });
 
-  it('carries what the page reads it for', () => {
-    // Guards against a payload that is fresh and useless. Every assertion here
-    // is a field some panel renders by name, and a missing one draws an empty
-    // box that reads as "nothing to report".
-    expect(committed.grid.totals.cells).toBe(70);
-    expect(committed.grid.cells).toHaveLength(70);
-    expect(committed.grid.totals.enabledCells).toBeGreaterThan(0);
-    expect(committed.grid.totals.nodes).toBeGreaterThan(0);
-
-    expect(committed.primitives.rows.length).toBeGreaterThan(0);
-    for (const row of committed.primitives.rows) {
+  it('carries the primitive table, with every row in a status the page has a colour for', () => {
+    expect(payload.primitives.rows.length).toBeGreaterThan(0);
+    for (const row of payload.primitives.rows) {
       expect(['node-driven', 'non-node', 'unconsumed']).toContain(row.status);
     }
-
-    expect(committed.species.rows).toHaveLength(6);
-    expect(committed.reachability.examinedSymbolCount).toBeGreaterThan(0);
-    // The one property of a line number the page depends on. Pinning the values
-    // themselves is what the projection above declines to do, and this is the
-    // half of that trade which still has to hold.
-    for (const entry of committed.reachability.unreached) {
-      expect(entry.line, `${entry.name} has no line`).toBeGreaterThan(0);
-      expect(entry.file.length).toBeGreaterThan(0);
+    const ids = new Set(payload.primitives.rows.map((r) => r.id));
+    expect(ids.size, 'two primitive rows share an id').toBe(payload.primitives.rows.length);
+    // The panel prints `unconsumed` as a headline list above the table. Every
+    // name in it has to be a row, or the page names a primitive a reader then
+    // cannot find.
+    //
+    // What is deliberately *not* asserted: that this list equals the rows whose
+    // `status` is `unconsumed`. It does not, and the difference is the finding
+    // the panel exists to show — the check calls a primitive unconsumed when no
+    // authored *node* drives it, while `status` also distinguishes the ones a
+    // non-node consumer moves. Three against one on this tree. An equality here
+    // would have been a green invented over a real disagreement; it was written,
+    // it failed, and this is what replaced it.
+    for (const id of payload.primitives.unconsumed) {
+      expect(ids, `unconsumed names ${id}, which has no row`).toContain(id);
     }
+  });
 
-    expect(committed.metrics.rows.length).toBeGreaterThan(0);
-    for (const row of committed.metrics.rows) {
-      // The registry requires one on every entry; the dashboard prints them in
-      // a column, and a blank cell there would read as "nothing would disprove
+  it('carries the species table', () => {
+    expect(payload.species.rows).toHaveLength(6);
+    for (const row of payload.species.rows) expect(row.name.length).toBeGreaterThan(0);
+  });
+
+  it('carries the §7 metric registry, with a falsifier on every row', () => {
+    expect(payload.metrics.rows.length).toBeGreaterThan(0);
+    for (const row of payload.metrics.rows) {
+      // The registry requires one on every entry; the dashboard prints them in a
+      // column, and a blank cell there would read as "nothing would disprove
       // this", which is the opposite of what an empty string means.
       expect(row.disprovedBy.length, `${row.id} has no disprovedBy`).toBeGreaterThan(0);
     }
-    expect(committed.metrics.baselines).toHaveLength(4);
+    expect(payload.metrics.gateMetricIds.length).toBeGreaterThan(0);
+    expect(payload.provenance.metricRegistrySize).toBe(payload.metrics.rows.length);
+  });
 
-    expect(committed.openQuestions.length).toBeGreaterThan(0);
+  it('reads all four committed baselines, and keeps the fields that identify each', () => {
+    // This is what the `withoutFileSeals` projection was really protecting. The
+    // seal is a **tamper seal over a baseline file's own fields, not a content
+    // hash**, so it moves whenever any row of any baseline moves — which is why
+    // pinning its value reddened `main` on other people's work. Its *presence*
+    // is what a reader checks a file against, and that is asserted here.
+    //
+    // What is deliberately not asserted: that all four share one
+    // `contentRevision`. Three do and the ascension baseline does not, and the
+    // page renders that disagreement as a warning of its own (`sameContent` in
+    // index.html). Asserting equality would be inventing a green over a real
+    // and displayed finding.
+    expect(payload.metrics.baselines).toHaveLength(4);
+    expect(payload.provenance.contentRevision).toMatch(/^[0-9a-f]{32}$/u);
+    for (const baseline of payload.metrics.baselines) {
+      expect(baseline.file, 'a baseline does not say which file it came from').toMatch(
+        /^balance\/baselines\/.+\.json$/u,
+      );
+      expect(baseline.sweepId.length, `${baseline.file} has no sweepId`).toBeGreaterThan(0);
+      expect(baseline.contentRevision, `${baseline.file} has no content revision`).toMatch(
+        /^[0-9a-f]{32}$/u,
+      );
+      expect(baseline.fileSeal, `${baseline.file} has no file seal`).toMatch(/^[0-9a-f]{64}$/u);
+      expect(baseline.runCount, `${baseline.file} reports no runs`).toBeGreaterThan(0);
+      expect(baseline.metricIds.length, `${baseline.file} gates no metrics`).toBeGreaterThan(0);
+    }
+  });
+
+  it('carries reachability as rows the tables can render, without pinning the findings', () => {
+    // The counts move on any pull request that adds a file or an export, and the
+    // findings move whenever one is fixed. Neither is this payload's business —
+    // `check:reachability:ratchet` gates the finding set. What has to hold is
+    // that the blocks exist, are arrays, and carry the keys each column reads.
+    expect(payload.reachability.examinedSymbolCount).toBeGreaterThan(0);
+    expect(payload.reachability.productionFileCount).toBeGreaterThan(0);
+    expect(payload.reachability.findingCount).toBeGreaterThanOrEqual(0);
+
+    for (const [block, keys] of Object.entries(REACHABILITY_ROW_KEYS)) {
+      const rows = payload.reachability[block as keyof Payload['reachability']];
+      expect(Array.isArray(rows), `reachability.${block} is not an array`).toBe(true);
+      for (const row of rows as readonly Record<string, unknown>[]) {
+        expect(Object.keys(row).sort(), `a row of reachability.${block} has the wrong keys`).toEqual(
+          [...keys],
+        );
+      }
+    }
+    // `untouchedComponents` is empty on this tree, so an exact key set for it
+    // cannot be asserted from evidence and is not guessed. What the column needs
+    // is stated instead, and it starts holding the moment a row appears.
+    expect(Array.isArray(payload.reachability.untouchedComponents)).toBe(true);
+    for (const row of payload.reachability.untouchedComponents) {
+      expect(Object.keys(row)).toContain('name');
+      expect(Object.keys(row)).toContain('line');
+    }
+
+    // The one property of a line number the page depends on: it prints them in a
+    // column, and a zero there points a reader at the top of a file.
+    for (const entry of payload.reachability.unreached) {
+      expect(entry.line, `${entry.name} has no line`).toBeGreaterThan(0);
+      expect(entry.file.length).toBeGreaterThan(0);
+    }
   });
 
   it('dates and refs every figure it lifted from a document', () => {
-    // `CLAUDE.md`: an undated measurement in the present tense is read as
-    // current for as long as it survives, and that has cost this project twice.
-    // The generator itself takes no clock reading, so the only dates in the
-    // payload are the ones the source documents state — and a document-derived
-    // section that lost its date would look exactly like a live one.
-    expect(committed.decisions.statedDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(committed.decisions.statedRef?.commit).toBeTruthy();
-    expect(committed.decisions.items.length).toBeGreaterThan(0);
+    // `CLAUDE.md`: an undated measurement in the present tense is read as current
+    // for as long as it survives, and that has cost this project twice. The
+    // generator takes no clock reading, so the only dates in the payload are the
+    // ones the source documents state — and a document-derived section that lost
+    // its date would look exactly like a live one.
+    expect(payload.decisions.statedDate).toMatch(/^\d{4}-\d{2}-\d{2}$/u);
+    expect(payload.decisions.statedRef?.commit).toBeTruthy();
+    expect(payload.decisions.items.length).toBeGreaterThan(0);
 
-    const separation = committed.measurements.speciesSeparation;
-    expect(separation.statedDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    const separation = payload.measurements.speciesSeparation;
+    expect(separation.statedDate).toMatch(/^\d{4}-\d{2}-\d{2}$/u);
     expect(separation.refs.length).toBeGreaterThan(0);
     for (const ref of separation.refs) expect(ref.commit).toBeTruthy();
+
+    expect(payload.openQuestions.length).toBeGreaterThan(0);
+    for (const question of payload.openQuestions) {
+      expect(question.detail.length, `${question.id} has no detail`).toBeGreaterThan(0);
+    }
   });
 
-  it('carries no wall-clock stamp, so the pin above is a check and not a false alarm', () => {
-    // The obvious provenance — a timestamp — would make the byte comparison
-    // fail on every run, and the first response to that would be to delete the
-    // comparison. Asserted rather than trusted, because adding a date to a
-    // provenance block is a natural-looking edit.
+  it('carries no wall-clock stamp, so the page is a statement about the tree', () => {
+    // The property `npm run check:generated` rests on: the payload is a pure
+    // function of the repository, so the file CI builds is the file you build,
+    // and the page can say it describes whatever commit you are reading it on.
+    // The check would catch a timestamp as non-determinism; this catches it with
+    // a message that says what was added and why it is not allowed.
+    //
     // A date in a *relayed* document field is legitimate and required; one in
     // provenance is not, so only the provenance block is searched. Matched as an
     // ISO date rather than as a year, because a content hash is hex and will
     // contain `2026` sooner or later.
-    expect(JSON.stringify(committed.provenance)).not.toMatch(/\d{4}-\d{2}-\d{2}/u);
-    expect(readFileSync(COMMITTED, 'utf8')).not.toContain('generatedAt');
+    expect(JSON.stringify(payload.provenance)).not.toMatch(/\d{4}-\d{2}-\d{2}/u);
+    expect(Object.keys(payload.provenance)).not.toContain('generatedAt');
   });
 
-  it('names itself and this test, so a reader of the file can find both ends', () => {
-    expect(committed.provenance.generatedBy).toBe('scripts/build-design-dashboard.mjs');
-    expect(committed.provenance.pinnedBy).toBe(
-      'packages/content/test/unit/design-dashboard-payload.test.ts',
-    );
+  it('names itself, the command that builds it, and the check that gates it', () => {
+    // So a reader of the file can find every end of it without grepping.
+    expect(payload.provenance.generatedBy).toBe('scripts/build-design-dashboard.mjs');
+    expect(payload.provenance.command).toBe('npm run ui:dashboard');
+    expect(payload.provenance.checkedBy).toBe('scripts/check-generated-artifacts.mjs');
   });
 });
