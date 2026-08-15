@@ -10857,3 +10857,54 @@ two different sets project to the same number.** Diff identities, not totals.
 
 *(And the agent noted against itself that it ran that diff through `/tmp` files minutes after thanking me
 for the `/tmp` rule — inside a single command, so nothing could race, but the wrong reflex.)*
+
+## W209 — the first reachability *repair*, and a usability trap in the ratchet
+
+#170 merged `main` and came out **337/337 files, 4,652/4,652 tests, zero failures**. Three of tonight's
+new gates fired on it, and all three fired usefully — within hours of landing, against a component that
+did not exist when they were written.
+
+### The ratchet's `--update` is all-or-nothing, and that is a trap
+
+The ratchet reported **5 new findings**. **Four were `main`'s own** — proved with a control worktree on
+untouched `origin/main` rather than assumed. The fifth was the agent's: `fidelityFractionOf`, a wrapper
+nothing called.
+
+**It deleted the wrapper rather than pinning it**, and the reason is the finding:
+
+> *"Pinning banks debt for speculation, and `reachability:pin` would have silently adopted main's four
+> too."*
+
+`npm run reachability:pin` re-pins **everything currently reported**. So an author pinning their own new
+finding silently adopts every other unpinned finding on the tree — including debt that arrived from
+someone else's merge minutes earlier. **The correct use is almost always to fix the finding, not pin it**,
+and the tool makes the wrong action one command and the right action manual. Worth a warning at the script,
+and worth considering a `--only <key>` form.
+
+### And the first repair: 125 → 124
+
+`study.ts` — the reading edge that did not exist before this PR — **gives `STANDARD_STORE` a consumer**.
+So the baseline drops to **124**, integration debt **61 → 60**, and §2's store-policy row goes from five
+members to four. **Baseline, triage document, its title and its test all move together**, which is the
+shape a ratchet repair is supposed to have and the first time anything has taken it.
+
+### The entitlement gate worked on a component invented after it
+
+It caught `knowledge-fidelity`'s two new fields unclassified. Both went to `undecided()`, and the reasoning
+on one is worth keeping:
+
+> *"`corruption` deliberately not argued either way — a channel saying **this book is wrong** deletes the
+> mechanic; one saying **a reader marked it** would be legitimate and doesn't exist. **Two questions, one
+> field.**"*
+
+That is exactly what the 70 `not-yet-decided` traits are for: a place to record that a decision has not
+been made, rather than making it by accident in an encoder.
+
+### Two conventions converging independently
+
+- **`data.json` resolved by regenerating, not merging** — *"hand-merging a payload whose contract is 'this
+  is what the command produces today' would produce a file no command produces."* Independently the same
+  reasoning I used on #126 an hour earlier, and the argument for #179 stated better than #179 states it.
+- **`observable-trait-inventory.md` amended at the head, not rewritten**, because *"its tables are a
+  measurement taken at `be446a6` and belong to that tree."* That is the discipline this whole campaign has
+  been trying to establish, applied without being asked.
