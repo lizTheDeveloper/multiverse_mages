@@ -11408,3 +11408,48 @@ and the third variant tonight: not reading a stale build, not writing into a run
 **Handoff:** #186 and #170 both take **RNG stream 13**, and `rng-registry-append-only.test.ts` asserts the
 table is **dense from 1**, so skipping is unavailable — whichever merges second renumbers to 14 and
 re-states §6.
+
+## W216 — three PRs claim RNG stream 13, and nothing catches that until after a merge
+
+The first genuine **simulation-rigor** consequence of the wiring wave, and it is exactly the class
+`CLAUDE.md` constraint 3 exists for: *"adding a draw in one subsystem must not re-roll any other."*
+
+Verified with a control — `origin/main`'s `RNG_STREAM` table has **12** entries — and each of three open
+PRs adds a thirteenth:
+
+| PR | new stream | subsystem |
+|---|---|---|
+| **#170** | `corruption: 13` | ambient scribal error |
+| **#185** | `career: 13` | graduate career sort |
+| **#186** | `detachment: 13` | soldier detachment remainder |
+
+**And `rng-registry-append-only.test.ts` asserts the table is dense from 1**, so the ids must match
+*merge order*. Nobody can sidestep the collision by picking 14 — a tree holding 1–12 and 14 fails the same
+test.
+
+### The assignment, ruled by merge proximity
+
+| PR | id | why |
+|---|--:|---|
+| **#170** | **13** | closest to merge — `Verify` green, only the artifact conflict outstanding |
+| **#186** | **14** | green and independent; its three fixes touch no other PR's surface |
+| **#185** | **15** | furthest out — branched from #181, which is itself unmerged |
+
+Each renumber moves `rngRegistryHash`, which invalidates that baseline's identity seal — so **#186 and
+#185 each need a re-seal or a re-record after renumbering**, and #184's `reseal` tool is the cheap path
+for whichever of them has no metric movement.
+
+### The gap this exposes, which is worth more than the collision
+
+**Nothing catches two open PRs claiming the same stream.** The append-only test fires only once a
+conflicting id is *on main* — by which point the second PR is red for a reason that reads like its own
+defect. Three agents each found it independently, each reported it as a handoff risk, and **none of them
+could see the other two.**
+
+This is the same shape as the reachability finding it took four investigations to notice: a check that can
+only speak after the fact makes every discoverer pay the full cost. **A pre-merge check — "does any open
+PR add a stream id this PR also adds?" — is cheap and would have cost one of three agents nothing instead
+of costing all three something.**
+
+Recorded rather than built, because it belongs with the other CI work and the queue is already the
+constraint.
