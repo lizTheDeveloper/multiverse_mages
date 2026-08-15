@@ -10457,3 +10457,72 @@ Matching #161's precedent: **9.8** — library depth at year 200 is **24 distinc
 wants confirming rather than believing: **a `destructive` pair between two cells mages both want is a
 teaching treadmill.** If that holds it is an argument for **`refused` over `destructive`** here — and that
 is the author's call, not an agent's.
+
+## W203 — nothing raises mastery. A mage can never teach what she discovered.
+
+Three audits landed (PRs #174, #175, #177). This is the finding that outranks every other in the campaign,
+and it was already written down in **five separate source files**.
+
+### Verified verbatim at `origin/main`
+
+- `rules-magic/src/instances/constants.ts:50` — `DEFAULT_INITIAL_MASTERY = 256`
+- `rules-magic/src/instances/constants.ts:63` — `DEFAULT_TEACH_THRESHOLD = 512`
+- `setMastery` has **exactly one rules-path caller**, `instances/decay.ts:213`, **and it only ever lowers.**
+
+So a node a mage researches herself starts at **256**, can only decline, and needs **512** to be
+teachable. **The interval is empty.** No researched node is ever teachable by the mage who found it. The
+only knowledge that ever crosses the threshold is what a god grants directly — `grant-mastery = 1024` —
+and that constant's own gloss states the defect outright: *"A grant at the research default would sit
+below the teach threshold and never leave the founder's head."*
+
+**And the codebase says so in five places** — `knowledge-census.ts:257`, `god/interventions.ts:594`,
+`mc-harness/metrics-telemetry.ts:279`, `scenario/species-versatility.ts:45`, `state/components.ts:477`.
+Every one of them documents the hole accurately while working around it. **This is not an unknown defect.
+It is a known one that nobody has been able to see the consequences of**, because the consequences look
+like other subsystems failing.
+
+### It is the missing cause behind half this campaign
+
+| symptom recorded earlier | explained by |
+|---|---|
+| `teach-rate` wired and inert, lessons +0.1% | almost nothing is teachable, so a teaching multiplier has nothing to multiply |
+| the founding academy is *life support* (W181) | it is the **only source of teachable knowledge in the world** |
+| a mage cannot learn to research/teach/scribe better (W180) | the wire is real, but the knowledge to teach never reaches a second head |
+| library depth compounding "switches itself off" (§6a) | the loop's input is knowledge that cannot propagate |
+| graduation ignores curriculum (W-earlier) | there is no curriculum to complete |
+
+**The knowledge economy does not compound because knowledge cannot leave the head that found it.**
+Everything downstream of that has been measured as a separate defect.
+
+### Two more from the same batch, both structural
+
+**§9's balance gates gate nothing §9 is about.** All 199 metric entries across the four committed
+baselines are `reference*` scenario vital signs — **the non-`reference*` set is empty**, and no test or
+script asserts a §7 threshold. What the baselines *do* carry is a `metricDefinitionVersions` block, so
+**the gate refuses on provenance drift and never on a number.** That makes §11's MINOR-parity rule —
+*even MINOR = baselines committed and green* — arranged to pass while certifying nothing. `capitalSnowball`
+sits at **0.380 against the 0.35 its sibling is held to**, in `balance/README.md:587` rather than in a gate.
+
+**§2.9's unread-constant guard reports on the wrong input.** `content/src/god.ts:280` checks membership of
+a hardcoded array, not reachability — so seven `legacy-*` constants sit unread and **the guard cannot go
+red.** Alongside §8a's eight authored god constants whose only reader is the unreached `legacyGrant`:
+**knobs a content author can turn that move nothing anywhere.**
+
+### And the audit documents are themselves rotting
+
+- **`vision-audit.md` §8 has rotted at the root** — *"`rules-raid` is an orphan package"* is false, which
+  invalidates twelve table rows, three further sections, and its ranked gap #1.
+- **`:585` and gap #9 still assert *"2 distinct nodes across 1,308 books"* in the present tense** — the
+  exact figure `CLAUDE.md` records as costing two agents an investigation each. It was retracted at `:351`
+  **and at neither of the other two occurrences.**
+- **`reachability-triage.md` has two wrong rows at this ref**, both reporting a live capability as a dead
+  subsystem, both from searching the wrong package: `applyWard` is superseded by `CastArbiter.applyWardOnce`
+  (`raid.ts:514`), `replay` by `replayAndLocate` (`regen-goldens.mjs:142`). Its counts should read **44 not
+  46**, and **16 not 14**. Wiring either would duplicate a live path — the exact failure that document
+  exists to prevent.
+- `hard-magic.md`'s *"library depth must feed research rate — genuinely unimplemented"* is stale; it is
+  built. Stale in the safe direction, but it points a reader at finished work while the real defect sits
+  one layer down in its input.
+
+**The caveat that matters most:** `vision-audit.md` was re-verified **selectively**. A row not named above
+**has not been cleared — it has not been checked.**
