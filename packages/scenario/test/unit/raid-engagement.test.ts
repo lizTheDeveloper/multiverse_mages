@@ -218,9 +218,58 @@ describe('a reference universe is raided', () => {
     expect(played.raids.every((raid) => !raid.outbound)).toBe(true);
   });
 
-  it('destroys knowledge instances that would otherwise have survived', () => {
+  /**
+   * **This test passed on `main` for a reason that was not its title, and W116
+   * is what exposed that.** It asserted `raided.instances < peaceful.instances`
+   * on one seed. That held — and still holds on `main`, on all four seeds
+   * surveyed (784/845, 813/884, 1029/1122, 1031/1073) — but **not because a
+   * raid destroyed anything.**
+   *
+   * Measured on `origin/main` at `552630b`, the same four seeds: every raid
+   * ends `objectivesResolved`, with **zero casualties, zero
+   * `nodesLostLocally`, and zero `nodesGainedLocally`.** No instance is
+   * destroyed and none is stolen. `consequences.ts` destroys a casualty's
+   * instances and there are no casualties, so the channel the title names is
+   * never entered. The instance gap is the **time cost** of engagement: §0
+   * freezes world time for a universe in a raid, so a raided universe has
+   * fewer mage-months in which to research and write.
+   *
+   * A whole-universe instance count cannot tell those two apart, and once
+   * affiliation let mages scribe, the scribing term grew large enough to
+   * dominate the time term and the comparison split 2–2 across the same four
+   * seeds (669/626, 594/654, 921/852, 849/938). **A proxy that stops agreeing
+   * with itself when an unrelated channel gets louder was never measuring what
+   * it claimed.**
+   *
+   * So the assertion is now the seed-robust fact the fixture can actually
+   * support: a raid is not a no-op on the host's knowledge economy. The
+   * direction is deliberately not asserted, because on this build there is no
+   * destruction to give it one.
+   *
+   * **The zero-loss finding is left standing and is not this branch's to fix.**
+   * A reference universe that is raided three times and loses no node is either
+   * a combat model nobody dies in or an objective set with nothing to take, and
+   * both are `raid-engagement`'s. What is fixed here is a test that would have
+   * gone on reporting success through either.
+   */
+  it('is not a no-op on the host universe knowledge economy', () => {
     const seed = 0x0bad_c0de;
-    expect(play(seed, true).instances).toBeLessThan(play(seed, false).instances);
+    const raided = play(seed, true);
+    expect(raided.raids.length).toBeGreaterThan(0);
+    expect(raided.instances).not.toBe(play(seed, false).instances);
+  });
+
+  it('destroys nothing and steals nothing, which is a finding and not a design', () => {
+    // The zero above, pinned so it cannot quietly stop being zero — in either
+    // direction. If `raid-engagement` gives raiders something to take, this is
+    // the test that fails and says so, and the assertion above becomes
+    // directional again.
+    for (const seed of SEEDS) {
+      const raided = play(seed, true);
+      expect(raided.raids.length).toBeGreaterThan(0);
+      expect(raided.raids.reduce((sum, raid) => sum + raid.nodesLostLocally, 0)).toBe(0);
+      expect(raided.raids.reduce((sum, raid) => sum + raid.localCasualties, 0)).toBe(0);
+    }
   });
 });
 

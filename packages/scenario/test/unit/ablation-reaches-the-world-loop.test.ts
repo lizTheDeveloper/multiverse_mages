@@ -164,9 +164,20 @@ describe('an ablation arm is not its own control', () => {
     expect(ablated.knowledgeInstances).toBeLessThan(control.knowledgeInstances);
     expect(ablated.grimoires).toBeLessThan(control.grimoires);
 
-    // And it is a loss the arm suffered rather than an arm that died: the
-    // populations are the same, so this is not "the ablated universe collapsed".
-    expect(ablated.population).toBe(control.population);
+    // And it is a loss the arm suffered rather than an arm that died.
+    //
+    // This asserted the two populations were **equal** until W116, and that
+    // equality was a coincidence rather than a mechanism: it held because the
+    // ablated arm's mages spent their months identically to the control's, which
+    // stopped being true once they could affiliate and scribe. The arms now read
+    // 327 against 321 — the *ablated* arm larger, which is the direction that
+    // rules out the failure this line exists to catch.
+    //
+    // Pinned as a proportion rather than re-pinned as a pair of integers,
+    // because equality was never the claim. The claim is that the arm did not
+    // collapse, and 2% is a universe that lost books, not one that lost people.
+    const populationGap = Math.abs(ablated.population - control.population);
+    expect(populationGap * 20).toBeLessThan(control.population);
   }, RUN_TIMEOUT_MS);
 
   it('the two arms ran the same length, so the difference is not a shorter run', () => {
