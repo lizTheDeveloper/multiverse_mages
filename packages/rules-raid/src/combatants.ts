@@ -132,6 +132,17 @@ export interface CombatantBrief {
   readonly detachmentStrength: number;
   /** Nodes stolen this raid, kept only if this combatant withdraws alive. */
   readonly stolen: ContentId[];
+  /**
+   * Host knowledge instances corrupted this raid.
+   *
+   * **Unconditional on withdrawal, where `stolen` is not.** A thief has to carry
+   * knowledge home; a saboteur has already done the damage. Whether she reaches
+   * the portal decides what *she* gained, and it has never decided what the
+   * victim lost — a raider cut down on the library floor still burned the books
+   * she burned. The distinction is the whole shape of the move: corruption is
+   * a cost the victim pays, not a prize the raider carries.
+   */
+  readonly corrupted: Handle[];
   /** Whether this combatant has left through the portal. Attackers only. */
   withdrawn: boolean;
 }
@@ -260,6 +271,7 @@ export function spawnCombatant(
     intrinsicRange: spec.intrinsicRange ?? 0,
     detachmentStrength: spec.detachmentStrength ?? 0,
     stolen: [],
+    corrupted: [],
     withdrawn: false,
   };
   // Never reused within a raid, even when the combatant dies: a dead summon's

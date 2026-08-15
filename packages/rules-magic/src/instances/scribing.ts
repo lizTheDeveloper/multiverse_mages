@@ -236,7 +236,7 @@ export function scribe(inputs: ScribingInputs): ScribingOutcome {
   // poor one. Otherwise the *affinity* would decide the stream position and two
   // species would diverge in every roll downstream of the first book.
   const errorRoll = nextBounded(
-    inputs.rng.actorStream(RNG_STREAM.scribalError, inputs.scribe),
+    inputs.rng.actorStream(RNG_STREAM.corruption, inputs.scribe),
     FP_ONE,
   );
   const corrupted = errorRoll < scribalErrorChance(inputs.scribeAffinity, node.tier);

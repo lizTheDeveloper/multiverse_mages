@@ -98,6 +98,15 @@ export interface RaidOutcome {
 
   readonly casualties: readonly CasualtyRecord[];
   readonly cohortLosses: readonly CohortLossRecord[];
+  /**
+   * Host knowledge instances a raider left silently wrong, ascending.
+   *
+   * Not a {@link KnowledgeMovement}, and that is the point of the mechanic: no
+   * instance moved, none was destroyed, and `nodesLostByHost` does not change.
+   * *"Enter, corrupt, leave undetected"* — the victim's ledger of what a raid
+   * cost him balances to zero, and stays balanced until a reader fails.
+   */
+  readonly corruptedInstances: readonly Handle[];
   readonly objectives: readonly ObjectiveOutcome[];
 
   /** Instances that left the host universe, by verb. */

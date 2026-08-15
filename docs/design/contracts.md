@@ -818,6 +818,7 @@ all of them.
 | `worship-yield` | multiplier on favor regeneration | world | additive into `(1 + Σ)`, cap `fp(2048)` |
 | `concealment` | fp probability of evading targeting/detection | both | multiplicative on the remainder, cap `fp(870)` = 85% |
 | `knowledge-steal` | fp probability per attempt of copying an instance | engagement | max, not sum |
+| `knowledge-corrupt` | fp probability per attempt of corrupting an instance | engagement | max, not sum |
 | `portal` | boolean gate; enables raid initiation | world | n/a — presence only |
 
 **Why the caps exist:** every uncapped multiplicative rate in a game with two compounding loops
@@ -1278,7 +1279,7 @@ invalidates every committed balance baseline.**
 | 10 | objective and raid generation |
 | 11 | terrain generation and combatant deployment |
 | 12 | the opening square — which techniques and forms a universe is founded holding |
-| 13 | scribal error — whether a finished book is silently wrong |
+| 13 | corruption — whether a book is silently wrong, by scribal error or by attack |
 
 **Stream 12 is the first append since the baselines were committed, and it is what taught us that
 appending is not free.** The gate compares `provenance.rngRegistryHash` as a block-level refusal,

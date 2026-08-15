@@ -60,8 +60,8 @@ export const RNG_STREAM = {
    */
   openingSquare: 12,
   /**
-   * Scribal error: whether a finished book is *silently wrong*
-   * (`docs/design/scribing-fidelity.md`).
+   * Corruption: whether a book is *silently wrong*, by scribal error or by
+   * attack (`docs/design/scribing-fidelity.md`).
    *
    * Its own id rather than borrowing `scribing` (5), which is the other draw
    * taken at the moment a book is finished, and by the same actor. A shared
@@ -74,7 +74,7 @@ export const RNG_STREAM = {
    * That is the whole content of §6's insertion-invariance rule, applied to the
    * one case where it was cheapest to get wrong.
    */
-  scribalError: 13,
+  corruption: 13,
 } as const;
 
 /** Any ID in the permanent registry. */
