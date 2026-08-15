@@ -108,32 +108,72 @@ describe('god-driven consumption is recorded, and does not count', () => {
     },
   );
 
-  it('leaves a non-node primitive out of the consumed set', () => {
+  it('no longer has a god-only primitive to leave out, and says which ones moved', () => {
     const { recorder, registry } = recorded();
     const report = checkPrimitiveConsumption(registry, recorder);
     const consumed = report.consumed.map((entry) => entry.primitiveId);
 
-    // The failure this whole check exists to prevent: `lifespan` is stacked every
-    // tick from blessing and curse constants, and counting that as coverage would
-    // report the pipeline connected while no mage's knowledge moved it.
+    // **This assertion has now named three different primitives, and each swap
+    // was the point of a change rather than a weakening of the test.** It began
+    // on `research-rate` — the loudest case, consumed every tick, by the god,
+    // and by nothing a scholar could learn. W18's rate wire gave that one
+    // `coordination/academic-effects.academicRateBonuses`, so it moved to
+    // `lifespan`, the surviving god-only primitive. The vitality wire gave
+    // *that* one `coordination/knowledge-vitality.vitalityBonuses`. There is no
+    // third candidate: the registry declares sixteen primitives and all sixteen
+    // are node-driven on this tree, which is the campaign's stated exit
+    // condition and why `PRIMITIVE_CONSUMPTION_EXCLUSIONS` is empty.
     //
-    // **This assertion used to name `research-rate`, and the swap is the point of
-    // W18 rather than a weakening of the test.** `research-rate` was the original
-    // worked example precisely because it was the loudest case: consumed every
-    // tick, by the god, and by nothing a scholar could learn. It now has a
-    // node-driven consumer — `coordination/academic-effects.academicRateBonuses`
-    // — so it belongs in `consumed`, and asserting otherwise would be asserting
-    // the defect. `lifespan` is the surviving god-only primitive and carries the
-    // same shape: `state`'s blessing rows move it and `node.json` never does.
-    expect(consumed).not.toContain('lifespan');
-    // And the swap is only honest if the primitive that moved really did move.
-    expect(consumed).toContain('research-rate');
+    // So the assertion is inverted rather than retargeted. Naming a fourth
+    // primitive would mean asserting a defect; asserting that `nonNode` is
+    // *permanently* empty would bake today's content into a structural test,
+    // and the next god-only primitive to arrive would find the sentence that
+    // explained the section already deleted. The path itself is kept alive one
+    // test below, over a synthetic registration.
+    expect(report.nonNode).toEqual([]);
+    for (const primitiveId of ['research-rate', 'teach-rate', 'scribe-rate', 'lifespan']) {
+      expect(consumed).toContain(primitiveId);
+    }
+  });
+
+  it('still records the god as a non-node consumer, beside the node one', () => {
+    // The blessing did not stop existing when knowledge caught up with it. Both
+    // registrations are present for `lifespan`, and the check counts the node
+    // one — which is exactly the arithmetic that would be wrong if `nonNode`
+    // were empty because nothing registered rather than because everything did.
+    const kinds = recorded()
+      .recorder.registrations()
+      .filter((registration) => registration.primitiveId === 'lifespan')
+      .map((registration) => registration.kind);
+
+    expect(kinds).toContain('non-node');
+    expect(kinds).toContain('node');
   });
 
   it('explains itself in the report rather than leaving a reader guessing', () => {
+    // **A synthetic god-only registration, and not an assertion that the section
+    // is empty.** `consumption.ts` argues that `nonNode`'s whole job is to
+    // explain why a primitive plainly in use is nonetheless unreachable by an
+    // academic — and the day that explanation is needed again is the day a new
+    // primitive lands with a god consumer and no node one. A test that asserted
+    // the section stays empty would pass on the tree that deleted the section's
+    // formatter and fail nothing.
+    //
+    // So this replays the real universe's registrations with one edit: the
+    // vitality wire's node-driven `lifespan` row is dropped, leaving the god's
+    // blessing behind. That is a universe this repository shipped four commits
+    // ago, and it is the shape the formatter exists for.
     const { recorder, registry } = recorded();
-    const text = formatPrimitiveConsumptionReport(checkPrimitiveConsumption(registry, recorder));
+    const godOnly = createConsumptionRecorder();
+    for (const registration of recorder.registrations()) {
+      if (registration.primitiveId === 'lifespan' && registration.kind === 'node') continue;
+      godOnly.register(registration);
+    }
 
+    const report = checkPrimitiveConsumption(registry, godOnly, ['lifespan']);
+    expect(report.nonNode.map((entry) => entry.primitiveId)).toEqual(['lifespan']);
+
+    const text = formatPrimitiveConsumptionReport(report);
     expect(text).toContain('Consumed, but never from node effects');
     expect(text).toContain('coordination/god/effects.lifespanEffectsFor');
   });

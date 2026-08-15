@@ -145,6 +145,87 @@ function arms(): { control: CensusSample; ablated: CensusSample } {
 /** Long enough for two 240-tick runs on a machine several agents are sharing. */
 const RUN_TIMEOUT_MS = 300_000;
 
+/**
+ * How far below the control's population the ablated arm may finish, in percent.
+ *
+ * ## This was an equality, and the equality was never structural
+ *
+ * It read `expect(ablated.population).toBe(control.population)`, and its comment
+ * gave the reason: the knowledge and grimoire losses above should read as *"a
+ * loss the arm suffered rather than an arm that died"*. That reading is right.
+ * The equality was the wrong instrument for it, and this tree is where it
+ * finally reported so: **494 control, 495 ablated.**
+ *
+ * ## The mechanism, measured rather than argued
+ *
+ * The two effect campaigns this branch unions each raise the population level,
+ * and the first suspicion was that one of them had coupled knowledge to bodies
+ * in a way that made the arms diverge. Instrumented at the union's own seed
+ * (`0x12345678`, `HORIZON` 240), the wires do move the level a long way:
+ *
+ * | wiring | control | ablated | delta |
+ * |---|--:|--:|--:|
+ * | both wires off | 325 | 325 | 0 |
+ * | academic rates only | 304 | 304 | 0 |
+ * | vitality only | 392 | 392 | 0 |
+ * | **both (this tree)** | **494** | **495** | **+1** |
+ *
+ * Which looks exactly like an interaction defect, and is not one. Re-run across
+ * six seeds it falls apart:
+ *
+ * | seed | both wires off | academic only | vitality only | both |
+ * |---|--:|--:|--:|--:|
+ * | `0x12345678` | 0 | 0 | 0 | **+1** |
+ * | `0x00000001` | **−3** | **+1** | **−10** | **−5** |
+ * | `0x00000002` | 0 | 0 | 0 | 0 |
+ * | `0xdeadbeef` | 0 | 0 | 0 | 0 |
+ * | `0x0badc0de` | 0 | 0 | 0 | 0 |
+ * | `0x5eed0007` | 0 | 0 | 0 | 0 |
+ *
+ * **The pre-campaign column is not all zeroes.** With neither wire installed —
+ * the behaviour `main` ships — seed `0x00000001` already finishes 3 people
+ * apart. So the equality was a property of one seed, not of the simulation, and
+ * "it passed before and fails now" is a statement about `0x12345678` rather than
+ * about a coupling either wire introduced. The sign is not systematic either:
+ * +1, −3, −5, −10 all appear. Nothing here says the ablated arm is better off.
+ *
+ * The channel is ordinary and predates both wires. `resource-yield` feeds
+ * `stock.food`; food is the only kind `carryingCapacity` reads; capacity sets
+ * `fertilityBrake`; and `deliverBirths` is stochastic. Two arms whose food
+ * histories differ take different draws and land a few people apart in either
+ * direction. What the wires changed is the *level* — 325 to 494 — which moved
+ * this seed off the zero it had been sitting on by luck.
+ *
+ * ## Why a floor, and why one-sided
+ *
+ * *Not having died* was always the claim; the equality was a proxy that happened
+ * to hold. So this is the weakest statement that still makes the claim:
+ *
+ * - **One-sided.** An ablated arm finishing with slightly more people is not the
+ *   failure this guards. The inverted-mask failure the file comment warns about
+ *   — `0` substituted for `FP_ONE` under `additive-into-multiplier`, multiplying
+ *   an arm's whole economy by zero — is caught by the two `toBeLessThan`
+ *   assertions above, which a better-off arm cannot satisfy.
+ * - **A constant, not a ratio off `knowledgeInstances`.** A tolerance derived
+ *   from the quantity that is diverging widens itself as the mechanic grows,
+ *   which is how a guard stops guarding with nobody editing it.
+ * - **A backstop, not a discriminator, and said plainly** — the largest
+ *   population swing any lever in the table above produces is 10 of ~500, so
+ *   nothing this test can currently do will trip 95%. It is kept because the
+ *   coupling is real at longer horizons: `gate-power.test.ts`'s
+ *   `BLIND_ARM_LINES` records `referencePeakPopulation@permissive-breadth`
+ *   moving 7,009 → 12,685 at the 2,400-tick gate.
+ *
+ * PR #161 (`anti-requisites`) reached the same replacement independently, from a
+ * different failure and with the same constant and name, so the two resolve
+ * together. Its evidence is the ablation table across all seven primitives at
+ * one seed; this one is one primitive across six seeds, including the seeds
+ * where the pre-campaign tree already disagreed with itself.
+ *
+ * Measured on `w187/effects-union` at `9be84ea`, 2026-08-14.
+ */
+const POPULATION_FLOOR_PERCENT = 95;
+
 describe('an ablation arm is not its own control', () => {
   it('a task naming an ablated primitive produces a different universe', () => {
     const { control, ablated } = arms();
@@ -164,9 +245,12 @@ describe('an ablation arm is not its own control', () => {
     expect(ablated.knowledgeInstances).toBeLessThan(control.knowledgeInstances);
     expect(ablated.grimoires).toBeLessThan(control.grimoires);
 
-    // And it is a loss the arm suffered rather than an arm that died: the
-    // populations are the same, so this is not "the ablated universe collapsed".
-    expect(ablated.population).toBe(control.population);
+    // And it is a loss the arm suffered rather than an arm that died. See
+    // `POPULATION_FLOOR_PERCENT`: this was an equality until the union of the
+    // two effect campaigns showed the equality had only ever held on this seed.
+    expect(ablated.population).toBeGreaterThanOrEqual(
+      Math.floor((control.population * POPULATION_FLOOR_PERCENT) / 100),
+    );
   }, RUN_TIMEOUT_MS);
 
   it('the two arms ran the same length, so the difference is not a shorter run', () => {

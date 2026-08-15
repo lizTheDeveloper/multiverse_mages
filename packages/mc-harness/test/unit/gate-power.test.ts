@@ -106,10 +106,19 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // knowledge line sits close enough to zero that it will cross this threshold
   // on any re-roll, in either direction, and that is a fact about the strategy
   // rather than about the tolerance.
-  'balance/baselines/balance-gate-agency-v1.baseline.json': [
-    'referenceNodesGained@denial-warden',
-    'referenceNodesKnown@denial-warden',
-  ],
+  //
+  // **One since `w187/effects-union`, and the lesson above is why.**
+  // `referenceNodesKnown@denial-warden` moved 4.125 → 5.0 when node effects
+  // began driving the academic rates, and 4.69874 ÷ 5.0 is 94 %, so the line
+  // became sharp and left this list. **Shrinking it is a build failure for the
+  // same reason growing it is**, and this is that rationale: the gate can now
+  // see a doubling of that line where it could not before, which is a change in
+  // the instrument even though it is the pleasant direction. Its sibling
+  // `referenceNodesGained@denial-warden` sits at 2.5 against the same tolerance
+  // — 188 % — and stays. Both crossings, in both directions, have now happened
+  // to the same pair of lines on the same strategy without anybody touching a
+  // tolerance.
+  'balance/baselines/balance-gate-agency-v1.baseline.json': ['referenceNodesGained@denial-warden'],
   // Ten since w107, up from seven, and the three that joined are all the same
   // shape: an arm whose *spread* widened rather than an arm that stopped
   // producing. `referencePeakPopulation@permissive-breadth` is the clearest —

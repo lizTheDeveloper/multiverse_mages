@@ -257,16 +257,30 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 5.6 % | 6.6 % | 12.6 % | 16.2 % |
-| `referenceKnowledgeInstances` | 2.2 % | 2.5 % | 4.6 % | 7.2 % |
-| `referenceLibraryDepth` | 16.5 % | 14.3 % | 22.9 % | 17.5 % |
-| `referenceLivingMages` | 0.8 % | 1.6 % | 3.2 % | 6.1 % |
-| `referenceNodesGained` | 2.9 % | 1.4 % | 2.8 % | 2.8 % |
-| `referenceNodesGainedFinalQuarter` | — | 3.8 % | 10.1 % | 26.4 % |
-| `referenceNodesKnown` | 2.4 % | 1.3 % | 2.6 % | 2.7 % |
-| `referencePeakPopulation` | 0.0 % | 5.8 % | 8.2 % | 1.4 % |
-| `referencePopulation` | 1.0 % | 1.7 % | 3.3 % | 8.1 % |
-| `referencePopulationChange` | 8.7 % | 5.3 % | 10.1 % | 8.2 % |
+| `referenceGrimoires` | 5.8 % | 6.5 % | 12.7 % | 16.2 % |
+| `referenceKnowledgeInstances` | 2.3 % | 2.3 % | 5.5 % | 7.2 % |
+| `referenceLibraryDepth` | 17.5 % | 14.4 % | 26.8 % | 17.5 % |
+| `referenceLivingMages` | 0.8 % | 1.6 % | 3.8 % | 6.1 % |
+| `referenceNodesGained` | 2.5 % | 1.0 % | 2.9 % | 2.8 % |
+| `referenceNodesGainedFinalQuarter` | — | 7.3 % | 24.4 % | 26.4 % |
+| `referenceNodesKnown` | 2.2 % | 0.9 % | 2.7 % | 2.7 % |
+| `referencePeakPopulation` | 0.0 % | 18.0 % | 8.0 % | 1.4 % |
+| `referencePopulation` | 1.0 % | 1.8 % | 3.7 % | 8.1 % |
+| `referencePopulationChange` | 8.5 % | 5.7 % | 10.3 % | 8.2 % |
+
+**Re-recorded 2026-08-14 on `w187/effects-union`.** Three columns moved because three baselines did;
+the fourth (200-year) is unchanged because that gate was not re-recorded. Two cells are worth a
+sentence rather than a shrug, because both got *worse* and neither is a mistake:
+
+- **`referenceNodesGainedFinalQuarter` 3.8 % → 7.3 % at twenty years**, and 10.1 % → 24.4 % on the
+  agency gate. The metric halved — 8.33 → 4.345 — and the MDE is a *proportion* of it, so the gate
+  can still see the same absolute drift it always could. A frontier reached sooner is a smaller
+  final-quarter figure, and a smaller figure has a larger percentage tolerance around it.
+- **`referencePeakPopulation` 5.8 % → 18.0 % at twenty years.** The vitality wire made peak
+  population strategy-dependent, so its variance across the sweep went up and the standard error
+  with it. This is the gate honestly reporting that it now watches a noisier quantity; tightening
+  it by hand would be widening a tolerance by the other spelling.
+
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |

@@ -145,6 +145,43 @@
  * `coverage.ts`'s did not. See {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} for
  * what the split costs and what it does not.
  *
+ * ## What a green here still does not establish: the magnitude may never bind
+ *
+ * **This check cannot tell a live wire from one whose magnitude never binds**,
+ * and that is the same failure class it exists to catch, one layer up. It
+ * proves a path from an authored node effect to something the assembled
+ * simulation applies. It says nothing about whether applying it changes an
+ * outcome.
+ *
+ * The worked example is `teach-rate`, which is wired, registered against
+ * `coordination/academic-effects.academicRateBonuses` over twenty nodes, green
+ * here — and behaviourally inert under v1 content. The suite's own numbers, from
+ * `packages/coordination/test/unit/academic-effects.test.ts`, ablating each rate
+ * against the same control:
+ *
+ * | ablated | measure | control | treatment | gain |
+ * |---|---|--:|--:|--:|
+ * | `research-rate` | completions | 4,278 | 5,508 | +28.8% |
+ * | `research-rate` | `nodesKnown` | 29 | 46 | +58.6% |
+ * | `scribe-rate` | grimoires | 141 | 185 | +31.2% |
+ * | `teach-rate` | lessons | 3,174 | 3,271 | **+3.1%** |
+ *
+ * That last row is small for a structural reason rather than a tuning one, and
+ * the test that produces it is named after the reason: *"finds no
+ * completion-count gain for `teach-rate`, because a lesson already fits in a
+ * month."* The rate divides a duration that is already under the tick, so
+ * dividing it further buys nothing a completion count can see. Nineteen
+ * `single`-target effects reach a consumer and move no outcome.
+ *
+ * **Do not add `teach-rate` to {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} over
+ * this, and do not weaken the wire.** It is genuinely consumed; whether it
+ * *binds* is a content and tuning question, answered by ablation runs and by
+ * the balance gates, not by a registry walk. The honest statement of what a
+ * green here buys is the one `portal` and `worship-yield` already get: *the
+ * assembled simulation fetched these node magnitudes and applied them.* The
+ * check that would catch an inert magnitude is an ablation whose arms differ,
+ * and `§9`'s `winRateByPrimitive` mask is the instrument for it.
+ *
  * ## It fails in both directions, like its sibling
  *
  * `coverage.ts` argues that a one-directional check rots: it passes forever

@@ -452,11 +452,20 @@ export interface WorldStepReport {
    *
    * The sibling of {@link WorldStepReport.economicNodes}, emitted for the same
    * reason. Both primitives were declared exclusions in the consumption check
-   * until `knowledge-vitality.ts`, and under v1 content this figure is **zero**
-   * on every tick — every node authoring either sits outside the twelve enabled
-   * cells, so `permits()` refuses it. A zero here and a zero in the birth rate
-   * therefore mean different things, and without this counter they would look
-   * the same.
+   * until `knowledge-vitality.ts`, and under **v1 content** — the twelve enabled
+   * cells the balance gates play — this figure is **zero** on every tick, since
+   * every node authoring either sits outside them and `permits()` refuses it. A
+   * zero here and a zero in the birth rate therefore mean different things, and
+   * without this counter they would look the same.
+   *
+   * **The v1 scope is load-bearing and is easy to drop when quoting this.** A
+   * run that opens more of the grid than the v1 rectangle — which is every
+   * `scenario` reference run under `permissive-breadth`, including the ablation
+   * harness — sees this figure in the thousands, and sees population move with
+   * it. Measured on `w187/effects-union`: 2,592 contributions over 240 world
+   * ticks at seed `0x12345678`, and a final population of 494 against 325 with
+   * the wire absent. `knowledge-vitality.ts`'s module note carries the
+   * measurement and the date.
    */
   readonly vitalityContributions: number;
   /**

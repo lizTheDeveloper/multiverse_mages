@@ -130,6 +130,31 @@
  * includes *Corpus* — and `checkPrimitiveCoverage` is the check that will say
  * so, because both primitives stay on its list until a **v1** node declares
  * one.
+ *
+ * ## And it is *not* zero in the runs this repository measures with
+ *
+ * The paragraph above is scoped to the v1 rectangle, and that scope is doing
+ * more work than it looks like it is. **The reference harness does not play the
+ * v1 rectangle.** `scenario`'s reference run under `permissive-breadth` opens
+ * far more of the grid than the twelve cells, and every node above becomes
+ * reachable there. Instrumented on `w187/effects-union` at seed `0x12345678`
+ * over 240 world ticks, `vitalityBonuses` returned **2,592 contributions** —
+ * 998 `fertility` at `target: "universe"`, 1,594 `lifespan` at
+ * `target: "universe"`, none at `self` — and the final population moved from
+ * **325 with this wire absent to 392 with it installed**, on the `fertility`
+ * channel alone; zeroing `lifespanUniverse` changes nothing measurable at that
+ * horizon.
+ *
+ * That is not a contradiction of the paragraph above, and nothing here needs
+ * fixing. It is a warning about how the sentence *"under v1 content this figure
+ * is zero"* will be read six months from now by somebody looking at an ablation
+ * run and concluding the wire is dead. **It is dead in the twelve cells and
+ * lively everywhere else the harness goes**, so a zero in a balance gate — every
+ * gate plays the v1 rectangle — and a zero in a reference run mean different
+ * things. {@link import('./world-step.js').WorldStepReport.vitalityContributions}
+ * is the counter that distinguishes them and carries the same caveat.
+ *
+ * Measured 2026-08-14. Re-measure before quoting.
  */
 
 import type { ContentId, ContentRegistry } from '@mm/content';
