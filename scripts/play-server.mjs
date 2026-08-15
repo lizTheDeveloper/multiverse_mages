@@ -362,10 +362,18 @@ const readBody = async (req) => {
   }
 };
 
-/** A submitted action, validated here so a typo is a 400 and not a stack trace. */
+/**
+ * A submitted action, validated here so a typo is a 400 and not a stack trace.
+ *
+ * The upper bound is read off the live session rather than written as a
+ * literal. It was `16` when this file was written, and `w109`'s alliance verb
+ * has since made the action space **17** -- a literal here would 400 the last
+ * verb in the console's own list while the mask reported it legal, which reads
+ * as a dead button rather than as a stale bound.
+ */
 const toAction = (body) => {
   const kind = Number(body?.kind);
-  if (!Number.isInteger(kind) || kind < 0 || kind >= 16) return null;
+  if (!Number.isInteger(kind) || kind < 0 || kind >= run.session.actionSpaceSize) return null;
   const raw = Array.isArray(body?.params) ? body.params : [];
   const params = raw.map(Number);
   if (!params.every(Number.isInteger)) return null;
@@ -411,7 +419,7 @@ async function handle(req, res) {
     const body = await readBody(req);
     const action = toAction(body);
     if (action === null) {
-      json(res, 400, { error: 'body must be {kind:int 0..15, params:int[]}' });
+      json(res, 400, { error: 'body must be {kind:int in the action space, params:int[]}' });
       return;
     }
     const from = run.frames.length;
@@ -438,7 +446,7 @@ async function handle(req, res) {
     const body = await readBody(req);
     const action = toAction(body);
     if (action === null) {
-      json(res, 400, { error: 'body must be {kind:int 0..15, params:int[]}' });
+      json(res, 400, { error: 'body must be {kind:int in the action space, params:int[]}' });
       return;
     }
     const settle = Math.max(0, Math.min(200, Number(body?.settle ?? 30)));
