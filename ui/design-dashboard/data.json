@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 131,
-    "examinedSymbolCount": 853,
+    "findingCount": 130,
+    "examinedSymbolCount": 855,
     "examinedPackages": [
       "content",
       "coordination",
@@ -3082,26 +3082,20 @@
         "kind": "function"
       },
       {
-        "file": "packages/scenario/src/content-set.ts",
-        "line": 317,
-        "name": "explicitOpeningAxes",
-        "kind": "function"
-      },
-      {
         "file": "packages/scenario/src/long-run.ts",
-        "line": 572,
+        "line": 573,
         "name": "longRunLines",
         "kind": "function"
       },
       {
         "file": "packages/scenario/src/long-run.ts",
-        "line": 515,
+        "line": 516,
         "name": "longestOccupationAlternation",
         "kind": "function"
       },
       {
         "file": "packages/scenario/src/species-separation.ts",
-        "line": 567,
+        "line": 584,
         "name": "claimRate",
         "kind": "function"
       },
