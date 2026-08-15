@@ -130,6 +130,31 @@ export interface CellRecord {
   readonly nodes: readonly string[];
   readonly v1?: boolean;
   readonly edicts?: readonly EdictKind[];
+  /**
+   * Anti-requisites (`vision.md` §4b). Absent means this cell excludes nothing,
+   * which is every shipped cell as of this revision.
+   */
+  readonly excludes?: readonly ExclusionRecord[];
+}
+
+/**
+ * What happens when a mage who holds one side acquires the other.
+ *
+ * Authored per exclusion rather than fixed globally: §4b makes every exclusion
+ * carry its own reason, and the resolution follows from the reason. A pair whose
+ * halves disagree is rejected by the loader.
+ */
+export type ExclusionResolution = 'refused' | 'destructive';
+
+/** One anti-requisite edge, as authored on a cell. */
+export interface ExclusionRecord {
+  readonly cell: string;
+  /**
+   * Why the two exclude one another. Load-bearing: §4b derives symmetry from
+   * the reason, so this is what the two halves are checked to agree on.
+   */
+  readonly reason: string;
+  readonly resolution: ExclusionResolution;
 }
 
 export type EffectTarget = 'self' | 'single' | 'area' | 'side' | 'universe';

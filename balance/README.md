@@ -257,16 +257,16 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 5.6 % | 6.6 % | 12.6 % | 16.2 % |
-| `referenceKnowledgeInstances` | 2.2 % | 2.5 % | 4.6 % | 7.2 % |
-| `referenceLibraryDepth` | 16.5 % | 14.3 % | 22.9 % | 17.5 % |
-| `referenceLivingMages` | 0.8 % | 1.6 % | 3.2 % | 6.1 % |
-| `referenceNodesGained` | 2.9 % | 1.4 % | 2.8 % | 2.8 % |
-| `referenceNodesGainedFinalQuarter` | — | 3.8 % | 10.1 % | 26.4 % |
-| `referenceNodesKnown` | 2.4 % | 1.3 % | 2.6 % | 2.7 % |
-| `referencePeakPopulation` | 0.0 % | 5.8 % | 8.2 % | 1.4 % |
-| `referencePopulation` | 1.0 % | 1.7 % | 3.3 % | 8.1 % |
-| `referencePopulationChange` | 8.7 % | 5.3 % | 10.1 % | 8.2 % |
+| `referenceGrimoires` | 5.5 % | 6.5 % | 12.4 % | 16.2 % |
+| `referenceKnowledgeInstances` | 2.4 % | 2.4 % | 5.6 % | 7.2 % |
+| `referenceLibraryDepth` | 16.0 % | 14.2 % | 22.4 % | 17.5 % |
+| `referenceLivingMages` | 0.8 % | 1.6 % | 3.3 % | 6.1 % |
+| `referenceNodesGained` | 3.0 % | 1.4 % | 8.5 % | 2.8 % |
+| `referenceNodesGainedFinalQuarter` | — | 3.8 % | 25.7 % | 26.4 % |
+| `referenceNodesKnown` | 2.5 % | 1.3 % | 7.9 % | 2.7 % |
+| `referencePeakPopulation` | 0.0 % | 16.6 % | 8.2 % | 1.4 % |
+| `referencePopulation` | 1.0 % | 1.9 % | 3.3 % | 8.1 % |
+| `referencePopulationChange` | 8.6 % | 5.8 % | 10.0 % | 8.2 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
@@ -276,7 +276,7 @@ where their power actually lives; the column above is a summary of a mean taken 
 strategies that do very different things, and both figures below count **measured, nonzero** arm
 lines only — a line at zero has no proportional effect to be minimum-detectable about, which is the
 same reason the table above prints an em dash rather than `Infinity`. Agency arm lines: median MDE
-11.3 %, **78 of 80** below 100 %. Ascension arm lines: median 13.8 %, 67 of 77 below 100 % (the
+14.0 %, **77 of 80** below 100 %. Ascension arm lines: median 13.8 %, 67 of 77 below 100 % (the
 denominator moved from 80 to 77 when the convention was written down here, not when any file
 changed).
 
@@ -294,6 +294,15 @@ to zero that three standard errors exceed it. MDE is now 114 % and 289 % on thos
 instrument did not change; the arm moved under it, twice, in opposite directions.** That is the
 argument for keeping the list rather than a threshold: a line this close to zero will cross 100 %
 in either direction on a re-roll, and the crossing has to arrive with a rationale each time.
+
+**And a third opened at `anti-requisites` (PR #161) — this one a mechanic, not a re-roll.**
+The shipped exclusion pair (`creo-ignem` ⊥ `creo-umbra`, `destructive`) cut
+`permissive-breadth`'s final-quarter node gain to a fraction of what it was, and an arm whose mean
+has fallen onto zero is one whose three-standard-error tolerance exceeds it. It is listed alongside
+the two `denial-warden` lines in `gate-power.test.ts`'s `BLIND_ARM_LINES` so that a fourth cannot
+join them in silence. Note the contrast with the pair above, which is the whole reason the list
+carries reasons rather than counts: **the `denial-warden` crossings are the arm moving under a
+re-roll, and this one is content the god actually shipped.**
 
 `referencePeakPopulation` on the five-year gate has an MDE of exactly zero — its jackknife standard
 error is 0, because the peak is 216 in all 200 runs, so the gate demands exact equality. That is the

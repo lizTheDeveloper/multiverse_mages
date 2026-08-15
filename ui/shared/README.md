@@ -37,18 +37,27 @@ and it is why the recording is not a fixture-shaped shortcut.
     f.actions();         // the §4.2 mask, named
     f.candidateLists();  // §4.4's slots, as the integers they actually are
 
-### The recording is a golden
+### The recording is built, not committed
 
-`ui/session.json` is committed so a fresh clone can open the prototypes, and it gets the same
-discipline as the replay fixtures: **regenerate only by explicit command**, and a diff is a claim
-that behaviour changed on purpose.
+`ui/session.json` is gitignored. `npm run ui` builds it before serving, so a fresh clone still opens
+the prototypes in one command; to build it alone:
 
     npm run ui:record        # 400 ticks, seed 20260813
 
-`packages/scenario/test/unit/ui-recording.test.ts` re-runs the script and compares, so a stale
-recording is a red test rather than a prototype quietly showing last month's universe. It checks the
-layout digest *and* the frames, because the digest is blind to behaviour — a balance change moves
-every number in the file without touching it.
+It was committed and pinned byte-for-byte until W195. The pin cost more than it bought: a 1.1 MB
+generated JSON conflicts on every branch that moves a rule, and a conflict in it is settled by
+regenerating rather than by reading, so the merge goes to whoever ran the command last.
+`scripts/check-generated-artifacts.mjs` carries the argument and gates what replaces it — the
+recorder is deterministic over two runs, and the artifact is not tracked. Rot is then impossible
+rather than detected: what a prototype reads was produced from the tree you are on.
+
+`packages/scenario/test/unit/ui-recording.test.ts` no longer compares bytes. It runs the recorder and
+asserts the recording is one these helpers can decode — the blocks tile the observation end to end
+(which is what `blockByName.clock.offset + 2` depends on), every frame carries the full observation
+and the full mask, the episode ran to its cap, and no cell id repeats. The old digest comparison was
+**deleted rather than repointed**: against a committed file it caught a stale recording, but against
+freshly generated output the recorder writes that same constant microseconds earlier, and a
+tautology that reads as coverage is worse than an absence.
 
 ### Every page says where its data came from
 

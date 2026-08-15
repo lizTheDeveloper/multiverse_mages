@@ -1,5 +1,5 @@
 /*
- * Multiverse Mages — the committed session recording is a golden.
+ * Multiverse Mages — the session recording is built, and this is what it must hold.
  * Copyright (C) 2026 Ann Kelner
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -13,20 +13,43 @@
 
 /**
  * `ui/session.json` is a real `AgentSession` recorded over the reference
- * scenario, and the eleven prototypes read it instead of inventing numbers. It
- * is committed so a fresh clone can open them, which makes it exactly the kind
- * of generated artefact that rots in silence — the file keeps loading, the
- * prototypes keep rendering, and the universe they show stopped being this one
- * some commits ago.
+ * scenario, and the eleven prototypes read it instead of inventing numbers.
  *
- * So it gets the treatment `CLAUDE.md` already gives golden replay fixtures:
- * regenerated only by explicit command, and a diff is a claim that behaviour
- * changed on purpose. `npm run ui:record` is that command. This test is what
- * turns the claim into something a reviewer can rely on.
+ * ## It used to be committed, and this test used to pin it byte-for-byte
  *
- * It runs the script rather than reimplementing its loop. A test that
- * reimplements the recorder can agree with the committed file while both have
+ * That was the wrong shape, for the reason written up at the top of
+ * `scripts/check-generated-artifacts.mjs`: a 1.1 MB generated JSON in version
+ * control conflicts on every branch that moves a rule, and a conflict in it is
+ * resolved by regenerating rather than by reading — so the merge is decided by
+ * whoever ran the command last. The file is now **built and gitignored**, by
+ * `npm run ui:record`, and `npm run check:generated` gates the two properties
+ * that removal depends on: the recorder is deterministic (run twice, bytes
+ * compared) and the artifact is not tracked.
+ *
+ * **The "committed recording is stale" failure mode is gone by construction,
+ * not preserved.** There is no committed recording to go stale.
+ *
+ * ## So what is left for this test
+ *
+ * The half of the old file that was never about equality: *does a recording
+ * carry what a prototype decodes out of it?* Every assertion below names a field
+ * some page under `ui/` reads, and a recording that lost one draws an empty box
+ * that reads as "nothing to report" rather than failing.
+ *
+ * It runs the script rather than reimplementing its loop, exactly as before. A
+ * test that reimplements the recorder can agree with itself while both have
  * drifted from `record-session.mjs`, which is the one comparison that matters.
+ *
+ * ## One assertion deliberately deleted rather than repointed
+ *
+ * The old first case compared the recording's `observationLayoutDigest` to
+ * `OBSERVATION_LAYOUT_DIGEST` imported from `@mm/agent-api`. Against a
+ * *committed* file that was a real check — it caught a recording made before a
+ * block moved. Against freshly generated output it is a tautology: the recorder
+ * writes that same imported constant into the file microseconds earlier. A
+ * retained tautology reads as coverage and is worse than an absence, so it is
+ * gone rather than repointed. The staleness it guarded cannot happen to a file
+ * that is regenerated on every read.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -35,84 +58,153 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { OBSERVATION_LAYOUT_DIGEST, OBSERVATION_SCHEMA_VERSION } from '@mm/agent-api';
 import { afterAll, describe, expect, it } from 'vitest';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
-const COMMITTED = path.join(ROOT, 'ui', 'session.json');
 const scratch = mkdtempSync(path.join(tmpdir(), 'mm-ui-recording-'));
 
 afterAll(() => {
   rmSync(scratch, { recursive: true, force: true });
 });
 
+interface Frame {
+  readonly obs: readonly number[];
+  readonly sat: readonly number[];
+  readonly mask: readonly number[];
+  readonly candidates: Readonly<Record<string, readonly number[]>>;
+  readonly status: string;
+}
+
 interface Recording {
   readonly provenance: {
     readonly seed: number;
     readonly ticks: number;
     readonly tickCap: number;
+    readonly scenarioId: string;
     readonly observationSchemaVersion: number;
     readonly observationLayoutDigest: string;
+    readonly actionSpaceSize: number;
     readonly snapshotHash: string;
+    readonly recordedBy: string;
   };
-  readonly layout: readonly { readonly name: string; readonly size: number }[];
-  readonly content: { readonly cells: readonly unknown[]; readonly actionCosts: unknown };
-  readonly frames: readonly unknown[];
+  readonly layout: readonly { readonly name: string; readonly offset: number; readonly size: number }[];
+  readonly actions: Readonly<Record<string, string>>;
+  readonly content: {
+    readonly cells: readonly { readonly cellId: number; readonly id: string }[];
+    readonly species: readonly { readonly id: string }[];
+    readonly actionCosts: Readonly<Record<string, number>>;
+    readonly candidateSlots: Readonly<Record<string, number>>;
+  };
+  readonly frames: readonly Frame[];
 }
 
-const committed = JSON.parse(readFileSync(COMMITTED, 'utf8')) as Recording;
-
-describe('ui/session.json', () => {
-  it('was recorded against this layout, not an older one', () => {
-    // The cheap half of the check, and the one whose failure message is
-    // legible: a block moved or a saturation constant changed.
-    expect(committed.provenance.observationLayoutDigest).toBe(OBSERVATION_LAYOUT_DIGEST);
-    expect(committed.provenance.observationSchemaVersion).toBe(OBSERVATION_SCHEMA_VERSION);
+/**
+ * One recording, at the recorder's own defaults.
+ *
+ * The defaults rather than a smaller run on purpose: `npm run ui:record` with no
+ * flags is what a person gets and what the prototypes are drawn against, so a
+ * shorter episode here would test a file nobody opens. It costs about 0.8 s.
+ */
+const recording = ((): Recording => {
+  const out = path.join(scratch, 'session.json');
+  execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'record-session.mjs'), '--out', out], {
+    cwd: ROOT,
+    stdio: ['ignore', 'ignore', 'pipe'],
   });
+  return JSON.parse(readFileSync(out, 'utf8')) as Recording;
+})();
 
-  it('is byte-for-byte what `npm run ui:record` produces today', () => {
-    // The expensive half, and the one that catches a rules change. The digest
-    // above is blind to behaviour: a balance tweak moves every number in the
-    // file and does not touch the layout.
-    const out = path.join(scratch, 'session.json');
-    execFileSync(
-      process.execPath,
-      [
-        path.join(ROOT, 'scripts', 'record-session.mjs'),
-        // The cap the recording was made with, not the number of frames in it.
-        // They differ the first time a run ends early, and re-running with the
-        // observed length would hand the session a different episode.
-        '--ticks',
-        String(committed.provenance.tickCap),
-        '--seed',
-        String(committed.provenance.seed),
-        '--out',
-        out,
-      ],
-      { cwd: ROOT, stdio: ['ignore', 'ignore', 'pipe'] },
-    );
-
-    const fresh = JSON.parse(readFileSync(out, 'utf8')) as Recording;
-    // Compared field by field rather than as one string, so a failure says
-    // *what* moved instead of "two 1.1 MB strings differ".
-    expect(fresh.provenance).toEqual(committed.provenance);
-    expect(fresh.layout).toEqual(committed.layout);
-    expect(fresh.content).toEqual(committed.content);
-    expect(fresh.frames.length).toBe(committed.frames.length);
-    expect(fresh.frames).toEqual(committed.frames);
-  });
-
+describe('the recording `npm run ui:record` produces', () => {
   it('carries what the prototypes read it for', () => {
-    // Guards against a recording that is fresh and useless — every field here
-    // is one some prototype under ui/ decodes by name.
-    const names = committed.layout.map((b) => b.name);
+    // Guards against a recording that is fresh and useless — every field here is
+    // one some prototype under ui/ decodes by name.
+    const names = recording.layout.map((b) => b.name);
     expect(names).toContain('resources');
     expect(names).toContain('ruleset');
     expect(names).toContain('knowledge');
     expect(names).toContain('mages');
     expect(names).toContain('clock');
-    expect(committed.content.cells).toHaveLength(70);
-    expect(Object.keys(committed.content.actionCosts as object).length).toBeGreaterThan(0);
-    expect(committed.frames.length).toBeGreaterThan(1);
+    expect(recording.content.cells).toHaveLength(70);
+    expect(recording.content.species).toHaveLength(6);
+    expect(Object.keys(recording.content.actionCosts).length).toBeGreaterThan(0);
+    expect(Object.keys(recording.content.candidateSlots).length).toBeGreaterThan(0);
+    expect(Object.keys(recording.actions).length).toBeGreaterThan(0);
+    expect(recording.frames.length).toBeGreaterThan(1);
+  });
+
+  it('lays its blocks out end to end, which is how a view finds a channel', () => {
+    // `ui/shared/session.js` reads a channel as `blockByName.clock.offset + 2`.
+    // A gap or an overlap between blocks does not make that throw — it makes it
+    // return a *different channel's* number, and every prototype then prints a
+    // plausible wrong figure. This is the property that would have to hold for
+    // that arithmetic to mean anything, and nothing else in the suite states it.
+    let next = 0;
+    for (const block of recording.layout) {
+      expect(block.offset, `${block.name} does not start where the previous block ended`).toBe(next);
+      expect(block.size, `${block.name} is empty`).toBeGreaterThan(0);
+      next += block.size;
+    }
+    expect(next, 'the blocks do not sum to the observation length').toBe(
+      recording.frames[0]?.obs.length,
+    );
+  });
+
+  it('gives every frame the full observation and the full mask', () => {
+    // A short frame is the failure that reads as a rendering bug three pages
+    // away. `mask` is per action and §4.2 fixes the action space, so its length
+    // is a stated fact rather than an emergent one.
+    const slots = recording.layout.reduce((n, b) => n + b.size, 0);
+    for (const [i, frame] of recording.frames.entries()) {
+      expect(frame.obs.length, `frame ${String(i)} has a short observation`).toBe(slots);
+      expect(frame.mask.length, `frame ${String(i)} has a short mask`).toBe(
+        recording.provenance.actionSpaceSize,
+      );
+      expect(['running', 'truncated', 'terminated']).toContain(frame.status);
+      // `sat` names slots whose magnitude was lost to the ceiling. An index
+      // outside the observation would make a view label the wrong channel
+      // "128+", which is worse than not labelling it.
+      for (const slot of frame.sat) expect(slot).toBeLessThan(slots);
+    }
+  });
+
+  it('ran the whole episode it asked for, so the prototypes are not drawn against a collapse', () => {
+    // `ticks` is what happened and `tickCap` is what was asked for; they part
+    // company the first time a run ends early. The reference universe reaching
+    // its cap is a real property of this scenario and not a tautology of the
+    // recorder — a world that died at tick 40 would give every prototype a
+    // 40-frame timeline and no obvious sign that is what happened.
+    expect(recording.provenance.ticks).toBe(recording.provenance.tickCap);
+    expect(recording.frames).toHaveLength(recording.provenance.tickCap + 1);
+    expect(recording.frames.at(-1)?.status).not.toBe('running');
+  });
+
+  it('names one cell per id, so a view cannot silently resolve the wrong one', () => {
+    // `session.js` builds `cellById` with `Object.fromEntries`, which keeps the
+    // last of a duplicate pair without complaining.
+    const ids = new Set(recording.content.cells.map((c) => c.cellId));
+    expect(ids.size).toBe(recording.content.cells.length);
+  });
+
+  it('records the identity of the run it is, so a reader can trace it back', () => {
+    expect(recording.provenance.recordedBy).toBe('scripts/record-session.mjs');
+    expect(recording.provenance.scenarioId.length).toBeGreaterThan(0);
+    expect(recording.provenance.seed).toBeGreaterThan(0);
+    // The behaviour identity of the episode. It is not pinned to a literal here:
+    // a rules change moves it, and the three balance gates plus the golden
+    // replay fixtures are what state whether that change was intended. What
+    // matters to a *reader of the file* is that it is present, because it is the
+    // only thing in the payload that says which simulation produced it.
+    expect(recording.provenance.snapshotHash).toMatch(/^[0-9a-f]{16}$/u);
+    expect(recording.provenance.observationLayoutDigest).toMatch(/^[0-9a-f]{16}$/u);
+  });
+
+  it('carries no wall-clock stamp, so it is a statement about the tree and not about today', () => {
+    // The property `npm run check:generated` rests on: the recorder is a pure
+    // function of the repository, so the file CI builds is the file you build.
+    // The check would catch a timestamp as non-determinism; this catches it with
+    // a message that says what was added and why it is not allowed.
+    expect(JSON.stringify(recording.provenance)).not.toMatch(/\d{4}-\d{2}-\d{2}/u);
+    expect(Object.keys(recording.provenance)).not.toContain('generatedAt');
+    expect(Object.keys(recording.provenance)).not.toContain('recordedAt');
   });
 });
