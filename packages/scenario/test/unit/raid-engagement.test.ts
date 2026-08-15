@@ -32,10 +32,10 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { rngFromRootSeed, snapshotHash, step } from '@mm/sim-core';
+import { installValueSentinel, rngFromRootSeed, snapshotHash, step } from '@mm/sim-core';
 import { KNOWLEDGE_INSTANCE, collectRecords } from '@mm/state';
 import { executeReferenceRun, referenceContent, referenceScenario } from '@mm/scenario';
-import type { SimState } from '@mm/sim-core';
+import type { ComponentValueViolation, SimState } from '@mm/sim-core';
 
 /**
  * Long enough for the arrival process to fire, short enough to run in a gate.
@@ -50,6 +50,27 @@ const HORIZON = 520;
 
 /** Seeds these tests play. Three, so a pass is not one lucky arrival. */
 const SEEDS: readonly number[] = Object.freeze([0x1234_5678, 0x0bad_c0de]);
+
+/**
+ * The seed and horizon the sentinel arm plays, chosen to be the cheapest pair
+ * that still resolves a raid rather than the pair the rest of the file uses.
+ *
+ * The sentinel routes every component write through a `Proxy`, so its arm costs
+ * several times what an ordinary one does, and this suite is already the
+ * slowest in the repository. At {@link HORIZON} on this file's usual seed the
+ * arm added twenty-one seconds and pushed the whole run into
+ * `[vitest-worker]: Timeout calling "onTaskUpdate"` — which fails `npm run
+ * verify` outright, because vitest exits non-zero on an unhandled error even
+ * when every test passed.
+ *
+ * A scan of ten seeds at 240 ticks found `portal-rush` resolving raids on four
+ * of them; seed 99 resolves two, in under a third of the work. One resolved
+ * raid exercises the code path as well as three do, and the arm asserts the
+ * count, so a seed that stops raiding fails rather than quietly covering
+ * nothing.
+ */
+const SEED_UNDER_SENTINEL = 99;
+const SENTINEL_HORIZON = 240;
 
 const content = referenceContent();
 
@@ -118,6 +139,71 @@ function playOnce(seed: number, raids: boolean, ticks: number): Arm {
     instances: collectRecords(state, KNOWLEDGE_INSTANCE).length,
   };
 }
+
+/**
+ * Hands the event loop back so the vitest worker can answer its runner, for the
+ * reason `assembled-run-values.test.ts` documents: a worker doing unbroken
+ * synchronous work cannot answer an RPC, and a runner that has not heard from a
+ * worker treats it as dead. It changes no number.
+ */
+async function yieldToRunner(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
+/**
+ * # The NaN check, on the one path it could not previously reach
+ *
+ * `assembled-run-values.test.ts` watches the component write boundary across
+ * the reference universe and every shipped strategy, and finds nothing. It also
+ * cannot see `rules-raid`, which is 4,525 lines: its strategy arms run sixty
+ * ticks, and the arrival process behind a sixty-tick cooldown needs hundreds.
+ * Measured on this tree, the whole ten-strategy pool at that horizon resolves
+ * *one* raid, and that one is an accident of `archivist`'s seed --
+ * `portal-rush`, whose entire purpose is opening portals, resolves none at 60,
+ * 90, 120, 180 or 240 ticks.
+ *
+ * So raid coverage in the NaN check was never a property of a test. It was a
+ * property of one seed. This file already pays for the horizon that reaches the
+ * mechanic, so the check belongs here.
+ *
+ * The resolved-raid count is asserted for the reason the violation list is not
+ * enough on its own: a run that resolves no raid reports zero violations and
+ * passes while covering nothing. Asserting the count makes the arm fail when it
+ * stops reaching the mechanic, instead of quietly hollowing out.
+ */
+describe('a raid writes no non-finite value into state', () => {
+  it('stays clean at the component write boundary across every resolved raid', async () => {
+    const violations: ComponentValueViolation[] = [];
+    const previous = installValueSentinel((violation) => violations.push(violation));
+
+    let resolved = 0;
+    try {
+      const run = referenceScenario(content, { raids: true });
+      let state = run.scenario.create(SEED_UNDER_SENTINEL, {
+        worldTickCap: SENTINEL_HORIZON,
+      });
+      for (let tick = 0; tick < SENTINEL_HORIZON; tick += 1) {
+        state = step(state, [], rngFromRootSeed(state.rootSeed));
+        // Once a world year, as the long run does.
+        if (tick % 12 === 11) await yieldToRunner();
+      }
+      resolved = run.raids().length;
+    } finally {
+      installValueSentinel(previous);
+    }
+
+    expect(
+      violations.map(
+        (violation) =>
+          `${violation.component}.${violation.field}[${String(violation.row)}] = ` +
+          `${String(violation.value)} (via ${violation.door})`,
+      ),
+    ).toEqual([]);
+    expect(resolved).toBeGreaterThan(0);
+  }, 180_000);
+});
 
 describe('a reference universe is raided', () => {
   it('resolves raids over forty-three world years, where the build before this one resolved none', () => {

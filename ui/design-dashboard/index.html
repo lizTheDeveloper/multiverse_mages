@@ -1,0 +1,872 @@
+<!--
+  Multiverse Mages — the design dashboard.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  Not a twelfth prototype. The other eleven each ask one interface question;
+  this one asks nothing and answers instead — it is the instrument for reading
+  the campaign's own state, in one page, from files already in the repository.
+
+  Everything on it comes out of ui/design-dashboard/data.json, written by
+  `npm run ui:dashboard` and pinned byte-for-byte by
+  packages/content/test/unit/design-dashboard-payload.test.ts. So the page has
+  no numbers of its own: if a figure is here, the generator put it here, and a
+  stale payload is a red test rather than a dashboard showing last month's
+  design.
+
+  Serve with `npm run ui`, then open /ui/design-dashboard/.
+
+  KNOWN COST: none of the usual prototype kind. This page computes no rule, and
+  it reads no session — it is a view over a generated file and nothing else. The
+  one thing it does that a client would not is *state its own gaps*: the panels
+  headed "cannot be shown" are as load-bearing as the tables.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — design dashboard</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  /* The serif carries old-style figures by default, which turns 0 into O and
+     11 into II at tile size. Every digit on this page is data, so lining
+     figures are declared once at the top and never unset — a rule that adds
+     `tabular-nums` must repeat `lining-nums` or it silently drops it. */
+  .wrap{max-width:86rem;margin:0 auto;padding:1.6rem 1.25rem 5rem;font-variant-numeric:lining-nums}
+
+  /* ---------- typographic hierarchy: four levels, and no more ---------- */
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--warn)}
+  h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.08 var(--serif);margin:.25rem 0 .3rem;letter-spacing:-.012em}
+  .lede{color:var(--soft);max-width:64ch;margin:0}
+  .lede em{color:var(--ink);font-style:italic}
+  h2{font:400 1.5rem/1.15 var(--serif);margin:0;letter-spacing:-.008em}
+  h3{font:11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+     font-weight:500;margin:0 0 .55rem}
+  .kicker{font:10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+
+  header.page{display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;margin-bottom:1rem}
+  header.page > div:first-child{flex:1;min-width:22rem}
+
+  /* ---------- the provenance strip: the first thing, always ---------- */
+  .prov{display:flex;flex-wrap:wrap;gap:.35rem .9rem;align-items:baseline;
+    padding:.55rem .8rem;border:1px solid var(--edge);border-left:3px solid var(--god);
+    border-radius:0 3px 3px 0;background:var(--panel);margin:0 0 1.4rem;font-size:.83rem;color:var(--soft)}
+  .prov b{color:var(--ink);font-weight:500}
+  .prov code{font:11px var(--mono);color:var(--ink);background:var(--sunk);
+    padding:.1rem .3rem;border-radius:2px}
+
+  /* ---------- the top row of tiles ---------- */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.6rem;margin-bottom:2.2rem}
+  .tile{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:.7rem .85rem;
+    display:flex;flex-direction:column;gap:.15rem;border-top:3px solid var(--line)}
+  .tile[data-state="measured"]{border-top-color:var(--ok)}
+  .tile[data-state="unmeasured"]{border-top-color:var(--warn)}
+  .tile[data-state="refuted"]{border-top-color:var(--loss)}
+  .tile .n{font:400 1.9rem/1 var(--serif);font-variant-numeric:lining-nums tabular-nums;letter-spacing:-.02em}
+  .tile .n small{font:400 1rem var(--serif);color:var(--faint)}
+  .tile .k{font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+  /* Clamped, with the full sentence on the tile's title. One of these is a
+     whole refuted claim lifted from a document; unclamped it set the height of
+     the entire row and left the other five mostly empty. */
+  .tile .why{font-size:.78rem;color:var(--soft);line-height:1.35;
+    display:-webkit-box;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* ---------- sections ---------- */
+  section{margin:0 0 2.6rem;scroll-margin-top:1rem}
+  .sechead{display:flex;align-items:baseline;gap:.8rem;flex-wrap:wrap;
+    border-bottom:1px solid var(--rule-hi);padding-bottom:.4rem;margin-bottom:.9rem}
+  .sechead .src{font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+    margin-left:auto;text-align:right}
+  .sechead .src b{color:var(--soft);font-weight:500}
+  .say{color:var(--soft);max-width:74ch;margin:0 0 .9rem;font-size:.9rem}
+  .say b,.say strong{color:var(--ink);font-weight:500}
+  .say code{font:11.5px var(--mono);color:var(--ink)}
+
+  /* ---------- tables: dense, scannable, and scrolling in their own box --- */
+  .scroller{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--panel)}
+  table{border-collapse:collapse;width:100%;font-size:.855rem}
+  th,td{padding:.34rem .55rem;text-align:left;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);
+    white-space:nowrap;vertical-align:baseline}
+  thead th{position:sticky;top:0;background:var(--plate);z-index:1;
+    font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:500;
+    border-bottom:1px solid var(--rule-hi)}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover td{background:var(--sunk)}
+  td.num,th.num{text-align:right;font-variant-numeric:lining-nums tabular-nums;font-family:var(--mono);font-size:.8rem}
+  td.name{font-weight:500}
+  td.wrap-cell{white-space:normal;min-width:22rem;color:var(--soft);font-size:.82rem;line-height:1.4}
+  td.mono,th.mono{font:11px var(--mono);color:var(--soft)}
+  .zero{color:var(--faint)}
+  td.hash{font:10.5px var(--mono);color:var(--faint);letter-spacing:.01em}
+  .sp{display:flex;flex-direction:column;line-height:1.12}
+  .sp .raw{font:12px var(--mono);font-variant-numeric:lining-nums tabular-nums;color:var(--ink)}
+  .sp .mul{font:9.5px var(--mono);color:var(--faint);letter-spacing:.02em}
+  .sp .x{font-size:9px;letter-spacing:.06em;text-transform:uppercase}
+  .sp[data-x="high"] .raw,.sp[data-x="high"] .x{color:var(--ok)}
+  .sp[data-x="low"] .raw,.sp[data-x="low"] .x{color:var(--loss)}
+
+  /* ---------- status marks, one vocabulary across the whole page ---------- */
+  .mark{font:10px var(--mono);letter-spacing:.08em;text-transform:uppercase;
+    padding:.12rem .38rem;border-radius:2px;border:1px solid;display:inline-block;white-space:nowrap}
+  .mark[data-s="ok"]{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent);
+    background:color-mix(in srgb,var(--ok) 12%,transparent)}
+  .mark[data-s="warn"]{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent);
+    background:color-mix(in srgb,var(--warn) 12%,transparent)}
+  .mark[data-s="bad"]{color:var(--loss);border-color:color-mix(in srgb,var(--loss) 45%,transparent);
+    background:color-mix(in srgb,var(--loss) 12%,transparent)}
+  .mark[data-s="mute"]{color:var(--faint);border-color:var(--line);background:transparent}
+
+  /* ---------- the 5 x 14 grid ---------- */
+  .gridbox{display:grid;gap:2px;min-width:62rem;padding:.55rem}
+  .gcorner{font:10px var(--mono);color:var(--faint);display:flex;align-items:flex-end;padding:0 .3rem .3rem}
+  .gform{font:10px var(--mono);letter-spacing:.02em;color:var(--soft);text-align:center;
+    padding:.25rem .1rem;line-height:1.1;border-bottom:1px solid var(--line)}
+  .gform b{display:block;color:var(--ink);font-weight:500;font-size:11px}
+  .gform,.gtech{overflow:hidden}
+  .gtech{font:11px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink);
+    display:flex;align-items:center;padding-right:.5rem;justify-content:flex-end;border-right:1px solid var(--line)}
+  .gcell{aspect-ratio:1.5;border:1px solid var(--line);border-radius:2px;background:var(--sunk);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    font-variant-numeric:lining-nums tabular-nums}
+  .gcell .c{font:400 1.05rem var(--serif);color:var(--faint);line-height:1}
+  .gcell .t{font:9px var(--mono);color:var(--faint);letter-spacing:.04em}
+  .gcell[data-on="true"]{background:color-mix(in srgb,var(--ok) 24%,var(--panel));
+    border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}
+  .gcell[data-on="true"] .c{color:var(--ink)}
+  .gcell[data-on="true"] .t{color:var(--ok)}
+  .gcell[data-empty="true"] .c{opacity:.35}
+
+  .legend{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-top:.6rem;
+    font-size:.8rem;color:var(--soft)}
+  .swatch{display:inline-block;width:.8rem;height:.8rem;border-radius:2px;border:1px solid var(--line);
+    vertical-align:-1px;margin-right:.3rem}
+  .swatch[data-on="true"]{background:color-mix(in srgb,var(--ok) 24%,var(--panel));
+    border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}
+  .swatch[data-on="false"]{background:var(--sunk)}
+
+  /* ---------- bars inside cells, for a column you scan rather than read ---- */
+  .bar{display:inline-block;height:.5rem;border-radius:1px;background:var(--god);
+    vertical-align:0;min-width:1px}
+  .bar[data-tone="mute"]{background:color-mix(in srgb,var(--faint) 60%,transparent)}
+  .barcell{display:flex;align-items:center;gap:.4rem;justify-content:flex-end}
+  .barcell span.v{font-variant-numeric:lining-nums tabular-nums;font:11px var(--mono);min-width:2.2rem;text-align:right}
+
+  /* ---------- cards ---------- */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));gap:.7rem}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:.8rem .9rem;
+    display:flex;flex-direction:column;gap:.4rem;border-left:3px solid var(--line)}
+  .card[data-kind="mechanical"]{border-left-color:var(--ok)}
+  .card[data-kind="game"]{border-left-color:var(--warn)}
+  .card[data-kind="backlog"]{border-left-color:var(--line)}
+  .card[data-kind="landed"]{border-left-color:var(--god)}
+  .card .t{font:400 1.02rem var(--serif);color:var(--ink);line-height:1.25}
+  .card .r{font-size:.83rem;color:var(--soft);line-height:1.45;max-width:104ch}
+  .card .r b{color:var(--ink);font-weight:500}
+
+  .gapcard{background:transparent;border:1px dashed var(--ctl-denied-border);border-radius:4px;
+    padding:.8rem .9rem;display:flex;flex-direction:column;gap:.35rem}
+  .gapcard .t{font:400 1.02rem var(--serif);color:var(--ink)}
+  .gapcard .mark{align-self:flex-start}
+  .gapcard .d{font-size:.83rem;color:var(--soft);line-height:1.45}
+  .gapcard .d code{font:11px var(--mono);color:var(--ink)}
+
+  details.more{margin-top:.7rem}
+  details.more > summary{font:10px var(--mono);letter-spacing:.12em;text-transform:uppercase;
+    color:var(--faint);cursor:pointer;padding:.3rem 0;list-style:none}
+  details.more > summary::before{content:"▸ ";color:var(--god)}
+  details.more[open] > summary::before{content:"▾ "}
+  details.more > summary:focus-visible{outline:2px solid var(--god);outline-offset:2px}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  @media (max-width:64rem){.split{grid-template-columns:1fr}}
+
+  footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);color:var(--faint);
+    font-size:.8rem;line-height:1.6}
+  footer code{font:11px var(--mono);color:var(--soft)}
+  a{color:var(--god);text-decoration-color:color-mix(in srgb,var(--god) 40%,transparent)}
+  .err{border:1px solid var(--loss);background:var(--loss-bg);color:var(--loss);
+    padding:.9rem 1rem;border-radius:4px;font:13px var(--mono);white-space:pre-wrap}
+
+  /* The `font:` shorthand resets `font-variant-numeric` to normal, so every
+     serif rule above quietly undid the lining figures declared on .wrap — which
+     is why "#117" rendered as "#II7" until it was screenshotted. Re-declared
+     last, after every shorthand that would have cleared it. */
+  h1,h2,.card .t,.gapcard .t,.tile .n small,.cellname{font-variant-numeric:lining-nums}
+</style>
+
+<div class="wrap">
+  <header class="page">
+    <div>
+      <div class="eyebrow">Multiverse Mages · design instrument</div>
+      <h1>The state of the design</h1>
+      <p class="lede">What the grid holds, what the primitives reach, what the species are, which metrics have ever been measured — and, marked as plainly as the rest, <em>what nothing in this repository can currently tell you.</em></p>
+    </div>
+    <div id="themehost"></div>
+  </header>
+
+  <div class="prov" id="prov"></div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section id="grid">
+    <div class="sechead">
+      <h2>The grid</h2>
+      <span class="kicker">5 techniques × 14 forms</span>
+      <span class="src">derived from<br><b>cell.json · node.json</b></span>
+    </div>
+    <p class="say" id="grid-say"></p>
+    <div class="scroller"><div class="gridbox" id="gridbox"></div></div>
+    <div class="legend">
+      <span><i class="swatch" data-on="true"></i>enabled — a <code>v1</code> cell, permitted by the reference universe's axes</span>
+      <span><i class="swatch" data-on="false"></i>authored, not enabled</span>
+      <span>the small number is the node count; the tier line is how they are spread</span>
+    </div>
+  </section>
+
+  <section id="primitives">
+    <div class="sechead">
+      <h2>Primitive consumption</h2>
+      <span class="kicker">can what the academics know move it?</span>
+      <span class="src">relayed from<br><b>check:consumption</b></span>
+    </div>
+    <p class="say" id="prim-say"></p>
+    <div class="scroller"><table id="prim-table"></table></div>
+    <p class="say" style="margin-top:.7rem" id="prim-note"></p>
+  </section>
+
+  <section id="species">
+    <div class="sechead">
+      <h2>Species</h2>
+      <span class="kicker">six, and the tensions between their columns</span>
+      <span class="src">derived from<br><b>species.json</b></span>
+    </div>
+    <p class="say" id="species-say"></p>
+    <div class="scroller"><table id="species-table"></table></div>
+    <details class="more" id="species-affinity-wrap">
+      <summary>Per-form affinities — 14 forms, and the eleven declarations across all six species</summary>
+      <div class="scroller" style="margin-top:.5rem"><table id="affinity-table"></table></div>
+    </details>
+  </section>
+
+  <section id="metrics">
+    <div class="sechead">
+      <h2>Balance metrics</h2>
+      <span class="kicker">contracts.md §7</span>
+      <span class="src">read from<br><b>BALANCE_METRIC_REGISTRY</b></span>
+    </div>
+    <p class="say" id="metrics-say"></p>
+    <div class="scroller"><table id="metrics-table"></table></div>
+    <details class="more">
+      <summary>What would disprove each metric — the registry's own <code>disprovedBy</code> field</summary>
+      <div class="scroller" style="margin-top:.5rem"><table id="disproof-table"></table></div>
+    </details>
+  </section>
+
+  <section id="baselines">
+    <div class="sechead">
+      <h2>The measurements that exist</h2>
+      <span class="kicker">committed baselines, and the one species measurement</span>
+      <span class="src">read from<br><b>balance/baselines · docs/design</b></span>
+    </div>
+    <p class="say" id="baseline-say"></p>
+    <div class="scroller"><table id="baseline-table"></table></div>
+    <details class="more">
+      <summary>Every pooled metric value the four baselines hold</summary>
+      <div class="scroller" style="margin-top:.5rem"><table id="baseline-values"></table></div>
+    </details>
+    <details class="more">
+      <summary>Why each baseline was last re-recorded — its own <code>rationale</code> field</summary>
+      <div id="baseline-rationales" style="margin-top:.5rem"></div>
+    </details>
+    <div id="separation" style="margin-top:1.2rem"></div>
+  </section>
+
+  <section id="reachability">
+    <div class="sechead">
+      <h2>Symbol reachability</h2>
+      <span class="kicker">does any production code call this?</span>
+      <span class="src">relayed from<br><b>check:reachability --json</b></span>
+    </div>
+    <p class="say" id="reach-say"></p>
+    <div class="split">
+      <div class="scroller"><table id="reach-summary"></table></div>
+      <div class="scroller"><table id="reach-constants"></table></div>
+    </div>
+    <details class="more">
+      <summary id="reach-summary-label">Every exported value with no production caller</summary>
+      <div class="scroller" style="margin-top:.5rem"><table id="reach-unreached"></table></div>
+    </details>
+  </section>
+
+  <section id="decisions">
+    <div class="sechead">
+      <h2>Open design decisions</h2>
+      <span class="kicker">waiting on the owner</span>
+      <span class="src">relayed from<br><b id="dec-src"></b></span>
+    </div>
+    <p class="say" id="dec-say"></p>
+    <div id="dec-groups"></div>
+  </section>
+
+  <section id="gaps">
+    <div class="sechead">
+      <h2>What this page cannot tell you</h2>
+      <span class="kicker">and why, in one sentence each</span>
+      <span class="src">generated<br><b>openQuestions</b></span>
+    </div>
+    <p class="say">An absent panel reads as an absent problem. These are the things the dashboard was built to show and could not, each with the reason and something a reader can go and check.</p>
+    <div class="cards" id="gapcards"></div>
+  </section>
+
+  <footer>
+    Every figure on this page comes from <code>ui/design-dashboard/data.json</code>, written by <code>npm run ui:dashboard</code> and pinned byte-for-byte by <code>packages/content/test/unit/design-dashboard-payload.test.ts</code>. The payload is a pure function of the repository contents, so it is a statement about the commit you are reading it on — not about the day it was generated. Figures lifted from a document carry that document's own stated date and ref, and are labelled historical.
+    <br>Nothing here computes a rule, runs a sweep, or touches the simulation core. <code>contracts.md</code> §5 puts each rule in exactly one place, and a dashboard is not one of them.
+  </footer>
+</div>
+
+<script type="module">
+import { mountThemeControl } from '../shared/theme.js';
+
+mountThemeControl(document.getElementById('themehost'));
+
+const el = (tag, attrs = {}, ...kids) => {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === null || v === undefined) continue;
+    if (k === 'class') node.className = v;
+    else if (k === 'text') node.textContent = String(v);
+    else node.setAttribute(k, String(v));
+  }
+  node.append(...kids.filter((k) => k !== null && k !== undefined));
+  return node;
+};
+
+/** A table from a column spec, so every table on the page behaves the same. */
+const table = (host, columns, rows) => {
+  host.replaceChildren();
+  host.append(
+    el('thead', {}, el('tr', {}, ...columns.map((c) => el('th', { class: c.cls ?? '', text: c.head })))),
+    el(
+      'tbody',
+      {},
+      ...rows.map((row) =>
+        el('tr', {}, ...columns.map((c) => {
+          const cell = el('td', { class: c.cls ?? '' });
+          const value = c.get(row);
+          if (value instanceof Node) cell.append(value);
+          else cell.textContent = value === null || value === undefined ? '—' : String(value);
+          if (value === 0) cell.classList.add('zero');
+          return cell;
+        })),
+      ),
+    ),
+  );
+};
+
+const mark = (state, label) => el('span', { class: 'mark', 'data-s': state, text: label });
+
+/**
+ * Payload text is written in the repository's own prose, which means backticked
+ * identifiers and *emphasis*. Rendered as plain text those show as literal
+ * punctuation, which is how `check:reachability` came out looking like a typo.
+ * Nothing here interprets HTML — every fragment is a text node — so this cannot
+ * inject markup from a file it reads.
+ */
+const prose = (text) => {
+  const host = document.createDocumentFragment();
+  for (const [i, part] of String(text).split('`').entries()) {
+    if (part === '') continue;
+    host.append(i % 2 === 1 ? el('code', { text: part }) : document.createTextNode(part.replace(/\*\*?/g, '')));
+  }
+  return host;
+};
+
+/** A right-aligned number with a proportional bar behind it. */
+const barCell = (value, max, tone) =>
+  el(
+    'div',
+    { class: 'barcell' },
+    el('i', {
+      class: 'bar',
+      'data-tone': tone ?? 'god',
+      style: `width:${max > 0 ? Math.round((value / max) * 46) : 0}px`,
+    }),
+    el('span', { class: 'v', text: value }),
+  );
+
+/** Fixed point, at the scale the payload publishes rather than at a literal. */
+const fpScale = () => data.species.fpScale;
+const fp = (n) => (n / fpScale()).toFixed(2);
+
+let data;
+try {
+  const response = await fetch('./data.json');
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  data = await response.json();
+} catch (cause) {
+  document.querySelector('.wrap').append(
+    el('div', {
+      class: 'err',
+      text:
+        `Could not load ./data.json — ${cause.message}\n\n` +
+        'Run `npm run ui:dashboard` from the repository root, and serve with `npm run ui` ' +
+        'rather than opening the file directly: a fetch from file:// is blocked.',
+    }),
+  );
+  throw cause;
+}
+
+// --------------------------------------------------------------- provenance
+
+{
+  const p = data.provenance;
+  document.getElementById('prov').append(
+    el('span', {}, el('b', { text: 'Generated' }), document.createTextNode(' by ')),
+    el('code', { text: p.command }),
+    el('span', {}, document.createTextNode('content revision ')),
+    el('code', { text: p.contentRevision }),
+    el('span', { text: `${p.contentCounts.nodes} nodes · ${p.contentCounts.cells} cells · ${p.contentCounts.species} species` }),
+    el('span', { style: 'flex-basis:100%;color:var(--faint);font-size:.8rem', text: p.note }),
+  );
+}
+
+// -------------------------------------------------------------------- tiles
+
+{
+  const g = data.grid.totals;
+  const nodeDriven = data.primitives.rows.filter((r) => r.status === 'node-driven').length;
+  const missing = data.primitives.unconsumed.length;
+  const measured = data.metrics.contractMetricsWithCommittedValue.length;
+  const decisionsOpen = data.decisions.items.filter((i) => i.recommendation !== null).length;
+  // Counted, not typed in. The one hardcoded figure this tile used to carry was
+  // the only number on a page whose whole argument is that it has none.
+  const refuted = Object.values(data.measurements).filter(
+    (m) => m !== null && typeof m === 'object' && m.status === 'refuted',
+  );
+
+  const tile = (state, n, sub, k, why) =>
+    el(
+      'div',
+      { class: 'tile', 'data-state': state, title: `${k}: ${why}` },
+      el('div', { class: 'n' }, document.createTextNode(String(n)), sub ? el('small', { text: ` / ${sub}` }) : null),
+      el('div', { class: 'k', text: k }),
+      el('div', { class: 'why', text: why }),
+    );
+
+  document.getElementById('tiles').append(
+    tile('measured', g.enabledCells, g.cells, 'cells enabled', `${g.nodesInEnabledCells} of ${g.nodes} authored nodes sit inside the rectangle.`),
+    tile(missing === 0 ? 'measured' : 'refuted', nodeDriven, data.primitives.rows.length, 'primitives node-driven', `${missing} have no path from what an academic knows.`),
+    tile(measured === 0 ? 'refuted' : 'measured', measured, data.metrics.rows.length, '§7 metrics with a value', 'No committed baseline holds a value for any of them.'),
+    tile('unmeasured', data.reachability.findingCount, null, 'reachability findings', `Over ${data.reachability.examinedSymbolCount} examined exported values.`),
+    tile(
+      'refuted',
+      refuted.length,
+      null,
+      refuted.length === 1 ? 'refuted design claim' : 'refuted design claims',
+      refuted.map((m) => m.headline).join(' '),
+    ),
+    tile('unmeasured', decisionsOpen, null, 'decisions waiting', 'Each carries a recommendation and none has been taken.'),
+  );
+}
+
+// --------------------------------------------------------------------- grid
+
+{
+  const { techniques, forms, cells, totals, permittedTechniques, permittedForms } = data.grid;
+  const byId = new Map(cells.map((c) => [`${c.technique}/${c.form}`, c]));
+  const box = document.getElementById('gridbox');
+  box.style.gridTemplateColumns = `5.6rem repeat(${forms.length}, minmax(3.1rem, 1fr))`;
+
+  document.getElementById('grid-say').append(
+    el('b', { text: `${totals.enabledCells} of ${totals.cells} cells are enabled` }),
+    document.createTextNode(
+      ` — the rectangle §2.2 pins, ${permittedTechniques.length} techniques × ${permittedForms.length} forms. ` +
+        `All ${totals.cells} cells are authored: ${totals.nodes} nodes across the whole grid, of which ` +
+        `${totals.nodesInEnabledCells} are reachable in the reference universe. A disabled cell is content ` +
+        'that exists and cannot be studied.',
+    ),
+  );
+
+  box.append(el('div', { class: 'gcorner', text: 'technique ╲ form' }));
+  for (const form of forms) {
+    box.append(
+      el('div', { class: 'gform', 'data-lit': permittedForms.includes(form.id) },
+        el('b', { text: form.name }),
+        document.createTextNode(permittedForms.includes(form.id) ? 'permitted' : ''),
+      ),
+    );
+  }
+  for (const technique of techniques) {
+    box.append(el('div', { class: 'gtech', text: technique.name }));
+    for (const form of forms) {
+      const cell = byId.get(`${technique.id}/${form.id}`);
+      const tiers = Object.keys(cell.tierCounts).sort().map((t) => t).join('·');
+      box.append(
+        el(
+          'div',
+          {
+            class: 'gcell',
+            'data-on': String(cell.enabled),
+            'data-empty': String(cell.nodeCount === 0),
+            title: `${cell.id} — ${cell.nodeCount} node(s), tiers ${tiers || 'none'}` +
+              (cell.classicalLabels.length > 0 ? ` · ${cell.classicalLabels.join(', ')}` : '') +
+              (cell.enabled ? ' · enabled' : ' · not enabled'),
+          },
+          el('span', { class: 'c', text: cell.nodeCount }),
+          el('span', { class: 't', text: `t${tiers || '—'}` }),
+        ),
+      );
+    }
+  }
+}
+
+// --------------------------------------------------------------- primitives
+
+{
+  const rows = [...data.primitives.rows].sort((a, b) => {
+    const rank = (r) => (r.status === 'unconsumed' ? 0 : r.status === 'non-node' ? 1 : 2);
+    return rank(a) - rank(b) || b.nodeCount - a.nodeCount;
+  });
+  const maxNodes = Math.max(...rows.map((r) => r.nodeCount));
+
+  const statusMark = (row) => {
+    if (row.status === 'node-driven') return mark('ok', 'node-driven');
+    if (row.excluded) return mark('mute', 'excluded');
+    if (row.status === 'non-node') return mark('bad', 'not node-driven');
+    return mark('bad', 'no consumer');
+  };
+
+  document.getElementById('prim-say').append(
+    el('b', { text: `${data.primitives.unconsumed.length} of ${rows.length} primitives have no node-driven consumer` }),
+    document.createTextNode(
+      ` — ${data.primitives.unconsumed.join(', ')}. The check builds a real universe through the composition ` +
+        'root and records what assembling it asked the content for, so a primitive appears as consumed only ' +
+        'if the assembled simulation actually reached for it. ',
+    ),
+    el('b', { text: 'Not node-driven is not the same as unused' }),
+    document.createTextNode(
+      ': a primitive can be moved by a god constant or a species field and still be unreachable from anything ' +
+        'a mage can learn, which is the distinction this check exists to draw.',
+    ),
+  );
+
+  // Ordered so the scannable columns are all on screen and the one free-text
+  // column is last: a table whose verdict has scrolled out of view is a list.
+  table(document.getElementById('prim-table'), [
+    { head: 'primitive', cls: 'name', get: (r) => el('span', { title: `${r.id} — ${r.unit}`, text: r.id }) },
+    { head: 'consumption', get: statusMark },
+    { head: 'nodes', cls: 'num', get: (r) => barCell(r.nodeCount, maxNodes, r.status === 'node-driven' ? 'god' : 'mute') },
+    { head: 'effects', cls: 'num', get: (r) => r.effectCount },
+    { head: 'in rectangle', cls: 'num', get: (r) => r.enabledNodeCount },
+    { head: 'scale', cls: 'mono', get: (r) => r.scale },
+    { head: 'stacking', cls: 'mono', get: (r) => r.stacking },
+    { head: 'cap', cls: 'num', get: (r) => (r.cap === null ? '—' : r.cap) },
+    { head: 'what consumes it', cls: 'mono', get: (r) => (r.consumers.length === 0 ? '—' : r.consumers.join(', ')) },
+  ], rows);
+
+  document.getElementById('prim-note').append(
+    document.createTextNode('“In rectangle” counts the nodes authoring the primitive that sit in one of the twelve enabled cells. A primitive with a healthy authored count and a low rectangle count is authored for a game nobody is playing yet. Two primitives — '),
+    el('b', { text: data.primitives.exclusions.join(' and ') }),
+    document.createTextNode(' — are declared exclusions: the check knows they are moved by species and god constants rather than by nodes, and does not count them as failures.'),
+  );
+}
+
+// ------------------------------------------------------------------ species
+
+{
+  const rows = data.species.rows;
+  const ex = data.species.extremes;
+  /**
+   * The raw fp integer above its multiplier, because neither alone is legible:
+   * 1792 means nothing without the scale, and 1.75× loses the authored value.
+   * The extreme on a column is carried by colour *and* by a word, never by
+   * colour alone — the same rule the shared theme applies to a denied control.
+   */
+  const flag = (key, value) => {
+    const state = value === ex[key].max ? 'high' : value === ex[key].min ? 'low' : null;
+    return el(
+      'span',
+      { class: 'sp', 'data-x': state, title: `${key} ${value} fp = ${fp(value)}× parity` },
+      el('span', { class: 'raw', text: value }),
+      el('span', { class: 'mul' },
+        document.createTextNode(`${fp(value)}×`),
+        state === null ? null : el('span', { class: 'x', text: state === 'high' ? ' hi' : ' lo' }),
+      ),
+    );
+  };
+
+  const best = (key) => rows.find((r) => r[key] === ex[key].max);
+  const worst = (key) => rows.find((r) => r[key] === ex[key].min);
+
+  document.getElementById('species-say').append(
+    document.createTextNode(`Fixed point at 1/${data.species.fpScale}, so ${data.species.fpScale} is parity. The tensions are the point, and they read off the extremes rather than off a caption: `),
+    el('b', { text: `${best('scribeAffinity').name} is the best scribe (${ex.scribeAffinity.max})` }),
+    document.createTextNode(` and sits low on curiosity at ${rows.find((r) => r.id === best('scribeAffinity').id).curiosity}; `),
+    el('b', { text: `${best('curiosity').name} is the most curious (${ex.curiosity.max})` }),
+    document.createTextNode(` and holds the worst retention in the table (${ex.retention.min}). The lowest curiosity is ${worst('curiosity').name}'s ${ex.curiosity.min} and the worst scribe is ${worst('scribeAffinity').name}'s ${ex.scribeAffinity.min}, so curiosity and scribing are not each other's inverse — `),
+    el('b', { text: 'curiosity and retention are' }),
+    document.createTextNode('. Every row is authored '),
+    mark('warn', 'untuned'),
+    document.createTextNode(', which is a claim about balance provenance the content itself carries.'),
+  );
+
+  table(document.getElementById('species-table'), [
+    { head: 'species', cls: 'name', get: (r) => r.name },
+    { head: 'curiosity', get: (r) => flag('curiosity', r.curiosity) },
+    { head: 'retention', get: (r) => flag('retention', r.retention) },
+    { head: 'scribe', get: (r) => flag('scribeAffinity', r.scribeAffinity) },
+    { head: 'learn', get: (r) => flag('learnRate', r.learnRate) },
+    { head: 'rediscovery', get: (r) => flag('rediscoveryAffinity', r.rediscoveryAffinity) },
+    { head: 'aptitude', get: (r) => flag('mageAptitude', r.mageAptitude) },
+    { head: 'labor', get: (r) => flag('laborAffinity', r.laborAffinity) },
+    { head: 'fertility', get: (r) => flag('fertility', r.fertility) },
+    { head: 'depth ceiling', cls: 'num', get: (r) => r.depthCeiling },
+    { head: 'lifespan (mo)', cls: 'num', get: (r) => r.lifespanMonths },
+    { head: 'maturity (mo)', cls: 'num', get: (r) => r.maturityMonths },
+    { head: 'forms with an affinity', cls: 'num', get: (r) => Object.keys(r.affinities).length },
+    { head: 'tuning', get: (r) => mark(r.tuningStatus === 'untuned' ? 'warn' : 'ok', r.tuningStatus) },
+  ], rows);
+
+  const declared = data.species.formIds.filter((form) => rows.some((r) => r.affinities[form] !== undefined));
+  document.getElementById('species-affinity-wrap').querySelector('summary').textContent =
+    `Per-form affinities — ${declared.length} of ${data.species.formIds.length} forms carry any declaration at all`;
+  table(document.getElementById('affinity-table'), [
+    { head: 'species', cls: 'name', get: (r) => r.name },
+    ...declared.map((form) => ({
+      head: form,
+      cls: 'num',
+      get: (r) => (r.affinities[form] === undefined ? '—' : `${fp(r.affinities[form])}×`),
+    })),
+  ], rows);
+}
+
+// ------------------------------------------------------------------ metrics
+
+{
+  const rows = data.metrics.rows;
+  document.getElementById('metrics-say').append(
+    el('b', { text: `All ${rows.length} §7 metrics are registered with a collector, and not one has a committed value.` }),
+    document.createTextNode(
+      ' All four gate sweeps declare only the ten ',
+    ),
+    el('code', { text: 'reference*' }),
+    document.createTextNode(' metrics, so the registry has never been asked for a number. The ascension baseline lists a '),
+    el('code', { text: 'definitionVersion' }),
+    document.createTextNode(
+      ` for all ${rows.length} of them in its provenance, which at a glance reads as ${rows.length} measured metrics ` +
+        '— it is provenance of the registry, not of a measurement.',
+    ),
+  );
+
+  table(document.getElementById('metrics-table'), [
+    { head: 'metric', cls: 'name', get: (r) => r.id },
+    { head: 'committed value', get: (r) => (r.hasCommittedValue ? mark('ok', 'measured') : mark('warn', 'never measured')) },
+    { head: 'scope', cls: 'mono', get: (r) => r.scope },
+    { head: 'aggregation', cls: 'mono', get: (r) => r.aggregation },
+    { head: 'def. v', cls: 'num', get: (r) => r.definitionVersion },
+    { head: 'pinned consts', cls: 'num', get: (r) => r.pinnedConstantCount },
+    { head: 'threshold owner', cls: 'mono', get: (r) => r.thresholdOwner },
+    { head: 'unit', cls: 'mono', get: (r) => r.unit },
+  ], rows);
+
+  table(document.getElementById('disproof-table'), [
+    { head: 'metric', cls: 'name', get: (r) => r.id },
+    { head: 'what it measures', cls: 'wrap-cell', get: (r) => r.definition },
+    { head: 'disproved by', cls: 'wrap-cell', get: (r) => r.disprovedBy },
+  ], rows);
+}
+
+// ---------------------------------------------------------------- baselines
+
+{
+  const baselines = data.metrics.baselines;
+  const sweeps = data.metrics.sweeps;
+
+  const sameContent = baselines.every((b) => b.contentRevision === data.provenance.contentRevision);
+  document.getElementById('baseline-say').append(
+    document.createTextNode('Four committed gate baselines, all recorded at build '),
+    el('b', { text: baselines[0].buildVersion }),
+    document.createTextNode(' against content revision '),
+    el('code', { text: baselines[0].contentRevision }),
+    document.createTextNode(
+      sameContent
+        ? ' — which is the revision this tree carries, so they are baselines about this content. '
+        : ' — which is NOT the revision this tree carries. ',
+    ),
+    el('b', { text: 'The format carries no date' }),
+    document.createTextNode(
+      ': a baseline\'s identity is its content revision, its configuration hash and its RNG-registry hash. ' +
+        'Those answer "is this about this tree?" and do not answer "how old is it?". Both questions are worth ' +
+        'having and only one is available. The per-file seal is a hash over the baseline\'s own fields, so it ' +
+        'differs between the four and says nothing about content.',
+    ),
+  );
+
+  table(document.getElementById('baseline-table'), [
+    { head: 'sweep', cls: 'name', get: (b) => b.sweepId },
+    { head: 'horizon (ticks)', cls: 'num', get: (b) => sweeps[b.sweepId]?.worldTickCap ?? null },
+    { head: 'runs', cls: 'num', get: (b) => b.runCount },
+    { head: 'root seed', cls: 'num', get: (b) => b.rootSeed },
+    { head: 'tolerance k', cls: 'num', get: (b) => b.toleranceK },
+    { head: 'strategy arms', cls: 'num', get: (b) => b.armCount },
+    { head: 'metrics', cls: 'num', get: (b) => b.metricIds.length },
+    { head: '§7 metrics', get: (b) => {
+      const seven = b.metricIds.filter((id) => data.metrics.rows.some((r) => r.id === id));
+      return seven.length === 0 ? mark('warn', 'none') : mark('ok', String(seven.length));
+    } },
+    { head: 'content revision', cls: 'hash', get: (b) => el('span', { title: b.contentRevision, text: b.contentRevision }) },
+    { head: 'file seal', cls: 'hash', get: (b) => el('span', { title: b.fileSeal, text: `${b.fileSeal.slice(0, 12)}…` }) },
+    { head: 'build', cls: 'mono', get: (b) => b.buildVersion },
+  ], baselines);
+
+  const values = baselines.flatMap((b) => b.pooled.map((m) => ({ ...m, sweepId: b.sweepId })));
+  table(document.getElementById('baseline-values'), [
+    { head: 'sweep', cls: 'mono', get: (m) => m.sweepId },
+    { head: 'metric', cls: 'name', get: (m) => m.metricId },
+    { head: 'value', cls: 'num', get: (m) => m.value },
+    { head: 'unit', cls: 'mono', get: (m) => m.unit },
+    { head: 'agg', cls: 'mono', get: (m) => m.aggregation },
+    { head: 'std. error', cls: 'num', get: (m) => (m.standardError === null ? null : m.standardError.toFixed(4)) },
+    { head: 'tolerance', cls: 'num', get: (m) => (m.tolerance === null ? null : m.tolerance.toFixed(4)) },
+    { head: 'n', cls: 'num', get: (m) => m.sampleSize },
+    { head: 'status', get: (m) => (m.status === 'measured' ? mark('ok', 'measured') : mark('warn', m.status)) },
+  ], values);
+
+  document.getElementById('baseline-rationales').append(
+    ...baselines.map((b) =>
+      el(
+        'div',
+        { class: 'card', 'data-kind': 'landed', style: 'margin-bottom:.5rem' },
+        el('div', { class: 't', text: b.sweepId }),
+        el('div', { class: 'r' }, prose(b.rationale)),
+      ),
+    ),
+  );
+
+  const sep = data.measurements.speciesSeparation;
+  document.getElementById('separation').append(
+    el('h3', { text: 'Species separation — the one measurement with a stated ref and date' }),
+    el(
+      'div',
+      { class: 'card', 'data-kind': 'game', style: 'border-left-color:var(--loss)' },
+      el('div', { class: 't' }, mark('bad', 'refuted'), document.createTextNode(' ' + sep.headline)),
+      el('div', { class: 'r', text: sep.instrument }),
+      el('div', { class: 'r' },
+        el('b', { text: `Measured ${sep.statedDate}` }),
+        document.createTextNode(' on ' + sep.refs.map((r) => `${r.ref} @ ${r.commit} (${r.what})`).join('; ') + '. This is a historical measurement: re-measure before quoting it.'),
+      ),
+    ),
+  );
+}
+
+// ------------------------------------------------------------- reachability
+
+{
+  const r = data.reachability;
+  document.getElementById('reach-say').append(
+    el('b', { text: `${r.findingCount} findings over ${r.examinedSymbolCount} exported values in ${r.examinedPackages.length} rules-path packages.` }),
+    document.createTextNode(' This is '),
+    el('b', { text: 'not' }),
+    document.createTextNode(
+      ' metric reachability — it asks whether a rules-path symbol has any production caller, one hop, by name. ' +
+        'A finding here is not automatically a bug; it is a sentence someone owes. The check is red on main today ' +
+        'and is not part of ',
+    ),
+    el('code', { text: 'npm run verify' }),
+    document.createTextNode('.'),
+  );
+
+  const summary = [
+    ['exported values with no production caller', r.unreached.length],
+    ['called only by symbols that are themselves unreached', r.reachedOnlyByUnreached.length],
+    ['components declared and never read or written', r.untouchedComponents.length],
+    ['god constants resolved and never read off it', r.unconsumedConstants.length],
+    ['god constants read only by unreached code', r.constantsBehindDeadCode.length],
+    ['packages nothing depends on', r.orphanPackages.length],
+    ['excluded by rule, and cannot have a caller', r.structuralExclusions.reduce((n, s) => n + s.count, 0)],
+    ['excluded by name, each with its argument', r.declaredExclusions.length],
+  ].map(([label, count]) => ({ label, count }));
+
+  table(document.getElementById('reach-summary'), [
+    { head: 'sub-check', cls: 'wrap-cell', get: (s) => s.label },
+    { head: 'count', cls: 'num', get: (s) => s.count },
+  ], summary);
+
+  table(document.getElementById('reach-constants'), [
+    { head: 'god constant', cls: 'name', get: (c) => c.id },
+    { head: 'resolved as', cls: 'mono', get: (c) => c.field },
+    { head: 'state', get: (c) => (c.via === undefined ? mark('bad', 'never read') : mark('warn', 'behind dead code')) },
+    { head: 'read by', cls: 'mono', get: (c) => (c.via === undefined ? '—' : c.via.join(', ')) },
+  ], [...r.unconsumedConstants, ...r.constantsBehindDeadCode]);
+
+  document.getElementById('reach-summary-label').textContent =
+    `Every exported value with no production caller — ${r.unreached.length} of them`;
+  table(document.getElementById('reach-unreached'), [
+    { head: 'symbol', cls: 'name', get: (u) => u.name },
+    { head: 'kind', cls: 'mono', get: (u) => u.kind },
+    { head: 'file', cls: 'mono', get: (u) => u.file },
+    { head: 'line', cls: 'num', get: (u) => u.line },
+  ], r.unreached);
+}
+
+// ---------------------------------------------------------------- decisions
+
+{
+  const d = data.decisions;
+  document.getElementById('dec-src').textContent = d.from[0].replace('docs/design/', '');
+  document.getElementById('dec-say').append(
+    document.createTextNode('Relayed from the decisions page, which states its own ref: '),
+    el('b', { text: `measured ${d.statedDate} on ${d.statedRef.branch} at ${d.statedRef.commit}` }),
+    document.createTextNode('. Only the heading and the recommendation line are lifted — the argument is in the document and has to be read there. '),
+    el('b', { text: 'A historical measurement:' }),
+    document.createTextNode(' if those refs have moved, re-run before acting.'),
+  );
+
+  const kindOf = (group) => {
+    if (group.startsWith('The mechanical')) return 'mechanical';
+    if (group.startsWith('The three that are actually')) return 'game';
+    if (group.startsWith('Landed')) return 'landed';
+    return 'backlog';
+  };
+
+  const groups = [];
+  for (const item of d.items) {
+    let group = groups.find((g) => g.name === item.group);
+    if (group === undefined) groups.push((group = { name: item.group, items: [] }));
+    group.items.push(item);
+  }
+
+  const host = document.getElementById('dec-groups');
+  for (const group of groups) {
+    host.append(
+      el('h3', { text: group.name, style: 'margin-top:1.1rem' }),
+      el(
+        'div',
+        { class: 'cards' },
+        ...group.items.map((item) =>
+          el(
+            'div',
+            { class: 'card', 'data-kind': kindOf(group.name) },
+            el('div', { class: 't' }, prose(item.heading)),
+            item.recommendation === null
+              ? el('div', { class: 'r' }, mark('mute', 'no recommendation'), document.createTextNode(' Raised as newly relevant; the page states no recommendation for it.'))
+              : el('div', { class: 'r' }, mark('warn', 'recommended'), document.createTextNode(' '), prose(item.recommendation)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --------------------------------------------------------------------- gaps
+
+document.getElementById('gapcards').append(
+  ...data.openQuestions.map((q) =>
+    el(
+      'div',
+      { class: 'gapcard' },
+      mark('mute', 'not available'),
+      el('div', { class: 't', text: q.title }),
+      el('div', { class: 'd' }, prose(q.detail)),
+    ),
+  ),
+);
+</script>

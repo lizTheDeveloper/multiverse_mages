@@ -95,11 +95,35 @@ export type {
   CheckpointSample,
   MechanicAvailability,
   MirroredPlay,
+  RaidCombatSource,
+  LossShockSample,
   RaidObservation,
+  RaidRunSlice,
+  RoleDemographySample,
+  RosterSample,
+  SpeciesCellOccupancy,
+  SpeciesCellOccupancySample,
   RunTelemetry,
+  SpeciesGridReach,
+  SpeciesVersatilitySample,
   TierReach,
 } from './metrics-telemetry.js';
 export { MECHANICS_AT_0_5_0, NO_MECHANICS } from './metrics-telemetry.js';
+
+export type {
+  LossShockFinding,
+  RoleDemographyFinding,
+  SpeciesVersatilityFinding,
+} from './metrics-species-health.js';
+export {
+  RECOVERY_FRACTION,
+  STAFFABLE_DEFINITION,
+  VERSATILITY_HEGEMONY_FRACTION,
+  collectLossShockRecovery,
+  collectRoleAssignmentDemographicCost,
+  collectSpeciesCellOccupancy,
+  collectSpeciesGridVersatility,
+} from './metrics-species-health.js';
 
 export {
   KNOWLEDGE_CENSUS_INTERVAL_TICKS,
@@ -137,6 +161,8 @@ export {
   checkpointGinis,
   collectAscensionRate,
   collectCapitalSnowball,
+  collectCombatActionEconomy,
+  collectCombatThresholdEfficiency,
   collectIllegalActionRate,
   collectInboundRaidTempoLoss,
   collectKnowledgeHalfLife,
@@ -235,6 +261,7 @@ export { TERMINAL_REASON } from '@mm/agent-api';
 
 export type {
   ArmContribution,
+  CensusTracePoint,
   FailureClass,
   Provenance,
   RunExecutor,
@@ -433,3 +460,37 @@ export {
   scoreBalance,
   varietyOf,
 } from './tuner.js';
+
+export type {
+  Archive,
+  Phase,
+  PhaseObservation,
+  PhasedArchive,
+  PhasedCandidate,
+  ArchiveCell,
+  BehaviourAxis,
+  CandidateOutcome,
+  CellStatus,
+  MetaShape,
+  NullOutcomes,
+  NullRung,
+} from './quality-diversity.js';
+export {
+  CELL_STATUS,
+  META_SHAPE,
+  MIN_CELLS_TO_JUDGE_SHAPE,
+  shapeOf,
+  PHASE,
+  PHASE_BOUNDS,
+  PHASE_WEIGHT,
+  foldPhasedArchive,
+  phaseOfTick,
+  MAX_ELITE_ILLEGAL_RATE,
+  NULL_LADDER,
+  NULL_RUNG,
+  binOf,
+  clearsLadder,
+  coordinateOf,
+  foldArchive,
+  nullBarOf,
+} from './quality-diversity.js';

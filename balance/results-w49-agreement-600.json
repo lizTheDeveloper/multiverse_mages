@@ -1,0 +1,388 @@
+{
+  "sweepId": "w49-applied-use-v1",
+  "rootSeed": 20260811,
+  "worldTickCap": 600,
+  "runs": [
+    {
+      "strategyId": "passive-control",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 0
+      },
+      "runSeed": 1890169786,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 600,
+      "snapshotHash": "4f1e9eb17f7fc182",
+      "ticksObserved": 600,
+      "appliedUseInstanceTicks": 4451,
+      "reportedEconomicNodeTicks": 5378,
+      "ticksWithAnyApplication": 545,
+      "disagreements": 21,
+      "ticksWithoutReport": 0,
+      "peakHolders": 17,
+      "distinctHolders": 18,
+      "byForm": {
+        "Terram": 4451
+      },
+      "holderTop": [
+        799,
+        796,
+        352,
+        348,
+        336
+      ]
+    },
+    {
+      "strategyId": "passive-control",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 0
+      },
+      "runSeed": 3720131514,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 600,
+      "snapshotHash": "1eea72c4fddf5b7a",
+      "ticksObserved": 600,
+      "appliedUseInstanceTicks": 17209,
+      "reportedEconomicNodeTicks": 20636,
+      "ticksWithAnyApplication": 600,
+      "disagreements": 20,
+      "ticksWithoutReport": 0,
+      "peakHolders": 34,
+      "distinctHolders": 65,
+      "byForm": {
+        "Terram": 17209
+      },
+      "holderTop": [
+        762,
+        758,
+        756,
+        751,
+        741
+      ]
+    },
+    {
+      "strategyId": "permit-then-idle",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 0
+      },
+      "runSeed": 1890169786,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 600,
+      "snapshotHash": "99e4e830cbd071ad",
+      "ticksObserved": 600,
+      "appliedUseInstanceTicks": 27976,
+      "reportedEconomicNodeTicks": 30782,
+      "ticksWithAnyApplication": 573,
+      "disagreements": 76,
+      "ticksWithoutReport": 0,
+      "peakHolders": 15,
+      "distinctHolders": 22,
+      "byForm": {
+        "Aquam": 5468,
+        "Animal": 5364,
+        "Herbam": 5095,
+        "Auram": 4571,
+        "Terram": 3904,
+        "Ignem": 3306,
+        "Corpus": 268
+      },
+      "holderTop": [
+        4486,
+        4388,
+        2239,
+        2238,
+        2220
+      ]
+    },
+    {
+      "strategyId": "permit-then-idle",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 0
+      },
+      "runSeed": 3720131514,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 600,
+      "snapshotHash": "24299b6c3a8c81d1",
+      "ticksObserved": 600,
+      "appliedUseInstanceTicks": 98282,
+      "reportedEconomicNodeTicks": 109540,
+      "ticksWithAnyApplication": 600,
+      "disagreements": 107,
+      "ticksWithoutReport": 0,
+      "peakHolders": 44,
+      "distinctHolders": 68,
+      "byForm": {
+        "Aquam": 18238,
+        "Animal": 18034,
+        "Herbam": 16935,
+        "Auram": 16251,
+        "Terram": 15540,
+        "Ignem": 12213,
+        "Corpus": 1071
+      },
+      "holderTop": [
+        4664,
+        4647,
+        4526,
+        4525,
+        4506
+      ]
+    },
+    {
+      "strategyId": "permissive-breadth",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 0
+      },
+      "runSeed": 1890169786,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 600,
+      "snapshotHash": "301cc4a2a1b996d1",
+      "ticksObserved": 600,
+      "appliedUseInstanceTicks": 28949,
+      "reportedEconomicNodeTicks": 32296,
+      "ticksWithAnyApplication": 581,
+      "disagreements": 76,
+      "ticksWithoutReport": 0,
+      "peakHolders": 24,
+      "distinctHolders": 35,
+      "byForm": {
+        "Aquam": 6486,
+        "Herbam": 5344,
+        "Auram": 5076,
+        "Terram": 4464,
+        "Animal": 3778,
+        "Ignem": 3533,
+        "Corpus": 268
+      },
+      "holderTop": [
+        4231,
+        4209,
+        2096,
+        2035,
+        2034
+      ]
+    },
+    {
+      "strategyId": "permissive-breadth",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 0
+      },
+      "runSeed": 3720131514,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 600,
+      "snapshotHash": "860746fd73c50fa6",
+      "ticksObserved": 600,
+      "appliedUseInstanceTicks": 94403,
+      "reportedEconomicNodeTicks": 105243,
+      "ticksWithAnyApplication": 600,
+      "disagreements": 110,
+      "ticksWithoutReport": 0,
+      "peakHolders": 49,
+      "distinctHolders": 84,
+      "byForm": {
+        "Animal": 17670,
+        "Aquam": 17499,
+        "Auram": 15848,
+        "Herbam": 15695,
+        "Terram": 15102,
+        "Ignem": 11222,
+        "Corpus": 1367
+      },
+      "holderTop": [
+        4544,
+        4525,
+        4523,
+        4521,
+        4375
+      ]
+    },
+    {
+      "strategyId": "denial-warden",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 0
+      },
+      "runSeed": 1890169786,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "stagnated",
+      "terminalReason": 3,
+      "ticksRun": 504,
+      "snapshotHash": "15e3d5e95f369837",
+      "ticksObserved": 504,
+      "appliedUseInstanceTicks": 24,
+      "reportedEconomicNodeTicks": 20,
+      "ticksWithAnyApplication": 13,
+      "disagreements": 4,
+      "ticksWithoutReport": 0,
+      "peakHolders": 2,
+      "distinctHolders": 2,
+      "byForm": {
+        "Terram": 24
+      },
+      "holderTop": [
+        14,
+        10
+      ]
+    },
+    {
+      "strategyId": "denial-warden",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 0
+      },
+      "runSeed": 3720131514,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 600,
+      "snapshotHash": "cacfc6d28a15b0a2",
+      "ticksObserved": 600,
+      "appliedUseInstanceTicks": 241,
+      "reportedEconomicNodeTicks": 225,
+      "ticksWithAnyApplication": 29,
+      "disagreements": 11,
+      "ticksWithoutReport": 0,
+      "peakHolders": 9,
+      "distinctHolders": 10,
+      "byForm": {
+        "Terram": 241
+      },
+      "holderTop": [
+        38,
+        37,
+        37,
+        33,
+        33
+      ]
+    },
+    {
+      "strategyId": "archivist",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 0
+      },
+      "runSeed": 1890169786,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 600,
+      "snapshotHash": "93232d173abc330e",
+      "ticksObserved": 600,
+      "appliedUseInstanceTicks": 4148,
+      "reportedEconomicNodeTicks": 5122,
+      "ticksWithAnyApplication": 564,
+      "disagreements": 9,
+      "ticksWithoutReport": 0,
+      "peakHolders": 10,
+      "distinctHolders": 10,
+      "byForm": {
+        "Terram": 4148
+      },
+      "holderTop": [
+        804,
+        782,
+        448,
+        408,
+        350
+      ]
+    },
+    {
+      "strategyId": "archivist",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 0
+      },
+      "runSeed": 3720131514,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 600,
+      "snapshotHash": "d0aff19953f46839",
+      "ticksObserved": 600,
+      "appliedUseInstanceTicks": 17558,
+      "reportedEconomicNodeTicks": 21090,
+      "ticksWithAnyApplication": 600,
+      "disagreements": 30,
+      "ticksWithoutReport": 0,
+      "peakHolders": 35,
+      "distinctHolders": 64,
+      "byForm": {
+        "Terram": 17558
+      },
+      "holderTop": [
+        759,
+        759,
+        754,
+        751,
+        740
+      ]
+    }
+  ]
+}

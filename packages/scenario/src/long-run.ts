@@ -72,7 +72,7 @@ import {
   observationBlock,
   rawObservation,
 } from '@mm/agent-api';
-import { GRID_CELL_COUNT } from '@mm/state';
+import { GRID_CELL_COUNT, MAGE, collectRecords, componentOf } from '@mm/state';
 import { libraryContribution, maxCarryingCapacity } from '@mm/rules-world';
 import type { WorldStepReport } from '@mm/coordination';
 import { defineWorldSimulation } from '@mm/coordination';
@@ -122,6 +122,13 @@ export const LONG_RUN_OPTIONS: ReferenceOptions = Object.freeze({
   cohortSize: 12,
   foundingMages: 1,
   foundingNodes: 6,
+  // The v1 rectangle, which is what the long run has always opened on. A long
+  // run exists to measure two hundred years of one universe, so drawing its
+  // opening square from the seed would make every reading a reading of a
+  // different game.
+  openingTechniqueCount: 0,
+  openingFormCount: 0,
+  openingSquareSeeded: 0,
   // Every species founds the long run, which is what it has always done and what
   // task 9.9's per-species time-to-tier measurement requires.
   foundingSpeciesMask: 0,
@@ -188,6 +195,8 @@ export interface LongRunResult {
   readonly populationBound: number;
   /** Species ids in the order every per-species array above is indexed. */
   readonly speciesIds: readonly ContentId[];
+  /** What the loss shock removed, or absent when the run was not shocked. */
+  readonly shock?: LossShockOutcome;
 }
 
 /** What {@link runLongReference} may be told. */
@@ -196,6 +205,93 @@ export interface LongRunOptions {
   readonly ticks?: number;
   readonly options?: ReferenceOptions;
   readonly content?: ReferenceContent;
+  /** A deterministic mage cull to apply mid-run. See {@link LossShock}. */
+  readonly shock?: LossShock;
+}
+
+/**
+ * A deterministic cull of living mages, applied between two `step` calls.
+ *
+ * ## Why it takes no draw
+ *
+ * `contracts.md` §6: adding a draw in one subsystem must not re-roll any other,
+ * and every committed balance baseline depends on that. A shock that sampled
+ * which mages to kill would consume from some stream and shift every subsequent
+ * value behind it, so the selection is positional instead — **every k-th living
+ * mage by ascending entity handle**. Handles are stable identities, not array
+ * indices, so the same run seed culls the same mages every time, and the mages
+ * left alive keep their own handle-keyed mortality streams untouched.
+ *
+ * ## Why it writes `alive` directly
+ *
+ * This is the same pair of writes `rules-raid`'s `applyConsequences` uses for a
+ * casualty, and it has the same known gap: it does not run `killMage`, so goal
+ * abandonment, university slot release and grimoire inheritance do not happen.
+ * Matching the raid path was the choice — a second, tidier way to kill a mage
+ * would be a third behaviour for the measurement to diverge from — but a
+ * recovery time read from this is a recovery of *headcount*, and slots held by
+ * the culled are a known distortion rather than a silent one.
+ */
+export interface LossShock {
+  /** The world tick, 1-based in step order, at which the cull lands. */
+  readonly atTick: number;
+  /** Kill every k-th living mage by ascending handle. `2` halves the roster. */
+  readonly everyKth: number;
+}
+
+/** What the cull actually did, so the metric is not told to trust it. */
+export interface LossShockOutcome {
+  readonly atTick: number;
+  readonly everyKth: number;
+  /** Living mages per species immediately before the cull. */
+  readonly preShockBySpecies: readonly number[];
+  /** Living mages per species immediately after it. */
+  readonly postShockBySpecies: readonly number[];
+  /** Handles culled, ascending. Named so a reviewer can reproduce the selection. */
+  readonly culled: readonly number[];
+}
+
+/**
+ * Applies the cull and reports what it removed.
+ *
+ * Species counts are read off the mage rows rather than off the observation,
+ * because the observation's mage block is keyed on `(species, highest tier)` and
+ * a mage holding nothing does not appear in it — which would make the pre-shock
+ * roster smaller than the number of mages actually alive.
+ */
+function applyLossShock(
+  state: SimState,
+  shock: LossShock,
+  speciesCount: number,
+): LossShockOutcome {
+  const pre = Array.from({ length: speciesCount }, () => 0);
+  const post = Array.from({ length: speciesCount }, () => 0);
+  const culled: number[] = [];
+
+  const living = collectRecords(state, MAGE)
+    .filter((entry) => entry.row.alive === 1)
+    .sort((a, b) => a.handle - b.handle);
+
+  const mages = componentOf(state, MAGE);
+  living.forEach((entry, index) => {
+    const speciesIndex = entry.row.speciesId - 1;
+    const counted = speciesIndex >= 0 && speciesIndex < speciesCount;
+    if (counted) pre[speciesIndex] = (pre[speciesIndex] ?? 0) + 1;
+    if ((index + 1) % shock.everyKth === 0) {
+      mages.set(entry.handle, 'alive', 0);
+      culled.push(entry.handle);
+      return;
+    }
+    if (counted) post[speciesIndex] = (post[speciesIndex] ?? 0) + 1;
+  });
+
+  return {
+    atTick: shock.atTick,
+    everyKth: shock.everyKth,
+    preShockBySpecies: Object.freeze(pre),
+    postShockBySpecies: Object.freeze(post),
+    culled: Object.freeze(culled),
+  };
 }
 
 /** Sums a run of raw observation channels. */
@@ -309,6 +405,7 @@ export async function runLongReference(input: LongRunOptions = {}): Promise<Long
   const foundingObservation = readObservation(state, content);
   let peakPopulation = foundingObservation.population;
   const recorded: LongRunTick[] = [];
+  let shockOutcome: LossShockOutcome | undefined;
 
   for (let index = 0; index < ticks; index += 1) {
     if (index > 0 && index % TICKS_PER_WORLD_YEAR === 0) {
@@ -328,6 +425,12 @@ export async function runLongReference(input: LongRunOptions = {}): Promise<Long
     const observed = readObservation(state, content);
     peakPopulation = Math.max(peakPopulation, observed.population);
     recorded.push({ ...observed, report });
+
+    // After the tick, so `atTick` names a tick that has happened and the next
+    // step is the first one the shortened roster lives through.
+    if (input.shock !== undefined && index + 1 === input.shock.atTick) {
+      shockOutcome = applyLossShock(state, input.shock, content.registry.species.length);
+    }
   }
 
   return {
@@ -337,6 +440,7 @@ export async function runLongReference(input: LongRunOptions = {}): Promise<Long
     peakPopulation,
     populationBound: maxCarryingCapacity(content.deps.territory),
     speciesIds: Object.freeze([...content.registry.species.map((entry) => entry.contentId)]),
+    ...(shockOutcome === undefined ? {} : { shock: shockOutcome }),
   };
 }
 
