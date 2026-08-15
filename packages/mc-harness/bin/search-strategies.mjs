@@ -376,22 +376,34 @@ async function main() {
   // A cell can fail to be occupied for two unrelated reasons, and printing them
   // the same way is the failure this repo has documented five times: folding
   // "the probe is broken" into "the answer is no". `clearsLadder` already
-  // separates them -- an elite over `MAX_ELITE_ILLEGAL_RATE` is refused with the
-  // comment *"above this it is a mask bug"* -- and then reuses `failedRung` to
-  // say so, which prints as `(lost to rung N)`. That sentence means *this
-  // strategy is weaker than doing nothing*. A mask bug means *this strategy was
-  // never allowed to play*, and reading the first for the second retires a real
-  // defect as a balance result.
+  // separates them -- an elite over `MAX_ELITE_ILLEGAL_RATE` is refused -- and
+  // then reuses `failedRung` to say so, which prints as `(lost to rung N)`. That
+  // sentence means *this strategy is weaker than doing nothing*. Exclusion means
+  // *this strategy was never allowed to play*, and reading the first for the
+  // second retires a real defect as a balance result.
+  //
+  // The label says EXCLUDED and not MASK-BUG deliberately, even though
+  // `MAX_ELITE_ILLEGAL_RATE`'s own comment says "above this it is a mask bug".
+  // What is *measured* here is a rejection rate; which component is wrong is a
+  // second question this report cannot answer, and there are at least two live
+  // readings. `strategies.ts`'s `noise-floor-submits-axis-actions-bare` records
+  // that a missing-parameter refusal lands on the core's `illegalActionCount`
+  // and **not** on the session counters `illegalActionRate` is collected from,
+  // which would make a session-counted rejection a genuine mask disagreement.
+  // But `session.ts` warns that an unresolvable slot index is "recorded as an
+  // ordinary illegal action, hiding the bug", which would make it target-level
+  // and the mask innocent. Naming the culprit in the output would be the same
+  // misreport this block exists to fix, one layer over.
   //
   // Recomputed here from `elite.illegalActionRate` rather than plumbed through a
   // new status, so this is display-only and cannot move a baseline. The archive
   // JSON already carries the rate, so an analyser can make the same distinction.
-  const maskBugs = [];
+  const excluded = [];
   for (const cell of archive.cells) {
     const masked = cell.status !== 'occupied' && cell.elite.illegalActionRate > MAX_ELITE_ILLEGAL_RATE;
-    if (masked) maskBugs.push(cell.elite);
+    if (masked) excluded.push(cell.elite);
     process.stdout.write(
-      `  ${cell.status === 'occupied' ? 'OCCUPIED ' : masked ? 'MASK-BUG ' : 'not-worth'} ` +
+      `  ${cell.status === 'occupied' ? 'OCCUPIED ' : masked ? 'EXCLUDED ' : 'not-worth'} ` +
       `${cell.elite.strategyId.padEnd(22)}` +
       ` asc ${String(cell.elite.ascended).padStart(3)}/${cell.elite.runs}` +
       ` bar ${String(cell.nullBar).padStart(3)}` +
@@ -407,12 +419,15 @@ async function main() {
   // that cannot submit a legal action is not evidence about balance in either
   // direction, and a sweep containing one has a smaller effective pool than its
   // own header claims.
-  for (const elite of maskBugs) {
+  for (const elite of excluded) {
     process.stdout.write(
-      `[search] WARNING: mask bug -- ${elite.strategyId} submitted illegal actions at ` +
-        `${(elite.illegalActionRate * 100).toFixed(1)}%. It was excluded from holding a cell, so it ` +
-        'is absent from the archive for a reason that is not about its play. Fix the mask or the ' +
-        "strategy's preferences before reading this sweep's width.\n",
+      `[search] WARNING: excluded -- ${elite.strategyId} was rejected on ` +
+        `${(elite.illegalActionRate * 100).toFixed(1)}% of its submissions, over the ` +
+        `${String(MAX_ELITE_ILLEGAL_RATE * 100)}% ceiling, so it could not hold a cell. It is absent ` +
+        'from the archive for a reason that is not about its play, and this sweep measured a ' +
+        'smaller pool than its header claims. Whether the mask, the slot resolution or the ' +
+        "strategy's own preferences are at fault is not decided here -- diagnose before reading " +
+        "this sweep's width.\n",
     );
   }
 }
