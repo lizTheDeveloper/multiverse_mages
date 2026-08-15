@@ -278,13 +278,14 @@ describe('the payload `npm run ui:dashboard` produces', () => {
         );
       }
     }
-    // `untouchedComponents` is empty on this tree, so an exact key set for it
-    // cannot be asserted from evidence and is not guessed. What the column needs
-    // is stated instead, and it starts holding the moment a row appears.
+    // `untouchedComponents` is empty on this tree, so its key set cannot be
+    // observed the way the four above were. It is read out of the emitter
+    // instead — `check-reachability.mjs` builds each row as `{ file, line, name }`
+    // — rather than guessed, and the assertion starts biting the moment a row
+    // appears. The array itself still has to exist: the page counts it.
     expect(Array.isArray(payload.reachability.untouchedComponents)).toBe(true);
     for (const row of payload.reachability.untouchedComponents) {
-      expect(Object.keys(row)).toContain('name');
-      expect(Object.keys(row)).toContain('line');
+      expect(Object.keys(row).sort()).toEqual(['file', 'line', 'name']);
     }
 
     // The one property of a line number the page depends on: it prints them in a
