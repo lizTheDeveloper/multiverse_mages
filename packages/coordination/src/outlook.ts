@@ -132,6 +132,7 @@ export function buildOutlook(
     teachableByMe: boundCandidates(teachableByMe(mage, deps), species),
     scribableTargets: boundCandidates(scribableBy(mage, deps), species),
     applicableTargets: boundCandidates(applicableBy(mage, deps), species),
+    practiceTargets: boundCandidates(practicableBy(mage, deps), species),
 
     materials: deps.materials,
     scribeThroughput: deps.scribeThroughputOf(row.universityId),
@@ -258,6 +259,35 @@ function applicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
   const found: KnowledgeTarget[] = [];
   for (const nodeId of deps.gateway.castableNodes(mage)) {
     if (index.appliedYieldOf(nodeId) === undefined) continue;
+    const facets = deps.facetsOf(nodeId);
+    found.push({
+      nodeId,
+      tier: deps.tierOf(nodeId),
+      remainingCost: 0,
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
+      libraryHolds: false,
+    });
+  }
+  return found;
+}
+
+/**
+ * Nodes this mage could spend the month **drilling**.
+ *
+ * The gateway answers the whole question — held, permitted, within her reach,
+ * and below the ceiling practice can carry that tier to — so this builder does
+ * no filtering of its own. It only shapes the ids into targets, the way
+ * `applicableBy` does, and for the same reason: `rules-world` scores *targets*
+ * and may not read a node record.
+ *
+ * `remainingCost` is `0` for every entry. There is no project: a month of
+ * practice is spent and gone, and next month she may spend another.
+ */
+function practicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
+  const found: KnowledgeTarget[] = [];
+  for (const nodeId of deps.gateway.practicableNodes(mage)) {
     const facets = deps.facetsOf(nodeId);
     found.push({
       nodeId,

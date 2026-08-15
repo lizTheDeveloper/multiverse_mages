@@ -132,6 +132,27 @@ export interface MageOutlook {
    * project to finish.
    */
   readonly applicableTargets: readonly KnowledgeTarget[];
+  /**
+   * Nodes she could spend the month **drilling**, already gated.
+   *
+   * The gates are the coordinating layer's, for the reason every other target
+   * list's are: held at a mind or a memory palace, in a cell the ruleset
+   * permits *now*, within her species' `depthCeiling`, and — the one that is
+   * particular to practice — at a mastery **below** what `rules-magic`'s
+   * `practiceCeiling` allows her for that node's tier. A mage already at her
+   * ceiling has nothing to gain from the month, so she is not offered it, and
+   * the goal is masked rather than selected and wasted.
+   *
+   * That last filter is also what keeps mastery from levelling a population.
+   * The ceiling is per mage and per node — deeper nodes cap lower, for a given
+   * species — so a mage runs out of things to practise long before she runs out
+   * of things she knows, and the ones she cannot perfect are exactly the ones
+   * at the top of her reach.
+   *
+   * `remainingCost` is zero for every entry: practice has no project to finish
+   * and can be done again next month.
+   */
+  readonly practiceTargets: readonly KnowledgeTarget[];
 
   /** The universe's materials stock, `fp`. Scribing is masked without enough. */
   readonly materials: Fixed;

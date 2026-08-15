@@ -210,23 +210,39 @@ describe('the acquire hook reaches a running universe', () => {
     expect(withHook.researchCompleted).toBeLessThan(withoutHook.researchCompleted);
   });
 
-  it('creates derived instances at the declared mastery, so teaching becomes possible', () => {
-    // The hook says a name is known or it is not. In the loop that is the
-    // difference between a civilization that can transmit and one that cannot:
-    // the placeholder mastery sits below `TEACH_THRESHOLD`, so a standard
-    // universe's mages hold knowledge none of them is able to pass on.
+  it('creates derived instances at the declared mastery, so teaching comes sooner', () => {
+    // The hook says a name is known or it is not, and the declared masteries
+    // still differ at creation: `fp(1024)` against a placeholder that sits
+    // below `TEACH_THRESHOLD`.
     expect(DEFAULT_INITIAL_MASTERY).toBeLessThan(DEFAULT_TEACH_THRESHOLD);
-    // Read at the end of twenty years, so the top of the distribution is a
-    // decayed `instanceMastery` rather than the declared one — `MASTERY_MAX` is
-    // where these instances started, and the ceiling is the bound worth
-    // asserting. The standard universe's ceiling is its placeholder mastery,
-    // which nothing in the loop ever raises.
+
+    // ## What this assertion used to say, and why it had to change
+    //
+    // It read: the standard universe's ceiling is its placeholder mastery,
+    // *"which nothing in the loop ever raises"*, and `withoutHook.lessonsTaught`
+    // is exactly `0`. Both were true and both were a statement of the defect
+    // `w196/mastery-rises` fixes — `setMastery`'s only rules-path caller was the
+    // decay sweep. A standard universe was not slow at transmitting knowledge,
+    // it was **structurally incapable** of it, and this test was one of the
+    // places that fact was written down as though it were a property of
+    // traditions.
+    //
+    // With `GOAL.practice` in the loop both universes climb: the measured
+    // ceiling is 1019 on each arm at twenty years. So the acquire hook's
+    // difference is no longer possible-versus-impossible. It is **15× the
+    // transmission** — 479 lessons against 31 — because True Naming's mages
+    // start above the threshold and everybody else has to spend months getting
+    // there. That is a tradition being *better*, which is what a tradition
+    // should be, rather than a tradition being the only one that works.
     expect(Math.max(...withHook.masteries)).toBeGreaterThan(DEFAULT_TEACH_THRESHOLD);
     expect(Math.max(...withHook.masteries)).toBeLessThanOrEqual(MASTERY_MAX);
-    expect(Math.max(...withoutHook.masteries)).toBeLessThanOrEqual(DEFAULT_INITIAL_MASTERY);
+    expect(Math.max(...withoutHook.masteries)).toBeLessThanOrEqual(MASTERY_MAX);
+    // The fix itself, asserted here because this is the test that pinned its
+    // absence: a universe with no tradition help now gets above the threshold.
+    expect(Math.max(...withoutHook.masteries)).toBeGreaterThan(DEFAULT_INITIAL_MASTERY);
 
-    expect(withHook.lessonsTaught).toBeGreaterThan(0);
-    expect(withoutHook.lessonsTaught).toBe(0);
+    expect(withoutHook.lessonsTaught).toBeGreaterThan(0);
+    expect(withHook.lessonsTaught).toBeGreaterThan(withoutHook.lessonsTaught * 4);
   });
 
   it('is reproducible: the same seeded universe twice', () => {

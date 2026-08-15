@@ -38,6 +38,13 @@
  * `contracts.md` §0 is `0`, so a zeroed goal component reads as `idle` rather
  * than as a goal nobody selected.
  *
+ * ## The tenth goal was appended, not inserted
+ *
+ * `practice` took id 10 because the registry is append-only and `applyMagic`
+ * already held 9. Every baseline taken before it exists is keyed on a goal set
+ * that could not express practice — which is a fact about those baselines, not
+ * a reason to renumber anything.
+ *
  * ## Two goals here are placeholders for capabilities that do not exist
  *
  * `ward-duty` and `raid-readiness` are scored and selectable at 0.4.0 but the
@@ -83,6 +90,27 @@ export const GOAL = {
    * anything.
    */
   applyMagic: 9,
+  /**
+   * Spend the month **drilling a node she already holds**, raising her mastery
+   * of it.
+   *
+   * The tenth goal, and the one that closes the knowledge lifecycle. Before it
+   * existed nothing in the rules path raised mastery at all: research created
+   * an instance at 256, the teach threshold sat at 512, and `setMastery`'s only
+   * caller was the decay sweep, which lowers. A mage could discover something
+   * and was structurally incapable of ever passing it on.
+   *
+   * `docs/design/metis-from-use-results.md` §6 named this goal and its shape —
+   * *"a tenth entry in the permanent goal registry… it competes. A mage
+   * practising is not researching, not teaching, not on the wall"* — and the
+   * competition is the point. An accrual that did not cost a month would rank
+   * gods by how little they interfere, which is the finding that killed the
+   * hook §6 was recommending against.
+   *
+   * See `rules-magic`'s `practice.ts` for the ceiling that keeps a population
+   * stratified while mastery rises.
+   */
+  practice: 10,
 } as const;
 
 /** Any id in the permanent registry. */
@@ -108,6 +136,7 @@ export const GOALS_IN_ORDER: readonly GoalId[] = [
   GOAL.wardDuty,
   GOAL.raidReadiness,
   GOAL.applyMagic,
+  GOAL.practice,
 ];
 
 /** How many goals the enumeration holds. Grows; never shrinks. */
@@ -130,6 +159,7 @@ export const GOAL_NAMES: Readonly<Record<GoalId, string>> = {
   [GOAL.wardDuty]: 'ward-duty',
   [GOAL.raidReadiness]: 'raid-readiness',
   [GOAL.applyMagic]: 'apply-magic',
+  [GOAL.practice]: 'practice',
 };
 
 /** Whether a number names a goal in the permanent registry. */
@@ -151,6 +181,7 @@ export const GOALS_NEEDING_A_TARGET: readonly GoalId[] = [
   GOAL.teach,
   GOAL.scribe,
   GOAL.applyMagic,
+  GOAL.practice,
 ];
 
 /** Whether a goal is meaningless without a node to point it at. */

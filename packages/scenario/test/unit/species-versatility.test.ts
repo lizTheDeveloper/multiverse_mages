@@ -126,10 +126,15 @@ describe('depth: the contrast vector, which does separate them', () => {
 
 describe('the teachable window, which is where the separation actually lives', () => {
   /**
-   * Nothing in the rules path raises mastery — `setMastery`'s only non-test
-   * caller is the decay pass, and it lowers. So a species is not limited by what
-   * it can learn; it is limited by how long it can still teach what it was
-   * granted before the instance falls back below the threshold.
+   * Written when nothing in the rules path raised mastery — `setMastery`'s only
+   * non-test caller was the decay pass, and it lowers — so a species was not
+   * limited by what it could learn but by how long it could still teach what it
+   * was granted.
+   *
+   * `rules-magic`'s `practice` (`w196/mastery-rises`) added the climb, so this
+   * window is now the *decay* half of the separation rather than all of it. The
+   * numbers below are unchanged and still assert what they always did: how long
+   * a fully-mastered instance stays transmissible in each species' hands.
    */
   it('runs from 32 ticks to 102 across the six', () => {
     expect(bySpecies('gnome').teachableWindowTicks).toBe(32);
