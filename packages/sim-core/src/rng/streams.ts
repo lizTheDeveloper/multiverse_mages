@@ -70,14 +70,20 @@ export const RNG_STREAM = {
    * would move the battlefield, and no committed raid baseline could be read as
    * a statement about either.
    *
-   * **13, because the table must stay dense** — `rng-registry.test.ts` asserts
-   * that, and it is what makes "append-only" checkable rather than a promise.
-   * `w190/scribing-fidelity` (PR #170) is open and also takes 13 for
-   * `corruption`. Both cannot: whichever of the two lands second renumbers to 14
-   * and re-states the §6 table, and the `rngRegistryHash` refusal below means
-   * that is a visible re-baseline rather than a silent collision.
+   * **14, assigned by merge order rather than chosen.** Three open PRs each
+   * appended a stream to a table that ends at 12: #170 (`corruption`), this one
+   * (`detachment`), and #185 (`career`). One id, three claimants. The ruling is
+   * #170 = 13, this = 14, #185 = 15, and there is no dodging it by picking a
+   * spare number — `rng-registry-append-only.test.ts` requires the table **dense
+   * from 1**, so an id *is* a merge position.
+   *
+   * The consequence is stated rather than hidden: **until #170 lands, this
+   * branch's registry reads 1..12, 14, and the density assertion is red.** That
+   * is the correct reading of a branch holding the second slot in a queue whose
+   * first slot has not arrived. It closes when #170 is merged in, and needs no
+   * edit here.
    */
-  detachment: 13,
+  detachment: 14,
 } as const;
 
 /** Any ID in the permanent registry. */

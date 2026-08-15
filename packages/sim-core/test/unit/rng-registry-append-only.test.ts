@@ -75,12 +75,16 @@ const PERMANENT_IDS: Readonly<Record<string, number>> = {
   // and refuses on it, so all three baselines invalidated by identity before a
   // single measured number moved. See `docs/design/opening-square.md` §4.
   openingSquare: 12,
-  // Appended by `w200/layer-one-fixes`. The second append, and the second
-  // re-baseline event: `provenance.rngRegistryHash` is taken over this whole
-  // table, so the three balance gates refuse on identity before any measured
-  // number has moved. That is expected and named in the PR body rather than
-  // worked around.
-  detachment: 13,
+  // Appended by `w200/layer-one-fixes` at **14**, not 13, by merge-order ruling:
+  // #170 takes 13 for `corruption` and #185 takes 15 for `career`. Three open
+  // PRs appended to a table ending at 12, and because this file requires the
+  // table dense from 1, an id is a queue position rather than a free choice.
+  //
+  // **`is dense from 1` is therefore red on this branch until #170 merges**, and
+  // that is the assertion doing its job: it is the only thing that would catch
+  // two of the three quietly shipping the same number. Do not add a gap
+  // exemption to make it green.
+  detachment: 14,
 };
 
 /**
