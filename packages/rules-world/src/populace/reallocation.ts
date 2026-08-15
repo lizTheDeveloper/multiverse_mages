@@ -106,7 +106,7 @@ import { OCCUPATIONS_IN_ORDER, RETIREMENT_NORMALIZED_AGE } from './occupations.j
  * So the rate limit is now applied where the control law is stated — to the
  * **occupation** — and truncated once:
  *
- * - {@link ReallocationPools.rate} is `floorDiv(supply * rate, FP_ONE)` per
+ * - The occupation's `ratePool` is `floorDiv(supply * rate, FP_ONE)` per
  *   source occupation, computed from the supply *before* any move, and it caps
  *   the total leaving that occupation this tick. It is universe-wide, so it
  *   does **not** scale with the number of cohorts: splitting one occupation
