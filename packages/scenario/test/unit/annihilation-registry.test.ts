@@ -126,6 +126,31 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'the intent, this is the line that says so.',
   ],
 
+  [
+    'capital:applyLibraryUpkeep',
+    'A genuine floor with no banking, declared at the site: "a shortfall ' +
+      'smaller than one instance\'s worth costs nothing this tick", because ' +
+      'banking it would need a pending-degradation field §1.5 does not have. ' +
+      'DEGRADATION_PER_SHORTFALL is 32, so that is the threshold. **Newly ' +
+      'reached rather than newly written** — W116 gave `completeAffiliation` a ' +
+      'caller, and a universe whose mages actually join universities is the ' +
+      'first one to keep libraries deep enough to owe upkeep it cannot pay.',
+  ],
+
+  [
+    'terms:shareOfDeviation',
+    'A scoring term, and the floor is a rounding step rather than a lost ' +
+      'quantity: it converts how far a trait sits from `fp(1024)` neutral into ' +
+      'a signed share, so a value one or two units off neutral scores 0 rather ' +
+      'than a fraction of a point. Nothing accumulates and nothing can stall — ' +
+      'the result is compared against other goals in the same tick and ' +
+      '`boundTerm` clamps it anyway. `floorDiv` rather than a shift precisely ' +
+      'so it rounds the same way for both signs, which the site explains. ' +
+      '**Newly reached rather than newly written** — W116 made `affiliate` ' +
+      'score an `ambition` term only on a transfer, so the ternary reaches ' +
+      'this function on ticks where the old unconditional call did not.',
+  ],
+
   // ---- Handled at the site. ----
   [
     'worship:laggedWorship',

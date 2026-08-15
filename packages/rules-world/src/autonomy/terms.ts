@@ -131,7 +131,21 @@ export const GOAL_BASE_APPEAL: Readonly<Record<GoalId, Fixed>> = {
   [GOAL.seekTeaching]: 448,
   [GOAL.teach]: 448,
   [GOAL.scribe]: 384,
-  [GOAL.affiliate]: 256,
+  // Level with `research-node` at the top of the band, and the only entry here
+  // that is not a statement about an activity. Affiliation accomplishes
+  // nothing: it produces no node, no lesson and no book. What it does is
+  // *unlock* — an unaffiliated mage may neither scribe (`scribeThroughputFor`
+  // is zero for `universityId === 0`) nor ward (`feasibility.ts` masks
+  // `ward-duty` on the same field), so two of her nine goals do not exist until
+  // she joins something. A gate on two goals is worth what the goals behind it
+  // are worth, and the highest of those is a research-scale number.
+  //
+  // The base term is where that belongs precisely because it is unconditional:
+  // it is what the *goal* is worth before anything about the mage is
+  // considered. Whether she should act on it *now* is the opportunity term's
+  // job, and that term is what separates a mage with no university from one who
+  // merely has a better option — see {@link opportunityTerm}.
+  [GOAL.affiliate]: 512,
   [GOAL.wardDuty]: 320,
   [GOAL.raidReadiness]: 256,
   /**
@@ -245,11 +259,61 @@ export const OPPORTUNITY_PER_CANDIDATE: Fixed = 64;
  */
 export const OPPORTUNITY_CANDIDATE_CAP = 4;
 
-/** Opportunity a change of affiliation offers when one is worth making. **Untuned.** */
-export const AFFILIATION_OPPORTUNITY: Fixed = 256;
-
 function candidateOpportunity(count: number): Fixed {
   return Math.min(count, OPPORTUNITY_CANDIDATE_CAP) * OPPORTUNITY_PER_CANDIDATE;
+}
+
+/**
+ * The two magnitudes affiliation is priced with, read once from content.
+ *
+ * **Two, because the codebase already names two operations.**
+ * `completeAffiliation` and `changeAffiliation` are separate functions, and
+ * `MageOutlook` carries `betterAffiliationAvailable` beside `universityId`
+ * rather than instead of it. Getting a first university is a near-necessity —
+ * it is the gate on scribing and warding. Moving between universities is a
+ * preference about library depth. Pricing both with one number is what made
+ * `affiliate` a goal that scored ≈640 against research's ≈832 and was never
+ * chosen by anybody in any run.
+ */
+export interface AffiliationAppeal {
+  /**
+   * Opportunity for a mage with **no** university, `fp`.
+   *
+   * Bounded by `TERM_BOUND.opportunity`, and the shipped value is that bound:
+   * the strongest statement this axis can make, for the one case where the goal
+   * is a prerequisite rather than an option.
+   */
+  readonly firstOpportunity: Fixed;
+  /** Opportunity for a mage who has one and could have a deeper one, `fp`. */
+  readonly transferOpportunity: Fixed;
+}
+
+/** Every goal-scoring magnitude that is content rather than a table above. */
+export interface GoalAppealWeights {
+  readonly affiliation: AffiliationAppeal;
+}
+
+/** The part of `@mm/content`'s registry {@link readGoalAppeal} reads. */
+export interface GoalAppealSource {
+  autonomyWeight(id: string): number;
+}
+
+/**
+ * Reads the goal-appeal magnitudes, once.
+ *
+ * Eager and by name, exactly as `readTargetAppeal` is and for the same two
+ * reasons: `autonomyWeight` throws on an id the table does not declare, so a
+ * content mistake fails before a single mage has chosen anything; and a
+ * registry lookup per goal per mage per tick is the hot loop the Monte Carlo
+ * harness runs millions of times.
+ */
+export function readGoalAppeal(source: GoalAppealSource): GoalAppealWeights {
+  return Object.freeze({
+    affiliation: Object.freeze({
+      firstOpportunity: source.autonomyWeight('goal-affiliate-first-opportunity'),
+      transferOpportunity: source.autonomyWeight('goal-affiliate-transfer-opportunity'),
+    }),
+  });
 }
 
 /**
@@ -316,7 +380,16 @@ export function personalityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
     case GOAL.scribe:
       return boundTerm('personality', shareOfDeviation(caution, 2));
     case GOAL.affiliate:
-      return boundTerm('personality', shareOfDeviation(ambition, 2));
+      // **Ambition prices a transfer and does not price a first affiliation.**
+      // Moving to a deeper library to make a bigger name is what ambition is;
+      // needing an institution before you may write anything down is not a
+      // matter of temperament. Leaving ambition on both would have left a real
+      // tail — a low-ambition mage takes −256 here, which is enough to keep her
+      // unaffiliated for a whole life, and "the unambitious never learn to
+      // write" is a rule nobody chose.
+      return outlook.universityId === 0
+        ? 0
+        : boundTerm('personality', shareOfDeviation(ambition, 2));
     case GOAL.wardDuty:
       return boundTerm('personality', shareOfDeviation(caution, 2));
     case GOAL.raidReadiness:
@@ -350,7 +423,11 @@ export function ageTerm(goal: GoalId, outlook: MageOutlook): Fixed {
  * throughput, or a boolean about affiliation. There is no coordinate in
  * `MageOutlook` to reach for.
  */
-export function opportunityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
+export function opportunityTerm(
+  goal: GoalId,
+  outlook: MageOutlook,
+  weights: GoalAppealWeights,
+): Fixed {
   switch (goal) {
     case GOAL.researchNode:
       return boundTerm('opportunity', candidateOpportunity(outlook.discoveryTargets.length));
@@ -363,7 +440,16 @@ export function opportunityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
     case GOAL.scribe:
       return boundTerm('opportunity', floorDiv(outlook.scribeThroughput, 4));
     case GOAL.affiliate:
-      return outlook.betterAffiliationAvailable ? AFFILIATION_OPPORTUNITY : 0;
+      // Three cases and only two of them are weights. Nothing available is
+      // zero — and `feasibility.ts` has already masked the goal in that case,
+      // so this arm is reachable only through a direct call.
+      if (!outlook.betterAffiliationAvailable) return 0;
+      return boundTerm(
+        'opportunity',
+        outlook.universityId === 0
+          ? weights.affiliation.firstOpportunity
+          : weights.affiliation.transferOpportunity,
+      );
     case GOAL.wardDuty:
       return boundTerm('opportunity', outlook.wardPressure);
     case GOAL.raidReadiness:
@@ -384,7 +470,11 @@ export function opportunityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
  * so "idle scores at the floor" is a property of one line rather than of nine
  * table rows all happening to hold a zero.
  */
-export function termsFor(goal: GoalId, outlook: MageOutlook): ScoreTerms {
+export function termsFor(
+  goal: GoalId,
+  outlook: MageOutlook,
+  weights: GoalAppealWeights,
+): ScoreTerms {
   if (goal === GOAL.idle) {
     return { base: 0, role: 0, species: 0, personality: 0, age: 0, opportunity: 0 };
   }
@@ -394,6 +484,6 @@ export function termsFor(goal: GoalId, outlook: MageOutlook): ScoreTerms {
     species: speciesTerm(goal, outlook),
     personality: personalityTerm(goal, outlook),
     age: ageTerm(goal, outlook),
-    opportunity: opportunityTerm(goal, outlook),
+    opportunity: opportunityTerm(goal, outlook, weights),
   };
 }

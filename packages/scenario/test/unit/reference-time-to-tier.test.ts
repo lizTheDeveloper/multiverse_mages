@@ -319,14 +319,26 @@ describe('time to tier, by species', () => {
     };
 
     const gnome = interval('gnome');
-    const dwarf = interval('dwarf');
     const human = interval('human');
     const elf = interval('elf');
     const draconic = interval('draconic');
     // `orc` is deliberately not bound. Both claims that read it — `orc.high <
     // elf.low` at 11/12 and `human.high < orc.low` at 0/12 — are retired, and
     // leaving the binding would invite the next author to reach for it.
-    const beforeElf = [gnome, dwarf];
+    // **`dwarf` left this list on W116 and `orc` did not join it.** Dwarf was
+    // established before elf in 12 of 12 seed sets and is now *refuted* in 12 of
+    // 12 — elf arrives first, by 8.6 paired standard errors — because dwarf's
+    // mean time to tier 3 went from among the fastest to 234.9 ± 23.5 ticks
+    // against gnome's 23.8. `species-separation-spread.test.ts` carries the row
+    // and the reasoning; the short version is that dwarf has the highest
+    // `scribeAffinity` in the content, `completeAffiliation` gained a caller,
+    // and a month spent writing is a month not spent reaching the next tier.
+    // `species-occupancy` reads the same species falling furthest over the same
+    // change, which is two independent instruments agreeing on the mechanism.
+    //
+    // `gnome < elf` takes its place: 12/12 sets at 13.3 SE, true before this
+    // branch and unmoved by it.
+    const beforeElf = [gnome];
 
     // What separates strictly in **every one of twelve** independent seed sets:
     // gnome and dwarf arrive before elf, and gnome arrives before human. Both

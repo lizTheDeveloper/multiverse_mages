@@ -36,6 +36,7 @@ import type { Handle, MageRecord, MageRoleValue } from '@mm/state';
 import {
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
+  MAGE,
   UNIVERSITY,
   componentOf,
 } from '@mm/state';
@@ -273,6 +274,28 @@ function applicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
   return found;
 }
 
+/** One tick's reading of which university a mage would move to, and whether she fits. */
+export interface UniversityStanding {
+  /**
+   * The university a mage now at `current` would move to, or `current`.
+   *
+   * Seat-aware, and it reads the occupancy **at the moment it is called** — so a
+   * caller that walks a list of movers and reports each one through
+   * {@link UniversityStanding.takeSeat} gets an answer that accounts for the
+   * movers ahead of her.
+   */
+  preferredFor(current: Handle): Handle;
+  /**
+   * The one she would move to if capacity were no object.
+   *
+   * Differs from {@link UniversityStanding.preferredFor} exactly when a bound
+   * binds, which is the only way anybody finds out that it did.
+   */
+  unboundedFor(current: Handle): Handle;
+  /** Records a move, so the seat is gone for whoever is asked about next. */
+  takeSeat(to: Handle, from: Handle): void;
+}
+
 /**
  * Nodes this mage could spend the month **drilling**.
  *
@@ -303,7 +326,7 @@ function practicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
 }
 
 /**
- * The university this mage would move to, or the one she is already in.
+ * Where each university stands this tick: who would move to it, and who fits.
  *
  * **A placeholder policy, and marked as one.** "Better" is measured as a deeper
  * library, counted in shelved instances, among completed universities only —
@@ -316,8 +339,36 @@ function practicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
  * Returning her current affiliation when nothing is better is what makes
  * `betterAffiliationAvailable` false without a second computation that could
  * disagree with this one.
+ *
+ * ## A full university is not an option, and both halves of that are needed
+ *
+ * `contracts.md` §1.4 gives a university a `capacity` and until this function
+ * nothing read it as a bound — `completedCapacity` reads it as a *demand signal*
+ * for the labour market, which is the opposite direction. Unbounded, this policy
+ * has exactly one answer for every mage alive: the deepest library in the
+ * universe. Every scholar migrates to it and the rest stand empty.
+ *
+ * That is not a prediction. Measured on `w183`'s tree at 60 world ticks, on
+ * `knowledge-capital`'s two-academy fixture: with no bound the deep-shelf arm
+ * and the bare-shelf arm come back **1030 and 1031 books** — the same universe
+ * sampled twice, because the bare arm's mages walk to the deep academy within a
+ * few ticks. With the transfer door shut it is **384 against 1031**. An
+ * apparently one-book §6a near-miss was the two arms having merged.
+ *
+ * Filtering here is what stops a **livelock**, and it is why the bound cannot
+ * live only at the move: a mage refused there would keep
+ * `betterAffiliationAvailable` true, stay committed to `affiliate`, be refused
+ * again next tick, and queue outside a full building for life while doing no
+ * work — strictly worse than the missing wire this branch replaces. She has to
+ * stop wanting what she cannot have. {@link UniversityStanding.unboundedFor} is
+ * then what keeps the refusal visible, because a mage who never wants a seat
+ * leaves no trace of the bound that stopped her, and `capacity.ts` states the
+ * rule: *"a bound that is never observed to bind is a bound nobody can tune."*
+ *
+ * The university she is already in is never filtered out. She is in it; a bound
+ * that evicted her would be a different rule entirely.
  */
-export function universityPreference(state: SimState): (current: Handle) => Handle {
+export function universityPreference(state: SimState): UniversityStanding {
   // The two columns, not a record per instance: this counts shelved copies and
   // reads two of the five fields, and `collectRecords` would build an object
   // carrying all of them for every instance in the universe — tens of thousands
@@ -336,26 +387,65 @@ export function universityPreference(state: SimState): (current: Handle) => Hand
   const universities = componentOf(state, UNIVERSITY);
   const libraryIds = universities.field('libraryId');
   const buildProgress = universities.field('buildProgress');
+  const capacities = universities.field('capacity');
+
+  // Living mages per university, so that a *full* one can be told from a
+  // popular one. Two of the mage component's columns rather than a record
+  // apiece, for the reason the instance tally above gives.
+  const hosted = new Map<Handle, number>();
+  const mages = componentOf(state, MAGE);
+  const alive = mages.field('alive');
+  const affiliations = mages.field('universityId');
+  mages.forEach((row) => {
+    if ((alive[row] as number) === 0) return;
+    const university = affiliations[row] as Handle;
+    if (university !== 0) hosted.set(university, (hosted.get(university) ?? 0) + 1);
+  });
 
   // Collected once, ascending by handle, so the walk below is over a list and
   // not over the component — and so the tie-break reads as the declared order it
   // is rather than as a property of `forEach`.
-  const completed: { handle: Handle; depth: number }[] = [];
+  const completed: { handle: Handle; depth: number; seats: number }[] = [];
   universities.forEach((row, handle) => {
     if ((buildProgress[row] as number) < FP_ONE) return;
-    completed.push({ handle, depth: shelvedBy.get(libraryIds[row] as number) ?? 0 });
+    completed.push({
+      handle,
+      depth: shelvedBy.get(libraryIds[row] as number) ?? 0,
+      seats: capacities[row] as number,
+    });
   });
 
-  return (current: Handle): Handle => {
+  // `-1` for the unaffiliated, so an empty university still beats belonging
+  // nowhere.
+  const depthOf = (current: Handle): number =>
+    current === 0 ? -1 : (shelvedBy.get(libraryDepthKey(state, current)) ?? 0);
+
+  const bestOf = (current: Handle, seatsMatter: boolean): Handle => {
     let best = current;
-    let bestDepth = current === 0 ? -1 : (shelvedBy.get(libraryDepthKey(state, current)) ?? 0);
+    let bestDepth = depthOf(current);
     for (const entry of completed) {
+      if (
+        seatsMatter &&
+        entry.handle !== current &&
+        entry.seats - (hosted.get(entry.handle) ?? 0) <= 0
+      ) {
+        continue;
+      }
       if (entry.depth > bestDepth || (entry.depth === bestDepth && best !== 0 && entry.handle < best)) {
         best = entry.handle;
         bestDepth = entry.depth;
       }
     }
     return best;
+  };
+
+  return {
+    preferredFor: (current: Handle): Handle => bestOf(current, true),
+    unboundedFor: (current: Handle): Handle => bestOf(current, false),
+    takeSeat: (to: Handle, from: Handle): void => {
+      hosted.set(to, (hosted.get(to) ?? 0) + 1);
+      if (from !== 0) hosted.set(from, Math.max(0, (hosted.get(from) ?? 1) - 1));
+    },
   };
 }
 

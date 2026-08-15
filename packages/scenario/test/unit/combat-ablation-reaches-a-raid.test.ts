@@ -91,10 +91,22 @@ const HORIZON = 400;
  * each and a survey belongs in the commit message. Both are asserted, so one of
  * them ceasing to raid cannot silently leave this file passing on the other.
  */
-const SEEDS: readonly number[] = Object.freeze([0x0bad_c0de, 0x00ab_cdef]);
+const SEEDS: readonly number[] = Object.freeze([0x0bad_c0de, 0x00ab_cdef, 0x1234_5678]);
 
-/** Seeds whose raid log does **not** move — the control on the control. */
-const UNMOVED_SEEDS: readonly number[] = Object.freeze([0x1234_5678, 0x0004_1000]);
+/**
+ * Seeds whose raid log does **not** move — the control on the control.
+ *
+ * `0x1234_5678` moved to {@link SEEDS} on W116 and the survey it came from is
+ * why that is a re-survey rather than a repair. Affiliation changes which mages
+ * hold which nodes by the time a raid resolves, so a seed whose raiders
+ * previously stole nothing now has something to steal — three of six surveyed
+ * seeds move, up from two, and this one is the third.
+ *
+ * The pair of lists is the point and neither may empty. A mask that moved every
+ * seed would be a general perturbation rather than a mechanic, and the day this
+ * list has nothing in it, that is what the other assertion stopped proving.
+ */
+const UNMOVED_SEEDS: readonly number[] = Object.freeze([0x0004_1000]);
 
 interface Played {
   readonly raidLog: string;
