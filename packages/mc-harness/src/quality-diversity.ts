@@ -187,6 +187,21 @@ export const META_SHAPE = {
   wide: 'wide',
   /** Too few cells reached to say. Not a verdict; a request for more search. */
   unresolved: 'unresolved',
+  /**
+   * Nothing cleared the ladder **and nothing ascended at all** — so the run
+   * ended before the win condition was reachable, and the sweep has measured
+   * its own `--ticks` rather than the strategies.
+   *
+   * Distinct from {@link META_SHAPE.dead}, which is the real verdict: strategies
+   * *did* reach the summit and the nulls matched them. Both used to report
+   * `dead`, and the ambiguity is load-bearing — `search-strategies.mjs` says so
+   * in the warning it prints, and this project spent a night reading one for the
+   * other. Measured 2026-08-15: at `--ticks 900` against `ascension-min-tick`
+   * 600, three separate `--search-seed`s all give zero ascensions; at 1350, one
+   * seed of three gives `dead` **with** four ascensions, which is the genuine
+   * case.
+   */
+  horizonBound: 'horizon-bound',
 } as const;
 
 export type MetaShape = (typeof META_SHAPE)[keyof typeof META_SHAPE];
@@ -202,9 +217,24 @@ export type MetaShape = (typeof META_SHAPE)[keyof typeof META_SHAPE];
 export const MIN_CELLS_TO_JUDGE_SHAPE = 3;
 
 /** The shape a set of cells is in. Pure, so the thresholds are testable. */
-export function shapeOf(occupied: number, notWorthPlaying: number): MetaShape {
+/**
+ * @param ascensions Total ascensions across **every** run in the sweep, nulls
+ *   included. Required rather than optional with a default: a default would let
+ *   an existing caller keep the old conflation silently, and separating those
+ *   two cases is the entire reason this parameter exists. Nulls count because
+ *   the question is whether the horizon was long enough for *anyone* to win —
+ *   if `idle-then-declare` reached the summit, the run was long enough, and a
+ *   field that failed to is a real result.
+ */
+export function shapeOf(
+  occupied: number,
+  notWorthPlaying: number,
+  ascensions: number,
+): MetaShape {
   const reached = occupied + notWorthPlaying;
-  if (occupied === 0) return META_SHAPE.dead;
+  if (occupied === 0) {
+    return ascensions === 0 ? META_SHAPE.horizonBound : META_SHAPE.dead;
+  }
   if (reached < MIN_CELLS_TO_JUDGE_SHAPE) return META_SHAPE.unresolved;
   if (notWorthPlaying === 0) return META_SHAPE.flat;
   return META_SHAPE.wide;
@@ -317,7 +347,17 @@ export function foldArchive(
     width: occupied.length,
     reachableNotWorthPlaying: cells.length - occupied.length,
     marginOverNull: bestElite - nullBarOf(nulls).bar,
-    shape: shapeOf(occupied.length, cells.length - occupied.length),
+    // Summed over candidates **and** nulls. A null that ascends proves the
+    // horizon was sufficient just as well as a candidate that does, and it is
+    // exactly the case that separates a real `dead` from a short run: on
+    // search seed 40260901 at 1350 ticks the only ascensions in the sweep were
+    // the ladder's.
+    shape: shapeOf(
+      occupied.length,
+      cells.length - occupied.length,
+      candidates.reduce((total, candidate) => total + candidate.ascended, 0) +
+        Object.values(nulls).reduce((total, outcome) => total + outcome.ascended, 0),
+    ),
   };
 }
 

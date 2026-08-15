@@ -305,27 +305,45 @@ describe('phases', () => {
 });
 
 describe('meta shape', () => {
-  it('calls a space with no winners dead', () => {
-    expect(shapeOf(0, 9)).toBe(META_SHAPE.dead);
+  it('calls a space with no winners dead, when someone did reach the summit', () => {
+    // The genuine verdict: strategies ascended and the null ladder matched
+    // them, so playing is worth nothing. Measured on search seed 40260901 at
+    // 1350 ticks -- `dead` with four ascensions in the sweep.
+    expect(shapeOf(0, 9, 4)).toBe(META_SHAPE.dead);
+  });
+
+  it('calls a space with no winners and no ascensions horizon-bound, not dead', () => {
+    // The trap this separates. `--ticks` at or near `ascension-min-tick` gives
+    // zero ascensions by construction, and every strategy then reads as
+    // not-worth-playing for a reason that is not about the strategies. Three
+    // separate search seeds all produced this at 900 ticks against an
+    // ascension-min-tick of 600.
+    expect(shapeOf(0, 9, 0)).toBe(META_SHAPE.horizonBound);
+  });
+
+  it('does not call a space horizon-bound merely because a cell is occupied', () => {
+    // The ascension count only decides between `dead` and `horizon-bound`. If
+    // anything holds a cell, the sweep has a verdict either way.
+    expect(shapeOf(4, 11, 0)).toBe(META_SHAPE.wide);
   });
 
   it('calls a space where everything works flat, which is the failure to avoid', () => {
     // Not balanced -- flat. A design with no wrong answers has no right ones,
     // and no reason to prefer one opening over another.
-    expect(shapeOf(6, 0)).toBe(META_SHAPE.flat);
+    expect(shapeOf(6, 0, 12)).toBe(META_SHAPE.flat);
   });
 
   it('calls a space with winners and losers wide, which is the target', () => {
     // StarCraft, not a symmetric mirror: all species playable, not all build
     // orders.
-    expect(shapeOf(4, 11)).toBe(META_SHAPE.wide);
+    expect(shapeOf(4, 11, 7)).toBe(META_SHAPE.wide);
   });
 
   it('refuses to judge a space too small to have a shape', () => {
     // Two cells can be one-and-one by luck. Reporting `wide` off that would be
     // the same error as calling a coin landing heads once a width of one.
-    expect(shapeOf(1, 1)).toBe(META_SHAPE.unresolved);
-    expect(shapeOf(2, 1)).toBe(META_SHAPE.wide);
+    expect(shapeOf(1, 1, 3)).toBe(META_SHAPE.unresolved);
+    expect(shapeOf(2, 1, 3)).toBe(META_SHAPE.wide);
   });
 
   it('reports the shape on the archive, not just the width', () => {
