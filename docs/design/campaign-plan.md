@@ -8722,3 +8722,66 @@ the combat half in between.
   It hit all three branches. I projected `fileSeal` and the reachability findings out of that payload's
   pin today for exactly this reason and **did not follow the thought to the metric rows** — the same
   omission twice in one file, and the second time it taxed three unrelated PRs.
+
+## W173 — the dwarf answer, and four numbers I gave the owner that do not survive it
+
+`tools/w134/upkeep.mjs`, 7 arms × 20 replicates on W116's seeds, refs `e2a15cf` before and `b02e115`
+after. **No rules-path change, no new draw, nothing written under `balance/`.** Positive control passed
+**three** ways — a `--control` assertion (200-instance library, stock 0 → 400 fp shortfall, 12
+degraded), per-arm first-fired ticks so a zero is readable, and the decomposition
+`scribed − degraded = final` closing exactly on all fourteen arm/tree pairs.
+
+### The answer: mechanism confirmed, explanation falsified
+
+**It is destruction, not a failure to write.** Dwarf production *rose* — **417.1 → 597.3** — while
+degradation rose four times as far, **174.6 → 545.5 (4.58 SE)**.
+
+**But `applyLibraryUpkeep` was not newly reached.** Before #134, dwarf already owed from **world tick
+2**, went unpayable on **118.8 ticks in 7 of 20 runs**, and lost 174.6 instances; all-six fired in
+17 of 20. What changed is the **rate** and the **crossing point** (dwarf 631 → 270). So H1's mechanism
+is right and **H1's stated explanation — "newly reached" — is wrong.**
+
+### Four things I told the owner that do not hold
+
+I reported these when the owner made the decision to accept #134, and three of them were mine to check:
+
+1. **"elf −43%, draconic −28%"** — **not significant.** Elf **1.12 SE**, draconic **0.33 SE**,
+   all-six **0.14 SE**. **Only dwarf clears `toleranceK = 3`, at 3.83 SE.** I quoted three regressions
+   where there is one.
+2. **"while its population doubles"** — **false.** Living mages **0.55 SE**, and the populace point
+   estimate *fell*. Run length checked as a non-confound at 0.62 SE.
+3. **H2's cause — `scribeAffinity`** — wrong. **The ceiling is vellum.** Gnome wrote **113** and kept
+   **75.7**; dwarf wrote **597** and kept **51.8**. Being the best scribe is not what punishes dwarf;
+   **writing more than the vellum can sustain is.**
+4. **And the framing lands in the owner's favour anyway, for a better reason than I gave.**
+   **What died was redundancy**: 545.5 destroyed instances cost dwarf **0.95 ± 0.62 nodes** leaving the
+   universe — down from 2.75 — and `nodesKnown` moves 1.09 SE. The library shrank; the knowledge did
+   not.
+
+### The defect, named not fixed, and it is upstream of upkeep
+
+Nothing is wrong in `applyLibraryUpkeep`. Two absences above it:
+
+- **The affordability reserve at `world-step.ts:688` is one tick deep.** A book owes 2 fp/tick
+  **forever** and nothing compares that to income. **91% of dwarf's production is destroyed; 658,842 fp
+  of vellum wasted.**
+- **The vellum source is not sized for its sink** — endowment 1,024,000 fp against lifetime production
+  24,170 fp, ledger closing to the unit.
+
+Both were **pre-registered** in `economy-flow-models.md` §6, ideas 2 and 4. A prediction written before
+the measurement and confirmed by it is the strongest thing in this file.
+
+### And #134 is red — nine failures, not a flake
+
+`npm run verify` on `b02e115`: **9 failures across 7 files, same count on two runs, and all seven files
+pass on `e2a15cf`.** The one that matters is `knowledge-capital.test.ts`: its four brake-4 assertions
+still pass, but **vision §6a — *"a deep library produces strictly more output over five years than a
+bare shelf"* — now fails at `expected 1025 > 1026`.**
+
+**The brake's mechanics are intact; the benefit it balances against is gone.** That is a vision-level
+claim failing, and the owner accepted this PR on my report, which did not mention it because I did not
+know. It should be re-decided with this on the table.
+
+*(The agent also shipped a counter that could only ever have returned zero —
+`report.shortKinds.length` on a `Record` — caught it, fixed it, and disclosed it unprompted. Third
+agent today to catch its own instrument before publishing.)*
