@@ -34,7 +34,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Action, EntityHandle, SimState } from '@mm/sim-core';
-import { TIME_MODE, createState } from '@mm/sim-core';
+import { TIME_MODE, createState, rngFromRootSeed } from '@mm/sim-core';
 import {
   EVER_KNOWN,
   GRANT_BUDGET,
@@ -70,6 +70,19 @@ interface Bench {
 }
 
 /** A god world, optionally carrying a budget row. No row means no budget. */
+/**
+ * A tick-bound RNG for the resolver, which needs one only for action 16's
+ * personality roll. Bound at tick 0: these benches resolve one action against a
+ * hand-built world, and the tick a draw is keyed on is not what any of them
+ * measures.
+ */
+const TEST_RNG = {
+  rootSeed: 1,
+  stream: (subsystemId: number) => rngFromRootSeed(1).stream(subsystemId, 0),
+  actorStream: (subsystemId: number, actorKey: number) =>
+    rngFromRootSeed(1).actorStream(subsystemId, 0, actorKey),
+};
+
 function bench(budget?: {
   startingGrants: number;
   accrualNodes?: number;
@@ -85,6 +98,9 @@ function bench(budget?: {
     knowledge: KnowledgeSubsystem.fromState(world.state, catalog.nodeCount),
     edictBudgetMax: 8,
     portalNodes: new Set(nodesCarrying('portal').keys()),
+    invitableSpecies: new Set<number>(),
+    speciesOf: () => undefined,
+    rng: TEST_RNG,
     requestEngagement: () => {},
   };
   if (budget !== undefined) {

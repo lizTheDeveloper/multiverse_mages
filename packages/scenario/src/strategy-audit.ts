@@ -90,12 +90,14 @@
 
 import type { SlotPolicy, StrategyContext, StrategyDefinition } from '@mm/mc-harness';
 import {
+  ASCENSION_STANCE,
   BOT_POOL_REGISTRY,
   adaptAgentSession,
   effectivePreferences,
   runEpisode,
 } from '@mm/mc-harness';
-import { ACTION_SPACE_SIZE, agentRng, createSession, isLegal } from '@mm/agent-api';
+import { ACTION_SPACE_SIZE, GOD_ACTION, agentRng, createSession, isLegal } from '@mm/agent-api';
+import type { GodTickReport, WorldStepReport } from '@mm/coordination';
 
 import type { ReferenceContent } from './reference-universe.js';
 import { referenceContent, referenceScenario } from './reference-universe.js';
@@ -174,6 +176,95 @@ export interface StrategyAudit {
   readonly verbs: readonly VerbAudit[];
   /** Rows whose verdict is {@link VERB_VERDICT.shadowed}, for the caller's convenience. */
   readonly shadowed: readonly VerbAudit[];
+  /** What this run did about founding a university. See {@link FoundingAudit}. */
+  readonly founding: FoundingAudit;
+}
+
+/**
+ * What one strategy did about action 11 over one run — and what came of it.
+ *
+ * ## Why this is not four more columns on {@link VerbAudit}
+ *
+ * Action 11 is two purchases behind one id. §4.2 gives *"found a new one"* and
+ * *"advance this build"* the same action number, priced from two different
+ * places (`found-university-cost` fp 10240 against `fund-university` fp 3072),
+ * and `cheapestPrice` in `@mm/agent-api` therefore admits the mask entry while
+ * **either** is affordable. So `timesSubmitted[11]` cannot answer the question
+ * the reference universe's starting position was changed to ask — *does anybody
+ * found one?* — and neither can `timesApplied[11]`.
+ *
+ * Two consequences of that shared id are worth having in front of a reader
+ * before they read the numbers:
+ *
+ * - **Legality is not success.** A run holding fp 3072 and an unfinished site
+ *   sees action 11 legal and cannot afford to found. A run holding fp 3072 and a
+ *   *finished* site also sees it legal, because `fundUniversityCandidates` does
+ *   not filter completed universities — and `fundPlan` refuses every submission
+ *   against one. Post-completion, action 11 is legal-and-inert.
+ * - **Founding is only observable in the world.** `spentByAction` records that
+ *   action 11 resolved, not which purchase it was. So {@link founded} and
+ *   {@link completed} are read off the `UNIVERSITY` component itself, once per
+ *   tick, and cannot be confused by either of the above.
+ *
+ * ## The failure modes this separates
+ *
+ * | reading | name | fix |
+ * | --- | --- | --- |
+ * | `ticksAffordable == 0` | **starved** — the pool never reached fp 10240 | strategy spends its favor elsewhere |
+ * | `ticksAffordable > 0`, `submittedFound == 0` | **shadowed** — something ahead of it in the list was legal every tick | preference ordering |
+ * | `submittedFound > 0`, `founded == 0` | **refused** — the rules turned it away | a mask/rules disagreement |
+ * | `founded > 0`, `completed == 0` | **unfinished** — founded and never built | stone, laborers, or funding |
+ */
+export interface FoundingAudit {
+  readonly strategyId: string;
+  /** Ticks on which the legality mask permitted action 11 at all. */
+  readonly ticksLegal: number;
+  /**
+   * Ticks on which the favor pool held at least `found-university-cost`.
+   *
+   * The honest affordability column, read off the universe row rather than
+   * inferred from the mask — see the note above on why the mask entry is not
+   * this. With no university in the world it happens to coincide with
+   * `ticksLegal`, because slot 0 is then the only candidate; once one stands
+   * they diverge, and that divergence is the point.
+   */
+  readonly ticksAffordable: number;
+  /** Action-11 submissions naming slot 0 — *"found a new one"*. */
+  readonly submittedFound: number;
+  /** Action-11 submissions naming an existing university — *"advance this build"*. */
+  readonly submittedFund: number;
+  /** Universities that came into existence after tick 0. */
+  readonly founded: number;
+  /** The world tick the first one was first observed, or `-1` if none ever was. */
+  readonly firstFoundedTick: number;
+  /** Universities observed at `buildProgress == fp(1)` during the run. */
+  readonly completed: number;
+  /** The world tick the first completion was first observed, or `-1`. */
+  readonly firstCompletedTick: number;
+  /** The most favor the pool ever held, `fp`. */
+  readonly peakFavor: number;
+  /**
+   * Grimoires scribed over the whole run.
+   *
+   * The knowledge economy's first product, and the reason the starting position
+   * matters: `isFeasible` masks `scribe` while a mage's scribe throughput is
+   * zero, and it is zero for an unaffiliated mage. Zero here on a run that
+   * founded nothing is the expected consequence rather than a defect.
+   */
+  readonly grimoires: number;
+  /** The world tick the first grimoire was scribed, or `-1`. */
+  readonly firstGrimoireTick: number;
+  /** Lessons taught over the whole run — knowledge moving without a university. */
+  readonly lessonsTaught: number;
+  /**
+   * Lessons taught **before** the first university was observed.
+   *
+   * The answer to *"does the run stall in the opening window, or does knowledge
+   * still move?"* — teaching is mage-to-mage and needs no institution, so a
+   * non-zero figure here says the window is slow rather than dead. Equal to
+   * {@link lessonsTaught} on a run that never founded one.
+   */
+  readonly lessonsBeforeFirstUniversity: number;
 }
 
 /** How an audit run is configured. */
@@ -220,6 +311,129 @@ function counters(): Counters {
     applied: new Int32Array(ACTION_SPACE_SIZE),
   };
 }
+
+/**
+ * A once-per-tick read of the three world facts action 11 is about.
+ *
+ * ## Why none of this reads `SimState`
+ *
+ * The first version of this watcher held the state {@link Scenario.create}
+ * returned and read the `UNIVERSITY` component off it every tick. It reported
+ * **zero universities founded on a run that founded 195 of them**, and the
+ * positive control below is the only reason that was caught rather than
+ * published. `sim-core`'s `step` is `(state, actions, rng) -> state` and it
+ * *clones*: `const next = state.clone()`. A reference taken before the first
+ * step is a reference to the tick-0 world forever, and every counter built on
+ * one reports the starting position no matter what the run does.
+ *
+ * So every number here comes from something the run itself hands out each tick:
+ *
+ * - **the god's tick report**, which the god's own outcome system writes from
+ *   the live state — `favor`, the ledger's `opening`, and
+ *   `ascensionProgress.completedUniversities`, which is a fresh walk of the
+ *   `UNIVERSITY` component counting `buildProgress >= fp(1)`;
+ * - **the world step report**, whose `universitiesStanding` is the same walk
+ *   without the completion filter.
+ *
+ * Neither is a second copy of the world. Both are the world answering.
+ */
+class FoundingWatch {
+  private readonly foundUniversityCost: number;
+
+  /** Universities standing at tick 0. A starting position is not a founding. */
+  private baseline = -1;
+  private standing = 0;
+
+  founded = 0;
+  firstFoundedTick = -1;
+  completed = 0;
+  firstCompletedTick = -1;
+  peakFavor = 0;
+  ticksAffordable = 0;
+
+  constructor(foundUniversityCost: number) {
+    this.foundUniversityCost = foundUniversityCost;
+  }
+
+  /**
+   * The starting position, before any tick has run.
+   *
+   * Taken explicitly rather than inferred from the first report, because the
+   * first report is written *after* the first tick and a founding on tick 0
+   * would otherwise be counted as part of the opening.
+   */
+  observeOpening(standing: number): void {
+    this.baseline = standing;
+    this.standing = standing;
+  }
+
+  /** One world step report, drained once per tick. */
+  observeWorldReport(report: WorldStepReport): void {
+    if (this.baseline < 0) this.observeOpening(report.universitiesStanding);
+    if (report.universitiesStanding > this.standing) {
+      this.founded += report.universitiesStanding - this.standing;
+      if (this.firstFoundedTick < 0) this.firstFoundedTick = report.worldTick;
+    }
+    this.standing = report.universitiesStanding;
+  }
+
+  /** One god tick report, drained once per tick. */
+  observeGodReport(report: GodTickReport): void {
+    if (report.favor > this.peakFavor) this.peakFavor = report.favor;
+    // The ledger's opening balance, not its closing one: the question this
+    // column answers is what the god could afford *when it chose*, and the
+    // closing balance is what it had after the choice was paid for.
+    if (report.ledger.opening >= this.foundUniversityCost) this.ticksAffordable += 1;
+
+    const complete = report.ascensionProgress.completedUniversities;
+    if (complete > this.completed) {
+      this.completed = complete;
+      if (this.firstCompletedTick < 0) this.firstCompletedTick = report.worldTick;
+    }
+  }
+}
+
+/**
+ * A control whose only preference is *"found a university"*.
+ *
+ * ## Why a probe exists at all
+ *
+ * A counter that reports zero is indistinguishable from a counter that never
+ * fired, and this campaign has shipped three instruments that confidently
+ * reported a zero while being broken. So the founding columns are only readable
+ * beside a run in which a founding **must** happen.
+ *
+ * It is a prediction rather than a non-zero assertion, which is the difference
+ * between a control and a formality. Favor starts at 0, `favor-regen-base` is
+ * fp 1024 per world tick, `found-university-cost` is fp 10240, worship starts at
+ * 0 and lags upward at 5% of the gap per tick so it contributes almost nothing
+ * over the first ten. A god that spends on nothing else therefore crosses the
+ * price in the region of ten world ticks and founds immediately — and
+ * `founding-instrument.test.ts` pins that window. A probe that founded at tick 0
+ * or tick 300 would say the instrument or the arithmetic is wrong, where
+ * *"non-zero"* would have passed either.
+ *
+ * **Not a member of the pool.** It is not registered in `BOT_POOL_REGISTRY`, it
+ * plays no sweep, and it moves no baseline: it exists to be the denominator of
+ * the founding table.
+ */
+export const FOUNDING_PROBE: StrategyDefinition = Object.freeze({
+  strategyId: 'founding-probe',
+  version: 1,
+  hypothesis:
+    'Not a hypothesis about the game: a positive control for the founding instrument. It probes ' +
+    'whether a god who wants exactly one thing and saves for it can get it, so that a zero in ' +
+    'any other row of the founding table is a fact about that strategy rather than about the ' +
+    'counter. If this row reads zero, nothing else in the table may be believed.',
+  ascension: {
+    when: ASCENSION_STANCE.never,
+    because:
+      'A control that ends its own run early stops the very clock the founding and completion ' +
+      'ticks are measured on. It has one job and declaring is not it.',
+  },
+  signatureActions: [GOD_ACTION.fundUniversity],
+  preferences: () => [{ action: GOD_ACTION.fundUniversity, parameter: 0 }],
+});
 
 /**
  * `policyFor`'s walk, with a tally around each of its observable events.
@@ -285,7 +499,11 @@ export function auditStrategy(
   const runSeed = options.runSeed ?? AUDIT_RUN_SEED;
   const worldTickCap = options.worldTickCap ?? AUDIT_WORLD_TICK_CAP;
 
-  const { scenario, lastGodReport } = referenceScenario(content);
+  const { scenario, lastGodReport, lastReport } = referenceScenario(content);
+  // `costs.foundUniversity` rather than a literal: the price is content, and an
+  // affordability column keyed on a number this file invented would go quietly
+  // wrong the first time somebody retunes `found-university-cost`.
+  const watch = new FoundingWatch(content.deps.god?.content.costs.foundUniversity ?? 0);
   const raw = createSession({ scenario, agentSlotIndex: 0, strategyId: definition.strategyId });
   const session = adaptAgentSession(raw);
 
@@ -306,6 +524,7 @@ export function auditStrategy(
     const report = lastGodReport();
     if (report === undefined || report.worldTick === seenTick) return;
     seenTick = report.worldTick;
+    watch.observeGodReport(report);
     for (const key of Object.keys(report.interventions.spentByAction)) {
       const action = Number(key);
       if (Number.isInteger(action) && action >= 0 && action < ACTION_SPACE_SIZE) {
@@ -314,12 +533,55 @@ export function auditStrategy(
     }
   };
 
+  // Action 11's two purchases, split by the slot the submission named. §4.2 gives
+  // them one id; only the parameter tells them apart, and only at submission time.
+  let submittedFound = 0;
+  let submittedFund = 0;
+  let lessonsTaught = 0;
+  let lessonsBeforeFirstUniversity = 0;
+  let grimoires = 0;
+  let firstGrimoireTick = -1;
+  let seenWorldTick = -1;
+  const drainWorld = (): void => {
+    const report = lastReport();
+    if (report === undefined || report.worldTick === seenWorldTick) return;
+    seenWorldTick = report.worldTick;
+    lessonsTaught += report.lessonsTaught;
+    if (watch.firstFoundedTick < 0) lessonsBeforeFirstUniversity += report.lessonsTaught;
+    grimoires += report.grimoiresScribed;
+    if (report.grimoiresScribed > 0 && firstGrimoireTick < 0) firstGrimoireTick = report.worldTick;
+    watch.observeWorldReport(report);
+  };
+
+  let opened = false;
   const tallying = auditPolicy(definition, context, into);
   const policy: SlotPolicy = (observation, mask, slot) => {
+    if (!opened) {
+      // The starting position, read on the first policy call because that is the
+      // first moment a session has a state and the last moment before a tick has
+      // run. The candidate list is the only route to it — no report exists yet —
+      // and it is capped at the action's slot count, so this is honest for a
+      // scenario opening with fewer than seven universities. Every scenario in
+      // this package opens with none.
+      const list = raw.candidates().get(GOD_ACTION.fundUniversity) ?? [];
+      watch.observeOpening(Math.max(list.length - 1, 0));
+      opened = true;
+    }
     // Called before this tick's step, so the report it drains is the previous
     // tick's. The final tick is drained after the episode, below.
     drainReport();
-    return tallying(observation, mask, slot);
+    drainWorld();
+    const submission = tallying(observation, mask, slot);
+    // A `SlotPolicy` may answer with a bare action id, which §4.2 reads as slot
+    // 0 — for action 11 that *is* "found a new one", so the bare form counts as
+    // a founding submission rather than being dropped.
+    const action = typeof submission === 'number' ? submission : submission.action;
+    const parameter = typeof submission === 'number' ? 0 : (submission.parameter ?? 0);
+    if (action === GOD_ACTION.fundUniversity) {
+      if (parameter === 0) submittedFound += 1;
+      else submittedFund += 1;
+    }
+    return submission;
   };
 
   const episode = runEpisode({
@@ -329,7 +591,10 @@ export function auditStrategy(
     policies: [policy],
     worldTickCap,
   });
+  // The last tick's reports land after the last policy call, so a table that
+  // stopped here would under-report every run that founded on its way out.
   drainReport();
+  drainWorld();
 
   const audited = new Set<number>(definition.signatureActions);
   for (let action = 0; action < ACTION_SPACE_SIZE; action += 1) {
@@ -361,6 +626,22 @@ export function auditStrategy(
     snapshotHash: raw.snapshotHash(),
     verbs: Object.freeze(verbs),
     shadowed: Object.freeze(verbs.filter((verb) => verb.verdict === VERB_VERDICT.shadowed)),
+    founding: Object.freeze({
+      strategyId: definition.strategyId,
+      ticksLegal: into.legal[GOD_ACTION.fundUniversity] ?? 0,
+      ticksAffordable: watch.ticksAffordable,
+      submittedFound,
+      submittedFund,
+      founded: watch.founded,
+      firstFoundedTick: watch.firstFoundedTick,
+      completed: watch.completed,
+      firstCompletedTick: watch.firstCompletedTick,
+      peakFavor: watch.peakFavor,
+      grimoires,
+      firstGrimoireTick,
+      lessonsTaught,
+      lessonsBeforeFirstUniversity,
+    }),
   });
 }
 
@@ -368,6 +649,20 @@ export function auditStrategy(
 export function auditPool(options: StrategyAuditOptions = {}): readonly StrategyAudit[] {
   const content = options.content ?? referenceContent();
   return BOT_POOL_REGISTRY.definitions.map((definition) =>
+    auditStrategy(definition, { ...options, content }),
+  );
+}
+
+/**
+ * The pool **plus its positive control**, for the founding table.
+ *
+ * {@link FOUNDING_PROBE} is placed first rather than appended, because the
+ * table is only readable top-down: if the control's row is empty the rows below
+ * it mean nothing, and a reader should learn that before reading them.
+ */
+export function auditFounding(options: StrategyAuditOptions = {}): readonly StrategyAudit[] {
+  const content = options.content ?? referenceContent();
+  return [FOUNDING_PROBE, ...BOT_POOL_REGISTRY.definitions].map((definition) =>
     auditStrategy(definition, { ...options, content }),
   );
 }
@@ -390,11 +685,62 @@ const ACTION_NAMES: readonly string[] = Object.freeze([
   'changeTradition',
   'openPortal',
   'declareAscension',
+  'inviteScholar',
 ]);
 
 /** The name of a §4.2 action id, or the id itself for one nobody named. */
 export function actionName(action: number): string {
   return ACTION_NAMES[action] ?? `action-${String(action)}`;
+}
+
+/**
+ * The founding audit as a fixed-width table. One line per strategy.
+ *
+ * `-` in a tick column means the thing never happened. The columns are ordered
+ * as the causal chain runs — could it? did it ask? did it get one? did it
+ * finish? did anything get written? — so that the first `0` in a row names the
+ * step that failed.
+ */
+export function formatFounding(audits: readonly StrategyAudit[]): string {
+  const tick = (value: number): string => (value < 0 ? '-' : String(value));
+  const rows: string[][] = [
+    [
+      'strategy',
+      'legal',
+      'afford',
+      'sub:found',
+      'sub:fund',
+      'founded',
+      '@tick',
+      'completed',
+      '@tick',
+      'grimoires',
+      '@tick',
+      'lessons',
+      'pre-uni',
+      'peakFavor',
+    ],
+  ];
+  for (const audit of audits) {
+    const founding = audit.founding;
+    rows.push([
+      audit.strategyId,
+      `${String(founding.ticksLegal)}/${String(audit.ticks)}`,
+      `${String(founding.ticksAffordable)}/${String(audit.ticks)}`,
+      String(founding.submittedFound),
+      String(founding.submittedFund),
+      String(founding.founded),
+      tick(founding.firstFoundedTick),
+      String(founding.completed),
+      tick(founding.firstCompletedTick),
+      String(founding.grimoires),
+      tick(founding.firstGrimoireTick),
+      String(founding.lessonsTaught),
+      String(founding.lessonsBeforeFirstUniversity),
+      String(founding.peakFavor),
+    ]);
+  }
+  return padded(rows);
 }
 
 /** The audit as a fixed-width table. One line per verb, plus a header. */
@@ -417,6 +763,11 @@ export function formatAudit(audits: readonly StrategyAudit[]): string {
     }
   }
 
+  return padded(rows);
+}
+
+/** Fixed-width layout for a header row plus body rows. */
+function padded(rows: readonly (readonly string[])[]): string {
   const widths = rows[0]?.map((_, column) =>
     Math.max(...rows.map((row) => (row[column] ?? '').length)),
   ) ?? [];

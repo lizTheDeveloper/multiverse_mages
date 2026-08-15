@@ -462,9 +462,11 @@ change… no travel, no whoosh"* [`sound-design.md` §4.3].
    the most to lose to Perdo and Ignem.** The two switches interact through the species table
    without either knowing about the other.
 
-*Every link in that chain is correct and none of them is wired: `advanceConstruction` has no
-caller and construction is passed a hardcoded zero materials claim. See §7.5a — this is the
-largest projected payoff in the document sitting behind the smallest disconnection.*
+*Every link in that chain is correct ~~and none of them is wired: `advanceConstruction` has no
+caller and construction is passed a hardcoded zero materials claim~~ — **corrected 2026-08-15 at
+`08ca5368`: every link is also connected.** `advanceConstruction` is called at `world-step.ts:1302`
+and construction claims `construction.stoneOwed` at `:1011`. See §7.5a — this is still the largest
+projected payoff in the document, and it is now a magnitude question rather than a wiring one.*
 
 ### 3.6 Herbam — the quiet permit, and what it proves
 
@@ -757,9 +759,10 @@ occupation mixes at tick 2400. **Disproved by:** the mixes converging, which wou
 dominated by construction backlog and the ruleset term is decorative.
 
 **Subset: fully.** Perdo, Intellego and Terram are all in the v1 rectangle, so all three demand
-shifts are expressible today. One caution: construction demand is derived from a backlog that
-`advanceConstruction` never advances (§7.5a), so the laborer term is currently the least trustworthy
-of the four.
+shifts are expressible today. ~~One caution: construction demand is derived from a backlog that `advanceConstruction` never
+advances (§7.5a), so the laborer term is currently the least trustworthy of the four.~~ **Corrected
+2026-08-15 at `08ca5368`:** `advanceConstruction` advances the backlog every tick
+(`world-step.ts:1302`), so the laborer term is expressible on the same footing as the other three.
 
 ### 6.5 The sealed archive
 
@@ -847,43 +850,72 @@ The two answers are different games:
 This one decision determines whether Limen is the most interesting switch in the grid or the least.
 It is the cheapest thing in this document to resolve and the most expensive to get wrong.
 
-### 7.5 The only node-authored effect that reaches the simulation is the one that ignores the ruleset
+### 7.5 Three of sixteen node-authored effects reach the simulation, and one of the three ignores the ruleset
+
+> **Corrected 2026-08-15, verified at `08ca5368`.** This section said *"the only node-authored effect
+> that reaches the simulation is the one that ignores the ruleset"* and rested on
+> *"`gatherEffects` … has no non-test caller anywhere in `packages/`"*. **That is false and has been
+> for some time.** `metis-from-use-results.md` §9 already flagged the claim as *"stale everywhere it
+> appears"* on `main`, naming four documents plus `scripts/check-primitive-consumption.mjs` and
+> `packages/rules-magic/src/effects/consumption.ts`'s header — this is one of the four, and it is the
+> one people read. The corrected reading follows; it is narrower, not gone.
 
 This is the sharpest form of the campaign's own question, and it is worth stating exactly.
 
 **14 of 16 primitives are authored on v1 nodes** — `checkPrimitiveCoverage` enforces it in
 `npm run verify` and both CI jobs, with `lifespan` and `fertility` as the two declared exclusions.
-**1 of 16 is node-driven at runtime.** `gatherEffects`
-(`packages/rules-magic/src/effects/gather.ts:96`) — documented as the single legality point for
-turning a node's `effects[]` into a contribution — **has no non-test caller anywhere in
-`packages/`**, verified against this tree and not merely inherited from `w12/vision-audit` (a branch
-that is not merged). `world-step.ts` hardcodes `resourceYieldBonuses: []`, `fertilityBonuses: []`
-and `scribeRateBonuses: []`. Three more are reachable but driven only by god-blessing constants.
+`packages/content/data/primitive.json` still holds exactly **16** at `08ca5368`, so the denominator
+is unchanged.
 
-**Eight primitives are raid-locked** behind a package that never calls `gatherEffects`:
+**3 of 16 are node-driven at runtime.** `gatherEffects`
+(`packages/rules-magic/src/effects/gather.ts:96`) — the single legality point for turning a node's
+`effects[]` into a contribution — is imported at `packages/coordination/src/universe-effects.ts:123`
+and **called at `:330`**. It does not appear among the 125 pinned findings of
+`scripts/reachability-baseline.json`, which is the independent confirmation. What it drives is
+deliberately narrow: `ECONOMIC_PRIMITIVES` (`universe-effects.ts:183`) is the two-member set
+`{resource-yield, build-rate}`, reaching `world-step.ts:1114` (`resourceYieldBonuses: economy.resourceYield`)
+and `:986` (`buildRateBonuses: economy.buildRate`). Add `worship-yield`, which reaches favor
+regeneration by its own path, and three of sixteen move a number from authored content.
+
+**Two hardcoded empties survive** and are the residue worth chasing: `fertilityBonuses: []`
+(`world-step.ts:1849`) and `scribeRateBonuses: []` (`:2017`). `resourceYieldBonuses` is no longer one
+of them. Three more primitives — `research-rate`, `teach-rate`, `lifespan` — are reachable but
+driven only by god-blessing constants and, since the capital loop closed, by library depth
+(`world-step.ts:1580`); no node's authored magnitude enters them.
+
+**Eight primitives are raid-locked** behind a package that still never calls `gatherEffects`:
 `direct-damage`, `ward`, `area-denial`, `blink`, `summon`, `concealment`, `knowledge-steal`, and
-`portal` itself. That is **half the registry**, and it means half of every projection about what a
-permit *does* is unobservable in a single-universe sweep — which is exactly the shape every sweep
-this campaign has run. `direct-damage` alone carries 11 of the 51 v1 nodes and `area-denial` 6, so
-**a third of the shipped subset's authored effects have never fired in a measurement.** Any claim
-that "permitting doesn't matter" is, to that extent, a claim about the harness rather than about
-the game.
+`portal` itself. That is **half the registry**. The lock has changed shape rather than opened:
+`rules-raid` is no longer an orphan — `packages/scenario/package.json` lists it,
+`packages/scenario/src/raids.ts:423` calls `openPortal`, and `REFERENCE_MECHANICS.raidEngagement` is
+`true` — so `portal` executes. But `audit-vision.md` measures **zero combat attempts on either
+path** [given, not re-derived here], so the other seven remain unobserved for the same practical
+reason. `direct-damage` alone carries 11 of the 51 v1 nodes and `area-denial` 6, so **a third of the
+shipped subset's authored effects have still never fired in a measurement.** Any claim that
+"permitting doesn't matter" is, to that extent, a claim about the harness rather than about the
+game.
 
-That leaves **`worship-yield`, and `worship-yield` is the one primitive whose accounting skips
-`permits()`** (§7.7).
+Of the three that are node-driven, **`worship-yield` is the one whose accounting skips
+`permits()`** (§7.7) — re-verified at `08ca5368`: `yieldSources` (`god/system.ts:649–656`) still
+tests only `instanceCount(nodeId) > 0`. The other two are gated correctly, and gated at *application*
+time: `universe-effects.ts` requires a node be **known** (an instance at a mind or memory palace at
+or above `MASTERY_ACTIVATION_THRESHOLD`) **and** its cell `permits()`-permitted when the contribution
+is applied, so an interdiction switches the economy off without destroying what anyone knows.
 
-Read as one sentence: **the only authored magic that currently changes the simulation is a favor
-trickle that does not care whether the god permitted it.** Every other consequence of a permit is a
-node count. That is not a mispriced button or a weak reward function — it is the complete
-mechanical content of "which magic exists in your universe" in the build as it stands, and it is a
-sufficient explanation for the negative control on its own.
+Read as one sentence: **the economy now knows what the universe knows, along two primitives, and a
+favor trickle that does not care whether the god permitted it runs alongside them.** That is a
+narrower complaint than this section used to make, and it is a different one. The negative control
+this section was written to explain cannot any longer be explained by *"nothing authored reaches the
+simulation"*; if permitting still fails to pay, the reason is now a magnitude or a content question
+rather than a missing wire.
 
-So: §2.1's Creo chain lands on `resource-yield`, §3.1's Corpus chain lands on `lifespan` and
-`fertility`, §3.5's Terram chain lands on `build-rate` — and none of those does anything today.
-**This is not a contradiction between the projection and the design; it is one between the design
-and the build.** Every projection here should be read as *"once the primitive is connected"*, and
-§6.3 is deliberately the cheapest of the five mechanics precisely because most of it is the act of
-connecting two of them.
+So: §2.1's Creo chain lands on `resource-yield` and §3.5's Terram chain on `build-rate`, and **both
+are connected end to end**. §3.1's Corpus chain lands on `lifespan` and `fertility`, and **those two
+are the ones still severed** — `lifespan` is a god-blessing input only, `fertilityBonuses` is the
+hardcoded `[]` at `world-step.ts:1849`, and `fertility` is one of `checkPrimitiveCoverage`'s two
+declared exclusions on the content side as well. Read every projection in this document as *"once the
+primitive is connected"* **only where the primitive is one of those** — for `resource-yield` and
+`build-rate` the correct reading is now *"connected; the open question is the magnitude"*.
 
 **One correction to a claim in circulation:** the *species* table is not inert. Every one of the
 thirteen tuned fields has a live call site — `depthCeiling` gates which node tiers a mage may
@@ -894,23 +926,33 @@ thing wearing the same word. `hard-magic.md` carries a claim-and-retraction pair
 point, and the corrected version is the narrower one: the fields are read, and the reference
 scenario never creates the scarcity under which reading them would change an outcome.
 
-### 7.5a Construction never pays for itself
+### 7.5a Construction pays for itself now — the chain is connected, and the open question is its magnitude
 
-`materials.ts:111` declares four claimants in a fixed consumption order — `subsistence`,
-`libraryUpkeep`, `scribing`, `construction`. Two of them genuinely claim. `scribing` is paid earlier
-at the desk and passed as `0` so it is not double-charged. **`construction` is passed a hardcoded
-`0`, and `advanceConstruction` has no non-test caller at all.**
+> **Corrected 2026-08-15, verified at `08ca5368`.** This section read *"`construction` is passed a
+> hardcoded `0`, and `advanceConstruction` has no non-test caller at all"*, and called that
+> **"the highest-leverage single disconnection in the tree"**. Both halves are false at this ref, and
+> `vision-audit.md`'s ranked gap #2 carried the same claim four days after its own table rows were
+> retracted. Anyone acting on the old text would go looking for a caller that exists.
 
-So §3.5's chain — Terram raises `build-rate`, `build-rate` shortens `constructionBacklog`,
-a shorter backlog adds student seats, seats are what bound the mage roster at 88 — is correct in
-every link and connected in none of them. It is also the chain with the largest projected payoff in
-this document, which makes `advanceConstruction`'s missing caller the highest-leverage single
-disconnection in the tree.
+`materials.ts` declares four claimants in a fixed consumption order — `subsistence`,
+`libraryUpkeep`, `scribing`, `construction` — and **three of them now genuinely claim.** `scribing`
+is still paid earlier at the desk and passed as `0` so it is not double-charged. `construction` is
+passed `construction.stoneOwed` (`world-step.ts:1011`), and `libraryUpkeep` is charged through
+`applyLibraryUpkeep` (`world-step.ts:1737`) over the per-tick reading of every library.
+`advanceConstruction` is imported at `world-step.ts:148` and **called at `:1302`**, taking
+`buildRateBonuses: input.buildRateBonuses` — fed from `economy.buildRate` at `:986`, which is
+node-authored `build-rate` gathered by `universe-effects.ts`.
 
-*(Noted for the record: `w29/city-and-supply-chain` points at the same commit as
-`integration/campaign-round-2` and carries no unique commits, so the material scalar is not
-currently being differentiated into a supply chain by anyone. The four claimants above are what
-exists.)*
+So §3.5's chain — Terram raises `build-rate`, `build-rate` shortens `constructionBacklog`, a shorter
+backlog adds student seats, seats are what bound the mage roster — is correct in every link **and
+connected in every link.** What is not settled is whether it *matters*: the projected payoff was the
+largest in this document and no sweep in this repository has yet isolated the Terram → seats → roster
+effect at its shipped magnitudes. That measurement is the open item, and it is a run, not a wire.
+
+*(The parenthetical that used to sit here said `w29/city-and-supply-chain` carried no unique commits
+and that nobody was differentiating the material scalar into a supply chain. Also stale: that branch
+head, `d5a3357c`, is an ancestor of `origin/main` at `08ca5368` — the split landed, `material-stock`
+took world-schema revision 5, and the four claimants above spend three different stocks.)*
 
 ### 7.6 A raider can import knowledge into a cell her own universe forbids
 

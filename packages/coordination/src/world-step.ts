@@ -117,7 +117,7 @@ import {
 } from '@mm/state';
 import type {
   AcquirePolicy,
-  CellResolver,
+  ExclusionResolver,
   KnowledgeSubsystem,
   NodeCatalog,
   StorePolicy,
@@ -141,9 +141,11 @@ import type {
 import {
   CohortStore,
   GOAL,
+  GOAL_COUNT,
   LABORERS_PER_BUILD_UNIT,
   MATERIALS_PER_LABOR_MONTH,
   MATERIAL_KINDS,
+  NO_STANDING_ARMY,
   advanceConstruction,
   appliedYield,
   applicationRations,
@@ -214,7 +216,13 @@ export interface WorldStepDeps {
   /** The species behind an interned id, or `undefined` for one this content lacks. */
   readonly speciesOf: (speciesId: number) => SpeciesRecord | undefined;
   readonly catalog: NodeCatalog;
-  readonly cells: CellResolver;
+  /**
+   * Widened to {@link ExclusionResolver} rather than the bare `CellResolver`: the
+   * knowledge subsystem needs a cell's anti-requisites (`vision.md` §4b) on the
+   * acquisition path, and `MagicGrid` supplies both from one object. Every
+   * consumer that only wanted `cellOf` is unaffected — this is a superset.
+   */
+  readonly cells: ExclusionResolver;
   /**
    * A node's cell, form and effect primitives, and a species' resolved
    * affinities.
@@ -433,6 +441,24 @@ export interface WorldStepReport {
   readonly buildProgressAdded: Fixed;
   /** Universities finished by that labour this tick. */
   readonly universitiesCompleted: number;
+  /**
+   * Universities standing at the end of the tick, finished or not.
+   *
+   * A census, not an event, and the difference is the reason it exists.
+   * {@link universitiesCompleted} counts only the ones **laborers** finished, so
+   * a site the god's fourth funding action completed is invisible to it, and
+   * nothing at all reported a *founding*: §4.2 gives founding and funding one
+   * action id, so `spentByAction[11]` cannot say which purchase resolved, and
+   * `candidates` is capped at the action's slot count and stops counting at
+   * seven. A universe that founded a thousand universities and one that founded
+   * eight were the same number everywhere a caller could look — which is the
+   * same blindness {@link universitiesUnstaffed} was added for, one question
+   * earlier: *how many are there at all.*
+   *
+   * Read once per tick off the component that owns the answer. Nothing hashes
+   * it and no rule reads it back.
+   */
+  readonly universitiesStanding: number;
   /** Stone construction asked for this tick, `fp`. */
   readonly constructionStoneOwed: Fixed;
   /** Stone construction was actually paid, `fp`. Below `owed` means the quarry is the bottleneck. */
@@ -470,6 +496,37 @@ export interface WorldStepReport {
   /** Nodes whose last instance was destroyed this tick, by death or by decay. */
   readonly nodesLost: number;
   readonly goalSwitches: number;
+  /**
+   * Mage-months the work phase spent under each goal this tick, indexed by goal
+   * id, length `GOAL_COUNT`.
+   *
+   * ## A goal every mage picks and that does nothing looks like a goal nobody picks
+   *
+   * `goalSwitches` was the only goal-shaped number this report carried, and it
+   * counts *changes*. The per-goal histogram `stepMageAutonomy` builds every
+   * tick — `GoalHistogram`, three integers a cell, written precisely so an
+   * emergent monoculture is *"visible as a number rather than as an unexplained
+   * flat line"* — was read for that one scalar and dropped. So the loop had no
+   * standing answer to "what is mage-life actually being spent on", and the one
+   * question it could not answer is the one that went wrong: on `08ca5368`,
+   * over 600 ticks of the reference universe, **36.5 % of committed mage-months
+   * were held on `affiliate`**, a goal {@link workOne} has no arm for and which
+   * therefore fell through to `return undefined`. Nothing in the report moved
+   * when it did, and nothing in the report would have moved had it been fixed.
+   *
+   * Counted in the **work** phase rather than taken from the autonomy
+   * histogram, and the difference is the point. The histogram answers *what did
+   * mages choose*; this answers *what did the month go to* — the same commitment
+   * the phase actually consumed, written last tick, including the mages whose
+   * goal spent nothing. Put beside {@link researchCompleted},
+   * {@link lessonsTaught} and {@link grimoiresScribed}, a large entry with no
+   * matching movement is the signature of a verb the rules do not implement.
+   *
+   * A mage with no commitment row is in no bucket: the sum is at most
+   * {@link livingMages} and is smaller for as long as autonomy has not reached
+   * a newly promoted mage.
+   */
+  readonly monthsByGoal: readonly number[];
   /** Research projects that reached their requirement and became instances. */
   readonly researchCompleted: number;
   /** Teaching projects that paid `teachCost` and transmitted the node. */
@@ -773,7 +830,12 @@ export function worldSystem(
           constructionBacklog: constructionBacklog(state),
           scribingQueueDepth: 0,
           universityCapacity: completedCapacity(state),
-          standingSoldierTarget: 0,
+          // Zero, by citation rather than by omission. `ages-of-magic.md` §2b:
+          // *"A university's stationed mages are its faculty, its researchers
+          // and its garrison at once. There is no separate military."* The
+          // constant carries the rest of the argument, and the three things
+          // that would have to exist before this becomes a number.
+          standingSoldierTarget: NO_STANDING_ARMY,
         }),
       });
 
@@ -1007,6 +1069,7 @@ export function worldSystem(
         buildRateMagnitudes: economy.buildRate,
         buildProgressAdded: construction.progressAdded,
         universitiesCompleted: construction.completed,
+        universitiesStanding: componentOf(state, UNIVERSITY).size,
         constructionStoneOwed: construction.stoneOwed,
         constructionStonePaid: consumption.spent.construction,
         carryingCapacity: capacity,
@@ -1020,6 +1083,7 @@ export function worldSystem(
         livingMages: countLivingMages(state),
         nodesLost: mortality.nodesLost + decayed.length + degraded.nodesLost,
         goalSwitches: autonomy.histogram.goalSwitches,
+        monthsByGoal: work.monthsByGoal,
         researchCompleted: work.researchCompleted,
         lessonsTaught: work.lessonsTaught,
         grimoiresScribed: work.grimoiresScribed,
@@ -1422,6 +1486,8 @@ interface WorkPhaseOutcome {
   readonly applied: MaterialAmounts;
   /** Mages who spent the month applying magic. What the rations are owed for. */
   readonly applyingMages: number;
+  /** Mage-months spent under each goal, indexed by goal id. */
+  readonly monthsByGoal: readonly number[];
 }
 
 /**
@@ -1469,10 +1535,19 @@ function spendTheMonth(
   const alive = mages.field('alive');
   const applied = zeroAmounts();
   let applyingMages = 0;
+  // One counter per goal, filled on the walk this phase already makes. The
+  // commitment is read here for every living mage regardless, so the tally is
+  // an increment and no second pass — see `WorldStepReport.monthsByGoal` for
+  // why the number has to exist at all.
+  const monthsByGoal = new Array<number>(GOAL_COUNT).fill(0);
   mages.forEach((row, handle) => {
     if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
     if (commitment === undefined) return;
+    // Before `workOne`, and unconditionally: a goal with no arm returns from it
+    // without touching anything, and a tally taken on the way out would count
+    // exactly the goals that are working and miss exactly the ones that are not.
+    monthsByGoal[commitment.goalId] = (monthsByGoal[commitment.goalId] ?? 0) + 1;
     const cast = workOne(state, handle, commitment, gateway, deps, worldTick, capital, rateClamps);
     if (cast === undefined) return;
     applyingMages += 1;
@@ -1497,6 +1572,7 @@ function spendTheMonth(
     grimoiresScribed,
     applied,
     applyingMages,
+    monthsByGoal,
   };
 }
 

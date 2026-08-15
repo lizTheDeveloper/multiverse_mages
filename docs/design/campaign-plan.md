@@ -8053,7 +8053,13 @@ cannot keep books.
 
 PR #154. `ui/design-dashboard/` over the shared theme, no build and no dependency, with
 `scripts/build-design-dashboard.mjs` writing a committed `data.json` pinned by a test — the same
-generate-and-pin shape as `ui/session.json`. Screenshotted and iterated in Playwright, both themes, two
+generate-and-pin shape as `ui/session.json`.
+
+> **Superseded by W195 (2026-08-14).** The generate-and-pin shape described in this entry is gone.
+> Both files are now generated and gitignored, and `npm run check:generated` gates determinism and
+> untracked-ness instead. The pin was defended three times by projecting a field out of the equality
+> and by the third projection it was green over a stale payload. This entry stands as the record of
+> what was built in W162; it is not a description of the tree you are on. Screenshotted and iterated in Playwright, both themes, two
 viewports, **zero console messages**.
 
 ### The correction: I have been reading the wrong `contentHash`

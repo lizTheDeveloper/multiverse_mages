@@ -21,7 +21,9 @@
   plot the run and look. A client that only ever showed you "now" would never
   have told you.
 
-  Serve with `npm run ui`, then open /ui/console/.
+  `npm run play` serves this next to a universe that is still running, and the cast
+  controls appear. `npm run ui` serves it next to a finished recording, and they do
+  not — a control that could not act would be the one lie this page must not tell.
 
   KNOWN COST: the same one ui/glow/ carries and for the same reason — telling
   *unaffordable* apart from *impossible* needs the action's price, which §4.2's
@@ -144,6 +146,25 @@
   .cands .row .p { color: var(--ink); }
   .cands .more { padding: .22rem .4rem; color: var(--faint); }
 
+  /* the cast panel — the only controls in ui/ that write */
+  .cast { display: flex; flex-direction: column; gap: .45rem; padding: .55rem;
+    border: 1px solid var(--edge); border-radius: 3px; background: var(--sunk); }
+  .cast .lbl { font: 10px var(--mono); letter-spacing: .11em; text-transform: uppercase; color: var(--faint); }
+  .cast select { width: 100%; font: 11px var(--mono); padding: .25rem .3rem; border: 1px solid var(--edge);
+    border-radius: 3px; background: var(--plate); color: var(--ink); }
+  .cast .row { display: flex; gap: .4rem; flex-wrap: wrap; }
+  .cast button { flex: 1 1 auto; font: 11px var(--mono); padding: .35rem .5rem; border: 1px solid var(--edge);
+    border-radius: 3px; background: var(--plate); color: var(--soft); cursor: pointer; }
+  .cast button.primary { border-color: var(--god); color: var(--god); }
+  .cast button:disabled { opacity: .4; cursor: not-allowed; }
+  .cast .receipt { font: 10.5px/1.55 var(--mono); color: var(--faint); }
+  .cast .receipt b { color: var(--ink); font-weight: 500; }
+  .cast .receipt .ok { color: var(--mentem) } .cast .receipt .no { color: var(--loss) }
+  .cast .note { font: italic 11.5px/1.5 var(--serif); color: var(--soft); }
+
+  .cands .row[data-sel="true"] { outline: 1px solid var(--god); }
+  .cands .row[data-k="true"] { cursor: pointer; }
+
   footer { margin-top: 2.2rem; padding-top: .9rem; border-top: 1px solid var(--edge);
     color: var(--faint); font: 11px var(--mono); line-height: 1.8; }
   footer a { color: var(--god); }
@@ -155,10 +176,14 @@
   <h1>One universe, one clock</h1>
   <p class="lede">The eleven prototypes each answer one question about one surface. This asks whether
   they <em>compose</em> — every pane the read path can feed, drawn from a single frame of a single
-  recorded universe, against a single clock.</p>
-  <p class="lede"><b>Scrub the spine.</b> It is the whole four-hundred-tick run at once, and it is here
-  because the read path emits states and no events: the only way to see that a species ended is to
-  plot the run and look at it.</p>
+  universe, against a single clock.</p>
+  <p class="lede"><b>Under <code>npm run play</code> this universe is running.</b> Advance the clock,
+  choose a verb, choose its parameter, and cast: the action goes to <code>agent-api</code>'s admission
+  gate and the world on this page is the world after it. Opened over a plain static server instead, the
+  same page reads a finished recording and the cast controls are gone — the strip above says which.</p>
+  <p class="lede"><b>Scrub the spine.</b> It is the whole run at once, and it is here because the read
+  path emits states and no events: the only way to see that a species ended is to plot the run and look
+  at it.</p>
 
   <div id="srchost" style="margin:1.1rem 0 0"></div>
 
@@ -178,7 +203,11 @@
     <span class="of">of <b id="tickmax">—</b> · era <b id="erav">—</b></span>
     <span class="st" id="statusv">—</span>
     <span class="spacer"></span>
+    <button type="button" id="step1">▶| tick</button>
+    <button type="button" id="step10">▶▶ 10</button>
+    <button type="button" id="step50">▶▶ 50</button>
     <button type="button" id="play" aria-pressed="false">▶ play</button>
+    <button type="button" id="head" title="jump to the newest tick">↦ now</button>
     <span id="themehost"></span>
   </div>
 
@@ -188,6 +217,15 @@
       <div class="body">
         <div class="res" id="res"></div>
         <div class="verbs" id="verbs"></div>
+        <div class="cast" id="cast" hidden>
+          <div class="lbl" id="picklbl">parameter</div>
+          <div id="pick"></div>
+          <div class="row">
+            <button type="button" class="primary" id="castbtn">cast</button>
+            <button type="button" id="ctlbtn" title="replay this run twice from its seed — with the action and without — and diff">control</button>
+          </div>
+          <div class="receipt" id="receipt"></div>
+        </div>
         <div class="gridkey"><b style="color:var(--warn)">†</b> the mask said only <em>no</em>. Latent
           and denied were told apart by pricing the action here, which §5 says the client may not do.</div>
       </div>
@@ -215,7 +253,10 @@
   </div>
 
   <footer>
-    Composed from <code>ui/session.json</code> through <code>ui/shared/session.js</code> — decoding only.
+    Composed through <code>ui/shared/session.js</code> — from a live universe under
+    <code>npm run play</code>, or from <code>ui/session.json</code> under <code>npm run ui</code>.
+    Reads decode; the only writes are the cast controls, and they post a <code>{kind, params}</code>
+    at <code>agent-api</code>'s admission gate rather than deciding anything here.
     The per-surface studies are at <a href="../">ui/</a>; what wiring them found is in
     <a href="../shared/README.md">shared/README.md</a>.<br>
     Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
@@ -226,52 +267,75 @@
 import { mountThemeControl } from '../shared/theme.js';
 import { mountSourceNote, openSession, reconstructedCharge } from '../shared/session.js';
 
-const session = await openSession({ recording: '../session.json' }).catch(() => null);
+/*
+  Live first, recording second, and never a third thing.
+
+  `npm run play` serves this page next to a universe that is still running;
+  `npm run ui` serves it next to one that finished. The two publish the same
+  document, so everything below is written once — the only branch is whether the
+  cast controls exist, because a recording cannot be acted on and a control that
+  did nothing would be the exact dishonesty this page was built to avoid.
+*/
+const session =
+  (await openSession({ live: '' }).catch(() => null)) ??
+  (await openSession({ recording: '../session.json' }).catch(() => null));
+
 mountSourceNote(document.getElementById('srchost'), session,
   ['resources', 'ruleset', 'knowledgeAggregates', 'mageBuckets', 'candidates', 'eventDeltas']);
 
 const el = (id) => document.getElementById(id);
-const state = { at: 0, verb: 9, playing: false };
+const state = { at: 0, verb: 9, slot: 0, params: new Map(), playing: false, busy: false };
+
+/** §4.2's parameter columns, as the four kinds of chooser they need. */
+const DIRECT_PICKER = { 1: 'technique', 2: 'technique', 3: 'form', 4: 'form', 5: 'cell', 6: 'cell', 7: 'edict' };
+/** §4.4's range, restated where it is used: for these, `params[0]` is a slot index. */
+const PARAMETERIZED = new Set([8, 9, 10, 11, 12, 13, 14]);
 
 if (session === null) {
   document.querySelector('.panes').innerHTML =
-    '<p class="lede">No recording loaded — run <code>npm run ui</code> and open this over http.</p>';
+    '<p class="lede">No universe and no recording. Run <code>npm run play</code> and open '
+    + '<code>http://localhost:8300/</code>, or <code>npm run ui</code> for the recorded one.</p>';
 } else {
   state.at = session.frameCount - 1;
   boot();
 }
 
 function boot() {
-  /* One pass over the run, kept because every pane wants a denominator and the
-     read path publishes no ceilings: §1.1 makes favorCap rise with worship
-     tier, so even a constant would be wrong later. The run's own peak is at
-     least a number this page can defend. */
-  const series = Array.from({ length: session.frameCount }, (_, i) => {
-    const f = session.frame(i);
-    const buckets = f.mageBuckets();
-    return {
-      favor: f.resources().favor,
-      cells: f.knowledge().filter((c) => c.live).length,
-      mages: buckets.reduce((n, m) => n + m.living, 0),
-      alive: buckets.map((m) => m.living > 0),
-    };
-  });
-  const peak = {
-    favor: Math.max(1, ...series.map((s) => s.favor)),
-    cells: Math.max(1, ...series.map((s) => s.cells)),
-    mages: Math.max(1, ...series.map((s) => s.mages)),
-  };
+  /* One entry per tick, appended as ticks arrive. Every pane wants a denominator
+     and the read path publishes no ceilings — §1.1 makes favorCap rise with
+     worship tier, so even a constant would be wrong later. The run's own peak is
+     at least a number this page can defend, and on a live run it rescales. */
+  const series = [];
+  const peak = { favor: 1, cells: 1, mages: 1 };
   /* The ticks at which a species count reaches zero for good. Derived here
-     rather than read, because nothing emits it — which is the finding the
-     spine exists to make visible. */
+     rather than read, because nothing emits it — which is the finding the spine
+     exists to make visible. Extended in step with the series so a four-thousand
+     tick run does not re-scan itself on every frame. */
   const endings = [];
-  for (let s = 0; s < 6; s += 1) {
-    for (let i = 1; i < series.length; i += 1) {
-      if (series[i - 1].alive[s] && !series[i].alive[s]) {
-        endings.push({ at: i, name: session.frame(i).mageBuckets()[s].name });
+
+  function syncSeries() {
+    for (let i = series.length; i < session.frameCount; i += 1) {
+      const f = session.frame(i);
+      const buckets = f.mageBuckets();
+      const row = {
+        favor: f.resources().favor,
+        cells: f.knowledge().filter((c) => c.live).length,
+        mages: buckets.reduce((n, m) => n + m.living, 0),
+        alive: buckets.map((m) => m.living > 0),
+      };
+      const prev = series[i - 1];
+      series.push(row);
+      if (prev !== undefined) {
+        for (let sp = 0; sp < 6; sp += 1) {
+          if (prev.alive[sp] && !row.alive[sp]) endings.push({ at: i, name: buckets[sp].name });
+        }
       }
+      peak.favor = Math.max(peak.favor, row.favor);
+      peak.cells = Math.max(peak.cells, row.cells);
+      peak.mages = Math.max(peak.mages, row.mages);
     }
   }
+  syncSeries();
 
   const canvas = el('spine');
   const ctx = canvas.getContext('2d');
@@ -282,7 +346,8 @@ function boot() {
     const h = canvas.height;
     const pad = 12;
     ctx.clearRect(0, 0, w, h);
-    const x = (i) => pad + (i / (series.length - 1)) * (w - pad * 2);
+    const span = Math.max(1, series.length - 1);
+    const x = (i) => pad + (i / span) * (w - pad * 2);
     const y = (v, max) => h - pad - (v / max) * (h - pad * 2);
 
     // A species ending, drawn first so the lines cross it rather than hide it.
@@ -333,20 +398,77 @@ function boot() {
     if (ev.key === 'ArrowRight') { state.at = Math.min(session.frameCount - 1, state.at + step); paint(); ev.preventDefault(); }
   });
 
+  /* ------------------------------------------------------------- the clock */
+
+  const head = () => { state.at = session.frameCount - 1; };
+
+  /**
+   * On a live run this makes the universe take `n` ticks; on a recording it
+   * moves the plumb line over ticks that already happened. Deliberately the same
+   * control: the difference is what a tick *is*, not what the button means.
+   */
+  async function advance(n) {
+    if (!session.live) {
+      state.at = Math.min(session.frameCount - 1, state.at + n);
+      paint();
+      return;
+    }
+    if (state.busy) return;
+    state.busy = true;
+    try {
+      const out = await session.advance(n);
+      syncSeries();
+      head();
+      if (out.status !== 'running') stopPlaying(`the episode is ${out.status}`);
+    } catch (err) {
+      say(`<span class="no">${String(err.message)}</span>`);
+      stopPlaying('the server stopped answering');
+    } finally {
+      state.busy = false;
+      paint();
+    }
+  }
+
+  el('step1').addEventListener('click', () => void advance(1));
+  el('step10').addEventListener('click', () => void advance(10));
+  el('step50').addEventListener('click', () => void advance(50));
+  el('head').addEventListener('click', () => { head(); paint(); });
+
+  function stopPlaying(why) {
+    if (!state.playing) return;
+    state.playing = false;
+    el('play').setAttribute('aria-pressed', 'false');
+    el('play').textContent = '▶ play';
+    if (why !== undefined) say(`stopped — ${why}`);
+  }
+
   el('play').addEventListener('click', () => {
     state.playing = !state.playing;
     el('play').setAttribute('aria-pressed', String(state.playing));
     el('play').textContent = state.playing ? '❚❚ pause' : '▶ play';
-    if (state.playing) step();
+    if (state.playing) void run();
   });
-  function step() {
-    if (!state.playing) return;
-    state.at = state.at >= session.frameCount - 1 ? 0 : state.at + 1;
-    paint();
-    setTimeout(() => requestAnimationFrame(step), 60);
+
+  /* A live tick costs a round trip and a `step()`, so the loop waits for one to
+     finish before asking for the next. A recording has neither and keeps the
+     original 60ms scrub. */
+  async function run() {
+    while (state.playing) {
+      if (session.live) {
+        await advance(1);
+        await new Promise((r) => setTimeout(r, 140));
+        if (session.frame(state.at).status() !== 'running') { stopPlaying('the episode ended'); return; }
+      } else {
+        state.at = state.at >= session.frameCount - 1 ? 0 : state.at + 1;
+        paint();
+        await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 60)));
+      }
+    }
   }
 
-  // The verb rows, built once so a row keeps its identity as it lights.
+  /* --------------------------------------------------------- the sixteen verbs */
+
+  // Built once so a row keeps its identity as it lights.
   const verbs = el('verbs');
   for (const a of session.frame(0).actions()) {
     const row = document.createElement('div');
@@ -356,14 +478,168 @@ function boot() {
       + `<span class="l">${a.name.replace(/([a-z])([A-Z])/gu, '$1 $2').toLowerCase()}</span>`
       + '<span class="c"></span>';
     row.addEventListener('click', () => {
-      if (row.dataset.k !== 'true') return;
       state.verb = a.id;
+      state.slot = 0;
       paint();
     });
     verbs.append(row);
   }
+  // Every verb is now selectable, live or not: choosing one to *look* at its
+  // candidates is a read, and it was already the page's one interaction.
+  verbs.querySelectorAll('.v').forEach((v) => { v.dataset.k = 'true'; });
 
-  // The seventy-cell grid, built once: five techniques down, fourteen forms across.
+  /* ------------------------------------------------------------- the writes */
+
+  const cast = el('cast');
+  if (session.live) cast.hidden = false;
+
+  const say = (html) => { el('receipt').innerHTML = html; };
+
+  /** What `params` this verb would be cast with, given the current choices. */
+  function currentParams() {
+    if (PARAMETERIZED.has(state.verb)) return [state.slot];
+    if (DIRECT_PICKER[state.verb] !== undefined) {
+      const v = state.params.get(state.verb);
+      return v === undefined ? [] : [v];
+    }
+    return [];
+  }
+
+  /**
+   * The parameter chooser, rebuilt when the verb or the tick changes.
+   *
+   * Nothing here judges legality — the options are content ids and edict slots,
+   * and whether one is allowed is the gate's answer, delivered as a rejection
+   * with the gate's own word for it. §5: the client computes no rules.
+   */
+  function paintPick(f) {
+    const kind = DIRECT_PICKER[state.verb];
+    const pick = el('pick');
+    const label = el('picklbl');
+
+    if (PARAMETERIZED.has(state.verb)) {
+      label.textContent = 'parameter — a candidate slot';
+      pick.innerHTML = '<div class="note">Chosen from the candidate list at the right of the page. '
+        + '§4.4 hands the god a ranked top-<em>k</em>, and a slot index is what the action takes.</div>';
+      return;
+    }
+    if (kind === undefined) {
+      label.textContent = 'parameter';
+      pick.innerHTML = '<div class="note">This verb takes none.</div>';
+      return;
+    }
+
+    let options = [];
+    if (kind === 'technique') {
+      label.textContent = 'parameter — a technique';
+      options = session.content.techniques.map((t) => ({ value: t.bit + 1, label: `${t.name} (${t.id})` }));
+    } else if (kind === 'form') {
+      label.textContent = 'parameter — a form';
+      options = session.content.forms.map((x) => ({ value: x.bit + 1, label: `${x.name} (${x.id})` }));
+    } else if (kind === 'cell') {
+      label.textContent = 'parameter — a cell of the grid';
+      const known = new Map(f.knowledge().map((c) => [`${c.technique}-${c.form}`, c]));
+      options = session.content.cells.map((c) => {
+        const k = known.get(`${c.technique}-${c.form}`);
+        return {
+          value: c.cellId,
+          label: `${c.technique} × ${c.form}${k !== undefined && k.live ? ` — ${k.nodesKnown} nodes` : ''}`,
+        };
+      });
+    } else {
+      label.textContent = 'parameter — an edict slot';
+      options = f.ruleset().edicts.filter((e) => !e.empty)
+        .map((e) => ({ value: e.slot, label: `slot ${e.slot} — ${e.kindName} on ${e.cell?.id ?? e.cellId}` }));
+      if (options.length === 0) {
+        pick.innerHTML = '<div class="note">No edict is in force, so there is nothing to revoke. '
+          + 'The mask says the same thing with one bit.</div>';
+        return;
+      }
+    }
+
+    const chosen = state.params.get(state.verb) ?? options[0]?.value;
+    state.params.set(state.verb, chosen);
+    const sel = document.createElement('select');
+    for (const o of options) {
+      const node = document.createElement('option');
+      node.value = String(o.value);
+      node.textContent = o.label;
+      if (o.value === chosen) node.selected = true;
+      sel.append(node);
+    }
+    sel.addEventListener('change', () => { state.params.set(state.verb, Number(sel.value)); });
+    pick.replaceChildren(sel);
+  }
+
+  el('castbtn').addEventListener('click', async () => {
+    if (state.busy) return;
+    state.busy = true;
+    say('casting…');
+    try {
+      const before = session.frame(session.frameCount - 1).resources().favor;
+      const out = await session.submit(state.verb, currentParams());
+      syncSeries();
+      head();
+      const f = session.frame(state.at);
+      const after = f.resources().favor;
+      say(out.admitted
+        ? `<span class="ok">admitted</span> — tick <b>${f.clock().worldTick}</b>, `
+          + `favor <b>${before.toFixed(1)} → ${after.toFixed(1)}</b>. `
+          + 'Press <b>control</b> to see what it changed.'
+        : `<span class="no">refused: ${out.rejection ?? 'unknown'}</span> — the gate's own word. `
+          + 'The tick still happened.');
+    } catch (err) {
+      say(`<span class="no">${String(err.message)}</span>`);
+    } finally {
+      state.busy = false;
+      paint();
+    }
+  });
+
+  /**
+   * The control, and the reason to believe any of this.
+   *
+   * The server replays this run's whole action log from its seed into two fresh
+   * sessions, gives one the action and the other a no-op, settles both thirty
+   * ticks, and reports the snapshot hashes and which observation slots differ.
+   * A recording cannot answer this question at all, which is the point.
+   */
+  el('ctlbtn').addEventListener('click', async () => {
+    if (state.busy) return;
+    state.busy = true;
+    say('replaying the run twice, with and without…');
+    try {
+      const r = await session.control(state.verb, currentParams(), 30);
+      const name = session.actionNames[String(state.verb)];
+      /* Three lines, in the order a sceptic reads them: is the measurement
+         trustworthy, did the submission reach the simulation, and did anything a
+         person can see move. Collapsing them would be the dishonesty. */
+      const trust = r.nullControlHeld
+        ? '<span class="ok">null control held</span> — a third replay with a no-op came back identical to the no-op arm'
+        : '<span class="no">null control FAILED</span> — two identical replays disagreed, so believe nothing below';
+      const reach = r.admitted
+        ? `<span class="ok">admitted</span> · snapshot <b>${r.withHash}</b> vs <b>${r.withoutHash}</b> — `
+          + `<span class="${r.hashDiffers ? 'ok' : 'no'}">${r.hashDiffers ? 'the world diverged' : 'identical'}</span>`
+        : `<span class="no">refused: ${r.rejection ?? 'unknown'}</span> — the hash still moves, because a `
+          + 'refusal is counted on the state and the count is inside the hash. That is reach, not effect.';
+      say(`<b>${name}</b> at tick ${r.atTick}, settled ${r.settle} ticks.<br>`
+        + `${trust}<br>${reach}<br>`
+        + `<b>${r.slotsDiffering}</b> of 400 observation slots differ`
+        + (r.blocks.length > 0 ? ` — ${r.blocks.join(', ')}` : '')
+        + (r.admitted && r.hashDiffers && r.slotsDiffering === 0
+          ? '<br><span class="no">The action reached the simulation and reached nothing this page can draw.</span> '
+            + 'That is a read-path finding, not a broken control.'
+          : ''));
+    } catch (err) {
+      say(`<span class="no">${String(err.message)}</span>`);
+    } finally {
+      state.busy = false;
+    }
+  });
+
+  /* ------------------------------------------------------------- the grid */
+
+  // Five techniques down, fourteen forms across. Built once.
   const grid = el('grid70');
   const forms = session.content.forms;
   const techniques = session.content.techniques;
@@ -389,10 +665,13 @@ function boot() {
   function paint() {
     const f = session.frame(state.at);
     const clock = f.clock();
+    const atHead = state.at === session.frameCount - 1;
     el('tickv').textContent = String(clock.worldTick);
     el('tickmax').textContent = String(session.frameCount - 1);
     el('erav').textContent = String(clock.era);
-    el('statusv').textContent = clock.engaged ? 'engagement' : f.status();
+    el('statusv').textContent = clock.engaged
+      ? 'engagement'
+      : atHead ? f.status() : `${f.status()} · looking back`;
 
     // Resources.
     const r = f.resources();
@@ -417,7 +696,6 @@ function boot() {
       const list = lists.get(id);
       row.dataset.s = s;
       row.dataset.recon = String(reconstructed);
-      row.dataset.k = String(list !== undefined && list.length > 0);
       row.dataset.sel = String(id === state.verb);
       row.querySelector('.c').textContent = list === undefined ? '' : `${list.length}`;
       row.title = s === 'charged'
@@ -466,13 +744,30 @@ function boot() {
           + ' — derived by diffing frames, because nothing announces it.'
         : '');
 
-    // The chosen verb's candidate list, as the integers it is.
+    // The chosen verb's candidate list, as the integers it is — and, live, as
+    // the thing you pick from.
     const list = lists.get(state.verb) ?? [];
-    el('cands').innerHTML = list.length === 0
-      ? '<div class="more">no candidates for this verb this tick</div>'
-      : list.slice(0, 10).map((c, i) =>
-          `<div class="row"><span class="ix">${i}</span><span class="p">${c.params.join(' , ')}</span></div>`).join('')
-        + (list.length > 10 ? `<div class="more">+ ${list.length - 10} more — and every slot is handles, not names</div>` : '');
+    const cands = el('cands');
+    if (list.length === 0) {
+      cands.innerHTML = '<div class="more">no candidates for this verb this tick</div>';
+    } else {
+      cands.innerHTML = list.slice(0, 16).map((c, i) =>
+        `<div class="row" data-slot="${i}" data-k="${session.live}" data-sel="${i === state.slot}">`
+        + `<span class="ix">${i}</span><span class="p">${c.params.join(' , ')}</span></div>`).join('')
+        + (list.length > 16 ? `<div class="more">+ ${list.length - 16} more — and every slot is handles, not names</div>` : '');
+      if (session.live) {
+        for (const row of cands.querySelectorAll('.row')) {
+          row.addEventListener('click', () => { state.slot = Number(row.dataset.slot); paint(); });
+        }
+      }
+    }
+
+    if (session.live) {
+      paintPick(session.frame(session.frameCount - 1));
+      const running = session.frame(session.frameCount - 1).status() === 'running';
+      el('castbtn').disabled = !running;
+      el('castbtn').textContent = atHead ? 'cast' : 'cast at the newest tick';
+    }
 
     drawSpine();
   }

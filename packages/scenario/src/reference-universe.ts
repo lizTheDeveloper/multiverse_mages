@@ -101,6 +101,7 @@ import {
   v1RulesetAxes,
   worldDeps,
 } from './content-set.js';
+import { withAxisPriceScale } from './axis-price.js';
 import { BalanceTelemetryRecorder, balanceTelemetrySystem } from './balance-telemetry.js';
 import type { BalanceRunTelemetry } from './balance-telemetry.js';
 import type { RaidRecord } from './raids.js';
@@ -249,6 +250,40 @@ export interface ReferenceOptions {
    */
   readonly foundingSpeciesMask: number;
   /**
+   * Whether the founding faculty is handed portal magic outright. **An
+   * instrument, not a magnitude** — the same kind of thing
+   * {@link ReferenceOptions.foundingSpeciesMask} is, and declared for the same
+   * reason: a question that cannot be asked without it.
+   *
+   * The question is this. Action 16 is gated on a living mage holding a node
+   * that carries the `portal` primitive, and both such nodes sit at tier 4 and
+   * 5 of a seven-node chain across `rego-limen` and `intellego-limen`. Measured
+   * over a hundred runs per species on this build, how often a universe ever
+   * reaches that gate tracks species curiosity — gnome (1792) 17 runs, human
+   * (1152) 14, elf (896) 16, dwarf (512) 3, orc (384) 0, draconic (256) 0. A
+   * trend and **not** strict monotonicity: elf outreaches human from lower
+   * curiosity.
+   *
+   * The load-bearing half needs no ordering at all: **the two least curious
+   * species never reach the gate, and they are exactly the two the alliance
+   * mechanic exists to rescue.** So the gate is a curiosity gate in disguise,
+   * and its asymmetry runs opposite to the design intent.
+   *
+   * That is a finding about where the portal nodes sit in the grid, and it is
+   * reported rather than patched. But it also makes the mechanic unmeasurable
+   * for draconic through the front door: an arm that never opens the gate
+   * cannot distinguish "the verb does nothing" from "the verb never ran". This
+   * flag separates those two, by putting a universe *downstream* of the gate and
+   * asking only what the invitation is worth once it is legal.
+   *
+   * `1` seeds one instance of the shallowest portal-carrying node into a
+   * founding mage's mind at full mastery — the same shape and mastery every
+   * other founding grant uses. Zero, the default, changes nothing: a sweep file
+   * that does not name this factor produces byte-identical runs to one written
+   * before it existed.
+   */
+  readonly foundingPortalMagic: number;
+  /**
    * Techniques the universe is founded holding, or `0` for the v1 rectangle.
    *
    * The **opening square** (`campaign-plan.md`, "The 2×2 opening"). Non-zero
@@ -323,6 +358,7 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'foundingMages',
   'foundingNodes',
   'foundingSpeciesMask',
+  'foundingPortalMagic',
   'openingTechniqueCount',
   'openingFormCount',
   'openingSquareSeeded',
@@ -330,6 +366,7 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'grantBudgetStart',
   'grantAccrualNodes',
   'grantBudgetCap',
+  'axisPriceScale',
 ]);
 
 /**
@@ -350,6 +387,32 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
  * tradition, all sharing a `sweepId` and `rootSeed`.
  */
 export const TRADITION_FACTOR_ID = 'tradition';
+
+/**
+ * The factor pricing `permit-technique` and `permit-form` (`contracts.md` §4.2
+ * actions 1–4), in `fp` — `1024` is the shipped price, `8192` is eight times it.
+ *
+ * The **second** entry that is not a {@link ReferenceOptions} field, and for
+ * exactly {@link TRADITION_FACTOR_ID}'s reason: the price is read out of the
+ * content registry when `worldDeps` and `contentCatalogue` are built, which
+ * happens once per worker before any tick-zero state exists. So it is resolved
+ * where the tradition is resolved, and it is memoized the same way — see
+ * `executor.ts`, whose content cache is keyed on **both**.
+ *
+ * `0` and `1024` are the shipped price and are byte-identical to the behaviour
+ * before this factor existed. See `axis-price.ts` for why all four axis actions
+ * move together and why the registry rather than the resolver is the place the
+ * scale is applied.
+ *
+ * The same common-random-numbers warning {@link TRADITION_FACTOR_ID} carries
+ * applies here and is sharper, because this factor's whole purpose is a
+ * *within-universe* comparison: declaring several levels in one sweep file gives
+ * each level its own cell index and therefore its own seeds, and a price
+ * difference measured that way is confounded with a seed difference. One level
+ * per file, sharing a `sweepId` and `rootSeed` — or an out-of-band harness that
+ * walks the identical coordinate grid, which is what `tools/w158` does.
+ */
+export const AXIS_PRICE_FACTOR_ID = 'axisPriceScale';
 
 /**
  * Reads one option out of a scenario config, or refuses.
@@ -405,6 +468,7 @@ export function referenceOptions(config: ScenarioConfig): ReferenceOptions {
     foundingMages: readCount(config, 'foundingMages', DEFAULT_FOUNDING_MAGES),
     foundingNodes: readCount(config, 'foundingNodes', DEFAULT_FOUNDING_NODES),
     foundingSpeciesMask: readCount(config, 'foundingSpeciesMask', DEFAULT_FOUNDING_SPECIES_MASK),
+    foundingPortalMagic: readCount(config, 'foundingPortalMagic', 0),
     openingTechniqueCount: readCount(config, 'openingTechniqueCount', DEFAULT_OPENING_AXIS_COUNT),
     openingFormCount: readCount(config, 'openingFormCount', DEFAULT_OPENING_AXIS_COUNT),
     openingSquareSeeded: readCount(config, 'openingSquareSeeded', DEFAULT_OPENING_SQUARE_SEEDED),
@@ -457,23 +521,32 @@ export interface ReferenceContent {
  * True Naming by accident of the alphabet in the first place, and a committed
  * sweep file naming `2` is that hazard with a baseline attached. See
  * `docs/superpowers/plans/integration-round-2.md`, collision 5.
+ *
+ * @param axisPriceScale - {@link AXIS_PRICE_FACTOR_ID}'s level, in `fp`. Absent,
+ * `0` and `1024` all mean the shipped price and return the registry unmodified
+ * by identity, so a caller written before this parameter existed produces
+ * byte-identical content. The scale is applied **before** anything is resolved
+ * off the registry, so `deps.god.costs` and `catalogue.costs` — the resolver's
+ * price and the mask's — cannot disagree about it.
  */
 export function referenceContent(
   registry: ContentRegistry = shippedContent(),
   traditionName?: string,
+  axisPriceScale = 0,
 ): ReferenceContent {
+  const priced = withAxisPriceScale(registry, axisPriceScale);
   const traditionId =
     traditionName === undefined
-      ? scribingTraditionId(registry)
-      : traditionIdNamed(registry, traditionName);
+      ? scribingTraditionId(priced)
+      : traditionIdNamed(priced, traditionName);
   return {
-    registry,
+    registry: priced,
     traditionId,
-    axes: v1RulesetAxes(registry),
-    foundingNodeIds: foundingCandidates(registry),
-    catalogue: contentCatalogue(registry),
-    deps: worldDeps(registry, traditionId),
-    prestigeCap: resolveGodContent(registry).constants.prestigeCap,
+    axes: v1RulesetAxes(priced),
+    foundingNodeIds: foundingCandidates(priced),
+    catalogue: contentCatalogue(priced),
+    deps: worldDeps(priced, traditionId),
+    prestigeCap: resolveGodContent(priced).constants.prestigeCap,
   };
 }
 
@@ -681,6 +754,13 @@ export function buildReferenceState(input: {
     nodeCount: content.deps.catalog.nodeCount,
   });
 
+  seedPortalMagic(state, {
+    founders,
+    enabled: options.foundingPortalMagic !== 0,
+    portalNodes: content.deps.god?.portalNodes,
+    nodeCount: content.deps.catalog.nodeCount,
+  });
+
   attachGrantBudget(state, {
     universe: findUniverse(state),
     // `worldDeps` always supplies the god block; the optionality on `WorldStepDeps`
@@ -767,6 +847,45 @@ function grantFoundingKnowledge(
       // never leave the founder's head.
       mastery: MASTERY_MAX,
     });
+  });
+}
+
+/**
+ * Puts portal magic in a founder's head, when the instrument asks for it.
+ *
+ * The **shallowest** portal-carrying node, by interned id, so that the arm is
+ * placed exactly at the gate and not past it: `rl-the-standing-gate` is tier 5
+ * and carries two further primitives, and seeding that instead would be handing
+ * the universe a capability rather than a permission.
+ *
+ * `seededNodes` in {@link attachGrantBudget} deliberately does **not** count
+ * this. That figure exists to stop the founding-grant accrual paying for
+ * itself, and this node is not a founding grant — it is a starting position the
+ * instrument declares. Counting it would make the diagnostic arms carry a
+ * smaller grant budget than their controls, which is a second difference
+ * between two arms that must differ by one thing.
+ */
+function seedPortalMagic(
+  state: SimState,
+  input: {
+    readonly founders: readonly EntityHandle[];
+    readonly enabled: boolean;
+    readonly portalNodes: ReadonlySet<number> | undefined;
+    readonly nodeCount: number;
+  },
+): void {
+  if (!input.enabled) return;
+  const holder = input.founders[0];
+  if (holder === undefined) return;
+  const shallowest = [...(input.portalNodes ?? [])].sort((a, b) => a - b)[0];
+  if (shallowest === undefined) return;
+
+  new KnowledgeSubsystem(state, input.nodeCount).createInstance({
+    nodeId: shallowest,
+    locationKind: LOCATION_KIND.mind,
+    locationId: holder,
+    acquiredTick: 0,
+    mastery: MASTERY_MAX,
   });
 }
 
@@ -968,6 +1087,16 @@ export function referenceScenario(
       scenarioId: REFERENCE_SCENARIO_ID,
       catalogue: content.catalogue,
       portalTargets: portalTargetIds(constants),
+      // The roster the god may invite from, and it is every species the content
+      // declares. `invitePlan` refuses one already living here, so a
+      // single-species universe sees five candidates and an all-six universe
+      // sees none — which is the asymmetry the mechanic is for.
+      invitableSpecies: [...(content.deps.god?.invitableSpecies ?? [])],
+      // Action 16's gate, so the mask can see it. Without this the mask would
+      // be optimistic by one predicate and a policy listing the invitation
+      // first would burn every round on a refusal — measured, and documented on
+      // `inviteScholarCandidates`.
+      portalNodes: [...(content.deps.god?.portalNodes ?? [])],
       create: (runSeed: number, config: ScenarioConfig): SimState => {
         // A new episode is a new run: the raid log belongs to one, and a
         // scenario reused across two would report the first one's raids in the

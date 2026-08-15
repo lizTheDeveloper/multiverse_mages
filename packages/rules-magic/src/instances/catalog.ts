@@ -87,6 +87,29 @@ export interface CellResolver {
 }
 
 /**
+ * One authored anti-requisite, reduced to what the rules path needs.
+ *
+ * The `reason` is deliberately absent: it is load-bearing at *validation* time,
+ * where §4b makes symmetry follow from it, and it is not a rule input. Carrying
+ * it here would invite a rule to branch on prose.
+ */
+export interface ExclusionEdge {
+  readonly cell: ContentId;
+  readonly resolution: 'refused' | 'destructive';
+}
+
+/**
+ * `cellOf` plus the exclusions authored on a cell (`vision.md` §4b).
+ *
+ * Structural, like {@link CellResolver} beside it, so a call site binds the grid
+ * module's function and a lookup over `cell.json` with no class to construct.
+ */
+export interface ExclusionResolver extends CellResolver {
+  /** The cells this one excludes. Empty for every cell that excludes nothing. */
+  excludedBy(cellId: ContentId): readonly ExclusionEdge[];
+}
+
+/**
  * The seeded randomness a knowledge operation may draw from.
  *
  * Structurally `@mm/sim-core`'s `StepRng`, restated here because that type is

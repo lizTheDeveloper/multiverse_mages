@@ -257,16 +257,16 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 5.6 % | 6.6 % | 12.6 % | 16.2 % |
-| `referenceKnowledgeInstances` | 2.2 % | 2.5 % | 4.6 % | 7.2 % |
-| `referenceLibraryDepth` | 16.5 % | 14.3 % | 22.9 % | 17.5 % |
-| `referenceLivingMages` | 0.8 % | 1.6 % | 3.2 % | 6.1 % |
-| `referenceNodesGained` | 2.9 % | 1.4 % | 2.8 % | 2.8 % |
-| `referenceNodesGainedFinalQuarter` | — | 3.8 % | 10.1 % | 26.4 % |
-| `referenceNodesKnown` | 2.4 % | 1.3 % | 2.6 % | 2.7 % |
-| `referencePeakPopulation` | 0.0 % | 5.8 % | 8.2 % | 1.4 % |
-| `referencePopulation` | 1.0 % | 1.7 % | 3.3 % | 8.1 % |
-| `referencePopulationChange` | 8.7 % | 5.3 % | 10.1 % | 8.2 % |
+| `referenceGrimoires` | 5.5 % | 6.5 % | 12.4 % | 16.2 % |
+| `referenceKnowledgeInstances` | 2.4 % | 2.4 % | 5.6 % | 7.2 % |
+| `referenceLibraryDepth` | 16.0 % | 14.2 % | 22.4 % | 17.5 % |
+| `referenceLivingMages` | 0.8 % | 1.6 % | 3.3 % | 6.1 % |
+| `referenceNodesGained` | 3.0 % | 1.4 % | 8.5 % | 2.8 % |
+| `referenceNodesGainedFinalQuarter` | — | 3.8 % | 25.7 % | 26.4 % |
+| `referenceNodesKnown` | 2.5 % | 1.3 % | 7.9 % | 2.7 % |
+| `referencePeakPopulation` | 0.0 % | 16.6 % | 8.2 % | 1.4 % |
+| `referencePopulation` | 1.0 % | 1.9 % | 3.3 % | 8.1 % |
+| `referencePopulationChange` | 8.6 % | 5.8 % | 10.0 % | 8.2 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
@@ -276,7 +276,7 @@ where their power actually lives; the column above is a summary of a mean taken 
 strategies that do very different things, and both figures below count **measured, nonzero** arm
 lines only — a line at zero has no proportional effect to be minimum-detectable about, which is the
 same reason the table above prints an em dash rather than `Infinity`. Agency arm lines: median MDE
-11.3 %, **78 of 80** below 100 %. Ascension arm lines: median 13.8 %, 67 of 77 below 100 % (the
+14.0 %, **77 of 80** below 100 %. Ascension arm lines: median 13.8 %, 67 of 77 below 100 % (the
 denominator moved from 80 to 77 when the convention was written down here, not when any file
 changed).
 
@@ -294,6 +294,15 @@ to zero that three standard errors exceed it. MDE is now 114 % and 289 % on thos
 instrument did not change; the arm moved under it, twice, in opposite directions.** That is the
 argument for keeping the list rather than a threshold: a line this close to zero will cross 100 %
 in either direction on a re-roll, and the crossing has to arrive with a rationale each time.
+
+**And a third opened at `anti-requisites` (PR #161) — this one a mechanic, not a re-roll.**
+The shipped exclusion pair (`creo-ignem` ⊥ `creo-umbra`, `destructive`) cut
+`permissive-breadth`'s final-quarter node gain to a fraction of what it was, and an arm whose mean
+has fallen onto zero is one whose three-standard-error tolerance exceeds it. It is listed alongside
+the two `denial-warden` lines in `gate-power.test.ts`'s `BLIND_ARM_LINES` so that a fourth cannot
+join them in silence. Note the contrast with the pair above, which is the whole reason the list
+carries reasons rather than counts: **the `denial-warden` crossings are the arm moving under a
+re-roll, and this one is content the god actually shipped.**
 
 `referencePeakPopulation` on the five-year gate has an MDE of exactly zero — its jackknife standard
 error is 0, because the peak is 216 in all 200 runs, so the gate demands exact equality. That is the
@@ -465,6 +474,57 @@ measurement: **a regenerated baseline is a claim that behaviour changed on purpo
 **Nothing automated invokes it.** Not `npm test`, not `npm run verify`, neither CI system.
 `packages/mc-harness/test/unit/baseline-regeneration.test.ts` reads the CI configuration and fails
 if that ever stops being true.
+
+## Re-sealing a baseline, when the content moved and the behaviour did not
+
+A baseline carries two different claims — *what this build measured*, and *which build that was* —
+and until 2026-08-14 they could only be changed together. That was a real problem, because the gate
+refuses `baseline-invalid` on a `provenance` mismatch **before it reads a single metric**. Author a
+node's gloss, and every gate reports a failure while every metric underneath it reads its committed
+value to the digit. The branch is unmergeable, and the only expressible remedy was to re-record
+numbers that had not moved — which costs a merge conflict to every other open branch and banks
+whatever else has drifted since.
+
+    node packages/mc-harness/bin/reseal-baseline.mjs \
+      --scenario  ./packages/scenario/bin/scenario.mjs \
+      --sweep     ./balance/sweeps/balance-gate.sweep.json \
+      --baseline  ./balance/baselines/balance-gate-v1.baseline.json \
+      --sealed-on 2026-08-14 \
+      --workers   4
+
+It rewrites `provenance`, appends one note, recomputes `contentHash`, and **passes every metric line
+through byte for byte** — asserted on the encoded file text before the write, not on two in-memory
+arrays. `--dry-run true` verifies and reports without touching the file. `--note` is repeatable and
+appends; nothing here ever replaces `notes`, because a file that lost four caveats is
+indistinguishable from one that never had them.
+
+**It runs the gate sweep anyway, and no flag skips it.** *"Re-seal without re-measuring"* is a
+statement about what gets **written**, not about what gets **checked**. A content hash is opaque to
+behaviour, so the only sound way to know a re-seal is the right tool is to measure and throw the
+measurement away. The verification costs exactly what the gate costs — 4 s, 27 s and 10 s for the
+three gates inside the required check, ~1000 s for the two-hundred-year one — and not one of its
+numbers is written.
+
+If any gated metric has left its tolerance, become available, stopped being available, or moved its
+`definitionVersion`, the command **refuses and names it**, and a sweep that is disqualified, differently
+seeded or differently configured is refused too. Re-sealing over a real movement would hide a
+regression behind a fresh seal, which is worse than the blocked merge it was reaching for. There is
+no `--force` and no `--skip-verify`, and `baseline-reseal.test.ts` fails if one appears.
+
+**A re-seal is not a way to make a red gate green.** If the gate is red on a *number*, this command
+will refuse, and the answer is a regeneration with a rationale — or finding out why the number moved.
+The two are different claims and the file says which one it is carrying.
+
+The design constraint it is built against is the one `reachability:pin` violates: *a tool that writes
+a whole baseline needs an instrument that attributes rows, or its convenience path silently launders
+someone else's debt.* The instrument here is the drift report. Every gated metric's observed
+movement is printed on **every** run, including the passing ones and the zero ones, and the largest
+is written into the note where it stays in the file. The command banks no number, and the author sees
+exactly what they are sealing over.
+
+**Nothing automated invokes this one either** — not even an npm script, which is a step stricter than
+the regeneration command needs, because a re-seal is cheaper to run and produces a smaller diff, so a
+reachable one would be the easier mistake to make.
 
 ## The five sweeps
 

@@ -26,6 +26,8 @@ import {
   REJECTION,
   TickAssembly,
   canonicalBatch,
+  type CanonicalEntry,
+  type RejectedSubmission,
   type Submission,
 } from '../../src/index.js';
 
@@ -81,8 +83,8 @@ describe('the canonical batch does not depend on arrival order', () => {
       submission(0, 1, 1),
       submission(2, 1, 3),
     ]);
-    expect(batch.entries.map((e) => e.slot)).toEqual([0, 1, 2, 3]);
-    expect(batch.entries.map((e) => e.action.kind)).toEqual([1, 2, 3, 4]);
+    expect(batch.entries.map((e: CanonicalEntry) => e.slot)).toEqual([0, 1, 2, 3]);
+    expect(batch.entries.map((e: CanonicalEntry) => e.action.kind)).toEqual([1, 2, 3, 4]);
   });
 
   it('takes the lowest sequence when a slot submits twice, in either arrival order', () => {
@@ -91,7 +93,7 @@ describe('the canonical batch does not depend on arrival order', () => {
 
     expect(first.batch.entries[0]?.action.kind).toBe(3);
     expect(first.batch).toEqual(second.batch);
-    expect(first.rejected.map((r) => r.reason)).toEqual([REJECTION.duplicate]);
+    expect(first.rejected.map((r: RejectedSubmission) => r.reason)).toEqual([REJECTION.duplicate]);
   });
 });
 
@@ -123,11 +125,11 @@ describe('a missing action has a defined, deterministic meaning', () => {
   it('gives every slot an entry even when nobody submitted anything', () => {
     const { batch } = canonicalBatch(4, 2, []);
     expect(batch.tick).toBe(4);
-    expect(batch.entries.map((e) => e.source)).toEqual([
+    expect(batch.entries.map((e: CanonicalEntry) => e.source)).toEqual([
       ENTRY_SOURCE.substituted,
       ENTRY_SOURCE.substituted,
     ]);
-    expect(batch.entries.every((e) => e.action.kind === 0)).toBe(true);
+    expect(batch.entries.every((e: CanonicalEntry) => e.action.kind === 0)).toBe(true);
   });
 });
 
@@ -160,7 +162,7 @@ describe('a refusal cannot retract an action already admitted', () => {
       sequence: 1,
     });
     // And the refusal is still on the record.
-    expect(rejected.map((r) => r.reason)).toEqual([REJECTION.budgetExceeded]);
+    expect(rejected.map((r: RejectedSubmission) => r.reason)).toEqual([REJECTION.budgetExceeded]);
   });
 
   it('still explains a no-op when the refused submission was the only one', () => {

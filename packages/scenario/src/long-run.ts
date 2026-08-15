@@ -132,6 +132,9 @@ export const LONG_RUN_OPTIONS: ReferenceOptions = Object.freeze({
   // Every species founds the long run, which is what it has always done and what
   // task 9.9's per-species time-to-tier measurement requires.
   foundingSpeciesMask: 0,
+  // The long run measures a demographic question and the gate is not part of
+  // it; zero is what this constant meant before the instrument existed.
+  foundingPortalMagic: 0,
 });
 
 /** One world tick of the long run, stocks and flows together. */

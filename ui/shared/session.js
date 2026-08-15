@@ -307,24 +307,20 @@ export function reconstructedCharge(frame, session, actionId) {
     : { state: 'denied', reconstructed: true };
 }
 
-/** Opens a session over a source. */
-export async function openSession(source = {}) {
-  if (source.live !== undefined) {
-    throw new Error(
-      'No live transport exists yet. The frame shape here is what one would carry — see ' +
-        'scripts/record-session.mjs, and `pvp-server`, which is proposal-only.',
-    );
-  }
-  const url = source.recording ?? '../session.json';
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(
-      `No recording at ${url} (${res.status}). It is committed, so this usually means the page ` +
-        'was opened as a file:// URL rather than served. Run `npm run ui` and open ' +
-        'http://localhost:8200/ui/.',
-    );
-  }
-  const doc = await res.json();
+/**
+ * The view model, over an already-fetched document.
+ *
+ * Held apart from {@link openSession} because a recording and a live run differ
+ * only in where `doc.frames` comes from and whether it can grow. Everything a
+ * page reads is built here once, so a page cannot tell the two apart except by
+ * asking — which is the property the recording was built to have and the reason
+ * a live transport needed no new format.
+ *
+ * `frameCount` is a **getter**. On a recording it is constant and this changes
+ * nothing; on a live run the array grows under the page, and a number captured
+ * at load would pin every view to the first tick forever.
+ */
+function buildSession(doc, extras = {}) {
   doc.blockByName = Object.fromEntries(doc.layout.map((b) => [b.name, b]));
   doc.cellById = Object.fromEntries(doc.content.cells.map((c) => [c.cellId, c]));
 
@@ -336,10 +332,16 @@ export async function openSession(source = {}) {
   const anyEngagement = () => doc.frames.some((f) => f.obs[doc.blockByName.clock.offset + 2] === 1);
 
   return {
-    provenance: doc.provenance,
+    get provenance() {
+      return doc.provenance;
+    },
     content: doc.content,
     actionNames: doc.actions,
-    frameCount: doc.frames.length,
+    get frameCount() {
+      return doc.frames.length;
+    },
+    /** True when the frames are coming from a universe that is still running. */
+    live: false,
     frame,
     last: () => frame(doc.frames.length - 1),
     /** An action's favor price in fp, from the content the run was built with. */
@@ -368,7 +370,106 @@ export async function openSession(source = {}) {
         otherUniverse: false,
       };
     },
+    ...extras,
   };
+}
+
+/**
+ * The write half, and the only place in `ui/` that is not read-only.
+ *
+ * §5's *"the client computes no rules"* is untouched by this: nothing here
+ * decides whether an action is legal, prices it, or predicts its result. It
+ * posts `{kind, params}` at the server, which hands it to `agent-api`'s
+ * admission gate, and reads back the frames that came out. A rejection is
+ * reported as the gate's own word — `masked`, `empty-slot` — rather than
+ * re-derived.
+ *
+ * **`params[0]` is a slot index for actions 8–14 and a literal id for 1–7.**
+ * That asymmetry is `gate.ts`'s, not this file's; it is restated here because it
+ * is the single thing a caller gets wrong.
+ */
+function liveControls(base, doc) {
+  const post = async (route, body) => {
+    const res = await fetch(`${base}/live/${route}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body ?? {}),
+    });
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload?.error ?? `${route} failed (${res.status})`);
+    return payload;
+  };
+
+  /* The server returns only the frames the client does not have, so a
+     four-thousand-tick run does not re-ship itself on every button press. */
+  const absorb = (payload) => {
+    if (Array.isArray(payload.frames)) {
+      doc.frames.length = payload.from ?? doc.frames.length;
+      doc.frames.push(...payload.frames);
+    }
+    if (payload.provenance !== undefined) Object.assign(doc.provenance, payload.provenance);
+    return payload;
+  };
+
+  return {
+    live: true,
+    /** One god action, one tick. Resolves to what the admission gate said. */
+    submit: async (kind, params = []) =>
+      absorb(await post('submit', { kind, params: [...params] })),
+    /** `n` ticks of nothing, which is what a universe does on its own. */
+    advance: async (ticks = 1) => absorb(await post('advance', { ticks })),
+    /**
+     * The control. Replays this run's log twice from its seed — once with the
+     * action, once with a no-op — and reports whether the snapshot hash moved
+     * and which observation slots did. It does **not** touch the run.
+     */
+    control: async (kind, params = [], settle = 30) =>
+      post('control', { kind, params: [...params], settle }),
+    /** A new universe at a new seed, in place. */
+    restart: async (seed, ticks) => {
+      const next = await post('reset', { seed, ticks });
+      doc.frames.length = 0;
+      doc.frames.push(...next.frames);
+      Object.assign(doc.provenance, next.provenance);
+      return next;
+    },
+  };
+}
+
+/**
+ * Opens a session over a source.
+ *
+ *     openSession({ recording: '../session.json' })   // a run that already ended
+ *     openSession({ live: '' })                       // a run that has not
+ *
+ * The live branch talks to `scripts/play-server.mjs` (`npm run play`), which
+ * holds one `AgentSession` in memory and publishes it in exactly this document
+ * shape. `base` is a URL prefix — `''` for the page's own origin.
+ */
+export async function openSession(source = {}) {
+  if (source.live !== undefined) {
+    const base = String(source.live === true ? '' : source.live).replace(/\/+$/u, '');
+    const res = await fetch(`${base}/live/session.json`);
+    if (!res.ok) {
+      throw new Error(
+        `No live universe at ${base}/live/session.json (${res.status}). Start one with ` +
+          '`npm run play` and open http://localhost:8300/.',
+      );
+    }
+    const doc = await res.json();
+    return buildSession(doc, liveControls(base, doc));
+  }
+  const url = source.recording ?? '../session.json';
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(
+      `No recording at ${url} (${res.status}). It is generated rather than committed, so a ` +
+        'fresh clone does not have one yet, and a page opened as a file:// URL cannot fetch ' +
+        'one either. `npm run ui` does both — it records the session and then serves — so run ' +
+        'that and open http://localhost:8200/ui/. To record it alone: `npm run ui:record`.',
+    );
+  }
+  return buildSession(await res.json());
 }
 
 /**
@@ -389,6 +490,8 @@ export function mountSourceNote(host, session, needs = []) {
         padding:.5rem .75rem;border:1px solid var(--line);border-left:2px solid var(--god);
         background:var(--sunk);font:11px/1.6 var(--mono);color:var(--faint)}
       .mm-src.is-absent{border-left-color:var(--warn)}
+      .mm-src.is-live{border-left-color:var(--mentem);border-left-width:3px}
+      .mm-src.is-live b{color:var(--mentem)}
       .mm-src.is-none{border-left-color:var(--loss)}
       .mm-src b{color:var(--soft);font-weight:500;letter-spacing:.09em;text-transform:uppercase}
       .mm-src .mm-why{flex:1 1 26rem;min-width:0;font:italic 12.5px/1.55 var(--serif);color:var(--soft)}
@@ -419,8 +522,20 @@ export function mountSourceNote(host, session, needs = []) {
   const caps = session.capabilities();
   const missing = needs.filter((k) => caps[k] !== true);
   const p = session.provenance;
-  el.append(Object.assign(document.createElement('b'), { textContent: 'Source' }));
-  put(null, `seed ${p.seed} · ${p.ticks} ticks · layout ${p.observationLayoutDigest.slice(0, 8)}`);
+  /* The one distinction a player must never have to guess at. A recording and a
+     live run are the same document shape on purpose, which is exactly why the
+     strip has to say which one is on the screen. */
+  const isLive = session.live === true;
+  el.classList.toggle('is-live', isLive);
+  el.append(
+    Object.assign(document.createElement('b'), { textContent: isLive ? 'Live' : 'Recording' }),
+  );
+  put(
+    null,
+    isLive
+      ? `seed ${p.seed} · tick ${p.ticks} of ${p.tickCap} · running now · layout ${p.observationLayoutDigest.slice(0, 8)}`
+      : `seed ${p.seed} · ${p.ticks} ticks · layout ${p.observationLayoutDigest.slice(0, 8)}`,
+  );
   if (missing.length > 0) {
     el.classList.add('is-absent');
     put(
