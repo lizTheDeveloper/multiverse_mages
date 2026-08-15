@@ -68,6 +68,7 @@ import { KnowledgeSubsystem, MASTERY_MAX, portalHookSet, resolvePortalHooks, tra
 import type { ContentId, ContentRegistry, SpeciesRecord } from '@mm/content';
 import type { RaidParticipant } from '@mm/rules-raid';
 import type { EntityHandle, SimState, WorldSchema } from '@mm/sim-core';
+import type { Ruleset } from '@mm/state';
 import {
   GRIMOIRE,
   HOLDER_KIND,
@@ -81,6 +82,7 @@ import {
   collectRecords,
   componentOf,
   findUniverse,
+  permits,
 } from '@mm/state';
 
 import { speciesTable } from './content-set.js';
@@ -258,6 +260,17 @@ export function buildRival(input: {
   readonly schema: WorldSchema;
   readonly hostTraditionId: number;
   readonly constants: RivalConstants;
+  /**
+   * The ruleset of the universe that will meet this rival — **not** the
+   * rival's own.
+   *
+   * It decides what goes on the rival's loot shelf, and it has to come from
+   * outside because a rival is built in isolation from a seed. See
+   * {@link shelveForeignBooks}: a book is worth the trip exactly when the
+   * raider's god could not have permitted it at home, and only the raider's
+   * ruleset can say that.
+   */
+  readonly raiderRuleset: Ruleset;
 }): Rival {
   const { content, constants } = input;
   const world = buildReferenceState({
@@ -297,7 +310,7 @@ export function buildRival(input: {
   // through its own subsystem, so a fresh index would start blind to it.
   const knowledge = KnowledgeSubsystem.fromState(world, content.deps.catalog.nodeCount);
   armRaiders(world, knowledge, content, constants);
-  shelveForeignBooks(world, knowledge, content, constants, input.targetId);
+  shelveForeignBooks(world, knowledge, content, constants, input.targetId, input.raiderRuleset);
 
   const universe = findUniverse(world);
   const ruleset = captureRuleset(world, universe);
@@ -349,10 +362,29 @@ export function buildRival(input: {
  * a raider of ours standing in the rival's sky may cast whatever the rival
  * allows and she happens to know.
  *
- * The books are drawn in content order from nodes in **non-v1 cells**, rotated
- * by target id so the three rivals do not shelve the same twelve books, and
- * shelved at the durability the dwarf's line gives a well-made archive — so a
- * raid on a rival is also the place `grimoire-burn-resist-cap` bites.
+ * The books are drawn in content order from nodes in cells **the raiding
+ * universe's own ruleset forbids**, rotated by target id so the three rivals do
+ * not shelve the same twelve books, and shelved at the durability the dwarf's
+ * line gives a well-made archive — so a raid on a rival is also the place
+ * `grimoire-burn-resist-cap` bites.
+ *
+ * ## The selector is the ruleset, not content's `v1` flag
+ *
+ * `rival-foreign-book-count`'s gloss says *"cells this universe's own ruleset
+ * forbids"*, and it used to say that about a filter keyed on `CellRecord.v1`.
+ * The two agree only while the v1-flagged set is exactly the raider's opening
+ * square, which `v1RulesetAxes` makes true **by construction** for a universe
+ * founded on the v1 rectangle — and false for every other opening. A universe
+ * opened at 2×2 forbids sixty-six cells and would still have been offered loot
+ * from only the forty-nine outside the flagged twelve, so the cells it most
+ * conspicuously cannot reach — the ones inside the v1 rectangle but outside its
+ * own square — were the ones a raid could not fetch.
+ *
+ * It is the **raider's** ruleset and not the rival's, which is why it is a
+ * parameter rather than a read off `world`. `world` here is the rival's, and
+ * twelve lines below this function widens the rival's masks to every axis the
+ * registry declares; reading its ruleset would ask the shelf to be foreign to
+ * the universe that owns it, which is empty by definition.
  */
 function shelveForeignBooks(
   world: SimState,
@@ -360,15 +392,24 @@ function shelveForeignBooks(
   content: ReferenceContent,
   constants: RivalConstants,
   targetId: number,
+  raiderRuleset: Ruleset,
 ): void {
   const library = firstLibrary(world);
   if (library === 0) return;
 
-  const v1Cells = new Set(
-    content.registry.cells.filter((entry) => entry.record.v1 === true).map((entry) => entry.record.id),
-  );
+  const cellIdOf = new Map(content.registry.cells.map((entry) => [entry.record.id, entry.contentId]));
   const foreign = content.registry.nodes
-    .filter((entry) => !v1Cells.has(entry.record.cell))
+    .filter((entry) => {
+      const cellId = cellIdOf.get(entry.record.cell);
+      if (cellId === undefined) {
+        throw new Error(
+          `Node ${entry.record.id} names cell ${entry.record.cell}, which this registry does not ` +
+            'hold. The loader interns a node\'s cell before accepting it, so this is a loader ' +
+            'change rather than a content typo.',
+        );
+      }
+      return !permits(raiderRuleset, cellId);
+    })
     .map((entry) => entry.contentId)
     .sort((a, b) => a - b);
   if (foreign.length === 0) return;

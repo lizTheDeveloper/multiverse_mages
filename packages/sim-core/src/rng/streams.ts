@@ -59,6 +59,23 @@ export const RNG_STREAM = {
    * the mages'.
    */
   openingSquare: 12,
+  /**
+   * The partial-detachment draw at portal open: whether a soldier cohort with
+   * fewer people left than `detachment-strength` fields one more detachment.
+   *
+   * Its own id rather than `terrain`'s — which is the other deployment-time
+   * draw — because the two are taken at the same moment from the same source.
+   * Sharing `terrain`'s cursor would make *how many detachments a side fields*
+   * shift every deployment position behind it, so a change in the populace
+   * would move the battlefield, and no committed raid baseline could be read as
+   * a statement about either.
+   *
+   * **13 is deliberately skipped.** `w190/scribing-fidelity` (PR #170) claims it
+   * for `corruption` and is open but unmerged at the time of writing; taking it
+   * here would give one number two meanings depending on merge order, which is
+   * exactly what this table's append-only rule exists to prevent.
+   */
+  detachment: 14,
 } as const;
 
 /** Any ID in the permanent registry. */
