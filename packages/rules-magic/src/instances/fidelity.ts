@@ -144,8 +144,18 @@ export const GENERATION_STEP_MAX: Fp = 2048;
 export const KNOWLEDGE_KIND_STEP: Readonly<Record<KnowledgeKind, Fp>> = {
   /** Half a generation per copy: a written procedure survives being rewritten. */
   episteme: 512,
-  /** Two generations per copy: the practice is what the page cannot hold. */
-  metis: 2048,
+  /**
+   * A whole generation per copy: the practice is what the page cannot hold.
+   *
+   * Mētis is the **unit**, and episteme is the discount, rather than the other
+   * way round. That is forced by the design sentence and was measured rather
+   * than reasoned: at two generations per copy the first probe run gave a human
+   * scriptorium `100% / 33% / 0%`, which is *"fresh from a living holder: full"*
+   * and then straight over the cliff — no *"one copy out: fine"* at all. At one
+   * generation per copy it gives `100% / 100% / 67% / 33% / 0%`, which is the
+   * sentence: full, fine, and then the loss biting on copies-of-copies.
+   */
+  metis: FP_ONE,
 };
 
 /**

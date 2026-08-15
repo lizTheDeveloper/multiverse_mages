@@ -44,15 +44,18 @@ import {
   GOAL_COMMITMENT,
   GOD_STATE,
   GRANT_BUDGET,
+  KNOWLEDGE_FIDELITY,
   MAGE,
   MATERIAL_STOCK,
   UNIVERSE,
   UPHEAVAL,
+  WORLD_COMPONENTS,
   WORLD_SCHEMA_VERSION,
   addEffortProgress,
   addGoalCommitment,
   addGodAgencyState,
   addGrantBudget,
+  addKnowledgeFidelity,
   attachRecord,
   collectRecords,
   componentOf,
@@ -133,30 +136,37 @@ function withLegacyMaterialsField(
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name),
+    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, KNOWLEDGE_FIDELITY.name),
   );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name),
+    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, KNOWLEDGE_FIDELITY.name),
   );
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name));
+  return withLegacyMaterialsField(
+    envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, KNOWLEDGE_FIDELITY.name),
+  );
 }
 
 /** The world as the last build before the economy differentiated into kinds saw it. */
 function revisionFourEnvelope(materialsValue: number = LEGACY_MATERIALS_VALUE): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name), materialsValue);
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name, KNOWLEDGE_FIDELITY.name), materialsValue);
 }
 
 /** The world as the last build whose founding grants were unlimited saw it. */
 function revisionFiveEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(GRANT_BUDGET.name);
+  return envelopeWithout(GRANT_BUDGET.name, KNOWLEDGE_FIDELITY.name);
+}
+
+/** The world as the last build before scribing fidelity saw it. */
+function revisionSixEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(KNOWLEDGE_FIDELITY.name);
 }
 
 describe('the world-schema revision is read off the snapshot itself', () => {
@@ -166,6 +176,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     expect(worldSchemaVersionOf(revisionThreeEnvelope())).toBe(3);
     expect(worldSchemaVersionOf(revisionFourEnvelope())).toBe(4);
     expect(worldSchemaVersionOf(revisionFiveEnvelope())).toBe(5);
+    expect(worldSchemaVersionOf(revisionSixEnvelope())).toBe(6);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -178,7 +189,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(6);
+    expect(WORLD_SCHEMA_VERSION).toBe(7);
   });
 });
 
@@ -531,8 +542,12 @@ describe('an older save loads into a current world', () => {
   });
 
   it('re-serializes to exactly the bytes a fresh save with neither makes', () => {
-    const { state, universe, mage, effort } = populatedWorld();
+    const { state, universe, mage, effort, instance } = populatedWorld();
     componentOf(state, GOAL_COMMITMENT).remove(mage);
+    // And the fidelity row, for the same reason as the god sections below: the
+    // revision-1 envelope has no `knowledge-fidelity` section, so the fresh
+    // save it is compared against must carry no `knowledge-fidelity` row.
+    componentOf(state, KNOWLEDGE_FIDELITY).remove(instance);
     // The row, not the entity. Both sides of the comparison come from the same
     // fixture and therefore from the same entity table; destroying one here
     // would be comparing two different allocation histories.
@@ -597,11 +612,68 @@ describe('an older save loads into a current world', () => {
       [encodeSnapshot(revisionThreeEnvelope()), /god-state/],
       [encodeSnapshot(revisionFourEnvelope()), /material-stock/],
       [encodeSnapshot(revisionFiveEnvelope()), /grant-budget/],
+      [encodeSnapshot(revisionSixEnvelope()), /knowledge-fidelity/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(
         missing,
       );
     }
+  });
+});
+
+describe('migrating a revision-6 world snapshot forward', () => {
+  it('appends knowledge-fidelity as an empty section, in last position', () => {
+    const before = revisionSixEnvelope();
+    const after = addKnowledgeFidelity.migrate(before);
+
+    const appended = after.components[after.components.length - 1];
+    expect(appended?.name).toBe(KNOWLEDGE_FIDELITY.name);
+    expect(appended?.slots.length).toBe(0);
+    expect(appended?.values.length).toBe(0);
+    expect(appended?.fields.map((field) => field.name)).toEqual(
+      Object.keys(KNOWLEDGE_FIDELITY.fields),
+    );
+  });
+
+  it('appends it after grant-budget, which is where WORLD_COMPONENTS puts it', () => {
+    // The position, not merely the presence. Section order in an envelope is
+    // `WORLD_COMPONENTS` order, so a component declared anywhere but last would
+    // line every revision-6 save's sections up against the wrong layouts -- and
+    // the failure would not be a refusal, it would be one component's values
+    // read as another's. Asserted against the declaration itself rather than
+    // against a literal index, so it keeps holding at revision 8.
+    const declared = WORLD_COMPONENTS.map((spec) => spec.name);
+    expect(declared[declared.length - 1]).toBe(KNOWLEDGE_FIDELITY.name);
+    expect(declared[declared.length - 2]).toBe(GRANT_BUDGET.name);
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionSixEnvelope();
+    expect(addKnowledgeFidelity.migrate(before).version).toBe(before.version);
+    expect(addKnowledgeFidelity.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionSixEnvelope();
+    const componentCount = before.components.length;
+    addKnowledgeFidelity.migrate(before);
+    expect(before.components).toHaveLength(componentCount);
+  });
+
+  it('restores a pre-fidelity save with every book fresh and sound', () => {
+    // Empty, and the emptiness is the whole repair. Every reader of this
+    // component treats an absent row as copy generation zero and `sound`, which
+    // is exactly what a save written before scribing fidelity recorded: nothing.
+    //
+    // Synthesising a distance from `acquiredTick` was the alternative and there
+    // is no honest rule for it -- the old state does not record what a book was
+    // copied *from*, so any number chosen would be a fidelity loss the save
+    // never suffered, applied retroactively to a library the player already has.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionSixEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, KNOWLEDGE_FIDELITY).size).toBe(0);
   });
 });

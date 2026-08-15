@@ -41,6 +41,7 @@ import {
   GRANT_BUDGET,
   GRIMOIRE,
   HOLDER_KIND,
+  KNOWLEDGE_FIDELITY,
   KNOWLEDGE_INSTANCE,
   LIBRARY,
   LOCATION_KIND,
@@ -80,6 +81,8 @@ export interface PopulatedWorld {
   readonly university: EntityHandle;
   readonly library: EntityHandle;
   readonly grimoire: EntityHandle;
+  /** The shelved knowledge instance, which also carries the fidelity row. */
+  readonly instance: EntityHandle;
   readonly effort: EntityHandle;
 }
 
@@ -190,6 +193,13 @@ export function populatedWorld(): PopulatedWorld {
     mastery: FP_ONE,
   });
 
+  // On the instance's own handle, which is what makes the component a sparse
+  // side table rather than two more columns on every instance in a Monte Carlo
+  // run. The values are deliberately *not* the defaults: an absent row already
+  // means generation zero and sound, so a fixture row carrying zeros would
+  // round-trip identically to no row at all and would test nothing.
+  attachRecord(state, KNOWLEDGE_FIDELITY, instance, { copyGeneration: 1536, corruption: 1 });
+
   const everKnown = state.entities.create();
   attachRecord(state, EVER_KNOWN, everKnown, { nodeId: 7 });
 
@@ -264,7 +274,7 @@ export function populatedWorld(): PopulatedWorld {
   });
 
   assertEveryWorldComponentPopulated(state);
-  return { state, universe, mage, cohort, university, library, grimoire, effort };
+  return { state, universe, mage, cohort, university, library, grimoire, instance, effort };
 }
 
 /** Fails if any world component has no rows, so "every component" stays true. */

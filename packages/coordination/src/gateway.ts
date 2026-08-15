@@ -928,7 +928,17 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     for (const instance of candidates) {
       if (this.#deps.knowledge.read(instance).nodeId !== nodeId) continue;
       const { copyGeneration } = fidelityOf(this.#deps.state, instance);
-      if (best === undefined || copyGeneration < bestGeneration) {
+      if (best === undefined) {
+        best = instance;
+        bestGeneration = copyGeneration;
+        continue;
+      }
+      // The handle tie-break is not decoration. `candidates` arrives in
+      // `instancesAt`'s slot order followed by the mage's own books, and slots
+      // move under swap-removal — so a strict `<` alone would break ties on the
+      // *destruction history* of the universe rather than on its values, and two
+      // peers agreeing on every number could open different books.
+      if (copyGeneration < bestGeneration || (copyGeneration === bestGeneration && instance < best)) {
         best = instance;
         bestGeneration = copyGeneration;
       }
