@@ -1,14 +1,14 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 860,
-    "productionFileCount": 311
+    "examinedSymbolCount": 903,
+    "productionFileCount": 330
   },
   "scanFloor": {
-    "examinedSymbolCount": 688,
-    "productionFileCount": 248
+    "examinedSymbolCount": 722,
+    "productionFileCount": 264
   },
-  "findingCount": 125,
+  "findingCount": 133,
   "findings": [
     {
       "key": "constant:packages/coordination/src/god/constants.ts:legacyArchiveMaxTier",
@@ -103,6 +103,14 @@
       "category": "unreached",
       "file": "packages/content/src/audio.ts",
       "name": "audioSelect",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/content/src/character.ts:characterFor",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/content/src/character.ts",
+      "name": "characterFor",
       "kind": "function"
     },
     {
@@ -470,12 +478,43 @@
       "kind": "function"
     },
     {
+      "key": "symbol:packages/rules-raid/src/phases.ts:ENGAGEMENT_PHASE_NAMES",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-raid/src/phases.ts",
+      "name": "ENGAGEMENT_PHASE_NAMES",
+      "kind": "const"
+    },
+    {
       "key": "symbol:packages/rules-raid/src/raid.ts:BURNABLE_LOCATION_KINDS",
       "group": "symbol",
       "category": "unreached",
       "file": "packages/rules-raid/src/raid.ts",
       "name": "BURNABLE_LOCATION_KINDS",
       "kind": "const"
+    },
+    {
+      "key": "symbol:packages/rules-raid/src/verbs.ts:legalVerbs",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "legalVerbs",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-raid/src/verbs.ts:runPlanFor",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "runPlanFor",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-raid/src/verbs.ts:verbSide",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "verbSide"
     },
     {
       "key": "symbol:packages/rules-world/src/autonomy/affiliation.ts:completeAffiliation",
@@ -843,11 +882,26 @@
       "kind": "function"
     },
     {
+      "key": "symbol:packages/scenario/src/strategy-audit.ts:FOUNDING_PROBE",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/scenario/src/strategy-audit.ts",
+      "name": "FOUNDING_PROBE"
+    },
+    {
       "key": "symbol:packages/scenario/src/strategy-audit.ts:actionName",
       "group": "symbol",
       "category": "reachedOnlyByUnreached",
       "file": "packages/scenario/src/strategy-audit.ts",
       "name": "actionName"
+    },
+    {
+      "key": "symbol:packages/scenario/src/strategy-audit.ts:auditFounding",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/strategy-audit.ts",
+      "name": "auditFounding",
+      "kind": "function"
     },
     {
       "key": "symbol:packages/scenario/src/strategy-audit.ts:auditPool",
@@ -870,6 +924,14 @@
       "category": "unreached",
       "file": "packages/scenario/src/strategy-audit.ts",
       "name": "formatAudit",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/scenario/src/strategy-audit.ts:formatFounding",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/strategy-audit.ts",
+      "name": "formatFounding",
       "kind": "function"
     },
     {
