@@ -63,6 +63,8 @@
 
 import type { CellRecord, FormRecord, Interned, NodeRecord, TechniqueRecord } from '@mm/content';
 import type { ContentId } from '@mm/state';
+
+import type { ExclusionEdge } from './instances/catalog.js';
 import {
   GRID_CELL_COUNT,
   GRID_FORM_COUNT,
@@ -96,6 +98,42 @@ export interface GridContent {
  * question per tick, and an allocation there would be an allocation in the
  * innermost loop of the observation projection.
  */
+/** Shared empty result, so the common "excludes nothing" case allocates nothing. */
+const EMPTY_EXCLUSIONS: readonly ExclusionEdge[] = Object.freeze([]);
+
+/**
+ * Resolves authored exclusions from cell *names* to interned cell ids.
+ *
+ * Content authors `excludes: [{ cell: "creo-umbra", ... }]` by name, and every
+ * rule downstream addresses a cell by its interned id. Doing the translation
+ * once here is what lets {@link MagicGrid.excludedBy} be a map lookup on the
+ * acquisition path.
+ *
+ * An exclusion naming a cell this content set does not declare is dropped
+ * rather than thrown on: `content`'s loader already rejects that as an
+ * `unknown-reference` hard failure, so reaching this line means the check ran
+ * and passed, and a second throw here could only fire for a registry that
+ * bypassed validation entirely.
+ */
+function buildExclusions(
+  authored: ReadonlyMap<number, CellRecord>,
+  cellIdByName: ReadonlyMap<string, number>,
+): ReadonlyMap<number, readonly ExclusionEdge[]> {
+  const out = new Map<number, readonly ExclusionEdge[]>();
+  for (const [cellId, record] of authored) {
+    const excludes = record.excludes ?? [];
+    if (excludes.length === 0) continue;
+    const edges: ExclusionEdge[] = [];
+    for (const exclusion of excludes) {
+      const target = cellIdByName.get(exclusion.cell);
+      if (target === undefined) continue;
+      edges.push({ cell: target, resolution: exclusion.resolution });
+    }
+    if (edges.length > 0) out.set(cellId, Object.freeze(edges));
+  }
+  return out;
+}
+
 export interface CellView {
   /** Interned cell id, `1..70`. */
   readonly cellId: number;
@@ -167,6 +205,7 @@ export class MagicGrid {
   readonly #techniqueBitById: ReadonlyMap<ContentId, number>;
   readonly #formBitById: ReadonlyMap<ContentId, number>;
   readonly #v1CellIds: readonly number[];
+  readonly #exclusionsByCell: ReadonlyMap<number, readonly ExclusionEdge[]>;
 
   private constructor(parts: {
     cells: readonly (CellView | undefined)[];
@@ -176,6 +215,7 @@ export class MagicGrid {
     techniqueBitById: ReadonlyMap<ContentId, number>;
     formBitById: ReadonlyMap<ContentId, number>;
     v1CellIds: readonly number[];
+    exclusionsByCell: ReadonlyMap<number, readonly ExclusionEdge[]>;
   }) {
     this.#cells = parts.cells;
     this.#cellIdByName = parts.cellIdByName;
@@ -184,6 +224,7 @@ export class MagicGrid {
     this.#techniqueBitById = parts.techniqueBitById;
     this.#formBitById = parts.formBitById;
     this.#v1CellIds = parts.v1CellIds;
+    this.#exclusionsByCell = parts.exclusionsByCell;
   }
 
   /**
@@ -287,6 +328,7 @@ export class MagicGrid {
       techniqueBitById,
       formBitById,
       v1CellIds: Object.freeze(v1CellIds),
+      exclusionsByCell: buildExclusions(authored, cellIdByName),
     });
   }
 
@@ -370,6 +412,23 @@ export class MagicGrid {
    */
   cellOf(nodeId: ContentId): number {
     return this.#node(nodeId, 'cellOf').cellId;
+  }
+
+  /**
+   * The cells this one excludes (`vision.md` §4b), as interned ids.
+   *
+   * Empty for every cell that excludes nothing, which is all but two of the
+   * seventy as of this revision. Resolved once at construction rather than per
+   * call: the acquisition path asks this question every time an instance is
+   * created, and a string lookup per acquisition would put a map miss on the
+   * hot path for a set that is almost always empty.
+   *
+   * The authored `reason` is deliberately dropped here. It is load-bearing at
+   * validation time, where §4b derives symmetry from it, and it is not a rule
+   * input — carrying it further would invite a rule to branch on prose.
+   */
+  excludedBy(cellId: number): readonly ExclusionEdge[] {
+    return this.#exclusionsByCell.get(cellId) ?? EMPTY_EXCLUSIONS;
   }
 
   /** A node's authored string id, for diagnostics. */

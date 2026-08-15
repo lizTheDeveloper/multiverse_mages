@@ -1,0 +1,39 @@
+{
+  "sweepId": "w192-opening-strategies",
+  "kind": "full",
+  "rootSeed": 20260811,
+  "factors": [
+    { "id": "foundingSpeciesMask", "levels": [0] }
+  ],
+  "replicates": 100,
+  "agentPool": {
+    "strategies": [
+      "passive-control",
+      "permissive-breadth",
+      "narrow-depth",
+      "archivist",
+      "worship-maximizer"
+    ],
+    "assignment": "round-robin",
+    "slots": 1
+  },
+  "termination": {
+    "worldTickCap": 720,
+    "perRunTimeoutMs": 600000
+  },
+  "metrics": [
+    "referenceGrimoires",
+    "referenceKnowledgeInstances",
+    "referenceLibraryDepth",
+    "referenceLivingMages",
+    "referenceNodesGained",
+    "referenceNodesKnown",
+    "referencePeakPopulation",
+    "referencePopulation",
+    "referencePopulationChange",
+    "speciesCellOccupancy",
+    "timeToTierBySpecies"
+  ],
+  "ablation": { "mode": "none", "primitives": [] },
+  "failureThreshold": 0
+}

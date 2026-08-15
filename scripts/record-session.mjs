@@ -25,6 +25,21 @@
  *     npm run ui:record            # 400 ticks, seed 20260813, to ui/session.json
  *     node scripts/record-session.mjs --ticks 1200 --seed 7 --out /tmp/s.json
  *
+ * ## Generated, and deliberately not committed
+ *
+ * `ui/session.json` used to be committed and pinned byte-for-byte. It is now
+ * gitignored and built — `npm run ui` builds it for you, and `npm run verify`
+ * refreshes it. A 1.1 MB generated JSON in version control conflicts on every
+ * branch that moves a rule, and a conflict in it is resolved by regenerating
+ * rather than by reading, which means the merge is decided by whoever ran the
+ * command last. `scripts/check-generated-artifacts.mjs` has the full argument
+ * and gates the two properties this rests on: this recorder is deterministic,
+ * and the artifact is not tracked.
+ *
+ * That determinism is load-bearing rather than incidental. It is why the file CI
+ * builds is the file you build, and it is why nothing here may read a clock, a
+ * path or anything else about the machine it runs on.
+ *
  * ## Why a recording rather than a live session
  *
  * `agent-api` is TypeScript compiled to `dist/`, and the prototypes are static
