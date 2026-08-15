@@ -133,6 +133,21 @@ jobs:
       - name: Primitive coverage over v1 content
         run: npm run check:coverage
 
+      - name: Generated UI artifacts (built here, not committed)
+        # `ui/session.json` and `ui/design-dashboard/data.json` are pure
+        # functions of the repository and are built rather than committed, so
+        # the thing to gate is what makes that safe: each generator is
+        # deterministic (run twice, bytes compared) and neither artifact is
+        # tracked. It needs no credentials, no network and no services — two
+        # node scripts over the tree — which is what makes it safe here, in the
+        # only job that may see a fork pull request.
+        #
+        # Exit 42 is a finding; exit 1 is the generator itself being broken, and
+        # the two are deliberately not the same answer. Listed here by hand
+        # because this workflow lists its steps by hand; the self-hosted runner
+        # picks it up through `npm run verify`. Both, or the two gates disagree.
+        run: npm run check:generated
+
       - name: Test (unit + golden replay)
         run: npm test
 
@@ -214,6 +229,21 @@ jobs:
 
       - name: Primitive coverage over v1 content
         run: npm run check:coverage
+
+      - name: Generated UI artifacts (built here, not committed)
+        # `ui/session.json` and `ui/design-dashboard/data.json` are pure
+        # functions of the repository and are built rather than committed, so
+        # the thing to gate is what makes that safe: each generator is
+        # deterministic (run twice, bytes compared) and neither artifact is
+        # tracked. It needs no credentials, no network and no services — two
+        # node scripts over the tree — which is what makes it safe here, in the
+        # only job that may see a fork pull request.
+        #
+        # Exit 42 is a finding; exit 1 is the generator itself being broken, and
+        # the two are deliberately not the same answer. Listed here by hand
+        # because this workflow lists its steps by hand; the self-hosted runner
+        # picks it up through `npm run verify`. Both, or the two gates disagree.
+        run: npm run check:generated
 
       - name: Test (unit + golden replay)
         run: npm test

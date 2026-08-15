@@ -329,8 +329,8 @@ The self-hosted runner is **serialized**. With five pull requests open, all five
 `ci/hetzner-lint` reporting *"Queued -- another CI run in progress"* while every GitHub Actions check
 was already green. Nothing was failing; the queue was the whole delay.
 
-Each run is the full `npm run verify` — typecheck, lint, purity, content, audio, coverage, ~3,900
-tests, **and three Monte Carlo balance gates**. One test alone (`reference-long-run`) takes 332s in
+Each run is the full `npm run verify` — typecheck, lint, purity, content, audio, coverage,
+generated artifacts, ~3,900 tests, **and three Monte Carlo balance gates**. One test alone (`reference-long-run`) takes 332s in
 isolation.
 
 That last number matters more than it looks, because **the receiver kills a run at 600 seconds**. The
@@ -441,6 +441,36 @@ a1998f1  success
 One confirmed-green `Verify` in eight, and three commits with no verification on record at all. This
 is also why the `ui/session.json` break survived four merges: **the signal was being destroyed about
 as fast as it was generated.**
+
+That particular break can no longer recur, for a reason unrelated to this section:
+`ui/session.json` is no longer committed. It and `ui/design-dashboard/data.json` are built by
+`npm run check:generated` — see the section below — so there is no committed copy left to be broken
+by a merge. The point about destroyed signal stands for everything else.
+
+## `check:generated`: the two UI payloads are built, not committed
+
+`ui/session.json` and `ui/design-dashboard/data.json` are pure functions of the repository. They
+used to be committed and pinned byte-for-byte by a test, which reddened `main` three times on
+unrelated work; each fix projected another field out of the equality, and by the third the pin was
+green over a genuinely stale payload — measured on `63f44ced`, `main`'s tip at the time, in exactly
+the three fields the last projection had carved out. `scripts/check-generated-artifacts.mjs` carries
+the full argument.
+
+Both are now gitignored and built. Staleness is therefore impossible rather than detected, and what
+the check gates instead is the pair of properties that removal depends on: **each generator is
+deterministic** (run twice, bytes compared — about 1.4 s for both) and **neither artifact is
+tracked**. It exits `0` clean, `42` on a finding, and `1` when a generator itself is broken, which
+is deliberately not the same answer as "no findings".
+
+It is wired **exactly as the balance gates are**, and for the reason stated above: the self-hosted
+runner picks it up through `npm run verify`, and Actions names it as its own step in both
+full-suite jobs. It belongs on the Actions side of the required set because it needs no credentials,
+no network and no services — two node scripts over the tree — so it is safe in the only job that may
+see a fork pull request.
+
+**A local consequence worth knowing:** the check writes both artifacts at their canonical paths, so
+`npm run verify` leaves you with a working `npm run ui`. `npm run ui` also builds them before
+serving, and `npm run ui:record` / `npm run ui:dashboard` build one each.
 
 **The window is set by a job that is explicitly not required.** `Balance gate, two hundred world
 years` takes ~35 minutes and lives in this workflow, so the *run* holds the group for ~40 minutes

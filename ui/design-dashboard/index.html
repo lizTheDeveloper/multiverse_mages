@@ -317,7 +317,7 @@
   </section>
 
   <footer>
-    Every figure on this page comes from <code>ui/design-dashboard/data.json</code>, written by <code>npm run ui:dashboard</code> and pinned byte-for-byte by <code>packages/content/test/unit/design-dashboard-payload.test.ts</code>. The payload is a pure function of the repository contents, so it is a statement about the commit you are reading it on — not about the day it was generated. Figures lifted from a document carry that document's own stated date and ref, and are labelled historical.
+    Every figure on this page comes from <code>ui/design-dashboard/data.json</code>, written by <code>npm run ui:dashboard</code>. That file is <strong>generated, not committed</strong>: the payload is a pure function of the repository contents, so what you are reading was built from the tree you are reading it on — it cannot be a statement about an older commit, and it is not a statement about the day it was generated either. <code>npm run check:generated</code> gates the two properties that rests on (the generator is deterministic, and the file stays out of git), and <code>packages/content/test/unit/design-dashboard-payload.test.ts</code> asserts that what comes out is a payload this page can draw. Figures lifted from a document carry that document's own stated date and ref, and are labelled historical.
     <br>Nothing here computes a rule, runs a sweep, or touches the simulation core. <code>contracts.md</code> §5 puts each rule in exactly one place, and a dashboard is not one of them.
   </footer>
 </div>
@@ -407,8 +407,9 @@ try {
       class: 'err',
       text:
         `Could not load ./data.json — ${cause.message}\n\n` +
-        'Run `npm run ui:dashboard` from the repository root, and serve with `npm run ui` ' +
-        'rather than opening the file directly: a fetch from file:// is blocked.',
+        'The payload is generated rather than committed, so a fresh clone has none until you ' +
+        'build one. `npm run ui` builds it and then serves; `npm run ui:dashboard` builds it ' +
+        'alone. Serve rather than opening the file directly: a fetch from file:// is blocked.',
     }),
   );
   throw cause;
