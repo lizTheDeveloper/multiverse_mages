@@ -12459,25 +12459,44 @@ gives a monotone curve rather than a threshold:
 | 1350      | wide  | 2     | 6             |
 | 1500      | wide  | **3** | 7             |
 
-**Width climbs with the horizon and has not plateaued at 1500.** So the answer to *"does
-the demo set have enough variety to be fun"* is not a single number — it is a function of
-how long a game runs, and every previous reading of this project's strategy pool as *dead*
-was a reading taken at 600 ticks, where `ascension-min-tick` is 600 and nothing can ascend
-by construction.
+**At `--search-seed 20260813`, width climbs with the horizon and has not plateaued at
+1500.** The seed is named because all five rows share it: they vary `--ticks` and nothing
+else, so this is one seed sampled five times, not five independent measurements. Read as a
+property of *the game* it would be the undated-present-tense claim `CLAUDE.md` says costs
+two agents an investigation each. Replication at two further search seeds is in W235.
+
+Subject to that, the answer to *"does the demo set have enough variety to be fun"* is not
+a single number — it is a function of how long a game runs, and every previous reading of
+this project's strategy pool as *dead* was a reading taken at 600 ticks, where
+`ascension-min-tick` is 600 and nothing can ascend by construction.
 
 **The guard falls out without a magic multiplier.** `dead` at 900 coincides exactly with
 *zero ascensions anywhere*. That is the discriminator: a `dead` verdict with zero
 ascensions is a statement about the horizon, not the game. `shapeOf` already has
 `unresolved` for "too few cells to judge"; this is the same idea one axis over. Not landed
-in #196 — it changes a shape enum that is typed, tested and feeds baselines, and it
-deserves its own diff.
+in #196, and the reason is concrete rather than caution: **`shapeOf(occupied,
+notWorthPlaying)` does not receive an ascension count.** Implementing the discriminator
+means changing that signature and every call site and test that pins it. That is the work
+item — naming it here so the next pass does not rediscover the boundary and stop at it
+again.
 
 **And `portal-rush` was never allowed to play.** `illegalActionRate 0.483` — 48 times
-`MAX_ELITE_ILLEGAL_RATE`, whose own comment reads *"above this it is a mask bug"*.
-`clearsLadder` correctly refuses it the cell and then reports the refusal by reusing
-`failedRung`, so it printed as `(lost to rung 1)` — *weaker than doing nothing* — rather
-than *excluded*. A real defect was being retired as a balance result, in the tool built to
-stop exactly that. Now prints `MASK-BUG` with the rate, plus a trailing WARNING.
+`MAX_ELITE_ILLEGAL_RATE`. `clearsLadder` correctly refuses it the cell and then reports
+the refusal by reusing `failedRung`, so it printed as `(lost to rung 1)` — *weaker than
+doing nothing* — rather than *excluded*. A real defect was being retired as a balance
+result, in the tool built to stop exactly that. Now prints `EXCLUDED` with the rate, plus
+a trailing WARNING.
+
+**`EXCLUDED` and not `MASK-BUG`, though the constant's own comment says "above this it is
+a mask bug".** What is measured is a rejection *rate*; which component is wrong is a
+second question, and two live readings disagree. `strategies.ts`'s
+`noise-floor-submits-axis-actions-bare` records that a missing-parameter refusal lands on
+the core's `illegalActionCount` and **not** on the session counters `illegalActionRate`
+comes from — which would make a session-counted rejection a genuine mask disagreement.
+`session.ts` warns that an unresolvable slot index is *"recorded as an ordinary illegal
+action, hiding the bug"* — which would make it target-level, and the mask innocent. I had
+written `MASK-BUG` first. Naming a culprit the measurement does not identify is the same
+misreport the block exists to fix, one layer over.
 
 Two consequences worth stating plainly:
 
