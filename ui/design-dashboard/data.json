@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
+    "contentRevision": "fd8ce7ef5fded0b0a23fc85f8006f595",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -15,8 +15,8 @@
       "primitives": 16,
       "territories": 5,
       "godCosts": 16,
-      "godConstants": 72,
-      "raidConstants": 46,
+      "godConstants": 73,
+      "raidConstants": 59,
       "autonomyWeights": 38
     },
     "metricRegistrySize": 18,
@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 125,
-    "examinedSymbolCount": 855,
+    "findingCount": 131,
+    "examinedSymbolCount": 888,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 309,
+    "productionFileCount": 314,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2615,7 +2615,7 @@
       },
       {
         "file": "packages/coordination/src/god/interventions.ts",
-        "line": 1047,
+        "line": 1106,
         "name": "tierDerivedValues",
         "kind": "function"
       },
@@ -2795,25 +2795,25 @@
       },
       {
         "file": "packages/rules-raid/src/arbitration.ts",
-        "line": 716,
+        "line": 760,
         "name": "drawBelow",
         "kind": "function"
       },
       {
         "file": "packages/rules-raid/src/consequences.ts",
-        "line": 363,
+        "line": 459,
         "name": "fractionOf",
         "kind": "function"
       },
       {
         "file": "packages/rules-raid/src/consequences.ts",
-        "line": 369,
+        "line": 465,
         "name": "returnedWithKnowledge",
         "kind": "function"
       },
       {
         "file": "packages/rules-raid/src/consequences.ts",
-        "line": 354,
+        "line": 450,
         "name": "strandedAttackers",
         "kind": "function"
       },
@@ -2830,10 +2830,34 @@
         "kind": "function"
       },
       {
+        "file": "packages/rules-raid/src/phases.ts",
+        "line": 83,
+        "name": "ENGAGEMENT_PHASE_NAMES",
+        "kind": "const"
+      },
+      {
+        "file": "packages/rules-raid/src/phases.ts",
+        "line": 133,
+        "name": "phaseAdmitsAction",
+        "kind": "function"
+      },
+      {
         "file": "packages/rules-raid/src/raid.ts",
-        "line": 1205,
+        "line": 1350,
         "name": "BURNABLE_LOCATION_KINDS",
         "kind": "const"
+      },
+      {
+        "file": "packages/rules-raid/src/verbs.ts",
+        "line": 159,
+        "name": "legalVerbs",
+        "kind": "function"
+      },
+      {
+        "file": "packages/rules-raid/src/verbs.ts",
+        "line": 540,
+        "name": "runPlanFor",
+        "kind": "function"
       },
       {
         "file": "packages/rules-world/src/autonomy/affiliation.ts",
@@ -3161,7 +3185,7 @@
       },
       {
         "file": "packages/state/src/enums.ts",
-        "line": 211,
+        "line": 245,
         "name": "OBJECTIVE_KIND_UNSPECIFIED",
         "kind": "const"
       },
@@ -3185,13 +3209,13 @@
       },
       {
         "file": "packages/state/src/migrations.ts",
-        "line": 496,
+        "line": 530,
         "name": "loadWorldSnapshot",
         "kind": "function"
       },
       {
         "file": "packages/state/src/universe.ts",
-        "line": 202,
+        "line": 257,
         "name": "currentEra",
         "kind": "function"
       }
@@ -3238,6 +3262,22 @@
         ]
       },
       {
+        "file": "packages/rules-raid/src/verbs.ts",
+        "line": 296,
+        "name": "applyDirective",
+        "via": [
+          "runPlanFor"
+        ]
+      },
+      {
+        "file": "packages/rules-raid/src/verbs.ts",
+        "line": 149,
+        "name": "verbSide",
+        "via": [
+          "legalVerbs"
+        ]
+      },
+      {
         "file": "packages/rules-world/src/mages/roles.ts",
         "line": 95,
         "name": "changeAffiliation",
@@ -3280,7 +3320,7 @@
       },
       {
         "file": "packages/state/src/migrations.ts",
-        "line": 450,
+        "line": 484,
         "name": "migrateWorldEnvelope",
         "via": [
           "loadWorldSnapshot"
@@ -3293,7 +3333,7 @@
         "id": "legacy-reference-tick",
         "field": "legacyReferenceTick",
         "file": "packages/coordination/src/god/constants.ts",
-        "line": 296
+        "line": 309
       }
     ],
     "constantsBehindDeadCode": [
@@ -3352,7 +3392,7 @@
     "structuralExclusions": [
       {
         "id": "fields-match",
-        "count": 23,
+        "count": 24,
         "reason": "A `KeysMatch<Record, typeof COMPONENT>` assertion. Its consumer is `tsc`: it fails the build if a component spec and its record interface disagree about a field, and it does nothing at run time. One with a caller would be the surprise."
       },
       {
