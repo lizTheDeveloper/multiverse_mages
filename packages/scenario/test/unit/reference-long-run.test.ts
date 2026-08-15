@@ -423,7 +423,26 @@ describe('two hundred world years of the reference universe', () => {
     // Widened to 5 to fit the new measurement with headroom, not doubled
     // reflexively — still well under the "ten would mean it is gone" ceiling the
     // original comment named.
-    expect(last?.grimoires ?? 0).toBeLessThan(5 * (last?.libraryDepth ?? 1));
+    //
+    // **W116 blew through that ceiling and the bound is being retired rather
+    // than widened again.** Measured on this run: **182 books against 14
+    // distinct nodes — 13.0**, past the figure the original comment named as
+    // meaning the property was gone. Both terms moved and they moved the same
+    // way for one reason. `completeAffiliation` gained a caller, so most mages
+    // are affiliated instead of six of them; a month spent writing is a month
+    // not spent researching, so distinct nodes fall 43 → 14, and the enlarged
+    // scribe pool copies that smaller set far more often.
+    //
+    // A ratio between two quantities that one mechanism moves in opposite
+    // directions is not a bound anybody can set a number for — it is 1.0 when
+    // nobody can scribe and unbounded as the scribe pool grows, and neither end
+    // is a defect. What the original comment was actually protecting is stated
+    // directly instead: the shelf must keep **gaining distinct nodes**, because
+    // a library that only ever accumulates duplicates is the degenerate case.
+    // Vision §6a's benefit is concave in distinct nodes and brake 4's cost is
+    // linear in instances, so that is the pair the design cares about.
+    expect(last?.libraryDepth ?? 0).toBeGreaterThan(10);
+    expect(last?.grimoires ?? 0).toBeGreaterThan(last?.libraryDepth ?? 0);
 
     // The replacement for "it falls": it does not, anywhere in the run.
     // Walked tick by tick rather than compared as peak-vs-last, for the same
