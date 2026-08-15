@@ -8615,3 +8615,51 @@ The parts stack, and the bottom two are already the campaign's blockers:
 **Nothing above step 2 can be measured until step 2 exists**, and step 2 is the same missing piece as
 *"no raider ever comes home"* and *"the observation boundary cannot see an engagement."* Three separate
 findings, one cause.
+
+## W171 — correcting W170: the raid UI already lets a player act during a raid
+
+**W170 says "a player cannot act during a raid today, at all." That is wrong, and it is mine.** The
+owner corrected it and `ui/` on `main` confirms the correction.
+
+`ui/raid/index.html` implements mid-raid god action. Its own comments:
+
+- *"The ruleset MAY be changed during a raid, and every change LOCKS until…"*
+- *"the two-layer legality check, and `forbiddenCastsBlocked` as a counter"*
+- *"costs in `raid-constant.json` — forbid, permit, levy, ward, mend"*
+- the surface described as *"god-shaped: permit, forbid, and favor spent on a standing condition"*
+
+`ui/ruleset/` and `ui/ruleset-symmetry/` carry related surfaces. **The mechanic is not missing. It is
+designed, specified and prototyped.**
+
+### The accurate statement is a three-way split
+
+1. **Specified.** `contracts.md` §4.2 makes permit *(1)* and permit-form *(3)* legal during engagement,
+   forbid *(2)* and forbid-form *(4)* legal for the defender, **all four locking** until the raid
+   resolves. The old *"every action except no-op is masked"* rule was **repealed** by
+   `raid-engagement.md`.
+2. **Prototyped.** `ui/raid/` implements the interaction, the lock and the costs.
+3. **Not carried by `agent-api`.** `mask.ts` still early-returns `[1, 0, 0, …]` in engagement and its
+   docstring quotes the *repealed* rule; `submit()` runs a whole world step, so a session client
+   observes only between raids. And #152 found `ui/raid/` draws a **synthetic trace** rather than the
+   recorded session — **consistent with (3), because the session cannot supply one.**
+
+**So this is a wiring gap, not a missing mechanic** — a much smaller and better-defined item than W170
+described.
+
+### How I got it wrong, because the shape matters
+
+I had three code-level facts — `mask.ts` returns no-op-only in engagement, the engagement branch is
+evaluated zero times, `submit()` runs a whole step — and I generalised them into a **whole-system
+claim** without checking the UI layer. Each fact was true. The conclusion was not.
+
+**This is the same failure I have been cataloguing all day, in its purest form.** A checker that
+answers confidently about the wrong input; a document that is not a ref for the code; a grep that
+misses a verb reached by drawing. Here the "wrong input" was *the layer I happened to be reading*, and
+nothing in the three facts told me a fourth layer existed.
+
+That is now four of my briefs refuted by measurement or by the owner in one session — the ablation
+seam, the academic-primitive target, the combat primitives, and this. **In every case the correction
+came from someone looking at a layer I had not opened.** The rule I keep writing for agents applies to
+me at least as hard: *where the question is "does this happen", look, do not infer.*
+
+The sequencing agent has been told, since I gave it this claim as a dependency.
