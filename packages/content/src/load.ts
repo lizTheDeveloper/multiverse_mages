@@ -580,6 +580,147 @@ function checkCells(
   }
 
   checkV1Subset(v1Cells, out);
+  checkExclusions(cells, out);
+}
+
+/**
+ * The `intellego` technique, which `vision.md` §4b rules out as an exclusion
+ * candidate: *"Intellego is the grid's perception trunk, so excluding it costs a
+ * mage two-thirds of the grid rather than a school, and it is therefore not a
+ * candidate."*
+ *
+ * A literal rather than a value derived from the technique that happens to have
+ * the most cross-cell edges. The rule is a design decision recorded in §4b, not
+ * a property of whatever content is loaded — deriving it would let a content
+ * edit quietly move which technique is protected.
+ */
+const PERCEPTION_TRUNK_TECHNIQUE = 'intellego';
+
+/**
+ * Anti-requisites (`vision.md` §4b), authored on cells and validated here.
+ *
+ * ## Why a one-sided exclusion is a hard failure rather than an inference
+ *
+ * §4b: *"Every exclusion carries its **reason**, and symmetry follows from the
+ * reason rather than being asserted alongside it — an exclusion whose reason
+ * does not run both ways is not yet an exclusion."*
+ *
+ * The loader could synthesise the reverse edge from the forward one. It does
+ * not, because that would author content nobody wrote, and the reason is the
+ * part that would be fabricated: an exclusion's reason is the thing a reader
+ * checks the symmetry *against*. A generated mirror would always look symmetric
+ * and would prove nothing. `contracts.md` §2 refuses the same shape everywhere
+ * else — a silently-completed record is a balance defect found weeks later with
+ * nothing pointing at the content.
+ *
+ * So both halves are authored, and the two must agree on **reason** and on
+ * **resolution**. Disagreeing halves are the interesting case: they are what a
+ * half-finished edit looks like, and taking either side would be a coin flip
+ * that decides whether a mage loses her holdings.
+ */
+function checkExclusions(cells: readonly CellRecord[], out: ContentDiagnostic[]): void {
+  const file = 'cell.json';
+  const byId = new Map<string, CellRecord>();
+  for (const cell of cells) if (!byId.has(cell.id)) byId.set(cell.id, cell);
+
+  for (let position = 0; position < cells.length; position += 1) {
+    const cell = cells[position];
+    if (cell === undefined) continue;
+    const exclusions = cell.excludes ?? [];
+
+    for (let index = 0; index < exclusions.length; index += 1) {
+      const exclusion = exclusions[index];
+      if (exclusion === undefined) continue;
+      const at = `${pointerAppend('', position)}/excludes/${String(index)}`;
+
+      if (exclusion.cell === cell.id) {
+        out.push(
+          diagnostic(
+            file,
+            at,
+            'self-exclusion',
+            `cell "${cell.id}" excludes itself. An anti-requisite is a relation between two ` +
+              'bodies of magic, and a mage cannot be forbidden what holding it is the condition of',
+          ),
+        );
+        continue;
+      }
+
+      const other = byId.get(exclusion.cell);
+      if (other === undefined) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/cell`,
+            'unknown-reference',
+            `cell "${cell.id}" excludes "${exclusion.cell}", which no cell.json record defines`,
+          ),
+        );
+        continue;
+      }
+
+      if (
+        cell.technique === PERCEPTION_TRUNK_TECHNIQUE ||
+        other.technique === PERCEPTION_TRUNK_TECHNIQUE
+      ) {
+        out.push(
+          diagnostic(
+            file,
+            at,
+            'intellego-exclusion',
+            `the exclusion between "${cell.id}" and "${exclusion.cell}" names a ` +
+              `"${PERCEPTION_TRUNK_TECHNIQUE}" cell. vision.md §4b rules the perception trunk out ` +
+              'as a candidate: excluding it costs a mage two-thirds of the grid rather than a ' +
+              'school, which is not an exclusion between bodies of magic but a lobotomy',
+          ),
+        );
+        continue;
+      }
+
+      const mirror = (other.excludes ?? []).find((candidate) => candidate.cell === cell.id);
+      if (mirror === undefined) {
+        out.push(
+          diagnostic(
+            file,
+            at,
+            'asymmetric-exclusion',
+            `cell "${cell.id}" excludes "${exclusion.cell}", which does not exclude it back. ` +
+              'vision.md §4b derives symmetry from the reason rather than asserting it alongside, ' +
+              'so a one-sided edge is not yet an exclusion — author the mirror with the same ' +
+              'reason, or delete this one. The loader will not synthesise it, because the reason ' +
+              'is the half that would be fabricated',
+          ),
+        );
+        continue;
+      }
+
+      if (mirror.reason !== exclusion.reason) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/reason`,
+            'asymmetric-exclusion',
+            `the exclusion between "${cell.id}" and "${exclusion.cell}" carries two different ` +
+              'reasons. §4b makes symmetry follow from the reason, so two reasons are two ' +
+              'different claims and at most one of them is the exclusion',
+          ),
+        );
+      }
+
+      if (mirror.resolution !== exclusion.resolution) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/resolution`,
+            'asymmetric-exclusion',
+            `the exclusion between "${cell.id}" and "${exclusion.cell}" resolves as ` +
+              `"${exclusion.resolution}" one way and "${mirror.resolution}" the other. Which side ` +
+              'a mage approaches from cannot decide whether she loses her holdings',
+          ),
+        );
+      }
+    }
+  }
 }
 
 /**

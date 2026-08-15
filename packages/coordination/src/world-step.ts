@@ -117,7 +117,7 @@ import {
 } from '@mm/state';
 import type {
   AcquirePolicy,
-  CellResolver,
+  ExclusionResolver,
   KnowledgeSubsystem,
   NodeCatalog,
   StorePolicy,
@@ -214,7 +214,13 @@ export interface WorldStepDeps {
   /** The species behind an interned id, or `undefined` for one this content lacks. */
   readonly speciesOf: (speciesId: number) => SpeciesRecord | undefined;
   readonly catalog: NodeCatalog;
-  readonly cells: CellResolver;
+  /**
+   * Widened to {@link ExclusionResolver} rather than the bare `CellResolver`: the
+   * knowledge subsystem needs a cell's anti-requisites (`vision.md` §4b) on the
+   * acquisition path, and `MagicGrid` supplies both from one object. Every
+   * consumer that only wanted `cellOf` is unaffected — this is a superset.
+   */
+  readonly cells: ExclusionResolver;
   /**
    * A node's cell, form and effect primitives, and a species' resolved
    * affinities.

@@ -450,6 +450,15 @@ serialized into snapshots.
   "edicts": [],                                      // optional; "dispensation" | "interdiction".
                                                      // §1.1 requires the loader to reject a cell
                                                      // carrying both, which needs a slot to carry one
+  "excludes": [                                      // optional; anti-requisites (vision.md §4b),
+    {                                                // checked against a MAGE's held set, never
+      "cell": "creo-umbra",                          // the universe's. Both halves must be
+      "reason": "one claim about causation",         // authored: the loader rejects a one-sided
+      "resolution": "destructive"                    // edge rather than synthesising the mirror,
+    }                                                // because the reason is the half that would
+  ],                                                 // be fabricated. "refused" | "destructive".
+                                                     // No "intellego" cell may appear on either
+                                                     // side — §4b rules the perception trunk out
   "nodes": ["rc-still-the-limb", "rc-puppet-flesh"]   // every id must resolve in node.json; there is
                                                      // no elision syntax, "..." is not a contentId
 }

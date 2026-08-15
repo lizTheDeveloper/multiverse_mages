@@ -46,7 +46,7 @@ import type { CatalogueNode, ContentCatalogue } from '@mm/agent-api';
 import { buildCatalogue } from '@mm/agent-api';
 import type {
   AcquirePolicy,
-  CellResolver,
+  ExclusionResolver,
   ConsumptionRecorder,
   NodeCatalog,
   StorePolicy,
@@ -590,7 +590,7 @@ export function contentCatalogue(registry: ContentRegistry): ContentCatalogue {
 /** The node catalog and the node-to-cell addressing the world loop resolves against. */
 export function catalogAndCells(registry: ContentRegistry): {
   catalog: NodeCatalog;
-  cells: CellResolver;
+  cells: ExclusionResolver;
 } {
   return { catalog: catalogFromRegistry(registry), cells: MagicGrid.from(registry) };
 }
@@ -637,8 +637,11 @@ export function worldDeps(
 ): WorldStepDeps & { readonly combat: CombatEffectIndex } {
   const { catalog, cells } = catalogAndCells(registry);
   const { speciesOf, ids: speciesIds } = speciesTable(registry);
+  // `cells` is the exclusion resolver as well as the cell resolver: `MagicGrid`
+  // satisfies both, so the anti-requisites content authored (`vision.md` §4b)
+  // reach the acquisition path without a second lookup table to keep in step.
   const knowledgeFor = (state: SimState): KnowledgeSubsystem =>
-    KnowledgeSubsystem.fromState(state, catalog.nodeCount);
+    KnowledgeSubsystem.fromState(state, catalog.nodeCount, cells);
 
   const god = resolveGodContent(registry);
   const lifespan = primitiveNamed(registry, 'lifespan');

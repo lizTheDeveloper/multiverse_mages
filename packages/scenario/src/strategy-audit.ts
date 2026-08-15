@@ -390,6 +390,7 @@ const ACTION_NAMES: readonly string[] = Object.freeze([
   'changeTradition',
   'openPortal',
   'declareAscension',
+  'inviteScholar',
 ]);
 
 /** The name of a §4.2 action id, or the id itself for one nobody named. */

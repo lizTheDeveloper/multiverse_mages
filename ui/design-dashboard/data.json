@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "b63bd615c1877925b36c7b3eb7812731",
+    "contentRevision": "0dfdd5efc2c6dad07bd486a7d80c851d",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -1954,14 +1954,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "5df32efc5c542935068aa542c0290f5f5bacdc34e3dea2ed1e6915ed84be8687",
-        "contentRevision": "b63bd615c1877925b36c7b3eb7812731",
+        "fileSeal": "b936facfc9263d12a5581066855d0bc28d5dda8a909071b8ac1678728efac0b6",
+        "contentRevision": "0dfdd5efc2c6dad07bd486a7d80c851d",
         "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
         "armCount": 0,
         "arms": [],
-        "rationale": "Provenance only, and NOTHING MOVED, re-verified against main's own committed baselines after merging origin/main at 8d2159f. The seventeenth god-cost record -- action 16, inviteScholar -- moves provenance.contentHash from d4e3047657b4fa8a1a74e1d52f9f5c86 to b63bd615c1877925b36c7b3eb7812731, and gate.ts treats that key as a block-level refusal before it reads a metric, so this file had to be re-recorded whether or not any number moved. NO NUMBER MOVED. Measured on the merged tree before regenerating: balance-gate-v1 9 of 9 rows at delta 0.00000, balance-gate-horizon-v1 10 of 10 at delta 0.00000, balance-gate-agency-v1 90 of 90 at delta 0.00000 -- 109 of 109 against main's baselines at 8d2159f, with baseline-invalid on contentHash the only finding in any of the three. This confirms the prediction docs/design/baseline-decisions-2026-08-14.md made for this branch: if no gate strategy exercises action 16, a re-run on the rebased tree reproduces main's values exactly and the regeneration is again provenance-only. It does. Three independent checks say why: auditPool on this tree, with action 16 forced into every audited set and each run checked against an untouched one by snapshotHash, reports action 16 legal on 0 of 60 and 0 of 240 ticks for all fourteen pool strategies including uniform-random-legal, the only gate strategy that samples the legal set; it first becomes legal at world tick 276 under passive play, past both gate horizons. Forcing invitableSpecies empty reproduces the agency gate byte for byte across all 90 comparisons. And main added NO content data between this branch's merge base 7694528 and 8d2159f, so b63bd615 is the same hash this branch measured before the merge. provenance.rngRegistryHash is 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9 on both sides, unchanged by this branch -- the openingSquare stream is main's, from PR #72. NO RNG STREAM was added here, NO WORLD SCHEMA REVISION was needed, NO GOLDEN FIXTURE WAS REGENERATED, and balance-gate-ascension-v1 is deliberately untouched. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. The universe remains degenerate in the ways the first note records.",
+        "rationale": "PR #126 (w109/alliances) ships god action 16, `invite scholar`, as a seventeenth record in packages/content/data/god-cost.json. provenance.contentHash moves e8442af2c5f91ae6f80ad9a178e0e451 -> 0dfdd5efc2c6dad07bd486a7d80c851d, so this gate refuses on provenance before it reads a metric -- 'the gate compares two runs of one build; across two builds a delta is not a regression, it is a category error'. Recorded from the tree MERGED WITH origin/main 552630b, not from the branch alone, per the w77 precedent that a competing baseline re-record means taking the measurement from the merged tree. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. THIS FILE (the five-year gate, worldTickCap 60, 200 runs, 9 metrics): ALL 9 OF 9 ROWS MOVED BY EXACTLY 0.00000 against the superseded baseline -- not 'passed', moved by zero. BYTE-IDENTITY IS ESTABLISHED BY GREPPING FOR NON-ZERO DELTAS, NOT BY READING THE PASS COLUMN, and the grep was given a positive control: run against #161's own agency recording the same grep finds its 19 movers (the 9 pooled aggregates plus all 10 @permissive-breadth rows), so a checker that reports zero here is a checker that can report non-zero. Across all three gates the count is 109 of 109 rows at 0.00000 (9 + 10 + 90). WHAT THIS RE-DERIVES: earlier passes on this branch established 109/109 at zero against main at 8d2159f and 90/90 at zero on the agency gate after #125 landed underneath. Whether alliances still moves nothing WITH ANTI-REQUISITES IN THE BASE was a genuine question -- anti-requisites removes cells a mage may hold and alliances buys a foreign scholar, so an interaction was plausible -- and the answer measured here is that it does not. THE STRUCTURAL REASON, unchanged by the merge: action 16 needs portal magic and a species with no living mage, and these three sweeps play the v1 rectangle with a fixed passive-control or round-robin pool that never reaches the portal chain, so the verb is never legal. The exclusion pair is invisible to these sweeps for its own separate reason (both halves are creo; the v1 rectangle is intellego/perdo/rego x mentem/terram/limen/nomen). NO GOLDEN FIXTURE WAS REGENERATED and none needed to be. MEASURED INDEPENDENCE OF THE TWO CONTENT EDITS: stripping the two `excludes` arrays from cell.json on this merged tree reproduces this branch's own pre-merge literal b63bd615c1877925b36c7b3eb7812731 exactly; the mirror probe is refused by the god-cost content invariant, because GOD_ACTION_ID_MAX moved to 16 in code here.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -1976,62 +1976,62 @@
         "pooled": [
           {
             "metricId": "referenceGrimoires",
-            "value": 90.47,
+            "value": 90.86,
             "unit": "grimoires",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 1.6751746786773112,
-            "tolerance": 5.025524036031934,
+            "standardError": 1.6615314425835817,
+            "tolerance": 4.984594327750745,
             "sampleSize": 200
           },
           {
             "metricId": "referenceKnowledgeInstances",
-            "value": 277.115,
+            "value": 277.31,
             "unit": "instances",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.0484883675131607,
-            "tolerance": 6.145465102539482,
+            "standardError": 2.1822191943626787,
+            "tolerance": 6.546657583088036,
             "sampleSize": 200
           },
           {
             "metricId": "referenceLibraryDepth",
-            "value": 3.815,
+            "value": 3.725,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.20945142147806894,
-            "tolerance": 0.6283542644342068,
+            "standardError": 0.1983696302463702,
+            "tolerance": 0.5951088907391106,
             "sampleSize": 200
           },
           {
             "metricId": "referenceLivingMages",
-            "value": 38.97,
+            "value": 39,
             "unit": "mages",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.09951412575353207,
-            "tolerance": 0.2985423772605962,
+            "standardError": 0.09889697793612279,
+            "tolerance": 0.29669093380836836,
             "sampleSize": 200
           },
           {
             "metricId": "referenceNodesGained",
-            "value": 13.39,
+            "value": 13.38,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.128428491975186,
-            "tolerance": 0.38528547592555795,
+            "standardError": 0.132738041853502,
+            "tolerance": 0.39821412556050595,
             "sampleSize": 200
           },
           {
             "metricId": "referenceNodesKnown",
-            "value": 15.89,
+            "value": 15.88,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.128428491975186,
-            "tolerance": 0.38528547592555795,
+            "standardError": 0.132738041853502,
+            "tolerance": 0.39821412556050595,
             "sampleSize": 200
           },
           {
@@ -2046,22 +2046,22 @@
           },
           {
             "metricId": "referencePopulation",
-            "value": 129.295,
+            "value": 129.43,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.4243127697001497,
-            "tolerance": 1.2729383091004491,
+            "standardError": 0.41915975231310515,
+            "tolerance": 1.2574792569393154,
             "sampleSize": 200
           },
           {
             "metricId": "referencePopulationChange",
-            "value": -14.705,
+            "value": -14.57,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.4243127697001497,
-            "tolerance": 1.2729383091004491,
+            "standardError": 0.41915975231310515,
+            "tolerance": 1.2574792569393154,
             "sampleSize": 200
           }
         ]
@@ -2073,14 +2073,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "cfa31e48f5e6501b4bb04c9e96d66e8e83574da491976f437d9104dadb50d436",
-        "contentRevision": "b63bd615c1877925b36c7b3eb7812731",
+        "fileSeal": "89785e2bfd99c7f88362212795b3b0aa7df8355e3be7d1b10f0d7e5dd582b9c7",
+        "contentRevision": "0dfdd5efc2c6dad07bd486a7d80c851d",
         "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
         "armCount": 0,
         "arms": [],
-        "rationale": "Provenance only, and NOTHING MOVED, re-verified against main's own committed baselines after merging origin/main at 8d2159f. The seventeenth god-cost record -- action 16, inviteScholar -- moves provenance.contentHash from d4e3047657b4fa8a1a74e1d52f9f5c86 to b63bd615c1877925b36c7b3eb7812731, and gate.ts treats that key as a block-level refusal before it reads a metric, so this file had to be re-recorded whether or not any number moved. NO NUMBER MOVED. Measured on the merged tree before regenerating: balance-gate-v1 9 of 9 rows at delta 0.00000, balance-gate-horizon-v1 10 of 10 at delta 0.00000, balance-gate-agency-v1 90 of 90 at delta 0.00000 -- 109 of 109 against main's baselines at 8d2159f, with baseline-invalid on contentHash the only finding in any of the three. This confirms the prediction docs/design/baseline-decisions-2026-08-14.md made for this branch: if no gate strategy exercises action 16, a re-run on the rebased tree reproduces main's values exactly and the regeneration is again provenance-only. It does. Three independent checks say why: auditPool on this tree, with action 16 forced into every audited set and each run checked against an untouched one by snapshotHash, reports action 16 legal on 0 of 60 and 0 of 240 ticks for all fourteen pool strategies including uniform-random-legal, the only gate strategy that samples the legal set; it first becomes legal at world tick 276 under passive play, past both gate horizons. Forcing invitableSpecies empty reproduces the agency gate byte for byte across all 90 comparisons. And main added NO content data between this branch's merge base 7694528 and 8d2159f, so b63bd615 is the same hash this branch measured before the merge. provenance.rngRegistryHash is 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9 on both sides, unchanged by this branch -- the openingSquare stream is main's, from PR #72. NO RNG STREAM was added here, NO WORLD SCHEMA REVISION was needed, NO GOLDEN FIXTURE WAS REGENERATED, and balance-gate-ascension-v1 is deliberately untouched. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. The universe remains degenerate in the ways the first note records.",
+        "rationale": "PR #126 (w109/alliances) ships god action 16, `invite scholar`, as a seventeenth record in packages/content/data/god-cost.json. provenance.contentHash moves e8442af2c5f91ae6f80ad9a178e0e451 -> 0dfdd5efc2c6dad07bd486a7d80c851d, so this gate refuses on provenance before it reads a metric -- 'the gate compares two runs of one build; across two builds a delta is not a regression, it is a category error'. Recorded from the tree MERGED WITH origin/main 552630b, not from the branch alone, per the w77 precedent that a competing baseline re-record means taking the measurement from the merged tree. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. THIS FILE (the twenty-year gate, worldTickCap 240, 200 runs, 10 metrics): ALL 10 OF 10 ROWS MOVED BY EXACTLY 0.00000 against the superseded baseline -- not 'passed', moved by zero. BYTE-IDENTITY IS ESTABLISHED BY GREPPING FOR NON-ZERO DELTAS, NOT BY READING THE PASS COLUMN, and the grep was given a positive control: run against #161's own agency recording the same grep finds its 19 movers (the 9 pooled aggregates plus all 10 @permissive-breadth rows), so a checker that reports zero here is a checker that can report non-zero. Across all three gates the count is 109 of 109 rows at 0.00000 (9 + 10 + 90). WHAT THIS RE-DERIVES: earlier passes on this branch established 109/109 at zero against main at 8d2159f and 90/90 at zero on the agency gate after #125 landed underneath. Whether alliances still moves nothing WITH ANTI-REQUISITES IN THE BASE was a genuine question -- anti-requisites removes cells a mage may hold and alliances buys a foreign scholar, so an interaction was plausible -- and the answer measured here is that it does not. THE STRUCTURAL REASON, unchanged by the merge: action 16 needs portal magic and a species with no living mage, and these three sweeps play the v1 rectangle with a fixed passive-control or round-robin pool that never reaches the portal chain, so the verb is never legal. The exclusion pair is invisible to these sweeps for its own separate reason (both halves are creo; the v1 rectangle is intellego/perdo/rego x mentem/terram/limen/nomen). NO GOLDEN FIXTURE WAS REGENERATED and none needed to be. MEASURED INDEPENDENCE OF THE TWO CONTENT EDITS: stripping the two `excludes` arrays from cell.json on this merged tree reproduces this branch's own pre-merge literal b63bd615c1877925b36c7b3eb7812731 exactly; the mirror probe is refused by the god-cost content invariant, because GOD_ACTION_ID_MAX moved to 16 in code here.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2096,102 +2096,102 @@
         "pooled": [
           {
             "metricId": "referenceGrimoires",
-            "value": 323.895,
+            "value": 325.075,
             "unit": "grimoires",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 7.143616709614083,
-            "tolerance": 21.43085012884225,
+            "standardError": 7.00770803749525,
+            "tolerance": 21.02312411248575,
             "sampleSize": 200
           },
           {
             "metricId": "referenceKnowledgeInstances",
-            "value": 951.57,
+            "value": 954.845,
             "unit": "instances",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 7.841504111756485,
-            "tolerance": 23.524512335269456,
+            "standardError": 7.746834738742511,
+            "tolerance": 23.240504216227535,
             "sampleSize": 200
           },
           {
             "metricId": "referenceLibraryDepth",
-            "value": 16.1,
+            "value": 16.385,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.7679139513869336,
-            "tolerance": 2.303741854160801,
+            "standardError": 0.7782302660130712,
+            "tolerance": 2.3346907980392135,
             "sampleSize": 200
           },
           {
             "metricId": "referenceLivingMages",
-            "value": 37.715,
+            "value": 37.77,
             "unit": "mages",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.20106730521019525,
-            "tolerance": 0.6032019156305858,
+            "standardError": 0.19516084418253787,
+            "tolerance": 0.5854825325476136,
             "sampleSize": 200
           },
           {
             "metricId": "referenceNodesGained",
-            "value": 38.165,
+            "value": 38.205,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.18070863909868268,
-            "tolerance": 0.542125917296048,
+            "standardError": 0.17362139198584386,
+            "tolerance": 0.5208641759575316,
             "sampleSize": 200
           },
           {
             "metricId": "referenceNodesGainedFinalQuarter",
-            "value": 8.33,
+            "value": 8.43,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.10454956836303993,
-            "tolerance": 0.3136487050891198,
+            "standardError": 0.10544850760016493,
+            "tolerance": 0.31634552280049477,
             "sampleSize": 200
           },
           {
             "metricId": "referenceNodesKnown",
-            "value": 40.665,
+            "value": 40.705,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.18070863909868268,
-            "tolerance": 0.542125917296048,
+            "standardError": 0.17362139198584386,
+            "tolerance": 0.5208641759575316,
             "sampleSize": 200
           },
           {
             "metricId": "referencePeakPopulation",
-            "value": 362,
+            "value": 378,
             "unit": "people",
             "status": "measured",
             "aggregation": "max",
-            "standardError": 6.965000000000003,
-            "tolerance": 20.89500000000001,
+            "standardError": 20.895000000000028,
+            "tolerance": 62.68500000000009,
             "sampleSize": 200
           },
           {
             "metricId": "referencePopulation",
-            "value": 212.29,
+            "value": 213.03,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 1.2032901324523286,
-            "tolerance": 3.609870397356986,
+            "standardError": 1.3279710625074415,
+            "tolerance": 3.983913187522324,
             "sampleSize": 200
           },
           {
             "metricId": "referencePopulationChange",
-            "value": 68.29,
+            "value": 69.03,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 1.2032901324523289,
-            "tolerance": 3.6098703973569863,
+            "standardError": 1.3279710625074415,
+            "tolerance": 3.983913187522324,
             "sampleSize": 200
           }
         ]
@@ -2203,8 +2203,8 @@
         "runCount": 64,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "0a6fa7ca15f1bc7beb9c5a6ff8b1ed70fccf062ce1770d13b32360f7b091aa9d",
-        "contentRevision": "b63bd615c1877925b36c7b3eb7812731",
+        "fileSeal": "79b65fae5fd2c2dcb177146398d8f5de1a04bb4d3cfab55ecaea4666e1ab1ca7",
+        "contentRevision": "0dfdd5efc2c6dad07bd486a7d80c851d",
         "configurationHash": "1b73f7e27b0bf2eb582d9094c5747ebd29663c6f5991847ea2178fccd3304b28",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
@@ -2219,7 +2219,7 @@
           "uniform-random-legal",
           "worship-maximizer"
         ],
-        "rationale": "Provenance only, and NOTHING MOVED. Measured on w109/alliances merged with origin/main at be446a6 -- that is, with PR #125 already landed and this file already carrying #125's re-recorded values. The seventeenth god-cost record -- action 16, inviteScholar -- moves provenance.contentHash from d4e3047657b4fa8a1a74e1d52f9f5c86 to b63bd615c1877925b36c7b3eb7812731, and gate.ts treats that key as a block-level refusal before it reads a metric, so this file had to be re-recorded whether or not any number moved. NO NUMBER MOVED: 90 of 90 rows reported delta 0.00000 against #125's landed values before this regeneration, with baseline-invalid on contentHash the only finding, and regenerate-baseline.mjs then printed \"no metric moved\". That is the SECOND time this branch has taken that measurement and got 90 of 90: the first was against main's pre-#125 agency values at 8d2159f, where all three gates reported 109 of 109 rows at delta 0.00000. So the verb moves neither set of numbers. balance-gate-v1 and balance-gate-horizon-v1 did not conflict with #125 and both PASS on this tree at the stamp this branch wrote against 8d2159f. This confirms the prediction docs/design/baseline-decisions-2026-08-14.md made for this branch: if no gate strategy exercises action 16, a re-run on the rebased tree reproduces main's values exactly and the regeneration is provenance-only. It does, twice, against two different sets of values. Three independent checks say why: auditPool on this tree, with action 16 forced into every audited set and each run checked against an untouched one by snapshotHash, reports action 16 legal on 0 of 60 and 0 of 240 ticks for all fourteen pool strategies including uniform-random-legal, the only gate strategy that samples the legal set; it first becomes legal at world tick 276 under passive play, past both gate horizons. Forcing invitableSpecies empty reproduces the agency gate byte for byte across all 90 comparisons. And main added NO content data between this branch's merge base 7694528 and be446a6, so b63bd615 is the same hash this branch measured before any of these merges. provenance.rngRegistryHash is 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9 on both sides, unchanged by this branch -- the openingSquare stream is main's, from PR #72. NO RNG STREAM was added here, NO WORLD SCHEMA REVISION was needed, NO GOLDEN FIXTURE WAS REGENERATED, and balance-gate-ascension-v1 is deliberately untouched. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. The universe remains degenerate in the ways the first note records.",
+        "rationale": "PR #126 (w109/alliances) ships god action 16, `invite scholar`, as a seventeenth record in packages/content/data/god-cost.json. provenance.contentHash moves e8442af2c5f91ae6f80ad9a178e0e451 -> 0dfdd5efc2c6dad07bd486a7d80c851d, so this gate refuses on provenance before it reads a metric -- 'the gate compares two runs of one build; across two builds a delta is not a regression, it is a category error'. Recorded from the tree MERGED WITH origin/main 552630b, not from the branch alone, per the w77 precedent that a competing baseline re-record means taking the measurement from the merged tree. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. THIS FILE (the god-verb gate, worldTickCap 240, 64 runs, 9 metrics x 10 arms = 90 rows): ALL 90 OF 90 ROWS MOVED BY EXACTLY 0.00000 against the superseded baseline -- not 'passed', moved by zero. BYTE-IDENTITY IS ESTABLISHED BY GREPPING FOR NON-ZERO DELTAS, NOT BY READING THE PASS COLUMN, and the grep was given a positive control: run against #161's own agency recording the same grep finds its 19 movers (the 9 pooled aggregates plus all 10 @permissive-breadth rows), so a checker that reports zero here is a checker that can report non-zero. Across all three gates the count is 109 of 109 rows at 0.00000 (9 + 10 + 90). WHAT THIS RE-DERIVES: earlier passes on this branch established 109/109 at zero against main at 8d2159f and 90/90 at zero on the agency gate after #125 landed underneath. Whether alliances still moves nothing WITH ANTI-REQUISITES IN THE BASE was a genuine question -- anti-requisites removes cells a mage may hold and alliances buys a foreign scholar, so an interaction was plausible -- and the answer measured here is that it does not. THE STRUCTURAL REASON, unchanged by the merge: action 16 needs portal magic and a species with no living mage, and these three sweeps play the v1 rectangle with a fixed passive-control or round-robin pool that never reaches the portal chain, so the verb is never legal. The exclusion pair is invisible to these sweeps for its own separate reason (both halves are creo; the v1 rectangle is intellego/perdo/rego x mentem/terram/limen/nomen). NO GOLDEN FIXTURE WAS REGENERATED and none needed to be. MEASURED INDEPENDENCE OF THE TWO CONTENT EDITS: stripping the two `excludes` arrays from cell.json on this merged tree reproduces this branch's own pre-merge literal b63bd615c1877925b36c7b3eb7812731 exactly; the mirror probe is refused by the god-cost content invariant, because GOD_ACTION_ID_MAX moved to 16 in code here.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2235,72 +2235,72 @@
         "pooled": [
           {
             "metricId": "referenceGrimoires",
-            "value": 259.0625,
+            "value": 261.515625,
             "unit": "grimoires",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 10.875763263445007,
-            "tolerance": 32.62728979033502,
+            "standardError": 10.798977725779187,
+            "tolerance": 32.39693317733756,
             "sampleSize": 64
           },
           {
             "metricId": "referenceKnowledgeInstances",
-            "value": 875.90625,
+            "value": 800.734375,
             "unit": "instances",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 13.524879418362664,
-            "tolerance": 40.57463825508799,
+            "standardError": 15.039149756240377,
+            "tolerance": 45.11744926872113,
             "sampleSize": 64
           },
           {
             "metricId": "referenceLibraryDepth",
-            "value": 15.6875,
+            "value": 14.875,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 1.1989578808281798,
-            "tolerance": 3.5968736424845393,
+            "standardError": 1.1083842406855124,
+            "tolerance": 3.3251527220565373,
             "sampleSize": 64
           },
           {
             "metricId": "referenceLivingMages",
-            "value": 37.96875,
+            "value": 37.953125,
             "unit": "mages",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.4068505176966105,
-            "tolerance": 1.2205515530898317,
+            "standardError": 0.41369382171480396,
+            "tolerance": 1.2410814651444118,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesGained",
-            "value": 34.234375,
+            "value": 30.96875,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.32211762700137975,
-            "tolerance": 0.9663528810041393,
+            "standardError": 0.8758366535775949,
+            "tolerance": 2.6275099607327848,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesGainedFinalQuarter",
-            "value": 5.4375,
+            "value": 4.265625,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.18355218944485516,
-            "tolerance": 0.5506565683345654,
+            "standardError": 0.3661054535581244,
+            "tolerance": 1.098316360674373,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesKnown",
-            "value": 36.734375,
+            "value": 33.46875,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.32211762700137975,
-            "tolerance": 0.9663528810041393,
+            "standardError": 0.8758366535775949,
+            "tolerance": 2.6275099607327848,
             "sampleSize": 64
           },
           {
@@ -2315,22 +2315,22 @@
           },
           {
             "metricId": "referencePopulation",
-            "value": 212.84375,
+            "value": 213.203125,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.3168245037658766,
-            "tolerance": 6.95047351129763,
+            "standardError": 2.3152960292638607,
+            "tolerance": 6.945888087791582,
             "sampleSize": 64
           },
           {
             "metricId": "referencePopulationChange",
-            "value": 68.84375,
+            "value": 69.203125,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.3168245037658766,
-            "tolerance": 6.95047351129763,
+            "standardError": 2.3152960292638607,
+            "tolerance": 6.945888087791582,
             "sampleSize": 64
           }
         ]
@@ -2544,7 +2544,7 @@
     ],
     "ok": false,
     "findingCount": 125,
-    "examinedSymbolCount": 855,
+    "examinedSymbolCount": 860,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 310,
+    "productionFileCount": 311,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2675,13 +2675,13 @@
       },
       {
         "file": "packages/rules-magic/src/grid.ts",
-        "line": 486,
+        "line": 545,
         "name": "cellAxes",
         "kind": "function"
       },
       {
         "file": "packages/rules-magic/src/grid.ts",
-        "line": 137,
+        "line": 175,
         "name": "heldNodes",
         "kind": "function"
       },
@@ -3101,7 +3101,7 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 401,
+        "line": 402,
         "name": "formatAudit",
         "kind": "function"
       },
@@ -3264,7 +3264,7 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 396,
+        "line": 397,
         "name": "actionName",
         "via": [
           "formatAudit"

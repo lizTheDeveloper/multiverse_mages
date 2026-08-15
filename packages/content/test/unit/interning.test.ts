@@ -378,6 +378,38 @@ describe('contentRevision', () => {
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
     //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> e8442af2c5f91ae6f80ad9a178e0e451,
+    // when anti-requisites landed (`vision.md` §4b) and `cell.json` gained an
+    // `excludes` array carrying one pair: *Creo Ignem* and *Creo Umbra* exclude
+    // one another, `destructive`. In the preimage for the sharpest version of
+    // the reason every entry above gives — two universes disagreeing about
+    // which bodies of magic exclude one another would disagree about what a
+    // mage may *hold*, and under a `destructive` resolution about what she
+    // loses when she learns the other. A raider carries her own acquisition
+    // rules across a portal (§8's arbitration split), so a revision mismatch
+    // here is not an abstract incompatibility: it decides whether a stolen node
+    // burns the thief's own school.
+    //
+    // Unlike the founding-grant constants above, this one is **not** inert at
+    // ship: the pair is authored on live cells, and any mage who holds one side
+    // and acquires the other loses her instances of it. What keeps the shipped
+    // baselines still is that no v1 cell is involved — the v1 rectangle is
+    // `intellego · perdo · rego` × `mentem · terram · limen · nomen`, and both
+    // halves of this pair are *creo*, so the reference universe never reaches
+    // either. The mechanic is live and the reference run cannot see it, which is
+    // exactly the state a balance sweep should be able to change without a
+    // content edit.
+    //
+    // On this branch that same edit was first recorded as `162f80bf ->
+    // ee99b5845d1da2afe532eb5280e07f57`, and the two arrived on separate
+    // branches, so neither literal is a digest over a preimage holding both:
+    // `d4e30476` has the applied-magic scalars and no exclusions, `ee99b584`
+    // has the exclusions and no scalars. This tree is the first holding both,
+    // and a third value is what a digest over the union is supposed to produce
+    // — the same situation the three-branch paragraph above describes, and the
+    // reason the check is a digest over the preimage rather than a
+    // hand-maintained list of files.
+    //
     // 162f80bf169296d0e5fd516cc3c5257a -> 87fdff6cbf4414b584fef95bf9d4916a,
     // when `w109` appended the seventeenth god cost — action 16, the alliance
     // invitation. A price is in the preimage for the same reason every god
@@ -398,7 +430,35 @@ describe('contentRevision', () => {
     // applied magic makes. This tree is the first one holding both, so a sixth
     // value is what a digest over the union is supposed to produce — not a
     // disagreement being settled.
-    expect(registry.contentRevision).toBe('b63bd615c1877925b36c7b3eb7812731');
+    //
+    // b63bd615c1877925b36c7b3eb7812731 -> 0dfdd5efc2c6dad07bd486a7d80c851d,
+    // when this branch merged the `main` that had meanwhile landed
+    // anti-requisites (PR #161). And so, for the fourth time in this list,
+    // neither side's literal survives: `e8442af2` is a digest over a preimage
+    // holding the exclusion pair and not the seventeenth god cost, `b63bd615`
+    // over one holding the seventeenth god cost and not the exclusion pair.
+    // This tree is the first one holding both, so a sixth value is what a
+    // digest over the union is supposed to produce -- not a disagreement being
+    // settled.
+    //
+    // MEASURED, in one direction only, and the asymmetry is worth reading.
+    // Stripping the two `excludes` arrays from `cell.json` on this tree and
+    // reloading reproduces `b63bd615...` EXACTLY, so the exclusion pair is the
+    // whole of `main`'s contribution to the move and this branch contributes
+    // none of it. The mirror probe cannot be run as a content edit: deleting the
+    // `invite-scholar` record is refused first by the schema's `minItems` and
+    // then, with that relaxed, by the `god-cost` content invariant -- "no cost
+    // is declared for action id 16" -- because `GOD_ACTION_ID_MAX` moved to 16
+    // in code on this branch. That refusal is the defect fix in the PR body
+    // working as intended (an undeclared price is a free action), so the
+    // one-sided probe is a property of the invariant, not a gap in the check.
+    //
+    // Also measured, because it is the obvious thing to assume wrongly: the
+    // schema is NOT in the preimage. Editing `god-cost.schema.json`'s
+    // `minItems` from 17 to 16 while leaving all seventeen records in place
+    // reproduces `0dfdd5ef...` byte-identically. The digest is over the content
+    // values, not over the files that constrain them.
+    expect(registry.contentRevision).toBe('0dfdd5efc2c6dad07bd486a7d80c851d');
   });
 
   it('is stable across loads of identical content', () => {
