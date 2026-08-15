@@ -183,9 +183,13 @@ seeds per strategy, control = v1 rectangle, treatment = the 24-cell exclusion sq
 
 **The test as posed is passed, and the passing is the damage.** The largest movements are
 `passive-control` and `worship-maximizer` losing 21 and 24 distinct nodes off their library shelves
-at 6.1 and 10.0 standard errors — the rate multiplier falling from ~1.33 to ~1.16. That is not a
-mechanic becoming visible; it is the scribing effort of a fixed number of mage-months spread across
-twice as many distinct nodes. A wider grid does make the arms move. It moves them down.
+at 6.1 and 10.0 standard errors — the rate multiplier falling from ~1.33 to ~1.16. A wider grid does
+make the four arms move. It moves them **down**.
+
+Two mechanisms could produce that drop and §7 separates them: a fixed supply of mage-months scribing
+across twice as many distinct nodes (dilution), or the **destructive** resolution on
+`creo-ignem ⊥ creo-umbra` deleting held knowledge, which this 24-cell square is the smallest opening
+to make live. Do not read the drop as dilution before §7.
 
 The one honest exception is `narrow-depth`, which gains on everything — it keeps one technique and
 one form whatever the opening, so a wider opening changes *which* cell it builds on rather than
@@ -262,12 +266,66 @@ are exactly the slow ones, so read it beside the censoring column and never alon
 
 ---
 
-## 8. Re-running any of this
+## 9. Re-running any of this
 
-*(commands)*
+`npm ci` in the worktree first, then `npm run typecheck` — the scripts load `dist/`.
+
+```sh
+# static: what each candidate square can reach, before any run
+node scripts/w192-opening-reach.mjs
+node scripts/w192-opening-reach.mjs --json          # for a checker; never parse the table by column
+
+# the positive control. Must reproduce the shipped instrument's calibration set.
+node scripts/w192-opening-sweep.mjs --calibrate
+node packages/scenario/bin/species-separation.mjs --sets 1 --tier 3   # the shipped one, to compare
+
+# the frontier. --out is required and nothing is globbed.
+node scripts/w192-opening-sweep.mjs --list
+node scripts/w192-opening-sweep.mjs --arms v1,named-4x6 --seeds 12 --out balance/w192/mine.ndjson
+node scripts/w192-analyse.mjs balance/w192/frontier-a.ndjson balance/w192/frontier-b.ndjson \
+                              balance/w192/frontier-c.ndjson balance/w192/frontier-d.ndjson
+
+# criterion 3, the task 9.9 spread. Refuses to run unless v1 reproduces the pinned 0.0473.
+node scripts/w192-opening-occupancy.mjs --seeds 6 --out balance/w192/occupancy.ndjson
+
+# criterion 4, the strategy pool under an arm's opening square
+W192_ARM=named-4x6 node packages/mc-harness/bin/run-sweep.mjs \
+  --scenario ./balance/w192/scenario.mjs --sweep ./balance/w192/strategies.sweep.json \
+  --out ./balance/w192/strat-named-4x6 --workers 4
+node scripts/w192-strategy-compare.mjs \
+  control=balance/w192/strat-v1/w192-opening-strategies.0.runs.ndjson \
+  wide=balance/w192/strat-named-4x6/w192-opening-strategies.0.runs.ndjson
+```
+
+Every one of these refuses rather than defaults: the sweep exits `2` if `explicitOpeningAxes` on the
+v1 axes does not rebuild the shipped opening, the occupancy script exits `2` if the v1 arm does not
+reproduce `0.0473`, and the analyser exits `3` if the files it is given mix horizons or hold no
+records. A third exit for *"the probe is broken"* is deliberate; folding it into *"the answer is no"*
+is the failure `CLAUDE.md` records five instances of.
 
 ---
 
-## 9. Instrument findings recorded because they cost time
+## 10. Instrument findings recorded because they cost time
 
-*(text)*
+**`reference-time-to-tier.test.ts`'s narrative table is stale, and the shipped instrument disagrees
+with it.** `species-separation.mjs` prints the calibration set and says *"If those do not match the
+committed docstring, stop: the instrument is wrong."* Running it produces
+`gnome [24,25] dwarf [25,34] human [29,31] elf [53,60] orc [25,40] draconic [27,246] (1 censored)`,
+against the docstring's line-48 table of `gnome [39,53] dwarf [41,54] orc [42,63] human [44,57]
+elf [54,110] draconic [68,245]`. The later before/after tables in the same file carry the current
+figures, so the file contradicts itself and the misleading half is the one the harness points a
+reader at. This measurement's own calibration matched the *shipped instrument* byte for byte, which
+is the control that matters; the docstring is a documentation-rot finding and is not repaired here.
+
+**Two broken probes, both caught by a positive control, both of the shape `CLAUDE.md` names.**
+A wait loop written as `until [ ! -e /proc/$$ ] || …` exited immediately on macOS, where `/proc` does
+not exist, and reported the sweeps finished when 120 of 180 runs were outstanding. And
+`pgrep -f "a\|b\|c"` matched nothing, so a second waiter would have returned instantly; run
+individually, each pattern matched. Neither threw. Both were found by asking the probe to report the
+*positive* case first — the pattern must match a process that is definitely running before its
+absence is allowed to mean anything.
+
+**`awk '{print $9}'` on this document's own table reads the wrong column.** The square label
+`standard 3x4` is two whitespace-separated fields, so the anti-requisite column is `$10`. The
+W191 check in §7 parses `--json` instead. This is the fourth instance of that shape in the
+repository's notes and it took one command to catch.
