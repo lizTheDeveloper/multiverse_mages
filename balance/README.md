@@ -475,6 +475,57 @@ measurement: **a regenerated baseline is a claim that behaviour changed on purpo
 `packages/mc-harness/test/unit/baseline-regeneration.test.ts` reads the CI configuration and fails
 if that ever stops being true.
 
+## Re-sealing a baseline, when the content moved and the behaviour did not
+
+A baseline carries two different claims — *what this build measured*, and *which build that was* —
+and until 2026-08-14 they could only be changed together. That was a real problem, because the gate
+refuses `baseline-invalid` on a `provenance` mismatch **before it reads a single metric**. Author a
+node's gloss, and every gate reports a failure while every metric underneath it reads its committed
+value to the digit. The branch is unmergeable, and the only expressible remedy was to re-record
+numbers that had not moved — which costs a merge conflict to every other open branch and banks
+whatever else has drifted since.
+
+    node packages/mc-harness/bin/reseal-baseline.mjs \
+      --scenario  ./packages/scenario/bin/scenario.mjs \
+      --sweep     ./balance/sweeps/balance-gate.sweep.json \
+      --baseline  ./balance/baselines/balance-gate-v1.baseline.json \
+      --sealed-on 2026-08-14 \
+      --workers   4
+
+It rewrites `provenance`, appends one note, recomputes `contentHash`, and **passes every metric line
+through byte for byte** — asserted on the encoded file text before the write, not on two in-memory
+arrays. `--dry-run true` verifies and reports without touching the file. `--note` is repeatable and
+appends; nothing here ever replaces `notes`, because a file that lost four caveats is
+indistinguishable from one that never had them.
+
+**It runs the gate sweep anyway, and no flag skips it.** *"Re-seal without re-measuring"* is a
+statement about what gets **written**, not about what gets **checked**. A content hash is opaque to
+behaviour, so the only sound way to know a re-seal is the right tool is to measure and throw the
+measurement away. The verification costs exactly what the gate costs — 4 s, 27 s and 10 s for the
+three gates inside the required check, ~1000 s for the two-hundred-year one — and not one of its
+numbers is written.
+
+If any gated metric has left its tolerance, become available, stopped being available, or moved its
+`definitionVersion`, the command **refuses and names it**, and a sweep that is disqualified, differently
+seeded or differently configured is refused too. Re-sealing over a real movement would hide a
+regression behind a fresh seal, which is worse than the blocked merge it was reaching for. There is
+no `--force` and no `--skip-verify`, and `baseline-reseal.test.ts` fails if one appears.
+
+**A re-seal is not a way to make a red gate green.** If the gate is red on a *number*, this command
+will refuse, and the answer is a regeneration with a rationale — or finding out why the number moved.
+The two are different claims and the file says which one it is carrying.
+
+The design constraint it is built against is the one `reachability:pin` violates: *a tool that writes
+a whole baseline needs an instrument that attributes rows, or its convenience path silently launders
+someone else's debt.* The instrument here is the drift report. Every gated metric's observed
+movement is printed on **every** run, including the passing ones and the zero ones, and the largest
+is written into the note where it stays in the file. The command banks no number, and the author sees
+exactly what they are sealing over.
+
+**Nothing automated invokes this one either** — not even an npm script, which is a step stricter than
+the regeneration command needs, because a re-seal is cheaper to run and produces a smaller diff, so a
+reachable one would be the easier mistake to make.
+
 ## The five sweeps
 
 | | `balance-gate` | `balance-gate-horizon` | `balance-gate-agency` | `balance-gate-ascension` | `balance-full` |

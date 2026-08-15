@@ -20,6 +20,19 @@ nobody currently knows.
 Re-derive before acting on it. A measurement is a statement about the tree it was taken on, and §6
 is what happens when you skip that step.
 
+> **Third correction round — 2026-08-15, re-verified at `08ca5368`.** Three rows were wrong and are
+> corrected below rather than left for a reader to trip over. **`applyWard`** and **`replay`** move
+> from §2 to §3: each has a live capability under another name, found independently by
+> `audit-contracts.md`, `audit-vision.md` and `audit-sequence.md` §1.2 and re-checked here. And §2's
+> `rules-raid` row gave *"nothing in `scenario` opens a portal"* as its reason, which is false —
+> `packages/scenario/src/raids.ts:423` calls `openPortal`; **the five findings in that row are still
+> `unreached` in `scripts/reachability-baseline.json` at this ref, so the row's verdict stands and
+> only its reason changes.** The category totals move with the two reclassifications: integration
+> debt **61 → 59**, superseded **14 → 16**. The 125 and the per-package totals are unchanged — this
+> is a re-judgement, not a re-measurement, and the per-package split was re-derived from the
+> committed baseline as a control (content 6, coordination 16, primitives 3, rules-magic 27,
+> rules-raid 7, rules-world 40, scenario 12, sim-core 6, state 8 = 125).
+
 ---
 
 ## 1. The counts
@@ -28,18 +41,18 @@ is what happens when you skip that step.
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | `content` | 0 | 0 | 5 | 1 | 0 | 6 |
 | `coordination` | 13 | 2 | 0 | 1 | 0 | 16 |
-| `primitives` | 2 | 0 | 1 | 0 | 0 | 3 |
+| `primitives` | 1 | 1 | 1 | 0 | 0 | 3 |
 | `rules-magic` | 15 | 6 | 1 | 4 | 0 | 26 |
 | `rules-raid` | 5 | 0 | 0 | 2 | 0 | 7 |
 | `rules-world` | 19 | 6 | 3 | 12 | 0 | 40 |
 | `scenario` | 0 | 0 | 12 | 0 | 0 | 12 |
-| `sim-core` | 1 | 0 | 5 | 0 | 0 | 6 |
+| `sim-core` | 0 | 1 | 5 | 0 | 0 | 6 |
 | `state` | 5 | 0 | 0 | 3 | 0 | 8 |
-| **Total** | **60** | **14** | **27** | **23** | **0** | **124** |
+| **Total** | **58** | **16** | **27** | **23** | **0** | **124** |
 
-The headline: **60 of the 124 are integration debt** — mechanics that are built, mostly tested,
+The headline: **58 of the 124 are integration debt** — mechanics that are built, mostly tested,
 exported, and that nothing in a running universe calls. That is the number the raw count was hiding.
-The other 64 are noise of three different kinds.
+The other 66 are noise of three different kinds.
 
 ### The five categories
 
@@ -72,24 +85,24 @@ were moved to §3 and are not here.
 | **Portal spell transfer** — `populatePreparedSpells`, `releaseAbroad` | 2 | `resolvePortalHooks` is reached and the two functions that would use the resolved hooks are not. Prepared spells do not cross a portal. |
 | **Tradition store policy** — `palaceLibraryDepth`, `perishesWithHolder`, `scribeAvailability`, `PALACE_STORE` | 4 | `storePolicy`, `canHoldAt` and `admitToStore` are reached, so storage admits. The *consequences* of a store kind — palace depth, perishing with the holder, scribe availability — are computed by nothing. **`STANDARD_STORE` was the fifth member and is repaired** (see the amendment at the head of this file): `study.ts` passes the store hook, so the constant has a production consumer. The other four are unchanged. |
 | **`changeTradition`** and `RESOLUTION`, `hooksOfTradition` | 3 | `agent-api` publishes a change-tradition action and `mc-harness`'s strategies name it, while the rules function that would execute it has no caller. The action space advertises a move the rules never make. |
-| **`applyWard`** | 1 | `damage × (1 − preventedFraction)` is the **only** implementation of ward prevention in the tree — verified by reading `primitives/src/stacking.ts` and `ablation.ts`, which describes the stacked value as "the prevented fraction". Wards stack into a fraction that is never applied to damage. |
 | **Library-level destruction** — `destroyLibrary`, `grimoiresIn` | 2 | Narrower than it looks, and corrected once. `destroyGrimoire` **is** live: `rules-raid/src/consequences.ts:241` and `:265` loot and burn books one at a time, and that file's own comment claiming it was the fix for both is out of date about the library half. What has no caller is destruction of a library *as a unit* — and `instances/subsystem.ts:116` already records the consequence, that an unshelved book is one `grimoiresIn` cannot see and `destroyLibrary` leaves standing. |
-| **`replay`** | 1 | The replayer has no production caller: the only call-shaped occurrence of `replay(` in the tree is its own definition. Golden fixtures are *recorded* by `scripts/regen-goldens.mjs`, which mentions replay in prose and does not call it. Constraint 4's value is that a fixture diff means behaviour changed on purpose; nothing outside a test ever re-runs one. |
-| **`rules-raid` consequences and objectives** — `returnedWithKnowledge`, `strandedAttackers`, `objectiveHoldsKnowledge`, `OBJECTIVE_LOCATION_KIND`, `BURNABLE_LOCATION_KINDS` | 5 | Consistent with CLAUDE.md: `raid-engagement` is 67/92 and nothing in `scenario` opens a portal. Whole-subsystem debt, not individually surprising. |
+| **`rules-raid` consequences and objectives** — `returnedWithKnowledge`, `strandedAttackers`, `objectiveHoldsKnowledge`, `OBJECTIVE_LOCATION_KIND`, `BURNABLE_LOCATION_KINDS` | 5 | ~~Consistent with CLAUDE.md: `raid-engagement` is 67/92 and nothing in `scenario` opens a portal.~~ **Reason corrected 2026-08-15 at `08ca5368`: `scenario` does open a portal** — `packages/scenario/src/raids.ts:423` calls `openPortal` and `reference-universe.ts:1007` supplies `portalTargets`. All five names are nevertheless still `unreached` in `scripts/reachability-baseline.json` at this ref, so the row keeps its count and its category: portals open and raids terminate, and the *consequences* of a raid — knowledge carried home, attackers stranded, an objective that holds knowledge, a burnable location — are what nothing reaches. |
 | **World-snapshot loading** — `loadWorldSnapshot`, `migrateWorldEnvelope` | 2 | Weaker than it looks and stated precisely for that reason: `sim-core`'s `envelopeToState` *is* reached, so snapshots decode. What has no caller is the **world-schema-aware** wrapper in `@mm/state`. Nothing in the rules path loads a world snapshot back. |
 | — | — | **`ENGAGEMENT_TICK_MS` was here and has been removed.** Its own doc comment settles it: the constant documents *"how much simulated time a combat tick represents, not how much wall clock a caller should spend on one"*, and real-time pacing *"is a client and server concern and never enters the core"*. Its consumers are the Electron client and the PvP server, both outside this repository. Reclassified tooling-only. |
 
 One more was dropped from this table on inspection: **`withdrawGrimoire`** is declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"* — which is an accepted design decision rather than debt.
 
-That is 45 of the 60. The remaining 15 are integration debt of the ordinary kind — an economy input
+That is 43 of the 58. (It was 46 of 61 until `applyWard` and `replay` moved to §3 in the third
+correction round, and 44 of 59 until `study.ts` gave `STANDARD_STORE` a consumer.) The remaining 15
+are integration debt of the ordinary kind — an economy input
 list, a commitment predicate, a monoculture threshold, `speciesRediscoveryMultiplier`,
 `worshipShareOfRegeneration` — worth wiring, not worth a row.
 
 ---
 
-## 3. Superseded: 14 findings, and the trap they are
+## 3. Superseded: 16 findings, and the trap they are
 
-**This is the most useful thing in this document.** Fourteen findings look exactly like §2 — an
+**This is the most useful thing in this document.** Sixteen findings look exactly like §2 — an
 unreached mechanic in a rules package, well tested, obviously important — and are not, because the
 capability is live under a different name. A triage that read the symbol instead of the capability
 would have filed every one of them as a disabled subsystem, and each would have cost somebody an
@@ -104,13 +117,15 @@ investigation ending in "it already works".
 | `createUniversity`, `readUniversity` | Universities are created with `attachRecord(state, UNIVERSITY, …)` in `god/interventions.ts:781` and read with `collectRecords(state, UNIVERSITY)` in `capital.ts`, `gateway.ts` and `agent-api`. |
 | `withdrawGrimoire` | Declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"*. An accepted design decision. |
 | `POPULACE_STREAM` | A re-export of `RNG_STREAM.populace`, which is used directly at `economy/carrying-capacity.ts:488` and `populace/mortality.ts:229`. Constraint 3 is **not** at risk here. |
+| `applyWard` **(moved from §2, 2026-08-15)** | `CastArbiter#applyWardOnce` — `packages/rules-raid/src/arbitration.ts:570`, live at `raid.ts:514` and `:995`. It **reimplements** the multiply, `floorDiv(rawDamage * (FP_ONE - ward), FP_ONE)`, rather than delegating to `primitives`. §2's stated reason searched `primitives/` for a capability that lives in `rules-raid` — **the exact §5 trap this document is otherwise the best account of.** The pin is right and its old reason was wrong. Wards still never prevent anything, because no combat attempt occurs; that is §8's defect, not this one. |
+| `replay` **(moved from §2, 2026-08-15)** | `replayAndLocate` — imported at `scripts/regen-goldens.mjs:107` and **called at `:142`**, over `recordingOf(fixture)`. §2's reason grepped for the literal string `replay(`, which the named export does not match. Constraint 4 is enforced by a replayer with a production caller; it is `replay` itself that has none. |
 
 Every one of these is safe to delete, and each deletion is also a decision about which of two
 implementations is the real one — which makes them worth more attention than §4, not less.
 
 ---
 
-## 4. Dead: 23, and tooling-only: 26
+## 4. Dead: 23, and tooling-only: 27
 
 **Dead** splits three ways. *Empty sentinels nothing defaults to* (9): `NO_AFFINITIES`,
 `NO_TERRITORY`, `NO_DEMAND`, `NO_YIELD_BONUSES`, `TRAIT_NEUTRAL`, `NULL_CONTENT_ID`, `NULL_CELL_ID`,
@@ -156,6 +171,17 @@ directly twice). Each of those was one grep away from being checked, and each wo
 somebody at a subsystem that already works.
 
 A second correction round, run after the first, moved three more rows: `ENGAGEMENT_TICK_MS` (its own comment names its consumers as the client and server), `destroyLibrary` (the grimoire-level destruction it appeared to gate is live at `consequences.ts:241`), and `withdrawGrimoire` (`gateway.ts:107` declares it deliberately unused). In each case the **adjacent source comment** held the answer and the first two passes had not read it.
+
+A **third** correction round, 2026-08-15 at `08ca5368`, moved two more and corrected the reason on a
+third — `applyWard`, `replay`, and the `rules-raid` row's portal clause. All three failed the same
+way, and differently from rounds one and two: **the capability was looked for in the wrong package,
+or under the wrong spelling.** `applyWard`'s capability is in `rules-raid`, not `primitives`;
+`replay`'s live form is `replayAndLocate`, which a grep for `replay(` cannot see; and *"nothing in
+`scenario` opens a portal"* was inherited from `CLAUDE.md` rather than checked against `scenario`.
+So the §5 question needs a second clause: **"is the capability absent, or only this accessor" — and
+if only this accessor, under what other name, in which other package?** Three rounds of correction
+on one document is itself the finding: a symbol-level check produces judgements that rot faster than
+the counts do.
 
 So: **an unreached symbol is a claim about a symbol, never about a capability** — and the cheapest place to look for the capability is the doc comment on the symbol itself, which in this repository is usually where somebody already wrote down why it has no caller. Promoting it to a
 claim about a capability takes a second search, for the thing the symbol would have done, under any
