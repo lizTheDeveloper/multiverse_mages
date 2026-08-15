@@ -31,6 +31,16 @@ export default defineConfig({
       '@mm/state': packageSrc('state'),
       '@mm/rules-magic': packageSrc('rules-magic'),
       '@mm/rules-world': packageSrc('rules-world'),
+      // `rules-raid` was the one workspace package missing from this table, and
+      // the omission is the shape `CLAUDE.md` calls "a checker that answers
+      // about the wrong input". Without the alias the symlink resolves it to
+      // `dist/`, so a before/after control run over `src/` compares the built
+      // tree against itself: W200's detachment fix passed its own *negative*
+      // control — the pre-fix source, restored from `origin/main`, still ran the
+      // post-fix build — and the run reported seven green tests about code that
+      // was not on disk. Every other package was already aliased for exactly
+      // this reason.
+      '@mm/rules-raid': packageSrc('rules-raid'),
       // The reference scenario needs both halves of contracts.md §5's boundary:
       // `coordination` for the world loop and `agent-api` for the session it is
       // observed through. `coordination` gets an alias for the first time here —

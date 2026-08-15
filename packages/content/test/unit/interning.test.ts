@@ -458,7 +458,42 @@ describe('contentRevision', () => {
     // `minItems` from 17 to 16 while leaving all seventeen records in place
     // reproduces `0dfdd5ef...` byte-identically. The digest is over the content
     // values, not over the files that constrain them.
-    expect(registry.contentRevision).toBe('0dfdd5efc2c6dad07bd486a7d80c851d');
+    // 0dfdd5efc2c6dad07bd486a7d80c851d -> 3fa982e302f5b191c417d6bce36d1660,
+    // when `rn-call-by-name` gained a second effect: `resource-yield`, magnitude
+    // 128, target `universe` — the tier-1 magnitude eighteen other yield nodes
+    // already carry, so no new number is authored here.
+    //
+    // It is in the preimage for the reason every value edit above is, and this
+    // one is emphatically **not** inert at ship. Before it, no node in the v1
+    // rectangle routed any yield to vellum at all: of the 300 nodes, 59 carry
+    // `resource-yield`, exactly five of those sit in a v1 cell, and all five are
+    // `*-terram`, whose form weights are `stone` — while library upkeep and
+    // scribing both *spend* vellum. The single nomen yield node in the corpus,
+    // `mn-call-it-iron-until-it-is`, is in `muto-nomen`, and `muto` is not a v1
+    // technique. So the opening square had a vellum sink, a labour source in
+    // `territory.json`, and no magical source whatsoever — a god could permit
+    // every cell she had and still not make a universe that could write books
+    // faster by doing magic.
+    //
+    // `rego-nomen` is a v1 cell and `nomen`'s `yieldWeights` are `vellum: 1024`,
+    // so the whole of a yield in it is vellum, and the node's own text already
+    // said so: *"Say a thing's name in the imperative and have it arrive."* The
+    // gloss's standing joke — that it does not specify in what condition — is
+    // why the magnitude is the tier-1 one rather than a generous one. Nothing
+    // was invented to fill the hole; a second effect was hung on the sentence
+    // that already implied it.
+    //
+    // The arrow above is re-keyed, and the value with it. That edit was
+    // authored on `w200/layer-one-fixes` against a tree whose revision was
+    // `e8442af2...`, where it produced `7277d3f6...`. This branch stacks it on
+    // a `main` that had meanwhile reached `0dfdd5ef...`, so — for the fifth
+    // time in this list — neither side's literal is a digest over a preimage
+    // holding both: `0dfdd5ef` has the seventeenth god cost and the exclusion
+    // pair and no vellum yield, `7277d3f6` has the vellum yield and neither of
+    // the other two. This tree is the first one holding all three, so a new
+    // value is what a digest over the union is supposed to produce, not a
+    // disagreement being settled. Measured on this branch, 2026-08-15.
+    expect(registry.contentRevision).toBe('3fa982e302f5b191c417d6bce36d1660');
   });
 
   it('is stable across loads of identical content', () => {

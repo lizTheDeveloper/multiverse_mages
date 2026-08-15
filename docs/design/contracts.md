@@ -1304,6 +1304,7 @@ invalidates every committed balance baseline.**
 | 10 | objective and raid generation |
 | 11 | terrain generation and combatant deployment |
 | 12 | the opening square — which techniques and forms a universe is founded holding |
+| 13 | the partial-detachment draw at portal open — whether a soldier cohort with fewer people left than `detachment-strength` fields one more detachment |
 
 **Stream 12 is the first append since the baselines were committed, and it is what taught us that
 appending is not free.** The gate compares `provenance.rngRegistryHash` as a block-level refusal,
@@ -1312,6 +1313,35 @@ baseline *by identity*, before a single number has moved. That is conservative r
 but it means **any** future subsystem addition forces a re-baseline event, and the cost belongs in
 the plan for one rather than being discovered in a red gate. See
 `docs/design/opening-square.md` §4.
+
+**Stream 13 is an append, and it is one of those events.** It exists because deployment
+truncated a per-cohort threshold — `floor(count / 100)` detachments, on a populace fragmented by
+species × occupation × birth decade — so cohorts under a hundred fielded nothing, for every seed,
+forever. Resolving the remainder with a draw is `promotion.ts`'s idiom, and it needs an ID of its
+own rather than `terrain`'s: the two are the only deployment-time draws, and sharing a cursor would
+make how many detachments a side fields move every deployment position behind it.
+
+**The row above was authored as 14, and is 13 here.** Three changes appended to a twelve-row table
+at the same time — `w190/scribing-fidelity` (#170) with `corruption`, `w200/layer-one-fixes` (#186)
+with the row above, and `w193/students-are-entities` (#185) with `career` — and an early ruling
+assigned **13, 14, 15** respectively. That ruling described a queue in which #170 landed first.
+`w207/mastery-and-vellum` (2026-08-15) is a different queue: it stacks #183, which appends no
+stream, and #186 onto a `main` ending at 12, with #170 still unmerged — so the next free ID is 13
+and `detachment` **was renumbered 14 -> 13 as part of merging**. Because the registry must be
+**dense from 1**, an ID here is a position in a queue and cannot be chosen around; a PR holding a
+later slot reads as a gap, and its density assertion is red, until the earlier one lands. That is
+the check working, and on this branch it is green. The alternative — each branch taking the next number it personally sees
+free — is three PRs shipping one ID and three baselines that silently stop describing the game they
+were measured on.
+
+Stated generally, because the assignment above is one queue's arithmetic and not a rule: **an
+append's ID is valid only once every ID below it has landed.** So an ID is settled by a branch's
+position in the merge queue rather than at the moment it is authored, and **re-checking it is part
+of merging** — a change that has sat while another append landed must confirm its ID is still the
+next one and renumber if it is not. That costs nothing extra: the `rngRegistryHash` refusal forces a
+re-baseline for any append regardless. "Take the next free number" is correct only when nothing else
+is in flight, and is precisely wrong when something is, because both changes see the same number
+free.
 
 Draws key on `(rootSeed, stream, tick, actorKey, drawOrdinal)` where `actorKey` is stable identity,
 never array index. This gives **insertion invariance**: adding a combatant, or adding a draw,

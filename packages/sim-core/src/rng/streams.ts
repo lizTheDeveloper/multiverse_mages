@@ -59,6 +59,56 @@ export const RNG_STREAM = {
    * the mages'.
    */
   openingSquare: 12,
+  /**
+   * The partial-detachment draw at portal open: whether a soldier cohort with
+   * fewer people left than `detachment-strength` fields one more detachment.
+   *
+   * Its own id rather than `terrain`'s — which is the other deployment-time
+   * draw — because the two are taken at the same moment from the same source.
+   * Sharing `terrain`'s cursor would make *how many detachments a side fields*
+   * shift every deployment position behind it, so a change in the populace
+   * would move the battlefield, and no committed raid baseline could be read as
+   * a statement about either.
+   *
+   * **14, assigned by merge order rather than chosen.** Three open PRs each
+   * appended a stream to a table that ends at 12: #170 (`corruption`), this one
+   * (`detachment`), and #185 (`career`). One id, three claimants, and there is
+   * no dodging it by picking a spare number — `rng-registry-append-only.test.ts`
+   * requires the table **dense from 1**, so an id *is* a merge position.
+   *
+   * It was authored as **14**, behind a ruling that read #170 = 13, this = 14,
+   * #185 = 15. **This tree is a different queue.** `w207/mastery-and-vellum`
+   * stacks #183 (which appends no stream) and this change onto a `main` whose
+   * registry ends at 12, and #170 is still unmerged — so the next free id here
+   * is 13 and this row is **renumbered 14 -> 13** (2026-08-15). That is the
+   * paragraph below being applied rather than quoted: the id was not settled by
+   * the commit that wrote it, and re-checking it was part of merging. The
+   * density assertion is the check that the renumber is complete, and it is
+   * green on this branch.
+   *
+   * ## The general rule, because the case above is not one
+   *
+   * **An append's id is valid only once every id below it has landed.** Density
+   * makes that a hard consequence rather than etiquette: a branch that takes
+   * `N` while anything under `N` is still unmerged reads as a gap, and its
+   * density assertion is red until those land — so "take the next free number"
+   * is wrong advice the moment two changes are in flight, because they both see
+   * the same number free.
+   *
+   * Two things follow, and the second is the one that gets forgotten:
+   *
+   * 1. An id is **not** settled when it is authored. It is settled by the
+   *    branch's position in the merge queue, which can change after the commit
+   *    that wrote it.
+   * 2. **Re-checking it is part of merging**, not part of authoring. A branch
+   *    that has sat while another append landed must confirm its id is still
+   *    the next one, and renumber if it is not — which is cheap, because the
+   *    `rngRegistryHash` refusal already forces a re-baseline either way.
+   *
+   * Do not read "#170 lands 13, so this is 14" as an instruction. It is one
+   * queue's arithmetic, and it is wrong on any tree with a different queue.
+   */
+  detachment: 13,
 } as const;
 
 /** Any ID in the permanent registry. */

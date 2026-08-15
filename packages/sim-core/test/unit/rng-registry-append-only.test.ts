@@ -75,6 +75,22 @@ const PERMANENT_IDS: Readonly<Record<string, number>> = {
   // and refuses on it, so all three baselines invalidated by identity before a
   // single measured number moved. See `docs/design/opening-square.md` §4.
   openingSquare: 12,
+  // Appended by `w200/layer-one-fixes` at **14**, not 13, by merge-order ruling:
+  // #170 takes 13 for `corruption` and #185 takes 15 for `career`. Three open
+  // PRs appended to a table ending at 12, and because this file requires the
+  // table dense from 1, an id is a queue position rather than a free choice.
+  //
+  // **`is dense from 1` is therefore red on this branch until #170 merges**, and
+  // that is the assertion doing its job: it is the only thing that would catch
+  // two of the three quietly shipping the same number. Do not add a gap
+  // exemption to make it green.
+  //
+  // The general rule this is one instance of — an append's id is valid only
+  // once every id below it has landed, so an id is settled by merge position
+  // and not by authoring, and re-checking it belongs to merging — is argued in
+  // `streams.ts` beside the registry itself. Do not read the specific
+  // assignment here as an instruction; it is one queue's arithmetic.
+  detachment: 13,
 };
 
 /**
@@ -107,6 +123,7 @@ const DOC_TEXT_BY_SUBSYSTEM: Readonly<Record<string, string>> = {
   objectives: 'objective and raid generation',
   terrain: 'terrain generation and combatant deployment',
   openingSquare: 'the opening square',
+  detachment: 'the partial-detachment draw at portal open',
 };
 
 /** The consequence sentence every failure from this file has to carry. */
