@@ -9807,3 +9807,67 @@ symbols across all four of them is a finding about the exception.
 perish with its holder, and a palace depth nothing reads, are both *knowledge-retention* mechanics — the
 same subsystem the macro model just identified as the one that matters (W190: affiliation moves retention
 from zero at risk to all 284 fragile, and nothing else moves it at all).
+
+## W192 — the 495/494 was never a coupling, and lifespan moves nothing. Fertility does.
+
+PR #169, the union of the two effect campaigns. Two results, and then the pattern they complete.
+
+### The interaction defect was not one, and the control is the reason we know
+
+W187 recorded `expected 495 to be 494` as an interaction defect *"neither branch's CI could have
+caught"* — passing at `d11e09c` (rate wire alone) and `3219c62` (vitality alone), failing only on the
+merge. **That reading was wrong**, and the instrument that overturned it is a column nobody had run:
+
+| seed | both wires off | academic only | vitality only | both |
+|---|--:|--:|--:|--:|
+| `0x12345678` | 0 | 0 | 0 | **+1** |
+| `0x00000001` | **−3** | **+1** | **−10** | **−5** |
+| four others | 0 | 0 | 0 | 0 |
+
+**The pre-campaign column is not all zeroes.** With neither wire installed — what `main` ships — seed
+`0x00000001` already finishes three people apart. So *"it passed before and fails now"* is a statement
+about **one seed**, not about a coupling. And the sign is not systematic: +1, −3, −5, −10.
+
+The channel is ordinary and predates both wires: `resource-yield` feeds `stock.food`; food is the only
+kind `carryingCapacity` reads; capacity sets `fertilityBrake`; `deliverBirths` is stochastic. Arms with
+different food histories take different draws. **What the wires changed is the level — 325 to 494 at
+this seed — which moved the test off a zero it had been sitting on by luck.**
+
+Replaced with a one-sided 95% floor. **PR #161 reached the same replacement independently, from a
+different failure, with the same constant and name** — seven primitives at one seed there, one primitive
+across six seeds here. Two agents converging on the same fix from opposite directions is the strongest
+evidence either of them produced.
+
+### Lifespan is wired, contributes 1,594 times, and moves nothing
+
+`5662934` recorded that the vitality wire *"contributes zero on every tick"*. Measured at seed
+`0x12345678` over 240 world ticks: **2,592 contributions — 998 `fertility` and 1,594 `lifespan`**, both
+`target: universe`. Population **494 with the wire against 325 without**.
+
+**And zeroing `lifespanUniverse` changes nothing.** All of the level is the `fertility` channel. So
+lifespan is the third member of the family that now has a name: **wired, registered, green, and
+behaviourally inert** — beside `teach-rate` and beside `check:consumption`'s own blind spot.
+
+The *"zero on every tick"* claim is not false; its **scope** is. It is true of the twelve enabled cells,
+which is what every balance gate plays, and false under `permissive-breadth`, which is what the ablation
+harness plays. The re-recorded agency baseline says it from the other side:
+**`referencePopulation@permissive-breadth` 218.125 → 328.875 (+24.74 SE)**, with `denial-warden`,
+`narrow-depth`, `portal-rush` and `worship-maximizer` **flat**.
+
+### The pattern, and it is an argument for widening the opening square
+
+Three independent mechanisms measured tonight, and **the default position cannot express any of them**:
+
+| mechanism | why v1 cannot see it |
+|---|---|
+| **anti-requisites** | its only authored pair is `creo-ignem ⊥ creo-umbra`; `creo` is outside `intellego · perdo · rego` |
+| **the vitality wire** | moves `permissive-breadth` by +24.74 SE and every other arm not at all |
+| **`teach-rate`** | its 1.25× multiplier is live only above tier 3; v1's 51 nodes sit below it |
+
+Each was found separately, by a different agent, chasing a different defect. **Twelve cells and 51 nodes
+is a position too narrow for the game's own mechanics to show up in** — which is what the owner's
+instruction to *"make the v1 space larger"* was already reaching for, now with three measurements behind
+it rather than an instinct.
+
+It also reframes every balance gate: they all play the twelve, so **they are systematically blind to the
+mechanics that only wider play reveals.** A green gate is a statement about a narrow position.
