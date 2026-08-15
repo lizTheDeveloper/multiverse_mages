@@ -84,30 +84,38 @@ const GATES = [
  * that nobody reads "the gate is fixed" as "the gate sees everything".
  */
 const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
-  // **One since `anti-requisites` (PR #161), and it was empty from w107 until
-  // then.** The history is worth keeping because the two events are the same
-  // phenomenon read in opposite directions, and neither is a slack tolerance.
+  // **Three, and the history is the rationale**: the same threshold has now been
+  // crossed in both directions by two unrelated causes, and neither crossing was
+  // a change in the instrument.
   //
-  // w107 emptied this list: `apply-magic` moved `denial-warden`'s
+  // `w107`'s `apply-magic` **emptied** this list: it moved `denial-warden`'s
   // `referenceNodesKnown` from 4.75 to 5.75 nodes and its `referenceNodesGained`
-  // with it, and a mean no longer within a rounding error of zero has a
-  // tolerance that no longer exceeds it. The arm stepped off zero.
+  // with it, and a mean no longer within a rounding error of zero had a
+  // tolerance that no longer exceeded it. The arm stepped off zero.
   //
-  // PR #161 puts one back, because an arm stepped *onto* zero. The shipped
-  // exclusion pair (`creo-ignem` ⊥ `creo-umbra`, `destructive`) cut
-  // `permissive-breadth`'s final-quarter node gain from **15.375 to 3.75** — a
-  // 76 % drop, −41.59 SE, the largest movement in the file — and three standard
-  // errors of a quantity that small is 7.70, which exceeds 3.75. So the gate can
-  // no longer police a *proportional* change in that one line. It still sees the
-  // absolute collapse that put it here; what it cannot do is tell a further 50 %
-  // fall from noise.
+  // `w108/university-fidelity` put both back: `referenceNodesKnown` 5.75 → 4.125
+  // and `referenceNodesGained` 3.25 → 1.625. **That movement is a re-roll and
+  // not a mechanic** — the branch allocates `UNIVERSITY_STAFF` link rows,
+  // `contracts.md` §6 splits the RNG per entity handle, and a control build that
+  // keeps the rows and reverts only the scribing rule reproduces it metric for
+  // metric.
   //
-  // The agency gate is blind to **one** of its eighty arm lines, median MDE
-  // 13.2 %. Growing this list is a build failure precisely so that it arrives
-  // with a rationale, and this is the rationale. Do not add a second without
-  // one.
+  // `anti-requisites` (PR #161) adds the third, and this one *is* a mechanic.
+  // The shipped exclusion pair (`creo-ignem` ⊥ `creo-umbra`, `destructive`) cut
+  // `permissive-breadth`'s final-quarter node gain to a fraction of what it was,
+  // and three standard errors of a quantity that small exceeds it. The gate can
+  // still see the absolute collapse that put the line here; what it can no
+  // longer do is tell a further proportional fall from noise.
+  //
+  // Growing this list is a build failure precisely so that it arrives with a
+  // rationale, and this is the rationale. The lesson to carry: a knowledge line
+  // whose arm sits close to zero will cross this threshold on any re-roll, in
+  // either direction, and that is a fact about the strategy rather than about
+  // the tolerance.
   'balance/baselines/balance-gate-agency-v1.baseline.json': [
+    'referenceNodesGained@denial-warden',
     'referenceNodesGainedFinalQuarter@permissive-breadth',
+    'referenceNodesKnown@denial-warden',
   ],
   // Ten since w107, up from seven, and the three that joined are all the same
   // shape: an arm whose *spread* widened rather than an arm that stopped

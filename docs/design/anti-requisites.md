@@ -121,10 +121,28 @@ column.** The distinction is not pedantic: `referenceGrimoires@permissive-breadt
 
 ### The reference gates: byte-identical
 
-| gate | world ticks | runs | metrics | every delta |
+| gate | world ticks | runs | metrics | pair's contribution |
 |---|--:|--:|--:|---|
-| `balance-gate-v1` | 60 | 200 | 9 | **0.00000** |
-| `balance-gate-horizon-v1` | 240 | 200 | 10 | **0.00000** |
+| `balance-gate-v1` | 60 | 200 | 9 | **byte-identical** |
+| `balance-gate-horizon-v1` | 240 | 200 | 10 | **byte-identical** |
+
+**This table changed meaning when the branch was merged with `main` @ `be446a6` (PR #125), and the
+earlier version of it is now wrong.** Before that merge, both reference gates were byte-identical at
+every row against their committed baselines, and the table said so. On the merged tree they are
+not: 8 of 9 rows move on the five-year gate and 10 of 10 on the twenty-year gate — all well inside
+tolerance, both gates `PASS`, and **none of it is this branch's.**
+
+That attribution is measured, not argued. #125 changed no content file, so `provenance.contentHash`
+did not move for it and neither reference gate refused. What moved are values, and the pair
+contributes **exactly zero** to them: stripping the two `excludes` arrays, rebuilding, and
+re-running both sweeps reproduces **every current value byte-identically**. The residue is #125
+re-rolling handle-keyed draws by allocating `UNIVERSITY_STAFF` link rows — `contracts.md` §6 splits
+the RNG per entity handle — which is the same mechanism #125's own rationale gives for the
+`denial-warden` arm lines.
+
+So the claim the column now makes is the one that was always meant: **the pair is invisible to the
+reference universe.** The earlier phrasing conflated that with "nothing moves", which was true on
+the branch alone and is not true of the merged tree.
 
 **Both horizons in this table were previously wrong, and the correction is worth stating rather
 than making quietly.** The rows read `240` and `2400`; the committed sweeps
@@ -157,44 +175,52 @@ The agency pool permits the full grid, so unlike the reference universe it *can*
 
 | strategy | baseline | current | delta |
 |---|--:|--:|--:|
-| `portal-rush` | 45.75 | 45.75 | 0.00 |
-| `uniform-random-legal` | 44.50 | 44.50 | 0.00 |
-| `archivist` | 43.88 | 43.88 | 0.00 |
-| **`permissive-breadth`** | 68.50 | **42.00** | **−26.50** (−22.35 SE) |
-| `worship-maximizer` | 40.88 | 40.88 | 0.00 |
-| `passive-control` | 40.63 | 40.63 | 0.00 |
-| `narrow-depth` | 7.63 | 7.63 | 0.00 |
-| `denial-warden` | 5.75 | 5.75 | 0.00 |
+| `portal-rush` | 44.88 | 44.88 | 0.00 |
+| `uniform-random-legal` | 43.75 | 43.75 | 0.00 |
+| `archivist` | 43.38 | 43.38 | 0.00 |
+| **`permissive-breadth`** | 68.63 | **42.50** | **−26.13** (−20.80 SE) |
+| `passive-control` | 41.25 | 41.25 | 0.00 |
+| `worship-maximizer` | 40.13 | 40.13 | 0.00 |
+| `narrow-depth` | 7.75 | 7.75 | 0.00 |
+| `denial-warden` | 4.13 | 4.13 | 0.00 |
 
-**Seven of eight strategies are byte-identical. The eighth loses 39% of its knowledge** — and the
+**Seven of eight strategies are byte-identical. The eighth loses 38% of its knowledge** — and the
 rows are printed in the *new* order on purpose: `permissive-breadth` was first and is now fourth.
 
 Byte-identity is the whole claim, so it is checked as one rather than read off the pass/fail column
 — a row can pass a three-SE tolerance while moving (`referenceGrimoires@permissive-breadth` moved
-+25.0 and passed at 1.66 SE). Counted exactly, on the run taken immediately before regenerating:
++19.6 and passed at 1.27 SE). Counted exactly, on the run taken immediately before regenerating:
 **71 of the gate's 90 rows are at `delta 0.00000`.** The 19 that moved are the **9 pooled
 aggregates** and **all 10 `@permissive-breadth` arm rows**, and nothing else — so the other seven
 strategies are byte-identical across **all 70 of their arm rows**, and the pooled aggregates move
 only because they pool `permissive-breadth`.
 
-The largest movements, all on that one arm: `referenceNodesGainedFinalQuarter` 15.375 → 3.75
-(−41.59 SE, the largest in the file), `referenceNodesKnown` and `referenceNodesGained` both −26.50
-(−22.35 SE), `referenceKnowledgeInstances` 1570.63 → 990.25 (−7.67 SE), and
-`referencePeakPopulation` 323 → 330 (+8.00 SE). That last one is worth noticing: the arm that
+The largest movements, all on that one arm: `referenceKnowledgeInstances` 1614.38 → 1013.00
+(−27.04 SE, the largest in the file), `referenceNodesGainedFinalQuarter` 14.625 → 5.25 (−25.00 SE),
+`referenceNodesKnown` and `referenceNodesGained` both −26.13 (−20.80 SE), and — moving *upward* —
+`referenceGrimoires` +19.63 (1.27 SE, passing) and
+`referencePeakPopulation` 330 → 340 (1.27 SE). That last one is worth noticing: the arm that
 forgets the most ends with slightly *more* people, which is the same decoupling of knowledge from
 demography that the ablation test's population floor documents.
 
-**Why these numbers differ from the first recording.** The table above previously read
-75.25 → 45.00, −30.25. Nothing about the mechanic changed: `main` re-recorded the agency baseline
-in `5a1ce6c` for `apply-magic`, which moved `permissive-breadth`'s baseline from 75.25 to 68.50 and
-the passive control's from 42.13 to 40.63. Running the gate on `main` @ `9cfe582` alone reproduces
-the committed baseline with **every delta 0.00000**, which is the positive control that makes the
-comparison above a statement about anti-requisites and not about the merge.
+**Why these numbers differ from the first recording, twice over.** The table above first read
+75.25 → 45.00, −30.25, then 68.50 → 42.00, −26.50, and now 68.63 → 42.50, −26.13. **Nothing about
+the mechanic changed at either step**; what changed was the baseline underneath it, because `main`
+re-recorded this gate twice while the branch was open. `5a1ce6c` did it for `apply-magic`
+(`permissive-breadth` 75.25 → 68.50, passive control 42.13 → 40.63), and PR #125
+(`w108/university-fidelity`) did it again — that one is a pure re-roll of handle-keyed draws from
+allocating `UNIVERSITY_STAFF` link rows, which is why every arm's *baseline* shifts slightly while
+the *deltas* for seven of eight stay at exactly 0.00000.
+
+That the shape survived is the check worth recording rather than the numbers: a competing
+re-baseline could have moved other arms and turned this from a re-quote into a different finding.
+It did not — the non-zero rows are the same 9 pooled aggregates and the same 10
+`@permissive-breadth` arm rows before and after the merge.
 
 This is the result the campaign has been asking for since W24, and it is worth stating precisely
 because it is easy to overclaim. F3 measured the strategy space as **one axis — permit more vs
 permit less** — with `permissive-breadth` strictly dominant (75.25 nodes against a 42-node passive
-control when F3 measured it; 68.50 against 40.63 on this tree, after `apply-magic` re-recorded the
+control when F3 measured it; 68.63 against 41.25 on this tree, after two later re-recordings moved the
 baseline). `campaign-plan.md` records five independent confirmations that the binding constraint is
 content exhaustion and *the absence of opposing terms*, and W24's rule: **"without an opposing term
 siting is a ranking, not a decision."**
@@ -203,7 +229,7 @@ An anti-requisite is an opposing term, and it is aimed at exactly the strategy t
 Permitting everything no longer means *getting* everything: a mage who learns one side of an
 exclusion loses the other, so a permissive god now has a composition problem where he previously had
 a monotone accumulation. Measured, the dominant strategy's lead over the passive control falls from
-**+27.9 nodes to +1.4**, and on this metric it stops being the leading strategy at all — three
+**+27.4 nodes to +1.3**, and on this metric it stops being the leading strategy at all — three
 others now finish ahead of it.
 
 **One authored pair did that.** The set in `content/deep-magic` proposes more.
