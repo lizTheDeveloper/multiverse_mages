@@ -1,12 +1,29 @@
 ## ADDED Requirements
 
-### Requirement: Mages are promoted from student cohorts, never spawned
+### Requirement: Mages are enrolled from student cohorts, never spawned
 
-A mage SHALL come into existence only by promotion of a member of a `student` populace cohort that
-has reached its species `maturityMonths`. The number promoted from a cohort MUST be
-`floor(count × mageAptitude / fp(1024))`, plus one additional mage if a single draw on RNG stream 1
-falls below the fixed-point remainder. Exactly one draw MUST be made per cohort per promotion event;
-no per-person draw is permitted.
+A mage SHALL come into existence only by **enrolment** of a member of a `student` populace cohort
+that has reached its species `maturityMonths`, into a seat at a completed university that has
+something to teach. She arrives in the `student` **role**, and becomes a standing mage by
+graduation — see *Graduation is curriculum completion* below.
+
+**Amended by W193 (`docs/design/magical-prevalence.md`), and the amendment moves *when* the crossing
+happens rather than how.**
+
+The number enrolled from a cohort MUST be `floor(count × eligibleFraction / fp(1024))`, plus one
+additional mage if a single draw on RNG stream 1 falls below the fixed-point remainder, and bounded
+above by the free seats and by the species' per-tick class capacity. Exactly one draw MUST be made
+per cohort per enrolment event; no per-person draw is permitted.
+
+`eligibleFraction` is `prevalence × mageAptitude / fp(1024)`. **The two are stages of one pipeline
+and not two spellings of one idea**: `prevalence` is who is born able to do magic at all, a
+per-species content field, optional and meaningful in its absence; `mageAptitude` is who among them
+is strong enough to be found, which is *"some number of those people never get discovered because
+their skills are very weak"*. Both are applied at enrolment. **Nothing applies a fraction at
+graduation.**
+
+The scenarios below use `mageAptitude` alone, and are read as `eligibleFraction` — the arithmetic is
+unchanged and only its input moved.
 
 #### Scenario: Integer part promotes deterministically
 
@@ -24,11 +41,67 @@ no per-person draw is permitted.
 - **WHEN** the promotion routine is instrumented over a cohort of 10,000
 - **THEN** the number of RNG draws attributed to that promotion is 1, not 10,000
 
-#### Scenario: Unpromoted students leave the student occupation
+#### Scenario: Unenrolled students leave the student occupation
 
-- **WHEN** a student cohort is processed for promotion
-- **THEN** every member not promoted to mage transitions to another occupation, and no member
+- **WHEN** a student cohort is processed for enrolment
+- **THEN** every member not enrolled transitions to another occupation, and no member
   remains in the `student` occupation past maturity
+
+#### Scenario: The gap between who could be a mage and who was seated is reported
+
+- **WHEN** a tick's enrolment phase completes
+- **THEN** the loop reports both the members the species gate rejected and the members who cleared
+  it and found no free seat, as two numbers rather than one — the first is a fact about the
+  species and the second is a building the god did not fund, and a sum of them has no lever
+
+### Requirement: Graduation is curriculum completion, not age
+
+**Added by W193.** A mage in the `student` role SHALL become a standing mage when the university she
+is enrolled at can teach her nothing further: no non-student mage affiliated there holds a node she
+could receive, and no instance on its library's shelf is one she could receive. Graduation MUST NOT
+be gated on elapsed time, on age, or on `maturityMonths`.
+
+A student who holds no knowledge at all MUST NOT graduate, whatever her university's state. This is
+the floor against *"a university with nothing to teach graduates its students instantly, which would
+make a bare founding a mage factory"*.
+
+#### Scenario: A deeper university holds its students longer
+
+- **WHEN** two identical universes differ only in what their faculty and libraries hold
+- **THEN** the one with more to teach graduates its students later
+
+#### Scenario: A rate that makes learning faster moves the graduation date
+
+- **WHEN** `teach-rate` is raised in a universe whose students are learning from faculty
+- **THEN** the time from enrolment to graduation falls, which was impossible while promotion was
+  gated on age since birth
+
+#### Scenario: A student who can be taught nothing and knows nothing is reported, not graduated
+
+- **WHEN** a student's university loses everything it held while she was enrolled and she holds
+  nothing herself
+- **THEN** she remains a student and the loop reports her as stalled, rather than graduating a mage
+  who knows nothing
+
+### Requirement: A student is a mage entity, not a headcount
+
+**Added by W193.** A student SHALL be a `MAGE` entity in the `student` role, never a count inside a
+populace cohort. Everything that takes a mage handle therefore applies to her: she holds knowledge
+instances, is taught, reads what her tradition permits her to read, and is affiliated to a
+university.
+
+The `student` role MUST NOT be assignable by the god's assign-role action, and a student MUST NOT be
+eligible to teach.
+
+#### Scenario: A student holds knowledge in her own mind
+
+- **WHEN** a student learns anything at all
+- **THEN** a knowledge instance exists whose location is `mind` and whose location id is her handle
+
+#### Scenario: The god cannot enrol or un-enrol anybody
+
+- **WHEN** the god's assign-role action names the `student` role
+- **THEN** it is refused, and the role is absent from the action's candidate enumeration
 
 ### Requirement: Personality is rolled at birth from species means
 
