@@ -791,13 +791,37 @@ export function worldSystem(
           // material and produces none. That is what emptied the stock at tick
           // 600 and kept it empty.
           //
-          // W23 read a `subsistenceReserve` computed above this phase. The
-          // differentiated economy took that variable away — subsistence is food
-          // and upkeep is vellum, so there is no single reserve any more — and
-          // phase 8's claim is not computed until long after this line. So the
-          // demand for it is asked the way phase 8 asks it, off the populace
-          // this tick opened with. It is a *demand*, not a payment: the same
-          // reading `constructionBacklog` above it gets.
+          // ## What this expression is, and the one term it does not carry
+          //
+          // W23 wrote this as `subsistenceReserve + upkeepOwed`, where
+          // `subsistenceReserve` was `subsistenceDemand(cohorts.totalCount())`
+          // and nothing else. The differentiated economy took the *variable*
+          // away — subsistence is food and upkeep is vellum, so there is no
+          // single reserve for a scribe to be held behind any more — but not the
+          // quantity. **The formula below is w23's, inlined, term for term.**
+          //
+          // What it does **not** carry is `applicationRationsOwed`: what the
+          // mages who spend a month casting at the world eat while they do it.
+          // `main`'s `apply-magic` added it to phase 8's subsistence claim
+          // (`subsistenceDemand(...) + applicationRationsOwed`), so on this tree
+          // the universe's real food bill is that sum and this line understates
+          // it by the rations.
+          //
+          // **It is dropped on an ordering constraint, not an oversight, and
+          // there is no successor to reach for.** `applicationRationsOwed` is
+          // `applicationRations(work.applyingMages, ...)`, and `work` is phase
+          // 5's — three phases after this one. Nothing earlier in the tick knows
+          // which mages will choose to apply magic, and no component carries the
+          // previous tick's figure. The alternatives are both worse than the
+          // understatement: moving phase 5 ahead of phase 2 reorders the whole
+          // world step and re-keys every per-actor stream (§6), and inventing a
+          // stored carry-over would be a new component to serve one addend.
+          //
+          // The understatement is bounded by the mage population rather than the
+          // populace — tens against tens of thousands — so it cannot flip this
+          // driver's sign or scale. If applied magic ever becomes a large share
+          // of the food bill, this is the line that has to change, and the fix
+          // is a phase reorder with its own rationale and its own baselines.
           materialsObligation: subsistenceDemand(cohorts.totalCount()) + upkeepOwed,
         }),
       });

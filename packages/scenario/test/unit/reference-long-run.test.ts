@@ -405,8 +405,17 @@ describe('two hundred world years of the reference universe', () => {
 
     // ## The tripwire fired, and W23 is the somebody it was set to bring back
     //
-    // It read `grimoires < 2 * libraryDepth` and it now reads 3,350 books
-    // against 51 nodes. **Its stated reason does not survive the measurement.**
+    // It read `grimoires < 2 * libraryDepth` and on this tree it reads **2,746
+    // books against 51 nodes**. **Its stated reason does not survive the
+    // measurement.**
+    //
+    // *Re-measured on the merged tree (W23 + `main`), 2026-08-14, at
+    // `LONG_RUN_SEED`.* W23 recorded 3,350 books here against the same 51
+    // nodes, on its own branch and before `apply-magic` and the differentiated
+    // economy. The numerator moved and the claim below did not, which is the
+    // point of asserting an equality against the run's own `nodesKnown` rather
+    // than a ratio against a literal: the ratio would have had to be rewritten
+    // for a third time and this did not move at all.
     // The comment argued the ratio would stay near one because *"a scribe
     // prefers something the library lacks and upkeep charges her for every
     // duplicate"* — so a ratio of 65 would mean the preference had stopped
@@ -416,6 +425,12 @@ describe('two hundred world years of the reference universe', () => {
     //     books standing at the end   before 15      after 3,350
     //     library depth reached       before 36      after 51 — every node known
     //     books scribed, last window  before  0      after 480
+    //
+    // That ablation is W23's, on W23's tree, and is left as it was recorded.
+    // The merged tree reaches the same place by the same route: 51 of 51 nodes
+    // shelved, 2,746 books standing, 480 scribed in the last 20-year window,
+    // and 597 instances degraded off unpaid shelves over the run — so
+    // destruction is live here too, which the assertion below this one checks.
     //
     // The preference was not biting *harder* before. It had nothing to bite
     // with: the stock emptied around world year seventy, scribing became
