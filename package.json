@@ -22,6 +22,7 @@
     "check:coverage": "node scripts/check-primitive-coverage.mjs",
     "check:consumption": "node scripts/check-primitive-consumption.mjs",
     "check:reachability": "node scripts/check-reachability.mjs",
+    "check:generated": "node scripts/check-generated-artifacts.mjs",
     "check:reachability:ratchet": "node scripts/check-reachability-ratchet.mjs",
     "reachability:pin": "node scripts/check-reachability-ratchet.mjs --update",
     "content:map": "node scripts/content-graph.mjs --format map",
@@ -41,12 +42,15 @@
     "prebalance:gate:ascension": "npm run typecheck",
     "test:watch": "vitest",
     "bench": "tsc -p packages/sim-core/bench/tsconfig.run.json && node scripts/bench.mjs",
-    "verify:nosweeps": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test",
-    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test && npm run balance:gate && npm run balance:gate:horizon && npm run balance:gate:agency",
+    "verify:nosweeps": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run check:generated && npm run test",
+    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run check:generated && npm run test && npm run balance:gate && npm run balance:gate:horizon && npm run balance:gate:agency",
     "verify:full": "npm run verify && npm run balance:gate:ascension",
     "ui": "npx --yes http-server . -p 8200 --no-dotfiles -c-1",
+    "preui": "npm run ui:dashboard && npm run ui:record",
     "ui:record": "node scripts/record-session.mjs",
-    "ui:dashboard": "node scripts/build-design-dashboard.mjs"
+    "preui:record": "npm run typecheck",
+    "ui:dashboard": "node scripts/build-design-dashboard.mjs",
+    "preui:dashboard": "npm run typecheck"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
