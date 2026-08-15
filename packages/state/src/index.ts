@@ -56,6 +56,8 @@ export {
   OBJECTIVE_STATUS,
   OCCUPATION,
   RAID_SIDE,
+  RULE_CHANGE_KIND,
+  RULE_SCOPE,
   TERMINAL_REASON,
 } from './enums.js';
 export type {
@@ -70,6 +72,8 @@ export type {
   ObjectiveStatusValue,
   OccupationValue,
   RaidSideValue,
+  RuleChangeKindValue,
+  RuleScopeValue,
   TerminalReasonValue,
 } from './enums.js';
 
@@ -87,6 +91,15 @@ export {
 
 export type { Edict, Ruleset, RulesetSnapshot } from './permits.js';
 export { assertNoEdictConflict, findEdictConflict, permits } from './permits.js';
+
+export type { RuleChange } from './rule-change.js';
+export {
+  changesLegality,
+  revertSurcharge,
+  ruleTargetInRange,
+  rulesetWith,
+  writeRuleChange,
+} from './rule-change.js';
 
 export type {
   AxisChangeCounterRecord,
@@ -112,6 +125,7 @@ export type {
   LibraryRecord,
   MageRecord,
   MaterialStockRecord,
+  MidRaidChangeRecord,
   ObjectiveRecord,
   PopulaceCohortRecord,
   PreparedSpellRecord,
@@ -141,6 +155,7 @@ export {
   LIBRARY,
   MAGE,
   MATERIAL_STOCK,
+  MID_RAID_CHANGE,
   OBJECTIVE,
   POPULACE_COHORT,
   POSITION_FIELD_NAMES,
@@ -166,6 +181,7 @@ export {
   addGodAgencyState,
   addGrantBudget,
   addKnowledgeFidelity,
+  addMidRaidChange,
   splitMaterialsByKind,
   loadWorldSnapshot,
   migrateWorldEnvelope,
@@ -175,6 +191,7 @@ export {
 export type { RowOf } from './records.js';
 export { attachRecord, collectRecords, readRecord } from './records.js';
 
+export type { MidRaidMark } from './universe.js';
 export {
   assertTraditionSelected,
   canIssueEdict,
@@ -182,8 +199,10 @@ export {
   readRulesetForObservation,
   createUniverse,
   currentEra,
+  findMidRaidMark,
   findUniverse,
   readEdicts,
+  readMidRaidMarks,
   readUniverse,
 } from './universe.js';
 

@@ -56,35 +56,35 @@ describe('shipped content', () => {
       forms: 14,
       cells: 70,
       v1Cells: 12,
-      nodes: 301,
+      nodes: 300,
       species: 6,
       traditions: 3,
       territories: 5,
-      primitives: 17,
+      primitives: 16,
       // One per action id in contracts.md §4.2, and one per magnitude the
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.
-      godCosts: 17,
-      godConstants: 72,
+      godCosts: 16,
+      // 73: `main`'s 72 plus `mid-raid-revert-multiplier`, which prices
+      // `raid-engagement.md` §1's walk-back of a wartime edict.
+      godConstants: 73,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of
       // them are the composition root's rather than the engine's — how many
       // rivals hang in the sky, how they are armed, how often one arrives, and
       // how long after a raid the next may not — because §1.1 keeps the
       // multiverse out of state and something has to say who is on the other
-      // end of the portal.
-      raidConstants: 46,
+      // end of the portal. Fifty-nine is `main`'s 46 plus the thirteen
+      // `raid-engagement` authored: §2's two phase boundaries, what each of §3's
+      // six verbs costs and does, the concealment ceiling, and the Vis a
+      // raiding party carries.
+      raidConstants: 59,
       // Thirty-eight since `apply-magic` added `apply-output-per-month` and
       // `apply-ration-per-month`. Both are scalars rather than role-appeal rows
       // — they price what applied work makes and eats, not what a role wants —
       // and both are in `REQUIRED_AUTONOMY_WEIGHTS`, so the loader checks the
       // set in both directions exactly as it does for the target weights.
-      //
-      // Forty since W116 added the two `goal-affiliate-*` opportunities beside
-      // them. Both pairs are scalars in the same file for the same reason, and
-      // they arrived on separate branches — see `interning.test.ts` for the
-      // revision digest that union produces.
-      autonomyWeights: 40,
+      autonomyWeights: 38,
     });
   });
 

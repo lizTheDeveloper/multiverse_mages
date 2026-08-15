@@ -502,5 +502,12 @@
     "unit": "count",
     "gloss": "Ceiling on grants ever authorized — starting allowance plus everything accrued. A ceiling on what may be granted, never on what is held, so a frugal god keeps earning and a spent one is not refunded. Unreachable at this build for the same reason the starting allowance is.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "mid-raid-revert-multiplier",
+    "value": 4096,
+    "unit": "fp",
+    "gloss": "Cost of unmaking a ruleset change made during a raid, as a multiple of the larger of the ordinary action price and what the change cost inside the engagement. fp(4) -- 'substantially more', four rather than two because the decision should sometimes stand unwanted: a doubling is an inconvenience, a quadrupling is a reason to keep a constitution you regret. The first favor drain attached to a decision rather than to existing.",
+    "tuningStatus": "untuned"
   }
 ]

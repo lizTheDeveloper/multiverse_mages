@@ -154,8 +154,8 @@ export {
 export type { Candidate, CandidateInput, CandidateLists } from './candidates.js';
 export { buildCandidates, candidateAt } from './candidates.js';
 
-export type { MaskInput } from './mask.js';
-export { isLegal, legalityMask } from './mask.js';
+export type { EngagementStance, MaskInput } from './mask.js';
+export { ENGAGEMENT_ACTIONS, isLegal, legalityMask } from './mask.js';
 
 export type { AdmissionResult, GateInput, RejectedAction, RejectionReason } from './gate.js';
 export { admit } from './gate.js';

@@ -56,12 +56,14 @@ import {
   addGodAgencyState,
   addGrantBudget,
   addKnowledgeFidelity,
+  addMidRaidChange,
   attachRecord,
   collectRecords,
   componentOf,
   defineWorldStateSchema,
   findUniverse,
   foundingGrantsRemaining,
+  MID_RAID_CHANGE,
   loadWorldSnapshot,
   migrateWorldEnvelope,
   readRecord,
@@ -136,37 +138,66 @@ function withLegacyMaterialsField(
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, KNOWLEDGE_FIDELITY.name),
+    envelopeWithout(
+      GOAL_COMMITMENT.name,
+      EFFORT_PROGRESS.name,
+      MATERIAL_STOCK.name,
+      ...GOD_SECTIONS,
+      GRANT_BUDGET.name,
+      KNOWLEDGE_FIDELITY.name,
+      MID_RAID_CHANGE.name,
+    ),
   );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, KNOWLEDGE_FIDELITY.name),
+    envelopeWithout(
+      EFFORT_PROGRESS.name,
+      MATERIAL_STOCK.name,
+      ...GOD_SECTIONS,
+      GRANT_BUDGET.name,
+      KNOWLEDGE_FIDELITY.name,
+      MID_RAID_CHANGE.name,
+    ),
   );
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, KNOWLEDGE_FIDELITY.name),
+    envelopeWithout(
+      MATERIAL_STOCK.name,
+      ...GOD_SECTIONS,
+      GRANT_BUDGET.name,
+      KNOWLEDGE_FIDELITY.name,
+      MID_RAID_CHANGE.name,
+    ),
   );
 }
 
 /** The world as the last build before the economy differentiated into kinds saw it. */
 function revisionFourEnvelope(materialsValue: number = LEGACY_MATERIALS_VALUE): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name, KNOWLEDGE_FIDELITY.name), materialsValue);
+  return withLegacyMaterialsField(
+    envelopeWithout(
+      MATERIAL_STOCK.name,
+      GRANT_BUDGET.name,
+      KNOWLEDGE_FIDELITY.name,
+      MID_RAID_CHANGE.name,
+    ),
+    materialsValue,
+  );
 }
 
 /** The world as the last build whose founding grants were unlimited saw it. */
 function revisionFiveEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(GRANT_BUDGET.name, KNOWLEDGE_FIDELITY.name);
+  return envelopeWithout(GRANT_BUDGET.name, KNOWLEDGE_FIDELITY.name, MID_RAID_CHANGE.name);
 }
 
 /** The world as the last build before scribing fidelity saw it. */
 function revisionSixEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(KNOWLEDGE_FIDELITY.name);
+  return envelopeWithout(KNOWLEDGE_FIDELITY.name, MID_RAID_CHANGE.name);
 }
 
 describe('the world-schema revision is read off the snapshot itself', () => {
@@ -232,6 +263,7 @@ describe('migrating a revision-1 world snapshot forward', () => {
     expect(carried).toContain(EFFORT_PROGRESS.name);
     for (const name of GOD_SECTIONS) expect(carried).toContain(name);
     expect(carried).toContain(MATERIAL_STOCK.name);
+    expect(carried).toContain(MID_RAID_CHANGE.name);
 
     // And the rewrite actually ran: `universe` no longer carries `materials`,
     // which is the one part of this walk that is not "append an empty
@@ -528,6 +560,39 @@ describe('migrating a revision-5 world snapshot forward', () => {
   });
 });
 
+describe('migrating a revision-6 world snapshot forward', () => {
+  it('appends mid-raid-change as an empty section, in last position', () => {
+    const before = revisionSixEnvelope();
+    const after = addMidRaidChange.migrate(before);
+    const appended = after.components.slice(before.components.length);
+
+    expect(appended.map((component) => component.name)).toEqual([MID_RAID_CHANGE.name]);
+    expect(appended[0]?.slots.length).toBe(0);
+    expect(appended[0]?.values.length).toBe(0);
+    expect(appended[0]?.fields.map((field) => field.name)).toEqual(
+      Object.keys(MID_RAID_CHANGE.fields),
+    );
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionSixEnvelope();
+    expect(addMidRaidChange.migrate(before).version).toBe(before.version);
+  });
+
+  it('restores a pre-raid-engagement save owing no surcharge on anything', () => {
+    // Empty rather than synthesised, and here the distinction is a bill. Before
+    // this revision the rule was that a raid in progress was frozen policy, so
+    // no save in existence holds a change this section could describe. A zeroed
+    // row would charge a god four times over for an edict she issued in
+    // peacetime.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionSixEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, MID_RAID_CHANGE).size).toBe(0);
+  });
+});
+
 describe('an older save loads into a current world', () => {
   it('loads, and nobody in it is committed to anything or part-way through anything', () => {
     const bytes = encodeSnapshot(revisionOneEnvelope());
@@ -565,6 +630,7 @@ describe('an older save loads into a current world', () => {
       BLESSING,
       UPHEAVAL,
       ERA_EVALUATION,
+      MID_RAID_CHANGE,
     ];
     for (const spec of godSpecs) {
       const store = componentOf(state, spec);

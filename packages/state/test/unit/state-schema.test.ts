@@ -179,6 +179,9 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // disk was written with twenty sections and expects the twenty-first to be
       // the one it does not know.
       'knowledge-fidelity',
+      // Appended by `raid-engagement`, as world-schema revision 8 -- it and
+      // `knowledge-fidelity` both claimed 7, and fidelity merged first.
+      'mid-raid-change',
     ]);
   });
 

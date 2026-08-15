@@ -742,6 +742,15 @@ function raidObservationOf(record: RaidRecord, god: GodTickReport | undefined): 
     attackerTempoCostWorldTicks:
       regenerated <= 0 ? 0 : Math.floor(record.attackerFavorCost / regenerated),
 
+    raidersFielded: record.raidersFielded,
+    raidersWithdrawn: record.raidersWithdrawn,
+    raidersStranded: record.raidersStranded,
+    nodesTakenByAttacker: record.nodesTakenByAttacker,
+    directivesApplied: record.directivesApplied,
+    directiveFavorSpent: record.directiveFavorSpent,
+    victor: record.victor,
+    reason: record.reason,
+
     // The action-economy fields, now measured rather than declared absent.
     //
     // They used to read `combatSources: []`, a zero denominator, and

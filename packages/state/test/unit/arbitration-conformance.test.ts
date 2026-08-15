@@ -448,6 +448,16 @@ describe('ruleset legality is computed in exactly one place', () => {
       // `permits()` as every other, which `reference-universe.test.ts` asserts
       // over all seventy cells.
       'packages/scenario/src/content-set.ts',
+      // The write side of the same rule. `rulesetWith` and `changesLegality`
+      // *produce* a ruleset rather than arbitrate one, and their axis cases ask
+      // "is the perdo bit set" — a question about an axis, which is the whole of
+      // what this list clears. They are next door to `permits()` rather than
+      // inside it deliberately: `permits.ts` is this check's positive control,
+      // and an axis-scoped site in it would blunt the thing that proves the
+      // classifier still recognises arbitration. Their cell case calls
+      // `permits()` rather than reading edicts, which is why there is no
+      // second implementation of the precedence here to find.
+      'packages/state/src/rule-change.ts',
     ]);
   });
 });

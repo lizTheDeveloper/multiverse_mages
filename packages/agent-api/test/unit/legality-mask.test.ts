@@ -13,19 +13,23 @@
 
 /**
  * Task 4.4, and the `observation-action-space` scenarios *"ruleset actions
- * unavailable mid-raid"* and *"ruleset actions available at world scale"*.
+ * available mid-raid to the defender"* and *"ruleset actions available at world
+ * scale"*.
  *
- * The engagement assertion is written over **every** action rather than over
- * 1–7 and 13, because §4.2 says so in terms:
+ * The engagement assertions here are still written over **every** action rather
+ * than over a named few, and the reason survives `raid-engagement.md` §1's
+ * repeal of the frozen-policy rule intact — it just points the other way now.
+ * §4.2's old sentence was:
  *
- * > This covers the ruleset actions 1–7 and 13, and equally 8–12, 14, and 15:
- * > blessing a defender mid-raid, or declaring ascension to escape a losing
- * > one, violates frozen policy exactly as squarely as forbidding a technique
- * > does. Silence in an earlier draft of this table was not permission.
+ * > ~~This covers the ruleset actions 1–7 and 13, and equally 8–12, 14, and 15…
+ * > Silence in an earlier draft of this table was not permission.~~
  *
- * A test that checked only the eight named ids would pass against a mask that
- * let an agent bless a defender mid-raid — which is the exact defect the
- * sentence was added to close.
+ * Four actions — 1, 2, 3, 4 — are now legal mid-raid **for the defender, in a
+ * phase that still admits a change**. Everything else stays masked, and the
+ * sweep over `ALL_GOD_ACTIONS` is what keeps that true by default: a test that
+ * checked only the four would pass against a mask that also let an agent bless
+ * a defender mid-raid, which is the same defect the repealed sentence was added
+ * to close.
  */
 
 import type { SimState } from '@mm/sim-core';
@@ -37,16 +41,25 @@ import {
   EDICT_KIND,
   EMPTY_GOD_STATE,
   GOD_STATE,
+  GRID_TECHNIQUE_COUNT,
+  MID_RAID_CHANGE,
+  RULE_CHANGE_KIND,
+  RULE_SCOPE,
   TERMINAL_REASON,
   UNIVERSE,
   attachRecord,
   cellIdAt,
+  collectRecords,
+  componentOf,
+  findUniverse,
   readUniverse,
 } from '@mm/state';
-import type { ContentCatalogue } from '@mm/agent-api';
+import type { ActionCostTable, ContentCatalogue } from '@mm/agent-api';
+import type { EngagementStance } from '@mm/agent-api';
 import {
   ACTION_SPACE_SIZE,
   ALL_GOD_ACTIONS,
+  ENGAGEMENT_ACTIONS,
   GOD_ACTION,
   RULESET_ACTIONS,
   buildCandidates,
@@ -59,10 +72,21 @@ import { describe, expect, it } from 'vitest';
 
 import { FIXTURE_CATALOGUE, engageWorld, firstUniverse, secondUniverse } from './fixtures.js';
 
-function maskOf(world: { state: SimState }): Uint8Array {
+function maskOf(world: { state: SimState }, engagement?: EngagementStance): Uint8Array {
   const candidates = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
-  return legalityMask({ state: world.state, candidates });
+  return legalityMask({
+    state: world.state,
+    candidates,
+    ...(engagement === undefined ? {} : { engagement }),
+  });
 }
+
+/** `RAID_SIDE`'s two values, named so the tests read as sides and not as ints. */
+const ATTACKER = 0;
+const DEFENDER = 1;
+
+/** A defender in a phase that still admits a ruleset change. */
+const DEFENDING: EngagementStance = { side: DEFENDER, admitsRuleChange: true };
 
 describe('the mask accompanies every observation', () => {
   it('is exactly the width of the action space', () => {
@@ -72,8 +96,54 @@ describe('the mask accompanies every observation', () => {
   });
 });
 
-describe('task 4.4 — every action except no-op is masked during engagement', () => {
-  it('leaves only action 0 legal, for all sixteen ids, not just 1–7 and 13', () => {
+describe('§4.2 as amended — the defender may change the ruleset mid-raid', () => {
+  it('opens exactly actions 1-4 to a defender whose phase admits a change', () => {
+    const world = firstUniverse();
+    engageWorld(world);
+    const mask = maskOf(world, DEFENDING);
+
+    expect(isLegal(mask, GOD_ACTION.noop)).toBe(true);
+    for (const action of ENGAGEMENT_ACTIONS) {
+      expect(isLegal(mask, action), `action ${action} must be open to the defender`).toBe(true);
+    }
+
+    // And nothing else. The sweep, not a list — an action added to §4.2
+    // tomorrow has to be put in ENGAGEMENT_ACTIONS deliberately to be legal
+    // mid-raid, which is the property the repealed total mask had.
+    const allowed = new Set<number>([GOD_ACTION.noop, ...ENGAGEMENT_ACTIONS]);
+    for (const action of ALL_GOD_ACTIONS) {
+      if (allowed.has(action)) continue;
+      expect(isLegal(mask, action), `action ${action} must stay masked mid-raid`).toBe(false);
+    }
+  });
+
+  it('gives the attacker nothing: forbidding is defender-only (§6.2)', () => {
+    const world = firstUniverse();
+    engageWorld(world);
+    const mask = maskOf(world, { side: ATTACKER, admitsRuleChange: true });
+
+    expect(isLegal(mask, GOD_ACTION.noop)).toBe(true);
+    for (const action of ALL_GOD_ACTIONS) {
+      if (action === GOD_ACTION.noop) continue;
+      expect(isLegal(mask, action), `attacker action ${action} must be masked`).toBe(false);
+    }
+  });
+
+  it('gives a defender in resolution nothing: the last phase is watch-only (§2)', () => {
+    const world = firstUniverse();
+    engageWorld(world);
+    const mask = maskOf(world, { side: DEFENDER, admitsRuleChange: false });
+
+    for (const action of ENGAGEMENT_ACTIONS) {
+      expect(isLegal(mask, action), `action ${action} must close in resolution`).toBe(false);
+    }
+  });
+
+  it('gives a caller who said nothing about the engagement nothing', () => {
+    // Silence is not permission. A caller that cannot say which side it is on
+    // or which phase the raid is in has not established that any verb is legal,
+    // and the honest mask is the no-op — the same rule the cost table follows
+    // when a catalogue arrives without prices.
     const world = firstUniverse();
     engageWorld(world);
     const mask = maskOf(world);
@@ -81,22 +151,45 @@ describe('task 4.4 — every action except no-op is masked during engagement', (
     expect(isLegal(mask, GOD_ACTION.noop)).toBe(true);
     for (const action of ALL_GOD_ACTIONS) {
       if (action === GOD_ACTION.noop) continue;
-      expect(isLegal(mask, action), `action ${action} must be masked mid-raid`).toBe(false);
+      expect(isLegal(mask, action), `action ${action} must be masked without a stance`).toBe(false);
     }
   });
 
-  it('masks the parameterized actions too, which an earlier draft left silent', () => {
+  it('still masks the parameterized actions, which an earlier draft left silent', () => {
     const world = firstUniverse();
     engageWorld(world);
-    const mask = maskOf(world);
+    const mask = maskOf(world, DEFENDING);
     // Named individually so a regression names itself: blessing a defender,
     // funding a university, opening a second portal, escaping by ascending.
+    // None of these is a ruleset change and none of them is repealed.
     expect(isLegal(mask, GOD_ACTION.blessMage)).toBe(false);
     expect(isLegal(mask, GOD_ACTION.assignRole)).toBe(false);
     expect(isLegal(mask, GOD_ACTION.fundUniversity)).toBe(false);
     expect(isLegal(mask, GOD_ACTION.encourageResearch)).toBe(false);
     expect(isLegal(mask, GOD_ACTION.openPortal)).toBe(false);
     expect(isLegal(mask, GOD_ACTION.declareAscension)).toBe(false);
+    // And the two ruleset actions that are *not* axis toggles: an edict is a
+    // per-cell dispensation with a budget, and §4.2 as amended does not grant
+    // it under fire.
+    expect(isLegal(mask, GOD_ACTION.issueDispensation)).toBe(false);
+    expect(isLegal(mask, GOD_ACTION.issueInterdiction)).toBe(false);
+    expect(isLegal(mask, GOD_ACTION.revokeEdict)).toBe(false);
+    expect(isLegal(mask, GOD_ACTION.changeTradition)).toBe(false);
+  });
+
+  it('closes an axis mid-raid on the same structural test world time applies', () => {
+    // Every technique permitted, so there is no technique left to permit — the
+    // mask must say so under fire exactly as it does at world scale, because
+    // the resolver refuses a toggle that would not move the bit either way.
+    const world = firstUniverse();
+    const universe = findUniverse(world.state);
+    const store = componentOf(world.state, UNIVERSE);
+    store.set(universe, 'permittedTechniques', (1 << GRID_TECHNIQUE_COUNT) - 1);
+    engageWorld(world);
+    const mask = maskOf(world, DEFENDING);
+
+    expect(isLegal(mask, GOD_ACTION.permitTechnique)).toBe(false);
+    expect(isLegal(mask, GOD_ACTION.forbidTechnique)).toBe(true);
   });
 });
 
@@ -308,6 +401,51 @@ describe('affordability is a mask condition, not a failure', () => {
     const free = pricedCatalogue(0);
     const mask = pricedMask(world, free);
     expect(isLegal(mask, GOD_ACTION.declareAscension)).toBe(false);
+  });
+
+  it('prices a revoke at the surcharge when the only edict is one a raid left', () => {
+    // `raid-engagement.md` §1's revert surcharge, at the *mask*. The resolver
+    // charging it is proved in `coordination`; this is the other half, and the
+    // reason `revertSurcharge` lives in `@mm/state` rather than beside either of
+    // them: agent-api may not import a rules package and coordination may not
+    // import agent-api, so a second copy of the price would be a player told
+    // they can afford something the server refuses.
+    const world = firstUniverse();
+    const favor = readUniverse(world.state, world.universe).favor;
+    // Priced so the ordinary revoke is affordable and the surcharged one is not.
+    const catalogue = pricedCatalogue(favor);
+    const marked = buildCatalogue(FIXTURE_CATALOGUE.nodes, [...FIXTURE_CATALOGUE.traditionIds], {
+      ...(catalogue.costs as ActionCostTable),
+      midRaidRevertMultiplier: 2048,
+    });
+
+    // Every edict this universe already carries, so that the mark below leaves
+    // no unmarked one to price the entry at the base.
+    const standing = collectRecords(world.state, EDICT);
+    expect(standing.length).toBeGreaterThan(0);
+    expect(isLegal(pricedMask(world, marked), GOD_ACTION.revokeEdict)).toBe(true);
+
+    // Now say a raid put every one of them there. The only revoke available is
+    // a surcharged one, and it is out of reach.
+    for (const { row } of standing) {
+      const mark = world.state.entities.create();
+      attachRecord(world.state, MID_RAID_CHANGE, mark, {
+        scope: RULE_SCOPE.cell,
+        targetId: row.cellId,
+        changeKind:
+          row.kind === EDICT_KIND.interdiction ? RULE_CHANGE_KIND.forbid : RULE_CHANGE_KIND.permit,
+        paidCost: 0,
+        markedTick: 0,
+      });
+    }
+    expect(isLegal(pricedMask(world, marked), GOD_ACTION.revokeEdict)).toBe(false);
+
+    // A second, unmarked edict reopens the entry: a mask over an action with
+    // many parameters can only honestly mean "there is a parameter this god can
+    // afford", and now there is one.
+    const ordinary = world.state.entities.create();
+    attachRecord(world.state, EDICT, ordinary, { cellId: 70, kind: EDICT_KIND.interdiction });
+    expect(isLegal(pricedMask(world, marked), GOD_ACTION.revokeEdict)).toBe(true);
   });
 
   it('prices a flip at the cheapest axis, not at the most recently churned one', () => {

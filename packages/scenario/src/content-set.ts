@@ -585,6 +585,7 @@ export function contentCatalogue(registry: ContentRegistry): ContentCatalogue {
     byAction: god.costs.byAction,
     foundUniversity: god.costs.foundUniversity,
     hysteresisStep: god.constants.hysteresisStep,
+    midRaidRevertMultiplier: god.constants.midRaidRevertMultiplier,
   });
 }
 

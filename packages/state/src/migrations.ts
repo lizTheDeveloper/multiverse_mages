@@ -88,6 +88,7 @@ import {
   GRANT_BUDGET,
   KNOWLEDGE_FIDELITY,
   MATERIAL_STOCK,
+  MID_RAID_CHANGE,
   UNIVERSE,
   UPHEAVAL,
 } from './components.js';
@@ -104,12 +105,20 @@ import {
  * | 5        | `city-and-supply-chain` | adds `material-stock`; **removes** `universe.materials` |
  * | 6        | `god-agency`        | adds `grant-budget` (`contracts.md` §1.1)     |
  * | 7        | `scribing-fidelity` | adds `knowledge-fidelity` (`docs/design/scribing-fidelity.md`) |
+ * | 8        | `raid-engagement`   | adds `mid-raid-change` (`raid-engagement.md` §1) |
  *
  * Revision 5 is the first step that does not only append. It splits the one
  * `materials` scalar into three kinds and takes the old field out of the
  * `universe` layout, because leaving it would leave a stock nothing spends
  * beside three stocks everything does. See {@link splitMaterialsByKind} for the
  * split rule and for why a section rewrite is safe here.
+ *
+ * Revision 7 appends `mid-raid-change`. It was written against revision 4 on
+ * `w37/raid-playable` and renumbered on the merge — `material-stock` and
+ * `grant-budget` had taken 5 and 6 in the meantime, and a revision number is
+ * what a migration step is keyed on, so keeping the branch's 5 would have
+ * silently applied a raid repair to a save that only needed the materials
+ * split.
  *
  * Revision 4 adds four components in one step, where the two before it added
  * one each. That is not a loosening of the rule — it is what the rule is for.
@@ -122,7 +131,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 7;
+export const WORLD_SCHEMA_VERSION = 8;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -140,13 +149,22 @@ export const WORLD_SCHEMA_VERSION = 7;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
-  // Revision 7's marker is `knowledge-fidelity`, newest first for the reason the
-  // next comment gives: a revision-7 envelope also carries `grant-budget`, so
-  // asking about the budget first would walk every save written since fidelity
-  // landed through a migration it has already had.
+  // Revision 8's marker is `mid-raid-change`, checked first because newest
+  // marker wins: a revision-8 envelope also carries `knowledge-fidelity` and
+  // `grant-budget`, and asking about either of those first would walk every
+  // save written since the raid seam landed through migrations it has had.
+  //
+  // `knowledge-fidelity` and `mid-raid-change` both landed claiming revision 7,
+  // on `scribing-fidelity` and `raid-engagement` respectively. They are
+  // reconciled here the way §4.4 requires — by order of arrival, not by
+  // preference: fidelity merged first and keeps 7, the raid seam takes 8, and
+  // `addMidRaidChange` steps 7 → 8 rather than 6 → 7. Nothing renumbers.
+  if (carried.has(MID_RAID_CHANGE.name)) return 8;
+  // Revision 7's marker is `knowledge-fidelity`, for the same newest-first
+  // reason: a revision-7 envelope also carries `grant-budget`.
   if (carried.has(KNOWLEDGE_FIDELITY.name)) return 7;
-  // Revision 6's marker is `grant-budget`, and it is checked first because a
-  // revision-6 envelope also carries `material-stock` — newest marker wins, or
+  // Revision 6's marker is `grant-budget`, and it is checked before
+  // `material-stock` because a revision-6 envelope also carries the stock — or
   // every save written since the budget landed would be walked through a
   // migration it has already had.
   if (carried.has(GRANT_BUDGET.name)) return 6;
@@ -252,6 +270,27 @@ export const addEffortProgress: WorldSchemaMigration = {
     return {
       ...envelope,
       components: [...envelope.components, emptySection(EFFORT_PROGRESS)],
+    };
+  },
+};
+
+/**
+ * Revision 6 → 7: append an empty `mid-raid-change` section.
+ *
+ * Empty is the correct repair and not merely the convenient one. A mark records
+ * a ruleset change made **during a raid**, and no build before this one could
+ * make one — the rule it descends from said a raid in progress was frozen
+ * policy. So there is no save in existence holding a change this section should
+ * describe, and synthesising rows would invent constitutional history: every
+ * restored universe would owe a surcharge on edicts it issued in peacetime.
+ */
+export const addMidRaidChange: WorldSchemaMigration = {
+  from: 7,
+  to: 8,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(MID_RAID_CHANGE)],
     };
   },
 };
@@ -472,6 +511,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   splitMaterialsByKind,
   addGrantBudget,
   addKnowledgeFidelity,
+  addMidRaidChange,
 ];
 
 /**

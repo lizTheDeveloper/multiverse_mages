@@ -100,7 +100,16 @@ import {
   takenObjectiveValue,
   totalObjectiveValue,
 } from './objectives.js';
+import type { RuleChange } from '@mm/state';
+
+import { ExposureRegister, exposedNodes, exposureMovements } from './exposure.js';
+import type { MaskSubject, RuleChangeResult } from './lock.js';
+import { RaidLock, applyRuleChange } from './lock.js';
+import type { EngagementPhaseValue } from './phases.js';
+import { phaseOf } from './phases.js';
 import { buildSpatialIndex } from './spatial.js';
+import type { RaidPurse } from './verbs.js';
+import { openPurse } from './verbs.js';
 import { generateTerrain } from './terrain.js';
 import type { TerrainGrid } from './terrain.js';
 import type { RaidTuning } from './tuning.js';
@@ -165,10 +174,45 @@ export interface Raid {
   /** Observation only. Draws nothing, decides nothing. See `action-economy.ts`. */
   readonly economy: ActionEconomyLedger;
   readonly counters: ClampCounters;
+  /**
+   * Which ruleset knobs this raid has already turned.
+   *
+   * `raid-engagement.md` §1's lock, and it lives here rather than in world state
+   * for a reason that is a fact rather than a preference: a raid runs inside a
+   * single world tick, so it can never be serialized mid-engagement and a lock
+   * has nothing to survive. What *does* outlive the raid is the mark the lock
+   * leaves — see `MID_RAID_CHANGE` in `@mm/state`.
+   */
+  readonly lock: RaidLock;
+  /**
+   * The two stocks the raid is played out of (`raid-engagement.md` §3).
+   *
+   * Raid-scoped, seeded at portal open, settled through `RaidOutcome`. Nothing
+   * here debits a world: a verb that moved favor directly would be the one write
+   * in the engine that could half-happen on a crashed worker.
+   */
+  readonly purse: RaidPurse;
+  /**
+   * Nodes the attacker has been seen to cast, once each.
+   *
+   * §3's exposure. Filled by `resolveOneCast`; read at resolution. See
+   * `exposure.ts` for why the mechanic teaches outright rather than weighting a
+   * discovery, and for why it therefore draws no randomness.
+   */
+  readonly exposure: ExposureRegister;
   /** Where the attacker came in, and the only way out. */
   readonly portal: Point;
   /** Computable before the first tick, from `RaidState` alone. */
   readonly maxTicks: number;
+  /**
+   * The engagement tick contact was first observed on, or `-1` for never.
+   *
+   * The muster phase's boundary (`raid-engagement.md` §2), and the only thing
+   * this change adds to the tick loop. Written once, by the first ledgered
+   * damage or the first resolved cast — see `phases.ts` for why a detachment's
+   * intrinsic attack has to count.
+   */
+  contactTick: number;
   readonly faults: RaidFaults;
   outcome: RaidOutcome | undefined;
 }
@@ -271,7 +315,10 @@ export function openPortal(options: OpenPortalOptions): Raid {
     faults: options.faults ?? {},
   });
 
-  const terrain = generateTerrain(tuning, rng);
+  // Computed before the terrain, because the terrain generator has to know
+  // where the exit is in order to guarantee there is one. See `terrain.ts`.
+  const portal: Point = { x: floorDiv(tuning.battlefieldExtent, 2), y: 0 };
+  const terrain = generateTerrain(tuning, rng, portal);
 
   const raid: Raid = {
     attacker,
@@ -290,8 +337,12 @@ export function openPortal(options: OpenPortalOptions): Raid {
     ledger: new OutcomeLedger(),
     economy: new ActionEconomyLedger(),
     counters,
-    portal: { x: floorDiv(tuning.battlefieldExtent, 2), y: 0 },
+    lock: new RaidLock(),
+    purse: openPurse(host.world, tuning.attackerVisStock),
+    exposure: new ExposureRegister(),
+    portal,
     maxTicks: maxEngagementTicks(engagement.raid),
+    contactTick: -1,
     faults: options.faults ?? {},
     outcome: undefined,
   };
@@ -426,6 +477,9 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
   ): void => {
     ledger.set(target, (ledger.get(target) ?? 0) + amount);
     raid.economy.damage(target, source, amount, attempt);
+    // Contact, observed at the one place every point of damage in the tick
+    // passes through — casts, denial fields, detachments and summons alike.
+    if (raid.contactTick < 0) raid.contactTick = tick;
   };
 
   // ---- Phase 3: area denial. Additive across fields; bypasses concealment. ----
@@ -570,9 +624,48 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
     engagementTick: nextTick,
     maxTicks: raid.maxTicks,
     allObjectivesResolved: allObjectivesResolved(raid.objectives),
-    livingAttackers: alive.filter((brief) => brief.side === RAID_SIDE.attacker).length,
+    livingAttackers: alive.filter(
+      (brief) => brief.side === RAID_SIDE.attacker && !isMarchingAtAWall(raid, brief, nextTick),
+    ).length,
     livingDefenders: alive.filter((brief) => brief.side === RAID_SIDE.defender).length,
+    // `livingCombatants` excludes the withdrawn, so they have to be counted off
+    // the roster rather than off `alive`.
+    withdrawnAttackers: withdrawnAttackerCount(raid),
   });
+}
+
+/** Attackers who left through the portal alive. */
+function withdrawnAttackerCount(raid: Raid): number {
+  let count = 0;
+  for (const brief of raid.rosters[RAID_SIDE.attacker].briefs) {
+    if (brief.withdrawn && isAlive(raid, brief)) count += 1;
+  }
+  return count;
+}
+
+/**
+ * An attacker who is trying to leave and can never arrive.
+ *
+ * Not a third kind of death and not a shortcut: she is still alive, still on
+ * the field, and `resolveRaid` will take her under the stranded-raider rule
+ * exactly as it would have. What this excludes her from is the **termination
+ * count**, because a raid whose every remaining attacker is walking at a wall
+ * has nothing left to decide, and without it it runs to portal collapse —
+ * measured at 3,199 engagement ticks against a p50 of 65.
+ *
+ * Two conditions, and both are needed. Past the withdrawal tick, because before
+ * it she is still fighting and a raid is not over merely because one exit is
+ * blocked. Unreachable, because `stepTowardGoal` degrades to a direct step for
+ * an unreachable goal rather than refusing, so she keeps moving and no other
+ * signal distinguishes her from a raider who is simply far away.
+ *
+ * The portal cell itself is guaranteed passable by `generateTerrain`; what is
+ * left after that is the walled-off pocket a raider can deploy into, which
+ * terrain generation can produce and nothing prevents.
+ */
+function isMarchingAtAWall(raid: Raid, brief: CombatantBrief, tick: number): boolean {
+  if (tick < raid.tuning.withdrawAfterTicks) return false;
+  return !raid.navigator.canReach(positionOf(raid, brief), raid.portal);
 }
 
 /**
@@ -632,10 +725,16 @@ function chooseIntent(
 
   // 1. Leave, while leaving is still possible. The stranded-raider rule makes
   //    this the difference between a live mage and a dead one.
-  if (
-    isAttacker &&
-    raid.engagement.raid.portalStability <= raid.tuning.withdrawStabilityMargin
-  ) {
+  //
+  // Keyed on **how long she has been here**, not on what is left of the portal.
+  // The stability form was measured dead: a portal opens with 2,411–3,577
+  // engagement ticks of life and the longest raid observed is 148, so the
+  // window opened thousands of ticks after every raid had ended. Over 97 raids
+  // on four seeds, 169 raiders went out, **0 came back and 169 were stranded**.
+  // Retuning the old threshold could not have fixed it — `portalStabilityJitter`
+  // is ±600 ticks, so any absolute remaining-stability figure fires at a tick
+  // that varies by twelve hundred, which is longer than any raid runs.
+  if (isAttacker && tick >= raid.tuning.withdrawAfterTicks) {
     return { kind: 'withdraw', goal: raid.portal };
   }
 
@@ -906,6 +1005,16 @@ function resolveOneCast(
     vigor: field(raid, caster.handle, 'vigor'),
   });
   if (!resolution.resolved) return;
+
+  // A cast that lands no damage — a ward, a summon, a blink — is still the
+  // moment the two sides are in the same fight.
+  if (raid.contactTick < 0) raid.contactTick = tick;
+
+  // Exposure (§3). Observed here, at the single point a node becomes effects on
+  // the host's ground, so there is no second definition of "cast in front of
+  // the host's academics" to drift from this one. Attacker casts only: a
+  // defender casting at home is not performing for anybody.
+  if (caster.side === RAID_SIDE.attacker) raid.exposure.observe(nodeId);
 
   caster.preparedSpells = resolution.preparedSpells;
   setField(raid, caster.handle, 'vigor', field(raid, caster.handle, 'vigor') - resolution.cost);
@@ -1260,10 +1369,29 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
   const casualties: RaidOutcome['casualties'] = [];
   const cohortLosses: RaidOutcome['cohortLosses'] = [];
   const movements = [...raid.ledger.knowledgeMovements];
+  // Exposure, resolved against the host as it stands *now*: a mage who died in
+  // the last tick did not go home with a lesson.
+  const exposures = exposedNodes(raid.host, raid.exposure);
+  movements.push(...exposureMovements(exposures));
+
+  // The three counts `RaidOutcome` documents. Summed in the walk below rather
+  // than in a second pass, so they cannot describe a different roster than the
+  // casualties do.
+  let raidersFielded = 0;
+  let raidersWithdrawn = 0;
+  let raidersStranded = 0;
 
   for (const roster of raid.rosters) {
     for (const brief of roster.briefs) {
       const dead = !isAlive(raid, brief);
+      if (
+        brief.side === RAID_SIDE.attacker &&
+        brief.sourceKind === COMBATANT_SOURCE_KIND.mage
+      ) {
+        raidersFielded += 1;
+        if (brief.withdrawn && !dead) raidersWithdrawn += 1;
+        else if (!dead) raidersStranded += 1;
+      }
       // The stranded-raider rule. An attacker still on the field when the
       // portal collapses is lost with it, and takes everything she was carrying.
       //
@@ -1333,6 +1461,32 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
     primitiveApplication: raid.ledger.primitiveApplication(),
     actionEconomy: raid.economy.report(engagementTickOf(raid)),
     peakCombatants: raid.ledger.peakCombatants,
+    raidersFielded,
+    raidersWithdrawn,
+    raidersStranded,
+    favorSpentByDefender: raid.purse.defenderSpent,
+    visSpentByAttacker: raid.purse.attackerSpent,
+    // Unspent Vis is captured when the raiders do not come home with it, and
+    // carried otherwise. §3 calls Vis lootable and this is the whole of that:
+    // there is nowhere at world scale to put captured Vis yet, so it is
+    // recorded and not inserted — see the economy spec amendment.
+    visCapturedByDefender:
+      victorOf({
+        takenValue: taken,
+        totalValue: total,
+        victoryThresholdFraction: raid.tuning.victoryThresholdFraction,
+      }) === RAID_SIDE.defender
+        ? raid.purse.attackerVis
+        : 0,
+    exposures,
+    // §1's second half: the lock dies with the raid, the mark does not.
+    constitutionalMarks: raid.lock.changes().map((locked) => ({
+      scope: locked.scope,
+      targetId: locked.targetId,
+      changeKind: locked.kind,
+      paidCost: locked.paidCost,
+      atTick: locked.atTick,
+    })),
   };
 
   raid.outcome = outcome;
@@ -1356,6 +1510,62 @@ export function closePortal(raid: Raid): void {
  */
 export function engagementTickOf(raid: Raid): number {
   return raid.host.world.clock.engagementTick;
+}
+
+/**
+ * Which of `raid-engagement.md` §2's three phases this engagement is in.
+ *
+ * Derived on every call and stored nowhere — see `phases.ts`. It gates the
+ * player's verbs and nothing in the tick loop reads it, which is what lets the
+ * whole phase structure be added to a finished engine without moving a number.
+ */
+/**
+ * Changes the ruleset this raid is fought under, under the lock.
+ *
+ * The thin wrapper `lock.ts` deliberately does not have: everything below is
+ * reading a `Raid` apart, and the module that owns the rule is written against
+ * the four things it actually needs so that it can be tested without one.
+ *
+ * Only mage combatants are subjects. A detachment and a summon hold no
+ * knowledge, so their masks are empty and recomputing one is a no-op with a
+ * component write in it.
+ */
+export function changeRuleMidRaid(
+  raid: Raid,
+  change: RuleChange,
+  paidCost: Fixed,
+): RuleChangeResult {
+  const subjects: MaskSubject[] = [];
+  for (const roster of raid.rosters) {
+    for (const brief of roster.briefs) {
+      if (brief.sourceKind !== COMBATANT_SOURCE_KIND.mage) continue;
+      const participant = brief.side === RAID_SIDE.attacker ? raid.attacker : raid.host;
+      subjects.push({ brief, held: heldInstancesOf(participant, brief.sourceId) });
+    }
+  }
+
+  return applyRuleChange({
+    arbiter: raid.arbiter,
+    lock: raid.lock,
+    change,
+    paidCost,
+    atTick: engagementTickOf(raid),
+    subjects,
+    baseConcealment: raid.tuning.combatantBaseConcealment,
+    setConcealment: (brief, value) => {
+      componentOf(raid.engagement.entities, COMBATANT).set(brief.handle, 'concealment', value);
+    },
+  });
+}
+
+export function currentPhase(raid: Raid): EngagementPhaseValue {
+  return phaseOf({
+    engagementTick: engagementTickOf(raid),
+    contactTick: raid.contactTick,
+    allObjectivesResolved: allObjectivesResolved(raid.objectives),
+    musterCeilingTicks: raid.tuning.musterCeilingTicks,
+    resolutionOnsetTicks: raid.tuning.resolutionOnsetTicks,
+  });
 }
 
 /** Every instance a mage holds, in the shape arbitration reads. */

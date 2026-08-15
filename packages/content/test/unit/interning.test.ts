@@ -140,21 +140,13 @@ describe('interning', () => {
     expect(registry.intern('cell', 'creo-animal')).toBe(1);
     expect(registry.intern('cell', 'rego-nomen')).toBe(70);
     expect(registry.intern('node', 'can-call-the-pack')).toBe(1);
-    // 301, not 300: `w190/scribing-fidelity` authored `pn-the-wrong-true-name`,
-    // the one v1 node carrying `knowledge-corrupt`. Node ids intern in **sort
-    // order**, not file order, so it lands at 227 and every node after it shifts
-    // by one — `rn-keep-the-name-close` from 285 to 286, `rv-turn-the-casting`
-    // from 300 to 301. That renumbering is exactly what these assertions exist
-    // to surface, and the considered decision is that a new primitive needs a
-    // node to carry it: an effect primitive with no authored node is a rule that
-    // behaves as a comment.
-    //
-    // The count before that was 300, from pre-authoring the other 58 cells (249
-    // nodes) plus `knowledge-model` task 2.5's `rn-keep-the-name-close`, the one
-    // neither side of that merge shared.
-    expect(registry.intern('node', 'pn-the-wrong-true-name')).toBe(227);
-    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(286);
-    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(301);
+    // 300, not 299: pre-authoring the other 58 cells brought 249 nodes, and
+    // `knowledge-model` task 2.5's `rn-keep-the-name-close` is the one neither
+    // side of that merge shared. Node ids intern in sort order, so it lands at
+    // 285 and every node after it shifts by one — the renumbering these
+    // assertions exist to surface.
+    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(285);
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(300);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
@@ -418,17 +410,45 @@ describe('contentRevision', () => {
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of files.
     //
-    // e8442af2c5f91ae6f80ad9a178e0e451 -> 8a20c0a64242b6322283d439724f6993,
-    // when scribing fidelity added the `knowledge-corrupt` primitive and
-    // `pn-the-wrong-true-name`, the one v1 node carrying it. In the preimage for
-    // the plainest reason on the list: two universes disagreeing about whether
-    // corruption is a thing magic can do would disagree about what a raid into
-    // either of them is *able to do*, which is the arbitration question the host
-    // ruleset exists to answer. And because node ids intern in sort order, the
-    // new node renumbers 74 nodes after it — a save's `nodeId` columns mean
-    // different nodes across the boundary, which is precisely what a revision
-    // mismatch has to refuse.
-    expect(registry.contentRevision).toBe('8a20c0a64242b6322283d439724f6993');
+    // ---- And a fourth confluence, which is why the literal moved again ----
+    //
+    // Everything above describes `main`'s history. What follows arrived on
+    // `w182/raid-seam`, and the merge of the two is what this literal is a
+    // digest over. Neither side's value survives, for the same reason as every
+    // paragraph above: a digest over a union is a third value.
+    //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> fd8ce7ef5fded0b0a23fc85f8006f595, when `main` met
+    // `w37/raid-playable` and took the fourteen magnitudes that make
+    // `raid-engagement.md` §§1-3 playable: eleven in `raid-constant.json` —
+    // where §2's two phase boundaries fall, what each of §3's six raid verbs
+    // costs and does, the concealment ceiling, and the Vis a raiding party
+    // carries — plus `mid-raid-revert-multiplier` in `god-constant.json`, which
+    // prices §1's walk-back of a wartime edict. They are in the preimage for the
+    // reason every other raid and god magnitude is: two universes that disagreed
+    // about when the defender stops having verbs, or about what unmaking a
+    // wartime edict costs, would be playing two different games while their
+    // revisions agreed they were compatible. Nothing existing changed a byte.
+    //
+    // Neither literal survives, for the third time in this list. The branch
+    // asserted 74e73627 over a preimage that had W17's autonomy weights and the
+    // raid magnitudes but neither the material split, the summon cap, the two
+    // `node.json` passes, the grant budget nor `apply-magic`'s two scalars;
+    // `main` asserted d4e30476 over a preimage holding all of those and none of
+    // the raid magnitudes. This tree is the first holding both, and fd8ce7ef
+    // was measured from that merged tree.
+    //
+    // **And it moves again here, deliberately.** Two raid constants were
+    // renamed, re-valued and re-united: `withdraw-stability-margin` (409,600
+    // raw) became `withdraw-after-ticks` (56 ticks) and
+    // `resolution-stability-margin` (614,400 raw) became
+    // `resolution-onset-ticks` (96 ticks). Both were thresholds on *remaining
+    // portal stability* against a portal that outlives the raid by a factor of
+    // twenty, so neither could ever fire — 0 of 169 raiders withdrew across 97
+    // raids, and resolution was a phase no raid entered. An id, a value and a
+    // unit are all in the preimage, which is exactly right: two universes that
+    // disagreed about when a raider runs for the door would be playing
+    // different games while their revisions claimed compatibility.
+    expect(registry.contentRevision).toBe('824c16c93ac3441c146848760eaf3ef8');
   });
 
   it('is stable across loads of identical content', () => {

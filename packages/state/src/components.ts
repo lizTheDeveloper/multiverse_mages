@@ -1098,6 +1098,57 @@ export interface ObjectiveRecord {
 
 export const OBJECTIVE_FIELDS_MATCH: KeysMatch<ObjectiveRecord, typeof OBJECTIVE> = true;
 
+/**
+ * One ruleset change made **during a raid**, still bearing its lock's mark.
+ *
+ * `docs/design/raid-engagement.md` §1 repeals the vision's frozen-policy rule
+ * and replaces it with two halves. The first half — *"every change locks until
+ * the raid ends"* — needs no world state at all: a raid runs inside a single
+ * world tick, so a lock cannot outlive the in-memory `Raid` object it is
+ * attached to and there is nothing for a snapshot to carry.
+ *
+ * The second half is what this component is for. *"After the raid, reverting a
+ * mid-raid change costs substantially more favor than the change did."* The
+ * revert happens seasons later, across saves and restarts, so the mark has to
+ * be durable. One row per change, hung on its own entity rather than on the
+ * universe, because a god may make several under pressure and a fixed field
+ * would cap what the design deliberately does not.
+ *
+ * `paidCost` is carried rather than recomputed. The surcharge is defined
+ * against *what the change cost when it was made*, and a raid's verb prices are
+ * content the balance harness will move — recomputing later would price a
+ * historical decision at today's rates, which is not what the design says and
+ * is not what the player was told.
+ */
+export const MID_RAID_CHANGE = {
+  name: 'mid-raid-change',
+  fields: {
+    scope: 'u8',
+    targetId: 'u16',
+    changeKind: 'u8',
+    paidCost: 'i32',
+    markedTick: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface MidRaidChangeRecord {
+  /** {@link RULE_SCOPE}: technique, form, or cell. */
+  scope: Enum8;
+  /** The technique bit, the form bit, or the cell id, by `scope`. */
+  targetId: ContentId;
+  /** {@link RULE_CHANGE_KIND}: which way legality moved. */
+  changeKind: Enum8;
+  /** Favor paid for the change inside the raid. The surcharge's base. */
+  paidCost: Fp;
+  /** The world tick the raid that produced this mark ended on. */
+  markedTick: Tick;
+}
+
+export const MID_RAID_CHANGE_FIELDS_MATCH: KeysMatch<
+  MidRaidChangeRecord,
+  typeof MID_RAID_CHANGE
+> = true;
+
 // ---------------------------------------------------------------------------
 // Schemas.
 // ---------------------------------------------------------------------------
@@ -1139,6 +1190,12 @@ export const WORLD_COMPONENTS = [
   // `KNOWLEDGE_INSTANCE`. It goes last, because section order is this list's
   // order and every revision-6 save on disk was written with twenty sections.
   KNOWLEDGE_FIDELITY,
+  // And once more, a revision later still: `mid-raid-change` is world-schema
+  // revision 8. It was written against revision 4 on `w37/raid-playable`, and
+  // claimed revision 7 at the same time `knowledge-fidelity` did; fidelity
+  // merged first, so this one steps 7 -> 8 and sits behind it here. Section
+  // order is this list's order, and appending is the only safe edit.
+  MID_RAID_CHANGE,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */
