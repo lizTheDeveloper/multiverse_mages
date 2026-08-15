@@ -177,8 +177,11 @@ describe('voice line banks', () => {
       readFileSync(new URL('../../data/character/character.json', import.meta.url), 'utf8'),
     ) as { id: string; species: string; lines?: { id: string; tier: string; text: string }[] }[];
     const gendered = /\b(she|he|her|his|him|hers)\b/iu;
-    const tiers = new Set(banks.flatMap((b) => b.lines.map((l) => l.tier)));
-    const seen = new Set(banks.flatMap((b) => b.lines.map((l) => l.id)));
+    // Widened to string rather than cast at the call site: the point of this
+    // check is that an unknown tier fails, and a cast would make the compiler
+    // agree it cannot happen while the data still could.
+    const tiers = new Set<string>(banks.flatMap((b) => b.lines.map((l) => String(l.tier))));
+    const seen = new Set<string>(banks.flatMap((b) => b.lines.map((l) => l.id)));
     for (const character of characters) {
       for (const line of character.lines ?? []) {
         expect(gendered.test(line.text), `${line.id}: ${line.text}`).toBe(false);
