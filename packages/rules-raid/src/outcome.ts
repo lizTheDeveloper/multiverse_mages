@@ -34,6 +34,7 @@ import type { ContentId } from '@mm/content';
 import type { Fixed } from '@mm/sim-core';
 import type { Handle, RaidSideValue } from '@mm/state';
 
+import type { ActionEconomyReport } from './action-economy.js';
 import type { ObjectiveKindValue } from './objectives.js';
 import type { RaidEndReasonValue } from './termination.js';
 
@@ -127,6 +128,21 @@ export interface RaidOutcome {
    * (`contracts.md` §7 puts definitions in `agent-interface`, thresholds here).
    */
   readonly primitiveApplication: readonly (readonly [string, PrimitiveApplication])[];
+
+  /**
+   * **What the combat primitives were actually worth**, in combatant-ticks of
+   * enemy action denied rather than in magnitude put on the field.
+   *
+   * Beside {@link primitiveApplication} rather than replacing it, deliberately.
+   * `winRateByPrimitive`'s ablation reads that field and its meaning must not
+   * move under it; and the two answer different questions. Magnitude applied is
+   * *how much a primitive did*. This is *what the doing bought*, which is the
+   * question a combat node exists to answer and the one no metric in the project
+   * was asking. See `action-economy.ts` for the three channels and for the
+   * fourth, displacement, which this engine cannot produce and which is declared
+   * rather than reported as a zero.
+   */
+  readonly actionEconomy: ActionEconomyReport;
 
   /** Peak simultaneous combatants per side, for the cap's own bound test. */
   readonly peakCombatants: readonly [number, number];

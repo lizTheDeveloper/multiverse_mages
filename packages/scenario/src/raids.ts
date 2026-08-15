@@ -90,7 +90,8 @@ import {
   portalGate,
   runRaid,
 } from '@mm/rules-raid';
-import type { RaidParticipant, RaidTuning } from '@mm/rules-raid';
+import type { ActionEconomyReport, RaidParticipant, RaidTuning } from '@mm/rules-raid';
+import type { AblationMask } from '@mm/coordination';
 import {
   TERMINAL_REASON,
   captureRuleset,
@@ -144,6 +145,46 @@ export interface RaidRecord {
    * claim; must read zero across every raid of every run.
    */
   readonly forbiddenCastsBlocked: number;
+  /**
+   * **What happened inside the raid**, carried across the boundary rather than
+   * recomputed on the far side of it.
+   *
+   * Until this field existed, a raid reported its *shape* — how long it ran,
+   * what the portal cost, who won — and nothing at all about the combat in it.
+   * The consequence was measured and is the reason this field is here: with
+   * `portal-rush` fielding real combatants, **ablating six of the seven combat
+   * primitives moved the raid log on none of four seeds**, because the log was
+   * structurally incapable of showing it. The mask was live and the instrument
+   * was blind, which is the worse of the two failures: a sweep arm ablating one
+   * of those six reported a null for a working wire.
+   *
+   * `RaidOutcome` carries three things that could have closed it, and this is
+   * the one with a written consumer:
+   *
+   * - `actionEconomy` — `RaidObservation` already declares `combatSources`,
+   *   `totalCombatantTicks`, `worldScaleRemovals`, `summonsRemoved` and
+   *   `unimplementedCombatChannels`, field for field, and
+   *   `collectCombatActionEconomy` and `collectCombatThresholdEfficiency` are
+   *   written against them. Two of §7's six unmeasured metrics are waiting on
+   *   exactly this and nothing else.
+   * - Opposing-side casualties — **subsumed**, not rejected on taste.
+   *   {@link ActionEconomyReport.removals} is per side, so the number that
+   *   would have justified a `remoteCasualties` field is already in here beside
+   *   the local one.
+   * - `primitiveApplication` — magnitude put on the field. Deliberately *not*
+   *   carried: nothing downstream of this boundary reads it. `winRateByPrimitive`
+   *   attributes wins to arms, not to these rows, and a second field with no
+   *   consumer is how this project got four metrics that read as healthy
+   *   constants while being incapable of moving.
+   *
+   * **Raid-relative, not local-relative.** Every other side-bearing field on
+   * this record is oriented to this universe — `localCasualties` counts *our*
+   * dead. This one is not: its pairs are indexed by `RAID_SIDE`, attacker first,
+   * exactly as `rules-raid` computed them. Re-orienting it here would mean
+   * arithmetic on a record whose whole job is to carry numbers unmodified, and
+   * §7's two collectors pool both sides anyway.
+   */
+  readonly actionEconomy: ActionEconomyReport;
 }
 
 /** Everything {@link raidSystem} needs. */
@@ -169,6 +210,18 @@ export interface RaidSystemDeps {
    * log makes one reset enough.
    */
   readonly raidsSoFar: () => readonly RaidRecord[];
+  /**
+   * §9's ablation mask for this run, or absent for the control arm.
+   *
+   * Threaded because without it **no combat primitive is ablatable**, and a
+   * sweep arm that neutralizes `direct-damage` would report "no detected
+   * effect" while every raid in the arm ran at full strength — a false negative
+   * dressed as a measurement, which is worse than a missing one.
+   *
+   * Absent rather than `NO_ABLATION`, matching `world-step.ts`: every control
+   * run and every committed baseline then takes the branch it was recorded on.
+   */
+  readonly ablation?: AblationMask | undefined;
 }
 
 /**
@@ -364,8 +417,18 @@ function resolveOneRaid(input: {
     host,
     registry: deps.content.registry,
     grid: deps.grid,
+    // The composition root's fetch, not one built here. `worldDeps` asked the
+    // content for every combat primitive's node effects and recorded that it
+    // did; passing that object through is what makes the recording a fact about
+    // the assembled simulation rather than about a function somebody wrote.
+    combat: deps.content.deps.combat,
     tuning: deps.tuning,
     raidSeed: input.raidSeed,
+    // §9's mask, per run rather than per content set — the same placement
+    // `referenceScenario` uses and for the same reason: a `ReferenceContent` is
+    // memoized for the life of a worker, and a mask folded into it would
+    // neutralize every arm scheduled after the one that set it.
+    ...(deps.ablation === undefined ? {} : { ablation: deps.ablation }),
   });
   deployRaid(raid);
 
@@ -414,6 +477,9 @@ function resolveOneRaid(input: {
     nodesGainedLocally: outbound ? countOf(applied.nodesGainedByRaider) : 0,
     attackerFavorCost: input.attackerFavorCost,
     forbiddenCastsBlocked: outcome.forbiddenCastsBlocked,
+    // Passed through untouched. `resolveRaid` froze it at resolution and this
+    // layer neither normalises nor re-sides it; see the field's own note.
+    actionEconomy: outcome.actionEconomy,
   });
 }
 

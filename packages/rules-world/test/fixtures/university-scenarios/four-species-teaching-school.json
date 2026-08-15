@@ -1,0 +1,18 @@
+{
+  "id": "four-species-teaching-school",
+  "ticks": 240,
+  "capacity": 40,
+  "axes": {
+    "speciesMix": "human+elf+dwarf+draconic",
+    "staffSize": "16",
+    "roleMix": "teaching-school",
+    "stage": "mid",
+    "scribeQueue": "pinned-zero",
+    "ruleset": "permit-all"
+  },
+  "actions": [
+    { "tick": 60, "kind": "shelve", "nodeId": 291 },
+    { "tick": 120, "kind": "unstaff", "speciesId": "draconic" },
+    { "tick": 180, "kind": "graduate", "count": 20 }
+  ]
+}

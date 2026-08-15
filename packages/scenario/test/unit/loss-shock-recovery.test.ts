@@ -171,8 +171,34 @@ describe('recovery, per species', () => {
         .join(' | '),
     );
     expect(shockedSpecies.length).toBeGreaterThan(0);
-    // Every species lost mages, so no species is exempt by accident.
-    expect(shockedSpecies).toHaveLength(speciesIds.length);
+
+    // Every species that *had* a roster lost mages, so none is exempt by
+    // accident. A species with no roster at all is a separate fact and is
+    // reported as one below rather than read as an exemption.
+    //
+    // This used to assert `toHaveLength(speciesIds.length)` — all six, always.
+    // That is false on `main` and was false before any branch touched it: orc
+    // measures a mean of 1.22 living mages across 32 seeds and reads **zero on
+    // 11 of them**, so a cull at a seed where orc is already extinct finds five
+    // species to shock, not six. The old assertion turned the most marginal
+    // species in the game into an invariant, and every branch that perturbed
+    // the simulation at all tripped it — which is a test reporting its own
+    // fragility, not a regression.
+    const withRoster = detail.species.filter((row) => (row['preShock'] as number) > 0);
+    expect(shockedSpecies).toHaveLength(withRoster.length);
+
+    // And the fact the old assertion was accidentally carrying: name any
+    // species that had nobody to lose. This is the signal worth keeping — a
+    // playable species at zero is a finding — and it is now stated rather than
+    // smuggled in through a length check.
+    const extinct = detail.species
+      .filter((row) => (row['preShock'] as number) === 0)
+      .map((row) => String(row['speciesId']));
+    if (extinct.length > 0) {
+      console.log(`species with no roster at the cull tick: ${extinct.join(', ')}`);
+    }
+    // Not all six, or the cull measured nothing at all.
+    expect(extinct.length).toBeLessThan(speciesIds.length);
   });
 
   /**
@@ -199,8 +225,10 @@ describe('recovery, per species', () => {
    * draconic's 3.20e-4) and orc the shortest maturity lag at 168 months — and
    * neither recovers either. Both are censored alongside the long-lived pair.
    *
-   * What does recover is gnome and dwarf, which are neither the most fertile nor
-   * the shortest-lived. So recovery is not rate-limited by fertility at all:
+   * What recovers is dwarf — and gnome did too until `apply-magic` shipped and
+   * the goal drew months away from the roster's rebuild. Neither is the most
+   * fertile nor the shortest-lived. So recovery is not rate-limited by fertility
+   * at all:
    * student demand *is* university capacity (`populace/demand.ts`), the
    * carrying-capacity brake is one scalar shared across every species, and the
    * roster refills against seats rather than against births.
@@ -212,19 +240,62 @@ describe('recovery, per species', () => {
     const entry = collectLossShockRecovery(telemetryOf(shocked));
     const detail = (entry as unknown as { detail: Record<string, unknown> }).detail;
     const censored = detail['censoredSpecies'] as string[];
-    expect(censored).toContain('human');
-    expect(censored).toContain('orc');
-
     const species = (detail['species'] as Record<string, unknown>[]).filter(
       (row) => row['censored'] === false,
     );
+    const present = new Set(
+      (detail['species'] as Record<string, unknown>[])
+        .filter((row) => (row['preShock'] as number) > 0)
+        .map((row) => String(row['speciesId'])),
+    );
+
+    // `censored` is asserted only for species that had a roster to censor.
+    //
+    // Orc is the reason. It reads zero at some seeds — mean 1.22 living mages
+    // over 32 seeds on `main`, zero on 11 of them — and a species with nobody
+    // alive is neither censored nor recovered; it is absent. Requiring it in
+    // `censored` made this test fail whenever orc happened to roll zero, which
+    // is a property of orc's tuning and not of the claim being defended.
+    //
+    // Nothing is weakened, because the claim survives the distinction intact:
+    // the refutation is that the recoverers are *not* the two shortest-lived
+    // species, and a species at zero is certainly not a recoverer. That is
+    // asserted unconditionally below.
+    for (const shortLived of ['human', 'orc']) {
+      if (present.has(shortLived)) {
+        expect(censored).toContain(shortLived);
+      }
+    }
     // Something recovers, so the censoring above is a finding and not a run
     // that simply ended too early for anybody.
     expect(species.length).toBeGreaterThan(0);
-    const recoverers = species.map((row) => String(row['speciesId']));
-    // The recoverers are not the two shortest-lived species, which is the whole
-    // of the refutation in one assertion.
-    expect(recoverers).not.toContain('orc');
-    expect(recoverers).not.toContain('human');
+    // Absent species are filtered out here for exactly the reason the block
+    // above filters them out of the `censored` check, and the guard was
+    // one-sided until `apply-magic` shipped and this seed's orc roster reached
+    // the shock tick empty.
+    //
+    // A species at zero is scored as recovering in twelve ticks — nought is
+    // trivially back to nought — and that reads in `recoverers` as the very
+    // outcome this test exists to refute. It is not one. `preShock: 0,
+    // postShock: 0` is a species that was never there, and the refutation is a
+    // claim about species that were: **the two shortest-lived species that had
+    // a roster do not recover.** Symmetrical with the `censored` guard, and
+    // stated rather than left to whoever next reads a green test and a zero.
+    //
+    // **Both sides of the `w108` merge wrote this same guard, independently and
+    // for different runs.** `w108/university-fidelity` hit an empty orc roster
+    // because `UNIVERSITY_STAFF` link rows are entities and `contracts.md` §6
+    // splits the RNG per entity handle, so creating them re-rolls every
+    // handle-keyed draw in the run; `main` hit it because `apply-magic` shipped
+    // and moved orc's months. That two unrelated changes both landed on the
+    // same hole is the argument for the general guard kept here rather than the
+    // one-species version the branch wrote — the hole is structural, not a
+    // property of either change.
+    const recoverers = species
+      .map((row) => String(row['speciesId']))
+      .filter((speciesId) => present.has(speciesId));
+    for (const shortLived of ['human', 'orc']) {
+      if (present.has(shortLived)) expect(recoverers).not.toContain(shortLived);
+    }
   });
 });

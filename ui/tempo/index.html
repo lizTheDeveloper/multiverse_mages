@@ -88,12 +88,14 @@
   .sp[disabled]{opacity:.45;cursor:not-allowed}
 
   /* the feed */
-  .feed{height:15rem;overflow-y:auto;display:flex;flex-direction:column-reverse;gap:2px;
+  .feed{height:15rem;overflow-y:auto;--scroll-bg:var(--sunk);display:flex;flex-direction:column-reverse;gap:2px;
     background:var(--sunk);border:1px solid var(--edge);border-radius:3px;padding:.4rem}
   .ev{display:grid;grid-template-columns:3.1rem 1fr;gap:.45rem;padding:.18rem .3rem;border-radius:2px;
     font-size:.83rem;line-height:1.35}
   .ev .t{font:9.5px var(--mono);color:var(--faint);font-variant-numeric:tabular-nums;padding-top:.15rem}
   .ev.routine{color:var(--faint)}
+  .ev.absorbed{color:var(--faint);font-style:italic;border-bottom:1px dotted var(--edge);
+    padding-bottom:.35rem;margin-bottom:.15rem}
   .ev.notable{color:var(--soft)}
   .ev.loss{color:var(--loss);background:color-mix(in srgb,var(--loss) 11%,transparent)}
   .ev.loss b{color:color-mix(in srgb, var(--loss) 45%, var(--ink))}
@@ -143,6 +145,8 @@
   <p class="lede">All three run off one simulated stream. Change the population — the routine classes cross
   their thresholds and turn to texture, while loss stays discrete at any scale.</p>
 
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
   <div class="globalbar">
     <button class="run" id="run" type="button" aria-pressed="true">⏸ Running</button>
     <span class="k">population</span>
@@ -157,7 +161,7 @@
 
   <div class="dirs" id="dirs"></div>
 
-  <div class="note">
+  <div class="note mm-essay">
     <h2>What operating these settles</h2>
     <p><b class="hot">The density rule transfers, and it is the whole answer to the feed.</b> Research,
     teaching and scribing all cross their thresholds somewhere between 200 and 600 mages and stop being
@@ -178,13 +182,7 @@
     clock, which suits a game with no map and no units to command. It also makes the tempo-lost-to-inbound-
     raids metric (vision §8) meaningless, because there is no wall clock to lose. Worth knowing before
     anyone specifies that metric against a client that may not have a clock.</p>
-    <p><b class="hot">The interruption policy is downstream of a balance number, and that is the finding.</b>
-    Drag the loss slider. At well under one last copy a year the halt is the best moment in the game. Past
-    roughly three a year it is a nuisance and direction B collapses into direction A with extra steps —
-    the prototype says so itself once the rate crosses. So <em>the feed cannot be designed until the loss
-    rate is known</em>, and it is not: the campaign measured roughly 55 copies per node, which puts it near
-    never today, while the same campaign is actively trying to make loss bite. Whichever way that lands
-    changes which of these three directions is correct.</p>
+    <p><b class="hot">The interruption policy is downstream of concentration, and that is now measured.</b> Drag the loss slider: under about one last copy a year the halt is the best moment in the game, past roughly three a year it is a nuisance. W8 settled which end reality sits at, and it is neither — <code>nodesLost</code> is <b>0.00 for six of eight strategies</b> and <code>libraryDependence</code> is <b>0</b>, so <em>the halt never fires at all</em>. Raids burn books and remove nothing, because at 50–80 copies per node every library is held fifty other places. The choice between halting and a conventional feed therefore cannot be made by playing, and it is blocked on <em>concentration</em> rather than on a decay rate — which is not a number this screen or any tuning pass can move.</p>
     <p><b>One threshold per class, read by both layers.</b> These numbers are the same numbers the audio
     uses rather than a visual set that happens to look similar. Two layers choosing independently would
     disagree about the moment a class became weather, and a player would <em>see</em> discrete events while
@@ -248,7 +246,7 @@ let seed = 8675309;
 const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
 const pick = (a) => a[Math.floor(rnd() * a.length)];
 
-const state = { running: true, pop: 240, tick: 0, speed: { a: 1, b: 1 }, halted: false, unread: 0, halts: 0 };
+const state = { running: true, pop: 240, tick: 0, speed: { a: 1, b: 1 }, halted: false, unread: 0, halts: 0, absorbed: 0 };
 const feeds = { a: [], b: [], c: [] };
 const rates = {};
 
@@ -289,7 +287,7 @@ function renderShell() {
         <div class="clock"><span class="tick" data-tick>0</span><span class="date" data-date></span>
           <span class="state" data-state data-halted="false">running</span></div>
         <div class="speeds" data-speeds></div>
-        <div class="feed" data-feed></div>
+        <div class="feed mm-scroll" data-feed></div>
       </div>
       <div class="dfoot">Attention is the player's problem. Everything that happens is a line, and at 4×
         the lines outrun reading. This is what every management game ships.</div>
@@ -303,7 +301,7 @@ function renderShell() {
           <span class="state" data-state data-halted="false">running</span></div>
         <div class="speeds" data-speeds></div>
         <div class="texture" data-texture></div>
-        <div class="feed" data-feed></div>
+        <div class="feed mm-scroll" data-feed></div>
         <div data-halt></div>
       </div>
       <div class="dfoot">Routine classes become rate bars above their threshold; only what survives the
@@ -321,7 +319,7 @@ function renderShell() {
           <button class="advance" type="button" data-advance>Advance a year</button>
           <span class="unread" data-unread></span>
         </div>
-        <div class="feed" data-feed></div>
+        <div class="feed mm-scroll" data-feed></div>
       </div>
       <div class="dfoot">Time moves when you ask it to. Suits a game with no map and nothing to command —
         and deletes the wall clock that vision §8's tempo-lost-to-raids metric is measured against.</div>
@@ -360,8 +358,14 @@ function step(manual = false) {
     push('a', ev);
     if (manual || true) push('c', ev);
     const cls = CLASSES.find(c => c.id === ev.cls);
-    // B only keeps a line for classes under their density threshold
+    // B only keeps a line for classes under their density threshold. The count
+    // of what it drops is kept here, monotonically, and NOT derived by
+    // subtracting the two feed lengths: both are ring buffers capped at 60, so
+    // A saturates while B does not, and the difference falls back towards zero
+    // exactly as the density rule starts absorbing the most. That is an
+    // instrument that reads zero when the answer is largest.
     if (rates[ev.cls] < cls.threshold) push('b', ev);
+    else state.absorbed += 1;
     if (ev.cls === 'loss') {
       state.halts += 1;
       state.halted = true;
@@ -384,8 +388,22 @@ function paint() {
     else if (key === 'b' && state.halted) { st.textContent = 'halted on loss'; st.dataset.halted = 'true'; }
     else { st.textContent = state.running ? `running ${state.speed[key] ?? 1}×` : 'paused'; st.dataset.halted = String(!state.running); }
 
+    // The feed is column-reverse, so the last string rendered sits at the *top*
+    // — which is where B's empty space is. B's box looked like a panel that had
+    // failed to render, when what it was actually showing is the density rule
+    // working: the routine classes crossed their threshold and became the rate
+    // bars above, so there is nothing left to print. Absence is reported.
+    const absorbed = key === 'b' ? state.absorbed : 0;
     root.querySelector('[data-feed]').innerHTML = feeds[key].map(ev =>
-      `<div class="ev ${ev.tone}"><span class="t">t${ev.tick}</span><span>${ev.text}</span></div>`).join('');
+      `<div class="ev ${ev.tone}"><span class="t">t${ev.tick}</span><span>${ev.text}</span></div>`).join('')
+      + (absorbed > 0
+        ? `<div class="ev absorbed"><span class="t">—</span><span>${absorbed} routine
+             ${absorbed === 1 ? 'line has' : 'lines have'} been absorbed since t0: their classes are over
+             the density threshold and are the rate bars above. This space is the rule working.</span></div>`
+        : '')
+      + (feeds[key].length === 0 && absorbed === 0
+        ? '<div class="ev absorbed"><span class="t">—</span><span>Nothing has happened yet.</span></div>'
+        : '');
   }
 
   // B's texture panel
@@ -450,4 +468,13 @@ setInterval(() => {
 <script type="module">
   import { floatThemeControl } from '../shared/theme.js';
   floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['eventDeltas']);
 </script>

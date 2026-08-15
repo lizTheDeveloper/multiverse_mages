@@ -46,6 +46,19 @@ export const RNG_STREAM = {
   objectives: 10,
   /** Terrain generation and combatant deployment. */
   terrain: 11,
+  /**
+   * The opening square: which techniques and forms a universe is founded
+   * holding (`campaign-plan.md`, "The 2×2 opening").
+   *
+   * Drawn exactly once per universe, at founding, and never again. It has its
+   * own id rather than borrowing `mageBirth`'s — which is the other tick-zero
+   * draw — because the two are taken from the same tick and a shared cursor
+   * would make *how many axes a square has* shift every founding personality
+   * behind it. A 1×1 arm and a 3×3 arm would then differ in their founders as
+   * well as in their grid, and the square's effect could not be separated from
+   * the mages'.
+   */
+  openingSquare: 12,
 } as const;
 
 /** Any ID in the permanent registry. */

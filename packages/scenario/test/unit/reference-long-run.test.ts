@@ -403,50 +403,27 @@ describe('two hundred world years of the reference universe', () => {
     expect(distinct.length).toBeGreaterThan(2);
     expect(peak).toBeGreaterThan(0);
 
-    // ## The books-to-depth ratio, restated a second time, and this time the
-    // ## mechanism changed rather than the economy
+    // The books-to-depth ratio, restated at its new measured value. It used
+    // to run close to one book per distinct node under the single-stock
+    // economy, where a scribe's `vellum` competed with the populace's food and
+    // upkeep for the same pool. Decoupled from food, scribing now has more
+    // headroom and duplicates accumulate faster before upkeep's per-instance
+    // cost catches them — measured at 157 books against 48 distinct nodes,
+    // roughly 3.3 books per node.
     //
-    // History, because the number alone reads as drift:
+    // `apply-magic` moved it again, to **186 books against 43 nodes — 4.33** —
+    // and the direction is the goal doing what it is for rather than a
+    // regression. A month spent casting at the world is a month not spent
+    // researching, so the universe reaches five fewer distinct nodes; the
+    // scribes are unaffected (applied Terram work makes stone, and a scribe is
+    // paid in vellum), so the same scribing capacity now has a smaller distinct
+    // set to write and copies it more often. Fewer nodes and the same books is
+    // exactly a higher ratio.
     //
-    // | when | books | distinct nodes | per node | bound |
-    // |---|--:|--:|--:|---|
-    // | single-stock economy | ~1 per node | — | ~1.0 | `< 2 ×` |
-    // | after `vellum` decoupled from food | 157 | 48 | 3.3 | `< 4 ×` |
-    // | **after `w78/teaching-boundary`** | **154** | **36** | **4.3** | `< 6 ×` |
-    //
-    // The middle row moved because scribing got headroom: a scribe's `vellum`
-    // had competed with the populace's food for one pool, and decoupling them
-    // let duplicates accumulate faster than upkeep's per-instance cost catches
-    // them.
-    //
-    // **The last row moved for a different reason, and it is the numerator that
-    // stayed still while the denominator fell.** Books barely moved, 157 → 154.
-    // *Distinct nodes shelved* fell 48 → 36, and that is teaching acquiring an
-    // institutional boundary. The chain is short and worth writing out, because
-    // a future reader will otherwise read a 25% fall in library depth as a
-    // regression:
-    //
-    // 1. `isFeasible` masks `scribe` when `scribeThroughput <= 0`, and
-    //    `scribeThroughputFor` returns `0` for `universityId === 0`. **Only
-    //    affiliated mages ever write a book.**
-    // 2. This universe affiliates its six founders and nobody else — every mage
-    //    promoted afterwards is created unaffiliated, and `affiliate` never wins
-    //    the goal argmax. So the shelf is filled by six mages out of ninety.
-    // 3. Before the boundary those six could learn from any of the 32
-    //    lowest-handle mages in the universe. Now they learn only from each
-    //    other. They collectively know less, so they collectively shelve less.
-    //
-    // **A university that is a container holds fewer distinct nodes than one
-    // that is a doorway, and that is the mechanic working rather than failing.**
-    // The duplicates are unchanged in kind: the same six mages write at the same
-    // rate against a narrower set of things worth writing.
-    //
-    // The bound is raised to `6 ×` to fit the measurement with headroom, not
-    // doubled reflexively — 4.3 is still nowhere near the "ten would mean it is
-    // gone" ceiling the original comment named, so upkeep is still biting. **If
-    // this fails again, do not widen it a third time without naming which
-    // mechanism moved which half of the ratio.**
-    expect(last?.grimoires ?? 0).toBeLessThan(6 * (last?.libraryDepth ?? 1));
+    // Widened to 5 to fit the new measurement with headroom, not doubled
+    // reflexively — still well under the "ten would mean it is gone" ceiling the
+    // original comment named.
+    expect(last?.grimoires ?? 0).toBeLessThan(5 * (last?.libraryDepth ?? 1));
 
     // The replacement for "it falls": it does not, anywhere in the run.
     // Walked tick by tick rather than compared as peak-vs-last, for the same
