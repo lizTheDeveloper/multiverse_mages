@@ -10329,3 +10329,74 @@ Both are already pinned in the ratchet baseline, among the **14 of 125 findings 
 to content-not-code. Left for the magic auditor (`w194/audit-magic`) to place in context rather than
 fixed here, since it has that package in its corpus and a fix commissioned now would collide with its
 report.
+
+## W201 — the loot shelf reads the content flag, not the ruleset, and that is why #137 collapses
+
+The magic audit (PR #174, `docs/design/audit-magic.md`): **42 rows — 30 ABSENT, 6 SUPERSEDED, 5 PARTIAL,
+1 BUILT.** Its worst row explains a result that had been sitting unexplained for a day.
+
+### Verified verbatim at `origin/main`
+
+`packages/scenario/src/rival-universe.ts:367`:
+
+```js
+const v1Cells = new Set(
+  content.registry.cells.filter((entry) => entry.record.v1 === true).map((entry) => entry.record.id),
+);
+const foreign = content.registry.nodes
+  .filter((entry) => !v1Cells.has(entry.record.cell))
+  ...
+if (foreign.length === 0) return;
+```
+
+**The selector is the `v1` flag in *content*.** `raid-constant.json`'s own gloss describes something else
+entirely: *"Books a rival shelves from cells **this universe's own ruleset** forbids… A god researches
+only what they permit but may take what another permitted, so **this is what makes the other 249
+reachable at all**."*
+
+And twelve lines further down the same function **writes both ruleset masks** — every technique, every
+form — with a comment explaining that a rival permitting only what this universe permits *"would have
+nothing worth the trip."* **It writes the ruleset and then does not read it.** The two have agreed only
+by coincidence, for exactly as long as the set of `v1`-flagged cells has equalled the opening square.
+
+### Why this explains #137
+
+`w115/enable-all-cells` flags all seventy. Then `v1Cells` is all seventy, `foreign` is **empty**, and the
+function **returns early** — so **no foreign book is ever shelved, and the sole path by which the other
+249 nodes become reachable is closed.**
+
+That is a complete mechanism for #137's measured collapse, which had been recorded as an unexplained
+result: **every species ~20× slower to tier 3, human censored in 51 of 72 runs, two whole seed sets never
+reaching tier 3 at all.** It was never evidence that a wide grid is bad. It is evidence that widening the
+grid silently disables knowledge import, because the import is keyed on the wrong field.
+
+**So #137 should be re-measured after this is fixed, not judged on the numbers it has.** And the
+opening-width sweep now running (`w192/opening-width`) is measuring across exactly the axis this bug
+distorts — it must be told.
+
+### The ratchet's blind spot, stated precisely
+
+Only **7 of the 42 rows** name a mechanism pinned in `scripts/reachability-baseline.json`. **The other 35
+are invisible to it by construction**: the ratchet finds unreached *symbols*, so it cannot see
+
+- a hardcoded literal where an input belongs — `fertilityBonuses: []` at `world-step.ts:1849` and
+  **`scribeRateBonuses: []` at `:2017`**, both still literals;
+- a missing `permits()` inside a function that *is* reached;
+- **a live function reading the wrong field** — the row above;
+- unauthored content.
+
+**Six of the ten worst rows would survive a green ratchet untouched.** The ratchet is worth having and it
+is not a substitute for reading. Worth writing at the ratchet itself.
+
+### Two more from the same audit
+
+- **`magic-projection` §7.5/§7.5a are stale**, and `metis-from-use-results.md` §9 **already says so on
+  `main`** — naming four docs, `scripts/check-primitive-consumption.mjs`, and a source header as carrying
+  the same stale claim. The `vision-audit.md` pattern repeating: a correction exists and the wrong version
+  is the one people read. Real findings survive inside the stale doc, above.
+- **The mētis-from-use ruling was decided against a tree that had no applied-work verb.** Its gating
+  measurement is #50 (08-13); `applyMagic` landed as #127 (08-14), confirmed from `git log`. **That
+  decision should be revisited on a tree that has the verb**, rather than treated as settled.
+
+And the auditor flagged that **two of its own absence probes came back non-zero and were corrected before
+publishing** — one of which made the finding stronger. That is the discipline working.
