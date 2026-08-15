@@ -13133,12 +13133,34 @@ sweep runs at 2400 and the re-seal tool **refused**:
 | referencePopulation@permissive-breadth | 4,724 | 13,134 | +6.4 |
 | referencePopulation@portal-rush | 18,283 | 16,179 | -17.6 |
 
-**20480 is `favor-cap-base`.** The declaration is legal only at a full pool, so a god who spends
-on anything else can never end. Hoarding becomes optimal and every other verb starves — knowledge
-nearly halves while population balloons. That is not the win condition discriminating; it is the
-win condition excluding play, which is the same defect as zero with the sign flipped.
+**RETRACTED — none of that movement is mine.** The paragraph that stood here read the table as
+the price biting, and it was wrong. Two controls killed it:
 
-Testing 8192 instead: affordable while still spending.
+1. Re-priced 20480 -> 8192 and re-ran. **Byte-identical.** Every metric, every strategy, to the
+   decimal. A price that changes by 2.5x and moves nothing is not the cause.
+2. Ran the same sweep against the same baseline on **unmodified `main`**. **The identical 23
+   regressions.**
+
+So `balance-gate-ascension-v1` was already 23 metrics past tolerance before this branch existed,
+and pricing the ending is **behaviourally inert** in that sweep. I attributed pre-existing drift
+to my own one-line edit, in a document, in the present tense — the exact failure this file has a
+rule about, committed by the person who wrote the rule.
+
+The tell was free and I nearly walked past it: **two different inputs producing byte-identical
+output means neither input is the input.**
+
+**And the drift has a cause: nothing runs that gate.** `package.json` declares
+`balance:gate:ascension`; `.github/workflows/ci.yml` runs `balance:gate`, `balance:gate:horizon`
+and `balance:gate:agency` — and **not** ascension, on either runner. The one baseline covering the
+win condition is the one no gate checks, so it rotted silently. That is this repository's
+documented shape — a checker that is built and not wired — landing on the measurement that matters
+most to the release the campaign is for.
+
+What survives about the price: it is what `discriminating-ascension` task 1.5 asks for, it was
+never applied, the tests pass, and the two gated baselines re-seal provenance-only at 0.00 SE.
+What is **not** established is that it fixes anything. W242's `permit-then-idle` result came from
+`search-strategies` at 1350 ticks, a different harness and a different pool; whether a priced
+ending moves *that* is untested and is the next measurement, not an assumption.
 
 Two things worth keeping:
 
